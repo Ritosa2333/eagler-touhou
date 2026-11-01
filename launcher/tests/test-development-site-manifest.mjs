@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
@@ -8,6 +9,7 @@ import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
+test("test-development-site-manifest", async () => {
 const root = await mkdtemp(join(resolve(import.meta.dirname, "../.."), "eagler-development-manifest-"));
 const project = fileURLToPath(new URL("..", import.meta.url));
 const fixtureData = Buffer.from([1, 2, 3, 4]);
@@ -138,3 +140,4 @@ for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {
 }
 await rm(root, { recursive: true, force: true });
 console.log(JSON.stringify({ developmentHostManifest: "PASS", games: Object.keys(manifest.games) }));
+});

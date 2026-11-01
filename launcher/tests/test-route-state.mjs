@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { PRODUCT_IDS } from "../lib/contracts/product-catalog.mjs";
 import {
@@ -22,6 +23,7 @@ import {
 } from "../.cache/build/browser/assets/launcher/route-state.mjs";
 import { ROOM_INVITE_KEY, decodeRoomInvite, encodeRoomInvite } from "../.cache/build/browser/assets/launcher/room-invite.mjs";
 
+test("test-route-state", async () => {
 const products = new Set(PRODUCT_IDS);
 
 assert.equal(normalizeRoomCode(" 12-34abc567890 "), "12345678");
@@ -232,3 +234,4 @@ console.log(JSON.stringify({
   playerHistory: ["push", "replace", "stable"],
   directRoomBackPredecessor: true,
 }));
+});

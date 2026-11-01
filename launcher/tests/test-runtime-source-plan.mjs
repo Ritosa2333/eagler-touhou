@@ -1,5 +1,4 @@
-// Local build-plan acceptance with synthetic source/SDK markers. No compiler or
-// game data is executed. Covers all registered normal/multiplayer source owners.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,6 +7,18 @@ import { loadRuntimeBuildConfig } from "../lib/runtime-build-profiles.mjs";
 import { WORKSPACE_REPOSITORIES } from "../lib/workspace-layout.mjs";
 import { loadSourceLayout } from "../lib/source-layout.mjs";
 import { planRuntimeSourceBuild } from "../lib/runtime-source-plan.mjs";
+
+test("test-runtime-source-plan", async () => {
+// Local build-plan acceptance with synthetic source/SDK markers. No compiler or
+// game data is executed. Covers all registered normal/multiplayer source owners.
+
+
+
+
+
+
+
+
 
 const root = await mkdtemp(resolve(tmpdir(), "eagler-runtime-plans-"));
 async function put(path, text = "fixture") {
@@ -107,3 +118,4 @@ try {
   await rm(root, { recursive: true, force: true });
 }
 console.log("Runtime source plans: PASS (20 variants, shared dependencies, explicit tools, invalid inputs)");
+});

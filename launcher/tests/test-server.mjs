@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -6,6 +7,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+test("test-server", async () => {
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const port = await allocateLoopbackPort();
 const fixtureName = `.server-policy-${randomUUID()}.data`;
@@ -179,3 +181,4 @@ async function stopChild(processHandle, timeoutMs = 5_000) {
     ]);
   }
 }
+});

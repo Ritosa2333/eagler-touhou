@@ -2,88 +2,191 @@
    Common settings rows no longer opt into legacy MP-only spacing classes. */
 /* Both entries share the same viewport geometry; the room only owns its
    foreground layer and close intent. Inline viewport values follow its owner. */
-body.library-tools-closing .library-backdrop,.settings-room-backdrop.closing {
-  visibility:visible!important;pointer-events:none!important;transition:none!important;
-  animation:shared-options-shade-out .2s ease-out both!important;
+body.library-tools-closing .library-backdrop,
+.settings-room-backdrop.closing {
+  visibility: visible !important;
+  pointer-events: none !important;
+  transition: none !important;
+  animation: shared-options-shade-out 0.2s ease-out both !important;
 }
-@keyframes shared-options-shade-out{from{opacity:1}to{opacity:0}}
-@media(prefers-reduced-motion:reduce){body.library-tools-closing .library-backdrop,.settings-room-backdrop.closing{animation:none!important;opacity:0!important}}
-.less-motion :is(.library-backdrop,.settings-room-backdrop.closing){animation:none!important}
-.less-motion.library-tools-closing .library-backdrop,.less-motion .settings-room-backdrop.closing{opacity:0!important}
-:is(.main.library-layout>.tools,.mp-settings-room-drawer.settings-ui) {
-  --options-gap:16px;
-  --options-edge-top:max(var(--options-gap),env(safe-area-inset-top));
-  --options-edge-bottom:max(var(--options-gap),env(safe-area-inset-bottom));
-  --options-edge-left:max(var(--options-gap),env(safe-area-inset-left));
-  --options-edge-right:max(var(--options-gap),env(safe-area-inset-right));
-  --options-width:min(480px,calc(var(--options-view-width,100vw) - var(--options-edge-left) - var(--options-edge-right)));
-  --options-height:min(920px,calc(var(--options-view-height,100dvh) - var(--options-edge-top) - var(--options-edge-bottom)));
-  inset:auto;
-  top:calc(var(--options-view-top,0px) + var(--options-edge-top));
-  left:calc(var(--options-view-left,0px) + var(--options-view-width,100vw) - var(--options-edge-right) - var(--options-width));
-  width:var(--options-width)!important;height:var(--options-height)!important;
-  max-height:var(--options-height);
-}
-:is(.main.library-layout>.tools,.mp-settings-room-drawer).options-compact .tools-head{flex-basis:84px}
-:is(.main.library-layout>.tools,.mp-settings-room-drawer).options-compact .options-number{font-size:42px}
-:is(.main.library-layout>.tools,.mp-settings-room-drawer).options-compact .tools-title{bottom:6px}
-:is(.main.library-layout>.tools,.mp-settings-room-drawer).options-compact .options-subtitle{font-size:12px}
-@media(min-width:781px) and (hover:hover) and (pointer:fine) {
-  .mp-settings-room-drawer.settings-ui{animation:shared-options-room-desktop-in .48s cubic-bezier(.2,.85,.2,1) both}
-  .mp-settings-room-drawer.settings-ui.closing{animation:shared-options-room-desktop-out .2s ease-in both}
-}
-@keyframes shared-options-room-desktop-in{from{opacity:0;transform:translateX(36px) scale(.97)}50%{opacity:1}to{opacity:1;transform:none}}
-@keyframes shared-options-room-desktop-out{to{opacity:0;transform:translateX(36px) scale(.97)}}
-@media(max-width:780px),(hover:none),(pointer:coarse) {
-  :is(.main.library-layout>.tools,.mp-settings-room-drawer.settings-ui) {
-    --options-edge-top:max(24px,env(safe-area-inset-top));
-    --options-edge-bottom:0px;--options-edge-left:0px;--options-edge-right:0px;
-    --options-width:var(--options-view-width,100vw);
-    --options-height:calc(var(--options-view-height,100dvh) - var(--options-edge-top));
-    left:var(--options-view-left,0px);border:0;border-radius:24px 24px 0 0;
-    box-shadow:none;contain:layout paint;
+@keyframes shared-options-shade-out {
+  from {
+    opacity: 1;
   }
-  .mp-settings-room-drawer.settings-ui{animation:shared-options-room-in .26s cubic-bezier(.2,.8,.2,1) both}
-  .mp-settings-room-drawer.settings-ui.closing{animation:shared-options-room-out .2s cubic-bezier(.4,0,1,1) both}
-  .settings-room-backdrop{background:transparent;animation:none;touch-action:none}
-  .mp-settings-room-drawer .tools-head .library-back{top:max(16px,env(safe-area-inset-top));left:max(20px,env(safe-area-inset-left))}
-  .mp-settings-room-drawer .mp-settings-room-content{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  to {
+    opacity: 0;
+  }
 }
-@keyframes shared-options-room-in{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@keyframes shared-options-room-out{from{transform:translateY(0)}to{transform:translateY(100%)}}
-:is(.library-layout .tools,.mp-settings-room-drawer) .tools-head{touch-action:none}
-:is(.library-layout .tools.mp-mode,.mp-settings-room-drawer) .tools-head {
-  flex-basis:clamp(90px,calc(var(--options-view-height,100dvh) - 570px),260px);
+@media (prefers-reduced-motion: reduce) {
+  body.library-tools-closing .library-backdrop,
+  .settings-room-backdrop.closing {
+    animation: none !important;
+    opacity: 0 !important;
+  }
 }
-@media(max-width:780px),(hover:none),(pointer:coarse) {
-  :is(.library-layout .tools.mp-mode,.mp-settings-room-drawer) .tools-head {
-    flex-basis:clamp(90px,calc(var(--options-view-height,100dvh) * .25),210px);
+.less-motion :is(.library-backdrop, .settings-room-backdrop.closing) {
+  animation: none !important;
+}
+.less-motion.library-tools-closing .library-backdrop,
+.less-motion .settings-room-backdrop.closing {
+  opacity: 0 !important;
+}
+:is(.main.library-layout > .tools, .mp-settings-room-drawer.settings-ui) {
+  --options-gap: 16px;
+  --options-edge-top: max(var(--options-gap), env(safe-area-inset-top));
+  --options-edge-bottom: max(var(--options-gap), env(safe-area-inset-bottom));
+  --options-edge-left: max(var(--options-gap), env(safe-area-inset-left));
+  --options-edge-right: max(var(--options-gap), env(safe-area-inset-right));
+  --options-width: min(
+    480px,
+    calc(var(--options-view-width, 100vw) - var(--options-edge-left) - var(--options-edge-right))
+  );
+  --options-height: min(
+    920px,
+    calc(var(--options-view-height, 100dvh) - var(--options-edge-top) - var(--options-edge-bottom))
+  );
+  inset: auto;
+  top: calc(var(--options-view-top, 0px) + var(--options-edge-top));
+  left: calc(
+    var(--options-view-left, 0px) +
+    var(--options-view-width, 100vw) -
+    var(--options-edge-right) -
+    var(--options-width)
+  );
+  width: var(--options-width) !important;
+  height: var(--options-height) !important;
+  max-height: var(--options-height);
+}
+:is(.main.library-layout > .tools, .mp-settings-room-drawer).options-compact .tools-head {
+  flex-basis: 84px;
+}
+:is(.main.library-layout > .tools, .mp-settings-room-drawer).options-compact .options-number {
+  font-size: 42px;
+}
+:is(.main.library-layout > .tools, .mp-settings-room-drawer).options-compact .tools-title {
+  bottom: 6px;
+}
+:is(.main.library-layout > .tools, .mp-settings-room-drawer).options-compact .options-subtitle {
+  font-size: 12px;
+}
+@media (min-width: 781px) and (hover: hover) and (pointer: fine) {
+  .mp-settings-room-drawer.settings-ui {
+    animation: shared-options-room-desktop-in 0.48s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  }
+  .mp-settings-room-drawer.settings-ui.closing {
+    animation: shared-options-room-desktop-out 0.2s ease-in both;
+  }
+}
+@keyframes shared-options-room-desktop-in {
+  from {
+    opacity: 0;
+    transform: translateX(36px) scale(0.97);
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shared-options-room-desktop-out {
+  to {
+    opacity: 0;
+    transform: translateX(36px) scale(0.97);
+  }
+}
+@media (max-width: 780px), (hover: none), (pointer: coarse) {
+  :is(.main.library-layout > .tools, .mp-settings-room-drawer.settings-ui) {
+    --options-edge-top: max(24px, env(safe-area-inset-top));
+    --options-edge-bottom: 0px;
+    --options-edge-left: 0px;
+    --options-edge-right: 0px;
+    --options-width: var(--options-view-width, 100vw);
+    --options-height: calc(var(--options-view-height, 100dvh) - var(--options-edge-top));
+    left: var(--options-view-left, 0px);
+    border: 0;
+    border-radius: 24px 24px 0 0;
+    box-shadow: none;
+    contain: layout paint;
+  }
+  .mp-settings-room-drawer.settings-ui {
+    animation: shared-options-room-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .mp-settings-room-drawer.settings-ui.closing {
+    animation: shared-options-room-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  .settings-room-backdrop {
+    background: transparent;
+    animation: none;
+    touch-action: none;
+  }
+  .mp-settings-room-drawer .tools-head .library-back {
+    top: max(16px, env(safe-area-inset-top));
+    left: max(20px, env(safe-area-inset-left));
+  }
+  .mp-settings-room-drawer .mp-settings-room-content {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+}
+@keyframes shared-options-room-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes shared-options-room-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+:is(.library-layout .tools, .mp-settings-room-drawer) .tools-head {
+  touch-action: none;
+}
+:is(.library-layout .tools.mp-mode, .mp-settings-room-drawer) .tools-head {
+  flex-basis: clamp(90px, calc(var(--options-view-height, 100dvh) - 570px), 260px);
+}
+@media (max-width: 780px), (hover: none), (pointer: coarse) {
+  :is(.library-layout .tools.mp-mode, .mp-settings-room-drawer) .tools-head {
+    flex-basis: clamp(90px, calc(var(--options-view-height, 100dvh) * 0.25), 210px);
   }
 }
 /* The shared presence owner keeps either carrier alive during desktop exit.
    Use the established closed pose while the retained panel is still open. */
-@media(min-width:781px) and (hover:hover) and (pointer:fine) {
-  body.library-tools-closing.library-tools-open .main.library-layout>.tools.is-open {
-    opacity:0;
-    transform:translateX(36px) scale(.97);
-    pointer-events:none;
+@media (min-width: 781px) and (hover: hover) and (pointer: fine) {
+  body.library-tools-closing.library-tools-open .main.library-layout > .tools.is-open {
+    opacity: 0;
+    transform: translateX(36px) scale(0.97);
+    pointer-events: none;
   }
 }
 
 /* React action pairs use semantic roles rather than two historical button IDs.
    Important retires the frozen main ID-selector priority for these properties;
    all React consumers, including new IDs, now share this one icon owner. */
-:is(.library-layout,.mp-settings-room-drawer) .launch-actions>.launch:not(.launch-secondary) .launch-icon {
-  order:-1!important;
+:is(.library-layout, .mp-settings-room-drawer) .launch-actions > .launch:not(.launch-secondary) .launch-icon {
+  order: -1 !important;
 }
-:is(.library-layout,.mp-settings-room-drawer) .launch-actions>.launch:not(.launch-secondary) .launch-icon svg {
-  width:22px!important;height:22px!important;fill:currentColor!important;stroke:none!important;
+:is(.library-layout, .mp-settings-room-drawer) .launch-actions > .launch:not(.launch-secondary) .launch-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+  fill: currentColor !important;
+  stroke: none !important;
 }
 /* Explicit compact placement preserves embedded row padding and 16px labels.
    Standard placement retains 17px labels. Motion remains common to both. */
-:is(.library-layout,.mp-settings-room-drawer) .launch-actions.launch-actions-compact {
-  margin:0;padding:10px 4px 4px 10px;
+:is(.library-layout, .mp-settings-room-drawer) .launch-actions.launch-actions-compact {
+  margin: 0;
+  padding: 10px 4px 4px 10px;
 }
-:is(.library-layout,.mp-settings-room-drawer) .launch-actions.launch-actions-compact>.launch:not(.launch-secondary) {
-  font-size:16px;gap:8px;padding-inline:12px;
+:is(.library-layout, .mp-settings-room-drawer) .launch-actions.launch-actions-compact > .launch:not(.launch-secondary) {
+  font-size: 16px;
+  gap: 8px;
+  padding-inline: 12px;
 }

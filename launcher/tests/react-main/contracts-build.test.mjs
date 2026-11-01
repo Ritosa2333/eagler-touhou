@@ -1,6 +1,6 @@
 /** Cold maintainer contracts and compiler-free distribution boundary. No UI,
  * browser, published endpoint or native game is initialized by these checks. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';

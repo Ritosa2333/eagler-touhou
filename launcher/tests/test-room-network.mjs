@@ -1,7 +1,9 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import { createRoomNetwork, recordProbeSample, freshProbeMetric } from '../.cache/build/browser/assets/launcher/room-network.mjs';
 import { roomProbeEnvelope } from '../../services/relay/src/room-probe-policy.mjs';
 
+test("test-room-network", async () => {
 const blank = { rtt: null, jitter: null, state: 'checking', at: 0 };
 const first = recordProbeSample(blank, 24, 0);
 assert.equal(first.jitter, null);
@@ -92,3 +94,4 @@ try {
   assert.equal(network.metric('b','relay').state,'unavailable');
 } finally { Object.assign(globalThis,saved); }
 console.log('PASS room probe policy, RTT freshness, lane separation, retry and lifecycle');
+});

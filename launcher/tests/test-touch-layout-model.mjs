@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   canonicalTouchLayout,
@@ -16,6 +17,7 @@ import {
   touchLayoutVersion,
 } from "../.cache/build/browser/assets/launcher/touch-layout-model.mjs";
 
+test("test-touch-layout-model", async () => {
 const placement = (priority, overrides = {}) => ({ x: 0.25, y: 0.5, scale: 1, priority, ...overrides });
 const requiredControls = () => ({
   focus: placement(0),
@@ -159,3 +161,4 @@ assert.equal(failedPersist.persisted, false);
 assert.deepEqual(failedPersist.value, loaded);
 assert.ok(failedPersist.error);
 console.log("Touch layout persistence result: PASS");
+});

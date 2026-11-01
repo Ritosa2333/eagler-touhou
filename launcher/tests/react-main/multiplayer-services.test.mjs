@@ -2,7 +2,7 @@ import {readUiHistoryText} from '../support/ui-history.mjs';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Production room/directory services with synthetic clocks, storage and Runtime
  * ports. Protocol integration cases also use a real local Relay. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after, describe, beforeAll, afterAll} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {WebSocket} from 'ws';
@@ -661,11 +661,11 @@ function pinnedRoomRetry({status, attempt, present = true}) {
   return {events, attempt: sandbox.gameDataAttempt};
 }
 
-test('room Retry matches pinned handler eligibility, cleanup order and continuation filtering', async t => {
+describe('room Retry matches pinned handler eligibility, cleanup order and continuation filtering', () => {
   for (const status of ['cancelled', 'failed', 'preparing', 'ready', 'importing']) {
     for (const attempt of [null, {manual: true, continuation: {kind: 'install-only'}},
       {manual: true, continuation: {kind: 'launch'}}, {manual: false, continuation: {kind: 'install-only'}}]) {
-      await t.test(`${status} / ${JSON.stringify(attempt)}`, async () => {
+      test(`${status} / ${JSON.stringify(attempt)}`, async () => {
         let report, currentAttempt = structuredClone(attempt), cleanupCalls = 0;
         const events = [], finish = [];
         const fixture = await joinedRoom({
@@ -682,7 +682,7 @@ test('room Retry matches pinned handler eligibility, cleanup order and continuat
       });
     }
   }
-  await t.test('absent room', async () => {
+  test('absent room', async () => {
     let cleanupCalls = 0; const fixture = await joinedRoom({beforePreparationRetry() {cleanupCalls++;}});
     fixture.service.leave(); const expected = pinnedRoomRetry({status: 'cancelled', attempt: {manual: true, continuation: {kind: 'install-only'}}, present: false});
     fixture.service.retryPreparation(); assert.equal(cleanupCalls, 0); assert.deepEqual(expected.events, []); fixture.service.dispose();

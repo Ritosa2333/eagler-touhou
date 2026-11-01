@@ -1,7 +1,9 @@
+import {test} from 'vitest';
 import {selectedPortGames} from './support/port-selection.mjs';
 import fs from "node:fs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-replay-extension-contract", async () => {
 const read = rel => { const [repository, ...segments] = rel.split("/"); return fs.readFileSync(workspacePath(repository.replace(/-eagler$/, ""), ...segments), "utf8").replaceAll("\r\n", "\n"); };
 const requireText = (source, needle, label) => {
   if (!source.includes(needle)) throw new Error(`missing ${label}: ${needle}`);
@@ -149,3 +151,4 @@ const host = fs.readFileSync(new URL("../app/services/files.ts", import.meta.url
 if (host.includes('"EAGX"')) throw new Error("host file manager must not parse the game-owned EAGX format");
 
 console.log("TH06/TH07 ReplayExtension contract: PASS");
+});

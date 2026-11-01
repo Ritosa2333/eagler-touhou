@@ -56,13 +56,13 @@ function documentTags(html, parse) {
  * @param {{directory: string, metadata?: {manifest: Record<string, any>, graph: any} | null, expectedMountPath?: string}} options
  */
 export async function readReactFrontendArtifact({directory, metadata = null, expectedMountPath = undefined}) {
-  // Operator entrypoints may inspect selection before npm ci. Keep parser
+  // Operator entrypoints may inspect selection before bun install. Keep parser
   // dependencies behind the actual prebuilt-artifact read, after setup.
   const [{parse}, {browserModuleClosure}] = await Promise.all([import("parse5"), import("./browser-module-graph.mjs")]);
   const root = resolve(directory);
   let realRoot;
   try {realRoot = realpathSync(root);} catch (error) {
-    throw new Error(`React frontend artifact is missing at ${root}; run npm run build:ui-rewrite in the source checkout or supply a complete prebuilt distribution`, {cause: error});
+    throw new Error(`React frontend artifact is missing at ${root}; run bun run build:ui-rewrite in the source checkout or supply a complete prebuilt distribution`, {cause: error});
   }
   const resolveFile = path => {
     const absolute = resolve(root, path), real = realpathSync(absolute);
@@ -78,7 +78,7 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
       graph: JSON.parse(await readFile(resolveFile(REACT_ARTIFACT_METADATA_FILES[1]), "utf8")),
     };
   } catch (error) {
-    throw new Error(`React frontend artifact metadata is missing or invalid at ${root}; run npm run build:ui-rewrite or supply a complete prebuilt distribution`, {cause: error});
+    throw new Error(`React frontend artifact metadata is missing or invalid at ${root}; run bun run build:ui-rewrite or supply a complete prebuilt distribution`, {cause: error});
   }
   const {manifest, graph} = supplied;
   if (!manifest || typeof manifest !== "object" || Array.isArray(manifest) || !graph || graph.schema !== "eagler-touhou/react-app-shell-graph/1" || !Array.isArray(graph.shellFiles) || !Object.hasOwn(graph, "appShell")) throw new Error("Invalid React frontend artifact metadata");
@@ -101,7 +101,7 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     for (const path of [...entry.css ?? [], ...entry.assets ?? []]) generated.add(generatedPath(path));
   }
   if (!entrypoints.size) throw new Error("React artifact has no Vite browser entrypoints");
-  for (const path of ["index.html", "en.html", "lobby.html"]) {
+  for (const path of ["index.html", "en.html", "ja.html", "lobby.html"]) {
     const tags = documentTags(await readFile(resolveFile(path), "utf8"), parse);
     const declarations = tags.filter(node => node.tag === "meta" && node.attributes.name === REACT_APP_SHELL_META);
     if (declarations.length !== (appShell ? 1 : 0)) throw new Error(`React App Shell metadata mismatch: ${path}`);
@@ -118,7 +118,7 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     }
     if (!referencedEntry) throw new Error(`React document has no browser entrypoint: ${path}`);
   }
-  const shellFiles = [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), ...generated])].sort();
+  const shellFiles = [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), "ja.html", ...generated])].sort();
   if (graph.shellFiles.length !== shellFiles.length || [...graph.shellFiles].sort().some((path, index) => path !== shellFiles[index])) throw new Error("React App Shell graph differs from its canonical static/Vite publication ownership");
   // Vite owns dynamic-expression imports used by React Router; every concrete
   // emitted module import must still stay inside that declared output graph.
@@ -126,7 +126,7 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
   if (generatedModules.some(path => !generated.has(path))) throw new Error("React browser module import is absent from the Vite publication graph");
   const compatibility = await browserModuleClosure({root, entries: compatibilityEntries, resolveFile});
   if (compatibility.some(path => !path.startsWith("legacy/"))) throw new Error("React compatibility module escapes its bounded legacy publication");
-  const packageFiles = [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, ...generated, ...compatibility])].sort();
+  const packageFiles = [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, "ja.html", ...generated, ...compatibility])].sort();
   for (const path of packageFiles) resolveFile(artifactPath(path));
   const browserModules = [...new Set([...generatedModules, ...compatibility])].sort();
   const owned = new Set(packageFiles);

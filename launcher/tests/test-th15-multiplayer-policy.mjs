@@ -1,4 +1,4 @@
-/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {readFile} from 'node:fs/promises';
@@ -12,6 +12,21 @@ import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.
 import {loadRuntimeBuildConfig, getRuntimeBuildProfile} from '../lib/runtime-build-profiles.mjs';
 import {DEVELOPMENT_CONTENT} from '../lib/development-content.mjs';
 import {projectRelativeWorkspacePath} from '../lib/workspace-layout.mjs';
+
+test("test-th15-multiplayer-policy", async () => {
+/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+
+
+
+
+
+
+
+
+
+
+
+
 
 const game=PRODUCT_GAMES.th15, policy=multiplayerConfigForProduct('th15mp');
 assert.equal(isMultiplayerProductId('th15mp'),true);
@@ -163,3 +178,4 @@ try{
   relay.kill();
 }
 console.log('TH15 MP catalog, shared cooperative challenge, P0 timing, EBTM/EBNP and local 2P/3P relay policy PASS');
+});

@@ -4,7 +4,7 @@ import {createServer} from 'node:net';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {randomUUID} from 'node:crypto';
 import {resolve} from 'node:path';
-import test from 'node:test';
+import {test} from 'vitest';
 import {WebSocket} from 'ws';
 
 const root=resolve(import.meta.dirname,'..');
@@ -19,7 +19,7 @@ async function service(t,{relayFallback=false}={}){
     env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'1000',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:relayFallback?'1':'0'},
     stdio:['ignore','pipe','pipe']});
   let log='';child.stdout.on('data',b=>{log+=b;});child.stderr.on('data',b=>{log+=b;});
-  const sockets=[];t.after(()=>{for(const value of sockets)value.socket.close();child.kill();});
+  const sockets=[];t.onTestFinished(()=>{for(const value of sockets)value.socket.close();child.kill();});
   await until(()=>{assert.equal(child.exitCode,null,log);return log.includes('relay listening');},'relay failed to listen');
   async function open(query){
     const socket=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams(query));

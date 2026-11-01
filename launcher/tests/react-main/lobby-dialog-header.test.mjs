@@ -1,5 +1,5 @@
 /** Synthetic third-consumer reuse; no browser, layout or native top-layer claim. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -26,7 +26,7 @@ test('a third form consumer retains its own lifecycle, IDs, labels and close cal
   try {
     await render({title: 'Third title', closeContent: 'Cancel', onCloseRequest: () => calls.push('first')});
     const button = container.querySelector('button'), title = container.querySelector('h2'), input = container.querySelector('input');
-    assert.equal(button.className, 'lobby-close'); assert.equal(button.type, 'button'); assert.equal(button.id, 'thirdClose');
+    assert.equal(button.classList.contains('lobby-close'), true); assert.equal(button.type, 'button'); assert.equal(button.id, 'thirdClose');
     assert.equal(button.hasAttribute('aria-label'), false); assert.equal(title.id, 'thirdTitle');
     assert.equal(title.parentElement.className, 'lobby-dialog-head');
     input.value = 'edited draft'; button.click(); button.click(); assert.deepEqual(calls, ['first', 'first']); assert.equal(submissions, 0);

@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {existsSync} from 'node:fs';
+import {existsSync, mkdirSync, rmSync} from 'node:fs';
 import {mkdir, mkdtemp, readFile, readdir, rename, rm, stat, writeFile} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 import {relative, resolve} from 'node:path';
@@ -50,7 +50,17 @@ async function valid(root, input) {
 async function lock(path) {
   const started = Date.now();
   while (true) {
-    try {await mkdir(path); return;}
+    try {
+      // A sibling module can reject during Bun's asynchronous ESM evaluation.
+      // Acquire and register exit cleanup in one synchronous ownership boundary.
+      mkdirSync(path);
+      const release = () => {
+        process.off('exit', release);
+        rmSync(path, {recursive: true, force: true});
+      };
+      process.once('exit', release);
+      return release;
+    }
     catch (error) {
       if (error?.code !== 'EEXIST') throw error;
       if (Date.now() - started > 120000) throw new Error(`Timed out waiting for contracts-only build lock: ${path}`);
@@ -86,7 +96,7 @@ async function prepare(project) {
   const sourceRoot = resolve(project, 'src/contracts');
   if (!existsSync(sourceRoot)) return Object.freeze({mode: 'prebuilt', root: project, contractsDirectory: resolve(project, 'assets/contracts'), inputHash: null});
   const cache = resolve(project, '.cache/build/contracts'); await mkdir(cache, {recursive: true});
-  const lockPath = resolve(cache, '.build.lock'); await lock(lockPath);
+  const lockPath = resolve(cache, '.build.lock'); const release = await lock(lockPath);
   try {
     for (let attempt = 0; attempt < 3; attempt++) {
       const input = await identity(project), root = resolve(cache, input.hash);
@@ -115,7 +125,7 @@ async function prepare(project) {
       } finally {await rm(staging, {recursive: true, force: true});}
     }
     throw new Error('Contract sources changed repeatedly during compilation; no mixed generation was published');
-  } finally {await rm(lockPath, {recursive: true, force: true});}
+  } finally {release();}
 }
 /** Maintainer-only source fallback; prebuilt Node 22+ installs need no compiler. */
 export function ensureContractsBuild({project = defaultProject} = {}) {

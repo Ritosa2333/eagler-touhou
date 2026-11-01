@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -9,6 +10,7 @@ import {
   validateHostConfig,
 } from "../lib/host-config.mjs";
 
+test("test-host-config", async () => {
 const empty = validateHostConfig({
   schema: HOST_CONFIG_SCHEMA,
   netplay: { relay: "" },
@@ -42,3 +44,4 @@ assert.equal((await readHostConfig(file)).present, true);
 }
 
 console.log(JSON.stringify({ hostConfig: "PASS" }));
+});

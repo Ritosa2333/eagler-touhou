@@ -1,5 +1,5 @@
 /** Public CSS partition/output ownership; authored style edits are permitted. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {resolve, basename} from 'node:path';

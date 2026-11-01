@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { discouragedBrowserId } from "../.cache/build/browser/assets/launcher/browser-support.mjs";
 
+test("test-browser-support", async () => {
 // One representative UA per vendor token. Detection is token-based, so these
 // only pin the feature markers, not the surrounding version numbers.
 const blacklisted = [
@@ -34,3 +36,4 @@ for (const [name, ua] of allowed) {
 assert.equal(discouragedBrowserId(""), null);
 
 console.log(JSON.stringify({ browserSupport: "PASS", blacklisted: blacklisted.length, allowed: allowed.length }));
+});

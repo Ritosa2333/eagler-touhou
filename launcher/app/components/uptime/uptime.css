@@ -1,42 +1,205 @@
-.site-pages-body{min-height:100dvh;background:linear-gradient(rgba(7,9,8,.85),rgba(7,9,8,.85)),url('assets/launcher-background.webp') center/cover fixed;color:var(--paper);font:15px/1.5 var(--ui-font)}
-.uptime-page{--uptime-font:"ET Chill Round",sans-serif;width:min(1160px,calc(100% - 64px));margin:48px auto 64px;font-family:var(--uptime-font)}
-.uptime-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:28px}
-.uptime-heading h1{margin:0;font:900 clamp(28px,4vw,44px)/1.25 var(--ui-font)}
-.uptime-ranges{display:flex;flex:none;padding:3px;background:#1c1d19;border:1px solid rgba(235,231,223,.1);border-radius:10px}
-.uptime-ranges button{border:0;background:transparent;min-height:38px;padding:0 20px;border-radius:8px;color:var(--paper);cursor:pointer;font:500 14px/1.3 var(--uptime-font);transition:background-color .15s ease,color .15s ease,transform 75ms ease-out}
-.uptime-ranges button[aria-pressed=true],.uptime-ranges button:hover{background:#f1e4e6;color:#b33142}
-.uptime-ranges button:active{transform:scale(.97)}
-.uptime-ranges button:focus-visible{outline:2px solid #ef6a58;outline-offset:2px}
-.uptime-list{border:1px solid rgba(235,231,223,.1);border-radius:16px;background:rgba(28,29,25,.96);overflow:hidden}
-.uptime-columns,.uptime-row{display:grid;grid-template-columns:80px minmax(150px,1fr) minmax(180px,1.4fr) 90px 110px;gap:20px;align-items:center;padding:18px 24px}
-.uptime-columns{min-height:52px;padding-block:14px;color:var(--muted);font-size:13px}
-.uptime-group h2{margin:0;padding:12px 24px;border-top:1px solid rgba(235,231,223,.1);font:700 15px/1.4 var(--ui-font);background:rgba(235,231,223,.015)}
-.uptime-row{min-height:72px;border-top:1px solid rgba(235,231,223,.08);font-size:16px}
-.uptime-service{font-weight:700;overflow-wrap:anywhere}
-.uptime-status{font-weight:700;color:#a9c286}
-.uptime-row[data-status=outage] .uptime-status{color:#ee897b}
-.uptime-row:is([data-status=unknown],[data-status=stale]) .uptime-status{color:#a29c92}
-.uptime-history{height:23px;display:flex;gap:3px;min-width:0}
-.uptime-history i{flex:1;min-width:0;border-radius:2px;background:#62645d}
-.uptime-history i[data-state=up]{background:#9caf8c}
-.uptime-history i[data-state=partial]{background:#d1b46c}
-.uptime-history i[data-state=down]{background:#bd685c}
-.uptime-latency,.uptime-availability{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;font-family:var(--uptime-font)}
-.uptime-message{margin:16px 24px;color:#bcb5ac;font-size:14px}
-@media(max-width:780px){
- .uptime-page{width:calc(100% - 28px);margin:24px auto 36px}
- .uptime-heading{align-items:flex-start;flex-direction:column;gap:16px;margin-bottom:18px}
- .uptime-heading h1{font-size:28px}
- .uptime-ranges{align-self:stretch;max-width:360px}
- .uptime-ranges button{flex:1;padding-inline:14px;min-height:40px}
- .uptime-columns{display:none}
- .uptime-group h2{padding:10px 14px;font-size:14px}
- .uptime-row{grid-template-columns:40px minmax(0,1fr) 62px 72px;gap:8px;padding:14px;font-size:14px;min-height:78px}
- .uptime-history{grid-column:1/-1;grid-row:2;height:14px;gap:3px;margin-top:2px}
- .uptime-service{font-size:15px}
- .uptime-status{font-size:14px}
- .uptime-latency{grid-column:3;grid-row:1}
- .uptime-availability{grid-column:4;grid-row:1}
+.site-pages-body {
+  min-height: 100dvh;
+  background:
+    linear-gradient(rgba(7, 9, 8, 0.85), rgba(7, 9, 8, 0.85)),
+    url("assets/launcher-background.webp") center / cover fixed;
+  color: var(--paper);
+  font: 15px / 1.5 var(--ui-font);
 }
-.less-motion .uptime-ranges button{transition:none}
-@media(prefers-reduced-motion:reduce){.uptime-ranges button{transition:none}}
+.uptime-page {
+  --uptime-font: "ET Chill Round", sans-serif;
+  width: min(1160px, calc(100% - 64px));
+  margin: 48px auto 64px;
+  font-family: var(--uptime-font);
+}
+.uptime-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+.uptime-heading h1 {
+  margin: 0;
+  font: 900 clamp(28px, 4vw, 44px) / 1.25 var(--ui-font);
+}
+.uptime-ranges {
+  display: flex;
+  flex: none;
+  padding: 3px;
+  background: #1c1d19;
+  border: 1px solid rgba(235, 231, 223, 0.1);
+  border-radius: 10px;
+}
+.uptime-ranges button {
+  border: 0;
+  background: transparent;
+  min-height: 38px;
+  padding: 0 20px;
+  border-radius: 8px;
+  color: var(--paper);
+  cursor: pointer;
+  font: 500 14px / 1.3 var(--uptime-font);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 75ms ease-out;
+}
+.uptime-ranges button[aria-pressed="true"],
+.uptime-ranges button:hover {
+  background: #f1e4e6;
+  color: #b33142;
+}
+.uptime-ranges button:active {
+  transform: scale(0.97);
+}
+.uptime-ranges button:focus-visible {
+  outline: 2px solid #ef6a58;
+  outline-offset: 2px;
+}
+.uptime-list {
+  border: 1px solid rgba(235, 231, 223, 0.1);
+  border-radius: 16px;
+  background: rgba(28, 29, 25, 0.96);
+  overflow: hidden;
+}
+.uptime-columns,
+.uptime-row {
+  display: grid;
+  grid-template-columns: 80px minmax(150px, 1fr) minmax(180px, 1.4fr) 90px 110px;
+  gap: 20px;
+  align-items: center;
+  padding: 18px 24px;
+}
+.uptime-columns {
+  min-height: 52px;
+  padding-block: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.uptime-group h2 {
+  margin: 0;
+  padding: 12px 24px;
+  border-top: 1px solid rgba(235, 231, 223, 0.1);
+  font: 700 15px / 1.4 var(--ui-font);
+  background: rgba(235, 231, 223, 0.015);
+}
+.uptime-row {
+  min-height: 72px;
+  border-top: 1px solid rgba(235, 231, 223, 0.08);
+  font-size: 16px;
+}
+.uptime-service {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.uptime-status {
+  font-weight: 700;
+  color: #a9c286;
+}
+.uptime-row[data-status="outage"] .uptime-status {
+  color: #ee897b;
+}
+.uptime-row:is([data-status="unknown"], [data-status="stale"]) .uptime-status {
+  color: #a29c92;
+}
+.uptime-history {
+  height: 23px;
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+}
+.uptime-history i {
+  flex: 1;
+  min-width: 0;
+  border-radius: 2px;
+  background: #62645d;
+}
+.uptime-history i[data-state="up"] {
+  background: #9caf8c;
+}
+.uptime-history i[data-state="partial"] {
+  background: #d1b46c;
+}
+.uptime-history i[data-state="down"] {
+  background: #bd685c;
+}
+.uptime-latency,
+.uptime-availability {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  font-family: var(--uptime-font);
+}
+.uptime-message {
+  margin: 16px 24px;
+  color: #bcb5ac;
+  font-size: 14px;
+}
+@media (max-width: 780px) {
+  .uptime-page {
+    width: calc(100% - 28px);
+    margin: 24px auto 36px;
+  }
+  .uptime-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .uptime-heading h1 {
+    font-size: 28px;
+  }
+  .uptime-ranges {
+    align-self: stretch;
+    max-width: 360px;
+  }
+  .uptime-ranges button {
+    flex: 1;
+    padding-inline: 14px;
+    min-height: 40px;
+  }
+  .uptime-columns {
+    display: none;
+  }
+  .uptime-group h2 {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  .uptime-row {
+    grid-template-columns: 40px minmax(0, 1fr) 62px 72px;
+    gap: 8px;
+    padding: 14px;
+    font-size: 14px;
+    min-height: 78px;
+  }
+  .uptime-history {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: 14px;
+    gap: 3px;
+    margin-top: 2px;
+  }
+  .uptime-service {
+    font-size: 15px;
+  }
+  .uptime-status {
+    font-size: 14px;
+  }
+  .uptime-latency {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .uptime-availability {
+    grid-column: 4;
+    grid-row: 1;
+  }
+}
+.less-motion .uptime-ranges button {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .uptime-ranges button {
+    transition: none;
+  }
+}

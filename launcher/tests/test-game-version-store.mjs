@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {IDBFactory, IDBKeyRange} from 'fake-indexeddb';
 import {createHash} from 'node:crypto';
 import {installPackageFromAcquisition} from '../package/package-installer.mjs';
 import {readCurrentPackageGeneration, readPackageObject, garbageCollectPackageStore} from '../package/package-store.mjs';
 
+test("test-game-version-store", async () => {
 globalThis.indexedDB = new IDBFactory();
 globalThis.IDBKeyRange = IDBKeyRange;
 const digest = b => createHash('sha256').update(b).digest('hex');
@@ -41,3 +43,4 @@ assert.equal((await readCurrentPackageGeneration('th06',{gameVersion:'beauty'}))
 assert.equal((await readCurrentPackageGeneration('th06')).installation.pendingGeneration,null);
 assert.equal((await readCurrentPackageGeneration('th06',{gameVersion:'beauty'})).installation.pendingGeneration,null);
 console.log('Independent original/beauty installs, immutable deduplication, GC, failed update and concurrent commits: PASS');
+});

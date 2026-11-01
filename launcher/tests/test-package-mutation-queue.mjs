@@ -1,7 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
-
 import { createPackageMutationQueue } from "../package/package-mutation-queue.mjs";
 
+test("test-package-mutation-queue", async () => {
 const queue = createPackageMutationQueue();
 const events = [];
 let releaseFirst;
@@ -33,3 +34,4 @@ await assert.rejects(queue.run("th07", async () => { throw new Error("expected f
 assert.equal(await queue.run("th07", async () => 4), 4, "a failed mutation must not poison the queue");
 
 console.log("Package mutation queue: PASS");
+});

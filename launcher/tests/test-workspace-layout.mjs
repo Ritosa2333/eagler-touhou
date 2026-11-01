@@ -1,7 +1,4 @@
-/** L0/L3 module contract. Preconditions: repository-owned workspace config.
- * Mutation: none. Proves topology names resolve from one owner and may be
- * rooted elsewhere with EAGLER_WORKSPACE_ROOT. Does NOT prove sibling repos
- * are present or valid. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -17,6 +14,20 @@ import {
   workspaceRepositoryNames,
   workspaceRoot,
 } from "../lib/workspace-layout.mjs";
+
+test("test-workspace-layout", async () => {
+/** L0/L3 module contract. Preconditions: repository-owned workspace config.
+ * Mutation: none. Proves topology names resolve from one owner and may be
+ * rooted elsewhere with EAGLER_WORKSPACE_ROOT. Does NOT prove sibling repos
+ * are present or valid. */
+
+
+
+
+
+
+
+
 
 const configuration = JSON.parse(readFileSync(new URL('../config/workspace.json', import.meta.url), 'utf8'));
 assert.deepEqual(WORKSPACE_REPOSITORIES, configuration.repositories);
@@ -46,3 +57,4 @@ const powershellLayout = readFileSync(resolve(import.meta.dirname, "..", "tools"
 assert.doesNotMatch(powershellLayout, /foreach\s*\(\$name\s+in\s+@\([^)]*th0\d/i,
   "PowerShell workspace layout must validate repository declarations generically instead of carrying a second game registry");
 console.log(JSON.stringify({ workspaceLayout: "PASS", repositories: Object.keys(WORKSPACE_REPOSITORIES).length }));
+});

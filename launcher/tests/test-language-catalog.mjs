@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   buildLanguageCatalog,
@@ -8,6 +9,7 @@ import {
 } from "../.cache/build/browser/assets/launcher/language-catalog.mjs";
 import { languagePriority } from "../lib/contracts/product-catalog.mjs";
 
+test("test-language-catalog", async () => {
 const translate = key => ({
   "gameLanguage.ja": "Japanese",
   "gameLanguage.zhHans": "Simplified Chinese",
@@ -109,3 +111,4 @@ assert.equal(resolvePreferredGameLanguage([{ id: "ja" }], null, "zh-CN"), "ja");
 assert.equal(resolvePreferredGameLanguage(translatedCatalog, null, "ja"), "ja");
 assert.equal(resolvePreferredGameLanguage([{ id: "ja" }, { id: "lang_zh-hant" }], null, "zh-CN"), "lang_zh-hant");
 assert.equal(resolvePreferredGameLanguage(translatedCatalog, "unavailable", "en"), "lang_en");
+});

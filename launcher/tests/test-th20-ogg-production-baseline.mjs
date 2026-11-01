@@ -1,12 +1,21 @@
-/** L3/module. Verifies the TH20 production OGG baseline declaration and the
- * byte-level stream-serial normalization used by the release adapter. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-
 import { assertOggProductionBaseline, pinOggSerial } from "../lib/ogg-production-baseline.mjs";
 import { TH20_MUSIC_FILES, TH20_MUSIC_LAYOUT } from "../lib/th20-content-layout.mjs";
+
+test("test-th20-ogg-production-baseline", async () => {
+/** L3/module. Verifies the TH20 production OGG baseline declaration and the
+ * byte-level stream-serial normalization used by the release adapter. */
+
+
+
+
+
+
+
 
 const root = resolve(import.meta.dirname, "..");
 const baseline = JSON.parse(await readFile(resolve(root, "host/ogg-baselines/th20.json"), "utf8"));
@@ -34,3 +43,4 @@ assert.deepEqual(assertOggProductionBaseline(pinned, expected), expected);
 assert.throws(() => assertOggProductionBaseline(pinned, { ...expected, sha256: "0".repeat(64) }), /does not match/);
 
 console.log(JSON.stringify({ th20OggProductionBaseline: "PASS", tracks: Object.keys(baseline.files).length }));
+});

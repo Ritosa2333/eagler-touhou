@@ -1,0 +1,218 @@
+[
+  {
+    "key": "error.downloadCancelled",
+    "source": "已取消下载"
+  },
+  {
+    "key": "error.manifestEmpty",
+    "source": "Site Manifest 没有可用游戏"
+  },
+  {
+    "key": "error.exitCurrent",
+    "source": "请先退出当前游戏"
+  },
+  {
+    "key": "error.beautyCatalog",
+    "source": "美化版资源目录不可用：HTTP {status}"
+  },
+  {
+    "key": "error.testOnly",
+    "source": "该游戏仅在测试版开启"
+  },
+  {
+    "key": "error.beautyMissing",
+    "source": "{game} 尚未提供美化版资源"
+  },
+  {
+    "key": "error.externalUnavailable",
+    "source": "外部游戏资源当前不可用，请检查网络 / CDN，或导入本地游戏包"
+  },
+  {
+    "key": "error.replayBusy",
+    "source": "本地录像存储正被占用，请重试"
+  },
+  {
+    "key": "error.replayVersion",
+    "source": "无法识别本地录像存储版本"
+  },
+  {
+    "key": "error.replayPath",
+    "source": "录像路径无效"
+  },
+  {
+    "key": "error.replayFolder",
+    "source": "录像文件夹无效"
+  },
+  {
+    "key": "error.replayStorage",
+    "source": "浏览器无法读取本地录像存储"
+  },
+  {
+    "key": "error.replayRead",
+    "source": "读取录像失败"
+  },
+  {
+    "key": "error.replayInvalid",
+    "source": "本地录像内容无效"
+  },
+  {
+    "key": "error.vendorTimeout",
+    "source": "{label} 加载超时，请重试"
+  },
+  {
+    "key": "error.vendorMissing",
+    "source": "{label} 加载后没有注册组件"
+  },
+  {
+    "key": "error.vendorFailed",
+    "source": "{label} 加载失败"
+  },
+  {
+    "key": "error.sharedFonts",
+    "source": "安装包缺少运行所需的共享字体，请更新游戏资源"
+  },
+  {
+    "key": "error.installationChanged",
+    "source": "游戏安装已变化，请重新启动"
+  },
+  {
+    "key": "error.replayInfo",
+    "source": "录像信息无效"
+  },
+  {
+    "key": "error.replayStage",
+    "source": "录像关卡无效"
+  },
+  {
+    "key": "error.replayMotion",
+    "source": "触摸录像数据损坏或不属于这款游戏"
+  },
+  {
+    "key": "error.storageTimeout",
+    "source": "本地存储读取超时，请重试"
+  },
+  {
+    "key": "error.runtimeCheck",
+    "source": "联机程序版本检查失败，请联网并重试准备资源。"
+  },
+  {
+    "key": "error.runtimeUpdated",
+    "source": "联机程序已有更新，请返回房间，双方重新准备资源后再开始。"
+  },
+  {
+    "key": "error.languageManifestMissing",
+    "source": "语言包缺少清单"
+  },
+  {
+    "key": "error.languageManifestCorrupt",
+    "source": "语言包清单损坏"
+  },
+  {
+    "key": "error.languageManifestIncompatible",
+    "source": "语言包清单不兼容"
+  },
+  {
+    "key": "error.languageFilesInvalid",
+    "source": "语言包文件清单无效"
+  },
+  {
+    "key": "error.languageDuplicate",
+    "source": "语言包文件清单包含重复路径"
+  },
+  {
+    "key": "error.languageCount",
+    "source": "语言包文件数量不一致"
+  },
+  {
+    "key": "error.languagePath",
+    "source": "语言包路径无效"
+  },
+  {
+    "key": "error.languageSize",
+    "source": "{path}: 语言包文件大小错误"
+  },
+  {
+    "key": "error.midiSynth",
+    "source": "MIDI 合成器"
+  },
+  {
+    "key": "error.relayUrl",
+    "source": "Relay WebSocket URL 无效"
+  },
+  {
+    "key": "error.relayScheme",
+    "source": "Relay URL 必须使用 ws:// 或 wss://"
+  },
+  {
+    "key": "error.relayFlag",
+    "source": "WebSocket 回退开关必须为布尔值"
+  },
+  {
+    "key": "error.turnFlag",
+    "source": "TURN 偏好必须为布尔值"
+  },
+  {
+    "key": "error.challengeValue",
+    "source": "挑战模式参数无效"
+  },
+  {
+    "key": "error.chargeValue",
+    "source": "蓄力进度参数无效"
+  },
+  {
+    "key": "error.extendScore",
+    "source": "奖残所需得分无效"
+  },
+  {
+    "key": "error.lanSeat",
+    "source": "LAN 玩家槽位无效"
+  },
+  {
+    "key": "error.spectatorEligibility",
+    "source": "旁观者资格无效"
+  },
+  {
+    "key": "error.lanSeed",
+    "source": "LAN 同步种子必须在 0–65535 之间"
+  },
+  {
+    "key": "error.lanDifficulty",
+    "source": "LAN 难度必须在 0–{max} 之间"
+  },
+  {
+    "key": "error.lanLoadoutsEmpty",
+    "source": "LAN 机体配置表为空"
+  },
+  {
+    "key": "error.lanPlayerLoadout",
+    "source": "P{player} 机体配置无效"
+  },
+  {
+    "key": "error.lanLoadoutCount",
+    "source": "LAN 机体配置数量不足"
+  },
+  {
+    "key": "error.directRollbackLimit",
+    "source": "{game} 直接回滚固定使用 12 帧预测上限"
+  },
+  {
+    "key": "error.measuredTiming",
+    "source": "实测输入时序参数无效"
+  },
+  {
+    "key": "error.adonisUnsupported",
+    "source": "该多人 Runtime 不支持 Adonis 时序"
+  },
+  {
+    "key": "error.delayOnly",
+    "source": "该多人 Runtime 仅支持纯延迟时序，不能启用预测或回滚"
+  },
+  {
+    "key": "error.adonisDelay",
+    "source": "Adonis 输入延迟必须为 0–{max} 帧"
+  },
+  {
+    "key": "error.spectatorNextMatch",
+    "source": "本局已经开始；已保留旁观席，将在下一局生效"
+  }
+]

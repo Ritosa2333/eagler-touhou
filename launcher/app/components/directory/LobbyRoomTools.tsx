@@ -1,9 +1,69 @@
-import {useLocale} from '../../i18n';
+import { RefreshCw } from 'lucide-react';
+import { useLocale } from '../../i18n';
+import { Button } from '../ui/button';
 
 /** Shared original lobby.html room actions, including its disabled boot state. */
-export function LobbyRoomTools({disabled, onCreate, onJoin, onRefresh, onReplay}: {
-  disabled: boolean; onCreate?: () => void; onJoin?: () => void; onRefresh?: () => void; onReplay?: () => void;
+export function LobbyRoomTools({
+  disabled,
+  onCreate,
+  onJoin,
+  onRefresh,
+  onReplay,
+}: {
+  disabled: boolean;
+  onCreate?: () => void;
+  onJoin?: () => void;
+  onRefresh?: () => void;
+  onReplay?: () => void;
 }) {
-  const {t} = useLocale();
-  return <><button className="lobby-button lobby-primary" id="createButton" type="button" disabled={disabled} onClick={onCreate}>{t('lobby.create')}</button>{onReplay && <button className="lobby-button lobby-secondary" id="watchReplayButton" type="button" onClick={onReplay}>{t('lobby.watchReplay')}</button>}<button className="lobby-button lobby-secondary" id="codeButton" type="button" disabled={disabled} onClick={onJoin}>{t('lobby.byCode')}</button><button className="lobby-button lobby-refresh" id="refreshRooms" type="button" aria-label={t('lobby.refresh')} onClick={onRefresh}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.16 7v5h-5M20 12a8 8 0 1 0-2.3 5.7"/></svg></button></>;
+  const { t } = useLocale();
+  return (
+    <>
+      <Button
+        variant="legacy"
+        size="legacy"
+        className="lobby-button lobby-primary"
+        id="createButton"
+        type="button"
+        disabled={disabled}
+        onClick={onCreate}
+      >
+        {t('lobby.create')}
+      </Button>
+      {onReplay && (
+        <Button
+          variant="legacy"
+          size="legacy"
+          className="lobby-button lobby-secondary"
+          id="watchReplayButton"
+          type="button"
+          onClick={onReplay}
+        >
+          {t('lobby.watchReplay')}
+        </Button>
+      )}
+      <Button
+        variant="legacy"
+        size="legacy"
+        className="lobby-button lobby-secondary"
+        id="codeButton"
+        type="button"
+        disabled={disabled}
+        onClick={onJoin}
+      >
+        {t('lobby.byCode')}
+      </Button>
+      <Button
+        variant="legacy"
+        size="legacy"
+        className="lobby-button lobby-refresh"
+        id="refreshRooms"
+        type="button"
+        aria-label={t('lobby.refresh')}
+        onClick={onRefresh}
+      >
+        <RefreshCw size={24} aria-hidden="true" focusable="false" />
+      </Button>
+    </>
+  );
 }

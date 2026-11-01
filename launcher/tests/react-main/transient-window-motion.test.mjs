@@ -1,6 +1,6 @@
 /** Actual shared component + authored CSSOM reuse. This proves shared motion
  * configuration, not native rendering, animation timing or fullscreen paint. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, readFile, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

@@ -1,8 +1,11 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {defaultTh15ChapterThreshold,validTh15ChapterThreshold} from '../lib/th15-chapter-reward.mjs';
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {multiplayerConfigForProduct} from '../lib/contracts/product-catalog.mjs';
+
+test("test-th15-chapter-reward", async () => {
 for(const value of [500000,1250000,1500000,5000000])assert(validTh15ChapterThreshold(value));
 for(const value of [0,250000,500001,1250001,5250000,NaN,'1250000',null])assert(!validTh15ChapterThreshold(value));
 assert.equal(defaultTh15ChapterThreshold(2),1250000);assert.equal(defaultTh15ChapterThreshold(3),1500000);
@@ -36,3 +39,4 @@ try{
  const other=await connect('th11mp','other',0);assert.equal((await send(other,settings,m=>m.type==='error')).type,'error','Other titles must reject this rule');
  console.log('PASS TH15 chapter threshold defaults, range, host authority, ready reset, peer sync, run lock and title isolation');
 }finally{for(const socket of sockets)socket.close();relay.kill();}
+});

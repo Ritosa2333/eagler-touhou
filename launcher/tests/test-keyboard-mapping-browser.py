@@ -108,6 +108,8 @@ def run(browser, launcher, workspace, target, broken=False):
         state = frame.evaluate("getKeys()")
         assert state.get("bits", 0) & 1 or "KeyZ" in state.get("keys", []), "disconnected receiver did not receive shooting"
     frame.locator("canvas").click()
+    # TH12 queues keyboard-clear on focus changes; drain it before arming the pad.
+    page.evaluate("flushInput()")
     frame.evaluate("window.samplePad=()=>window.managedPad?managedPad():__eaglerGamepadInputBridge.sample(0)")
     assert frame.evaluate("window.managedPad?managedPad()!==null:__eaglerGamepadInputBridge.owned()")
     assert frame.evaluate("samplePad()") == 0

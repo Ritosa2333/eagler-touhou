@@ -4,14 +4,15 @@
 
 ## 准备输入
 
-需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
+需要 Bun 1.4.4+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
 
 在 `launcher/` 或自托管包根目录使用以下目录结构：
 
 ```text
 host-root/
 ├─ package.json
-├─ package-lock.json
+├─ bun.lock
+├─ .bun-version
 ├─ runtime-release/
 ├─ games/<game-id>/       # 每个已登记游戏一个目录
 ├─ shared/                # 可选：unifont.otf 和 japanese-font.otf
@@ -27,28 +28,28 @@ host-root/
 从源码检出在 `launcher/` 运行：
 
 ```sh
-npm ci
-npm run build
-npm run host:doctor
-npm run host:build
-npm run verify:server -- dist/site
+bun install --frozen-lockfile
+bun run build
+bun run host:doctor
+bun run host:build
+bun run verify:server -- dist/site
 ```
 
 自托管包已包含构建好的 Launcher Host 文件。从包根目录安装依赖并运行 Host 检查：
 
 ```sh
-npm ci
-npm run host:doctor
-npm run host:build
-npm run verify:server -- dist/site
+bun install --frozen-lockfile
+bun run host:doctor
+bun run host:build
+bun run verify:server -- dist/site
 ```
 
-`npm run host:doctor` 在组装前检查所有 Runtime 和游戏输入。Host 准备游戏数据、可选音乐与语言包、封面、Launcher App Shell 和部署清单，生成的站点位于 `dist/site/`。
+`bun run host:doctor` 在组装前检查所有 Runtime 和游戏输入。Host 准备游戏数据、可选音乐与语言包、封面、Launcher App Shell 和部署清单，生成的站点位于 `dist/site/`。
 
 从源码检出或自托管包根目录运行以下命令，可在 `http://127.0.0.1:8130/` 本地提供站点：
 
 ```sh
-npm run host -- --no-open
+bun run host -- --no-open
 ```
 
 ## 发布
@@ -56,9 +57,9 @@ npm run host -- --no-open
 将 `dist/site/` 内容复制到静态网站、对象存储或 CDN 的文档根目录，并通过 HTTPS 提供服务以启用浏览器 Service Worker 存储。然后验证公开地址：
 
 ```sh
-npm run verify:deployed -- https://example.com/
+bun run verify:deployed -- https://example.com/
 ```
 
-若站点让玩家自行导入 Package，运行 `npm run import`；详情见[自托管参考](SELF_HOSTING_REFERENCE.md)。若大体积 Package 放在独立源站，按[外置资源模式](EXTERNAL_RESOURCE_MODE.md)配置。
+若站点让玩家自行导入 Package，运行 `bun run import`；详情见[自托管参考](SELF_HOSTING_REFERENCE.md)。若大体积 Package 放在独立源站，按[外置资源模式](EXTERNAL_RESOURCE_MODE.md)配置。
 
-源码检出的 `npm run host` 和 `npm run import` 使用同一套 Launcher Host 实现。维护者通过[发布流程](RELEASE.md)生成便携自托管包。
+源码检出的 `bun run host` 和 `bun run import` 使用同一套 Launcher Host 实现。维护者通过[发布流程](RELEASE.md)生成便携自托管包。

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { pathToFileURL, fileURLToPath } from "node:url";
 import { marked, Renderer } from "marked";
 import { writeFileAtomic } from "../lib/atomic-file.mjs";
 
@@ -145,17 +145,26 @@ const faqHtml = `<!doctype html>
   <link rel="stylesheet" href="site-pages.css">
   <script type="module" src="site-pages.mjs"></script>
 </head>
-<body class="about-body">
+<body class="about-body" data-site-page="faq">
   <div id="site-page-header" class="site-standalone-header"></div>
   <main class="about-page">
     <p class="about-back"><a href="./">← 返回 EAGLER TOUHOU</a></p>
-    <article class="faq-content" aria-label="常见问题列表">
+    <article class="faq-content" data-localized-content aria-label="常见问题列表">
 ${content.trimEnd().split("\n").map(line => `      ${line}`).join("\n")}
     </article>
   </main>
 </body>
 </html>
 `;
+
+// The standalone compatibility variants consume compiled Paraglide functions at build time.
+await import('./compile-i18n.mjs');
+const {translateUi} = await import(pathToFileURL(resolve(project, 'src/launcher/i18n.mts')).href);
+const {localizeCompatibilityHtml} = await import('../lib/localized-compatibility.mjs');
+const compatibilitySource = await readFile(resolve(project, 'public/compatibility.html'), 'utf8');
+for (const locale of ['en', 'ja']) {
+  await emit(resolve(project, `public/compatibility.${locale}.html`), localizeCompatibilityHtml(compatibilitySource, locale, translateUi), `public/compatibility.${locale}.html is stale; run bun run build:content`);
+}
 
 const firstUseNoticeHtml = renderFirstUseNoticeFragment(await readFile(firstUseNoticeSourcePath, "utf8"));
 const multiplayerHtml = renderMultiplayerFragment(await readFile(multiplayerSourcePath, "utf8"));
@@ -170,7 +179,7 @@ async function emit(path, body, staleMessage) {
   await writeFileAtomic(path, body, "utf8");
 }
 
-await emit(faqOutputPath, faqHtml, "public/faq.html is stale; run npm run build:content");
-await emit(firstUseNoticeOutputPath, firstUseNoticeHtml, "public/content/FIRST_USE_NOTICE.html is stale; run npm run build:content");
-await emit(multiplayerOutputPath, multiplayerHtml, "public/content/MULTIPLAYER.html is stale; run npm run build:content");
+await emit(faqOutputPath, faqHtml, "public/faq.html is stale; run bun run build:content");
+await emit(firstUseNoticeOutputPath, firstUseNoticeHtml, "public/content/FIRST_USE_NOTICE.html is stale; run bun run build:content");
+await emit(multiplayerOutputPath, multiplayerHtml, "public/content/MULTIPLAYER.html is stale; run bun run build:content");
 if (!quiet) console.log(`Content pages: ${check ? "PASS" : "built"} (FAQ + First-use Notice + Multiplayer Guide)`);

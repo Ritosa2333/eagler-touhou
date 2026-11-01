@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import type { ReactNode } from 'react';
 
 export interface OptionRowProps {
   className: string;
@@ -12,6 +12,25 @@ export interface OptionRowProps {
   control: ReactNode;
 }
 /** Common toggle-row presentation; capability and mutation policy stay outside. */
-export function OptionRow({className, id, hidden, label, hint, hintId, inlineLabel = false, control}: OptionRowProps) {
-  return <section className={className} id={id} hidden={hidden}><div className="itemtop"><span>{hint === undefined || inlineLabel ? label : <span>{label}</span>}{hint !== undefined && <small id={hintId}>{hint}</small>}</span>{control}</div></section>;
+export function OptionRow({
+  className,
+  id,
+  hidden,
+  label,
+  hint,
+  hintId,
+  inlineLabel = false,
+  control,
+}: OptionRowProps) {
+  return (
+    <section className={className} id={id} hidden={hidden}>
+      <div className="itemtop">
+        <span>
+          {hint === undefined || inlineLabel ? label : <span>{label}</span>}
+          {hint !== undefined && <small id={hintId}>{hint}</small>}
+        </span>
+        {control}
+      </div>
+    </section>
+  );
 }

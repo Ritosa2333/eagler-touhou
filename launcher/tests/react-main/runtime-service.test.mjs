@@ -3,7 +3,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * first rendered pixel claim. Main app:4241–4289,5948–5983 and unchanged
  * runtime-session/generation-lease/preparation tests supply the expectations.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

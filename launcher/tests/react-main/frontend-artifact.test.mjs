@@ -1,6 +1,6 @@
 import {assertReactFrontendEnvironment} from '../../compat/frontend-environment.mjs';
 /** Publication source/artifact contracts only. No server, browser or deployment. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
@@ -20,15 +20,15 @@ async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
   };
   const generated = ['assets/entry-abcd.js', 'assets/entry-abcd.css', 'assets/lazy-abcd.js', 'assets/manifest-abcd.js'];
   const graph = {schema: 'eagler-touhou/react-app-shell-graph/1', mountPath, appShell,
-    shellFiles: [...STATIC_APP_SHELL_FILES.filter(path => !['lobby.css', 'touch-guide.css'].includes(path)), ...generated].sort()};
+    shellFiles: ['ja.html', ...STATIC_APP_SHELL_FILES.filter(path => !['lobby.css', 'touch-guide.css'].includes(path)), ...generated].sort()};
   const metadata = {manifest, graph};
   try {
-    for (const path of [...STATIC_FRONTEND_PACKAGE_FILES, ...generated]) await put(path, 'fixture');
+    for (const path of [...STATIC_FRONTEND_PACKAGE_FILES, 'ja.html', ...generated]) await put(path, 'fixture');
     for (const path of STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith('legacy/'))) await put(path, "export {value} from './chunks/shared.mjs';\n");
     await put('legacy/chunks/shared.mjs', 'export const value = 1;\n');
     const declaration = appShell ? `<meta name="eagler-react-app-shell" content="${JSON.stringify(appShell).replaceAll('"', '&quot;')}">` : '';
     const html = `<!doctype html><html><head>${declaration}<link rel="modulepreload" href="${mountPath}assets/manifest-abcd.js"><script type="module" src="${mountPath}assets/entry-abcd.js"></script><link rel="stylesheet" href="${mountPath}assets/entry-abcd.css"></head><body></body></html>`;
-    for (const path of ['index.html', 'en.html', 'lobby.html']) await put(path, html);
+    for (const path of ['index.html', 'en.html', 'ja.html', 'lobby.html']) await put(path, html);
     await put('.vite/manifest.json', JSON.stringify(manifest));
     await put('.vite/react-app-shell-graph.json', JSON.stringify(graph));
     await run({work, directory, metadata, put, html});
@@ -70,13 +70,13 @@ test('publication derives complete static, Vite and compatibility closures separ
     await rm(resolve(directory, '.vite'), {recursive: true});
     const packaged = await readReactFrontendArtifact({directory, metadata: artifact.metadata});
     assert.deepEqual(packaged.packageFiles, artifact.packageFiles);
-    await assert.rejects(readReactFrontendArtifact({directory}), /run npm run build:ui-rewrite/);
+    await assert.rejects(readReactFrontendArtifact({directory}), /run bun run build:ui-rewrite/);
   });
 });
 
 test('missing output, malformed dependency graphs and foreign source paths fail closed', async () => {
   await fixture(async ({directory, metadata}) => {
-    await assert.rejects(readReactFrontendArtifact({directory: resolve(directory, 'absent')}), /run npm run build:ui-rewrite/);
+    await assert.rejects(readReactFrontendArtifact({directory: resolve(directory, 'absent')}), /run bun run build:ui-rewrite/);
     await assert.rejects(readReactFrontendArtifact({directory, expectedMountPath: '/other/'}), /selected mount/);
     const bad = mutate => {const copy = structuredClone(metadata); mutate(copy); return readReactFrontendArtifact({directory, metadata: copy});};
     await assert.rejects(bad(value => value.manifest.entry.imports = ['absent']), /Missing Vite module dependency/);

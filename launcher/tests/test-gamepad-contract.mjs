@@ -1,14 +1,22 @@
+import {test} from 'vitest';
+import assert from 'node:assert/strict';
+import {access, readFile} from 'node:fs/promises';
+import {resolve, relative} from 'node:path';
+import {targets, root} from '../../tools/ports/inputs.mjs';
+import {runNativeCpp} from './support/native-cpp.mjs';
+
+test("test-gamepad-contract", async () => {
 /** Preconditions: monorepo sources and a C++17 compiler (CXX or g++).
  * Inputs: each logical gamepad bit, combined bits, neutral/disconnected snapshots.
  * Invariant: canonical virtual/scancode keys and independent keyboard ownership.
  * Proves: shared native mapping behavior and identity of its generated copies.
  * Device sampling and gameplay effects use the browser/Runtime acceptance tests.
  */
-import assert from 'node:assert/strict';
-import {access, readFile} from 'node:fs/promises';
-import {resolve, relative} from 'node:path';
-import {targets, root} from '../../tools/ports/inputs.mjs';
-import {runNativeCpp} from './support/native-cpp.mjs';
+
+
+
+
+
 
 const header = 'browser-gamepad-input.hpp';
 const canonical = resolve(root, 'common/browser', header);
@@ -50,3 +58,4 @@ int main(){
 }`, {includes: [resolve(root, 'common/browser')]});
 console.log(JSON.stringify({nativeGamepadMapping: 'PASS', combinations: 4096,
   copies: [...copies].map(([path, targets]) => ({path: relative(root, path).replaceAll('\\', '/'), targets}))}));
+});

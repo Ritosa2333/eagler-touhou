@@ -1,6 +1,6 @@
 // Mounted real components and models with synthetic storage/Runtime file ports.
 // Real native/browser persistence is covered by the retained TH09 browser run.
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -20,7 +20,7 @@ before(async()=>{
     export * from './app/components/notices/ReplayDialog.tsx';
     export * from './app/models/game-settings.ts'; export * from './app/models/replays.ts';
     export * from './app/i18n.tsx'; export {gameRuntimeOptions} from './app/services/game-preparation.ts';`},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(work,'test.mjs'),logLevel:'silent',plugins:[{name:'authored',setup(ctx){
-      ctx.onResolve({filter:/^[^./]/},args=>({path:args.path.startsWith('node:')?args.path:pathToFileURL(require.resolve(args.path)).href,external:true}));
+      ctx.onResolve({filter:/^[^./]/},args=>({path:args.path.startsWith('node:')?args.path:import.meta.resolve(args.path),external:true}));
       ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const p=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(p))return {path:p};});
     }}]});api=await import(pathToFileURL(resolve(work,'test.mjs')));
 });

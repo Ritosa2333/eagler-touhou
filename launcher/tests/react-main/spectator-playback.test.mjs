@@ -1,5 +1,5 @@
 // Mounted adapters and the shared TH09-derived view. No native world restore claim.
-import test,{before,after,afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {createRequire} from 'node:module';
@@ -17,7 +17,7 @@ before(async()=>{
  "export * from './app/components/player/SpectatorMatchScore.tsx';",
  "export * from './src/launcher/spectator-playback.mts';",
  "export * from './app/i18n.tsx';"].join('\n')},bundle:true,format:'esm',platform:'node',jsx:'automatic',outfile,logLevel:'silent',
- plugins:[{name:'shared-react',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));}}]});
+ plugins:[{name:'shared-react',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:import.meta.resolve(args.path),external:true}));}}]});
  views=await import(pathToFileURL(outfile).href);
 });
 afterEach(async()=>{

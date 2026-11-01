@@ -1,10 +1,18 @@
-/** Workspace integration: reconstruct current TH06/TH07 Emscripten DATA from
- * their declared source files and require exact bytes against known builds. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { assemblePreloadData } from "../lib/preload-data-assembler.mjs";
 import {workspacePath} from "../lib/workspace-layout.mjs";
+
+test("test-preload-data-assembler", async () => {
+/** Workspace integration: reconstruct current TH06/TH07 Emscripten DATA from
+ * their declared source files and require exact bytes against known builds. */
+
+
+
+
+
 
 for (const test of [
   { game: "th06", build: "build-web-eagler-thprac-test" },
@@ -21,3 +29,4 @@ for (const test of [
   assert.equal(data.length, layout.bytes);
 }
 console.log("Preload DATA assembly: PASS (TH06/TH07 exact bytes)");
+});

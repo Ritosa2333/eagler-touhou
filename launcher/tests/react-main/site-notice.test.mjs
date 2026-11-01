@@ -1,6 +1,6 @@
+import {afterAll} from 'vitest';
 import {readUiHistoryText} from '../support/ui-history.mjs';
-/** Run from repository root: node tests/react-main/site-notice.run.mjs */
-import {execFileSync} from 'node:child_process';
+/** Native Vitest registration with an independently bundled pinned oracle. */
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {builtinModules, createRequire} from 'node:module';
 import {dirname, isAbsolute, join, resolve} from 'node:path';
@@ -15,7 +15,8 @@ const builtins = new Set(builtinModules.flatMap(name => [name, `node:${name}`]))
 // Build only from repository inputs; isolate and remove each run's generated bundle.
 const buildDirectory = await mkdtemp(join(directory, 'site-notice-build-'));
 const output = join(buildDirectory, 'checks.mjs');
-try {
+afterAll(async () => { await rm(buildDirectory, {recursive: true, force: true}); });
+{
   const result = await build({
     absWorkingDir: repo,
     entryPoints: [join(directory, 'site-notice.checks.tsx')],
@@ -34,15 +35,11 @@ try {
       build.onResolve({filter: /^[^./]/}, args => {
         if (args.kind === 'entry-point' || isAbsolute(args.path)) return;
         if (args.path.startsWith('@source/') || args.path.startsWith('@pinned/')) return;
-        return {path: builtins.has(args.path) ? args.path : pathToFileURL(requireFromRepo.resolve(args.path)).href, external: true};
+        return {path: builtins.has(args.path) ? args.path : import.meta.resolve(args.path), external: true};
       });
     }}, authoredSourcesPlugin(repo)],
   });
   await writeFile(output, result.outputFiles[0].text);
-  const {runChecks} = await import(`${pathToFileURL(output).href}?run=${Date.now()}`);
-  const results = await runChecks(repo);
-  console.log(`PASS ${results.cases.length} site-notice cases; pinned main: ${results.pinnedMain}`);
-  console.log(`Source SHA-256: ${results.sourceSha256}`);
-} finally {
-  await rm(buildDirectory, {recursive: true, force: true});
+  const {registerChecks} = await import(`${pathToFileURL(output).href}?run=${Date.now()}`);
+  registerChecks(repo);
 }

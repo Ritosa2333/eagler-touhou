@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { bindPixelPerfectDisplay } from '../app/services/pixel-perfect-display.ts';
 import { DEFAULT_GAME_OPTIONS, loadStoredGamePreferences, persistStoredGamePreferences } from '../.cache/build/browser/assets/launcher/game-preferences.mjs';
 
+test("test-pixel-perfect-display", async () => {
 const values = new Map();
 const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
 const context = { thpracAvailable: true, webAudioAvailable: true };
@@ -36,3 +38,4 @@ frame.dispatchEvent(new dom.window.Event('load'));
 assert.equal(child.querySelector('#eagler-pixel-perfect-display'), null);
 dom.window.close();
 console.log('PASS: default off, per-title persistence, late canvas, frame reuse and disposal');
+});

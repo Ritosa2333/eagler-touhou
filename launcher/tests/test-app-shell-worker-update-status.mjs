@@ -1,7 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash, webcrypto } from "node:crypto";
 import vm from "node:vm";
+
+test("test-app-shell-worker-update-status", async () => {
 const source = await readFile(new URL("../src/app-shell-sw.js", import.meta.url), "utf8");
 const sha = text => createHash("sha256").update(text).digest("hex");
 class MemoryCache {
@@ -157,3 +160,4 @@ await migrated.lifecycle("install");
 assert.equal(migrated.requests.length, 1, "legacy revision labels are not proof of verified bytes");
 assert.equal(await (await migrated.request("./")).text(), "fresh");
 console.log("app shell worker update status, integrity, on-demand Runtimes and scope isolation: PASS");
+});

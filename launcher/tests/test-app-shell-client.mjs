@@ -1,7 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createAppShellClient } from "../.cache/build/browser/assets/launcher/app-shell-client.mjs";
 import { HOST_SITE_ARTWORK_FILES } from "../lib/frontend-manifest.mjs";
+
+test("test-app-shell-client", async () => {
 class EventTargetStub {
   listeners = new Map();
   addEventListener(type, callback) { const list = this.listeners.get(type) || []; list.push(callback); this.listeners.set(type, list); }
@@ -186,3 +189,4 @@ const maskable = manifest.icons.find(icon => icon.sizes === "512x512" && icon.pu
 assert.ok(maskable);
 assert.ok(HOST_SITE_ARTWORK_FILES.includes(maskable.src.replace(/^assets\//, "")));
 console.log("app shell client and PWA icons: PASS");
+});

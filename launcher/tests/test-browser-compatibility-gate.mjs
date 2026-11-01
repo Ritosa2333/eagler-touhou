@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from "../lib/frontend-static-manifest.mjs";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 
+test("test-browser-compatibility-gate", async () => {
 const root = resolve(import.meta.dirname, "..");
 const index = readFileSync(resolve(root, "public/bootstrap/index.html"), "utf8");
 const guide = readFileSync(resolve(root, "public/compatibility.html"), "utf8");
@@ -66,3 +68,4 @@ for (const [label, scenario, expected, probes] of cases) {
   }
 }
 console.log(`PASS browser compatibility gate (${cases.length} scenarios), self-contained guide and shell manifest`);
+});

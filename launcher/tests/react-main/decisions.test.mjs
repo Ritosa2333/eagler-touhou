@@ -1,5 +1,5 @@
 /** Main app.mts3114–3153 decision contract, plain-store adapter coverage. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {createDecisionStore} from '../../app/models/decisions.ts';
 

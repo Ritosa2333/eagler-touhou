@@ -1,0 +1,6690 @@
+{
+  "multiplayer.character.th075_0": {
+    "id": "multiplayer_character_th075_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_0_0": {
+    "id": "multiplayer_spell_th075_0_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_0_1": {
+    "id": "multiplayer_spell_th075_0_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_0_2": {
+    "id": "multiplayer_spell_th075_0_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_0_3": {
+    "id": "multiplayer_spell_th075_0_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_0_4": {
+    "id": "multiplayer_spell_th075_0_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_0_5": {
+    "id": "multiplayer_spell_th075_0_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_0": {
+    "id": "multiplayer_loadout_th075_0_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_1": {
+    "id": "multiplayer_loadout_th075_0_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_2": {
+    "id": "multiplayer_loadout_th075_0_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_3": {
+    "id": "multiplayer_loadout_th075_0_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_4": {
+    "id": "multiplayer_loadout_th075_0_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_5": {
+    "id": "multiplayer_loadout_th075_0_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_6": {
+    "id": "multiplayer_loadout_th075_0_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_7": {
+    "id": "multiplayer_loadout_th075_0_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_0_8": {
+    "id": "multiplayer_loadout_th075_0_8",
+    "params": []
+  },
+  "multiplayer.character.th075_1": {
+    "id": "multiplayer_character_th075_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_1_0": {
+    "id": "multiplayer_spell_th075_1_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_1_1": {
+    "id": "multiplayer_spell_th075_1_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_1_2": {
+    "id": "multiplayer_spell_th075_1_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_1_3": {
+    "id": "multiplayer_spell_th075_1_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_1_4": {
+    "id": "multiplayer_spell_th075_1_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_1_5": {
+    "id": "multiplayer_spell_th075_1_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_0": {
+    "id": "multiplayer_loadout_th075_1_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_1": {
+    "id": "multiplayer_loadout_th075_1_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_2": {
+    "id": "multiplayer_loadout_th075_1_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_3": {
+    "id": "multiplayer_loadout_th075_1_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_4": {
+    "id": "multiplayer_loadout_th075_1_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_5": {
+    "id": "multiplayer_loadout_th075_1_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_6": {
+    "id": "multiplayer_loadout_th075_1_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_7": {
+    "id": "multiplayer_loadout_th075_1_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_1_8": {
+    "id": "multiplayer_loadout_th075_1_8",
+    "params": []
+  },
+  "multiplayer.character.th075_2": {
+    "id": "multiplayer_character_th075_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_2_0": {
+    "id": "multiplayer_spell_th075_2_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_2_1": {
+    "id": "multiplayer_spell_th075_2_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_2_2": {
+    "id": "multiplayer_spell_th075_2_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_2_3": {
+    "id": "multiplayer_spell_th075_2_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_2_4": {
+    "id": "multiplayer_spell_th075_2_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_2_5": {
+    "id": "multiplayer_spell_th075_2_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_0": {
+    "id": "multiplayer_loadout_th075_2_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_1": {
+    "id": "multiplayer_loadout_th075_2_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_2": {
+    "id": "multiplayer_loadout_th075_2_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_3": {
+    "id": "multiplayer_loadout_th075_2_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_4": {
+    "id": "multiplayer_loadout_th075_2_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_5": {
+    "id": "multiplayer_loadout_th075_2_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_6": {
+    "id": "multiplayer_loadout_th075_2_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_7": {
+    "id": "multiplayer_loadout_th075_2_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_2_8": {
+    "id": "multiplayer_loadout_th075_2_8",
+    "params": []
+  },
+  "multiplayer.character.th075_3": {
+    "id": "multiplayer_character_th075_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_3_0": {
+    "id": "multiplayer_spell_th075_3_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_3_1": {
+    "id": "multiplayer_spell_th075_3_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_3_2": {
+    "id": "multiplayer_spell_th075_3_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_3_3": {
+    "id": "multiplayer_spell_th075_3_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_3_4": {
+    "id": "multiplayer_spell_th075_3_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_3_5": {
+    "id": "multiplayer_spell_th075_3_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_0": {
+    "id": "multiplayer_loadout_th075_3_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_1": {
+    "id": "multiplayer_loadout_th075_3_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_2": {
+    "id": "multiplayer_loadout_th075_3_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_3": {
+    "id": "multiplayer_loadout_th075_3_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_4": {
+    "id": "multiplayer_loadout_th075_3_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_5": {
+    "id": "multiplayer_loadout_th075_3_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_6": {
+    "id": "multiplayer_loadout_th075_3_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_7": {
+    "id": "multiplayer_loadout_th075_3_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_3_8": {
+    "id": "multiplayer_loadout_th075_3_8",
+    "params": []
+  },
+  "multiplayer.character.th075_4": {
+    "id": "multiplayer_character_th075_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_4_0": {
+    "id": "multiplayer_spell_th075_4_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_4_1": {
+    "id": "multiplayer_spell_th075_4_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_4_2": {
+    "id": "multiplayer_spell_th075_4_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_4_3": {
+    "id": "multiplayer_spell_th075_4_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_4_4": {
+    "id": "multiplayer_spell_th075_4_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_4_5": {
+    "id": "multiplayer_spell_th075_4_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_0": {
+    "id": "multiplayer_loadout_th075_4_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_1": {
+    "id": "multiplayer_loadout_th075_4_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_2": {
+    "id": "multiplayer_loadout_th075_4_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_3": {
+    "id": "multiplayer_loadout_th075_4_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_4": {
+    "id": "multiplayer_loadout_th075_4_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_5": {
+    "id": "multiplayer_loadout_th075_4_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_6": {
+    "id": "multiplayer_loadout_th075_4_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_7": {
+    "id": "multiplayer_loadout_th075_4_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_4_8": {
+    "id": "multiplayer_loadout_th075_4_8",
+    "params": []
+  },
+  "multiplayer.character.th075_5": {
+    "id": "multiplayer_character_th075_5",
+    "params": []
+  },
+  "multiplayer.spell.th075_5_0": {
+    "id": "multiplayer_spell_th075_5_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_5_1": {
+    "id": "multiplayer_spell_th075_5_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_5_2": {
+    "id": "multiplayer_spell_th075_5_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_5_3": {
+    "id": "multiplayer_spell_th075_5_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_5_4": {
+    "id": "multiplayer_spell_th075_5_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_5_5": {
+    "id": "multiplayer_spell_th075_5_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_0": {
+    "id": "multiplayer_loadout_th075_5_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_1": {
+    "id": "multiplayer_loadout_th075_5_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_2": {
+    "id": "multiplayer_loadout_th075_5_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_3": {
+    "id": "multiplayer_loadout_th075_5_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_4": {
+    "id": "multiplayer_loadout_th075_5_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_5": {
+    "id": "multiplayer_loadout_th075_5_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_6": {
+    "id": "multiplayer_loadout_th075_5_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_7": {
+    "id": "multiplayer_loadout_th075_5_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_5_8": {
+    "id": "multiplayer_loadout_th075_5_8",
+    "params": []
+  },
+  "multiplayer.character.th075_6": {
+    "id": "multiplayer_character_th075_6",
+    "params": []
+  },
+  "multiplayer.spell.th075_6_0": {
+    "id": "multiplayer_spell_th075_6_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_6_1": {
+    "id": "multiplayer_spell_th075_6_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_6_2": {
+    "id": "multiplayer_spell_th075_6_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_6_3": {
+    "id": "multiplayer_spell_th075_6_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_6_4": {
+    "id": "multiplayer_spell_th075_6_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_6_5": {
+    "id": "multiplayer_spell_th075_6_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_0": {
+    "id": "multiplayer_loadout_th075_6_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_1": {
+    "id": "multiplayer_loadout_th075_6_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_2": {
+    "id": "multiplayer_loadout_th075_6_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_3": {
+    "id": "multiplayer_loadout_th075_6_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_4": {
+    "id": "multiplayer_loadout_th075_6_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_5": {
+    "id": "multiplayer_loadout_th075_6_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_6": {
+    "id": "multiplayer_loadout_th075_6_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_7": {
+    "id": "multiplayer_loadout_th075_6_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_6_8": {
+    "id": "multiplayer_loadout_th075_6_8",
+    "params": []
+  },
+  "multiplayer.character.th075_7": {
+    "id": "multiplayer_character_th075_7",
+    "params": []
+  },
+  "multiplayer.spell.th075_7_0": {
+    "id": "multiplayer_spell_th075_7_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_7_1": {
+    "id": "multiplayer_spell_th075_7_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_7_2": {
+    "id": "multiplayer_spell_th075_7_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_7_3": {
+    "id": "multiplayer_spell_th075_7_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_7_4": {
+    "id": "multiplayer_spell_th075_7_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_7_5": {
+    "id": "multiplayer_spell_th075_7_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_0": {
+    "id": "multiplayer_loadout_th075_7_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_1": {
+    "id": "multiplayer_loadout_th075_7_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_2": {
+    "id": "multiplayer_loadout_th075_7_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_3": {
+    "id": "multiplayer_loadout_th075_7_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_4": {
+    "id": "multiplayer_loadout_th075_7_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_5": {
+    "id": "multiplayer_loadout_th075_7_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_6": {
+    "id": "multiplayer_loadout_th075_7_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_7": {
+    "id": "multiplayer_loadout_th075_7_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_7_8": {
+    "id": "multiplayer_loadout_th075_7_8",
+    "params": []
+  },
+  "multiplayer.character.th075_8": {
+    "id": "multiplayer_character_th075_8",
+    "params": []
+  },
+  "multiplayer.spell.th075_8_0": {
+    "id": "multiplayer_spell_th075_8_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_8_1": {
+    "id": "multiplayer_spell_th075_8_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_8_2": {
+    "id": "multiplayer_spell_th075_8_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_8_3": {
+    "id": "multiplayer_spell_th075_8_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_8_4": {
+    "id": "multiplayer_spell_th075_8_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_8_5": {
+    "id": "multiplayer_spell_th075_8_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_0": {
+    "id": "multiplayer_loadout_th075_8_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_1": {
+    "id": "multiplayer_loadout_th075_8_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_2": {
+    "id": "multiplayer_loadout_th075_8_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_3": {
+    "id": "multiplayer_loadout_th075_8_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_4": {
+    "id": "multiplayer_loadout_th075_8_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_5": {
+    "id": "multiplayer_loadout_th075_8_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_6": {
+    "id": "multiplayer_loadout_th075_8_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_7": {
+    "id": "multiplayer_loadout_th075_8_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_8_8": {
+    "id": "multiplayer_loadout_th075_8_8",
+    "params": []
+  },
+  "multiplayer.character.th075_9": {
+    "id": "multiplayer_character_th075_9",
+    "params": []
+  },
+  "multiplayer.spell.th075_9_0": {
+    "id": "multiplayer_spell_th075_9_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_9_1": {
+    "id": "multiplayer_spell_th075_9_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_9_2": {
+    "id": "multiplayer_spell_th075_9_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_9_3": {
+    "id": "multiplayer_spell_th075_9_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_9_4": {
+    "id": "multiplayer_spell_th075_9_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_9_5": {
+    "id": "multiplayer_spell_th075_9_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_0": {
+    "id": "multiplayer_loadout_th075_9_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_1": {
+    "id": "multiplayer_loadout_th075_9_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_2": {
+    "id": "multiplayer_loadout_th075_9_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_3": {
+    "id": "multiplayer_loadout_th075_9_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_4": {
+    "id": "multiplayer_loadout_th075_9_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_5": {
+    "id": "multiplayer_loadout_th075_9_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_6": {
+    "id": "multiplayer_loadout_th075_9_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_7": {
+    "id": "multiplayer_loadout_th075_9_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_9_8": {
+    "id": "multiplayer_loadout_th075_9_8",
+    "params": []
+  },
+  "multiplayer.character.th075_10": {
+    "id": "multiplayer_character_th075_10",
+    "params": []
+  },
+  "multiplayer.spell.th075_10_0": {
+    "id": "multiplayer_spell_th075_10_0",
+    "params": []
+  },
+  "multiplayer.spell.th075_10_1": {
+    "id": "multiplayer_spell_th075_10_1",
+    "params": []
+  },
+  "multiplayer.spell.th075_10_2": {
+    "id": "multiplayer_spell_th075_10_2",
+    "params": []
+  },
+  "multiplayer.spell.th075_10_3": {
+    "id": "multiplayer_spell_th075_10_3",
+    "params": []
+  },
+  "multiplayer.spell.th075_10_4": {
+    "id": "multiplayer_spell_th075_10_4",
+    "params": []
+  },
+  "multiplayer.spell.th075_10_5": {
+    "id": "multiplayer_spell_th075_10_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_0": {
+    "id": "multiplayer_loadout_th075_10_0",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_1": {
+    "id": "multiplayer_loadout_th075_10_1",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_2": {
+    "id": "multiplayer_loadout_th075_10_2",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_3": {
+    "id": "multiplayer_loadout_th075_10_3",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_4": {
+    "id": "multiplayer_loadout_th075_10_4",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_5": {
+    "id": "multiplayer_loadout_th075_10_5",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_6": {
+    "id": "multiplayer_loadout_th075_10_6",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_7": {
+    "id": "multiplayer_loadout_th075_10_7",
+    "params": []
+  },
+  "multiplayer.loadout.th075_10_8": {
+    "id": "multiplayer_loadout_th075_10_8",
+    "params": []
+  },
+  "game.title.th075mp": {
+    "id": "game_title_th075mp",
+    "params": []
+  },
+  "room.basicSettings": {
+    "id": "room_basicSettings",
+    "params": []
+  },
+  "room.cancelReady": {
+    "id": "room_cancelReady",
+    "params": []
+  },
+  "room.gameSettingsGroup": {
+    "id": "room_gameSettingsGroup",
+    "params": []
+  },
+  "room.ruleSettings": {
+    "id": "room_ruleSettings",
+    "params": []
+  },
+  "room.workspaceLoading": {
+    "id": "room_workspaceLoading",
+    "params": []
+  },
+  "room.workspaceReady": {
+    "id": "room_workspaceReady",
+    "params": []
+  },
+  "room.workspaceSpectating": {
+    "id": "room_workspaceSpectating",
+    "params": []
+  },
+  "room.reloadSettingsPrompt": {
+    "id": "room_reloadSettingsPrompt",
+    "params": []
+  },
+  "room.reloadResources": {
+    "id": "room_reloadResources",
+    "params": []
+  },
+  "room.restoreSettings": {
+    "id": "room_restoreSettings",
+    "params": []
+  },
+  "touch.fighting.light": {
+    "id": "touch_fighting_light",
+    "params": []
+  },
+  "touch.fighting.heavy": {
+    "id": "touch_fighting_heavy",
+    "params": []
+  },
+  "touch.fighting.projectile": {
+    "id": "touch_fighting_projectile",
+    "params": []
+  },
+  "touch.fighting.dash": {
+    "id": "touch_fighting_dash",
+    "params": []
+  },
+  "help.fightingIntro": {
+    "id": "help_fightingIntro",
+    "params": []
+  },
+  "help.fightingMovement": {
+    "id": "help_fightingMovement",
+    "params": []
+  },
+  "help.fightingA": {
+    "id": "help_fightingA",
+    "params": []
+  },
+  "help.fightingB": {
+    "id": "help_fightingB",
+    "params": []
+  },
+  "help.fightingCD": {
+    "id": "help_fightingCD",
+    "params": []
+  },
+  "help.fightingNote": {
+    "id": "help_fightingNote",
+    "params": []
+  },
+  "spectator.controls": {
+    "id": "spectator_controls",
+    "params": []
+  },
+  "spectator.expand": {
+    "id": "spectator_expand",
+    "params": []
+  },
+  "spectator.collapse": {
+    "id": "spectator_collapse",
+    "params": []
+  },
+  "spectator.actionFailed": {
+    "id": "spectator_actionFailed",
+    "params": []
+  },
+  "spectator.nodes": {
+    "id": "spectator_nodes",
+    "params": []
+  },
+  "spectator.progress": {
+    "id": "spectator_progress",
+    "params": []
+  },
+  "spectator.stageNode": {
+    "id": "spectator_stageNode",
+    "params": ["stage"]
+  },
+  "spectator.bossNode": {
+    "id": "spectator_bossNode",
+    "params": ["stage"]
+  },
+  "spectator.stageNodeUnknown": {
+    "id": "spectator_stageNodeUnknown",
+    "params": []
+  },
+  "spectator.bossNodeUnknown": {
+    "id": "spectator_bossNodeUnknown",
+    "params": []
+  },
+  "spectator.paused": {
+    "id": "spectator_paused",
+    "params": []
+  },
+  "spectator.seeking": {
+    "id": "spectator_seeking",
+    "params": []
+  },
+  "spectator.playing": {
+    "id": "spectator_playing",
+    "params": []
+  },
+  "spectator.live": {
+    "id": "spectator_live",
+    "params": []
+  },
+  "spectator.ended": {
+    "id": "spectator_ended",
+    "params": []
+  },
+  "spectator.waiting": {
+    "id": "spectator_waiting",
+    "params": []
+  },
+  "spectator.lag": {
+    "id": "spectator_lag",
+    "params": ["seconds"]
+  },
+  "spectator.pause": {
+    "id": "spectator_pause",
+    "params": []
+  },
+  "spectator.resume": {
+    "id": "spectator_resume",
+    "params": []
+  },
+  "spectator.returnLive": {
+    "id": "spectator_returnLive",
+    "params": []
+  },
+  "room.inGameSelectionHint": {
+    "id": "room_inGameSelectionHint",
+    "params": []
+  },
+  "replay.stopBeforeWatch": {
+    "id": "replay_stopBeforeWatch",
+    "params": []
+  },
+  "replay.watch": {
+    "id": "replay_watch",
+    "params": []
+  },
+  "lobby.watchReplay": {
+    "id": "lobby_watchReplay",
+    "params": []
+  },
+  "room.challengeEnabled": {
+    "id": "room_challengeEnabled",
+    "params": []
+  },
+  "room.baseResources": {
+    "id": "room_baseResources",
+    "params": []
+  },
+  "room.resourceLoading": {
+    "id": "room_resourceLoading",
+    "params": []
+  },
+  "room.quickChat": {
+    "id": "room_quickChat",
+    "params": []
+  },
+  "room.elapsedTime": {
+    "id": "room_elapsedTime",
+    "params": ["time"]
+  },
+  "room.decreaseDelay": {
+    "id": "room_decreaseDelay",
+    "params": []
+  },
+  "room.increaseDelay": {
+    "id": "room_increaseDelay",
+    "params": []
+  },
+  "room.resetAutoDelay": {
+    "id": "room_resetAutoDelay",
+    "params": []
+  },
+  "room.inputDelaySettingsHint": {
+    "id": "room_inputDelaySettingsHint",
+    "params": []
+  },
+  "spectator.waitingNextRun": {
+    "id": "spectator_waitingNextRun",
+    "params": []
+  },
+  "spectator.controlsUnavailable": {
+    "id": "spectator_controlsUnavailable",
+    "params": []
+  },
+  "spectator.realtimeReserved": {
+    "id": "spectator_realtimeReserved",
+    "params": []
+  },
+  "player.exitPlayback": {
+    "id": "player_exitPlayback",
+    "params": []
+  },
+  "player.exitSpectating": {
+    "id": "player_exitSpectating",
+    "params": []
+  },
+  "replay.watching": {
+    "id": "replay_watching",
+    "params": ["name"]
+  },
+  "replay.parentFolder": {
+    "id": "replay_parentFolder",
+    "params": []
+  },
+  "replay.rootFolder": {
+    "id": "replay_rootFolder",
+    "params": []
+  },
+  "replay.move": {
+    "id": "replay_move",
+    "params": []
+  },
+  "replay.moveTo": {
+    "id": "replay_moveTo",
+    "params": []
+  },
+  "replay.newFolder": {
+    "id": "replay_newFolder",
+    "params": []
+  },
+  "replay.folderName": {
+    "id": "replay_folderName",
+    "params": []
+  },
+  "replay.folderInvalid": {
+    "id": "replay_folderInvalid",
+    "params": []
+  },
+  "replay.operationCancelled": {
+    "id": "replay_operationCancelled",
+    "params": []
+  },
+  "replay.downloadFolder": {
+    "id": "replay_downloadFolder",
+    "params": []
+  },
+  "file.replayImported": {
+    "id": "file_replayImported",
+    "params": ["count"]
+  },
+  "th09.replayLocation": {
+    "id": "th09_replayLocation",
+    "params": []
+  },
+  "th09.replayOpenFolder": {
+    "id": "th09_replayOpenFolder",
+    "params": ["name"]
+  },
+  "th09.replayAutoSave": {
+    "id": "th09_replayAutoSave",
+    "params": []
+  },
+  "th09.replayAutoSaveHint": {
+    "id": "th09_replayAutoSaveHint",
+    "params": []
+  },
+  "th09.elapsed": {
+    "id": "th09_elapsed",
+    "params": ["minutes"]
+  },
+  "th09.matchInformation": {
+    "id": "th09_matchInformation",
+    "params": []
+  },
+  "th09.watching": {
+    "id": "th09_watching",
+    "params": ["count"]
+  },
+  "th09.spectatorCount": {
+    "id": "th09_spectatorCount",
+    "params": ["count"]
+  },
+  "th09.playing": {
+    "id": "th09_playing",
+    "params": []
+  },
+  "th09.waitingPlayer": {
+    "id": "th09_waitingPlayer",
+    "params": []
+  },
+  "th09.waitingStart": {
+    "id": "th09_waitingStart",
+    "params": []
+  },
+  "th09.notStarted": {
+    "id": "th09_notStarted",
+    "params": []
+  },
+  "th09.score": {
+    "id": "th09_score",
+    "params": []
+  },
+  "th09.quickChat": {
+    "id": "th09_quickChat",
+    "params": []
+  },
+  "room.matchStats": {
+    "id": "room_matchStats",
+    "params": ["wins", "losses", "minutes"]
+  },
+  "room.th09SpectatorHint": {
+    "id": "room_th09SpectatorHint",
+    "params": []
+  },
+  "room.spectatorJoined": {
+    "id": "room_spectatorJoined",
+    "params": []
+  },
+  "room.loadingSpectator": {
+    "id": "room_loadingSpectator",
+    "params": []
+  },
+  "room.versus": {
+    "id": "room_versus",
+    "params": ["count"]
+  },
+  "nickname.hint": {
+    "id": "nickname_hint",
+    "params": []
+  },
+  "nickname.save": {
+    "id": "nickname_save",
+    "params": []
+  },
+  "nickname.reviewing": {
+    "id": "nickname_reviewing",
+    "params": []
+  },
+  "nickname.queued": {
+    "id": "nickname_queued",
+    "params": []
+  },
+  "nickname.queuedHint": {
+    "id": "nickname_queuedHint",
+    "params": []
+  },
+  "nickname.submitted": {
+    "id": "nickname_submitted",
+    "params": []
+  },
+  "nickname.briefHint": {
+    "id": "nickname_briefHint",
+    "params": []
+  },
+  "nickname.idle": {
+    "id": "nickname_idle",
+    "params": []
+  },
+  "nickname.approved": {
+    "id": "nickname_approved",
+    "params": []
+  },
+  "nickname.firstApproved": {
+    "id": "nickname_firstApproved",
+    "params": []
+  },
+  "nickname.oneRetry": {
+    "id": "nickname_oneRetry",
+    "params": []
+  },
+  "nickname.exhausted": {
+    "id": "nickname_exhausted",
+    "params": []
+  },
+  "nickname.rejected": {
+    "id": "nickname_rejected",
+    "params": []
+  },
+  "nickname.cooldown": {
+    "id": "nickname_cooldown",
+    "params": []
+  },
+  "nickname.rate-limited": {
+    "id": "nickname_rate_limited",
+    "params": []
+  },
+  "nickname.unavailable": {
+    "id": "nickname_unavailable",
+    "params": []
+  },
+  "nickname.unavailableNoName": {
+    "id": "nickname_unavailableNoName",
+    "params": []
+  },
+  "nickname.nextChange": {
+    "id": "nickname_nextChange",
+    "params": ["time"]
+  },
+  "multiplayer.control.keysOrStick": {
+    "id": "multiplayer_control_keysOrStick",
+    "params": []
+  },
+  "touch.tools": {
+    "id": "touch_tools",
+    "params": []
+  },
+  "touch.actionHold": {
+    "id": "touch_actionHold",
+    "params": []
+  },
+  "touch.actionToggle": {
+    "id": "touch_actionToggle",
+    "params": []
+  },
+  "touch.opacity": {
+    "id": "touch_opacity",
+    "params": []
+  },
+  "touch.opacityHint": {
+    "id": "touch_opacityHint",
+    "params": []
+  },
+  "help.rotatePhone": {
+    "id": "help_rotatePhone",
+    "params": []
+  },
+  "help.rotateCorner": {
+    "id": "help_rotateCorner",
+    "params": []
+  },
+  "help.rotateVaries": {
+    "id": "help_rotateVaries",
+    "params": []
+  },
+  "help.autoRotate": {
+    "id": "help_autoRotate",
+    "params": []
+  },
+  "help.autoRotateStep": {
+    "id": "help_autoRotateStep",
+    "params": []
+  },
+  "lobby.title": {
+    "id": "lobby_title",
+    "params": []
+  },
+  "lobby.surveyNotice": {
+    "id": "lobby_surveyNotice",
+    "params": []
+  },
+  "lobby.surveyAction": {
+    "id": "lobby_surveyAction",
+    "params": []
+  },
+  "lobby.gameOptions": {
+    "id": "lobby_gameOptions",
+    "params": []
+  },
+  "lobby.loadingOptions": {
+    "id": "lobby_loadingOptions",
+    "params": []
+  },
+  "room.visibility": {
+    "id": "room_visibility",
+    "params": []
+  },
+  "room.public": {
+    "id": "room_public",
+    "params": []
+  },
+  "room.private": {
+    "id": "room_private",
+    "params": []
+  },
+  "room.privateHint": {
+    "id": "room_privateHint",
+    "params": []
+  },
+  "room.cheatMovement": {
+    "id": "room_cheatMovement",
+    "params": []
+  },
+  "room.cheatHint": {
+    "id": "room_cheatHint",
+    "params": []
+  },
+  "room.disableLocalChargePriority": {
+    "id": "room_disableLocalChargePriority",
+    "params": []
+  },
+  "room.localChargeReplayHint": {
+    "id": "room_localChargeReplayHint",
+    "params": []
+  },
+  "room.challengeMode": {
+    "id": "room_challengeMode",
+    "params": []
+  },
+  "room.th15ChapterThreshold": {
+    "id": "room_th15ChapterThreshold",
+    "params": []
+  },
+  "room.th15ChapterSettingsHint": {
+    "id": "room_th15ChapterSettingsHint",
+    "params": []
+  },
+  "room.th15ChapterGraze": {
+    "id": "room_th15ChapterGraze",
+    "params": ["count"]
+  },
+  "room.challengeHint": {
+    "id": "room_challengeHint",
+    "params": []
+  },
+  "room.modeOn": {
+    "id": "room_modeOn",
+    "params": []
+  },
+  "room.modeOff": {
+    "id": "room_modeOff",
+    "params": []
+  },
+  "chat.prompt": {
+    "id": "chat_prompt",
+    "params": []
+  },
+  "chat.back": {
+    "id": "chat_back",
+    "params": []
+  },
+  "chat.empty": {
+    "id": "chat_empty",
+    "params": []
+  },
+  "chat.mute": {
+    "id": "chat_mute",
+    "params": []
+  },
+  "chat.unmute": {
+    "id": "chat_unmute",
+    "params": []
+  },
+  "chat.players": {
+    "id": "chat_players",
+    "params": []
+  },
+  "room.cheatDisabled": {
+    "id": "room_cheatDisabled",
+    "params": []
+  },
+  "room.cheatAllowed": {
+    "id": "room_cheatAllowed",
+    "params": []
+  },
+  "room.movementRequired": {
+    "id": "room_movementRequired",
+    "params": []
+  },
+  "room.movementRequiredHint": {
+    "id": "room_movementRequiredHint",
+    "params": []
+  },
+  "room.useTouch": {
+    "id": "room_useTouch",
+    "params": []
+  },
+  "room.useJoystick": {
+    "id": "room_useJoystick",
+    "params": []
+  },
+  "lobby.noCheat": {
+    "id": "lobby_noCheat",
+    "params": []
+  },
+  "multiplayer.control.normal": {
+    "id": "multiplayer_control_normal",
+    "params": []
+  },
+  "multiplayer.control.touch": {
+    "id": "multiplayer_control_touch",
+    "params": []
+  },
+  "multiplayer.control.cheat": {
+    "id": "multiplayer_control_cheat",
+    "params": []
+  },
+  "lobby.testStageHint": {
+    "id": "lobby_testStageHint",
+    "params": []
+  },
+  "lobby.loading": {
+    "id": "lobby_loading",
+    "params": []
+  },
+  "lobby.loadFailed": {
+    "id": "lobby_loadFailed",
+    "params": []
+  },
+  "lobby.reload": {
+    "id": "lobby_reload",
+    "params": []
+  },
+  "lobby.back": {
+    "id": "lobby_back",
+    "params": []
+  },
+  "lobby.create": {
+    "id": "lobby_create",
+    "params": []
+  },
+  "lobby.byCode": {
+    "id": "lobby_byCode",
+    "params": []
+  },
+  "lobby.join": {
+    "id": "lobby_join",
+    "params": []
+  },
+  "lobby.joinRoom": {
+    "id": "lobby_joinRoom",
+    "params": []
+  },
+  "lobby.game": {
+    "id": "lobby_game",
+    "params": []
+  },
+  "lobby.all": {
+    "id": "lobby_all",
+    "params": []
+  },
+  "lobby.rooms": {
+    "id": "lobby_rooms",
+    "params": []
+  },
+  "lobby.gameAndRoom": {
+    "id": "lobby_gameAndRoom",
+    "params": []
+  },
+  "lobby.capacity": {
+    "id": "lobby_capacity",
+    "params": []
+  },
+  "lobby.difficulty": {
+    "id": "lobby_difficulty",
+    "params": []
+  },
+  "lobby.ready": {
+    "id": "lobby_ready",
+    "params": []
+  },
+  "lobby.state": {
+    "id": "lobby_state",
+    "params": []
+  },
+  "lobby.roomCode": {
+    "id": "lobby_roomCode",
+    "params": []
+  },
+  "lobby.cancel": {
+    "id": "lobby_cancel",
+    "params": []
+  },
+  "lobby.publicRoom": {
+    "id": "lobby_publicRoom",
+    "params": []
+  },
+  "lobby.codeHint": {
+    "id": "lobby_codeHint",
+    "params": []
+  },
+  "lobby.mine": {
+    "id": "lobby_mine",
+    "params": ["code"]
+  },
+  "lobby.mineHint": {
+    "id": "lobby_mineHint",
+    "params": []
+  },
+  "lobby.release": {
+    "id": "lobby_release",
+    "params": []
+  },
+  "lobby.releasing": {
+    "id": "lobby_releasing",
+    "params": []
+  },
+  "lobby.released": {
+    "id": "lobby_released",
+    "params": []
+  },
+  "lobby.releaseFailed": {
+    "id": "lobby_releaseFailed",
+    "params": []
+  },
+  "lobby.releaseChanged": {
+    "id": "lobby_releaseChanged",
+    "params": []
+  },
+  "lobby.releaseUnsupported": {
+    "id": "lobby_releaseUnsupported",
+    "params": []
+  },
+  "lobby.connecting": {
+    "id": "lobby_connecting",
+    "params": []
+  },
+  "lobby.loadingHint": {
+    "id": "lobby_loadingHint",
+    "params": []
+  },
+  "lobby.empty": {
+    "id": "lobby_empty",
+    "params": []
+  },
+  "lobby.emptyHint": {
+    "id": "lobby_emptyHint",
+    "params": []
+  },
+  "lobby.offline": {
+    "id": "lobby_offline",
+    "params": []
+  },
+  "lobby.disconnected": {
+    "id": "lobby_disconnected",
+    "params": []
+  },
+  "lobby.refresh": {
+    "id": "lobby_refresh",
+    "params": []
+  },
+  "lobby.refreshHint": {
+    "id": "lobby_refreshHint",
+    "params": []
+  },
+  "lobby.offlineHint": {
+    "id": "lobby_offlineHint",
+    "params": []
+  },
+  "lobby.unsupported": {
+    "id": "lobby_unsupported",
+    "params": []
+  },
+  "lobby.unsupportedHint": {
+    "id": "lobby_unsupportedHint",
+    "params": []
+  },
+  "lobby.noService": {
+    "id": "lobby_noService",
+    "params": []
+  },
+  "lobby.retry": {
+    "id": "lobby_retry",
+    "params": []
+  },
+  "lobby.stale": {
+    "id": "lobby_stale",
+    "params": []
+  },
+  "lobby.recruiting": {
+    "id": "lobby_recruiting",
+    "params": []
+  },
+  "lobby.full": {
+    "id": "lobby_full",
+    "params": []
+  },
+  "lobby.roomFull": {
+    "id": "lobby_roomFull",
+    "params": []
+  },
+  "lobby.playing": {
+    "id": "lobby_playing",
+    "params": []
+  },
+  "lobby.count": {
+    "id": "lobby_count",
+    "params": ["players", "capacity"]
+  },
+  "lobby.playersCount": {
+    "id": "lobby_playersCount",
+    "params": ["count"]
+  },
+  "lobby.roomCount": {
+    "id": "lobby_roomCount",
+    "params": ["count"]
+  },
+  "lobby.truncated": {
+    "id": "lobby_truncated",
+    "params": ["count"]
+  },
+  "lobby.seatEmpty": {
+    "id": "lobby_seatEmpty",
+    "params": ["seat"]
+  },
+  "lobby.seatReady": {
+    "id": "lobby_seatReady",
+    "params": ["seat", "name"]
+  },
+  "lobby.seatWaiting": {
+    "id": "lobby_seatWaiting",
+    "params": ["seat", "name"]
+  },
+  "lobby.seatOffline": {
+    "id": "lobby_seatOffline",
+    "params": ["seat", "name"]
+  },
+  "lobby.readyCount": {
+    "id": "lobby_readyCount",
+    "params": ["ready", "players", "spectators"]
+  },
+  "lobby.invalidCode": {
+    "id": "lobby_invalidCode",
+    "params": []
+  },
+  "lobby.opening": {
+    "id": "lobby_opening",
+    "params": []
+  },
+  "lobby.expired": {
+    "id": "lobby_expired",
+    "params": []
+  },
+  "lobby.replaced": {
+    "id": "lobby_replaced",
+    "params": []
+  },
+  "lobby.conflict": {
+    "id": "lobby_conflict",
+    "params": []
+  },
+  "lobby.removed": {
+    "id": "lobby_removed",
+    "params": []
+  },
+  "lobby.gone": {
+    "id": "lobby_gone",
+    "params": []
+  },
+  "room.together": {
+    "id": "room_together",
+    "params": []
+  },
+  "room.players": {
+    "id": "room_players",
+    "params": []
+  },
+  "room.takeHostSeat": {
+    "id": "room_takeHostSeat",
+    "params": []
+  },
+  "room.hostAvailable": {
+    "id": "room_hostAvailable",
+    "params": []
+  },
+  "room.host": {
+    "id": "room_host",
+    "params": ["name"]
+  },
+  "room.removePlayer": {
+    "id": "room_removePlayer",
+    "params": ["seat"]
+  },
+  "room.managePlayer": {
+    "id": "room_managePlayer",
+    "params": ["seat"]
+  },
+  "room.movePlayerToSpectator": {
+    "id": "room_movePlayerToSpectator",
+    "params": []
+  },
+  "room.removePlayerConfirm": {
+    "id": "room_removePlayerConfirm",
+    "params": ["seat"]
+  },
+  "room.removeSpectator": {
+    "id": "room_removeSpectator",
+    "params": []
+  },
+  "room.removeSpectatorConfirm": {
+    "id": "room_removeSpectatorConfirm",
+    "params": []
+  },
+  "room.playerOptions": {
+    "id": "room_playerOptions",
+    "params": []
+  },
+  "room.peerReady": {
+    "id": "room_peerReady",
+    "params": []
+  },
+  "room.waitReady": {
+    "id": "room_waitReady",
+    "params": []
+  },
+  "room.tapSeat": {
+    "id": "room_tapSeat",
+    "params": []
+  },
+  "room.connections": {
+    "id": "room_connections",
+    "params": []
+  },
+  "room.done": {
+    "id": "room_done",
+    "params": []
+  },
+  "room.spectatorLounge": {
+    "id": "room_spectatorLounge",
+    "params": []
+  },
+  "room.spectatorNumber": {
+    "id": "room_spectatorNumber",
+    "params": ["number"]
+  },
+  "room.spectatorHint": {
+    "id": "room_spectatorHint",
+    "params": []
+  },
+  "room.network": {
+    "id": "room_network",
+    "params": []
+  },
+  "room.networkHint": {
+    "id": "room_networkHint",
+    "params": []
+  },
+  "room.networkNote": {
+    "id": "room_networkNote",
+    "params": []
+  },
+  "room.inputDelay": {
+    "id": "room_inputDelay",
+    "params": []
+  },
+  "room.inputDelayAutoToggle": {
+    "id": "room_inputDelayAutoToggle",
+    "params": []
+  },
+  "room.inputDelayMeasure": {
+    "id": "room_inputDelayMeasure",
+    "params": []
+  },
+  "room.inputDelayMeasuring": {
+    "id": "room_inputDelayMeasuring",
+    "params": []
+  },
+  "room.inputDelayMeasured": {
+    "id": "room_inputDelayMeasured",
+    "params": ["frames"]
+  },
+  "room.enableRollback": {
+    "id": "room_enableRollback",
+    "params": []
+  },
+  "room.rollbackHint": {
+    "id": "room_rollbackHint",
+    "params": []
+  },
+  "room.manualDelayHint": {
+    "id": "room_manualDelayHint",
+    "params": []
+  },
+  "room.adonisTiming": {
+    "id": "room_adonisTiming",
+    "params": []
+  },
+  "room.adonisRollback": {
+    "id": "room_adonisRollback",
+    "params": []
+  },
+  "room.adonisDelay": {
+    "id": "room_adonisDelay",
+    "params": []
+  },
+  "room.adonisHybrid": {
+    "id": "room_adonisHybrid",
+    "params": []
+  },
+  "room.adonisPreset": {
+    "id": "room_adonisPreset",
+    "params": ["frames"]
+  },
+  "room.inputDelayRecommended": {
+    "id": "room_inputDelayRecommended",
+    "params": []
+  },
+  "room.inputDelayAutomatic": {
+    "id": "room_inputDelayAutomatic",
+    "params": ["frames", "milliseconds"]
+  },
+  "room.localDevice": {
+    "id": "room_localDevice",
+    "params": []
+  },
+  "room.packetLoss": {
+    "id": "room_packetLoss",
+    "params": []
+  },
+  "room.packetLossHint": {
+    "id": "room_packetLossHint",
+    "params": []
+  },
+  "room.preferTurn": {
+    "id": "room_preferTurn",
+    "params": []
+  },
+  "room.preferTurnHint": {
+    "id": "room_preferTurnHint",
+    "params": []
+  },
+  "room.packetLossTest": {
+    "id": "room_packetLossTest",
+    "params": []
+  },
+  "room.packetLossRunning": {
+    "id": "room_packetLossRunning",
+    "params": []
+  },
+  "room.packetLossOutgoing": {
+    "id": "room_packetLossOutgoing",
+    "params": []
+  },
+  "room.packetLossIncoming": {
+    "id": "room_packetLossIncoming",
+    "params": []
+  },
+  "room.packetLoss.idle": {
+    "id": "room_packetLoss_idle",
+    "params": []
+  },
+  "room.packetLoss.running": {
+    "id": "room_packetLoss_running",
+    "params": []
+  },
+  "room.packetLoss.complete": {
+    "id": "room_packetLoss_complete",
+    "params": []
+  },
+  "room.packetLoss.unavailable": {
+    "id": "room_packetLoss_unavailable",
+    "params": []
+  },
+  "room.packetLoss.interrupted": {
+    "id": "room_packetLoss_interrupted",
+    "params": []
+  },
+  "room.inputDelayHost": {
+    "id": "room_inputDelayHost",
+    "params": []
+  },
+  "room.inputTimingHint": {
+    "id": "room_inputTimingHint",
+    "params": ["delay", "phones", "network", "target", "limit"]
+  },
+  "room.probeUnsupported": {
+    "id": "room_probeUnsupported",
+    "params": []
+  },
+  "room.rtcUnavailable": {
+    "id": "room_rtcUnavailable",
+    "params": []
+  },
+  "room.turnUnconfigured": {
+    "id": "room_turnUnconfigured",
+    "params": []
+  },
+  "room.retry": {
+    "id": "room_retry",
+    "params": []
+  },
+  "room.direct": {
+    "id": "room_direct",
+    "params": []
+  },
+  "room.turn": {
+    "id": "room_turn",
+    "params": []
+  },
+  "room.relay": {
+    "id": "room_relay",
+    "params": []
+  },
+  "room.checking": {
+    "id": "room_checking",
+    "params": []
+  },
+  "room.unavailable": {
+    "id": "room_unavailable",
+    "params": []
+  },
+  "room.jitter": {
+    "id": "room_jitter",
+    "params": ["value"]
+  },
+  "room.seatToTest": {
+    "id": "room_seatToTest",
+    "params": []
+  },
+  "room.waitPeer": {
+    "id": "room_waitPeer",
+    "params": []
+  },
+  "room.peerLeft": {
+    "id": "room_peerLeft",
+    "params": []
+  },
+  "room.pausedTest": {
+    "id": "room_pausedTest",
+    "params": []
+  },
+  "room.emptySeat": {
+    "id": "room_emptySeat",
+    "params": []
+  },
+  "room.notReady": {
+    "id": "room_notReady",
+    "params": []
+  },
+  "room.ready": {
+    "id": "room_ready",
+    "params": []
+  },
+  "room.online": {
+    "id": "room_online",
+    "params": []
+  },
+  "room.lobby": {
+    "id": "room_lobby",
+    "params": []
+  },
+  "room.preparingResources": {
+    "id": "room_preparingResources",
+    "params": []
+  },
+  "room.preparingRuntime": {
+    "id": "room_preparingRuntime",
+    "params": []
+  },
+  "room.resourcesReady": {
+    "id": "room_resourcesReady",
+    "params": []
+  },
+  "room.resourcesUnavailable": {
+    "id": "room_resourcesUnavailable",
+    "params": []
+  },
+  "room.resourcesCancelled": {
+    "id": "room_resourcesCancelled",
+    "params": []
+  },
+  "room.cancelDownload": {
+    "id": "room_cancelDownload",
+    "params": []
+  },
+  "room.retryDownload": {
+    "id": "room_retryDownload",
+    "params": []
+  },
+  "room.peerDownloading": {
+    "id": "room_peerDownloading",
+    "params": ["percent"]
+  },
+  "room.gameplayPathTimeout": {
+    "id": "room_gameplayPathTimeout",
+    "params": []
+  },
+  "room.starting": {
+    "id": "room_starting",
+    "params": []
+  },
+  "room.connectingGameplay": {
+    "id": "room_connectingGameplay",
+    "params": []
+  },
+  "room.running": {
+    "id": "room_running",
+    "params": []
+  },
+  "room.coop": {
+    "id": "room_coop",
+    "params": ["count"]
+  },
+  "room.watching": {
+    "id": "room_watching",
+    "params": []
+  },
+  "library.singleplayer": {
+    "id": "library_singleplayer",
+    "params": []
+  },
+  "library.multiplayer": {
+    "id": "library_multiplayer",
+    "params": []
+  },
+  "library.singleplayerHint": {
+    "id": "library_singleplayerHint",
+    "params": []
+  },
+  "library.multiplayerHint": {
+    "id": "library_multiplayerHint",
+    "params": []
+  },
+  "library.previous": {
+    "id": "library_previous",
+    "params": []
+  },
+  "library.next": {
+    "id": "library_next",
+    "params": []
+  },
+  "library.back": {
+    "id": "library_back",
+    "params": []
+  },
+  "library.quickNav": {
+    "id": "library_quickNav",
+    "params": []
+  },
+  "library.holdNav": {
+    "id": "library_holdNav",
+    "params": []
+  },
+  "site.documentTitle": {
+    "id": "site_documentTitle",
+    "params": []
+  },
+  "site.description": {
+    "id": "site_description",
+    "params": []
+  },
+  "brand.neverUpdated": {
+    "id": "brand_neverUpdated",
+    "params": []
+  },
+  "brand.updatedAgo": {
+    "id": "brand_updatedAgo",
+    "params": ["age"]
+  },
+  "filter.aria": {
+    "id": "filter_aria",
+    "params": []
+  },
+  "filter.all": {
+    "id": "filter_all",
+    "params": []
+  },
+  "filter.original": {
+    "id": "filter_original",
+    "params": []
+  },
+  "filter.multiplayer": {
+    "id": "filter_multiplayer",
+    "params": []
+  },
+  "ui.language": {
+    "id": "ui_language",
+    "params": []
+  },
+  "ui.language.menu": {
+    "id": "ui_language_menu",
+    "params": []
+  },
+  "ui.language.zhCN": {
+    "id": "ui_language_zhCN",
+    "params": []
+  },
+  "ui.language.en": {
+    "id": "ui_language_en",
+    "params": []
+  },
+  "preload.aria": {
+    "id": "preload_aria",
+    "params": []
+  },
+  "notice.aria": {
+    "id": "notice_aria",
+    "params": []
+  },
+  "notice.label": {
+    "id": "notice_label",
+    "params": []
+  },
+  "notice.close": {
+    "id": "notice_close",
+    "params": []
+  },
+  "notice.dismissForever": {
+    "id": "notice_dismissForever",
+    "params": []
+  },
+  "diagnostics.toggle": {
+    "id": "diagnostics_toggle",
+    "params": []
+  },
+  "nav.siteInfo": {
+    "id": "nav_siteInfo",
+    "params": []
+  },
+  "nav.lessMotion": {
+    "id": "nav_lessMotion",
+    "params": []
+  },
+  "nav.lessMotionFirst": {
+    "id": "nav_lessMotionFirst",
+    "params": []
+  },
+  "nav.lessMotionSecond": {
+    "id": "nav_lessMotionSecond",
+    "params": []
+  },
+  "nav.motionLessTitle": {
+    "id": "nav_motionLessTitle",
+    "params": []
+  },
+  "nav.motionFullTitle": {
+    "id": "nav_motionFullTitle",
+    "params": []
+  },
+  "nav.firstUseNotice": {
+    "id": "nav_firstUseNotice",
+    "params": []
+  },
+  "nav.oldSiteMigration": {
+    "id": "nav_oldSiteMigration",
+    "params": []
+  },
+  "nav.faq": {
+    "id": "nav_faq",
+    "params": []
+  },
+  "nav.faqFirst": {
+    "id": "nav_faqFirst",
+    "params": []
+  },
+  "nav.faqSecond": {
+    "id": "nav_faqSecond",
+    "params": []
+  },
+  "nav.donate": {
+    "id": "nav_donate",
+    "params": []
+  },
+  "nav.about": {
+    "id": "nav_about",
+    "params": []
+  },
+  "nav.more": {
+    "id": "nav_more",
+    "params": []
+  },
+  "nav.oldSitePart1": {
+    "id": "nav_oldSitePart1",
+    "params": []
+  },
+  "nav.migrationPart2": {
+    "id": "nav_migrationPart2",
+    "params": []
+  },
+  "game.title.th06mp": {
+    "id": "game_title_th06mp",
+    "params": []
+  },
+  "game.title.th07mp": {
+    "id": "game_title_th07mp",
+    "params": []
+  },
+  "game.title.th08mp": {
+    "id": "game_title_th08mp",
+    "params": []
+  },
+  "game.title.th10mp": {
+    "id": "game_title_th10mp",
+    "params": []
+  },
+  "game.title.th15mp": {
+    "id": "game_title_th15mp",
+    "params": []
+  },
+  "multiplayer.loadout.th15_reimu": {
+    "id": "multiplayer_loadout_th15_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.th15_marisa": {
+    "id": "multiplayer_loadout_th15_marisa",
+    "params": []
+  },
+  "multiplayer.loadout.th15_sanae": {
+    "id": "multiplayer_loadout_th15_sanae",
+    "params": []
+  },
+  "multiplayer.loadout.th15_reisen": {
+    "id": "multiplayer_loadout_th15_reisen",
+    "params": []
+  },
+  "game.title.th12mp": {
+    "id": "game_title_th12mp",
+    "params": []
+  },
+  "multiplayer.loadout.sanaeA": {
+    "id": "multiplayer_loadout_sanaeA",
+    "params": []
+  },
+  "multiplayer.loadout.sanaeB": {
+    "id": "multiplayer_loadout_sanaeB",
+    "params": []
+  },
+  "game.title.th11mp": {
+    "id": "game_title_th11mp",
+    "params": []
+  },
+  "game.title.th09mp": {
+    "id": "game_title_th09mp",
+    "params": []
+  },
+  "multiplayer.th09DialogTitle": {
+    "id": "multiplayer_th09DialogTitle",
+    "params": []
+  },
+  "multiplayer.th09DialogHint": {
+    "id": "multiplayer_th09DialogHint",
+    "params": []
+  },
+  "gameNotice.title": {
+    "id": "gameNotice_title",
+    "params": []
+  },
+  "gameNotice.earlyTest": {
+    "id": "gameNotice_earlyTest",
+    "params": []
+  },
+  "gameNotice.creditBefore": {
+    "id": "gameNotice_creditBefore",
+    "params": []
+  },
+  "gameNotice.credit": {
+    "id": "gameNotice_credit",
+    "params": []
+  },
+  "gameNotice.creditAfter": {
+    "id": "gameNotice_creditAfter",
+    "params": []
+  },
+  "gameNotice.repo": {
+    "id": "gameNotice_repo",
+    "params": []
+  },
+  "settings.title": {
+    "id": "settings_title",
+    "params": []
+  },
+  "multiplayer.runtimeCheckFailed": {
+    "id": "multiplayer_runtimeCheckFailed",
+    "params": []
+  },
+  "multiplayer.runtimeRelayUpgrade": {
+    "id": "multiplayer_runtimeRelayUpgrade",
+    "params": []
+  },
+  "runtime.roomReturnUnavailable": {
+    "id": "runtime_roomReturnUnavailable",
+    "params": []
+  },
+  "multiplayer.runtimeVersionMismatch": {
+    "id": "multiplayer_runtimeVersionMismatch",
+    "params": []
+  },
+  "settings.shareSingleplayer": {
+    "id": "settings_shareSingleplayer",
+    "params": []
+  },
+  "settings.shareSingleplayerHint": {
+    "id": "settings_shareSingleplayerHint",
+    "params": []
+  },
+  "settings.save": {
+    "id": "settings_save",
+    "params": []
+  },
+  "settings.replay": {
+    "id": "settings_replay",
+    "params": []
+  },
+  "settings.download": {
+    "id": "settings_download",
+    "params": []
+  },
+  "settings.import": {
+    "id": "settings_import",
+    "params": []
+  },
+  "settings.manage": {
+    "id": "settings_manage",
+    "params": []
+  },
+  "settings.language": {
+    "id": "settings_language",
+    "params": []
+  },
+  "settings.gameVersion": {
+    "id": "settings_gameVersion",
+    "params": []
+  },
+  "settings.version.original": {
+    "id": "settings_version_original",
+    "params": []
+  },
+  "settings.version.beauty": {
+    "id": "settings_version_beauty",
+    "params": []
+  },
+  "settings.version.hint": {
+    "id": "settings_version_hint",
+    "params": []
+  },
+  "settings.gameLanguage": {
+    "id": "settings_gameLanguage",
+    "params": []
+  },
+  "settings.music": {
+    "id": "settings_music",
+    "params": []
+  },
+  "gameLanguage.ja": {
+    "id": "gameLanguage_ja",
+    "params": []
+  },
+  "gameLanguage.zhHans": {
+    "id": "gameLanguage_zhHans",
+    "params": []
+  },
+  "gameLanguage.zhHant": {
+    "id": "gameLanguage_zhHant",
+    "params": []
+  },
+  "gameLanguage.en": {
+    "id": "gameLanguage_en",
+    "params": []
+  },
+  "gameLanguage.ru": {
+    "id": "gameLanguage_ru",
+    "params": []
+  },
+  "settings.musicMode": {
+    "id": "settings_musicMode",
+    "params": []
+  },
+  "settings.music.oggStream": {
+    "id": "settings_music_oggStream",
+    "params": []
+  },
+  "settings.music.oggFull": {
+    "id": "settings_music_oggFull",
+    "params": []
+  },
+  "settings.music.none": {
+    "id": "settings_music_none",
+    "params": []
+  },
+  "settings.frameLimit": {
+    "id": "settings_frameLimit",
+    "params": []
+  },
+  "settings.pixelPerfect": {
+    "id": "settings_pixelPerfect",
+    "params": []
+  },
+  "settings.externalMidi": {
+    "id": "settings_externalMidi",
+    "params": []
+  },
+  "settings.externalMidiHint": {
+    "id": "settings_externalMidiHint",
+    "params": []
+  },
+  "settings.externalMidiDevice": {
+    "id": "settings_externalMidiDevice",
+    "params": []
+  },
+  "settings.externalMidiNoDeviceOption": {
+    "id": "settings_externalMidiNoDeviceOption",
+    "params": []
+  },
+  "settings.externalMidiUnsupported": {
+    "id": "settings_externalMidiUnsupported",
+    "params": []
+  },
+  "settings.externalMidiPending": {
+    "id": "settings_externalMidiPending",
+    "params": []
+  },
+  "settings.externalMidiNoDevice": {
+    "id": "settings_externalMidiNoDevice",
+    "params": []
+  },
+  "settings.externalMidiSysexDenied": {
+    "id": "settings_externalMidiSysexDenied",
+    "params": []
+  },
+  "settings.externalMidiConnected": {
+    "id": "settings_externalMidiConnected",
+    "params": ["count"]
+  },
+  "settings.externalMidiDenied": {
+    "id": "settings_externalMidiDenied",
+    "params": []
+  },
+  "settings.externalMidiFailed": {
+    "id": "settings_externalMidiFailed",
+    "params": ["reason"]
+  },
+  "settings.frameLimitHint": {
+    "id": "settings_frameLimitHint",
+    "params": []
+  },
+  "settings.appleNotice": {
+    "id": "settings_appleNotice",
+    "params": []
+  },
+  "settings.localPlayerVisibility": {
+    "id": "settings_localPlayerVisibility",
+    "params": []
+  },
+  "settings.localPlayerVisibilityHint": {
+    "id": "settings_localPlayerVisibilityHint",
+    "params": []
+  },
+  "options.touch": {
+    "id": "options_touch",
+    "params": []
+  },
+  "options.files": {
+    "id": "options_files",
+    "params": []
+  },
+  "settings.faithBar": {
+    "id": "settings_faithBar",
+    "params": []
+  },
+  "settings.hint": {
+    "id": "settings_hint",
+    "params": []
+  },
+  "file.chooseHint": {
+    "id": "file_chooseHint",
+    "params": []
+  },
+  "file.hintTooLarge": {
+    "id": "file_hintTooLarge",
+    "params": []
+  },
+  "file.hintDeleted": {
+    "id": "file_hintDeleted",
+    "params": []
+  },
+  "file.hintDeleteVerifyFailed": {
+    "id": "file_hintDeleteVerifyFailed",
+    "params": []
+  },
+  "options.display": {
+    "id": "options_display",
+    "params": []
+  },
+  "options.advanced": {
+    "id": "options_advanced",
+    "params": []
+  },
+  "options.adaptation": {
+    "id": "options_adaptation",
+    "params": []
+  },
+  "settings.mobile": {
+    "id": "settings_mobile",
+    "params": []
+  },
+  "settings.touchEnabled": {
+    "id": "settings_touchEnabled",
+    "params": []
+  },
+  "settings.touchLayout": {
+    "id": "settings_touchLayout",
+    "params": []
+  },
+  "settings.touchLayoutShared": {
+    "id": "settings_touchLayoutShared",
+    "params": []
+  },
+  "settings.edit": {
+    "id": "settings_edit",
+    "params": []
+  },
+  "settings.alwaysHitbox": {
+    "id": "settings_alwaysHitbox",
+    "params": []
+  },
+  "settings.focusHitbox": {
+    "id": "settings_focusHitbox",
+    "params": []
+  },
+  "settings.drawerClose": {
+    "id": "settings_drawerClose",
+    "params": []
+  },
+  "settings.drawerSwipeClose": {
+    "id": "settings_drawerSwipeClose",
+    "params": []
+  },
+  "settings.magnifier": {
+    "id": "settings_magnifier",
+    "params": []
+  },
+  "settings.magnifierHint": {
+    "id": "settings_magnifierHint",
+    "params": []
+  },
+  "settings.magnifierConflict": {
+    "id": "settings_magnifierConflict",
+    "params": []
+  },
+  "settings.thpracMultiplayerDisabled": {
+    "id": "settings_thpracMultiplayerDisabled",
+    "params": []
+  },
+  "settings.thpracHint": {
+    "id": "settings_thpracHint",
+    "params": []
+  },
+  "settings.builtin": {
+    "id": "settings_builtin",
+    "params": []
+  },
+  "settings.webAudioUnavailable": {
+    "id": "settings_webAudioUnavailable",
+    "params": []
+  },
+  "settings.thpracUnavailableMultiplayer": {
+    "id": "settings_thpracUnavailableMultiplayer",
+    "params": []
+  },
+  "action.start": {
+    "id": "action_start",
+    "params": []
+  },
+  "action.startMultiplayer": {
+    "id": "action_startMultiplayer",
+    "params": []
+  },
+  "action.importGameData": {
+    "id": "action_importGameData",
+    "params": []
+  },
+  "action.import": {
+    "id": "action_import",
+    "params": []
+  },
+  "action.back": {
+    "id": "action_back",
+    "params": []
+  },
+  "action.close": {
+    "id": "action_close",
+    "params": []
+  },
+  "action.cancel": {
+    "id": "action_cancel",
+    "params": []
+  },
+  "action.confirm": {
+    "id": "action_confirm",
+    "params": []
+  },
+  "action.backgroundDownload": {
+    "id": "action_backgroundDownload",
+    "params": []
+  },
+  "action.retry": {
+    "id": "action_retry",
+    "params": []
+  },
+  "action.reset": {
+    "id": "action_reset",
+    "params": []
+  },
+  "action.save": {
+    "id": "action_save",
+    "params": []
+  },
+  "action.exit": {
+    "id": "action_exit",
+    "params": []
+  },
+  "action.replay": {
+    "id": "action_replay",
+    "params": []
+  },
+  "action.rename": {
+    "id": "action_rename",
+    "params": []
+  },
+  "action.delete": {
+    "id": "action_delete",
+    "params": []
+  },
+  "action.openLink": {
+    "id": "action_openLink",
+    "params": []
+  },
+  "action.watchReplay": {
+    "id": "action_watchReplay",
+    "params": []
+  },
+  "action.download": {
+    "id": "action_download",
+    "params": []
+  },
+  "action.retrySave": {
+    "id": "action_retrySave",
+    "params": []
+  },
+  "action.leaveAnyway": {
+    "id": "action_leaveAnyway",
+    "params": []
+  },
+  "action.stayInGame": {
+    "id": "action_stayInGame",
+    "params": []
+  },
+  "fullscreen.autoBlocked": {
+    "id": "fullscreen_autoBlocked",
+    "params": ["reason"]
+  },
+  "fullscreen.unsupported": {
+    "id": "fullscreen_unsupported",
+    "params": []
+  },
+  "fullscreen.switchFailed": {
+    "id": "fullscreen_switchFailed",
+    "params": ["reason"]
+  },
+  "replay.renamePrompt": {
+    "id": "replay_renamePrompt",
+    "params": []
+  },
+  "replay.deleteConfirm": {
+    "id": "replay_deleteConfirm",
+    "params": ["name"]
+  },
+  "replay.downloadFailed": {
+    "id": "replay_downloadFailed",
+    "params": ["reason"]
+  },
+  "replay.operationFailed": {
+    "id": "replay_operationFailed",
+    "params": ["reason"]
+  },
+  "replay.deleteFailed": {
+    "id": "replay_deleteFailed",
+    "params": ["reason"]
+  },
+  "touch.layoutSaved": {
+    "id": "touch_layoutSaved",
+    "params": []
+  },
+  "touch.layoutSessionOnly": {
+    "id": "touch_layoutSessionOnly",
+    "params": []
+  },
+  "touch.layoutSavedStatus": {
+    "id": "touch_layoutSavedStatus",
+    "params": []
+  },
+  "touch.layoutDefaultSavedStatus": {
+    "id": "touch_layoutDefaultSavedStatus",
+    "params": []
+  },
+  "touch.layoutSessionOnlyStatus": {
+    "id": "touch_layoutSessionOnlyStatus",
+    "params": []
+  },
+  "touch.layoutEditorClosed": {
+    "id": "touch_layoutEditorClosed",
+    "params": []
+  },
+  "touch.editorStatus": {
+    "id": "touch_editorStatus",
+    "params": []
+  },
+  "touch.viewportEditStatus": {
+    "id": "touch_viewportEditStatus",
+    "params": []
+  },
+  "touch.previewUnavailable": {
+    "id": "touch_previewUnavailable",
+    "params": []
+  },
+  "touch.settingsMissing": {
+    "id": "touch_settingsMissing",
+    "params": []
+  },
+  "touch.draftUnavailable": {
+    "id": "touch_draftUnavailable",
+    "params": []
+  },
+  "touch.editWhileRunning": {
+    "id": "touch_editWhileRunning",
+    "params": []
+  },
+  "touch.orientationUnsupported": {
+    "id": "touch_orientationUnsupported",
+    "params": []
+  },
+  "touch.orientationRequested": {
+    "id": "touch_orientationRequested",
+    "params": ["orientation"]
+  },
+  "touch.orientationFailed": {
+    "id": "touch_orientationFailed",
+    "params": []
+  },
+  "touch.restoreViewport": {
+    "id": "touch_restoreViewport",
+    "params": ["orientation"]
+  },
+  "touch.restoreLayoutConfirm": {
+    "id": "touch_restoreLayoutConfirm",
+    "params": ["orientation"]
+  },
+  "touch.restoreLayoutToast": {
+    "id": "touch_restoreLayoutToast",
+    "params": ["orientation"]
+  },
+  "touch.warningSummary": {
+    "id": "touch_warningSummary",
+    "params": ["issues"]
+  },
+  "touch.warningSeparator": {
+    "id": "touch_warningSeparator",
+    "params": []
+  },
+  "touch.restoreDefault": {
+    "id": "touch_restoreDefault",
+    "params": []
+  },
+  "dialog.saveSyncFailed": {
+    "id": "dialog_saveSyncFailed",
+    "params": ["reason"]
+  },
+  "package.imported": {
+    "id": "package_imported",
+    "params": ["count"]
+  },
+  "package.importedReady": {
+    "id": "package_importedReady",
+    "params": []
+  },
+  "package.importing": {
+    "id": "package_importing",
+    "params": []
+  },
+  "package.continuing": {
+    "id": "package_continuing",
+    "params": []
+  },
+  "package.readyNextLaunch": {
+    "id": "package_readyNextLaunch",
+    "params": []
+  },
+  "package.localLaunching": {
+    "id": "package_localLaunching",
+    "params": []
+  },
+  "package.importServerMissing": {
+    "id": "package_importServerMissing",
+    "params": ["reason"]
+  },
+  "package.importStorageFailed": {
+    "id": "package_importStorageFailed",
+    "params": ["reason"]
+  },
+  "package.importInvalid": {
+    "id": "package_importInvalid",
+    "params": ["reason"]
+  },
+  "package.manualImportIntro": {
+    "id": "package_manualImportIntro",
+    "params": []
+  },
+  "package.needImport": {
+    "id": "package_needImport",
+    "params": []
+  },
+  "package.downloadCancelledImport": {
+    "id": "package_downloadCancelledImport",
+    "params": []
+  },
+  "package.resourceFailureLocal": {
+    "id": "package_resourceFailureLocal",
+    "params": []
+  },
+  "package.resourceFailureStatus": {
+    "id": "package_resourceFailureStatus",
+    "params": []
+  },
+  "package.noLaunchableLocal": {
+    "id": "package_noLaunchableLocal",
+    "params": []
+  },
+  "package.fallbackLinkTitle": {
+    "id": "package_fallbackLinkTitle",
+    "params": []
+  },
+  "package.fallbackLinkUnavailableTitle": {
+    "id": "package_fallbackLinkUnavailableTitle",
+    "params": []
+  },
+  "package.fallbackLinkUnavailable": {
+    "id": "package_fallbackLinkUnavailable",
+    "params": []
+  },
+  "package.manualImportReason": {
+    "id": "package_manualImportReason",
+    "params": ["reason"]
+  },
+  "package.manualCancelledReason": {
+    "id": "package_manualCancelledReason",
+    "params": []
+  },
+  "package.importServerOnly": {
+    "id": "package_importServerOnly",
+    "params": ["reason"]
+  },
+  "package.fallbackWaitOrImport": {
+    "id": "package_fallbackWaitOrImport",
+    "params": ["reason"]
+  },
+  "package.firstByteTimeout": {
+    "id": "package_firstByteTimeout",
+    "params": []
+  },
+  "package.downloadSlow": {
+    "id": "package_downloadSlow",
+    "params": []
+  },
+  "package.downloadStartTimeout": {
+    "id": "package_downloadStartTimeout",
+    "params": []
+  },
+  "package.updateAvailableLocal": {
+    "id": "package_updateAvailableLocal",
+    "params": []
+  },
+  "package.updateAvailableRemote": {
+    "id": "package_updateAvailableRemote",
+    "params": []
+  },
+  "package.updateNow": {
+    "id": "package_updateNow",
+    "params": []
+  },
+  "package.keepCurrent": {
+    "id": "package_keepCurrent",
+    "params": []
+  },
+  "package.cancelUpdate": {
+    "id": "package_cancelUpdate",
+    "params": []
+  },
+  "package.updatingLocal": {
+    "id": "package_updatingLocal",
+    "params": []
+  },
+  "package.updatingRemote": {
+    "id": "package_updatingRemote",
+    "params": []
+  },
+  "package.updatingLocalProgress": {
+    "id": "package_updatingLocalProgress",
+    "params": ["completed", "total"]
+  },
+  "package.updatingRemoteProgress": {
+    "id": "package_updatingRemoteProgress",
+    "params": ["completed", "total"]
+  },
+  "package.updated": {
+    "id": "package_updated",
+    "params": []
+  },
+  "update.readyTitle": {
+    "id": "update_readyTitle",
+    "params": ["game"]
+  },
+  "update.readyMessage": {
+    "id": "update_readyMessage",
+    "params": []
+  },
+  "update.restartNow": {
+    "id": "update_restartNow",
+    "params": []
+  },
+  "update.nextLaunch": {
+    "id": "update_nextLaunch",
+    "params": []
+  },
+  "package.updateCancelled": {
+    "id": "package_updateCancelled",
+    "params": []
+  },
+  "package.updateFailed": {
+    "id": "package_updateFailed",
+    "params": ["reason"]
+  },
+  "transfer.musicDownloading": {
+    "id": "transfer_musicDownloading",
+    "params": []
+  },
+  "transfer.oggMusic": {
+    "id": "transfer_oggMusic",
+    "params": []
+  },
+  "transfer.languageDownloading": {
+    "id": "transfer_languageDownloading",
+    "params": []
+  },
+  "transfer.language": {
+    "id": "transfer_language",
+    "params": []
+  },
+  "transfer.loading": {
+    "id": "transfer_loading",
+    "params": []
+  },
+  "transfer.gameResources": {
+    "id": "transfer_gameResources",
+    "params": []
+  },
+  "transfer.waitingServer": {
+    "id": "transfer_waitingServer",
+    "params": []
+  },
+  "transfer.preparing": {
+    "id": "transfer_preparing",
+    "params": []
+  },
+  "transfer.requesting": {
+    "id": "transfer_requesting",
+    "params": []
+  },
+  "transfer.waiting": {
+    "id": "transfer_waiting",
+    "params": []
+  },
+  "transfer.preparingShort": {
+    "id": "transfer_preparingShort",
+    "params": []
+  },
+  "transfer.languageFailed": {
+    "id": "transfer_languageFailed",
+    "params": []
+  },
+  "transfer.languageFailedDetail": {
+    "id": "transfer_languageFailedDetail",
+    "params": ["reason"]
+  },
+  "transfer.oggFailed": {
+    "id": "transfer_oggFailed",
+    "params": ["count"]
+  },
+  "transfer.musicComplete": {
+    "id": "transfer_musicComplete",
+    "params": []
+  },
+  "transfer.musicPreparing": {
+    "id": "transfer_musicPreparing",
+    "params": []
+  },
+  "transfer.localOgg": {
+    "id": "transfer_localOgg",
+    "params": []
+  },
+  "transfer.musicReady": {
+    "id": "transfer_musicReady",
+    "params": []
+  },
+  "transfer.localOggPartialFailed": {
+    "id": "transfer_localOggPartialFailed",
+    "params": ["reason"]
+  },
+  "transfer.retryingOgg": {
+    "id": "transfer_retryingOgg",
+    "params": []
+  },
+  "transfer.received": {
+    "id": "transfer_received",
+    "params": ["amount"]
+  },
+  "transfer.receiving": {
+    "id": "transfer_receiving",
+    "params": []
+  },
+  "transfer.requestCount": {
+    "id": "transfer_requestCount",
+    "params": ["count"]
+  },
+  "transfer.resourceFallback": {
+    "id": "transfer_resourceFallback",
+    "params": []
+  },
+  "transfer.fetchingGameInfo": {
+    "id": "transfer_fetchingGameInfo",
+    "params": []
+  },
+  "transfer.versionDescriptor": {
+    "id": "transfer_versionDescriptor",
+    "params": ["game"]
+  },
+  "transfer.gameDownloading": {
+    "id": "transfer_gameDownloading",
+    "params": []
+  },
+  "transfer.runtimeDownloading": {
+    "id": "transfer_runtimeDownloading",
+    "params": []
+  },
+  "transfer.runtimeScript": {
+    "id": "transfer_runtimeScript",
+    "params": ["game"]
+  },
+  "transfer.runtimePage": {
+    "id": "transfer_runtimePage",
+    "params": ["game"]
+  },
+  "transfer.resourceDownloading": {
+    "id": "transfer_resourceDownloading",
+    "params": []
+  },
+  "transfer.font": {
+    "id": "transfer_font",
+    "params": ["file"]
+  },
+  "transfer.packageDownloading": {
+    "id": "transfer_packageDownloading",
+    "params": []
+  },
+  "transfer.serverRequesting": {
+    "id": "transfer_serverRequesting",
+    "params": []
+  },
+  "touch.layoutDiscardConfirm": {
+    "id": "touch_layoutDiscardConfirm",
+    "params": []
+  },
+  "touch.discardChanges": {
+    "id": "touch_discardChanges",
+    "params": []
+  },
+  "file.importSaveOverwrite": {
+    "id": "file_importSaveOverwrite",
+    "params": []
+  },
+  "file.continueImport": {
+    "id": "file_continueImport",
+    "params": []
+  },
+  "file.kind.save": {
+    "id": "file_kind_save",
+    "params": []
+  },
+  "file.kind.replay": {
+    "id": "file_kind_replay",
+    "params": []
+  },
+  "file.exportPreparing": {
+    "id": "file_exportPreparing",
+    "params": ["kind"]
+  },
+  "file.exporting": {
+    "id": "file_exporting",
+    "params": ["kind"]
+  },
+  "file.noReplayToExport": {
+    "id": "file_noReplayToExport",
+    "params": []
+  },
+  "file.exportDownloadStarted": {
+    "id": "file_exportDownloadStarted",
+    "params": ["kind"]
+  },
+  "file.exported": {
+    "id": "file_exported",
+    "params": ["kind"]
+  },
+  "file.missingSavePrompt": {
+    "id": "file_missingSavePrompt",
+    "params": []
+  },
+  "file.missingReplayPrompt": {
+    "id": "file_missingReplayPrompt",
+    "params": []
+  },
+  "file.selectImport": {
+    "id": "file_selectImport",
+    "params": []
+  },
+  "file.exportFailed": {
+    "id": "file_exportFailed",
+    "params": ["kind", "reason"]
+  },
+  "file.emptyImport": {
+    "id": "file_emptyImport",
+    "params": []
+  },
+  "file.importTooLarge": {
+    "id": "file_importTooLarge",
+    "params": []
+  },
+  "file.importing": {
+    "id": "file_importing",
+    "params": []
+  },
+  "file.replaySlotsExhausted": {
+    "id": "file_replaySlotsExhausted",
+    "params": []
+  },
+  "file.zipUnsafePath": {
+    "id": "file_zipUnsafePath",
+    "params": []
+  },
+  "file.zipDuplicatePath": {
+    "id": "file_zipDuplicatePath",
+    "params": []
+  },
+  "file.chooseSave": {
+    "id": "file_chooseSave",
+    "params": []
+  },
+  "file.chooseReplay": {
+    "id": "file_chooseReplay",
+    "params": []
+  },
+  "file.importNoFiles": {
+    "id": "file_importNoFiles",
+    "params": []
+  },
+  "file.importDuplicatePaths": {
+    "id": "file_importDuplicatePaths",
+    "params": []
+  },
+  "file.importStoredTooLarge": {
+    "id": "file_importStoredTooLarge",
+    "params": []
+  },
+  "file.importArchiveExpandedTooLarge": {
+    "id": "file_importArchiveExpandedTooLarge",
+    "params": []
+  },
+  "file.zipComponentMissing": {
+    "id": "file_zipComponentMissing",
+    "params": []
+  },
+  "file.saveVerifyFailed": {
+    "id": "file_saveVerifyFailed",
+    "params": []
+  },
+  "file.importedRestart": {
+    "id": "file_importedRestart",
+    "params": ["count"]
+  },
+  "runtime.invalidFileContent": {
+    "id": "runtime_invalidFileContent",
+    "params": []
+  },
+  "runtime.invalidFileList": {
+    "id": "runtime_invalidFileList",
+    "params": []
+  },
+  "runtime.invalidFileEntry": {
+    "id": "runtime_invalidFileEntry",
+    "params": []
+  },
+  "runtime.fsUnavailable": {
+    "id": "runtime_fsUnavailable",
+    "params": []
+  },
+  "runtime.localResourceMissing": {
+    "id": "runtime_localResourceMissing",
+    "params": ["file"]
+  },
+  "runtime.downloadCancelled": {
+    "id": "runtime_downloadCancelled",
+    "params": []
+  },
+  "runtime.missingResourcesPlayer": {
+    "id": "runtime_missingResourcesPlayer",
+    "params": []
+  },
+  "runtime.missingResourcesLauncher": {
+    "id": "runtime_missingResourcesLauncher",
+    "params": []
+  },
+  "runtime.multiplayerContext": {
+    "id": "runtime_multiplayerContext",
+    "params": ["game"]
+  },
+  "runtime.multiplayerPlayerContext": {
+    "id": "runtime_multiplayerPlayerContext",
+    "params": ["game", "player"]
+  },
+  "runtime.requestingServer": {
+    "id": "runtime_requestingServer",
+    "params": []
+  },
+  "runtime.requestTimeoutDetail": {
+    "id": "runtime_requestTimeoutDetail",
+    "params": ["path", "seconds"]
+  },
+  "package.noExternalLink": {
+    "id": "package_noExternalLink",
+    "params": []
+  },
+  "runtime.readingHostManifest": {
+    "id": "runtime_readingHostManifest",
+    "params": []
+  },
+  "runtime.checkingRelease": {
+    "id": "runtime_checkingRelease",
+    "params": []
+  },
+  "diagnostics.netplayRoleSpectator": {
+    "id": "diagnostics_netplayRoleSpectator",
+    "params": ["players"]
+  },
+  "diagnostics.netplayRuntime": {
+    "id": "diagnostics_netplayRuntime",
+    "params": ["room", "role", "runtime"]
+  },
+  "diagnostics.inputDelay": {
+    "id": "diagnostics_inputDelay",
+    "params": ["frames"]
+  },
+  "diagnostics.transportSpectator": {
+    "id": "diagnostics_transportSpectator",
+    "params": []
+  },
+  "diagnostics.transportConnecting": {
+    "id": "diagnostics_transportConnecting",
+    "params": []
+  },
+  "diagnostics.network": {
+    "id": "diagnostics_network",
+    "params": ["transport", "route", "peers", "failure"]
+  },
+  "diagnostics.peerSpectator": {
+    "id": "diagnostics_peerSpectator",
+    "params": []
+  },
+  "diagnostics.sync": {
+    "id": "diagnostics_sync",
+    "params": ["frame", "confirmed", "peers"]
+  },
+  "diagnostics.syncWaiting": {
+    "id": "diagnostics_syncWaiting",
+    "params": []
+  },
+  "diagnostics.spectatorRollback": {
+    "id": "diagnostics_spectatorRollback",
+    "params": []
+  },
+  "diagnostics.rollback": {
+    "id": "diagnostics_rollback",
+    "params": ["rollback", "resimulated", "advantage", "pacing"]
+  },
+  "diagnostics.quality": {
+    "id": "diagnostics_quality",
+    "params": ["rtt", "variation", "stall"]
+  },
+  "diagnostics.inputRecovery": {
+    "id": "diagnostics_inputRecovery",
+    "params": ["missing", "repairs"]
+  },
+  "diagnostics.roundTripLatency": {
+    "id": "diagnostics_roundTripLatency",
+    "params": []
+  },
+  "diagnostics.latencyVariation": {
+    "id": "diagnostics_latencyVariation",
+    "params": []
+  },
+  "diagnostics.peerReconnecting": {
+    "id": "diagnostics_peerReconnecting",
+    "params": []
+  },
+  "diagnostics.iceFallback": {
+    "id": "diagnostics_iceFallback",
+    "params": []
+  },
+  "diagnostics.iceCandidates": {
+    "id": "diagnostics_iceCandidates",
+    "params": []
+  },
+  "diagnostics.frameShort": {
+    "id": "diagnostics_frameShort",
+    "params": ["hz", "age"]
+  },
+  "diagnostics.audioRobust": {
+    "id": "diagnostics_audioRobust",
+    "params": []
+  },
+  "diagnostics.audioUnderruns": {
+    "id": "diagnostics_audioUnderruns",
+    "params": ["count"]
+  },
+  "touch.layoutControlMissing": {
+    "id": "touch_layoutControlMissing",
+    "params": ["name"]
+  },
+  "startup.failed": {
+    "id": "startup_failed",
+    "params": []
+  },
+  "runtime.firstFrameLate": {
+    "id": "runtime_firstFrameLate",
+    "params": []
+  },
+  "runtime.firstFrameDiagnostic": {
+    "id": "runtime_firstFrameDiagnostic",
+    "params": ["diagnostic"]
+  },
+  "runtime.firstFrameContext": {
+    "id": "runtime_firstFrameContext",
+    "params": ["game"]
+  },
+  "runtime.offlineFsUnavailable": {
+    "id": "runtime_offlineFsUnavailable",
+    "params": []
+  },
+  "runtime.offlineReplaced": {
+    "id": "runtime_offlineReplaced",
+    "params": []
+  },
+  "runtime.localOggDescriptorInvalid": {
+    "id": "runtime_localOggDescriptorInvalid",
+    "params": []
+  },
+  "runtime.resourceDamaged": {
+    "id": "runtime_resourceDamaged",
+    "params": ["path"]
+  },
+  "runtime.hostManifestMissingGame": {
+    "id": "runtime_hostManifestMissingGame",
+    "params": ["game"]
+  },
+  "runtime.multiplayerRuntimeMissing": {
+    "id": "runtime_multiplayerRuntimeMissing",
+    "params": ["game"]
+  },
+  "runtime.dataDescriptorMissing": {
+    "id": "runtime_dataDescriptorMissing",
+    "params": ["game"]
+  },
+  "package.invalidDataSize": {
+    "id": "package_invalidDataSize",
+    "params": []
+  },
+  "package.indexedDbUnavailable": {
+    "id": "package_indexedDbUnavailable",
+    "params": []
+  },
+  "package.rawDataSizeMismatch": {
+    "id": "package_rawDataSizeMismatch",
+    "params": ["game", "actual", "expected"]
+  },
+  "package.validatingRawData": {
+    "id": "package_validatingRawData",
+    "params": ["game"]
+  },
+  "package.rawDataHashMismatch": {
+    "id": "package_rawDataHashMismatch",
+    "params": ["game"]
+  },
+  "package.installingRawData": {
+    "id": "package_installingRawData",
+    "params": ["game"]
+  },
+  "package.installingRawDataProgress": {
+    "id": "package_installingRawDataProgress",
+    "params": ["game", "completed", "total"]
+  },
+  "package.wrongGame": {
+    "id": "package_wrongGame",
+    "params": ["actual", "expected"]
+  },
+  "package.importingSimple": {
+    "id": "package_importingSimple",
+    "params": []
+  },
+  "package.importingProgress": {
+    "id": "package_importingProgress",
+    "params": ["completed", "total"]
+  },
+  "package.legacyWrongGame": {
+    "id": "package_legacyWrongGame",
+    "params": ["actual", "expected"]
+  },
+  "package.dataPathMismatch": {
+    "id": "package_dataPathMismatch",
+    "params": []
+  },
+  "package.serverNoContent": {
+    "id": "package_serverNoContent",
+    "params": []
+  },
+  "package.legacyMissingResource": {
+    "id": "package_legacyMissingResource",
+    "params": ["resource"]
+  },
+  "package.missingRequiredResource": {
+    "id": "package_missingRequiredResource",
+    "params": ["resource"]
+  },
+  "package.validatingLocalData": {
+    "id": "package_validatingLocalData",
+    "params": []
+  },
+  "package.dataHashFailed": {
+    "id": "package_dataHashFailed",
+    "params": []
+  },
+  "package.validatingLocalOgg": {
+    "id": "package_validatingLocalOgg",
+    "params": ["completed", "total"]
+  },
+  "package.shaFailed": {
+    "id": "package_shaFailed",
+    "params": ["name"]
+  },
+  "package.validatingLegacyResource": {
+    "id": "package_validatingLegacyResource",
+    "params": ["resource"]
+  },
+  "package.validatingLegacyLanguage": {
+    "id": "package_validatingLegacyLanguage",
+    "params": ["language"]
+  },
+  "package.migratingLegacy": {
+    "id": "package_migratingLegacy",
+    "params": []
+  },
+  "package.migratingLegacyProgress": {
+    "id": "package_migratingLegacyProgress",
+    "params": ["completed", "total"]
+  },
+  "runtime.preparingResources": {
+    "id": "runtime_preparingResources",
+    "params": ["resource"]
+  },
+  "runtime.localMusicGenerationUnavailable": {
+    "id": "runtime_localMusicGenerationUnavailable",
+    "params": []
+  },
+  "runtime.unavailable": {
+    "id": "runtime_unavailable",
+    "params": []
+  },
+  "runtime.localOggFallbackMidi": {
+    "id": "runtime_localOggFallbackMidi",
+    "params": ["reason"]
+  },
+  "runtime.ready": {
+    "id": "runtime_ready",
+    "params": []
+  },
+  "language.fallbackName": {
+    "id": "language_fallbackName",
+    "params": []
+  },
+  "common.selectOption": {
+    "id": "common_selectOption",
+    "params": []
+  },
+  "runtime.multiplayerUnsupported": {
+    "id": "runtime_multiplayerUnsupported",
+    "params": []
+  },
+  "touch.replayWarning": {
+    "id": "touch_replayWarning",
+    "params": []
+  },
+  "touch.unlimitedWarning": {
+    "id": "touch_unlimitedWarning",
+    "params": []
+  },
+  "touch.freeStickWarning": {
+    "id": "touch_freeStickWarning",
+    "params": []
+  },
+  "touch.enableConfirm": {
+    "id": "touch_enableConfirm",
+    "params": []
+  },
+  "touch.disabledInputTitle": {
+    "id": "touch_disabledInputTitle",
+    "params": []
+  },
+  "touch.disabledInputWarning": {
+    "id": "touch_disabledInputWarning",
+    "params": []
+  },
+  "touch.enableAndContinue": {
+    "id": "touch_enableAndContinue",
+    "params": []
+  },
+  "touch.externalInput": {
+    "id": "touch_externalInput",
+    "params": []
+  },
+  "music.noneLaunchWarning": {
+    "id": "music_noneLaunchWarning",
+    "params": []
+  },
+  "music.midiLaunchWarning": {
+    "id": "music_midiLaunchWarning",
+    "params": []
+  },
+  "music.startAnyway": {
+    "id": "music_startAnyway",
+    "params": []
+  },
+  "runtime.switched": {
+    "id": "runtime_switched",
+    "params": []
+  },
+  "music.webAudioUnsupported": {
+    "id": "music_webAudioUnsupported",
+    "params": []
+  },
+  "music.synthMissing": {
+    "id": "music_synthMissing",
+    "params": []
+  },
+  "runtime.notReady": {
+    "id": "runtime_notReady",
+    "params": []
+  },
+  "runtime.operationTimeout": {
+    "id": "runtime_operationTimeout",
+    "params": ["command"]
+  },
+  "runtime.handingLocalData": {
+    "id": "runtime_handingLocalData",
+    "params": []
+  },
+  "runtime.readyStatus": {
+    "id": "runtime_readyStatus",
+    "params": []
+  },
+  "runtime.readyWithMusic": {
+    "id": "runtime_readyWithMusic",
+    "params": ["game", "music"]
+  },
+  "runtime.gameExited": {
+    "id": "runtime_gameExited",
+    "params": []
+  },
+  "runtime.gameExitedAbnormally": {
+    "id": "runtime_gameExitedAbnormally",
+    "params": []
+  },
+  "runtime.startFailed": {
+    "id": "runtime_startFailed",
+    "params": []
+  },
+  "runtime.operationFailed": {
+    "id": "runtime_operationFailed",
+    "params": []
+  },
+  "runtime.preparingLocal": {
+    "id": "runtime_preparingLocal",
+    "params": []
+  },
+  "runtime.localGameLabel": {
+    "id": "runtime_localGameLabel",
+    "params": ["game"]
+  },
+  "runtime.localLoadTimeout": {
+    "id": "runtime_localLoadTimeout",
+    "params": []
+  },
+  "music.initialOggIncomplete": {
+    "id": "music_initialOggIncomplete",
+    "params": []
+  },
+  "music.cancelDownload": {
+    "id": "music_cancelDownload",
+    "params": []
+  },
+  "music.preparingInitialOgg": {
+    "id": "music_preparingInitialOgg",
+    "params": []
+  },
+  "music.preparingInitialOggProgress": {
+    "id": "music_preparingInitialOggProgress",
+    "params": ["completed", "total"]
+  },
+  "music.initialOggPersistFailed": {
+    "id": "music_initialOggPersistFailed",
+    "params": []
+  },
+  "music.initialOggFailed": {
+    "id": "music_initialOggFailed",
+    "params": ["reason"]
+  },
+  "package.cancelDownload": {
+    "id": "package_cancelDownload",
+    "params": []
+  },
+  "package.installingResources": {
+    "id": "package_installingResources",
+    "params": []
+  },
+  "package.installingResourcesProgress": {
+    "id": "package_installingResourcesProgress",
+    "params": ["completed", "total"]
+  },
+  "package.installFailedUsingExisting": {
+    "id": "package_installFailedUsingExisting",
+    "params": ["reason"]
+  },
+  "package.remoteUnavailableNoLocal": {
+    "id": "package_remoteUnavailableNoLocal",
+    "params": ["game", "reason"]
+  },
+  "package.releaseNotReadyNoLocal": {
+    "id": "package_releaseNotReadyNoLocal",
+    "params": ["game"]
+  },
+  "package.importServerNoFiles": {
+    "id": "package_importServerNoFiles",
+    "params": []
+  },
+  "runtime.loadingGameData": {
+    "id": "runtime_loadingGameData",
+    "params": []
+  },
+  "runtime.requestingComponent": {
+    "id": "runtime_requestingComponent",
+    "params": []
+  },
+  "runtime.requestingComponentLabel": {
+    "id": "runtime_requestingComponentLabel",
+    "params": ["game"]
+  },
+  "runtime.gameLoadTimeout": {
+    "id": "runtime_gameLoadTimeout",
+    "params": []
+  },
+  "runtime.loadTimedOutImport": {
+    "id": "runtime_loadTimedOutImport",
+    "params": []
+  },
+  "music.packageUrlInvalid": {
+    "id": "music_packageUrlInvalid",
+    "params": []
+  },
+  "music.packageResourceInvalid": {
+    "id": "music_packageResourceInvalid",
+    "params": []
+  },
+  "music.manifestInvalid": {
+    "id": "music_manifestInvalid",
+    "params": []
+  },
+  "music.fileNameInvalid": {
+    "id": "music_fileNameInvalid",
+    "params": []
+  },
+  "runtime.sharedFontManifestInvalid": {
+    "id": "runtime_sharedFontManifestInvalid",
+    "params": []
+  },
+  "language.downloadComplete": {
+    "id": "language_downloadComplete",
+    "params": []
+  },
+  "language.cancelDownload": {
+    "id": "language_cancelDownload",
+    "params": []
+  },
+  "language.downloading": {
+    "id": "language_downloading",
+    "params": []
+  },
+  "language.requesting": {
+    "id": "language_requesting",
+    "params": ["language"]
+  },
+  "language.streamTimeout": {
+    "id": "language_streamTimeout",
+    "params": ["path"]
+  },
+  "language.localMissing": {
+    "id": "language_localMissing",
+    "params": []
+  },
+  "language.empty": {
+    "id": "language_empty",
+    "params": []
+  },
+  "language.sizeError": {
+    "id": "language_sizeError",
+    "params": []
+  },
+  "language.hashError": {
+    "id": "language_hashError",
+    "params": []
+  },
+  "language.launchFallback": {
+    "id": "language_launchFallback",
+    "params": ["language", "reason"]
+  },
+  "replay.unsupported": {
+    "id": "replay_unsupported",
+    "params": []
+  },
+  "multiplayer.noProduct": {
+    "id": "multiplayer_noProduct",
+    "params": []
+  },
+  "multiplayer.replayMenuOpened": {
+    "id": "multiplayer_replayMenuOpened",
+    "params": ["game"]
+  },
+  "multiplayer.replayContext": {
+    "id": "multiplayer_replayContext",
+    "params": ["game"]
+  },
+  "multiplayer.roomStateInvalid": {
+    "id": "multiplayer_roomStateInvalid",
+    "params": []
+  },
+  "multiplayer.relayUrlInvalid": {
+    "id": "multiplayer_relayUrlInvalid",
+    "params": []
+  },
+  "multiplayer.loadoutEmpty": {
+    "id": "multiplayer_loadoutEmpty",
+    "params": []
+  },
+  "ui.cardImageContainerMissing": {
+    "id": "ui_cardImageContainerMissing",
+    "params": []
+  },
+  "multiplayer.serviceMissing": {
+    "id": "multiplayer_serviceMissing",
+    "params": []
+  },
+  "multiplayer.configLoading": {
+    "id": "multiplayer_configLoading",
+    "params": []
+  },
+  "status.selectedLanguage": {
+    "id": "status_selectedLanguage",
+    "params": ["language"]
+  },
+  "music.webAudioFallback": {
+    "id": "music_webAudioFallback",
+    "params": []
+  },
+  "status.musicNone": {
+    "id": "status_musicNone",
+    "params": []
+  },
+  "status.musicMode": {
+    "id": "status_musicMode",
+    "params": ["music"]
+  },
+  "notice.restoreHint": {
+    "id": "notice_restoreHint",
+    "params": []
+  },
+  "package.objectNotPersisted": {
+    "id": "package_objectNotPersisted",
+    "params": []
+  },
+  "music.backgroundInterrupted": {
+    "id": "music_backgroundInterrupted",
+    "params": ["reason"]
+  },
+  "multiplayer.loadout.reimuA": {
+    "id": "multiplayer_loadout_reimuA",
+    "params": []
+  },
+  "multiplayer.loadout.reimuB": {
+    "id": "multiplayer_loadout_reimuB",
+    "params": []
+  },
+  "multiplayer.loadout.reimuC": {
+    "id": "multiplayer_loadout_reimuC",
+    "params": []
+  },
+  "multiplayer.loadout.marisaA": {
+    "id": "multiplayer_loadout_marisaA",
+    "params": []
+  },
+  "multiplayer.loadout.marisaB": {
+    "id": "multiplayer_loadout_marisaB",
+    "params": []
+  },
+  "multiplayer.loadout.marisaC": {
+    "id": "multiplayer_loadout_marisaC",
+    "params": []
+  },
+  "multiplayer.loadout.sakuyaA": {
+    "id": "multiplayer_loadout_sakuyaA",
+    "params": []
+  },
+  "multiplayer.loadout.sakuyaB": {
+    "id": "multiplayer_loadout_sakuyaB",
+    "params": []
+  },
+  "multiplayer.loadout.th08.reimuYukari": {
+    "id": "multiplayer_loadout_th08_reimuYukari",
+    "params": []
+  },
+  "multiplayer.loadout.th08.marisaAlice": {
+    "id": "multiplayer_loadout_th08_marisaAlice",
+    "params": []
+  },
+  "multiplayer.loadout.th08.sakuyaRemilia": {
+    "id": "multiplayer_loadout_th08_sakuyaRemilia",
+    "params": []
+  },
+  "multiplayer.loadout.th08.youmuYuyuko": {
+    "id": "multiplayer_loadout_th08_youmuYuyuko",
+    "params": []
+  },
+  "multiplayer.loadout.th08.reimu": {
+    "id": "multiplayer_loadout_th08_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.th08.yukari": {
+    "id": "multiplayer_loadout_th08_yukari",
+    "params": []
+  },
+  "multiplayer.loadout.th08.marisa": {
+    "id": "multiplayer_loadout_th08_marisa",
+    "params": []
+  },
+  "multiplayer.loadout.th08.alice": {
+    "id": "multiplayer_loadout_th08_alice",
+    "params": []
+  },
+  "multiplayer.loadout.th08.sakuya": {
+    "id": "multiplayer_loadout_th08_sakuya",
+    "params": []
+  },
+  "multiplayer.loadout.th08.remilia": {
+    "id": "multiplayer_loadout_th08_remilia",
+    "params": []
+  },
+  "multiplayer.loadout.th08.youmu": {
+    "id": "multiplayer_loadout_th08_youmu",
+    "params": []
+  },
+  "multiplayer.loadout.th08.yuyuko": {
+    "id": "multiplayer_loadout_th08_yuyuko",
+    "params": []
+  },
+  "multiplayer.loadout.th09_0": {
+    "id": "multiplayer_loadout_th09_0",
+    "params": []
+  },
+  "multiplayer.loadout.th09_1": {
+    "id": "multiplayer_loadout_th09_1",
+    "params": []
+  },
+  "multiplayer.loadout.th09_2": {
+    "id": "multiplayer_loadout_th09_2",
+    "params": []
+  },
+  "multiplayer.loadout.th09_3": {
+    "id": "multiplayer_loadout_th09_3",
+    "params": []
+  },
+  "multiplayer.loadout.th09_4": {
+    "id": "multiplayer_loadout_th09_4",
+    "params": []
+  },
+  "multiplayer.loadout.th09_5": {
+    "id": "multiplayer_loadout_th09_5",
+    "params": []
+  },
+  "multiplayer.loadout.th09_6": {
+    "id": "multiplayer_loadout_th09_6",
+    "params": []
+  },
+  "multiplayer.loadout.th09_7": {
+    "id": "multiplayer_loadout_th09_7",
+    "params": []
+  },
+  "multiplayer.loadout.th09_8": {
+    "id": "multiplayer_loadout_th09_8",
+    "params": []
+  },
+  "multiplayer.loadout.th09_9": {
+    "id": "multiplayer_loadout_th09_9",
+    "params": []
+  },
+  "multiplayer.loadout.th09_10": {
+    "id": "multiplayer_loadout_th09_10",
+    "params": []
+  },
+  "multiplayer.loadout.th09_11": {
+    "id": "multiplayer_loadout_th09_11",
+    "params": []
+  },
+  "multiplayer.loadout.th09_12": {
+    "id": "multiplayer_loadout_th09_12",
+    "params": []
+  },
+  "multiplayer.loadout.th09_13": {
+    "id": "multiplayer_loadout_th09_13",
+    "params": []
+  },
+  "multiplayer.loadout.th09_14": {
+    "id": "multiplayer_loadout_th09_14",
+    "params": []
+  },
+  "multiplayer.loadout.th09_15": {
+    "id": "multiplayer_loadout_th09_15",
+    "params": []
+  },
+  "replay.dropSingle": {
+    "id": "replay_dropSingle",
+    "params": []
+  },
+  "replay.dropType": {
+    "id": "replay_dropType",
+    "params": []
+  },
+  "replay.importFailed": {
+    "id": "replay_importFailed",
+    "params": ["reason"]
+  },
+  "status.errorReason": {
+    "id": "status_errorReason",
+    "params": ["reason"]
+  },
+  "replay.nameEmpty": {
+    "id": "replay_nameEmpty",
+    "params": []
+  },
+  "replay.nameInvalid": {
+    "id": "replay_nameInvalid",
+    "params": ["prefix", "prefix"]
+  },
+  "replay.nameExists": {
+    "id": "replay_nameExists",
+    "params": []
+  },
+  "multiplayer.title": {
+    "id": "multiplayer_title",
+    "params": []
+  },
+  "multiplayer.createRoom": {
+    "id": "multiplayer_createRoom",
+    "params": []
+  },
+  "multiplayer.or": {
+    "id": "multiplayer_or",
+    "params": []
+  },
+  "multiplayer.roomCode": {
+    "id": "multiplayer_roomCode",
+    "params": []
+  },
+  "multiplayer.roomCodePlaceholder": {
+    "id": "multiplayer_roomCodePlaceholder",
+    "params": []
+  },
+  "multiplayer.joinRoom": {
+    "id": "multiplayer_joinRoom",
+    "params": []
+  },
+  "multiplayer.roomAria": {
+    "id": "multiplayer_roomAria",
+    "params": []
+  },
+  "multiplayer.host": {
+    "id": "multiplayer_host",
+    "params": []
+  },
+  "multiplayer.you": {
+    "id": "multiplayer_you",
+    "params": []
+  },
+  "multiplayer.join": {
+    "id": "multiplayer_join",
+    "params": []
+  },
+  "multiplayer.spectators": {
+    "id": "multiplayer_spectators",
+    "params": []
+  },
+  "multiplayer.spectate": {
+    "id": "multiplayer_spectate",
+    "params": []
+  },
+  "multiplayer.joinSpectator": {
+    "id": "multiplayer_joinSpectator",
+    "params": []
+  },
+  "multiplayer.leaveSpectator": {
+    "id": "multiplayer_leaveSpectator",
+    "params": []
+  },
+  "multiplayer.name": {
+    "id": "multiplayer_name",
+    "params": []
+  },
+  "multiplayer.namePlaceholder": {
+    "id": "multiplayer_namePlaceholder",
+    "params": []
+  },
+  "multiplayer.nameAria": {
+    "id": "multiplayer_nameAria",
+    "params": []
+  },
+  "multiplayer.spectating": {
+    "id": "multiplayer_spectating",
+    "params": []
+  },
+  "multiplayer.chooseSeat": {
+    "id": "multiplayer_chooseSeat",
+    "params": []
+  },
+  "multiplayer.previousCharacter": {
+    "id": "multiplayer_previousCharacter",
+    "params": []
+  },
+  "multiplayer.nextCharacter": {
+    "id": "multiplayer_nextCharacter",
+    "params": []
+  },
+  "multiplayer.leaveSeat": {
+    "id": "multiplayer_leaveSeat",
+    "params": []
+  },
+  "multiplayer.copyRoomCode": {
+    "id": "multiplayer_copyRoomCode",
+    "params": []
+  },
+  "multiplayer.copyHint": {
+    "id": "multiplayer_copyHint",
+    "params": []
+  },
+  "multiplayer.ready": {
+    "id": "multiplayer_ready",
+    "params": []
+  },
+  "multiplayer.readyDone": {
+    "id": "multiplayer_readyDone",
+    "params": []
+  },
+  "multiplayer.checkGame": {
+    "id": "multiplayer_checkGame",
+    "params": []
+  },
+  "multiplayer.checkingGame": {
+    "id": "multiplayer_checkingGame",
+    "params": []
+  },
+  "multiplayer.checkGamePassed": {
+    "id": "multiplayer_checkGamePassed",
+    "params": []
+  },
+  "multiplayer.checkGameFailed": {
+    "id": "multiplayer_checkGameFailed",
+    "params": ["reason"]
+  },
+  "multiplayer.waitHost": {
+    "id": "multiplayer_waitHost",
+    "params": []
+  },
+  "multiplayer.waitReady": {
+    "id": "multiplayer_waitReady",
+    "params": []
+  },
+  "multiplayer.players": {
+    "id": "multiplayer_players",
+    "params": []
+  },
+  "multiplayer.difficulty": {
+    "id": "multiplayer_difficulty",
+    "params": []
+  },
+  "multiplayer.settingsHint": {
+    "id": "multiplayer_settingsHint",
+    "params": []
+  },
+  "multiplayer.ownerMissing": {
+    "id": "multiplayer_ownerMissing",
+    "params": []
+  },
+  "multiplayer.ownerLocalHint": {
+    "id": "multiplayer_ownerLocalHint",
+    "params": []
+  },
+  "multiplayer.ownerRemoteHint": {
+    "id": "multiplayer_ownerRemoteHint",
+    "params": []
+  },
+  "multiplayer.syncingMembers": {
+    "id": "multiplayer_syncingMembers",
+    "params": []
+  },
+  "multiplayer.reconnecting": {
+    "id": "multiplayer_reconnecting",
+    "params": []
+  },
+  "multiplayer.youAreHost": {
+    "id": "multiplayer_youAreHost",
+    "params": []
+  },
+  "multiplayer.takeHostSeat": {
+    "id": "multiplayer_takeHostSeat",
+    "params": []
+  },
+  "multiplayer.playerReconnecting": {
+    "id": "multiplayer_playerReconnecting",
+    "params": []
+  },
+  "multiplayer.unnamedSpectator": {
+    "id": "multiplayer_unnamedSpectator",
+    "params": []
+  },
+  "multiplayer.nameEditableHint": {
+    "id": "multiplayer_nameEditableHint",
+    "params": []
+  },
+  "multiplayer.connectingRoom": {
+    "id": "multiplayer_connectingRoom",
+    "params": []
+  },
+  "multiplayer.spectatorSeat": {
+    "id": "multiplayer_spectatorSeat",
+    "params": []
+  },
+  "multiplayer.notSeated": {
+    "id": "multiplayer_notSeated",
+    "params": []
+  },
+  "multiplayer.syncingState": {
+    "id": "multiplayer_syncingState",
+    "params": []
+  },
+  "multiplayer.waitSpectatorStream": {
+    "id": "multiplayer_waitSpectatorStream",
+    "params": []
+  },
+  "multiplayer.chooseSeatOrSpectate": {
+    "id": "multiplayer_chooseSeatOrSpectate",
+    "params": []
+  },
+  "multiplayer.startGame": {
+    "id": "multiplayer_startGame",
+    "params": []
+  },
+  "multiplayer.gameSettings": {
+    "id": "multiplayer_gameSettings",
+    "params": []
+  },
+  "multiplayer.connection": {
+    "id": "multiplayer_connection",
+    "params": []
+  },
+  "multiplayer.connectingPeers": {
+    "id": "multiplayer_connectingPeers",
+    "params": []
+  },
+  "multiplayer.waitingPath": {
+    "id": "multiplayer_waitingPath",
+    "params": []
+  },
+  "networkCheck.action": {
+    "id": "networkCheck_action",
+    "params": []
+  },
+  "networkCheck.title": {
+    "id": "networkCheck_title",
+    "params": []
+  },
+  "networkCheck.serverCapability": {
+    "id": "networkCheck_serverCapability",
+    "params": []
+  },
+  "networkCheck.directCapability": {
+    "id": "networkCheck_directCapability",
+    "params": []
+  },
+  "networkCheck.checking": {
+    "id": "networkCheck_checking",
+    "params": []
+  },
+  "networkCheck.wsLatency": {
+    "id": "networkCheck_wsLatency",
+    "params": ["latency"]
+  },
+  "networkCheck.turnLatency": {
+    "id": "networkCheck_turnLatency",
+    "params": ["latency"]
+  },
+  "networkCheck.failed": {
+    "id": "networkCheck_failed",
+    "params": []
+  },
+  "networkCheck.unavailable": {
+    "id": "networkCheck_unavailable",
+    "params": []
+  },
+  "networkCheck.ipv6Available": {
+    "id": "networkCheck_ipv6Available",
+    "params": []
+  },
+  "networkCheck.ipv6Unavailable": {
+    "id": "networkCheck_ipv6Unavailable",
+    "params": []
+  },
+  "multiplayerGuide.action": {
+    "id": "multiplayerGuide_action",
+    "params": []
+  },
+  "multiplayerGuide.title": {
+    "id": "multiplayerGuide_title",
+    "params": []
+  },
+  "multiplayerGuide.close": {
+    "id": "multiplayerGuide_close",
+    "params": []
+  },
+  "multiplayerGuide.loading": {
+    "id": "multiplayerGuide_loading",
+    "params": []
+  },
+  "multiplayerGuide.readFailed": {
+    "id": "multiplayerGuide_readFailed",
+    "params": ["reason"]
+  },
+  "dialog.closeNotice": {
+    "id": "dialog_closeNotice",
+    "params": []
+  },
+  "dialog.closeError": {
+    "id": "dialog_closeError",
+    "params": []
+  },
+  "dialog.errorTitle": {
+    "id": "dialog_errorTitle",
+    "params": []
+  },
+  "dialog.copyError": {
+    "id": "dialog_copyError",
+    "params": []
+  },
+  "dialog.errorCopied": {
+    "id": "dialog_errorCopied",
+    "params": []
+  },
+  "dialog.errorCopyFailed": {
+    "id": "dialog_errorCopyFailed",
+    "params": []
+  },
+  "dialog.confirmTitle": {
+    "id": "dialog_confirmTitle",
+    "params": []
+  },
+  "firstUseNotice.title": {
+    "id": "firstUseNotice_title",
+    "params": []
+  },
+  "browserWarning.title": {
+    "id": "browserWarning_title",
+    "params": []
+  },
+  "browserWarning.message": {
+    "id": "browserWarning_message",
+    "params": []
+  },
+  "action.viewFaq": {
+    "id": "action_viewFaq",
+    "params": []
+  },
+  "action.continueVisit": {
+    "id": "action_continueVisit",
+    "params": []
+  },
+  "firstUseNotice.close": {
+    "id": "firstUseNotice_close",
+    "params": []
+  },
+  "firstUseNotice.loading": {
+    "id": "firstUseNotice_loading",
+    "params": []
+  },
+  "firstUseNotice.swipeToClose": {
+    "id": "firstUseNotice_swipeToClose",
+    "params": []
+  },
+  "firstUseNotice.empty": {
+    "id": "firstUseNotice_empty",
+    "params": []
+  },
+  "firstUseNotice.readFailed": {
+    "id": "firstUseNotice_readFailed",
+    "params": ["reason"]
+  },
+  "apple.close": {
+    "id": "apple_close",
+    "params": []
+  },
+  "apple.faqAria": {
+    "id": "apple_faqAria",
+    "params": []
+  },
+  "apple.highRefreshQuestion": {
+    "id": "apple_highRefreshQuestion",
+    "params": []
+  },
+  "apple.highRefreshIntro": {
+    "id": "apple_highRefreshIntro",
+    "params": []
+  },
+  "apple.highRefreshPath": {
+    "id": "apple_highRefreshPath",
+    "params": []
+  },
+  "apple.highRefreshStep": {
+    "id": "apple_highRefreshStep",
+    "params": []
+  },
+  "apple.highRefreshResult": {
+    "id": "apple_highRefreshResult",
+    "params": []
+  },
+  "apple.lowFpsQuestion": {
+    "id": "apple_lowFpsQuestion",
+    "params": []
+  },
+  "apple.lowPowerStep": {
+    "id": "apple_lowPowerStep",
+    "params": []
+  },
+  "replay.manager": {
+    "id": "replay_manager",
+    "params": []
+  },
+  "replay.dropHint": {
+    "id": "replay_dropHint",
+    "params": []
+  },
+  "replay.fileCount": {
+    "id": "replay_fileCount",
+    "params": ["count"]
+  },
+  "replay.fileCountZero": {
+    "id": "replay_fileCountZero",
+    "params": []
+  },
+  "replay.import": {
+    "id": "replay_import",
+    "params": []
+  },
+  "replay.loading": {
+    "id": "replay_loading",
+    "params": []
+  },
+  "replay.empty": {
+    "id": "replay_empty",
+    "params": []
+  },
+  "replay.readFailed": {
+    "id": "replay_readFailed",
+    "params": []
+  },
+  "player.preparing": {
+    "id": "player_preparing",
+    "params": []
+  },
+  "player.oggNotReady": {
+    "id": "player_oggNotReady",
+    "params": []
+  },
+  "player.oggFallback": {
+    "id": "player_oggFallback",
+    "params": []
+  },
+  "player.loading": {
+    "id": "player_loading",
+    "params": []
+  },
+  "player.gameData": {
+    "id": "player_gameData",
+    "params": []
+  },
+  "player.cancelDownload": {
+    "id": "player_cancelDownload",
+    "params": []
+  },
+  "package.label": {
+    "id": "package_label",
+    "params": []
+  },
+  "package.importTitle": {
+    "id": "package_importTitle",
+    "params": []
+  },
+  "package.unavailable": {
+    "id": "package_unavailable",
+    "params": []
+  },
+  "package.installing": {
+    "id": "package_installing",
+    "params": []
+  },
+  "package.closeImport": {
+    "id": "package_closeImport",
+    "params": []
+  },
+  "package.downloadLink": {
+    "id": "package_downloadLink",
+    "params": []
+  },
+  "package.downloadTitle": {
+    "id": "package_downloadTitle",
+    "params": []
+  },
+  "package.closeLink": {
+    "id": "package_closeLink",
+    "params": []
+  },
+  "package.openLinkAria": {
+    "id": "package_openLinkAria",
+    "params": []
+  },
+  "package.link": {
+    "id": "package_link",
+    "params": []
+  },
+  "package.codeHint": {
+    "id": "package_codeHint",
+    "params": []
+  },
+  "common.none": {
+    "id": "common_none",
+    "params": []
+  },
+  "touch.reserved": {
+    "id": "touch_reserved",
+    "params": []
+  },
+  "touch.editorTitle": {
+    "id": "touch_editorTitle",
+    "params": []
+  },
+  "touch.workbenchTitle": {
+    "id": "touch_workbenchTitle",
+    "params": []
+  },
+  "touch.layoutTab": {
+    "id": "touch_layoutTab",
+    "params": []
+  },
+  "touch.moreLayoutOptions": {
+    "id": "touch_moreLayoutOptions",
+    "params": []
+  },
+  "touch.pickControl": {
+    "id": "touch_pickControl",
+    "params": []
+  },
+  "touch.arrangeHint": {
+    "id": "touch_arrangeHint",
+    "params": []
+  },
+  "touch.independentLayoutHint": {
+    "id": "touch_independentLayoutHint",
+    "params": []
+  },
+  "touch.profileHint": {
+    "id": "touch_profileHint",
+    "params": []
+  },
+  "touch.collapsePanel": {
+    "id": "touch_collapsePanel",
+    "params": []
+  },
+  "touch.expandPanel": {
+    "id": "touch_expandPanel",
+    "params": []
+  },
+  "touch.layoutSaveHint": {
+    "id": "touch_layoutSaveHint",
+    "params": []
+  },
+  "touch.saveLayout": {
+    "id": "touch_saveLayout",
+    "params": []
+  },
+  "touch.settingsAutoSaveHint": {
+    "id": "touch_settingsAutoSaveHint",
+    "params": []
+  },
+  "touch.landscape": {
+    "id": "touch_landscape",
+    "params": []
+  },
+  "touch.portrait": {
+    "id": "touch_portrait",
+    "params": []
+  },
+  "touch.selected": {
+    "id": "touch_selected",
+    "params": ["control"]
+  },
+  "touch.editorInstruction": {
+    "id": "touch_editorInstruction",
+    "params": []
+  },
+  "touch.sharedLayout": {
+    "id": "touch_sharedLayout",
+    "params": []
+  },
+  "touch.separateLayouts": {
+    "id": "touch_separateLayouts",
+    "params": []
+  },
+  "touch.dragWindow": {
+    "id": "touch_dragWindow",
+    "params": []
+  },
+  "touch.size": {
+    "id": "touch_size",
+    "params": []
+  },
+  "touch.switchOrientation": {
+    "id": "touch_switchOrientation",
+    "params": []
+  },
+  "touch.restoreDirection": {
+    "id": "touch_restoreDirection",
+    "params": []
+  },
+  "touch.settingsAria": {
+    "id": "touch_settingsAria",
+    "params": []
+  },
+  "touch.movement": {
+    "id": "touch_movement",
+    "params": []
+  },
+  "touch.movement.touch": {
+    "id": "touch_movement_touch",
+    "params": []
+  },
+  "touch.movement.unlimited": {
+    "id": "touch_movement_unlimited",
+    "params": []
+  },
+  "touch.movement.joystick": {
+    "id": "touch_movement_joystick",
+    "params": []
+  },
+  "touch.movement.joystickFree": {
+    "id": "touch_movement_joystickFree",
+    "params": []
+  },
+  "touch.focusMethod": {
+    "id": "touch_focusMethod",
+    "params": []
+  },
+  "touch.focus.hold": {
+    "id": "touch_focus_hold",
+    "params": []
+  },
+  "touch.focus.toggle": {
+    "id": "touch_focus_toggle",
+    "params": []
+  },
+  "touch.focus.twoFinger": {
+    "id": "touch_focus_twoFinger",
+    "params": []
+  },
+  "touch.doubleTapBomb": {
+    "id": "touch_doubleTapBomb",
+    "params": []
+  },
+  "touch.doubleTapBombHint": {
+    "id": "touch_doubleTapBombHint",
+    "params": []
+  },
+  "touch.thpracButtons": {
+    "id": "touch_thpracButtons",
+    "params": []
+  },
+  "touch.thpracButtonsHint": {
+    "id": "touch_thpracButtonsHint",
+    "params": []
+  },
+  "touch.advancedMenu": {
+    "id": "touch_advancedMenu",
+    "params": []
+  },
+  "touch.sensitivity": {
+    "id": "touch_sensitivity",
+    "params": []
+  },
+  "touch.sensitivityHint": {
+    "id": "touch_sensitivityHint",
+    "params": []
+  },
+  "touch.sensitivityPresets": {
+    "id": "touch_sensitivityPresets",
+    "params": []
+  },
+  "touch.custom": {
+    "id": "touch_custom",
+    "params": []
+  },
+  "touch.customSensitivity": {
+    "id": "touch_customSensitivity",
+    "params": []
+  },
+  "touch.viewportPosition": {
+    "id": "touch_viewportPosition",
+    "params": []
+  },
+  "touch.viewportHint": {
+    "id": "touch_viewportHint",
+    "params": []
+  },
+  "touch.adjustViewport": {
+    "id": "touch_adjustViewport",
+    "params": []
+  },
+  "touch.adjustDone": {
+    "id": "touch_adjustDone",
+    "params": []
+  },
+  "touch.leftControls": {
+    "id": "touch_leftControls",
+    "params": []
+  },
+  "touch.focus": {
+    "id": "touch_focus",
+    "params": []
+  },
+  "touch.specialFunction": {
+    "id": "touch_specialFunction",
+    "params": []
+  },
+  "touch.functionKeyHint": {
+    "id": "touch_functionKeyHint",
+    "params": []
+  },
+  "touch.holdFocus": {
+    "id": "touch_holdFocus",
+    "params": []
+  },
+  "touch.tapToggle": {
+    "id": "touch_tapToggle",
+    "params": []
+  },
+  "touch.fire": {
+    "id": "touch_fire",
+    "params": []
+  },
+  "touch.holdFireCharge": {
+    "id": "touch_holdFireCharge",
+    "params": []
+  },
+  "touch.joystickAria": {
+    "id": "touch_joystickAria",
+    "params": []
+  },
+  "touch.escapeAria": {
+    "id": "touch_escapeAria",
+    "params": []
+  },
+  "touch.escapeTitle": {
+    "id": "touch_escapeTitle",
+    "params": []
+  },
+  "touch.restartTitle": {
+    "id": "touch_restartTitle",
+    "params": []
+  },
+  "touch.restartHint": {
+    "id": "touch_restartHint",
+    "params": []
+  },
+  "touch.cheatsAndSettings": {
+    "id": "touch_cheatsAndSettings",
+    "params": []
+  },
+  "touch.cheatMenu": {
+    "id": "touch_cheatMenu",
+    "params": []
+  },
+  "touch.invincible": {
+    "id": "touch_invincible",
+    "params": []
+  },
+  "touch.infiniteLives": {
+    "id": "touch_infiniteLives",
+    "params": []
+  },
+  "touch.infiniteBombs": {
+    "id": "touch_infiniteBombs",
+    "params": []
+  },
+  "touch.infinitePower": {
+    "id": "touch_infinitePower",
+    "params": []
+  },
+  "touch.timeLock": {
+    "id": "touch_timeLock",
+    "params": []
+  },
+  "touch.autoBomb": {
+    "id": "touch_autoBomb",
+    "params": []
+  },
+  "touch.enemyBgm": {
+    "id": "touch_enemyBgm",
+    "params": []
+  },
+  "touch.enemyInvincible": {
+    "id": "touch_enemyInvincible",
+    "params": []
+  },
+  "help.open": {
+    "id": "help_open",
+    "params": []
+  },
+  "help.close": {
+    "id": "help_close",
+    "params": []
+  },
+  "help.title": {
+    "id": "help_title",
+    "params": []
+  },
+  "help.manualLandscape": {
+    "id": "help_manualLandscape",
+    "params": []
+  },
+  "help.orientationSummary": {
+    "id": "help_orientationSummary",
+    "params": []
+  },
+  "help.subtitle": {
+    "id": "help_subtitle",
+    "params": []
+  },
+  "help.iphoneFullscreen": {
+    "id": "help_iphoneFullscreen",
+    "params": []
+  },
+  "help.iphoneFullscreenSummary": {
+    "id": "help_iphoneFullscreenSummary",
+    "params": []
+  },
+  "help.turnPhone": {
+    "id": "help_turnPhone",
+    "params": []
+  },
+  "help.systemRotate": {
+    "id": "help_systemRotate",
+    "params": []
+  },
+  "help.rotateImageAlt": {
+    "id": "help_rotateImageAlt",
+    "params": []
+  },
+  "help.iosSafariShare": {
+    "id": "help_iosSafariShare",
+    "params": []
+  },
+  "help.iosSafariShareStep": {
+    "id": "help_iosSafariShareStep",
+    "params": []
+  },
+  "help.iosAddHome": {
+    "id": "help_iosAddHome",
+    "params": []
+  },
+  "help.iosAddHomeStep": {
+    "id": "help_iosAddHomeStep",
+    "params": []
+  },
+  "help.iosWebApp": {
+    "id": "help_iosWebApp",
+    "params": []
+  },
+  "help.iosWebAppStep": {
+    "id": "help_iosWebAppStep",
+    "params": []
+  },
+  "help.gameControls": {
+    "id": "help_gameControls",
+    "params": []
+  },
+  "help.gameControlsSummary": {
+    "id": "help_gameControlsSummary",
+    "params": []
+  },
+  "help.gameControlsIntro": {
+    "id": "help_gameControlsIntro",
+    "params": []
+  },
+  "help.arrowKeys": {
+    "id": "help_arrowKeys",
+    "params": []
+  },
+  "help.moveSelect": {
+    "id": "help_moveSelect",
+    "params": []
+  },
+  "help.fireConfirm": {
+    "id": "help_fireConfirm",
+    "params": []
+  },
+  "help.bombCancel": {
+    "id": "help_bombCancel",
+    "params": []
+  },
+  "help.focusMove": {
+    "id": "help_focusMove",
+    "params": []
+  },
+  "help.pauseBack": {
+    "id": "help_pauseBack",
+    "params": []
+  },
+  "help.skipDialogue": {
+    "id": "help_skipDialogue",
+    "params": []
+  },
+  "help.gameControlsNote": {
+    "id": "help_gameControlsNote",
+    "params": []
+  },
+  "help.inGame": {
+    "id": "help_inGame",
+    "params": []
+  },
+  "help.focusSummary": {
+    "id": "help_focusSummary",
+    "params": []
+  },
+  "help.focusTwoFingerSummary": {
+    "id": "help_focusTwoFingerSummary",
+    "params": []
+  },
+  "help.focusTwoFingerLabel": {
+    "id": "help_focusTwoFingerLabel",
+    "params": []
+  },
+  "help.focusToggleSummary": {
+    "id": "help_focusToggleSummary",
+    "params": []
+  },
+  "help.focusToggleLabel": {
+    "id": "help_focusToggleLabel",
+    "params": []
+  },
+  "help.toggle": {
+    "id": "help_toggle",
+    "params": []
+  },
+  "help.focusHoldSummary": {
+    "id": "help_focusHoldSummary",
+    "params": []
+  },
+  "help.hold": {
+    "id": "help_hold",
+    "params": []
+  },
+  "help.holdFocus": {
+    "id": "help_holdFocus",
+    "params": []
+  },
+  "help.menu": {
+    "id": "help_menu",
+    "params": []
+  },
+  "help.menuSummary": {
+    "id": "help_menuSummary",
+    "params": []
+  },
+  "help.tapConfirm": {
+    "id": "help_tapConfirm",
+    "params": []
+  },
+  "help.slideConfirm": {
+    "id": "help_slideConfirm",
+    "params": []
+  },
+  "help.twoFingerBack": {
+    "id": "help_twoFingerBack",
+    "params": []
+  },
+  "help.dialogue": {
+    "id": "help_dialogue",
+    "params": []
+  },
+  "help.dialogueSummary": {
+    "id": "help_dialogueSummary",
+    "params": []
+  },
+  "help.dialogue1": {
+    "id": "help_dialogue1",
+    "params": []
+  },
+  "help.dialogue2": {
+    "id": "help_dialogue2",
+    "params": []
+  },
+  "help.dialogue3": {
+    "id": "help_dialogue3",
+    "params": []
+  },
+  "help.dialogue4": {
+    "id": "help_dialogue4",
+    "params": []
+  },
+  "help.thpracSummary": {
+    "id": "help_thpracSummary",
+    "params": []
+  },
+  "help.thpracIntro": {
+    "id": "help_thpracIntro",
+    "params": []
+  },
+  "help.tracker": {
+    "id": "help_tracker",
+    "params": []
+  },
+  "help.cheatMenu": {
+    "id": "help_cheatMenu",
+    "params": []
+  },
+  "help.thpracControls": {
+    "id": "help_thpracControls",
+    "params": []
+  },
+  "help.thpracFeatures": {
+    "id": "help_thpracFeatures",
+    "params": []
+  },
+  "help.thpracReplayDesktop": {
+    "id": "help_thpracReplayDesktop",
+    "params": []
+  },
+  "help.thpracReplayMobile": {
+    "id": "help_thpracReplayMobile",
+    "params": []
+  },
+  "help.thpracMobilePanels": {
+    "id": "help_thpracMobilePanels",
+    "params": []
+  },
+  "player.switchLandscape": {
+    "id": "player_switchLandscape",
+    "params": []
+  },
+  "player.switchPortrait": {
+    "id": "player_switchPortrait",
+    "params": []
+  },
+  "player.switchOrientationTitle": {
+    "id": "player_switchOrientationTitle",
+    "params": []
+  },
+  "player.restoreViewportAria": {
+    "id": "player_restoreViewportAria",
+    "params": []
+  },
+  "player.restoreViewportTitle": {
+    "id": "player_restoreViewportTitle",
+    "params": []
+  },
+  "player.rotate": {
+    "id": "player_rotate",
+    "params": []
+  },
+  "player.enterFullscreen": {
+    "id": "player_enterFullscreen",
+    "params": []
+  },
+  "player.exitFullscreen": {
+    "id": "player_exitFullscreen",
+    "params": []
+  },
+  "player.enterFullscreenTitle": {
+    "id": "player_enterFullscreenTitle",
+    "params": []
+  },
+  "player.exitFullscreenTitle": {
+    "id": "player_exitFullscreenTitle",
+    "params": []
+  },
+  "diagnostics.aria": {
+    "id": "diagnostics_aria",
+    "params": []
+  },
+  "diagnostics.browser": {
+    "id": "diagnostics_browser",
+    "params": ["value"]
+  },
+  "diagnostics.environment": {
+    "id": "diagnostics_environment",
+    "params": ["value"]
+  },
+  "diagnostics.audio": {
+    "id": "diagnostics_audio",
+    "params": ["value"]
+  },
+  "diagnostics.graphics": {
+    "id": "diagnostics_graphics",
+    "params": ["value"]
+  },
+  "diagnostics.maxGap": {
+    "id": "diagnostics_maxGap",
+    "params": ["value"]
+  },
+  "status.selectGame": {
+    "id": "status_selectGame",
+    "params": []
+  },
+  "status.running": {
+    "id": "status_running",
+    "params": []
+  },
+  "status.loading": {
+    "id": "status_loading",
+    "params": []
+  },
+  "status.waitingResponse": {
+    "id": "status_waitingResponse",
+    "params": []
+  },
+  "status.connectionFailed": {
+    "id": "status_connectionFailed",
+    "params": []
+  },
+  "status.requestTimeout": {
+    "id": "status_requestTimeout",
+    "params": []
+  },
+  "status.deviceOffline": {
+    "id": "status_deviceOffline",
+    "params": []
+  },
+  "status.connectionRestored": {
+    "id": "status_connectionRestored",
+    "params": []
+  },
+  "status.siteUpdateWaiting": {
+    "id": "status_siteUpdateWaiting",
+    "params": []
+  },
+  "status.siteUpdateAfterExit": {
+    "id": "status_siteUpdateAfterExit",
+    "params": ["seconds"]
+  },
+  "status.siteUpdateAfterOperation": {
+    "id": "status_siteUpdateAfterOperation",
+    "params": ["seconds"]
+  },
+  "status.applyingSiteUpdate": {
+    "id": "status_applyingSiteUpdate",
+    "params": ["seconds"]
+  },
+  "status.remoteUnavailable": {
+    "id": "status_remoteUnavailable",
+    "params": ["reason"]
+  },
+  "status.updateCheckFailed": {
+    "id": "status_updateCheckFailed",
+    "params": ["reason"]
+  },
+  "status.selectedProduct": {
+    "id": "status_selectedProduct",
+    "params": ["product"]
+  },
+  "status.switchedProduct": {
+    "id": "status_switchedProduct",
+    "params": ["product"]
+  },
+  "status.shareSettings": {
+    "id": "status_shareSettings",
+    "params": []
+  },
+  "status.separateSettings": {
+    "id": "status_separateSettings",
+    "params": []
+  },
+  "status.roomCreated": {
+    "id": "status_roomCreated",
+    "params": ["code"]
+  },
+  "status.roomJoined": {
+    "id": "status_roomJoined",
+    "params": ["code"]
+  },
+  "status.roomLeft": {
+    "id": "status_roomLeft",
+    "params": []
+  },
+  "status.enterRoomCode": {
+    "id": "status_enterRoomCode",
+    "params": []
+  },
+  "status.roomCodeCopied": {
+    "id": "status_roomCodeCopied",
+    "params": []
+  },
+  "status.roomCode": {
+    "id": "status_roomCode",
+    "params": ["code"]
+  },
+  "status.noSpectators": {
+    "id": "status_noSpectators",
+    "params": []
+  },
+  "status.noReplay": {
+    "id": "status_noReplay",
+    "params": []
+  },
+  "status.readingReplay": {
+    "id": "status_readingReplay",
+    "params": []
+  },
+  "status.replayReadFailed": {
+    "id": "status_replayReadFailed",
+    "params": []
+  },
+  "touch.controlHidden": {
+    "id": "touch_controlHidden",
+    "params": ["control"]
+  },
+  "touch.controlOverlap": {
+    "id": "touch_controlOverlap",
+    "params": ["first", "second"]
+  },
+  "touch.controlReserved": {
+    "id": "touch_controlReserved",
+    "params": ["control"]
+  },
+  "ui.language.ja": {
+    "id": "ui_language_ja",
+    "params": []
+  },
+  "nav.single": {
+    "id": "nav_single",
+    "params": []
+  },
+  "nav.lobby": {
+    "id": "nav_lobby",
+    "params": []
+  },
+  "nav.help": {
+    "id": "nav_help",
+    "params": []
+  },
+  "nav.settings": {
+    "id": "nav_settings",
+    "params": []
+  },
+  "nav.closePanel": {
+    "id": "nav_closePanel",
+    "params": []
+  },
+  "nav.serviceStatus": {
+    "id": "nav_serviceStatus",
+    "params": []
+  },
+  "nav.expandSidebar": {
+    "id": "nav_expandSidebar",
+    "params": []
+  },
+  "nav.collapseSidebar": {
+    "id": "nav_collapseSidebar",
+    "params": []
+  },
+  "uptime.historyRange": {
+    "id": "uptime_historyRange",
+    "params": []
+  },
+  "uptime.range24h": {
+    "id": "uptime_range24h",
+    "params": []
+  },
+  "uptime.range7d": {
+    "id": "uptime_range7d",
+    "params": []
+  },
+  "uptime.range90d": {
+    "id": "uptime_range90d",
+    "params": []
+  },
+  "uptime.failed": {
+    "id": "uptime_failed",
+    "params": []
+  },
+  "uptime.loading": {
+    "id": "uptime_loading",
+    "params": []
+  },
+  "uptime.services": {
+    "id": "uptime_services",
+    "params": []
+  },
+  "uptime.status": {
+    "id": "uptime_status",
+    "params": []
+  },
+  "uptime.service": {
+    "id": "uptime_service",
+    "params": []
+  },
+  "uptime.history": {
+    "id": "uptime_history",
+    "params": ["range"]
+  },
+  "uptime.response": {
+    "id": "uptime_response",
+    "params": []
+  },
+  "uptime.availability": {
+    "id": "uptime_availability",
+    "params": []
+  },
+  "uptime.availabilityHint": {
+    "id": "uptime_availabilityHint",
+    "params": []
+  },
+  "uptime.empty": {
+    "id": "uptime_empty",
+    "params": []
+  },
+  "uptime.normal": {
+    "id": "uptime_normal",
+    "params": []
+  },
+  "uptime.outage": {
+    "id": "uptime_outage",
+    "params": []
+  },
+  "uptime.unknown": {
+    "id": "uptime_unknown",
+    "params": []
+  },
+  "uptime.site": {
+    "id": "uptime_site",
+    "params": []
+  },
+  "uptime.download": {
+    "id": "uptime_download",
+    "params": []
+  },
+  "uptime.netplay": {
+    "id": "uptime_netplay",
+    "params": []
+  },
+  "uptime.turn": {
+    "id": "uptime_turn",
+    "params": []
+  },
+  "chat.spectator": {
+    "id": "chat_spectator",
+    "params": []
+  },
+  "footer.license": {
+    "id": "footer_license",
+    "params": []
+  },
+  "footer.repository": {
+    "id": "footer_repository",
+    "params": []
+  },
+  "footer.group": {
+    "id": "footer_group",
+    "params": []
+  },
+  "footer.donate": {
+    "id": "footer_donate",
+    "params": []
+  },
+  "game.name.th06": {
+    "id": "game_name_th06",
+    "params": []
+  },
+  "game.name.th07": {
+    "id": "game_name_th07",
+    "params": []
+  },
+  "game.name.th075": {
+    "id": "game_name_th075",
+    "params": []
+  },
+  "game.name.th08": {
+    "id": "game_name_th08",
+    "params": []
+  },
+  "game.name.th09": {
+    "id": "game_name_th09",
+    "params": []
+  },
+  "game.name.th10": {
+    "id": "game_name_th10",
+    "params": []
+  },
+  "game.name.th11": {
+    "id": "game_name_th11",
+    "params": []
+  },
+  "game.name.th12": {
+    "id": "game_name_th12",
+    "params": []
+  },
+  "game.name.th15": {
+    "id": "game_name_th15",
+    "params": []
+  },
+  "game.name.th17": {
+    "id": "game_name_th17",
+    "params": []
+  },
+  "game.name.th20": {
+    "id": "game_name_th20",
+    "params": []
+  },
+  "chat.phrase.1": {
+    "id": "chat_phrase_1",
+    "params": []
+  },
+  "chat.phrase.request-life": {
+    "id": "chat_phrase_request_life",
+    "params": []
+  },
+  "chat.phrase.request-power": {
+    "id": "chat_phrase_request_power",
+    "params": []
+  },
+  "chat.phrase.share-resources": {
+    "id": "chat_phrase_share_resources",
+    "params": []
+  },
+  "chat.phrase.follow-me": {
+    "id": "chat_phrase_follow_me",
+    "params": []
+  },
+  "chat.phrase.spread-out": {
+    "id": "chat_phrase_spread_out",
+    "params": []
+  },
+  "chat.phrase.stop-fire": {
+    "id": "chat_phrase_stop_fire",
+    "params": []
+  },
+  "chat.phrase.bomb-me": {
+    "id": "chat_phrase_bomb_me",
+    "params": []
+  },
+  "chat.phrase.bomb-you": {
+    "id": "chat_phrase_bomb_you",
+    "params": []
+  },
+  "chat.phrase.leaving": {
+    "id": "chat_phrase_leaving",
+    "params": []
+  },
+  "chat.phrase.last-game": {
+    "id": "chat_phrase_last_game",
+    "params": []
+  },
+  "chat.phrase.last": {
+    "id": "chat_phrase_last",
+    "params": []
+  },
+  "chat.phrase.thanks": {
+    "id": "chat_phrase_thanks",
+    "params": []
+  },
+  "chat.phrase.xxzj": {
+    "id": "chat_phrase_xxzj",
+    "params": []
+  },
+  "input.text.layout_saved": {
+    "id": "input_text_layout_saved",
+    "params": []
+  },
+  "input.text.enter_a_name_up_to_32_layouts_can_be_saved": {
+    "id": "input_text_enter_a_name_up_to_32_layouts_can_be_saved",
+    "params": []
+  },
+  "input.text.the_browser_could_not_save_this_layout": {
+    "id": "input_text_the_browser_could_not_save_this_layout",
+    "params": []
+  },
+  "input.text.layout": {
+    "id": "input_text_layout",
+    "params": []
+  },
+  "input.text.keyboard_layout": {
+    "id": "input_text_keyboard_layout",
+    "params": []
+  },
+  "input.text.presets": {
+    "id": "input_text_presets",
+    "params": []
+  },
+  "input.text.arrow_keys": {
+    "id": "input_text_arrow_keys",
+    "params": []
+  },
+  "input.text.custom": {
+    "id": "input_text_custom",
+    "params": []
+  },
+  "input.text.my_layouts": {
+    "id": "input_text_my_layouts",
+    "params": []
+  },
+  "input.text.save_layout": {
+    "id": "input_text_save_layout",
+    "params": []
+  },
+  "input.text.layout_name": {
+    "id": "input_text_layout_name",
+    "params": []
+  },
+  "input.text.save": {
+    "id": "input_text_save",
+    "params": []
+  },
+  "input.text.cancel": {
+    "id": "input_text_cancel",
+    "params": []
+  },
+  "input.text.click_a_binding_to_change_it_new_keys_take_priority_original_keys": {
+    "id": "input_text_click_a_binding_to_change_it_new_keys_take_priority_original_keys",
+    "params": []
+  },
+  "input.text.restore_original_binding": {
+    "id": "input_text_restore_original_binding",
+    "params": []
+  },
+  "input.text.this_key_or_chord_is_not_supported_esc_cancels": {
+    "id": "input_text_this_key_or_chord_is_not_supported_esc_cancels",
+    "params": []
+  },
+  "input.text.press_a_new_key_or_esc_to_cancel": {
+    "id": "input_text_press_a_new_key_or_esc_to_cancel",
+    "params": []
+  },
+  "input.text.changes_save_automatically": {
+    "id": "input_text_changes_save_automatically",
+    "params": []
+  },
+  "input.text.changes_apply_only_to_this_page": {
+    "id": "input_text_changes_apply_only_to_this_page",
+    "params": []
+  },
+  "input.text.saved_layout_deleted_current_bindings_are_retained": {
+    "id": "input_text_saved_layout_deleted_current_bindings_are_retained",
+    "params": []
+  },
+  "input.text.delete_layout": {
+    "id": "input_text_delete_layout",
+    "params": []
+  },
+  "input.text.reset_preset": {
+    "id": "input_text_reset_preset",
+    "params": []
+  },
+  "input.text.enable_gamepad_mapping": {
+    "id": "input_text_enable_gamepad_mapping",
+    "params": []
+  },
+  "input.text.controller": {
+    "id": "input_text_controller",
+    "params": []
+  },
+  "input.text.gamepad_device": {
+    "id": "input_text_gamepad_device",
+    "params": []
+  },
+  "input.text.select_a_controller": {
+    "id": "input_text_select_a_controller",
+    "params": []
+  },
+  "input.text.saved_controller_disconnected": {
+    "id": "input_text_saved_controller_disconnected",
+    "params": []
+  },
+  "input.text.this_browser_cannot_read_gamepads": {
+    "id": "input_text_this_browser_cannot_read_gamepads",
+    "params": []
+  },
+  "input.text.connect_your_controller_and_press_a_button_to_make_it_visible": {
+    "id": "input_text_connect_your_controller_and_press_a_button_to_make_it_visible",
+    "params": []
+  },
+  "input.text.click_a_binding_then_press_a_button_or_move_an_axis": {
+    "id": "input_text_click_a_binding_then_press_a_button_or_move_an_axis",
+    "params": []
+  },
+  "input.text.this_controller_has_no_standard_layout_set_each_action": {
+    "id": "input_text_this_controller_has_no_standard_layout_set_each_action",
+    "params": []
+  },
+  "input.text.clear_binding": {
+    "id": "input_text_clear_binding",
+    "params": []
+  },
+  "input.text.stick_trigger_threshold": {
+    "id": "input_text_stick_trigger_threshold",
+    "params": []
+  },
+  "input.text.release_controls_then_press_the_new_control": {
+    "id": "input_text_release_controls_then_press_the_new_control",
+    "params": []
+  },
+  "input.text.saved_automatically_for_this_controller": {
+    "id": "input_text_saved_automatically_for_this_controller",
+    "params": []
+  },
+  "input.text.reset_defaults": {
+    "id": "input_text_reset_defaults",
+    "params": []
+  },
+  "input.text.this_controller_belongs_to_the_other_player": {
+    "id": "input_text_this_controller_belongs_to_the_other_player",
+    "params": []
+  },
+  "input.text.this_key_or_chord_is_not_supported": {
+    "id": "input_text_this_key_or_chord_is_not_supported",
+    "params": []
+  },
+  "input.text.enable_local_two_player_controls": {
+    "id": "input_text_enable_local_two_player_controls",
+    "params": []
+  },
+  "input.text.only_for_local_versus_overrides_both_players_in_game_device_setti": {
+    "id": "input_text_only_for_local_versus_overrides_both_players_in_game_device_setti",
+    "params": []
+  },
+  "input.text.local_player": {
+    "id": "input_text_local_player",
+    "params": []
+  },
+  "input.text.input_device": {
+    "id": "input_text_input_device",
+    "params": []
+  },
+  "input.text.player_input_device": {
+    "id": "input_text_player_input_device",
+    "params": []
+  },
+  "input.text.keyboard": {
+    "id": "input_text_keyboard",
+    "params": []
+  },
+  "input.text.gamepad": {
+    "id": "input_text_gamepad",
+    "params": []
+  },
+  "input.text.two_player_keyboard_layout": {
+    "id": "input_text_two_player_keyboard_layout",
+    "params": []
+  },
+  "input.text.two_player_layout_name": {
+    "id": "input_text_two_player_layout_name",
+    "params": []
+  },
+  "input.text.press_a_key_or_esc_to_cancel": {
+    "id": "input_text_press_a_key_or_esc_to_cancel",
+    "params": []
+  },
+  "input.text.saved_automatically_for_each_player": {
+    "id": "input_text_saved_automatically_for_each_player",
+    "params": []
+  },
+  "input.text.restore_original": {
+    "id": "input_text_restore_original",
+    "params": []
+  },
+  "input.text.input_settings": {
+    "id": "input_text_input_settings",
+    "params": []
+  },
+  "input.text.keyboard_51": {
+    "id": "input_text_keyboard_51",
+    "params": []
+  },
+  "input.text.gamepad_52": {
+    "id": "input_text_gamepad_52",
+    "params": []
+  },
+  "input.text.close_input_settings": {
+    "id": "input_text_close_input_settings",
+    "params": []
+  },
+  "input.text.control_context": {
+    "id": "input_text_control_context",
+    "params": []
+  },
+  "input.text.single_player_online": {
+    "id": "input_text_single_player_online",
+    "params": []
+  },
+  "input.text.local_two_player": {
+    "id": "input_text_local_two_player",
+    "params": []
+  },
+  "input.text.action": {
+    "id": "input_text_action",
+    "params": []
+  },
+  "input.text.binding": {
+    "id": "input_text_binding",
+    "params": []
+  },
+  "input.text.waiting_for_input_click_to_cancel": {
+    "id": "input_text_waiting_for_input_click_to_cancel",
+    "params": []
+  },
+  "input.text.unbound": {
+    "id": "input_text_unbound",
+    "params": []
+  },
+  "input.text.change_binding": {
+    "id": "input_text_change_binding",
+    "params": []
+  },
+  "input.text.press_a_control": {
+    "id": "input_text_press_a_control",
+    "params": []
+  },
+  "input.button": {
+    "id": "input_button",
+    "params": ["number"]
+  },
+  "input.axis": {
+    "id": "input_axis",
+    "params": ["number", "direction"]
+  },
+  "input.usedByOther": {
+    "id": "input_usedByOther",
+    "params": ["key"]
+  },
+  "input.player": {
+    "id": "input_player",
+    "params": ["number"]
+  },
+  "input.originalLeft": {
+    "id": "input_originalLeft",
+    "params": []
+  },
+  "input.originalRight": {
+    "id": "input_originalRight",
+    "params": []
+  },
+  "input.action.shoot": {
+    "id": "input_action_shoot",
+    "params": []
+  },
+  "input.action.bomb": {
+    "id": "input_action_bomb",
+    "params": []
+  },
+  "input.action.focus": {
+    "id": "input_action_focus",
+    "params": []
+  },
+  "input.action.pause": {
+    "id": "input_action_pause",
+    "params": []
+  },
+  "input.action.up": {
+    "id": "input_action_up",
+    "params": []
+  },
+  "input.action.down": {
+    "id": "input_action_down",
+    "params": []
+  },
+  "input.action.left": {
+    "id": "input_action_left",
+    "params": []
+  },
+  "input.action.right": {
+    "id": "input_action_right",
+    "params": []
+  },
+  "input.action.skip": {
+    "id": "input_action_skip",
+    "params": []
+  },
+  "input.action.confirm": {
+    "id": "input_action_confirm",
+    "params": []
+  },
+  "input.action.action": {
+    "id": "input_action_action",
+    "params": []
+  },
+  "input.action.restart": {
+    "id": "input_action_restart",
+    "params": []
+  },
+  "input.action.quick": {
+    "id": "input_action_quick",
+    "params": []
+  },
+  "input.action.charge": {
+    "id": "input_action_charge",
+    "params": []
+  },
+  "donation.close": {
+    "id": "donation_close",
+    "params": []
+  },
+  "donation.scan": {
+    "id": "donation_scan",
+    "params": []
+  },
+  "donation.image": {
+    "id": "donation_image",
+    "params": []
+  },
+  "netplay.return": {
+    "id": "netplay_return",
+    "params": []
+  },
+  "replay.ui.choose": {
+    "id": "replay_ui_choose",
+    "params": []
+  },
+  "replay.ui.speed": {
+    "id": "replay_ui_speed",
+    "params": []
+  },
+  "replay.ui.fullSpeed": {
+    "id": "replay_ui_fullSpeed",
+    "params": []
+  },
+  "replay.ui.unknownTime": {
+    "id": "replay_ui_unknownTime",
+    "params": []
+  },
+  "replay.ui.back": {
+    "id": "replay_ui_back",
+    "params": []
+  },
+  "replay.ui.choosePlay": {
+    "id": "replay_ui_choosePlay",
+    "params": []
+  },
+  "replay.ui.chooseStage": {
+    "id": "replay_ui_chooseStage",
+    "params": []
+  },
+  "replay.ui.browseWhileLoading": {
+    "id": "replay_ui_browseWhileLoading",
+    "params": []
+  },
+  "replay.ui.exitFullscreen": {
+    "id": "replay_ui_exitFullscreen",
+    "params": []
+  },
+  "replay.ui.transport": {
+    "id": "replay_ui_transport",
+    "params": []
+  },
+  "replay.ui.play": {
+    "id": "replay_ui_play",
+    "params": []
+  },
+  "replay.ui.pause": {
+    "id": "replay_ui_pause",
+    "params": []
+  },
+  "replay.ui.restart": {
+    "id": "replay_ui_restart",
+    "params": []
+  },
+  "replay.ui.fullscreen": {
+    "id": "replay_ui_fullscreen",
+    "params": []
+  },
+  "replay.ui.ended": {
+    "id": "replay_ui_ended",
+    "params": []
+  },
+  "replay.ui.info": {
+    "id": "replay_ui_info",
+    "params": []
+  },
+  "replay.ui.reading": {
+    "id": "replay_ui_reading",
+    "params": []
+  },
+  "replay.ui.chooseOne": {
+    "id": "replay_ui_chooseOne",
+    "params": []
+  },
+  "replay.ui.chooseToPlay": {
+    "id": "replay_ui_chooseToPlay",
+    "params": []
+  },
+  "replay.ui.files": {
+    "id": "replay_ui_files",
+    "params": []
+  },
+  "replay.ui.oneAtATime": {
+    "id": "replay_ui_oneAtATime",
+    "params": []
+  },
+  "replay.ui.heading": {
+    "id": "replay_ui_heading",
+    "params": []
+  },
+  "replay.ui.import": {
+    "id": "replay_ui_import",
+    "params": []
+  },
+  "replay.ui.location": {
+    "id": "replay_ui_location",
+    "params": []
+  },
+  "replay.ui.all": {
+    "id": "replay_ui_all",
+    "params": []
+  },
+  "replay.ui.moveTo": {
+    "id": "replay_ui_moveTo",
+    "params": []
+  },
+  "replay.ui.newFolder": {
+    "id": "replay_ui_newFolder",
+    "params": []
+  },
+  "replay.ui.folderName": {
+    "id": "replay_ui_folderName",
+    "params": []
+  },
+  "replay.ui.cancel": {
+    "id": "replay_ui_cancel",
+    "params": []
+  },
+  "replay.ui.move": {
+    "id": "replay_ui_move",
+    "params": []
+  },
+  "replay.ui.loading": {
+    "id": "replay_ui_loading",
+    "params": []
+  },
+  "replay.ui.failed": {
+    "id": "replay_ui_failed",
+    "params": []
+  },
+  "replay.ui.retry": {
+    "id": "replay_ui_retry",
+    "params": []
+  },
+  "replay.ui.matchStarted": {
+    "id": "replay_ui_matchStarted",
+    "params": []
+  },
+  "replay.ui.modified": {
+    "id": "replay_ui_modified",
+    "params": []
+  },
+  "replay.ui.parsing": {
+    "id": "replay_ui_parsing",
+    "params": []
+  },
+  "replay.ui.parseFailed": {
+    "id": "replay_ui_parseFailed",
+    "params": []
+  },
+  "replay.ui.empty": {
+    "id": "replay_ui_empty",
+    "params": []
+  },
+  "replay.ui.drop": {
+    "id": "replay_ui_drop",
+    "params": []
+  },
+  "replay.ui.download": {
+    "id": "replay_ui_download",
+    "params": []
+  },
+  "replay.ui.rename": {
+    "id": "replay_ui_rename",
+    "params": []
+  },
+  "replay.ui.delete": {
+    "id": "replay_ui_delete",
+    "params": []
+  },
+  "replay.ui.playerName": {
+    "id": "replay_ui_playerName",
+    "params": []
+  },
+  "replay.ui.loadout": {
+    "id": "replay_ui_loadout",
+    "params": []
+  },
+  "replay.ui.date": {
+    "id": "replay_ui_date",
+    "params": []
+  },
+  "replay.ui.spell": {
+    "id": "replay_ui_spell",
+    "params": []
+  },
+  "replay.ui.difficulty": {
+    "id": "replay_ui_difficulty",
+    "params": []
+  },
+  "replay.ui.score": {
+    "id": "replay_ui_score",
+    "params": []
+  },
+  "replay.ui.slowdown": {
+    "id": "replay_ui_slowdown",
+    "params": []
+  },
+  "replay.ui.mode": {
+    "id": "replay_ui_mode",
+    "params": []
+  },
+  "replay.ui.spellName": {
+    "id": "replay_ui_spellName",
+    "params": []
+  },
+  "replay.ui.seek": {
+    "id": "replay_ui_seek",
+    "params": ["time"]
+  },
+  "replay.ui.moving": {
+    "id": "replay_ui_moving",
+    "params": ["name"]
+  },
+  "replay.ui.count": {
+    "id": "replay_ui_count",
+    "params": ["count"]
+  },
+  "replay.ui.manageFolder": {
+    "id": "replay_ui_manageFolder",
+    "params": ["name"]
+  },
+  "replay.ui.manage": {
+    "id": "replay_ui_manage",
+    "params": ["name"]
+  },
+  "replay.ui.details": {
+    "id": "replay_ui_details",
+    "params": ["name"]
+  },
+  "calibration.ready": {
+    "id": "calibration_ready",
+    "params": []
+  },
+  "calibration.unavailable": {
+    "id": "calibration_unavailable",
+    "params": []
+  },
+  "calibration.suspended": {
+    "id": "calibration_suspended",
+    "params": []
+  },
+  "calibration.retrying": {
+    "id": "calibration_retrying",
+    "params": []
+  },
+  "calibration.waiting": {
+    "id": "calibration_waiting",
+    "params": []
+  },
+  "calibration.stabilizing": {
+    "id": "calibration_stabilizing",
+    "params": []
+  },
+  "calibration.negotiating": {
+    "id": "calibration_negotiating",
+    "params": []
+  },
+  "calibration.measuring": {
+    "id": "calibration_measuring",
+    "params": []
+  },
+  "calibration.delayHigh": {
+    "id": "calibration_delayHigh",
+    "params": []
+  },
+  "calibration.failed": {
+    "id": "calibration_failed",
+    "params": []
+  },
+  "calibration.keepOpen": {
+    "id": "calibration_keepOpen",
+    "params": []
+  },
+  "calibration.attempt": {
+    "id": "calibration_attempt",
+    "params": ["attempt", "maximum"]
+  },
+  "calibration.waitSecond": {
+    "id": "calibration_waitSecond",
+    "params": []
+  },
+  "calibration.waitChannels": {
+    "id": "calibration_waitChannels",
+    "params": []
+  },
+  "calibration.waitConfirm": {
+    "id": "calibration_waitConfirm",
+    "params": []
+  },
+  "calibration.probes": {
+    "id": "calibration_probes",
+    "params": ["probes", "replies"]
+  },
+  "calibration.delay": {
+    "id": "calibration_delay",
+    "params": ["frames"]
+  },
+  "calibration.rollback": {
+    "id": "calibration_rollback",
+    "params": ["state"]
+  },
+  "calibration.on": {
+    "id": "calibration_on",
+    "params": []
+  },
+  "calibration.off": {
+    "id": "calibration_off",
+    "params": []
+  },
+  "calibration.player": {
+    "id": "calibration_player",
+    "params": []
+  },
+  "calibration.latency": {
+    "id": "calibration_latency",
+    "params": []
+  },
+  "calibration.maximum": {
+    "id": "calibration_maximum",
+    "params": []
+  },
+  "calibration.note": {
+    "id": "calibration_note",
+    "params": []
+  },
+  "calibration.dismiss": {
+    "id": "calibration_dismiss",
+    "params": []
+  },
+  "calibration.reportTitle": {
+    "id": "calibration_reportTitle",
+    "params": []
+  },
+  "calibration.reportTrigger": {
+    "id": "calibration_reportTrigger",
+    "params": []
+  },
+  "calibration.reportHint": {
+    "id": "calibration_reportHint",
+    "params": []
+  },
+  "calibration.copied": {
+    "id": "calibration_copied",
+    "params": []
+  },
+  "calibration.selected": {
+    "id": "calibration_selected",
+    "params": []
+  },
+  "calibration.copy": {
+    "id": "calibration_copy",
+    "params": []
+  },
+  "replay.ui.progress": {
+    "id": "replay_ui_progress",
+    "params": []
+  },
+  "replay.ui.round": {
+    "id": "replay_ui_round",
+    "params": ["round", "time"]
+  },
+  "nav.collapseSidebarLabel": {
+    "id": "nav_collapseSidebarLabel",
+    "params": []
+  },
+  "content.faq": {
+    "id": "content_faq",
+    "params": []
+  },
+  "content.firstUse": {
+    "id": "content_firstUse",
+    "params": []
+  },
+  "content.multiplayer": {
+    "id": "content_multiplayer",
+    "params": []
+  },
+  "content.about": {
+    "id": "content_about",
+    "params": []
+  },
+  "content.faqTitle": {
+    "id": "content_faqTitle",
+    "params": []
+  },
+  "content.faqDescription": {
+    "id": "content_faqDescription",
+    "params": []
+  },
+  "content.faqAria": {
+    "id": "content_faqAria",
+    "params": []
+  },
+  "content.aboutTitle": {
+    "id": "content_aboutTitle",
+    "params": []
+  },
+  "content.aboutDescription": {
+    "id": "content_aboutDescription",
+    "params": []
+  },
+  "content.back": {
+    "id": "content_back",
+    "params": []
+  },
+  "guide.common": {
+    "id": "guide_common",
+    "params": []
+  },
+  "guide.specific": {
+    "id": "guide_specific",
+    "params": []
+  },
+  "guide.games": {
+    "id": "guide_games",
+    "params": []
+  },
+  "guide.none": {
+    "id": "guide_none",
+    "params": []
+  },
+  "guide.th06": {
+    "id": "guide_th06",
+    "params": []
+  },
+  "guide.th07": {
+    "id": "guide_th07",
+    "params": []
+  },
+  "guide.th08": {
+    "id": "guide_th08",
+    "params": []
+  },
+  "guide.th09": {
+    "id": "guide_th09",
+    "params": []
+  },
+  "guide.th10": {
+    "id": "guide_th10",
+    "params": []
+  },
+  "guide.th11": {
+    "id": "guide_th11",
+    "params": []
+  },
+  "guide.th15": {
+    "id": "guide_th15",
+    "params": []
+  },
+  "help.demoContinue": {
+    "id": "help_demoContinue",
+    "params": []
+  },
+  "help.demoYes": {
+    "id": "help_demoYes",
+    "params": []
+  },
+  "help.demoNo": {
+    "id": "help_demoNo",
+    "params": []
+  },
+  "help.demoInput": {
+    "id": "help_demoInput",
+    "params": []
+  },
+  "startup.noScriptLobby": {
+    "id": "startup_noScriptLobby",
+    "params": []
+  },
+  "startup.noScriptLauncher": {
+    "id": "startup_noScriptLauncher",
+    "params": []
+  },
+  "startup.noScriptAnd": {
+    "id": "startup_noScriptAnd",
+    "params": []
+  },
+  "startup.noScriptEnd": {
+    "id": "startup_noScriptEnd",
+    "params": []
+  },
+  "startup.noScriptHome": {
+    "id": "startup_noScriptHome",
+    "params": []
+  },
+  "connection.playbackStopped": {
+    "id": "connection_playbackStopped",
+    "params": []
+  },
+  "connection.playbackStoppedHint": {
+    "id": "connection_playbackStoppedHint",
+    "params": []
+  },
+  "connection.spectatorLost": {
+    "id": "connection_spectatorLost",
+    "params": []
+  },
+  "connection.spectatorConnecting": {
+    "id": "connection_spectatorConnecting",
+    "params": []
+  },
+  "connection.spectatorFailed": {
+    "id": "connection_spectatorFailed",
+    "params": []
+  },
+  "connection.spectatorWaiting": {
+    "id": "connection_spectatorWaiting",
+    "params": []
+  },
+  "connection.peerReconnecting": {
+    "id": "connection_peerReconnecting",
+    "params": []
+  },
+  "connection.peerConnected": {
+    "id": "connection_peerConnected",
+    "params": []
+  },
+  "connection.peerConnecting": {
+    "id": "connection_peerConnecting",
+    "params": []
+  },
+  "connection.peerWaiting": {
+    "id": "connection_peerWaiting",
+    "params": []
+  },
+  "connection.peerDisconnected": {
+    "id": "connection_peerDisconnected",
+    "params": []
+  },
+  "connection.stopped": {
+    "id": "connection_stopped",
+    "params": []
+  },
+  "connection.lost": {
+    "id": "connection_lost",
+    "params": []
+  },
+  "connection.reconnecting": {
+    "id": "connection_reconnecting",
+    "params": []
+  },
+  "connection.connecting": {
+    "id": "connection_connecting",
+    "params": []
+  },
+  "connection.stoppedHint": {
+    "id": "connection_stoppedHint",
+    "params": []
+  },
+  "connection.lostHint": {
+    "id": "connection_lostHint",
+    "params": []
+  },
+  "connection.reconnectingHint": {
+    "id": "connection_reconnectingHint",
+    "params": []
+  },
+  "connection.waitingHint": {
+    "id": "connection_waitingHint",
+    "params": []
+  },
+  "diagnostics.unknownBrowser": {
+    "id": "diagnostics_unknownBrowser",
+    "params": []
+  },
+  "diagnostics.mobileDevice": {
+    "id": "diagnostics_mobileDevice",
+    "params": []
+  },
+  "diagnostics.desktopDevice": {
+    "id": "diagnostics_desktopDevice",
+    "params": []
+  },
+  "input.bindingListening": {
+    "id": "input_bindingListening",
+    "params": ["name", "hint"]
+  },
+  "input.bindingChange": {
+    "id": "input_bindingChange",
+    "params": ["name", "keys", "hint"]
+  },
+  "error.downloadCancelled": {
+    "id": "error_downloadCancelled",
+    "params": []
+  },
+  "error.manifestEmpty": {
+    "id": "error_manifestEmpty",
+    "params": []
+  },
+  "error.exitCurrent": {
+    "id": "error_exitCurrent",
+    "params": []
+  },
+  "error.beautyCatalog": {
+    "id": "error_beautyCatalog",
+    "params": ["status"]
+  },
+  "error.testOnly": {
+    "id": "error_testOnly",
+    "params": []
+  },
+  "error.beautyMissing": {
+    "id": "error_beautyMissing",
+    "params": ["game"]
+  },
+  "error.externalUnavailable": {
+    "id": "error_externalUnavailable",
+    "params": []
+  },
+  "error.replayBusy": {
+    "id": "error_replayBusy",
+    "params": []
+  },
+  "error.replayVersion": {
+    "id": "error_replayVersion",
+    "params": []
+  },
+  "error.replayPath": {
+    "id": "error_replayPath",
+    "params": []
+  },
+  "error.replayFolder": {
+    "id": "error_replayFolder",
+    "params": []
+  },
+  "error.replayStorage": {
+    "id": "error_replayStorage",
+    "params": []
+  },
+  "error.replayRead": {
+    "id": "error_replayRead",
+    "params": []
+  },
+  "error.replayInvalid": {
+    "id": "error_replayInvalid",
+    "params": []
+  },
+  "error.vendorTimeout": {
+    "id": "error_vendorTimeout",
+    "params": ["label"]
+  },
+  "error.vendorMissing": {
+    "id": "error_vendorMissing",
+    "params": ["label"]
+  },
+  "error.vendorFailed": {
+    "id": "error_vendorFailed",
+    "params": ["label"]
+  },
+  "error.sharedFonts": {
+    "id": "error_sharedFonts",
+    "params": []
+  },
+  "error.installationChanged": {
+    "id": "error_installationChanged",
+    "params": []
+  },
+  "error.replayInfo": {
+    "id": "error_replayInfo",
+    "params": []
+  },
+  "error.replayStage": {
+    "id": "error_replayStage",
+    "params": []
+  },
+  "error.replayMotion": {
+    "id": "error_replayMotion",
+    "params": []
+  },
+  "error.storageTimeout": {
+    "id": "error_storageTimeout",
+    "params": []
+  },
+  "error.runtimeCheck": {
+    "id": "error_runtimeCheck",
+    "params": []
+  },
+  "error.runtimeUpdated": {
+    "id": "error_runtimeUpdated",
+    "params": []
+  },
+  "error.languageManifestMissing": {
+    "id": "error_languageManifestMissing",
+    "params": []
+  },
+  "error.languageManifestCorrupt": {
+    "id": "error_languageManifestCorrupt",
+    "params": []
+  },
+  "error.languageManifestIncompatible": {
+    "id": "error_languageManifestIncompatible",
+    "params": []
+  },
+  "error.languageFilesInvalid": {
+    "id": "error_languageFilesInvalid",
+    "params": []
+  },
+  "error.languageDuplicate": {
+    "id": "error_languageDuplicate",
+    "params": []
+  },
+  "error.languageCount": {
+    "id": "error_languageCount",
+    "params": []
+  },
+  "error.languagePath": {
+    "id": "error_languagePath",
+    "params": []
+  },
+  "error.languageSize": {
+    "id": "error_languageSize",
+    "params": ["path"]
+  },
+  "error.midiSynth": {
+    "id": "error_midiSynth",
+    "params": []
+  },
+  "error.relayUrl": {
+    "id": "error_relayUrl",
+    "params": []
+  },
+  "error.relayScheme": {
+    "id": "error_relayScheme",
+    "params": []
+  },
+  "error.relayFlag": {
+    "id": "error_relayFlag",
+    "params": []
+  },
+  "error.turnFlag": {
+    "id": "error_turnFlag",
+    "params": []
+  },
+  "error.challengeValue": {
+    "id": "error_challengeValue",
+    "params": []
+  },
+  "error.chargeValue": {
+    "id": "error_chargeValue",
+    "params": []
+  },
+  "error.extendScore": {
+    "id": "error_extendScore",
+    "params": []
+  },
+  "error.lanSeat": {
+    "id": "error_lanSeat",
+    "params": []
+  },
+  "error.spectatorEligibility": {
+    "id": "error_spectatorEligibility",
+    "params": []
+  },
+  "error.lanSeed": {
+    "id": "error_lanSeed",
+    "params": []
+  },
+  "error.lanDifficulty": {
+    "id": "error_lanDifficulty",
+    "params": ["max"]
+  },
+  "error.lanLoadoutsEmpty": {
+    "id": "error_lanLoadoutsEmpty",
+    "params": []
+  },
+  "error.lanPlayerLoadout": {
+    "id": "error_lanPlayerLoadout",
+    "params": ["player"]
+  },
+  "error.lanLoadoutCount": {
+    "id": "error_lanLoadoutCount",
+    "params": []
+  },
+  "error.directRollbackLimit": {
+    "id": "error_directRollbackLimit",
+    "params": ["game"]
+  },
+  "error.measuredTiming": {
+    "id": "error_measuredTiming",
+    "params": []
+  },
+  "error.adonisUnsupported": {
+    "id": "error_adonisUnsupported",
+    "params": []
+  },
+  "error.delayOnly": {
+    "id": "error_delayOnly",
+    "params": []
+  },
+  "error.adonisDelay": {
+    "id": "error_adonisDelay",
+    "params": ["max"]
+  },
+  "error.spectatorNextMatch": {
+    "id": "error_spectatorNextMatch",
+    "params": []
+  },
+  "library.multiplayerCaption": {
+    "id": "library_multiplayerCaption",
+    "params": []
+  },
+  "player.frameTitle": {
+    "id": "player_frameTitle",
+    "params": []
+  },
+  "replay.ui.stage": {
+    "id": "replay_ui_stage",
+    "params": []
+  },
+  "replay.ui.stageNumber": {
+    "id": "replay_ui_stageNumber",
+    "params": ["stage"]
+  },
+  "replay.ui.lastScore": {
+    "id": "replay_ui_lastScore",
+    "params": []
+  },
+  "compatibility.title": {
+    "id": "compatibility_title",
+    "params": []
+  },
+  "compatibility.heading": {
+    "id": "compatibility_heading",
+    "params": []
+  },
+  "compatibility.recheck": {
+    "id": "compatibility_recheck",
+    "params": []
+  },
+  "compatibility.tryAnyway": {
+    "id": "compatibility_tryAnyway",
+    "params": []
+  },
+  "compatibility.results": {
+    "id": "compatibility_results",
+    "params": []
+  },
+  "compatibility.checking": {
+    "id": "compatibility_checking",
+    "params": []
+  },
+  "compatibility.computer": {
+    "id": "compatibility_computer",
+    "params": []
+  },
+  "compatibility.oldWindows": {
+    "id": "compatibility_oldWindows",
+    "params": []
+  },
+  "compatibility.download": {
+    "id": "compatibility_download",
+    "params": []
+  },
+  "compatibility.mirror": {
+    "id": "compatibility_mirror",
+    "params": []
+  },
+  "compatibility.chromiumFloor": {
+    "id": "compatibility_chromiumFloor",
+    "params": []
+  },
+  "compatibility.run": {
+    "id": "compatibility_run",
+    "params": []
+  },
+  "compatibility.webglTest": {
+    "id": "compatibility_webglTest",
+    "params": []
+  },
+  "compatibility.afterPass": {
+    "id": "compatibility_afterPass",
+    "params": []
+  },
+  "compatibility.oldBrowser": {
+    "id": "compatibility_oldBrowser",
+    "params": []
+  },
+  "compatibility.newWindows": {
+    "id": "compatibility_newWindows",
+    "params": []
+  },
+  "compatibility.or": {
+    "id": "compatibility_or",
+    "params": []
+  },
+  "compatibility.oldWindowsAdvice": {
+    "id": "compatibility_oldWindowsAdvice",
+    "params": []
+  },
+  "compatibility.drivers": {
+    "id": "compatibility_drivers",
+    "params": []
+  },
+  "compatibility.installDrivers": {
+    "id": "compatibility_installDrivers",
+    "params": []
+  },
+  "compatibility.open": {
+    "id": "compatibility_open",
+    "params": []
+  },
+  "compatibility.acceleration": {
+    "id": "compatibility_acceleration",
+    "params": []
+  },
+  "compatibility.restartChrome": {
+    "id": "compatibility_restartChrome",
+    "params": []
+  },
+  "compatibility.retest": {
+    "id": "compatibility_retest",
+    "params": []
+  },
+  "compatibility.tryOpenGL": {
+    "id": "compatibility_tryOpenGL",
+    "params": []
+  },
+  "compatibility.select": {
+    "id": "compatibility_select",
+    "params": []
+  },
+  "compatibility.restartTest": {
+    "id": "compatibility_restartTest",
+    "params": []
+  },
+  "compatibility.noOption": {
+    "id": "compatibility_noOption",
+    "params": []
+  },
+  "compatibility.mobile": {
+    "id": "compatibility_mobile",
+    "params": []
+  },
+  "compatibility.huawei": {
+    "id": "compatibility_huawei",
+    "params": []
+  },
+  "compatibility.huaweiAdvice": {
+    "id": "compatibility_huaweiAdvice",
+    "params": []
+  },
+  "compatibility.otherAndroid": {
+    "id": "compatibility_otherAndroid",
+    "params": []
+  },
+  "compatibility.androidAdvice": {
+    "id": "compatibility_androidAdvice",
+    "params": []
+  },
+  "compatibility.fail": {
+    "id": "compatibility_fail",
+    "params": []
+  },
+  "compatibility.pass": {
+    "id": "compatibility_pass",
+    "params": []
+  },
+  "compatibility.switchBrowser": {
+    "id": "compatibility_switchBrowser",
+    "params": []
+  },
+  "compatibility.notIE": {
+    "id": "compatibility_notIE",
+    "params": []
+  },
+  "compatibility.current": {
+    "id": "compatibility_current",
+    "params": []
+  },
+  "compatibility.requires": {
+    "id": "compatibility_requires",
+    "params": []
+  },
+  "compatibility.unrecognized": {
+    "id": "compatibility_unrecognized",
+    "params": []
+  },
+  "compatibility.checkVersion": {
+    "id": "compatibility_checkVersion",
+    "params": []
+  },
+  "compatibility.oldWindowsFloor": {
+    "id": "compatibility_oldWindowsFloor",
+    "params": []
+  },
+  "compatibility.oldWindowsPass": {
+    "id": "compatibility_oldWindowsPass",
+    "params": []
+  },
+  "compatibility.notApplicable": {
+    "id": "compatibility_notApplicable",
+    "params": []
+  },
+  "compatibility.failedPrefix": {
+    "id": "compatibility_failedPrefix",
+    "params": []
+  },
+  "compatibility.allPassed": {
+    "id": "compatibility_allPassed",
+    "params": []
+  },
+  "compatibility.allPassedUnknown": {
+    "id": "compatibility_allPassedUnknown",
+    "params": []
+  },
+  "startup.noScriptAbout": {
+    "id": "startup_noScriptAbout",
+    "params": []
+  }
+}

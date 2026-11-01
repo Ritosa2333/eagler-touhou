@@ -1,7 +1,8 @@
+import {legacyControlAttributes} from './legacy-control-attributes.mjs';
 import {synchronizedMainAuthority} from './source-text.mjs';
 /** Production directory components and services under a synthetic DOM and router.
  * Fixed UI history supplies comparison markup. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -53,7 +54,7 @@ before(async () => {
     export * from './src/launcher/room-invite.mts';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
     plugins: [{name: 'installed-deps-original-mts', setup(ctx) {
-      ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+      ctx.onResolve({filter: /^[^./]/}, args => ({path: import.meta.resolve(args.path), external: true}));
       ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
     }}]});
   owners = await import(pathToFileURL(resolve(work, 'actual-bundle.mjs')));
@@ -134,7 +135,7 @@ async function submit() {const event = new env.window.Event('submit', {bubbles: 
 function normalize(element) {
   if (element.nodeType === 3) return element.textContent.replace(/\s+/g, ' ').trim() || null;
   if (element.nodeType !== 1) return null;
-  const attrs = [...element.attributes].filter(a => !a.name.startsWith('data-i18n') && a.name !== 'open' && !(a.name === 'value' && element.localName === 'input'))
+  const attrs = legacyControlAttributes(element).filter(a => !a.name.startsWith('data-i18n') && a.name !== 'open' && !(a.name === 'value' && element.localName === 'input'))
     .map(a => [a.name, a.value]).sort(([a], [b]) => a.localeCompare(b));
   const children = []; let text = '';
   const flushText = () => {const value = text.replace(/\s+/g, ' ').trim(); if (value) children.push(value); text = '';};

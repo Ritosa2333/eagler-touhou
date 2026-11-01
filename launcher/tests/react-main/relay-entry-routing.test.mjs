@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test, afterAll} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -8,7 +8,7 @@ import {pathToFileURL, fileURLToPath} from 'node:url';
 const work = await mkdtemp(join(tmpdir(), 'relay-entry-'));
 await build({entryPoints: [fileURLToPath(new URL('../../src/launcher/relay-entry-routing.mts', import.meta.url))], bundle: true, platform: 'node', format: 'esm', outfile: join(work, 'routing.mjs')});
 const {createRelayEntryRouting} = await import(pathToFileURL(join(work, 'routing.mjs')));
-test.after(() => rm(work, {recursive: true, force: true}));
+afterAll(() => rm(work, {recursive: true, force: true}));
 const primary = 'wss://primary.example/netplay/';
 const backup = 'wss://backup.example/netplay/';
 class Socket extends EventTarget {

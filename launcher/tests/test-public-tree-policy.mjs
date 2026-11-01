@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { publicTreePolicyViolation } from "../lib/public-tree-policy.mjs";
 
+test("test-public-tree-policy", async () => {
 assert.match(publicTreePolicyViolation("screenshots/mobile.png"), /not public source/);
 assert.match(publicTreePolicyViolation("debug.pid"), /ephemeral/);
 assert.match(publicTreePolicyViolation("host/config/site-features.customer.json"), /site-specific/);
@@ -29,3 +31,4 @@ for (const path of listed.stdout.split("\0").filter(Boolean)) {
 }
 assert.deepEqual(violations, [], `public-tree policy violations:\n${violations.join("\n")}`);
 console.log(JSON.stringify({ publicTreePolicy: "PASS", candidates: listed.stdout.split("\0").filter(Boolean).length }));
+});

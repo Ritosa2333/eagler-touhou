@@ -1,102 +1,541 @@
 /* Original TH15 HUD sprites, displayed at 100 × 20 without recoloring. */
-.difficulty-label{display:inline-block;vertical-align:middle}
-.difficulty-texture{position:relative;width:100px;height:20px;overflow:hidden;flex:none}
-.difficulty-texture>img{position:absolute;left:-320px;width:640px;height:640px;max-width:none;pointer-events:none}
-.difficulty-accessible-name{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-.room-challenge-on{font-size:.75em;font-weight:600;color:#efbf78;white-space:nowrap}
-.room-card-player-copy{min-width:0;display:grid;gap:4px}
-.room-card-loadout{display:block;color:var(--lobby-muted);font-size:14px;overflow-wrap:anywhere}
-.coop-room-row .th09-room-duel{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-.coop-room-row .th09-room-duel[data-player-count="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
-.coop-room-row .th09-duel-player{grid-column:auto;grid-row:auto;justify-content:flex-start;flex-direction:row}
-.coop-room-row .th09-duel-name{font-size:clamp(18px,2.7vw,32px)}
-.coop-room-row .th09-room-meta{grid-column:1/3;gap:6px 12px}
-.coop-room-row .th09-room-meta .lobby-challengeMode{display:inline}
-.coop-room-row .th09-room-duration{grid-column:1/3;justify-self:start;font-size:15px}
-.coop-room-row .lobby-room-state{grid-column:3;grid-row:1;justify-self:end}
-.lobby-page .coop-room-row.th09-room-row .lobby-join{grid-column:1/3;grid-row:4;justify-self:start}
-.coop-room-row .th09-room-spectators{grid-row:4}
-#mpRoomView[data-roster-identities] .mp-seat-stage .mp-seat.occupied{--room-avatar-size:44px;--room-avatar-type:20px;grid-template-columns:var(--room-avatar-size) minmax(0,1fr)!important;grid-template-rows:minmax(24px,auto) auto auto auto auto!important;column-gap:12px!important}
-#mpRoomView[data-roster-identities] .mp-seat-stage .mp-seat.occupied .mp-seat-face{width:var(--room-avatar-size)!important;height:var(--room-avatar-size)!important}
-#mpRoomView[data-roster-identities] .mp-seat-glyph{font-size:var(--room-avatar-type)!important}
-#mpRoomView[data-roster-identities] .mp-seat-identity{grid-column:2!important;grid-row:2/4!important;display:flex;flex-direction:column;gap:4px;align-items:stretch;align-self:center;min-width:0;width:100%}
-#mpRoomView[data-roster-identities] .mp-seat-name{display:block;white-space:normal!important;overflow-wrap:anywhere;text-overflow:clip!important}
-#mpRoomView[data-roster-identities] .mp-seat-details{display:flex;flex-direction:column;align-items:flex-start;gap:3px;font:500 11px/1.4 var(--ui-font);min-width:0}
-#mpRoomView[data-roster-identities] .mp-seat-details>.mp-seat-loadout{max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere;font:inherit!important}
-#mpRoomView[data-roster-identities] .mp-seat-details>.mp-seat-control{font:inherit}
-#mpRoomView[data-roster-identities] .mp-seat-state{grid-row:4!important}
-#mpRoomView[data-roster-identities] .mp-seat-resource{grid-column:1/-1!important;grid-row:5!important}
-#mpRoomView .mp-room-difficulty{display:inline-flex;align-items:center;flex-wrap:wrap;gap:12px;font-size:inherit;font-weight:700}
-#mpRoomView .mp-room-head{flex-wrap:wrap}
-#mpRoomView .mp-seat-identity{min-width:0}
-#mpRoomView .mp-seat-identity .mp-seat-name{white-space:normal;overflow-wrap:anywhere}
-#mpRoomView .mp-session-dock{grid-template-columns:minmax(0,1fr);gap:24px;width:100%;max-width:1120px;box-sizing:border-box;align-self:center}
-#mpRoomView .mp-room-social{min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:0 20px;align-items:start}
-#mpRoomView .mp-room-social-time{grid-column:1/-1;margin-bottom:12px;color:var(--room-muted);font-size:11px}
-#mpRoomView .mp-spectator-rail{grid-column:1;grid-row:1;width:auto;min-width:0;border:0!important;padding:0!important;margin:0!important}
-#mpRoomView .mp-room-social:has(.mp-room-social-time) .mp-spectator-rail,#mpRoomView .mp-room-social:has(.mp-room-social-time) .mp-room-chat-actions{grid-row:2}
-#mpRoomView .mp-spectator-stack{display:none!important}
-#mpRoomView .mp-spectator-rail-head{flex-direction:row!important;justify-content:center;min-height:48px!important;width:100%}
-#mpRoomView .mp-room-quick-chat{display:contents}
-#mpRoomView .mp-room-chat-space{flex:1 0 56px;min-height:56px;display:flex;flex-direction:column;justify-content:flex-end;padding:12px 0;box-sizing:border-box}
-#mpRoomView .mp-room-chat-log{max-height:120px;margin:0;overflow:auto;overflow-wrap:anywhere;font-size:12px;line-height:1.6;color:var(--room-text)}
-#mpRoomView .mp-room-chat-log p{margin:4px 0}
-#mpRoomView .mp-room-chat-actions{grid-column:2;grid-row:1;position:relative;min-width:0}
-#mpRoomView .mp-room-chat-actions summary{display:flex;align-items:center;justify-content:center;min-height:48px;padding:0 10px;border:0;border-inline-start:1px solid var(--room-line);border-radius:0;list-style:none;font-size:14px;cursor:pointer;color:var(--room-text)}
-#mpRoomView .mp-room-chat-actions summary::-webkit-details-marker{display:none}
-#mpRoomView .mp-room-chat-phrases{position:absolute;z-index:20;right:0;top:auto;bottom:calc(100% + 8px);width:min(300px,70vw);max-height:min(260px,50dvh);box-sizing:border-box;margin:0;overflow:auto;display:grid;gap:5px;padding:10px;border:1px solid var(--room-line);border-radius:16px;background:var(--room-surface)}
-#mpRoomView .mp-room-social .mp-spectator-rail{align-self:start;padding:0!important;margin:0!important}
-#mpRoomView .mp-room-social .mp-spectator-rail-head,#mpRoomView .mp-room-social .mp-room-chat-actions summary{display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box;min-height:48px!important;height:48px!important;padding:0 10px!important;font-size:14px!important;line-height:20px!important}
-#mpRoomView .mp-room-chat-phrases button{min-height:40px;padding:8px;border:0;border-radius:8px;background:var(--room-raised);color:var(--room-text);font:inherit;font-size:12px;text-align:left}
-#mpRoomView .mp-room-input-timing{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;padding:0;gap:4px}
-#mpRoomView #mpRoomSettings>.mp-room-input-timing{align-items:flex-start!important;justify-content:flex-start!important;justify-self:stretch;align-self:stretch;width:100%;box-sizing:border-box;margin-inline:0!important;text-align:left}
-#mpRoomView #mpRoomSettings .mp-room-delay{align-self:flex-start;justify-content:flex-start;margin-inline:0}
-#mpRoomView .mp-room-delay{width:max-content;max-width:100%;white-space:nowrap}
-#mpRoomView .mp-room-footer{grid-column:1;width:100%;box-sizing:border-box;border:0!important;padding:0!important;min-height:0!important}
-#mpRoomView .mp-room-footer button{width:100%!important;height:58px!important}
-#mpRoomView .mp-room-delay-hint{margin:2px 0 0;font-size:11px;line-height:1.5;color:var(--room-muted)}
-#mpRoomView .mp-room-delay{display:flex;align-items:center;gap:4px;min-width:0;font-size:12px;flex-wrap:nowrap}
-#mpRoomView .mp-room-delay[hidden]{display:none}
-#mpRoomView .mp-delay-stepper{display:inline-flex;flex:none;align-items:center;gap:2px;padding:2px;border:1px solid var(--room-line);border-radius:999px;background:var(--room-raised)}
-#mpRoomView .mp-delay-stepper button{box-sizing:border-box;min-height:36px!important;height:36px!important;padding:0!important;font:600 14px/1 var(--ui-font);color:var(--room-text)}
-#mpRoomView .mp-delay-step{width:32px;border:0;border-radius:999px;background:transparent}
-#mpRoomView .mp-delay-value{min-width:38px;border:0;border-radius:999px;background:transparent;font-variant-numeric:tabular-nums}
-#mpRoomView .mp-resource-tracks{grid-column:1/-1;width:100%;display:grid;gap:7px}
-#mpRoomView .mp-resource-row{display:grid;grid-template-columns:86px minmax(0,1fr) 34px;align-items:center;gap:10px;font-size:11px;color:var(--room-muted)}
-#mpRoomView .mp-resource-percent{text-align:right;font-variant-numeric:tabular-nums}
-#mpRoomView .mp-resource-row .mp-room-resource-track{grid-column:auto;margin:0;height:5px;min-width:0}
-#mpRoomView .mp-resource-row .mp-room-resource-track>span{display:block;height:100%;border-radius:inherit;background:var(--room-accent)}
-#mpRoomView .mp-resource-row .mp-room-resource-track.indeterminate>span{width:32%;animation:room-resource-sweep 1.5s ease-in-out infinite alternate}
-.less-motion #mpRoomView .mp-resource-row .mp-room-resource-track.indeterminate>span{animation:none;width:100%;opacity:.55}
-#mpRoomView .mp-seat-resource .mp-resource-row{grid-template-columns:64px minmax(0,1fr) 28px;font-size:9px;gap:5px}
-#mpRoomView .mp-seat-resource[data-status=ready] .mp-seat-resource-label,#mpRoomView .mp-seat-resource[data-status=preparing] .mp-seat-resource-label{display:none}
-#mpRoomView .mp-resource-row[data-resource-stage=package] .mp-room-resource-track>span,#mpRoomView .mp-seat-resource[data-status=ready] .mp-room-resource-track>span,#mpRoomView #mpRoomResourceProgress[data-status=ready] .mp-room-resource-track>span{background:#b4dba6!important}
-#mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat-details{flex-direction:row;flex-wrap:wrap;gap:4px 8px}
-@media(max-width:1100px){
- #mpRoomView .mp-session-dock{grid-template-columns:minmax(0,1fr);gap:24px}
- #mpRoomView .mp-dock-players{grid-column:1/-1}
- #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="3"] .mp-seat.occupied{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:44px auto auto auto auto!important}
- #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="3"] .mp-seat-identity{grid-column:1!important;grid-row:3!important}
+.difficulty-label {
+  display: inline-block;
+  vertical-align: middle;
 }
-@media(prefers-reduced-motion:reduce){#mpRoomView .mp-resource-row .mp-room-resource-track.indeterminate>span{animation:none;width:100%;opacity:.55}}
-@media(max-width:640px){
- .coop-room-row .th09-room-meta{flex-wrap:wrap}
- .coop-room-row .th09-room-duel{gap:10px}
- .coop-room-row .th09-duel-player{align-items:flex-start;gap:6px}
- .coop-room-row .th09-duel-name{font-size:16px;white-space:normal;overflow-wrap:anywhere}
- .coop-room-row .th09-duel-avatar{width:28px;height:28px;font-size:14px}
- .coop-room-row .room-card-loadout{font-size:11px}
- #mpRoomView .mp-room-head{display:grid!important;grid-template-columns:auto minmax(0,1fr) 36px!important;gap:8px!important}
- #mpRoomView .mp-room-back{grid-column:1;grid-row:1}
- #mpRoomView .mp-room-code{grid-column:2;grid-row:1;justify-self:end}
- #mpRoomView #mpSettingsRoomDrawerToggle{grid-column:3;grid-row:1}
- #mpRoomView .mp-room-difficulty{gap:10px}
- #mpRoomView .mp-session-dock{grid-template-columns:1fr;gap:24px;width:calc(100% + 40px)}
- #mpRoomView .mp-room-social,#mpRoomView .mp-room-footer{grid-column:1;grid-row:auto}
- #mpRoomView .mp-room-social{grid-template-columns:1fr 1fr}
- #mpRoomView .mp-room-chat-log{max-height:72px;min-height:28px}
- #mpRoomView .mp-room-delay{flex-wrap:nowrap}
- #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied{grid-template-columns:44px minmax(0,1fr)!important;grid-template-rows:minmax(24px,auto) auto auto auto auto!important}
- #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied .mp-seat-face{grid-column:1!important;grid-row:2/4!important}
- #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat-identity{grid-column:2!important;grid-row:2/4!important}
+.difficulty-texture {
+  position: relative;
+  width: 100px;
+  height: 20px;
+  overflow: hidden;
+  flex: none;
+}
+.difficulty-texture > img {
+  position: absolute;
+  left: -320px;
+  width: 640px;
+  height: 640px;
+  max-width: none;
+  pointer-events: none;
+}
+.difficulty-accessible-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.room-challenge-on {
+  font-size: 0.75em;
+  font-weight: 600;
+  color: #efbf78;
+  white-space: nowrap;
+}
+.room-card-player-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.room-card-loadout {
+  display: block;
+  color: var(--lobby-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.coop-room-row .th09-room-duel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.coop-room-row .th09-room-duel[data-player-count="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.coop-room-row .th09-duel-player {
+  grid-column: auto;
+  grid-row: auto;
+  justify-content: flex-start;
+  flex-direction: row;
+}
+.coop-room-row .th09-duel-name {
+  font-size: clamp(18px, 2.7vw, 32px);
+}
+.coop-room-row .th09-room-meta {
+  grid-column: 1 / 3;
+  gap: 6px 12px;
+}
+.coop-room-row .th09-room-meta .lobby-challengeMode {
+  display: inline;
+}
+.coop-room-row .th09-room-duration {
+  grid-column: 1 / 3;
+  justify-self: start;
+  font-size: 15px;
+}
+.coop-room-row .lobby-room-state {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+.lobby-page .coop-room-row.th09-room-row .lobby-join {
+  grid-column: 1 / 3;
+  grid-row: 4;
+  justify-self: start;
+}
+.coop-room-row .th09-room-spectators {
+  grid-row: 4;
+}
+#mpRoomView[data-roster-identities] .mp-seat-stage .mp-seat.occupied {
+  --room-avatar-size: 44px;
+  --room-avatar-type: 20px;
+  grid-template-columns: var(--room-avatar-size) minmax(0, 1fr) !important;
+  grid-template-rows: minmax(24px, auto) auto auto auto auto !important;
+  column-gap: 12px !important;
+}
+#mpRoomView[data-roster-identities] .mp-seat-stage .mp-seat.occupied .mp-seat-face {
+  width: var(--room-avatar-size) !important;
+  height: var(--room-avatar-size) !important;
+}
+#mpRoomView[data-roster-identities] .mp-seat-glyph {
+  font-size: var(--room-avatar-type) !important;
+}
+#mpRoomView[data-roster-identities] .mp-seat-identity {
+  grid-column: 2 !important;
+  grid-row: 2 / 4 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: stretch;
+  align-self: center;
+  min-width: 0;
+  width: 100%;
+}
+#mpRoomView[data-roster-identities] .mp-seat-name {
+  display: block;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  text-overflow: clip !important;
+}
+#mpRoomView[data-roster-identities] .mp-seat-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  font: 500 11px / 1.4 var(--ui-font);
+  min-width: 0;
+}
+#mpRoomView[data-roster-identities] .mp-seat-details > .mp-seat-loadout {
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  font: inherit !important;
+}
+#mpRoomView[data-roster-identities] .mp-seat-details > .mp-seat-control {
+  font: inherit;
+}
+#mpRoomView[data-roster-identities] .mp-seat-state {
+  grid-row: 4 !important;
+}
+#mpRoomView[data-roster-identities] .mp-seat-resource {
+  grid-column: 1 / -1 !important;
+  grid-row: 5 !important;
+}
+#mpRoomView .mp-room-difficulty {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: inherit;
+  font-weight: 700;
+}
+#mpRoomView .mp-room-head {
+  flex-wrap: wrap;
+}
+#mpRoomView .mp-seat-identity {
+  min-width: 0;
+}
+#mpRoomView .mp-seat-identity .mp-seat-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#mpRoomView .mp-session-dock {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  width: 100%;
+  max-width: 1120px;
+  box-sizing: border-box;
+  align-self: center;
+}
+#mpRoomView .mp-room-social {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 20px;
+  align-items: start;
+}
+#mpRoomView .mp-room-social-time {
+  grid-column: 1 / -1;
+  margin-bottom: 12px;
+  color: var(--room-muted);
+  font-size: 11px;
+}
+#mpRoomView .mp-spectator-rail {
+  grid-column: 1;
+  grid-row: 1;
+  width: auto;
+  min-width: 0;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+#mpRoomView .mp-room-social:has(.mp-room-social-time) .mp-spectator-rail,
+#mpRoomView .mp-room-social:has(.mp-room-social-time) .mp-room-chat-actions {
+  grid-row: 2;
+}
+#mpRoomView .mp-spectator-stack {
+  display: none !important;
+}
+#mpRoomView .mp-spectator-rail-head {
+  flex-direction: row !important;
+  justify-content: center;
+  min-height: 48px !important;
+  width: 100%;
+}
+#mpRoomView .mp-room-quick-chat {
+  display: contents;
+}
+#mpRoomView .mp-room-chat-space {
+  flex: 1 0 56px;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px 0;
+  box-sizing: border-box;
+}
+#mpRoomView .mp-room-chat-log {
+  max-height: 120px;
+  margin: 0;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--room-text);
+}
+#mpRoomView .mp-room-chat-log p {
+  margin: 4px 0;
+}
+#mpRoomView .mp-room-chat-actions {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  min-width: 0;
+}
+#mpRoomView .mp-room-chat-actions summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 0;
+  border-inline-start: 1px solid var(--room-line);
+  border-radius: 0;
+  list-style: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--room-text);
+}
+#mpRoomView .mp-room-chat-actions summary::-webkit-details-marker {
+  display: none;
+}
+#mpRoomView .mp-room-chat-phrases {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  top: auto;
+  bottom: calc(100% + 8px);
+  width: min(300px, 70vw);
+  max-height: min(260px, 50dvh);
+  box-sizing: border-box;
+  margin: 0;
+  overflow: auto;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--room-line);
+  border-radius: 16px;
+  background: var(--room-surface);
+}
+#mpRoomView .mp-room-social .mp-spectator-rail {
+  align-self: start;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+#mpRoomView .mp-room-social .mp-spectator-rail-head,
+#mpRoomView .mp-room-social .mp-room-chat-actions summary {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box;
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 0 10px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+#mpRoomView .mp-room-chat-phrases button {
+  min-height: 40px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--room-raised);
+  color: var(--room-text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+#mpRoomView .mp-room-input-timing {
+  flex-direction: column;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  padding: 0;
+  gap: 4px;
+}
+#mpRoomView #mpRoomSettings > .mp-room-input-timing {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  justify-self: stretch;
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin-inline: 0 !important;
+  text-align: left;
+}
+#mpRoomView #mpRoomSettings .mp-room-delay {
+  align-self: flex-start;
+  justify-content: flex-start;
+  margin-inline: 0;
+}
+#mpRoomView .mp-room-delay {
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+}
+#mpRoomView .mp-room-footer {
+  grid-column: 1;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+#mpRoomView .mp-room-footer button {
+  width: 100% !important;
+  height: 58px !important;
+}
+#mpRoomView .mp-room-delay-hint {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--room-muted);
+}
+#mpRoomView .mp-room-delay {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+  flex-wrap: nowrap;
+}
+#mpRoomView .mp-room-delay[hidden] {
+  display: none;
+}
+#mpRoomView .mp-delay-stepper {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--room-line);
+  border-radius: 999px;
+  background: var(--room-raised);
+}
+#mpRoomView .mp-delay-stepper button {
+  box-sizing: border-box;
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  font: 600 14px / 1 var(--ui-font);
+  color: var(--room-text);
+}
+#mpRoomView .mp-delay-step {
+  width: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+}
+#mpRoomView .mp-delay-value {
+  min-width: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+}
+#mpRoomView .mp-resource-tracks {
+  grid-column: 1 / -1;
+  width: 100%;
+  display: grid;
+  gap: 7px;
+}
+#mpRoomView .mp-resource-row {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--room-muted);
+}
+#mpRoomView .mp-resource-percent {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+#mpRoomView .mp-resource-row .mp-room-resource-track {
+  grid-column: auto;
+  margin: 0;
+  height: 5px;
+  min-width: 0;
+}
+#mpRoomView .mp-resource-row .mp-room-resource-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--room-accent);
+}
+#mpRoomView .mp-resource-row .mp-room-resource-track.indeterminate > span {
+  width: 32%;
+  animation: room-resource-sweep 1.5s ease-in-out infinite alternate;
+}
+.less-motion #mpRoomView .mp-resource-row .mp-room-resource-track.indeterminate > span {
+  animation: none;
+  width: 100%;
+  opacity: 0.55;
+}
+#mpRoomView .mp-seat-resource .mp-resource-row {
+  grid-template-columns: 64px minmax(0, 1fr) 28px;
+  font-size: 9px;
+  gap: 5px;
+}
+#mpRoomView .mp-seat-resource[data-status="ready"] .mp-seat-resource-label,
+#mpRoomView .mp-seat-resource[data-status="preparing"] .mp-seat-resource-label {
+  display: none;
+}
+#mpRoomView .mp-resource-row[data-resource-stage="package"] .mp-room-resource-track > span,
+#mpRoomView .mp-seat-resource[data-status="ready"] .mp-room-resource-track > span,
+#mpRoomView #mpRoomResourceProgress[data-status="ready"] .mp-room-resource-track > span {
+  background: #b4dba6 !important;
+}
+#mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat-details {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+@media (max-width: 1100px) {
+  #mpRoomView .mp-session-dock {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  #mpRoomView .mp-dock-players {
+    grid-column: 1 / -1;
+  }
+  #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="3"] .mp-seat.occupied {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: 44px auto auto auto auto !important;
+  }
+  #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="3"] .mp-seat-identity {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #mpRoomView .mp-resource-row .mp-room-resource-track.indeterminate > span {
+    animation: none;
+    width: 100%;
+    opacity: 0.55;
+  }
+}
+@media (max-width: 640px) {
+  .coop-room-row .th09-room-meta {
+    flex-wrap: wrap;
+  }
+  .coop-room-row .th09-room-duel {
+    gap: 10px;
+  }
+  .coop-room-row .th09-duel-player {
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .coop-room-row .th09-duel-name {
+    font-size: 16px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .coop-room-row .th09-duel-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  .coop-room-row .room-card-loadout {
+    font-size: 11px;
+  }
+  #mpRoomView .mp-room-head {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) 36px !important;
+    gap: 8px !important;
+  }
+  #mpRoomView .mp-room-back {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  #mpRoomView .mp-room-code {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  #mpRoomView #mpSettingsRoomDrawerToggle {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  #mpRoomView .mp-room-difficulty {
+    gap: 10px;
+  }
+  #mpRoomView .mp-session-dock {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: calc(100% + 40px);
+  }
+  #mpRoomView .mp-room-social,
+  #mpRoomView .mp-room-footer {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  #mpRoomView .mp-room-social {
+    grid-template-columns: 1fr 1fr;
+  }
+  #mpRoomView .mp-room-chat-log {
+    max-height: 72px;
+    min-height: 28px;
+  }
+  #mpRoomView .mp-room-delay {
+    flex-wrap: nowrap;
+  }
+  #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied {
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    grid-template-rows: minmax(24px, auto) auto auto auto auto !important;
+  }
+  #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat.occupied .mp-seat-face {
+    grid-column: 1 !important;
+    grid-row: 2 / 4 !important;
+  }
+  #mpRoomView[data-roster-identities] .mp-seat-stage[data-player-count="2"] .mp-seat-identity {
+    grid-column: 2 !important;
+    grid-row: 2 / 4 !important;
+  }
 }

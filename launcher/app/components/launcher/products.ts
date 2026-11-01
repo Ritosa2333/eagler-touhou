@@ -1,4 +1,10 @@
-import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, type ProductId, type GameId} from '../../../src/contracts/product-catalog.mts';
+import {
+  type GameId,
+  gameIdForProduct,
+  isMultiplayerProductId,
+  PRODUCT_GAMES,
+  type ProductId,
+} from '../../../src/contracts/product-catalog.mts';
 
 /** Host/publication decides membership and URLs before constructing this view data. */
 export interface LibraryProduct {
@@ -11,18 +17,34 @@ export interface LibraryProduct {
   artwork: string | null;
   href: string;
   hidden?: boolean;
-  presentation?: {positionPercent: number; artBrightness: number; artSaturation: number; glowBrightness: number; glowSaturation: number};
+  presentation?: {
+    positionPercent: number;
+    artBrightness: number;
+    artSaturation: number;
+    glowBrightness: number;
+    glowSaturation: number;
+  };
   adaptationNotice: boolean;
   sourceRepository: string;
-  credit?: {name: string; url: string};
+  credit?: { name: string; url: string };
 }
 
 /** Same catalog fields as lib/frontend-assets.mjs; no copied product list. */
-export function createLibraryProducts(ids: readonly ProductId[], assetUrl: (path: string) => string, hrefForProduct: (id: ProductId) => string): LibraryProduct[] {
-  return ids.map(id => {
-    const gameId = gameIdForProduct(id), game = PRODUCT_GAMES[gameId], support = game.support;
+export function createLibraryProducts(
+  ids: readonly ProductId[],
+  assetUrl: (path: string) => string,
+  hrefForProduct: (id: ProductId) => string,
+): LibraryProduct[] {
+  return ids.map((id) => {
+    const gameId = gameIdForProduct(id),
+      game = PRODUCT_GAMES[gameId],
+      support = game.support;
     return {
-      id, gameId, title: game.title, subtitle: game.subtitle, number: game.number,
+      id,
+      gameId,
+      title: game.title,
+      subtitle: game.subtitle,
+      number: game.number,
       multiplayer: isMultiplayerProductId(id),
       artwork: 'cardArtwork' in game && game.cardArtwork ? assetUrl(`assets/${game.cardArtwork}`) : null,
       href: hrefForProduct(id),

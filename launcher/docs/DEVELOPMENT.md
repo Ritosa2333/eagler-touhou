@@ -1,6 +1,6 @@
 # 前端与一个游戏的本地联调
 
-使用 Git、Node.js 24（最低 22.18）和 npm。编译游戏还需要 Emscripten SDK；其他依赖和本地资源由该作[开发指南](../../ports/README.md)列出。
+使用 Git 和 Bun 1.4.4（版本见 `.bun-version`）。编译游戏还需要 Emscripten SDK；其他依赖和本地资源由该作[开发指南](../../ports/README.md)列出。
 
 ## 1. 取前端和 TH10
 
@@ -8,7 +8,7 @@
 git clone --filter=blob:none --sparse https://github.com/YomotsuHisami/eagler-touhou.git
 cd eagler-touhou
 git sparse-checkout set launcher common tools docs ports/th10
-npm --prefix launcher ci --ignore-scripts
+bun install --cwd launcher --frozen-lockfile --ignore-scripts
 ```
 
 之后的命令都从仓库根目录运行。只改页面时，可从检出列表中去掉 `ports/th10`。
@@ -18,7 +18,7 @@ npm --prefix launcher ci --ignore-scripts
 已有完整打包 Runtime 的本地预览可指定 `EAGLER_DEVELOPMENT_SITE_MANIFEST`，由正常 Site Manifest 校验器读取运营者提供的 JSON。相对地址从预览站点解析；`EAGLER_TOUHOU_NETPLAY_RELAY` 可覆盖其联机地址。该选项只供源码开发服务器使用，不修改 Host 发布输入。
 
 ```sh
-npm run dev
+bun run dev
 ```
 
 打开终端显示的地址，修改页面并查看刷新结果。接下来运行游戏时，停止这个命令，使用第 4 步的集成服务器。
@@ -28,7 +28,7 @@ npm run dev
 先按 [TH10 开发指南](../../ports/th10/docs/DEVELOPMENT.md)准备 SDK 和字体目录，再编译普通版：
 
 ```sh
-npm run build:runtime -- --game=th10 --variant=normal --emsdk=/absolute/path/to/emsdk
+bun run build:runtime -- --game=th10 --variant=normal --emsdk=/absolute/path/to/emsdk
 EAGLER_FONT_ROOT=/absolute/path/to/th10-fonts node ports/th10/portable/package-eagler.mjs
 ```
 
@@ -39,11 +39,11 @@ EAGLER_FONT_ROOT=/absolute/path/to/th10-fonts node ports/th10/portable/package-e
 ## 4. 启动集成服务器
 
 ```sh
-npm run build
-EAGLER_DEVELOPMENT_GAMES=th10 npm start
+bun run build
+EAGLER_DEVELOPMENT_GAMES=th10 bun run start
 ```
 
-打开 <http://127.0.0.1:8130/>，导入 TH10 游戏数据后启动。修改前端后重新运行 `npm run build`；修改游戏后重新编译、打包。
+打开 <http://127.0.0.1:8130/>，导入 TH10 游戏数据后启动。修改前端后重新运行 `bun run build`；修改游戏后重新编译、打包。
 
 开发服务器按内容目录中实际完整存在的音乐文件集提供音乐选项。DATA 已准备、OGG 尚未准备时，可先使用无背景音乐模式运行游戏。
 
@@ -78,10 +78,10 @@ th11 与 th11mp 均提供高刷新呈现设置，首次开放时默认关闭，�
 ## 6. 检查改动
 
 ```sh
-npm run docs:check
-npm run typecheck
-npm run build
-npm test
+bun run docs:check
+bun run typecheck
+bun run build
+bun run test
 ```
 
 游戏行为按本作 `ADAPTATION.md` 逐项验证。需要核心模块、服务或真实浏览器测试时，按[测试入口](../tests/README.md)准备其输入并运行对应命令。
@@ -89,3 +89,11 @@ npm test
 播放器进入全屏即请求浏览器键盘锁，包含资源准备及 Runtime 初始化阶段。
 支持 Keyboard Lock 的浏览器将短按 Esc 交给游戏，长按 Esc 保留浏览器退出全屏行为；
 退出全屏释放锁。
+
+## 自动化测试
+
+在 `launcher/` 执行 `bun run test`，Vitest 会运行 TypeScript 单元测试、UI 契约、支持夹具和仓库内断言测试。`bun run test:unit`、`bun run test:ui-rewrite`、`bun run test:support` 和 `bun run test:repository` 分别选择对应测试组。
+
+`bun run test:workspace` 选择 `tests/test-plan.mjs` 中的跨仓库集成测试，需要检出相应作品源码。`bun run check` 和 `bun run check:workspace` 继续包含编译、语法、Python 和发布审计步骤；其中的 JavaScript 行为测试由 Vitest 调度。浏览器及原生 Runtime 的专项验收命令见 `package.json`。
+
+测试保留 `node:assert/strict` 断言，使用 Vitest 原生注册和钩子。测试文件在独立子进程内顺序执行，公告与发布检查逐项报告用例。启动器服务编译与 React 前端共享 Paraglide 词库，并将消息变化纳入缓存校验。

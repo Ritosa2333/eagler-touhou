@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createGameZoomController } from "../.cache/build/browser/assets/launcher/game-zoom.mjs";
 
+test("test-game-zoom", async () => {
 class FakeClassList {
   #values = new Set();
   add(...names) { for (const name of names) this.#values.add(name); }
@@ -124,3 +126,4 @@ console.log(JSON.stringify({
   pinch: "behavioral",
   runtimeWindowRebind: "detach-then-attach",
 }));
+});

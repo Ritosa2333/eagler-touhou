@@ -2,7 +2,7 @@
  * The clock and media queries are explicit fixtures. No browser, rendered CSS,
  * mobile device, native runtime, network or deployment validation is claimed.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

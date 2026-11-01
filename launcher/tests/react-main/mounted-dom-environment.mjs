@@ -16,7 +16,7 @@ export function installMountedDom() {
     originals.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
     Object.defineProperty(globalThis, key, {configurable: true, writable: true, value});
   };
-  for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement',
+  for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'HTMLFormElement', 'HTMLButtonElement', 'HTMLInputElement',
     'HTMLSelectElement', 'HTMLDialogElement', 'Element', 'Node', 'Event', 'MouseEvent', 'KeyboardEvent',
     'SubmitEvent', 'CustomEvent', 'MutationObserver', 'DOMRect', 'CSS', 'FormData', 'File', 'Blob']) expose(key, key === 'window' ? window : window[key]);
   expose('getComputedStyle', window.getComputedStyle.bind(window));

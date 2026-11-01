@@ -3,7 +3,10 @@ const STYLE_ID = 'eagler-pixel-perfect-display';
 /** Final browser scaling only. A stylesheet also covers canvases created later. */
 export function setPixelPerfectDisplay(document: Document, enabled: boolean) {
   const existing = document.getElementById(STYLE_ID);
-  if (!enabled) { existing?.remove(); return; }
+  if (!enabled) {
+    existing?.remove();
+    return;
+  }
   if (existing) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;

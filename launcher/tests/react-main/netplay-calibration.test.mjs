@@ -1,6 +1,6 @@
 /** Main netplay-calibration-{connection,report} source contracts. Synthetic
  * authenticated-epoch inputs/clock/DOM only; no live transport or upload. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';

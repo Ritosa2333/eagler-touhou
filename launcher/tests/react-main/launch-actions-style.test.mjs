@@ -1,5 +1,5 @@
 /** Resolved authored-rule contract, not rendered browser or device evidence. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
@@ -87,7 +87,7 @@ test('semantic standard and compact action pairs resolve to existing launcher/re
 
 test('third consumer arbitrary IDs inherit full primary icon style and shared motion; one common change reaches every consumer', () => {
   const mode = modes[0], reference = fixture();
-  const changed = rules(legacyCss + '\n' + sharedCss.replace('width:22px!important', 'width:26px!important'));
+  const changed = rules(legacyCss + '\n' + sharedCss.replace(/width:\s*22px\s*!important/, 'width:26px!important'));
   for (const id of ['launch', 'mpReplayViewer', 'thirdPlay']) {
     const root = fixture({id});
     for (const target of ['.launch:not(.launch-secondary)', '.launch:not(.launch-secondary) .launch-icon', '.launch:not(.launch-secondary) svg']) assert.deepEqual(resolved(newRules, root.querySelector(target), mode), resolved(newRules, reference.querySelector(target), mode));

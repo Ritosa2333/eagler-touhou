@@ -1,4 +1,4 @@
-/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import net from 'node:net';
@@ -8,6 +8,17 @@ import {PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerInputTimingPolicy
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {normalizeMultiplayerLobbySnapshot} from '../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs';
 import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.mjs';
+
+test("test-th11-multiplayer-policy", async () => {
+/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+
+
+
+
+
+
+
+
 
 const game=PRODUCT_GAMES.th11, policy=multiplayerConfigForProduct('th11mp');
 assert.equal(isMultiplayerProductId('th11mp'),true);
@@ -187,3 +198,4 @@ async function verifyRelayCase(count,requestedMode,automatic,code){
 for(const fixture of [[2,0,false,'9101'],[3,0,false,'9102'],[2,1,true,'9111'],[3,1,false,'9112'],[2,2,false,'9121']])
   await verifyRelayCase(...fixture);
 console.log('TH11 MP D0/P12 Direct, legacy pure delay, typed Runtime options, EBTM/EBNP and real local 2P/3P relay policy PASS');
+});

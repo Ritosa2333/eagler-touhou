@@ -1,13 +1,22 @@
-/** Cross-language format-adapter coverage gate.
- * Product registration and retail artwork decoding are separate owners, but
- * every formal game must have an artwork adapter before Host assembly can be
- * considered complete. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { HOST_SITE_ARTWORK_FILES } from "../lib/frontend-manifest.mjs";
+
+test("test-host-artwork-adapter-coverage", async () => {
+/** Cross-language format-adapter coverage gate.
+ * Product registration and retail artwork decoding are separate owners, but
+ * every formal game must have an artwork adapter before Host assembly can be
+ * considered complete. */
+
+
+
+
+
+
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const python = process.env.EAGLER_PYTHON || process.env.PYTHON || "python";
@@ -35,3 +44,4 @@ for (const artwork of HOST_SITE_ARTWORK_FILES) {
 }
 
 console.log(JSON.stringify({ hostArtworkAdapterCoverage: "PASS", games: report.games }));
+});

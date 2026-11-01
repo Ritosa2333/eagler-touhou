@@ -1,5 +1,5 @@
 /** Synthetic DOM: real Router links and main-derived masthead/select ownership. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach, vi} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -21,7 +21,7 @@ before(async()=>{
  export * from './app/components/room/MultiplayerOnlineFold.tsx';
  export * from './app/i18n.tsx';
  export {MemoryRouter,useLocation} from 'react-router';
- `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
+ `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:import.meta.resolve(args.path),external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
  owners=await import(pathToFileURL(resolve(buildDirectory,'bundle.mjs')));
 });
 afterEach(async()=>{if(root)await React.act(async()=>root.unmount());root=null;env.document.body.replaceChildren();assert.deepEqual(env.errors.splice(0),[]);});
@@ -61,7 +61,7 @@ test('Original hidden legacy online fold preserves readiness, retained normalize
  await React.act(async()=>update('missing'));await React.act(async()=>update('ready'));assert.equal(head.getAttribute('aria-expanded'),'true');assert.equal(input.value,'12345678');assert.equal(fold.hidden,true);
 });
 function Masthead({variant='lobby'}){const[open,setOpen]=React.useState(false);return el(owners.LauncherMasthead,{variant,assetUrl:x=>x,launcherHref:'/en.html',faqHref:'faq.html',aboutHref:'about.html',menuOpen:open,onMenuOpenChange:setOpen,lessMotion:false,onToggleMotion(){},noticeEnabled:true,onToggleNotice(){},diagnosticsEnabled:false,onToggleDiagnostics(){},onDonation(){},onFirstUse(){},languageControl:el(owners.MainSelect,{id:'uiLanguageSelect',className:'option-select ui-language-select','data-trigger-i18n':'ui.language.menu',value:'en',onChange(){}},el('option',{value:'zh-CN'},'简体中文'),el('option',{value:'en'},'English'))});}
-test('Lobby launcher back keeps original anchor and uses Router, standalone docs remain native',async()=>{await mount(el(Masthead));assert.equal(n('#launcherLink').getAttribute('href'),'/en.html');assert.equal(n('a[href="faq.html"]').getAttribute('data-discover'),null);await click('#launcherLink');assert.equal(n('#address').textContent,'/en.html');});
+test('Lobby launcher back keeps original anchor and uses Router, standalone docs remain native',async()=>{await mount(el(Masthead));assert.equal(n('#launcherLink').getAttribute('href'),'/en.html');assert.equal(n('a[href^="faq.html"]').getAttribute('data-discover'),null);await click('#launcherLink');assert.equal(n('#address').textContent,'/en.html');});
 test('Lobby masthead close closes actual detached custom-select menu',async()=>{await mount(el(Masthead));await click('#mastheadMenuToggle');await click('.mizuki-select-trigger');assert.equal(n('.mizuki-select-menu').hidden,false);await click('#mastheadMenuToggle');assert.equal(n('.mizuki-select-menu').hidden,true);assert.equal(n('#mastheadMenuPanel').hasAttribute('inert'),true);});
 test('Lobby custom-select item click does not count as masthead outside click',async()=>{await mount(el(Masthead));await click('#mastheadMenuToggle');await click('.mizuki-select-trigger');await click('.mizuki-select-item');assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'true');});
 test('Lobby Escape closes menu and restores original toggle focus',async()=>{await mount(el(Masthead));await click('#mastheadMenuToggle');const event=new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true});await React.act(async()=>n('#mastheadMenuPanel').dispatchEvent(event));assert.equal(event.defaultPrevented,true);assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'false');assert.equal(env.document.activeElement,n('#mastheadMenuToggle'));});
@@ -71,23 +71,23 @@ test('shared header play links navigate directly and only help and settings expa
  await mount(el(CurrentMasthead));
  assert.equal(n('.site-primary-links [aria-current=page]').dataset.siteLink,'single');
  assert.equal(n('#mastheadMenu').querySelectorAll('a[href*="game="]').length,0);
- assert.equal(n('.site-mobile-page-links [data-site-link=lobby]').getAttribute('href'),'/lobby.html');
+ assert.equal(n('.site-primary-links [data-site-link=lobby]').getAttribute('href'),'/lobby.html?lang=en');
  await React.act(async()=>n('.site-primary-links [data-site-link=lobby]').dispatchEvent(new env.window.PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'})));
  assert.equal(n('#mastheadMenuPanel').hasAttribute('inert'),true);
- await click('.site-primary-links [data-site-link=lobby]');assert.equal(n('#address').textContent,'/lobby.html');
+ await click('.site-primary-links [data-site-link=lobby]');assert.equal(n('#address').textContent,'/lobby.html?lang=en');
  assert.equal(n('.site-primary-links [aria-current=page]').dataset.siteLink,'lobby');
  await click('.site-primary-links [data-site-link=single]');assert.equal(n('#address').textContent,'/en.html');
  assert.equal(n('.site-primary-links [aria-current=page]').dataset.siteLink,'single');
  await click('[data-site-trigger=help]');
  assert.equal(n('#mastheadMenu').dataset.group,'help');assert.equal(n('#mastheadMenuPanel').hasAttribute('inert'),false);
- assert.equal(n('[data-site-panel=help] a[href="/uptime/"]').tagName,'A');
+ assert.equal(n('[data-site-panel=help] a[href^="/uptime/?lang="]').tagName,'A');
  await React.act(async()=>env.document.body.click());assert.equal(n('#mastheadMenuPanel').hasAttribute('inert'),true);
 });
 
 test('header hover waits 500ms, cancels on departure or dismissal, and keeps direct actions immediate',async t=>{
- await mount(el(Masthead));t.mock.timers.enable({apis:['setTimeout']});
+ await mount(el(Masthead));vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); t.onTestFinished(() => vi.useRealTimers());
  const enter=()=>React.act(async()=>n('[data-site-trigger=help]').dispatchEvent(new env.window.PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'})));
- const tick=ms=>React.act(async()=>t.mock.timers.tick(ms));
+ const tick=ms=>React.act(async()=>vi.advanceTimersByTime(ms));
  const escape=()=>React.act(async()=>n('[data-site-trigger=help]').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
  const closed=()=>assert.equal(n('#mastheadMenuPanel').hasAttribute('inert'),true);
  await enter();await tick(499);closed();await tick(1);

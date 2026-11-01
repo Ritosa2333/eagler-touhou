@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   buildMultiplayerGameplayRelayUrl,
@@ -5,6 +6,7 @@ import {
   multiplayerTransportRoomId,
 } from "../.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs";
 
+test("test-multiplayer-relay-url", async () => {
 assert.equal(multiplayerTransportRoomId("th06mp", "1234"), "th06mp-1234");
 assert.notEqual(multiplayerTransportRoomId("th06mp", "1234"), multiplayerTransportRoomId("th07mp", "1234"),
   "display room codes must remain isolated by multiplayer product");
@@ -58,3 +60,4 @@ console.log(JSON.stringify({
   roleParams: "exclusive-and-normalized",
   deploymentQuery: "preserved",
 }));
+});

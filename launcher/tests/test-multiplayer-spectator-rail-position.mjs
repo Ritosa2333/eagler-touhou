@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   createMultiplayerSpectatorRailPositionStore,
@@ -5,6 +6,7 @@ import {
   multiplayerSpectatorRailPositionStorageKey,
 } from "../.cache/build/browser/assets/launcher/multiplayer-spectator-rail-position.mjs";
 
+test("test-multiplayer-spectator-rail-position", async () => {
 class MemoryStorage {
   values = new Map();
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
@@ -65,3 +67,4 @@ console.log(JSON.stringify({
   canonicalWriteBeforeLegacyDelete: true,
   storageFailure: "non-fatal",
 }));
+});

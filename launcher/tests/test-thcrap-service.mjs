@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -5,6 +6,7 @@ import { join } from "node:path";
 import { crc32 } from "../integrations/thcrap.mjs";
 import { ThcrapService, createThcrapHttpHandler } from "../server/thcrap-service.mjs";
 
+test("test-thcrap-service", async () => {
 const encoder = new TextEncoder();
 const png = encoder.encode("server png fixture");
 const jdiff = encoder.encode('{"0":{"60_0":{"lines":["Hello"]}}}');
@@ -109,3 +111,4 @@ try {
 } finally {
   await rm(cacheRoot, { recursive: true, force: true });
 }
+});

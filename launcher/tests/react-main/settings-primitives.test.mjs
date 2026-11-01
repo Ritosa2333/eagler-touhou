@@ -1,6 +1,6 @@
 /** Third-consumer mounted contracts for shared presentation owners.
  * Synthetic DOM only; no browser layout, animation pixels or native runtime. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -42,10 +42,10 @@ test('third launch consumer shares shell/icon order and retains current intent, 
   await update('Preview');
   const play = n('#thirdPlay'), secondary = n('#thirdImport');
   assert.equal(play.parentElement.className, 'launch-wrap launch-actions launch-actions-compact');
-  assert.equal(play.className, 'launch'); assert.equal(secondary.className, 'launch launch-secondary');
+  assert.equal(play.classList.contains('launch'), true); assert.equal(secondary.classList.contains('launch-secondary'), true);
   assert.equal(play.firstElementChild.id, 'thirdText'); assert.equal(play.lastElementChild.className, 'launch-icon');
   assert.equal(secondary.firstElementChild.className, 'launch-icon'); assert.equal(secondary.lastElementChild.textContent, 'Import');
-  assert.equal(play.querySelector('path').getAttribute('d'), 'm9 6 9 6-9 6Z');
+  assert.ok(play.querySelector('svg.lucide-play')); assert.equal(play.querySelector('svg').getAttribute('aria-hidden'), 'true');
   for (const button of [play, secondary]) {assert.equal(button.type, 'button'); assert.equal(button.querySelector('.launch-icon').getAttribute('aria-hidden'), 'true');}
   play.click(); secondary.click(); assert.deepEqual(calls, ['Preview', 'import']); assert.equal(submits, 0);
   await update('Busy', true); assert.equal(n('#thirdPlay'), play); play.click(); assert.deepEqual(calls, ['Preview', 'import']);
@@ -79,9 +79,9 @@ test('third option row preserves label/hint structure, linked switch and hidden/
   await update(); const row = n('#thirdRow'), button = n('#thirdSwitch');
   assert.equal(row.firstElementChild.className, 'itemtop'); assert.equal(n('#thirdHint').parentElement.firstElementChild.textContent, 'Third switch');
   assert.equal(button.getAttribute('aria-describedby'), 'thirdHint'); assert.equal(button.title, 'Capability reason');
-  button.click(); assert.deepEqual(changes, [true]);
+  await act(() => button.click()); assert.deepEqual(changes, [true]);
   await update({disabled: true, checked: true, hidden: true}); assert.equal(n('#thirdSwitch'), button); assert.equal(row.hidden, true);
-  assert.equal(button.getAttribute('aria-checked'), 'true'); assert.equal(button.className, 'option-switch on'); button.click(); assert.deepEqual(changes, [true]);
+  assert.equal(button.getAttribute('aria-checked'), 'true'); assert.equal(button.classList.contains('option-switch') && button.classList.contains('on'), true); await act(() => button.click()); assert.deepEqual(changes, [true]);
   await update({inlineLabel: true}); assert.equal(n('#thirdHint').parentElement.firstChild.nodeType, env.window.Node.TEXT_NODE);
   await render(React.createElement(owners.OptionRow, {className: 'item', label: 'Plain', control: React.createElement('button', {type: 'button'}, 'Control')}));
   assert.equal(env.document.querySelector('small'), null); assert.equal(n('.itemtop>span').textContent, 'Plain');

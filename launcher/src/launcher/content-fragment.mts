@@ -12,11 +12,11 @@ export function renderContentFragment(target: HTMLElement, html: string, documen
   const template = documentObj.createElement("template");
   template.innerHTML = html;
   const fragment = documentObj.createDocumentFragment();
-  const safeUrl = (value: string | null): string | null => {
+  const safeUrl = (value: string | null, allowMail = false): string | null => {
     if (!value?.trim()) return null;
     try {
       const url = new URL(value, documentObj.baseURI);
-      return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+      return url.protocol === "http:" || url.protocol === "https:" || allowMail && url.protocol === "mailto:" ? url.href : null;
     } catch { return null; }
   };
   const copy = (source: Node, parent: Node, depth: number): void => {
@@ -35,7 +35,7 @@ export function renderContentFragment(target: HTMLElement, html: string, documen
     const title = element.getAttribute("title");
     if (title) node.title = title;
     if (tag === "a") {
-      const href = safeUrl(element.getAttribute("href"));
+      const href = safeUrl(element.getAttribute("href"), true);
       if (href) node.setAttribute("href", href);
       if (element.getAttribute("target") === "_blank") {
         node.setAttribute("target", "_blank");

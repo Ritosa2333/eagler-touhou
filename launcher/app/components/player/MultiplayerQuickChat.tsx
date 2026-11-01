@@ -1,19 +1,15 @@
 import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  QUICK_CHAT_ROWS,
-  type QuickChatPhrase,
-} from '../../../src/contracts/multiplayer-quick-chat.mts';
-import type {
-  MultiplayerQuickChatModel,
-  QuickChatEntry,
-} from '../../../src/launcher/multiplayer-quick-chat-model.mts';
-import { useLocale } from '../../i18n';
+import { QUICK_CHAT_ROWS, type QuickChatPhrase } from '../../../src/contracts/multiplayer-quick-chat.mts';
+import { isUiMessageKey, resolveUiLocale } from '../../../src/launcher/i18n.mts';
+import type { MultiplayerQuickChatModel, QuickChatEntry } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
+import { translate, useLocale } from '../../i18n';
+import { Button } from '../ui/button';
 
 /** React owns every node. Native effects retain the original iframe input,
  * scrolling and independent move/expiry animations; they never own chat state. */
 export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatModel }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const root = useRef<HTMLElement>(null),
     log = useRef<HTMLDivElement>(null);
   const rows = useRef(new Map<number, HTMLParagraphElement>());
@@ -58,8 +54,7 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
   const th09 = context?.room.startsWith('th09mp-') === true;
 
   function duration(milliseconds: number) {
-    return model.getSnapshot().context?.lessMotion ||
-      matchMedia('(prefers-reduced-motion: reduce)').matches
+    return model.getSnapshot().context?.lessMotion || matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 0
       : milliseconds;
   }
@@ -84,18 +79,12 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       'touchcancel',
     ];
     element.addEventListener('keydown', key);
-    for (const name of ['pointerdown', 'mousedown'])
-      element.addEventListener(name, prevent, { capture: true });
+    for (const name of ['pointerdown', 'mousedown']) element.addEventListener(name, prevent, { capture: true });
     for (const name of blocked) element.addEventListener(name, stop);
     const detach = model.setExpiryPresenter((entry: QuickChatEntry) => {
       const row = rows.current.get(entry.id),
         milliseconds = duration(280);
-      if (
-        !milliseconds ||
-        !model.getSnapshot().context?.visible ||
-        row?.parentElement !== log.current
-      )
-        return;
+      if (!milliseconds || !model.getSnapshot().context?.visible || row?.parentElement !== log.current) return;
       const animation = row.animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: milliseconds,
         easing: 'ease-in',
@@ -106,8 +95,7 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
     });
     return () => {
       element.removeEventListener('keydown', key);
-      for (const name of ['pointerdown', 'mousedown'])
-        element.removeEventListener(name, prevent, { capture: true });
+      for (const name of ['pointerdown', 'mousedown']) element.removeEventListener(name, prevent, { capture: true });
       for (const name of blocked) element.removeEventListener(name, stop);
       for (const animation of fades.current.values()) animation.cancel();
       fades.current.clear();
@@ -156,22 +144,24 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
         from.opacity = opacity;
         to.opacity = 1;
       }
-      moves.current.set(
-        row,
-        row.animate([from, to], { duration: milliseconds, easing: 'cubic-bezier(.2,.7,.2,1)' }),
-      );
+      moves.current.set(row, row.animate([from, to], { duration: milliseconds, easing: 'cubic-bezier(.2,.7,.2,1)' }));
     }
   }, [state]);
-  const label = (phrase: QuickChatPhrase) => (context?.language === 'en' ? phrase.en : phrase.zh);
+  const label = (phrase: QuickChatPhrase) => {
+    const key = `chat.phrase.${phrase.id}`;
+    return isUiMessageKey(key) ? translate(resolveUiLocale(context?.language ?? locale), key) : phrase.en;
+  };
   const muteButton = (
-    <button
+    <Button
+      variant="legacy"
+      size="legacy"
       type="button"
       className="mp-quick-chat-mute"
       aria-expanded={state.muteOpen}
       onClick={model.toggleMute}
     >
       {t(state.muteOpen ? 'chat.back' : 'chat.mute')}
-    </button>
+    </Button>
   );
   const section = (
     <section
@@ -180,37 +170,35 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       hidden={!context?.visible || context.inRoom}
       aria-label={t('chat.players')}
     >
-      <button
+      <Button
+        variant="legacy"
+        size="legacy"
         type="button"
         className="mp-quick-chat-prompt"
         aria-expanded={state.pickerOpen || state.muteOpen}
         disabled={!context?.connected}
         onClick={model.togglePicker}
       >
-        <img
-          className="th09-chat-icon"
-          src={new URL('assets/player-chat.svg', document.baseURI).href}
-          alt=""
-        />
+        <img className="th09-chat-icon" src={new URL('assets/player-chat.svg', document.baseURI).href} alt="" />
         {t('room.quickChat')}
-      </button>
+      </Button>
       <div className="mp-quick-chat-picker" hidden={!state.pickerOpen}>
         {QUICK_CHAT_ROWS.map((phrases, index) => (
           <div key={index} className={`mp-quick-chat-row${phrases.length === 2 ? ' paired' : ''}`}>
             {phrases.map((phrase) => (
-              <button
+              <Button
+                variant="legacy"
+                size="legacy"
                 key={phrase.id}
                 type="button"
                 className="mp-quick-chat-phrase"
                 data-phrase={phrase.id}
                 title={label(phrase)}
-                disabled={
-                  !context?.connected || (context.localSeat == null && !context.localSpectator)
-                }
+                disabled={!context?.connected || (context.localSeat == null && !context.localSpectator)}
                 onClick={() => model.sendPhrase(phrase.id)}
               >
                 {label(phrase)}
-              </button>
+              </Button>
             ))}
           </div>
         ))}
@@ -222,19 +210,23 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
           !seat || index === context.localSeat
             ? []
             : [
-                <button
+                <Button
+                  variant="legacy"
+                  size="legacy"
                   key={seat.clientId}
                   type="button"
                   className="mp-quick-chat-mute-member"
                   aria-pressed={state.muted.includes(seat.clientId)}
                   onClick={() => model.toggleMember(seat.clientId)}
-                >{`P${index + 1} ${seat.name} · ${t(state.muted.includes(seat.clientId) ? 'chat.unmute' : 'chat.mute')}`}</button>,
+                >{`P${index + 1} ${seat.name} · ${t(state.muted.includes(seat.clientId) ? 'chat.unmute' : 'chat.mute')}`}</Button>,
               ],
         )}
         {context?.spectators
           ?.filter((member) => member.clientId !== context.localClientId)
           .map((member) => (
-            <button
+            <Button
+              variant="legacy"
+              size="legacy"
               key={member.clientId}
               type="button"
               className="mp-quick-chat-mute-member"
@@ -242,7 +234,7 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
               onClick={() => model.toggleMember(member.clientId)}
             >
               {`${t('multiplayer.spectators')} ${member.name} · ${t(state.muted.includes(member.clientId) ? 'chat.unmute' : 'chat.mute')}`}
-            </button>
+            </Button>
           ))}
         {state.muteOpen && muteButton}
       </div>
@@ -297,7 +289,8 @@ function RetainedRow({
     },
     [entry.id, carrier, rows, log, visible],
   );
-  const sender = `${entry.spectator ? '观众' : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
+  const { t } = useLocale();
+  const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   return (
     <p ref={ref} title={`${sender}: ${label}`}>
       <strong>{sender}</strong>

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   createTouchLayoutWindowPositionStore,
@@ -7,6 +8,7 @@ import {
   touchLayoutWindowPositionsVersion,
 } from "../.cache/build/browser/assets/launcher/touch-layout-editor-state.mjs";
 
+test("test-touch-layout-editor-state", async () => {
 class MemoryStorage {
   constructor(initial = {}) { this.values = new Map(Object.entries(initial)); }
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
@@ -78,3 +80,4 @@ console.log(JSON.stringify({
   storageFailure: "non-fatal",
   positions: "normalized-per-window",
 }));
+});

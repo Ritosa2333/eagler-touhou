@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {createThcrapClient} from '../integrations/thcrap.mjs';
 
+test("test-thcrap-patch-precedence", async () => {
 const root='https://fixture.test/';
 const fixtures=new Map([
  ['script_latin/patch.js',{id:'script_latin',fonts:{'font.ttf':true}}],
@@ -20,3 +22,4 @@ for(const path of ['th15/title/result00.png','th15/musiccmt.js']){
 assert.equal(pack.assets.find(x=>x.mountPath==='/thcrap/th15/th15.js')?.path,'global.js',
  'Font-options precedence must remain unchanged');
 console.log('PASS: language leaf artwork/tables and independent font-options precedence');
+});

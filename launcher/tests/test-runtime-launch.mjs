@@ -1,9 +1,12 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { prepareRuntimeLaunch } from "../.cache/build/browser/assets/launcher/runtime-launch.mjs";
 import { canonicalRuntimePayload, RUNTIME_MANIFEST_SCHEMA, RUNTIME_PROTOCOL,
   RUNTIME_CACHE_PROTOCOL, RUNTIME_CAPABILITIES, RUNTIME_PREPARE, RUNTIME_PROGRESS, RUNTIME_IMPORT,
   validateRuntimeImportRequest } from "../lib/contracts/runtime-generations.mjs";
+
+test("test-runtime-launch", async () => {
 const hash = text => createHash("sha256").update(text).digest("hex");
 function generation(version) {
   const bodies={"game.html":`<script src="game.js"></script>${version}`,"game.js":`// ${version}`,"game.wasm":`wasm ${version}`};
@@ -153,3 +156,4 @@ assert.deepEqual(fontModes,[["game.html","error"],["fonts/blend4444.bin","follow
 corruptFont=true;
 await assert.rejects(prepareRuntimeLaunch(root+"game.html",{baseUrl,fetchImpl:fontFetch,worker:null}),/integrity mismatch/);
 console.log("Launcher offline-first, verified background updates, strict MP versions, whole-generation fallback, bounded downloads and DATA identity separation: PASS");
+});

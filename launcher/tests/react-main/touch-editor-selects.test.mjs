@@ -1,7 +1,7 @@
 /** Pinned main app.mts4504–4510,6933–6945,7433–7449,9490–9527: native
  * fullscreen menu hosts, workbench dismissal and editor lifecycle. Synthetic DOM only;
  * not evidence of real fullscreen top-layer paint or browser focus behavior. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

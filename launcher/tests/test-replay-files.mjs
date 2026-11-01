@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   allocateReplayName,
@@ -14,6 +15,7 @@ import {
   selectReplayExportPaths,
 } from "../.cache/build/browser/assets/launcher/replay-files.mjs";
 
+test("test-replay-files", async () => {
 assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.rep");
 assert.equal(isReplayFilePath("replay/replay000.rep"), true);
 assert.equal(isValidReplayName("th075", "replay000.rep"), true);
@@ -142,3 +144,4 @@ console.log(JSON.stringify({
   replayMetadata: "embedded-prac-only",
   collision: "case-insensitive",
 }));
+});

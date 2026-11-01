@@ -1,3 +1,5 @@
+import {paraglideVitePlugin} from '@inlang/paraglide-js';
+import tailwindcss from '@tailwindcss/vite';
 import {defineConfig} from 'vite';
 import {reactRouter} from '@react-router/dev/vite';
 import {originalBootstrap} from './scripts/ui-rewrite/original-bootstrap.ts';
@@ -17,4 +19,5 @@ export default defineConfig({base: deployment.mountPath,
   // Keep generated JavaScript within the browser floor admitted by bootstrap.
   build: {manifest: true, target: 'chrome108'},
   define: {__REACT_APP_SHELL_DEPLOYMENT__: JSON.stringify(deployment.appShell)},
-  plugins: [originalBootstrap(), mainAssets(), authoredSources(), reactRouter()], publicDir: false});
+  resolve: {alias: {'~': fileURLToPath(new URL('./app', import.meta.url))}},
+  plugins: [paraglideVitePlugin({project: './project.inlang', outdir: './src/paraglide', strategy: ['baseLocale'], outputStructure: 'message-modules', emitTsDeclarations: true, disableAsyncLocalStorage: true}), tailwindcss(), originalBootstrap(), mainAssets(), authoredSources(), reactRouter()], publicDir: false});

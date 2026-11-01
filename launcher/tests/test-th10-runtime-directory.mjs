@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
@@ -7,6 +8,8 @@ import {PRODUCT_GAMES} from '../lib/contracts/product-catalog.mjs';
 import {runtimeAppShellPaths} from '../lib/app-shell-policy.mjs';
 import {workspacePath} from '../lib/workspace-layout.mjs';
 import {TH10_MUSIC_LAYOUT, TH10_MUSIC_NAMES} from '../lib/th10-content-layout.mjs';
+
+test("test-th10-runtime-directory", async () => {
 const verified = {};
 const directoryGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.runtimeFileLayout === 'directory')
@@ -58,3 +61,4 @@ assert.deepEqual(portableTh10Layout, TH10_MUSIC_LAYOUT.map(row => ({...row})),
   'Launcher-owned TH10 content layout must match the canonical portable Runtime');
 assert.deepEqual(TH10_MUSIC_NAMES, ['02','00','01','03','04','05','06','07','08','09','10','11','12','15','16','13','14','17']);
 console.log(JSON.stringify({directoryRuntime: 'PASS', verifiedFiles: verified, executableContentRejected: true, sdl3GlesRuntimeContract: true}));
+});

@@ -1,6 +1,7 @@
+import {legacyControlAttributes} from './legacy-control-attributes.mjs';
 import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Mounted synthetic DOM only. No browser, authored-CSS, rendering or device claim. */
-import test, {before, beforeEach, after, afterEach} from 'node:test';
+import {test, beforeAll as before, beforeEach, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -50,7 +51,7 @@ before(async () => {
     `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic',
     outfile: resolve(buildDirectory, 'bundle.mjs'), logLevel: 'silent',
     plugins: [{name: 'dependencies-and-existing-mts', setup(context) {
-      context.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+      context.onResolve({filter: /^[^./]/}, args => ({path: import.meta.resolve(args.path), external: true}));
       context.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {
         const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts');
         if (existsSync(path)) return {path};
@@ -148,7 +149,7 @@ async function mount(initial = {}, {locale = 'en', strict = false, controlledClo
 function normalize(element) {
   if (element.nodeType === 3) return element.textContent.replace(/\s+/g, ' ').trim() || null;
   if (element.nodeType !== 1) return null;
-  return [element.localName, [...element.attributes].map(attribute => [attribute.name, attribute.value]).sort(([a], [b]) => a.localeCompare(b)),
+  return [element.localName, legacyControlAttributes(element).map(attribute => [attribute.name, attribute.value]).sort(([a], [b]) => a.localeCompare(b)),
     [...element.childNodes].map(normalize).filter(Boolean)];
 }
 function originalHelp(locale, {open, touchEnabled, focusMode, showIosFullscreenHelp}) {
@@ -157,6 +158,9 @@ function originalHelp(locale, {open, touchEnabled, focusMode, showIosFullscreenH
   for (const node of help.querySelectorAll('[data-i18n]')) node.textContent = t(node.dataset.i18n);
   for (const attribute of ['aria-label', 'title']) for (const node of help.querySelectorAll(`[data-i18n-${attribute}]`)) {
     node.setAttribute(attribute, t(node.getAttribute(`data-i18n-${attribute}`)));
+  }
+  for (const [selector,key] of [['.menu-question','help.demoContinue'],['.choice-yes','help.demoYes'],['.choice-no','help.demoNo'],['.menu-result small','help.demoInput'],['.result-yes b','help.demoYes'],['.result-no b','help.demoNo']]) {
+    for (const element of help.querySelectorAll(selector)) element.textContent = t(key);
   }
   help.hidden = !open;
   help.classList.toggle('touch-help-touch-input', touchEnabled);

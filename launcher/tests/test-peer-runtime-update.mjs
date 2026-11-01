@@ -1,5 +1,8 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {updatePeerRuntime} from '../scripts/update-peer-runtime.mjs';
+
+test("test-peer-runtime-update", async () => {
 const fixture=`const unchanged=42; export default async function runtime(Module){
 function eagler_peer_connect(a,b,c,d,e){return 'old';}
 function eagler_peer_send(a,b,c){return 1;}
@@ -23,3 +26,4 @@ assert.throws(()=>update(fixture.replace('a,b,c,d,e','a,b,c,d')),/ABI mismatch/)
 assert.throws(()=>update(fixture.replace('eagler_peer_send_to','absent')),/binding missing/);
 assert.throws(()=>update(fixture+'function eagler_peer_send_to(a,b,c){}'),/Ambiguous binding/);
 console.log('Shared browser bridge update | native signatures | unrelated content | repeatability');
+});

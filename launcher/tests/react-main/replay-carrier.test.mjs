@@ -1,7 +1,8 @@
+import {legacyControlAttributes} from './legacy-control-attributes.mjs';
 import {synchronizedMainAuthority} from './source-text.mjs';
 import {runInNewContext} from 'node:vm';
 /** Independent mounted synthetic-DOM regression. No browser/CSS/native top-layer claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -38,7 +39,7 @@ before(async()=>{
  export * from './app/i18n.tsx';
  export {encodeRoomInvite,ROOM_INVITE_KEY} from './src/launcher/room-invite.mts';
  export {SurfaceNavigationProvider,useSurfaceNavigation} from './app/navigation/surface-navigation.tsx';
- `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'actual-bundle.mjs'),logLevel:'silent',plugins:[{name:'existing-deps',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
+ `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'actual-bundle.mjs'),logLevel:'silent',plugins:[{name:'existing-deps',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:import.meta.resolve(args.path),external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
  owners=await import(pathToFileURL(resolve(buildDirectory,'actual-bundle.mjs')));
  for(const [key,zh,en]of messages)if(/^replay\.|^status\.(?:readingReplay|replayReadFailed|noReplay)$|^action\.(?:close|download|rename|delete)$/.test(key)){
    assert.equal(owners.translate('zh-CN',key),zh,`legacy Replay copy ${key} zh-CN stays pinned`);
@@ -59,7 +60,7 @@ function fakeClock(){let now=0,serial=0;const timers=new Map();globalThis.setTim
 async function click(selector){await React.act(async()=>n(selector).click());}
 async function cancel(selector){const e=new env.window.Event('cancel',{cancelable:true});await React.act(async()=>n(selector).dispatchEvent(e));assert.equal(e.defaultPrevented,true);}
 async function animation(name,target='#replayDialog'){const event=new env.window.Event('animationend',{bubbles:true});Object.defineProperty(event,'animationName',{value:name});await React.act(async()=>n(target).dispatchEvent(event));}
-function normalize(el){if(el.nodeType===3)return el.textContent.replace(/\s+/g,' ').trim()||null;if(el.nodeType!==1)return null;const attrs=[...el.attributes].filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [el.localName,attrs,[...el.childNodes].map(normalize).filter(Boolean)];}
+function normalize(el){if(el.nodeType===3)return el.textContent.replace(/\s+/g,' ').trim()||null;if(el.nodeType!==1)return null;const attrs=legacyControlAttributes(el).filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [el.localName,attrs,[...el.childNodes].map(normalize).filter(Boolean)];}
 function normalizedActualReplay(){
  const actual=n('#replayDialog').cloneNode(true);
  // Explicit replacement for the old iframe document boundary; all other

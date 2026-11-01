@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {developmentResourceRoutes} from '../lib/development-resource-routes.mjs';
 
+test("test-development-resource-routes", async () => {
 const directory=await mkdtemp(resolve(tmpdir(),'eagler-development-inputs-'));
 try{
   const outside=resolve(directory,'private 素材');await mkdir(outside);
@@ -27,3 +29,4 @@ try{
   assert.throws(()=>developmentResourceRoutes(input,{sourceRoot:directory}),/outside declared directory/);
   console.log('Development external inputs: PASS');
 }finally{await rm(directory,{recursive:true,force:true});}
+});

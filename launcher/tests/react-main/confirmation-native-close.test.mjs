@@ -1,7 +1,7 @@
 /** Source authority: main app.mts3114–3152,3178–3207,8957–8981 and
  * tests/browser/test-pwa-boot.py's direct decisionDialog.close() step.
  * Mounted synthetic DOM only; no native browser or PWA result is claimed. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, readFile, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

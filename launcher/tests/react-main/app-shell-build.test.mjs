@@ -1,5 +1,5 @@
 /** Real build output contracts only. These tests never start a browser/server. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile} from 'node:fs/promises';
@@ -23,12 +23,14 @@ before(async () => {
   coldSource = resolve(work, 'source'); await mkdir(coldSource);
   // Exercise the supported build from authored inputs, never a warm ignored
   // launcher cache. Keep dependency installation shared; copy no build output.
-  for (const path of ['app', 'src', 'lib', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
+  for (const path of ['app', 'src', 'messages', 'project.inlang', 'lib', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
     'content', 'favicon.ico', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
-    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
+    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});
   }
+  // Code generation is intentionally absent in this fresh-source fixture.
+  await rm(resolve(coldSource, 'src/paraglide'), {recursive: true, force: true});
   await cp(resolve('../common/contracts'), resolve(work, 'common/contracts'), {recursive: true});
   // Change only authored Markdown. Pre-generated HTML deliberately remains
   // stale so the real build must use main's content compiler, not copy it.
@@ -61,7 +63,7 @@ test('default actual build publishes an enabled same-origin offline worker', asy
   const worker = await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8');
   assert.notEqual(worker, APP_SHELL_RETIREMENT_WORKER);
   assert.match(worker, /App Shell integrity mismatch/);
-  for (const file of ['index.html', 'en.html', 'lobby.html']) {
+  for (const file of ['index.html', 'en.html', 'ja.html', 'lobby.html']) {
     const html = await readFile(resolve(directory, file), 'utf8');
     assert.match(html, /name="eagler-react-app-shell"/);
     assert.match(html, /same-origin/);
@@ -70,7 +72,7 @@ test('default actual build publishes an enabled same-origin offline worker', asy
 test('explicitly disabled actual build publishes the retirement worker', async () => {
   const {directory} = outputs.get('disabled');
   assert.equal(await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8'), APP_SHELL_RETIREMENT_WORKER);
-  for (const file of ['index.html', 'en.html', 'lobby.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
+  for (const file of ['index.html', 'en.html', 'ja.html', 'lobby.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
 });
 for (const name of ['root', 'nested']) test(`${name} output uses actual React chunks, exact mount, canonical worker and byte identities`, async () => {
   const {directory, mountPath} = outputs.get(name), appShell = configuration(mountPath);
@@ -89,11 +91,11 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
     const bytes = await readFile(resolve(directory, entry.url === './' ? 'index.html' : entry.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'), entry.revision, entry.url);
   }
-  for (const path of ['index.html', 'en.html', 'lobby.html']) {
+  for (const path of ['index.html', 'en.html', 'ja.html', 'lobby.html']) {
     const html = await readFile(resolve(directory, path), 'utf8'), elements = nodes(html);
     assert.equal((await stat(resolve(directory, path))).isFile(), true, 'original flat document URL');
-    assert.equal(elements.find(node => node.tagName === 'html').attrs.find(attr => attr.name === 'lang').value, path === 'en.html' ? 'en' : 'zh-CN');
-    assert.match(html, path === 'en.html' ? /<title[^>]*>Touhou Project Original STGs ~ EAGLER TOUHOU<\/title>/ : path === 'lobby.html' ? /<title>联机大厅 ~ EAGLER TOUHOU<\/title>/ : /<title[^>]*>东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
+    assert.equal(elements.find(node => node.tagName === 'html').attrs.find(attr => attr.name === 'lang').value, path === 'ja.html' ? 'ja' : path === 'en.html' ? 'en' : 'zh-CN');
+    assert.match(html, path === 'ja.html' ? /<title[^>]*>東方Project 原作STG ~ EAGLER TOUHOU<\/title>/ : path === 'en.html' ? /<title[^>]*>Touhou Project Original STGs ~ EAGLER TOUHOU<\/title>/ : path === 'lobby.html' ? /<title>联机大厅 ~ EAGLER TOUHOU<\/title>/ : /<title[^>]*>东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
     assert.ok(html.includes(`"basename":${JSON.stringify(mountPath)}`));
     const metadata = elements.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === 'eagler-react-app-shell'));
     const doc = {querySelectorAll: () => metadata.map(node => ({getAttribute: name => node.attrs.find(attr => attr.name === name)?.value}))};
@@ -147,6 +149,7 @@ test('actual build keeps canonical public URLs including bounded legacy readers'
 
 test('original legacy compatibility assertions pass unchanged against published modules', async () => {
   const original = await readFile(resolve('tests/test-legacy-game-pack.mjs'), 'utf8');
+  const fixtures = [];
   for (const [name, {directory}] of outputs) {
     let replacements = 0;
     const adapted = original.replace(/"\.\.\/compat\/([^"\n]+\.mjs)"/g, (_match, file) => {
@@ -155,8 +158,12 @@ test('original legacy compatibility assertions pass unchanged against published 
     assert.equal(replacements, 3, 'only the three subject imports are adapted');
     const fixture = resolve(work, `original-legacy-${name}.mjs`);
     await writeFile(fixture, adapted);
-    execFileSync(process.execPath, [fixture], {cwd: resolve('.'), encoding: 'utf8', stdio: 'pipe', timeout: 30000});
+    fixtures.push(fixture.replaceAll('\\', '/'));
   }
+  const config = resolve(work, 'legacy-vitest.config.mjs');
+  await writeFile(config, `export default ${JSON.stringify({test: {include: fixtures, exclude: [], pool: 'forks', maxWorkers: 1, fileParallelism: false}})};\n`);
+  execFileSync(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config', config],
+    {cwd: resolve('.'), encoding: 'utf8', stdio: 'pipe', timeout: 30000});
 });
 
 test('selected self-host bundle consumes prebuilt React and private graph inputs without a compiler', async () => {

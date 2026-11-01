@@ -292,7 +292,12 @@ try {
     try {await renamePublicationDirectory(candidate, root);}
     catch (error) {
       try {await renamePublicationDirectory(backup, root);}
-      catch (restoreError) {throw new AggregateError([error, restoreError], `refresh replacement and rollback failed; original deployment retained at ${backup}`);}
+      catch (restoreError) {
+        // Bun prints AggregateError children without its outer recovery message.
+        // Keep both causes while exposing the preserved backup path to operators.
+        throw new Error(`refresh replacement and rollback failed (${String(error)}; ${String(restoreError)}); original deployment retained at ${backup}`,
+          {cause: new AggregateError([error, restoreError])});
+      }
       throw error;
     }
     await rm(backup, {recursive: true});

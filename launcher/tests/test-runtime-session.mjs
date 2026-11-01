@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createRuntimeSessionOwner } from "../.cache/build/browser/assets/launcher/runtime-session.mjs";
 
+test("test-runtime-session", async () => {
 const owner = createRuntimeSessionOwner();
 const changes = [];
 const unsubscribe = owner.subscribe(session => changes.push(session?.id ?? null));
@@ -16,3 +18,4 @@ unsubscribe();
 owner.clear();
 assert.deepEqual(changes, [first.id, null, second.id]);
 console.log("Runtime session owner: PASS");
+});

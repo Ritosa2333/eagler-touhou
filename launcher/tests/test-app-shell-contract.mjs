@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   APP_SHELL_CONTRACT_SCHEMA,
@@ -10,6 +11,7 @@ import {
 } from "../lib/app-shell-policy.mjs";
 import { APP_SHELL_FILES, FRONTEND_PACKAGE_FILES } from "../lib/frontend-manifest.mjs";
 
+test("test-app-shell-contract", async () => {
 const legacy = {
   games: {
     th06: {
@@ -86,3 +88,4 @@ const missingRuntime = {
 assert.throws(() => assertAppShellContract(missingRuntime, legacy), /omits Runtime/);
 
 console.log(JSON.stringify({ appShellContract: "PASS", runtimeFiles: runtimePaths.length }));
+});

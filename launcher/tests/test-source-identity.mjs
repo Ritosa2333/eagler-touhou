@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -5,6 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { sourceIdentity } from "../lib/release-manifest.mjs";
 
+test("test-source-identity", async () => {
 const root = await mkdtemp(resolve(tmpdir(), "eagler-source-identity-"));
 const repo = resolve(root, "monorepo"), game = resolve(repo, "games/game");
 const git = (...args) => execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", windowsHide: true });
@@ -60,3 +62,4 @@ try {
   await rm(root, { recursive: true, force: true });
 }
 console.log("Source identity: PASS (nested component, dirty inputs, sibling isolation, submodule dependency)");
+});

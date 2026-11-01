@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -6,6 +7,7 @@ import { basename, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
+test("test-language-pack-cache", async () => {
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const temporary = await mkdtemp(resolve(tmpdir(), "eagler-language-cache-test-"));
 
@@ -91,3 +93,4 @@ try {
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }
+});

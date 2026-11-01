@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0d0d0c">
+  <title>互換性ガイド - EAGLER TOUHOU</title>
+  <!-- Standalone HTML. No external CSS, fonts, modules or WebGL. -->
+  <style>
+    body{max-width:960px;margin:24px auto;padding:0 15px;color:#ebe7df;background:#0d0d0c;font:15px/1.5 Arial,"Microsoft YaHei",sans-serif}
+    a{color:#8ab4ff}a:visited{color:#c39bff}
+    h1{font-size:23px;margin:0 0 9px}h2{font-size:19px;margin:0 0 10px}h3{font-size:16px;margin:0 0 6px}
+    p{margin:6px 0}ol{margin:5px 0 9px;padding-left:23px}li{margin-bottom:5px}
+    .actions{margin:0 0 19px}.actions button{font:inherit;cursor:pointer;margin:0 12px 6px 0;color:#111;background:#e0e0e0;border:0;border-radius:6px;padding:6px 12px}
+    .section{border-top:1px solid #333;padding-top:14px;margin-top:18px}
+    .columns{display:table;width:100%;table-layout:fixed}
+    .half{display:table-cell;width:50%;vertical-align:top;padding-right:20px}
+    .half.right{border-left:1px solid #333;padding:0 0 0 20px}
+    code{font-family:Consolas,"Courier New",monospace;overflow-wrap:break-word;word-wrap:break-word}
+    .checks{margin:7px 0 13px;padding-left:21px}.checks li{margin:3px 0}
+    .pass{color:#5fd48a;font-weight:bold}.fail{color:#ff6b6b;font-weight:bold}
+    #result{margin:5px 0}#result[hidden]{display:none}
+  </style>
+</head>
+<body>
+  <nav aria-label="表示言語"><a href="compatibility.html" lang="zh-CN">简体中文</a> · <a href="compatibility.en.html" lang="en">English</a> · <a href="compatibility.ja.html" lang="ja">日本語</a></nav>
+  <h1>ブラウザーが基本的な互換性チェックに合格しませんでした。</h1>
+  <div class="actions"><button id="recheck" type="button" onclick="location.reload()">互換性を再チェック</button><button id="try-anyway" type="button" onclick="location.href='./?compat=continue'">そのまま試してみる</button></div>
+  <h2>確認結果</h2>
+  <ul id="checks" class="checks"><li>ブラウザーと WebGL 2.0 を確認中…</li></ul>
+  <p id="result" hidden></p>
+
+  <div id="computer" class="section">
+    <h2>パソコン</h2>
+    <div class="columns">
+      <div class="half">
+        <h3>Windows 7 以前</h3>
+        <ol>
+          <li>ダウンロードしてインストール： <a href="https://www.supermium.net/" target="_blank" rel="noopener noreferrer">Supermium</a>（<a href="https://github.com/win32ss/supermium/releases" target="_blank" rel="noopener noreferrer">別のダウンロード先</a>）。</li>
+          <li>Chromium 108 以降をご利用ください。</li>
+          <li>次を実行： <a href="https://get.webgl.org/webgl2/" target="_blank" rel="noopener noreferrer">WebGL 2.0 テスト</a>。合格したら起動ページへ進めます。</li>
+        </ol>
+      </div>
+      <div class="half right">
+        <h3>IE／古い Chrome</h3>
+        <p>Windows 10/11：最新版をインストール： <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Chrome</a> または <a href="https://www.microsoft.com/edge/download" target="_blank" rel="noopener noreferrer">Edge</a>。</p>
+        <p>古い Windows：左側の Supermium を導入してください。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="graphics" class="section">
+    <h2>WebGL 2.0</h2>
+    <div class="columns">
+      <div class="half">
+        <h3>ドライバーの更新</h3>
+        <ol>
+          <li>最新の GPU ドライバーを導入して再起動します。</li>
+          <li>開く： <code>chrome://settings/system</code>でグラフィックアクセラレーションを有効にします。</li>
+          <li>Chrome を再起動し、<a href="https://get.webgl.org/webgl2/" target="_blank" rel="noopener noreferrer">再テスト</a>。</li>
+        </ol>
+      </div>
+      <div class="half right">
+        <h3>OpenGL を試す</h3>
+        <ol>
+          <li>開く： <code>chrome://flags/#use-angle</code>。</li>
+          <li>選択： <strong>OpenGL</strong>、再起動して確認します。</li>
+        </ol>
+        <p>項目がなければ Chrome を終了し、ショートカットの末尾に追加： <code>--use-angle=gl</code>。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="phone" class="section">
+    <h2>スマートフォン</h2>
+    <div class="columns">
+      <div class="half">
+        <h3>Huawei</h3>
+        <p>卓易通と Via は避け、標準ブラウザーをお試しください。</p>
+      </div>
+      <div class="half right">
+        <h3>その他の Android 端末</h3>
+        <p>Via は避け、最新版を導入してください： <a href="https://www.microsoft.com/edge/download" target="_blank" rel="noopener noreferrer">Edge</a> または <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Chrome</a>。</p>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var ua = navigator.userAgent || "";
+    var chrome = /(?:Chrome|Chromium)\/(\d+)/i.exec(ua);
+    var major = chrome ? Number(chrome[1]) : 0;
+    var ie = /MSIE |Trident\//i.test(ua);
+    var oldWindows = /Windows NT (?:[1-5]\.\d|6\.[01])(?:[;)]|$)/i.test(ua);
+    var windows = /Windows NT /i.test(ua);
+    var failed = [];
+    var checks = [];
+
+    function add(name, status, detail) {
+      checks.push({name:name,status:status,detail:detail});
+      if (status === "不合格") failed.push(name);
+    }
+    if (ie) add("IE", "不合格", "別のブラウザーをご利用ください");
+    else add("IE", "合格", "IE ではありません");
+
+    if (major && major < 108) add("Chromium", "不合格", "現在 " + major + "、108 以降が必要です");
+    else if (major) add("Chromium", "合格", "現在 " + major);
+    else add("Chromium", "認識できません", "ブラウザーのバージョンをご確認ください");
+
+    if (oldWindows && major < 108) add("Windows", "不合格", "古い Windows では Chromium 108 以降が必要です");
+    else if (oldWindows) add("Windows", "合格", "古い Windows で新しい Chromium を使用しています");
+    else if (windows) add("Windows", "合格");
+    else add("Windows", "対象外");
+
+    try {
+      var canvas = document.createElement("canvas");
+      var gl = canvas.getContext && canvas.getContext("webgl2");
+      if (!gl || (gl.isContextLost && gl.isContextLost())) add("WebGL 2.0", "不合格");
+      else {
+        add("WebGL 2.0", "合格");
+        var extension = gl.getExtension && gl.getExtension("WEBGL_lose_context");
+        if (extension) extension.loseContext();
+      }
+    } catch (error) { add("WebGL 2.0", "不合格"); }
+
+    var list = document.getElementById("checks");
+    while (list.firstChild) list.removeChild(list.firstChild);
+    for (var i = 0; i < checks.length; i++) {
+      var li = document.createElement("li");
+      li.appendChild(document.createTextNode(checks[i].name + "："));
+      var status = document.createElement("span");
+      if (checks[i].status === "合格") status.className = "pass";
+      if (checks[i].status === "不合格") status.className = "fail";
+      status.appendChild(document.createTextNode(checks[i].status));
+      li.appendChild(status);
+      if (checks[i].detail) li.appendChild(document.createTextNode("（" + checks[i].detail + "）"));
+      list.appendChild(li);
+    }
+    var result = document.getElementById("result");
+    var summary = failed.length ? "不合格：" + failed.join("、")
+      : major ? "不合格の項目はありませんでした。" : "不合格の項目はありませんが、ブラウザーのバージョンを認識できませんでした。";
+    if ("textContent" in result) result.textContent = summary;
+    else result.innerText = summary;
+    result.removeAttribute("hidden");
+  }());
+  </script>
+</body>
+</html>

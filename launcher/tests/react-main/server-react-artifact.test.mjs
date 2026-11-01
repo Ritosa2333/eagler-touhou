@@ -1,7 +1,7 @@
 /** Real Node package/verification entrypoints with synthetic Runtime/DATA only.
  * This is structural publication evidence, never browser or gameplay parity. */
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import {test, describe, beforeAll, afterAll} from 'vitest';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createHash} from 'node:crypto';
@@ -45,49 +45,64 @@ async function resign(directory, change) {
   await writeReleaseManifest(directory, release);
 }
 
-test('opt-in React artifacts use the actual server packager and generic verifier', async t => {
-  // React Router's prerendered server resolves installed React from this checkout.
-  const cache = resolve(project, '.cache/tests');
-  await mkdir(cache, {recursive: true});
-  const temporary = await mkdtemp(resolve(cache, 'eagler-react-server-'));
-  try {
-    const defaultBuild = resolve(temporary, 'default-build'), isolatedBuild = resolve(temporary, 'isolated-build');
-    await command(['node_modules/@react-router/dev/bin.cjs', 'build'], {EAGLER_REACT_BUILD_DIRECTORY: defaultBuild});
-    await command(['node_modules/@react-router/dev/bin.cjs', 'build'], {EAGLER_REACT_BUILD_DIRECTORY: isolatedBuild,
+describe('opt-in React artifacts use the actual server packager and generic verifier', () => {
+let cache, temporary, defaultBuild, isolatedBuild, runtimeRelease, seed, features, packageSite, verify, main, plain, isolated, hosted;
+async function rejectsMutation(name, source, mutation, expected) {
+
+        const directory = resolve(temporary, name.replaceAll(/[^a-z0-9]+/gi, '-'));
+        await cp(source, directory, {recursive: true});
+        await resign(directory, (deployment, release) => mutation(directory, deployment, release));
+        await assert.rejects(verify(directory), expected);
+      
+}
+beforeAll(async () => {
+cache = resolve(project, '.cache/tests');
+await mkdir(cache, {recursive: true});
+temporary = await mkdtemp(resolve(cache, 'eagler-react-server-'));
+defaultBuild = resolve(temporary, 'default-build'); isolatedBuild = resolve(temporary, 'isolated-build');
+await command(['node_modules/@react-router/dev/bin.cjs', 'build'], {EAGLER_REACT_BUILD_DIRECTORY: defaultBuild});
+await command(['node_modules/@react-router/dev/bin.cjs', 'build'], {EAGLER_REACT_BUILD_DIRECTORY: isolatedBuild,
       EAGLER_REACT_MOUNT_PATH: '/react-review/', EAGLER_REACT_APP_SHELL: 'isolated', EAGLER_REACT_APP_SHELL_ORIGIN: 'https://review.invalid'});
-    const runtimeRelease = await writeSyntheticRuntimeRelease(resolve(temporary, 'runtime'));
-    const seed = createPublicationHostSeed('web-validation-react-server');
-    seed.schema = 'eagler-touhou/site-manifest/1';
-    seed.shared = {resourceMode: 'hosted', vanillaFont: 'shared/msgothic.ttc?v=f', unicodeFont: 'shared/unifont.otf?v=g'};
-    for (const [game, product] of Object.entries(PRODUCT_GAMES)) Object.assign(seed.games[game], {
+runtimeRelease = await writeSyntheticRuntimeRelease(resolve(temporary, 'runtime'));
+seed = createPublicationHostSeed('web-validation-react-server');
+seed.schema = 'eagler-touhou/site-manifest/1';
+seed.shared = {resourceMode: 'hosted', vanillaFont: 'shared/msgothic.ttc?v=f', unicodeFont: 'shared/unifont.otf?v=g'};
+for (const [game, product] of Object.entries(PRODUCT_GAMES)) Object.assign(seed.games[game], {
       runtime: `runtime/${game}/${game}.html?hosted=1&v=old`,
       ...(product.multiplayerRuntime ? {multiplayerRuntime: `runtime/${game}/multiplayer/${game}.html?hosted=1&v=old`} : {}),
       gameData: {path: product.package.dataTarget.slice(1), bytes: 4, sha256: 'a'.repeat(64), version: `sha256-${'a'.repeat(64)}`, layout: runtimeRelease.games[game].dataLayout},
       features: {thprac: false, focusHitbox: false}, music: {midi: {files: [], ...(product.musicCapabilities.midi ? {} : {supported: false})}},
     });
-    const features = {schema: 'eagler-touhou/server-features/1', resourceMode: 'import', games: Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game, {
+features = {schema: 'eagler-touhou/server-features/1', resourceMode: 'import', games: Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game, {
       ...(product.features.languages ? {languages: ['ja']} : {}), ...(product.features.thprac ? {thprac: false} : {}),
     }]))};
-    await writeFile(resolve(temporary, 'host-seed.json'), JSON.stringify(seed));
-    await writeFile(resolve(temporary, 'features.json'), JSON.stringify(features));
-    const packageSite = (output, build, extra = [], selection = 'react') => command(['scripts/package-server.mjs', `--output=${output}`,
+await writeFile(resolve(temporary, 'host-seed.json'), JSON.stringify(seed));
+await writeFile(resolve(temporary, 'features.json'), JSON.stringify(features));
+packageSite = (output, build, extra = [], selection = 'react') => command(['scripts/package-server.mjs', `--output=${output}`,
       `--runtime-release=${resolve(temporary, 'runtime')}`, `--site-manifest=${resolve(temporary, 'host-seed.json')}`,
       `--feature-config=${resolve(temporary, 'features.json')}`, '--profile=web-validation-react-server', '--games=th06,th07,th08,th10', '--music=midi', ...extra],
     {...(selection === null ? {} : {EAGLER_FRONTEND: selection}), EAGLER_REACT_BUILD_DIRECTORY: build});
-    // Neither the verifier's selection nor a nonexistent build can override
-    // the deployment's embedded, provenance-covered frontend graph.
-    const verify = directory => command(['scripts/verify-server-build.mjs', directory],
+verify = directory => command(['scripts/verify-server-build.mjs', directory],
       {EAGLER_FRONTEND: 'invalid-verifier-environment', EAGLER_REACT_BUILD_DIRECTORY: resolve(temporary, 'missing')});
-    const main = resolve(temporary, 'main-site'), plain = resolve(temporary, 'plain-site'), isolated = resolve(temporary, 'isolated-site');
-    await t.test('unset selection publishes React and verifies independently of caller selection', async () => {
+main = resolve(temporary, 'main-site'); plain = resolve(temporary, 'plain-site'); isolated = resolve(temporary, 'isolated-site');
+});
+afterAll(async () => {
+
+    if (temporary) await rm(temporary, {recursive: true, force: true});
+  
+});
+test('unset selection publishes React and verifies independently of caller selection', async () => {
+
       await packageSite(main, defaultBuild, [], null);
       const deployment = await json(resolve(main, 'deployment.json'));
       assert.equal(deployment.frontend.kind,'react');
       assert.equal(deployment.appShell,null);
       assert.ok(!deployment.files.some(item=>item.path==='app.js'));
       await verify(main);
-    });
-    await t.test('default React publication retains the retirement worker and omits legacy UI and public graph metadata', async () => {
+    
+});
+test('default React publication retains the retirement worker and omits legacy UI and public graph metadata', async () => {
+
       await packageSite(plain, defaultBuild);
       await verify(plain);
       const deployment = await json(resolve(plain, 'deployment.json'));
@@ -102,8 +117,10 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       assert.equal((await verifyReleaseManifest(plain)).parameters.frontend.kind, 'react');
       const runtime = await verifyRuntimePublication(plain, await json(resolve(plain, 'site-manifest.json')));
       assert.equal(runtime.groups.length, ['th06', 'th07', 'th08', 'th10'].reduce((count, game) => count + 1 + Number(Boolean(PRODUCT_GAMES[game].multiplayerRuntime)), 0));
-    });
-    await t.test('isolated React publication rebuilds its SW against final Host bytes and actual graph', async () => {
+    
+});
+test('isolated React publication rebuilds its SW against final Host bytes and actual graph', async () => {
+
       await packageSite(isolated, isolatedBuild, ['--site-url=https://review.invalid/react-review/']);
       await verify(isolated);
       const deployment = await json(resolve(isolated, 'deployment.json'));
@@ -112,8 +129,10 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       assert.ok(deployment.appShell.entries.every(path => !path.startsWith('runtime/') && path !== 'runtime-manifest.json'));
       assert.equal(deployment.appShell.runtimeManifest.sha256, createHash('sha256').update(await readFile(resolve(isolated, 'runtime-manifest.json'))).digest('hex'));
       assert.notEqual(await readFile(resolve(isolated, 'app-shell-sw.js'), 'utf8'), await readFile(resolve(isolatedBuild, 'client/app-shell-sw.js'), 'utf8'));
-    });
-    await t.test('cross-UI frontend refresh rejects without changing any deployment file', async () => {
+    
+});
+test('cross-UI frontend refresh rejects without changing any deployment file', async () => {
+
       for (const target of [plain, isolated]) {
         const before = await fileHashes(target);
         await assert.rejects(command(['scripts/refresh-deployment-app-shell.mjs', target, '--frontend'],
@@ -125,8 +144,10 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       const before=await fileHashes(retired);
       await assert.rejects(command(['scripts/refresh-deployment-app-shell.mjs',retired]),/Retired UI deployments/);
       assert.deepEqual(await fileHashes(retired),before);
-    });
-    await t.test('wrong or absent isolated site URL and unknown selection preserve existing output', async () => {
+    
+});
+test('wrong or absent isolated site URL and unknown selection preserve existing output', async () => {
+
       const output = resolve(temporary, 'preserved'); await mkdir(output); await writeFile(resolve(output, 'sentinel'), 'keep');
       for (const extra of [[], ['--site-url=https://other.invalid/react-review/'], ['--site-url=https://review.invalid/']]) {
         await assert.rejects(packageSite(output, isolatedBuild, extra), /React (?:App Shell|frontend artifact mount)/);
@@ -135,9 +156,11 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       await assert.rejects(packageSite(output, defaultBuild, [], 'typo'), /EAGLER_FRONTEND/);
       await assert.rejects(packageSite(output, resolve(temporary, 'not-built')), /React frontend artifact is missing/);
       assert.deepEqual(await readdir(output), ['sentinel']);
-    });
-    const hosted = resolve(temporary, 'hosted-site');
-    await t.test('hosted React publication preserves DATA, package, and shared-font ownership', async () => {
+    
+});
+test('hosted React publication preserves DATA, package, and shared-font ownership', async () => {
+hosted = resolve(temporary, 'hosted-site');
+
       const assets = resolve(temporary, 'synthetic-assets'), artwork = resolve(temporary, 'empty-artwork');
       await mkdir(assets); await mkdir(artwork);
       await writeFile(resolve(assets, 'th08.dat'), 'synthetic retail DATA');
@@ -153,8 +176,10 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       assert.equal(deployment.resourceMode, 'hosted');
       assert.ok(deployment.files.some(item => item.path === 'th08.package.json'));
       assert.ok(deployment.files.some(item => item.path === 'shared/msgothic.ttc'));
-    });
-    await t.test('external React publication preserves remote package identities without payloads', async () => {
+    
+});
+test('external React publication preserves remote package identities without payloads', async () => {
+
       const external = resolve(temporary, 'external-site');
       await writeFile(resolve(temporary, 'external-features.json'), JSON.stringify({...features, resourceMode: 'external'}));
       await command(['scripts/package-server.mjs', `--output=${external}`, `--runtime-release=${resolve(temporary, 'runtime')}`,
@@ -166,49 +191,55 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       assert.equal(deployment.resourceMode, 'external');
       assert.ok(deployment.files.some(item => item.path === 'th08.package.json'));
       assert.ok(deployment.files.every(item => !/^(?:games|shared)\//.test(item.path)));
-    });
-    async function rejectsMutation(name, source, mutation, expected) {
-      await t.test(name, async () => {
-        const directory = resolve(temporary, name.replaceAll(/[^a-z0-9]+/gi, '-'));
-        await cp(source, directory, {recursive: true});
-        await resign(directory, (deployment, release) => mutation(directory, deployment, release));
-        await assert.rejects(verify(directory), expected);
-      });
-    }
-    await rejectsMutation('graph omission fails despite fresh release hashes', plain, async (_, deployment) => {
+    
+});
+test('graph omission fails despite fresh release hashes', async () => {
+await rejectsMutation('graph omission fails despite fresh release hashes', plain, async (_, deployment) => {
       deployment.frontend.validationMetadata.graph.shellFiles.pop();
     }, /React App Shell graph differs/);
-    await rejectsMutation('frontend provenance mismatch fails', plain, async (_, __, release) => {
+});
+test('frontend provenance mismatch fails', async () => {
+await rejectsMutation('frontend provenance mismatch fails', plain, async (_, __, release) => {
       release.parameters.frontend.mountPath = '/other/';
     }, /frontend does not match Release Manifest provenance/);
-    await rejectsMutation('disabled offline mode rejects a noncanonical retirement worker', plain, async directory => {
+});
+test('disabled offline mode rejects a noncanonical retirement worker', async () => {
+await rejectsMutation('disabled offline mode rejects a noncanonical retirement worker', plain, async directory => {
       await writeFile(resolve(directory, 'app-shell-sw.js'), '// unexpected worker');
     }, /disabled React App Shell/);
-    await rejectsMutation('isolated permission cannot move to another origin', isolated, async (_, deployment) => {
+});
+test('isolated permission cannot move to another origin', async () => {
+await rejectsMutation('isolated permission cannot move to another origin', isolated, async (_, deployment) => {
       deployment.siteUrl = 'https://other.invalid/react-review/';
     }, /exact isolated origin and mount/);
-    await rejectsMutation('missing inert React migration entry fails structural verification', plain, async (directory, deployment) => {
+});
+test('missing inert React migration entry fails structural verification', async () => {
+await rejectsMutation('missing inert React migration entry fails structural verification', plain, async (directory, deployment) => {
       for (const item of deployment.files.filter(item => /^assets\/.+\.js$/.test(item.path))) {
         const source = await readFile(resolve(directory, item.path), 'utf8');
         if (source.includes('originMigrationOpen')) await writeFile(resolve(directory, item.path), source.replaceAll('originMigrationOpen', 'missingMigrationOpen'));
       }
     }, /React UI is missing its inert Site Manifest governed origin migration entry/);
-    await rejectsMutation('hosted shared-font targets remain a required React UI contract', hosted, async (directory, deployment) => {
+});
+test('hosted shared-font targets remain a required React UI contract', async () => {
+await rejectsMutation('hosted shared-font targets remain a required React UI contract', hosted, async (directory, deployment) => {
       for (const item of deployment.files.filter(item => /^assets\/.+\.js$/.test(item.path))) {
         const source = await readFile(resolve(directory, item.path), 'utf8');
         await writeFile(resolve(directory, item.path), source.replaceAll('/msgothic.ttc', '/wrong-font.ttc'));
       }
     }, /host shared font target mismatch: \/msgothic.ttc/);
-    await rejectsMutation('Runtime identity is still checked with React SW disabled', plain, async (directory, deployment) => {
+});
+test('Runtime identity is still checked with React SW disabled', async () => {
+await rejectsMutation('Runtime identity is still checked with React SW disabled', plain, async (directory, deployment) => {
       const file = deployment.files.find(item => /^runtime\/.+\.wasm$/.test(item.path));
       await writeFile(resolve(directory, file.path), 'changed-runtime');
     }, /(?:Runtime|runtime).*(?:mismatch|identity)|(?:mismatch|identity).*(?:Runtime|runtime)/);
-    await rejectsMutation('DATA identity is still checked with React SW disabled', plain, async directory => {
+});
+test('DATA identity is still checked with React SW disabled', async () => {
+await rejectsMutation('DATA identity is still checked with React SW disabled', plain, async directory => {
       const host = await json(resolve(directory, 'site-manifest.json'));
       host.games.th06.gameData.bytes = 0;
       await writeFile(resolve(directory, 'site-manifest.json'), JSON.stringify(host));
     }, /(?:game data identity|gameData|data identity|invalid Site Manifest games)/);
-  } finally {
-    await rm(temporary, {recursive: true, force: true});
-  }
+});
 });

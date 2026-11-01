@@ -1,6 +1,4 @@
-/** L0 static contract. Preconditions: workspace Runtime Shell sources.
- * Mutation: none. Proves the shared command/event vocabulary remains present.
- * Does NOT prove message execution, browser lifecycle, payload semantics or gameplay. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
@@ -13,6 +11,17 @@ import {
 } from "../lib/contracts/runtime-protocol.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import {execFileSync} from 'node:child_process';
+
+test("test-runtime-protocol-contract", async () => {
+/** L0 static contract. Preconditions: workspace Runtime Shell sources.
+ * Mutation: none. Proves the shared command/event vocabulary remains present.
+ * Does NOT prove message execution, browser lifecycle, payload semantics or gameplay. */
+
+
+
+
+
+
 
 const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game,
   product.runtimeFileLayout === "directory"
@@ -28,7 +37,9 @@ const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game
 assert.deepEqual(Object.keys(shellSources), Object.keys(PRODUCT_GAMES));
 for (const [game, paths] of Object.entries(shellSources)) {
   if (game === 'th12') {
-    execFileSync(process.execPath,['--test','--test-name-pattern=managed (protocol|touch):',workspacePath(game,'tests/managed-adapter.test.mjs')],
+    execFileSync(process.execPath, process.versions.bun
+      ? ['test', '-t', 'managed (protocol|touch):', workspacePath(game, 'tests/managed-adapter.test.mjs')]
+      : ['--test', '--test-name-pattern=managed (protocol|touch):', workspacePath(game, 'tests/managed-adapter.test.mjs')],
       {encoding:'utf8',windowsHide:true});
     continue;
   }
@@ -63,3 +74,4 @@ for (const [game, paths] of Object.entries(shellSources)) {
   }
 }
 console.log(`Runtime protocol L0: PASS (${Object.keys(shellSources).length} games, ${RUNTIME_PROTOCOL_COMMANDS.length} commands, ${RUNTIME_PROTOCOL_EVENTS.length} events)`);
+});

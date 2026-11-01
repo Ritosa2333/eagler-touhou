@@ -1,6 +1,6 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-
 import { APP_SHELL_FILES, FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
 import { PRODUCT_GAMES, PRODUCT_IDS } from "../product-catalog.mjs";
 import { replayStorageLocation } from "../.cache/build/browser/assets/launcher/replay-storage-policy.mjs";
@@ -30,6 +30,7 @@ import {
   legacyLocalAssetKey,
 } from "../compat/legacy-import-storage.mjs";
 
+test("test-origin-migration", async () => {
 const html = await readFile(resolveFrontendPackageSource("migrate.html"), "utf8");
 const indexHtml = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
 const app = (await Promise.all(["app/components/launcher/LauncherMasthead.tsx","app/session/browser-session.ts","app/services/language-pack.ts","app/models/site-preferences.ts","src/launcher/game-preferences.mts"].map(file=>readFile(new URL("../"+file,import.meta.url),"utf8")))).join("\n");
@@ -173,3 +174,4 @@ console.log(JSON.stringify({
   exactLegacyLocalStorageKeys: 1,
   serverUpload: false,
 }));
+});

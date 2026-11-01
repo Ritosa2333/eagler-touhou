@@ -1,9 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-midi-capability-contract", async () => {
 const midiGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.musicCapabilities.midi)
   .map(([game]) => game);
@@ -39,3 +40,4 @@ console.log(JSON.stringify({
   games: midiGames,
   transport: "touhou-midi -> Launcher MidiSynth",
 }));
+});

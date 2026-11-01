@@ -14,16 +14,24 @@ const ownSources = ['tools/ports/check.mjs','tools/ports/inputs.mjs','tools/port
   'tools/ports/status.mjs','tools/ports/shared-checks.json','tools/build/runtime-inputs.mjs',
   'docs/adaptation/checklist.json','tools/docs/new-adaptation.mjs',
   'launcher/config/runtime-builds.json','launcher/config/workspace.json','launcher/src/contracts/runtime-protocol.mts',
+  'launcher/bun.lock','launcher/vitest.config.ts','launcher/vitest.ports.config.ts',
   'common/contracts/product-catalog.mjs'].map(name => resolve(root, name));
 
-function commandCheck(id, files, checks, level, output, games, complete=true) {
+export function commandCheck(id, files, checks, level, output, games, complete=true) {
   const logs = [];
   let code = 0;
-  for (const file of files) {
-    const result = spawnSync(process.execPath, [resolve(root, file)], {cwd:resolve(root,'launcher'), encoding:'utf8',
+  const launcherFiles=files.filter(file=>file.startsWith('launcher/tests/'));
+  const commands=files.filter(file=>!launcherFiles.includes(file)).map(file=>
+    ({label:file,executable:process.execPath,args:[resolve(root,file)]}));
+  if (launcherFiles.length) commands.push({label:launcherFiles.join('\n'),
+    executable:process.versions.bun ? process.execPath : process.platform==='win32' ? 'bun.exe' : 'bun',
+    args:['--bun',resolve(root,'launcher/node_modules/vitest/vitest.mjs'),'run','--config',
+      resolve(root,'launcher/vitest.ports.config.ts'),...launcherFiles.map(file=>file.slice('launcher/'.length))]});
+  for (const {label,executable,args} of commands) {
+    const result = spawnSync(executable, args, {cwd:resolve(root,'launcher'), encoding:'utf8',
       env:{...process.env,EAGLER_PORT_CHECK_GAMES:JSON.stringify(games)},
       windowsHide:true, maxBuffer:16*1024*1024, timeout:180000});
-    logs.push(`${file}\n${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`);
+    logs.push(`${label}\n${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`);
     if (result.error || result.status !== 0) code = 1;
   }
   writeFileSync(resolve(output, `${id}.log`), logs.join('\n'), 'utf8');
@@ -34,7 +42,7 @@ function commandCheck(id, files, checks, level, output, games, complete=true) {
 function evidenceSources(target) {
   const names = execFileSync('git', ['ls-files','--cached','--others','--exclude-standard','-z','--',
     target.directory,'launcher/app','launcher/src','launcher/lib','launcher/tests','launcher/package',
-    'launcher/package.json','launcher/package-lock.json',
+    'launcher/package.json','launcher/bun.lock',
     'launcher/config','common/include','common/contracts','common/testkit','tools/ports','tools/build','tools/browser','tools/testing'],
     {cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:16*1024*1024}).split('\0').filter(Boolean);
   return [...ownSources, ...names.filter(name=>/\.(?:mjs|mts|ts|tsx|jsx|cpp|c|h|hpp|inc|html|json)$/.test(name))

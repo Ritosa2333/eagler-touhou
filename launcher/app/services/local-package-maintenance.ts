@@ -1,10 +1,13 @@
-import {HOST_PROTOCOL, isGameId, type GameId} from '../../src/contracts/product-catalog.mts';
-import {garbageCollectPackageStore, readCurrentPackageGeneration} from '../../package/package-store.mjs';
-import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
+import { garbageCollectPackageStore, readCurrentPackageGeneration } from '../../package/package-store.mjs';
+import type { InstalledPackageGeneration } from '../../src/contracts/package-read-models.mts';
+import { type GameId, HOST_PROTOCOL, isGameId } from '../../src/contracts/product-catalog.mts';
 
-type PackageFeature = Pick<typeof import('../../src/launcher/package-feature.mts'), 'installParsedPackageZip' | 'migrateLegacyStoredImport'>;
+type PackageFeature = Pick<
+  typeof import('../../src/launcher/package-feature.mts'),
+  'installParsedPackageZip' | 'migrateLegacyStoredImport'
+>;
 export interface LocalPackageMaintenanceOptions {
-  getGames(): Partial<Record<GameId, {gameData?: unknown}>>;
+  getGames(): Partial<Record<GameId, { gameData?: unknown }>>;
   origin: string;
   onInstalled(game: GameId, generation: InstalledPackageGeneration): void;
   onHydrated?(): void;
@@ -36,25 +39,35 @@ export function createLocalPackageMaintenance(options: LocalPackageMaintenanceOp
   };
   const logger = options.logger ?? console;
   let feature: Promise<PackageFeature> | null = null;
-  const loadFeature = () => feature ??= options.dependencies?.loadPackageFeature?.() ?? import('../../src/launcher/package-feature.mts');
-  let running = false, scheduled = false, rerun = false, disposed = false;
-  let frame: number | null = null, timer: number | null = null;
+  const loadFeature = () =>
+    (feature ??= options.dependencies?.loadPackageFeature?.() ?? import('../../src/launcher/package-feature.mts'));
+  let running = false,
+    scheduled = false,
+    rerun = false,
+    disposed = false;
+  let frame: number | null = null,
+    timer: number | null = null;
   const games = () => Object.keys(options.getGames()).filter(isGameId);
   async function readHint(game: GameId) {
     const installed = await readCurrent(game);
     if (!disposed && installed.generation) options.onInstalled(game, installed.generation);
   }
   async function migrate() {
-    const {migrateLegacyStoredImport, installParsedPackageZip} = await loadFeature();
+    const { migrateLegacyStoredImport, installParsedPackageZip } = await loadFeature();
     for (const game of games()) {
       if (disposed) return;
       let currentRevision: string | null = null;
-      try {currentRevision = (await readCurrent(game)).generation?.descriptor.revision || null;} catch {}
+      try {
+        currentRevision = (await readCurrent(game)).generation?.descriptor.revision || null;
+      } catch {}
       if (disposed) return;
       try {
         const result = await migrateLegacyStoredImport(game, {
-          protocol: HOST_PROTOCOL, fallbackGameData: options.getGames()[game]?.gameData || null,
-          currentRevision, install: parsed => installParsedPackageZip(parsed), origin: options.origin,
+          protocol: HOST_PROTOCOL,
+          fallbackGameData: options.getGames()[game]?.gameData || null,
+          currentRevision,
+          install: (parsed) => installParsedPackageZip(parsed),
+          origin: options.origin,
         });
         // Already-started canonical installs are allowed to finish atomically
         // after disposal; only subsequent work and presentation are suppressed.
@@ -72,20 +85,28 @@ export function createLocalPackageMaintenance(options: LocalPackageMaintenanceOp
   }
   async function hydrate() {
     if (disposed) return;
-    if (running) {rerun = true; return;}
+    if (running) {
+      rerun = true;
+      return;
+    }
     running = true;
     try {
       await migrate();
       if (disposed) return;
-      await Promise.all(games().map(game => readHint(game).catch(() => {})));
+      await Promise.all(games().map((game) => readHint(game).catch(() => {})));
       if (disposed) return;
       // Unchanged GC uses Package generation leases, including a Runtime that
       // starts after this background task was queued.
-      try {await garbageCollect();} catch {}
+      try {
+        await garbageCollect();
+      } catch {}
       if (!disposed) options.onHydrated?.();
     } finally {
       running = false;
-      if (rerun && !disposed) {rerun = false; schedule();}
+      if (rerun && !disposed) {
+        rerun = false;
+        schedule();
+      }
     }
   }
   function schedule() {
@@ -95,17 +116,23 @@ export function createLocalPackageMaintenance(options: LocalPackageMaintenanceOp
       frame = null;
       if (disposed) return;
       timer = scheduler.setTimer(() => {
-        timer = null; scheduled = false;
-        if (!disposed) void hydrate().catch(error => {if (!disposed) logger.warn('local Package Store hydration deferred', error);});
+        timer = null;
+        scheduled = false;
+        if (!disposed)
+          void hydrate().catch((error) => {
+            if (!disposed) logger.warn('local Package Store hydration deferred', error);
+          });
       });
     });
   }
   function dispose() {
-    disposed = true; rerun = false; scheduled = false;
+    disposed = true;
+    rerun = false;
+    scheduled = false;
     if (frame !== null) scheduler.cancelFrame(frame);
     if (timer !== null) scheduler.clearTimer(timer);
     frame = timer = null;
   }
-  return Object.freeze({schedule, dispose});
+  return Object.freeze({ schedule, dispose });
 }
 export type LocalPackageMaintenance = ReturnType<typeof createLocalPackageMaintenance>;

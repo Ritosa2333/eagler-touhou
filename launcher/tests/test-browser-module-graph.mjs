@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { browserModuleClosure, localModuleClosure } from "../lib/browser-module-graph.mjs";
 
+test("test-browser-module-graph", async () => {
 const root = await mkdtemp(join(tmpdir(), "eagler-browser-graph-"));
 try {
   await writeFile(join(root, "entry.js"), [
@@ -43,3 +45,4 @@ try {
 }
 
 console.log(JSON.stringify({ browserModuleGraph: "PASS" }));
+});

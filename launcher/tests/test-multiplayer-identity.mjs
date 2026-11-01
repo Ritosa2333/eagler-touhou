@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   createMultiplayerIdentityStore,
@@ -10,6 +11,7 @@ import {
   validMultiplayerClientId,
 } from "../.cache/build/browser/assets/launcher/multiplayer-identity.mjs";
 
+test("test-multiplayer-identity", async () => {
 class MemoryStorage {
   constructor(entries = []) { this.values = new Map(entries); }
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
@@ -124,3 +126,4 @@ for (const sessionStorage of [null, hostile, {
   assert.equal(isolated.lobbyClientId("th07mp"), other);
 }
 console.log("Multiplayer identity without session storage: PASS");
+});

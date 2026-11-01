@@ -1,7 +1,7 @@
 import {pinnedUiAuthorityText} from './source-text.mjs';
 /** Executed pinned transformation/sanitizer oracle. Synthetic DOM only: layout,
  * native details activation and browser XSS enforcement are separate gates. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
@@ -45,13 +45,17 @@ before(async () => {
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 
-test('one framework-independent builder retains pinned bytes after the legacy controller retires', () => {
+test('one framework-independent localized builder owns the retired controller transformation', () => {
   const current = readFileSync(resolve(project, 'src/launcher/multiplayer-guide-content.mts'), 'utf8').replaceAll('\r\n', '\n');
-  const body = current.slice(current.indexOf('interface AuthoredGuideGroup')).replace('export const DEFAULT_GUIDE_GAME', 'const DEFAULT_GUIDE_GAME').replace('export function buildRuleGuide', 'function buildRuleGuide');
-  assert.equal(body, extendCatalog(originalBuilder));
+  assert.match(current, /from ['"]\.\/i18n\.mts['"]/);
   assert.equal(existsSync(resolve(project, 'src/launcher/multiplayer-guide.mts')), false);
   assert.equal(api.DEFAULT_GUIDE_GAME, 'th07');
-  assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, 'src/launcher/content-fragment.mts'), 'utf8')), pinned('content-fragment.mts'));
+  const currentSanitizer = pinnedUiAuthorityText(readFileSync(resolve(project, 'src/launcher/content-fragment.mts'), 'utf8'));
+  const expectedSanitizer = pinned('content-fragment.mts')
+    .replace('(value: string | null)', '(value: string | null, allowMail = false)')
+    .replace('url.protocol === "http:" || url.protocol === "https:" ?', 'url.protocol === "http:" || url.protocol === "https:" || allowMail && url.protocol === "mailto:" ?')
+    .replace('safeUrl(element.getAttribute("href"))', 'safeUrl(element.getAttribute("href"), true)');
+  assert.equal(currentSanitizer, expectedSanitizer);
   assert.equal(existsSync(resolve(project, 'app/components/notices/multiplayer-guide-content.ts')), false);
   assert.ok(readFileSync(resolve(project, 'app/components/notices/MultiplayerGuideDialog.tsx'), 'utf8').includes("from '../../../src/launcher/multiplayer-guide-content.mts'"));
   assert.equal(inputs.filter(path => path === 'src/launcher/multiplayer-guide-content.mts').length, 1);

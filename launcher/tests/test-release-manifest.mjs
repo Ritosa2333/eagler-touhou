@@ -1,12 +1,21 @@
-/** L2 artifact test. Preconditions: synthetic local files only. Mutations:
- * rewrite each fixture component in a fresh temporary directory. Proves:
- * identity, inventory and checksum tampering fails. Not source-build proof. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeReleaseManifest, verifyReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
+
+test("test-release-manifest", async () => {
+/** L2 artifact test. Preconditions: synthetic local files only. Mutations:
+ * rewrite each fixture component in a fresh temporary directory. Proves:
+ * identity, inventory and checksum tampering fails. Not source-build proof. */
+
+
+
+
+
+
 
 const track = { bytes: 4, sha256: "a".repeat(64) };
 const set = fileSetIdentity(["track.ogg"], [track]);
@@ -51,3 +60,4 @@ assert.equal((await verifyReleaseManifest(root)).releaseId, manifest.releaseId);
   await rm(root, { recursive: true, force: true });
 }
 console.log("Release manifest L2: PASS (four tamper cases; fixture cleaned)");
+});

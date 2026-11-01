@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   canUseExistingInstallationAfterRemoteFailure,
@@ -5,6 +6,7 @@ import {
   installedComponentIds,
 } from "../package/package-launcher.mjs";
 
+test("test-package-launcher", async () => {
 const descriptor = {
   schema: "eagler-touhou/package/1",
   game: "th08",
@@ -88,3 +90,4 @@ for (const fallbackState of [
     "a first-install or unavailable Site Manifest must not claim that an existing installation will be used");
 }
 console.log("Package Launcher policy contract: PASS (fetch cancellation is Browser-owned)");
+});

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   appliedAppShellUpdateAt,
@@ -5,6 +6,7 @@ import {
   nextRelativeUpdateRefresh,
 } from "../.cache/build/browser/assets/launcher/relative-update-time.mjs";
 
+test("test-relative-update-time", async () => {
 assert.equal(appliedAppShellUpdateAt(null), null);
 assert.equal(appliedAppShellUpdateAt({ updated: false, appliedAt: 123 }), null);
 assert.equal(appliedAppShellUpdateAt({ updated: true, appliedAt: "invalid" }), null);
@@ -25,3 +27,4 @@ assert.equal(nextRelativeUpdateRefresh(61 * 60_000), 59 * 60_000);
 assert.equal(nextRelativeUpdateRefresh(25 * 60 * 60_000), 23 * 60 * 60_000);
 
 console.log("relative update time: PASS");
+});

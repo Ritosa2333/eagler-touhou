@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { loadSourceLayout, validateWorkspaceConfiguration } from "../lib/source-layout.mjs";
 
+test("test-source-layout", async () => {
 const root = await mkdtemp(resolve(tmpdir(), "eagler-source-layout-"));
 const configuration = launcher => ({ schema: "eagler-touhou/workspace-layout/1", repositories: {
   launcher, th06: "th06-eagler", common: "eagler-common",
@@ -46,3 +48,4 @@ try {
   await rm(root, { recursive: true, force: true });
 }
 console.log("Source layout: PASS (worktree, explicit root, monorepo, standalone, invalid paths)");
+});

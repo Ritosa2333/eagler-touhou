@@ -1,5 +1,5 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
-
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import {
   createRawDataImportPackageDescriptor,
@@ -9,6 +9,7 @@ import {
   rawDataImportSizeMatches,
 } from "../.cache/build/browser/assets/launcher/raw-data-import.mjs";
 
+test("test-raw-data-import-policy", async () => {
 const rawImportGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => "rawDataImport" in product.package && !!product.package.rawDataImport)
   .map(([game]) => game);
@@ -59,3 +60,4 @@ console.log(JSON.stringify({
   games: rawImportGames,
   destination: "canonical Package Store",
 }));
+});

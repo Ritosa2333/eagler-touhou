@@ -1,10 +1,18 @@
-// Module regression: a structurally valid old hosted site must not suppress
-// preparation of newly enabled default language packs. No game data is used.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { hostedLanguagesComplete } from "../host/lib/site-builder.mjs";
+
+test("test-hosted-base-language-cache", async () => {
+// Module regression: a structurally valid old hosted site must not suppress
+// preparation of newly enabled default language packs. No game data is used.
+
+
+
+
+
 
 const games = Object.keys(PRODUCT_GAMES);
 const manifest = { games: Object.fromEntries(games.map(game => [game, {
@@ -26,3 +34,4 @@ manifest.games.th09.languageOptions = full;
 await save();
 assert.equal(hostedLanguagesComplete(manifest), true);
 console.log(JSON.stringify({ hostedLanguageCache: "validated", th09MissingPacks: "rebuild" }));
+});

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   postDirectTouch,
@@ -7,6 +8,7 @@ import {
   postTouchControls,
 } from "../.cache/build/browser/assets/launcher/touch-runtime-protocol.mjs";
 
+test("test-touch-runtime-protocol", async () => {
 const sent = [];
 const target = {
   postMessage(message, targetOrigin) {
@@ -145,3 +147,4 @@ console.log(JSON.stringify({
   touchCancel: "ready-runtime",
   thpracMouse: "child-runtime",
 }));
+});

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
@@ -6,6 +7,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { assertSupportedNode, isSupportedNodeVersion, requiredNodeDependencies, installedEnvironmentMatches, ensureNodeDependencies } from "../host/lib/node-environment.mjs";
 
+test("test-node-environment", async () => {
 assert.equal(isSupportedNodeVersion("v22.0.0"),true);
 assert.equal(isSupportedNodeVersion("21.9.0"),false);
 assert.throws(()=>assertSupportedNode("v21.9.0"),/Node\.js >= 22/);
@@ -58,3 +60,4 @@ try {
   assert.equal(resolve(fresh,'..'),resolve(tmpdir()));
   await rm(fresh,{recursive:true,force:true});
 }
+});

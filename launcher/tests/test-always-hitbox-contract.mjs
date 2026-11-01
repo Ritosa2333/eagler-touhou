@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import fs from "node:fs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import assert from "node:assert/strict";
@@ -6,6 +7,7 @@ import {parse} from 'acorn';
 import {runInNewContext} from 'node:vm';
 import {runNativeCpp} from './support/native-cpp.mjs';
 
+test("test-always-hitbox-contract", async () => {
 const th06Options = fs.readFileSync(workspacePath("th06", "src/EaglerOptions.hpp"), "utf8");
 const th06Player = fs.readFileSync(workspacePath("th06", "src/Player.cpp"), "utf8");
 const player = fs.readFileSync(workspacePath("th07", "src/Player.cpp"), "utf8");
@@ -127,3 +129,4 @@ int main(){Application app;int value=0;Application::Startup startup{&value,&valu
 assert.deepEqual([...coveredGames].sort(), Object.keys(PRODUCT_GAMES).sort(),
   "required always-hitbox verification must be updated when a formal game adapter is registered");
 console.log(`All-game always-hitbox presentation contract: PASS (${Object.keys(PRODUCT_GAMES).map(game => game.toUpperCase()).join("/")})`);
+});

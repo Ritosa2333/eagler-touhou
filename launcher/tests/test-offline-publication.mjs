@@ -1,5 +1,4 @@
-// L2: synthetic content, unchanged publication then same-size tampering.
-// Proves the publisher verifies bytes; does not prove gameplay or installation.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
@@ -7,6 +6,17 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parsePackageZip } from "../package/package-zip.mjs";
+
+test("test-offline-publication", async () => {
+// L2: synthetic content, unchanged publication then same-size tampering.
+// Proves the publisher verifies bytes; does not prove gameplay or installation.
+
+
+
+
+
+
+
 
 const root = await mkdtemp(join(tmpdir(), "eagler-offline-publication-"));
 try {
@@ -48,3 +58,4 @@ assert.notEqual(changed.descriptor.revision, descriptor.revision);
   await rm(root, { recursive: true, force: true });
 }
 console.log("Offline publication input identity: PASS");
+});

@@ -1,7 +1,9 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { appendRttSample, compactDiagnosticText, compactNetplayPeerStatus, compactRendererLabel, describeBrowserEnvironment, describeNetplayConnection, describeNetplayPeerStatus, runtimeDiagnosticsVisibleByDefault, selectedRtcPair }
   from "../.cache/build/browser/assets/launcher/runtime-diagnostics-model.mjs";
 
+test("test-runtime-diagnostics-model", async () => {
 assert.equal(runtimeDiagnosticsVisibleByDefault(true, true), true);
 for (const [testBuild, launched] of [[false, true], [true, false], ["true", true], [true, 1]]) {
   assert.equal(runtimeDiagnosticsVisibleByDefault(testBuild, launched), false);
@@ -135,3 +137,4 @@ for (const spectator of [false, true]) {
 }
 
 console.log(JSON.stringify({ runtimeDiagnosticsModel: "PASS", visibility: "test-build-default-or-user-toggle", lineLimit: 96, browserDetection: 3, renderer: "compact", rtcPair: "selected", rttWindow: 20, connectionWindow: "modeled" }));
+});

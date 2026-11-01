@@ -3,9 +3,22 @@ import {test} from 'node:test';
 import {selectedPortGames} from '../../launcher/tests/support/port-selection.mjs';
 import {STATUS_SCHEMA,checkStates,retainedVerification,validateStatusReport} from './status.mjs';
 import {targets,dependencyRevision,sourceIdentity,inspectInputs} from './inputs.mjs';
-import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
+import {mkdtempSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
+import {commandCheck} from './check.mjs';
+
+test('shared gates execute repository and workspace Launcher checks through their test runner',()=>{
+  const output=mkdtempSync(resolve(tmpdir(),'eagler-shared-gate-'));
+  const files=['launcher/tests/test-mobile-frame-pacing.mjs','launcher/tests/test-runtime-storage-contract.mjs'];
+  try {
+    const result=commandCheck('runner',files,['DISPLAY-01'],'module',output,['th06']);
+    assert.equal(result.status,'passed',readFileSync(resolve(output,'runner.log'),'utf8'));
+    assert.deepEqual(result.files,files);
+    const missing=commandCheck('missing',['launcher/tests/does-not-exist.mjs'],['DISPLAY-01'],'module',output,['th06']);
+    assert.equal(missing.status,'failed');
+  } finally {rmSync(output,{recursive:true,force:true});}
+});
 
 test('th20 compiler include precedence uses the same module order on every platform',()=>{
   const input=inspectInputs(targets({game:'th20',variant:'normal'})[0]);

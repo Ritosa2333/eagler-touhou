@@ -1,7 +1,7 @@
-import {useLayoutEffect, useRef, useState} from 'react';
-import {closeMainSelectMenus} from './MainSelect';
-import type {OptionsTargets} from './options-ownership';
-import type {LibraryProduct} from './products';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { closeMainSelectMenus } from './MainSelect';
+import type { OptionsTargets } from './options-ownership';
+import type { LibraryProduct } from './products';
 
 export interface LibraryOptionsPresenceInput {
   /** The Router has already committed this state; this hook never navigates. */
@@ -31,11 +31,17 @@ const mobileLibraryMotion = '(max-width: 780px), (hover: none), (pointer: coarse
  * lifetime is introduced. The directory's native carrier follows this same
  * visual lifetime rather than running a second animation or close timer.
  */
-export function useLibraryOptionsPresence({open, context, product, lessMotion, concealed = false}: LibraryOptionsPresenceInput): LibraryOptionsPresence {
-  const [presence, setPresence] = useState<Presence>(() => ({open, closing: false, product}));
-  const targets = useRef<OptionsTargets>({selectedCard: null, panel: null});
+export function useLibraryOptionsPresence({
+  open,
+  context,
+  product,
+  lessMotion,
+  concealed = false,
+}: LibraryOptionsPresenceInput): LibraryOptionsPresence {
+  const [presence, setPresence] = useState<Presence>(() => ({ open, closing: false, product }));
+  const targets = useRef<OptionsTargets>({ selectedCard: null, panel: null });
   const pendingClose = useRef<(() => void) | null>(null);
-  const previous = useRef({open, context});
+  const previous = useRef({ open, context });
   const timer = useRef<number | null>(null);
   const generation = useRef(0);
   const mounted = useRef(false);
@@ -60,16 +66,17 @@ export function useLibraryOptionsPresence({open, context, product, lessMotion, c
 
   useLayoutEffect(() => {
     const before = previous.current;
-    previous.current = {open, context};
+    previous.current = { open, context };
     // Changing documents/surfaces must not finish an old library animation or
     // move focus into the now-hidden library. Reopening retires its completion.
     if (open || before.context !== context) {
       if (before.open && (!open || before.context !== context)) closeMainSelectMenus();
       cancelClose();
-      setPresence(current => {
+      setPresence((current) => {
         const nextProduct = product ?? current.product;
         return current.open === open && !current.closing && current.product === nextProduct
-          ? current : {open, closing: false, product: nextProduct};
+          ? current
+          : { open, closing: false, product: nextProduct };
       });
       return;
     }
@@ -77,7 +84,7 @@ export function useLibraryOptionsPresence({open, context, product, lessMotion, c
     if (!before.open) {
       // Catalog arrival at home may supply the initial retained panel. It must
       // not replace a selected panel while an exit is still in progress.
-      if (product) setPresence(current => current.product === product ? current : {...current, product});
+      if (product) setPresence((current) => (current.product === product ? current : { ...current, product }));
       return;
     }
 
@@ -91,16 +98,14 @@ export function useLibraryOptionsPresence({open, context, product, lessMotion, c
       timer.current = null;
       pendingClose.current = null;
       pendingFocus.current = concealed ? null : selected;
-      setPresence(current => ({...current, open: false, closing: false}));
+      setPresence((current) => ({ ...current, open: false, closing: false }));
     };
-    if (concealed || lessMotion ||
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (concealed || lessMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       finish();
       return;
     }
     pendingClose.current = finish;
-    setPresence(current => ({...current, closing: true}));
-
+    setPresence((current) => ({ ...current, closing: true }));
   }, [open, context, product, lessMotion, concealed]);
 
   useLayoutEffect(() => {
@@ -118,18 +123,28 @@ export function useLibraryOptionsPresence({open, context, product, lessMotion, c
       const duration = optionsTransformDuration(targets.current.panel);
       const finish = pendingClose.current;
       if (duration === 0) finish();
-      else timer.current = window.setTimeout(finish, (duration ?? (window.matchMedia(mobileLibraryMotion).matches ? 200 : 480)) + 40);
+      else
+        timer.current = window.setTimeout(
+          finish,
+          (duration ?? (window.matchMedia(mobileLibraryMotion).matches ? 200 : 480)) + 40,
+        );
     }
     // React has now removed selection, dialog semantics and library inertness.
     // Restoring focus earlier would target a still-inert card on real browsers.
     if (!concealed && !open && !presence.open && pendingFocus.current) {
       const selected = pendingFocus.current;
       pendingFocus.current = null;
-      if (selected.isConnected) selected.focus({preventScroll: true});
+      if (selected.isConnected) selected.focus({ preventScroll: true });
     }
   }, [presence, open, context, concealed]);
 
-  return {...presence, targets: targets.current, open: presence.open && !concealed, closing: presence.closing && !concealed, openedProduct: presence.open && !concealed ? presence.product?.id : undefined};
+  return {
+    ...presence,
+    targets: targets.current,
+    open: presence.open && !concealed,
+    closing: presence.closing && !concealed,
+    openedProduct: presence.open && !concealed ? presence.product?.id : undefined,
+  };
 }
 
 /** Null means no authored/computed transition (e.g. a synthetic DOM without CSS).
@@ -137,19 +152,29 @@ export function useLibraryOptionsPresence({open, context, product, lessMotion, c
 export function optionsTransformDuration(panel: HTMLElement | null): number | null {
   if (!panel) return null;
   // A document with no stylesheets or inline transition has no CSS motion source.
-  if (!panel.ownerDocument.styleSheets.length && !panel.style.transition && !panel.style.transitionProperty && !panel.style.transitionDuration) return null;
+  if (
+    !panel.ownerDocument.styleSheets.length &&
+    !panel.style.transition &&
+    !panel.style.transitionProperty &&
+    !panel.style.transitionDuration
+  )
+    return null;
   const style = panel.ownerDocument.defaultView?.getComputedStyle(panel);
   if (!style) return null;
   if (!style.transitionProperty && !style.transitionDuration && !style.transition) return null;
   if (style.transition === 'none' || style.transitionProperty === 'none') return 0;
-  const properties = (style.transitionProperty || 'all').split(',').map(value => value.trim());
-  const milliseconds = (value: string) => {const n = parseFloat(value) || 0; return value.trim().endsWith('ms') ? n : n * 1000;};
+  const properties = (style.transitionProperty || 'all').split(',').map((value) => value.trim());
+  const milliseconds = (value: string) => {
+    const n = parseFloat(value) || 0;
+    return value.trim().endsWith('ms') ? n : n * 1000;
+  };
   const durations = (style.transitionDuration || '0s').split(',').map(milliseconds);
   const delays = (style.transitionDelay || '0s').split(',').map(milliseconds);
   // CSS repeats shorter duration/delay lists and the last matching property wins.
   let duration = 0;
   properties.forEach((property, index) => {
-    if (property === 'transform' || property === 'all') duration = Math.max(0, durations[index % durations.length]! + delays[index % delays.length]!);
+    if (property === 'transform' || property === 'all')
+      duration = Math.max(0, durations[index % durations.length]! + delays[index % delays.length]!);
   });
   return duration;
 }

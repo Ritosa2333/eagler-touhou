@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { cp, mkdtemp, mkdir, readFile, rm, stat } from "node:fs/promises";
@@ -12,6 +13,7 @@ import { FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/fro
 import {PRODUCT_CONTENT} from '../lib/content-definition.mjs';
 import {workspacePath} from '../lib/workspace-layout.mjs';
 
+test("test-self-host-bundle", async () => {
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const targets = new Map(SELF_HOST_BUNDLE_COPY_RULES.map(rule => [rule.target, rule.source]));
 assert.equal(targets.size, SELF_HOST_BUNDLE_COPY_RULES.length, "self-host bundle targets must be unique");
@@ -208,3 +210,4 @@ console.log(JSON.stringify({
   files: SELF_HOST_BUNDLE_COPY_RULES.length,
   nodeDependencies: SELF_HOST_BUNDLE_NODE_DEPENDENCIES,
 }));
+});

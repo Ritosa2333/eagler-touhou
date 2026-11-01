@@ -1,7 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
-
 import { validateStaticLanguagePackEntries } from "../.cache/build/browser/assets/launcher/language-pack-validation.mjs";
 
+test("test-language-pack-validation", async () => {
 const encoder = new TextEncoder();
 const filePath = "/thcrap/th06/localization/stages.etl";
 const payload = encoder.encode("ETL1");
@@ -82,3 +83,4 @@ assert.throws(() => validateStaticLanguagePackEntries({
 }, { game: "th08", language: "lang_zh-hans" }), /清单不兼容/);
 
 console.log(JSON.stringify({ languagePackValidation: "PASS", duplicatePaths: "rejected", fileSha256: "not-a-contract", th08: "accepted", th09: "accepted" }));
+});

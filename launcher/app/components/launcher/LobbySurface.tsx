@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react';
 import { useLocale } from '../../i18n';
+import { Button } from '../ui/button';
 import { LibraryCards, type LibraryCardsProps } from './LibraryCards';
 
-export interface LobbySurfaceProps extends Omit<
-  LibraryCardsProps,
-  'variant' | 'lobbyLink' | 'inert'
-> {
+export interface LobbySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
   onGuide: (() => void) | null;
   onNetwork: (() => void) | null;
@@ -50,8 +48,8 @@ export function LobbySurface({
   const { t } = useLocale();
   return (
     <>
+      {masthead}
       <main className="lobby-main" inert={rail.interactive === false}>
-        {masthead}
         <aside className="lobby-survey-notice" aria-label={t('notice.label')}>
           <strong>{t('lobby.surveyNotice')}</strong>
           <a
@@ -66,7 +64,9 @@ export function LobbySurface({
         <header className="lobby-intro">
           <h1>{t('lobby.title')}</h1>
           <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
-            <button
+            <Button
+              variant="legacy"
+              size="legacy"
               className="lobby-support-link"
               id="lobbyGuideOpen"
               type="button"
@@ -75,8 +75,10 @@ export function LobbySurface({
             >
               <span>{t('multiplayerGuide.action')}</span>
               <span aria-hidden="true">›</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="legacy"
+              size="legacy"
               className={`lobby-support-link${networkRunning ? ' running' : ''}`}
               id="lobbyNetworkCheck"
               aria-disabled={networkRunning ? 'true' : undefined}
@@ -86,7 +88,7 @@ export function LobbySurface({
             >
               <span>{t('networkCheck.action')}</span>
               <span aria-hidden="true">›</span>
-            </button>
+            </Button>
           </nav>
         </header>
         {connectionWarning}
@@ -130,14 +132,16 @@ export function LobbySurface({
               <h2 id="emptyTitle">{emptyState.title}</h2>
               <p id="emptyHint">{emptyState.hint}</p>
               {emptyState.action && (
-                <button
+                <Button
+                  variant="legacy"
+                  size="legacy"
                   className="lobby-button"
                   id="emptyAction"
                   type="button"
                   onClick={emptyState.action.onClick}
                 >
                   {emptyState.action.label}
-                </button>
+                </Button>
               )}
             </div>
           )}

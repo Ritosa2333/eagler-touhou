@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import { runNativeCpp } from "./support/native-cpp.mjs";
 
+test("test-portable-touch-controller-contract", async () => {
 const th08Path = workspacePath("th08", "portable", "input", "TouchController.hpp");
 const th10Path = workspacePath("th10", "portable", "input", "TouchController.hpp");
 const [th08, th10, th08Motion, th10Motion, th08Host, th10Host, th08GameHost, th10GameHost,
@@ -55,3 +57,4 @@ for (const [game, host, nativeHost] of [["th08", th08Host, th08GameHost], ["th10
 }
 
 console.log("Portable touch controller contract: PASS (TH08/TH10 identical, deathbomb-safe, sensitivity 100-300%, cheat processing-drop semantics)");
+});

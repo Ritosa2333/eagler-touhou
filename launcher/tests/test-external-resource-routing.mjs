@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   validateExternalResourceFinalUrl,
   validateExternalResourceRedirect,
 } from "../lib/external-resource-routing.mjs";
 
+test("test-external-resource-routing", async () => {
 const request = "https://play.example.com/games/th08/th08.data?v=revision";
 assert.equal(
   validateExternalResourceRedirect(request, {
@@ -39,3 +41,4 @@ assert.throws(() => validateExternalResourceFinalUrl(
 ), /different HTTPS Origin/);
 
 console.log("External resource routing contract: PASS");
+});

@@ -1,3 +1,15 @@
+import {test} from 'vitest';
+import assert from "node:assert/strict";
+import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
+import { workspacePath } from "../lib/workspace-layout.mjs";
+import { writeSyntheticRuntimeRelease } from "./support/runtime-release-fixture.mjs";
+import { writeRuntimeGeneration } from "../lib/runtime-generations.mjs";
+
+test("test-runtime-release-host-assembly", async () => {
 /** L2/L3 workspace integration.
  * Preconditions: current TH06/TH07 Runtime build artifacts and TH06/TH07
  * original-content fixtures in the workspace.
@@ -10,15 +22,15 @@
  * Does NOT prove: TH08 original-content host assembly, browser/gameplay, OGG,
  * language packs, thprac, device behavior, or publication.
  */
-import assert from "node:assert/strict";
-import { spawn, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { resolve } from "node:path";
-import { workspacePath } from "../lib/workspace-layout.mjs";
-import { writeSyntheticRuntimeRelease } from "./support/runtime-release-fixture.mjs";
-import { writeRuntimeGeneration } from "../lib/runtime-generations.mjs";
+
+
+
+
+
+
+
+
+
 
 function run(args, env = process.env) {
   return new Promise((resolveRun, reject) => {
@@ -202,3 +214,4 @@ try {
 } finally {
   await rm(scratch, { recursive: true, force: true });
 }
+});

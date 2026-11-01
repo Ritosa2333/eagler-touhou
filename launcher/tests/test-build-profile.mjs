@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   BUILD_AUTHORITY_PRIVATE,
@@ -5,6 +6,7 @@ import {
   classifyBuildProfile,
 } from "../lib/build-profile.mjs";
 
+test("test-build-profile", async () => {
 assert.equal(classifyBuildProfile("web-development"), BUILD_AUTHORITY_PRIVATE);
 assert.equal(classifyBuildProfile("web-validation"), BUILD_AUTHORITY_PRIVATE);
 assert.equal(classifyBuildProfile("web-validation-import"), BUILD_AUTHORITY_PRIVATE);
@@ -15,3 +17,4 @@ for (const invalid of ["", "test", "web-package", "release", "web-development-lo
 }
 
 console.log(JSON.stringify({ authorities: [BUILD_AUTHORITY_PRIVATE, BUILD_AUTHORITY_PUBLICATION] }));
+});

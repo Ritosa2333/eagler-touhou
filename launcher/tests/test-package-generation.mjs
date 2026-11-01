@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { PACKAGE_DESCRIPTOR_SCHEMA, PLAYER_PROTOCOL_V1 } from "../package/package-descriptor.mjs";
 import {
@@ -8,6 +9,7 @@ import {
   planPackageGeneration,
 } from "../package/package-generation.mjs";
 
+test("test-package-generation", async () => {
 const descriptor = (revision, dataRevision, oggRevision = "ogg-1") => ({
   schema: PACKAGE_DESCRIPTOR_SCHEMA,
   game: "th08",
@@ -78,3 +80,4 @@ assert.deepEqual(componentFileIds(nextDescriptor, "language", ["lang_zh-hans"]),
 assert.deepEqual(componentFileIds(nextDescriptor, "language", []), []);
 
 console.log("Package generation contract: PASS");
+});

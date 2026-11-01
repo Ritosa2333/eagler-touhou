@@ -1,4 +1,4 @@
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -36,7 +36,7 @@ before(async () => {
     export * from './src/launcher/game-preferences.mts';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual.mjs'), logLevel: 'silent',
   plugins: [{name: 'installed-deps-authored-mts', setup(ctx) {
-    ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+    ctx.onResolve({filter: /^[^./]/}, args => ({path: import.meta.resolve(args.path), external: true}));
     ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
   }}]}); owners = await import(pathToFileURL(resolve(work, 'actual.mjs')));
 });

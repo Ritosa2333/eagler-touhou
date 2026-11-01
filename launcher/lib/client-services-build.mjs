@@ -27,7 +27,8 @@ export async function ensureClientServicesBuild({force=false}={}) {
   const expected = new Set(files.filter(path => !path.endsWith('.d.mts')).map(path =>
     'assets/' + relative(resolve(project, 'src'), path).replaceAll('\\', '/').replace(/\.mts$/, '.mjs')));
   const hash = createHash('sha256');
-  for (const path of [...files, ...sharedContractInputs(project), fileURLToPath(import.meta.url), resolve(project,'lib/shared-contract-sources.mjs'), resolve(project,'tsconfig.launcher.json'), resolve(project,'package-lock.json')]) {
+  const messageInputs = ['zh-CN.json', 'en.json', 'ja.json', 'keys.json', 'errors.json'].map(name => resolve(project, 'messages', name));
+  for (const path of [...files, ...messageInputs, resolve(project, 'scripts/build-service-translations.mjs'), resolve(project, 'scripts/compile-i18n.mjs'), resolve(project, 'project.inlang/settings.json'), ...sharedContractInputs(project), fileURLToPath(import.meta.url), resolve(project,'lib/shared-contract-sources.mjs'), resolve(project,'tsconfig.launcher.json'), resolve(project, existsSync(resolve(project, 'bun.lock')) ? 'bun.lock' : 'package-lock.json')]) {
     hash.update(relative(project,path)); hash.update(await readFile(path));
   }
   const identity = hash.digest('hex'), state = resolve(project,'.cache/client-services-build.json');
@@ -45,9 +46,20 @@ export async function ensureClientServicesBuild({force=false}={}) {
         if(previous.identity===identity && complete && unchanged) return {built:false,sourceCount:files.length};
       } catch {}
     }
+    // Direct source-build callers also start without generated Paraglide files.
+    await new Promise((yes,no)=>{
+      const child=spawn(process.execPath,[resolve(project,'scripts/compile-i18n.mjs')],{cwd:project,stdio:'inherit'});
+      child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Service message compilation failed (${code})`)));
+    });
     await new Promise((yes,no)=>{
       const child=spawn(process.execPath,[resolve(project,'node_modules/typescript/bin/tsc'),'-p','tsconfig.launcher.json','--pretty','false'],{cwd:project,stdio:'inherit'});
       child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Client service compilation failed (${code})`)));
+    });
+    // Source-only bundling stays behind the same boundary as the TS compiler;
+    // prebuilt self-host packages load this module without maintainer dependencies.
+    await new Promise((yes,no)=>{
+      const child=spawn(process.execPath,[resolve(project,'scripts/build-service-translations.mjs')],{cwd:project,stdio:'inherit'});
+      child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Service translation bundling failed (${code})`)));
     });
     await copySharedContractOutputs(project,resolve(output,'assets'));
     const generated=[];

@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { classifyThcrapAsset, createThcrapClient, crc32, downloadThcrapPack } from "../integrations/thcrap.mjs";
 import { createThpracSession, normalizeThpracParams, THPRAC_SUPPORTED_GAMES } from "../integrations/thprac.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
+test("test-integrations", async () => {
 const encoder = new TextEncoder();
 const png = encoder.encode("fake png fixture");
 const jdiff = encoder.encode('{"1":{"3":"Hello"}}');
@@ -92,3 +94,4 @@ const declaredThpracGames = Object.entries(PRODUCT_GAMES)
 assert.deepEqual(THPRAC_SUPPORTED_GAMES, declaredThpracGames,
   "thprac integration support must exactly match Product Catalog declarations");
 console.log(JSON.stringify({ thcrap: { assets: pack.assets.length, stringdefs: stringdefsAssets.length, crc32: "ok" }, thprac: { games: THPRAC_SUPPORTED_GAMES } }));
+});

@@ -1,10 +1,11 @@
+import {test} from 'vitest';
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { runNativeCpp } from "./support/native-cpp.mjs";
-
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-sdl-emscripten-audio-contract", async () => {
 const preloadGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.dataProvider === "emscripten-preload")
   .map(([game]) => game)
@@ -50,3 +51,4 @@ console.log(JSON.stringify({
   configuredFrames: 2048,
   rejectedExperiment: "AudioWorklet",
 }));
+});

@@ -1,6 +1,4 @@
-/** L1 protocol-envelope behavior contract. Mutation: none. Proves unknown
- * Runtime messages are accepted only for the current protocol/game and known
- * event or response discriminants. Does not execute a Runtime shell. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   TOUCH_SENSITIVITY_MAX,
@@ -18,6 +16,13 @@ import {
   RUNTIME_PROTOCOL_OPTIONAL_EVENTS,
   parseRuntimeInboundMessage,
 } from "../.cache/build/browser/assets/contracts/runtime-protocol.mjs";
+
+test("test-runtime-protocol-model", async () => {
+/** L1 protocol-envelope behavior contract. Mutation: none. Proves unknown
+ * Runtime messages are accepted only for the current protocol/game and known
+ * event or response discriminants. Does not execute a Runtime shell. */
+
+
 
 assert.equal(TOUCH_SENSITIVITY_MIN, 100);
 assert.equal(TOUCH_SENSITIVITY_MAX, 300);
@@ -108,3 +113,4 @@ for (const invalid of [
 ]) assert.equal(parseRuntimeInboundMessage(invalid, "th06"), null);
 
 console.log(JSON.stringify({ runtimeProtocolModel: "PASS", boundary: "game-and-navigation-epoch" }));
+});

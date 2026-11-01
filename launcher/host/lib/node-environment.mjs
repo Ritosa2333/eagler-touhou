@@ -1,3 +1,4 @@
+import {usesBunLock, installedBunEnvironmentMatches, ensureBunDependencies} from './bun-environment.mjs';
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
@@ -43,6 +44,7 @@ async function lockIdentity(projectRoot) {
 }
 
 export async function installedEnvironmentMatches(projectRoot, required, identity) {
+  if (usesBunLock(projectRoot)) return installedBunEnvironmentMatches(projectRoot, required, identity);
   const stampPath = resolve(projectRoot, "node_modules", STAMP_FILE);
   let stamp;
   try { stamp = JSON.parse(await readFile(stampPath, "utf8")); }
@@ -74,6 +76,7 @@ async function writeEnvironmentStamp(projectRoot, required, identity) {
 }
 
 export async function ensureNodeDependencies(projectRoot) {
+  if (usesBunLock(projectRoot)) return ensureBunDependencies(projectRoot, [...requiredNodeDependencies(projectRoot)]);
   assertSupportedNode();
   if (!existsSync(resolve(projectRoot, "package-lock.json"))) {
     throw new Error("package-lock.json is missing; refusing to install unpinned Node.js dependencies");

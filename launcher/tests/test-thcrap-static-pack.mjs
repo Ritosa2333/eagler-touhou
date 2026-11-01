@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { unzipSync } from "fflate";
 import {readFile} from 'node:fs/promises';
 import {transform} from 'esbuild';
 import { createStaticThcrapPack, staticLanguagePackPath } from "../server/thcrap-static-pack.mjs";
 
+test("test-thcrap-static-pack", async () => {
 // Exercise the ZIP date under a negative UTC offset, where UTC midnight on
 // 1980-01-01 would otherwise become a local date in 1979.
 process.env.TZ = "America/Los_Angeles";
@@ -70,3 +72,4 @@ assert.throws(()=>createStaticThcrapPack({pack:{game:'th09',language:'lang_en',a
   {path:'th09/pl00.msg.jdiff',mountPath:'/thcrap/th09/pl00.msg',format:'touhou-message/1',bytes:new Uint8Array([9])},
 ]}),/duplicate thcrap target path/,'raw and jdiff outputs cannot silently produce a duplicate manifest');
 console.log('Six producer/consumer round trips and duplicate compiled-target rejection: PASS');
+});

@@ -3,7 +3,7 @@ import {readUiHistoryText} from '../support/ui-history.mjs';
  * authenticated-runtime ports and bounded scheduling inputs only. No browser,
  * CSS-pixel, live performance, transport or calibration-report claim.
  * Original main edee9633: index1066–1078, app2244–2312/2720–2749. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {existsSync} from 'node:fs';
@@ -153,7 +153,7 @@ for (const locale of ['zh-CN', 'en']) {
       `${originalText(locale, 'frameShort', {hz: '--', age: ''})} - C-- - P-- - gap -- - lock off`]);
     for (const id of netplayIds) {
       assert.equal(element(id).hidden, true);
-      assert.equal(element(id).textContent, originalAside.querySelector(`#${id}`)?.textContent ?? '输入 --');
+      assert.equal(element(id).textContent, '--');
     }
   });
 
@@ -200,7 +200,7 @@ for (const locale of ['zh-CN', 'en']) {
       await f.render({netplay: {[selected]: `Synthetic owner line: ${selected}`}});
       for (const id of netplayIds) {
         assert.equal(element(id).hidden, id !== selected, `Only ${selected} is shown`);
-        assert.equal(element(id).textContent, id === selected ? `Synthetic owner line: ${id}` : originalAside.querySelector(`#${id}`)?.textContent ?? '输入 --');
+        assert.equal(element(id).textContent, id === selected ? `Synthetic owner line: ${id}` : '--');
       }
     }
     const lines = Object.fromEntries(netplayIds.map(id => [id, `Synthetic owner line: ${id}`]));
