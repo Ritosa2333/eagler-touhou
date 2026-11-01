@@ -39,7 +39,7 @@ class Scene {
 public:
     Scene(Renderer& r,TextRaster& t,Banks& b,const ExeTables& e);
     struct Options {float current_fps=-1;i32 hud_age=-1;i32 score_low_digit=0;bool practice=false;bool stage_clear=false;double high_score=0;i32 recorded_fps=-1;};
-    void set_geometry(i32 stage,StdGeometry g){geometry_stage=stage;geometry=std::move(g);}
+    void set_geometry(i32 stage,StdGeometry g);
     void reset_presentation();
     void reset_motion(){previous_motion.clear();current_motion.clear();}
 #ifdef TH12_MULTIPLAYER
@@ -79,6 +79,10 @@ private:
 #endif
     Renderer& gpu;TextRaster& raster;Banks& banks;const ExeTables& exe;AnimationSampler sampler_;
     StdGeometry geometry;i32 geometry_stage=0;i32 last_frame=-1,live_fps_text=-1;
+    // STD instances share primitive VMs. Rotate each primitive once per capture;
+    // camera projection and clipping remain specific to every instance.
+    struct BackgroundQuad {bool ready=false;std::array<std::array<double,3>,4> corners{};};
+    std::vector<BackgroundQuad> background_quads;
     std::vector<Pose> poses;std::vector<u32> sorted;std::vector<TextDescriptor> texts;std::vector<Dialogue> dialogues;std::vector<Triangle> triangles;
     std::vector<Appearance> scratch;std::vector<Pose> logical_poses;std::vector<u32> owners;FrameLookup schedule_ids;PriorityBuckets draw_buckets,menu_buckets;std::vector<u32> menu_order;Pose shaken; // per-frame scratch
     struct ClipVertex {double cx,cy,depth,u,v;};

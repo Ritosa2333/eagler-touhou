@@ -23,6 +23,16 @@
 #include <thread>
 
 namespace th12host {
+// Version 1 packed host ABI. String pointers last until the next collection.
+enum HostStateField : size_t {
+    HostVersion,HostLength,HostScene,HostKind,HostReady,HostFps,
+    HostMenuSerial,HostMenuReady,HostMenuAge,HostSelection,HostStage,
+    HostCharacter,HostShot,HostCursor,HostInstance,HostX,HostY,HostFast,
+    HostSlow,HostPaused,HostCaptureSerial,HostDrawCalls,HostVertices,
+    HostPracticeVertices,HostCapturing,HostTrack,HostSeeking,HostStateLength
+};
+static_assert(HostStateLength==27);
+
 // Core input bits (native held word); menus also read Enter and Retry.
 enum Input:u32 {InShot=1,InBomb=2,InFocus=8,InUp=16,InDown=32,InLeft=64,InRight=128,InPause=256,InSkip=512,InEnter=0x80000,InRetry=0x200000};
 // One controller sample: Switch buttons by pad-button number (the original's
@@ -48,6 +58,7 @@ public:
     void refresh_music(){audio.retry_music();}
     void set_motion(int mode,int x,int y){motion_mode=mode;motion_x=x;motion_y=y;}
     const std::string& host_state();
+    const double* host_state_values();
     bool playback(int action,const char* path,int value);
     void practice_key(int code,bool down);
     void clear_inputs(bool pointers){practice_ui.clear(pointers);}
@@ -92,6 +103,7 @@ private:
     AnimationSampler loading_sampler; // LoadingPresentation's own sampler and display RNG
     std::unique_ptr<MenuAnimation> signature,indicator;std::vector<std::unique_ptr<MenuAnimation>> retiring;u32 loading_seed=0x1234;
     std::vector<Appearance> loading_poses;
+    Texture startup_credit;
     bool held_frame=false; // stage loads draw the last game frame behind the indicator
 #ifdef TH12_MULTIPLAYER
     bool mp_playing=false,mp_result=false,mp_replay=false,mp_visible=false,mp_audio_muted=false;
@@ -105,6 +117,8 @@ private:
     float presentation_alpha=1;
     u32 slow_frames=0;     // replay slow motion: one tick every fourth frame
     int motion_mode=0,motion_x=0,motion_y=0;
+    std::array<double,HostStateLength> host_values{};
+    std::string host_track;
     std::string host_snapshot,pending_replay;int pending_replay_stage=0;
     bool external_paused=false;double external_rate=1,rate_debt=0;
     int seek_target=-1;bool seek_resume=false;std::string replay_file;

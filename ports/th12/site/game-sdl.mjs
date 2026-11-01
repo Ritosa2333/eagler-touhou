@@ -9,6 +9,8 @@ import {prepareLocalization,isLocalizationResourcePath} from '../src/localizatio
 import {mountSdlContent} from '../src/sdl-content.mjs';
 import {sdlStopError} from '../src/sdl-lifecycle.mjs';
 import {sdlPointerPosition} from '../src/sdl-input.mjs';
+import {installStartupBranding} from './startup-branding.mjs';
+import {readSdlHostState} from '../src/sdl-host-state.mjs';
 import {parseReplay} from '../src/replay.mjs';
 
 const canvas=document.querySelector('#screen'),notice=document.querySelector('#notice');
@@ -66,7 +68,7 @@ function beforeFrame(){
   core._th12_host_pressed(sample.pressed);
 }
 function frame(){
-  const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
+  const now=performance.now();const raw=readSdlHostState(core);state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
   if(viewer&&!state.seeking&&state.scene==='replay-playing')viewer.target=null;
   if(!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame'});healthAt=now;}
   frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;
@@ -159,12 +161,13 @@ async function launch(){
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()]})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
+    await installStartupBranding(core,{game:'th12'});
     await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!options.alwaysHitbox),Number(options.thpracEnabled!==false),locale,Number(music!=='none'));
     core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));
     const exitCode=core.callMain(['--data-dir','/game','--save-dir','/savesth12']);
     if(terminated||exitCode)throw sdlStopError(exitCode??1,lastFailure,{source:'call-main'},{started:false,logs:startupLog});
-    window.__th12Runtime={core,state:()=>JSON.parse(stringAt(core._th12_host_state()))};
+    window.__th12Runtime={core,state:()=>readSdlHostState(core)};
     canvas.focus();
     for(const n of new Set(keys.values()))core._th12_host_key(n,1);
     if(options.replayPath)await playback({action:'open',path:options.replayPath.startsWith('/savesth12/')?options.replayPath:'/savesth12/'+options.replayPath});

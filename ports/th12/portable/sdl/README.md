@@ -4,6 +4,12 @@
 
 SDL3 负责窗口、输入、音频设备与计时；GLES 3 负责绘制。浏览器编译使用 WebGL 2；桌面可以使用 GLES 3 或 OpenGL 3.3 核心上下文，macOS 请求 OpenGL 4.1。FreeType 负责文字，miniaudio 混合音效，并支持 OGG 流式或整曲解码；原版 `thbgm.dat` 使用 PCM 预读。
 
+## 逐帧状态接口
+
+浏览器通过 `th12_host_state_values()` 读取带版本和长度的 27 项 double 状态，保留逐帧坐标、触控作用域、菜单、录像和音乐信息，省去整份状态 JSON 的生成与解析。字符串指针在当前同步读取期间有效；读取器在每次调用后取得最新 Wasm 内存视图，支持内存增长。旧 `th12_host_state()` 继续提供 JSON 诊断与旧运行包兼容。
+
+`tests/sdl-host-state.test.mjs` 检查字段、内存增长和旧接口回退。桌面构建可启用 `TH12_BUILD_HOST_STATE_TEST=ON`，运行不加载素材、不创建窗口的 `th12_host_state_test`，核对实际 C++ 接口与 JSON 状态。
+
 ## 桌面构建
 
 需要 CMake 3.24+、C/C++20 编译器、Python 3，以及 SDL3、FreeType 开发文件。在 monorepo 根目录运行：
@@ -47,7 +53,7 @@ npm start -- --port=8114
 ## 输入、练习与显示
 
 - 方向键移动；Z 射击／确认；X Bomb／取消；Shift 低速；Ctrl 跳过对话；Esc 暂停；Enter 确认；R 重试。
-- 桌面 Alt+Enter 全屏。SDL 标准手柄支持热插拔、方向键、左摇杆和游戏内 Key Config。
+- 桌面 Alt+Enter 全屏。SDL 标准手柄支持热插拔、方向键、左摇杆和游戏内 Key Config。左摇杆沿用原版的方形死区：X、Y 轴分别超过 50% 幅度才触发对应方向，双轴同时越界触发斜向；方向十字键直接生效。主站手柄输入沿用启动器的映射与自定义阈值。
 - `TH12_ENABLE_THPRAC=ON` 将现有 C++ ImGui 练习界面直接绘入同一窗口。Practice 可选分段；Backspace 打开工具菜单，Tab 切换信息，F12 打开高级选项。速度设置作用于逻辑时钟。
 - 默认逻辑为 60 Hz。桌面 `--high-refresh`、Web 的高刷新率选项允许额外显示帧；按稳定实体标识对连续位置插值，出生、消失、切关和瞬移保持各自边界，显示数据不回写游戏状态。
 - `--always-hitbox` 开启显示用判定点；`--no-thprac`、`--no-music` 分别关闭练习工具和音乐；`--full-music` 将当前 OGG 整曲解码为 PCM 后播放。整曲 PCM 在换曲时释放，单曲上限 256 MiB。

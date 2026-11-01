@@ -46,6 +46,14 @@ class BulletSystem:public BulletEmissionActions,public LaserEmissionActions,priv
     void items()override{failed|=!inventory.draw(arcade);}
     void effects()override{effect_system.draw_alternative();}
     void draw(AnmVm& vm)override{renderer.draw_2d(vm);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool before_cancel_vm(BulletState& bullet)override{
+        if(!creation.capture_cancel_vm(bullet)){failed=true;return false;}return true;
+    }
+    bool before_cancel_vms()override{
+        if(!creation.capture_cancel_vms()){failed=true;return false;}return true;
+    }
+#endif
 public:
     BulletSystem(BulletManagerState&,EclGlobals&,Rng&,PlayerSimulation&,ItemSystem&,EffectSystem&,AnmRenderer&,BulletSystemAudio&);
     ~BulletSystem(){if(globals.bullet_actions==this)globals.bullet_actions=nullptr;if(globals.laser_actions==this)globals.laser_actions=nullptr;}

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 396 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 407 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -212,8 +212,14 @@
 | 历史记录 | [archive/rollback-zero-delay-th12-performance-20261028/README.md](../archive/rollback-zero-delay-th12-performance-20261028/README.md) | 回滚零输入延迟与 TH12 采集开销 |
 | 历史记录 | [archive/shared-input-audio-20261030/README.md](../archive/shared-input-audio-20261030/README.md) | 全作触点与音效核对 ｜ 2026-10-30 |
 | 历史记录 | [archive/site-recovery-20261028/README.md](../archive/site-recovery-20261028/README.md) | 网页入口回退发布 |
+| 历史记录 | [archive/th06-miss-feedback-20261031/README.md](../archive/th06-miss-feedback-20261031/README.md) | TH06 多人 Miss 与符卡呈现 |
 | 历史记录 | [archive/th06-th08-multiplayer-bugs-20261028/README.md](../archive/th06-th08-multiplayer-bugs-20261028/README.md) | TH06／TH08 多人索敌与 Last Spell 修复验证 |
 | 历史记录 | [archive/th08-extra-last-spell-20261029/README.md](../archive/th08-extra-last-spell-20261029/README.md) | TH08 Extra 雷保护与 Last Spell 生命周期 |
+| 历史记录 | [archive/th08-keyboard-ownership-20261031/README.md](../archive/th08-keyboard-ownership-20261031/README.md) | TH08 键盘输入所有权 |
+| 历史记录 | [archive/th08-mp-extra-performance-20261030/README.md](../archive/th08-mp-extra-performance-20261030/README.md) | TH08 多人消弹性能与 ECL 目标选择 |
+| 历史记录 | [archive/th08-mp-steady-performance-20261030/README.md](../archive/th08-mp-steady-performance-20261030/README.md) | TH08 多人常态弹幕性能 |
+| 历史记录 | [archive/th12-autosave-host-state-20261030/README.md](../archive/th12-autosave-host-state-20261030/README.md) | 星莲船录像保存与逐帧状态读取 |
+| 历史记录 | [archive/th12-combined-optimizations-20261030/README.md](../archive/th12-combined-optimizations-20261030/README.md) | TH12 综合性能优化 |
 | 历史记录 | [archive/th12-complete-sdl-20261029/README.md](../archive/th12-complete-sdl-20261029/README.md) | TH12 普通版与多人版完整 SDL 入口 |
 | 历史记录 | [archive/th12-green-ufo-warning-20261028/README.md](../archive/th12-green-ufo-warning-20261028/README.md) | Extra 绿 UFO 激光预告线 |
 | 历史记录 | [archive/th12-hud-sampling-20261029/README.md](../archive/th12-hud-sampling-20261029/README.md) | TH12 静态 HUD 采样优化 |
@@ -221,6 +227,8 @@
 | 历史记录 | [archive/th12-maintenance-20261025/th12-history-rebuild-20261025.md](../archive/th12-maintenance-20261025/th12-history-rebuild-20261025.md) | TH12 未合入历史重建 |
 | 历史记录 | [archive/th12-maintenance-20261025/th12-switch-fixes-20261025.md](../archive/th12-maintenance-20261025/th12-switch-fixes-20261025.md) | TH12 Switch 修复适配 |
 | 历史记录 | [archive/th12-maintenance-20261026/th12mp-stage-ending-20261026.md](../archive/th12-maintenance-20261026/th12mp-stage-ending-20261026.md) | TH12 多人结局与换面 |
+| 历史记录 | [archive/th12-mp-laser-checkpoints-20261030/README.md](../archive/th12-mp-laser-checkpoints-20261030/README.md) | TH12 多人激光回滚存储复用 |
+| 历史记录 | [archive/th12-mp-rollback-storage-20261030/README.md](../archive/th12-mp-rollback-storage-20261030/README.md) | TH12 多人回滚存储复用 |
 | 历史记录 | [archive/th12-multiplayer-20261028/README.md](../archive/th12-multiplayer-20261028/README.md) | th12 多人接收 ｜ 2026-10-28 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-multiplayer-20261024.md](../archive/th12-multiplayer-20261028/th12-multiplayer-20261024.md) | TH12 多人合作 ｜ 共享飞碟与独立源码 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-multiplayer-bomb-interpolation-20261027.md](../archive/th12-multiplayer-20261028/th12-multiplayer-bomb-interpolation-20261027.md) | TH12 多人放雷与回滚插值开销 |
@@ -231,8 +239,10 @@
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-multiplayer-transfer-font-20261026.md](../archive/th12-multiplayer-20261028/th12-multiplayer-transfer-font-20261026.md) | TH12 多人资源传递提示 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-visual-performance-20261025.md](../archive/th12-multiplayer-20261028/th12-visual-performance-20261025.md) | TH12 飞钵轮廓与展示性能 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12mp-localization-20261025.md](../archive/th12-multiplayer-20261028/th12mp-localization-20261025.md) | TH12 多人本地语言资源 |
+| 历史记录 | [archive/th12-pool-ufo-reuse-20261030/README.md](../archive/th12-pool-ufo-reuse-20261030/README.md) | TH12 弹幕索引与 UFO 特效快照复用 |
 | 历史记录 | [archive/th12-rtc-channel-repair-20261029/README.md](../archive/th12-rtc-channel-repair-20261029/README.md) | TH12 多人 RTC 通道生命周期与可靠发送 |
 | 历史记录 | [archive/th12-sdl-animation-storage-20261029/README.md](../archive/th12-sdl-animation-storage-20261029/README.md) | TH12 SDL 动画存储复用 |
+| 历史记录 | [archive/th12-sdl-background-cache-20261030/README.md](../archive/th12-sdl-background-cache-20261030/README.md) | TH12 SDL 背景图元复用 |
 | 历史记录 | [archive/th12-sdl-completion-20261029/README.md](../archive/th12-sdl-completion-20261029/README.md) | TH12 SDL3 应用构建身份 |
 | 历史记录 | [archive/th12-sdl-input-20261029/README.md](../archive/th12-sdl-input-20261029/README.md) | TH12 SDL 输入、菜单与呈现 |
 | 历史记录 | [archive/th12-sdl-invariants-20261030/README.md](../archive/th12-sdl-invariants-20261030/README.md) | th12 SDL 输入与音乐错误验证 |
@@ -255,6 +265,7 @@
 | 历史记录 | [archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md](../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md) | TH15 多人回滚实验 |
 | 历史记录 | [archive/th15-rollback-20261026/th15-rollback-stress-fix-20261026.md](../archive/th15-rollback-20261026/th15-rollback-stress-fix-20261026.md) | TH15 密集回滚修复与复测 |
 | 历史记录 | [archive/th15-rollback-20261026/th15-upstream-rebuild-20261026.md](../archive/th15-rollback-20261026/th15-upstream-rebuild-20261026.md) | TH15 多人实验分支与上游同步 |
+| 历史记录 | [archive/th15-rollback-latency-performance-20261031/README.md](../archive/th15-rollback-latency-performance-20261031/README.md) | TH15 多人回滚快照与本机呈现 |
 | 历史记录 | [archive/th15-stage-transition-rollback-20261028/README.md](../archive/th15-stage-transition-rollback-20261028/README.md) | TH15 多人回滚换面输入节奏 |
 | 历史记录 | [archive/th17-development-20261030/CHANGELOG.txt](../archive/th17-development-20261030/CHANGELOG.txt) | [2026-10-27] 鬼形兽 WEB 1.0.14 |
 | 历史记录 | [archive/th17-development-20261030/README-交付说明.md](../archive/th17-development-20261030/README-交付说明.md) | 鬼形兽 WEB 1.0.14 完整开发交付 · 2026-10-27 |

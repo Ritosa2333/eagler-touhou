@@ -170,6 +170,8 @@
 
 <!-- manual-verification -->
 
+练习页面复用公共 `PracticeNavigation.hpp`：上下选行、左右直接调整，Shift 加大数值步长；鼠标拖动、文本编辑与弹出列表保留控件输入所有权，确认键由练习开始流程处理。真实 ImGui 导航回归登记在 `common/tests/thprac-navigation-test.cpp`。
+
 ## 运行验收记录
 
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。

@@ -122,8 +122,9 @@ function padInput(){
   }
   const mapped=assets.managed?managedInput.pad():null;if(mapped!==null)return {value:mapped,capturing:false};
   if(!p)return {value:0,capturing:false};
-  let value=0;if(p.axes[0]<-.3||p.buttons[14]?.pressed)value|=64;if(p.axes[0]>.3||p.buttons[15]?.pressed)value|=128;
-  if(p.axes[1]<-.3||p.buttons[12]?.pressed)value|=16;if(p.axes[1]>.3||p.buttons[13]?.pressed)value|=32;
+  // Original square deadzone; managed mappings retain the Launcher's threshold.
+  let value=0;if(p.axes[0]<-.5||p.buttons[14]?.pressed)value|=64;if(p.axes[0]>.5||p.buttons[15]?.pressed)value|=128;
+  if(p.axes[1]<-.5||p.buttons[12]?.pressed)value|=16;if(p.axes[1]>.5||p.buttons[13]?.pressed)value|=32;
   for(const [name,bit]of Object.entries({shoot:1,bomb:2,focus:8,pause:256,skip:512}))if(p.buttons[profile.settings.joyButtons[name]]?.pressed)value|=bit;
   return {value,capturing:false};
 }

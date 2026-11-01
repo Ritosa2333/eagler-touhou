@@ -170,6 +170,8 @@
 
 <!-- manual-verification -->
 
+继承的普通版练习页面复用公共 `PracticeNavigation.hpp`：上下选行、左右直接调整，Shift 加大数值步长；鼠标拖动、文本编辑与弹出列表保留控件输入所有权，确认键由练习开始流程处理。真实 ImGui 导航回归登记在 `common/tests/thprac-navigation-test.cpp`。正式多人构建维持 THPrac 关闭，练习入口由普通版提供。
+
 ### 2026-10-24 | 高刷源码接收与独立联机时钟
 
 MP 在完整原生事务之间生成高刷画面，独立 SimulationCadence 保持网络前进规则。完整世界对照通过 43 组场景、1,335,299 项检查；真实 WebRTC 双端使用不同显示限制，确认状态与实际输入 Replay 一致。MP 完整构建、三种宿主配置编译、六组呈现／时钟 CPU 契约及 31 项位移和打包隔离回归通过。来源、模式所有者与复现入口见[验收记录](docs/records/2026-10-24-display-high-refresh.md)。

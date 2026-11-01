@@ -43,7 +43,9 @@ void Game::shutdown(){
     if(menus)save_profile();
     prefetch.reset();practice_ui.shutdown(gpu);scene->drop_text_cache();
     for(auto& b:banks.slots)if(b){Renderer::release(*b);b.reset();}
-    ending.reset();title.reset();menus.reset();signature.reset();indicator.reset();retiring.clear();scene.reset();gpu.shutdown();
+    ending.reset();title.reset();menus.reset();signature.reset();indicator.reset();retiring.clear();
+    if(startup_credit.name)gpu.delete_texture(startup_credit.name);startup_credit={};
+    scene.reset();gpu.shutdown();
 }
 bool Game::read(const std::string& name,std::vector<u8>& out){if(archive.read(name,out))return true;error=archive.error;return false;}
 bool Game::load_bank(i32 bank,const std::string& name,bool optional){
@@ -86,6 +88,9 @@ bool Game::boot(){
     loading_sampler.files=[this](i32 bank){return banks.get(bank);};loading_sampler.display_random32=[this]{return next_loading_random();};
     ending_sampler.files=loading_sampler.files;ending_sampler.display_random32=loading_sampler.display_random32;
     signature=std::make_unique<MenuAnimation>(loading_sampler,banks.get(BankSig),BankSig,0);signature->tick();
+    std::vector<u8> credit;
+    if(host::read_file("/eagler-startup.rgba",credit,1280u*960u*4u)&&credit.size()==1280u*960u*4u)
+        startup_credit={gpu.create_texture(1280,960,credit.data(),true),1280,960,false,false};
     show_indicator();
     for(const auto& [bank,name]:std::initializer_list<std::pair<i32,const char*>>{{BankBullet,"bullet"},{BankEnemy,"enemy"},{BankPlayer,"pl00"},{BankPlayer+1,"pl01"},{BankPlayer+2,"pl02"},{BankFront,"front"},{BankText,"text"},{BankTitle,"title"},{BankTitleV,"title_v"}})
         jobs.push_back([this,bank=bank,name=std::string(name)]{return load_bank(bank,name);});
@@ -632,6 +637,7 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha,bool draw
         // 43f320 waits for at least 180 start-up frames.
         if(startup_ready&&startup_frames>=180){
             signature.reset();Renderer::release(*banks.slots[BankSig]);banks.slots[BankSig].reset();retire_indicator();
+            if(startup_credit.name)gpu.delete_texture(startup_credit.name);startup_credit={};
             menus=std::make_unique<TitleScenes>(profile,music_tracks,host::paths().save+"/replay");
             std::vector<std::u32string> warning;for(const auto& line:exe.music_warning)warning.push_back(exe.warning_utf8?decode_utf8(line):decode_cp932(line));
             title=std::make_unique<TitlePresentation>(*scene,banks,profile,std::move(warning));
@@ -691,7 +697,14 @@ void Game::focus_lost(){
 void Game::draw_loading(){
     auto& poses=loading_poses;poses.clear();
     if(held_frame){scene->render();const float field[4]{32,16,416,464};scene->render_menu({},0,0,true,1,field);}
-    else{if(signature)signature->poses(poses);scene->render_menu(poses,0,0,false);}
+    else{
+        if(signature)signature->poses(poses);scene->render_menu(poses,0,0,false);
+        // The public developer wordmark follows the original signature's tint.
+        if(signature&&startup_credit.name&&!poses.empty()){
+            const auto& p=poses.front();Renderer::RegionOptions options;options.anchor_x=options.anchor_y=1;
+            gpu.region(startup_credit,0,0,1280,960,0,0,640,480,0,p.alpha,{p.r,p.g,p.b,1},0,options);gpu.flush();
+        }
+    }
 }
 void Game::draw(){
     if(phase==Phase::Startup||phase==Phase::Loading)draw_loading();

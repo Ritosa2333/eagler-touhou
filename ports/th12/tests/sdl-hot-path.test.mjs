@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readSdlHostState} from '../src/sdl-host-state.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
@@ -10,7 +11,7 @@ function boundary(){
   const core={FS:{analyzePath:path=>{calls.paths.push(path);return {exists:files.has(path)};},writeFile(path,bytes){files.add(path);calls.writes.push([path,Array.from(bytes)]);}},
     UTF8ToString:()=>JSON.stringify(snapshot),_th12_host_state:()=>1,_th12_host_refresh_music(){calls.refreshes++;},
     _th12_host_key(code,down){calls.keys.set(code,down);},_th12_host_controls(){},_th12_host_pressed(){}};
-  const context={URL,TextEncoder,Uint8Array,console,testEmit:event=>calls.events.push(event),performance:{now:()=>0},
+  const context={URL,TextEncoder,Uint8Array,console,readSdlHostState,testEmit:event=>calls.events.push(event),performance:{now:()=>0},
     document:{querySelector:id=>id==='#notice'?notice:canvas,addEventListener(){}},addEventListener(){},
     RuntimeAssets:class{managed=true;fetch(path){calls.fetches.push(path);return new Promise((yes,no)=>downloads.push({yes,no}));}},
     ManagedInput:class{pad(){return pad;}},TouchInput:class{sample(_state,hints){calls.samples.push({...hints});return {held:0,pressed:0};}}};

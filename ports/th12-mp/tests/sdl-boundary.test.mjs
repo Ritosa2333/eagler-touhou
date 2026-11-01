@@ -1,3 +1,4 @@
+import {readSdlHostState} from '../src/sdl-host-state.mjs';
 // Execute each production browser entry with IO doubles and real input owners.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +15,7 @@ function fixture(){
     _th12_host_key:(...args)=>keys.push(args),_th12_host_clear(){},_th12_host_controls:(...args)=>controls.push(args),_th12_host_pressed(){},
     _th12_host_audio:value=>audio.push(value),_th12_host_flush:()=>flushes++,
     _th12_host_state:()=>1,UTF8ToString:()=>JSON.stringify(snapshot),_th12_host_refresh_music:()=>refreshes++};
-  const context={URL,TextEncoder,Uint8Array,console,performance:{now:()=>100},innerWidth:640,innerHeight:480,keyboardCode,
+  const context={readSdlHostState,URL,TextEncoder,Uint8Array,console,performance:{now:()=>100},innerWidth:640,innerHeight:480,keyboardCode,
     document:{hidden:false,querySelector:id=>id==='#notice'?notice:canvas,addEventListener(){}},
     location:new URL('https://game.test/runtime/th12.html?runtimeEpoch=1'),
     addEventListener:(type,callback)=>handlers.set(type,callback),

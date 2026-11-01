@@ -170,6 +170,10 @@
 
 <!-- manual-verification -->
 
+SDL 启动画面在原作社团署名下方叠加公共 `EAGLER ☯ TOUHOU Developers` 图案，随原版启动淡入淡出；普通关卡加载继续使用原作画面。图案由浏览器入口生成并交给 GLES 绘制，保持原作素材与署名。
+
+手柄左摇杆的本作输入默认使用每轴 50% 的方形死区，普通版与多人版、SDL 原生入口与旧网页入口保持一致。边界、斜向、十字键和启动器映射所有权由 `tests/sdl-gamepad.test.mjs` 检查；主站输入继续采用启动器的手柄配置。
+
 ## 运行验收记录
 
 当前正式构建入口为 SDL3／GLES 普通版，代码包沿用 `th12.html`、目录 Runtime 协议和 `/savesth12`。初版构建身份保留在 [#161 构建记录](../../archive/th12-sdl-completion-20261029/README.md)。当前正式清单登记完整 SDL 入口，浏览器实测与构建证据见 [完整迁移验证](../../archive/th12-complete-sdl-20261029/README.md)。

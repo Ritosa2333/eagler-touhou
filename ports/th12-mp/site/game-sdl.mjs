@@ -9,6 +9,8 @@ import {prepareLocalization,isLocalizationResourcePath} from '../src/localizatio
 import {mountSdlContent} from '../src/sdl-content.mjs';
 import {sdlStopError} from '../src/sdl-lifecycle.mjs';
 import {sdlPointerPosition} from '../src/sdl-input.mjs';
+import {installStartupBranding} from './startup-branding.mjs';
+import {readSdlHostState} from '../src/sdl-host-state.mjs';
 import {createMultiplayerRuntime,multiplayerHeldInput} from '../src/multiplayer.mjs';
 
 const canvas=document.querySelector('#screen'),notice=document.querySelector('#notice');
@@ -81,7 +83,7 @@ function beforeFrame(){
 }
 function frame(){
   if(fatalError)return;
-  const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
+  const now=performance.now();const raw=readSdlHostState(core);state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
   presentations++;
   if(multiplayer?.active&&!core._th12_mp_pump())throw Error(stringAt(core._th12_mp_error())||'多人网络处理失败');
   if(launched&&!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame',launchSerial});healthAt=now;}
@@ -93,17 +95,17 @@ function frame(){
     if(!core.FS.analyzePath('/game/music/'+track+'.ogg').exists)
       assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(error=>musicFailed(track,error));
   }
-  if(now-syncedAt>5000){syncedAt=now;syncRuntime().catch(fail);}
+  if(now-syncedAt>5000){syncedAt=now;syncRuntime(false).catch(fail);}
 }
 function paths(FS,directory){
   return FS.readdir(directory).filter(name=>name!=='.'&&name!=='..').flatMap(name=>{const path=directory+'/'+name;return FS.isDir(FS.stat(path).mode)?paths(FS,path):[path];});
 }
 function mountSave(path,bytes){if(!core)return;core.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));core.FS.writeFile(path,bytes);}
 async function loadSaves(){oldFiles=new Map();for(const path of await store.list()){const bytes=await store.read(path);if(bytes){oldFiles.set(path,copy(bytes));mountSave(path,bytes);}}}
-function syncRuntime(){
+function syncRuntime(saveReplay=true){
   syncQueue=syncQueue.catch(()=>{}).then(async()=>{
     if(!core||!nativeStarted){await store?.sync();return;}
-    if(!terminated)core._th12_host_flush();if(multiplayer?.active)await multiplayer.save();const current=new Set();
+    if(!terminated)core._th12_host_flush();if(saveReplay&&multiplayer?.active)await multiplayer.save({force:true});const current=new Set();
     for(const path of paths(core.FS,'/savesth12')){
       try{allowedPath(path);}catch{continue;}
       current.add(path);const bytes=core.FS.readFile(path);
@@ -174,7 +176,7 @@ function returnRoom(){
   launchAttempt++;
   returning=(async()=>{
     if(initializing)await initializing;
-    const saved=multiplayer?.save();multiplayer?.stop();launched=false;firstFrame=false;
+    const saved=multiplayer?.save({force:true});multiplayer?.stop();launched=false;firstFrame=false;
     await saved;
     const before=presentations;
     clearKeyboard();cancelTouch();core?._th12_host_mp_room();await syncRuntime();
@@ -216,6 +218,7 @@ async function bootNative(){
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()],multiplayer:multiplayer?.active?multiplayer.state():null})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
+    await installStartupBranding(core,{game:'th12'});
     await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!(options.alwaysHitbox||options.touchAlwaysHitbox)),0,locale,Number(music!=='none'));
     core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));

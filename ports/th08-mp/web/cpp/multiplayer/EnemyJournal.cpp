@@ -1,4 +1,5 @@
 #include "EnemyJournal.hpp"
+#include "JournalTouch.hpp"
 #include <cstddef>
 
 namespace th08::multiplayer {
@@ -18,6 +19,7 @@ bool EnemyJournal::BeginFrame(u32 frame,bool extend){
        program->mutable_data()!=program_data||program->size()!=program_size)return Fail();
     if(!bytes.BeginFrame(frame,extend))return Fail();
     if(extend){RecordAt(record_count-1).end=frame;return true;}
+    CheckpointCapture capture(bytes);if(!capture.Valid())return Fail();
     auto& record=RecordAt(record_count++);record.frame=record.end=frame;
     record.existed.fill(false);record.captured.fill(false);record.owners.clear();
     // ECL can write literal bytecode arguments. The loaded buffer is an
@@ -31,7 +33,7 @@ bool EnemyJournal::BeginFrame(u32 frame,bool extend){
         const auto& enemy=population->enemies[slot];record.existed[slot]=bool(enemy);
         if(enemy&&(enemy->flags&1)&&!Capture(slot))return false;
     }
-    return true;
+    return capture.Finish()||Fail();
 }
 bool EnemyJournal::Capture(u32 slot){
     if(!population||Failed())return false;

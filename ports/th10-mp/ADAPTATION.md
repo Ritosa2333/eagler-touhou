@@ -170,6 +170,8 @@
 
 <!-- manual-verification -->
 
+继承的普通版练习页面复用公共 `PracticeNavigation.hpp`：上下选行、左右直接调整，Shift 加大数值步长；鼠标拖动、文本编辑与弹出列表保留控件输入所有权，确认键由练习开始流程处理。真实 ImGui 导航回归登记在 `common/tests/thprac-navigation-test.cpp`。正式多人构建维持 THPrac 关闭，练习入口由普通版提供。
+
 ## 运行验收记录
 
 WASI32 的多人规则兼容检查使用内存通道运行原生 NetplayRuntime、公共协议和输入核心，覆盖双人、三人录像准入。入口为 `portable/check-multiplayer-rules.mjs --suite multiplayer-rules-compatibility`。

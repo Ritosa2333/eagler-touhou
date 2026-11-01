@@ -24,6 +24,14 @@ if(Freetype_FOUND)
     target_include_directories(eagler_common_thprac_keyboard_test PRIVATE ../third_party/imgui)
     target_link_libraries(eagler_common_thprac_keyboard_test PRIVATE eagler::thprac Freetype::Freetype)
     add_test(NAME eagler-common.thprac-keyboard COMMAND eagler_common_thprac_keyboard_test)
+    add_executable(eagler_common_thprac_navigation_test thprac-navigation-test.cpp
+        ../third_party/imgui/imgui.cpp ../third_party/imgui/imgui_draw.cpp
+        ../third_party/imgui/imgui_widgets.cpp ../third_party/imgui/imgui_tables.cpp
+        ../third_party/imgui/imgui_freetype.cpp)
+    target_include_directories(eagler_common_thprac_navigation_test PRIVATE ../third_party/imgui)
+    target_compile_definitions(eagler_common_thprac_navigation_test PRIVATE IMGUI_DISABLE_WIN32_FUNCTIONS)
+    target_link_libraries(eagler_common_thprac_navigation_test PRIVATE eagler::thprac Freetype::Freetype)
+    add_test(NAME eagler-common.thprac-navigation COMMAND eagler_common_thprac_navigation_test)
 endif()
 
 add_executable(eagler_common_assertions_enabled_test assertions-enabled-test.cpp)

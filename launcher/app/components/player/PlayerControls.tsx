@@ -334,17 +334,9 @@ function PlayerUtilities({
             className="fullscreen-toggle"
             id="fullscreenToggle"
             type="button"
-            data-fullscreen={session.nativeTouch.isFullscreen() || state.roomPlayerExpanded === true}
-            aria-label={t(
-              session.nativeTouch.isFullscreen() || state.roomPlayerExpanded
-                ? 'player.exitFullscreen'
-                : 'player.enterFullscreen',
-            )}
-            title={t(
-              session.nativeTouch.isFullscreen() || state.roomPlayerExpanded
-                ? 'player.exitFullscreenTitle'
-                : 'player.enterFullscreenTitle',
-            )}
+            data-fullscreen={session.nativeTouch.isFullscreen()}
+            aria-label={t(session.nativeTouch.isFullscreen() ? 'player.exitFullscreen' : 'player.enterFullscreen')}
+            title={t(session.nativeTouch.isFullscreen() ? 'player.exitFullscreenTitle' : 'player.enterFullscreenTitle')}
             onClick={() => {
               void session.togglePlayerFullscreen();
             }}
