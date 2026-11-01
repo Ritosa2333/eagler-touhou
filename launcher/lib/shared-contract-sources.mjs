@@ -3,7 +3,7 @@ import {copyFile,mkdir,readFile} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
 
 const contracts=['product-catalog','netplay-timing','multiplayer-quick-chat','public-nickname'];
-const shared=[...contracts,'th15-chapter-reward'];
+const shared=[...contracts,'th15-chapter-reward','th05-initial-stock'];
 const root=project=>resolve(project,'../common/contracts');
 
 export function sharedContractInputs(project) {

@@ -10,6 +10,7 @@ export function multiplayerOptions(value){
  const localDevelopment=url.protocol==='ws:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
  if(!['ws:','wss:'].includes(url.protocol)||!['room','run','member'].every(key=>url.searchParams.get(key))||!localDevelopment&&!/^[a-f0-9]{64}$/.test(url.searchParams.get('runtimeGeneration')??''))throw Error('Missing TH05 room run identity');
  if(!integer(value.netplaySeed,0,65535)||!integer(value.netplayDifficulty,0,4))throw Error('Invalid TH05 multiplayer settings');
+ if(value.netplayInitialSpares!==undefined&&!integer(value.netplayInitialSpares,0,5)||value.netplayInitialBombs!==undefined&&!integer(value.netplayInitialBombs,0,3))throw Error('Invalid TH05 initial stocks');
  if(!Array.isArray(value.netplayLoadouts)||value.netplayLoadouts.length!==count||value.netplayLoadouts.some(p=>!integer(p?.character,0,3)||p.shot!==0))throw Error('Invalid TH05 multiplayer characters');
  const mode=value.netplayAdonisMode??1;
  // The room advertises the title's capacity even when prediction is disabled.
@@ -29,7 +30,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
  const count=options.netplayPlayerCount,local=options.netplayPlayer,url=new URL(options.netplayUrl);
  const mode=options.netplayAdonisMode??1,limit=mode===1?0:8;
  const reserve=options.netplayPredictionReserve??2;
- const identity=JSON.stringify({protocol:'th05-native-coop/2',mode,limit,run:url.searchParams.get('run'),generation:url.searchParams.get('runtimeGeneration'),count,challenge:options.netplayChallengeMode===true,seed:options.netplaySeed,difficulty:options.netplayDifficulty,characters:options.netplayLoadouts.map(p=>p.character)});
+ const identity=JSON.stringify({protocol:'th05-native-coop/2',mode,limit,run:url.searchParams.get('run'),generation:url.searchParams.get('runtimeGeneration'),count,challenge:options.netplayChallengeMode===true,spares:options.netplayInitialSpares??2,bombs:options.netplayInitialBombs??3,seed:options.netplaySeed,difficulty:options.netplayDifficulty,characters:options.netplayLoadouts.map(p=>p.character)});
  const rows=Array.from({length:count},()=>new Map()),peers=new Map(),proposals=new Map(),acknowledged=new Set(),checks=new Map();
  let transport,started=false,closed=false,ending=false,frame=0,delay=0,lastProgress=now(),lastWarning=0,proposalTimer,deadline,probeTimer,resolveStart,rejectStart,endTask,nextCheck=120;
  const startTask=new Promise((resolve,reject)=>{resolveStart=resolve;rejectStart=reject;});
@@ -58,7 +59,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
  function begin(){
   if(started)throw Error('Duplicate TH05 start');
   const chars=options.netplayLoadouts.map(p=>p.character);while(chars.length<3)chars.push(0);
-  if(!module._th05_coop_start(count,local,options.netplayDifficulty,options.netplaySeed,...chars,+(options.netplayChallengeMode===true),+(options.multiplayerLocalPlayerVisibility===true)))throw Error('TH05 cooperative world could not start');
+  if(!module._th05_coop_start_stock(count,local,options.netplayDifficulty,options.netplaySeed,...chars,+(options.netplayChallengeMode===true),+(options.multiplayerLocalPlayerVisibility===true),options.netplayInitialSpares??2,options.netplayInitialBombs??3))throw Error('TH05 cooperative world could not start');
   applyDisplay(module,options.th05MultiplayerDisplay);
   if(!module._th05_net_reset(delay,limit))throw Error('TH05 rollback session could not start');
   for(let i=0;i<delay;i++)for(const row of rows)row.set(i,[0,0,0,0]);

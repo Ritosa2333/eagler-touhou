@@ -13,6 +13,8 @@ const disconnect=process.argv.includes('--disconnect');
 const rollback=process.argv.includes('--rollback');
 const delayOnly=process.argv.includes('--no-rollback');
 const frames=Number(option('frames','180'));
+const th05Stock=option('th05-stock')?.split(',').map(Number);
+if(th05Stock)assert.ok(th05Stock.length===2&&Number.isInteger(th05Stock[0])&&th05Stock[0]>=0&&th05Stock[0]<=5&&Number.isInteger(th05Stock[1])&&th05Stock[1]>=0&&th05Stock[1]<=3);
 const returningUser=process.argv.includes('--existing-user');
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
 assert.ok(base&&out,'Required: --url=local-launcher --output=private-directory');
@@ -28,6 +30,7 @@ report.disconnectRequested=disconnect;report.returningUser=returningUser;
 report.rollbackRequested=rollback;
 report.delayOnlyRequested=delayOnly;
 report.targetFrames=frames;
+report.th05Stock=th05Stock;
 report.commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 if(gamepad){report.gamepadProbeSha256=createHash('sha256').update(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))).digest('hex');report.gamepadBundleSha256=createHash('sha256').update(gamepadBundle).digest('hex');await writeFile(resolve(directory,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(directory,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
@@ -65,7 +68,8 @@ async function nativeSnapshot(page){return page.evaluate(()=>{
     transportState:{disconnected:r.__eaglerPeerTransport?.disconnected===true,recovering:r.__eaglerPeerTransport?.isRecovering?.()===true},
     state:runtime?.status?.()??null,gameplayStage:r.__eaglerNetplayGameplayStage??null,
     rollback:r.__eaglerNetplayLanRollback??null,resimulated:r.__eaglerNetplayLanResimulated??null,
-    options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,adonisMode:options.netplayAdonisMode,prediction:options.netplayPredictionLimit},
+    initialStock:window.acceptanceInitialStock,
+    options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,adonisMode:options.netplayAdonisMode,prediction:options.netplayPredictionLimit,initialSpares:options.netplayInitialSpares,initialBombs:options.netplayInitialBombs},
     events:window.acceptanceEvents??[]};
 });}
 try{
@@ -83,7 +87,11 @@ try{
         if(gamepad)await prepareVirtualGamepad(context,gamepadBundle);
         if(route==='relay')await context.addInitScript(()=>Object.defineProperty(window,'RTCPeerConnection',{value:undefined,configurable:true}));
         await context.addInitScript(()=>{window.acceptanceEvents=[];addEventListener('message',event=>{
-          if(event.source===document.querySelector('#gameFrame')?.contentWindow&&event.data?.protocol==='eagler-touhou/1')acceptanceEvents.push(event.data);
+          if(event.source===document.querySelector('#gameFrame')?.contentWindow&&event.data?.protocol==='eagler-touhou/1'){
+            acceptanceEvents.push(event.data);
+            const m=event.source.Module;
+            if(event.data.event==='first-frame'&&typeof m?._th05_coop_value==='function')window.acceptanceInitialStock=Array.from({length:m.eaglerOptions.netplayPlayerCount},(_,seat)=>[m._th05_coop_value(seat,0),m._th05_coop_value(seat,1)]);
+          }
         });});
         const page=await context.newPage();pages.push(page);
         page.on('pageerror',error=>record.errors.push({seat,error:String(error)}));
@@ -147,6 +155,17 @@ try{
       });
       // Joining/importing can finish a pending loadout or resource change after
       // another seat first readies. Reconfirm against the final shared settings.
+      if(game==='th05'&&th05Stock)await step('team-initial-stock',async()=>{
+        await pages[0].locator('#roomWorkspaceTab-game').click();
+        await pages[0].locator('#mpTh05InitialSpares').selectOption(String(th05Stock[0]),{force:true});
+        await pages[0].waitForFunction(spares=>Number(document.querySelector('#mpTh05InitialSpares')?.value)===spares,th05Stock[0]);
+        await pages[0].locator('#mpTh05InitialBombs').selectOption(String(th05Stock[1]),{force:true});
+        for(const page of pages)await page.waitForFunction(([spares,bombs])=>Number(document.querySelector('#mpTh05InitialSpares')?.value)===spares&&Number(document.querySelector('#mpTh05InitialBombs')?.value)===bombs,th05Stock);
+        for(const page of pages.slice(1))assert.ok(await page.locator('#mpTh05InitialSpares').isDisabled(),'Guest stock settings must be readonly');
+        assert.ok((await Promise.all(pages.map(page=>page.locator('#mpReady').getAttribute('aria-pressed')))).every(value=>value!=='true'),'Team stock changes must clear every ready flag');
+        await pages[0].locator('#mpRoomSettings').screenshot({path:resolve(directory,'th05-stock-settings.png')});
+        await pages[0].locator('#roomWorkspaceTab-chat').click();
+      });
       if(rollback||delayOnly)await step(rollback?'enable-rollback':'disable-rollback',async()=>{
         await pages[0].locator('#roomWorkspaceTab-game').click();
         const toggle=pages[0].locator('#mpRollbackToggle');await toggle.waitFor({state:'visible'});
@@ -200,6 +219,7 @@ try{
       });
       if(rollback)assert.ok(record.native.every(state=>state.options.adonisMode!==1&&state.options.prediction===PRODUCT_GAMES[game].multiplayer.inputTiming.sendPredictionLimit),'Launcher must send rollback timing and limits to every native seat');
       if(delayOnly)assert.ok(record.native.every(state=>state.options.adonisMode===1&&state.rollback===0),'Delay-only rooms must disable native prediction');
+      if(game==='th05'&&th05Stock)for(const state of record.native){assert.equal(state.options.initialSpares,th05Stock[0]);assert.equal(state.options.initialBombs,th05Stock[1]);assert.deepEqual(state.initialStock,Array.from({length:players},()=>[th05Stock[0]+1,th05Stock[1]]));}
       if(gamepad)await step('native-gamepad-sampling',async()=>{
         record.gamepad=[];
         for(const page of pages){const frame=await(await page.locator('#gameFrame').elementHandle()).contentFrame();

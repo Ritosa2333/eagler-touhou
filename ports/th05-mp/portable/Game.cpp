@@ -101,17 +101,19 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_input_scene(){if(th5w::original::DemoAc
 extern "C" EMSCRIPTEN_KEEPALIVE double th05_display_fps(){return game?game->m_fps:0.;}
 
 extern "C" {
-EMSCRIPTEN_KEEPALIVE int th05_coop_start(int count,int local,int difficulty,int seed,int c0,int c1,int c2,int challenge,int localVisibility){
- if(!game||count<2||count>3||local<0||local>=count||difficulty<0||difficulty>4||c0<0||c0>3||c1<0||c1>3||c2<0||c2>3)return 0;
+EMSCRIPTEN_KEEPALIVE int th05_coop_start_stock(int count,int local,int difficulty,int seed,int c0,int c1,int c2,int challenge,int localVisibility,int spares,int bombs){
+ if(!game||count<2||count>3||local<0||local>=count||difficulty<0||difficulty>4||c0<0||c0>3||c1<0||c1>3||c2<0||c2>3||spares<0||spares>5||bombs<0||bombs>3)return 0;
  return Guard([=]{using namespace th5w;
   delete game->m_pCurScheme;game->m_pCurScheme=nullptr;original::StopDemo();coop::Reset();auto& run=coop::Run();
   run.count=count;run.challenge=challenge!=0;run.localVisibility=localVisibility!=0;run.local=local;run.difficulty=difficulty;run.seed=seed;run.characters[0]=c0;run.characters[1]=c1;run.characters[2]=c2;
+  run.initialSpares=spares;run.initialBombs=bombs;
   practice::Configure(false);auto& g=CGame::GVar();g.m_bReplayMode=false;g.m_bPracticeMode=false;g.m_playDifficulty=difficulty;g.m_playStage=difficulty==4?6:0;
-  g.m_playChara=c0;g.m_nInitLife=3;g.m_nInitBomb=3;g.m_turboMode=true;g.OnBeginGame();g.m_bCanSaveReplay=false;
+  g.m_playChara=c0;g.m_nInitLife=spares+1;g.m_nInitBomb=bombs;g.m_turboMode=true;g.OnBeginGame();g.m_bCanSaveReplay=false;
   for(int i=0;i<7;i++)g.m_randomSeed[i]=(seed+i*7919)&0x7fffffff;
   auto* stage=new CStage;game->m_pCurScheme=stage;game->m_curSchemeID=4;stage->Initialize();
  });
 }
+EMSCRIPTEN_KEEPALIVE int th05_coop_start(int count,int local,int difficulty,int seed,int c0,int c1,int c2,int challenge,int localVisibility){return th05_coop_start_stock(count,local,difficulty,seed,c0,c1,c2,challenge,localVisibility,2,3);}
 EMSCRIPTEN_KEEPALIVE void th05_coop_input(int seat,int buttons,float x,float y,int motionMode){
  auto& run=th5w::coop::Run();if(seat>=0&&seat<run.count&&motionMode>=0&&motionMode<=3&&std::isfinite(x)&&std::isfinite(y))run.input[seat]={static_cast<unsigned short>(buttons),x,y,motionMode};
 }

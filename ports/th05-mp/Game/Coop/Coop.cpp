@@ -320,9 +320,27 @@ void CStage::DrawCoopStatistics(){
  };
  for(int i=0;i<m_seatCount;i++){
   const auto& seat=m_seats[i];const auto* rgb=coop::ArtColor(coop::Run().characters[i],coop::Variant(i));const float color[]={rgb[0]/255.f,rgb[1]/255.f,rgb[2]/255.f};const int y=168+i*32;
-  char label[20];snprintf(label,sizeof(label),"%dP",i+1);text(label,448,y,color[0],color[1],color[2]);
-  seat.resources->m_patternArray.GetImagePtr(20)->Draw(464,y);
+  char label[20];snprintf(label,sizeof(label),"%dP",i+1);
   if(!m_bLogo)text(label,int(m_playAreaUpperLeftX+seat.player->m_curX/16)-4,int(m_playAreaUpperLeftY+seat.player->m_curY/16)-32,color[0],color[1],color[2],.5f);
+  if(display.numericPower){
+   // Compact two-line stocks. The type marker is the seat's actual recolored
+   // shot texture, while P1/P2/P3 retain their independent seat colors.
+   const float seatColors[][3]={{0,1,1},{1,1,0},{0,1,0}};
+   snprintf(label,sizeof(label),"P%d",i+1);text(label,448,y,seatColors[i][0],seatColors[i][1],seatColors[i][2]);
+   seat.resources->m_patternArray.GetImagePtr(20)->Draw(472,y);
+   seat.resources->m_patternArray.GetImagePtr(36+ITEM_POWER)->Draw(448,y+16);
+   snprintf(label,sizeof(label),"%3d/128",seat.player->GetPower());text(label,472,y+16,1,1,1);
+   if(seat.stock.ghost)text(seat.stock.offline?"OFFLINE":"GHOST",496,y,.5f,.6f,.8f);
+   else{
+    if(coop::Run().challenge){text("MISS",504,y,1,1,1);snprintf(label,sizeof(label),"%02d",seat.stock.deaths);}
+    else{seat.resources->m_patternArray.GetImagePtr(36+ITEM_1UP)->Draw(528,y);snprintf(label,sizeof(label),"%02d",std::max(0,seat.stock.lives-1));}
+    text(label,544,y,1,1,1);
+    seat.resources->m_patternArray.GetImagePtr(36+ITEM_BOMB)->Draw(528,y+16);
+    snprintf(label,sizeof(label),"%02d",seat.stock.bombs);text(label,544,y+16,1,1,1);
+   }
+  }else{
+  text(label,448,y,color[0],color[1],color[2]);
+  seat.resources->m_patternArray.GetImagePtr(20)->Draw(464,y);
   if(seat.stock.ghost){text(seat.stock.offline?"OFFLINE":"GHOST",480,y,.5f,.6f,.8f);}
   else if(coop::Run().challenge){text("MISS",480,y,1,1,1);m_pStageRes->DrawNumber(544,y,seat.stock.deaths,2,false,true,1,1,1);}
   else{
@@ -331,8 +349,8 @@ void CStage::DrawCoopStatistics(){
    CTh5ExtFont::DrawExtChar(0xd3,528,y,1,1,1);
    m_pStageRes->DrawNumber(544,y,seat.stock.bombs,2,false,true,1,1,1);
   }
-  if(display.numericPower){const unsigned char power[]={0xe4,0xe5,0};CTh5ExtFont::DrawExtString(power,2,448,y+16,1,1,0);m_pStageRes->DrawNumber(528,y+16,seat.player->GetPower(),3,false,true,1,1,1);}
-  else m_pStageRes->DrawGauge(seat.player->GetPower(),128,448,y+16,color[0],color[1],color[2]);
+  m_pStageRes->DrawGauge(seat.player->GetPower(),128,448,y+16,color[0],color[1],color[2]);
+  }
   if(seat.rescue){snprintf(label,sizeof(label),"%d/5",seat.rescue);text(label,576,y,color[0],color[1],color[2],.5f);}
  }
  const unsigned char cumulative[]={0xed,0xee,0};
