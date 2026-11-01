@@ -21,13 +21,27 @@ node launcher/scripts/prepare-th05-content.mjs --original=/path/to/TH05 --resour
 node launcher/scripts/prepare-th05-language-pack.mjs --original=/path/to/uth05win --output=/path/to/languages
 ```
 
-资源制备核对原版 `kaiki1.dat`、`kaiki2.dat`、`zun.com` 的 MD5，也通过文件内容识别日文名称的 DAT。`--resources` 提供 `anex86.bmp`、练习／Replay 图片和额外 Music Room 数据。汉化使用 uth05win 的 `chs.dat`，以静态语言包交给启动器安装。
+资源制备核对原版 `kaiki1.dat`、`kaiki2.dat`、`zun.com` 的 MD5，也通过文件内容识别日文名称的 DAT。`--resources` 提供 `anex86.bmp`、练习／Replay 图片和额外 Music Room 数据；原版 `SE/s01.wav`～`s15.wav` 可通过 `--se=DIR` 单独指定。汉化使用 uth05win 的 `chs.dat`，以静态语言包交给启动器安装。
 
 制备脚本自动下载 [PR #143](https://github.com/Ritosa2333/eagler-touhou/pull/143) 对应源码 `th05-coop-lab@6eb46ed1d4f581f109ffa494ea0d21d54c8b38df` 的音频；缓存目录可由 `--pr-audio=DIR` 指定。首次下载核对 Git blob SHA-1，制备及播放核对 SHA-256。`provenance.json` 保留原始文件名与全部身份。
 
-`th05.data` 内置独立 `sfx/effects.pcm`；BGM 放在独立 `music/` 组件。原版采用 PR 的 M86 曲目和循环点；“幺乐团专辑版”采用 PR 的 Akyu 音轨和整曲循环。Opus 的 Ogg 容器以扁平 `.ogg` 包文件名接入现有音乐清单，文件内容不转码。`resources/audio/` 保留原始元数据，`node scripts/generate-audio-layout.mjs --check` 核对生成模块。
+`th05.data` 内置 uth05win 原版 15 个 SE WAV。相同音效按原来的 Stop／Reset／Play 语义重播，其他正在播放的音效继续运行；BGM 放在 `music/` 组件。原版采用 PR 的 M86 曲目和循环点；“幺乐团专辑版”采用 PR 的 Akyu 音轨和整曲循环。Opus 的 Ogg 容器以扁平 `.ogg` 包文件名接入现有音乐清单，文件内容不转码。`resources/audio/` 保留原始元数据，`node scripts/generate-audio-layout.mjs --check` 核对生成模块。
 
 开发启动器可设置 `EAGLER_TH05_CONTENT_DIR`、`EAGLER_TH05_LANGUAGE_PACK_DIR`；默认 DATA／音乐目录为 `ports/th05/artifacts/content/`。TH05 属于测试构建产品。
+
+TH01–04 的曲目制备使用原 uth05win 的 PMDWin DLL 和 32 位 Windows 渲染工具 `scripts/render-music-room.cpp`。编译工具后运行：
+
+```sh
+python scripts/prepare-music-room-audio.py --archive=/path/to/music.dat --dll=/path/to/PMDWin.dll --renderer=/path/to/render-music-room.exe --output=artifacts/music-room-audio
+```
+
+`resources/audio/music-room.json` 固定各曲目的源数据、音频身份和循环点。内容制备可通过 `--music-room-audio=DIR` 指定结果目录。曲目顺序和评论继续读取原 Music Room 数据。
+
+## 手机输入
+
+启动器的 `direct-touch` 坐标按 iframe 比例转换为 640×480 游戏坐标，并扣除横竖屏的黑边。`touch-controls` 驱动移动、低速、射击和原生练习面板；在触控布局设置中开启 thprac 按键后，点击“作弊和高级设置”进入与桌面共用的 C++ 工具。
+
+`PracticeMobilePanels.hpp` 提供作弊、高级设置和信息折叠面板，`PracticePointer.hpp` 在按下时确定 UI／游戏归属。信息区内开始的拖动可继续交给自机，原生按钮点击不会移动自机。对话支持单击确认、长按跳过；触控回放记录实际位移。
 
 ## 运行接口
 
@@ -37,12 +51,12 @@ node launcher/scripts/prepare-th05-language-pack.mjs --original=/path/to/uth05wi
 
 游戏按原生场景的 56／26 Hz 等节奏推进。独立 FBO 呈现保留逻辑帧；产品目录暂不声明画面插值能力。
 
-Replay 文件保持 uth05win 的原始头部与输入流，`TCH5` 扩展记录每帧真实触控位移。旧录像继续可读。工作区支持检查、选择关卡、暂停、重播、定位和倍速；定位重建选中关卡的保存状态后执行原生输入流。单关卡帧数构成播放时间线。浏览器 Music Room 提供 TH05 的 23 首曲目，跟随启动器所选音源。
+Replay 文件保持 uth05win 的原始头部与输入流，`TCH5` 扩展记录每帧真实触控位移。旧录像继续可读。工作区支持检查、选择关卡、暂停、重播、定位和倍速；定位重建选中关卡的保存状态后执行原生输入流。单关卡帧数构成播放时间线。浏览器 Music Room 保留 TH01–05 共 107 首曲目。TH05 的 23 首跟随启动器所选音源，TH01–04 的 84 首 Arrange／Special MIX 从原始 MUSIC.DAT 离线制备为 Ogg；播放使用音乐文件，浏览器程序继续直接运行 C++ 游戏逻辑。
 
 ## 检查
 
 ```sh
-node --test ports/th05/tests/managed-adapter.test.mjs
+node --test ports/th05/tests/managed-adapter.test.mjs ports/th05/tests/pointer.test.mjs ports/th05/tests/sfx.test.mjs
 node ports/th05/tests/presentation.mjs
 node ports/th05/tests/browser.mjs
 node ports/th05/tests/launcher.mjs

@@ -12,7 +12,7 @@ for(const target of targets().filter(target=>!selected||selected.includes(target
   assert(inputs.translationUnits.includes('portable/Platform.cpp'));
   assert.match(readFileSync(resolve(owner,'portable/Platform.cpp'),'utf8'),/void PlaySound\(int index\)\{EM_ASM\(\{Module\.eaglerAudio\?\.sound\(\$0\)/);
   const audio=readFileSync(resolve(owner,'web/audio.mjs'),'utf8');
-  assert.match(audio,/sfx=createSfx\(ctx\(\),bytes\)/);assert.match(audio,/sound\(index\).*sfx\?\.trigger\(index\)/);
+  assert.match(audio,/sfx=createSfx\(ctx\(\),files\)/);assert.match(audio,/sound\(index\).*sfx\?\.trigger\(index\)/);
   assert.match(audio,/pump\(\)\{sfx\?\.pump\(\)/);return;
  }
  const routes=inputs.translationUnits.map(path=>resolve(owner,path))

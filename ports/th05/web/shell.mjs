@@ -6,10 +6,11 @@ import {installManagedShell,protocol} from './managed.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {createDirectInputBridge} from './direct-input-bridge.mjs';
 import {createTouchInput,virtualKey} from './input.mjs';
+import {hostedPoint,createPointerRouter} from './pointer.mjs';
 import {createAudio} from './audio.mjs';
 import {createPlayback} from './playback.mjs';
 const query=new URLSearchParams(location.search),canvas=document.querySelector('#canvas');
-let module,store,audio,bridge,playback,launched=false,configured=false,closed=false,options={},language='ja',music='none',raf=0,firstFrame=false,saveTimer=0;
+let module,store,audio,bridge,playback,pointers,launched=false,configured=false,closed=false,options={},language='ja',music='none',raf=0,firstFrame=false,saveTimer=0;
 const clock=new FrameClock(),presentation=new PresentationClock();
 let lastHealth=0,healthFrames=0,maxGap=0,launchSerial,unloadSync;
 const owners=new Map();
@@ -19,16 +20,16 @@ function nativeKey(code,down,owner){const key=virtualKey(code);if(!key)return;le
 const keyboard=createBrowserKeyboard({send:(code,down)=>nativeKey(code,down,'keyboard'),hostContext:{protocol,game:'th05',epoch:Number(query.get('runtimeEpoch')),origin:location.origin,ready:()=>launched&&!document.hidden&&!closed,reset:clearKeyboard}});
 const touch=createTouchInput({send:(code,down)=>nativeKey(code,down,'touch'),position:()=>({x:module?._th05_player_x()??224,y:module?._th05_player_y()??376}),options:()=>options,scene:()=>module?._th05_input_scene()??0,move:(x,y,unlimited)=>module?._th05_touch_motion(x,y,+unlimited)});
 function clearKeyboard(){keyboard.clear();owners.delete('keyboard');reconcile();}
-function cancelTouch(){touch.cancel();owners.delete('touch');module?._th05_touch_motion(0,0,0);reconcile();}
+function cancelTouch(){touch.cancel();pointers?.cancel();owners.delete('touch');module?._th05_touch_motion(0,0,0);reconcile();}
 function reconcile(){module?._th05_clear();for(const keys of owners.values())for(const key of keys)module?._th05_key(key,1);}
-function clearAll(){keyboard.clear();touch.cancel();owners.clear();module?._th05_clear();}
+function clearAll(){keyboard.clear();touch.cancel();pointers?.cancel();owners.clear();module?._th05_clear();}
 function sameOrigin(value){const url=new URL(value,location.href);if(url.origin!==location.origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');return url;}
 function allowedResource(path){
  if(typeof path!=='string'||/[\\\x00-\x1f]/.test(path)||path.split('/').slice(1).some(p=>!p||p==='.'||p==='..'))return false;
  return /^\/(?:music\/[A-Za-z0-9_.-]+\.(?:ogg|opus|json)|data\/(?:chs\.dat|gothic\.ttf)|msgothic\.ttc|unifont\.otf|thcrap\/th05\/chs\.dat)$/.test(path);
 }
 async function resources(list=[]){
- if(!Array.isArray(list)||list.length>128)throw Error('Invalid resource list');
+ if(!Array.isArray(list)||list.length>256)throw Error('Invalid resource list');
  const verified=[];
  for(const resource of list){if(!allowedResource(resource?.path))throw Error('Invalid resource path');if(launched&&!resource.path.startsWith('/music/'))throw Error('Runtime resource is immutable after launch');const response=await fetch(sameOrigin(resource.url));if(!response.ok)throw Error('Resource download failed: '+resource.path);const bytes=new Uint8Array(await response.arrayBuffer()),expected=resource.bytes??resource.size;if(bytes.length>64*1024*1024||expected!==undefined&&bytes.length!==expected||resource.sha256&&await digest(bytes)!==resource.sha256.replace(/^sha256-/,''))throw Error('Resource integrity mismatch: '+resource.path);verified.push({path:resource.path,bytes});}
  for(const file of verified){module.FS.mkdirTree(file.path.slice(0,file.path.lastIndexOf('/')));module.FS.writeFile(file.path,file.bytes);audio?.resourceChanged(file.path);emit('transfer',{mode:file.path.startsWith('/music/')?'ogg':'runtime',loaded:file.bytes.length,total:file.bytes.length,path:file.path});}
@@ -70,8 +71,9 @@ const api={running:()=>launched,viewer:()=>options.replayViewer===true,resources
  async launch(message){if(!configured||closed)throw Error('Runtime cannot launch');clearAll();cstring(language,game=>cstring(options.thpracLocale??(language==='ja'?'ja-JP':'zh-CN'),locale=>module._th05_language_configure(game,locale)));module._th05_viewer(+!!options.replayViewer);module._th05_practice_configure(+(options.thpracEnabled===true&&!options.replayViewer));if(!module._th05_initialize())throw Error('TH05 initialization failed');module._th05_options(+(options.alwaysHitbox===true),+(options.focusHitboxEnabled===true));if(options.replayPath)openReplay(options.replayPath);launched=true;launchSerial=message.launchSerial;clock.reset();clock.credit=1/56;presentation.reset();lastHealth=performance.now();emit('runtime-info',{renderer:'C++ / WebGL GLES2',architecture:'uth05win-native-cpp',version:'1.0.0',protocol});raf=requestAnimationFrame(frame);saveTimer=setInterval(()=>{unloadSync=sync().catch(error);},3000);},
  async playback(message){if(!launched||!options.replayViewer)throw Error('Launch the Replay workspace first');return playback.command(message);},
  key(message){if(!options.replayViewer)keyboard.event(message,message.down,'hosted');audio.resume();},clearKeyboard,cancelTouch,
- touch(message){if(!options.replayViewer)touch.controls(message);},pointer(message){if(!options.replayViewer)touch.pointer(message);},
- practicePointer(message){module?._th05_mouse(message.x,message.y,message.type==='move'?-1:message.type==='down'?1:0);},
+ touch(message){if(!options.replayViewer){audio.resume();touch.controls(message);module.eaglerControls={thpracMobilePanelsEnabled:options.thpracEnabled===true&&message.thpracMobilePanelsEnabled===true,thpracMobilePanelsVisible:message.thpracMobilePanelsVisible===true};}},
+ pointer(message){if(!options.replayViewer){audio.resume();const rect=canvas.getBoundingClientRect();pointers.pointer(hostedPoint(message,rect.width,rect.height));}},
+ practicePointer(message){if(!options.replayViewer)pointers.pointer({...message,id:message.id??0},true);},
 };
 try{
  bridge=installManagedShell(api,window);
@@ -81,12 +83,13 @@ try{
  const prepared=await parent.__eaglerPrepareManagedRuntimeDataV1({game:'th05',generation:query.get('gameGeneration'),epoch:bridge.epoch}),files=await decodeContent(prepared.buffer);
  for(const [path,bytes] of files){module.FS.mkdirTree('/data/'+path.split('/').slice(0,-1).join('/'));module.FS.writeFile('/data/'+path,bytes);}module.FS.chdir('/data');
  audio=createAudio(module,emit);module.eaglerAudio=audio;
+ pointers=createPointerRouter(module,touch);
  playback=createPlayback({emit,read:path=>store.read(path),validate:path=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_validate(ptr)),open:(path,stage)=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_open(ptr,stage)),clear:clearAll,resetClock:()=>clock.reset(),step:()=>module._th05_step(),draw:()=>{module._th05_draw();module._th05_present();},frame:()=>module._th05_replay_frame(),stage:()=>module._th05_replay_stage(),scene:()=>module._th05_scene(),gate:value=>audio.playback(value),yield:()=>new Promise(resolve=>setTimeout(resolve,0))});
  globalThis.__eaglerDirectInputBridge=createDirectInputBridge({protocol,game:'th05',epoch:bridge.epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!closed,dispatch(message){switch(message.command){case 'keyboard':api.key(message);break;case 'keyboard-clear':clearKeyboard();break;case 'touch-controls':api.touch(message);break;case 'touch-cancel':cancelTouch();break;case 'direct-touch':api.pointer(message);break;default:return false;}return true;}});
  addEventListener('keydown',event=>{if(!options.replayViewer&&keyboard.event(event,true))event.preventDefault();audio.resume();});addEventListener('keyup',event=>{if(!options.replayViewer&&keyboard.event(event,false))event.preventDefault();});addEventListener('blur',clearAll);
  document.addEventListener('visibilitychange',()=>{clearAll();clock.reset();presentation.reset();module._th05_focus(+!document.hidden);audio.visibility(document.hidden);if(document.hidden)unloadSync=sync().catch(error);});
  const pointer=event=>{const rect=canvas.getBoundingClientRect(),scale=Math.min(rect.width/640,rect.height/480),left=rect.left+(rect.width-640*scale)/2,top=rect.top+(rect.height-480*scale)/2;return {id:event.pointerId,x:(event.clientX-left)/scale,y:(event.clientY-top)/scale,type:event.type==='pointerdown'?'down':event.type==='pointermove'?'move':'up'};};
- for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(options.replayViewer)return;if(event.pointerType==='touch')touch.pointer(message);else module._th05_mouse(message.x,message.y,message.type==='move'?-1:message.type==='down'?1:0);audio.resume();event.preventDefault();});
+ for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(options.replayViewer)return;pointers.pointer(message,event.pointerType!=='touch');audio.resume();event.preventDefault();});
  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();error(Error('TH05 WebGL context lost'));void finish(1);});
  addEventListener('pagehide',()=>{clearAll();cancelAnimationFrame(raf);clearInterval(saveTimer);module._th05_save();unloadSync=store.sync().catch(console.error);audio.close();bridge.close();closed=true;});
  bridge.ready();

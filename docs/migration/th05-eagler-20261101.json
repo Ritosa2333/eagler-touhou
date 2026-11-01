@@ -21,6 +21,17 @@
       "../../ports/th05/resources/audio/original.json",
       "../../ports/th05/resources/audio/akyu.json",
       "../../ports/th05/resources/audio/sfx.json"
-    ]
+    ],
+    "soundEffects": {
+      "source": "uth05win/SE",
+      "manifest": "../../ports/th05/resources/audio/sfx-original.json",
+      "playback": "Original per-effect Stop/Reset/Play; PR FM PCM replacement reverted"
+    },
+    "musicRoom": {
+      "source": "Original TH05 MUSIC.DAT / TH01-04 Arrange and Special MIX",
+      "tracks": 84,
+      "manifest": "../../ports/th05/resources/audio/music-room.json",
+      "preparation": "Offline PMDWin to Ogg; browser plays audio without PC-98 compatibility layer"
+    }
   }
 }

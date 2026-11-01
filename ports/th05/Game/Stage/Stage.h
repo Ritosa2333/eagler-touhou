@@ -261,6 +261,7 @@ public:
 	void Initialize();
  CChara* BrowserPlayer() const {return m_pChara;}
  bool BrowserMenu() const {return m_bPaused||m_bContinueScr;}
+ bool BrowserDialogue() const;
 protected:
 	void DownloadVarFromGlobal();
 	void UploadVarToGlobal();

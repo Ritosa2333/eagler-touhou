@@ -1,4 +1,5 @@
 #include "../../portable/Localization.hpp"
+#include "../../portable/PracticeMobile.hpp"
 #include "Practice.h"
 #include "../Game.h"
 #include "../Stage/Stage.h"
@@ -163,20 +164,22 @@ void DrawStatus() {
   for (int i=0;i<ToolCount;i++) if (tools[i]) { MarkAssisted(); break; }
  if(AdvancedOpen()){DrawAdvanced();return;}
  DrawRuntimeHUD();
- if (!overlayOpen) {DrawAdvanced();return;}
+ if (!mobile::Show(mobile::Cheats,overlayOpen)) {DrawAdvanced();return;}
  ImGui::GetIO().MouseDrawCursor=true;
  ImGui::SetNextWindowPos(ImVec2(10,10),ImGuiCond_Always);
  ImGui::SetNextWindowBgAlpha(.5f);
- ImGui::Begin("Mod Menu",NULL,ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|
+ if(!mobile::Begin(mobile::Cheats,"Mod Menu###th05-cheats",ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|
   ImGuiWindowFlags_NoMove|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoSavedSettings|
-  ImGuiWindowFlags_NoFocusOnAppearing|ImGuiWindowFlags_NoNav);
+  ImGuiWindowFlags_NoFocusOnAppearing|ImGuiWindowFlags_NoNav)){ImGui::End();DrawAdvanced();return;}
  const Tool order[]={Invincible,InfiniteLives,LockDream,InfiniteBombs,KeepPower,LockTimeout,AutoBomb,EnemyInvincible};
+ if(mobile::Enabled()){ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,ImVec2(6,5));ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,ImVec2(8,6));}
  for (Tool tool:order) {
   const int i=int(tool);
   char text[128]; const bool enabled=Enabled(Tool(i));
   if(keys[i][0])sprintf_s(text,enabled?"[%s: %s]":"%s: %s",keys[i],labels[i]);
   else sprintf_s(text,enabled?"[%s]":"%s",labels[i]);
   if (i==InfiniteLives&&Options().noContinue)sprintf_s(text,enabled?"[F2: %s]":"F2: %s",th5w::locale::Text(u8"\u4e0d\u75ae"));
+  if(mobile::Enabled()){bool checked=enabled;if(ImGui::Checkbox(text,&checked))Toggle(tool);continue;}
   if (enabled) ImGui::PushStyleColor(ImGuiCol_Text,ImVec4(0,1,0,1));
   const ImVec2 cursor=ImGui::GetCursorPos();
   ImGui::TextUnformatted(text);
@@ -186,6 +189,7 @@ void DrawStatus() {
   if (ImGui::InvisibleButton("##tool",ImGui::CalcTextSize(text))) Toggle(Tool(i));
   ImGui::PopID();
  }
+ if(mobile::Enabled())ImGui::PopStyleVar(2);
  char infoText[128];sprintf_s(infoText,infoOpen?"[Tab: %s]":"Tab: %s",th5w::locale::Text(u8"\u66f4\u591a\u6e38\u620f\u4fe1\u606f"));
  if(infoOpen)ImGui::PushStyleColor(ImGuiCol_Text,ImVec4(0,1,0,1));
  const ImVec2 infoPos=ImGui::GetCursorPos();ImGui::TextUnformatted(infoText);ImGui::SetCursorPos(infoPos);

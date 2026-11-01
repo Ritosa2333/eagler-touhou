@@ -1,4 +1,5 @@
 #include "../../portable/Localization.hpp"
+#include "../../portable/PracticeMobile.hpp"
 // Adapted from purple thprac THAdvOptWnd, GameFPSOpt, DisableKeyOpt,
 // KeyHUDOpt and THGuiTestReactionTest. Native TH05 runs at 56 FPS.
 #include "Practice.h"
@@ -20,8 +21,12 @@ bool Shift(){const auto& io=ImGui::GetIO();return io.KeysDown[VK_SHIFT]||io.Keys
 void Help(const char* text){ImGui::SameLine();ImGui::TextDisabled("(?)");if(ImGui::IsItemHovered()){ImGui::BeginTooltip();ImGui::PushTextWrapPos(420);ImGui::TextUnformatted(text);ImGui::PopTextWrapPos();ImGui::EndTooltip();}}
 }
 AdvancedOptions& Options(){static AdvancedOptions native;return original::DemoActive()||!Available()?native:options;}
-bool AdvancedOpen(){return Available()&&open&&!original::DemoActive();}
-void SetAdvancedOpen(bool value){open=value;if(value)fpsDraft=options.fps;if(!value){Reaction().Reset();SaveAdvancedOptions();}}
+bool AdvancedOpen(){return Available()&&mobile::CapturesAdvanced(open)&&!original::DemoActive();}
+void SetAdvancedOpen(bool value){open=value;
+#ifdef __EMSCRIPTEN__
+ if(mobile::Enabled()){eagler::thprac::mobile::expanded[eagler::thprac::mobile::Advanced]=value;if(value)eagler::thprac::mobile::visible=true;}
+#endif
+ if(value)fpsDraft=options.fps;if(!value){Reaction().Reset();SaveAdvancedOptions();}}
 float GameFPS(){return original::DemoActive()||!Available()?56.f:float(Config::Bound(options.fps,1,6000));}
 unsigned short FilterGameplayInput(unsigned short raw,bool replay){
  if(replay||!Available())return raw;
@@ -141,10 +146,10 @@ void DrawReaction(){
 }
 }
 void DrawAdvanced(){
- if(!Available()||!open)return;ImGui::GetIO().MouseDrawCursor=true;
+ if(!Available()||!mobile::Show(mobile::Advanced,open))return;ImGui::GetIO().MouseDrawCursor=true;
  ImGui::SetNextWindowPos(ImVec2(0,0),ImGuiCond_Always);ImGui::SetNextWindowSize(ImVec2(640,480),ImGuiCond_Always);ImGui::SetNextWindowBgAlpha(.8f);
  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0.f);ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0.f);
- ImGui::Begin("TH05 Advanced Options",NULL,ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings);
+ if(!mobile::Begin(mobile::Advanced,"TH05 Advanced Options###th05-advanced",ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings)){ImGui::End();ImGui::PopStyleVar(2);return;}
  ImGui::TextUnformatted(th5w::locale::Text(u8"\u9ad8\u7ea7\u9009\u9879"));ImGui::Separator();ImGui::BeginChild("Adv. Options",ImVec2(0,0));
  bool changed=false;
  if(ImGui::CollapsingHeader(th5w::locale::Text(u8"\u6e38\u620f\u901f\u5ea6"))){
@@ -206,12 +211,12 @@ void DrawAdvanced(){
  if(changed)SaveAdvancedOptions();
 }
 void DrawRuntimeHUD(){
- if(!Available()||open||!CGame::s_pCurGame||CGame::s_pCurGame->m_curSchemeID!=4||!CGame::s_pCurGame->m_pCurScheme)return;
+ if(!Available()||AdvancedOpen()||!CGame::s_pCurGame||CGame::s_pCurGame->m_curSchemeID!=4||!CGame::s_pCurGame->m_pCurScheme)return;
  auto* stage=static_cast<CStage*>(CGame::s_pCurGame->m_pCurScheme);
  if(options.lockTimer&&Enabled(LockTimeout)&&stage->LockTimerFrames()>0){
   char value[32];sprintf_s(value,"%.2f",stage->LockTimerFrames()/56.f);auto* draw=ImGui::GetForegroundDrawList();ImVec2 size=ImGui::CalcTextSize(value);draw->AddRectFilled(ImVec2(32,0),ImVec2(110,size.y),IM_COL32_WHITE);draw->AddText(ImVec2(110-size.x,0),IM_COL32_BLACK,value);
  }
- if(InGameInfoOpen())stage->DrawPracticeInfo();
+ if(mobile::Show(mobile::Information,InGameInfoOpen()))stage->DrawPracticeInfo();
  if(!options.showKeys)return;
  KeyRectStyle style;style.size=ImVec2(48,48);style.separated=true;style.padding=ImVec2(0,0);
  style.border_color_press=style.border_color_release=0xFFFFFFFF;
