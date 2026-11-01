@@ -35,7 +35,7 @@ bool C2DImage::UploadToTexture()
 			return false;
 		for (int i=0;i<m_height;i++)
 			memcpy(tempdata+m_texWidth*i*4,m_data+m_width*i*4,m_width*4);
-		delete m_data;
+		delete[] m_data;
 		m_data=tempdata;
 	}
 
@@ -47,7 +47,7 @@ bool C2DImage::UploadToTexture()
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
 
-	delete m_data;
+	delete[] m_data;
 	m_data=NULL;
 
 	return true;
@@ -208,7 +208,7 @@ C2DImage* C2DImage::Create2DImage(int width,int height)
 	C2DImage *pRet=new C2DImage;
 	if (pRet==NULL)
 	{
-		delete data;
+		delete[] data;
 		return NULL;
 	}
 
@@ -225,7 +225,7 @@ void C2DImage::Destroy()
 	if (m_texID!=0)
 		glDeleteTextures(1,&m_texID);
 	if (m_data)
-		delete m_data;
+		delete[] m_data;
 	delete this;
 }
 

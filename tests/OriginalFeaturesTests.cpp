@@ -24,6 +24,7 @@
 #include <vector>
 #include <cstring>
 #include <limits>
+#include <cmath>
 namespace th5w {
 struct PracticeTests {
  static int checks;
@@ -50,7 +51,7 @@ struct PracticeTests {
   practice::MarkAssisted();
   for(int speed=0;speed<2;speed++)for(int stage=5;stage<=6;stage++)for(int chara=0;chara<4;chara++){
    g.m_runTurboMode=speed!=0;g.m_playStage=stage;g.m_playChara=chara;g.m_playDifficulty=stage==6?4:1;g.m_curScore=70000;Stats()=Perfect();Stats().stage=stage;
-   CScheme* next=NULL;int id=0;Check(CSchemeSwitcher::SwitchScheme(&next,&id,stage==6?11:9,1)&&id==7,"assisted Staff and Extra verdict route to native ranking");auto* scene=static_cast<CHighScoreScreen*>(next);
+   CScheme* next=NULL;int id=0;Check(CSchemeSwitcher::SwitchScheme(&next,&id,12,1)&&id==7,"assisted congratulations exits to native ranking");auto* scene=static_cast<CHighScoreScreen*>(next);
    Check(!scene->m_bQuit&&!scene->m_storeHighScore&&scene->m_opRank==0,"assisted full clear opens temporary native name entry");Check(scene->m_scores[chara][g.m_playDifficulty][0]==70000,"temporary board includes assisted clear score");
    scene->m_curScrFade=100;scene->Draw();glFinish();if(stage==5&&chara==0)Screenshot("original-assisted-ranking.bmp");scene->Tick(0);scene->Tick(32);scene->Tick(0);scene->m_curCharX=16;scene->m_curCharY=2;scene->Tick(32);
    Check(scene->m_quitCode==HIGHSCORESCREEN_END_ENTER_END,"assisted ranking accepts native name confirmation");Check(g.m_highScore[chara][g.m_playDifficulty][0]!=70000,"assisted ranking never changes the in-memory ordinary board");g.LoadHighScore();Check(g.m_highScore[chara][g.m_playDifficulty][0]!=70000,"assisted name confirmation never writes an ordinary record");int exit=0;for(int i=0;i<20&&!exit;i++)exit=scene->Tick(0);delete scene;
@@ -64,7 +65,53 @@ struct PracticeTests {
   g.m_bPracticeMode=false;practice::ResetRun();
   memcpy(g.m_highScore,scores,sizeof(scores));memcpy(g.m_highScoreName,names,sizeof(names));memcpy(g.m_highScoreFlag,flags,sizeof(flags));memcpy(g.m_defaultHighScoreName,defaultName,10);g.SaveHighScore();g.SaveConfig();
  }
- static void Routes(CGame& game){using namespace original;CScheme* next=NULL;int id=0;auto& g=game.m_globalVar;g.m_bPracticeMode=g.m_bReplayMode=false;Stats()=Perfect();g.m_playStage=5;Check(CSchemeSwitcher::SwitchScheme(&next,&id,5,1)&&id==9,"normal ending routes to Staff before registration");delete next;Check(CSchemeSwitcher::SwitchScheme(&next,&id,9,1)&&id==7,"Staff verdict and scores finish at highscore registration");delete next;g.m_playStage=6;Stats().stage=6;Stats().endSequence=1;Check(CSchemeSwitcher::SwitchScheme(&next,&id,5,1)&&id==10,"Extra ending routes to All Cast");delete next;Check(CSchemeSwitcher::SwitchScheme(&next,&id,10,1)&&id==11,"Extra All Cast precedes standalone verdict");delete next;Check(CSchemeSwitcher::SwitchScheme(&next,&id,11,1)&&id==7,"Extra verdict precedes registration");delete next;Stats().complete=false;Check(CSchemeSwitcher::SwitchScheme(&next,&id,7,3)&&id==11,"failed run registration precedes verdict");delete next;Check(CSchemeSwitcher::SwitchScheme(&next,&id,11,1)&&id==6,"failed run verdict retains port replay-save flow");delete next;}
+ static void Routes(CGame& game){using namespace original;CScheme* next=NULL;int id=0;auto& g=game.m_globalVar;g.m_bReplayMode=g.m_bPracticeMode=false;g.m_nContinueUsed=0;Stats()=Perfect();g.m_playStage=5;
+  Check(CSchemeSwitcher::SwitchScheme(&next,&id,5,1)&&id==9,"normal ending routes to Staff before registration");delete next;
+  Check(CSchemeSwitcher::SwitchScheme(&next,&id,9,1)&&id==12,"normal Staff verdict and scores lead to congratulations");delete next;
+  Check(CSchemeSwitcher::SwitchScheme(&next,&id,12,1)&&id==7,"normal congratulations leads to registration");delete next;
+  g.m_playStage=6;Stats().stage=6;Stats().endSequence=1;
+  Check(CSchemeSwitcher::SwitchScheme(&next,&id,5,1)&&id==10,"Extra ending routes to All Cast");delete next;
+  Check(CSchemeSwitcher::SwitchScheme(&next,&id,10,1)&&id==11,"Extra All Cast precedes standalone verdict");delete next;
+  Check(CSchemeSwitcher::SwitchScheme(&next,&id,11,1)&&id==12,"Extra verdict leads to congratulations");delete next;
+  Check(CSchemeSwitcher::SwitchScheme(&next,&id,12,1)&&id==7,"Extra congratulations leads to registration");delete next;
+  g.m_nContinueUsed=1;g.m_playStage=5;Check(CSchemeSwitcher::SwitchScheme(&next,&id,9,1)&&id==7,"continued clear retains name entry without a no-continue congratulations");delete next;g.m_nContinueUsed=0;
+  Stats().complete=false;Check(CSchemeSwitcher::SwitchScheme(&next,&id,7,3)&&id==11,"failed run registration precedes verdict");delete next;Check(CSchemeSwitcher::SwitchScheme(&next,&id,11,1)&&id==6,"failed run verdict retains port replay-save flow");delete next;
+ }
+ static void ClearPersistence(CGame& game){using namespace original;StopDemo(true);auto& g=game.m_globalVar;const auto options=practice::Options();
+  bool clears[4][5],extras[4];memcpy(clears,g.m_bClear,sizeof(clears));memcpy(extras,g.m_bExtraPlayable,sizeof(extras));
+  for(int display=0;display<2;display++)for(int chara=0;chara<4;chara++)for(int difficulty=0;difficulty<5;difficulty++){
+   practice::Options().showHitbox=display==0;practice::Options().alwaysHitbox=display==1;
+   g.m_bReplayMode=g.m_bPracticeMode=false;g.m_playChara=chara;g.m_playDifficulty=difficulty;g.m_playStage=difficulty==4?6:5;g.m_turboMode=difficulty!=4;g.OnBeginGame();
+   Check(!practice::Assisted(),"either hitbox display option preserves ordinary run eligibility");
+   memset(g.m_bClear,0,sizeof(g.m_bClear));memset(g.m_bExtraPlayable,0,sizeof(g.m_bExtraPlayable));
+   g.m_curScore=g.m_highScore[chara][difficulty][0]+1000;original::EndStage(g.m_playStage,g.m_curScore,true);
+   CScheme* next=NULL;int id=0;Check(CSchemeSwitcher::SwitchScheme(&next,&id,4,STAGE_END_CLEAR)&&id==5,"real final-stage clear enters ending and persists clear data");delete next;
+   Check(g.m_bClear[chara][difficulty]&&(difficulty==4||g.m_bExtraPlayable[chara]),"all four normal difficulties including Easy unlock the selected character's Extra");
+   {CGlobalVariableAndStatistics loaded;loaded.Initialize();Check(loaded.m_bClear[chara][difficulty]&&(difficulty==4||loaded.m_bExtraPlayable[chara]),"clear and Extra unlock survive restarting the game");}
+   Check(CSchemeSwitcher::SwitchScheme(&next,&id,4,STAGE_END_PLAYER_QUIT)&&id==2,"clear fixture can return to title");delete next;
+   Check(CSchemeSwitcher::SwitchScheme(&next,&id,12,1)&&id==7,"completed congratulations enters name registration");auto* ranking=static_cast<CHighScoreScreen*>(next);
+   Check(!ranking->m_bQuit&&ranking->m_storeHighScore,"hitbox-only clear and Slow Extra are eligible to save high scores");
+   const int score=g.m_curScore;ranking->m_curScrFade=100;ranking->Tick(0);ranking->Tick(32);ranking->Tick(0);ranking->m_curCharX=16;ranking->m_curCharY=2;ranking->Tick(32);
+   Check(ranking->m_bQuit&&ranking->m_quitCode==HIGHSCORESCREEN_END_ENTER_END,"actual name input and END confirm completed score");delete ranking;
+   {CGlobalVariableAndStatistics loaded;loaded.LoadHighScore();Check(loaded.m_highScore[chara][difficulty][0]==score&&loaded.m_highScoreName[chara][difficulty][0][0]!=0&&loaded.m_highScoreFlag[chara][difficulty][0]==128,"name, score and ALL flag survive a fresh disk load for normal and Extra clears");}
+   Check(CSchemeSwitcher::SwitchScheme(&next,&id,2,TITLESCREEN_END_VIEW_HIGHSCORE)&&id==7,"title High Score opens saved leaderboard");auto* view=static_cast<CHighScoreScreen*>(next);Check(view->m_scores[chara][difficulty][0]==score,"saved clear appears on the High Score page");delete view;
+   if(chara==0&&difficulty==1){CHighScoreScreen view;view.Initialize(true,false);view.m_curPage=difficulty;view.m_curScrFade=100;view.Draw();glFinish();Screenshot("hitbox-clear-highscore.bmp");}
+   if(chara==0&&(difficulty==1||difficulty==4)){
+    COriginalEnd congrats(COriginalEnd::Congratulations);Check(congrats.Initialize()&&congrats.m_background->m_width==640&&congrats.m_background->m_height==400,"normal and Extra congratulations load original full-screen CG");
+    C2DImage* raw=NULL;unsigned char palette[48];Check(CCommonFunctionGraphic::LoadPIFromDat(&raw,palette,&game.m_th5Dat1,"CONG1.PI"),"original congratulations remains available for localization verification");
+    glBindTexture(GL_TEXTURE_2D,raw->GetTexID());GLint width=0,height=0;glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&width);glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,&height);std::vector<unsigned char> before(width*height*4),after(before.size());glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,before.data());glBindTexture(GL_TEXTURE_2D,congrats.m_background->GetTexID());glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,after.data());bool intact=true,translated=false;
+    for(int y=0;y<400;y++)for(int x=0;x<640;x++){const bool equal=!memcmp(&before[((399-y)*width+x)*4],&after[((399-y)*width+x)*4],4);if(y<296||y>=368||x<328||x>=624)intact&=equal;else translated|=!equal;}
+    Check(intact&&translated,"Chinese caption replaces only lower lettering and preserves the English Congratulations title and all illustration pixels");raw->Destroy();
+    for(int frame=0;frame<130;frame++)congrats.Tick(32);Check(!congrats.m_fadeOut,"held confirm cannot skip the congratulations CG");congrats.Tick(0);congrats.Draw();glFinish();Screenshot(difficulty==4?"extra-clear-congratulations.bmp":"normal-clear-congratulations.bmp");congrats.Tick(32);Check(congrats.m_fadeOut==1,"congratulations waits for a released and pressed key before leaving");
+   }
+  }
+  g.m_playChara=g.m_playDifficulty=0;g.m_playStage=5;
+  for(int excluded=0;excluded<4;excluded++){
+   g.m_bReplayMode=excluded==1;g.m_bPracticeMode=excluded==2;g.m_nContinueUsed=excluded==0?1:0;practice::ResetRun();if(excluded==3)practice::MarkAssisted();
+   memset(g.m_bClear,0,sizeof(g.m_bClear));memset(g.m_bExtraPlayable,0,sizeof(g.m_bExtraPlayable));g.OnClear();Check(!g.m_bClear[0][0]&&!g.m_bExtraPlayable[0],"continued, replay, practice and gameplay-assisted runs do not unlock Extra");
+  }
+  g.m_bReplayMode=g.m_bPracticeMode=false;g.m_nContinueUsed=0;g.m_playDifficulty=1;g.m_turboMode=true;practice::Options()=options;practice::ResetRun();memcpy(g.m_bClear,clears,sizeof(clears));memcpy(g.m_bExtraPlayable,extras,sizeof(extras));g.SaveConfig();
+ }
  static void DemoData(CGame& game){using namespace original;auto& g=game.m_globalVar;StopDemo(true);bool extras[4];memcpy(extras,g.m_bExtraPlayable,4);memset(g.m_bExtraPlayable,0,4);Check(!StartDemo(true)&&!DemoActive(),"hidden Extra requires all four original unlock flags");
   for(int number=1;number<=4;number++){Check(StartDemo()&&Demo().number==number,"original normal Demo sequence rotates through four characters");uint32_t seed=318;Demo().seed=318;for(int i=0;i<16;i++){seed=seed*0x015a4e35u+1;Check(IRandom()==int((seed>>16)&32767),"Demo uses original IRand LCG");}const auto bytes=Demo().data;unsigned short input=0;for(int i=0;i<4996;i++){Check(DemoInput(15|64|128,input),"movement, slow and skip do not cancel Demo");Check(input==(bytes[i]|(bytes[5000+i]?64:0)),"original input and shift planes decode byte-for-byte");}Check(!DemoInput(0,input),"normal Demo ends before original 5000-byte buffer limit");Check(!g.m_bCanSaveReplay,"Demo cannot save replay");const auto oldClear=g.m_bClear[g.m_playChara][g.m_playDifficulty];g.OnClear();Check(g.m_bClear[g.m_playChara][g.m_playDifficulty]==oldClear,"Demo cannot set clear flags");StopDemo();}
   memset(g.m_bExtraPlayable,1,4);Check(StartDemo(true)&&Demo().number==5&&Demo().data.size()==40000,"hidden Extra loads its original first part");const auto seed=Demo().seed;DemoDialogueEnded();Check(Demo().extraPart2&&Demo().index==0&&Demo().data.size()==40000&&Demo().seed==seed,"Extra pre-boss dialogue swaps REC without reseeding");unsigned short input;Check(!DemoInput(32,input)&&!DemoInput(4096,input),"native shot and cancel terminate Demo");StopDemo(true);memcpy(g.m_bExtraPlayable,extras,4);
@@ -380,7 +427,7 @@ struct PracticeTests {
   g.m_bReplayMode=false;g.m_turboMode=true;g.OnBeginGame();BeginTimingFrame();BulletSlowdown(400,0,1);Check(FrameDelay()==1&&Stats().turbo,"Turbo bypasses intentional delay even above the original unused threshold");
   g.SaveConfig();BeginTimingFrame();
  }
- static int Run(){VerdictMath();CGame game;CGame::s_pCurGame=&game;Check(game.Initialize(false),"production game and OpenGL initialize");if(getenv("TH05_STAGE1_BULLETS_ONLY")){Stage1MidBossBullets(game);game.OnGameEnd();printf("PASS %d stage-one midboss bullet checks\n",checks);return 0;}if(getenv("TH05_ENDING_ONLY")){SpeedModes(game);Scenes(game);Ranking(game);Routes(game);game.OnGameEnd();printf("PASS %d ending and ranking checks\n",checks);return 0;}if(getenv("TH05_RANKING_ONLY")){Ranking(game);game.OnGameEnd();printf("PASS %d ranking checks\n",checks);return 0;}if(getenv("TH05_RESULTS_ONLY")){Scenes(game);game.OnGameEnd();printf("PASS %d result localization checks\n",checks);return 0;}if(getenv("TH05_B4_LASER_ONLY")){Stage4LaserInterruption(game);game.OnGameEnd();printf("PASS %d dual-boss laser checks\n",checks);return 0;}if(getenv("TH05_DEMO_ONLY")){DemoSimulation(game);game.OnGameEnd();return 0;}Stage1MidBossBullets(game);Stage4LaserInterruption(game);SpeedModes(game);Scenes(game);Ranking(game);Routes(game);NativeIdle();Counters(game);DemoData(game);DemoOverlay(game);NativeMovement(game);NativeMechanics(game);NativeEnemies(game);NativeBeam(game);NativeBossMechanics(game);NativeSpecialMechanics(game);DemoSimulation(game);game.OnGameEnd();printf("PASS %d original-feature production checks\n",checks);return 0;}
+ static int Run(){VerdictMath();CGame game;CGame::s_pCurGame=&game;Check(game.Initialize(false),"production game and OpenGL initialize");if(getenv("TH05_STAGE1_BULLETS_ONLY")){Stage1MidBossBullets(game);game.OnGameEnd();printf("PASS %d stage-one midboss bullet checks\n",checks);return 0;}if(getenv("TH05_ENDING_ONLY")){SpeedModes(game);Scenes(game);Ranking(game);Routes(game);ClearPersistence(game);game.OnGameEnd();printf("PASS %d ending and ranking checks\n",checks);return 0;}if(getenv("TH05_RANKING_ONLY")){Ranking(game);game.OnGameEnd();printf("PASS %d ranking checks\n",checks);return 0;}if(getenv("TH05_RESULTS_ONLY")){Scenes(game);game.OnGameEnd();printf("PASS %d result localization checks\n",checks);return 0;}if(getenv("TH05_B4_LASER_ONLY")){Stage4LaserInterruption(game);game.OnGameEnd();printf("PASS %d dual-boss laser checks\n",checks);return 0;}if(getenv("TH05_DEMO_ONLY")){DemoSimulation(game);game.OnGameEnd();return 0;}Stage1MidBossBullets(game);Stage4LaserInterruption(game);SpeedModes(game);Scenes(game);Ranking(game);Routes(game);ClearPersistence(game);NativeIdle();Counters(game);DemoData(game);DemoOverlay(game);NativeMovement(game);NativeMechanics(game);NativeEnemies(game);NativeBeam(game);NativeBossMechanics(game);NativeSpecialMechanics(game);DemoSimulation(game);game.OnGameEnd();printf("PASS %d original-feature production checks\n",checks);return 0;}
 };int PracticeTests::checks=0;
 }
 int main(){return th5w::PracticeTests::Run();}

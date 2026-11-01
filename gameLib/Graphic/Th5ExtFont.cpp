@@ -24,7 +24,7 @@ bool CTh5ExtFont::LoadZUNCOM(const char *fileName)
 	FILE *fp=fopen(fileName,"rb");
 	if (fp==NULL)
 	{
-		delete texImage;
+		delete[] texImage;
 		return false;
 	}
 
@@ -56,7 +56,7 @@ bool CTh5ExtFont::LoadZUNCOM(const char *fileName)
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
 
-	delete texImage;
+	delete[] texImage;
 
 	s_bFontLoaded=true;
 

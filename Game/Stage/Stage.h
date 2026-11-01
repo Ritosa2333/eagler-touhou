@@ -28,6 +28,48 @@
 #define STAGE_END_RESTART 6
 
 namespace th5w{
+class CChara;
+class CCharaReimu;
+class CCharaMarisa;
+class CCharaMima;
+class CCharaYuka;
+class CCharaBullet;
+class CEnemyBullet;
+class CGatherEffect;
+class CSparkEffect;
+class CPopupNumber;
+class CCircle;
+class CItem;
+class CFloatingText;
+class CBackground;
+class CEnemy;
+class CTextOverlay;
+class CDialogue;
+class CMidBoss;
+class CMidBossStage1;
+class CMidBossStage2;
+class CMidBossStage3;
+class CMidBossStage4;
+class CMidBossStage5;
+class CMidBossStageEx;
+class CBoss;
+class CBossStage1;
+class CBossStage2;
+class CBossStage3;
+class CBossStage4;
+class CBossStage4Mai;
+class CBossStage4Yuki;
+class CBossStage5;
+class CBossStage6;
+class CBossStageEx;
+class CLaser;
+class CSummary;
+class CStage2BG;
+class CCurvingBullet;
+class CLargeBullet;
+class CKnifeBullet;
+class CShinkiBullet;
+class CStageResource;
 
 class CStage : public CScheme
 {
@@ -217,6 +259,8 @@ public:
  void PracticeResume() { m_bPaused=false; }
 	void PracticeExit(int action) { SetQuit(action==3 ? STAGE_END_RESTART : action==1 ? STAGE_END_SAVE_EXIT : STAGE_END_PLAYER_QUIT); m_bPaused=false; }
 	void Initialize();
+ CChara* BrowserPlayer() const {return m_pChara;}
+ bool BrowserMenu() const {return m_bPaused||m_bContinueScr;}
 protected:
 	void DownloadVarFromGlobal();
 	void UploadVarToGlobal();

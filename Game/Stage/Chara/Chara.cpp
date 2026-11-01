@@ -95,6 +95,16 @@ void CChara::MoveChara(unsigned short keyState)
 			m_collisionAreaAlpha=0;
 	}
 
+#ifdef __EMSCRIPTEN__
+ if(!original::DemoActive()){
+  float x=0,y=0;
+  if(!CGame::GVar().m_bReplayMode)web::TouchMotion(x,y,m_moveSpeed*(CCommonFunctionInput::LShiftKey(keyState)?.5f:1.f));
+  CGame::GVar().m_replay.TouchMotion(x,y,CGame::GVar().m_bReplayMode);
+  deltaX+=x;deltaY+=y;
+ }
+#else
+ if(CGame::GVar().m_bReplayMode){float x=0,y=0;CGame::GVar().m_replay.TouchMotion(x,y,true);deltaX+=x;deltaY+=y;}
+#endif
 	m_deltaX=deltaX;
 	m_deltaY=deltaY;
 

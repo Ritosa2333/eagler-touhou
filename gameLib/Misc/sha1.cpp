@@ -33,7 +33,9 @@
 
 typedef unsigned int uint32_t;
 typedef unsigned char uint8_t;
+#ifndef __EMSCRIPTEN__
 typedef int int_least16_t;
+#endif
 
 /*
 *  Define the SHA1 circular left shift macro

@@ -1,7 +1,15 @@
 #pragma once
 #include <stdio.h>
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Graphics.hpp"
+#else
 #include "include/glew.h"
+#endif
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Graphics.hpp"
+#else
 #include <gl/GL.h>
+#endif
 
 namespace th5w{
 

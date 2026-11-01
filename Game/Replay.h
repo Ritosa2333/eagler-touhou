@@ -51,6 +51,12 @@ public:
 	int m_stageScore[7];
 	int m_randSeed[7];
 	vector<unsigned short> m_keyState[7];
+ struct TouchSample { unsigned int frame; float x,y; };
+ vector<TouchSample> m_touchMotion[7];
+ void TouchMotion(float& x,float& y,bool playback);
+ int ReadFrame() const {return m_opIdx;}
+ int ReadStage() const {return m_opStage;}
+
 
 protected:
 	int m_opIdx;

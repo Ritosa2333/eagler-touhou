@@ -1,3 +1,6 @@
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Audio.hpp"
+#else
 #pragma once
 #include <windows.h>
 #include <vector>
@@ -23,3 +26,4 @@ public:
 };
 
 }
+#endif

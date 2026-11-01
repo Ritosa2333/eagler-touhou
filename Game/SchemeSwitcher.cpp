@@ -57,9 +57,10 @@ bool CSchemeSwitcher::SwitchScheme(CScheme** ppOutNextScheme,int *pOutNextScheme
   }else{CTitleScreen* next=new CTitleScreen;next->Initialize(false,0,true);*ppOutNextScheme=next;*pOutNextSchemeID=SCHEME_TITLESCREEN;}
   return true;
  }
- if(curSchemeID==9||curSchemeID==10||curSchemeID==11){
+ if(curSchemeID==9||curSchemeID==10||curSchemeID==11||curSchemeID==12){
   if(curSchemeID==10){COriginalEnd* next=new COriginalEnd(COriginalEnd::VerdictOnly);next->Initialize();*ppOutNextScheme=next;*pOutNextSchemeID=11;}
   else if(curSchemeID==11&&!original::Stats().complete){CSelectReplayScreen* next=new CSelectReplayScreen;next->Initialize(false,true);*ppOutNextScheme=next;*pOutNextSchemeID=SCHEME_SELECTREPLAYSCREEN;}
+  else if(curSchemeID!=12&&original::Stats().complete&&CGame::GVar().m_nContinueUsed==0){COriginalEnd* next=new COriginalEnd(COriginalEnd::Congratulations);next->Initialize();*ppOutNextScheme=next;*pOutNextSchemeID=12;}
   else{CHighScoreScreen* next=new CHighScoreScreen;next->Initialize(false,true);*ppOutNextScheme=next;*pOutNextSchemeID=SCHEME_HIGHSCORESCREEN;}
   return true;
  }

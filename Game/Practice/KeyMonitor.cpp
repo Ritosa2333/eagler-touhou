@@ -1,3 +1,4 @@
+#include "../../portable/Localization.hpp"
 // Ported from purple thprac thprac_igi_key_render.cpp.
 // Source revision: 17780056107a014e88d35fceb3ad86c121d94287.
 // Drawing geometry and APS edge counting retained; native masks and 56-frame window adapted.
@@ -208,25 +209,25 @@ void KeysHUD(int ver, ImVec2 render_pos_arrow, ImVec2 render_pos_key, const KeyR
     { // arrows
         ImVec2 render_pos_orig = render_pos_arrow;
         render_pos_arrow.x += size.x;
-        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Up], u8"\u2191");
+        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Up], th5w::locale::Text(u8"\u2191"));
         render_pos_arrow.y += size.y;
         render_pos_arrow.x = render_pos_orig.x;
-        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Left], u8"\u2190");
+        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Left], th5w::locale::Text(u8"\u2190"));
         render_pos_arrow.x += size.x;
-        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Down], u8"\u2193");
+        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Down], th5w::locale::Text(u8"\u2193"));
         render_pos_arrow.x += size.x;
-        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Right], u8"\u2192");
+        KeysRect(p, render_pos_arrow, size, border_size, style, g_keys_down[Key_Right], th5w::locale::Text(u8"\u2192"));
     }
     { // keys
         ImVec2 render_pos_orig = render_pos_key;
-        KeysRect(p, render_pos_key, { size.x * 1.5f, size.y }, border_size, style, g_keys_down[Key_Shift], u8"\u0394");
+        KeysRect(p, render_pos_key, { size.x * 1.5f, size.y }, border_size, style, g_keys_down[Key_Shift], th5w::locale::Text(u8"\u0394"));
         render_pos_key.x += size.x * 1.5f;
         KeysRect(p, render_pos_key, size, border_size, style, g_keys_down[Key_Z], "Z");
         render_pos_key.x += size.x;
         KeysRect(p, render_pos_key, size, border_size, style, g_keys_down[Key_X], "X");
         render_pos_key.y += size.y;
         render_pos_key.x = render_pos_orig.x;
-        KeysRect(p, render_pos_key, size, border_size, style, g_keys_down[Key_Ctrl], u8"\u03a3", g_key_mask[Key_Ctrl] == 0);
+        KeysRect(p, render_pos_key, size, border_size, style, g_keys_down[Key_Ctrl], th5w::locale::Text(u8"\u03a3"), g_key_mask[Key_Ctrl] == 0);
         render_pos_key.x += size.x;
         KeysRect(p, render_pos_key, size, border_size, style, g_keys_down[Key_C], "C", g_key_mask[Key_C] == 0);
         render_pos_key.x += size.x;

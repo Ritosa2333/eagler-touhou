@@ -1,6 +1,8 @@
 #include ".\replay.h"
 #include <stdio.h>
 #include <time.h>
+#include <cmath>
+#include <algorithm>
 #include "game.h"
 
 namespace th5w{
@@ -39,7 +41,7 @@ bool CReplay::Reset()
 	memset(m_stageScore,0,sizeof(m_stageScore));
 	memset(m_randSeed,0,sizeof(m_randSeed));
 	for (int i=0;i<7;i++)
-        m_keyState[i].clear();
+        {m_keyState[i].clear();m_touchMotion[i].clear();}
 
 	memset(m_playerName,0,sizeof(m_playerName));
 
@@ -144,6 +146,15 @@ bool CReplay::SaveFile(const char *fileName)
   FAIL_CLOSE_RETURN(fwrite(&version,4,1,fp)!=1)
   FAIL_CLOSE_RETURN(fwrite(&mode,4,1,fp)!=1)
  }
+ bool touch=false;for(int i=0;i<7;i++)touch=touch||!m_touchMotion[i].empty();
+ if(touch){const unsigned int version=1;
+  FAIL_CLOSE_RETURN(fwrite("TCH5",1,4,fp)!=4)
+  FAIL_CLOSE_RETURN(fwrite(&version,4,1,fp)!=1)
+  for(int i=0;i<7;i++){const unsigned int count=m_touchMotion[i].size();
+   FAIL_CLOSE_RETURN(fwrite(&count,4,1,fp)!=1)
+   for(const auto& s:m_touchMotion[i]){FAIL_CLOSE_RETURN(fwrite(&s.frame,4,1,fp)!=1) FAIL_CLOSE_RETURN(fwrite(&s.x,4,1,fp)!=1) FAIL_CLOSE_RETURN(fwrite(&s.y,4,1,fp)!=1)}
+  }
+ }
 	fclose(fp);
 	return true;
 #undef FAIL_CLOSE_RETURN
@@ -151,6 +162,7 @@ bool CReplay::SaveFile(const char *fileName)
 
 bool CReplay::LoadFile(const char *fileName)
 {
+ for(int stage=0;stage<7;stage++){m_keyState[stage].clear();m_touchMotion[stage].clear();}
  m_turboMode=true;
  m_practiceConfig=practice::Config();
 #define FAIL_CLOSE_RETURN(x) if (x) {fclose(fp);return false;}
@@ -213,14 +225,18 @@ bool CReplay::LoadFile(const char *fileName)
   for(int stage=0;stage<7;stage++)FAIL_CLOSE_RETURN((m_stageFlag[stage]!=0)!=(stage==m_practiceConfig.stage))
   FAIL_CLOSE_RETURN((m_practiceConfig.stage==6)!=(m_playDifficulty==4))
  }
- const int extension=fgetc(fp);
- if(extension!=EOF){
-  char sig[4];sig[0]=char(extension);unsigned int version=0,mode=0;
-  FAIL_CLOSE_RETURN(fread(sig+1,1,3,fp)!=3||memcmp(sig,"TSP5",4)!=0)
-  FAIL_CLOSE_RETURN(fread(&version,4,1,fp)!=1||version!=1)
-  FAIL_CLOSE_RETURN(fread(&mode,4,1,fp)!=1||mode>1)
-  FAIL_CLOSE_RETURN(fgetc(fp)!=EOF)
-  m_turboMode=mode!=0;
+ for(auto& motion:m_touchMotion)motion.clear();
+ bool seenSpeed=false,seenTouch=false;
+ while(true){const int first=fgetc(fp);if(first==EOF)break;char sig[4]={char(first),0,0,0};unsigned int version=0;
+  FAIL_CLOSE_RETURN(fread(sig+1,1,3,fp)!=3||fread(&version,4,1,fp)!=1||version!=1)
+  if(!memcmp(sig,"TSP5",4)){unsigned int mode=0;FAIL_CLOSE_RETURN(seenSpeed||seenTouch||fread(&mode,4,1,fp)!=1||mode>1) m_turboMode=mode!=0;seenSpeed=true;}
+  else if(!memcmp(sig,"TCH5",4)){FAIL_CLOSE_RETURN(seenTouch)seenTouch=true;
+   for(int stage=0;stage<7;stage++){unsigned int count=0;FAIL_CLOSE_RETURN(fread(&count,4,1,fp)!=1||count>m_keyState[stage].size())
+    auto& samples=m_touchMotion[stage];samples.resize(count);unsigned int previous=0;
+    for(unsigned int i=0;i<count;i++){auto& s=samples[i];FAIL_CLOSE_RETURN(fread(&s.frame,4,1,fp)!=1||fread(&s.x,4,1,fp)!=1||fread(&s.y,4,1,fp)!=1)
+     FAIL_CLOSE_RETURN(s.frame>=m_keyState[stage].size()||(i&&s.frame<=previous)||!std::isfinite(s.x)||!std::isfinite(s.y)||fabs(s.x)>8192||fabs(s.y)>8192)previous=s.frame;}
+   }
+  }else{FAIL_CLOSE_RETURN(true)}
  }
 	fclose(fp);
 	return true;
@@ -269,6 +285,13 @@ bool CReplay::CloseStage(bool bCleared)
 	}
 	m_opStage=-1;
 	return true;
+}
+
+void CReplay::TouchMotion(float& x,float& y,bool playback){
+ if(m_opStage<0||m_opStage>6||m_opIdx<=0){x=y=0;return;}
+ const unsigned int frame=m_opIdx-1;auto& samples=m_touchMotion[m_opStage];
+ if(playback){x=y=0;auto found=std::lower_bound(samples.begin(),samples.end(),frame,[](const TouchSample& s,unsigned int f){return s.frame<f;});if(found!=samples.end()&&found->frame==frame){x=found->x;y=found->y;}}
+ else if(x!=0||y!=0)samples.push_back({frame,x,y});
 }
 
 bool CReplay::GetNextData(unsigned short *pOut)
