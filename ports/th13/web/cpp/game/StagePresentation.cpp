@@ -1501,10 +1501,31 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 }
                 shot_generations_[i] = shot.generation;
             }
-            if (shot.state == 2 && shot_faded_generations_.insert(shot.generation).second)
-                vm->pending_interrupt = 1; // 446bf0, once per hit generation.
+            // 0x446bf0 命中回调 / 0x4471c5·0x447213 光束中断都经 vm+0x59c
+            // （0x46fca0/0x46fc30）置 +0x4a0 并沿 +0x560 子链把 label 逐个
+            // 写到每个子体；tick 仍由主链 walk 消费（0x46fc30 不立即 tick）。
+            // 只写父 VM 的 pending 时，script13 光束经 op500 生成的 script14
+            // 光斑子体收不到 label1：父走 252（op412 收缩 8 帧）→op1 自灭，
+            // 子体却在 op200(80,0) 循环里回绕继续脉冲，直到父树销毁才被清
+            // （th13_udMy25 5521-5530 链 dump：原生子 5521 起收缩 t16 自灭，
+            // port 子 5522 回绕 t=1）。脚本无 label 的普通弹净效果不变
+            // （interrupt 扫描失败即清除 pending），旧回退路径保持直写。
+            if (shot.state == 2 && shot_faded_generations_.insert(shot.generation).second) {
+                // 446bf0, once per hit generation.
+                if (shot.script >= 0) {
+                    if (!animations.interrupt(shot_handles_[i], 1, false))
+                        return fail("Player shot fade interrupt failed");
+                } else {
+                    vm->pending_interrupt = 1;
+                }
+            }
             if (shot.behavior == 2 && shot.state == 1 && shot.beam_interrupt) {
-                vm->pending_interrupt = shot.beam_interrupt;
+                if (shot.script >= 0) {
+                    if (!animations.interrupt(shot_handles_[i], shot.beam_interrupt, false))
+                        return fail("Player beam interrupt failed");
+                } else {
+                    vm->pending_interrupt = shot.beam_interrupt;
+                }
                 shot.beam_interrupt = 0;
             }
             vm->visual.translation = {shot.x + kGameToScreenX, shot.y + kGameToScreenY,

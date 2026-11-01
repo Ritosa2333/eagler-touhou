@@ -402,6 +402,15 @@ EMSCRIPTEN_KEEPALIVE void th13_loop_stop() {
     if (app) app->audio_device.suspend(true);
 }
 
+// 诊断专用：仅解除 AudioDevice 挂起（输出面）。不触碰 running/loop_epoch/
+// cadence，不推进任何游戏帧，不影响 RNG。无头捕获页从不调用 th13_loop_start，
+// th13_loop_stop 的 suspend(true) 恒生效令 mix() 静音；TH13_AUDIO_STATS 捕获
+// 先调本入口才能读到真实混合统计（suspended:false、nonzeroSamples 增长）。
+EMSCRIPTEN_KEEPALIVE void th13_debug_audio_resume() {
+    using namespace th13::sdl;
+    if (app) app->audio_device.suspend(false);
+}
+
 EMSCRIPTEN_KEEPALIVE void th13_loop_pause(unsigned enabled) {
     using namespace th13::sdl;
     suspended = enabled != 0;

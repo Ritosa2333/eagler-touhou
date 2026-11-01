@@ -29,10 +29,18 @@ struct Rig {
     HudPlayerState player;
     HudScoreState score;
     StageBattle battle;
+    // 契约更新裁决（e34 四路 coreEqual 认证）：擦弹特效不再入 anm_effects
+    // 头插队列，改 StageBattle 碰撞点内联 graze_effect 回调（0x445900 尾
+    // 0x46f820 主链尾插语义）。计数回调即新观测点。
+    int graze_effects = 0;
+    Vec3 last_graze{};
     Rig() {
         provider.names = &battle.sim.anim_list;
         CHECK(battle.load(provider, "test.ecl", 2, host, progress, player, score));
         battle.sim.enemies.clear();
+        battle.sim.graze_effect = [this](const Vec3& pos) {
+            ++graze_effects; last_graze = pos; return true;
+        };
         battle.set_player_pos(0, 200);
         battle.player_phase = StageBattle::PlayerPhase::Active;
         battle.invulnerable = 0;
@@ -63,10 +71,14 @@ TEST(circle_enemy_body_graze_uses_flag_and_six_frame_clock) {
         CHECK_EQ(r.progress.max_point, enabled ? 1100 : 1000);
         CHECK_EQ(r.host.grazes, enabled ? 1 : 0);
         CHECK(r.battle.player_phase == StageBattle::PlayerPhase::Active);
-        CHECK_EQ(r.battle.sim.anm_effects.size(), enabled ? size_t(1) : size_t(0));
-        if (enabled && !r.battle.sim.anm_effects.empty()) {
-            CHECK_EQ(r.battle.sim.anm_effects[0].x, 0.f);
-            CHECK_EQ(r.battle.sim.anm_effects[0].y, 200.f);
+        // 旧断言查 anm_effects 头插队列；按 0x445900 内联尾插契约改为回调
+        // 计数与位置（玩家位 0,200），且队列必须保持为空（擦弹不入 ECL
+        // 特效 flush 队列——e34 认证属性）。
+        CHECK_EQ(r.graze_effects, enabled ? 1 : 0);
+        CHECK_EQ(r.battle.sim.anm_effects.size(), size_t(0));
+        if (enabled) {
+            CHECK_EQ(r.last_graze.x, 0.f);
+            CHECK_EQ(r.last_graze.y, 200.f);
         }
     }
 }

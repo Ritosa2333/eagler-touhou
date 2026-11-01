@@ -678,8 +678,13 @@ public:
     // slot = 事件口径的发射器号（601 的实参；0x2000 子发射按 oracle 的
     // et 指针回退口径恒 0）。ex_seed = 弹体 ex 队列起始项（601 恒 0 =
     // et dword 0x23A 默认；0x2000 子弹 = 打包 i4 的 byte0）。
+    // latch_sound = 0x40ffe0 尾的发射声闩锁（0x41004c：slot+0x36c bit0x20
+    // → slot+0x370 声音 id、slot+8 出生点 x，0x460c50 定位播）。etNew 恒写
+    // 0x23（0x41d5d1）且全 .text 无清除者，601 常开；0x2000 子发射的栈临时
+    // 块 +0x36c 非常开语义（0x40f030 local_24 = 下一表项 integer_arguments[1]），
+    // 传 false。
     void emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const float spawn[3], float aim,
-                 u32 ex_seed = 0);
+                 u32 ex_seed = 0, bool latch_sound = true);
     void advance_lasers();
     void cancel_lasers(bool reset_protection = true); // 545/613 -> 434940, including effects
     bool cancel_laser(StageLaser&); // virtual+1c: cancellation, without clearing protection/ID
