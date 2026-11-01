@@ -51,10 +51,10 @@ function frame(time){raf=0;if(closed||!launched)return;
   let steps=0;
   if(options.replayViewer&&!playback.advancing())clock.reset();
   else if(playback.active()&&playback.rate()===0){for(let n=0;n<32&&playback.advancing();n++){playback.tick();audio.pump();steps++;}}
-  else while(clock.consume(module._th05_frame_seconds()/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{touch.tick();const render=clock.steps>=4||clock.credit+1e-9<module._th05_frame_seconds();if(!module._th05_tick(+render))throw Error('TH05 game frame failed');}audio.pump();steps++;}
+  else while(clock.consume(module._th05_frame_seconds()/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{touch.tick();if(!module._th05_tick(+!clock.due(module._th05_frame_seconds())))throw Error('TH05 game frame failed');}audio.pump();steps++;}
   playback.update(time);
   if(!module._th05_alive()){void finish();return;}
-  if(module._th05_ticks()>0&&presentation.present(time,options.limitPresentationTo60!==false)){module._th05_present();healthFrames++;}
+  if(presentation.fresh(time,options.limitPresentationTo60!==false,steps,module._th05_frame_seconds()/(playback.active()?playback.rate():1))){module._th05_present();healthFrames++;}
   if((steps||options.replayViewer)&&!firstFrame){firstFrame=true;requestAnimationFrame(()=>{if(!closed)emit('first-frame',launchSerial===undefined?{}:{launchSerial});});}
   if(time-lastHealth>=1000){emit('frame-health',{fps:healthFrames*1000/Math.max(1,time-lastHealth),maxGapMs:maxGap,frameMs:module._th05_frame_seconds()*1000,scene:module._th05_scene(),ticks:module._th05_ticks()});emit('audio-health',audio.health());lastHealth=time;healthFrames=0;maxGap=0;}
   raf=requestAnimationFrame(frame);

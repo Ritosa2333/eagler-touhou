@@ -21,6 +21,7 @@ test('managed protocol: atomic content identity and file traversal boundaries',a
  const api=mock(),handle=commandHandler(api);await handle({command:'write',path:'score.dat',bytes:Array(1500).fill(0)});assert.equal((await handle({command:'read',path:'score.dat'})).bytes.length,1500);await assert.rejects(handle({command:'write',path:'score.dat',bytes:[0]}),/score/);await handle({command:'remove',path:'score.dat'});assert.deepEqual((await handle({command:'list'})).files,[]);
 });
 test('managed practice: one binary forwards disabled/enabled and independent interface language',async()=>{
+ assert.equal(runtimeOptions({limitPresentationTo60:false}).limitPresentationTo60,true,'TH05 native cadence keeps its display cap');
  const api=mock(),handle=commandHandler(api);for(const enabled of [false,true,false])await handle({command:'configure',music:'none',language:'ja',options:{thpracEnabled:enabled,thpracLocale:'en-US'}});
  assert.deepEqual(api.calls.filter(c=>c[0]==='configure').map(c=>[c[1].options.thpracEnabled,c[1].options.thpracLocale]),[[false,'en-US'],[true,'en-US'],[false,'en-US']]);
  await handle({command:'configure',music:'none',runtimePack:{language:'lang_zh-hans'}});assert.equal(api.calls.at(-1)[1].language,'lang_zh-hans');

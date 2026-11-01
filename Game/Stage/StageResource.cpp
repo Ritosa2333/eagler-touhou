@@ -520,12 +520,28 @@ void CStageResource::DrawLine(float gameCoordSrcX,float gameCoordSrcY,float game
 	glColor4f(colorR,colorG,colorB,1);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+#ifdef __EMSCRIPTEN__
+ // WebGL implementations commonly expose only 1 px hardware lines. Submit the
+ // laser body as filled geometry so its colored edge and white core keep width.
+ if(width>1){
+  const float dx=gameCoordTarX-gameCoordSrcX,dy=gameCoordTarY-gameCoordSrcY;
+  const float length=sqrtf(dx*dx+dy*dy);
+  if(length>0){const float nx=-dy/length*width*.5f,ny=dx/length*width*.5f;
+   glBegin(GL_QUADS);
+   glVertex2f(gameCoordSrcX+nx,gameCoordSrcY+ny);glVertex2f(gameCoordTarX+nx,gameCoordTarY+ny);
+   glVertex2f(gameCoordTarX-nx,gameCoordTarY-ny);glVertex2f(gameCoordSrcX-nx,gameCoordSrcY-ny);
+   glEnd();
+  }
+ }else
+#endif
+ {
 	glLineWidth(width);
     glBegin(GL_LINES);
 		glVertex2f(gameCoordSrcX,gameCoordSrcY);
 		glVertex2f(gameCoordTarX,gameCoordTarY);
 	glEnd();
 	glLineWidth(1);
+ }
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();

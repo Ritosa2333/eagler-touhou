@@ -10,7 +10,7 @@ export function runtimeOptions(value={}){
  for(const [key,choices] of [['touchMovementMode',['touch','touch-unlimited','joystick','joystick-free']],['touchFocusMode',['two-finger','hold-button','toggle-button']],['oggDecodeMode',['stream','full']],['musicSource',['original','akyu']],['thpracLocale',['ja-JP','en-US','zh-CN']]])if(value[key]!==undefined&&!choices.includes(value[key]))throw Error('Invalid '+key);
  if(value.replayPath!==undefined&&!userPath(value.replayPath).endsWith('.rpy'))throw Error('Invalid Replay path');
  if(value.debugHarness!=null)throw Error('Diagnostic harness requires a diagnostic build');
- return {limitPresentationTo60:true,touchSensitivity:150,touchMovementMode:'touch',touchFocusMode:'two-finger',oggDecodeMode:'stream',...value};
+ return {touchSensitivity:150,touchMovementMode:'touch',touchFocusMode:'two-finger',oggDecodeMode:'stream',...value,limitPresentationTo60:true};
 }
 export function commandHandler(api){let configured=false;return async message=>{
  switch(message.command){
