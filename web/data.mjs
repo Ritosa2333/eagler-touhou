@@ -1,7 +1,7 @@
 export const DATA_MAGIC='UTH05PK1';
 export const DATA_SCHEMA='eagler-touhou/uth05-content/1';
-export const DATA_LAYOUT_SPEC=Object.freeze({files:[{filename:'/data/kaiki1.dat'},{filename:'/data/kaiki2.dat'},{filename:'/data/zun.com'},...Array.from({length:15},(_,i)=>({filename:`/data/se/s${String(i+1).padStart(2,'0')}.wav`}))]});
-const assets=/^(?:kaiki[12]\.dat|zun\.com|anex86\.bmp|practice\.bmp|replay\.bmp|chs\.dat|music\.dat|music-font\.bmp|sfx\/effects\.pcm|se\/s(?:0[1-9]|1[0-5])\.wav)$/;
+export const DATA_LAYOUT_SPEC=Object.freeze({files:[{filename:'/data/kaiki1.dat'},{filename:'/data/kaiki2.dat'},{filename:'/data/zun.com'},{filename:'/data/music-notes.bin.gz'},...Array.from({length:15},(_,i)=>({filename:`/data/se/s${String(i+1).padStart(2,'0')}.wav`}))]});
+const assets=/^(?:kaiki[12]\.dat|zun\.com|anex86\.bmp|practice\.bmp|replay\.bmp|chs\.dat|music\.dat|music-font\.bmp|music-notes\.bin\.gz|sfx\/effects\.pcm|se\/s(?:0[1-9]|1[0-5])\.wav)$/;
 export function assetPath(path){if(typeof path!=='string'||!assets.test(path))throw Error('Invalid TH05 content path');return path;}
 export const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
 export async function decodeContent(value){

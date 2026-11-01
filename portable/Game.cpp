@@ -15,9 +15,10 @@
 #include <stdexcept>
 namespace th5w {
 CGame* CGame::s_pCurGame=nullptr;
-CGame::CGame(){m_windowWidth=640;m_windowHeight=480;m_playArea={32,56,416,424};m_pCurScheme=nullptr;m_curSchemeID=0;m_fpsLimit=56;m_fps=56;m_fpsTimeIdx=0;m_thisFrameDuration=1.f/56;m_thisFrameLostTime=0;memset(m_fpsTimeArray,0,sizeof(m_fpsTimeArray));}
+CGame::CGame(){m_windowWidth=640;m_windowHeight=480;m_playArea={32,56,416,424};m_pCurScheme=nullptr;m_curSchemeID=0;m_fpsLimit=56;m_fps=0;m_fpsTimeIdx=0;m_thisFrameDuration=1.f/56;m_thisFrameLostTime=0;memset(m_fpsTimeArray,0,sizeof(m_fpsTimeArray));}
 CGame::~CGame(){}
 void CGame::SetVSYNC(bool){}
+// Browser presentation owns FPS; simulation catch-up must not inflate it.
 void CGame::UpdateFPS(){}
 Cth5DatFile* CGame::FindResource(const char* name){for(auto* pack:{&m_modDat,&m_th5Dat1,&m_th5Dat2})if(pack->GetChildFileIndex(name)>=0)return pack;return nullptr;}
 void CGame::LoadModConfig(){int id=m_modDat.GetChildFileIndex("mod.ini");if(id<0)return;char line[1024];while(m_modDat.Childfgets(line,sizeof(line),id)){unsigned value;if(sscanf(line," TEXT_CODEPAGE = %u",&value)==1)GVar().m_textCodePage=value;if(sscanf(line," USE_SYSTEM_FONT = %u",&value)==1)GVar().m_bUseSystemFont=value!=0;}}
@@ -40,13 +41,14 @@ void CGame::OnGameEnd(){delete m_pCurScheme;m_pCurScheme=nullptr;practice::Shutd
 void CGame::OnPaintInactivate(){if(m_pCurScheme)m_pCurScheme->Draw();}
 }
 namespace {
-std::unique_ptr<th5w::CGame> game;bool failed=false;uint64_t ticks=0;int lastStep=0;
+std::unique_ptr<th5w::CGame> game;bool failed=false;uint64_t ticks=0,renderVersion=0,presentVersion=0;double fpsStart=0;int freshFrames=0;int lastStep=0;
 int Guard(const std::function<void()>& operation){try{operation();return 1;}catch(const std::exception& e){failed=true;th5w::web::ReportError(e.what());return 0;}catch(...){failed=true;th5w::web::ReportError("TH05 runtime exception");return 0;}}
 }
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th05_initialize(){if(game)return 0;failed=false;return Guard([]{game=std::make_unique<th5w::CGame>();game->Run();if(!game->m_pCurScheme)throw std::runtime_error("TH05 initialization failed");});}
-EMSCRIPTEN_KEEPALIVE int th05_step(){if(!game||failed||!game->m_pCurScheme)return 0;return Guard([]{using namespace th5w;web::graphics::BeginFrame();practice::BeginFrame();original::BeginTimingFrame();lastStep=practice::AdvancedOpen()?0:game->m_pCurScheme->Step();game->m_pCurScheme->Draw();practice::DrawStatus();practice::EndFrame();original::RenderTiming(false);++ticks;
+EMSCRIPTEN_KEEPALIVE int th05_tick(int render){if(!game||failed||!game->m_pCurScheme)return 0;return Guard([render]{using namespace th5w;if(render)web::graphics::BeginFrame();practice::BeginFrame();original::BeginTimingFrame();lastStep=practice::AdvancedOpen()?0:game->m_pCurScheme->Step();if(render){game->m_pCurScheme->Draw();++renderVersion;}practice::DrawStatus();practice::EndFrame(render!=0);original::RenderTiming(false);++ticks;
  if(lastStep){CScheme* next=nullptr;int id=0;if(CSchemeSwitcher::SwitchScheme(&next,&id,game->m_curSchemeID,lastStep)){delete game->m_pCurScheme;game->m_pCurScheme=next;game->m_curSchemeID=id;}}});}
+EMSCRIPTEN_KEEPALIVE int th05_step(){return th05_tick(1);}
 EMSCRIPTEN_KEEPALIVE double th05_frame_seconds(){return game?double(th5w::original::FrameDelay())/std::max(1.f,game->m_fpsLimit):1./56;}
 EMSCRIPTEN_KEEPALIVE int th05_alive(){return game&&game->m_pCurScheme&&!failed;}
 EMSCRIPTEN_KEEPALIVE int th05_scene(){return game?game->m_curSchemeID:0;}
@@ -75,7 +77,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_practice_tool(int tool){return tool>=0&
 extern "C" EMSCRIPTEN_KEEPALIVE void th05_language_configure(const char* game,const char* practice){th5w::locale::Configure(game,practice);}
 extern "C" EMSCRIPTEN_KEEPALIVE const char* th05_practice_label(){return th5w::locale::Text(u8"\u65e0\u654c");}
 
-extern "C" EMSCRIPTEN_KEEPALIVE void th05_present(){th5w::web::graphics::Present();}
+extern "C" EMSCRIPTEN_KEEPALIVE void th05_present(){th5w::web::graphics::Present();if(!game)return;const double now=emscripten_get_now();if(!fpsStart)fpsStart=now;if(renderVersion!=presentVersion){++freshFrames;presentVersion=renderVersion;}if(now-fpsStart>=500){game->m_fps=freshFrames*1000./(now-fpsStart);freshFrames=0;fpsStart=now;}}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_replay_save(const char* path){if(!game)return 0;auto snapshot=game->m_globalVar.m_replay;snapshot.CloseStage(false);return snapshot.SaveFile(path);}
 
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_codepage(){return game?game->m_globalVar.m_textCodePage:0;}
@@ -84,3 +86,5 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_replay_validate(const char* path){if(!g
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_draw(){if(!game||!game->m_pCurScheme)return 0;return Guard([]{th5w::web::graphics::BeginFrame();game->m_pCurScheme->Draw();});}
 
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_input_scene(){if(game&&game->m_curSchemeID==4){auto* stage=static_cast<th5w::CStage*>(game->m_pCurScheme);if(stage->BrowserMenu())return 0;if(stage->BrowserDialogue())return 13;}return game?game->m_curSchemeID:0;}
+
+extern "C" EMSCRIPTEN_KEEPALIVE double th05_display_fps(){return game?game->m_fps:0.;}

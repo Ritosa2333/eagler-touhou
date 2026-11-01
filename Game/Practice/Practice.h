@@ -21,7 +21,7 @@ bool BeforeTimeout(bool beforeDeadline);
 bool Initialize(HWND window);
 void Shutdown();
 void BeginFrame();
-void EndFrame();
+void EndFrame(bool render=true);
 void WindowMessage(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 void FocusPause();
 void DrawPause(CStage& stage);

@@ -26,3 +26,10 @@ test('native panels own touches; passive panel swipes replay their original down
  events.length=0;route=2;router.pointer(down);route=4;router.pointer(up);assert.deepEqual(events,[]);
  router.cancel();assert.equal(cancelled,1);
 });
+
+test('auto-fire leaves cold title and character confirmation edges available',()=>{
+ let scene=2;const keys=[];const input=createTouchInput({send:(...key)=>keys.push(key),position:()=>({x:200,y:300}),options:()=>({touchEnabled:true,touchMovementMode:'touch-unlimited',touchSensitivity:150}),move(){},scene:()=>scene});
+ input.controls({fireEnabled:true,focusEnabled:false,joystickX:0,joystickY:0,bombSerial:0,escapeSerial:0});input.tick();assert.deepEqual(keys,[]);
+ for(const active of [2,3]){scene=active;input.pointer({type:'down',id:1,x:200,y:200});input.pointer({type:'up',id:1,x:200,y:200});input.tick();input.tick();assert.deepEqual(keys.slice(-2),[['KeyZ',true],['KeyZ',false]]);}
+ scene=4;input.tick();assert.deepEqual(keys.at(-1),['KeyZ',true]);scene=2;input.tick();assert.deepEqual(keys.at(-1),['KeyZ',false]);
+});
