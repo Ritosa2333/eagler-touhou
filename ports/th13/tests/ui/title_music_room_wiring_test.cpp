@@ -10,6 +10,7 @@
 #include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
 
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,6 +19,14 @@ using namespace th13;
 using namespace th13::test;
 
 namespace {
+
+std::string locked_title(i32 track) {
+    char prefix[16];
+    std::snprintf(prefix, sizeof prefix, "No.%2d ", int(track) + 1);
+    std::string text = prefix;
+    for (i32 i = 0; i < 11; ++i) text += "\x81\x48";
+    return text;
+}
 
 struct MusicHost final : TitleScenePlatform {
     AnmManager& manager;
@@ -163,11 +172,14 @@ struct MusicHarness {
 };
 
 // entry 6（音楽室）Z → 屏 13 → case0/1 进列表 → 10 行窗口 + 注释队列文本 →
-// 未听曲 Z = 锁定响应（不播曲）；已听曲 Z = play_track + mark_heard(0)；
-// X → case3 >9 帧：resume_title_music + 回 Main + 光标还原 6。
+// 未听曲首次 Z = 锁定响应（不播曲），二次 Z = play_track + mark_heard(0)；
+// 已听曲 Z = play_track + mark_heard(0)；X → case3 >9 帧：resume_title_music +
+// 回 Main + 光标还原 6；返回主菜单按 0x44cdb9 重建背景/LOGO 根（H01-1）。
 TEST(music_room_entry_platform_and_return_roundtrip) {
     MusicHarness harness;
     harness.reach_main_menu();
+    const u32 background_before = harness.scene->state.handles[89];
+    CHECK(background_before != 0);
     for (int i = 0; i < 5; i++) harness.frame(0x20);  // 0→2→3→4→5→6
     CHECK_EQ(harness.scene->state.menu.cursor, 6);
     harness.frame(0x01);   // Z：主菜单确认序
@@ -178,20 +190,20 @@ TEST(music_room_entry_platform_and_return_roundtrip) {
     CHECK_EQ(harness.scene->state.substate, 2);
     CHECK_EQ(harness.scene->music_room_menu().row(), 0);
     CHECK_EQ(harness.scene->state.menu.count, 12);  // 曲数入光标计数
-    // 列表文本（Draw 队列通道）：行0 已听 = "Track 00" ffffff00 选中 x=62；
-    // 行1 未听 = "???" ff8080ff x=58；origin (58,80) 行距 20。
+    // 列表文本（Draw 队列通道）：行0 已听 = "Track 00" 白字选中 x=62；
+    // 行1 未听 = 0x4ac930 占位白字 x=58；origin (58,80) 行距 20。
     harness.host.texts.clear();
     harness.frame();
     CHECK(harness.host.texts.size() >= 10u);
     CHECK_EQ(harness.host.texts[0].text, std::string("Track 00"));
-    CHECK_EQ(harness.host.texts[0].color, 0xffffff00u);
+    CHECK_EQ(harness.host.texts[0].color, 0xffffffffu);
     CHECK_NEAR(harness.host.texts[0].position.x, 62.f, 1e-5);  // 选中 +4
     CHECK_NEAR(harness.host.texts[0].position.y, 80.f, 1e-5);
-    CHECK_EQ(harness.host.texts[1].text, std::string("???"));
-    CHECK_EQ(harness.host.texts[1].color, 0xff8080ffu);
+    CHECK_EQ(harness.host.texts[1].text, locked_title(1));
+    CHECK_EQ(harness.host.texts[1].color, 0xffffffffu);
     CHECK_NEAR(harness.host.texts[1].position.x, 58.f, 1e-5);
     CHECK_NEAR(harness.host.texts[1].position.y, 100.f, 1e-5);
-    // ↓ 到行1（未听）→ Z：锁定响应，不播曲、不落档。
+    // ↓ 到行1（未听）→ 首次 Z：锁定响应，不播曲、不落档；二次 Z 播放+落档。
     harness.frame(0x20);
     CHECK_EQ(harness.scene->music_room_menu().row(), 1);
     harness.frame(0x01);
@@ -199,14 +211,26 @@ TEST(music_room_entry_platform_and_return_roundtrip) {
     CHECK(harness.host.played.empty());
     CHECK(harness.host.marked.empty());
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::MusicRoom));
-    // ↑ 回行0（已听）→ Z：play_track(0) + mark_heard(0)（原版解锁 0 号曲）。
+    harness.host.texts.clear();
+    harness.frame();
+    bool saw_placeholder = false;
+    for (const auto& text : harness.host.texts)
+        if (text.color == 0xff8080ffu && text.text == std::string("\x81\x40"))
+            saw_placeholder = true;
+    CHECK(saw_placeholder);
+    harness.frame(0x01);   // 二次 Z（显影未满 8 行）：播放 + 解锁 0 号曲
+    CHECK_EQ(harness.host.played.size(), 1u);
+    CHECK_EQ(harness.host.played[0], 1);
+    CHECK_EQ(harness.host.marked.size(), 1u);
+    CHECK_EQ(harness.host.marked[0], 0);
+    // ↑ 回行0（已听）→ Z：play_track(0) + mark_heard(0)。
     harness.frame(0x10);
     CHECK_EQ(harness.scene->music_room_menu().row(), 0);
     harness.frame(0x01);
-    CHECK_EQ(harness.host.played.size(), 1u);
-    CHECK_EQ(harness.host.played[0], 0);
-    CHECK_EQ(harness.host.marked.size(), 1u);
-    CHECK_EQ(harness.host.marked[0], 0);
+    CHECK_EQ(harness.host.played.size(), 2u);
+    CHECK_EQ(harness.host.played[1], 0);
+    CHECK_EQ(harness.host.marked.size(), 2u);
+    CHECK_EQ(harness.host.marked[1], 0);
     CHECK(harness.scene->error.empty());
     // X → case3 → >9 帧：恢复标题曲 + 回主菜单 + 光标栈还原 6/10。
     harness.frame(0x100);
@@ -216,6 +240,15 @@ TEST(music_room_entry_platform_and_return_roundtrip) {
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK_EQ(harness.scene->state.menu.cursor, 6);
     CHECK_EQ(harness.scene->state.menu.count, kTitleMainEntries);
+    // 0x44cdb9：返回路径重建背景 89 与 LOGO 94（旧树已停机，label2 不可恢复）。
+    CHECK(harness.scene->state.handles[89] != 0);
+    CHECK(harness.scene->state.handles[89] != background_before);
+    CHECK(harness.scene->state.handles[94] != 0);
+    CHECK_EQ(harness.scene->state.handles[95], 0u);
+    auto* background = harness.manager.registry.find(harness.scene->state.handles[89]);
+    CHECK(background != nullptr);
+    CHECK(harness.manager.registry.find_child_script(*background, 90, 0) != nullptr);
+    CHECK(harness.manager.registry.find_child_script(*background, 91, 0) != nullptr);
     CHECK(harness.scene->error.empty());
 }
 

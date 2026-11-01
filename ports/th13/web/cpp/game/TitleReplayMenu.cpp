@@ -101,6 +101,22 @@ bool TitleReplayMenu::sound(i32 id) {
 
 bool TitleReplayMenu::present(u32 handle) const { return handle && animations.registry.find(handle); }
 
+// 0x417370：把 ascii.anm script17 祈祷根建在共享 ANM 管理器（与 boot 装载幕
+// 同一模板语义：层 26、位置 (480,392)、尾插）；create 只做根首 tick。
+bool TitleReplayMenu::start_launch_prayer() {
+    if (launch_prayer) return true;
+    launch_prayer = animations.create(resources.ascii, 17, -1, 0, {480.f, 392.f, 0.f});
+    return launch_prayer != 0 || fail(animations.error);
+}
+
+void TitleReplayMenu::stop_launch_prayer() {
+    if (!launch_prayer) return;
+    animations.retire(launch_prayer);  // 整树卸载（根 + script14/15/16 子体）
+    launch_prayer = 0;
+}
+
+TitleReplayMenu::~TitleReplayMenu() { stop_launch_prayer(); }
+
 bool TitleReplayMenu::spell_practice(const ReplayFile& file) {
     // 顶层头 +0xA bit1（0x452cde/0x452fd4 test [esi+0xa],2；0x447900:67 录制侧
     // 置位源 = DAT_004be830 &0x30==0x20）。
@@ -269,8 +285,19 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         }
         break;
     case 3:
+        // 0x452a70 case3：age==2 拍（0x452a75）调 0x417370 建 ascii script17
+        // 祈祷根；随后由常规 ANM 调度（主链 0x46f170）逐帧推进，op200 每 4
+        // 帧回到 t=1 出生 script16。原生迹线（agent-g segment attribution）：
+        // 652 建根、等待期 8 次出生 ×24 units = 192 visual index；web 此前
+        // 完全不建，导致菜单→对局 visual RNG 恒差 1272（1080 签名幕 + 192）。
+        if (state.age.current == 2 && !launch_prayer) {
+            if (!start_launch_prayer()) return false;
+        }
         // >31 帧排队 destination 0xd（0x452a70 case3 age>0x1f && 枚举完成；
-        // 原版此拍写 DAT_004dc674 = 选中扁平序，同拍持久化）。
+        // 原版此拍写 DAT_004dc674 = 选中扁平序，同拍持久化）。原版在场景
+        // 激活（0x42c550 -> 0x4172e0 -> 0x46fc30）卸载 caption 树；这里在
+        // 排队成功时立即 retire（retire 不抽签，故出生总数不变），确保祈祷
+        // 树不会残留在共享管理器里进入对局帧。
         if (!launch_queued && state.age.current > 31) {
             const ReplayFile* file = selected_file();
             if (!file) return fail("Replay launch: selected entry unavailable");
@@ -282,6 +309,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
             if (!replay_host.start_replay(selected_index, chain))
                 return fail("Replay launch: host rejected start request");
             launch_queued = true;  // 排队即止：宿主帧尾消费，本菜单不销毁自身
+            stop_launch_prayer();
         }
         break;
     case 5:

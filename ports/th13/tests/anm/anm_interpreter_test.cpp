@@ -146,8 +146,10 @@ TEST(geometry_modes_th13) {
 
 TEST(unimplemented_opcodes_rejected) {
     // 计划 §四/§六：th13 未用的 th15 残留 opcode 显式报错。
+    // 609..611 不在该列：00462450 的 >600 switch 到 0x260(608) 结束，609..611
+    // 走默认 advance（见 opcodes_past_608_advance_without_error）。
     for (th13::i16 opcode : {th13::i16(109), th13::i16(123), th13::i16(127), th13::i16(422),
-                             th13::i16(507), th13::i16(509), th13::i16(609), th13::i16(610), th13::i16(611)}) {
+                             th13::i16(507), th13::i16(509)}) {
         std::vector<th13::u8> bytes;
         th13test::push_insn(bytes, opcode, 0, 0, {0, 0, 0});
         th13test::push_terminator(bytes);
@@ -156,6 +158,21 @@ TEST(unimplemented_opcodes_rejected) {
         CHECK(vm.bind(script));
         CHECK_EQ(vm.tick(rng), -1);
         CHECK(vm.error.find("Unimplemented") != std::string::npos);
+    }
+}
+
+TEST(opcodes_past_608_advance_without_error) {
+    // 00462450 的 >600 switch 覆盖到 0x260(608)；609/610/611 落入默认
+    // advance，不是 Unimplemented。旧测试把三者与 109/123/... 同列，已过时。
+    for (th13::i16 opcode : {th13::i16(609), th13::i16(610), th13::i16(611)}) {
+        std::vector<th13::u8> bytes;
+        th13test::push_insn(bytes, opcode, 0, 0, {0, 0, 0});
+        th13test::push_terminator(bytes);
+        auto script = th13test::make_script(std::move(bytes));
+        th13::AnmVm vm;
+        CHECK(vm.bind(script));
+        CHECK_EQ(vm.tick(rng), 1);  // advances to the -1 terminator
+        CHECK(vm.error.empty());
     }
 }
 

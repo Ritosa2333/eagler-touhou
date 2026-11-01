@@ -149,7 +149,11 @@ bool ApplicationState::bomb_hud(i32 stock, i32 pieces) {
 }
 
 bool ApplicationState::game_over() {
-    return pause && pause->open(PauseEntrance::GameOver) ||
+    // 0043f570: mode0 → 0xe (GameOver/continue, script 142); mode≠0 → 0x18
+    // (BGameOver, script 147, three items, default cursor 2, no Continue).
+    const bool results_menu = (progress.run_mode_flags & 0x30u) != 0;
+    return pause && pause->open(results_menu ? PauseEntrance::BGameOver
+                                             : PauseEntrance::GameOver) ||
            fail(pause ? pause->error : "Game-over menu has no owner");
 }
 
@@ -168,6 +172,9 @@ bool ApplicationState::request_player_game_over() {
 }
 
 bool ApplicationState::hud_sound(i32 id) { return sound(id); }
+bool ApplicationState::hud_sound(i32 id, float x) { return audio_device.enqueue(id, x) || fail(audio_device.error); }
+bool ApplicationState::stop_sound(i32 id) { return audio_device.stop(id) || fail(audio_device.error); }
+bool ApplicationState::set_voice_pan(i32 id, float x) { return audio_device.set_voice_pan(id, x) || fail(audio_device.error); }
 
 bool ApplicationState::suspend_music() {
     audio_device.pause_music(true);
@@ -190,6 +197,17 @@ bool ApplicationState::request_extra_results() {
 }
 
 bool ApplicationState::restart_run() {
+    // Retry (0xa ordinary / 0xb practice, 0x440960 state 0x1d cursor 2) is a
+    // fresh run, not the pending 0xc continuation. A pause opened while the
+    // 0xc transition was active must discard that pending stage and resume
+    // state, or begin_run would keep environment.paused/stage_transition_active
+    // and skip the replay restore.
+    stage_transition_loading = false;
+    stage_transition_active = false;
+    stage_startup_age = -1;
+    pending_replay_stage = nullptr;
+    pending_replay_stage_index = 0;
+    environment.paused = false;
     if (replay_active) {
         const i32 stage_index = ReplaySession::stage_index(replay_file, progress.stage);
         if (stage_index < 0) return fail("Replay restart stage missing");

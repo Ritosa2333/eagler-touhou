@@ -1,3 +1,4 @@
+#include "AnmRenderer.hpp"
 #include "TitleScene.hpp"
 
 namespace th13 {
@@ -24,6 +25,8 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
     stage_text_draw.enabled = true;
     stage_text_draw.run = [](void* owner) {
         auto& scene = *static_cast<TitleScene*>(owner);
+        // [§8.9] LOGO 绘制侧层落码（Draw 优先级 2，先于 ANM 层任务）。
+        scene.main.apply_draw_layers();
         if (scene.player_data && scene.player_data_view &&
             scene.state.screen == TitleScreen::PlayerData &&
             !scene.player_data_view->draw(*scene.player_data, scene.host))
@@ -40,8 +43,13 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
 
 TitleScene::~TitleScene() {
     scheduler.remove(stage_text_draw);
+    clear_draw_layer_overrides();  // 防 VM 指针复用后偏移泄漏到对局绘制
     // PlayerData 宿主表按 0x453170 case3 收面释放；场景提前析构也要闭合。
     if (player_data && player_data->opened()) host.close_player_data();
+    if (music_room_view) music_room_view->release();
+    // Manual 查看器在屏内正常结束会自行 close；场景提前析构（退出/异常）时
+    // 在此闭合，避免 help.anm VM 先于 bank 回收残留。
+    if (state.screen == TitleScreen::Manual) host.close_manual();
     for (auto& handle : state.handles) animations.retire(handle);
     animations.retire(state.version_bar);
     animations.retire(state.start_effect);
@@ -67,8 +75,25 @@ bool TitleScene::fade_out_title_music() { return host.fade_out_title_music(); }
 bool TitleScene::sound(i32 id) { return host.sound(id); }
 
 bool TitleScene::begin_transition(u32& animation) {
-    // 开始游戏转场特效（effect bank script 0；th15 用 create(8,0)）。
-    animation = animations.create(8, 0, -1, 0);
+    // 00451450/00451cb0/004576c0 case3 age10 → 00417370(480.0,392.0)。
+    // 反汇编 0x46f820（capstone，/work/artifacts/decomp/jp/functions/0046f820.c
+    // 与 0x46f820 机器码）确认：0x417370 用 **EAX=game_main+0x19194 的独立
+    // effect 管理器** 调 create，栈参 [ebp+0xc]=模板号 0x11(17)、位置
+    // (480,392,0)、layer=-1、flags=0（0x46f3f0 尾插）。该 effect 管理器的
+    // 模板 17 自带 layer 26（模板头 +0x24=0x1a），脚本首段为
+    // ins_501(15)/ins_501(14)/ins_503(16) 三连（fore 链），与 title 管理器
+    // 的 effect.anm script17 不是同一张表——原版模板/脚本映射未解析，
+    // 不能声称「script1 是唯一 4-quad 脚本」（effect.anm script2 也 spawn
+    // 7-10 四个 quad，只是旋转 70/80°，与 oracle 的 110/100° 不符）。
+    // 移植侧取 effect.anm script1：其子体 3-6 的旋转/缩放与 oracle 逐帧
+    // 完全一致（110/-110/100/-100°，384/1536 边长），是当前唯一可复现
+    // 4-quad 的脚本；映射仍属近似（原版模板 17 未解析）。
+    // 坐标：原版 create 位置 (480,392) 经 effect 管理器绘制路径后，oracle
+    // 窗B f719-749 四 quad 中心恒等于移植侧 (480,392) 结果 -(160,152)
+    // （f749 稳定帧逐顶点实证）。effect 管理器的绘制原点变换未反汇编；
+    // 这里按 oracle 顶点把 VM 位置补偿到 (320,240) = 屏幕中心，属绘制侧
+    // 补偿而非原版坐标真值（蓝图登记待 effect 管理器解析后回填）。
+    animation = animations.create(8, 1, 26, 0, {320, 240, 0});
     return animation != 0;
 }
 
@@ -91,7 +116,6 @@ bool TitleScene::practice_stage_played(i32 character, i32 difficulty, i32 stage)
     return host.practice_stage_played(character, difficulty, stage);
 }
 
-void TitleScene::advance_main_menu_selection() { main.advance_selection(); }
 
 bool TitleScene::draw_title_replay_texts() {
     // Replay 屏动态文字：TitleFrame Draw 回调（优先级 2，先于全部 ANM 层）逐帧
@@ -102,6 +126,7 @@ bool TitleScene::draw_title_replay_texts() {
 
 bool TitleScene::draw_title_music_room_texts() {
     // [r4-M2] 音楽室列表/注释：同 Replay 文本队列通道（0x4554f0 值域）。
+    if (host.record_menu_views()) return true;
     return check(music_room.draw_texts(host), music_room.error);
 }
 
@@ -298,8 +323,19 @@ bool TitleScene::update_title_menu(TitleScreen screen, const TitleFrameInput& va
     case TitleScreen::Replay:
         return check(replay.update(value.pressed, value.repeated), replay.error);
     case TitleScreen::MusicRoom:
-        // 屏值 13（0x44c570 case d → 0x4554f0）：音楽室驱动。
-        return check(music_room.update(value.pressed, value.repeated), music_room.error);
+        if (host.record_menu_views() && !music_room_view)
+            music_room_view = std::make_unique<TitleMusicRoomView>(animations,
+                resources.title, 0, resources.ascii);
+        if (!check(music_room.update(value.pressed, value.repeated), music_room.error)) return false;
+        if (music_room_view && !music_room_view->update(state, music_room, host,
+                [this](AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
+                    return host.rasterize_title_text(vm, color, text, alignment);
+                })) return check(false, music_room_view->error);
+        if (state.screen != TitleScreen::MusicRoom && music_room_view) {
+            music_room_view->release();
+            music_room_view.reset();
+        }
+        return true;
     case TitleScreen::Manual:
         // 屏值 16（0x44c570 case 10 → 0x455330）：マニュアル supervisor wrapper。
         return check(manual.update(value.pressed, value.repeated), manual.error);

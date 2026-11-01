@@ -15,6 +15,12 @@ struct AnmDrawProbe {
     void reset() noexcept { *this = AnmDrawProbe{}; }
 };
 extern AnmDrawProbe anm_draw_probe;
+// [蓝图 §8.3/§8.9] 绘制侧层覆盖（诊断捕获/无头导出用）：不改 VM 层（脚本
+// ins_304 真值保持），仅让 DrawCapture 的 sprite 钩子按覆盖值记录 op 层。
+// 原版 supervisor 的 +1/+2 偏移发生在绘制侧（oracle VM dump 层恒为脚本值，
+// op 层 +1/+2）。每帧 draw 前 clear 后由标题场景重设。
+void set_draw_layer_override(const AnmVm& vm, i32 layer);
+void clear_draw_layer_overrides();
 class AnmRenderer {
     ZunGraphics& graphics;std::vector<AnmGeometryVertex> vertices;u32 bound_texture=~0u;
     struct ColorVertex {Vec3 position;float reciprocal_w;u32 color;};std::vector<ColorVertex> shapes;

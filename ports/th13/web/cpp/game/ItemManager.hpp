@@ -123,6 +123,7 @@ struct ItemEvent {
         FullPower = 3,   // 0x42a430（满灵力演出）
         Extend = 4,      // 0x43d330 满碎片 +1 命（sound 0x11）
         SpiritGained = 5,// 0x438730 → 0x43d530（灵界值累加）
+        BombGained = 6,  // 0x43d440/0x43d480 灵击 +1（sound 0x2e）
     };
     Kind kind = Kind::Collected;
     i32 value = 0;          // 弹出值/灵力增量/灵界增量
@@ -134,6 +135,12 @@ public:
     // Production queries the actual ANM handle at 00438aca, before collection.
     // Standalone arithmetic tests have no animation host.
     std::function<bool(u32 slot, u32 serial)> spirit_animation_alive;
+    // 0x438730 收集瞬间的 front.anm 拾取动画（0x438b7a/0x438bdd/0x438c36 与
+    // 0x438d26/0x438d80/0x438da1 的 0x46f820 flags=0 尾插；脚本按
+    // (trance bit0, kind) 查表）。返回 false 表示表现层创建失败。
+    std::function<bool(i32 script, float x, float y, float z)> spirit_pickup_effect;
+    // 42edc0/42e380 call 444df0 synchronously when collected power crosses a level.
+    std::function<void()> option_power_changed;
     // 原版槽量：0x42e380 循环上界 0xa57+1 = 2648（道具）；0x438ec0 扫描
     // 0x100 = 256 槽（步长 0x22 float）——满时静默丢弃（本函数返回不产件）。
     static constexpr i32 kItemCapacity = 2648;
@@ -154,6 +161,8 @@ public:
     // DAT_004be830>>8 & 1 = trance 激活位（0x438ec0:54 的 XOR 化简结果）。
     // 未绑定时按 0（未激活）处理——常规局主路径同原版。
     void bind_session(const SessionState& session) { session_ = &session; }
+    // 438ec0 queues the positional birth voice before it scans the pool.
+    std::function<void(i32, float)> spirit_birth_sound;
 
     // ---- StageItemHost（StageSim 注入调用面，见 StageSim.hpp）----
 
@@ -173,6 +182,8 @@ public:
     // u*3.5 + base_speed），顺序先角后速（00438ec0.c:94-115）。
     void spawn_value_item(i32 kind, float x, float y, float z,
                           float base_speed) override;
+    void spawn_value_item(i32 kind, float x, float y, float z,
+                          float base_speed, bool sound) override;
 
     // 0x4302a0：616 etClear 转换点登记（St1 未消费，登记待证面）。
     void on_et_clear(float x, float y, float z) override;
@@ -211,8 +222,8 @@ public:
     // 0x0043d210 大P：power += amount（未满时），满级溢出钳制 + 满灵力演出；
     // 返回是否跨档。
     bool collect_power_big(i32 amount);
-    // 0x0043d330 残机碎片 +1：0x4bb994[下标] 循环扣减，满 → +1 命/下标++。
-    void collect_life_piece();
+    // 0x0043d330 adds EAX pieces, then applies the 0x4bb994 thresholds.
+    void collect_life_piece(i32 amount = 1);
     // 0x0043d480 灵击碎片 +amount：满 8 → +1 炸弹（上限 9）。
     void collect_bomb_piece(i32 amount);
     // 0x0043d2f0 1UP：+1 命（上限 8）。

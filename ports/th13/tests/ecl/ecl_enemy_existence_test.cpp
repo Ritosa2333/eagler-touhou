@@ -27,7 +27,7 @@ TEST(death_effect_instruction_does_not_drop_or_terminate_and_forced_drop_is_sepa
     Rig r;std::vector<u8> code;
     int sounds=0,effects=0;
     r.caller.death_sound=5;r.caller.death_effect=39;r.caller.drop_main=2;
-    r.sim.enemy_sound=[&](i32 id){CHECK_EQ(id,5);++sounds;return true;};
+    r.sim.enemy_position_sound=[&](i32 id,float x){CHECK_EQ(id,5);CHECK_EQ(x,r.caller.position[0]);++sounds;return true;};
     r.sim.enemy_death_effect=[&](i32,i32 script,const Vec3&,float angle){
         CHECK_EQ(script,39);CHECK_EQ(angle,-1.5707964f);++effects;return true;
     };
@@ -42,6 +42,17 @@ TEST(death_effect_instruction_does_not_drop_or_terminate_and_forced_drop_is_sepa
     CHECK_EQ(r.sim.commands.execute(r.context,562),0);
     CHECK(!r.caller.dead);CHECK_EQ(r.caller.drop_main,0);CHECK_EQ(r.sim.random.index(),2u);
     CHECK_EQ(sounds,1);CHECK_EQ(effects,1);
+}
+TEST(ecl_sound_uses_enemy_x) {
+    Rig r; std::vector<u8> code; int sounds = 0;
+    r.caller.position[0] = -37.5f;
+    r.sim.enemy_position_sound = [&](i32 id, float x) {
+        CHECK_EQ(id, 12); CHECK_EQ(x, -37.5f); ++sounds; return true;
+    };
+    th13test::emit(code, 0, 516, 0, 255, 0, {12});
+    r.context.instruction = reinterpret_cast<const EclInstruction*>(code.data());
+    CHECK_EQ(r.sim.commands.execute(r.context, 516), 0);
+    CHECK_EQ(sounds, 1);
 }
 }
 int main(){return th13test::run_all("enemy-existence");}

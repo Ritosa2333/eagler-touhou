@@ -200,13 +200,14 @@ TEST(practice_cancel_chain_then_ordinary_start_has_no_mode_or_cursor_leak) {
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Character));
-    CHECK_EQ(h.scene->state.menu.cursor, 2);
+    CHECK_EQ(h.scene->state.menu.cursor, 1);  // 0x451450 uses the character index.
     CHECK_EQ(h.scene->state.menu.depth, 2);
     CHECK_EQ(h.settings.practice_stage, 1);
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Difficulty));
     CHECK_EQ(h.scene->state.menu.cursor, 2);
+    CHECK_EQ(h.scene->state.handles[129], 0u);  // 0x451450 case4 retires the active root.
     CHECK_EQ(h.scene->state.menu.depth, 1);
     h.frame(0x100);
     h.advance(25);
@@ -328,7 +329,7 @@ TEST(practice_game_return_restores_stage_and_entire_cancel_history_without_scori
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Character));
-    CHECK_EQ(h.scene->state.menu.cursor, 4);
+    CHECK_EQ(h.scene->state.menu.cursor, 3);  // 0x451450 cursor is the character index.
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Difficulty));

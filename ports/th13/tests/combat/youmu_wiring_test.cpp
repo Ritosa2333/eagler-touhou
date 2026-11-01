@@ -132,10 +132,17 @@ int main() {
         input.held = 0x01;
         if (!battle.step(input)) break;
     }
-    int survivors = 0;
-    for (const auto& bullet : battle.sim.bullets)
-        if (bullet.alive && bullet.y > 30.0f) ++survivors;
+    int survivors = 0, cancelled = 0;
+    for (const auto& bullet : battle.sim.bullets) {
+        if (!bullet.alive) continue;
+        if (bullet.state == 4) {
+            ++cancelled;
+            continue;
+        }
+        if (bullet.y > 30.0f) ++survivors;
+    }
     check(survivors > 0, "W3 local clear leaves in-field bullets");
+    check(cancelled > 0, "W3 covered bullets enter state4 (not erased)");
     check(battle.error().empty(), "W4 no battle error");
     std::printf(failures ? "# youmu wiring: %d FAIL\n" : "# youmu wiring: all pass\n",
                 failures);

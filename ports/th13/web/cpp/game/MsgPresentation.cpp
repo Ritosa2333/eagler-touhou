@@ -76,10 +76,13 @@ bool MsgPresentation::create(bool player_bank, i32 manager_bank, i32 script, u32
     // 换算全局脚本号。
     const i32 global = player_bank ? script : stage_script(manager_bank, script);
     if (global < 0) return false;
-    // 0x429285 原版序：位置清零 + flags 0x200（create 内建）+ 立即 tick。
-    // layer 不传（-1）：立绘脚本经 ins_304 自带层（AnmInterpreter.cpp:121）。
+    // 0x429285 原版序：位置清零 + flags 0x200 + 立即 tick + 0x46f3f0 主链
+    // 尾插（0x42930c `call 0x46f3f0` 实证，非 0x46f4a0 头插）。此前 ordering=2
+    // 把头插入链首：魔理沙 S1 f5520 立绘(pl01 s34)顶掉链尾后，s167 变成尾节点，
+    // 其 tick 内新建的 s166 特效 VM 无法当帧被 walk 二次 tick → f5545 单帧
+    // -2 index。layer 不传（-1）：立绘脚本经 ins_304 自带层。
     const u32 created =
-        animations.create(player_bank ? banks.player : banks.stage, global, -1, 2, Vec3{});
+        animations.create(player_bank ? banks.player : banks.stage, global, -1, 0, Vec3{});
     if (!created) return fail("MsgPresentation VM create: " + animations.error);
     handle = created;
     return true;
@@ -91,11 +94,11 @@ bool MsgPresentation::player_portrait(i32 character) {
 }
 
 bool MsgPresentation::side_portrait(i32 entry) {
-    if (side_) return true;
     if (stage_ < 1 || stage_ > 7) return fail("MsgPresentation stage row not bound");
     const PortraitRow& row = kStageRows[stage_ - 1];
     // opcode 2（0x429335）：+0x64==-1 或 entry<2 → 中Boss 对（+0x6c/+0x70），
-    // 否则 Boss 对（+0x64/+0x68）。
+    // 否则 Boss 对（+0x64/+0x68）。名牌章节由 RunScene 的 ECL chapter 传入。
+    if (side_) return true;
     const bool boss = row.boss_bank != -1 && entry >= 2;
     // create 第 2 参 = stage 表 bank（ECL 文件槽）；AnmManager 槽由 player_bank
     // 分支内建（false → banks.stage），无需重复传。
@@ -104,21 +107,21 @@ bool MsgPresentation::side_portrait(i32 entry) {
 }
 
 bool MsgPresentation::boss_side_portrait() {
-    if (side_) return true;
     if (stage_ < 1 || stage_ > 7) return fail("MsgPresentation stage row not bound");
     // opcode 31（0x42948c）：Boss 对无条件。
+    if (side_) return true;
     const PortraitRow& row = kStageRows[stage_ - 1];
     if (row.boss_bank == -1) return fail("MsgPresentation boss portrait row absent");
     return create(false, row.boss_bank, row.boss_script, side_);
 }
 
-bool MsgPresentation::nameplate() {
+bool MsgPresentation::nameplate(i32 chapter) {
     if (nameplate_) return true;
     if (stage_ < 1 || stage_ > 7) return fail("MsgPresentation stage row not bound");
     const PortraitRow& row = kStageRows[stage_ - 1];
-    // opcode 20（0x429a94）：be824<5 恒真（难度 0..4），[stage+0x54]!=-1 取
-    // A 对，否则 B 对。
-    const bool use_a = row.nameplate_a_bank != -1;
+    // 0x429a94: DAT_004be824 < 5 selects the A pair when available; ECL 524
+    // supplies the real chapter (stage3 midboss=4, boss=5/6/7).
+    const bool use_a = chapter < 5 && row.nameplate_a_bank != -1;
     return create(false, use_a ? row.nameplate_a_bank : row.nameplate_b_bank,
                   use_a ? row.nameplate_a_script : row.nameplate_b_script, nameplate_);
 }

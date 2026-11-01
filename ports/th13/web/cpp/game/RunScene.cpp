@@ -4,6 +4,7 @@
 #include <cstdio>
 
 namespace th13 {
+RunDialogObserver run_dialog_observer = nullptr;
 
 namespace {
 // 场景回调优先级（th13 原版调度位待锚定；先按 th15 同族布局取值）：
@@ -80,11 +81,21 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     battle.sim.defer_laser_update = true;
     battle.sim.laser_sound = [this](i32 id) { return host.hud_sound(id); };
     battle.sim.enemy_sound = [this](i32 id) { return host.hud_sound(id); };
+    battle.sim.enemy_position_sound = [this](i32 id, float x) { return host.hud_sound(id, x); };
     battle.sim.time_rate_changed = [this](float rate) { animations.rate = rate; };
     battle.sim.screen_shake = [this](i32 duration, i32 start, i32 end) {
         return start_shake(duration,start,end);
     };
+    battle.bomb_screen_shake = [this](i32 magnitude, i32 rise, i32 hold, i32 fall) {
+        return start_shake(ScreenShake::bomb(magnitude, rise, hold, fall));
+    };
+    battle.reimu_explosion_shake = [this]() {
+        return start_shake(8, 6, 6);
+    };
     environment.stage_difficulty=p.difficulty;
+    // 0x4019d0 读 0x4be824（ins_524 chapter），非 rank。S4 f240 起原生 chapter
+    // 恒 0 → 风迹少 1 次 unit()（+2 index/8 帧，360 帧 720 mismatches）。
+    environment.chapter=&p.chapter;
     battle.sim.scene_effect=[this,banks](i32 kind,const Vec3& position){
         // 4bba80+6*18: effect bank0 -> effect.anm, script136, native401730.
         // 4bba80+1*18: kind1 script0 native401000；位置=敌机VM+0x44（op334 显式），
@@ -99,7 +110,7 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         auto* vm=animations.registry.find(handle);
         return vm&&animations.spawn_effect(*vm,kind);
     };
-    battle.sim.enemy_hit_sound = [this](i32 id) { return host.hud_sound(id); };
+    battle.sim.enemy_hit_sound = [this](i32 id, float x) { return host.hud_sound(id, x); };
     battle.sim.enemy_fog=[this](StageEnemy& enemy,bool reset){return presentation->enemy_fog(enemy,reset);};
     battle.sim.enemy_death_effect = [this](i32 file,i32 script,const Vec3& pos,float angle) {
         return presentation->enemy_death(file,script,pos,angle);
@@ -114,9 +125,48 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         const u32 h= presentation->player_effect(script,pos,layer);
         return h!=0;
     };
+    // 0x445900 擦弹/得分特效：effect.anm script100 主链尾插（内联相位）。
+    battle.sim.graze_effect = [this](const Vec3& pos) {
+        return presentation->graze_effect(pos);
+    };
+    battle.beam_hit_effect = [this](const Vec3& position, const Vec3& displacement, float angle) {
+        return presentation->beam_hit_effect(position, displacement, angle);
+    };
+    battle.player_shot_birth = [this](PlayerShot& shot, u32 index) {
+        return presentation->initialize_player_shot(shot, index);
+    };
+    battle.youmu_bomb_update = [this](StageBattle& state) {
+        return presentation->sync_youmu_slash(state);
+    };
+    battle.youmu_charge_effect = [this](i32 action, const Vec3& position) {
+        return presentation->youmu_charge_effect(action, position);
+    };
+    // 303/306/313/316/318 槽位 VM：0x41fe80/0x41b7cc 在 ECL 指令内同步建 VM。
+    // 宿主在 StageCommands 每次 push 后立即回调；307/308 特效同样在指令处
+    // 经 ecl_effect_create 同步创建（0x41b510→0x4243e0，round-s15 帧序实证
+    // 推翻了"留到 sync 的 stage_script 相位"旧模型，见 StageSim.hpp 注释）。
+    battle.sim.flush_anm_slots = [this](StageEnemy* enemy) {
+        if (!presentation->flush_ecl_animations(battle, enemy, true)) {
+            battle.sim.error_ = presentation->error();
+            return false;
+        }
+        return true;
+    };
+    battle.sim.ecl_effect_create = [this](i32 file, i32 script, const Vec3& position) {
+        if (!presentation->create_ecl_effect(file, script, position)) {
+            battle.sim.error_ = presentation->error();
+            return false;
+        }
+        return true;
+    };
     battle.sim.enemy_animation = [this](StageEnemy& enemy, i32 slot) -> AnmVm* {
-        // Mutations must see preceding303/306 births in this ECL turn.
-        if (!presentation->flush_ecl_animations(battle, &enemy)) {
+        // Mutations must see preceding303/306 births in this ECL turn. Only
+        // slot requests are flushed here: enemy_animation is invoked from
+        // in_bounds() inside the enemy loop. 307/308 effects are no longer
+        // queued in interactive mode (they are created at their instruction
+        // via ecl_effect_create, matching retail 0x41b510→0x4243e0), so this
+        // slots_only flush cannot displace them.
+        if (!presentation->flush_ecl_animations(battle, &enemy, true)) {
             battle.sim.error_ = presentation->error();
             return nullptr;
         }
@@ -125,7 +175,7 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         return vm;
     };
     battle.sim.enemy_animation_interrupt=[this](StageEnemy& enemy,i32 slot,i32 label) {
-        if(!presentation->flush_ecl_animations(battle,&enemy)) {
+        if(!presentation->flush_ecl_animations(battle,&enemy,true)) {
             battle.sim.error_=presentation->error();return false;
         }
         if(!animations.interrupt(enemy.anm_slot_handle[slot],label,false)) {
@@ -180,15 +230,26 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
 RunScene::~RunScene() {
     battle.sim.time_rate_changed = {};
     battle.sim.screen_shake = {};
+    battle.bomb_screen_shake = {};
+    battle.reimu_explosion_shake = {};
     battle.sim.stage_fog = {};
     battle.sim.stage_script_interrupt = {};
+    battle.sim.stage_logo = {};
     for (auto& shake : shakes) scheduler.remove(shake->callback);
     battle.sim.enemy_fog={};
-    battle.sim.enemy_sound = {};battle.sim.enemy_hit_sound = {};battle.sim.enemy_death_effect = {};battle.sim.player_effect = {};
+    battle.sim.enemy_sound = {};battle.sim.enemy_position_sound = {};battle.sim.enemy_hit_sound = {};battle.sim.enemy_death_effect = {};battle.sim.player_effect = {};
+    battle.beam_hit_effect = {};
+    battle.option_power_changed = {};
+    battle.player_shot_birth = {};
+    battle.youmu_bomb_update = {};
+    battle.youmu_charge_effect = {};
+    battle.reimu_bomb_orb_birth = {};
     battle.sim.bullet_animation = {};
+    battle.sim.bullet_animation_initialize = {};
     battle.sim.scene_effect = {};
     battle.sim.enemy_animation = {};
     battle.sim.enemy_animation_interrupt = {};
+    battle.sim.flush_anm_slots = {};
     scheduler.remove(laser_update);
     scheduler.remove(scenery_update);
     laser_presentation.reset(); // detach callbacks while battle.sim is alive
@@ -203,6 +264,7 @@ RunScene::~RunScene() {
     if (presentation) presentation->release();
 }
 
+
 bool RunScene::fail(const std::string& why) {
     if (error.empty()) error = why.empty() ? "Run scene unavailable" : why;
     return false;
@@ -213,13 +275,39 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     // clear presentation; loader preparation itself must retain its clock.
     if (!hud.finish_stage_clear()) return fail(hud.error);
     if (!error.empty()) return false;
+    // 原版全局相机块（0x4dcaf4）在新开局起步为 (0,0,1000)（0043bbc0.c:55-58）；
+    // port 的等价物 environment.screen_translation 会被 release_run 清零
+    // （Application.cpp:403，begin_run 新局路径必经），而下面 battle.load 的
+    // stage ECL 构造会经 ins_307/308 → 0x4243e0（模板拷贝+立即 tick）创建特效
+    // VM；其首 tick 的 ANM 变量 10016-10018 必须已读到该种子（00461e80.c:56-61，
+    // 由 0x406680:82 每帧覆盖前的启动值）。换关延续时该块持有上一关末态
+    // （0x406680:82 语义），故只在清零态播种、不覆盖续关快照。
+    seed_native_camera_block_if_cleared(environment);
+    battle.sim.stage_logo = [this] {
+        return hud.stage_logo(0) || fail(hud.error);
+    };
     battle.sim.bullet_animation = [this](StageBullet& bullet, bool birth) {
         if (presentation->tick_bullet(bullet, birth)) return true;
         battle.sim.error_ = presentation->error();
         return false;
     };
+    battle.sim.bullet_animation_initialize = [this](StageBullet& bullet, i32 interrupt) {
+        if (presentation->initialize_bullet(bullet, interrupt)) return true;
+        battle.sim.error_ = presentation->error();
+        return false;
+    };
     battle.item_manager.spirit_animation_alive = [this](u32 slot, u32 serial) {
         return presentation->spirit_animation_alive(slot, serial);
+    };
+    // 0x438730 收集瞬间 front.anm 拾取动画：原版在神霊管理器更新内 0x46f820
+    // flags=0 尾插创建（0x438b8e/0x438be5/0x438c38 与 0x438d39/0x438d82/
+    // 0x438d93），早于主链 walk。缺此 VM 会使取消弹链尾父节点无后继，
+    // 本帧尾插子体不被 walk 二次 tick（妖梦 S1 10222 首差的链形态依据）。
+    battle.item_manager.spirit_pickup_effect = [this](i32 script, float x, float y, float z) {
+        return presentation->spirit_pickup(script, {x, y, z});
+    };
+    battle.option_power_changed = [this](StageBattle& active) {
+        return presentation->sync_player_options(active, true);
     };
     battle.sim.spell_event = [this](const SpellEvent& event, const StageEnemy& enemy) {
         // Consume each ECL event immediately; begin/end in one tick cannot be lost.
@@ -243,12 +331,24 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     // DAT_004be81c 装载 st0N.ecl/std，此处取同表同款——非首关不再误装 st01）。
     char stage_ecl[16];
     std::snprintf(stage_ecl, sizeof stage_ecl, "st%02d.ecl", int(progress.stage));
+    if (restore_after_player_prepare) {
+        if (!battle.prepare_player(provider, progress, player_state,
+                                   battle_sht.empty() ? nullptr : battle_sht.c_str(), true))
+            return fail(battle.error());
+        if (!presentation->initialize_player_effects(battle)) return fail(presentation->error());
+        if (!restore_after_player_prepare()) return fail("Replay stage restore failed");
+    }
     const u8 rank_mask = ecl_difficulty_mask(progress.difficulty);
     if (!rank_mask) return fail("Invalid ECL difficulty");
     if (!battle.load(provider, stage_ecl, rank_mask, host, progress,
                      player_state, score_state, nullptr,
                      battle_sht.empty() ? nullptr : battle_sht.c_str()))
         return fail(battle.error().empty() ? "Stage battle load failed" : battle.error());
+    if (!restore_after_player_prepare && !presentation->initialize_player_effects(battle))
+        return fail(presentation->error());
+    battle.reimu_bomb_orb_birth = [this](StageBattle& active, i32 index) {
+        return presentation->reimu_bomb_orb_birth(active, index);
+    };
     // 敌机句柄化默认路径（2026-10-23 基座治理整改）：ECL 303/306 建池 VM
     // 入 registry（0x41fe80/case3 同构——oracle 极小环境路径），表现层手工
     // 敌机段跳过（enemies_from_ecl），敌机销毁回收由 retire_sink 钩承担。
@@ -358,6 +458,16 @@ bool RunScene::update_lasers() {
     if (!battle.sim.error().empty())
         return fail(laser_presentation->error.empty() ? battle.sim.error()
                                                      : laser_presentation->error);
+    // 0x4315d0 段的激光擦弹在激光管理器更新内同帧完成：0x445900:11-13 计数
+    // → 0x445900 尾 0x46f820 立即建特效。port 的激光走 FramePass::Update 22，
+    // 晚于场景更新 20（其 sync 内的 flush_ecl_animations 已跑过），入队的
+    // ANM 请求会被推迟到下一帧 flush。stage6/2823 实证：擦弹计数与原版同帧
+    // +1（004be7d0 2017→2018），特效 VM（effect.anm 100，native 调用点
+    // 0x445958）却晚一帧（2824），使视觉 RNG 相位整帧错位。此处补同帧
+    // flush，恢复原版创建时序。
+    if (!battle.sim.anm_effects.empty() &&
+        !presentation->flush_ecl_animations(battle))
+        return fail(presentation->error());
     return true;
 }
 
@@ -373,17 +483,23 @@ bool RunScene::draw_spell() {
 }
 
 bool RunScene::start_shake(i32 duration, i32 start, i32 end) {
-    auto shake = std::make_unique<ShakeCallback>(*this,duration,start,end);
+    return start_shake(ScreenShake(duration,start,end));
+}
+
+bool RunScene::start_shake(ScreenShake effect) {
+    auto shake = std::make_unique<ShakeCallback>(*this, effect);
     auto& callback = shake->callback;
     callback.owner = shake.get();
     callback.enabled = true;
     callback.run = [](void* owner) -> i32 {
         auto& shake = *static_cast<ShakeCallback*>(owner);
         auto& scene = shake.scene;
-        // 42c550 returns3 before Update75 during pause/overlays. The port
+        // 42c550 returns3 during pause/overlays. The port
         // keeps UI callbacks running, so apply that gate to this effect.
         if (scene.environment.paused || (scene.progress.scene_flags & 0x70u)) return 1;
-        return shake.effect.advance(scene.animations.random_source(),scene.progress.rate,
+        if (shake.effect.envelope && (scene.progress.scene_flags & 0x07u)) return 1;
+        auto& random = shake.effect.envelope ? scene.battle.sim.random : scene.animations.random_source();
+        return shake.effect.advance(random,scene.progress.rate,
                                     scene.environment.screen_shake_offset) ? 1 : 7;
     };
     callback.cleanup = [](void* owner) -> i32 {
@@ -391,7 +507,9 @@ bool RunScene::start_shake(i32 duration, i32 start, i32 end) {
         shake.scene.scheduler.remove(shake.callback);
         return 0;
     };
-    if (scheduler.add(callback,FramePass::Update,75) < 0) return false;
+    // 40bfae / 45fb48 set EBX=16 for 470f30 -> 470990. Enemy update
+    // registers at 21 (418885), so the shake consumes RNG before enemies.
+    if (scheduler.add(callback,FramePass::Update,16) < 0) return false;
     shakes.push_back(std::move(shake));
     return true;
 }
@@ -401,18 +519,30 @@ bool RunScene::update() {
         return !scheduler.contains(shake->callback);
     }),shakes.end());
     if (!error.empty()) return false;
-    // 42c550 ->42a370 precedes the player/enemy/item managers. HUD score
-    // convergence consumes the previous update's score, including while the
-    // 10/20/40 overlay flags freeze gameplay. Bit4 is the loader gate.
-    if (!(progress.scene_flags & 4u)) hud.update_score();
     if (environment.paused) return true;  // 暂停覆盖层冻结对局（th15 environment.paused 同机制）
-    // 对局内覆盖层三旗冻结（0x42c550:263：GameInf+0x60 的 0x10/0x20/0x40 任一
-    // 非零 → 对局 update 返 3 不推帧；0x4000 通关演出不在门内照常推帧）。
+    // 0042c562..0042c57c: only the combined clear/result flags return before
+    // score convergence. Other 0x70 overlays return after 0042cacd's call.
+    if ((progress.scene_flags & 0x4010u) == 0x4010u) return true;
+    if (!(progress.scene_flags & 4u)) hud.update_score();
     if (progress.scene_flags & 0x70u) return true;
     const GameInput* effective_input = input_frame;
+    // Playback consumes the active cursor here, including transition ticks.
+    // ApplicationState installs the next stage's cursor during activation.
     if (playback_input) {
         effective_input = playback_input();
         if (!effective_input) return true;
+        if (damage_probe_enabled)
+            std::printf("PBI sf=%d flags=%u wait=%d held=%x pressed=%x\n",
+                        progress.stage_frame, progress.scene_flags,
+                        transition_wait ? 1 : 0, effective_input->held,
+                        effective_input->pressed);
+    }
+    // 42c550's first active update calls 424d0, whose 441b00 queues
+    // label2 to option trees. Replay's 448ec0 restores position before
+    // this point; the same activation also runs for normal games.
+    if (player_effect_activation_pending) {
+        if (!presentation->activate_player_effects(battle)) return fail(presentation->error());
+        player_effect_activation_pending = false;
     }
     static const GameInput no_input{};
     const GameInput& selected_input = effective_input ? *effective_input : no_input;
@@ -422,10 +552,6 @@ bool RunScene::update() {
         if (!presentation->sync(battle, selected_input.held)) return fail(presentation->error());
         hud.tick_stage_clear();
         HudFrameContext frame;
-        // 0x4265a0 的灵界槽左下淡化在过渡帧也必须运行；玩家位置仍是
-        // DAT_004c22c4+0x5b8/+0x5bc 的游戏坐标。
-        const Vec3 player_position{battle.player_x, battle.player_y, 0};
-        frame.player_position = &player_position;
         hud.update(frame, host);
         return hud.error.empty() || fail(hud.error);
     }
@@ -499,9 +625,6 @@ bool RunScene::update() {
     }
     if(!boss_view.boss)battle.sim.boss_markers[0]={}; // 4265a0 clears vacant slot ratios
     HudFrameContext frame;
-    // 0x4265a0:85-96 灵界槽左下淡化/恢复需要玩家游戏坐标。
-    const Vec3 player_position{battle.player_x, battle.player_y, 0};
-    frame.player_position = &player_position;
     frame.dialogue = boss_view.dialog_active;
     frame.boss = &boss_view; // a vacant boss slot must also retire its HUD
     hud.update(frame, host);
@@ -512,10 +635,13 @@ bool RunScene::update() {
 }
 
 void RunScene::open_dialog(i32 entry) {
+    if (run_dialog_observer) run_dialog_observer(entry);
     // 00428820 -2 ends Spell Practice; timeout uses the game-over branch.
     if (entry == -2) {
         if (battle.sim.spell.state().flags & kSpellTimedOut) {
-            post_flow.on_game_over();
+            // 0x428820 timeout enters 0x43f570. The host routes mode0 to the
+            // GameOver menu and mode≠0 to the 0x440960 BGameOver results menu;
+            // the scene must not pre-decide the overlay state.
             if (!host.request_game_over()) fail("Spell Practice game-over request failed");
         } else {
             msg_stage_clear();
@@ -563,9 +689,11 @@ void RunScene::msg_bgm(i32 opcode) {
         break;
     case 19:
         if (!host.queue_music(2, 1, "")) fail("Boss music queue failed");
+        // 429a24: boss music also creates stage-logo script2.
+        else if (!hud.stage_music_logo()) fail(hud.error);
         break;
     case 20:
-        if (!msg_presentation->nameplate())
+        if (!msg_presentation->nameplate(progress.chapter))
             fail("Dialog nameplate: " + msg_presentation->error);
         break;
     case 31:
@@ -601,6 +729,13 @@ void RunScene::msg_stage_clear() {
     }
     if ((progress.run_mode_flags & 0x30u) != 0x20u && !hud.begin_stage_clear()) {
         fail(hud.error);
+        return;
+    }
+    // 0x42cd40:0x42cd59 call 0x42b6d0：clear 同帧下发 option 根隐藏
+    // （pending=3 / player+0x14698 bit3），先于目的地 0xc 请求。门
+    // （0x42bfa0）不再重复（见 prepare_next_stage 守卫）。
+    if (!presentation->hide_player_options()) {
+        fail(presentation->error());
         return;
     }
     post_flow.on_stage_clear();
@@ -698,11 +833,20 @@ bool RunScene::draw_stage(u32 pass) {
 bool RunScene::prepare_transition(i32 bank, const std::string& name) {
     transition_wait = true;
     scenery_started = false;
-    // 414180 destroys the linked enemy list without death routines/drops.
+    // 0042bfa0's 0xc teardown runs on the first transition frame (native
+    // state frame 11976 = battle frame 11976: enemies 0). 00418b50/00414180
+    // destroys the linked enemy list without death routines/drops; 00412b00
+    // destroys the bullet manager and 00438520 the item manager. The
+    // following 150 ticks are the loading gate, not extra stage play, so
+    // these managers must not survive into it.
     for (auto& enemy : battle.sim.enemies)
         if (battle.sim.retire_sink) battle.sim.retire_sink(enemy->serial);
     battle.sim.enemies.clear();
+    battle.sim.bullets.clear();
     battle.item_manager.reset_items();
+    // 00438520 destroys DAT_004c22a4, the same manager whose +0x14 pool
+    // 00438ec0 spawns spirits into; reset_items covers the item pools only.
+    for (auto& spirit : battle.item_manager.spirits()) spirit = Spirit{};
     presentation->release_stage();
     previous_scenery = std::move(scenery);
     previous_scenery_bank = scenery_bank;
@@ -727,6 +871,11 @@ bool RunScene::start_transition() {
 
 void RunScene::preserve_presentation_from(RunScene& old) {
     presentation = std::move(old.presentation);
+    // 上面的 move 赋值销毁了本 RunScene 构造时创建的临时 StagePresentation
+    //（其析构按 owner 检查清掉自己安装的钩子），移入的旧对象从未在新
+    // RunScene 上重装钩子，且 battle_ 仍指向已析构的旧 RunScene。不重装会
+    // 使换关后自机弹四角快照/自灭检出整段失效（伤害注册池耗尽）。
+    if (presentation) presentation->install_main_update_hook();
     scenery = std::move(old.scenery);
     previous_scenery = std::move(old.previous_scenery);
     previous_scenery_bank = old.previous_scenery_bank;

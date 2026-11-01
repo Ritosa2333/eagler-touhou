@@ -111,11 +111,13 @@ TEST(spell_presentation_numeric_text_uses_live_bonus_mode_counters_and_vm_alpha)
     CHECK(sink.texts[0].text == " 1000000");
     CHECK(sink.texts[0].position.x == 357.0f && sink.texts[0].position.y == 35.0f);
     CHECK_EQ(sink.texts[0].style.font, 2);
-    CHECK_EQ(sink.texts[0].style.alignment, 2);
+    CHECK_EQ(sink.texts[0].style.alignment, 1);
+    CHECK_EQ(sink.texts[0].style.vertical_alignment, 1);
     CHECK_EQ(sink.texts[0].style.coordinate_space, 1);
     CHECK_EQ(sink.texts[0].style.color, 0x7fffffffu);
     CHECK(sink.texts[1].text == "03/07");
     CHECK(sink.texts[1].position.x == 452.0f);
+    CHECK_EQ(sink.texts[1].style.alignment, 1);
     sink.texts.clear();
     CHECK(fixture.presentation.draw(sink, 99, 100));
     CHECK(sink.texts[1].text == "99/99+");

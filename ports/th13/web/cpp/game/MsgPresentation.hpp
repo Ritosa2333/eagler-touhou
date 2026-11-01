@@ -66,7 +66,13 @@ public:
     // opcode 2：entry 号决定 Boss/中Boss 对（entry<2 或无 boss 对 = 中Boss）。
     bool side_portrait(i32 entry);
     bool boss_side_portrait();  // opcode 31
-    bool nameplate();           // opcode 20
+    // opcode 20。原版 0x429a94：DAT_004be824 < 5 且 stage+0x54 != -1 取 A 对，
+    // 否则 B 对。DAT_004be824 由 ECL ins_524（0x424310，handler 62）写入章节号：
+    // stage3 MainMBoss 在 entry2 前写 4（A=st03menm 小傘），main 在 entry0 前写
+    // 5/6、MainBoss 在 entry1 前写 6/7（B=st03enm 芳香）。port 的 ECL 524 已把
+    // 章节写进 SessionState（StageCommands case 524）；RunScene 把该真实章节
+    // 传入，而不是由 entry/立绘分支反推名牌章节。
+    bool nameplate(i32 chapter);  // opcode 20
     bool interrupt_player(i32 label);  // opcode 13 / opcode 7 的左亮
     bool interrupt_side(i32 label);    // opcode 14 / opcode 8 的右亮
     void release_player();      // opcode 4/23

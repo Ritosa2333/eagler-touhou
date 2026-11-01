@@ -20,10 +20,9 @@ bool TitleManualMenu::update(u32 pressed, u32 repeated) {
     case 0:
         if (!host.open_manual()) return fail("Title manual viewer unavailable");
         state.change_substate(1);
-        frames_ = 0;
         break;
     case 1:
-        ++frames_;
+        if (!host.update_manual(pressed, repeated)) return fail("Title manual update failed");
         if (host.manual_finished()) {
             host.close_manual();  // 0x42d860 + 0x4a7261
             if (state.menu.depth > 0) state.menu.pop();

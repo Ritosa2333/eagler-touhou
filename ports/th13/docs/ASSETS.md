@@ -26,4 +26,4 @@
 
 ## 音乐
 
-当前开发资源为 OGG 补丁版：`thbgmogg.dat`（30.5MB）提供单个连续 Vorbis 流。生产 `AudioDevice` 读取 `/assets/thbgm.ogg` 和原版 `/assets/thbgm.fmt`，按 fmt 的虚拟 PCM 偏移与循环点定位曲目；不是逐曲 OGG 文件。补丁 DLL 不进入网页运行时。Launcher 的内容准备层须保持该文件和偏移契约，原版音乐数据不进入源码仓库。
+原版目录为 OGG 补丁版：`thbgmogg.dat`（30.5MB）替代 `thbgm.dat`，配套 `d3d9.dll` 包装层（2013，第三方 OGG 补丁组件，仅原版运行需要，移植侧不依赖）。网页端音乐链路沿用 launcher 的 `bgm-ogg/` 约定。

@@ -10,7 +10,9 @@ void append16(std::vector<u8>& v, u16 x) { v.push_back(u8(x)); v.push_back(u8(x>
 std::vector<u8> ReplayRecorder::top_snapshot(const SessionState& p) {
     std::vector<u8> v(0x74,0);
     put32(v,0x5c,u32(p.character)); put32(v,0x60,0); put32(v,0x64,u32(p.difficulty));
-    // +0x70 stores DAT_004be7d4 (selected spell id), not practice stage.
+    // 00447900 stores the two replay mode bits separately from the name.
+    v[0x0a] = u8(((p.run_mode_flags >> 4) & 1u) |
+                    ((p.run_mode_flags & 0x30u) == 0x20u ? 2u : 0u));
     put32(v,0x70,u32(p.selected_spell_id)); return v;
 }
 std::vector<u8> ReplayRecorder::stage_snapshot(const SessionState& p,
@@ -55,7 +57,7 @@ bool ReplayRecorder::record(const GameInput& input,u8 slow_rate) {
 }
 bool ReplayRecorder::encode(std::vector<u8>& out,const std::string& name,i32 score) const {
     if(!ready()) return false;
-    auto top=top_; std::fill(top.begin(),top.begin()+12,u8(' '));
+    auto top=top_; std::fill(top.begin(),top.begin()+9,u8(' '));
     const size_t n=std::min<size_t>(name.size(),8); std::copy_n(name.begin(),n,top.begin());
     top[8]=0; put32(top,0x14,u32(score)); top[0x58]=u8(stages_.size());
     std::vector<u8> plain=top;

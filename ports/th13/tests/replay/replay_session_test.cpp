@@ -69,6 +69,26 @@ TEST(replay_next_stage_restores_its_own_seed_and_resources) {
     CHECK_EQ(progress.difficulty, 1);
     CHECK_EQ(progress.max_point_cap, 25000000);
 }
+
+TEST(replay_load_and_transition_have_distinct_rng_restoration) {
+    ReplayFile file; file.stages.push_back(stage(1, 0x1234, 42, 100));
+    SessionState progress; HudPlayerState player; HudScoreState score;
+    GameRandom game(0xaaaa), visual(0xbbbb);
+    game.next(); visual.next(); visual.step16();
+    const auto visual_seed = visual.seed();
+    const auto visual_index = visual.index();
+    ReplayRestoreTarget target{&progress, &player, &score, &game, &visual};
+    ReplayRestoreLog log; std::string error;
+    // 00447900:200-201: game seed and counter only, preserving visual state.
+    CHECK(ReplaySession::restore_stage(file, 0, target, log, error, ReplayRestorePhase::Load));
+    CHECK_EQ(game.seed(), u16(0x1234)); CHECK_EQ(game.index(), 0u);
+    CHECK_EQ(visual.seed(), visual_seed); CHECK_EQ(visual.index(), visual_index);
+    game.next();
+    // 00449070:40-42: both seeds, only the game counter is reset.
+    CHECK(ReplaySession::restore_stage(file, 0, target, log, error, ReplayRestorePhase::Transition));
+    CHECK_EQ(game.seed(), u16(0x1234)); CHECK_EQ(game.index(), 0u);
+    CHECK_EQ(visual.seed(), u16(0x1234)); CHECK_EQ(visual.index(), visual_index);
+}
 TEST(replay_start_restores_signed_fixed_position_and_focus_without_clamping) {
     StageBattle battle;std::string error;auto saved=stage(5,123,0,100);
     put32(saved.header,0x0c,-6163);put32(saved.header,0x10,47332);put32(saved.header,0x6c,1);
@@ -105,6 +125,18 @@ TEST(replay_start_initializes_youmu_follow_history_before_first_movement) {
     GameInput input;input.held=0x80;CHECK(battle.step(input));
     CHECK(battle.player_x>100.f);
     for(int i=0;i<4;++i){CHECK_EQ(battle.options[i].x,100.f);CHECK_EQ(battle.options[i].y,200.f);}
+}
+TEST(youmu_option_uses_history_entry_seven_for_first_option) {
+    StageBattle battle; StartProvider provider{battle.sim}; StartHost host;
+    SessionState progress; progress.character = 3; HudPlayerState player; player.power = 100;
+    HudScoreState score; CHECK(battle.load(provider, "start.ecl", 2, host, progress, player, score));
+    battle.restore_replay_player(0, 51200, false);
+    GameInput input; input.held = 0x80;
+    for (int i = 0; i < 7; ++i) CHECK(battle.step_transition(input));
+    CHECK_EQ(battle.options[0].x, 0.f);
+    CHECK(battle.step_transition(input));
+    // 00445660: +14770 is entry 7 relative to +14738, not entry 8.
+    CHECK(battle.options[0].x > 0.f);
 }
 }  // namespace
 

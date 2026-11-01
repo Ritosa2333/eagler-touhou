@@ -21,7 +21,8 @@ const std::array<AnmDrawSchedule::Entry,31> AnmDrawSchedule::entries{{
  {17,35},
  {18,39},
  {19,43},
- {20,44,3,false,true,true,true,false},
+ // 46ef30 clears 4dcbe8/ec and camera+0xd0/d4 immediately before layer20.
+ {20,44,3,false,true,true,true,false,true},
  // L21/22/23 优先级按原版注册序对齐（r4/render/integration.md；objdump
  // 46bf25..46c7f0 `mov ebx,prio`、回调体 46ed40..46f090）：
  //   {21,54} ← 46ef60@0x36（全屏相机）；{22,55} ← 46ef20@0x37（HUD front00
@@ -46,6 +47,6 @@ const std::array<AnmDrawSchedule::Entry,31> AnmDrawSchedule::entries{{
 }};
 AnmDrawSchedule::AnmDrawSchedule(FrameScheduler& f,AnmManager& a,AnmRenderer& r,ZunGraphics& g,AnmDrawServices& s):scheduler(f),animations(a),renderer(r),graphics(g),services(s){for(u32 i=0;i<callbacks.size();i++){auto& c=callbacks[i];c.owner=this;c.index=i;c.callback.owner=&c;c.callback.enabled=true;c.callback.run=[](void* p){auto& c=*static_cast<Callback*>(p);return c.owner->draw(c.index)?i32(FrameAction::Continue):i32(FrameAction::Error);};if(scheduler.add(c.callback,FramePass::Draw,entries[i].priority)<0)error="Animation draw callback registration failed";}}
 AnmDrawSchedule::~AnmDrawSchedule(){for(auto& c:callbacks)scheduler.remove(c.callback);}
-bool AnmDrawSchedule::draw(u32 index){if(!error.empty())return false;const auto& e=entries[index];if(e.camera>=0){renderer.invalidate();if(!services.camera(DrawCamera(e.camera),e.refresh)){error="Animation camera selection failed";return false;}if(e.disable_fog)graphics.set_fog(false);if(e.disable_depth_write)graphics.set_depth_mask(false);if(e.disable_fog||e.disable_depth_write)graphics.set_depth_compare(touhou::graphics::Compare::Always);if(e.zero_offset)renderer.offset={};}
+bool AnmDrawSchedule::draw(u32 index){if(!error.empty())return false;const auto& e=entries[index];if(e.camera>=0){renderer.invalidate();if(!services.camera(DrawCamera(e.camera),e.refresh)){error="Animation camera selection failed";return false;}if(e.disable_fog)graphics.set_fog(false);if(e.disable_depth_write)graphics.set_depth_mask(false);if(e.disable_fog||e.disable_depth_write)graphics.set_depth_compare(touhou::graphics::Compare::Always);if(e.zero_offset)renderer.offset={};if(e.clear_shake)animations.scene_environment().screen_shake_offset={};}
  if(!renderer.draw_layer(animations.registry.layer(e.layer))){error=renderer.error;return false;}if(e.restore){renderer.invalidate();if(!services.camera(DrawCamera::Fullscreen,false)){error="Animation full-screen camera restoration failed";return false;}}return true;}
 }

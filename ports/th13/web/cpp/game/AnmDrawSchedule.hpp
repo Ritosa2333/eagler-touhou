@@ -9,7 +9,7 @@ struct AnmDrawServices {virtual ~AnmDrawServices()=default;virtual bool camera(D
 // Layer order is deliberately not numeric: playfield overlays temporarily
 // switch cameras and then restore the full-screen camera.
 class AnmDrawSchedule {
- struct Entry {i32 layer,priority,camera=-1;bool refresh=false,disable_fog=false,disable_depth_write=false,zero_offset=false,restore=false;};
+ struct Entry {i32 layer,priority,camera=-1;bool refresh=false,disable_fog=false,disable_depth_write=false,zero_offset=false,restore=false,clear_shake=false;};
  static const std::array<Entry,31> entries;
  struct Callback {FrameCallback callback;AnmDrawSchedule* owner=nullptr;u32 index=0;};
  std::array<Callback,31> callbacks;FrameScheduler& scheduler;AnmManager& animations;AnmRenderer& renderer;ZunGraphics& graphics;AnmDrawServices& services;bool draw(u32);

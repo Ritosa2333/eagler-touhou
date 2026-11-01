@@ -55,7 +55,9 @@ TEST(legacy_v1_v2_v3_raw_bytes_and_observable_state_survive_repeated_v4_saves) {
         CHECK(initial.loaded);
         CHECK_EQ(initial.bgm_volume, 43);
         CHECK_EQ(initial.effect_volume, 65);
-        CHECK_EQ(initial.heard_mask, 0x85u); // keep the legacy reader's mask
+        // scoreth13.dat +24 为 32 位曲目掩码（FileStore.hpp:58/124），v6 完整保留。
+        CHECK_EQ(initial.heard_mask, 0xfedcba85u);
+        CHECK(initial.heard_mask != 0x85u);  // 低 8 位截断不等价
         CHECK_EQ(initial.cleared_mask, 0xf0010001u);
         CHECK_EQ(initial.legacy_save_size(), bytes.size());
         CHECK(std::equal(bytes.begin(), bytes.end(), initial.legacy_save_bytes().begin()));
@@ -75,7 +77,12 @@ TEST(legacy_v1_v2_v3_raw_bytes_and_observable_state_survive_repeated_v4_saves) {
             CHECK(std::equal(bytes.begin(), bytes.end(), restored.legacy_save_bytes().begin()));
             CHECK(restored.practice_played == played);
             CHECK_EQ(restored.extra_unlocked_mask, (version > 1 ? 5u : 0u) | 8u);
+            // v6 写回后完整 32 位掩码一致（FileStore.cpp:464/387）。
+            CHECK_EQ(restored.heard_mask, 0xfedcba85u);
             CHECK(restored.save());
+            FileStore mask_roundtrip;
+            CHECK(mask_roundtrip.initialize());
+            CHECK_EQ(mask_roundtrip.heard_mask, 0xfedcba85u);
         }
     }
 }

@@ -6,11 +6,17 @@
 #include "AnmVm.hpp"
 #include "StageMath.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace th13 {
+
+// StageBattle.cpp 定义的诊断开关（模拟层探针统一门控；wasm 侧 std::getenv
+// 读不到宿主 env，故不再用环境变量）。
+extern bool damage_probe_enabled;
 
 float StageSim::time_rate() const { return session ? session->rate : standalone_rate_; }
 void StageSim::set_time_rate(float rate) {
@@ -437,7 +443,7 @@ StageEnemy* StageSim::spawn_enemy(const char* routine, float x, float y, float l
                                   bool inherit_anm, bool mirror, const StageSpawnArguments* arguments) {
     (void)inherit_anm;  // ANM 遗产拷贝（0x41fcc0:73-79 无条件 12 dword）不参与事件，暂略
     auto enemy = std::make_unique<StageEnemy>();
-    enemy->serial = next_serial_++;  // mgr+0xBC 序号：root=0，此后逐次 +1
+    enemy->serial = next_serial_++;  // 418d30 reserves 0; 418f40 assigns mgr+bc.
     if (next_serial_ == 0) ++next_serial_;  // 418f40 skips zero after wraparound.
     enemy->script_id = i32(enemy->serial);
     // Written before constructor ECL; nested creations can replace it.
@@ -538,6 +544,9 @@ void StageSim::tick_enemy(StageEnemy& e) {
         if (!e.dead && error_.empty() && e.threads) interrupt_enemy(e);
         if (!e.dead && error_.empty() && enemy_body_collision) enemy_body_collision(e);
         if (!e.dead && error_.empty()) update_enemy_feedback(e);
+        // 0041a39b decrements +0x4004 after feedback: surviving hits end at
+        // 29, but death/terminated-interrupt returns skip this tail entirely.
+        if (!e.dead && error_.empty() && e.hit_anim_timer > 0) --e.hit_anim_timer;
         // 41a8a0 calls41a3d0 after damage and before slot following/timers.
         if(!e.dead&&error_.empty()&&e.fog) {
             e.fog->update({e.position[0],e.position[1],e.position[2]},session?session->rate:1.f);
@@ -594,7 +603,8 @@ void StageSim::update_enemy_feedback(StageEnemy& enemy) {
         enemy.hit_feedback_cooldown = 4;
         const i32 voice = enemy.hit_sound >= 0 ? enemy.hit_sound :
             boss_feedback && enemy.phase_life_remaining < (card.active() ? 200 : 900) ? 35 : 34;
-        if (enemy_hit_sound && !enemy_hit_sound(voice)) error_ = "Enemy hit sound failed";
+        // 41a2e8 passes the enemy VM's x to 460c50.
+        if (enemy_hit_sound && !enemy_hit_sound(voice, enemy.position[0])) error_ = "Enemy hit sound failed";
     } else if (!fourth_frame) {
         visual.flags &= ~0x60000u;
     } else if (boss_feedback && enemy.phase_life_remaining < (card.active() ? 100 : 500)) {
@@ -688,7 +698,7 @@ bool StageSim::step_frame() {
     if (enemies.empty()) {
         if (!defer_laser_update) advance_lasers();
         if (interactive) advance_bullets();
-        return true;
+        return error_.empty();
     }
     // 0x418e00:16-30：游标在每个敌机处理前取其实时 next；0x41a8a0 返回
     // -1（死亡）当场摘链——已死敌机不占链位，链尾创建者的新敌机是否被
@@ -744,7 +754,12 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
         if (entry.flags == 0 && (bullet.behavior_flags & 0xfffffeffu) != 0) return;
         if ((entry.op & bullet.behavior_flags) != 0) return;
         const float* args = entry.args;        // +0x00..+0x0C 浮点
-        const bool exact_integers = entry.op == 0x1000000 || entry.op == 0x2000 || entry.op == 0x80;
+        // 0x200 不在此列：StageCommands 以 float(value) 写 args[4+n] 且同步
+        // 写 integer_arguments；sprite/subtype 为 16 位值，float 往返精确，
+        // 旧视图与原生 word 读取等价。tests/ui 的直接构造夹具只写 args[4]，
+        // 因此保持原判定（phase5 已确认 op0x200 未执行才是首差根因）。
+        const bool exact_integers =
+            entry.op == 0x1000000 || entry.op == 0x2000 || entry.op == 0x80;
         const i32 i4 = exact_integers ? entry.integer_arguments[0] : i32(entry.args[4]);
         const i32 i5 = exact_integers ? entry.integer_arguments[1] : i32(entry.args[5]);
         switch (entry.op) {
@@ -826,6 +841,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             case 5: {
                 // 0x472e10 signed_unit：> -990 字面量（>=990 加瞄准角）、
                 // <= -990 相对当前角；均 wrap。
+                GameRandom::tag(11);
                 const float unit = random.signed_unit();
                 float value;
                 if (f0 > -990.0f) {
@@ -841,6 +857,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
                 break;
             }
             case 6:  // 原始 signed_unit×f0，不 wrap（0x40f3f6）
+                GameRandom::tag(11);
                 bullet.ex10_angle = random.signed_unit() * f0;
                 break;
             default:
@@ -897,11 +914,16 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
                 bullet.hit_size[0] = 4.0f;
                 bullet.hit_size[1] = 4.0f;
             }
-            // (u32)i5 & 0x8000 → 0x4124d0（出场 ANM 重置）：纯表现，无事件。
+            // 0040f030 always resets the embedded VM. Only bit15 requests
+            // 004124d0's immediate label2; without it the new script keeps
+            // its natural entrance, including the sprite used by culling.
+            bullet.flags |= 0x10u;
+            if (bullet_animation_initialize &&
+                !bullet_animation_initialize(bullet, (u32(i5) & 0x8000u) ? 2 : 0)) return;
             break;
         }
         case 0x400:  // 411380: retire with ANM interrupt1, half-speed state3
-            if(!cancel_bullet(bullet))return;
+            if(!cancel_bullet(bullet, true, true, false))return;
             break;
         case 0x2000: {
             // 子弹发射（0x40f79a）：下一项为角度/条数描述符。参数打包见 i4：
@@ -933,7 +955,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             emit_et(temp, bullet.source_enemy, 0, spawn, 0.0f, u32(i4) & 0xffu);
             if (i4 < 0) {           // 0040f030:306：bit31=1 → FUN_00411380
                 bullet.ex_cursor += 1;  // 0040f030:305 发射后再 +1；break 后
-                if(!cancel_bullet(bullet))return;  // 公共尾块即 LAB_0040f483 尾部，净 +3
+                if(!cancel_bullet(bullet, true, true, false))return;  // 公共尾块即 LAB_0040f483 尾部，净 +3
             }
             // bit31=0 → LAB_0040f489：:305 的 +1 由公共尾块承担，净 +2
             break;
@@ -1261,19 +1283,42 @@ void StageSim::advance_bullets() {
     // 之后再到达）。逐弹以本地副本推进再写回：队列内 0x2000 的递归
     // push_back 会使 vector 重分配，禁止持有跨调用引用。
     const size_t count = bullets.size();
-    //40e840 inserts at the active-list head;40e360 traverses newest first.
-    //Child emissions consume game RNG, so processing vector insertion order
-    //assigns random angles/speeds to the wrong parents even with equal totals.
-    for (size_t next = count; next > 0;) {
-        const size_t i = --next;
+    std::vector<size_t> active_order;
+    active_order.reserve(count);
+    for (size_t i = count; i > 0; --i) active_order.push_back(i - 1);
+    // 40e840 links each node at the head *before* processing birth-time
+    // recursive children. Vector insertion happens after that processing,
+    // so generation order, rather than reverse vector order, represents the
+    // native active chain when a parent creates children during its birth.
+    std::stable_sort(active_order.begin(), active_order.end(), [this](size_t a, size_t b) {
+        return bullets[a].generation > bullets[b].generation;
+    });
+    for (size_t i : active_order) {
         StageBullet bullet = bullets[i];
-        if (!bullet.alive) continue;
+        if (!bullet.alive) {
+            release_bullet_slot(bullets[i]);
+            continue;
+        }
+        // 0x40db10 的 switch(+0xbbe) 用帧首状态选分支：本帧进入 case1 的弹
+        // 会后处理队列/位移，末尾只按 +0x20 的碰撞位调用 0x444140/0x443fd0。
+        // 0x411380 把 bbe 置 3 但不清 +0x20 bit1，所以淡出同帧仍擦弹/命中；
+        // 下一帧才走 case3（仅半速位移、无碰撞）。
+        const u16 entered_state = bullet.state;
+        const bool entered_fade = entered_state == 3;
+        bool delayed_contact = false;
         if (bullet.state == 2) {
             bullet.x += float(bullet.vel[0] * global_rate) * 0.5f;
             bullet.y += float(bullet.vel[1] * global_rate) * 0.5f;
             bullet.z += float(bullet.vel[2] * global_rate) * 0.5f;
             bullet.collision_ready = bullet.state_age > 7;
-            if (bullet.animation_ready) bullet.state = 1;
+            if (bullet.collision_ready && bullet_player_collision) {
+                bullet_player_collision(bullet);
+                if (!error_.empty()) return;
+                delayed_contact = bullet.state == 3;
+            }
+            // 40db10 enters the state1 path in the same tick after the
+            // delayed VM signals readiness, unless the delayed hit canceled it.
+            if (bullet.state == 2 && bullet.animation_ready) bullet.state = 1;
         } else {
             bullet.collision_ready = true;
         }
@@ -1293,14 +1338,23 @@ void StageSim::advance_bullets() {
                 finished = previous & ~bullet.behavior_flags;
             } while (finished);
         }
-        if (bullet.state != 2 && bullet.state != 4) {
-            const float rate = bullet.state == 3 ? .5f : 1.f;
+        if (bullet.state != 2 && bullet.state != 4 && !delayed_contact) {
+            // 40db10 selects case1 before queue processing.411380 may set
+            // state3 within that queue, but this already-entered case still
+            // moves at full speed; the following update selects case3/half.
+            const float rate = entered_fade ? .5f : 1.f;
             bullet.x += float(bullet.vel[0] * global_rate) * rate;
             bullet.y += float(bullet.vel[1] * global_rate) * rate;
             bullet.z += float(bullet.vel[2] * global_rate) * rate;
         }
-        if (bullet.state == 1) bullet.collision_ready = true;
-        if (bullet.state == 3 || bullet.state == 4) bullet.collision_ready = false;
+        // 帧首 case1（含 2→1 的 goto 复用）在末尾调用碰撞；本帧由 1 变 3
+        // 的弹仍要碰撞，下一帧进入 case3 才停止。
+        const bool collide_now = entered_state == 1 || bullet.state == 1;
+        if (collide_now) bullet.collision_ready = true;
+        if (collide_now && bullet.collision_ready && bullet_player_collision) {
+            bullet_player_collision(bullet);
+            if (!error_.empty()) return;
+        }
         if (!(bullet.behavior_flags & 0x100u)) {
             if (bullet.animation_geometry && bullet.cull_grace <= 0) {
                 // 40db10 -> 40da30 reads the current sprite dimensions
@@ -1317,6 +1371,7 @@ void StageSim::advance_bullets() {
         }
         if (bullet.cull_grace > 0) --bullet.cull_grace;
         if (bullet.alive && bullet_animation && !bullet_animation(bullet, false)) return;
+        if (!bullet.alive) release_bullet_slot(bullet);
         if (truncate_int(bullet.state_time) != bullet.state_age)
             bullet.state_time = float(bullet.state_age);
         bullet.state_time += global_rate > .99f && global_rate < 1.01f ? 1.f : global_rate;
@@ -1331,16 +1386,46 @@ void StageSim::advance_bullets() {
     bullets.resize(keep);
 }
 
-void StageSim::clear_bullets() {
-    for(auto& bullet:bullets)if(!cancel_bullet(bullet))return;
+void StageSim::release_bullet_slot(StageBullet& bullet) {
+    if (bullet.pool_slot < 0) return;
+    bullet_free_slots_.push_back(bullet.pool_slot);
+    bullet.pool_slot = -1;
 }
 
-bool StageSim::cancel_bullet(StageBullet& bullet) {
-        if(!bullet.alive||(bullet.state!=1&&bullet.state!=2))return true;
+std::vector<size_t> StageSim::bullet_pool_order() const {
+    std::vector<size_t> order;
+    order.reserve(bullets.size());
+    for (size_t i = 0; i < bullets.size(); ++i) order.push_back(i);
+    std::stable_sort(order.begin(), order.end(), [this](size_t a, size_t b) {
+        const i32 left = bullets[a].pool_slot < 0 ? 2000 : bullets[a].pool_slot;
+        const i32 right = bullets[b].pool_slot < 0 ? 2000 : bullets[b].pool_slot;
+        return left < right;
+    });
+    return order;
+}
+
+void StageSim::clear_bullets() {
+    for (size_t i : bullet_pool_order()) if (!cancel_bullet(bullets[i])) return;
+}
+
+bool StageSim::cancel_bullet(StageBullet& bullet, bool interpolate, bool set_delay,
+                             bool require_active) {
+        // 原版 0x411380（op0x400/op0x2000 bit31 的共同入口）没有 state 门：
+        // 只检查 cancel script>=0。port 旧实现无条件要求 state∈{1,2}，会把
+        // state2/4 上的队列取消静默跳过而游标照常前进（phase6 e8q dump：
+        // cursor=10 越过 op0x400、state 仍=1、无 201 父 VM）。队列调用面
+        // 传 require_active=false。
+        if(!bullet.alive)return true;
+        if(require_active&&(bullet.state!=1&&bullet.state!=2))return true;
         bullet.state=3;bullet.state_age=0;bullet.state_time=0;
-        bullet.delay=bullet.animation_interrupt=1;bullet.collision_ready=false;
+        if (set_delay) bullet.delay = 1;
+        bullet.animation_interrupt=1;bullet.collision_ready=false;
         const i32 script=bullet_cancel_script(i32(bullet.sprite),i32(bullet.subtype));
-        if(script>=0&&bullet_cancel_effect){
+        if (script >= 0 && !interpolate && stationary_cancel_effect) {
+            if (!stationary_cancel_effect(script, {bullet.x, bullet.y, bullet.z})) {
+                error_ = "Bullet cancel animation failed"; return false;
+            }
+        } else if(script>=0&&bullet_cancel_effect){
             //411df0 stores velocity*rate to f32, then multiplies by f64 10.
             const float rate=session?session->rate:1.f;
             const Vec3 displacement{float(double(float(bullet.vel[0]*rate))*10.0),
@@ -1353,30 +1438,89 @@ bool StageSim::cancel_bullet(StageBullet& bullet) {
     return true;
 }
 
+namespace {
+// 0x412320: strict 32x32 on-screen box (x+32 > -192, x-32 < 192,
+// y+32 > 0, y-32 < 448). The f32 input stays exact when widened to double.
+bool cancel_item_box(float x, float y) {
+    return double(x) + 32.0 > -192.0 && double(x) - 32.0 < 192.0 &&
+           double(y) + 32.0 > 0.0 && double(y) - 32.0 < 448.0;
+}
+// 0x474340: the angle is negated before sin/cos, local coordinates are stored
+// f32, then the rectangle/rounded-corner test runs. Used by 4119c0's world and
+// screen-field checks.
+bool rotated_rect_covers(const Vec3& center, const Vec3& size, float angle,
+                         float px, float py, float radius) {
+    const double c = std::cos(double(angle));
+    const double s = std::sin(double(angle));
+    const double dx = double(px) - double(center.x);
+    const double dy = double(py) - double(center.y);
+    const float lx = float(dx * c + dy * s);
+    const float ly = float(dy * c - dx * s);
+    const double hw = double(size.x) * 0.5;
+    const double hh = double(size.y) * 0.5;
+    const double rr = double(radius);
+    const double ax = std::fabs(double(lx));
+    const double ay = std::fabs(double(ly));
+    if (rr + hw < ax || hh < ay) {
+        if (ax < hw && ay <= hh + rr) return true;
+        const double ex = double(lx) - hw;
+        const double ey = double(ly) - hh;
+        if (ey * ey + ex * ex < rr * rr) return true;
+        const double fx = double(lx) + hw;
+        if (ey * ey + fx * fx < rr * rr) return true;
+        const double fy = double(ly) + hh;
+        if (fy * fy + ex * ex < rr * rr) return true;
+        if (rr * rr <= fy * fy + fx * fx) return false;
+    }
+    return true;
+}
+}  // namespace
+
+bool StageSim::cancel_bullet_state4(StageBullet& bullet, bool spawn_cancel,
+                                    bool item_after_half_step, bool respect_protection) {
+    if (!bullet.alive || (bullet.state != 1 && bullet.state != 2)) return true;
+    if (respect_protection && bullet.cancel_protection != 0) return true;
+    // 4114f0/411770/4119c0 common head: ANM cancel callback and delay=1.
+    // The independent particle is created at the pre-half-step position; these
+    // state4 paths do not attach 411df0's velocity interpolation.
+    bullet.delay = 1;
+    bullet.animation_interrupt = 1;
+    const i32 script = bullet_cancel_script(i32(bullet.sprite), i32(bullet.subtype));
+    if (script >= 0 && stationary_cancel_effect &&
+        !stationary_cancel_effect(script, {bullet.x, bullet.y, bullet.z})) {
+        error_ = "Bullet cancel particle failed";
+        return false;
+    }
+    if (!item_after_half_step && spawn_cancel && items && cancel_item_box(bullet.x, bullet.y))
+        items->spawn_item(bullet.x, bullet.y, bullet.z, 9, -1.5707964f, 2.2f);
+    // 0x4114f0/0x411770 half-step (three-stage f32 chain); 0x4119c0 tests its
+    // 32x32 item box only after this move.
+    const float rate = time_rate();
+    bullet.x += float(bullet.vel[0] * rate) * .5f;
+    bullet.y += float(bullet.vel[1] * rate) * .5f;
+    bullet.z += float(bullet.vel[2] * rate) * .5f;
+    if (item_after_half_step && spawn_cancel && items && cancel_item_box(bullet.x, bullet.y))
+        items->spawn_item(bullet.x, bullet.y, bullet.z, 9, -1.5707964f, 2.2f);
+    bullet.state = 4;
+    bullet.state_age = 0;
+    bullet.state_time = 0;
+    bullet.collision_ready = false;
+    return true;
+}
+
 bool StageSim::cancel_respawn_bullets(const Vec3& center,float radius) {
-    const float rate=time_rate();
-    for(auto& bullet:bullets) {
+    for (size_t i : bullet_pool_order()) {
+        auto& bullet = bullets[i];
         if(!bullet.alive || (bullet.state!=1 && bullet.state!=2) || bullet.cancel_protection)continue;
         const double dx=double(bullet.x)-center.x,dy=double(bullet.y)-center.y;
         const float limit=float(double(bullet.hit_size[0])*.5+radius);
         if(dx*dx+dy*dy>double(limit)*limit)continue;
-        //411770 creates the independent particle at the old position before
-        // the one half-step, and does not attach411df0's motion interpolation.
-        const i32 script=bullet_cancel_script(i32(bullet.sprite),i32(bullet.subtype));
-        if(script>=0 && stationary_cancel_effect &&
-           !stationary_cancel_effect(script,{bullet.x,bullet.y,bullet.z})) {
-            error_="Respawn bullet cancel particle failed";return false;
-        }
-        bullet.animation_interrupt=1;
         // 0x411770 半步（0x4118cf..0x41193c）：三轴同式三级 f32 链——
         // t=f32(vel·rate)（0x4118da fld [0x4c0a28] 后逐轴 fmulp+fstp）→
         // h=f32(t·0.5)（fld qword 0x4ae8b8 后逐轴 fmul+fstp）→ pos=f32(pos+h)。
         // x 轴原 double 单舍入式为移植笔误（rate=1.0 时数值恒等，
         // fp-audit-20261028 §4 D2）；统一后与 y/z 及 0x40db10 case2 半步同构。
-        bullet.x+=float(bullet.vel[0]*rate)*.5f;
-        bullet.y+=float(bullet.vel[1]*rate)*.5f;
-        bullet.z+=float(bullet.vel[2]*rate)*.5f;
-        bullet.state=4;bullet.state_age=0;bullet.state_time=0;bullet.collision_ready=false;
+        if(!cancel_bullet_state4(bullet,false,false,true))return false;
     }
     return true;
 }
@@ -1393,12 +1537,14 @@ void StageSim::drop_table(StageEnemy& enemy) {
     if (items && enemy.drop_main != 0)
         items->spawn_item(enemy.position[0], enemy.position[1], enemy.position[2],
                           enemy.drop_main, -1.5707964f, 2.2f);
+    GameRandom::tag(12);
     float angle = random.signed_unit() * 3.1415927f;
     for (int kind = 0; kind < 14; ++kind) {
         for (int n = 0; n < enemy.drop_extra[kind]; ++n) {
             // 0x424770：offset = (cos(angle)×area_x, sin(angle)×area_y)。
             const float ox = std::cos(static_cast<double>(angle)) * enemy.drop_area[0];
             const float oy = std::sin(static_cast<double>(angle)) * enemy.drop_area[1];
+            GameRandom::tag(12);
             const float jitter = 0.5f + random.unit() * 0.5f;
             const float x = enemy.position[0] + jitter * ox;
             const float y = enemy.position[1] + jitter * oy;
@@ -1410,6 +1556,7 @@ void StageSim::drop_table(StageEnemy& enemy) {
             }
             // 417be6 stores RNG*pi to f32, then keeps angle+pi/2 and
             // noise*.25 extended until the single store at417c04.
+            GameRandom::tag(12);
             const float noise = float(double(random.signed_unit()) * double(3.1415927f));
             angle = wrap_angle(float(double(angle) + double(1.5707964f) + double(noise) * .25));
         }
@@ -1425,7 +1572,8 @@ void StageSim::cancel_bullets_radius(const StageEnemy& enemy, float radius, bool
 
 void StageSim::cancel_bullets_radius(const Vec3& center, float radius, bool spawn_cancel,
                                      bool respect_protection) {
-    for (auto& bullet : bullets) {
+    for (size_t i : bullet_pool_order()) {
+        auto& bullet = bullets[i];
         if (!bullet.alive || (bullet.state != 1 && bullet.state != 2)) continue;
         // 411770 (Bomb) skips protected bullets; ECL's 4114f0 does not.
         if (respect_protection && bullet.cancel_protection != 0) continue;
@@ -1436,18 +1584,34 @@ void StageSim::cancel_bullets_radius(const Vec3& center, float radius, bool spaw
         // 411801 keeps limit squared extended through the comparison.
         const float distance2 = float(double(dx) * dx + double(dy) * dy);
         if (double(distance2) > double(limit) * limit) continue;
-        // 场内判定（0x4114f0 的 ±32 窗）：615 给场内弹产取消道具（kind 9）。
-        if (items && spawn_cancel && bullet.x + 32.0f >= -192.0f &&
-            bullet.x - 32.0f < 192.0f && bullet.y + 32.0f >= 0.0f &&
-            bullet.y - 32.0f < 448.0f)
-            items->spawn_item(bullet.x, bullet.y, bullet.z, 9, -1.5707964f, 2.2f);
-        bullet.x += bullet.vel[0] * 0.5f;  // 4114f0 moves AFTER item creation
-        bullet.y += bullet.vel[1] * 0.5f;
-        bullet.z += bullet.vel[2] * 0.5f;
-        bullet.alive = false;  // state → 4
+        // 0x4114f0/0x411770: callback + delay, 0x412320 32x32 item box BEFORE
+        // the half-step, then state4 (the bullet is not removed here).
+        if (!cancel_bullet_state4(bullet, spawn_cancel, false, respect_protection)) return;
     }
     if (items && !spawn_cancel)
         items->on_et_clear(center.x, center.y, center.z);
+}
+
+// 0x4119c0: rotated world rectangle AND the 384x448 screen field, then the
+// shared state4 tail. Item creation uses the 32x32 box after the half-step.
+void StageSim::cancel_bullets_box(const Vec3& center, const Vec3& size, float angle,
+                                  float bullet_radius, bool spawn_cancel,
+                                  bool respect_protection, bool use_bullet_radius) {
+    for (size_t i : bullet_pool_order()) {
+        auto& bullet = bullets[i];
+        if (!bullet.alive || (bullet.state != 1 && bullet.state != 2)) continue;
+        if (respect_protection && bullet.cancel_protection != 0) continue;
+        // 4119c0 stores +1324 * +b90 as f32, independently of the
+        // player's collision flag, then passes it to both 474340 calls.
+        const float radius = use_bullet_radius ? float(bullet.hit_scale * bullet.hit_size[0])
+                                               : bullet_radius;
+        if (!rotated_rect_covers(center, size, angle, bullet.x, bullet.y, radius))
+            continue;
+        if (!rotated_rect_covers({0.0f, 224.0f, 0.0f}, {384.0f, 448.0f, 0.0f}, 0.0f,
+                                 bullet.x, bullet.y, radius))
+            continue;
+        if (!cancel_bullet_state4(bullet, spawn_cancel, true, respect_protection)) return;
+    }
 }
 
 // ---- 发射内核（0x40ffe0 外层 ways/count 循环 + 0x40e840 单弹出生）----
@@ -1469,6 +1633,13 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                                                       static_cast<double>(way) /
                                                       static_cast<double>(ways - 1));
         for (i32 idx = 0; idx < count; ++idx) {
+            // 40e840 unlinks the free-list head before consuming angle RNG.
+            i32 pool_slot = -1;
+            if (interactive) {
+                if (bullet_free_slots_.empty()) continue;
+                pool_slot = bullet_free_slots_.back();
+                bullet_free_slots_.pop_back();
+            }
             double angle = 0;
             switch (mode) {
             case 0:
@@ -1508,10 +1679,12 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                         kPiF / static_cast<double>(count);
                 break;
             case 6:
+                GameRandom::tag(13);
                 angle = et.angle2 +
                         random.unit() * static_cast<double>(et.angle1 - et.angle2);
                 break;
             case 7:
+                GameRandom::tag(13);
                 speed = static_cast<float>(random.unit() *
                                                static_cast<double>(et.speed1 - et.speed2) +
                                            et.speed2);
@@ -1519,22 +1692,50 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                         static_cast<double>(idx) * kTwoPiF / static_cast<double>(count);
                 break;
             case 8:
-                angle = et.angle2 +
-                        random.unit() * static_cast<double>(et.angle1 - et.angle2);
-                speed = static_cast<float>(random.unit() *
-                                               static_cast<double>(et.speed1 - et.speed2) +
-                                           et.speed2);
+                GameRandom::tag(13);
+                // 0x40ea52..0x40ea76（mode 8 抽签角）：每步中间值都先落 f32——
+                //   d=f32(angle1-angle2)（fld/fsub/fstp [ebp+0x10]）；
+                //   m=f32(u*d)（fmul dword/fstp [ebp+0x10]）；
+                //   angle=f32(angle2+m)（fld/fadd/fstp [ebp-4]）。
+                // u 是 0x472de0(unit) 的返回值，其尾部 0x472e06/0x472e09
+                // fstp dword+fld dword 把结果压成 f32 精度——unit() 的 float
+                // 返回与本式一致。Unicorn 直读实证（3 个 mode8 出生
+                // 10102/10105/10107 的 d/m/角度/速度中间位全部命中）：
+                // Reimu S1 f10107 bullet1998 原生角 0x3ed4ce20；旧式
+                // （全 double 单次落点）给 0x3ed4ce1d。
+                {
+                    const float u = random.unit();
+                    const float delta = et.angle1 - et.angle2;
+                    const float scaled = u * delta;
+                    angle = static_cast<double>(et.angle2 + scaled);
+                }
+                GameRandom::tag(13);
+                // 0x40ea79..0x40ea93：出生速度同型 f32 落点链
+                // （sd=f32(speed1-speed2)、sm=f32(u2*sd)、speed=f32(speed2+sm)）。
+                {
+                    const float u = random.unit();
+                    const float delta = et.speed1 - et.speed2;
+                    const float scaled = u * delta;
+                    speed = et.speed2 + scaled;
+                }
                 break;
             case 9:
             case 10: {
+                // 40eab8 stores the spoke to f32;40eaee then stores the
+                // combined fan offset before reflection/aim/base addition.
+                // Keeping the spoke/fan sum in double changes Sanae stage5
+                // frame252 bullet10's angle by2ULP and its birth x by1ULP.
+                const float spoke = float(static_cast<double>(idx) * kTwoPiF /
+                                          static_cast<double>(count));
+                double fan;
                 if ((count & 1) == 0)
-                    angle = et.angle2 * 0.5 + static_cast<double>(way / 2) * et.angle2;
+                    fan = et.angle2 * 0.5 + static_cast<double>(way / 2) * et.angle2;
                 else
-                    angle = static_cast<double>((way + 1) / 2) * et.angle2;
-                angle = angle + static_cast<double>(idx) * kTwoPiF / static_cast<double>(count);
-                if (way & 1) angle = angle * -1.0;
-                if (mode == 9) angle = angle + aim_d;
-                angle = et.angle1 + angle;
+                    fan = static_cast<double>((way + 1) / 2) * et.angle2;
+                float offset = float(fan + spoke);
+                if (way & 1) offset = -offset;
+                if (mode == 9) offset = float(double(offset) + aim_d);
+                angle = double(et.angle1) + offset;
                 break;
             }
             default:
@@ -1563,13 +1764,17 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
             if(active_bullet_protect_radius2>0) {
                 const double dx=double(x)-player_x,dy=double(y)-player_y;
                 const float distance2=float(dx*dx+dy*dy); // 40eca0 f32 store before compare
-                if(distance2<active_bullet_protect_radius2)continue;
+                if(distance2<active_bullet_protect_radius2) {
+                    if (pool_slot >= 0) bullet_free_slots_.push_back(pool_slot);
+                    continue;
+                }
             }
             sink.bullet_spawn(enemy_serial, slot, u32(way), u32(idx), x, y, z, stored, speed,
                               et.sprite, et.subtype);
             if (interactive) {
                 // 交互模式同源产弹体实体；无 RNG（事件口径无涉）。
                 StageBullet bullet;
+                bullet.pool_slot = pool_slot;
                 //40e840 only constructs the node. Collision belongs to
                 //40db10, so children inserted behind40e360's saved cursor
                 //cannot hit/graze until their first actual manager update.
@@ -1620,6 +1825,8 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                 // 实体吸收 0x2000 的递归 push（vector 重分配不悬空引用）；
                 // 事件序 = 父弹先于子弹（0x40e840 调用序），列表序 = 子弹在
                 // 父弹前（原版头插语义）。
+                if (bullet_animation_initialize &&
+                    !bullet_animation_initialize(bullet, bullet.state == 2 ? bullet.delay : 2)) return;
                 process_bullet_queue(bullet, true);
                 if (!error_.empty()) return;
                 if (bullet_animation && !bullet_animation(bullet, true)) return;
@@ -1651,7 +1858,7 @@ bool StageSim::clear_enemies() {
 
 bool StageSim::death_effects_and_drops(StageEnemy& enemy) {
     // 41aad0 emits sound and the oriented death animation before drops.
-    if(enemy.death_sound>=0&&enemy_sound&&!enemy_sound(enemy.death_sound)) {
+    if(enemy.death_sound>=0&&enemy_position_sound&&!enemy_position_sound(enemy.death_sound,enemy.position[0])) {
         error_="Enemy death sound failed";return false;
     }
     if(enemy.death_effect>=0&&enemy_death_effect) {
@@ -1712,6 +1919,13 @@ void StageSim::damage(StageEnemy& enemy, float amount) {
     }
     if (enemy.dead || (enemy.life <= 0.0f && !(enemy.flags & 0x80u))) {
         // 0x419f3c：计时奖励神灵先于 0x41aad0 的掉落表消费共享 RNG。
+        // 只在死亡帧结算（移植实测：放到每次伤害后会让 game RNG 在 143 帧即
+        // 与原生分叉、web game_index 反而远超原生——原版该段的 age/limit
+        // 语义不是「每次伤害」）。探针由伤害开关门控（wasm 无宿主 env）。
+        if (damage_probe_enabled)
+            std::printf("SPIRIT f=%d serial=%u age=%d limit=%d cnt=%d dead=%d\n",
+                        frame, enemy.serial, i32(enemy.age), enemy.death_spirit_limit,
+                        enemy.death_spirit_count, enemy.dead ? 1 : 0);
         if (items && i32(enemy.age) <= enemy.death_spirit_limit) {
             if (enemy.death_spirit_count == 0) {
                 error_ = "Enemy death spirit count divides by zero";
@@ -1748,5 +1962,39 @@ void StageSim::damage(StageEnemy& enemy, float amount) {
             sink.kill(enemy.serial, enemy.position[0], enemy.position[1]);
     }
 }
+
+// 只读诊断（探针臂，默认不调用）：全弹 etEx 队列 dump，字段与原生
+// 0x40f030/0x40f5df/0x40f8ad/0x40f735 探针记录对齐。不改变任何状态。
+std::string StageSim::debug_bullet_queue() const {
+    std::string out = "{\"frame\":" + std::to_string(frame) + ",\"bullets\":[";
+    bool first = true;
+    for (const auto& bullet : bullets) {
+        if (!bullet.alive) continue;
+        char head[320];
+        std::snprintf(head, sizeof head,
+                      "%s{\"generation\":%u,\"state\":%u,\"sprite\":%u,"
+                      "\"subtype\":%u,\"behavior_flags\":%u,\"ex_cursor\":%d,"
+                      "\"wait_time\":%.9g,\"wait_timer\":%d,\"queue\":[",
+                      first ? "" : ",", bullet.generation, unsigned(bullet.state),
+                      bullet.sprite, bullet.subtype, bullet.behavior_flags,
+                      bullet.ex_cursor, double(bullet.wait_time), bullet.wait_timer);
+        first = false;
+        out += head;
+        for (u32 n = 0; n < 18; ++n) {
+            const auto& e = bullet.ex[n];
+            char row[200];
+            std::snprintf(row, sizeof row,
+                          "%s[%u,%u,%.9g,%.9g,%d,%d]",
+                          n ? "," : "", e.op, e.flags, double(e.args[0]),
+                          double(e.args[1]), e.integer_arguments[0],
+                          e.integer_arguments[1]);
+            out += row;
+        }
+        out += "]}";
+    }
+    out += "]}";
+    return out;
+}
+
 
 }  // namespace th13

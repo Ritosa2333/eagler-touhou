@@ -3,6 +3,10 @@
 //   root129 直接子脚本 131+character（含子树）；!= 0（该角色当前难度通关）
 //   → 保持可见。数据源经 TitleMenuServices::character_cleared 注入，
 //   默认 false = 零进度全隐藏（原版无存档行为）。
+// 反汇编实证（artifacts/decomp/jp/functions/00470030.c）：FUN_00470030 只清
+// vm+0x18 bit1（绘制使能），保留 bit0（visible/脚本执行）；原版绘制门
+// FUN_0046a150 / FUN_00469b10 要求 bit0 与 bit1 同时置位。故「隐藏」以
+// bit1=0 且渲染门不通过判定，不把 bit0/AnmVm::visible 当作绘制位。
 // 夹具：131-134 子脚本含 op300（sprite 置 visible），使「隐藏/未隐藏」可判别；
 // 主链→难度(Hard=2)→角色屏路径复用 title_state_test 时序锚。
 #include "ui_test_fixtures.hpp"
@@ -20,6 +24,11 @@ using namespace th13;
 using namespace th13::test;
 
 namespace {
+
+// 原版绘制门：bit0（visible）与 bit1（绘制使能）同时置位才提交。
+bool drawable(const AnmVm* vm) {
+    return vm && vm->visible && (vm->visual.flags & 3u) == 3u;
+}
 
 struct ClearHost final : TitleScenePlatform {
     AnmManager& manager;
@@ -158,15 +167,17 @@ TEST(character_clear_tags_hidden_without_clears) {
     for (i32 c = 0; c < 4; c++) {
         AnmVm* tag = harness.clear_tag(c);
         CHECK(tag != nullptr);
-        CHECK(tag->visible == false);
-        CHECK((tag->visual.flags & 1u) == 0u);
+        CHECK(!drawable(tag));
+        CHECK((tag->visual.flags & 2u) == 0u);  // 0x470030 清绘制使能
+        CHECK(tag->visible);                    // bit0 保留（原版不清）
     }
-    // 跨帧保持（tick 会以 visual.visible() 重算，flags bit0 被清才持久）。
+    // 跨帧保持（wait 会以 visual.visible() 重算 bit0；bit1 才是隐藏位）。
     harness.advance(30);
     for (i32 c = 0; c < 4; c++) {
         AnmVm* tag = harness.clear_tag(c);
         CHECK(tag != nullptr);
-        CHECK(tag->visible == false);
+        CHECK(!drawable(tag));
+        CHECK((tag->visual.flags & 2u) == 0u);
     }
     CHECK_EQ(int(harness.progress.difficulty), 2);
     bool queried_at_difficulty = false;
@@ -186,15 +197,18 @@ TEST(character_clear_tag_visible_only_for_cleared_character) {
         AnmVm* tag = harness.clear_tag(c);
         CHECK(tag != nullptr);
         if (c == 2) {
-            CHECK(tag->visible == true);
-            CHECK((tag->visual.flags & 1u) != 0u);
+            CHECK(drawable(tag));
+            CHECK((tag->visual.flags & 2u) != 0u);
+            CHECK(tag->visible);
         } else {
-            CHECK(tag->visible == false);
+            CHECK(!drawable(tag));
+            CHECK((tag->visual.flags & 2u) == 0u);
         }
     }
     harness.advance(30);
-    CHECK(harness.clear_tag(2)->visible == true);   // 跨帧保持
-    CHECK(harness.clear_tag(0)->visible == false);
+    CHECK(drawable(harness.clear_tag(2)));          // 跨帧保持
+    CHECK(!drawable(harness.clear_tag(0)));
+    CHECK((harness.clear_tag(0)->visual.flags & 2u) == 0u);
     CHECK(harness.scene->error.empty());
 }
 

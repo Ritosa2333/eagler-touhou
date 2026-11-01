@@ -122,6 +122,12 @@ void ItemManager::retire_item(Item& item) {
 // >9 时同位（未钳制 pos）补一件 kind3（base 0.5，再耗两次 RNG）。
 void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
                                    float base_speed) {
+    spawn_value_item(kind, x, y, z, base_speed, true);
+}
+
+void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
+                                   float base_speed, bool sound) {
+    if (sound && spirit_birth_sound) spirit_birth_sound((kind == 4 ? 1 : kind) + 0x3b, x);
     if (!random_) return;
     for (Spirit& s : spirits_) {
         if (s.alive) continue;
@@ -137,14 +143,15 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
         const u32 quadrant = id & 3u;
         float angle = 0.0f;
         switch (quadrant) {
-        case 0: angle = random_->signed_unit() * kPi * 0.25f - 2.3561945f; break;
-        case 1: angle = random_->signed_unit() * kPi * 0.25f + 0.7853982f; break;
-        case 2: angle = random_->signed_unit() * kPi * 0.25f + 2.3561945f; break;
-        default: angle = random_->signed_unit() * kPi * 0.25f - 0.7853982f; break;
+        case 0: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f - 2.3561945f; break;
+        case 1: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f + 0.7853982f; break;
+        case 2: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f + 2.3561945f; break;
+        default: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f - 0.7853982f; break;
         }
         s.angle = wrap_angle(angle);
         // 0x438ec0：[0xb]（move_speed）= u*3.5 + base；[4]（speed 目标）= 0。
         s.speed = 0.0f;
+        GameRandom::tag(10);
         s.move_speed = random_->unit() * 3.5f + base_speed;
         s.state = 1;
         s.anm_frame_prev = -1;
@@ -160,7 +167,7 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
             spirit_window_ = 60;
             spirit_window_clock_.set(60);
             if (++spirit_overflow_ > 9) {
-                spawn_value_item(3, x, y, z, 0.5f);
+                spawn_value_item(3, x, y, z, 0.5f, true);
             }
         }
         return;
@@ -169,8 +176,8 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
 
 // 0x4302a0：616 etClear 转换点登记。Stage1 无人消费，先记事件留证。
 void ItemManager::on_et_clear(float x, float y, float z) {
+    (void)x; (void)y;
     (void)z;
-    events_.push_back({ItemEvent::Kind::Collected, -1, x, y});
 }
 
 // ---- 步进：道具池（0x0042e380）----
@@ -314,7 +321,10 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
     HudScoreState& score_state = *player.score;
     switch (item.type) {
     case 1:  // 小P（0x42edc0）
-        if (collect_power_small()) push_level_up(item);
+        if (collect_power_small()) {
+            if (option_power_changed) option_power_changed();
+            push_level_up(item);
+        }
         break;
     case 2: {  // 点（0x42e380 case2）：得分 = 显示值/10（0x413bf0）
         const i32 value = point_value(player.y, item.state == 3);
@@ -331,8 +341,12 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
             score_state.score += 20000 / 10;
             if (score_state.score > 999999999) score_state.score = 999999999;
             events_.push_back({ItemEvent::Kind::ScorePopup, 20000, item.x, item.y});
+            events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
-        if (collect_power_big(hud.power_step)) push_level_up(item);
+        if (collect_power_big(hud.power_step)) {
+            if (option_power_changed) option_power_changed();
+            push_level_up(item);
+        }
         break;
     }
     case 4:  // 残机碎片（0x43d330）
@@ -352,8 +366,12 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
             // 0042e8ca loads 004aeaf0=100.0; 0042f510 converts to raw x100.
             add_max_point(100.0f);
             events_.push_back({ItemEvent::Kind::ScorePopup, 100, item.x, item.y});
+            events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
-        if (collect_power_big(hud.power_step)) push_level_up(item);
+        if (collect_power_big(hud.power_step)) {
+            if (option_power_changed) option_power_changed();
+            push_level_up(item);
+        }
         break;
     }
     case 9: {  // 消弹灵（0x42eb46）：0x42f510(0.1) raw max_point+10；
@@ -413,10 +431,10 @@ bool ItemManager::collect_power_big(i32 amount) {
     return before / hud.power_step != hud.power / hud.power_step;
 }
 
-// 0x0043d330 残机碎片 +1：be7f8 += 1；while (0x4bb994[be7fc] <= be7f8)：
+// 0x0043d330 adds EAX pieces; while (0x4bb994[be7fc] <= be7f8):
 // be7f8 -= 阈值；be7f4 < 8 → +1 命（cap 8，sound 0x11）+ 0x42a430 演出；
 // be7fc += 1（下标推进）。be7f4 > 8 → be7f8 = 0 直接收。
-void ItemManager::collect_life_piece() {
+void ItemManager::collect_life_piece(i32 amount) {
     ItemCollector& c = last_player_;
     HudPlayerState& hud = *c.player;
     SessionState& progress = *c.progress;
@@ -424,7 +442,7 @@ void ItemManager::collect_life_piece() {
         hud.life_pieces = 0;
         return;
     }
-    hud.life_pieces += 1;
+    hud.life_pieces += amount;
     while (life_piece_threshold(progress.life_piece_threshold_index) <=
            hud.life_pieces) {
         hud.life_pieces -= life_piece_threshold(progress.life_piece_threshold_index);
@@ -441,7 +459,8 @@ void ItemManager::collect_life_piece() {
 // be804 += amount；be804 > 7 → 归零、be800 = min(be800+1, 9)（先 +1 后
 // ≥10 钳 9，0043d480.c:11-17；sound 0x2e 在 <10 支路）。
 void ItemManager::collect_bomb_piece(i32 amount) {
-    HudPlayerState& hud = *last_player_.player;
+    ItemCollector& c = last_player_;
+    HudPlayerState& hud = *c.player;
     if (hud.bombs > 8) {
         hud.bomb_pieces = 0;
         return;
@@ -451,6 +470,7 @@ void ItemManager::collect_bomb_piece(i32 amount) {
         hud.bomb_pieces = 0;
         hud.bombs += 1;
         if (hud.bombs > 9) hud.bombs = 9;
+        else events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
     }
 }
 
@@ -464,10 +484,11 @@ void ItemManager::collect_extra_life() {
 
 // 0x0043d440 灵击：be7f4(+0x48) += 1；< 10 → sound 0x2e；否则钳 9。
 void ItemManager::collect_bomb() {
-    HudPlayerState& hud = *last_player_.player;
+    ItemCollector& c = last_player_;
+    HudPlayerState& hud = *c.player;
     hud.bombs += 1;
     if (hud.bombs < 10) {
-        // sound 0x2e（事件面）
+        events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
     } else {
         hud.bombs = 9;
     }
@@ -568,7 +589,9 @@ void ItemManager::update_spirits(const ItemCollector& player) {
         // ① 反弹门。
         if ((s.flags & 2u) != 0 &&
             (s.x < -192.0f || s.x > 192.0f || s.y < 0.0f || s.y > 448.0f)) {
-            if (s.x <= -192.0f || s.x > 192.0f)
+            // 43878b–438798 also reflects at x==192 when another axis
+            // has already put the spirit outside the 384x448 box.
+            if (s.x <= -192.0f || s.x >= 192.0f)
                 s.angle = wrap_angle(-s.angle - kPi);
             if (s.y <= 0.0f || s.y >= 448.0f) s.angle = wrap_angle(-s.angle);
         }
@@ -682,8 +705,8 @@ float ItemManager::angle_to_player(const Spirit& s, const ItemCollector& player)
 //     max_point += 1000（0x42f510(10.0)），选人光标==2 再 trance +1（0x43d530）；
 //     kind2 → 灵击碎片 +1（0x43d480(1)）；kind3 → trance 再 +1 + 点值弹出
 //     （A-A%10，无下限钳）+ score += 值/10（0x413bf0）。
-//   bit0==1（trance 期产件，LAB_00438dd4 后收集）：无公共 trance；kind2 →
-//     灵击碎片 +2（0x43d480(2)）；kind3 → 点值 + score（无 trance）；其余同。
+//   bit0==1（trance 期产件）：无公共 trance；kind0/2 分别给残机/灵击碎片+2；
+//     kind3 → 点值 + score（无 trance）；其余同。
 void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     SessionState& progress = *player.progress;
     const i32 character = progress.character;              // DAT_004be7b8
@@ -693,7 +716,9 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     if ((s.flags & 1u) == 0) collect_trance(2);
     switch (s.kind) {
     case 0:
-        collect_life_piece();
+        // 438b5d passes EAX=1 for ordinary-born spirits; 438d09 passes
+        // EAX=2 for trance-born spirits. Both invoke the same 43d330.
+        collect_life_piece((s.flags & 1u) == 0 ? 1 : 2);
         break;
     case 1:
         if (easy_difficulty) {
@@ -720,6 +745,17 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     default:
         break;
     }
+    // 0x438730 收集瞬间的 front.anm 拾取动画：普通/灵界两套脚本表
+    // （0x438e3c / 0x438e4c 两张 jump table 的 0x46f820 调用点实证）：
+    //   ordinary: kind0→96(0x60) kind1→102(0x66) kind2→99(0x63) kind3→无
+    //   trance  : kind0→97(0x61) kind1→103(0x67) kind2→100(0x64) kind3→无
+    // 创建为 flags=0 尾插、layer=-1、位置=神霊位；句柄原版即丢弃（ESI=0）。
+    static constexpr i32 kPickup[2][4] = {{96, 102, 99, -1}, {97, 103, 100, -1}};
+    const i32 pickup_kind = s.kind >= 0 && s.kind < 4 ? s.kind : -1;
+    const i32 pickup_script =
+        pickup_kind >= 0 ? kPickup[(s.flags & 1u) ? 1 : 0][pickup_kind] : -1;
+    if (pickup_script >= 0 && spirit_pickup_effect)
+        (void)spirit_pickup_effect(pickup_script, s.x, s.y, s.z);
     s.alive = false;
 }
 

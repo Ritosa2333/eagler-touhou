@@ -20,8 +20,8 @@ i32 AnmTrail::update(GameRandom& random,float rate){
     if(age.current>=segment_count)return 1; // 401190@40119f：idx>=8（kind1）；64 点族 >=64⟺>63
     if(age.current!=age.previous){const i32 count=age.current;if(count<1){return -1;}for(i32 i=0;i<count;i++){auto& color=colors[u32(i)];const u32 alpha=color>>24;color=(color&0xffffff)|((alpha<16?0:alpha-16)<<24);}
         const float speed=float(float(random.unit()*5.f)+4.f);auto& p=points[u32(count)];
-        if(segment_count==8){ // 401490：fsincos→(sin·s,cos·s)
-            p={float(std::sin(double(angle))*double(speed)),float(std::cos(double(angle))*double(speed))};
+        if(segment_count==8){ // 401490：fsincos 后先存 cos·s 到 x、sin·s 到 y
+            p={float(std::cos(double(angle))*double(speed)),float(std::sin(double(angle))*double(speed))};
         }else{ // 既有 64 点基未动
             p={float(std::cos(double(angle))*double(speed)),float(std::sin(double(angle))*double(speed))};
         }

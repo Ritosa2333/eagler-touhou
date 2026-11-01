@@ -1,6 +1,7 @@
 #include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/StagePresentation.hpp"
+#include <fstream>
 using namespace th13;using namespace th13::test;
 namespace {
 struct Graphics:ZunGraphics {
@@ -67,6 +68,40 @@ TEST(sprite_culling_uses_original_bounds_and_birth_grace) {
  StageBullet b;b.animation_geometry=true;b.sprite_width=16;b.sprite_height=16;
  b.x=199.5f;b.y=455.5f;b.cull_grace=0;sim.bullets.push_back(b);
  sim.advance_bullets();CHECK_EQ(sim.bullets.size(),size_t(1));
+}
+TEST(same_type_transform_restarts_real_entrance_before_culling) {
+ GameRandom rng;AnmEnvironment env;AnmManager manager(rng,env);Graphics graphics;AnmRenderer renderer(graphics);
+ StagePresentation presentation(manager,renderer,{4,5,6},0);StageSim sim;
+ std::ifstream file("artifacts/reference/raw/bullet.anm",std::ios::binary);
+ const std::vector<u8> bytes{std::istreambuf_iterator<char>(file),{}};
+ CHECK(!bytes.empty());CHECK(manager.load(5,bytes.data(),u32(bytes.size())));
+ sim.bullet_animation=[&](StageBullet& b,bool birth){return presentation.tick_bullet(b,birth);};
+ sim.bullet_animation_initialize=[&](StageBullet& b,i32 label){return presentation.initialize_bullet(b,label);};
+ StageBullet b;b.sprite=12;b.subtype=4;b.generation=722;b.x=199.5f;b.y=100;b.cull_grace=0;
+ CHECK(presentation.initialize_bullet(b,2));CHECK(presentation.tick_bullet(b,true));
+ CHECK_EQ(b.sprite_width,14.f); // actual sprite228
+ b.ex[0].op=0x200;b.ex[0].args[4]=12;b.ex[0].args[5]=4;
+ // 0040f030 rebinds even the identical type/color. Without bit15 it does
+ // not send label2: sprite325 (30x30) must precede this frame's cull query.
+ sim.bullets.push_back(b);sim.advance_bullets();
+ CHECK_EQ(sim.bullets.size(),size_t(1));if(sim.bullets.empty())return;
+ CHECK_EQ(sim.bullets[0].sprite_width,30.f);
+ for(int i=0;i<12;++i){sim.advance_bullets();CHECK_EQ(sim.bullets.size(),size_t(1));}
+}
+TEST(transform_bit15_selects_normal_sprite_in_the_real_tail_update) {
+ GameRandom rng;AnmEnvironment env;AnmManager manager(rng,env);Graphics graphics;AnmRenderer renderer(graphics);
+ StagePresentation presentation(manager,renderer,{4,5,6},0);StageSim sim;
+ std::ifstream file("artifacts/reference/raw/bullet.anm",std::ios::binary);
+ const std::vector<u8> bytes{std::istreambuf_iterator<char>(file),{}};
+ CHECK(!bytes.empty());CHECK(manager.load(5,bytes.data(),u32(bytes.size())));
+ sim.bullet_animation=[&](StageBullet& b,bool birth){return presentation.tick_bullet(b,birth);};
+ sim.bullet_animation_initialize=[&](StageBullet& b,i32 label){return presentation.initialize_bullet(b,label);};
+ StageBullet b;b.sprite=12;b.subtype=4;b.generation=723;b.y=100;
+ CHECK(presentation.initialize_bullet(b,2));CHECK(presentation.tick_bullet(b,true));
+ b.ex[0].op=0x200;b.ex[0].args[4]=12;b.ex[0].args[5]=32772;
+ sim.bullets.push_back(b);sim.advance_bullets();
+ CHECK_EQ(sim.bullets.size(),size_t(1));if(sim.bullets.empty())return;
+ CHECK_EQ(sim.bullets[0].sprite_width,14.f);CHECK_EQ(sim.bullets[0].subtype,4u);
 }
 }
 int main(){return th13test::run_all("enemy-bullet-delay");}

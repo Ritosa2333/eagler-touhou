@@ -143,10 +143,17 @@ struct ManualHarness {
 }  // namespace
 
 // entry 8 → 屏 16 → open_manual 一次（含 help_%.2d.png 页名契约）→
-// 结束位 → close_manual + 回 Main（光标保持 8，无栈操作）。
+// 结束位 → close_manual + 回 Main（光标保持 8，无栈操作）；再次进入重走
+// open/close，且返回主菜单重建背景根（0x44cdb9，H01-1）。
 TEST(manual_entry_routes_and_finishes_via_platform) {
     ManualHarness harness;
-    harness.enter_manual();
+    harness.advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
+    const u32 background_before = harness.scene->state.handles[89];
+    CHECK(background_before != 0);
+    for (int i = 0; i < 7; i++) harness.frame(0x20);
+    CHECK_EQ(harness.scene->state.menu.cursor, 8);
+    harness.frame(0x01);
+    harness.advance(25);
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Manual));
     CHECK_EQ(int(harness.scene->state.screen), 16);  // 0x44c570 case 10 屏值
     CHECK_EQ(harness.scene->state.substate, 1);      // case0 → substate1
@@ -161,6 +168,22 @@ TEST(manual_entry_routes_and_finishes_via_platform) {
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK_EQ(harness.scene->state.menu.cursor, 8);   // 不经光标栈，保持 entry 8
     CHECK_EQ(harness.scene->state.menu.count, kTitleMainEntries);
+    // 返回路径重建 89/94（旧树已停机；label2 不能恢复灵梦）。
+    CHECK(harness.scene->state.handles[89] != 0);
+    CHECK(harness.scene->state.handles[89] != background_before);
+    CHECK(harness.scene->state.handles[94] != 0);
+    // 再次进入：返回菜单就绪后同一入口重走 open/close。
+    harness.advance(kTitleMenuReadyDelay + 1);
+    CHECK_EQ(harness.scene->state.substate, 2);
+    harness.host.finished = false;
+    harness.frame(0x01);
+    harness.advance(25);
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Manual));
+    CHECK_EQ(harness.host.opened, 2);
+    harness.host.finished = true;
+    harness.advance(2);
+    CHECK_EQ(harness.host.closed, 2);
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK(harness.scene->error.empty());
 }
 

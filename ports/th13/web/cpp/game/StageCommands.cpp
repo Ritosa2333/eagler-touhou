@@ -7,10 +7,13 @@
 #include "StageMath.hpp"
 #include "SessionState.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
 namespace th13 {
+
+EclSpriteObserver ecl_sprite_observer = nullptr;
 
 namespace {
 constexpr float kKeep = -999999.0f;
@@ -66,6 +69,15 @@ int StageCommands::execute(EclContext& c, u16 op) {
     const auto emit_move = [&](const u32* integral, std::initializer_list<float> values) {
         sim.sink.enemy_move(e.serial,op,integral,values.begin(),u32(values.size()));
     };
+    // 303/306/313/316/318 槽位 VM 请求在 ECL 指令处同步冲刷（0x41fe80 /
+    // 0x41b7cc：原版在解释器内 0x4243e0 建 VM 并写回 +0x120 槽句柄）。
+    // 307/308 特效（kind=0）不在此列：保持入队到 sync 的 stage_script 相位。
+    const auto flush_anm_slots = [&]() -> bool {
+        if (!sim.flush_anm_slots) return true;
+        if (sim.flush_anm_slots(&e)) return true;
+        if (sim.error_.empty()) sim.error_ = "Enemy slot animation flush failed";
+        return false;
+    };
 
     switch (op) {
     // ---------- 300 族：敌人/ANM ----------
@@ -119,6 +131,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             }
             sim.anm_effects.push_back({e.anm_file, script, 0, 0, 0,
                                         1, u16(op), slot, e.serial});
+            if (!flush_anm_slots()) return -2;
         }
         if (!resolved) {
             sim.error_ = c.error.empty() ? "anmScript args" : c.error;
@@ -141,17 +154,27 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.flags &= ~0x200000u;
         e.mirror_dir = 0;
         e.anm_script[0] = e.anm_base_script;
-        if (!sim.anm_effects_noop && sim.ecl_slot_anm)
+        if (!sim.anm_effects_noop && sim.ecl_slot_anm) {
             sim.anm_effects.push_back({e.anm_file, e.anm_base_script, 0, 0, 0,
                                        1, u16(op), 0, e.serial});
+            if (!flush_anm_slots()) return -2;
+        }
         return 0;
     }
     case 307:   // anmAt（case4：file=arg0、script=arg1、位置=敌机 xyz、主池头入链）
-    case 308: {  // anmVm（case5 → 0x4243e0：同上但位置清零 0x4243e0:22-24）
+    case 308: { // anmVm（case5 → 0x4243e0：同上但位置清零 0x4243e0:22-24）
         if (sim.anm_effects_noop) return 0;  // 事件契约：stage1 oracle NOOP 同源
         i32 file = 0, script = 0;
         if (!resolve_int(c, 0, file) || !resolve_int(c, 1, script)) return -2;
-        if (op == 308)
+        // 0x41b510 case4/5 在指令处内联调 0x4243e0（模板拷贝→立即 tick），
+        // round-s15 实证帧序为敌机 ECL 相位内创建（见 StageSim.hpp
+        // ecl_effect_create 注释）；有宿主即同步创建，无宿主保持入队。
+        if (sim.ecl_effect_create) {
+            const float x = op == 308 ? 0 : e.position[0];
+            const float y = op == 308 ? 0 : e.position[1];
+            const float z = op == 308 ? 0 : e.position[2];
+            if (!sim.ecl_effect_create(file, script, {x, y, z})) return -2;
+        } else if (op == 308)
             sim.anm_effects.push_back({file, script, 0, 0, 0});
         else
             sim.anm_effects.push_back(
@@ -185,6 +208,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             const i32 base = e.anm_base_script;
             sim.anm_effects.push_back({e.anm_file, base + delta + 5, 0, 0, 0,
                                         1, u16(op), slot, e.serial});
+            if (!flush_anm_slots()) return -2;
         }
         return 0;
     }
@@ -266,7 +290,11 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 554:
-        return 0;  // ANM 插值族/关卡 logo：0x41b400/0x42adc0，视觉分期接入
+        if (sim.stage_logo && !sim.stage_logo()) {
+            sim.error_ = "Stage logo creation failed";
+            return -2;
+        }
+        return 0;
 
     // ---------- 400 族：运动 ----------
     case 400:
@@ -592,11 +620,15 @@ int StageCommands::execute(EclContext& c, u16 op) {
         const float cx = e.limit_center[0], cy = e.limit_center[1];
         float angle;
         if (e.position[0] < cx - qx) {
+            GameRandom::tag(7);
             angle = float(float(sim.random.signed_unit() * pi) / 3.0);
         } else if (e.position[0] > cx + qx) {
+            GameRandom::tag(7);
             angle = wrap_angle(float(pi + float(sim.random.signed_unit() * pi) / 3.0));
         } else {
+            GameRandom::tag(7);
             const float quarter = float(float(sim.random.signed_unit() * pi) * 0.25);
+            GameRandom::tag(8);
             const bool third = (u32(sim.random.step16()) % 3u) == 0;
             const bool left_of_player = sim.player_x > e.position[0];
             angle = (left_of_player ? third : !third) ? float(quarter + pi) : quarter;
@@ -922,7 +954,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     }
     case 516: { // 41e382: synchronous sound effect
         i32 id=0;if(!resolve_int(c,0,id)){sim.error_=c.error;return -2;}
-        if(id>=0&&sim.enemy_sound&&!sim.enemy_sound(id)){sim.error_="ECL sound failed";return -2;}
+        if(id>=0&&sim.enemy_position_sound&&!sim.enemy_position_sound(id,e.position[0])){sim.error_="ECL sound failed";return -2;}
         return 0;
     }
     case 547: { // 41f242: resolve float then fstp to global4c0a28, no clamp.
@@ -1186,7 +1218,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 561: { // jump-table dense5f ->41b437: death audiovisual effects only
-        if(e.death_sound>=0 && sim.enemy_sound && !sim.enemy_sound(e.death_sound)) {
+        if(e.death_sound>=0 && sim.enemy_position_sound && !sim.enemy_position_sound(e.death_sound,e.position[0])) {
             sim.error_="Enemy death sound failed";return -2;
         }
         if(e.death_effect>=0 && sim.enemy_death_effect) {
@@ -1220,6 +1252,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
             slot < 8) {
             e.et[slot].sprite = u32(s1);
             e.et[slot].subtype = u32(s2);
+            if (ecl_sprite_observer)
+                ecl_sprite_observer(sim.frame, e.serial, slot, s1, s2);
             return 0;
         }
         sim.error_ = "etSprite args";

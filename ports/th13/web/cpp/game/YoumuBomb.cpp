@@ -5,6 +5,7 @@
 //   center  = (0 ∓ offset.x, y ∓ offset.y)（偶减/奇加）   （0x40ce0b / 0x40cdf1）
 //   h       = f32(rect_scale × double(128.0))             （0x40ce3b fmul QWORD 0x4ae8c8）
 #include "YoumuBomb.hpp"
+#include "Types.hpp"
 
 #include <array>
 #include <cmath>
@@ -14,16 +15,30 @@ namespace th13 {
 void YoumuBomb::reset() {
     for (auto& s : slots_) s = Slot{};
     cursor_ = 0;
+    // 0x40c910 的复位函数（0x40cb3c 起）把 +0xd90 游标与 +0xd9c 倒计时清零，
+    // 并把 +0xd94 写回初值 0x19。
+    cooldown_ = 0;
+    slots_left_ = 25;
 }
 
 std::optional<YoumuBomb::Spawn> YoumuBomb::step(int age, GameRandom& rng) {
     if (age >= kActiveFrames) return std::nullopt;
+    // 0x40cb50: `cmp [edi+0xd9c],0 / jg 0x40cd45` —— 倒计时未归零则本帧不生成
+    // （仍不抽随机）。倒计时由上一次生成的尾部按 +0xd94 装入，逐帧先递减再判：
+    // battle-bomb-trace 里 9842 生成后 9843 读到 22，9865 归零当帧生成
+    // （9842→9865 间隔 23 = 装入值），故递减必须发生在判定之前。
+    if (cooldown_ > 0) --cooldown_;
+    if (cooldown_ > 0) return std::nullopt;
     const int c = cursor_++;
     const float jitter =
         static_cast<float>(static_cast<double>(rng.signed_unit()) * 48.0);
     const float y = static_cast<float>(static_cast<double>(kLanes[c % 11]) +
                                        static_cast<double>(jitter));
     const int script = (c & 1) ? 20 : 19;
+    // 生成尾（0x40cd03-0x40cd2a）：+0xd94 > 8 则减 2，随后以更新值为倒计时初值
+    // 装入 +0xd9c 的定时器（0x4016c0），下一帧起每帧递减。
+    if (slots_left_ > 8) slots_left_ -= 2;
+    cooldown_ = slots_left_;
     if (c < kSlots) {
         Slot& s = slots_[c];
         s.has_anm = true;
@@ -39,7 +54,7 @@ std::optional<YoumuBomb::Spawn> YoumuBomb::step(int age, GameRandom& rng) {
     return Spawn{-1, script, y};
 }
 
-void YoumuBomb::set_vm(int slot, bool alive, float rotation_z) {
+void YoumuBomb::set_vm(int slot, bool alive, float rotation_z, float rate) {
     if (slot < 0 || slot >= kSlots) return;
     Slot& s = slots_[slot];
     if (!s.has_anm) return;  // 原版：anm id==0 的槽不进循环体（无 tick、无矩形）
@@ -51,8 +66,16 @@ void YoumuBomb::set_vm(int slot, bool alive, float rotation_z) {
     s.alive = true;
     s.angle = rotation_z;
     s.rect_scale = s.scale;  // 本帧矩形用 tick 前值
-    s.scale = static_cast<float>(static_cast<double>(s.scale) + 1.0);
-    s.counter += 1;          // 槽定时器 max += *cb(=1.0)
+    // 40ceac..40cee7 follows the slot timer's rate pointer. The near-one
+    // path increments the integer separately; the other path truncates the
+    // updated f32 fractional value, just like FUN_004971f0.
+    if (rate > .99f && rate < 1.01f) {
+        s.scale = float(s.scale + 1.0f);
+        ++s.counter;
+    } else {
+        s.scale = float(s.scale + rate);
+        s.counter = truncate_int(s.scale);
+    }
 }
 
 bool YoumuBomb::active(int slot) const { return slots_[slot].alive; }

@@ -15,6 +15,17 @@
 #include "AnmVm.hpp"
 #include <cmath>
 namespace th13 {
+// Optional read-only diagnostic observer. It sees the VM and the RNG state
+// around a variable read, but never changes either or the read result.
+using AnmRandomObserver = void (*)(const AnmVm&, i32, i32, i32, u32, u32, u32, u32, bool);
+AnmRandomObserver anm_random_observer = nullptr;
+// 诊断用逐 tick 观察器（默认 nullptr，仅浏览器探针臂接）：每次 AnmVm::tick
+// 入口登记 VM 身份与 timer/pc。不改变任何取值；用于与原版逐 tick 轨迹对拍。
+using AnmTickObserver = void (*)(const AnmVm&, float);
+AnmTickObserver anm_tick_observer = nullptr;
+// 诊断用：当前正在 tick 的 VM（GameRandom::draw_observer 的消费者上下文）。
+// 不在 tick 内的抽取（Trail/特效几何/表现层直读）读到 nullptr。
+const AnmVm* anm_tick_current_vm = nullptr;
 namespace {
 template<class T>T read(const u8* p){T result;std::memcpy(&result,p,sizeof result);return result;}
 bool span(u32 off,u32 n,u32 size){return off<=size&&n<=size-off;}
@@ -25,7 +36,7 @@ bool integer_math(i32 a,i32 b,u32 operation,i32& out){
 float float_math(float a,float b,u32 operation){switch(operation){case 0:return b;case 1:return float(a+b);case 2:return float(a-b);case 3:return float(a*b);case 4:return float(a/b);default:return float(std::fmod(double(a),double(b)));}}
 }
 bool AnmVm::bind(AnmScript& data){presentation_generation=++presentation_counter;presentation_motion=false;const i32 layer=visual.layer;const Vec3 translation=visual.translation;script=&data.bytes;resource=nullptr;source_script=-1;sprite=nullptr;sprite_resource=nullptr;sprite_source=nullptr;rotation_parent=nullptr;creation_parent=nullptr;slowdown=0;variables=AnmVariables{};visual=AnmVisualState{};visual.layer=layer;visual.translation=translation;visual.sprite_matrix.identity();interpolators=AnmInterpolators{};timer=Timer{};timer.set(0);age=Timer{};age.set(0);saved_timer=Timer{0,0,0,0,0};saved_offset=0;geometry.clear();instruction_offset=0;visible=false;pending_interrupt=0;error.clear();return script->size()>=8;}
-bool AnmVm::bind(AnmResource& data,u32 index){if(index>=data.scripts.size()||!bind(data.scripts[index]))return false;resource=&data;source_script=i32(index);return true;}
+bool AnmVm::bind(AnmResource& data,u32 index){if(index>=data.scripts.size()||!bind(data.scripts[index]))return false;resource=&data;source_script=i32(index);if(anm_random_observer)anm_random_observer(*this,-4,0,0,0,0,0,0,false);return true;}
 bool AnmVm::select_sprite(i32 index)noexcept{
     const i32 local_index=index<0?301:index;
     AnmResource* source=resource;if(index<0){source=environment?environment->fallback_sprite_resource:nullptr;index=301;}
@@ -40,6 +51,14 @@ bool AnmVm::select_sprite(i32 index)noexcept{
 Vec3 AnmVm::total_rotation(u32 depth)noexcept{Vec3 result=variables.rotation;if(rotation_parent&&!(visual.render_flags&0x10000)&&depth<64){const Vec3 parent=rotation_parent->total_rotation(depth+1);result={float(parent.x+result.x),float(parent.y+result.y),float(parent.z+result.z)};variables.rotation={normalize_angle(variables.rotation.x),normalize_angle(variables.rotation.y),normalize_angle(variables.rotation.z)};}return result;}
 float AnmVm::effective_slowdown()const noexcept{const AnmVm* source=this;for(u32 depth=0;source->rotation_parent&&!(source->visual.render_flags&0x10000)&&depth<64;depth++)source=source->rotation_parent;return source->slowdown;}
 int AnmVm::tick(GameRandom& rng,float rate){
+    // 诊断上下文：GameRandom::draw_observer 借此识别抽取发生的 VM。
+    if(anm_tick_observer)anm_tick_observer(*this,rate);
+    const AnmVm* prior_vm=anm_tick_current_vm;anm_tick_current_vm=this;
+    const int tick_result=tick_inner(rng,rate);
+    anm_tick_current_vm=prior_vm;
+    return tick_result;
+}
+int AnmVm::tick_inner(GameRandom& rng,float rate){
     // 前置回调（vm+0x590）：非零返回即整帧跳过，不推进时间（00462450.c:293-300）。
     if(pre_tick&&pre_tick(*this))return 0;
     if(geometry.wind&&environment&&!geometry.wind->update(*environment,visual.color>>24,rate))return 1;
@@ -83,12 +102,18 @@ int AnmVm::tick(GameRandom& rng,float rate){
         else if(opcode>=600&&opcode<=608)needed=opcode>=603?2:1;
         if(8+needed*4>length)return fail("Truncated animation arguments");
         auto arg=[&](u32 n){return p+8+n*4;};
-        auto integer=[&](u32 n){const i32 value=read<i32>(arg(n));return mask&(1u<<n)?variables.integer(value,rng):value;};
+        auto integer=[&](u32 n){const i32 value=read<i32>(arg(n));if(!(mask&(1u<<n)))return value;
+            const u32 before=rng.index(),seed=rng.seed();const i32 result=variables.integer(value,rng);
+            if(anm_random_observer&&before!=rng.index())anm_random_observer(*this,opcode,value,i32(n),before,seed,rng.index(),rng.seed(),false);return result;};
         bool unresolved=false;auto floating=[&](u32 n){const float value=read<float>(arg(n));if(!(mask&(1u<<n)))return value;const i32 id=truncate_int(value);
             // 10026：一层父的旋转 z + 自身 z，归一（00461e80.c case 0x272a）。
             if(id==10026)return normalize_angle(float(variables.rotation.z+(rotation_parent?rotation_parent->variables.rotation.z:0.f)));
             if(id>=10016&&id<=10021){if(!environment){unresolved=true;return 0.f;}const Vec3& a=id<=10018?environment->camera_origin:environment->reference_position;const float values[]={a.x,a.y,a.z};float result=values[(id-10016)%3];if(id<=10018){const float shifts[]={environment->screen_translation.x,environment->screen_translation.y,environment->screen_translation.z};result=float(result+shifts[id-10016]);}return result;}
-            return variables.floating(value,rng);
+            const bool game_stream=id>=10030&&id<=10032;
+            if(game_stream&&!environment){unresolved=true;return 0.f;}
+            GameRandom& source=game_stream?environment->distortion_random():rng;
+            const u32 before=source.index(),seed=source.seed();const float result=variables.floating(value,source);
+            if(anm_random_observer&&before!=source.index())anm_random_observer(*this,opcode,id,i32(n),before,seed,source.index(),source.seed(),game_stream);return result;
         };
         auto int_dest=[&](u32 n){auto* a=reinterpret_cast<i32*>(arg(n));return mask&(1u<<n)?variables.integer_destination(a):a;};
         auto float_dest=[&](u32 n){auto* a=reinterpret_cast<float*>(arg(n));return mask&(1u<<n)?variables.float_destination(a):a;};
@@ -112,23 +137,23 @@ int AnmVm::tick(GameRandom& rng,float rate){
             case 3:case 4:if(opcode==4){visible=false;visual.flags&=~1u;}if(pending_interrupt){if(interrupt())continue;}else{visual.flags|=0x4000;timer.decrement(&rate);if(!advance(rate))return -1;timer.tick(&rate);visible=visual.visible();return 0;}break;
             case 6:{const float frames=float(integer(0));timer.previous=timer.current;timer.fractional=float(timer.fractional-frames);timer.current=truncate_int(timer.fractional);break;}
             case 7:timer.set(saved_timer.current);instruction_offset=i32(saved_offset);continue;
-            case 122:{const u32 bound=u32(integer(1));const i32 value=bound?signed_bits(rng.next32()%bound):0;*int_dest(0)=value;break;}
+            case 122:{GameRandom::tag(16);const u32 bound=u32(integer(1));const i32 value=bound?signed_bits(rng.next32()%bound):0;*int_dest(0)=value;break;}
             case 124:case 125:{const double angle=double(floating(1));const float value=float(opcode==124?std::sin(angle):std::cos(angle));*float_dest(0)=value;break;}
-            case 131:{const float minimum=floating(2),maximum=floating(3),angle=float(rng.signed_unit()*3.1415927410125732421875f),radius=float(float(rng.signed_unit()*float(maximum-minimum))+minimum);const float x=float(std::cos(double(angle))*double(radius)),y=float(std::sin(double(angle))*double(radius));*float_dest(0)=x;*float_dest(1)=y;break;}
+            case 131:{GameRandom::tag(16);const u32 random_index_before=rng.index(),random_seed_before=rng.seed();const float minimum=floating(2),maximum=floating(3),angle=float(rng.signed_unit()*3.1415927410125732421875f),radius=float(float(rng.signed_unit()*float(maximum-minimum))+minimum);const float x=float(std::cos(double(angle))*double(radius)),y=float(std::sin(double(angle))*double(radius));if(anm_random_observer&&random_index_before!=rng.index())anm_random_observer(*this,131,0,0,random_index_before,random_seed_before,rng.index(),rng.seed(),false);*float_dest(0)=x;*float_dest(1)=y;break;}
             case 200:if(!jump(read<u32>(arg(0)),read<i32>(arg(1))))return fail("Invalid animation jump");continue;
             case 201:{auto* counter=int_dest(0);*counter=wrapping_add(*counter,-1);if(integer(0)>0){if(!jump(read<u32>(arg(1)),read<i32>(arg(2))))return fail("Invalid animation jump");continue;}break;}
             case 300:{visual.flags|=1;visible=true;const i32 parameter=integer(0),index=sprite_source?sprite_source->sprite_index(parameter):parameter;if(!select_sprite(index))return fail("Animation sprite not available");visual.sprite_frame=timer.current;break;}
-            case 301:{visual.flags|=1;visible=true;const i32 first=integer(0);const u32 count=u32(integer(1));if(!count)return fail("Animation sprite random range is zero");const i32 parameter=signed_bits(rng.next32()%count+u32(first)),index=sprite_source?sprite_source->sprite_index(parameter):parameter;if(!select_sprite(index))return fail("Animation sprite not available");visual.sprite_frame=timer.current;break;}
-            case 302:{const u32 mode=read<u32>(arg(0));bits(visual.flags,mode,25,0x3e000000);if((mode&31)==10){if(!environment)return fail("Animation distortion random source not bound");geometry.clear();geometry.distortion=std::make_unique<AnmDistortion>();geometry.distortion->initialize(variables.position,visual.translation,environment->game_rng);geometry.allocation_bytes=1200;}break;}
+            case 301:{GameRandom::tag(16);visual.flags|=1;visible=true;const i32 first=integer(0);const u32 count=u32(integer(1));if(!count)return fail("Animation sprite random range is zero");const i32 parameter=signed_bits(rng.next32()%count+u32(first)),index=sprite_source?sprite_source->sprite_index(parameter):parameter;if(!select_sprite(index))return fail("Animation sprite not available");visual.sprite_frame=timer.current;break;}
+            case 302:{const u32 mode=read<u32>(arg(0));bits(visual.flags,mode,25,0x3e000000);if((mode&31)==10){if(!environment)return fail("Animation distortion random source not bound");geometry.clear();geometry.distortion=std::make_unique<AnmDistortion>();geometry.distortion->initialize(variables.position,visual.translation,environment->distortion_random());geometry.allocation_bytes=1200;}break;}
             case 303:bits(visual.flags,read<u32>(arg(0)),5,0x1e0);break;
             case 304:visual.set_layer(u8(read<u32>(arg(0))));break;
             case 305:bits(visual.flags,read<u32>(arg(0)),13,0x2000);break;
             case 306:bits(visual.flags,read<u32>(arg(0)),15,0x8000);break;
-            case 307:bits(visual.render_flags,u8(read<u32>(arg(0))),10,0x400);break;
+            case 307:bits(visual.render_flags,u8(read<u32>(arg(0))),9,0x200);break;
             case 308:visual.flags=(visual.flags^0x800)|8;visual.scale.x=float(-visual.scale.x);break;
             case 309:visual.flags=(visual.flags^0x1000)|8;visual.scale.y=float(-visual.scale.y);break;
             case 310:bits(visual.flags,read<u32>(arg(0)),0,1);visible=visual.visible();break;
-            case 311:bits(visual.render_flags,read<u32>(arg(0)),11,0x800);break;
+            case 311:bits(visual.render_flags,read<u32>(arg(0)),10,0x400);break;
             case 312:bits(visual.render_flags,u32(integer(0)),0,3);bits(visual.flags,u32(integer(1)),30,0xc0000000);break;
             case 313:bits(visual.render_flags,u32(integer(0)),20,0x700000);break;
             case 314:bits(visual.render_flags,u32(integer(0)),23,0x800000);break;
@@ -164,8 +189,8 @@ int AnmVm::tick(GameRandom& rng,float rate){
             case 427:case 428:{const float target=floating(2);const i32 frames=integer(0);auto& interpolation=opcode==427?interpolators.uv_x:interpolators.uv_y;interpolation.control1={};interpolation.control2={};interpolation.begin(frames,read<i32>(arg(1)),{opcode==427?visual.uv_velocity.x:visual.uv_velocity.y},{target});break;}
             case 429:visual.uv_scale.x=floating(0);visual.uv_scale.y=floating(1);visual.flags|=0x10;break;
             case 430:interpolate2(interpolators.uv_scale,visual.uv_scale);visual.flags|=0x10;break;
-            case 431:bits(visual.render_flags,u8(read<u32>(arg(0))),8,0x100);break;
-            case 432:bits(visual.render_flags,u32(integer(0)),9,0x200);break;
+            case 431:bits(visual.render_flags,u8(read<u32>(arg(0))),7,0x80);break;
+            case 432:bits(visual.render_flags,u32(integer(0)),8,0x100);break;
             case 433:{const i32 frames=integer(0);const Vec3 from=visual.flags&0x400?visual.child_anchor:variables.position;const float radius=floating(3),angle=floating(2),x=float(std::cos(double(angle))*double(radius)),y=float(std::sin(double(angle))*double(radius));interpolators.position.control1={};interpolators.position.control2={};interpolators.position.begin(frames,read<i32>(arg(1)),{from.x,from.y,from.z},{x,y,0});break;}
             case 434:visual.secondary_scale.x=floating(0);visual.secondary_scale.y=floating(1);visual.flags|=8;break;
             case 435:interpolate2(interpolators.secondary_scale,visual.scale);visual.flags|=8;break;

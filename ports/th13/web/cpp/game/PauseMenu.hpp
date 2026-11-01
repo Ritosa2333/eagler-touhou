@@ -13,6 +13,10 @@ constexpr i32 kPauseMenuScript = 132;
 constexpr i32 kPracticePauseMenuScript = 133;
 constexpr i32 kPracticeEndMenuScript = 134;
 constexpr i32 kGameOverMenuScript = 142;
+// 0x440960 态 0x17/0x18/0x1e/0x1f 的屏根（results-overlay-anatomy §2.1：
+// push 147 @0x440a21/0x440b53/0x440c18）。ExtraEnd 与 BGameOver 共用它；
+// 0x43f570 mode≠0 由 0x440960 态 0x18 进同一 0x19 菜单，仅默认光标不同。
+constexpr i32 kResultsMenuScript = 147;
 // 此脚本来自常驻 text.anm（DAT_004dcc54），不是 front.anm 的数字75！
 constexpr i32 kPauseBackdropScript = 75;
 
