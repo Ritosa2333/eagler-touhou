@@ -1,6 +1,7 @@
 #include ".\globalvariableandstatistics.h"
 #include "Original/OriginalFeatures.h"
 #include "Practice/Practice.h"
+#include "Coop/Coop.h"
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
@@ -308,8 +309,7 @@ void CGlobalVariableAndStatistics::OnBeginGame()
 		m_nContinueLimit=3;
 		if (m_playDifficulty==4)
 		{
-			m_nCurLife=3;
-			m_nCurBomb=3;
+   if(coop::Run().count<=1){m_nCurLife=3;m_nCurBomb=3;}
 			m_nContinueLimit=0;
 		}
 		m_curScore=0;

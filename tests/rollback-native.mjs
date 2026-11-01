@@ -9,7 +9,8 @@ await mkdir(out,{recursive:true});
 const site=await multiplayerFixture(1),browser=await launchBrowser(),page=await browser.newPage(),errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 const frames=Number(process.env.TH05_ROLLBACK_FRAMES??360);
-const report={frames,cases:[]};
+const spares=Number(process.env.TH05_INITIAL_SPARES??2),bombs=Number(process.env.TH05_INITIAL_BOMBS??3);
+const report={frames,spares,bombs,cases:[]};
 try {
  await page.goto(site.url);await page.waitForFunction(()=>events.some(e=>e.event==='ready'));
  for(const [command,payload] of [['configure',{music:'none',language:'ja',sharedResources:[{path:'/data/gothic.ttf',url:'/font'}],options:{}}],['prepare-room',{}]]){
@@ -17,10 +18,10 @@ try {
  }
  for(const count of [2,3])for(let stage=0;stage<7;stage++)for(const warp of [0,1,2]){
   if(stage===5&&warp===1)continue;
-  const result=await page.evaluate(({count,stage,warp,frames})=>{
+  const result=await page.evaluate(({count,stage,warp,frames,spares,bombs})=>{
    const m=document.querySelector('iframe').contentWindow.Module;
    const check=(value,message)=>{if(!value)throw Error(message);};
-   check(m._th05_coop_start(count,0,stage===6?4:1,741,stage%4,(stage+1)%4,(stage+2)%4,0,0),'start');
+   check(m._th05_coop_start_stock(count,0,stage===6?4:1,741,stage%4,(stage+1)%4,(stage+2)%4,0,0,spares,bombs),'start');
    check(m._th05_native_coop_stage(stage,warp),'stage');
    for(let seat=0;seat<count;seat++){m._th05_native_coop_probe(3,seat,128);m._th05_native_coop_probe(6,seat,10000);}
    // Establish the actor factory before the same-address byte oracle. Factory
@@ -58,7 +59,7 @@ try {
     check(JSON.stringify(exactSounds)===JSON.stringify(actualSounds),'audio repeated, lost or reordered');
     return {count,stage,warp,frames,comparisons,stalls,rollbacks:m._th05_net_stat(0),resimulated:m._th05_net_stat(1),predicted:m._th05_net_stat(2),maxBytes,maxHistory,audioEvents:actualSounds.length,finalGame};
    }finally{m._th05_net_close();m.eaglerAudio=originalAudio;}
-  },{count,stage,warp,frames});
+  },{count,stage,warp,frames,spares,bombs});
   assert.ok(result.rollbacks>0,JSON.stringify(result));assert.ok(result.comparisons>0);assert.ok(result.maxHistory<=8);report.cases.push(result);
   console.log(`PASS ${count}P stage ${stage+1} warp ${warp}: ${result.rollbacks} corrections, ${result.maxBytes} bytes/checkpoint`);
  }

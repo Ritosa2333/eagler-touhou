@@ -15,6 +15,12 @@ test('rollback and mixed timing use the common eight-frame ceiling',()=>{
  for(const reserve of [0,3,1.5])assert.throws(()=>multiplayerOptions({...options(2,0),netplayPredictionReserve:reserve}));
 });
 
+test('team initial stocks follow PR spare-life and Bomb bounds',()=>{
+ for(const spares of [0,5])for(const bombs of [0,3])assert.equal(runtimeOptions({...options(2,0),netplayInitialSpares:spares,netplayInitialBombs:bombs},true).netplayInitialSpares,spares);
+ for(const patch of [{netplayInitialSpares:-1},{netplayInitialSpares:6},{netplayInitialSpares:1.5},{netplayInitialBombs:4},{netplayInitialBombs:'3'}])assert.throws(()=>runtimeOptions({...options(2,0),...patch},true));
+ assert.throws(()=>runtimeOptions({netplayInitialSpares:2}),/Unsupported/);
+});
+
 for(const count of [2,3])test(`${count} native seats confirm identical inputs with delayed and reordered packets`,async()=>{
  const endpoints=new Map(),pending=[],errors=[],logs=Array.from({length:count},()=>[]),sessions=[];
  let serial=0;
@@ -36,7 +42,7 @@ for(const count of [2,3])test(`${count} native seats confirm identical inputs wi
    _th05_net_input(seat,f,...input){ledger[seat].set(f,input);return 1;},
    _th05_net_advance(){if(ledger.some(lane=>!lane.has(frame)))return 0;logs[local].push(ledger.map(lane=>lane.get(frame)));++frame;return 1;},
    _th05_net_confirmed:()=>frame-1,_th05_net_stat:()=>0,_th05_net_hash:()=>42,_th05_net_close(){},
-   _th05_coop_display:()=>{},_th05_coop_start:()=>1,_th05_coop_input:(seat,...value)=>inputs[seat]=value,_th05_tick(){logs[local].push(inputs.map(value=>[...value]));return 1;},_th05_coop_finished:()=>false};
+   _th05_coop_display:()=>{},_th05_coop_start_stock:()=>1,_th05_coop_input:(seat,...value)=>inputs[seat]=value,_th05_tick(){logs[local].push(inputs.map(value=>[...value]));return 1;},_th05_coop_finished:()=>false};
   sessions.push(createMultiplayer(options(count,local),{module,sample:()=>[(++sample%4)*16+local,(sample+local)*.125,-sample*.25,(sample+local)%4],fail:error=>errors.push(error),transportFactory:factory,setTimer:(fn,ms)=>setTimeout(fn,ms>1000?2000:Math.min(ms,15))}));
  }
  const tasks=sessions.map(s=>s.start());
