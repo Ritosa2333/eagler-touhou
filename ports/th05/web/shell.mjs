@@ -9,6 +9,7 @@ import {createTouchInput,virtualKey} from './input.mjs';
 import {hostedPoint,createPointerRouter} from './pointer.mjs';
 import {createAudio} from './audio.mjs';
 import {createPlayback} from './playback.mjs';
+import {decodeMusicNotes} from './music-notes.mjs';
 const query=new URLSearchParams(location.search),canvas=document.querySelector('#canvas');
 let module,store,audio,bridge,playback,pointers,launched=false,configured=false,closed=false,options={},language='ja',music='none',raf=0,firstFrame=false,saveTimer=0;
 const clock=new FrameClock(),presentation=new PresentationClock();
@@ -50,7 +51,7 @@ function frame(time){raf=0;if(closed||!launched)return;
   let steps=0;
   if(options.replayViewer&&!playback.advancing())clock.reset();
   else if(playback.active()&&playback.rate()===0){for(let n=0;n<32&&playback.advancing();n++){playback.tick();audio.pump();steps++;}}
-  else while(clock.consume(module._th05_frame_seconds()/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{touch.tick();if(!module._th05_step())throw Error('TH05 game frame failed');}audio.pump();steps++;}
+  else while(clock.consume(module._th05_frame_seconds()/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{touch.tick();const render=clock.steps>=4||clock.credit+1e-9<module._th05_frame_seconds();if(!module._th05_tick(+render))throw Error('TH05 game frame failed');}audio.pump();steps++;}
   playback.update(time);
   if(!module._th05_alive()){void finish();return;}
   if(module._th05_ticks()>0&&presentation.present(time,options.limitPresentationTo60!==false)){module._th05_present();healthFrames++;}
@@ -82,6 +83,7 @@ try{
  if(query.get('managedData')!=='1'||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('TH05 requires the Launcher DATA provider');
  const prepared=await parent.__eaglerPrepareManagedRuntimeDataV1({game:'th05',generation:query.get('gameGeneration'),epoch:bridge.epoch}),files=await decodeContent(prepared.buffer);
  for(const [path,bytes] of files){module.FS.mkdirTree('/data/'+path.split('/').slice(0,-1).join('/'));module.FS.writeFile('/data/'+path,bytes);}module.FS.chdir('/data');
+ const noteStream=new Blob([module.FS.readFile('/data/music-notes.bin.gz')]).stream().pipeThrough(new DecompressionStream('gzip'));module.eaglerMusicNotes=decodeMusicNotes(new Uint8Array(await new Response(noteStream).arrayBuffer()));
  audio=createAudio(module,emit);module.eaglerAudio=audio;
  pointers=createPointerRouter(module,touch);
  playback=createPlayback({emit,read:path=>store.read(path),validate:path=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_validate(ptr)),open:(path,stage)=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_open(ptr,stage)),clear:clearAll,resetClock:()=>clock.reset(),step:()=>module._th05_step(),draw:()=>{module._th05_draw();module._th05_present();},frame:()=>module._th05_replay_frame(),stage:()=>module._th05_replay_stage(),scene:()=>module._th05_scene(),gate:value=>audio.playback(value),yield:()=>new Promise(resolve=>setTimeout(resolve,0))});

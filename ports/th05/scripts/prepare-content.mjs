@@ -26,6 +26,7 @@ try{await stat(join(audio,'source.json'));}catch{
 }
 async function verified(path,expected){const bytes=await readFile(path);if(bytes.length!==expected.bytes||createHash('sha256').update(bytes).digest('hex')!==(expected.audioSha256??expected.sha256))throw Error('PR #143 audio identity mismatch: '+path);return bytes;}
 const se=JSON.parse(await readFile(new URL('../resources/audio/sfx-original.json',import.meta.url),'utf8'));
+files.set('music-notes.bin.gz',await verified(join(resolve(args['music-notes']??fileURLToPath(new URL('../artifacts/music-room-audio',import.meta.url))),'music-notes.bin.gz'),JSON.parse(await readFile(new URL('../resources/audio/music-notes.json',import.meta.url),'utf8'))));
 for(const [name,expected] of Object.entries(se.files))files.set('se/'+name,await verified(join(resolve(args.se??join(resources,'SE')),name),expected));
 await mkdir(output,{recursive:true});await writeFile(join(output,'th05.data'),await encodeContent(files));
 await mkdir(join(output,'music'),{recursive:true});

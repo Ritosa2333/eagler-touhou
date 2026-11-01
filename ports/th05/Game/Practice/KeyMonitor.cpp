@@ -253,7 +253,12 @@ void KeysHUD(int ver, ImVec2 render_pos_arrow, ImVec2 render_pos_key, const KeyR
 }
 
 bool SaveKeyRecorded(){
- FILE* file=fopen("APS.csv","wb");if(!file)return false;
+#ifdef __EMSCRIPTEN__
+ FILE* file=fopen("/savesth05/APS.csv","wb");
+#else
+ FILE* file=fopen("APS.csv","wb");
+#endif
+ if(!file)return false;
  bool ok=fputs("frame,aps,up,down,left,right,Z,X,C,D,Ctrl,Shift\n",file)>=0;
  for(size_t j=0;j<g_recorded_aps.size()&&ok;j++){
   ok=fprintf(file,"%u,%d",unsigned(j+1),g_recorded_aps[j])>=0;

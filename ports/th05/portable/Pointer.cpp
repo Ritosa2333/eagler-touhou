@@ -11,7 +11,7 @@ std::deque<MouseEdge> edges;
 bool Hit(float x,float y) {
  if(!ImGui::GetCurrentContext())return false;
  for(auto* window:ImGui::GetCurrentContext()->Windows)
-  if(window->Active&&!window->Hidden&&!(window->Flags&ImGuiWindowFlags_NoMouseInputs)&&window->OuterRectClipped.Contains({x,y}))return true;
+  if(!window->IsFallbackWindow&&window->Active&&!window->Hidden&&!(window->Flags&ImGuiWindowFlags_NoMouseInputs)&&window->OuterRectClipped.Contains({x,y}))return true;
  return false;
 }
 void Queue(float x,float y,bool down){if(edges.size()<64)edges.push_back({x,y,down});}

@@ -32,6 +32,12 @@
       "tracks": 84,
       "manifest": "../../ports/th05/resources/audio/music-room.json",
       "preparation": "Offline PMDWin to Ogg; browser plays audio without PC-98 compatibility layer"
+    },
+    "musicNotes": {
+      "source": "Original MUSIC.DAT / offline PMDWin piano and measure timeline",
+      "tracks": 107,
+      "manifest": "../../ports/th05/resources/audio/music-notes.json",
+      "preparation": "Offline timeline metadata in DATA; native Music Room follows selected original Ogg playback time"
     }
   }
 }

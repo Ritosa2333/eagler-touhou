@@ -3,7 +3,7 @@ export const SAVE_ROOT='/savesth05';
 export function userPath(value){
  if(typeof value!=='string'||value.length>240||/[\\\x00-\x1f]/.test(value))throw Error('Invalid user path');
  const path=value.startsWith(SAVE_ROOT+'/')?value.slice(SAVE_ROOT.length+1):value;
- if(!/^(?:score\.dat|game\.cfg|thprac-uth05\.ini|practice-progress\.dat|replay\/(?:[A-Za-z0-9_-]+\/)?[A-Za-z0-9_.-]+\.rpy)$/.test(path)||path.split('/').some(p=>!p||p==='.'||p==='..'))throw Error('Invalid user path');
+ if(!/^(?:APS\.csv|score\.dat|game\.cfg|thprac-uth05\.ini|practice-progress\.dat|replay\/(?:[A-Za-z0-9_-]+\/)?[A-Za-z0-9_.-]+\.rpy)$/.test(path)||path.split('/').some(p=>!p||p==='.'||p==='..'))throw Error('Invalid user path');
  return path;
 }
 // Reject truncated streams, invalid dimensions and unbounded stage allocations

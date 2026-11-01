@@ -37,11 +37,15 @@ python scripts/prepare-music-room-audio.py --archive=/path/to/music.dat --dll=/p
 
 `resources/audio/music-room.json` 固定各曲目的源数据、音频身份和循环点。内容制备可通过 `--music-room-audio=DIR` 指定结果目录。曲目顺序和评论继续读取原 Music Room 数据。
 
+同一渲染工具还记录 107 首原始 PMD 曲目的钢琴按键与小节时间。运行 `python scripts/prepare-music-notes.py --archive=/path/to/music.dat --dll=/path/to/PMDWin.dll --renderer=/path/to/render-music-room.exe --output=artifacts/music-room-audio`，然后以 `--music-notes=DIR` 交给内容制备脚本。`music-notes.bin.gz` 随 DATA 安装，浏览器按 Ogg 的播放时间查询显示；离线制备的工具不进入游戏运行时。专辑音源使用其自身音频，原始 PMD 的音符记录用于原版音源。
+
 ## 手机输入
 
 启动器的 `direct-touch` 坐标按 iframe 比例转换为 640×480 游戏坐标，并扣除横竖屏的黑边。`touch-controls` 驱动移动、低速、射击和原生练习面板；在触控布局设置中开启 thprac 按键后，点击“作弊和高级设置”进入与桌面共用的 C++ 工具。
 
 `PracticeMobilePanels.hpp` 提供作弊、高级设置和信息折叠面板，`PracticePointer.hpp` 在按下时确定 UI／游戏归属。信息区内开始的拖动可继续交给自机，原生按钮点击不会移动自机。对话支持单击确认、长按跳过；触控回放记录实际位移。
+
+自动开火在游玩场景注入射击键，标题与选人保留单指确认、双指返回的独立按键边沿。原生 ImGui 的默认窗口不参与触控命中，折叠的工具面板按其可见区域接收输入。
 
 ## 运行接口
 
@@ -51,18 +55,22 @@ python scripts/prepare-music-room-audio.py --archive=/path/to/music.dat --dll=/p
 
 游戏按原生场景的 56／26 Hz 等节奏推进。独立 FBO 呈现保留逻辑帧；产品目录暂不声明画面插值能力。
 
+图形适配器按相邻且兼容的纹理、混合、深度、裁剪和颜色掩码状态合并几何，保持原始绘制顺序。纹理变更与帧缓冲切换会提交待绘制几何。时钟将积累限制为 70 ms，每次回调最多推进 4 个逻辑帧，并绘制最后一帧。右下角 FPS 统计实际呈现的新画面，重复呈现同一帧不增加计数。
+
+简体语言在原 CP932 图集位置替换 1829 个字形，Music Room 的曲目说明和标题沿用原始文字布局；动态文本使用 512 项 LRU 缓存。APS 导出进入 `/savesth05/APS.csv`，通过现有用户文件接口与 IDBFS 保存。
+
 Replay 文件保持 uth05win 的原始头部与输入流，`TCH5` 扩展记录每帧真实触控位移。旧录像继续可读。工作区支持检查、选择关卡、暂停、重播、定位和倍速；定位重建选中关卡的保存状态后执行原生输入流。单关卡帧数构成播放时间线。浏览器 Music Room 保留 TH01–05 共 107 首曲目。TH05 的 23 首跟随启动器所选音源，TH01–04 的 84 首 Arrange／Special MIX 从原始 MUSIC.DAT 离线制备为 Ogg；播放使用音乐文件，浏览器程序继续直接运行 C++ 游戏逻辑。
 
 ## 检查
 
 ```sh
-node --test ports/th05/tests/managed-adapter.test.mjs ports/th05/tests/pointer.test.mjs ports/th05/tests/sfx.test.mjs
+node --test ports/th05/tests/managed-adapter.test.mjs ports/th05/tests/pointer.test.mjs ports/th05/tests/sfx.test.mjs ports/th05/tests/music-notes.test.mjs
 node ports/th05/tests/presentation.mjs
 node ports/th05/tests/browser.mjs
 node ports/th05/tests/launcher.mjs
 npm run ports:check -- --game=th05 --variant=normal
 ```
 
-浏览器检查使用真实 Wasm、DATA、PR 音频与语言包，默认读取本目录 `artifacts/content/`、`artifacts/languages/`。`TH05_TEST_CONTENT` 和 `TH05_TEST_FONT` 可指定 DATA 与字体。原生矩阵构建与运行均设置 `TH05_BROWSER_TESTS=1`。
+浏览器检查使用真实 Wasm、DATA、PR 音频与语言包，默认读取本目录 `artifacts/content/`、`artifacts/languages/`。`TH05_TEST_CONTENT` 和 `TH05_TEST_FONT` 可指定 DATA 与字体，`TH05_TEST_RUNTIME` 和 `TH05_TEST_ASSETS` 可指定构建与资源根目录。原生矩阵构建与运行均设置 `TH05_BROWSER_TESTS=1`。
 
 来源父链见 [迁移登记](../../../docs/migration/th05-eagler-20261101.json)，上游工作区改动清单见 [source-import.json](../source-import.json)。

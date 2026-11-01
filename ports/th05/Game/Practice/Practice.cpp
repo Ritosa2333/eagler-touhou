@@ -80,9 +80,9 @@ void BeginFrame() { if (!initialized) return;
  ImGui_ImplOpenGL2_NewFrame(); ImGui_ImplWin32_NewFrame();
 #endif
  ImGui::NewFrame(); ImGui::GetIO().MouseDrawCursor=false; }
-void EndFrame() { if (!initialized) return; ImGui::Render();
+void EndFrame(bool render) { if (!initialized) return; ImGui::Render();
 #ifdef __EMSCRIPTEN__
- web::EndUI();
+ if(render)web::EndUI();
 #else
  ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 #endif

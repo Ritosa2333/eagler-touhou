@@ -5,7 +5,8 @@
 // and keep CPU texture copies for its palette and ending operations.
 namespace th5w::web::graphics {
 bool Initialize();
-void BeginFrame();void Present();
+void BeginFrame();void Present();void Flush();
+void Clear(GLbitfield);void Scissor(GLint,GLint,GLsizei,GLsizei);
 void Begin(GLenum);void End();void Vertex(float,float,float=0);void TexCoord(float,float);
 void Color(float,float,float,float=1);void MatrixMode(GLenum);void PushMatrix();void PopMatrix();
 void Identity();void Ortho(double,double,double,double,double,double);
@@ -19,6 +20,8 @@ void PolygonMode(GLenum,GLenum);void Stipple(const GLubyte*);void PushAttrib(GLb
 void TexEnv(GLenum,GLenum,GLfloat);void Blend(GLenum,GLenum);void ColorMask(GLboolean,GLboolean,GLboolean,GLboolean);
 }
 #ifndef TH05_GRAPHICS_IMPLEMENTATION
+#define glClear th5w::web::graphics::Clear
+#define glScissor th5w::web::graphics::Scissor
 #define glBegin th5w::web::graphics::Begin
 #define glEnd th5w::web::graphics::End
 #define glVertex2f(x,y) th5w::web::graphics::Vertex(x,y)

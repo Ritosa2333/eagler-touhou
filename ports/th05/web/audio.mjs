@@ -4,6 +4,7 @@ import {digest} from './data.mjs';
 // Original uth05win SE playback accompanies the selected BGM. Pausing or disabling music never
 // suspends the effect part; only visibility, Replay transport and retirement do.
 export function createAudio(module,emit,environment=globalThis){
+ const sampleNotes=module.eaglerMusicNotes??(()=>null);
  let mode='none',decodeMode='stream',musicSource='original',context,sfx,element,source,gain,elementURL,loopTimer;
  let selected='',track='',generation=0,volume=1,rate=1,paused=false,hidden=false,gated=false,closed=false,position=0,startedAt=0,currentDefinition;
  const cache=new Map(),missing=new Set();
@@ -36,7 +37,10 @@ export function createAudio(module,emit,environment=globalThis){
  }
  async function initialize(){if(sfx||!environment.AudioContext)return;const files=new Map();for(let id=1;id<16;id++){const name=`s${String(id).padStart(2,'0')}.wav`,bytes=read('/data/se/'+name);if(!bytes)throw Error('Install original uth05win SE/'+name);files.set(name,bytes);}sfx=createSfx(ctx(),files);}
  function resumeContext(){if(context&&!hidden&&!gated)void context.resume().catch(report);}
+ function musicTime(){let value=element?element.currentTime:position+(source?(ctx().currentTime-startedAt)*rate:0);const end=currentDefinition?.loopEnd,start=currentDefinition?.loopStart??0;if(end>start&&value>=end)value=start+(value-end)%(end-start);return value;}
+ function notes(){if(mode==='none'||!track||paused||hidden||gated||musicSource==='akyu'&&!MUSIC_ROOM_BGM.tracks[track.toLowerCase().replace(/\.(?:m2|m)$/,'')])return null;return sampleNotes(track,musicTime());}
  return {
+  piano:()=>notes()?.notes??Array(8).fill(255),measure:()=>notes()?.measure??-1,
   initialize,
   async configure(music,options){stop();mode=music;decodeMode=options.oggDecodeMode;musicSource=options.musicSource??'original';await initialize();},
   select(name){selected=name;},
@@ -45,7 +49,7 @@ export function createAudio(module,emit,environment=globalThis){
    else if(action===1){paused=false;void play(true).catch(report);}
    else if(action===2){paused=true;stop(true);}
    else if(action===3){paused=false;void play(false).catch(report);}
-   else if(action===4){rate=Math.max(.1,Math.min(8,value));if(element)element.playbackRate=rate;if(source)source.playbackRate.value=rate;}
+   else if(action===4){position=musicTime();if(context)startedAt=context.currentTime;rate=Math.max(.1,Math.min(8,value));if(element)element.playbackRate=rate;if(source)source.playbackRate.value=rate;}
    else if(action===5){volume=Math.max(0,Math.min(1,value));if(element)element.volume=volume;if(gain)gain.gain.value=volume;}
   },
   sound(index){if(!closed&&!hidden&&!gated)sfx?.trigger(index);},
