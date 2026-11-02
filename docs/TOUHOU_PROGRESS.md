@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/b15036269c78e406bca61008ad914c830517e70a)；[剩余验收](https://github.com/AdingApkgg/thp/blob/b15036269c78e406bca61008ad914c830517e70a/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/21fd430c27be2edd1d78b758bd4a6de8d94cdc37)；[剩余验收](https://github.com/AdingApkgg/thp/blob/21fd430c27be2edd1d78b758bd4a6de8d94cdc37/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [魔理沙A Hard换关时序诊断](https://github.com/AdingApkgg/thp/blob/21fd430c27be2edd1d78b758bd4a6de8d94cdc37/docs/porting/TH14_HARD_TRANSITION_WINDOW_NOV03.md)：原版75,855回调实际一至五面，基准在第三面随机状态与第四面相机失败。实验性调度可对齐所列状态、相机与采样对象，但初始化时间校验拒绝其中未证时间；真实线程顺序、第六面及源录像EOF仍未证明，不计作通过。
 
 2026-11-03 [魔理沙B Lunatic新录像](https://github.com/AdingApkgg/thp/blob/b15036269c78e406bca61008ad914c830517e70a/docs/porting/TH14_MARISAB_LUNATIC_SIX_STAGE_NOV03.md)：静音原版实际81,077回调、一至六面进入结束菜单；核心22c4f85的所选状态／相机／HUD、1,408行VM、1,074战斗检查点和1,873初始发布通过严格、独立及Initialize时间覆盖检查。30组中28组已观察到全部目标关卡入口，魔理沙A Normal和Hard仍缺第六面；源录像EOF未证明，整作1:1未完成。
 
