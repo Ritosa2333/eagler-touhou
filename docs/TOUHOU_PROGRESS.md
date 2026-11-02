@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/52106c1c376b59e928c9c631e6c68ec1ea597360)；[剩余验收](https://github.com/AdingApkgg/thp/blob/52106c1c376b59e928c9c631e6c68ec1ea597360/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/55a4a84bddc7e523f7a952aa8ab735c4c06646e5)；[剩余验收](https://github.com/AdingApkgg/thp/blob/55a4a84bddc7e523f7a952aa8ab735c4c06646e5/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [震屏销毁栈来源更正](https://github.com/AdingApkgg/thp/blob/55a4a84bddc7e523f7a952aa8ab735c4c06646e5/docs/porting/TH14_CONTROLLER_SHAKE_THIS_NOV03.md)：新增静音原版36,823回调，23次控制器读取和13,013次栈写入中一次与震屏对象this关联，其值不同于被删回调节点；四组合成对象／节点地址的原版析构和ntdll指令组件复现该关系。此前节点地址的说法不成立；便携堆地址模型仍未实现，未注入采样值，VM Z及严格验收仍开放。
 
 2026-11-03 [Initialize时间覆盖检查及严格组合入口](https://github.com/AdingApkgg/thp/blob/52106c1c376b59e928c9c631e6c68ec1ea597360/docs/porting/TH14_INITIALIZE_TIME_COVERAGE_NOV03.md)：逐项核验全部应出现的原版事件，16份自然记录通过，时间／来源／漏项／重复／事件流篡改五种负控制均拒绝；组合入口先查时间再运行既有严格验收。未证明的较早交付假设在严格检查前被拒绝。此项仅覆盖Initialize时间，没有修改玩法，其他线程时序和整作1:1仍未完成。
 
