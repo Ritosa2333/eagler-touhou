@@ -13,6 +13,9 @@ const disconnect=process.argv.includes('--disconnect');
 const rollback=process.argv.includes('--rollback');
 const delayOnly=process.argv.includes('--no-rollback');
 const frames=Number(option('frames','180'));
+const language=option('language');
+const repeatRoom=process.argv.includes('--repeat-room');
+if(language)assert.ok(['ja','lang_zh-hans'].includes(language));
 const th05Stock=option('th05-stock')?.split(',').map(Number);
 if(th05Stock)assert.ok(th05Stock.length===2&&Number.isInteger(th05Stock[0])&&th05Stock[0]>=0&&th05Stock[0]<=5&&Number.isInteger(th05Stock[1])&&th05Stock[1]>=0&&th05Stock[1]<=3);
 const returningUser=process.argv.includes('--existing-user');
@@ -31,6 +34,7 @@ report.rollbackRequested=rollback;
 report.delayOnlyRequested=delayOnly;
 report.targetFrames=frames;
 report.th05Stock=th05Stock;
+report.language=language;report.repeatRoom=repeatRoom;
 report.commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 if(gamepad){report.gamepadProbeSha256=createHash('sha256').update(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))).digest('hex');report.gamepadBundleSha256=createHash('sha256').update(gamepadBundle).digest('hex');await writeFile(resolve(directory,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(directory,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
@@ -70,8 +74,20 @@ async function nativeSnapshot(page){return page.evaluate(()=>{
     rollback:r.__eaglerNetplayLanRollback??null,resimulated:r.__eaglerNetplayLanResimulated??null,
     initialStock:window.acceptanceInitialStock,
     options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,adonisMode:options.netplayAdonisMode,prediction:options.netplayPredictionLimit,initialSpares:options.netplayInitialSpares,initialBombs:options.netplayInitialBombs},
+    language:typeof module?._th05_codepage==='function'?{codepage:module._th05_codepage(),
+      config:new TextDecoder().decode(module.FS.readFile('/data/config.ini')),simplifiedGlyphs:module.eaglerFontStats?.simplifiedGlyphs??0,
+      practiceLabel:(()=>{const ptr=module._th05_practice_label();let end=ptr;while(module.HEAPU8[end])end++;return new TextDecoder().decode(module.HEAPU8.subarray(ptr,end));})()}:null,
     events:window.acceptanceEvents??[]};
 });}
+function checkLanguage(states){
+  if(!language)return;
+  for(const state of states){
+    assert.equal(state.language?.codepage,language==='ja'?932:936,'Native game text must retain the selected language');
+    assert.equal(state.language.config,language==='ja'?'':'MOD_FILE = chs.dat\n');
+    assert.equal(state.language.practiceLabel,language==='ja'?'無敵':'无敌');
+    if(language!=='ja')assert.ok(state.language.simplifiedGlyphs>0,'Simplified game atlas must stay mounted');
+  }
+}
 try{
   for(const game of games){
     assert.ok(PRODUCT_GAMES[game]?.multiplayer,game);
@@ -83,6 +99,7 @@ try{
     try{
       for(let seat=0;seat<players;seat++){
         const context=await browser.newContext({viewport:{width:1280,height:900}});contexts.push(context);
+        if(language)await context.addInitScript(({game,language})=>{for(const product of [game,game+'mp'])localStorage.setItem('eagler-touhou-language-v1-'+product,language);},{game,language});
         if(returningUser)await context.addInitScript(()=>localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1'));
         if(gamepad)await prepareVirtualGamepad(context,gamepadBundle);
         if(route==='relay')await context.addInitScript(()=>Object.defineProperty(window,'RTCPeerConnection',{value:undefined,configurable:true}));
@@ -179,6 +196,7 @@ try{
         await page.locator('#mpReady').click();await page.waitForFunction(()=>document.querySelector('#mpReady')?.getAttribute('aria-pressed')==='true');
       }
       record.ready=await Promise.all(pages.map(roomSnapshot));
+      if(language){record.previewLanguage=await Promise.all(pages.map(nativeSnapshot));checkLanguage(record.previewLanguage);}
       await step('synchronized-start',async()=>{
         await pages[0].waitForFunction(()=>!document.querySelector('#mpStartGame')?.disabled,null,{timeout:30000});
         await pages[0].locator('#mpStartGame').click();
@@ -220,6 +238,23 @@ try{
       if(rollback)assert.ok(record.native.every(state=>state.options.adonisMode!==1&&state.options.prediction===PRODUCT_GAMES[game].multiplayer.inputTiming.sendPredictionLimit),'Launcher must send rollback timing and limits to every native seat');
       if(delayOnly)assert.ok(record.native.every(state=>state.options.adonisMode===1&&state.rollback===0),'Delay-only rooms must disable native prediction');
       if(game==='th05'&&th05Stock)for(const state of record.native){assert.equal(state.options.initialSpares,th05Stock[0]);assert.equal(state.options.initialBombs,th05Stock[1]);assert.deepEqual(state.initialStock,Array.from({length:players},()=>[th05Stock[0]+1,th05Stock[1]]));}
+      checkLanguage(record.native);
+      if(repeatRoom)await step('native-room-return-and-second-start',async()=>{
+        assert.equal(game,'th05','Native pause-menu coordinates are TH05-specific');
+        const host=pages[0],epochs=await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#gameFrame').src)));
+        await host.frameLocator('#gameFrame').locator('canvas').focus();await host.keyboard.press('Escape',{delay:100});
+        for(const page of pages)await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow.Module._th05_input_scene()===0);
+        await host.frameLocator('#gameFrame').locator('canvas').screenshot({path:resolve(directory,'th05-pause-language.png')});
+        for(const key of ['ArrowDown','ArrowDown','z']){await host.keyboard.press(key,{delay:100});await host.waitForTimeout(100);}
+        for(const page of pages)await page.waitForFunction(()=>window.acceptanceEvents?.some(event=>event.event==='room-menu')&&document.querySelector('#gameFrame')?.contentWindow.Module._th05_scene()===2,null,{timeout:30000});
+        record.returnedLanguage=await Promise.all(pages.map(nativeSnapshot));checkLanguage(record.returnedLanguage);
+        const previousFrames=await Promise.all(pages.map(page=>page.evaluate(()=>acceptanceEvents.filter(e=>e.event==='first-frame').length)));
+        for(const page of pages){await page.waitForFunction(()=>!document.querySelector('#mpReady')?.disabled);if(await page.locator('#mpReady').getAttribute('aria-pressed')!=='true')await page.locator('#mpReady').click();}
+        await host.waitForFunction(()=>!document.querySelector('#mpStartGame')?.disabled);await host.locator('#mpStartGame').click();
+        for(let seat=0;seat<players;seat++)await pages[seat].waitForFunction(previous=>acceptanceEvents.filter(e=>e.event==='first-frame').length>previous&&document.querySelector('#gameFrame')?.contentWindow.__eaglerNetplayLanFrame>=180,previousFrames[seat],{timeout:120000});
+        record.secondNative=await Promise.all(pages.map(nativeSnapshot));checkLanguage(record.secondNative);
+        assert.deepEqual(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#gameFrame').src))),epochs,'Room return and restart retain the initialized engine');
+      });
       if(gamepad)await step('native-gamepad-sampling',async()=>{
         record.gamepad=[];
         for(const page of pages){const frame=await(await page.locator('#gameFrame').elementHandle()).contentFrame();

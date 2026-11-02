@@ -338,6 +338,22 @@ test('in-game room resource warming does not navigate or configure the running n
   await assert.rejects(api.prepareRoomResourcePlan(gameInput(f, state)), /room-entry intent/);
 });
 
+test('room preparation carries the selected language independently of its one-time pack payload', async () => {
+  const manifest = {schema:'eagler-touhou/thcrap-static-pack/1',game:'th06',language:'lang_zh-hans',runtimeVersion:'fixture',
+    files:[{path:'/thcrap/th06/msg.bin',bytes:bytes.length}]};
+  const archive = zipSync({'manifest.json':strToU8(JSON.stringify(manifest)),'thcrap/th06/msg.bin':bytes});
+  const languages = [{id:'ja',pack:null},{id:'lang_zh-hans',pack:{url:'language/zh.zip',bytes:archive.length,
+    sha256:createHash('sha256').update(archive).digest('hex'),runtimeVersion:'fixture'}}];
+  const f = acquisitionFixture({hostValue:host({multiplayerRuntime:'runtime/th06/multiplayer/th06.html',languageOptions:languages,languages:languages.slice(1)}),fetchImpl:async()=>new Response(archive)});
+  for (const language of ['lang_zh-hans','ja']) {
+    const state = settingsFixture({productId:'th06mp',language,languages});
+    const result = await api.prepareRoomResourcePlan(gameInput(f,state,{productId:'th06mp',multiplayer:{kind:'room-preload'}}));
+    assert.equal(result.language,language);
+    assert.equal(result.plan.configure.language,language,'run binding and room return omit the already mounted pack');
+    assert.equal(result.plan.configure.runtimePack?.language ?? 'ja',language);
+  }
+});
+
 test('room entry: cancellation during update decision cannot install or replace the current package', async () => {
   const controller = new AbortController(), initial = generation();
   const f = acquisitionFixture({current: initial, catalogValue: catalog('newer'), dependencies: {installPublished: async () => assert.fail('cancelled update must not install')}});
@@ -448,6 +464,7 @@ test('main 4126 and language-fallback original: native ready precedes optional l
   assert.equal(order.includes('midi'), false, 'music:none does not prepare MIDI');
   assert.deepEqual(warnings, [t('language.launchFallback', {language: 'English', reason: '/deploy/language/en.zip: HTTP 404'})]);
   assert.equal(result.plan.configure.runtimePack, null); assert.equal(result.plan.configure.options.thpracLocale, 'ja-JP');
+  assert.equal(result.plan.configure.language, 'ja');
   assert.deepEqual(languageActivity, [true, false]);
 });
 
