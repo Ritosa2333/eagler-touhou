@@ -98,6 +98,16 @@ bool ApplicationState::rasterize_title_text(AnmVm& vm, u32 color,
         fail(error.empty() ? fonts.error : error);
 }
 
+bool ApplicationState::dialogue_begin() {
+    // 0x4282b0 构造：open 时立即建四条 text.anm VM（尾插 + render_flags
+    // 0x1000），不等首行提交。sink 只做 graphics.texture() 查询，不写像素。
+    DeviceDialogueSink sink{graphics};
+    std::string error;
+    if (!dialogue_text.begin(animations, sink, error))
+        return fail("Dialogue text begin: " + error);
+    return true;
+}
+
 bool ApplicationState::dialogue_line(i32 row, const MsgLine& line, float box_x,
                                      float box_y) {
     DeviceDialogueSink sink{graphics};
@@ -244,7 +254,8 @@ bool ApplicationState::continue_run() {
     if (!run->battle.continue_player()) return fail("Player continuation failed");
     if (!run->hud.life(selection_player.extra_lives, selection_player.life_pieces) ||
         !run->hud.bombs(selection_player.bombs, selection_player.bomb_pieces) ||
-        !run->hud.update_trance()) return fail(run->hud.error);
+        // 0x43fa90:548-552：continue 置 be808=200 后 0x42b030 无条件刷新。
+        !run->hud.trance_label_refresh()) return fail(run->hud.error);
     return true;
 }
 

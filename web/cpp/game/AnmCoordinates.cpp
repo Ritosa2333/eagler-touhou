@@ -17,7 +17,13 @@ bool anm_quad_positions(AnmVm& vm,Vec3 (&out)[4])noexcept{
     float sine=0,cosine=1;if(mode==1){const auto rotation=vm.total_rotation();cosine=float(std::cos(double(rotation.z)));sine=float(std::sin(double(rotation.z)));}
     const auto& p=vm.variables.position;Vec3 center{float(v.child_anchor.x+float(v.translation.x+p.x)),float(v.child_anchor.y+float(p.y+v.translation.y)),float(v.child_anchor.z+float(p.z+v.translation.z))};if(!anm_adjust_position(vm,center))return false;
     const float z=float(float(v.translation.z+p.z)+v.child_anchor.z);for(u32 i=0;i<4;i++){float x=float(float(xs[ax][i]*v.sprite_size.x)-v.size.x),y=float(float(ys[ay][i]*v.sprite_size.y)-v.size.y);if(resolution==1||resolution==2){x=float(x*factor);y=float(y*factor);}x=float(x*scale_x);y=float(y*scale_y);
-        if(mode==1)out[i]={float(float(float(x*cosine)-float(y*sine))+center.x),float(float(float(x*sine)+float(y*cosine))+center.y),z};else out[i]={float(x+center.x),float(y+center.y),z};
+        if(mode==1){
+            // 0x467e80: x*cos - y*sin + center.x 与 x*sin + y*cos + center.y
+            // 全程 x87 80-bit，仅 0x468077/0x46808e 各 fstp 一次到 f32。
+            const double rx=double(x)*double(cosine)-double(y)*double(sine);
+            const double ry=double(x)*double(sine)+double(y)*double(cosine);
+            out[i]={float(double(center.x)+rx),float(double(center.y)+ry),z};
+        }else out[i]={float(x+center.x),float(y+center.y),z};
     }return true;
 }
 }

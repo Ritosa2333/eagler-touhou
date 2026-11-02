@@ -334,6 +334,15 @@ EMSCRIPTEN_KEEPALIVE unsigned th13_boot_seed() {
     return th13::sdl::app ? th13::sdl::app->boot_seed : 0;
 }
 
+// 捕获 harness：把 FPS 文本颜色钉到原生 oracle 的实测 fps（≈0.1）。
+// 只影响 FPS 文本颜色，不参与 core/RNG/audio/游戏逻辑；生产路径不调用。
+EMSCRIPTEN_KEEPALIVE void th13_debug_fps(float fps) {
+    using namespace th13::sdl;
+    if (!app) return;
+    if (!std::isfinite(fps) || fps < 0.f || fps > 10000.f) return;
+    app->set_fps_color_override(fps);
+}
+
 // 只读会话模式探针（Practice 网页验证用；不写状态/不泵帧）。无 app 按 0：
 // run_mode_flags 位面 = SessionState 原样；practice_mode 非零 = Practice 入口
 // 已排队。
@@ -611,6 +620,13 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_replay_progress() {
 // 诊断开关：仅打开 0x446870/0x419a90 的伤害贡献打印，不改变任何数值。
 EMSCRIPTEN_KEEPALIVE void th13_debug_damage_probe(unsigned enabled) {
     th13::damage_probe_enabled = enabled != 0;
+}
+
+// round-19 调试脚手架扩展：覆盖打印窗口（默认 7970..7985），
+// 不改变任何逻辑/数值。
+EMSCRIPTEN_KEEPALIVE void th13_debug_damage_probe_window(int first, int last) {
+    th13::damage_probe_first_frame = first;
+    th13::damage_probe_last_frame = last;
 }
 
 // 对局场景帧（RunScene::update 计数）：与 replay_frame 同步为帧泵对齐自检。

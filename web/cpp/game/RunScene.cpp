@@ -9,14 +9,18 @@ RunDialogObserver run_dialog_observer = nullptr;
 namespace {
 // 场景回调优先级（th13 原版调度位待锚定；先按 th15 同族布局取值）：
 // 更新 20（标题 6 与暂停 11 之间），HUD 文本 76（动画层 75 之后、字幕 78 之前）。
-// 战斗直绘穿插 AnmDrawSchedule 各层：自机 23（00441e5a→00443df0）/
+// 战斗直绘穿插 AnmDrawSchedule 各层：自机 24（00441e5a→00443df0；原 23 与
+// AnmDrawSchedule 层11 选项/卫星回调同值，FrameScheduler 同优先级新者先跑，
+// 导致机体先于选项提交，与原生层桶 11→12 相反；24 落在 23/26 之间）/
 // 自机弹 20（原版 layer9；不能在 priority14 的背景合成之前绘制）/
-// 敌机 19（层 8 同拍）/敌弹 43（层 20 之后，注册晚于动画层回调故同值仍靠后）。
+// 敌机 19（层 8 同拍）/敌弹 32（层15=31 与层16=33 之间；原生敌弹 op 的
+// layer watch=16/17，旧 43 使其画在 layer16 特效/agauge 之后，z-order 与
+// TFACTOR 残值都不对）。
 // STD 舞台背景两组均在动画层 0（优先级 5）之前：背景组 3 / 前景组 4
 // （th15 StageDrawFrame 3/6 的 th13 排位：层 0 前置约束下压缩到 3/4）。
 constexpr i32 kRunUpdatePriority = 20;
 constexpr i32 kRunTextPriority = 76;
-constexpr std::array<i32, 5> kStageDrawPriorities = {20, 23, 19, 43, 29};
+constexpr std::array<i32, 5> kStageDrawPriorities = {20, 24, 19, 32, 29};
 constexpr std::array<i32, 2> kSceneryDrawPriorities = {2, 5};
 }  // namespace
 
@@ -42,6 +46,7 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
                                                        kPlayerShotSprite)),
       msg_presentation(std::make_unique<MsgPresentation>(
           animations, MsgPresentation::Banks{banks.player, banks.stage})),
+      ascii_bank(ascii),
       scenery_bank(scenery_bank),
       scenery_std(std_name),
       post_flow(p, player, score, *this) {
@@ -258,6 +263,7 @@ RunScene::~RunScene() {
     for (auto& callback : spell_callbacks) scheduler.remove(callback);
     if (spell_presentation) spell_presentation->release();
     for (auto& draw : stage_draws) scheduler.remove(draw.callback);
+    scheduler.remove(score_popup_draw);
     for (auto& draw : scenery_draws) scheduler.remove(draw.callback);
     host.dialogue_end();  // 0x4282b0 四文本 VM 随对话对象销毁
     if (msg_presentation) msg_presentation->release_all();  // 对话立绘/名牌 VM 归还
@@ -409,6 +415,16 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
         if (scheduler.add(draw.callback, FramePass::Draw, kStageDrawPriorities[index]) < 0)
             return fail("Stage draw callback registration failed");
     }
+    // 0x44aa20 道具得分弹字：PlayfieldTargets compositor2(42) 之后、
+    // compositor3(53) 之前，独立一条 ascii UP op。
+    score_popup_draw.owner = this;
+    score_popup_draw.enabled = true;
+    score_popup_draw.run = [](void* p) -> i32 {
+        return static_cast<RunScene*>(p)->draw_score_popups()
+                   ? i32(FrameAction::Continue) : i32(FrameAction::Error);
+    };
+    if (scheduler.add(score_popup_draw, FramePass::Draw, 45) < 0)
+        return fail("Score popup draw callback registration failed");
     // S3：对话资产（st0Na-d.msg 按角色四份——stage 表 +0x14..+0x20 以
     // be7bc+be7b8 选份，0x424fd0:27）。缺失时降级为对话缺席（519 即过、
     // 事件契约行为不变）；浏览器侧资产清单补 st0N[a-d].msg 属接线 TODO。
@@ -435,6 +451,8 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
         return fail("Dialog presentation bind: " + msg_presentation->error);
     hud.prepare_stage_assets();
     if (!hud.initialize(hud_context)) return fail(hud.error);
+    // 0x44a8b0：道具得分弹出池（ascii.anm sprite 196..226）。
+    if (!score_popups.initialize(ascii_bank)) return fail(score_popups.error);
     return true;
 }
 
@@ -468,6 +486,23 @@ bool RunScene::update_lasers() {
     if (!battle.sim.anm_effects.empty() &&
         !presentation->flush_ecl_animations(battle))
         return fail(presentation->error());
+    return true;
+}
+
+bool RunScene::draw_score_popups() {
+    if (!error.empty()) return false;
+    if (transition_wait) return true;
+    if (!host.camera(DrawCamera::Fullscreen, false))
+        return fail("Score popup camera unavailable");
+    // 弹字属 layer20 战场层：0x44aa20 经 0x467350 用战场 2D 裁剪块。
+    scene_renderer.clip = GraphicsViewport{
+        u32(truncate_int(float(float(environment.screen_width) - 408.f) * .5f)),
+        u32(truncate_int(float(float(environment.screen_height) - 476.f) * .5f)),
+        408, 476, 0, 1};
+    scene_renderer.clip_set = true;
+    const bool ok = score_popups.draw(scene_renderer, battle.player_x, battle.player_y);
+    scene_renderer.clip_set = false;
+    if (!ok) return fail(score_popups.error);
     return true;
 }
 
@@ -552,7 +587,7 @@ bool RunScene::update() {
         if (!presentation->sync(battle, selected_input.held)) return fail(presentation->error());
         hud.tick_stage_clear();
         HudFrameContext frame;
-        hud.update(frame, host);
+    hud.update(frame, host);
         return hud.error.empty() || fail(hud.error);
     }
     progress.stage_frame++;
@@ -563,6 +598,9 @@ bool RunScene::update() {
     // no gameplay frame. Direct tests without controls use zero input.
     static const GameInput kNoInput{};
     const GameInput& input = effective_input ? *effective_input : kNoInput;
+    // 0x44a970 先于 0x42e380：本帧新 spawn 的弹字在绘制时仍 age=0
+    //（原生出生帧 NaN x 实证）；不能同一帧先 spawn 后 update。
+    score_popups.update(animations.rate);
     if (!battle.step(input)) return fail(battle.error());
     // 4265a0 advances HUD+184 before it calls the dialogue interpreter.
     // MSG21 may create the clear event below: its birth frame stays at0.
@@ -659,17 +697,23 @@ void RunScene::open_dialog(i32 entry) {
     dialogue_rows_ = 0;
     if (msg_presentation) msg_presentation->release_all();
     std::string dialog_error;
-    if (!dialog.open(dialog_file, u32(entry), *this, dialog_error))
+    if (!dialog.open(dialog_file, u32(entry), *this, dialog_error)) {
         fail("Dialog entry " + std::to_string(entry) + ": " + dialog_error);
-    else {
-        // 4282b0's constructor cancels projectiles and clears enemies before
-        // 428820 ends Trance. ECL518 repeats its own clear after returning;
-        // marked enemies remain linked and consume their death RNG twice.
-        battle.sim.clear_bullets();
-        battle.sim.cancel_lasers(false);
-        if (!battle.sim.clear_enemies()) fail(battle.sim.error());
-        else if (!battle.end_trance()) fail(battle.error());
+        return;
     }
+    // 0x428820 else → 0x4282b0：构造新对话对象时即建四条文本 VM（原生
+    // 5520 open 当帧入链；port 旧实现拖到首行 5554 才惰性创建）。
+    if (!host.dialogue_begin()) {
+        fail("Dialog text begin failed");
+        return;
+    }
+    // 4282b0's constructor cancels projectiles and clears enemies before
+    // 428820 ends Trance. ECL518 repeats its own clear after returning;
+    // marked enemies remain linked and consume their death RNG twice.
+    battle.sim.clear_bullets();
+    battle.sim.cancel_lasers(false);
+    if (!battle.sim.clear_enemies()) fail(battle.sim.error());
+    else if (!battle.end_trance()) fail(battle.error());
 }
 
 void RunScene::msg_bgm(i32 opcode) {
@@ -824,9 +868,17 @@ bool RunScene::draw_stage(u32 pass) {
     // supervisor's text84 pass later samples128..512 to screen32..416.
     // Do not translate either these vertices or their full-screen camera.
     if (!host.camera(DrawCamera::Fullscreen, false)) return fail("Stage camera unavailable");
-    if (pass == 4)
-        return laser_presentation->draw() || fail(laser_presentation->error);
-    if (!presentation->draw(pass)) return fail(presentation->error());
+    // 原生 0x467350 的 2D 裁剪块是战场矩形（0x43be9b {116,2,408,476}），
+    // 与 0x43b900 设置的 D3D 全屏 viewport 分离；直接绘制面同块裁剪。
+    const GraphicsViewport clip{
+        u32(truncate_int(float(float(environment.screen_width) - 408.f) * .5f)),
+        u32(truncate_int(float(float(environment.screen_height) - 476.f) * .5f)),
+        408, 476, 0, 1};
+    scene_renderer.clip = clip;
+    scene_renderer.clip_set = true;
+    const bool ok = pass == 4 ? laser_presentation->draw() : presentation->draw(pass);
+    scene_renderer.clip_set = false;
+    if (!ok) return fail(pass == 4 ? laser_presentation->error : presentation->error());
     return true;
 }
 

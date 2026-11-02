@@ -30,6 +30,19 @@ void ScreenViews::configure(const AnmEnvironment& environment){this->environment
  // 0043be9b..0043beb9: {0x74,2,0x198,0x1dc} = {116,2,408,476}.
  views[3]=screen_view({u32(truncate_int(float(float(float(environment.screen_width)-408.f)*.5f))),u32(truncate_int(float(float(float(environment.screen_height)-476.f)*.5f))),408,476,0,1},fov);
 }
+bool ScreenViews::loading_camera(){
+ // 原生 loading/2D 屏幕相机（boot draw 门逐位实证）：view 平移与
+ // screen_view 相同，但旋转为 diag(1,-1,-1)；proj 同 fov/aspect，zn=1、
+ // zf=10000（m10=1.00010002、m14=-1.00010002）。game scene 相机
+ //（zn=100、view 恒等）用于 battle 3D/playfield，不适用于 loading quad。
+ const u32 width=environment?u32(environment->screen_width):640u;
+ const u32 height=environment?u32(environment->screen_height):480u;
+ ScreenView view=screen_view({0,0,width,height,0,1},fov);
+ view.camera.view.m[5]=-1.f;view.camera.view.m[10]=-1.f;
+ view.camera.projection=scene_perspective(fov,float(float(width)/float(height)),1.f,10000.f);
+ renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);renderer.offset={};
+ return true;
+}
 bool ScreenViews::camera(DrawCamera index,bool refresh){auto& view=views[u32(index)];if(refresh)view=screen_view(view.viewport,fov,view.offset);renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);const Vec2 shake=environment?environment->screen_shake_offset:Vec2{};renderer.offset={float(view.offset.x+shake.x),float(view.offset.y+shake.y)};
 // 临时探针：相机切换取证（-96px 排查）
 if(probe::enabled&&cam_budget){--cam_budget;std::printf("[probe-cam] idx=%d vp={%u,%u,%u,%u} view12=%.6g view13=%.6g proj0=%.9g proj5=%.9g\n",int(index),view.viewport.x,view.viewport.y,view.viewport.width,view.viewport.height,double(view.camera.view.m[12]),double(view.camera.view.m[13]),double(view.camera.projection.m[0]),double(view.camera.projection.m[5]));}

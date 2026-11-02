@@ -855,7 +855,17 @@ void StageBattle::step_shots() {
                     shot.anchor_power != power_level() || focus ||
                     (progress_ && trance_active(*progress_)) ||
                     (sim.dialog_host && sim.dialog_host->dialog_active());
-                if (invalid) shot.state = 2;
+                if (invalid) {
+                    shot.state = 2;
+                    // 004471CA state=2 → 004471F0 FUN_00460d40(0x14)：光束失效
+                    // 当帧停止激光 loop 声（voice 20 = se_lazer02.wav, flags=1）。
+                    // 00446FF4 对 state==2 直接跳过，故每条 beam 的 1→2 跳变只
+                    // 停一次；同帧两条 beam 各停一次（原生 5521 实证两次）。
+                    if (host_ && !host_->stop_sound(20)) {
+                        error_ = "Player beam stop sound failed";
+                        return;
+                    }
+                }
                 if (shot.state == 1 && !shot.beam_contact_seen && shot.beam_contact) {
                     // 447210: eax=1; lea ebx,[eax+2] -> label3. Label1 is
                     // reserved for shutting down an invalid beam at 4471c5.
@@ -983,6 +993,8 @@ void StageBattle::consume_player_shot_geometry() {
 }
 
 bool damage_probe_enabled = false;
+int damage_probe_first_frame = 7970;
+int damage_probe_last_frame = 7985;
 bool rng_probe_on = false;
 
 float StageBattle::query_enemy_damage(StageEnemy& state, float width, float height) {
@@ -1014,7 +1026,10 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
             } else if (!shot_hits_enemy_box(registration.center_x, registration.center_y,
                                             registration.width, registration.height, ex, ey,
                                             width, height, registration.angle)) continue;
-            if (damage_probe_enabled && sim.frame >= 7970 && sim.frame <= 7980)
+            // 0x446870 命中分支把判定中心写入 enemy+0x27C（死亡特效角参考）。
+            state.last_hit_position[0] = registration.center_x;
+            state.last_hit_position[1] = registration.center_y;
+            if (damage_probe_enabled && sim.frame >= damage_probe_first_frame && sim.frame <= damage_probe_last_frame)
                 std::printf("DMG f=%d e=%u q=(%.1f,%.1f) reg=%u dmg=%.1f c=(%.1f,%.1f) box=(%.1f,%.1f)\n",
                             sim.frame, state.serial, ex, ey, unsigned(&registration - damage_registrations.data()),
                             double(registration.damage), double(registration.center_x),
@@ -1056,6 +1071,8 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
             registration.flags &= ~1u;
             continue;
         }
+        state.last_hit_position[0] = registration.center_x;
+        state.last_hit_position[1] = registration.center_y;
         // 446870 accumulates the registration's nominal damage, even when a
         // callback returns zero, before testing its finite damage threshold.
         registration.accumulated_damage = wrapping_add(registration.accumulated_damage,
@@ -1094,7 +1111,7 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
             // masking the low two bits: only age % 4 == 0 contributes damage.
             if (shot->age_clock.current != shot->age_clock.previous &&
                 (shot->age_clock.current & 3) == 0) {
-                if (damage_probe_enabled && sim.frame >= 7970 && sim.frame <= 7980)
+                if (damage_probe_enabled && sim.frame >= damage_probe_first_frame && sim.frame <= damage_probe_last_frame)
                     std::printf("DMGS f=%d e=%u reg=%u dmg=%.1f c=(%.1f,%.1f) box=(%.1f,%.1f)\n",
                                 sim.frame, state.serial, unsigned(&registration - damage_registrations.data()),
                                 double(registration.damage), double(registration.center_x),
@@ -1147,7 +1164,7 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
             }
             continue;
         }
-        if (damage_probe_enabled && sim.frame >= 7970 && sim.frame <= 7985)
+        if (damage_probe_enabled && sim.frame >= damage_probe_first_frame && sim.frame <= damage_probe_last_frame)
             std::printf("DMGH f=%d e=%u reg=%u gen=%u age=%d dmg=%.1f c=(%.1f,%.1f) box=(%.1f,%.1f) ebox=(%.1f,%.1f)\n",
                         sim.frame, state.serial,
                         unsigned(&registration - damage_registrations.data()),
@@ -1160,8 +1177,10 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
             // 4474b0 disables damage but keeps mode4 for the dying ANM.
             shot->sine_motion.radius = 16.0f;
             shot->sine_motion.speed = shot->speed = 3.0f;
+            shot->hit_fade = false;  // 4474b0: state=2 only
         } else {
             shot->speed *= .125f;
+            shot->hit_fade = true;   // 446bf0: +0x34=0x3dcccccd
         }
         // 00446c8d / 004474eb clear shot+0x98 after disabling the record.
         // Only 00446f20's beam termination leaves the pointer stale.
@@ -1181,22 +1200,29 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
         if (!shot_hits_enemy_box(shot.x, shot.y, shot.width, shot.height, ex, ey,
                                  width, height, shot.angle))
             continue;
+        state.last_hit_position[0] = shot.x;
+        state.last_hit_position[1] = shot.y;
         damage += shot.damage;
         shot.state = 2;
         if (shot.hit_behavior == 3) {
             shot.sine_motion.radius = 16.0f;
             shot.sine_motion.speed = shot.speed = 3.0f;
-        } else shot.speed *= .125f;
+            shot.hit_fade = false;
+        } else { shot.speed *= .125f; shot.hit_fade = true; }
     }
-    if (damage_probe_enabled && sim.frame >= 7970 && sim.frame <= 7980)
+    if (damage_probe_enabled && sim.frame >= damage_probe_first_frame && sim.frame <= damage_probe_last_frame)
         std::printf("DMGT f=%d e=%u q=(%.1f,%.1f) sum=%.1f\n", sim.frame, state.serial,
                     ex, ey, double(damage));
     if (damage <= 0) return 0;
     // 00446870 尾：命中计分 = (min(sum,80)/10 + 10)/10（原值域，逐命中
     // 帧计分；G 状态流实证 f96 +1、f98 +1）。炸弹/出生/死亡演出除5同序。
     const float capped = std::min(damage, 80.0f);
-    score_->score += (i32(capped) / 10 + 10) / 10;
+    const i32 hit_score = (i32(capped) / 10 + 10) / 10;
+    score_->score += hit_score;
     if (score_->score > 999999999) score_->score = 999999999;
+    if (damage_probe_enabled && sim.frame >= damage_probe_first_frame && sim.frame <= damage_probe_last_frame)
+        std::printf("DMGS f=%d e=%u hit=%d score=%d\n", sim.frame, state.serial,
+                    hit_score, score_->score);
     return capped;
 }
 
@@ -1752,6 +1778,11 @@ bool StageBattle::update_player(const GameInput& input) {
                     }
                 }
                 progress_->ending_points = 0;
+                // 0x443240:158-160：死亡复位灵界计后立刻 0x42b030。
+                if (!host_->trance_gauge_refresh()) {
+                    error_ = "Trance gauge refresh failed";
+                    return false;
+                }
                 sim.set_time_rate(1.f);
                 respawn_damage.center={player_x,player_y,0};
                 respawn_origin={player_x,player_y,0};
@@ -1930,7 +1961,22 @@ void StageBattle::update_item_side() {
         case ItemEvent::Kind::Extend: sound = 0x11; break;
         case ItemEvent::Kind::SpiritGained: sound = 0x44; break;
         case ItemEvent::Kind::BombGained: sound = 0x2e; break;
+        case ItemEvent::Kind::TranceGained:
+            // 0x43d530 → 0x42b030：必须在主链 tick（Update 34）之前重写。
+            if (!host_->trance_gauge_refresh()) {
+                error_ = "Trance gauge refresh failed";
+                item_manager.clear_events();
+                return;
+            }
+            break;
         case ItemEvent::Kind::ScorePopup:
+            // 0x44ad60：得分弹字入池（0x44a970 更新 / 0x44aa20 绘制）。
+            if (!host_->score_popup(event.value, event.x, event.y, event.color)) {
+                error_ = "Score popup failed";
+                item_manager.clear_events();
+                return;
+            }
+            break;
         case ItemEvent::Kind::FullPower:
             break;
         }
@@ -1955,6 +2001,12 @@ bool StageBattle::end_trance() {
     const bool protection = trance_protection_;
     trance_end(*progress_, protection);
     item_manager.set_spirit_trance(false);
+    // 0x405b80:78-84：正常结束（bit1=0）扣 200 后 0x42b030；保护灵界
+    // （死亡保护）不调，随后由 0x443240 死亡清零路径刷新。
+    if (!protection && !host_->trance_gauge_refresh()) {
+        error_ = "Trance gauge refresh failed";
+        return false;
+    }
     trance_protection_ = false;
     if (protection) {
         // 405b80 ->444a10, gauge0 makes405a20 fail: subtract a life
@@ -1968,6 +2020,14 @@ bool StageBattle::end_trance() {
         if ((progress_->scene_flags & 0x200u) == 0 && sim.player_effect &&
             !sim.player_effect(26, {player_x, player_y, 0}, -1)) {
             error_ = "Trance release effect failed";
+            return false;
+        }
+        // 0x405b80:38-42：保护灵界到期（bit1=1）先播死亡音 FUN_00460c50
+        // (ctx, 66)（返回地址 0x405c0a）再 FUN_00444a10() 死亡演出。
+        // round-19 死亡窗 gate 实证：native frame 4951 播 id66（se_pldead00，
+        // caller 00405c0a、x_bits=玩家位），web 缺失（idCountDeltas 66:-1）。
+        if (!host_->hud_sound(66, player_x)) {
+            error_ = "Player death sound failed";
             return false;
         }
         if (!commit_death_normal()) return false;
@@ -1985,6 +2045,11 @@ bool StageBattle::update_trance(const GameInput& input) {
     if (!progress_) return true;
     if (trance_active(*progress_)) {
         ++trance_task_frame_;
+        // 0x4057f0:28 / 0x43d4f0:12：激活期每帧 0x42b030（在 −1 之前）。
+        if (!host_->trance_gauge_refresh()) {
+            error_ = "Trance gauge refresh failed";
+            return false;
+        }
         if (progress_->ending_points > 0) {
             --progress_->ending_points;
             if (progress_->ending_points < 0) progress_->ending_points = 0;

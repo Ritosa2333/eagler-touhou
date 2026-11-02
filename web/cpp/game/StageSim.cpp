@@ -513,7 +513,6 @@ void StageSim::tick_enemy(StageEnemy& e) {
     if (e.dead || !error_.empty()) return;
     StageEnemy* saved = current;
     current = &e;
-    std::copy_n(e.position,3,e.previous_position);
     integrate(e);
     if (in_bounds(e)) {
         // 原版敌机恒有 ECL 线程块（0x4183f0:28 分配）；threads 为空的裸
@@ -1893,8 +1892,10 @@ bool StageSim::death_effects_and_drops(StageEnemy& enemy) {
         error_="Enemy death sound failed";return false;
     }
     if(enemy.death_effect>=0&&enemy_death_effect) {
-        const double dx=double(enemy.position[0])-enemy.previous_position[0];
-        const double dy=double(enemy.position[1])-enemy.previous_position[1];
+        // 0x41aad0：参考点 = 最近一次玩家判定命中中心（enemy+0x27C/0x280），
+        // 不是逐帧位移方向。
+        const double dx=double(enemy.position[0])-double(enemy.last_hit_position[0]);
+        const double dy=double(enemy.position[1])-double(enemy.last_hit_position[1]);
         const float distance=float(dx*dx+dy*dy);
         const float angle=distance>=0.040000003f?float(std::atan2(dy,dx)):-1.5707964f;
         if(!enemy_death_effect(enemy.death_effect_file,enemy.death_effect,

@@ -65,17 +65,21 @@ bool DialogueText::ensure(AnmManager& manager, DialogueTextureSink& sink, std::s
         if (!handles_[u32(script)]) {
             // 0x4282b0 四条文本 VM 创建位置为 0；正文行再按 0x428ae0:499
             // 写 box_x / box_x-(width+30)，脚本自带 (2,22/42)/(2,16/36)。
+            // 0x4282b0：四条文本 VM 走 0x46f3f0 尾插（ordering=0），不是
+            // 头插；建完后统一 VM+0x1c |= 0x1000（0x46e8f0 据此选 plain
+            // 文本路径而非 outlined）。
             handles_[u32(script)] =
-                manager.create(0, script, -1, 2, {}, 0, false);
+                manager.create(0, script, -1, 0, {}, 0, false);
             if (!handles_[u32(script)]) {
                 error = manager.error.empty() ? "text.anm dialogue VM creation failed"
                                               : manager.error;
                 release(manager);
                 return false;
             }
-            if (anchor_y_set_)
-                if (auto* vm = manager.registry.find(handles_[u32(script)]))
-                    vm->visual.child_anchor.y = anchor_y_;
+            if (auto* vm = manager.registry.find(handles_[u32(script)])) {
+                vm->visual.render_flags |= 0x1000;
+                if (anchor_y_set_) vm->visual.child_anchor.y = anchor_y_;
+            }
         }
     }
     return true;
@@ -344,7 +348,8 @@ bool DialogueText::update_bubble(AnmManager& manager, i32 row, const MsgLine& li
         return false;
     }
     if (!retire_bubble(manager, error)) return false;
-    box_ = manager.create(bubble_bank_, root_script, -1, 2, {box_x, box_y}, 0, false);
+    // 0x42a120 → 0x46f820(flags=0)：气泡根尾插（ordering=0），不是头插。
+    box_ = manager.create(bubble_bank_, root_script, -1, 0, {box_x, box_y}, 0, false);
     if (!box_) {
         error = manager.error.empty() ? "front.anm dialogue bubble creation failed"
                                       : manager.error;

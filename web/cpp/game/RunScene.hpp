@@ -13,6 +13,7 @@
 #include "SessionState.hpp"
 #include "StageBattle.hpp"
 #include "StagePresentation.hpp"
+#include "ScorePopups.hpp"
 #include "StageScenery.hpp"
 #include "ScreenShake.hpp"
 #include "FrameScheduler.hpp"
@@ -69,6 +70,9 @@ struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices
         (void)name;
         return false;
     }
+    // 0x4282b0 构造：对话 open(entry>=0) 时即建四条 text.anm VM（尾插、
+    // render_flags 0x1000），不等首行 0x428ae0 提交。默认 true = 无文本面宿主。
+    virtual bool dialogue_begin() { return true; }
     // 对话文本渲染服务：将保留 CP932 原文与 ruby 元数据的 MsgLine 提交给宿主
     virtual bool dialogue_line(i32 row, const MsgLine& line, float box_x, float box_y) {
         (void)row;
@@ -141,12 +145,16 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     std::unique_ptr<SpellPresentation> spell_presentation;
     bool update_spell();
     bool draw_spell();
+    bool draw_score_popups();
     struct StageDraw {
         FrameCallback callback;
         RunScene* owner = nullptr;
         u32 pass = 0;
     };
     std::array<StageDraw, 5> stage_draws;  // 自机/自机弹/敌机/敌弹/激光直绘
+    i32 ascii_bank = -1;
+    ScorePopups score_popups{animations, environment};
+    FrameCallback score_popup_draw{};
     std::array<StageDraw, 2> scenery_draws;  // STD 背景（背景组/前景组）
     i32 scenery_bank = -1;
     std::string scenery_std;
@@ -210,6 +218,10 @@ public:
     std::function<bool()> restore_after_player_prepare;
     bool initialize(const HudEntryContext& = {});
     bool update();
+    // 0x44ad60：道具得分弹字入池（ScorePopup 事件宿主钩子）。
+    bool spawn_score_popup(i32 value, float x, float y, u32 color) {
+        return score_popups.spawn(value, x, y, color);
+    }
     bool draw();
     bool draw_stage(u32 pass);  // 战斗直绘（initialize 注册的 4 个 Draw 回调）
     bool draw_scenery(u32 pass);  // STD 背景（层 0-7 背景组 / 8-11 前景组）

@@ -342,10 +342,11 @@ MsgPlayer::Flow MsgPlayer::execute(u8 opcode, const u8* args, u32 arg_bytes,
                 state_.block++;
             }
             line.block = state_.block;
-            // 原版 00428ae0 气泡宽度计算：((len - 1) * 8) & ~0xf - 28.0f；
+            // 原版 00428ae0 气泡宽度计算：(len * 8) & ~0xf - 28.0f；
             // len 是 NUL 之前的字节数（pcVar5 - (pcVar3 + 1)），不含终止符。
+            // 旧实现写成 (len-1)*8，宽度少 16px（balloon 端帽/scale 目标全偏）。
             u32 len = u32(std::strlen(decoded.c_str()));
-            u32 align_width = len > 0 ? (((len - 1) * 8) & 0xfffffff0u) : 0;
+            u32 align_width = len > 0 ? ((len * 8) & 0xfffffff0u) : 0;
             float calc_w = float(align_width) - 28.0f;
             if (calc_w > state_.bubble_width) {
                 state_.bubble_width = calc_w;
