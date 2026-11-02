@@ -9,7 +9,9 @@ import {Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, Di
 import {Field, FieldGroup, FieldLabel, FieldDescription} from '../ui/field';
 import {InputGroup, InputGroupInput} from '../ui/input-group';
 import {Slider} from '../ui/slider';
-import {catalogLocale, catalogSections, catalogColors, catalogModules, catalogBoundaries, catalogChecks} from '../ui/catalog';
+import {catalogLocale, catalogSections, catalogColors, catalogBoundaries, catalogChecks} from '../ui/catalog';
+import {PageInventory} from '../ui/page-inventory';
+import {RoomExample} from '../ui/room-example';
 import {BookThemeToggle} from '../components/launcher/BookThemeToggle';
 import {SiteBrand} from '../components/launcher/SiteBrand';
 import {OptionsGroup} from '../components/settings/OptionsGroup';
@@ -57,7 +59,8 @@ function Catalog() {
         <Section id="feedback" description="反馈跟随任务出现。空内容、加载和错误分别提供对应的下一步。"><FeedbackExamples/><Usage title="使用位置">搜索无结果提供清除筛选；空录像目录提供导入；连接失败提供重试；下载显示实际进度与取消入口。错误不能只靠颜色表达。</Usage></Section>
         <Section id="replay" description="列表围绕查找、选择和操作组织。播放进度拖动预览，松手后提交跳转。"><ReplayExample announce={setNotice}/><Usage title="数据与操作">普通列表使用清楚的标题、元信息和操作。记录增多后再接查询、排序和分页。录像跳转、房间状态和下载任务继续由业务服务处理。</Usage></Section>
         <Section id="navigation" description="两种入口组织使用相同内容。候选支持分组折叠记忆，窄屏改为底栏，游戏区域预览隐藏站点导航。"><NavigationComparison/></Section>
-        <Section id="modules" description="按用户要完成的事划分模块。这里列出当前界面与需要覆盖的状态，不代表所有模块已验收。"><ModuleInventory/></Section>
+        <Section id="modules" description="按页面查看区域、业务部件和检查状态。通用部件跳到对应组合，页面入口打开实际界面。"><PageInventory/></Section>
+        <Section id="room-components" description="房间特有部件直接复用生产实现，修改演示状态可检查卡片、菜单、观战席、设置和网络详情。"><RoomExample announce={setNotice}/></Section>
         <Section id="boundaries" description="统一通用部件，同时明确需要分别处理的场景。"><div className="catalog-boundaries">{catalogBoundaries.map(item => <article key={item.name}><header><h3>{item.name}</h3><span>{item.decision}</span></header><p>{item.detail}</p></article>)}</div><div className="catalog-extension"><h3>以后增加功能</h3><p>账号、观战 API 与数据库接在业务服务层；新页面组合已有字段、列表、弹层和任务状态。主题与组件定义集中管理，页面负责内容组织。</p><a href="https://ui.shadcn.com/docs" target="_blank" rel="noreferrer">shadcn 组件与组合<ArrowUpRight aria-hidden="true"/></a><a href="https://www.radix-ui.com/primitives/docs/overview/introduction" target="_blank" rel="noreferrer">Radix 交互基础<ArrowUpRight aria-hidden="true"/></a></div></Section>
         <Section id="checks" description="展示页验证组件呈现，完整页面和真实运行流程还需要单独验收。"><div className="catalog-checks">{catalogChecks.map((item, index) => <article key={item.name}><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{item.name}</h3><p>{item.detail}</p></div></article>)}</div></Section>
         <footer>演示复用应用的按钮、字段、选择、设置分组、房间菜单、确认窗口与录像进度条。普通 Radix 弹窗是迁移样板。</footer>
@@ -108,12 +111,6 @@ function ReplayExample({announce}: {announce(message: string): void}) {
   const files = replayFiles.filter(file => `${file.name} ${file.meta}`.toLowerCase().includes(query.trim().toLowerCase()));
   return <div className="catalog-demo catalog-replay"><div className="catalog-toolbar"><InputGroup><Search aria-hidden="true"/><InputGroupInput aria-label="搜索示例录像" placeholder="搜索录像" value={query} onChange={event => setQuery(event.target.value)}/></InputGroup><Button variant="outline" onClick={() => announce('示例：选择本地录像')}><Upload aria-hidden="true"/>导入</Button></div><fieldset className="catalog-file-list" aria-label="示例录像">{files.map(file => <button type="button" key={file.id} aria-pressed={selected === file.id} onClick={() => {setSelected(file.id);setPlaying(false);setFrame(0);}}><FileText aria-hidden="true"/><span><strong>{file.name}</strong><small>{file.meta}</small></span>{selected === file.id && <CheckIcon aria-hidden="true"/>}</button>)}{!files.length && <div className="catalog-no-results"><p>没有匹配的录像</p><Button variant="ghost" onClick={() => setQuery('')}>清除搜索</Button></div>}</fieldset><div className="catalog-playback"><div className="catalog-row"><Button variant="outline" size="icon" aria-label={playing ? '暂停示例播放' : '播放示例'} onClick={() => setPlaying(!playing)}>{playing ? <Pause aria-hidden="true"/> : <Play aria-hidden="true"/>}</Button><span>{replayFiles.find(file => file.id === selected)?.name}</span><span className="catalog-playback-status">{playing ? '播放状态演示' : '已暂停'}</span></div><ReplaySeekBar frame={frame} total={18000} roundStarts={[0, 6000, 12000]} disabled={false} onSeek={setFrame}/><output aria-live="polite">已提交位置 {replayClock(frame)}</output></div></div>;
 }
-function ModuleInventory() {
-  const [query, setQuery] = useState(''), [area, setArea] = useState('全部');
-  const modules = catalogModules.filter(module => (area === '全部' || module.area === area) && `${module.name} ${module.purpose} ${module.parts} ${module.states}`.toLowerCase().includes(query.trim().toLowerCase()));
-  return <><div className="catalog-module-tools"><InputGroup><Search aria-hidden="true"/><InputGroupInput aria-label="查找模块用途" placeholder="查找触控、下载、账户…" value={query} onChange={event => setQuery(event.target.value)}/></InputGroup><ChoiceGroup type="single" value={area} onValueChange={value => value && setArea(value)} aria-label="模块分类" className="catalog-choice-group">{['全部','浏览','游玩','联机','账户','支持'].map(value => <ChoiceItem key={value} value={value}>{value}</ChoiceItem>)}</ChoiceGroup></div><p className="catalog-result-count" role="status">{modules.length} 个模块</p><div className="catalog-modules">{modules.map(module => <article key={module.id} data-module={module.id}><header><h3>{'href' in module ? <a href={module.href}>{module.name}<ArrowUpRight aria-hidden="true"/></a> : module.name}</h3><span>{module.area}</span></header><p>{module.purpose}</p><dl><dt>界面组成</dt><dd>{module.parts}</dd><dt>需要覆盖</dt><dd>{module.states}</dd></dl>{'note' in module && <small>{module.note}</small>}</article>)}</div>{!modules.length && <div className="catalog-no-results"><p>没有匹配的模块</p><Button variant="outline" onClick={() => {setQuery('');setArea('全部');}}>清除筛选</Button></div>}</>;
-}
-
 
 const navigationGroups = [
   {id:'play',label:'游玩',items:[

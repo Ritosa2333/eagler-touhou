@@ -1,0 +1,97 @@
+{
+  "schema": "eagler-touhou/ogg-server-baseline/1",
+  "game": "th17",
+  "quality": 5,
+  "files": {
+    "th17_01.ogg": {
+      "bytes": 1831728,
+      "sha256": "08e19767a7270b6b86e019842dfd319112196e57f9afc6b34095004824b941f8",
+      "serial": "0x17000000"
+    },
+    "th17_03.ogg": {
+      "bytes": 3136612,
+      "sha256": "0af021dc3e4855112cc7d5db2722e4e651ad1e460c20f3ac87c8cc729407994e",
+      "serial": "0x17000001"
+    },
+    "th17_04.ogg": {
+      "bytes": 1769917,
+      "sha256": "8b56c9e7393590be2958115fc67f7f4b143d406b5e0bc68dab0132e14373a0e1",
+      "serial": "0x17000002"
+    },
+    "th17_05.ogg": {
+      "bytes": 3119047,
+      "sha256": "ed2cee063edef310a1fc8ceb6f5bd460e17ca334b1df429490de612ec888ef7d",
+      "serial": "0x17000003"
+    },
+    "th17_06.ogg": {
+      "bytes": 2646785,
+      "sha256": "5e3aed0bdba37b1830facfc2d99c91134fbaa020f37bd38944a2dddfd59e967f",
+      "serial": "0x17000004"
+    },
+    "th17_07.ogg": {
+      "bytes": 3804185,
+      "sha256": "0442343445c628e984fe7f1db6fb670ee9d17a93246adba3310888b6d58be3a7",
+      "serial": "0x17000005"
+    },
+    "th17_08.ogg": {
+      "bytes": 3004249,
+      "sha256": "e2e8258e0833fbd0918227b5d96d0ff03a9b734b8c7f11f9e26456d30b698826",
+      "serial": "0x17000006"
+    },
+    "th17_09.ogg": {
+      "bytes": 3967849,
+      "sha256": "30b392d52ff9cd5d934aa77231116e1e9d53a5ad11c5af3f830b5c76bd5b57f1",
+      "serial": "0x17000007"
+    },
+    "th17_10.ogg": {
+      "bytes": 3575982,
+      "sha256": "ebd27eb2b4e54dc9193dc2b1928bab499a2aa5d827b45fad55b229ac6f0ddc98",
+      "serial": "0x17000008"
+    },
+    "th17_11.ogg": {
+      "bytes": 3252914,
+      "sha256": "aa2a24f36c873228c61f6f6aefb65301f043c8a8d47eebf4bb8805209042c15f",
+      "serial": "0x17000009"
+    },
+    "th17_12.ogg": {
+      "bytes": 2884110,
+      "sha256": "44c6b1a4502b7a50da5ee6c4f320c7676fa48cde4bfd1f6d5ee620e279465a66",
+      "serial": "0x1700000a"
+    },
+    "th17_14.ogg": {
+      "bytes": 2523036,
+      "sha256": "7968d8e1e5fcad90568e717ac071116d1b6e0d7f7411958bbd7eaf88dc061dbc",
+      "serial": "0x1700000b"
+    },
+    "th17_13.ogg": {
+      "bytes": 4928129,
+      "sha256": "b685d185c4202df584a5d694945799f3ecea931f2c256aa88760368dffa2e8c4",
+      "serial": "0x1700000c"
+    },
+    "th17_17.ogg": {
+      "bytes": 3905663,
+      "sha256": "e3dc58d74e0e22df55ea39ec1af927cabc1e6fea87c3fb8859a3bb224bc7a851",
+      "serial": "0x1700000d"
+    },
+    "th17_18.ogg": {
+      "bytes": 4891984,
+      "sha256": "82313cd8a3af4760a5cd9ded8a2bdd9e8a45235bd4f895acd863a2a09549e0ce",
+      "serial": "0x1700000e"
+    },
+    "th17_15.ogg": {
+      "bytes": 1182103,
+      "sha256": "3f24624e4505b0cff93316151a43ed0451537d22ffa0350984138f868ae0055b",
+      "serial": "0x1700000f"
+    },
+    "th17_16.ogg": {
+      "bytes": 2130773,
+      "sha256": "102cc1f6248ebc4ee6817d024c9fe13617ea58ef55da7c122882b50ca8a97a39",
+      "serial": "0x17000010"
+    },
+    "th128_08.ogg": {
+      "bytes": 730927,
+      "sha256": "718687b8e61f6a99915579cbc3e9ffc3e8537617e7c26404ade46359911b3bf1",
+      "serial": "0x17000011"
+    }
+  }
+}

@@ -8,9 +8,15 @@
 
 旁观从原生 Replay 关头重建时，将应用时钟对齐到连续已确认帧。`portable/multiplayer/spectator-relay-browser.mjs --fixtures` 比较独立入场、回跳、切关和后续 600 帧的角色、敌机、子弹、道具归属及激光状态。
 
-分关旁观使用玩法身份 20，每关统一初始化幽灵私有随机流。`node ports/th15-mp/portable/multiplayer/native-test.mjs --ghost-stage-only` 比较两人、三人各席位跨关后的 720 帧幽灵轨迹，使用 `TH15_TEST_ARCHIVE` 与 `TH15_EMSDK` 指定输入。
+分关旁观与新录像使用玩法身份 22，每关统一初始化幽灵私有随机流。已登记的版本 20 录像按录制时的关卡与护盾规则回放。`node ports/th15-mp/portable/multiplayer/native-test.mjs --ghost-stage-only` 比较两人、三人各席位跨关后的 720 帧幽灵轨迹，使用 `TH15_TEST_ARCHIVE` 与 `TH15_EMSDK` 指定输入。
 
 设置 `TH15_TEST_UNINTERRUPTED_FRAMES=3600`，运行旁观驱动的 `--fixtures --uninterrupted-only`，可连续逐帧比较玩家与旁观场景。私有驱动用双方一致的碰撞保护保持活跃演算，全程按正常速度播放。`TH15_TEST_EVIDENCE_NAME` 指定独立的结果目录。
+
+## 回滚与运行诊断
+
+房间默认使用实测纯延迟，开启回滚后提供十二帧纠正窗口。帧快照覆盖应用、战斗、动画及实体所有权，确认帧统一提交音频、录像和旁观。FPS 按可见画面的实际进展计量，等输入时保持画面并更新数字。错误报告器支持下载包含堆栈、近期日志、构建身份和运行状态的 JSON。
+
+[实验与压力验证归档](../../../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md)保存对应构建与验证口径。原生网络协议检查同时覆盖旧录像的已登记构建准入、未知构建拒绝及重编码，护盾检查分别验证版本 20 回放与版本 22 新对局。
 
 ## 构建并在 Launcher 启动
 

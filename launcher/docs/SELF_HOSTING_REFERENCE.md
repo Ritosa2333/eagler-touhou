@@ -39,6 +39,8 @@ External 部署使用同一 Hosted 版本构建的站点配对。重定向、COR
 
 External 模式中，玩家站将 `/games/**` 和 `/shared/**` 重定向到资源源站；资源源站允许玩家站 HTTPS Origin 并保留字节范围响应。公开站点验证器会按 External 模式检查这些路径。
 
+th075 的站点语言 ZIP 可由玩家站直接发布。验证器按站点语言清单核对 `games/th075/language/` 下每个 ZIP 的路径、长度与完整 SHA-256，其余游戏数据和共享资源继续按 External 模式分发。
+
 离线使用要求 HTTPS 或浏览器信任的 loopback 源站。玩家需先安装 Launcher Shell、所选 Runtime 和游戏 Package，该游戏才可离线运行。Relay 是独立 WebSocket 服务；完整检出可在 `launcher/` 运行 `npm run relay`。自托管包提供 Host 工作流，Relay 需单独部署和启动。
 
 ## 本地验证

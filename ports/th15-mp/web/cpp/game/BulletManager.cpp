@@ -1,10 +1,11 @@
 #include "BulletManager.hpp"
 namespace th15 {
-BulletManager::BulletManager(BulletManagerHost& h):slots(capacity),host(h){reset();}
+BulletManager::BulletManager(BulletManagerHost& h):slots(capacity),snapshot_versions(capacity),host(h){reset();}
 void BulletManager::reset(){
     free_head=active_head=none;error.clear();visible_count=0;minimum_distance_squared=0;cancellation_rewards.count=0;
     for(auto& group:draw_groups)group.clear();
     for(u32 i=0;i<capacity;i++){
+        changed(i);
         auto& slot=slots[i];slot.state=BulletState{};auto& s=slot.state;const Timer zero{0,0,0,0,0};
         s.boost=s.acceleration.timer=s.approach.timer=s.angular.timer=s.drift.timer=s.position_curve.timer=s.turn.timer=s.wait=s.invulnerability=s.freeze=s.lifetime=s.spawn=s.graze_flash=s.graze_duration=zero;
         s.reflection.bounds={};s.transform_sound=0;s.phase=0;s.scale=0;s.cancellation_script=0;s.graze_interval=0;
@@ -12,10 +13,11 @@ void BulletManager::reset(){
     }
 }
 u32 BulletManager::acquire()noexcept{
-    if(free_head==none)return none;const u32 index=free_head;auto& slot=slots[index];free_head=slot.free_next;slot.free_next=none;slot.active=true;slot.active_previous=none;slot.active_next=active_head;if(active_head!=none)slots[active_head].active_previous=index;active_head=index;return index;
+    if(free_head==none)return none;const u32 index=free_head;changed(index);auto& slot=slots[index];free_head=slot.free_next;slot.free_next=none;slot.active=true;slot.active_previous=none;slot.active_next=active_head;if(active_head!=none)slots[active_head].active_previous=index;active_head=index;return index;
 }
 void BulletManager::recycle(u32 index)noexcept{
     if(index>=capacity)return;auto& slot=slots[index];auto& state=slot.state;if(!state.phase)return;
+    changed(index);
     state.phase=0;state.spawn.set(0);state.lifetime.set(0);state.graze_flash.set(0);state.graze_duration.set(0);state.flags&=0xfffffcbeu;state.step_limit=0;
     if(slot.active_previous==none)active_head=slot.active_next;else slots[slot.active_previous].active_next=slot.active_next;
     if(slot.active_next!=none)slots[slot.active_next].active_previous=slot.active_previous;

@@ -44,6 +44,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-build-profile.mjs",
   "tests/test-runtime-build-profiles.mjs",
   "tests/test-runtime-source-plan.mjs",
+  "tests/test-peer-runtime-update.mjs",
   "tests/test-host-workspace.mjs",
   "tests/test-host-artwork-adapter-coverage.mjs",
   "tests/test-format-adapter-coverage.mjs",
@@ -159,12 +160,12 @@ export const REPOSITORY_PYTHON_TESTS = Object.freeze([
 export const WORKSPACE_PRECHECKS = Object.freeze([]);
 
 export const WORKSPACE_NODE_TESTS = Object.freeze([
+  "tests/test-multiplayer-session-identity.mjs",
   "tests/test-th075-language-configure.mjs",
   "tests/test-shared-font-selection-workspace.mjs",
   "tests/test-development-site-manifest-workspace.mjs",
   "tests/test-runtime-protocol-contract.mjs",
   "tests/test-gamepad-contract.mjs",
-  "tests/test-required-gameplay-actions.mjs",
   "tests/test-portable-touch-controller-contract.mjs",
   "tests/test-preload-data-assembler.mjs",
   "tests/test-runtime-storage-contract.mjs",

@@ -595,10 +595,10 @@ void Touch::CancelTouches()
     ResetDoubleTapBomb();
 }
 
-void Touch::FingerDown(const SDL_TouchFingerEvent &f)
+void Touch::FingerDown(const SDL_TouchFingerEvent &f, bool transferred)
 {
 #ifdef TH_ENABLE_THPRAC
-    if (ThpracImGui::RouteTouchPointer(0,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+    if (!transferred && ThpracImGui::RouteTouchPointer(0,f.fingerID,f.x,f.y,f.touchID == -1)) return;
 #endif
     if (!EaglerOptions::TouchEnabled())
     {
@@ -734,7 +734,9 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
 void Touch::FingerUp(const SDL_TouchFingerEvent &f)
 {
 #ifdef TH_ENABLE_THPRAC
-    if (ThpracImGui::RouteTouchPointer(f.type == SDL_EVENT_FINGER_CANCELED ? 3 : 2,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+    float gameDownX=-1.f,gameDownY=-1.f;
+    if (ThpracImGui::RouteTouchPointer(f.type == SDL_EVENT_FINGER_CANCELED ? 3 : 2,f.fingerID,f.x,f.y,f.touchID == -1,&gameDownX,&gameDownY)) return;
+    if(gameDownX>=0.f){auto down=f;down.type=SDL_EVENT_FINGER_DOWN;down.x=gameDownX;down.y=gameDownY;FingerDown(down,true);}
 #endif
     if (!EaglerOptions::TouchEnabled())
     {
@@ -784,7 +786,9 @@ void Touch::FingerUp(const SDL_TouchFingerEvent &f)
 void Touch::FingerMotion(const SDL_TouchFingerEvent &f)
 {
 #ifdef TH_ENABLE_THPRAC
-    if (ThpracImGui::RouteTouchPointer(1,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+    float gameDownX=-1.f,gameDownY=-1.f;
+    if (ThpracImGui::RouteTouchPointer(1,f.fingerID,f.x,f.y,f.touchID == -1,&gameDownX,&gameDownY)) return;
+    if(gameDownX>=0.f){auto down=f;down.type=SDL_EVENT_FINGER_DOWN;down.x=gameDownX;down.y=gameDownY;FingerDown(down,true);}
 #endif
     if (!EaglerOptions::TouchEnabled())
     {

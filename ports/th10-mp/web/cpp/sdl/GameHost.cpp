@@ -1,3 +1,4 @@
+#include <eagler/thprac/PracticePointer.hpp>
 #include <eagler/input/BrowserGamepad.hpp>
 #include "../platform/Application.hpp"
 #include "ThpracUi.hpp"
@@ -70,7 +71,7 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
 #ifdef TH_ENABLE_THPRAC
-std::set<int> practice_pointers;
+eagler::thprac::PracticePointer practice_pointers;
 #endif
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!session||!session->app)return s;u32 raw[8];application_touch_state(session->app,raw);float values[5];std::memcpy(values,raw+3,20);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -85,20 +86,28 @@ touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!session|
 World* touch_world(){return session&&session->app?session->app->world:nullptr;}
 void cancel(){if(auto* world=touch_world()){world->motion.touch_cancel(world->state.game.stage);world->motion.target(0,0,0);}gestures.cancel_transient();
 #ifdef TH_ENABLE_THPRAC
-    practice_pointers.clear();
+    practice_pointers.reset();
     ThpracUi::cancel_pointer();
 #endif
 }
 void key(InputSnapshot& s,u32 scan,u32 vk){s.scan_keys[scan]=128;s.virtual_keys[vk]=128;if(vk>=160&&vk<=165)s.virtual_keys[16+(vk-160)/2]=128;}
 void sync_touch_context(const touhou::input::TouchState& state){const int previous=gestures.current_context();if(previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)if(auto* world=touch_world())world->motion.touch_cancel(world->state.game.stage);}
 void touch(int type,int id,float x,float y){
+    bool begin=false;float begin_x=0,begin_y=0;
 #ifdef TH_ENABLE_THPRAC
-    if(type==0&&ThpracUi::captures_pointer(x*640.f,y*480.f))practice_pointers.insert(id);
-    if(practice_pointers.count(id)){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);if(type==2)practice_pointers.erase(id);return;}
-    if(session&&session->state&&session->state->practice.enabled&&session->state->practice.flip_screen_y)y=1-y;
+    using Route=eagler::thprac::PracticePointer::TouchRoute;
+    if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();
+    const auto decision=practice_pointers.route_touch(unsigned(type),id,type==0&&ThpracUi::captures_pointer(x*640.f,y*480.f),type==0&&ThpracUi::passive_pointer(x*640.f,y*480.f),x*640.f,y*480.f);
+    if(decision.route==Route::Pending)return;
+    if(decision.route==Route::Tap){ThpracUi::mouse(1,decision.x,decision.y);ThpracUi::mouse(2,x*640.f,y*480.f);return;}
+    if(decision.route==Route::Ui){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);return;}
+    const bool flip=session&&session->state&&session->state->practice.enabled&&session->state->practice.flip_screen_y;
+    begin=decision.route==Route::BeginGame;begin_x=decision.x/640.f;begin_y=flip?1-decision.y/480.f:decision.y/480.f;if(flip)y=1-y;
 #endif
-    const auto state=touch_state();sync_touch_context(state);if((state.context==1||state.context==2))if(auto* world=touch_world())world->motion.touch_event(world->state.game.stage,type,id,x,y);gestures.pointer(type,id,x,y,SDL_GetTicks(),state,session&&session->input&&session->input->snapshot.virtual_keys[16]);}
-
+    const auto state=touch_state();sync_touch_context(state);const auto now=SDL_GetTicks();
+    const auto forward=[&](int kind,float nx,float ny){if((state.context==1||state.context==2))if(auto* world=touch_world())world->motion.touch_event(world->state.game.stage,kind,id,nx,ny);gestures.pointer(kind,id,nx,ny,now,state,session&&session->input&&session->input->snapshot.virtual_keys[16]);};
+    if(begin)forward(0,begin_x,begin_y);forward(type,x,y);
+}
 }
 extern "C" {
 __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Application* app){

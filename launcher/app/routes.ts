@@ -4,6 +4,8 @@ import {index, route, type RouteConfig} from '@react-router/dev/routes';
 export default [
   index('routes/surface.tsx', {id: 'library'}),
   route('ui-review.html', 'routes/ui-review.tsx'),
+  route('uptime', 'routes/uptime.tsx', {id: 'uptime'}),
+  route('uptime/index.html', 'routes/uptime.tsx', {id: 'uptime-index'}),
   route('index.html', 'routes/surface.tsx', {id: 'library-html'}),
   route('en.html', 'routes/surface.tsx', {id: 'library-en'}),
   route('ja.html', 'routes/surface.tsx', {id: 'library-ja'}),

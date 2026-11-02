@@ -11,7 +11,8 @@ bool EclExecutor::shoot(EclVm& vm,const EclInstruction& ins){
     const auto real=[&](u32 offset,u32 bit){float v;const u32 word=raw(offset);std::memcpy(&v,&word,4);return ins.variable_mask&(1u<<bit)?vm.resolve_float(v).to_float():v;};
     const u32 flags=raw(40);
     if(((flags&0x8000)&&!(vm.flags&0x800))||((flags&0x10000)&&(vm.flags&0x800)))return true;
-    const auto dy=number(vm.resolved_position.y)-number(globals.player.y),dx=number(vm.resolved_position.x)-number(globals.player.x);
+    const auto& player=vm.aimed_player();
+    const auto dy=number(vm.resolved_position.y)-number(player.y),dx=number(vm.resolved_position.x)-number(player.x);
     const auto distance=dy*dy+dx*dx,protection=number(vm.player_protect_squared);
     if(!(vm.player_protect_squared<=0)&&!(protection<distance||protection==distance))return true;
     auto& e=vm.emitter;

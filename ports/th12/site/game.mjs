@@ -52,9 +52,9 @@ function fail(error){if(fatalError)return;fatalError=true;busy=true;audio.musicP
 function clearKeys({touchToo=true,practiceToo=true,preserveFocus=false}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel({preserveFocus});if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);resetGamePresentation();}
 function resetGamePresentation(){previousPresentation=currentPresentation=null;renderer?.resetPresentation();}
 function interpolateGamePresentation(){return !runtimeOptions.limitPresentationTo60&&presentationCadence.fastFrames===4&&needsPresentationInterpolation(presentationInterval,logicalStep);}
-function gamePresentationOptions(){return {presentationContinuity:interpolateGamePresentation(),currentFps:meter.value,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
-function captureGamePresentation(){if(!session||!ready)return;previousPresentation=currentPresentation;currentPresentation=renderer.capturePresentation(core,gamePresentationOptions());}
-function drawGamePresentation(interpolate=false){if(!currentPresentation)captureGamePresentation();if(currentPresentation)renderer.renderPresentation(previousPresentation,currentPresentation,interpolate&&interpolateGamePresentation()?Math.min(1,accumulator/logicalStep):1);}
+function gamePresentationOptions(){return {presentationContinuity:interpolateGamePresentation(),currentFps:meter.value,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,highScore:session?.highScore??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
+function captureGamePresentation(){if(!session||!ready)return;session.highScore=Math.max(session.highScore??0,core._th12_score_stored()*10+(session.continues??0));warmNextStage();previousPresentation=currentPresentation;currentPresentation=renderer.capturePresentation(core,gamePresentationOptions());}
+function drawGamePresentation(interpolate=true){if(!currentPresentation)captureGamePresentation();if(currentPresentation)renderer.renderPresentation(previousPresentation,currentPresentation,interpolate&&interpolateGamePresentation()?Math.min(1,accumulator/logicalStep):1,{currentFps:meter.value});}
 function updatePracticeUI(){
   if(!practiceUI||!model)return;
   practiceUI.update({scene:model.state.scene,replay:!!session?.replay,menu:model.state.scene==='practice'?model.practiceMenu:null,menuReady:model.ready()});
@@ -62,7 +62,7 @@ function updatePracticeUI(){
 }
 function practicePointer(message){if(runtimeOptions.replayViewer)return false;const consumed=practiceUI?.pointer(message,down=>touch.pointer({...down,...pointerPosition(down.x,down.y)},touchState()))??false;if(consumed)updatePracticeUI();return consumed;}
 function checkDamageEntry(){const state=damageSources.state();if(state.error&&state.entryResult===-1)throw Error(state.error);}
-function initializeReplayStage(replay,part){
+function initializeReplayStage(replay,part,{fadeIn=false}={}){
   practiceBridge.setReplay(true);
   const practice=replay.extension?.practice;
   if(practice?.params.mode){
@@ -70,7 +70,7 @@ function initializeReplayStage(replay,part){
     practiceBridge.configure(practice.params,{replay:true,difficulty:replay.difficulty});
     if(core._th12_practice_prepare_replay(replay.difficulty)!==1)throw Error(practiceBridge.snapshot().error||'练习录像脚本准备失败');
   }
-  startReplayStage(core,replay,part);core._th12_set_full_game_mode(replay.practice?1:0);checkDamageEntry();
+  startReplayStage(core,replay,part);if(core._th12_replay_stage_flow(replay.practice?1:0,fadeIn?1:0)!==1)throw Error('Replay stage flow initialization failed');checkDamageEntry();
 }
 function touchState(){
   const scene=model?.state.scene,playing=ready&&!busy&&session&&scene==='playing';
@@ -78,7 +78,7 @@ function touchState(){
   const h=playing?hud():null,message=playing?readJSON('message'):null;
   const kind=playing?(session.replay?'replay':message?.active&&(message.flags&1||message.wait>0)?'dialogue':'game'):'menu';
   const instance=playing||paused?`${session.stage}:${core._th12_player_instance()}`:'';
-  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,paused,ready:!!playing&&core._th12_player_state()===1,
+  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,gestureScope:playing?`${session.stage}:${runtimeOptions.netplayPlayer??0}`:null,paused,ready:!!playing&&core._th12_player_state()===1,
     x:h?Math.round(h[1]*128):0,y:h?Math.round(h[2]*128):0,
     fast:playing?core._th12_player_speed(0):0,slow:playing?core._th12_player_speed(1):0,keyFocused:ready&&keyDown(profile.settings.keyMap.focus)};
 }
@@ -109,8 +109,9 @@ function padInput(){
   }
   const mapped=assets.managed?managedInput.pad():null;if(mapped!==null)return {value:mapped,capturing:false};
   if(!p)return {value:0,capturing:false};
-  let value=0;if(p.axes[0]<-.3||p.buttons[14]?.pressed)value|=64;if(p.axes[0]>.3||p.buttons[15]?.pressed)value|=128;
-  if(p.axes[1]<-.3||p.buttons[12]?.pressed)value|=16;if(p.axes[1]>.3||p.buttons[13]?.pressed)value|=32;
+  // Original square deadzone; managed mappings retain the Launcher's threshold.
+  let value=0;if(p.axes[0]<-.5||p.buttons[14]?.pressed)value|=64;if(p.axes[0]>.5||p.buttons[15]?.pressed)value|=128;
+  if(p.axes[1]<-.5||p.buttons[12]?.pressed)value|=16;if(p.axes[1]>.5||p.buttons[13]?.pressed)value|=32;
   for(const [name,bit]of Object.entries({shoot:1,bomb:2,focus:8,pause:256,skip:512}))if(p.buttons[profile.settings.joyButtons[name]]?.pressed)value|=bit;
   return {value,capturing:false};
 }
@@ -183,6 +184,15 @@ function viewerTransport(){
 }
 function loadSpellHistory(){const words=profile.spellHistoryWords(),p=core._malloc(words.length*4);try{new Int32Array(core.HEAPU8.buffer,p,words.length).set(words);if(core._th12_load_spell_history(p,words.length)!==1)throw Error('符卡记录载入失败');}finally{core._free(p);}}
 function saveProfile(){profile.updateSpellHistory(readJSON('spell_history').records);return profile.save().catch(error=>notice('记录保存失败：'+error.message));}
+function warmNextStage(){
+  if(!session||session.mode==='demo'||session.mode==='practice'||session.replay?.practice)return;
+  const flow=readJSON('stage_flow');if(flow.status!=='stage-clear')return;
+  const stage=session.replay?session.replay.stages.find(part=>part.number>session.stage)?.number:flow.nextStage;
+  if(!stage||session.stagePreparation?.stage===stage)return;
+  const owner=session,promise=Promise.all([loader.prepare(stage),renderer.prepareStage(stage,{activate:false}),
+    audio.context&&runtimeMusic!=='none'?audio.music.preload(musicIndex.filter(t=>[stageMusic[stage],bossMusic[stage]].includes(t.id))):null]);
+  owner.stagePreparation={stage,promise};promise.catch(error=>{if(session===owner)fail(error);});
+}
 async function prepareStage(stage,{demo=false}={}){await renderer.prepareStage(stage);if(!await loader.load(stage))throw Error('关卡准备被取消');if(audio.context){const tracks=demo||runtimeMusic==='none'?[]:musicIndex.filter(t=>[stageMusic[stage],bossMusic[stage]].includes(t.id));await Promise.all([audio.music.preload(tracks),audio.effectsReady]);}}
 function recordedHeader(flow){const h=flow.recordHeader;if(!h)throw Error('缺少关卡开始记录');return {number:flow.stage,seed:h.seed,initial:{x:h.x,y:h.y,power:h.power,lives:h.lives,bombs:h.bombs,score:h.scoreStored,pointValue:h.pointValueStored,lifeFragments:h.lifeFragments,bombFragments:h.bombFragments,ufoColors:h.ufoColors,rank:h.rank,nativeGlobals:h.nativeGlobals}};}
 function recordStage(){const flow=readJSON('stage_flow');session.recorder?.recordStage(recordedHeader(flow));session.resultKey=null;session.spellCount=0;}
@@ -204,7 +214,7 @@ async function begin(settings,replay=null,id=null){
     if(replay?.extension?.damage&&!runtimeOptions.thpracEnabled)throw Error('这份录像带有 THPrac 跨关状态，请在启动器启用 THPrac');
     practiceBridge.reset();practiceBridge.setReplay(!!replay);
     damageSources.begin({replay:!!replay,practice:settings.mode==='practice'||!!replay?.practice,character:settings.character,shot:settings.shot,metadata:replay?.extension?.damage});
-    session={...settings,stage,replay,id,cursor:0,previous:0,clock:0,playTicks:0,hudAge:0,resultKey:null,spellCount:0,continues:0,transitioning:false,clearRecorded:false,resultRecorded:false,unlimitedMovement:!!replay?.extension?.unlimited,assisted:!!replay?.extension?.practice?.assisted};
+    session={...settings,stage,replay,id,highScore:profile.highScore(settings.character,settings.shot,settings.difficulty,settings.mode==='practice'||replay?.practice?stage:0),cursor:0,previous:0,clock:0,playTicks:0,hudAge:0,resultKey:null,spellCount:0,continues:0,transitioning:false,clearRecorded:false,resultRecorded:false,unlimitedMovement:!!replay?.extension?.unlimited,assisted:!!replay?.extension?.practice?.assisted};
     if(replay){const part=replay.stages.find(s=>s.number===stage);if(!part)throw Error('录像不包含关卡');initializeReplayStage(replay,part);}
     else{
       const seed=crypto.getRandomValues(new Uint16Array(1))[0];
@@ -236,30 +246,31 @@ async function viewerStage(stage){
     if(core._th12_practice_damage_transition(session.stage,stage)!==1)throw Error(damageSources.state().error||'录像跨关状态保存失败');
     localization?.setContext({stage,character:session.character,shot:session.shot});
     await prepareStage(stage);resetGamePresentation();session.stage=stage;session.cursor=0;session.previous=0;session.clock=0;
-    initializeReplayStage(session.replay,session.replay.stages.find(part=>part.number===stage));
+    initializeReplayStage(session.replay,session.replay.stages.find(part=>part.number===stage),{fadeIn:true});
     audio.musicSerial=core._th12_music_serial();await playMusic(musicIndex[core._th12_music_track()]?.id??stageMusic[stage]);
   }finally{if(!fatalError){loadingScreen.completeResources();busy=false;}last=performance.now();accumulator=0;}
 }
+function holdStagePresentation(){
+  // Keep the last complete battle picture, including the live player and HUD,
+  // while native stage resources are installed. Loading never clears to black.
+  const held=currentPresentation;
+  loadingScreen.startResources({renderBase:()=>{if(held)renderer.renderPresentation(null,held,1,{currentFps:meter.value});}});
+}
 async function nextStage(){
   if(session?.mode==='demo'){model.returnTitle();return;}
-  if(!session||session.transitioning)return;session.transitioning=true;busy=true;
+  if(!session||session.transitioning)return;session.transitioning=true;busy=true;holdStagePresentation();
   try{
     const flow=readJSON('stage_flow');session.recorder?.finishStage();
     if(!session.replay&&session.mode!=='practice')profile.recordStageClear(session.character,session.shot,session.difficulty,session.stage,core._th12_score_stored()*10);
     const stage=session.replay?session.replay.stages.find(s=>s.number>session.stage)?.number:flow.nextStage;
     if(!stage){completeRun(true);return;}
     if(session.replay&&core._th12_practice_damage_transition(session.stage,stage)!==1)throw Error(damageSources.state().error||'录像跨关状态保存失败');
-    const heldPresentation=currentPresentation??renderer.capturePresentation(core,gamePresentationOptions());
-    loadingScreen.startResources({renderBase:()=>{
-      renderer.renderPresentation(null,heldPresentation,1);
-      renderer.renderMenu([],[],null,{overlay:true,shade:1,shadeBounds:[32,16,416,464]});
-      practiceUI?.render();
-    }});
+    if(session.stagePreparation?.stage===stage)await session.stagePreparation.promise;
     localization?.setContext({stage,character:session.character,shot:session.shot});
     await prepareStage(stage);resetGamePresentation();touch.cancel();session.stage=stage;session.cursor=0;session.previous=0;session.resultKey=null;session.spellCount=0;
-    if(session.replay){initializeReplayStage(session.replay,session.replay.stages.find(s=>s.number===stage));}
-    else{if(core._th12_start_next_stage()!==1)throw Error('跨关资源继承失败');recordStage();profile.recordStageEntry(session.character,session.shot,session.difficulty,stage);await saveProfile();}
-    audio.musicSerial=core._th12_music_serial();const track=musicIndex[core._th12_music_track()]?.id??stageMusic[stage];if(!session.replay)profile.unlockMusic(track);await playMusic(track);
+    if(session.replay){initializeReplayStage(session.replay,session.replay.stages.find(s=>s.number===stage),{fadeIn:true});}
+    else{if(core._th12_start_next_stage()!==1)throw Error('跨关资源继承失败');recordStage();profile.recordStageEntry(session.character,session.shot,session.difficulty,stage);saveProfile().catch(fail);}
+    audio.musicSerial=core._th12_music_serial();const track=musicIndex[core._th12_music_track()]?.id??stageMusic[stage];if(!session.replay)profile.unlockMusic(track);captureGamePresentation();void playMusic(track).catch(fail);
   }finally{if(session)session.transitioning=false;if(!fatalError){loadingScreen.completeResources();busy=false;}last=performance.now();meter.reset(last);accumulator=0;}
 }
 function resultData(clear){const flow=readJSON('stage_flow'),scoreStored=core._th12_score_stored(),timestamp=Math.floor(Date.now()/1000);session.assisted||=!!practiceBridge?.snapshot().assisted;const assisted=session.unlimitedMovement||session.assisted;return {mode:session.mode,practice:session.mode==='practice',character:session.character,shot:session.shot,difficulty:session.difficulty,stage:session.stage,scoreStored,score:scoreStored*10+flow.continueCount,timestamp,date:new Date(timestamp*1000).toISOString(),playSeconds:session.playTicks/60,clear,continueCount:flow.continueCount,continues:flow.continueCount,canContinue:flow.canContinue,canSaveReplay:!session.replay&&flow.continueCount===0,ranked:flow.continueCount===0&&!assisted,slowdown:assisted?100:0};}
@@ -283,7 +294,10 @@ function completeRun(clear,{saveOnly=false}={}){
 }
 function beginEnding(){
   pendingResult=resultData(true);recordClear(pendingResult);session.recorder?.finishStage({end:true});stopEffects();saveProfile();
-  const id=selectEnding(session.character,session.shot,pendingResult.continueCount>0);
+  playEnding(pendingResult);
+}
+function playEnding(result,loadout=session){
+  pendingResult=result;const id=selectEnding(loadout.character,loadout.shot,pendingResult.continueCount>0);
   model.enter('ending',0,{readyAt:0});ending=new EndingTimeline({resources,atlases:renderer.atlases,ending:resources.endings[id],difficulty:session.difficulty,seen:profile.data.endingsSeen.includes(id),onMusic:id=>playMusic(id).catch(fail),onFadeMusic:()=>fadeMusic(3),onSound:id=>effect({id})});clearKeys();
 }
 function returnTitle(){if(session&&session.mode!=='demo')stopMusic();loadingScreen.startResources();session=null;ending=null;stopEffects();clearKeys();practiceBridge?.reset();damageSources?.reset();saveProfile();}
@@ -306,7 +320,10 @@ function gameTick(input){
     session.unlimitedMovement||=!!resolved[3];session.recorder?.recordMotion(resolved[0],resolved[1],session.unlimitedMovement);
     core._th12_set_wall_time(performance.now());
   }
-  const h=hud(),flow=readJSON('stage_flow');session.continues=flow.continueCount;
+  const flow=readJSON('stage_flow');session.continues=Math.max(0,Math.trunc(flow.continueCount??0));
+  // The low score digit is the continue counter. Read the stored score as an
+  // integer so Float32 HUD rounding cannot create a false HI SCORE.
+  session.highScore=Math.max(session.highScore??0,core._th12_score_stored()*10+session.continues);
   readCoreSoundEvents(core)?.forEach(effect);
   const serial=core._th12_music_serial();if(serial!==audio.musicSerial){audio.musicSerial=serial;if(session.mode!=='demo'){const track=musicIndex[core._th12_music_track()]?.id;if(track){if(!session.replay)profile.unlockMusic(track);playMusic(track).catch(fail);}}}
   if(!session.replay){
@@ -449,7 +466,8 @@ function frame(now){
       const rate=!toolSpeed&&session?.replay&&model.state.scene==='playing'&&fast&&!shoot?4:1;
       logicalStep=toolSpeed?1000*practiceBridge.interval({replay:!!session.replay,fast,slow,debug:keyDown('Space')}):session?.replay&&model.state.scene==='playing'&&slow?TICK*4:TICK;
       if(session?.replay&&model.state.scene==='playing'&&shoot)logicalStep=Math.min(logicalStep,TICK/4);accumulator+=elapsed*rate;
-      for(let count=0;accumulator>=logicalStep&&count<Math.min(240,Math.max(8,Math.ceil(TICK/logicalStep)*8)*rate)&&!busy;count++){accumulator-=logicalStep;captureThisTick=needsPresentationCapture(accumulator,logicalStep,interpolateGamePresentation());tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
+      const tickBudget=Math.min(240,Math.max(8,Math.ceil(TICK/logicalStep)*8)*rate);
+      for(let count=0;accumulator>=logicalStep&&count<tickBudget&&!busy;count++){accumulator-=logicalStep;captureThisTick=count+1===tickBudget||needsPresentationCapture(accumulator,logicalStep,interpolateGamePresentation());tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
       if(loadingScreen.waiting)loadingScreen.renderBase(meter.value);else{present();loadingScreen.renderOverlay();}
     }else if(ready){present();loadingScreen.renderOverlay();}
   }}catch(error){fail(error);}
@@ -564,7 +582,7 @@ async function bootstrap(){
       }
       if(settings.language!=='ja'&&!assets.fonts.has('/unifont.otf'))throw Error('语言字体尚未安装');
       const provider=await prepareLocalization({language:settings.language,manifest:pack?.manifest,readFile:path=>installed.get(path),fontReady:installRuntimeFonts(assets.fonts)});
-      localization?.deactivate();localization=provider;assets.localization=provider;runtimeOptions=settings.options;runtimeMusic=settings.music;touch.configure(runtimeOptions);
+      localization?.deactivate();localization=provider.activate();assets.localization=provider;runtimeOptions=settings.options;runtimeMusic=settings.music;touch.configure(runtimeOptions);
     },
     resources:async items=>{await assets.install(items,message=>emit(message));await installRuntimeFonts(assets.fonts);},launch:launchRuntime,
     playback:message=>{if(!ready||!runtimeOptions.replayViewer||!replayWorkspace)throw Error('请先打开录像工作区');return replayWorkspace.command(message);},

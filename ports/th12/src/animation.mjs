@@ -45,7 +45,7 @@ class Track {
     this.saved={pc:this.pc,clock:this.clock,stopped:this.stopped};this.pc=at+1;this.clock=this.commands[at].time;this.stopped=false;this.ended=false;this.state.visible=true;return true;
   }
   interpolate(keys,to,duration,mode,hermite=null){
-    const from=keys.map(k=>this.state[k]);if(duration<=0){keys.forEach((k,i)=>this.state[k]=f32(to[i]));this.interpolations.delete(keys.join());}
+    const from=keys.map(k=>k==='scrollU'?this.velocity.u:k==='scrollV'?this.velocity.v:this.state[k]);if(duration<=0){keys.forEach((k,i)=>{if(k==='scrollU'||k==='scrollV')this.velocity[k==='scrollU'?'u':'v']=f32(to[i]);else this.state[k]=f32(to[i]);});this.interpolations.delete(keys.join());}
     else this.interpolations.set(keys.join(),{keys,from,to:to.map(f32),duration,mode,time:0,hermite});
   }
   child(op,id,offset=null){
@@ -152,7 +152,24 @@ class Track {
     // frame. Seeking backwards reconstructs the VM from its binding inputs.
     this.frames[0]=snapshot;this.tickCount++;if(!this.stopped&&!this.ended)this.clock++;
   }
-  sample(age){age=Math.max(0,Math.min(100000,age|0));while(this.tickCount<=age)this.tick();return this.frames[0];}
+  settled(){
+    if(!this.frames.length||!(this.stopped||this.ended)||this.interpolations.size)return false;
+    const v=this.velocity,s=this.state;
+    if(v.rx!==0||v.ry!==0||v.rotation!==0||v.sx!==0||v.sy!==0||v.u!==0||v.v!==0)return false;
+    // Zero velocity still normalizes authored angles and wraps UV each tick.
+    // Wait until those operations have reached a fixed point too.
+    if(!(s.rx>=-PI&&s.rx<=PI&&s.ry>=-PI&&s.ry<=PI&&s.rotation>=-PI&&s.rotation<=PI&&s.u>=0&&s.u<1&&s.v>=0&&s.v<1))return false;
+    return this.children.every(child=>child.born<this.tickCount&&child.settled());
+  }
+  skipSettledTicks(count){this.tickCount+=count;for(const child of this.children)child.skipSettledTicks(count);}
+  sample(age){
+    age=Math.max(0,Math.min(100000,age|0));
+    while(this.tickCount<=age){
+      if(this.settled()){this.skipSettledTicks(age+1-this.tickCount);break;}
+      this.tick();
+    }
+    return this.frames[0];
+  }
 }
 export class AnimationSampler {
   constructor(atlases,{displayRandom32=null}={}){this.atlases=atlases;this.displayRandom32=displayRandom32;this.tracks=new Map();this.unimplemented=new Set();this.unresolvedGameRandom=new Set();}

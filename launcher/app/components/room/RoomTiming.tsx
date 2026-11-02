@@ -5,8 +5,9 @@ import {multiplayerInputTimingPolicy} from '../../../src/contracts/product-catal
 import {useLocale} from '../../i18n';
 import {roomPresentation} from './presentation';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
+export type RoomTimingActions = Pick<MultiplayerRoomService, 'timingRecommendation' | 'setRollbackEnabled' | 'setTimingChoice'>;
 
-export function RoomTiming({state, service, settings = false}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; settings?: boolean}) {
+export function RoomTiming({state, service, settings = false}: {state: RoomOwnerSnapshot; service: RoomTimingActions; settings?: boolean}) {
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
   const policy = multiplayerInputTimingPolicy(config), supported = !!config.inputTiming?.measuredStartup && policy.rollback;
   const rollback = supported && (room.phase === 'lobby' ? state.rollbackEnabled : room.adonisMode !== 1);

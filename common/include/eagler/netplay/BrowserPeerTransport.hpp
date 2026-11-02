@@ -14,6 +14,9 @@ namespace Netplay
 // TURN; the game transport does not care which candidate pair won. A small
 // signaling barrier selects exactly one route before frame zero, so
 // rollback/session code never sees a mixed RTC/WebSocket path.
+// Capable peers subsequently compare a low-rate TURN standby with the current
+// RTC path. A route handover preserves native session/input identity and adds
+// bounded cross-path ordering and replay for reliable control messages.
 class BrowserPeerTransport : public PeerTransport
 {
 public:

@@ -1,15 +1,22 @@
 import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
+/** Router addresses and their mount-local publication files have one inventory. */
+export const REACT_DOCUMENTS = Object.freeze([
+  {path: '/', file: 'index.html'},
+  {path: '/en.html', file: 'en.html'},
+  {path: '/ja.html', file: 'ja.html'},
+  {path: '/lobby.html', file: 'lobby.html'},
+  {path: '/profile.html', file: 'profile.html'},
+  {path: '/login.html', file: 'login.html'},
+  {path: '/ui-review.html', file: 'ui-review.html'},
+  {path: '/uptime/', file: 'uptime/index.html'},
+].map(document => Object.freeze(document)));
+export const REACT_DOCUMENT_FILES = Object.freeze(REACT_DOCUMENTS.map(document => document.file));
+export const REACT_PRERENDER_PATHS = Object.freeze(REACT_DOCUMENTS.filter(document => document.path !== '/').map(document => document.path));
 // Repository-owned non-module frontend delivery manifest. Original-game-
 // derived artwork is intentionally absent: host assembly supplies it later.
 /** @type {Array<[string, boolean]>} */
 const entries = [
-  ['index.html', true],
-  ['en.html', true],
-  ['ja.html', true],
-  ['lobby.html', true],
-  ['profile.html', true],
-  ['login.html', true],
-  ['ui-review.html', true],
+  ...REACT_DOCUMENT_FILES.map(file => /** @type {[string, boolean]} */([file, true])),
   ['lobby.css', true],
   ['site.webmanifest', true],
   ['favicon.ico', true],

@@ -1,0 +1,18 @@
+{
+  "sourceHead": "1a5b7400d95bbe9e158921e08427b0c10b82956e",
+  "game": "th12",
+  "results": {
+    "th12": {
+      "head": "e05f94cedfd06ad043a86bd130f9ae7b316a1321",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true
+    },
+    "th12mp": {
+      "head": "0f8192a8f62732da1a37d5f3ca0577dae3be0d99",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true
+    }
+  }
+}

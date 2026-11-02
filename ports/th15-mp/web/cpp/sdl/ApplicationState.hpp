@@ -13,8 +13,10 @@
 #include "../game/AnmSceneEffects.hpp"
 #include "../game/Manual.hpp"
 #include "../game/ScreenMotionFrame.hpp"
+#include "FrameEffects.hpp"
 namespace th15::sdl {
 struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGameplayServices,SessionGameplayServices,SessionEntryServices,RunConstructionServices,RunCompletionServices,RunStageExitServices,RunPausePlatform,StageDrawServices,AssetSource {
+ FrameEffects* frame_effects=nullptr;bool resimulating=false;
  GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;FileStore files;
  Rng visual;AnmEnvironment environment;AnmManager animations{visual,environment};AnmRenderer renderer{graphics};ScreenViews views{renderer,environment};AsciiText captions{animations,environment};FrameScheduler scheduler;
  Rng loading_random;AnmEnvironment loading_environment;AnmManager loading_animations{loading_random,loading_environment};bool platform_prepared=false;u32 loading_signature=0,loading_prayer=0;unsigned pending_load=0,loading_frames=0;bool loading_startup=false;double loading_debt=0;
@@ -22,7 +24,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  GameConfig config;SessionState progress;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings selection;TitleAudioSettings volumes;TitleControllerSettings controller;MusicComments comments;TitleKeyboard keyboard_state;
  std::unordered_map<std::string,i32> shared;std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<SceneDisplay> display;std::array<FrameCallback,2> animation_updates;
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<SessionReplay> replay;std::unique_ptr<RunSession> session;std::unique_ptr<RunInitialization> initialization;std::unique_ptr<RunStageFlow> flow;std::unique_ptr<RunPause> pause;
- std::vector<std::unique_ptr<ScreenFade>> fades;std::vector<std::unique_ptr<ScreenMotionFrame>> motion;std::unique_ptr<Manual> pause_manual;FrameCallback manual_update;u32 manual_pressed=0,manual_repeated=0;StageCamera camera;std::array<u8,0xa4> live_description{};std::vector<u8> selected_replay,pending_png,pending_animation;std::string pending_animation_name;std::unordered_map<std::string,std::vector<u8>> resource_cache;
+ std::vector<std::shared_ptr<ScreenFade>> fades;std::vector<std::shared_ptr<ScreenMotionFrame>> motion;std::unique_ptr<Manual> pause_manual;FrameCallback manual_update;u32 manual_pressed=0,manual_repeated=0;StageCamera camera;std::array<u8,0xa4> live_description{};std::vector<u8> selected_replay,pending_png,pending_animation;std::string pending_animation_name;std::unordered_map<std::string,std::vector<u8>> resource_cache;
  i32 pending_destination=-1,selected_stage=1,pending_page=-1,pending_bank=-1,frame_skip=0,current_destination=13;u32 transition_overlay=0,restart_handle=0,restart_effect_handle=0,frames=0;bool initialized=false,exiting=false,completed_recording=false;std::array<i32,16> projected{};std::string failure;
  std::vector<u8> checkpoint_bytes;
  std::unique_ptr<Lzss> checkpoint_encoder;std::vector<u8> checkpoint_payload;CheckpointHeader checkpoint_header;

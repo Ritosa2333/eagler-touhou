@@ -421,7 +421,7 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
         presentation_audit::scope(audit_owner);
         // 3D scene objects live in world coordinates which the STD script may
         // rebase; a small step limit snaps those authored resets.
-        high_refresh::position_limit=(pass.kind==SceneDrawKind::StageBackground||pass.kind==SceneDrawKind::StageForeground)?32.f:128.f;
+        high_refresh::position_limit=(pass.kind==SceneDrawKind::StageBackground||pass.kind==SceneDrawKind::StageForeground)?32.f:64.f;
         // World-space passes may keep fractional presentation coordinates;
         // UI, ASCII and compositor passes retain retail pixel alignment.
         renderer.continuous=(pass.kind==SceneDrawKind::Animation&&pass.layer<=19)
@@ -449,7 +449,7 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
         if(overlay&&pass.kind==SceneDrawKind::AsciiOuter&&!overlay->draw(renderer,0,compositor.full_camera,compositor.play_camera))return fail("frame statistics draw failed");
     }
     presentation_audit::scope(0);
-    high_refresh::position_limit=128.f;
+    high_refresh::position_limit=64.f;
     renderer.continuous=false;
     renderer.flush();
     return true;

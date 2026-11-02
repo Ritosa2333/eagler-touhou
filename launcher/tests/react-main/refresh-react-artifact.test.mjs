@@ -257,7 +257,7 @@ describe('React refresh stages and verifies a coherent artifact before replacing
       'scripts/verify-server-build.mjs',
       'src/contracts',
       'src/app-shell-sw.js',
-      'src/runtime-cache-sw.js',
+      'src/runtime-cache-sw.js', 'src/site-mirror-sw.js',
       'compat/runtime-generation-reader.js',
       'tsconfig.launcher.json',
       'tsconfig.contracts.json',

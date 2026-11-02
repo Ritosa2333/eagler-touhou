@@ -14,7 +14,7 @@ inline bool render_only=false;
 inline bool smooth_submission=false;
 // Maximum position step still treated as continuous motion. Scene/background
 // owners lower it so authored world rebases snap instead of blending.
-inline float position_limit=128.f;
+inline float position_limit=64.f;
 inline void begin(float value,bool enabled,bool only,bool world_enabled=true) noexcept {
     alpha=enabled?std::clamp(value,0.0f,1.0f):1.0f;
     world_alpha=enabled&&world_enabled?alpha:1.0f;

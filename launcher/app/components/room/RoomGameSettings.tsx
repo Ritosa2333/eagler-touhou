@@ -5,9 +5,9 @@ import {useLocale} from '../../i18n';
 import {RoomChoiceGroup} from './RoomChoiceGroup';
 import {roomPresentation} from './presentation';
 import {MainSelect} from '../launcher/MainSelect';
-import {RoomTiming} from './RoomTiming';
+import {RoomTiming, type RoomTimingActions} from './RoomTiming';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
-export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; hidden: boolean}) {
+export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setRoomSettings' | 'takeSeat'> & RoomTimingActions; hidden: boolean}) {
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
   const disabled = !ready || !owner || room.phase !== 'lobby';
   return <section className="mp-room-settings room-grouped-settings options-settings" id="mpRoomSettings" hidden={hidden} data-room-panel="game">

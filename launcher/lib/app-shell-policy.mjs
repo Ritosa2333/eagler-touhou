@@ -5,7 +5,7 @@ import { assertAppShellContract as assertSelectedAppShellContract } from "./app-
 export {APP_SHELL_RUNTIME_GLOBS, runtimeAppShellPaths} from "./app-shell-validation.mjs";
 import { APP_SHELL_RUNTIME_GLOBS } from "./app-shell-validation.mjs";
 
-const repositoryInputs = new Set([APP_SHELL_SOURCE_FILE, "src/runtime-cache-sw.js", "compat/runtime-generation-reader.js", "assets/contracts/runtime-generations-worker.js", "src/contracts/runtime-generations.mts", ...APP_SHELL_FILES]);
+const repositoryInputs = new Set([APP_SHELL_SOURCE_FILE, "src/site-mirror-sw.js", "src/runtime-cache-sw.js", "compat/runtime-generation-reader.js", "assets/contracts/runtime-generations-worker.js", "src/contracts/runtime-generations.mts", ...APP_SHELL_FILES]);
 
 export function isRepositoryAppShellInput(value) {
   return repositoryInputs.has(normalizeAppShellPath(value));

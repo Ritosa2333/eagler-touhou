@@ -10,6 +10,7 @@ CMake 使用 `eagler::thprac`。脚本构建把 `common/include` 加入头文件
 | --- | --- |
 | [`PracticeInput.hpp`](../include/eagler/thprac/PracticeInput.hpp) | 逻辑输入、自动射击与禁用键顺序 |
 | [`PracticeKeyMonitor.hpp`](../include/eagler/thprac/PracticeKeyMonitor.hpp) | 会话拥有的按键统计、60 帧 APS 与 CSV |
+| [`PracticeNavigation.hpp`](../include/eagler/thprac/PracticeNavigation.hpp) | 练习页上下选行、左右直接调值、鼠标与键盘焦点交还 |
 | [`PracticeSpeed.hpp`](../include/eagler/thprac/PracticeSpeed.hpp) | 逻辑速度；显示插值仍由绘制层负责 |
 | [`PracticeKeyHud.inc`](../include/eagler/thprac/PracticeKeyHud.inc) | 绑定会话的 `key_monitor` |
 | [`PracticeReaction.inc`](../include/eagler/thprac/PracticeReaction.inc) | 提供平台时钟、频率、计数器与随机数 |
@@ -32,6 +33,8 @@ TH08/10/11/12/15 使用抽取的紫版工具。TH06/07 保留自己的实现和�
 TH12 的 [原生 ImGui 接入](../../ports/th12/src/practice/INTEGRATION.md) 复用同一套 ImGui、FreeType 和共享工具。浏览器传递输入、字体及绘制数据，窗口内容由作品的 C++ 适配器生成。定制 ImGui 的 `BeginDisabled(condition)` 与 `EndDisabled(condition)` 使用同一个条件；顶点颜色遵循 `IMGUI_USE_BGRA_PACKED_COLOR`。
 
 ## 4. 验证与更新
+
+TH10、TH11、TH15 的 SDL 练习页在输入就绪后、`ImGui::NewFrame` 前调用 `navigation::prepare`，使用对应控件包装，并在窗口内调用 `navigation::focus`。包装只作用于练习参数，弹出列表、拖动与文本编辑继续交给 ImGui。`eagler-common.thprac-navigation` 在真实 ImGui 中检查选行、步进、长按、边界、鼠标列表与焦点恢复。
 
 先运行 [common 测试](../README.md)，再运行受影响作品的输入、速度、面板及练习构建检查，最后填写[语言与练习适配项](../../docs/adaptation/localization.md)。移动端记录应包含面板展开、折叠和多指操作。
 

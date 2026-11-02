@@ -1,0 +1,229 @@
+{
+  "date": "2026-10-23",
+  "sharedFiles": [
+    {
+      "path": "portable/sdl/AssetPixelFormat.hpp",
+      "bytes": 1264,
+      "sha256": "5653937bc3857013326a95420effa3d1200469a48a65303cb2915772086cb894"
+    },
+    {
+      "path": "portable/sdl/Fixture.cpp",
+      "bytes": 3195,
+      "sha256": "d27bfa99298cb3b7dfaa33b2e34b2a235d6bed732a93a1c737ffdc11994e1cc6"
+    },
+    {
+      "path": "portable/sdl/FrameCadence.hpp",
+      "bytes": 593,
+      "sha256": "1b2a610ac172de2089b4cd6551e88b04d36fb4030da93526a4442cefa8cdbed8"
+    },
+    {
+      "path": "portable/sdl/GraphicsState.hpp",
+      "bytes": 8703,
+      "sha256": "e11ee01c47ef4cea3cd64eff069cd8bd1f4cfb8f761982f9769626dc62ba5a6b"
+    },
+    {
+      "path": "portable/sdl/LegacyGraphics.hpp",
+      "bytes": 2689,
+      "sha256": "e604d1e07504fc2b1633c54359be8a3243488cc94c44ab0a4d1e95e6a502f897"
+    },
+    {
+      "path": "portable/sdl/RenderCommands.hpp",
+      "bytes": 3144,
+      "sha256": "0e0e53d13c2b56b90b09e1ed83088dd43a7b658d72359b3c7c5ea2058c85f5c4"
+    },
+    {
+      "path": "portable/sdl/Renderer.cpp",
+      "bytes": 33838,
+      "sha256": "b15c11caee6185c3cbe7997684639198f4a6b10a73cbcc833a2b7e9035d2e974"
+    },
+    {
+      "path": "portable/sdl/Renderer.hpp",
+      "bytes": 4277,
+      "sha256": "4c82260993bd076fdfaf4eea82e5a07c7ad636b572ea764d3f8b204ba44637a2"
+    },
+    {
+      "path": "portable/sdl/ResampleShader.hpp",
+      "bytes": 4701,
+      "sha256": "93a0270dc680b8d095af700a36f1ea1dc7008a5c07fa471c20b9efd8164ea8a1"
+    },
+    {
+      "path": "portable/sdl/Shaders.hpp",
+      "bytes": 3785,
+      "sha256": "744c82640fdeb00ba8bc253f768d59b039652edb50be534cc7aab27c22a00754"
+    },
+    {
+      "path": "portable/sdl/third_party/miniaudio.h",
+      "bytes": 4203962,
+      "sha256": "2ff4797ef263c070ad9030884b515ef162efc2e00140db943f2daa95e8f08314"
+    },
+    {
+      "path": "portable/sdl/third_party/stb_image.h",
+      "bytes": 222898,
+      "sha256": "3e08556d97b2e07881df61b72aceb1e89d8c43f70354155749da4c37bde62a6a"
+    },
+    {
+      "path": "portable/sdl/third_party/stb_vorbis.h",
+      "bytes": 198374,
+      "sha256": "c8daf8d9f0dad818a1cb6c9194eeb4503b63b8cbf8c744efc12942f3d679f686"
+    },
+    {
+      "path": "portable/input/KeyboardMap.inc",
+      "bytes": 3305,
+      "sha256": "3171e0fab2b2a0bcd4d5c6a73d6f0a274fcda320c05c269dfe74f76c159cfada"
+    },
+    {
+      "path": "portable/input/MotionTrack.hpp",
+      "bytes": 4379,
+      "sha256": "49bf41a724cf7cd6b7f4f6de85ad8521d17864ae0bc4e31955d3cb4456152af4"
+    },
+    {
+      "path": "portable/input/touch-bomb-check.cpp",
+      "bytes": 2036,
+      "sha256": "969e5a38651102c94865241e42a364dac70ef95460c673683b3f355063590449"
+    },
+    {
+      "path": "portable/input/TouchController.hpp",
+      "bytes": 5922,
+      "sha256": "f187a6a0fd159aab554a6374631e582cebf7d5afd1bb01dee981df6d0b64a5f6"
+    },
+    {
+      "path": "portable/input/verify.cpp",
+      "bytes": 1423,
+      "sha256": "48d403b8dd82f656627832b647a3cac6e3be8870ed9916094fe6efe7395338f9"
+    }
+  ],
+  "releases": [
+    {
+      "game": "th08",
+      "path": "th08_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "82e48878b53803b27dcd3377361b5ebf55285709d44955459af6be8ece409f50",
+      "version": "3.4.1-sdl3",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "architecture": {
+          "loop": "cpp-fixed-60hz-bounded-catchup",
+          "audio": "miniaudio-sdl3",
+          "renderer": "cpp-gles-semantic-batched",
+          "graphicsInterface": "semantic-state-texture-matrix",
+          "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+          "files": "sdl-io-idbfs",
+          "fonts": "sdl3-ttf",
+          "input": "cpp-sdl",
+          "launcher": "eagler-touhou/1"
+        },
+        "sdlVersion": "3.4.2",
+        "bytes": 2885667,
+        "sha256": "a6de8136ad65d47175b13436cdc26448a081f1633b39e3e57b961fd2d7d083cb",
+        "loaderSha256": "96c8006d2dd3d0795023e9ef7eb9a897b81f52909eaca732e4d55034e4632781"
+      }
+    },
+    {
+      "game": "th09",
+      "path": "th09_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "033f5a86084f1b9a07868582ba57b8575615f8f739c82b24df4e085bb925a6e7",
+      "version": "b6e1724a546540054415b15e",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "entry": "/",
+        "wasm": "/runtime/45f20a6929b1765d0702/th09.wasm",
+        "loader": "/runtime/45f20a6929b1765d0702/th09.mjs",
+        "sha256": "6edb1ca1364c63073acdce4f2d121c7c9b693371aae478f5a938b7799ec0b979",
+        "loaderSha256": "1d1a641214040d09f937130d23e260fca394f7e55bb3b3ce5b4f6127d6104670"
+      },
+      "launcher": {
+        "protocol": "eagler-touhou/1",
+        "source": "local TH08/TH10 final launcher"
+      }
+    },
+    {
+      "game": "th10",
+      "path": "th10_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "91f9ed76beeed8e066b89a7898deafd6d73eba30bc01ddb9666c61029ca96535",
+      "version": "3.5.1-sdl3",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "architecture": {
+          "loop": "cpp-fixed-60hz-bounded-catchup",
+          "audio": "miniaudio-sdl3",
+          "renderer": "cpp-gles-semantic-batched",
+          "graphicsInterface": "semantic-state-texture-matrix",
+          "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+          "files": "sdl-io-idbfs",
+          "fonts": "sdl3-ttf",
+          "input": "cpp-sdl",
+          "launcher": "eagler-touhou/1"
+        },
+        "sdlVersion": "3.4.2",
+        "bytes": 2795006,
+        "sha256": "903ae6d5ff0e7d62fa4b9713efad3adecc56c2c98aeff2c1da91b781962bbff8",
+        "loaderSha256": "2268632d25e486af4fa06ad29a484ea213cba0ebe64fbfa03c2a620cb0d6612b"
+      }
+    },
+    {
+      "game": "th11",
+      "path": "th11_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "5d5740d29cb78060d5095c9e476ebfd41b5d90e0564ae615f9631d890a09df4c",
+      "version": "40704f8bcd9f1dd9f4cb63f5",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "entry": "/",
+        "architecture": {
+          "loop": "cpp-fixed-60hz-bounded-catchup",
+          "input": "cpp-sdl",
+          "renderer": "cpp-gles-semantic-batched",
+          "graphicsInterface": "semantic-state-texture-matrix",
+          "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+          "files": "sdl-io-idbfs",
+          "launcher": "eagler-touhou/1",
+          "audio": "cpp-miniaudio-vorbis-sdl3-stream",
+          "fonts": "cpp-original-baked-glyphs-argb4444"
+        },
+        "wasm": "/runtime/th11/th11.wasm",
+        "loader": "/runtime/th11/th11.mjs",
+        "sha256": "d3ab386f9ffd3bf9c10ee2a4e45a587b68eb42e883c04110b83cff1d5e568bc4",
+        "loaderSha256": "38fa37b7b47c2efabd4af19af86f3f135151ddd34d22e9479ebace82eb531aaa"
+      },
+      "launcher": {
+        "protocol": "eagler-touhou/1",
+        "source": "TH09 final common launcher / TH08+TH10 shared architecture",
+        "baseline": "final-baseline.json"
+      }
+    },
+    {
+      "game": "th15",
+      "path": "th15_web/artifacts/sdl-release/site/manifest.json",
+      "manifestSha256": "18d0392475a3624cfe4f25551fac0c6c599af6776eb6a7c3a4f495145d894db8",
+      "version": "1.0.3",
+      "execution": {
+        "kind": "cpp-sdl3",
+        "entry": "/",
+        "architecture": {
+          "loop": "cpp-fixed-60hz-bounded-catchup",
+          "audio": "miniaudio-sdl3",
+          "input": "cpp-sdl3-continuous-recorded-touch",
+          "files": "sdl-io-idbfs",
+          "launcher": "eagler-touhou/1",
+          "renderer": "shared portable/sdl/Renderer.cpp via SDL3/WebGL2",
+          "graphicsInterface": "semantic-state-texture-matrix",
+          "vertexUpload": "web-bufferData-direct-game-batches-cached-vao",
+          "fonts": "compiled SDL3 FontDevice with original measured RGB coverage; real title/run/pause/ending application; remaining unsupported services fail explicitly"
+        },
+        "wasm": "/runtime/th15/th15.wasm",
+        "loader": "/runtime/th15/th15.mjs",
+        "sha256": "d75950f168ec4328b02805f1f2bc1c62d98e7d9644a1f1166e4660a53bc1c3d9",
+        "loaderSha256": "d4361643556cb9e772cb8a489d60bdf64a287b1ecd0670b5c644edac0b1352fb"
+      },
+      "launcher": {
+        "protocol": "eagler-touhou/1",
+        "source": "TH09 final common launcher / TH08+TH10 shared architecture",
+        "baseline": "final-baseline.json"
+      }
+    }
+  ],
+  "launcher": "th15_web/launcher",
+  "productionInterface": "ZunGraphics semantic state, textures, matrices and CPU-generated vertices",
+  "renderer": "portable/sdl/Renderer.cpp",
+  "browserBackend": "SDL3 / WebGL2",
+  "legacyDevice": false,
+  "completeGame": false
+}

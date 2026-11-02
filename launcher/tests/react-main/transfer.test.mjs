@@ -278,24 +278,27 @@ test('main language cancellation/task lifetime brackets only downloads, closes o
   }
 });
 
-test('language download switches mirrors inside one transfer and validates the completed archive', async () => {
+test('DATA and language share node selection and validate the completed archive', async () => {
   const path = 'thcrap/th06/localization/strings.etl', payload = strToU8('ETL1');
   const manifest = {schema: 'eagler-touhou/thcrap-static-pack/1', game: 'th06', language: 'lang_en', runtimeVersion: 'mirror-test', files: [{path: `/${path}`, bytes: payload.length}]};
   const zip = zipSync({'manifest.json': strToU8(JSON.stringify(manifest)), [path]: payload}, {level: 0});
   const hash = createHash('sha256').update(zip).digest('hex'), visits = [], snapshots = [];
-  const foreground = api.createNetworkActivityTracker({onChange: snapshot => snapshots.push(snapshot)});
-  const network = api.createPreparationNetwork({foreground, baseUrl: 'https://launcher.invalid/', translate: t});
+  const fetchImpl = async input => {
+    const url = new URL(input); visits.push(url.origin);
+    if (url.pathname === '/_eagler/resource-routes') return Response.json({schema: 'eagler-touhou/resource-routes/1',
+      path: new URL(url.searchParams.get('path'), url).pathname, bytes: zip.length, sha256: hash,
+      sources: ['https://first.invalid', 'https://second.invalid'].map(origin => origin + url.searchParams.get('path'))});
+    if (url.origin === 'https://first.invalid') throw new TypeError('Node disconnected');
+    return new Response(zip);
+  };
+  const foreground = api.createNetworkActivityTracker({fetchImpl, onChange: snapshot => snapshots.push(snapshot)});
+  const network = api.createPreparationNetwork({foreground, baseUrl: 'https://launcher.invalid/', translate: t, fetchImpl});
+  await foreground.resourceFetch(new URL('https://launcher.invalid/games/th06/th06.data'));
+  visits.length = 0; snapshots.length = 0;
   const result = await api.prepareLanguagePack({game: 'th06', baseUrl: 'https://launcher.invalid/', translate: t,
     entry: {id: 'lang_en', title: 'English', pack: {url: '/language/th06/en.zip', bytes: zip.length, sha256: hash}},
-    caches: null, storage: null, network, fetchImpl: async input => {
-      const url = new URL(input); visits.push(url.origin);
-      if (url.pathname === '/_eagler/resource-routes') return Response.json({schema: 'eagler-touhou/resource-routes/1',
-        path: '/language/th06/en.zip', bytes: zip.length, sha256: hash,
-        sources: ['https://first.invalid', 'https://second.invalid'].map(origin => origin + url.searchParams.get('path'))});
-      if (url.origin === 'https://first.invalid') throw new TypeError('Node disconnected');
-      return new Response(zip);
-    }});
-  assert.deepEqual(visits, ['https://launcher.invalid', 'https://first.invalid', 'https://second.invalid']);
+    caches: null, storage: null, network, fetchImpl});
+  assert.deepEqual(visits, ['https://launcher.invalid', 'https://second.invalid']);
   assert.equal(result.files.length, 1); assert.equal(snapshots.at(-1).count, 0);
   assert.equal(Math.max(...snapshots.map(value => value.count)), 1);
   assert(snapshots.some(value => value.active[0]?.loaded === zip.length));

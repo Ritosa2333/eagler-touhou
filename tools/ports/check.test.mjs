@@ -27,7 +27,7 @@ test('source identity normalizes line endings and preserves non-UTF-8 source byt
     assert.equal(dirname(directory),resolve(tmpdir()));rmSync(directory,{recursive:true,force:true});
   }
 });
-import {adaptationMarkdown,preserveManualEvidence,MANUAL_EVIDENCE} from '../docs/new-adaptation.mjs';
+import {adaptationMarkdown,preserveManualEvidence,MANUAL_EVIDENCE,notApplicable} from '../docs/new-adaptation.mjs';
 
 test('regenerating source status preserves hand-written runtime acceptance records',()=>{
   const generated=adaptationMarkdown({game:'th20',directory:'ports/th20',variants:['normal']});
@@ -83,4 +83,16 @@ test('reports reject invented targets, duplicate gates and nonexistent acceptanc
   assert.ok(check([{...target,gates:[...target.gates,...target.gates]}]).some(issue=>issue.includes('重复')));
   assert.ok(check([{...target,gates:[{...target.gates[0],checks:['INPUT-99']}]}]).some(issue=>issue.includes('未登记适配')));
   assert.ok(check([{...target,sourceDigest:null}]).some(issue=>issue.includes('源码身份')));
+});
+
+test('th12 optional focus enhancement does not exempt required restart and always-hitbox behavior',()=>{
+  for(const variant of ['normal','multiplayer'])assert.equal(notApplicable({id:'RUNTIME-06'},'th12',variant),null);
+});
+
+test('th12 source identity includes the shipped SDL browser boundary in both variants',()=>{
+  for(const target of targets({game:'th12',variant:'both'})){
+    const input=inspectInputs(target),suffixes=input.inputFiles.map(file=>file.replaceAll('\\','/'));
+    for(const suffix of ['/site/game-sdl.mjs','/site/sdl.html','/src/managed-input.mjs'])assert.ok(suffixes.some(file=>file.endsWith(suffix)),suffix);
+    assert.ok(input.translationUnits.includes('portable/sdl/Application.cpp'));
+  }
 });

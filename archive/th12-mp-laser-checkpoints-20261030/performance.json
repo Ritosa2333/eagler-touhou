@@ -1,0 +1,137 @@
+{
+  "baseline": "41a13765",
+  "compiler": "MinGW GCC 16.2.0, CMake Release -O3 -DNDEBUG",
+  "scope": "Synthetic multiplayer laser-manager copy assignment only; same host, alternating execution, no SDL or game assets.",
+  "rounds": [
+    {
+      "before": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 448000,
+        "elapsedMs": 208.697,
+        "outputHash": "65bddb9c5a97dbde"
+      },
+      "after": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 0,
+        "elapsedMs": 23.635,
+        "outputHash": "65bddb9c5a97dbde"
+      }
+    },
+    {
+      "after": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 0,
+        "elapsedMs": 18.43,
+        "outputHash": "65bddb9c5a97dbde"
+      },
+      "before": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 448000,
+        "elapsedMs": 207.12,
+        "outputHash": "65bddb9c5a97dbde"
+      }
+    },
+    {
+      "before": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 448000,
+        "elapsedMs": 206.867,
+        "outputHash": "65bddb9c5a97dbde"
+      },
+      "after": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 0,
+        "elapsedMs": 14.69,
+        "outputHash": "65bddb9c5a97dbde"
+      }
+    },
+    {
+      "after": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 0,
+        "elapsedMs": 14.267,
+        "outputHash": "65bddb9c5a97dbde"
+      },
+      "before": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 448000,
+        "elapsedMs": 200.249,
+        "outputHash": "65bddb9c5a97dbde"
+      }
+    },
+    {
+      "before": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 448000,
+        "elapsedMs": 213.234,
+        "outputHash": "65bddb9c5a97dbde"
+      },
+      "after": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 0,
+        "elapsedMs": 15.98,
+        "outputHash": "65bddb9c5a97dbde"
+      }
+    },
+    {
+      "after": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 0,
+        "elapsedMs": 14.276,
+        "outputHash": "65bddb9c5a97dbde"
+      },
+      "before": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 448000,
+        "elapsedMs": 205.704,
+        "outputHash": "65bddb9c5a97dbde"
+      }
+    },
+    {
+      "before": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 448000,
+        "elapsedMs": 212.186,
+        "outputHash": "65bddb9c5a97dbde"
+      },
+      "after": {
+        "assignments": 1000,
+        "lasers": 192,
+        "curveNodes": 192,
+        "allocations": 0,
+        "elapsedMs": 17.863,
+        "outputHash": "65bddb9c5a97dbde"
+      }
+    }
+  ],
+  "medianMs": {
+    "before": 207.12,
+    "after": 15.98
+  }
+}

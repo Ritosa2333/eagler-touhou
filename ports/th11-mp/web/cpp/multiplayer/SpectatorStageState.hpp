@@ -9,18 +9,18 @@ namespace th11::multiplayer {
 // The native Replay header plus each seat's resource and position entry.
 struct SpectatorStageState {
     u32 frame=0,stage=0,seats=0,fragments=0,run_ticks=0;
-    i32 rank=0;
+    i32 rank=0,background_frame=0;
     std::array<ReplayStageState,3> players{};
     std::array<u32,3> ghost_random{},challenge_misses{};
 };
 template<class C> bool ReplayStageValues(C& c,SpectatorStageState& s){
-    if(!c.Values(s.frame,s.stage,s.seats,s.fragments,s.rank,s.run_ticks))return false;
+    if(!c.Values(s.frame,s.stage,s.seats,s.fragments,s.rank,s.run_ticks,s.background_frame))return false;
     for(auto& p:s.players)if(!c.Values(p.seed,p.score,p.power,p.points,p.lives,p.fragments,p.rank,
         p.x,p.y,p.continues,p.extends,p.focused,p.graze,p.weapon)||!c.Array(p.spell_times))return false;
     return c.Array(s.ghost_random)&&c.Array(s.challenge_misses);
 }
 inline bool ValidReplayStage(const SpectatorStageState& s){
-    if(s.stage<1||s.stage>7||s.seats<2||s.seats>3||s.fragments>=5||s.rank < -1024||s.rank>1024)return false;
+    if(s.stage<1||s.stage>7||s.seats<2||s.seats>3||s.fragments>=5||s.rank < -1024||s.rank>1024||s.background_frame < -1||s.background_frame>3000000)return false;
     for(unsigned i=0;i<s.seats;++i){const auto& p=s.players[i];
         if(p.seed>65535||p.lives < -1||p.lives>9||p.power<0||p.power>10000||
            p.fragments<0||p.fragments>=5||p.focused<0||p.focused>1)return false;
@@ -43,6 +43,7 @@ inline bool CaptureSpectatorStageState(const GameSession& session,u32 frame,std:
     const auto& battle=*session.battle;SpectatorStageState s;
     s.frame=frame;s.stage=session.state.stage;s.seats=session.multiplayer_options.seat_count;
     s.fragments=battle.mp_fragments;s.rank=battle.mp_rank;s.run_ticks=battle.mp_tick;
+    if(s.stage==6){if(!battle.stage)return false;s.background_frame=battle.stage->state.script_timer.current;}
     for(unsigned i=0;i<s.seats;++i){
         if(!battle.pilots[i]||!battle.pilots[i]->player)return false;
         const auto& pilot=*battle.pilots[i];const auto& e=pilot.economy;const auto& m=pilot.player->motion.state;
@@ -62,6 +63,7 @@ inline bool ApplySpectatorStageState(GameSession& session,const SpectatorStageSt
         if(!b.pilots[i]||!b.pilots[i]->player)return false;
         auto& pilot=*b.pilots[i];pilot.ghost_random=s.ghost_random[i];pilot.challenge_misses=s.challenge_misses[i];
     }
+    if(s.stage==6){if(!b.stage)return false;b.stage->multiplayer_replay_background_frame=s.background_frame;}
     b.mp_fragments=s.fragments;b.mp_rank=s.rank;b.mp_tick=s.run_ticks;
     b.spell_timing.records=s.players[0].spell_times;
     return true;

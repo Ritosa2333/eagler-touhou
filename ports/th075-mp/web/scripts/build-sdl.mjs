@@ -6,7 +6,7 @@ const release=process.argv.includes('--release'),eagler=process.argv.includes('-
 const acceptancePath=resolve(root,"reference/release-acceptance.json"),acceptance=existsSync(acceptancePath)?JSON.parse(readFileSync(acceptancePath,"utf8")):null;
 if(release&&!acceptance?.completeGame)throw Error("Complete native/browser acceptance before building the production release.");
 const multiplayer=process.argv.includes('--multiplayer'),common=resolve(process.env.EAGLER_COMMON_ROOT||resolve(workspace,'../../common'));
-const flags=[...(multiplayer?['-DTH075_MULTIPLAYER=1','-I'+resolve(root,'cpp'),'-I'+resolve(common,'include')]:[]),'-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1',`-DTH075_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','-sUSE_ZLIB=1'];
+const flags=['-I'+resolve(common,'include'),...(multiplayer?['-DTH075_MULTIPLAYER=1','-I'+resolve(root,'cpp')]:[]),'-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1',`-DTH075_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','-sUSE_ZLIB=1'];
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:process.env.EMCC_CORES||'4'};
 const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
 if(!compiler&&!printingRuntimeInputs)throw Error('Set TH075_EMSDK or EMSDK');
@@ -17,6 +17,7 @@ if(multiplayer)sources.push(...['NetplayProtocol.cpp','NetplayCore.cpp','Netplay
 const sha=b=>createHash('sha256').update(b).digest('hex');
 if(release)for(const [p,h]of Object.entries({...acceptance.sourceHashes,...acceptance.headerHashes}))if((!eagler||!p.startsWith('th075_web/cpp/sdl/'))&&sha(readFileSync(resolve(workspace,p.replace(/^th075_web\//,'web/'))))!==h)throw Error("Source changed after acceptance: "+p);
 if(multiplayer)headers.push(...headerInputs(resolve(common,'include')),resolve(common,'browser/adonis-calibration.mjs'));
+else headers.push(resolve(common,'include/eagler/audio/WebSfx.hpp'));
 await printRuntimeInputs({workspace,root:workspace,sources,headers,flags});
 await run([...flags,'-x','c++','-fsyntax-only','-']);
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n')),settings=JSON.stringify([flags,headerHash]);

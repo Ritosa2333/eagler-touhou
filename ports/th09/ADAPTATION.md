@@ -30,7 +30,7 @@
 | RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json)；multiplayer：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 不适用 | 不适用 | normal：本作未声明判定点显示；multiplayer：本作未声明判定点显示 |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
@@ -57,7 +57,7 @@
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [Deathbomb 与移动保持](../../docs/adaptation/input.md#touch-09) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | 待核对 | normal：[held-touch-continuity](../../docs/adaptation/status.json)；multiplayer：[held-touch-continuity](../../docs/adaptation/status.json) |
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -87,6 +87,7 @@
 | AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
+| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | 待核对 | normal：[immediate-sfx-routing](../../docs/adaptation/status.json)；multiplayer：[immediate-sfx-routing](../../docs/adaptation/status.json) |
 | MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | 不适用 | normal：本作使用 OGG 音乐；multiplayer：本作使用 OGG 音乐 |
 | MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | 不适用 | normal：本作使用 OGG 音乐；multiplayer：本作使用 OGG 音乐 |
 | MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | 不适用 | normal：本作使用 OGG 音乐；multiplayer：本作使用 OGG 音乐 |
@@ -141,7 +142,7 @@
 | MP-01 | [独立 MP 产品变体](../../docs/adaptation/multiplayer.md#mp-01) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
-| MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 进行中 | normal：单人模式；multiplayer：[宣言期间画面与恢复 8 帧回归](docs/DEVELOPMENT.md)，2,400 帧，单程 3–4 帧交付延迟，WASM `daf985b001e235e3` |
+| MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-06 | [旁观加入与输入隔离](../../docs/adaptation/multiplayer.md#mp-06) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-07 | [旁观只读取连续已确认历史](../../docs/adaptation/multiplayer.md#mp-07) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -174,3 +175,5 @@
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 本轮桌面协议、输入、文件持久化与实际 MP 房间结果见[逐作运行记录](../../docs/adaptation/desktop-20261018.md)。按作品、模式和分项读取通过、失败及待复验结果，原始报告身份见同页机器记录。
+
+TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。

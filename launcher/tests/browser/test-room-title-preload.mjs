@@ -10,10 +10,11 @@ import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 const game=process.argv[2];assert(['th06','th07','th08','th11','th09','th075'].includes(game));
 const mode=Number(process.argv[3]||0),runtime=resolve(process.env.ROOM_PREVIEW_RUNTIME),data=await readFile(process.env.ROOM_PREVIEW_DATA);
+const mixedRelay=process.env.ROOM_PREVIEW_MIXED_RELAY==='1';
 if(process.env.ROOM_PREVIEW_OPTIONS==='1')assert(['th09','th075'].includes(game),'Options-to-match regression selects th09 or th075');
 const wasm=await readFile(resolve(runtime,['th08','th11'].includes(game)?game+'-sdl.wasm':game+'.wasm'));
 const wasmSha256=createHash('sha256').update(wasm).digest('hex');
-const out=resolve('.cache/room-title-preload',game+'-'+mode);await mkdir(out,{recursive:true});
+const out=resolve('.cache/room-title-preload',game+'-'+mode+(mixedRelay?'-mixed-relay':''));await mkdir(out,{recursive:true});
 const fonts=new Map(await Promise.all([['/msgothic.ttc',process.env.EAGLER_SHARED_GOTHIC],['/unifont.otf',process.env.EAGLER_SHARED_UNIFONT]].map(async([url,path])=>[url,await readFile(path)])));
 const html=`<!doctype html><style>iframe{width:640px;height:480px}</style><script>
 window.events=[];window.ready=new Set();window.__eaglerPrepareManagedRuntimeDataV1=async()=>{const buffer=await(await fetch('/data')).arrayBuffer();return {buffer,bytes:buffer.byteLength};};
@@ -60,7 +61,7 @@ try{
  await page.evaluate(game=>{for(let s=0;s<2;s++)for(const [code,key,keyCode]of [['KeyZ','z',90],['Enter','Enter',13],['ArrowDown','ArrowDown',40]])for(const down of [true,false])document.querySelector('#p'+s).contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:s+1,command:'keyboard',code,key,keyCode,location:0,down},location.origin);},game);
  // The default checks the 30/60-second attract boundary. The Options case
  // checks local editing and its subsequent match with different title clocks.
- await new Promise(r=>setTimeout(r,process.env.ROOM_PREVIEW_OPTIONS==='1'?8000:game==='th075'?65000:33000));const after=await states();console.log('WAITED',after);assert(after.every((v,i)=>v.phase===before[i].phase&&v.frame>before[i].frame+300),'title must animate without entering demo');
+ await new Promise(r=>setTimeout(r,process.env.ROOM_PREVIEW_OPTIONS==='1'||mixedRelay?8000:game==='th075'?65000:33000));const after=await states();console.log('WAITED',after);assert(after.every((v,i)=>v.phase===before[i].phase&&v.frame>before[i].frame+(mixedRelay?30:300)),'title must animate without entering demo');
  for(const f of frames())await f.evaluate(game=>{
   window.preloadSamples={};const r=window['__'+game+'Runtime'];
   if(game==='th06'||game==='th07'){window.preloadModule=Module;return;}
@@ -71,7 +72,7 @@ try{
  const startupFrames=await page.evaluate(()=>[1,2].map(epoch=>events.filter(e=>e.epoch===epoch&&e.event==='first-frame').length));
  for(let s=0;s<2;s++)await send(sockets[s],{type:'set-ready',ready:true},m=>m.room?.seats[s]?.ready);
  const start=await send(sockets[0],['th06','th07'].includes(game)?{type:'start'}:{type:'start',adonisMode:mode,inputDelay:0,inputDelayAuto:false,predictionReserve:2},m=>m.type==='start'),count=requests.length;
- await page.evaluate(async({game,port,room,serial,mode})=>Promise.all([0,1].map(async s=>{await rpc(s,'configure',{music:'none',resources:[],runtimeResources:[],sharedResources:[],options:{thpracEnabled:false,renderScale:1,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(serial),member:'private-'+s,player:String(s)}),netplayPlayer:s,netplayPlayerCount:2,netplayDifficulty:1,netplaySeed:1234,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:mode,netplayPredictionLimit:game==='th08'?8:mode?0:game==='th11'?12:8,netplayPredictionReserve:2}});await rpc(s,'launch');})),{game,port,room,serial:start.serial,mode});
+ await page.evaluate(async({game,port,room,serial,mode,mixedRelay})=>Promise.all([0,1].map(async s=>{await rpc(s,'configure',{music:'none',resources:[],runtimeResources:[],sharedResources:[],options:{thpracEnabled:false,renderScale:1,netplayMode:'lan',netplayUrl:(mixedRelay&&s===1?'ws://localhost:'+port+'/backup-entry/':'ws://127.0.0.1:'+port+'/')+'?'+new URLSearchParams({room,run:String(serial),member:'private-'+s,player:String(s)}),netplayPlayer:s,netplayPlayerCount:2,netplayDifficulty:1,netplaySeed:1234,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:mode,netplayPredictionLimit:game==='th08'?8:mode?0:game==='th11'?12:8,netplayPredictionReserve:2}});await rpc(s,'launch');})),{game,port,room,serial:start.serial,mode,mixedRelay});
  const flat=game==='th06'||game==='th07';
  const shortSample=flat||game==='th075'&&process.env.ROOM_PREVIEW_OPTIONS!=='1';
  const sampleTarget=shortSample?2:game==='th075'?4:100;
@@ -90,5 +91,5 @@ try{
  for(const [n,v]of Object.entries(samples[0]))if(samples[1][n]!==undefined){assert.deepEqual(v,samples[1][n],'same-frame world '+n);matches++;}assert(matches>=(game==='th075'?sampleTarget:shortSample?2:20));
  assert(!requests.slice(count).some(u=>/\/(data|resources.json|[^/]+\.wasm)$/.test(u)),'Start must not cold-load again');
  for(const f of frames())assert(await f.evaluate(game=>{if(['th06','th07','th075'].includes(game))return Module===preloadModule;const r=window['__'+game+'Runtime'];return (game==='th09'?r.core:r.Module)===preloadModule;},game));
- assert.deepEqual(errors,[]);await writeFile(resolve(out,'result.json'),JSON.stringify({game,mode,wasmSha256,before,after,roomOptions,matches,scope:'Production native Runtime, original local DATA, two local peers; not physical mobile/WAN acceptance'},null,2));console.log('PASS',game,mode,matches);
+ assert.deepEqual(errors,[]);await writeFile(resolve(out,'result.json'),JSON.stringify({game,mode,mixedRelay,wasmSha256,before,after,roomOptions,matches,scope:'Production native Runtime and supplied DATA with two local peers'},null,2));console.log('PASS',game,mode,matches);
 }finally{for(const s of sockets)s.close();await browser?.close();server.close();relay.kill();}

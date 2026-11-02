@@ -1,6 +1,7 @@
 #include "EclThreads.hpp"
 namespace th15 {
-EclThreadsSnapshot EclThreads::snapshot()const{EclThreadsSnapshot out;out.main=main;out.children.reserve(children.size());for(const auto& child:children)out.children.push_back(*child);return out;}
+EclThreadsSnapshot EclThreads::snapshot()const{EclThreadsSnapshot out;snapshot(out);return out;}
+void EclThreads::snapshot(EclThreadsSnapshot& out)const{out.main=main;out.children.resize(children.size());size_t i=0;for(const auto& child:children)out.children[i++]=*child;}
 bool EclThreads::restore(const EclThreadsSnapshot& source){
     error.clear();if(main.program!=source.main.program){error="ECL checkpoint program changed";return false;}
     auto* variables=main.variables;auto* commands=main.commands;auto* visual=main.visual_rng;const auto* clock=main.interpolation_clock;

@@ -1,5 +1,6 @@
 // Presentation endpoints contain JS-owned draw data only. No core, input,
 // animation sampler, clock or random source is reachable from this module.
+import {copyMeshPose,meshVertexCount,interpolateMesh,translateMesh} from './mesh-vertices.mjs';
 const PLAYER=0xffff0000,FOCUS=0xffff0020;
 const family=owner=>(owner>>>28);
 const itemId=owner=>(owner&0x0fffffff);
@@ -80,7 +81,7 @@ function sameAppearance(a,b){
     a.drawPriority!==b.drawPriority||a.clip!==b.clip)return false;
   for(const key of appearanceFields)if(a.a?.[key]!==b.a?.[key])return false;
   if(a.mesh&&(a.primitive!==b.primitive||a.renderPass!==b.renderPass||a.untextured!==b.untextured||
-    a.filter!==b.filter||a.addressFlags!==b.addressFlags||a.vertices.length!==b.vertices.length||a.a.entry!==b.a.entry))return false;
+    a.filter!==b.filter||a.addressFlags!==b.addressFlags||meshVertexCount(a)!==meshVertexCount(b)||a.a.entry!==b.a.entry))return false;
   return true;
 }
 
@@ -145,7 +146,7 @@ function translatePose(p,offset){
   if(!x&&!y)return p;
   // Geometry is translated rigidly with its explicit owner. Laser curve
   // vertices are never paired by index; their owners are ineligible above.
-  if(p.mesh)return {...p,vertices:p.vertices.map(v=>({...v,x:v.x+x,y:v.y+y}))};
+  if(p.mesh)return translateMesh(p,x,y);
   if(p.nativeText)return {...p,nativeText:{...p.nativeText,x:p.nativeText.x+x,y:p.nativeText.y+y}};
   if(finitePoint(p))return {...p,presentationOffset:[x,y]};
   return p;
@@ -184,6 +185,7 @@ function nativeOwner(p,state){
 }
 function nativeKey(p){return poseIdentity(p)??(p.nativeText&&p.presentationKey?String(p.presentationKey):null);}
 const nativeIndices=new WeakMap();
+const nativePlans=new WeakMap();
 function nativeIndex(endpoint){
   let index=nativeIndices.get(endpoint);if(index)return index;
   const poses=new Map(),laserGroups=new Map();
@@ -227,11 +229,12 @@ function nativeScalars(p,old,node,oldNode,alpha){
   if(mask&16){fields(['r','g','b','alpha','r2','g2','b2','alpha2']);
     if(Array.isArray(old.a.primaryColor)&&Array.isArray(p.a.primaryColor)&&old.a.primaryColor.some((v,i)=>v!==p.a.primaryColor[i])){
       a??={...p.a};a.primaryColor=p.a.primaryColor.map((v,i)=>lerp(old.a.primaryColor[i],v,alpha));}}
-  return a?{...p,a}:p;
+  return a?copyMeshPose(p,{a}):p;
 }
-function interpolateNative(previous,current,alpha){
+function nativePlan(previous,current){
+  let next=nativePlans.get(previous);
+  const cached=next?.get(current);if(cached)return cached;
   const before=previous.nativeMotion,after=current.nativeMotion;
-  if(before.epoch!==after.epoch||before.frame!==previous.frame||after.frame!==current.frame)return current;
   const oldIndex=nativeIndex(previous),newIndex=nativeIndex(current),previousPoses=oldIndex.poses,
     oldGroups=oldIndex.groups,newGroups=newIndex.groups,continuousOwners=new Set(),continuousLasers=new Set(),
     oldLaserGroups=oldIndex.laserGroups,newLaserGroups=newIndex.laserGroups;
@@ -253,17 +256,41 @@ function interpolateNative(previous,current,alpha){
     }
     if(continuous)continuousOwners.add(owner);
   }
-  const poses=current.poses.map(p=>{
+  // Endpoints are immutable. Match topology and ownership once per adjacent
+  // logical pair, then reuse the plan for every display refresh between them.
+  const matches=current.poses.map(p=>{
     const key=nativeKey(p),old=key===null?null:previousPoses.get(key);
-    if(!old||!sameAppearance(old,p))return p;
+    if(!old||!sameAppearance(old,p))return null;
     const {node,owner,source}=nativeOwner(p,after),oldNode=node?before.nodeMap.get(node.id):null;
-    if(node&&!sameNode(oldNode,node))return p;
+    if(node&&!sameNode(oldNode,node))return null;
+    const localMotion=node&&((node.mask|oldNode.mask)&1)&&
+      sameArray(resolvedEngine(node,after),resolvedEngine(oldNode,before))&&finitePoint(p)&&finitePoint(old);
+    return {old,node,owner,source,oldNode,localMotion};
+  });
+  const background={
+    oldRows:new Map((previous.logicalBackground?.poses??[]).map(row=>[row[0],row])),
+    oldSlots:new Map(before.nodes.filter(n=>n.stageSlot>=0).map(n=>[n.stageSlot,n])),
+    newSlots:new Map(after.nodes.filter(n=>n.stageSlot>=0).map(n=>[n.stageSlot,n])),
+  };
+  const plan={matches,continuousOwners,continuousLasers,background};
+  // Both endpoints are weak keys: a live current frame cannot retain a
+  // linked chain of previous endpoints through cached plan values.
+  if(!next){next=new WeakMap();nativePlans.set(previous,next);}
+  next.set(current,plan);return plan;
+}
+function interpolateNative(previous,current,alpha){
+  const before=previous.nativeMotion,after=current.nativeMotion;
+  if(before.epoch!==after.epoch||before.frame!==previous.frame||after.frame!==current.frame)return current;
+  const {matches,continuousOwners,continuousLasers,background}=nativePlan(previous,current);
+  const poses=current.poses.map((p,index)=>{
+    const match=matches[index];if(!match)return p;
+    const {old,node,owner,source,oldNode,localMotion}=match;
     // Laser mesh corners/cross-sections have explicit source-owned roles.
     // A history cut, external set, extension transition or phase change
     // invalidates the complete role correspondence, even at equal lengths.
     if(p.mesh&&node?.meshKind==='laser'){
       if(!continuousLasers.has(p.owner))return p;
-      return {...p,vertices:p.vertices.map((v,i)=>({...v,x:lerp(old.vertices[i].x,v.x,alpha),y:lerp(old.vertices[i].y,v.y,alpha)}))};
+      return interpolateMesh(p,old,alpha);
     }
     const owned=source&&continuousOwners.has(owner);
     const a=before.ownerMap.get(owner),b=source;
@@ -272,7 +299,7 @@ function interpolateNative(previous,current,alpha){
     if(owned){
       const dx=(a.position[0]-b.position[0])*(1-alpha),dy=(a.position[1]-b.position[1])*(1-alpha);
       if(p.mesh){
-        if(node&&['ufo-fill','spell-ring'].includes(node.meshKind))return {...p,vertices:p.vertices.map((v,i)=>({...v,x:lerp(old.vertices[i].x,v.x,alpha),y:lerp(old.vertices[i].y,v.y,alpha)}))};
+        if(node&&['ufo-fill','spell-ring'].includes(node.meshKind))return interpolateMesh(p,old,alpha);
         return translatePose(result,{x:dx,y:dy});
       }
       // Options, focus and the optional hit marker share player displacement;
@@ -286,20 +313,20 @@ function interpolateNative(previous,current,alpha){
     }
     if(p.mesh&&node&&['stage-grid','ufo-summon','ufo-trail','leaf','spell-ring','ufo-fill'].includes(node.meshKind)){
       if(node.meshKind==='stage-grid'&&before.backgroundRevision!==after.backgroundRevision)return p;
-      return {...p,vertices:p.vertices.map((v,i)=>({...v,x:lerp(old.vertices[i].x,v.x,alpha),y:lerp(old.vertices[i].y,v.y,alpha)}))};
+      return interpolateMesh(p,old,alpha);
     }
     // Explicit authored ANM local position tracks are eligible when their
     // resolved engine origin did not move. Detached/global positions do not
     // acquire an inferred world-motion rule from being in the ANM list.
-    if(node&&((node.mask|oldNode.mask)&1)&&sameArray(resolvedEngine(node,after),resolvedEngine(oldNode,before))&&finitePoint(p)&&finitePoint(old))
+    if(localMotion)
       result={...result,presentationOffset:[(old.x-p.x)*(1-alpha),(old.y-p.y)*(1-alpha)]};
     return result;
   });
-  const logicalBackground=interpolateBackground(previous,current,alpha);
+  const logicalBackground=interpolateBackground(previous,current,alpha,background);
   return {...current,poses,logicalBackground,screenShake:logicalBackground?.camera?.screenShake??current.screenShake};
 }
 
-function interpolateBackground(previous,current,alpha){
+function interpolateBackground(previous,current,alpha,indices){
   const a=previous.logicalBackground,b=current.logicalBackground,x=previous.nativeMotion,y=current.nativeMotion;
   if(!a?.loaded||!b?.loaded||x.backgroundRevision!==y.backgroundRevision||a.flags!==b.flags||b.frame!==a.frame+1)return b;
   const camera={...b.camera};
@@ -308,7 +335,7 @@ function interpolateBackground(previous,current,alpha){
       camera[key]=b.camera[key].map((v,i)=>lerp(a.camera[key][i],v,alpha));
   }
   camera.fov=lerp(a.camera.fov,b.camera.fov,alpha);
-  const oldRows=new Map(a.poses.map(row=>[row[0],row])),oldSlots=new Map(x.nodes.filter(n=>n.stageSlot>=0).map(n=>[n.stageSlot,n])),newSlots=new Map(y.nodes.filter(n=>n.stageSlot>=0).map(n=>[n.stageSlot,n]));
+  const {oldRows,oldSlots,newSlots}=indices;
   const poses=b.poses.map(row=>{
     const old=oldRows.get(row[0]);if(!old||!sameNode(oldSlots.get(row[0]),newSlots.get(row[0]))||![1,16,17,18,19,20].every(i=>old[i]===row[i]))return row;
     const output=[...row];for(let i=2;i<=13;i++)output[i]=i>=5&&i<=7?wrappedLerp(old[i],row[i],alpha,Math.PI*2):i===10||i===11?wrappedLerp(old[i],row[i],alpha,1):lerp(old[i],row[i],alpha);return output;

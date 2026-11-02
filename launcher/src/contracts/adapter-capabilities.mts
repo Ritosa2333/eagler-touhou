@@ -30,7 +30,7 @@ export const REQUIRED_ADAPTER_CAPABILITIES = Object.freeze([
     verification: ["repository:tests/test-touch-runtime-protocol.mjs", "workspace:tests/test-runtime-protocol-contract.mjs", "workspace:tests/test-portable-touch-controller-contract.mjs", "runtime:per-game touch/deathbomb/outside-touch gates"],
     summary: "touch controls, direct touch, cancellation and the shared sensitivity contract; touch resolves to the same authoritative input/Replay semantics as keyboard/controller" },
   { id: "restart-action", class: "required", owner: "launcher-runtime",
-    verification: ["workspace:tests/test-required-gameplay-actions.mjs"],
+    verification: ["repository:tests/test-touch-runtime-protocol.mjs", "browser:../tools/ports/mp-browser.mjs", "runtime:per-game pause/restart acceptance"],
     summary: "the shared Restart control maps R to the title's restart-current-run action while the pause UI owns input" },
   { id: "always-hitbox", class: "required", owner: "launcher-runtime",
     verification: ["workspace:tests/test-always-hitbox-contract.mjs", "runtime:per-game visual regression"],
@@ -113,7 +113,7 @@ export const REQUIRED_TOUCH_BEHAVIORS = Object.freeze([
   { id: "focus-toggle", owner: "launcher-runtime", summary: "toggle-button focus produces the same logical focus state without changing game mechanics" },
   { id: "focus-two-finger", owner: "launcher-runtime", summary: "two-finger focus changes only the input source; normal low-speed/focus gameplay remains authoritative" },
   { id: "fire-bomb-pause", owner: "launcher-runtime", summary: "Fire, Bomb and Escape/Pause resolve to the title's normal logical inputs" },
-  { id: "deathbomb-preservation", owner: "launcher-runtime", summary: "touch Bomb preserves the title's original deathbomb window and must not cancel held movement merely because Bomb was consumed" },
+  { id: "deathbomb-preservation", owner: "launcher-runtime", summary: "touch movement ownership survives temporary gameplay movement blocks, including death/respawn and deathbomb; the same held pointer resumes movement when the player can move again, with targets rebased to the current player position and the title's original deathbomb window preserved" },
   { id: "unlimited-cheat-processing-rate", owner: "launcher-runtime", summary: "only actual non-zero unlimited direct movement marks the run as cheat movement; once used, Result/high-score and saved-Replay processing-drop metadata use the product-defined 100 percent value" },
   { id: "double-tap-bomb", owner: "launcher-runtime", summary: "the shared optional double-tap gesture, when enabled by the user, resolves to the same Bomb input path" },
   { id: "menu-dialogue-navigation", owner: "launcher-runtime", summary: "touch menu/dialogue gestures resolve to ordinary direction/confirm/cancel/skip inputs rather than bypassing menu state machines" },
@@ -184,6 +184,7 @@ export const REQUIRED_MUSIC_BEHAVIORS = Object.freeze([
   { id: "foreground-audio-recovery", summary: "background/foreground recovery restores the browser output path without restarting the track, corrupting queued output, or replacing the title's loop/fade/playback state" },
   { id: "music-failure-surfacing", summary: "missing/corrupt/failed required music resources are surfaced through the shared error/health model instead of hanging configure/launch silently" },
   { id: "presentation-audio-independence", summary: "display-rate presentation frames never duplicate authoritative music/sound events or advance audio event state" },
+  { id: "immediate-sound-effects", summary: "sound effects reach the output promptly even while music is loading, decoding or queued; music preparation and buffering must not serialize or delay effect playback" },
 ] satisfies readonly RequiredCoreBehavior[]);
 
 export const REQUIRED_PACKAGE_BEHAVIORS = Object.freeze([

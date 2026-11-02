@@ -9,6 +9,7 @@ import {PRODUCT_IDS, PRODUCT_GAMES, productEnabledForBuild, gameIdForProduct, is
 import {APP_SHELL_FILES, FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource} from '../lib/frontend-manifest.mjs';
 import {createLibraryProducts} from '../app/components/launcher/products.ts';
 import {bookArtwork} from '../app/components/launcher/book-artwork.ts';
+import {hostArtworkFiles} from '../lib/host-artwork.mjs';
 
 const project = fileURLToPath(new URL('..', import.meta.url));
 const attr = (node, name) => node.attrs?.find(value => value.name === name)?.value ?? null;
@@ -34,10 +35,14 @@ test('published home registers visible single-player products, routes and comple
     if (artwork) {
       assert.equal(images.length, 1, id + ': one cover per card');
       const published = attr(images[0], 'src').replace(/^\//, '');
-      assert.ok(FRONTEND_PACKAGE_FILES.includes(published), id + ': declared cover');
-      assert.ok(APP_SHELL_FILES.includes(published), id + ': offline cover');
-      assert.equal(sha(await readFile(resolveFrontendPackageSource(published))),
-        sha(await readFile(resolve(project, artwork.replace(/^\//, '')))), id + ': correct artwork bytes');
+      if (FRONTEND_PACKAGE_FILES.includes(published)) {
+        assert.ok(APP_SHELL_FILES.includes(published), id + ': offline bundled cover');
+        assert.equal(sha(await readFile(resolveFrontendPackageSource(published))),
+          sha(await readFile(resolve(project, artwork.replace(/^\//, '')))), id + ': correct artwork bytes');
+      } else {
+        assert.equal(published, product.artwork, id + ': host cover follows the catalog');
+        assert.ok(hostArtworkFiles([gameIdForProduct(id)]).includes(published.replace(/^assets\//, '')), id + ': declared host artwork');
+      }
     } else assert.equal(images.length, 0, id + ': no missing-artwork request');
   }
 });

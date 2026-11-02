@@ -15,6 +15,13 @@
 - `nginx -t` 通过，WebSocket Upgrade 请求可经 `/netplay-relay/` 建立连接。
 - 服务监听地址与 Nginx 上游相同，环境文件中的可信代理 IP 与连接来源一致。
 - 用公网代理验证来自不同 IP 的房间配额相互隔离；离开房间后配额释放。
+- 双端分别验证直连和 TURN 能进入 `route=rtc`。连接失败时两端收到 `route=failed` 并回到等待室。
+
+## 对战链路
+
+默认由 WebRTC 承载玩家输入，ICE 在可用的直连与 TURN 候选间选择。Relay 负责房间、信令与旁观。`EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK=0` 阻止服务在 WebRTC 失败时选择 WebSocket 对战链路；新 Runtime 也默认拒绝该回退。切换已有站点时，应配套发布包含新客户端策略的全部多人 Runtime，并验证失败后的等待室恢复。
+
+兼容旧对战链路时，服务端设置 `EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK=1`，同时由客户端明确设置 `netplayAllowWebsocketFallback=true`。
 
 ## TURN
 

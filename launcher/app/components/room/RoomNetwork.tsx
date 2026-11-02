@@ -3,7 +3,7 @@ import {useLocale} from '../../i18n';
 import type {RoomOwnerSnapshot} from '../../services/multiplayer-room';
 import type {RoomNetworkPresentation, RoomViewContext} from './types';
 import {networkMessage, roomPresentation} from './presentation';
-export function RoomNetwork({state, network, context, peerId, hidden}: {state: RoomOwnerSnapshot; network: RoomNetworkPresentation; context: RoomViewContext; peerId?: string; hidden: boolean}) {
+export function RoomNetwork({state, network, context, peerId, hidden}: {state: RoomOwnerSnapshot; network: Pick<RoomNetworkPresentation, 'capabilities' | 'metric' | 'retry'>; context: RoomViewContext; peerId?: string; hidden: boolean}) {
   const {t} = useLocale(), presentation = roomPresentation(state, t);
   if (!presentation) return null;
   const {room, label} = presentation, message = networkMessage(state, context, t), capabilities = network.capabilities();

@@ -1,0 +1,530 @@
+{
+  "schema": "eagler-touhou/relay-session-deployment/1",
+  "runtimeSourceRevision": "d48252551b28830dc10dc138a683d4cea270271f",
+  "fixRevision": "2f9764790d4d7b0c0c8d3bb28610177149ca02a9",
+  "publications": [
+    {
+      "site": "https://touhouonline.com/",
+      "releaseId": "sha256-630416f08ba0d503bee373f22ef286d64cf0db2c53cba767fe9e8064b1a3636e",
+      "buildId": "425e0440293a13b876e4",
+      "publishedAt": "2026-10-28T09:27:59Z",
+      "verificationScope": "full-site-and-edge",
+      "changes": [
+        {
+          "game": "th08",
+          "module": "multiplayer-host.mjs",
+          "previous": "e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b",
+          "generation": "48103c9ead96ade78943b8f1d12152cebb70de9a9414c0bcdb0e062e8861200a",
+          "beforeSha256": "83b75fc29c5dd40e7e481987d9b809274df7b5115f53ea5cc539f290d3d0251f",
+          "sha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "bytes": 7304
+        },
+        {
+          "game": "th10",
+          "module": "shell.mjs",
+          "previous": "5345d537ec2ad8232269858730cf02ea67a5102a6b96db9c98cb7194d6bbe6c7",
+          "generation": "afdae1f963e36188f47937894c1bc225d67520149b045565acdd4dd9b1843820",
+          "beforeSha256": "3abffce0e79412c97682f87cdd566bab2f553921038754ea91857d4dbecf76e6",
+          "sha256": "ada666f5e8fa113bfe4d30cc573c78f6e6a805b79ea737c43516042b6ba51987",
+          "bytes": 45168
+        },
+        {
+          "game": "th11",
+          "module": "multiplayer.mjs",
+          "previous": "620ff3a1fe2e2bde19e7808c83913cb6cd8b6f3fb56b7f482eab60b1cb44ff80",
+          "generation": "3398e9137f99ee4ef43bf69eca53ef1835c22865d5b38eae13094017140dd99a",
+          "beforeSha256": "bdc62b8f3a74509acb36ba382f71a3ae146bd499b8073f4ad7ac6e6c2eeb0a5a",
+          "sha256": "e63a42040ffef8fea057e28a82a3433643e58766cea3a86d58db1a01b2dbe433",
+          "bytes": 14501
+        },
+        {
+          "game": "th12",
+          "module": "multiplayer.mjs",
+          "previous": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "beforeSha256": "cc63327a53de5aa135876d885db2caca473cf19146b77de0344959495e7ef3ee",
+          "sha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "bytes": 16271
+        },
+        {
+          "game": "th15",
+          "module": "multiplayer.mjs",
+          "previous": "3c4097543165f0550335f9ef31ef7fa16150a0d9e1b9e0ba12fa0736bbc0277c",
+          "generation": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+          "beforeSha256": "a5066b79ba12d0a243fdefeda270b40263f8fdc7a2d1145b681aa8e3d4fd1f75",
+          "sha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "bytes": 7382
+        }
+      ]
+    },
+    {
+      "site": "https://touhou.vip/",
+      "releaseId": "sha256-302c1b5846106b0a82502ee3f41e1c8045ba443aa531a253d57c44199864e64e",
+      "buildId": "ef30606f146f35c4c6ef",
+      "publishedAt": "2026-10-28T09:38:24Z",
+      "verificationScope": "full-site-and-edge",
+      "changes": [
+        {
+          "game": "th08",
+          "module": "multiplayer-host.mjs",
+          "previous": "e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b",
+          "generation": "48103c9ead96ade78943b8f1d12152cebb70de9a9414c0bcdb0e062e8861200a",
+          "beforeSha256": "83b75fc29c5dd40e7e481987d9b809274df7b5115f53ea5cc539f290d3d0251f",
+          "sha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "bytes": 7304
+        },
+        {
+          "game": "th10",
+          "module": "shell.mjs",
+          "previous": "5345d537ec2ad8232269858730cf02ea67a5102a6b96db9c98cb7194d6bbe6c7",
+          "generation": "afdae1f963e36188f47937894c1bc225d67520149b045565acdd4dd9b1843820",
+          "beforeSha256": "3abffce0e79412c97682f87cdd566bab2f553921038754ea91857d4dbecf76e6",
+          "sha256": "ada666f5e8fa113bfe4d30cc573c78f6e6a805b79ea737c43516042b6ba51987",
+          "bytes": 45168
+        },
+        {
+          "game": "th11",
+          "module": "multiplayer.mjs",
+          "previous": "620ff3a1fe2e2bde19e7808c83913cb6cd8b6f3fb56b7f482eab60b1cb44ff80",
+          "generation": "3398e9137f99ee4ef43bf69eca53ef1835c22865d5b38eae13094017140dd99a",
+          "beforeSha256": "bdc62b8f3a74509acb36ba382f71a3ae146bd499b8073f4ad7ac6e6c2eeb0a5a",
+          "sha256": "e63a42040ffef8fea057e28a82a3433643e58766cea3a86d58db1a01b2dbe433",
+          "bytes": 14501
+        },
+        {
+          "game": "th12",
+          "module": "multiplayer.mjs",
+          "previous": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "beforeSha256": "cc63327a53de5aa135876d885db2caca473cf19146b77de0344959495e7ef3ee",
+          "sha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "bytes": 16271
+        },
+        {
+          "game": "th15",
+          "module": "multiplayer.mjs",
+          "previous": "3c4097543165f0550335f9ef31ef7fa16150a0d9e1b9e0ba12fa0736bbc0277c",
+          "generation": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+          "beforeSha256": "a5066b79ba12d0a243fdefeda270b40263f8fdc7a2d1145b681aa8e3d4fd1f75",
+          "sha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "bytes": 7382
+        }
+      ]
+    },
+    {
+      "site": "https://test.touhou.vip/",
+      "releaseId": "sha256-0a33458b1566af29b3a5534308c62830020fd6576eeaed0d451328f9013630e9",
+      "buildId": "851cd907a53f9c722bfe",
+      "publishedAt": "2026-10-28T09:43:29Z",
+      "verificationScope": "restricted-change",
+      "changes": [
+        {
+          "game": "th08",
+          "module": "multiplayer-host.mjs",
+          "previous": "9d22024cbfcc18cbd109f8ce86d7d48ebe618cd2be23ed6fd5747cc467d66716",
+          "generation": "448e2370008161001144938a29e33c749549118ff0af643d2259d9c51b0c7dae",
+          "beforeSha256": "83b75fc29c5dd40e7e481987d9b809274df7b5115f53ea5cc539f290d3d0251f",
+          "sha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "bytes": 7304
+        },
+        {
+          "game": "th10",
+          "module": "shell.mjs",
+          "previous": "51e1bf392f694003d46001e7e886cb37ce8122f627aea7c907c19416d2758058",
+          "generation": "d0434f828a0c389b4e348c994cb52423a5a598ee4f2ac9dd223f2ea4b05d6fb0",
+          "beforeSha256": "66d651501f044f5f4087971ab7716b8cbacf183f3a4a14a258344c8109cf4299",
+          "sha256": "c4a0f6d1c6d0c5e1c5d8978bf4ab262a1e4cdcbbf2861ca0f4c87df86a918dc1",
+          "bytes": 41514
+        },
+        {
+          "game": "th11",
+          "module": "multiplayer.mjs",
+          "previous": "d932e7c2afe91774390016a8d87c8b3bf09157d7492f2c997b83f50f9dd5ce92",
+          "generation": "62264bb61e56c50537d58a768b892043497715fc8f62b70206a800ff4654605f",
+          "beforeSha256": "721f4e8c9d277df42626dceb64404a4d2b850b2ff9d704a382422626fc80eeb1",
+          "sha256": "17b15bef6615c5f95e6db53e3928d8f5c23e252d0e906fb2075b094b250fb54f",
+          "bytes": 14074
+        },
+        {
+          "game": "th12",
+          "module": "multiplayer.mjs",
+          "previous": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "beforeSha256": "cc63327a53de5aa135876d885db2caca473cf19146b77de0344959495e7ef3ee",
+          "sha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "bytes": 16271
+        },
+        {
+          "game": "th15",
+          "module": "multiplayer.mjs",
+          "previous": "2fe228d0e489f1eec1dfa027fe60e1f69e3d59dfb14ce76e02b2092e9e121d3d",
+          "generation": "f771e00b98f4bb55584c34c3e7583ebd1d67aca24ad52b62459cf4adae79302f",
+          "beforeSha256": "a5066b79ba12d0a243fdefeda270b40263f8fdc7a2d1145b681aa8e3d4fd1f75",
+          "sha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "bytes": 7382
+        }
+      ]
+    },
+    {
+      "site": "https://beta.touhou.vip/",
+      "releaseId": "sha256-9cba00445d8c5467b87c5240e951b1bffad8dcae40ff1965bb9530076b284ee9",
+      "buildId": "dc97e7e8ca5a9518f1c1",
+      "publishedAt": "2026-10-28T09:38:55Z",
+      "verificationScope": "full-site-and-edge",
+      "changes": [
+        {
+          "game": "th08",
+          "module": "multiplayer-host.mjs",
+          "previous": "5cec436c7c94cfb53a617f86725d657ed77e61a8fafa7b773ea5def2cd6b8726",
+          "generation": "c45c8b580f222f6430ea760a3c99830ea156a8151d19f90a1dd544b8babe393e",
+          "beforeSha256": "83b75fc29c5dd40e7e481987d9b809274df7b5115f53ea5cc539f290d3d0251f",
+          "sha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "bytes": 7304
+        },
+        {
+          "game": "th10",
+          "module": "shell.mjs",
+          "previous": "0dc42ff50926a617d3c9471034228f7218b5bfd7866723661c5b075274a87042",
+          "generation": "a0d2e0493dc6d424c61ae1812ae52e6b29f52cb9cf3dac01c3291bb38f8dd350",
+          "beforeSha256": "e0f4c7e30083d1f0288e7bbd914f1202c43281978f31b25143e21ef0491a8e68",
+          "sha256": "a265b3c961d69a1a9b78fafb642e796207bf4264b0fa1ba877270fbba85a1715",
+          "bytes": 38794
+        },
+        {
+          "game": "th11",
+          "module": "multiplayer.mjs",
+          "previous": "d9f567d00cdd050ab1000150efaef17191b981a39af28cd9a130fc60ced4e557",
+          "generation": "5549995aaa2e953543061e08e2cc360d291051913701232b701a914165ee4c1d",
+          "beforeSha256": "721f4e8c9d277df42626dceb64404a4d2b850b2ff9d704a382422626fc80eeb1",
+          "sha256": "17b15bef6615c5f95e6db53e3928d8f5c23e252d0e906fb2075b094b250fb54f",
+          "bytes": 14074
+        },
+        {
+          "game": "th15",
+          "module": "multiplayer.mjs",
+          "previous": "7ee79951759d3cbb4528840a8e1ae759d370e3bedd34b521e4674959dfa39440",
+          "generation": "086f581aa879d2cd1ea44a28d8f590a59aafaab425e71244fa21ea39635433aa",
+          "beforeSha256": "365a740fd598e4f23433e63db3d0d9a7ae9fa1a782852303a457798761d6a8a4",
+          "sha256": "60bf54d1300e66ad864989dfc27e08738b8983dc4fd16d22a4c89398ce34c2f2",
+          "bytes": 6647
+        }
+      ]
+    }
+  ],
+  "publicChecks": [
+    {
+      "origin": "https://touhouonline.com/",
+      "checkedAt": "2026-10-28T09:36:42.440Z",
+      "games": [
+        {
+          "game": "th08",
+          "generation": "48103c9ead96ade78943b8f1d12152cebb70de9a9414c0bcdb0e062e8861200a",
+          "moduleSha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "entryMatches": true,
+          "entryBytes": 878,
+          "expectedEntryBytes": 878
+        },
+        {
+          "game": "th10",
+          "generation": "afdae1f963e36188f47937894c1bc225d67520149b045565acdd4dd9b1843820",
+          "moduleSha256": "ada666f5e8fa113bfe4d30cc573c78f6e6a805b79ea737c43516042b6ba51987",
+          "entryMatches": true,
+          "entryBytes": 811,
+          "expectedEntryBytes": 811
+        },
+        {
+          "game": "th11",
+          "generation": "3398e9137f99ee4ef43bf69eca53ef1835c22865d5b38eae13094017140dd99a",
+          "moduleSha256": "e63a42040ffef8fea057e28a82a3433643e58766cea3a86d58db1a01b2dbe433",
+          "entryMatches": true,
+          "entryBytes": 552,
+          "expectedEntryBytes": 552
+        },
+        {
+          "game": "th12",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "moduleSha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "entryMatches": true,
+          "entryBytes": 1060,
+          "expectedEntryBytes": 1060
+        },
+        {
+          "game": "th15",
+          "generation": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+          "moduleSha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "entryMatches": true,
+          "entryBytes": 555,
+          "expectedEntryBytes": 555
+        }
+      ],
+      "testBuild": false,
+      "valid": true
+    },
+    {
+      "origin": "https://jp-site.touhouonline.com/",
+      "checkedAt": "2026-10-28T09:36:52.333Z",
+      "games": [
+        {
+          "game": "th08",
+          "generation": "48103c9ead96ade78943b8f1d12152cebb70de9a9414c0bcdb0e062e8861200a",
+          "moduleSha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "entryMatches": true,
+          "entryBytes": 878,
+          "expectedEntryBytes": 878
+        },
+        {
+          "game": "th10",
+          "generation": "afdae1f963e36188f47937894c1bc225d67520149b045565acdd4dd9b1843820",
+          "moduleSha256": "ada666f5e8fa113bfe4d30cc573c78f6e6a805b79ea737c43516042b6ba51987",
+          "entryMatches": true,
+          "entryBytes": 811,
+          "expectedEntryBytes": 811
+        },
+        {
+          "game": "th11",
+          "generation": "3398e9137f99ee4ef43bf69eca53ef1835c22865d5b38eae13094017140dd99a",
+          "moduleSha256": "e63a42040ffef8fea057e28a82a3433643e58766cea3a86d58db1a01b2dbe433",
+          "entryMatches": true,
+          "entryBytes": 552,
+          "expectedEntryBytes": 552
+        },
+        {
+          "game": "th12",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "moduleSha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "entryMatches": true,
+          "entryBytes": 1060,
+          "expectedEntryBytes": 1060
+        },
+        {
+          "game": "th15",
+          "generation": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+          "moduleSha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "entryMatches": true,
+          "entryBytes": 555,
+          "expectedEntryBytes": 555
+        }
+      ],
+      "testBuild": false,
+      "valid": true
+    },
+    {
+      "origin": "https://cn-site.touhouonline.com:8443/",
+      "checkedAt": "2026-10-28T09:37:02.333Z",
+      "games": [
+        {
+          "game": "th08",
+          "generation": "48103c9ead96ade78943b8f1d12152cebb70de9a9414c0bcdb0e062e8861200a",
+          "moduleSha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "entryMatches": true,
+          "entryBytes": 878,
+          "expectedEntryBytes": 878
+        },
+        {
+          "game": "th10",
+          "generation": "afdae1f963e36188f47937894c1bc225d67520149b045565acdd4dd9b1843820",
+          "moduleSha256": "ada666f5e8fa113bfe4d30cc573c78f6e6a805b79ea737c43516042b6ba51987",
+          "entryMatches": true,
+          "entryBytes": 811,
+          "expectedEntryBytes": 811
+        },
+        {
+          "game": "th11",
+          "generation": "3398e9137f99ee4ef43bf69eca53ef1835c22865d5b38eae13094017140dd99a",
+          "moduleSha256": "e63a42040ffef8fea057e28a82a3433643e58766cea3a86d58db1a01b2dbe433",
+          "entryMatches": true,
+          "entryBytes": 552,
+          "expectedEntryBytes": 552
+        },
+        {
+          "game": "th12",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "moduleSha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "entryMatches": true,
+          "entryBytes": 1060,
+          "expectedEntryBytes": 1060
+        },
+        {
+          "game": "th15",
+          "generation": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+          "moduleSha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "entryMatches": true,
+          "entryBytes": 555,
+          "expectedEntryBytes": 555
+        }
+      ],
+      "testBuild": false,
+      "valid": true
+    },
+    {
+      "origin": "https://touhou.vip/",
+      "checkedAt": "2026-10-28T09:39:18.028Z",
+      "games": [
+        {
+          "game": "th08",
+          "generation": "48103c9ead96ade78943b8f1d12152cebb70de9a9414c0bcdb0e062e8861200a",
+          "moduleSha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "entryMatches": true,
+          "entryBytes": 878,
+          "expectedEntryBytes": 878
+        },
+        {
+          "game": "th10",
+          "generation": "afdae1f963e36188f47937894c1bc225d67520149b045565acdd4dd9b1843820",
+          "moduleSha256": "ada666f5e8fa113bfe4d30cc573c78f6e6a805b79ea737c43516042b6ba51987",
+          "entryMatches": true,
+          "entryBytes": 811,
+          "expectedEntryBytes": 811
+        },
+        {
+          "game": "th11",
+          "generation": "3398e9137f99ee4ef43bf69eca53ef1835c22865d5b38eae13094017140dd99a",
+          "moduleSha256": "e63a42040ffef8fea057e28a82a3433643e58766cea3a86d58db1a01b2dbe433",
+          "entryMatches": true,
+          "entryBytes": 552,
+          "expectedEntryBytes": 552
+        },
+        {
+          "game": "th12",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "moduleSha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "entryMatches": true,
+          "entryBytes": 1060,
+          "expectedEntryBytes": 1060
+        },
+        {
+          "game": "th15",
+          "generation": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+          "moduleSha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "entryMatches": true,
+          "entryBytes": 555,
+          "expectedEntryBytes": 555
+        }
+      ],
+      "testBuild": false,
+      "valid": true
+    },
+    {
+      "origin": "https://test.touhou.vip/",
+      "checkedAt": "2026-10-28T09:44:33.691Z",
+      "games": [
+        {
+          "game": "th08",
+          "generation": "448e2370008161001144938a29e33c749549118ff0af643d2259d9c51b0c7dae",
+          "moduleSha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "entryMatches": true,
+          "entryBytes": 878,
+          "expectedEntryBytes": 878
+        },
+        {
+          "game": "th10",
+          "generation": "d0434f828a0c389b4e348c994cb52423a5a598ee4f2ac9dd223f2ea4b05d6fb0",
+          "moduleSha256": "c4a0f6d1c6d0c5e1c5d8978bf4ab262a1e4cdcbbf2861ca0f4c87df86a918dc1",
+          "entryMatches": true,
+          "entryBytes": 811,
+          "expectedEntryBytes": 811
+        },
+        {
+          "game": "th11",
+          "generation": "62264bb61e56c50537d58a768b892043497715fc8f62b70206a800ff4654605f",
+          "moduleSha256": "17b15bef6615c5f95e6db53e3928d8f5c23e252d0e906fb2075b094b250fb54f",
+          "entryMatches": true,
+          "entryBytes": 552,
+          "expectedEntryBytes": 552
+        },
+        {
+          "game": "th12",
+          "generation": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+          "moduleSha256": "c0d4fa798bec902b881b6139fb020deec214b1ef59592977bed9d0952408a442",
+          "entryMatches": true,
+          "entryBytes": 1060,
+          "expectedEntryBytes": 1060
+        },
+        {
+          "game": "th15",
+          "generation": "f771e00b98f4bb55584c34c3e7583ebd1d67aca24ad52b62459cf4adae79302f",
+          "moduleSha256": "256e0467ee40ca4759aa5952c8080bf3c9dbbaed2ffea4627cd091bb73d31fff",
+          "entryMatches": true,
+          "entryBytes": 555,
+          "expectedEntryBytes": 555
+        }
+      ],
+      "testBuild": true,
+      "valid": true
+    },
+    {
+      "origin": "https://beta.touhou.vip/",
+      "checkedAt": "2026-10-28T09:39:33.890Z",
+      "games": [
+        {
+          "game": "th08",
+          "generation": "c45c8b580f222f6430ea760a3c99830ea156a8151d19f90a1dd544b8babe393e",
+          "moduleSha256": "000cc4064ad9ef2bcf12a7d927c1f15c75fa04e1a55d7875f404f4c108e5cdba",
+          "entryMatches": true,
+          "entryBytes": 878,
+          "expectedEntryBytes": 878
+        },
+        {
+          "game": "th10",
+          "generation": "a0d2e0493dc6d424c61ae1812ae52e6b29f52cb9cf3dac01c3291bb38f8dd350",
+          "moduleSha256": "a265b3c961d69a1a9b78fafb642e796207bf4264b0fa1ba877270fbba85a1715",
+          "entryMatches": true,
+          "entryBytes": 811,
+          "expectedEntryBytes": 811
+        },
+        {
+          "game": "th11",
+          "generation": "5549995aaa2e953543061e08e2cc360d291051913701232b701a914165ee4c1d",
+          "moduleSha256": "17b15bef6615c5f95e6db53e3928d8f5c23e252d0e906fb2075b094b250fb54f",
+          "entryMatches": true,
+          "entryBytes": 552,
+          "expectedEntryBytes": 552
+        },
+        {
+          "game": "th15",
+          "generation": "086f581aa879d2cd1ea44a28d8f590a59aafaab425e71244fa21ea39635433aa",
+          "moduleSha256": "60bf54d1300e66ad864989dfc27e08738b8983dc4fd16d22a4c89398ce34c2f2",
+          "entryMatches": true,
+          "entryBytes": 506,
+          "expectedEntryBytes": 506
+        }
+      ],
+      "testBuild": true,
+      "valid": true
+    }
+  ],
+  "publicMatch": {
+    "game": "th08",
+    "mode": 0,
+    "mixedRelay": true,
+    "wasmSha256": "e02e44fcb6aa3bd66548fd79d8a37f1cba7bc7f24c0e012a5e3a4e97be95a74a",
+    "before": [
+      {
+        "phase": 1,
+        "frame": 981
+      },
+      {
+        "phase": 1,
+        "frame": 17
+      }
+    ],
+    "after": [
+      {
+        "phase": 1,
+        "frame": 2332
+      },
+      {
+        "phase": 1,
+        "frame": 1366
+      }
+    ],
+    "roomOptions": [],
+    "matches": 32,
+    "scope": "Production native Runtime and supplied DATA with two local browser peers using separate public Relay aliases"
+  },
+  "testSiteValidation": {
+    "scope": "Five exact multiplayer identity replacements, complete immutable generation and release inventory, frontend contract, all unrelated old file identities",
+    "existingUnchangedTh09NormalGeneration": "019cff34ca616e013ce1b3ad4c93b4f9dfda142d8e4a004f312f23531c022fd1",
+    "fullSiteVerifierLimitation": "Existing th09 normal generation lacks auto-replay.mjs, replay-player.mjs and playback-clock.mjs required by the current verifier catalog"
+  }
+}

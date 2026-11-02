@@ -68,23 +68,22 @@ int main(){
   // Native 0.0167-second quantization rounds five seconds to 4.9933.
   assert(clock.encoded==SpellPresentationClock::encode(4,99));
  }
+ // Shared chapter events must dispatch the same native collection rule once
+ // per seat, including different cap and Extra-tier histories.
  for(unsigned count:{1u,2u,3u}){
-  std::array<PlayerLifeSession,3> stock;std::array<PlayerLifeSession*,3> seats{};
-  for(unsigned i=0;i<count;++i){seats[i]=&stock[i];stock[i].extra_lives=i?-1:2;}
-  i32 pieces=0,tier=0;
-  auto added=multiplayer_fragment(pieces,tier,1,seats,count);assert(pieces==1&&tier==0);
-  for(unsigned i=0;i<count;++i)assert(stock[i].life_pieces==1&&!added[i]);
-  multiplayer_fragment(pieces,tier,1,seats,count);added=multiplayer_fragment(pieces,tier,1,seats,count);
-  assert(pieces==0&&tier==1&&stock[0].extra_lives==3);
-  for(unsigned i=1;i<count;++i)assert(stock[i].extra_lives==0&&added[i]);
-  // Ghost reserves keep growing; this accounting never changes life state.
-  for(unsigned n=0;n<3;++n)multiplayer_fragment(pieces,tier,1,seats,count);
-  for(unsigned i=1;i<count;++i)assert(stock[i].extra_lives==1);
+  ItemScoreState score;PlayerMotion motion;Host host;
+  std::array<PlayerLifeSession,3> stock{};std::array<i32,3> tiers{};
+  for(unsigned seat=0;seat<count;++seat){
+   stock[seat].extra_lives=seat?7:8;stock[seat].bombs=2;stock[seat].life_pieces=2;
+   ItemCollection collection(stock[seat],score,motion,host,0,&tiers[seat]);ItemState fragment;fragment.kind=4;
+   assert(collection.award(fragment));
+   assert(stock[seat].extra_lives==8&&stock[seat].life_pieces==0);
+   assert(stock[seat].bomb_pieces==(seat?0:1)&&tiers[seat]==(seat?1:0));
+   assert(collection.award(fragment)&&stock[seat].bomb_pieces==(seat?1:2));
+   stock[seat].extra_lives=7;
+   assert(collection.award(fragment)&&stock[seat].life_pieces==1&&stock[seat].extra_lives==7);
+  }
  }
- PlayerLifeSession capped;capped.extra_lives=8;std::array<PlayerLifeSession*,3> one{&capped};i32 pieces=2,tier=0;
- assert(!multiplayer_fragment(pieces,tier,1,one,1)[0]&&capped.extra_lives==8&&pieces==0);
- pieces=4;tier=4;capped.extra_lives=2;assert(multiplayer_fragment(pieces,tier,4,one,1)[0]&&pieces==0&&tier==5);
- multiplayer_fragment(pieces,tier,4,one,1);assert(pieces==1&&capped.extra_lives==3);
  for(int count:{2,3}){
   PlayerLifeSession player;ItemScoreState score;score.max_power=400;PlayerMotion motion;motion.position.y=100;Host host;
   ItemCollection collection(player,score,motion,host,0);collection.small_power_amount=count;
@@ -95,5 +94,5 @@ int main(){
   // a second fragment after the shared callback updated all seats.
   unsigned calls=0;collection.shared_life_piece=[&](){++calls;return true;};item.kind=4;assert(collection.award(item)&&calls==1);
  }
- std::puts("PASS: one team fragment for 1/2/3 seats, ghost reserves, native cap/Extra threshold, 0.02/0.03 small P, 1.00 large P");
+ std::puts("PASS: native per-seat fragment conversion for 1/2/3 seats, 0.02/0.03 small P, 1.00 large P");
 }

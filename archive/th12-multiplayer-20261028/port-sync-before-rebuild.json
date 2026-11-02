@@ -1,0 +1,101 @@
+{
+  "normal": "ports/th12",
+  "multiplayer": "ports/th12-mp",
+  "base": "26aa44223c538bc5999c4dcd5e6fb03d2ed48cbc",
+  "history": [
+    {
+      "kind": "git-merge",
+      "base": "db0db42c2f494459f15ef286818478d4782e1f7b",
+      "source": "f5c9fc0670599190c6ed17783fe179c385ed23a0",
+      "targetHead": "89a8331d887395890dc9f1f6d57c58a704df1894",
+      "paths": [
+        "ports/th12-mp/docs/behavior/animation.md",
+        "ports/th12-mp/src/game/AnmScene.cpp",
+        "ports/th12-mp/src/game/AnmScene.hpp",
+        "ports/th12-mp/src/game/EnemyCallbacks.cpp",
+        "ports/th12-mp/src/game/Presentation.cpp",
+        "ports/th12-mp/src/game/PresentationGeometry.cpp",
+        "ports/th12-mp/src/game/PresentationMotion.cpp",
+        "ports/th12-mp/src/presentation-interpolation.mjs",
+        "ports/th12-mp/src/stage-background.mjs"
+      ],
+      "note": "同步飞钵半径、相邻帧展示匹配缓存、动画遍历缓冲、子弹绘制索引与背景旋转复用；保留多人席位作用域，目录合并节点 9256bc2ab1f22238a79e4e34146451d307b74f59，写回节点 89a8331d887395890dc9f1f6d57c58a704df1894。",
+      "integration": "committed",
+      "normalHistory": "5ea4831e98d6b3124d57240ab85af1e6839c3abb",
+      "multiplayerHistory": "9256bc2ab1f22238a79e4e34146451d307b74f59"
+    },
+    {
+      "kind": "git-merge",
+      "base": "f5c9fc0670599190c6ed17783fe179c385ed23a0",
+      "source": "54ab65c1307833ec728125fb32c3f8c04d495854",
+      "targetHead": "fa420cf5f329e4e0a1760f940f2e2e1e677b6073",
+      "paths": [
+        "ports/th12-mp/src/draw-scheduler.mjs",
+        "ports/th12-mp/src/mesh-vertices.mjs",
+        "ports/th12-mp/src/presentation-interpolation.mjs",
+        "ports/th12-mp/src/renderer.mjs",
+        "ports/th12-mp/src/sound-player.mjs",
+        "ports/th12-mp/src/stage-background.mjs"
+      ],
+      "note": "同步连续网格顶点快照、双精度坐标插值、背景裁剪缓冲与静态实例缓存、音效处理节点复用；保留多人角色绘制和输入行为。",
+      "integration": "committed",
+      "normalHistory": "b106ecd3d7102d4e9c3bf910ef6a32291d7e54e9",
+      "multiplayerHistory": "c94e00793ef3fd1aecbf59816a72aae30bca55a2"
+    },
+    {
+      "kind": "git-merge",
+      "base": "54ab65c1307833ec728125fb32c3f8c04d495854",
+      "source": "798d9aae245f3c1af61c4e46e2e8a810218535e0",
+      "targetHead": "283b14b6d227dbae5822a02ff0e464e24b417b57",
+      "paths": [
+        "ports/th12-mp/scripts/build.mjs",
+        "ports/th12-mp/site/game.mjs",
+        "ports/th12-mp/src/animation.mjs",
+        "ports/th12-mp/src/game-profile.mjs",
+        "ports/th12-mp/src/game/Application.cpp",
+        "ports/th12-mp/src/game/Presentation.cpp",
+        "ports/th12-mp/src/game/PresentationMotion.cpp",
+        "ports/th12-mp/src/game/PresentationMotion.hpp",
+        "ports/th12-mp/src/renderer.mjs",
+        "ports/th12-mp/src/stage-loader.mjs",
+        "ports/th12-mp/src/wasm/Api.hpp",
+        "ports/th12-mp/src/wasm/Exports.cpp",
+        "ports/th12-mp/tests/managed-adapter.test.mjs",
+        "ports/th12-mp/tests/native/stage-flow.cpp",
+        "ports/th12-mp/tests/switch-port-regressions.test.mjs"
+      ],
+      "note": "Switch 修复、整数分数与续关末位、ANM 速度插值、结算资源预读、录像换关、绘制查找及 owner 清理均已适配多人版；保留联机输入节奏、角色透明化、道具归属、回滚检查点与全队 Bomb 互斥。普通版转入 main，多人版转入 feature/th12-multiplayer。 两个来源提交的普通版目录树一致；保留旧基线到来源的处理记录，后续普通版基线使用 main 的 bca3cd6b7c953784c73201a1d34f32dd43f3753a。",
+      "integration": "committed",
+      "normalHistory": "82830a0a5d1c352348ccd288a9315f9cb13505e5",
+      "multiplayerHistory": "26403f19a1ab94cd407c66576308a094540fb6f4",
+      "normalBranch": "main",
+      "multiplayerBranch": "feature/th12-multiplayer",
+      "normalBranchBase": "bca3cd6b7c953784c73201a1d34f32dd43f3753a"
+    },
+    {
+      "kind": "git-merge",
+      "base": "bca3cd6b7c953784c73201a1d34f32dd43f3753a",
+      "source": "26aa44223c538bc5999c4dcd5e6fb03d2ed48cbc",
+      "targetHead": "9f9013aea55f276a147651f3ce7cc240b0a98781",
+      "paths": [
+        "ports/th12-mp/site/game.mjs",
+        "ports/th12-mp/src/renderer.mjs",
+        "ports/th12-mp/src/managed-shell.mjs"
+      ],
+      "note": "普通版与多人版同步实际帧率绘制、高刷入口和本机帧率选项保留；共享贴图编译器保存空替换精灵完整边缘。MP 接入三席插值、回滚边界与统计、Boss／飞碟存活系数和本机实际时间。",
+      "integration": "committed",
+      "normalHistory": "aac3a356f6877627d95f08b86630a3e75082fc10",
+      "multiplayerHistory": "3583448c9a8722a39ef8465fdc079e5e10daf5e4",
+      "normalBranch": "main",
+      "multiplayerBranch": "feature/th12-multiplayer",
+      "normalBranchBase": "26aa44223c538bc5999c4dcd5e6fb03d2ed48cbc"
+    }
+  ],
+  "origin": {
+    "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
+    "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
+    "mergeBases": [
+      "5e5081a1d2a434b2f8d785ebbd6b965f1058d828"
+    ]
+  }
+}

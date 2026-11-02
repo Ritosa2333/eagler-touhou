@@ -46,7 +46,7 @@ try{
  let r=await fetch(base+'/netplay-stats/sample',{method:'POST',headers:{Origin:'https://wrong.test','Content-Type':'application/json'},body:JSON.stringify(records[0])});assert.equal(r.status,403);
  r=await fetch(base+'/netplay-stats/sample',{method:'POST',headers:{Origin:'https://example.test','Content-Type':'application/json'},body:JSON.stringify({...records[0],playerName:'do-not-retain',ip:'do-not-retain'})});assert.equal(r.status,204);
  const publicData=await (await fetch(base+'/netplay-stats/summary')).text();assert(!publicData.includes('do-not-retain'));assert(!publicData.includes(records[0].id));
- assert.equal((await fetch(base+'/netplay-stats/')).status,200);await service.close();service=null;
+ const moved=await fetch(base+'/netplay-stats/',{redirect:'manual'});assert.equal(moved.status,308);assert.equal(moved.headers.get('location'),'../uptime/');await service.close();service=null;
  const persisted=JSON.parse(await readFile(stateFile,'utf8'));assert.equal(persisted.days[Object.keys(persisted.days)[0]].total.sessions,1);assert(!JSON.stringify(persisted).includes(records[0].id));
  service=await startTelemetryServer({port:0,origin:'https://example.test',stateFile});assert(Object.keys(service.store.snapshot().days).length);
 }finally{if(service)await service.close();await rm(dir,{recursive:true,force:true});}

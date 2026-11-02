@@ -127,6 +127,8 @@ int runEnemyCallback(Enemy& e, int selector) {
   world.writePrimaryAnimationWidth = [](u32 id, float width) {
     if (auto* node = animationScene.find(enemyAnimationKey(id, 0))) {
       node->vm.control().spriteWidth = width;
+      // Native VM+58 is also the radius read by the mode16 outline draw.
+      node->vm.control().geometryRadius = width;
       node->vm.control().flags |= 8u;
       return true;
     }

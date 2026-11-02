@@ -43,6 +43,7 @@ const publicAssets = new Set([
   "assets/player-live.svg", "assets/player-chat.svg", "assets/replay-arrow-left.svg",
   "assets/replay-arrow-counter-clockwise.svg", "assets/replay-file-text.svg",
   "assets/replay-folder.svg", "assets/replay-upload-simple.svg", "assets/replay-dots-three.svg",
+  "assets/site-menu.svg", "assets/site-menu-close.svg",
   "assets/LICENSE-Phosphor.txt", "assets/phosphor-ui-icons.json",
   "assets/fonts/touhou98.woff2",
   "assets/fonts/unifont-site.woff2",

@@ -12,9 +12,9 @@
 #include <deque>
 #include <string>
 namespace th15::multiplayer {
-// Title adapter over shared network authorities. The common history object is
-// used with prediction disabled. No title snapshot, undo or resimulation owner
-// exists in the TH15 multiplayer source set.
+// Title adapter over shared network authorities. The input history core
+// delegates world restoration to the application frame owner. Transport and
+// physical captures survive correction; only simulated decisions are rewound.
 class NetplayRuntime {
 public:
     bool Reset(const SessionSetup&);
@@ -35,6 +35,11 @@ public:
     bool FeedPlayback(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool FeedSpectator(std::uint32_t);
     Netplay::FrameDecision Prepare(std::uint32_t)const;
+    bool HasCorrection()const{return core_.HasRollbackRequest();}
+    std::uint32_t CorrectionFrame()const{return core_.RollbackFrame();}
+    bool Rewind(std::uint32_t frame){return core_.RewindSimulationTo(frame)||Fail("TH15 correction history expired");}
+    bool RollbackEnabled()const{return setup_.mode!=1&&!ReadOnly();}
+    bool Tentative(std::uint32_t frame)const{const auto confirmed=Confirmed();return RollbackEnabled()&&(confirmed==Netplay::INVALID_FRAME||frame>confirmed);}
     bool MarkSimulated(std::uint32_t,const Netplay::FrameDecision&);
     bool ConfirmedInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
     void RecordSpectatorFrame(Netplay::SpectatorStagePublisher::Frame);
@@ -100,5 +105,6 @@ private:
     Netplay::SpectatorStagePlayback stage_playback_;
     Netplay::SpectatorStageView stage_view_;
     bool stage_publication_=false,stage_received_=false;
+    std::uint32_t stage_recorded_=Netplay::INVALID_FRAME;
 };
 }

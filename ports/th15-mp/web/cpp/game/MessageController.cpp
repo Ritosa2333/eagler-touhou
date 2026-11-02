@@ -1,9 +1,10 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "MessageController.hpp"
 namespace th15 {
 bool MessageController::fail(const char* message){if(error.empty())error=message;return false;}
 MessageController::~MessageController(){release();}
 bool MessageController::release(){bool ok=true;if(dialogue){ok=host.release(dialogue->state);dialogue.reset();}script_index=-1;return ok||fail("Dialogue release failed");}
-bool MessageController::request(i32 id){
+bool MessageController::request(i32 id){if(!multiplayer::FrameFence::allow())return false;
  if(!error.empty())return false;
  if(id==-2)return (scene.spell_flags&0x80?services.begin_game_over():services.complete_stage())||fail("Message scene transition failed");
  if(id==-1||id==-3){const bool boss=id==-1;const u32 index=boss?1:0;

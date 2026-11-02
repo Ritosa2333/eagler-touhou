@@ -1,12 +1,13 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "AnmManager.hpp"
 namespace th15 {
-void AnmManager::unload(i32 id){auto found=banks.find(id);if(found==banks.end())return;auto* resource=&found->second->data;registry.retire_resource(resource);if(environment.fallback_sprite_resource==resource)environment.fallback_sprite_resource=nullptr;retired_banks.push_back(std::move(found->second));banks.erase(found);resource_names.erase(id);collect_resources();}
+void AnmManager::unload(i32 id){if(!multiplayer::FrameFence::allow())return;auto found=banks.find(id);if(found==banks.end())return;auto* resource=&found->second->data;registry.retire_resource(resource);if(environment.fallback_sprite_resource==resource)environment.fallback_sprite_resource=nullptr;retired_banks.push_back(std::move(found->second));banks.erase(found);resource_names.erase(id);collect_resources();}
 void AnmManager::collect_resources(){
- for(auto next=retired_banks.begin();next!=retired_banks.end();){const auto* resource=&(*next)->data;bool referenced=registry.references_resource(resource);if(!referenced)for(const auto& bank:banks){for(const auto& vm:bank.second->templates)if(vm.resource==resource||vm.sprite_resource==resource){referenced=true;break;}if(referenced)break;}
+ for(auto next=retired_banks.begin();next!=retired_banks.end();){if(next->use_count()>1){++next;continue;}const auto* resource=&(*next)->data;bool referenced=registry.references_resource(resource);if(!referenced)for(const auto& bank:banks){for(const auto& vm:bank.second->templates)if(vm.resource==resource||vm.sprite_resource==resource){referenced=true;break;}if(referenced)break;}
   if(referenced){++next;continue;}if(resource_release)resource_release(*resource);next=retired_banks.erase(next);
  }
 }
-bool AnmManager::load(i32 id,const u8* bytes,u32 size){
+bool AnmManager::load(i32 id,const u8* bytes,u32 size){if(!multiplayer::FrameFence::allow())return false;
     if(banks.count(id)){error="Animation resource already loaded";return false;}
     auto bank=std::make_unique<Bank>();if(!bank->data.open(bytes,size)){error="Invalid animation resource";return false;}
     bank->templates.resize(bank->data.scripts.size());

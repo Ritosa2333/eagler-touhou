@@ -3,8 +3,10 @@
 #include "PauseMenu.hpp"
 #include "FrameScheduler.hpp"
 namespace th15 {
+namespace sdl {class AppFrameState;}
 struct PauseFrameInput {u32 pressed=0,repeated=0;bool lost_focus=false,session_enabled=true;};
 class PauseFrame {
+ friend class sdl::AppFrameState;
  PauseState& state;SessionState& progress;PlayerLifeSession& player;Timer& session_age;PauseActivation& activation;PauseMenu& menu;FrameScheduler& scheduler;FrameCallback callback;PauseFrameInput input;i32 front;
  i32 scheduled();bool fail(const std::string&);
 public:

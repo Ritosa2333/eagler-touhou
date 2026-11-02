@@ -5,6 +5,7 @@
 #include "../../web/cpp/game/ScreenFade.hpp"
 #ifdef TH11_MULTIPLAYER
 #include <eagler/netplay/RollbackJournal.hpp>
+#include "../../web/cpp/multiplayer/SpectatorStageState.hpp"
 #endif
 #include <cstdio>
 #include <cstdlib>
@@ -292,12 +293,45 @@ void failure(){
 }
 }
 #endif
+#ifdef TH11_MULTIPLAYER
+void replay_background_clock(){
+    group("stage-six chapter restores recorded STD and camera clocks");
+    const auto setup=[](Fixture& f){
+        auto& s=f.stage.state;s.stage_number=6;
+        f.stage.resource.instructions={
+            {0,3,28,0,{60,0,word(120),word(300),word(-200)}},
+            {25,13,12,28,{0xffabcdef}},
+            {1000000,0,8,40,{}}};
+    };
+    for(unsigned warmup:{0u,1u,5u,29u,31u}){
+        Fixture full,direct;setup(full);setup(direct);
+        for(unsigned i=0;i<warmup;++i)full.tick();
+        direct.stage.multiplayer_replay_background_frame=full.stage.state.script_timer.current;
+        for(unsigned i=0;i<120;++i){
+            full.tick();direct.tick();const auto& a=full.stage.state;const auto& b=direct.stage.state;
+            check(a.script_timer.current==b.script_timer.current,"STD clock matches continuous playback");
+            check(a.position_interpolation.timer.current==b.position_interpolation.timer.current,"camera clock matches continuous playback");
+            check(!std::memcmp(&a.camera.position,&b.camera.position,sizeof(Vec3)),"camera sample matches continuous playback");
+            check(a.instruction_offset==b.instruction_offset&&full.color==direct.color,"authored instruction frontier matches");
+        }
+    }
+    Fixture back;setup(back);back.stage.multiplayer_replay_background_frame=-1;back.tick();
+    check(back.stage.state.script_timer.current==0,"negative-one THPrac offset remains signed");
+    th11::multiplayer::SpectatorStageState state,decoded;state.stage=6;state.seats=2;state.background_frame=31;
+    std::vector<u8> bytes;check(th11::multiplayer::EncodeSpectatorStageState(state,bytes),"stage codec accepts clock");
+    check(th11::multiplayer::DecodeSpectatorStageState(bytes,decoded)&&decoded.background_frame==31,"stage codec preserves clock");
+    auto old=bytes;old.erase(old.begin()+24,old.begin()+28);
+    check(!th11::multiplayer::DecodeSpectatorStageState(old,decoded),"old-size clockless initializer rejected");
+    for(i32 bad:{-2,3000001}){state.background_frame=bad;check(!th11::multiplayer::EncodeSpectatorStageState(state,bytes),"invalid clock rejected");}
+    std::puts("PASS TH11 replay background: 5 entry offsets x 120 native ticks + signed offset + wire codec");
+}
+#endif
 int main(){
     static_assert(sizeof(void*)==4,"execute exact WASI32 layout");
     static_assert(sizeof(th11::StageState)==0x3158,"authored Stage ABI");
     ordinary();
 #ifdef TH11_MULTIPLAYER
-    semantic_roundtrip();deformation_history();structural_barrier();preflight();failure();
+    replay_background_clock();semantic_roundtrip();deformation_history();structural_barrier();preflight();failure();
     std::printf("PASS Stage rollback multiplayer: %u groups, %u checks\n",groups,checks);
 #else
     std::printf("PASS Stage ordinary: %u groups, %u checks\n",groups,checks);

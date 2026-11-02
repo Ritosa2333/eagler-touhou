@@ -1,0 +1,103 @@
+{
+  "missing": 24,
+  "repaired": [
+    {
+      "path": "runtime/th08/f10eb9db4489744091332c592fe20effa523ae11315c6a14c4f3ac8bf3e3c0ac/fonts/blend.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th08/f10eb9db4489744091332c592fe20effa523ae11315c6a14c4f3ac8bf3e3c0ac/fonts/cp932.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th08/a0cd90f468c0adf35f09feb3cf44e042aa9675b01a25b5828c36c243dc3505c8/fonts/blend.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th08/a0cd90f468c0adf35f09feb3cf44e042aa9675b01a25b5828c36c243dc3505c8/fonts/cp932.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th09/multiplayer/05a5d1eab167d66d5818740899a4904c5cd02af412775017c597a98270b10d9b/fonts/blend.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th09/multiplayer/05a5d1eab167d66d5818740899a4904c5cd02af412775017c597a98270b10d9b/fonts/cp932.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th10/abe0be39fe55fc8c6c7420a7f0d4417d76cf032d4f9ff1a7872a86989b649a97/fonts/blend.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th10/abe0be39fe55fc8c6c7420a7f0d4417d76cf032d4f9ff1a7872a86989b649a97/fonts/codepages.bin",
+      "bytes": 262144
+    },
+    {
+      "path": "runtime/th10/f60bbdd7e426e89ca74d564f07396de676bbf450453c68de1e53fde22e840dc5/fonts/blend.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th10/f60bbdd7e426e89ca74d564f07396de676bbf450453c68de1e53fde22e840dc5/fonts/codepages.bin",
+      "bytes": 262144
+    },
+    {
+      "path": "runtime/th10/multiplayer/f648cc45e10f9c4a9714d084ffdcf843663d0bd90fa5f9af779a01667594bcb4/fonts/blend.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th10/multiplayer/f648cc45e10f9c4a9714d084ffdcf843663d0bd90fa5f9af779a01667594bcb4/fonts/codepages.bin",
+      "bytes": 262144
+    },
+    {
+      "path": "runtime/th11/031b25a0501021433526b2b8081465b6eee5d7597e351cbc488ef06b3268e10d/fonts/blend4444.bin",
+      "bytes": 65536
+    },
+    {
+      "path": "runtime/th11/031b25a0501021433526b2b8081465b6eee5d7597e351cbc488ef06b3268e10d/fonts/cp932.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th11/031b25a0501021433526b2b8081465b6eee5d7597e351cbc488ef06b3268e10d/fonts/font0.bin",
+      "bytes": 6543872
+    },
+    {
+      "path": "runtime/th11/031b25a0501021433526b2b8081465b6eee5d7597e351cbc488ef06b3268e10d/fonts/font1.bin",
+      "bytes": 6832262
+    },
+    {
+      "path": "runtime/th11/031b25a0501021433526b2b8081465b6eee5d7597e351cbc488ef06b3268e10d/fonts/font2.bin",
+      "bytes": 1547929
+    },
+    {
+      "path": "runtime/th11/031b25a0501021433526b2b8081465b6eee5d7597e351cbc488ef06b3268e10d/fonts/font3.bin",
+      "bytes": 1818874
+    },
+    {
+      "path": "runtime/th11/e0c415987fa25452d82da73e1a8301e6514fa8208c928ee2b4fbc6aec09505fb/fonts/blend4444.bin",
+      "bytes": 65536
+    },
+    {
+      "path": "runtime/th11/e0c415987fa25452d82da73e1a8301e6514fa8208c928ee2b4fbc6aec09505fb/fonts/cp932.bin",
+      "bytes": 131072
+    },
+    {
+      "path": "runtime/th11/e0c415987fa25452d82da73e1a8301e6514fa8208c928ee2b4fbc6aec09505fb/fonts/font0.bin",
+      "bytes": 6543872
+    },
+    {
+      "path": "runtime/th11/e0c415987fa25452d82da73e1a8301e6514fa8208c928ee2b4fbc6aec09505fb/fonts/font1.bin",
+      "bytes": 6832262
+    },
+    {
+      "path": "runtime/th11/e0c415987fa25452d82da73e1a8301e6514fa8208c928ee2b4fbc6aec09505fb/fonts/font2.bin",
+      "bytes": 1547929
+    },
+    {
+      "path": "runtime/th11/e0c415987fa25452d82da73e1a8301e6514fa8208c928ee2b4fbc6aec09505fb/fonts/font3.bin",
+      "bytes": 1818874
+    }
+  ],
+  "remaining": [],
+  "candidate": "/var/www/eagler-touhou-test/releases/th12mp-public-final-0dde257ec-20261028"
+}

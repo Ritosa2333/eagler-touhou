@@ -124,6 +124,7 @@ export interface RuntimeConfigureOptions {
   netplayReplayNames?: string[];
   netplayIceServers?: unknown[];
   netplayPreferTurn?: boolean;
+  netplayAllowWebsocketFallback?: boolean;
   netplayLoadouts?: RuntimeNetplayLoadout[];
 }
 
@@ -136,6 +137,7 @@ export interface RuntimeConfigureOptions {
  * aliases live in RUNTIME_CONFIGURE_LEGACY_OPTION_KEYS instead.
  */
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
+  netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),
   touchEnabled: Object.freeze({ requirement: "required", capability: "touch-controls" }),

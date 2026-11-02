@@ -1,0 +1,24 @@
+[
+  {
+    "target": "main",
+    "serviceWorker": {
+      "active": "activated",
+      "url": "https://touhou.vip/app-shell-sw.js",
+      "controller": null
+    },
+    "runtimeManifestMatches": true,
+    "errors": [],
+    "passed": true
+  },
+  {
+    "target": "test",
+    "serviceWorker": {
+      "active": "activated",
+      "url": "https://test.touhou.vip/app-shell-sw.js",
+      "controller": null
+    },
+    "runtimeManifestMatches": true,
+    "errors": [],
+    "passed": true
+  }
+]

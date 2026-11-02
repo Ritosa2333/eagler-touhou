@@ -57,7 +57,7 @@
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [Deathbomb 与移动保持](../../docs/adaptation/input.md#touch-09) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | 待核对 | normal：[held-touch-continuity](../../docs/adaptation/status.json)；multiplayer：[held-touch-continuity](../../docs/adaptation/status.json) |
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -87,6 +87,7 @@
 | AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
+| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | 待核对 | normal：[immediate-sfx-routing](../../docs/adaptation/status.json)；multiplayer：[immediate-sfx-routing](../../docs/adaptation/status.json) |
 | MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -171,6 +172,8 @@
 
 ## 运行验收记录
 
+2026-10-28 multiplayer：#148 灵梦 A 在命中前为各有效席位获取诱导目标，实际索敌片段的双人／三人及优先级检查通过。构建与验证范围见[修复验证记录](../../archive/th06-th08-multiplayer-bugs-20261028/README.md)。
+
 2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。
 
 2026-10-19 multiplayer：房间预览转正式开局补发实际呈现确认，双实例首帧、输入桥和同步检查通过，见[房间开局修复记录](../../docs/adaptation/room-start-20261019.md)。
@@ -178,3 +181,5 @@
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 本轮桌面协议、输入、文件持久化与实际 MP 房间结果见[逐作运行记录](../../docs/adaptation/desktop-20261018.md)。按作品、模式和分项读取通过、失败及待复验结果，原始报告身份见同页机器记录。
+
+TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。

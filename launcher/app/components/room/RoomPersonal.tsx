@@ -6,7 +6,7 @@ import {useLocale} from '../../i18n';
 import {roomPresentation} from './presentation';
 import {RoomPacketLoss} from './RoomPacketLoss';
 import type {RoomNetworkPresentation} from './types';
-export function RoomPersonal({state, service, network, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; network: RoomNetworkPresentation; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
+export function RoomPersonal({state, service, network, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setDisplayName' | 'changeLoadout' | 'standUp' | 'checkGame' | 'setPreferTurn'>; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
   const {t} = useLocale(), {room, loadout, label, config} = roomPresentation(state, t)!;
   const input = useRef<HTMLInputElement>(null), latest = useRef(service); latest.current = service;
   const moderated = !!state.nickname, moderatedRef = useRef(moderated); moderatedRef.current = moderated;

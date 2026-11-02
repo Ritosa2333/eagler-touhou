@@ -59,6 +59,8 @@ git log --oneline port-history/th10mp..port-history/th10
 
 日常开发使用原目录和开发分支。`port-history/*` 是各作的目录历史，合并同步时以 MP 分支为起点。`sync.mjs record` 登记处理进度，目录历史合并建立 Git 祖先，两者随同步一起维护。完整操作见[下一次提交与同步](docs/adaptation/port-sync.md#下一次提交与同步)。
 
+monorepo 的 `main` 集成普通版与 MP。向独立作品源仓库回推时，普通版目录历史进入其普通版分支（包括名为 `main` 的普通版分支），MP 目录历史进入对应多人分支。投影提交重新生成来源映射，独立连接提交通过标准子树导出核对祖先和目录内容。
+
 修改共用代码时，用[目录映射](launcher/config/workspace.json)和[构建配方](launcher/config/runtime-builds.json)找出受影响的游戏。接口定义、调用方和对应测试在同一改动中更新。
 
 ## 4. 检查
@@ -76,7 +78,11 @@ bun run test
 
 以上包含文档和前端检查。游戏改动再运行该作开发指南中的编译与行为检查；Relay 等服务运行自身测试。
 
+来源历史回归在隔离的临时仓库中先物化作品目录，再调用标准 `git subtree split`，同时核对导出树和上游祖先，覆盖 Windows 与 Linux 的路径前置条件。
+
 新建或移动文档后，运行 `npm run docs:index` 更新[全部文档表](docs/INDEX.md)，再执行 `npm run docs:check`。验收记录使用[模板](docs/adaptation/record-template.md)。
+
+带日期的实验、压测、部署和会话记录及配套 JSON 等证据，统一保存到 `archive/<主题-日期>/`。`docs/` 维护当前架构、接口契约、开发指南和适配状态，`docs/migration/` 保留当前有效的来源登记。移动历史记录时一起迁移关联证据、修正相对链接并更新文档总表。当前指南引用历史结果时，标明对应构建和验证范围。
 
 ## 5. 提交与合并
 

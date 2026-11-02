@@ -146,6 +146,13 @@ int th12_start_full_game(int c, int s, int d, int seed, int practice) {
 void th12_set_full_game_mode(int practice) {
   th12::setFullGameMode(practice != 0);
 }
+int th12_replay_stage_flow(int practice, int fade_in) {
+  if (!th12::spellState.replayWallClock || (practice != 0 && practice != 1) ||
+      (fade_in != 0 && fade_in != 1)) return 0;
+  th12::setFullGameMode(practice != 0);
+  if (fade_in) th12::fullGameFlow.entryFadeAge = 0;
+  return 1;
+}
 int th12_start_next_stage() { return th12::startNextStage(); }
 int th12_continue_game() { return th12::continueFullGame(); }
 const char* th12_stage_flow() { return th12::captureStageFlow().c_str(); }

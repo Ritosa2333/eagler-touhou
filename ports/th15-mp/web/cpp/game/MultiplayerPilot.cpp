@@ -1,3 +1,4 @@
+#include "../multiplayer/FrameFence.hpp"
 #include <eagler/gameplay/CooperativeRules.hpp>
 #if TH15_MULTIPLAYER
 #include "GameBattle.hpp"
@@ -26,7 +27,7 @@ bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
     player->motion.position={x,400,0};player->motion.position_fixed={i32(x*128),51200};player->motion.snap_options();
     return true;
 }
-bool MultiplayerPilot::rebuild_bomb(){
+bool MultiplayerPilot::rebuild_bomb(){if(!multiplayer::FrameFence::allow())return false;
     if(!seat){bomb=world.bomb.get();return true;}
     if(bomb){if(!bomb->stop())return world.fail(bomb->error);auto retire=[&](u32 h){return world.animations.retire(h)||world.fail(world.animations.error);};
       switch(character){case 0:if(!retire(static_cast<BombReimu&>(*bomb).aura))return false;break;
@@ -103,7 +104,8 @@ bool MultiplayerPilot::reset_stage(){
 bool MultiplayerPilot::allow_bomb(){return !ghost&&!world.mp_options.challenge&&bomb&&bomb->allowed();}
 bool MultiplayerPilot::begin_bomb(){
     if(!allow_bomb()||!bomb->begin())return false;
-    spell_startup_bomb=(world.spell.flags&1)&&world.spell.frame<60;
+    spell_startup_bomb=(character!=3||world.mp_options.replay_legacy_stage_flow)&&(world.spell.flags&1)&&world.spell.frame<60;
+    if(!world.mp_options.replay_legacy_stage_flow&&character==3&&!world.mp_spell_startup_active())world.spell.flags&=~32u;
     world.enemy_world.counters[1]=world.bomb_enemies.uses;world.enemy_world.counters[2]=world.bomb_enemies.chain;
     protect_teammates(multiplayer_bomb_start_protection(character));
     return true;
@@ -240,9 +242,8 @@ bool GameBattle::mp_prepare_spell_startup(){
     bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];p.spell_startup_bomb=!p.ghost&&p.session.bomb_state==1&&p.character!=3;active|=p.spell_startup_bomb;}return active;
 }
 bool GameBattle::mp_spell_startup_active(){
-    bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];if(p.ghost||p.session.bomb_state!=1){p.spell_startup_bomb=false;continue;}
-        // Retail Reisen startup hits can set flag 32 even for an older shield.
-        if(p.character==3&&p.player->life.state==4&&spell.frame<60&&(spell.flags&32))p.spell_startup_bomb=true;
+    bool active=false;for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];if(p.ghost||p.session.bomb_state!=1||(p.character==3&&!mp_options.replay_legacy_stage_flow)){p.spell_startup_bomb=false;continue;}
+        if(mp_options.replay_legacy_stage_flow&&p.character==3&&p.player->life.state==4&&spell.frame<60&&(spell.flags&32))p.spell_startup_bomb=true;
         active|=p.spell_startup_bomb;}return active;
 }
 i32 GameBattle::mp_boss_damage(EnemyState& enemy,i32 amount){

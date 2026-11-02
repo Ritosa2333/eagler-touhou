@@ -410,10 +410,12 @@ void touch_event(unsigned type,int id,float x,float y){
     // Same normalized direct-touch -> native ImGui bridge as TH08/TH10.
     // Both the launcher carrier and canvas-origin SDL fingers enter here.
     if(type==0&&practice_pointers.route(1,id,false))browser::ThpracUi::cancel_pointer();
-    if(practice_pointers.route(type,id,type==0&&browser::ThpracUi::captures_pointer(x*640.f,y*480.f))){
-        browser::ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
-        return;
-    }
+    using Route=eagler::thprac::PracticePointer::TouchRoute;
+    const auto decision=practice_pointers.route_touch(type,id,type==0&&browser::ThpracUi::captures_pointer(x*640.f,y*480.f),type==0&&browser::ThpracUi::passive_pointer(x*640.f,y*480.f),x*640.f,y*480.f);
+    if(decision.route==Route::Pending)return;
+    if(decision.route==Route::Tap){browser::ThpracUi::mouse(1,decision.x,decision.y);browser::ThpracUi::mouse(2,x*640.f,y*480.f);return;}
+    if(decision.route==Route::Ui){browser::ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);return;}
+    if(decision.route==Route::BeginGame)gestures.pointer(0,id,decision.x/640.f,decision.y/480.f,SDL_GetTicks(),touch_state(),false);
 #endif
     gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
 }
@@ -544,6 +546,10 @@ bool interpolation_ready(){
     auto& application=th11::sdl::app;
     if(!application.initialized||!application.error.empty())return false;
     const auto& session=application.session;
+    // Menus animate continuously through the ANM manager (background, cursor,
+    // transitions), so the title screen interpolates like gameplay. Only the
+    // in-stage frozen states (dialogue, pause) stay on the logic rate.
+    if(session.state.phase==th11::GameSessionPhase::title)return true;
     if(session.state.phase!=th11::GameSessionPhase::stage)return false;
     if(!session.battle||!session.battle->stage_active||session.battle->transitioning)return false;
     if(session.battle->dialogue&&session.battle->dialogue->active)return false;

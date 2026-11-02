@@ -12,9 +12,11 @@ namespace eagler::thprac::mobile {
 enum Panel { Cheats, Advanced, Information, Keyboard, Indicators, Result, PanelCount };
 inline bool enabled = false, visible = false;
 inline bool expanded[PanelCount]{};
+inline ImGuiID information_window = 0;
 
 inline void reset() {
     enabled = visible = false;
+    information_window = 0;
     for (auto& value : expanded) value = false;
 }
 inline void update(bool mode, bool open) {
@@ -40,6 +42,15 @@ inline bool show(Panel, bool desktopVisible) {
 inline bool captures_advanced(bool desktopOpen) {
     poll();
     return enabled ? visible && expanded[Advanced] : desktopOpen;
+}
+// Match the original TH15 passive-panel fix: taps stay in the tracker while
+// a drag is handed back to gameplay by PracticePointer::route_touch.
+inline bool passive_pointer(float x, float y) {
+    poll();
+    if (!enabled || !visible || captures_advanced(false) ||
+        ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) return false;
+    const auto* window = ImGui::FindWindowByID(information_window);
+    return window && window->Active && !window->Hidden && window->OuterRectClipped.Contains({x,y});
 }
 inline bool begin(Panel panel, const char* original, ImGuiWindowFlags flags, int locale) {
     if (!enabled) return ImGui::Begin(original, nullptr, flags);
@@ -89,6 +100,7 @@ inline bool begin(Panel panel, const char* original, ImGuiWindowFlags flags, int
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
     }
     const bool content = ImGui::Begin(title, nullptr, flags);
+    if (panel == Information) information_window = ImGui::GetCurrentWindow()->ID;
     if (!open) ImGui::PopStyleVar(3);
     if (!content) return false;
     char heading[128];

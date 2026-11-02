@@ -29,6 +29,7 @@ for (const packaged of [false, true]) test(`${packaged ? 'packaged' : 'source'} 
     child = spawn(process.execPath, [entry], {cwd, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: {
       ...env, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: '0',
       EAGLER_NETPLAY_PUBLIC_NICKNAMES: '0', EAGLER_NETPLAY_STUN_URLS: '',
+      EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK: '1',
       EAGLER_NETPLAY_TURN_URLS: 'turn:fallback.example:3478',
       EAGLER_NETPLAY_TURN_SHARED_SECRET: 'fallback-secret', EAGLER_NETPLAY_TURN_CONFIG_FILE: config,
     }});

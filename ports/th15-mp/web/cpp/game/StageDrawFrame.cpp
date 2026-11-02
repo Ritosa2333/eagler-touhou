@@ -2,7 +2,7 @@
 namespace th15 {
 using namespace touhou::graphics;
 StageDrawFrame::StageDrawFrame(FrameScheduler& f,StageScene& s,AnmManager& a,AnmRenderer& r,ZunGraphics& g,ScreenViews& v,StageDrawServices& h):scheduler(f),scene(s),animations(a),renderer(r),graphics(g),views(v),services(h),viewport(v.view(DrawCamera::Playfield).viewport){
- for(u32 i=0;i<callbacks.size();i++){auto& c=callbacks[i];c.owner=this;c.enabled=true;c.run=i?[](void* p)->i32{return static_cast<StageDrawFrame*>(p)->draw(1)?1:5;}:[](void* p)->i32{return static_cast<StageDrawFrame*>(p)->draw(0)?1:5;};if(scheduler.add(c,FramePass::Draw,i?6:3)<0)fail("Background draw registration failed");}
+ for(u32 i=0;i<callbacks.size();i++){auto& c=callbacks[i];c.owner=this;c.enabled=true;c.run=i?+[](void* p)->i32{return static_cast<StageDrawFrame*>(p)->draw(1)?1:5;}:+[](void* p)->i32{return static_cast<StageDrawFrame*>(p)->draw(0)?1:5;};if(scheduler.add(c,FramePass::Draw,i?6:3)<0)fail("Background draw registration failed");}
 }
 StageDrawFrame::~StageDrawFrame(){for(auto& c:callbacks)scheduler.remove(c);}
 bool StageDrawFrame::fail(const std::string& value){if(error.empty())error=value;return false;}

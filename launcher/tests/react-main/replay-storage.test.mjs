@@ -5,6 +5,8 @@ import {resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {IDBFactory,IDBKeyRange} from 'fake-indexeddb';
+import {openStore as openTh12Store} from '../../../ports/th12/src/storage.mjs';
+import {openStore as openTh12MultiplayerStore} from '../../../ports/th12-mp/src/storage.mjs';
 const root=fileURLToPath(new URL('../../',import.meta.url));let work,createReplayStorageReader;
 before(async()=>{await mkdir(resolve(root,'.cache'),{recursive:true});work=await mkdtemp(resolve(root,'.cache/replay-storage-'));const out=resolve(work,'reader.mjs');await build({entryPoints:[resolve(root,'app/services/replay-storage.ts')],outfile:out,bundle:true,platform:'node',format:'esm',logLevel:'silent'});({createReplayStorageReader}=await import(pathToFileURL(out).href));});
 after(async()=>{if(work)await rm(work,{recursive:true,force:true});});
@@ -69,4 +71,39 @@ test('every title and variant reads its real native namespace, with TH10 languag
     const japanese=await read.read(product,{language:'ja'}),chinese=await read.read(product,{language:'lang_zh-hans'});assert.deepEqual([...japanese[0].bytes],[1]);assert.deepEqual([...chinese[0].bytes],[2]);
     if(product==='th10mp'){assert.equal(japanese[0].path,'replay/th10_01.rpyx');assert.deepEqual([...(await read.read(product,{path:japanese[0].path}))[0].bytes],[1]);}
   }
+});
+
+
+test('th12 multiplayer persists in its own database and the Launcher reads its native paths',async()=>{
+  const factory=new IDBFactory(),previous=globalThis.indexedDB;globalThis.indexedDB=factory;
+  try{
+    const normal=await openTh12Store(),mp=await openTh12MultiplayerStore();
+    await normal.write('/savesth12/th12.cfg',new Uint8Array([11]));
+    assert.equal(await mp.read('/savesth12/th12.cfg'),undefined);
+    await mp.write('/savesth12/th12.cfg',new Uint8Array([22]));
+    assert.deepEqual([...await normal.read('/savesth12/th12.cfg')],[11]);
+    await mp.write('/savesth12/replay/th12_mp_01.rpy',new Uint8Array([33]));
+    const read=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}));
+    const rows=await read.read('th12mp');assert.equal(rows.length,1);assert.deepEqual([...rows[0].bytes],[33]);
+    assert.equal((await read.read('th12')).length,0);
+    assert.deepEqual((await factory.databases()).map(d=>d.name).sort(),['/savesth12','/savesth12mp']);
+  }finally{globalThis.indexedDB=previous;}
+});
+
+test('th12 multiplayer recovers only its former shared replays and does not resurrect removed files',async()=>{
+  const factory=new IDBFactory(),previous=globalThis.indexedDB;globalThis.indexedDB=factory;
+  try{
+    const normal=await openTh12Store();
+    await normal.write('/savesth12/scoreth12.dat',new Uint8Array([11]));
+    await normal.write('/savesth12/replay/th12_01.rpy',new Uint8Array([22]));
+    await normal.write('/savesth12/replay/th12_mp_01.rpy',new Uint8Array([33]));
+    const mp=await openTh12MultiplayerStore();
+    assert.equal(await mp.read('/savesth12/scoreth12.dat'),undefined);
+    assert.equal(await mp.read('/savesth12/replay/th12_01.rpy'),undefined);
+    assert.deepEqual([...await mp.read('/savesth12/replay/th12_mp_01.rpy')],[33]);
+    assert.deepEqual([...await normal.read('/savesth12/replay/th12_mp_01.rpy')],[33]);
+    await mp.remove('/savesth12/replay/th12_mp_01.rpy');
+    const reopened=await openTh12MultiplayerStore();
+    assert.equal(await reopened.read('/savesth12/replay/th12_mp_01.rpy'),undefined);
+  }finally{globalThis.indexedDB=previous;}
 });

@@ -45,6 +45,7 @@ ARTWORK_BY_GAME = {
     # TH15's title is layered artwork in the retail title.anm, not a screenshot.
     "th15": ("th15-card.webp",),
     "th12": ("th12-card.webp",),
+    "th17": ("th17-card.webp",),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
 # original title artwork.  The UI darkens/crops them heavily and Lighthouse's
@@ -181,6 +182,33 @@ def _extract_th15_title(root: Path, thdat: str, thanm: str) -> bytes:
         return output.getvalue()
 
 
+def _extract_th17_title(root: Path, thdat: str, thanm: str) -> bytes:
+    archive = (root / "th17.dat").resolve()
+    textures = ["title/title_bk00.png", "title/title_ch00.png", "title/title_logo.png"]
+    with tempfile.TemporaryDirectory(prefix="eagler-th17-artwork-") as directory:
+        # thtk's Windows archive reader needs an ASCII path; Python copies the
+        # user's original from Unicode directories without changing its bytes.
+        staged_archive = Path(directory) / "th17.dat"
+        shutil.copyfile(archive, staged_archive)
+        for arguments in ([thdat, "-x", "17", str(staged_archive), "title.anm"],
+                          [thanm, "-x", "title.anm", *textures]):
+            result = subprocess.run(arguments, cwd=directory, capture_output=True,
+                                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            if result.returncode:
+                raise ValueError(result.stderr.decode("utf-8", errors="replace"))
+        with Image.open(Path(directory) / textures[0]) as background, \
+             Image.open(Path(directory) / textures[1]) as character, \
+             Image.open(Path(directory) / textures[2]) as logo:
+            if background.size != (1280, 960) or character.size != background.size or logo.size != (496, 400):
+                raise ValueError("Unexpected TH17 title texture dimensions")
+            combined = background.convert("RGBA")
+            combined.alpha_composite(character.convert("RGBA"))
+            combined.alpha_composite(logo.convert("RGBA"), (736, 96))
+            output = BytesIO()
+            combined.convert("RGB").save(output, format="PNG")
+            return output.getvalue()
+
+
 def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = "thdat", thanm: str = "thanm") -> bytes:
     if name == "favicon.ico":
         return (Path(__file__).resolve().parent.parent / "favicon.ico").read_bytes()
@@ -206,6 +234,8 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         raise FileNotFoundError("Supply the TH075 development card or an artwork override")
     if name == "th15-card.webp":
         return _extract_th15_title(root, thdat, thanm)
+    if name == "th17-card.webp":
+        return _extract_th17_title(root, thdat, thanm)
     if name in ("th11-card.webp", "th20-card.webp"):
         raise FileNotFoundError(f"{game}: supply {name} through --override-dir; no retail artwork reader is available")
     raise AssertionError(name)

@@ -657,7 +657,7 @@ export function documentCategory(path) {
   if (/^CHANGELOG\.txt$/i.test(name)) return '历史记录';
   if (path === INDEX_PATH) return '文档总表';
   if (path.startsWith('docs/adaptation/')) return '适配指南';
-  if (path.startsWith('docs/history/')) return '历史记录';
+  if (path.startsWith('docs/history/') || path.startsWith('archive/')) return '历史记录';
   if (path.startsWith('docs/migration/')) return '迁移记录';
   if (path.startsWith('docs/architecture/')) return '架构说明';
   if (path.startsWith('ports/') && name.toUpperCase() === 'ADAPTATION.MD') return '作品适配表';

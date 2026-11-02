@@ -1,0 +1,80 @@
+[
+  {
+    "origin": "https://touhouonline.com/",
+    "status": 200,
+    "groups": [
+      {
+        "root": "runtime/th12/",
+        "generation": "5f64412b52a03c42cddf9144a8c8fbed5e74b921a54ef848d3edc6e0b70e7cee",
+        "files": [
+          {
+            "name": "animation.mjs",
+            "sha256": "1610c2d8de10902f94a28f863f00d582e18a4e95387f7c24fdfe861d449dc9ed"
+          },
+          {
+            "name": "draw-scheduler.mjs",
+            "sha256": "c57fed36bc39ebb81b5cb6734fe747b09c98e6875ae16637ced288f74d75df8c"
+          },
+          {
+            "name": "renderer.mjs",
+            "sha256": "07be65184ba1451bc42b7c9983d24011e4f62de8728bbd6cc14a86088f0b93e3"
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "e2f7b74eb075b70424a3cfda41e7b2056b0d75a71f0e7ac0e9f878b7454f8273"
+          },
+          {
+            "name": "core.wasm",
+            "sha256": "657298724c0a2b9d49209e79021206c8a3ff5ece3d59b07eecdd236247505d66"
+          },
+          {
+            "name": "core.mjs",
+            "sha256": "222ee1b50a0f3c035218cc0a23fa660a6ca7d6826a428668c6e72417089fb5e1"
+          }
+        ],
+        "loaderImported": true,
+        "wasmCompiled": true,
+        "webgl": true,
+        "actualTicks": 0,
+        "presentationAge": 60000
+      },
+      {
+        "root": "runtime/th12/multiplayer/",
+        "generation": "17916a73deea24dd6348b128cd42ee8620a09c0565ca56a3c2058ef459eb18c4",
+        "files": [
+          {
+            "name": "animation.mjs",
+            "sha256": "1610c2d8de10902f94a28f863f00d582e18a4e95387f7c24fdfe861d449dc9ed"
+          },
+          {
+            "name": "draw-scheduler.mjs",
+            "sha256": "c57fed36bc39ebb81b5cb6734fe747b09c98e6875ae16637ced288f74d75df8c"
+          },
+          {
+            "name": "renderer.mjs",
+            "sha256": "a07c89bc00379e85ffd79807aa4bf69c929cd6674cb443f9534c0d1c930a8e43"
+          },
+          {
+            "name": "manifest.json",
+            "sha256": "0aab7f684ebc92eabb104b56f99417c7f076ce6edcacba04e36d4415c86446d1"
+          },
+          {
+            "name": "core.wasm",
+            "sha256": "4f4c957f8d83cea00f919e58484a58bbb6581b5570bd2c704ddc8a05bfb7f78c"
+          },
+          {
+            "name": "core.mjs",
+            "sha256": "827429c5345f122a0b6a2ba68a00ec2a79ab483626e94146d8f723fdd67f7b92"
+          }
+        ],
+        "loaderImported": true,
+        "wasmCompiled": true,
+        "webgl": true,
+        "actualTicks": 0,
+        "presentationAge": 60000
+      }
+    ],
+    "valid": true,
+    "errors": []
+  }
+]

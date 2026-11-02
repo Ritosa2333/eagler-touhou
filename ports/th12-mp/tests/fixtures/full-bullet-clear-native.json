@@ -1,0 +1,3484 @@
+{
+  "schema": "th12-native-full-bullet-clear/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "bulletAnmSha256": "e3204da64932a75f5042b49c2666f7989d400ec8b27ff096381f825da69f92a0",
+  "asciiAnmSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+  "wholeGameOracle": false,
+  "acceptedReplayGolden": false,
+  "gpuExecuted": false,
+  "boundary": "Actual40cf60/4273f0/454d10/461250/4099e0 with a constructed384x448 BulletManager viewport, ten physical bullet slots and original embedded bullet.anm bodies. Only selected flag8 next-visits are invoked. Host malloc/free and resource tables use sample-ufo-summon-effect.py; no gameplay function stubs, no GPU draw. Enemy/Player/UFO/Item updates omitted.",
+  "initialBullets": [
+    {
+      "slot": 0,
+      "position": [
+        0,
+        128
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 1,
+      "bodyScript": 35,
+      "color": 0
+    },
+    {
+      "slot": 1,
+      "position": [
+        -193.5,
+        128
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 2,
+      "bodyScript": 35,
+      "color": 1
+    },
+    {
+      "slot": 2,
+      "position": [
+        -198,
+        128
+      ],
+      "hitbox": [
+        14,
+        14
+      ],
+      "phase": 1,
+      "bodyScript": 75,
+      "color": 2
+    },
+    {
+      "slot": 3,
+      "position": [
+        -194,
+        128
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 1,
+      "bodyScript": 35,
+      "color": 3
+    },
+    {
+      "slot": 4,
+      "position": [
+        0,
+        -1.9409205913543701
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 1,
+      "bodyScript": 35,
+      "color": 4
+    },
+    {
+      "slot": 5,
+      "position": [
+        0,
+        128
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 3,
+      "bodyScript": 35,
+      "color": 5
+    },
+    {
+      "slot": 6,
+      "position": [
+        0,
+        128
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 0,
+      "bodyScript": 35,
+      "color": 6
+    },
+    {
+      "slot": 7,
+      "position": [
+        260,
+        128
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 2,
+      "bodyScript": 35,
+      "color": 7
+    },
+    {
+      "slot": 8,
+      "position": [
+        0,
+        450
+      ],
+      "hitbox": [
+        4,
+        4
+      ],
+      "phase": 2,
+      "bodyScript": 69,
+      "color": 8
+    },
+    {
+      "slot": 9,
+      "position": [
+        40,
+        220
+      ],
+      "hitbox": [
+        10,
+        10
+      ],
+      "phase": 1,
+      "bodyScript": 69,
+      "color": 9
+    }
+  ],
+  "cases": [
+    {
+      "convert": true,
+      "card": 0,
+      "activeSpell": false,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "rngAfter": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "afterClear": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ],
+      "pointBirths": [
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 0
+        },
+        {
+          "type": 9,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 1
+        },
+        {
+          "type": 9,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 2
+        },
+        {
+          "type": 9,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 3
+        },
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ],
+          "sourceSlot": 4
+        },
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 8
+        },
+        {
+          "type": 9,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 9
+        }
+      ],
+      "effects": [
+        {
+          "id": 1,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286611584,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 2,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.5,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 3,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            26.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 4,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 5,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            14.05907917022705,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 6,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            466.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279271552,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 7,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            264.0,
+            236.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279303952,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        }
+      ],
+      "afterSelectedNextBulletVisit": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ]
+    },
+    {
+      "convert": false,
+      "card": 0,
+      "activeSpell": false,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "rngAfter": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "afterClear": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ],
+      "pointBirths": [],
+      "effects": [
+        {
+          "id": 1,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286611584,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 2,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.5,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 3,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            26.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 4,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 5,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            14.05907917022705,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 6,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            466.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279271552,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 7,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            264.0,
+            236.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279303952,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        }
+      ],
+      "afterSelectedNextBulletVisit": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ]
+    },
+    {
+      "convert": true,
+      "card": 95,
+      "activeSpell": true,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "rngAfter": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "afterClear": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ],
+      "pointBirths": [
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 0
+        },
+        {
+          "type": 9,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 1
+        },
+        {
+          "type": 9,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 2
+        },
+        {
+          "type": 9,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 3
+        },
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ],
+          "sourceSlot": 4
+        },
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 8
+        },
+        {
+          "type": 9,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 9
+        }
+      ],
+      "effects": [
+        {
+          "id": 1,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286611584,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 2,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.5,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 3,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            26.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 4,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 5,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            14.05907917022705,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 6,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            466.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279271552,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 7,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            264.0,
+            236.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279303952,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        }
+      ],
+      "afterSelectedNextBulletVisit": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ]
+    },
+    {
+      "convert": true,
+      "card": 96,
+      "activeSpell": true,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "rngAfter": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "afterClear": [
+        {
+          "slot": 0,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ],
+      "pointBirths": [],
+      "effects": [],
+      "afterSelectedNextBulletVisit": [
+        {
+          "slot": 0,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ]
+    },
+    {
+      "convert": true,
+      "card": 99,
+      "activeSpell": true,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "rngAfter": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "afterClear": [
+        {
+          "slot": 0,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ],
+      "pointBirths": [],
+      "effects": [],
+      "afterSelectedNextBulletVisit": [
+        {
+          "slot": 0,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 2,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ]
+    },
+    {
+      "convert": true,
+      "card": 96,
+      "activeSpell": false,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "rngAfter": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "afterClear": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ],
+      "pointBirths": [
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 0
+        },
+        {
+          "type": 9,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 1
+        },
+        {
+          "type": 9,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 2
+        },
+        {
+          "type": 9,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 3
+        },
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ],
+          "sourceSlot": 4
+        },
+        {
+          "type": 9,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 8
+        },
+        {
+          "type": 9,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ],
+          "sourceSlot": 9
+        }
+      ],
+      "effects": [
+        {
+          "id": 1,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286611584,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 2,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.5,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 3,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            26.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4294905872,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 4,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            30.0,
+            144.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 5,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            14.05907917022705,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4286582912,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 6,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            224.0,
+            466.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279271552,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "id": 7,
+          "type": 0,
+          "bank": 0,
+          "script": 96,
+          "sprite": 391,
+          "spriteSelected": true,
+          "enginePosition": [
+            264.0,
+            236.0,
+            0.10000000149011612
+          ],
+          "scriptPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "clock": 1,
+          "clockValue": 1.0,
+          "nativeAnmTickCalls": 1,
+          "layer": 16,
+          "flags": 1073741839,
+          "primaryColor": 4279303952,
+          "callbacks": [
+            "0x0",
+            "0x0",
+            "0x0",
+            "0x0"
+          ]
+        }
+      ],
+      "afterSelectedNextBulletVisit": [
+        {
+          "slot": 0,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 1,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -193.5,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 2,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -198.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 3,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            -194.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 4,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            -1.9409205913543701,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 5,
+          "flags": 2,
+          "phase": 3,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 6,
+          "flags": 2,
+          "phase": 0,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 7,
+          "flags": 2,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            260.0,
+            128.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 8,
+          "flags": 10,
+          "phase": 2,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            0.0,
+            450.0,
+            0.10000000149011612
+          ]
+        },
+        {
+          "slot": 9,
+          "flags": 10,
+          "phase": 1,
+          "word4": 9,
+          "timer": [
+            80,
+            81,
+            81.0
+          ],
+          "interrupt": 0,
+          "position": [
+            40.0,
+            220.0,
+            0.10000000149011612
+          ]
+        }
+      ]
+    }
+  ]
+}

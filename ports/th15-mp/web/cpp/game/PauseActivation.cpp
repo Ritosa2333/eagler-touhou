@@ -1,9 +1,10 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "PauseActivation.hpp"
 namespace th15 {
 bool PauseActivation::check(bool ok,const char* reason){if(!ok&&error.empty())error=reason;return ok;}
 bool PauseActivation::save_presentation(i32 skip){state.saved_rate=progress.rate;progress.rate=1;state.saved_frame_skip=frame_skip;frame_skip=skip;return true;}
 bool PauseActivation::freeze_overlays(){return check(host.freeze_dialogue(),"Pause dialogue freeze failed")&&check(host.freeze_chapter_result(),"Pause chapter notice freeze failed");}
-bool PauseActivation::open(PauseEntrance entrance,i32 front,bool selection){
+bool PauseActivation::open(PauseEntrance entrance,i32 front,bool selection){if(!multiplayer::FrameFence::allow())return false;
  if(!error.empty())return false;const u32 mode=player.mode_flags;const bool spell=(mode&0x30)==0x20;
  if(entrance!=PauseEntrance::RetryPause&&!check(host.record_elapsed_play_time(),"Pause play-time accounting failed"))return false;
  if((entrance==PauseEntrance::GameOver||entrance==PauseEntrance::Results)&&progress.transition==1)return check(host.replay_destination(selection),"Replay pause destination failed");

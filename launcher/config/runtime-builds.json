@@ -156,7 +156,29 @@
       "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"], "commonInputs": ["include/eagler/thprac/PracticeSpeed.hpp","include/eagler/thprac/PracticeInput.hpp","include/eagler/thprac/PracticeKeyMonitor.hpp","include/eagler/thprac/PracticeMobilePanels.hpp","include/eagler/thprac/PracticePointer.hpp"] },
       "workspaceRepository": "th12",
       "variants": {
-        "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} }
+        "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
+        "multiplayer": { "workspaceRepository": "th12mp", "features": { "thcrap": true, "thprac": false }, "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"] }, "cache": {} }
+      }
+    },
+    "th17": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th17",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "web/scripts/build-sdl-application.mjs",
+          "--release"
+        ],
+        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
+      },
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
       }
     }
   }

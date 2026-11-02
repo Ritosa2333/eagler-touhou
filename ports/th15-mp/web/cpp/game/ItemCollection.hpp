@@ -14,5 +14,7 @@ public:
     std::function<bool()> shared_life_piece;
     ItemCollection(PlayerLifeSession& p,ItemScoreState& s,PlayerMotion& m,ItemCollectionHost& h,i32 ch,i32* tier=nullptr):player(p),score(s),motion(m),world(h),character(ch),life_piece_tier(tier?*tier:s.life_piece_tier){}
     bool award(const ItemState&);
+    // Apply one native stock reward without redispatching a shared event.
+    bool award_life_piece();
 };
 }

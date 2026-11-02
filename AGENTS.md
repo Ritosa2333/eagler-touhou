@@ -1,5 +1,9 @@
 # 普通版与 MP 维护
 
+monorepo 的 `main` 集成普通版与多人版，改动按各自源码目录归属提交。向独立作品源仓库回推时，普通版目录历史进入其普通版分支（包括以 `main` 命名的普通版分支），多人版目录历史进入对应多人开发分支。目录投影保留原仓库祖先，提交标题按实际投影目录描述。
+
+目录投影为每个投影提交重新生成 `Monorepo-Source` 与 `Source-Prefix`，清理正文中继承的 `git-subtree-*` 控制标记和旧来源映射。经过标准子树导出验证的独立连接提交登记新基点。来源连接更新时，实际运行对应目录的 `git subtree split`，核对原仓库祖先和源码目录树；th12 的命令见 `docs/migration/th12-subtree-20261024.md`。
+
 修改普通版时，同时处理适用于多人版的改动。每对独立源码目录按 `docs/adaptation/port-sync.md` 保留自己的基线与同步历史，记录来源提交、多人版处理和模式专属决定。使用 `tools/ports/sync.mjs` 查看待同步提交并进行三方同步，沿该作品基线继续，源码与历史一起更新。
 
 相关目录提交后，用 `project-history.py --repo . --game <作品> --write-refs --track-normal` 刷新历史与 MP 上游；通过 `git branch -vv` 查看关系。
@@ -13,6 +17,10 @@
 新增 `ports/<作品>` 时，在 `docs/migration/` 登记原仓库提交、子树连接点与导出基点。`python tools/ports/check-history.py --base <目标分支>` 核对现有来源提交的祖先关系、新目录的来源登记，以及 Git 子树导出树与当前源码目录的一致性。普通版与 MP 的独立投影继续由 `project-history.py` 管理；th12 的单目录子树入口见 `docs/migration/th12-subtree-20261024.md`。
 
 作品目录 PR 使用合并提交保留原提交父链。提交前核对来源校验与适配文档，合入后复核目录历史分支或子树导出端。
+
+# 文档归档
+
+带日期的实验、压测、部署和会话记录，以及配套的 JSON 等证据，统一放入 `archive/<主题-日期>/`。当前架构、接口契约、开发指南和适配状态放在 `docs/`，当前有效的来源登记保留在 `docs/migration/`。归档时一起迁移关联证据、修正相对链接，并运行 `npm run docs:index` 和 `npm run docs:check`。当前文档引用归档记录时说明其构建与验证范围。
 
 # 文风要求
 

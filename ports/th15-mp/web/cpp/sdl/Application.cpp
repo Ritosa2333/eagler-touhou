@@ -1,3 +1,4 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "ApplicationState.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -20,7 +21,7 @@ bool Application::step(u32 held,u32 pressed,u32 repeated,float fps,bool focus){r
 const std::string& Application::error()const{return state->failure;}
 const i32* Application::projection()const{return state->projection();}
 bool ApplicationState::fail(const std::string& why){if(failure.empty())failure=why.empty()?"Application operation failed":why;return false;}
-bool ApplicationState::read(const std::string& name,std::vector<u8>& bytes){
+bool ApplicationState::read(const std::string& name,std::vector<u8>& bytes){if(!multiplayer::FrameFence::allow())return false;
  const auto at=name.find_last_of("/\\");const auto base=name.substr(at==std::string::npos?0:at+1);
  if(base.empty()||base=="."||base=="..")return fail("Invalid game asset name");
  const auto found=resource_cache.find(base);if(found!=resource_cache.end()){bytes=found->second;return true;}
@@ -190,7 +191,7 @@ bool ApplicationState::begin_ending(){
 #endif
  return true;
 }
-bool ApplicationState::apply_destination(){
+bool ApplicationState::apply_destination(){if(pending_destination>=0&&!multiplayer::FrameFence::allow())return false;
  if(pending_destination<0)return true;
 #if TH15_MULTIPLAYER
  if(multiplayer&&(pending_destination==10||pending_destination==11)){
@@ -239,8 +240,9 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   if(display->game)input.scene.background=display->game->background.update_frame();if(display->previous_background){display->previous_background->rate=progress.rate;input.background_finished=(display->previous_background->state.flags&8)!=0;}
   if(!session->step(input))return fail(session->error.empty()?scene()->error:session->error);
  }else return fail("Application has no active scene");
+ if(multiplayer::FrameFence::blocked)return false;
  PROFILE_AT(0);
- audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);
+ if(!resimulating)audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);
  PROFILE_AT(1);
  if(!display->draw())return fail(display->error);
  PROFILE_AT(2);
@@ -263,7 +265,7 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
    }
   }
  }
- audio_device.pump();frames++;
+ if(!resimulating)audio_device.pump();frames++;
  if(!pump_checkpoint())return false;
  // Inter-stage flow retains the departing STD for the native transition.
  // Keep the completed composite visible while preparing the next scene;

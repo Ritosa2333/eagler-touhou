@@ -95,4 +95,7 @@ test('account, settings and help groups expose the handbook in its help group',a
  const link=n('#mastheadMenuPanel a[href="ui-review.html?lang=en"]');
  assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
  assert.equal(link.getAttribute('target'),'_blank');assert.equal(link.getAttribute('rel'),'noopener noreferrer');
+ const status=n('#mastheadMenuPanel a[href="uptime/?lang=en"]');
+ assert.equal(status.textContent,owners.translate('en','nav.serviceStatus'));
+ assert.equal(status.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
 });

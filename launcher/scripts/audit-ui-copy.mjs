@@ -55,11 +55,14 @@ const contextualAllowed = new Map([
 const errors = JSON.parse(readFileSync(resolve(project, 'messages/errors.json'), 'utf8'));
 const errorSources = new Set(errors.filter((entry) => !entry.source.includes('{')).map((entry) => entry.source));
 const errorTemplates = new Set(errors.filter(entry => entry.source.includes('{')).map(entry => entry.source.replace(/\{\w+\}/g, '{}')));
-// These two sources compose the isolated, explicitly Chinese maintainer handbook.
+// These sources compose the isolated, explicitly Chinese maintainer handbook.
 // Production controls and all other routes stay in the copy audit.
 const authoredReferenceSources = new Map([
   ['app/routes/ui-review.tsx', 'Chinese UI handbook; its root declares catalogLocale through lang and LocaleProvider'],
   ['app/ui/catalog.ts', 'Chinese handbook data; catalogLocale is declared with the data'],
+  ['app/ui/page-catalog.ts', 'Chinese handbook page inventory rendered inside the declared catalogLocale'],
+  ['app/ui/page-inventory.tsx', 'Chinese handbook inventory controls inside the declared catalogLocale'],
+  ['app/ui/room-example.tsx', 'Chinese handbook demo data and controls; production room views stay audited'],
 ]);
 const containsCopy = (text) => /[\p{L}]/u.test(text) && !allowed.has(text) && !/^P\d+$/.test(text);
 

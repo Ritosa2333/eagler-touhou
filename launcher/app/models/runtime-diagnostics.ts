@@ -2,7 +2,8 @@ import {compactDiagnosticText, compactRendererLabel, runtimeDiagnosticsVisibleBy
 import type {RuntimeDiagnosticState} from '../../src/launcher/app-types.mts';
 import type {RuntimeService} from '../services/runtime';
 
-const preferenceKey = 'eagler-touhou-runtime-diagnostics-v1';
+export const RUNTIME_DIAGNOSTICS_STORAGE_KEY = 'eagler-touhou-runtime-diagnostics-v1';
+const preferenceKey = RUNTIME_DIAGNOSTICS_STORAGE_KEY;
 export interface RuntimeDiagnosticsSnapshot {
   enabled: boolean; visible: boolean; severity: '' | 'warn' | 'bad';
   browser: string; audio: string; renderer: string; frame: string;

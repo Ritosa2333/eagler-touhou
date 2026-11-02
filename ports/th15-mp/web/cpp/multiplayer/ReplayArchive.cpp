@@ -33,11 +33,11 @@ void ReplayArchive::Clear(){replay_.Clear();setup_={};timestamp_=score_=0;comple
 bool ReplayArchive::CompatibleBuild(const std::array<std::uint32_t,4>& build)const{
     if(!Loaded()||!(build[0]|build[1]|build[2]|build[3]))return false;
     if(!legacy_stage_flow_)return setup_.build==build;
-    // Rule 20 -> 21 is a named compatibility path, not a build-check bypass.
+    // Rule 20 uses its recorded stage flow, shield and stock rules in the current runtime.
     // Baseline: b8040505, CI run 40085809634, th15 multiplayer release.
-    // Revalidate this path when advancing the current gameplay version.
+    // The named source build and explicit target version keep admission bounded.
     constexpr std::array<std::uint32_t,4> stage_flow_baseline{0x69cf52f0,0x644bdac4,0x784d5168,0xcab6de55};
-    return SessionSetup::GameplayVersion==21&&setup_.build==stage_flow_baseline;
+    return SessionSetup::GameplayVersion==23&&setup_.build==stage_flow_baseline;
 }
 bool ReplayArchive::Begin(const SessionSetup& setup,std::uint64_t timestamp){
     if(!setup.valid())return false;ReplayArchive next;next.setup_=setup;next.timestamp_=timestamp;

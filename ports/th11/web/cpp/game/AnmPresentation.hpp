@@ -26,6 +26,10 @@ void begin_tick() noexcept;
 // Capture the pre-update endpoint once per VM per tick. Called from
 // AnmVm::update so embedded VMs outside AnmManager are covered as well.
 void capture(const AnmVm&) noexcept;
+// Mark a VM as created in this tick. Its first frame is presented as-is:
+// a freshly spawned VM may be repositioned by its owner within the same
+// tick, so the initial endpoint is not a trustworthy interpolation source.
+void note_spawn(const AnmVm&) noexcept;
 // Owners which reposition a VM during Draw (3D stage objects) publish the
 // pre-draw endpoint here when the ANM update did not run this tick.
 void capture_if_needed(const AnmVm&) noexcept;

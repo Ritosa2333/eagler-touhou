@@ -183,4 +183,4 @@ Raw native 0x74-byte damage-source
 blobs cannot be imported.
 Missing data in older native replays is reported by the compatibility state as
 unavailable. The game-resource and device acceptance checklist is in
-[WEB_ADAPTATION.md](../../docs/WEB_ADAPTATION.md).
+[Launcher 接入](../../docs/LAUNCHER_INTEGRATION.md).

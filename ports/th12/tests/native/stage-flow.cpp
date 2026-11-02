@@ -201,10 +201,21 @@ int main(int argc,char** argv) {
   int32_t header[17]={0,51200,143,2,2,1234,1000000,0,0,0,0,0,0,0,0,0,0};
   require(th12_start_replay(0,0,1,1234,header,17)==1,"Legacy replay failed to start");
   require(fullGameFlow.status==FullGameStatus::Disabled,"Full game leaked into legacy replay");
-  th12_set_full_game_mode(0);require(fullGameFlow.replay,"Replay did not enable full-game transitions");
+  require(th12_replay_stage_flow(0,0)==1&&fullGameFlow.replay,"Replay did not enable full-game transitions");
+  const int replayFrame=frame;
   clear();for(int i=0;i<150;i++)th12_tick(0,0);
+  require(frame==replayFrame+150&&fullGameFlow.totalFrames==151&&fullGameFlow.status==FullGameStatus::NextStage,
+    "Recorded stage-clear ticks did not animate the old world through its fade");
   th12_select_stage(3);require(th12_start_next_stage()==0,"Replay incorrectly uses live carry instead of stage header");
+  require(th12_start_replay(0,0,1,1234,header,17)==1&&th12_replay_stage_flow(0,1)==1,
+    "Incoming replay stage flow rejected");
+  require(fullGameFlow.entryFadeAge==0&&fullGameFlow.replay&&!fullGameFlow.practice,
+    "Incoming replay stage skipped its field fade-in");
+  th12_tick(0,0);require(fullGameFlow.entryFadeAge==1,"Replay fade did not advance on its next recorded input");
+  require(th12_start_replay(0,0,1,1234,header,17)==1&&th12_replay_stage_flow(1,0)==1&&fullGamePractice(),
+    "Practice replay lost its own clear-bonus rules");
   th12_start(0,0,1,1234);require(fullGameFlow.status==FullGameStatus::Disabled,"Full mode leaked into legacy start");
+  require(th12_replay_stage_flow(0,1)==0,"Replay-only flow changed a live game");
   ended=1;const int oldFrame=frame;th12_tick(0,0);
   require(frame==oldFrame&&ended==1,"Legacy end flag behavior changed");
   std::puts("Atomic main birth, six-stage carry, transitions, practice, Continue and legacy isolation passed.");

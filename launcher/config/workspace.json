@@ -24,6 +24,8 @@
     "turn": "services/turn",
     "telemetry": "services/telemetry",
     "resources": "services/resource-router",
-    "th12": "ports/th12"
+    "th12": "ports/th12",
+    "th12mp": "ports/th12-mp",
+    "th17": "ports/th17"
   }
 }

@@ -1,0 +1,1313 @@
+{
+  "schema": "th15-multiplayer-stress/1",
+  "runtimeCommit": "ec44ef5d28189c008aa1257981ce162a7660afe9",
+  "wasmSha256": "e985e6a3984e6ff2e63f96a43b1cbda491dbfe9ce3d03a91dd2af441ab1d3dfc",
+  "verdict": "dense-state-regression-failed; CPU6 performance needs optimization",
+  "browserCheckMeaning": "No native error; advancing gameplay or confirmed natural run end; identical all-seat confirmed input prefix. This is not a browser world-state hash.",
+  "timingMetric": "Whole native browser callback, including update, corrections, drawing, presentation and audio; not isolated game logic.",
+  "browser": [
+    {
+      "name": "2p-normal",
+      "players": 2,
+      "mode": 0,
+      "difficulty": 1,
+      "cpu": 1,
+      "seconds": 30,
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 2033,
+        "inputSha256": "b15bea756645e123350be64f31d5bdf861cd432d83bf589b1f3dce3f7616c7fb",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "seats": [
+        {
+          "seat": 0,
+          "frame": 1986,
+          "progressFps": 59.99800339422981,
+          "nativeCallbackMs": {
+            "count": 7196,
+            "mean": 0.39289883250425495,
+            "p50": 0.20000001788139343,
+            "p95": 1.199999988079071,
+            "p99": 1.4000000059604645,
+            "max": 6.299999982118607
+          },
+          "callbackGapMs": {
+            "count": 7196,
+            "mean": 4.17643135075373,
+            "p50": 4.199999988079071,
+            "p95": 5.199999988079071,
+            "p99": 5.899999976158142,
+            "max": 39
+          },
+          "visibleFps": {
+            "count": 30,
+            "mean": 239.4110000000001,
+            "p50": 240,
+            "p95": 240.04,
+            "p99": 240.04,
+            "max": 240.04
+          },
+          "heapBytes": {
+            "count": 30,
+            "mean": 400949248,
+            "p50": 400949248,
+            "p95": 400949248,
+            "p99": 400949248,
+            "max": 400949248
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 1,
+            "replayedFrames": 2,
+            "lastDepth": 2,
+            "peakDepth": 2,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 3606,
+            "dropped": 0,
+            "delivered": 3606,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 60.00124140498225,
+          "lastCombatSampleSeconds": 30.002900000005962
+        },
+        {
+          "seat": 1,
+          "frame": 1987,
+          "progressFps": 59.99800339422981,
+          "nativeCallbackMs": {
+            "count": 7195,
+            "mean": 0.6982626827207185,
+            "p50": 0.19999998807907104,
+            "p95": 2.4000000059604645,
+            "p99": 4.800000011920929,
+            "max": 6.9000000059604645
+          },
+          "callbackGapMs": {
+            "count": 7195,
+            "mean": 4.1766365531586045,
+            "p50": 4.100000023841858,
+            "p95": 7.5,
+            "p99": 9.799999982118607,
+            "max": 37.099999994039536
+          },
+          "visibleFps": {
+            "count": 30,
+            "mean": 239.40900000000005,
+            "p50": 240,
+            "p95": 240.04,
+            "p99": 240.04,
+            "max": 240.04
+          },
+          "heapBytes": {
+            "count": 30,
+            "mean": 481165312,
+            "p50": 481165312,
+            "p95": 481165312,
+            "p99": 481165312,
+            "max": 481165312
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 164,
+            "replayedFrames": 328,
+            "lastDepth": 2,
+            "peakDepth": 2,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 3606,
+            "dropped": 0,
+            "delivered": 3606,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 59.99958620971328,
+          "lastCombatSampleSeconds": 30.00059999999404
+        }
+      ]
+    },
+    {
+      "name": "3p-extra",
+      "players": 3,
+      "mode": 0,
+      "difficulty": 4,
+      "cpu": 1,
+      "seconds": 30,
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 2045,
+        "inputSha256": "ab2d2d40a11ec46c87d38a66839c4efff32ecc51b4a35b81c30ab1fe5e219ab9",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "seats": [
+        {
+          "seat": 0,
+          "frame": 1987,
+          "progressFps": 60,
+          "nativeCallbackMs": {
+            "count": 4914,
+            "mean": 1.50750915766199,
+            "p50": 0.3999999761581421,
+            "p95": 4.4000000059604645,
+            "p99": 6.300000011920929,
+            "max": 17
+          },
+          "callbackGapMs": {
+            "count": 4914,
+            "mean": 6.118518518519731,
+            "p50": 6.699999988079071,
+            "p95": 10.299999982118607,
+            "p99": 17.799999982118607,
+            "max": 52.099999994039536
+          },
+          "visibleFps": {
+            "count": 30,
+            "mean": 163.88766666666666,
+            "p50": 170,
+            "p95": 193.98,
+            "p99": 208,
+            "max": 208
+          },
+          "heapBytes": {
+            "count": 30,
+            "mean": 591165303.4666667,
+            "p50": 577437696,
+            "p95": 680394752,
+            "p99": 680394752,
+            "max": 680394752
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 191,
+            "replayedFrames": 243,
+            "lastDepth": 2,
+            "peakDepth": 5,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 7091,
+            "dropped": 0,
+            "delivered": 7091,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 59.994621171845615,
+          "lastCombatSampleSeconds": 30.013400000005962
+        },
+        {
+          "seat": 1,
+          "frame": 1987,
+          "progressFps": 60,
+          "nativeCallbackMs": {
+            "count": 4914,
+            "mean": 1.423137973170723,
+            "p50": 0.30000001192092896,
+            "p95": 4.299999982118607,
+            "p99": 6.199999988079071,
+            "max": 16.69999998807907
+          },
+          "callbackGapMs": {
+            "count": 4914,
+            "mean": 6.118192918189279,
+            "p50": 4.699999988079071,
+            "p95": 12,
+            "p99": 16.900000005960464,
+            "max": 52.19999998807907
+          },
+          "visibleFps": {
+            "count": 30,
+            "mean": 165.2286666666667,
+            "p50": 167.98,
+            "p95": 204.16,
+            "p99": 208.17,
+            "max": 208.17
+          },
+          "heapBytes": {
+            "count": 30,
+            "mean": 587713740.8,
+            "p50": 577437696,
+            "p95": 680198144,
+            "p99": 680198144,
+            "max": 680198144
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 199,
+            "replayedFrames": 250,
+            "lastDepth": 2,
+            "peakDepth": 5,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 7106,
+            "dropped": 0,
+            "delivered": 7106,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 59.99193211946126,
+          "lastCombatSampleSeconds": 30.013
+        },
+        {
+          "seat": 2,
+          "frame": 1987,
+          "progressFps": 60,
+          "nativeCallbackMs": {
+            "count": 4913,
+            "mean": 1.394321188655182,
+            "p50": 0.30000001192092896,
+            "p95": 4.199999988079071,
+            "p99": 5.800000011920929,
+            "max": 19.69999998807907
+          },
+          "callbackGapMs": {
+            "count": 4913,
+            "mean": 6.117830246286578,
+            "p50": 2.5,
+            "p95": 15,
+            "p99": 20.19999998807907,
+            "max": 53.29999998211861
+          },
+          "visibleFps": {
+            "count": 30,
+            "mean": 165.879,
+            "p50": 172.31,
+            "p95": 202,
+            "p99": 217.11,
+            "max": 217.11
+          },
+          "heapBytes": {
+            "count": 30,
+            "mean": 591165303.4666667,
+            "p50": 577437696,
+            "p95": 680394752,
+            "p99": 680394752,
+            "max": 680394752
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 156,
+            "replayedFrames": 195,
+            "lastDepth": 2,
+            "peakDepth": 5,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 7124,
+            "dropped": 0,
+            "delivered": 7124,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 59.99420745580719,
+          "lastCombatSampleSeconds": 30.005
+        }
+      ]
+    },
+    {
+      "name": "3p-extra-cpu6",
+      "players": 3,
+      "mode": 0,
+      "difficulty": 4,
+      "cpu": 6,
+      "seconds": 40,
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 570,
+        "inputSha256": "8c645b9da9121e0323f7f74201c0184ca8f4f10f54068a67e01708c88e4c4306",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "seats": [
+        {
+          "seat": 0,
+          "frame": 516,
+          "progressFps": 8.05817610062893,
+          "nativeCallbackMs": {
+            "count": 315,
+            "mean": 43.09587301526751,
+            "p50": 30.69999998807907,
+            "p95": 85,
+            "p99": 105.69999998807907,
+            "max": 121.80000001192093
+          },
+          "callbackGapMs": {
+            "count": 315,
+            "mean": 130.3219047619237,
+            "p50": 127.5,
+            "p95": 191.80000001192093,
+            "p99": 249.19999998807907,
+            "max": 895.5
+          },
+          "visibleFps": {
+            "count": 41,
+            "mean": 8.429024390243901,
+            "p50": 7.87,
+            "p95": 9.78,
+            "p99": 36.4,
+            "max": 36.4
+          },
+          "heapBytes": {
+            "count": 41,
+            "mean": 577437696,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 145,
+            "replayedFrames": 440,
+            "lastDepth": 3,
+            "peakDepth": 6,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 1296,
+            "dropped": 0,
+            "delivered": 1296,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 8.056864900679788,
+          "lastCombatSampleSeconds": 41.09670000001788
+        },
+        {
+          "seat": 1,
+          "frame": 515,
+          "progressFps": 8.05817610062893,
+          "nativeCallbackMs": {
+            "count": 314,
+            "mean": 35.608280253922864,
+            "p50": 25.900000005960464,
+            "p95": 68.39999997615814,
+            "p99": 75.10000002384186,
+            "max": 89.19999998807907
+          },
+          "callbackGapMs": {
+            "count": 314,
+            "mean": 130.55191082796853,
+            "p50": 124.80000001192093,
+            "p95": 199.30000001192093,
+            "p99": 241.30000001192093,
+            "max": 853.6999999880791
+          },
+          "visibleFps": {
+            "count": 40,
+            "mean": 9.722249999999999,
+            "p50": 7.9,
+            "p95": 10.52,
+            "p99": 88.64,
+            "max": 88.64
+          },
+          "heapBytes": {
+            "count": 40,
+            "mean": 577437696,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 130,
+            "replayedFrames": 280,
+            "lastDepth": 1,
+            "peakDepth": 4,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 1297,
+            "dropped": 0,
+            "delivered": 1297,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 8.062390101948134,
+          "lastCombatSampleSeconds": 40.24819999998808
+        },
+        {
+          "seat": 2,
+          "frame": 517,
+          "progressFps": 8.082743710691824,
+          "nativeCallbackMs": {
+            "count": 313,
+            "mean": 33.82332268271583,
+            "p50": 26.599999994039536,
+            "p95": 67.69999998807907,
+            "p99": 76.2000000178814,
+            "max": 83.59999999403954
+          },
+          "callbackGapMs": {
+            "count": 313,
+            "mean": 130.73961661341852,
+            "p50": 130,
+            "p95": 196.7999999821186,
+            "p99": 238.7999999821186,
+            "max": 815.0999999940395
+          },
+          "visibleFps": {
+            "count": 40,
+            "mean": 10.78875,
+            "p50": 7.9,
+            "p95": 10.35,
+            "p99": 134.37,
+            "max": 134.37
+          },
+          "heapBytes": {
+            "count": 40,
+            "mean": 577437696,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 133,
+            "replayedFrames": 249,
+            "lastDepth": 4,
+            "peakDepth": 4,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 1292,
+            "dropped": 0,
+            "delivered": 1292,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 8.07469604902179,
+          "lastCombatSampleSeconds": 40.32959999999404
+        }
+      ]
+    },
+    {
+      "name": "3p-extra-delay-cpu6",
+      "players": 3,
+      "mode": 1,
+      "difficulty": 4,
+      "cpu": 6,
+      "seconds": 40,
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 1395,
+        "inputSha256": "5c8c81d27f20d942b76422cec2c100c087c74444b88d6b7f82d73541afb56552",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "seats": [
+        {
+          "seat": 0,
+          "frame": 1351,
+          "progressFps": 29.082051154582288,
+          "nativeCallbackMs": {
+            "count": 1018,
+            "mean": 9.77504911620631,
+            "p50": 9.5,
+            "p95": 18.100000023841858,
+            "p99": 25.19999998807907,
+            "max": 31.200000017881393
+          },
+          "callbackGapMs": {
+            "count": 1018,
+            "mean": 39.56699410607866,
+            "p50": 39.900000005960464,
+            "p95": 63.599999994039536,
+            "p99": 83.7000000178814,
+            "max": 151
+          },
+          "visibleFps": {
+            "count": 40,
+            "mean": 26.027750000000005,
+            "p50": 22.44,
+            "p95": 33.59,
+            "p99": 192.42,
+            "max": 192.42
+          },
+          "heapBytes": {
+            "count": 40,
+            "mean": 481165312,
+            "p50": 481165312,
+            "p95": 481165312,
+            "p99": 481165312,
+            "max": 481165312
+          },
+          "rollback": {
+            "enabled": false,
+            "corrections": 0,
+            "replayedFrames": 0,
+            "lastDepth": 0,
+            "peakDepth": 0,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 4576,
+            "dropped": 0,
+            "delivered": 4576,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 28.871646812076456,
+          "lastCombatSampleSeconds": 40.05109999999404
+        },
+        {
+          "seat": 1,
+          "frame": 1351,
+          "progressFps": 29.082051154582288,
+          "nativeCallbackMs": {
+            "count": 1017,
+            "mean": 9.669419862264025,
+            "p50": 9.099999994039536,
+            "p95": 18.5,
+            "p99": 24.599999994039536,
+            "max": 34.79999998211861
+          },
+          "callbackGapMs": {
+            "count": 1017,
+            "mean": 39.60786627337058,
+            "p50": 40,
+            "p95": 62.5,
+            "p99": 87.40000000596046,
+            "max": 146.2999999821186
+          },
+          "visibleFps": {
+            "count": 40,
+            "mean": 23.08925,
+            "p50": 22.35,
+            "p95": 31.87,
+            "p99": 80.99,
+            "max": 80.99
+          },
+          "heapBytes": {
+            "count": 40,
+            "mean": 481165312,
+            "p50": 481165312,
+            "p95": 481165312,
+            "p99": 481165312,
+            "max": 481165312
+          },
+          "rollback": {
+            "enabled": false,
+            "corrections": 0,
+            "replayedFrames": 0,
+            "lastDepth": 0,
+            "peakDepth": 0,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 4577,
+            "dropped": 0,
+            "delivered": 4577,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 28.881347933038676,
+          "lastCombatSampleSeconds": 40.041
+        },
+        {
+          "seat": 2,
+          "frame": 1351,
+          "progressFps": 29.082051154582288,
+          "nativeCallbackMs": {
+            "count": 1016,
+            "mean": 9.422736220707105,
+            "p50": 9,
+            "p95": 18.200000017881393,
+            "p99": 24.80000001192093,
+            "max": 38.400000005960464
+          },
+          "callbackGapMs": {
+            "count": 1016,
+            "mean": 39.64350393699027,
+            "p50": 38.5,
+            "p95": 66.2999999821186,
+            "p99": 89.59999999403954,
+            "max": 155.5
+          },
+          "visibleFps": {
+            "count": 40,
+            "mean": 24.543250000000008,
+            "p50": 21.91,
+            "p95": 29.87,
+            "p99": 133.55,
+            "max": 133.55
+          },
+          "heapBytes": {
+            "count": 40,
+            "mean": 481165312,
+            "p50": 481165312,
+            "p95": 481165312,
+            "p99": 481165312,
+            "max": 481165312
+          },
+          "rollback": {
+            "enabled": false,
+            "corrections": 0,
+            "replayedFrames": 0,
+            "lastDepth": 0,
+            "peakDepth": 0,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 4601,
+            "dropped": 0,
+            "delivered": 4601,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 28.905366344090698,
+          "lastCombatSampleSeconds": 40.0385
+        }
+      ]
+    },
+    {
+      "name": "3p-extra-weak",
+      "players": 3,
+      "mode": 0,
+      "difficulty": 4,
+      "cpu": 1,
+      "seconds": 60,
+      "fault": {
+        "latency": 90,
+        "jitter": 60,
+        "dropEvery": 20,
+        "burstMs": 1100,
+        "burstEveryMs": 15000
+      },
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 3475,
+        "inputSha256": "94915ba583cda93edfb6ac29dd7129400c3013a0c6213f62dd7f60fd3739bba4",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "seats": [
+        {
+          "seat": 0,
+          "frame": 3423,
+          "progressFps": 53.845642491524295,
+          "nativeCallbackMs": {
+            "count": 8658,
+            "mean": 1.7320859321279265,
+            "p50": 0.30000001192092896,
+            "p95": 7.200000017881393,
+            "p99": 17.400000005960464,
+            "max": 36
+          },
+          "callbackGapMs": {
+            "count": 8658,
+            "mean": 6.9502656502663385,
+            "p50": 4.5,
+            "p95": 21.30000001192093,
+            "p99": 45.599999994039536,
+            "max": 87.10000002384186
+          },
+          "visibleFps": {
+            "count": 60,
+            "mean": 128.938,
+            "p50": 146,
+            "p95": 185.15,
+            "p99": 192.23,
+            "max": 192.23
+          },
+          "heapBytes": {
+            "count": 60,
+            "mean": 625300821.3333334,
+            "p50": 577437696,
+            "p95": 680001536,
+            "p99": 680001536,
+            "max": 680001536
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 375,
+            "replayedFrames": 2482,
+            "lastDepth": 8,
+            "peakDepth": 12,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 12095,
+            "dropped": 604,
+            "delivered": 11457,
+            "pending": 34,
+            "peakPending": 150
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 54.556270581492484,
+          "lastCombatSampleSeconds": 60.00569999998808
+        },
+        {
+          "seat": 1,
+          "frame": 3423,
+          "progressFps": 53.845642491524295,
+          "nativeCallbackMs": {
+            "count": 8658,
+            "mean": 1.6964541463722227,
+            "p50": 0.29999998211860657,
+            "p95": 6.700000017881393,
+            "p99": 17.5,
+            "max": 33.900000005960464
+          },
+          "callbackGapMs": {
+            "count": 8658,
+            "mean": 6.950231000230311,
+            "p50": 4.299999982118607,
+            "p95": 22.400000005960464,
+            "p99": 45.5,
+            "max": 110.5
+          },
+          "visibleFps": {
+            "count": 60,
+            "mean": 126.7945,
+            "p50": 143.81,
+            "p95": 189.22,
+            "p99": 193.23,
+            "max": 193.23
+          },
+          "heapBytes": {
+            "count": 60,
+            "mean": 624964403.2,
+            "p50": 577437696,
+            "p95": 679280640,
+            "p99": 679280640,
+            "max": 679280640
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 377,
+            "replayedFrames": 2492,
+            "lastDepth": 9,
+            "peakDepth": 12,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 12156,
+            "dropped": 607,
+            "delivered": 11515,
+            "pending": 34,
+            "peakPending": 151
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 54.556270581492484,
+          "lastCombatSampleSeconds": 60.00489999997616
+        },
+        {
+          "seat": 2,
+          "frame": 3423,
+          "progressFps": 53.845642491524295,
+          "nativeCallbackMs": {
+            "count": 8658,
+            "mean": 1.681277431669839,
+            "p50": 0.20000001788139343,
+            "p95": 6.9000000059604645,
+            "p99": 17.400000005960464,
+            "max": 38.5
+          },
+          "callbackGapMs": {
+            "count": 8658,
+            "mean": 6.950462000461312,
+            "p50": 4.199999988079071,
+            "p95": 22.400000005960464,
+            "p99": 46.599999994039536,
+            "max": 84.59999999403954
+          },
+          "visibleFps": {
+            "count": 60,
+            "mean": 128.1093333333333,
+            "p50": 139.41,
+            "p95": 188.64,
+            "p99": 199.18,
+            "max": 199.18
+          },
+          "heapBytes": {
+            "count": 60,
+            "mean": 625484322.1333333,
+            "p50": 577437696,
+            "p95": 680394752,
+            "p99": 680394752,
+            "max": 680394752
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 383,
+            "replayedFrames": 2512,
+            "lastDepth": 7,
+            "peakDepth": 12,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 12159,
+            "dropped": 607,
+            "delivered": 11519,
+            "pending": 33,
+            "peakPending": 152
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 54.539322376900536,
+          "lastCombatSampleSeconds": 60.00439999997616
+        }
+      ]
+    },
+    {
+      "name": "3p-normal-soak",
+      "players": 3,
+      "mode": 0,
+      "difficulty": 1,
+      "cpu": 1,
+      "seconds": 180,
+      "passed": true,
+      "observedSeconds": 180.215,
+      "naturalRunEnd": true,
+      "agreement": {
+        "confirmedFrames": 9109,
+        "inputSha256": "28218c0a793286121f55bd6a80d256e1f563280d5cc1306eccdebe155f1e6da0",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "seats": [
+        {
+          "seat": 0,
+          "frame": 9109,
+          "progressFps": 49.529728379990566,
+          "nativeCallbackMs": {
+            "count": 37867,
+            "mean": 0.7485224601403432,
+            "p50": 0.29999998211860657,
+            "p95": 2.9000000059604645,
+            "p99": 4.5,
+            "max": 23.400000005960464
+          },
+          "callbackGapMs": {
+            "count": 37867,
+            "mean": 4.759624475137135,
+            "p50": 4.300000011920929,
+            "p95": 7.800000011920929,
+            "p99": 12.200000017881393,
+            "max": 808.5999999940395
+          },
+          "visibleFps": {
+            "count": 180,
+            "mean": 210.24611111111102,
+            "p50": 218,
+            "p95": 240.02,
+            "p99": 240.04,
+            "max": 240.04
+          },
+          "heapBytes": {
+            "count": 180,
+            "mean": 548021134.2222222,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 478,
+            "replayedFrames": 557,
+            "lastDepth": 1,
+            "peakDepth": 6,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 39138,
+            "dropped": 0,
+            "delivered": 39138,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 59.66774975354972,
+          "lastCombatSampleSeconds": 149.00460000002383
+        },
+        {
+          "seat": 1,
+          "frame": 9109,
+          "progressFps": 49.529728379990566,
+          "nativeCallbackMs": {
+            "count": 37866,
+            "mean": 0.932224158838888,
+            "p50": 0.20000001788139343,
+            "p95": 3.5,
+            "p99": 6.0999999940395355,
+            "max": 20.200000017881393
+          },
+          "callbackGapMs": {
+            "count": 37866,
+            "mean": 4.759549463898855,
+            "p50": 4.0999999940395355,
+            "p95": 9.700000017881393,
+            "p99": 13.400000005960464,
+            "max": 813.3000000119209
+          },
+          "visibleFps": {
+            "count": 180,
+            "mean": 209.99216666666652,
+            "p50": 220,
+            "p95": 240.02,
+            "p99": 240.04,
+            "max": 240.14
+          },
+          "heapBytes": {
+            "count": 180,
+            "mean": 548021134.2222222,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 1047,
+            "replayedFrames": 1664,
+            "lastDepth": 2,
+            "peakDepth": 8,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 39167,
+            "dropped": 0,
+            "delivered": 39167,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 59.67141866753397,
+          "lastCombatSampleSeconds": 149.00140000000596
+        },
+        {
+          "seat": 2,
+          "frame": 9109,
+          "progressFps": 49.529728379990566,
+          "nativeCallbackMs": {
+            "count": 37865,
+            "mean": 0.9128456358863642,
+            "p50": 0.20000001788139343,
+            "p95": 3.4000000059604645,
+            "p99": 6,
+            "max": 18.80000001192093
+          },
+          "callbackGapMs": {
+            "count": 37865,
+            "mean": 4.759482371583571,
+            "p50": 3.7999999821186066,
+            "p95": 12.400000005960464,
+            "p99": 16.400000005960464,
+            "max": 821.2999999821186
+          },
+          "visibleFps": {
+            "count": 180,
+            "mean": 210.13422222222204,
+            "p50": 220,
+            "p95": 240.02,
+            "p99": 240.04,
+            "max": 240.04
+          },
+          "heapBytes": {
+            "count": 180,
+            "mean": 548021134.2222222,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 917,
+            "replayedFrames": 1538,
+            "lastDepth": 1,
+            "peakDepth": 8,
+            "pending": 0
+          },
+          "faults": {
+            "seen": 39215,
+            "dropped": 0,
+            "delivered": 39215,
+            "pending": 0,
+            "peakPending": 0
+          },
+          "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "combatSampleFps": 59.66698377349443,
+          "lastCombatSampleSeconds": 149.00520000001788
+        }
+      ]
+    }
+  ],
+  "nativeDense": [
+    {
+      "passed": false,
+      "firstDifferenceFrame": 369,
+      "firstDifferenceSection": "vm.presentation_generation",
+      "stage": 1,
+      "players": 2,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1932,
+      "maxAnimationNodes": 12066,
+      "exactReplaySteps": 33,
+      "peakPrivateBytes": 1026048000,
+      "captureMs": {
+        "count": 336,
+        "mean": 5.9929,
+        "p95": 19.3716,
+        "max": 29.016
+      },
+      "restoreMs": {
+        "count": 6,
+        "mean": 6.8976,
+        "p95": 14.4595,
+        "max": 14.4595
+      },
+      "stepMs": {
+        "count": 336,
+        "mean": 1.0155,
+        "p95": 3.9429,
+        "max": 7.3199
+      },
+      "configuredFrames": 1500
+    },
+    {
+      "passed": false,
+      "firstDifferenceFrame": 369,
+      "firstDifferenceSection": "vm.presentation_generation",
+      "stage": 1,
+      "players": 3,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1932,
+      "maxAnimationNodes": 12118,
+      "exactReplaySteps": 33,
+      "peakPrivateBytes": 1094520832,
+      "captureMs": {
+        "count": 336,
+        "mean": 5.3584,
+        "p95": 17.2383,
+        "max": 23.155
+      },
+      "restoreMs": {
+        "count": 6,
+        "mean": 6.7314,
+        "p95": 12.748,
+        "max": 12.748
+      },
+      "stepMs": {
+        "count": 336,
+        "mean": 0.9787,
+        "p95": 3.7085,
+        "max": 6.0538
+      },
+      "configuredFrames": 1500
+    },
+    {
+      "passed": false,
+      "firstDifferenceFrame": 247,
+      "firstDifferenceSection": "vm.presentation_generation",
+      "stage": 7,
+      "players": 2,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1977,
+      "maxAnimationNodes": 11938,
+      "exactReplaySteps": 19,
+      "peakPrivateBytes": 984678400,
+      "captureMs": {
+        "count": 228,
+        "mean": 5.5098,
+        "p95": 17.6053,
+        "max": 24.256
+      },
+      "restoreMs": {
+        "count": 4,
+        "mean": 4.7135,
+        "p95": 5.4375,
+        "max": 5.4375
+      },
+      "stepMs": {
+        "count": 228,
+        "mean": 0.8388,
+        "p95": 3.8571,
+        "max": 5.6183
+      },
+      "configuredFrames": 1500
+    },
+    {
+      "passed": false,
+      "firstDifferenceFrame": 240,
+      "firstDifferenceSection": "vm.presentation_generation",
+      "stage": 7,
+      "players": 3,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1971,
+      "maxAnimationNodes": 12034,
+      "exactReplaySteps": 12,
+      "peakPrivateBytes": 991657984,
+      "captureMs": {
+        "count": 228,
+        "mean": 5.4723,
+        "p95": 18.1732,
+        "max": 25.3439
+      },
+      "restoreMs": {
+        "count": 4,
+        "mean": 5.016,
+        "p95": 5.6337,
+        "max": 5.6337
+      },
+      "stepMs": {
+        "count": 228,
+        "mean": 0.8778,
+        "p95": 3.6505,
+        "max": 6.5729
+      },
+      "configuredFrames": 1500
+    }
+  ],
+  "nativeIgnoringPresentationIdentity": [
+    {
+      "passed": false,
+      "firstDifferenceFrame": 369,
+      "firstDifferenceSection": "vm.variables",
+      "stage": 1,
+      "players": 2,
+      "configuredFrames": 600,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1932,
+      "maxAnimationNodes": 12066,
+      "exactReplaySteps": 33,
+      "peakPrivateBytes": 1096790016,
+      "captureMs": {
+        "count": 336,
+        "mean": 5.3293,
+        "p95": 18.0417,
+        "max": 24.0944
+      },
+      "restoreMs": {
+        "count": 6,
+        "mean": 6.4735,
+        "p95": 13.3015,
+        "max": 13.3015
+      },
+      "stepMs": {
+        "count": 336,
+        "mean": 0.8781,
+        "p95": 3.4607,
+        "max": 5.3004
+      }
+    },
+    {
+      "passed": false,
+      "firstDifferenceFrame": 369,
+      "firstDifferenceSection": "vm.variables",
+      "stage": 1,
+      "players": 3,
+      "configuredFrames": 600,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1932,
+      "maxAnimationNodes": 12118,
+      "exactReplaySteps": 33,
+      "peakPrivateBytes": 1098444800,
+      "captureMs": {
+        "count": 336,
+        "mean": 5.362,
+        "p95": 17.4901,
+        "max": 25.4991
+      },
+      "restoreMs": {
+        "count": 6,
+        "mean": 6.0474,
+        "p95": 12.2037,
+        "max": 12.2037
+      },
+      "stepMs": {
+        "count": 336,
+        "mean": 0.9875,
+        "p95": 4.1315,
+        "max": 6.3969
+      }
+    },
+    {
+      "passed": false,
+      "firstDifferenceFrame": 247,
+      "firstDifferenceSection": "vm.variables",
+      "stage": 7,
+      "players": 2,
+      "configuredFrames": 600,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1977,
+      "maxAnimationNodes": 11938,
+      "exactReplaySteps": 19,
+      "peakPrivateBytes": 988676096,
+      "captureMs": {
+        "count": 228,
+        "mean": 5.4218,
+        "p95": 17.6561,
+        "max": 24.096
+      },
+      "restoreMs": {
+        "count": 4,
+        "mean": 4.489,
+        "p95": 5.2957,
+        "max": 5.2957
+      },
+      "stepMs": {
+        "count": 228,
+        "mean": 0.8325,
+        "p95": 3.624,
+        "max": 4.7059
+      }
+    },
+    {
+      "passed": false,
+      "firstDifferenceFrame": 240,
+      "firstDifferenceSection": "vm.variables",
+      "stage": 7,
+      "players": 3,
+      "configuredFrames": 600,
+      "ringSnapshots": 13,
+      "validationSnapshots": 1,
+      "maxBullets": 1971,
+      "maxAnimationNodes": 12034,
+      "exactReplaySteps": 12,
+      "peakPrivateBytes": 992231424,
+      "captureMs": {
+        "count": 228,
+        "mean": 5.4222,
+        "p95": 16.6749,
+        "max": 25.4323
+      },
+      "restoreMs": {
+        "count": 4,
+        "mean": 4.8656,
+        "p95": 5.1323,
+        "max": 5.1323
+      },
+      "stepMs": {
+        "count": 228,
+        "mean": 0.8655,
+        "p95": 3.7791,
+        "max": 5.47
+      }
+    }
+  ],
+  "nativeTimingNote": "Diagnostic traces allocate storage; native private bytes and timings are diagnostic observations, not a production memory/performance benchmark.",
+  "rawArtifacts": "artifacts/th15-stress-20261026",
+  "originalRegressionChecks": 9
+}

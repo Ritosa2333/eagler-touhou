@@ -11,7 +11,8 @@ import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
 import {thcrapLayout} from './localization/layout.mjs';
 import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
 import {VertexBatch} from './vertex-batch.mjs';
-export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10;if(size>40)exact[40]=score*10;return exact;}
+import {copyMeshPose,meshVertexCount,meshCoordinate,translateMesh} from './mesh-vertices.mjs';
+export function readCoreHud(core,{highScore=0,scoreLowDigit=0}={}){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10+scoreLowDigit;if(size>40)exact[40]=Math.max(exact[3],Number.isSafeInteger(highScore)&&highScore>=0?highScore:0);return exact;}
 export function readCoreBossHud(core){
   if(!core._th12_boss_hud||!core._th12_boss_hud_size)return null;
   const ptr=core._th12_boss_hud(),size=core._th12_boss_hud_size();
@@ -68,18 +69,18 @@ export function messageTextPoses(message,logicalPoses,atlases,{logicalText=false
 export function readCoreAnimationPoses(core,stage=1){
   if(!core._th12_anm_draw||!core._th12_anm_draw_ptr)return [];
   const count=core._th12_anm_draw(),ptr=core._th12_anm_draw_ptr(),stride=core._th12_anm_draw_stride?.()??128;
-  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||ptr<0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
-  const view=new DataView(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
-  for(let i=0;i<count;i++){const offset=ptr+i*stride,F=n=>view.getFloat32(offset+n*4,true),I=n=>view.getInt32(offset+n*4,true),U=n=>view.getUint32(offset+n*4,true),flags=U(24),flags2=U(25),primary=rgba(U(14)),secondary=rgba(U(15)),color=flags&0x10000?secondary:primary;
-    const a={name:banks[I(16)]??null,sprite:I(17),layer:I(18),mode:I(19),anchorX:I(20),anchorY:I(21),blend:I(22),geometryCount:I(23),
-      x:0,y:0,z:F(2),rx:F(3),ry:F(4),rotation:F(5),sx:F(6),sy:F(7),u:F(8),v:F(9),uvScaleX:F(10),uvScaleY:F(11),geometryRadius:F(12),geometryWidth:F(13),
-      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
-    if(U(31)===1){a.nativeWidth=F(29);a.nativeHeight=F(30);}
-    const owner=U(27);a.visible=(flags&3)===3;
+  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
+  const f=new Float32Array(core.HEAPU8.buffer),v=new Int32Array(core.HEAPU8.buffer),u=new Uint32Array(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
+  for(let i=0;i<count;i++){const k=(ptr>>2)+i*32,flags=u[k+24],flags2=u[k+25],primary=rgba(u[k+14]),secondary=rgba(u[k+15]),color=flags&0x10000?secondary:primary;
+    const a={name:banks[v[k+16]]??null,sprite:v[k+17],layer:v[k+18],mode:v[k+19],anchorX:v[k+20],anchorY:v[k+21],blend:v[k+22],geometryCount:v[k+23],
+      x:0,y:0,z:f[k+2],rx:f[k+3],ry:f[k+4],rotation:f[k+5],sx:f[k+6],sy:f[k+7],u:f[k+8],v:f[k+9],uvScaleX:f[k+10],uvScaleY:f[k+11],geometryRadius:f[k+12],geometryWidth:f[k+13],
+      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:v[k+19]===1||v[k+19]===3};
+    if(u[k+31]===1){a.nativeWidth=f[k+29];a.nativeHeight=f[k+30];}
+    const owner=u[k+27];a.visible=(flags&3)===3;
     // Original45c93e/45c95b tests primary alpha even when flag10000 selects
     // secondary color. A secondary alpha cannot revive a faded mode0/1 quad.
     if((a.mode===0||a.mode===1)&&primary[3]===0)a.visible=false;
-    poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
+    poses.push({a,x:f[k+0],y:f[k+1],angle:0,scale:1,alpha:f[k+28],id:u[k+26],owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
   }return poses;
 }
 export function readCoreLaserSegments(core,stage=1){
@@ -96,13 +97,14 @@ export function readCoreMeshes(core,stage=1){
   if(!core._th12_mesh_draw)return [];
   const count=core._th12_mesh_draw(),ptr=core._th12_mesh_draw_ptr(),stride=core._th12_mesh_draw_stride(),vertexPtr=core._th12_mesh_vertices_ptr(),vertexCount=core._th12_mesh_vertices_count(),vertexStride=core._th12_mesh_vertex_stride(),limit=core.HEAPU8.byteLength;
   if(!Number.isInteger(count)||count<0||count>65536||stride!==56||vertexStride!==28||!Number.isInteger(vertexCount)||vertexCount<0||vertexCount>4000000||ptr<0||ptr+count*stride>limit||vertexPtr<0||vertexPtr+vertexCount*vertexStride>limit)throw Error('网格绘制记录无效');
-  const view=new DataView(core.HEAPU8.buffer),meshes=[];
+  const heap=core.HEAPU8,view=new DataView(heap.buffer,heap.byteOffset,heap.byteLength),meshes=[];
+  // One owned copy before another export can grow WASM memory or replace
+  // the draw queue. All meshes share views of this immutable snapshot.
+  const bytes=heap.slice(vertexPtr,vertexPtr+vertexCount*vertexStride),floats=new Float32Array(bytes.buffer,bytes.byteOffset,vertexCount*7),colors=new Uint32Array(bytes.buffer,bytes.byteOffset,vertexCount*7);
   for(let i=0;i<count;i++){
     const at=ptr+i*stride,I=n=>view.getInt32(at+n*4,true),U=n=>view.getUint32(at+n*4,true),offset=U(10),length=U(11),primitive=U(5),pass=U(6);
     if(offset+length>vertexCount||![3,4,5].includes(primitive)||pass>2)throw Error('网格顶点范围无效');
-    const vertices=[];
-    for(let j=0;j<length;j++){const a=vertexPtr+(offset+j)*vertexStride,F=n=>view.getFloat32(a+n*4,true),color=view.getUint32(a+16,true);vertices.push({x:F(0),y:F(1),z:F(2),rhw:F(3),color,u:F(5),v:F(6)});}
-    meshes.push({mesh:true,vertices,primitive,untextured:I(0)===-1&&I(1)===-1,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:i,filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}});
+    meshes.push(copyMeshPose({mesh:true,vertexData:{floats,colors,offset,count:length},primitive,untextured:I(0)===-1&&I(1)===-1,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:i,filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}}));
   }return meshes;
 }
 // Stage draw2/5 installs camera2's screen offset; draw42 clears it before
@@ -113,7 +115,7 @@ export function shakePresentation(pose,offset=zeroOffset){
   const shift=(x,y)=>[Math.fround(x+offset[0]),Math.fround(y+offset[1])];
   // 459e50 shifts flat textured quads. 45c3a0/45d5d0 submits already formed
   // XYZRHW strips/lines without camera translation; solid14..20 do likewise.
-  if(pose.mesh)return pose.primitive===4&&!pose.untextured?{...pose,vertices:pose.vertices.map(v=>{const [x,y]=shift(v.x,v.y);return {...v,x,y};})}:pose;
+  if(pose.mesh)return pose.primitive===4&&!pose.untextured?translateMesh(pose,offset[0],offset[1],true):pose;
   if(pose.a?.mode>=14)return pose;
   // Ordinary quads construct their native corners before camera translation.
   // Pre-shifting a center would change mode0's floor/nearest-even boundaries.
@@ -191,12 +193,12 @@ export class Renderer {
   async prepare(){
     await this.loadAtlases(['pl00','pl01','pl02','bullet','enemy','front','ascii','text']);await this.prepareStage(1);
   }
-  async prepareStage(stage){
+  async prepareStage(stage,{activate=true}={}){
     if(!Number.isInteger(stage)||stage<1||stage>7)throw Error('关卡编号无效');
-    this.requestedStage=stage;
+    if(activate)this.requestedStage=stage;
     if(!this.stageJobs.has(stage)){const name='stage'+String(stage).padStart(2,'0'),enemy='stgenm'+String(stage).padStart(2,'0'),logo='st'+String(stage).padStart(2,'0')+'logo';
       const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]));this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
-    const background=await this.stageJobs.get(stage);if(this.requestedStage===stage)this.background=background;return background;
+    const background=await this.stageJobs.get(stage);if(activate&&this.requestedStage===stage)this.background=background;return background;
   }
   async loadAtlases(names){
     const gl=this.gl;
@@ -229,7 +231,11 @@ export class Renderer {
       :quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel,scratch),du=options.u||0,dv=options.v||0;
     const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
     const u0=sx/texture.w+du,u1=endX/texture.w+du,v0=sy/texture.h+dv,v1=endY/texture.h+dv;
-    const ox=presentationOffset?.[0]??0,oy=presentationOffset?.[1]??0,r=tint[0]??tint.r,g=tint[1]??tint.g,b=tint[2]??tint.b;
+    // Native45af10 mode1 keeps D3D9 integer pixel centers. Convert at
+    // submission to WebGL half-integer centers; otherwise a 1px warning
+    // samples only the transparent edges of its vertically compressed sprite.
+    // Mode0 already removes native459e50's half-pixel subtraction above.
+    const rasterOffset=mode===1?.5:0,ox=(presentationOffset?.[0]??0)+rasterOffset,oy=(presentationOffset?.[1]??0)+rasterOffset,r=tint[0]??tint.r,g=tint[1]??tint.g,b=tint[2]??tint.b;
     if(this.batch instanceof VertexBatch)this.batch.quad(corners,u0,u1,v0,v1,texture.flipY,r,g,b,alpha,ox,oy);
     else for(const i of quadIndices){const u=i===1||i===2?u1:u0,v=i>=2?v1:v0;this.batch.push(corners[i][0]+ox,corners[i][1]+oy,u,texture.flipY?1-v:v,r,g,b,alpha,1,0);}
   }
@@ -252,12 +258,18 @@ export class Renderer {
     this.material(p.a.blend);this.texture(texture,p.untextured||p.filter===1,p.addressFlags);
     this.primitive(p.primitive===3?this.gl.LINE_STRIP:this.gl.TRIANGLES);
     const ox=Math.fround(screenShake[0]),oy=Math.fround(screenShake[1]),shake=p.primitive===4&&!p.untextured&&(ox||oy);
-    const emit=v=>this.batch.push(shake?Math.fround(v.x+ox):v.x,shake?Math.fround(v.y+oy):v.y,p.untextured ? .5 : v.u,p.untextured ? .5 : texture.flipY?1-v.v:v.v,((v.color>>>16)&255)/255,((v.color>>>8)&255)/255,(v.color&255)/255,(v.color>>>24)/255,v.rhw?1/v.rhw:1,0);
+    const data=p.vertexData,count=meshVertexCount(p);
+    const emit=data?i=>{
+      const at=(data.offset+i)*7,f=data.floats,color=data.colors[at+4],x=meshCoordinate(p,i,0),y=meshCoordinate(p,i,1);
+      this.batch.push(shake?Math.fround(x+ox):x,shake?Math.fround(y+oy):y,p.untextured ? .5 : f[at+5],p.untextured ? .5 : texture.flipY?1-f[at+6]:f[at+6],((color>>>16)&255)/255,((color>>>8)&255)/255,(color&255)/255,(color>>>24)/255,f[at+3]?1/f[at+3]:1,0);
+    }:i=>{
+      const v=p.vertices[i];this.batch.push(shake?Math.fround(v.x+ox):v.x,shake?Math.fround(v.y+oy):v.y,p.untextured ? .5 : v.u,p.untextured ? .5 : texture.flipY?1-v.v:v.v,((v.color>>>16)&255)/255,((v.color>>>8)&255)/255,(v.color&255)/255,(v.color>>>24)/255,v.rhw?1/v.rhw:1,0);
+    };
     // Native45d5d0 submits each trail separately; batching two line strips
     // together would draw a spurious segment between their endpoints.
-    if(p.primitive===3){this.flush();for(const v of p.vertices)emit(v);this.flush();return;}
-    if(p.primitive===4)for(const v of p.vertices)emit(v);
-    else for(let i=2;i<p.vertices.length;i++)for(const index of i&1?[i-1,i-2,i]:[i-2,i-1,i])emit(p.vertices[index]);
+    if(p.primitive===3){this.flush();for(let i=0;i<count;i++)emit(i);this.flush();return;}
+    if(p.primitive===4)for(let i=0;i<count;i++)emit(i);
+    else for(let i=2;i<count;i++){emit(i&1?i-1:i-2);emit(i&1?i-2:i-1);emit(i);}
   }
   stageSurface(priority,screenShake=zeroOffset,clip=1){
     //431630 aliases text@R entry2 to the first native target.42f200 ends
@@ -354,7 +366,17 @@ export class Renderer {
     const family=localizedFontFamily(),key=JSON.stringify([text,record,metrics,raster,family,family?this.localizationTabs??[]:null]);
     if(cache.has(key)){const result=cache.get(key);if(family)this.localizationTabs=[...result.tabs];return result;}
     const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${localizedFontFamily()??raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", "Eagler Unicode", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
-    const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{const y=raster?.sourceY??2;ctx.fillStyle='#000';for(const [dx,dy]of raster?.outlineOffsets??[[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,y+dy-2);ctx.fillStyle=foreground;ctx.fillText(text,x,y);};
+    const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{
+      const y=raster?.sourceY??2;
+      // Trace one contour at the glyph baseline. Four displaced copies of
+      // the thin shared font form separate strokes instead of an outline;
+      // the old y-2 adjustment also raised ending outlines above their fill.
+      if(raster?.outlineOffsets?.length!==0){
+        ctx.strokeStyle='#'+((raster?.outlineColor??record.outlineColor??0)>>>0).toString(16).padStart(6,'0');
+        ctx.lineWidth=raster?.outlineWidth??2;ctx.lineJoin='round';ctx.strokeText(text,x,y);
+      }
+      ctx.fillStyle=foreground;ctx.fillText(text,x,y);
+    };
     if(family){
       ctx.textAlign='left';
       const font=ctx.font,measure=(value,commands='')=>{ctx.font=(commands.includes('b')?'bold ':'')+(commands.includes('i')?'italic ':'')+font;return ctx.measureText(value).width;};
@@ -432,16 +454,15 @@ export class Renderer {
   resetPresentation(){
     // Call on start/restart, stage load, replay seek, pause/resume, focus
     // loss or any host discontinuity; the host also discards its old pair.
+    if(this.drawBuckets)for(const bucket of this.drawBuckets)if(bucket)bucket.length=0;
     this.presentationEpoch++;this.lastFrame=-1;this.animations=new AnimationSampler(this.atlases);
   }
   capturePresentation(core,fps={}){
-    const h=[...readCoreHud(core)],frame=h[0];if(fps.scoreLowDigit){h[3]+=fps.scoreLowDigit;if(h.length>40)h[40]+=fps.scoreLowDigit;}if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
+    const h=[...readCoreHud(core,fps)],frame=h[0];if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0],backgroundVisible=background.authoritative||(core._th12_background_visible?.()??true);
-    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
-    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
-    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
-    const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core,logicalPoses),meshes=readCoreMeshes(core,stage),logicalOwners=(this.logicalOwners??=new Set()),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
+    logicalOwners.clear();for(const p of logicalPoses)logicalOwners.add(p.owner);for(const p of meshes)logicalOwners.add(p.owner);
     let bulletCount=0;
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases,{logicalText:!!core._th12_anm_draw}),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     for(const text of spellTextDescriptors(spell,logicalPoses,{disableMaster:fps.disableMaster}))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:text.drawFlag===0?69:45,clipped:false,order:poses.length});
@@ -453,6 +474,11 @@ export class Renderer {
     if(fps.stageClear){const text=stageClearText(h,logicalPoses,fps.practice);if(text)poses.push({nativeText:text,drawPriority:69,clip:0,order:poses.length});}
     const transition=stageTransitionPose(logicalBackground?.transition);if(transition)poses.push(transition);
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options,owner=Number.isInteger(sampling.entityId)?sampling.entityId:0;let child=0;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,owner,presentationKey:owner?'sample:'+owner+':'+id+':'+child++:undefined,order:poses.length});};
+    // Consume the draw queue after all metadata exports. No Wasm calls occur
+    // inside this loop; endpoint records own their scalars before the next export.
+    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
+    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
+    const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride),records=[];
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
       records.push({x,y,owner:entityId,bank:v[k+4],animation,kind,color,age,interrupt});
@@ -488,7 +514,7 @@ export class Renderer {
     }
     // These pose wrappers were created for this capture. Annotate them before
     // publishing the immutable endpoint; older endpoints and appearances stay intact.
-    const ordered=orderPresentation(poses,schedule,{reusePoses:true});
+    const ordered=orderPresentation(poses,schedule,{reusePoses:true,buckets:this.drawBuckets??=[]});
     this.animations.endFrame();
     // Modern cores already publish authoritative owner/lineage data. Do not
     // build a second legacy owner graph that their interpolation never uses;
@@ -500,7 +526,7 @@ export class Renderer {
     // Ordinary 60 Hz callers retain current-endpoint rendering.
     return this.renderPresentation(null,this.capturePresentation(core,{...fps,presentationContinuity:false}),1);
   }
-  renderPresentation(previous,current,interpolationAlpha=1){
+  renderPresentation(previous,current,interpolationAlpha=1,live={}){
     const endpoint=interpolatePresentation(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
       source=this.stageBackgrounds.get(endpoint.stage),background=source&&endpoint.logicalBackground!==current.logicalBackground&&endpoint.logicalBackground?.loaded
         ?source.geometry(endpoint.logicalBackground.frame,endpoint.logicalBackground):endpoint.background;
@@ -519,8 +545,10 @@ export class Renderer {
         else{p=shakePresentation(p,roundedShake);poseShake=p.screenShake;}
       }
       if(p.clip!==currentClip){this.flush();if(p.clip){g.enable(g.SCISSOR_TEST);if(p.clip===2)g.scissor(13,0,422,480);else g.scissor(32,16,384,448);}else g.disable(g.SCISSOR_TEST);currentClip=p.clip;}
-      if(p.nativeText)this.nativeText(p.nativeText,poseShake);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p,p.drawPriority<42?roundedShake:zeroOffset);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:poseShake,presentationOffset:p.presentationOffset});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,poseShake,p.presentationOffset);
+      if(p.nativeText){if(p.nativeText.kind!=='current-fps'||!Number.isFinite(live.currentFps))this.nativeText(p.nativeText,poseShake);}else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p,p.drawPriority<42?roundedShake:zeroOffset);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:poseShake,presentationOffset:p.presentationOffset});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,poseShake,p.presentationOffset);
     }
-    this.flush();g.disable(g.SCISSOR_TEST);return [...h];
+    this.flush();g.disable(g.SCISSOR_TEST);
+    for(const text of fpsTextDescriptors({currentFps:live.currentFps}))this.nativeText(text);
+    this.flush();return [...h];
   }
 }

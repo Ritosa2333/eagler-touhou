@@ -16,6 +16,8 @@ node --test tests/browser-keyboard-owners.test.mjs tests/keyboard-input-bridge.t
 
 | 组件 | 源码 | 生成到消费者 | 检查 |
 | --- | --- | --- | --- |
+| 游戏路径选路 | `browser/adaptive-peer-route.mjs` | `node common/tools/sync-adaptive-peer-route.mjs`（仓库根目录） | 同命令加 `--check`；`node common/tests/adaptive-peer-route.test.mjs` |
+| 既有 Runtime 传输绑定 | `src/netplay/BrowserPeerTransport.cpp` | `node launcher/scripts/update-peer-runtime.mjs --input=OLD --output=NEW --receipt=JSON` | `node launcher/tests/test-peer-runtime-update.mjs`；运行包实际对局换路验证 |
 | 键盘物理按键归属 | `browser/keyboard-owners.mjs`、`browser/keyboard-input-bridge.mjs` | `node tools/sync-browser-keyboard.mjs TARGET.html ...` | 同命令加 `--check`；运行 `node --test tests/browser-keyboard-owners.test.mjs tests/keyboard-input-bridge.test.mjs` |
 | 目录 Runtime 键盘 | `browser/directory-keyboard.mjs` | `node tools/sync-directory-keyboard.mjs TARGET.mjs ...` | 同命令加 `--check` |
 | 旁观时间轴 | `browser/spectator-timeline-view.mjs` | `node tools/sync-spectator-timeline-view.mjs --target TARGET.mjs` | 同命令加 `--check`；运行 `node --test browser/spectator-timeline-view.test.mjs` |

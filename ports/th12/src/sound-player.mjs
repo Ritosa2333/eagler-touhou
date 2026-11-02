@@ -46,7 +46,7 @@ export class SoundPlayer {
   constructor({context,index,readBytes,volume=80,onError=console.warn}){
     this.context=context;this.index=new Map(index.map(record=>[record.id,record]));
     this.readBytes=readBytes;this.volume=volume;this.onError=onError;
-    this.buffers=new Map();this.pending=new Map();this.voices=new Map();
+    this.buffers=new Map();this.pending=new Map();this.voices=new Map();this.graphs=new Map();
   }
   load(file){
     if(this.buffers.has(file))return Promise.resolve(this.buffers.get(file));
@@ -59,34 +59,42 @@ export class SoundPlayer {
   preload(){return Promise.all([...new Set([...this.index.values()].map(r=>r.file))].map(file=>this.load(file)));}
   release(voice){
     const source=voice.source;voice.source=null;
-    if(source){source.onended=null;try{source.stop();}catch{}}
-    for(const node of voice.nodes??[])node.disconnect();
-    voice.nodes=[];
+    if(source){source.onended=null;try{source.stop();}catch{}source.disconnect();}
+  }
+  graph(id,pan){
+    // One voice per retail sound ID. Keep its centre/spatial graphs between
+    // retriggers; BufferSource itself is one-shot and must still be replaced.
+    let slots=this.graphs.get(id);if(!slots){slots={};this.graphs.set(id,slots);}
+    const kind=pan===0?'center':'spatial';let graph=slots[kind];
+    if(!graph){
+      const {context}=this,gain=context.createGain();
+      gain.channelCount=2;gain.channelCountMode='explicit';gain.channelInterpretation='speakers';
+      graph={gain,nodes:[gain]};
+      if(pan===0)gain.connect(context.destination);
+      else{
+        const split=context.createChannelSplitter(2),left=context.createGain(),right=context.createGain(),merge=context.createChannelMerger(2);
+        gain.connect(split);split.connect(left,0);split.connect(right,1);
+        left.connect(merge,0,0);right.connect(merge,0,1);merge.connect(context.destination);
+        graph.left=left;graph.right=right;graph.nodes.push(split,left,right,merge);
+      }
+      slots[kind]=graph;
+    }
+    if(pan!==0){
+      // DirectSound attenuates only the channel away from the source. A
+      // StereoPanner's equal-power crossfade changes the centre level.
+      graph.left.gain.value=pan>0?Math.pow(10,-pan/2000):1;
+      graph.right.gain.value=pan<0?Math.pow(10,pan/2000):1;
+    }
+    return graph;
   }
   start(voice){
     if(this.voices.get(voice.id)!==voice||voice.paused||!voice.buffer)return;
     const {context}=this,{buffer,record}=voice;
     if(!record.loop&&voice.offset>=buffer.duration){this.voices.delete(voice.id);return;}
-    const source=context.createBufferSource(),gain=context.createGain();
+    const pan=Math.max(-10000,Math.min(10000,voice.pan)),{gain}=this.graph(voice.id,pan),source=context.createBufferSource();
     source.buffer=buffer;source.loop=!!record.loop;
     gain.gain.value=nativeSoundGain(record.volume,this.volume);
-    // DirectSound attenuates only the channel away from the source. A
-    // StereoPanner's equal-power crossfade changes the original centre level.
-    gain.channelCount=2;gain.channelCountMode='explicit';gain.channelInterpretation='speakers';
-    const pan=Math.max(-10000,Math.min(10000,voice.pan));
-    source.connect(gain);voice.nodes=[source,gain];
-    if(pan===0){
-      // The explicit stereo gain already performs the same mono upmix and
-      // stereo pass-through as two unity-gain split channels.
-      gain.connect(context.destination);
-    }else{
-      const split=context.createChannelSplitter(2),left=context.createGain(),right=context.createGain(),merge=context.createChannelMerger(2);
-      left.gain.value=pan>0?Math.pow(10,-pan/2000):1;
-      right.gain.value=pan<0?Math.pow(10,pan/2000):1;
-      gain.connect(split);split.connect(left,0);split.connect(right,1);
-      left.connect(merge,0,0);right.connect(merge,0,1);merge.connect(context.destination);
-      voice.nodes.push(split,left,right,merge);
-    }
+    source.connect(gain);
     voice.source=source;voice.gain=gain;
     voice.startedAt=context.currentTime;
     source.onended=()=>{if(voice.source!==source)return;this.release(voice);if(this.voices.get(voice.id)===voice)this.voices.delete(voice.id);};
@@ -114,5 +122,9 @@ export class SoundPlayer {
     }
   }
   resume(){for(const voice of this.voices.values())if(voice.paused){voice.paused=false;this.start(voice);}}
-  stop(){for(const voice of this.voices.values())this.release(voice);this.voices.clear();}
+  stop(){
+    for(const voice of this.voices.values())this.release(voice);this.voices.clear();
+    for(const slots of this.graphs.values())for(const graph of Object.values(slots))for(const node of graph.nodes)node.disconnect();
+    this.graphs.clear();
+  }
 }

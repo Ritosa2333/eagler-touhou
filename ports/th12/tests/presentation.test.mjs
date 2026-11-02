@@ -45,3 +45,12 @@ test('dialogue draws the four native text rectangles using logical visibility an
 });
 test('animation seeking is invariant and released entity tracks do not retain a frame history',()=>{const a=new AnimationSampler(atlases),early=a.sampleAll('front',0,3);a.sampleAll('front',0,3000);assert.deepEqual(a.sampleAll('front',0,3),early);for(const track of a.tracks.values())assert.equal(track.frames.length,1);a.beginFrame();a.sample('pl02',0,60,null,{entityId:1});a.endFrame();assert.equal(a.tracks.size,1);a.beginFrame();a.sample('pl02',0,61,null,{entityId:2});a.endFrame();assert.equal(a.tracks.size,1);});
 test('UFO HUD position/color interrupts resume the original holding script',()=>{const a=new AnimationSampler(atlases);for(let i=0;i<3;i++){const s=a.sample('front',80,40,null,{interrupts:[7+i,10+i,2]});assert.equal(s.x,52+21*i);assert.equal(s.y,456);assert.equal(s.sprite,59+i);assert.equal(s.alpha,1);}});
+
+
+test('packed ANM poses own their values after heap mutation and reject misaligned pointers',()=>{
+  const core={HEAPU8:new Uint8Array(256),_th12_anm_draw:()=>1,_th12_anm_draw_ptr:()=>0,_th12_anm_draw_stride:()=>128};
+  const v=new DataView(core.HEAPU8.buffer);v.setFloat32(0,12.5,true);v.setUint32(56,0xff123456,true);v.setUint32(96,3,true);v.setUint32(108,0xffff0000,true);
+  const [pose]=readCoreAnimationPoses(core);core.HEAPU8.fill(0);
+  assert.equal(pose.x,12.5);assert.equal(pose.owner,0xffff0000);assert.equal(pose.a.primaryColor[0],0x12/255);
+  core._th12_anm_draw_ptr=()=>1;assert.throws(()=>readCoreAnimationPoses(core),/姿态/);
+});

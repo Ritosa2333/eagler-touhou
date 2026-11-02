@@ -8,7 +8,7 @@ using namespace th08;
 struct Pilots final:EnemyDamageActions {
     PlayerFrameState frames[3]{};
     i32 hits[3]{},bombs[3]{};
-    u8 forms[3]{};
+    u8 forms[3]{},life_states[3]{};
     i32 damage_calls[3]{};
     i16 gauge_values[3]{},previous_gauge_values[3]{};
     GaugeThresholds thresholds[3]{};
@@ -20,7 +20,7 @@ struct Pilots final:EnemyDamageActions {
     i32 damage(const Vec3&,const Vec3&,i32&,i32&) override {return 0;}
     u32 participant_count()const override{return count;}
     bool participant(u32 seat,EnemyDamageParticipant& out) override {
-        out={{float(80+seat*12),300,0},&frames[seat],&gauges[seat],0,u8(bombs[seat]!=0),0,forms[seat]};
+        out={{float(80+seat*12),300,0},&frames[seat],&gauges[seat],0,u8(bombs[seat]!=0),0,forms[seat],life_states[seat]};
         return seat<count&&available[seat];
     }
     i32 participant_damage(u32 seat,const Vec3&,const Vec3&,i32&,i32& bomb_hit) override {
@@ -31,6 +31,23 @@ struct Pilots final:EnemyDamageActions {
 };
 
 int main(){
+    // A Last Spell entered by the team must not wait forever on dead P1.
+    for(u32 count:{2u,3u})for(u32 ready=0;ready<count;++ready){
+        Pilots team;team.count=count;
+        for(u32 seat=0;seat<count;++seat)team.life_states[seat]=2;
+        assert(last_spell_waits_for_players(team));
+        team.life_states[ready]=0;
+        assert(!last_spell_waits_for_players(team));
+        team.bombs[ready]=1;
+        assert(last_spell_waits_for_players(team));
+        team.bombs[ready]=0;team.life_states[ready]=3;
+        assert(last_spell_waits_for_players(team));
+        team.available[0]=false;team.life_states[0]=4;
+        team.life_states[count-1]=0;
+        assert(!last_spell_waits_for_players(team));
+        team.available[count-1]=false;
+        assert(last_spell_waits_for_players(team));
+    }
     GameGlobals shared{};
     GameConfiguration config{},display{};
     HighScore high_score{};
@@ -104,4 +121,25 @@ int main(){
     boss.life=100;
     assert(damage_enemy_multiplayer(boss,0,0,values,bomb_hit,owner,pilots));
     assert(boss.life==55);
+
+    // Extra's opcode 183 protects every source while any eligible pilot is
+    // bombing, even if that bomb has no active damage region this frame.
+    for(u32 count:{2u,3u})for(u32 bombing=0;bombing<count;++bombing){
+        Pilots team;team.count=count;for(u32 seat=0;seat<count;++seat)team.hits[seat]=20;
+        team.bombs[bombing]=1;team.hits[bombing]=0;
+        EclVm protected_boss{};protected_boss.flags=0x8000004au;protected_boss.life=100;
+        shared.score=0;
+        assert(enemy_bomb_protected(protected_boss,team));
+        assert(!damage_enemy_multiplayer(protected_boss,0,0,values,bomb_hit,owner,team));
+        assert(protected_boss.life==100&&protected_boss.last_damage==0&&shared.score==0);
+        for(u32 seat=0;seat<count;++seat)assert(team.damage_calls[seat]==0);
+        team.bombs[bombing]=0;
+        assert(!enemy_bomb_protected(protected_boss,team));
+        assert(damage_enemy_multiplayer(protected_boss,0,0,values,bomb_hit,owner,team));
+        assert(protected_boss.life<100);
+        team.bombs[bombing]=1;team.available[bombing]=false;
+        assert(!enemy_bomb_protected(protected_boss,team));
+        protected_boss.flags&=~0x80000000u;team.available[bombing]=true;
+        assert(!enemy_bomb_protected(protected_boss,team));
+    }
 }

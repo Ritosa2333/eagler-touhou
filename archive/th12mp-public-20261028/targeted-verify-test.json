@@ -1,0 +1,11 @@
+{
+  "valid": true,
+  "scope": "release-inventory-frontend-and-th12mp",
+  "releaseId": "sha256-c1e0869d72aad75251228fb6813802b1fa5b799ad6119a8c531454de22eb95ef",
+  "verifiedReleaseFiles": 6259,
+  "frontendFiles": 111,
+  "shellEntries": 96,
+  "runtimeGeneration": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+  "runtimeFiles": 64,
+  "otherCurrentGenerationsPreserved": true
+}

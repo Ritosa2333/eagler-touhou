@@ -317,6 +317,8 @@ for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(!core||!launched||closing||document.hidden)return;
  if(keyboard.mapNative(event,name==='keydown')){event.preventDefault();event.stopImmediatePropagation();return;}
+ // Rejected mapped input belongs to the browser/UI, never the raw game lane.
+ if(keyboard.mapped())return;
  const handled=keyboard.event(event,name==='keydown');
  if(handled&&options.thpracEnabled&&/^(Backspace|Tab|F[1-7]|F12)$/.test(event.code))event.preventDefault();
 },{capture:true});

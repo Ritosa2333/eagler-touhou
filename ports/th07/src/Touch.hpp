@@ -13,7 +13,7 @@ struct ReplayTouchPoint
     f32 y;
 };
 
-void FingerDown(const SDL_TouchFingerEvent &f);
+void FingerDown(const SDL_TouchFingerEvent &f, bool transferred=false);
 void FingerUp(const SDL_TouchFingerEvent &f);
 void FingerMotion(const SDL_TouchFingerEvent &f);
 

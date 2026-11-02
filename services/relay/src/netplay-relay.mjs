@@ -200,6 +200,7 @@ const rtcTimeoutMs = Math.max(
     10,
   ) || 4500,
 );
+const allowGameplayRelayFallback = process.env.EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK === '1';
 const stunUrls = envValue(
   'EAGLER_NETPLAY_STUN_URLS',
   ['TH07_STUN_URLS'],
@@ -382,11 +383,11 @@ function getRoom(id, socket) {
         inputDelay: 0,
         timingChoice: 'auto',
         startedAt: 0,
-        adonisMode: multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
+        adonisMode: id.startsWith('th15mp-') ? 1 : multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
         inputDelayAuto: false,
         predictionReserve: 2,
         timing: null,
-        predictionLimit: multiplayerInputTimingPolicy(multiplayer).predictionLimit,
+        predictionLimit: id.startsWith('th15mp-') ? 0 : multiplayerInputTimingPolicy(multiplayer).predictionLimit,
         settingsVersion: 1,
         phase: 'lobby',
         seats: [null, null, null],
@@ -671,6 +672,26 @@ function chooseRoute(roomId, runId, room, run, route) {
   broadcastRoute(run, { type: 'route', mode: route });
 }
 
+function failRoute(roomId, runId, run, reason) {
+  if (run.route || run.ended) return;
+  run.route = 'failed';
+  run.ended = true;
+  if (run.routeTimer) clearTimeout(run.routeTimer);
+  if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
+  run.routeTimer = null;
+  run.spectatorGraceTimer = null;
+  clearSpectatorHistory(run);
+  console.log(`ROUTE room=${roomId} run=${runId} mode=failed reason=${reason}`);
+  const message = JSON.stringify({type: 'route', mode: 'failed', reason});
+  for (const socket of [...run.signalClients.values(), ...run.clients.values()]) {
+    sendBounded(socket, message);
+    if (socket.readyState === WebSocket.OPEN) socket.close(1013, reason);
+  }
+  for (const socket of run.spectatorClients.values()) {
+    if (socket.readyState === WebSocket.OPEN) socket.close(1013, reason);
+  }
+}
+
 function maybeStartRouteTimer(roomId, runId, room, run) {
   const allSignalsPresent = run.signalClients.size >= run.playerCount;
   const allRelaysPresent = run.clients.size >= run.playerCount;
@@ -691,6 +712,10 @@ function maybeStartRouteTimer(roomId, runId, room, run) {
 function maybeResolveRoute(roomId, runId, room, run) {
   if (run.route || run.playerCount < 2) return;
   if (run.rtcFailed) {
+    if (!allowGameplayRelayFallback) {
+      failRoute(roomId, runId, run, 'WebRTC connection unavailable');
+      return;
+    }
     // Relay release is a barrier too: do not let the first endpoint begin
     // frame-zero traffic until every expected relay socket and signaling
     // client is already present. Route delivery itself is asynchronous, so
@@ -1292,7 +1317,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         invalidateLobbyReady(room);
         room.lobby.adonisMode = mode;
         room.lobby.timingChoice = choice;
-        room.lobby.inputDelay = choice === 'auto' || (message.rollbackEnabled && !timing.manualRollbackDelay) ? 0 : choice;
+        room.lobby.inputDelay = choice === 'auto' || message.rollbackEnabled ? 0 : choice;
         room.lobby.inputDelayAuto = !message.rollbackEnabled && timing.measuredStartup && choice === 'auto';
         room.lobby.timing = null;
         broadcastLobby(room);
@@ -1646,7 +1671,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
         !Number.isInteger(inputDelay) ||
         inputDelay < 0 ||
-        inputDelay > (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8) ||
+        inputDelay > timingPolicy.manualDelayLimit ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
             predictionLimit < 1 ||
@@ -1656,12 +1681,13 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         return;
       }
       const rollback = !!room.multiplayer && timingPolicy.rollback && adonisMode !== 1;
-      room.lobby.inputDelay = rollback && !timingPolicy.manualRollbackDelay ? 0 : inputDelay;
+      room.lobby.inputDelay = rollback ? 0 : inputDelay;
       room.lobby.adonisMode = rollback ? 0 : adonisMode;
       room.lobby.inputDelayAuto = rollback ? false : inputDelayAuto;
       room.lobby.predictionReserve = predictionReserve;
       room.lobby.timing = null;
-      if (configurablePredictionLimit != null) room.lobby.predictionLimit = predictionLimit;
+      if (room.th15) room.lobby.predictionLimit = rollback ? 12 : 0;
+      else if (configurablePredictionLimit != null) room.lobby.predictionLimit = predictionLimit;
       room.lobby.phase = 'starting';
       room.lobby.startedAt = Date.now();
       room.lobby.startSerial++;
@@ -2161,6 +2187,7 @@ server.on('connection', (socket, request) => {
         }
       return;
     }
+    if (!allowGameplayRelayFallback) return;
     let requestedPeer = null;
     let forwardedPayload = incoming;
     if (incoming.length >= 2 && incoming[0] === targetedEnvelopeMarker) {

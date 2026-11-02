@@ -76,5 +76,6 @@ struct StageEnvironment {
     virtual i32 update_animation(AnmVm& vm)=0;
     virtual void initialize_animation(AnmFile& file,AnmVm& vm,i32 script)=0;
     virtual void normalize(Vec3& output,const Vec3& input)=0;
+    virtual void camera_position_interpolated(Stage&){}
 };
 }

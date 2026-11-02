@@ -9,7 +9,7 @@ import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
-assert(['th06','th07','th08','th09','th10','th11','th15'].includes(game),'ROOM_RUNTIME_GAME must be a multiplayer title');
+assert(PRODUCT_GAMES[game]?.multiplayer?.spectator,'ROOM_RUNTIME_GAME must support multiplayer spectators');
 const timing=multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer);
 for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA','EAGLER_SHARED_GOTHIC','EAGLER_SHARED_UNIFONT'])assert(process.env[key],key+' is required');
 const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),out=resolve('.cache/native-room-retention',game);

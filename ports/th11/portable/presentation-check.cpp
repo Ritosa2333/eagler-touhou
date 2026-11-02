@@ -14,6 +14,27 @@ void setup(AnmVm& vm){
 }
 }
 int main(){
+    // A VM created this tick is presented as-is: owners spawn VMs at the
+    // origin and write the authored position within the same tick, so the
+    // first frame must not sweep in from (0,0).
+    presentation::reset();
+    AnmVm spawned;setup(spawned);spawned.position={0,0,0};
+    presentation::begin_tick();
+    presentation::note_spawn(spawned);
+    presentation::capture(spawned);
+    spawned.position={100,60,0};spawned.timer.current=11;
+    high_refresh::begin(.5f,true,true,true);
+    AnmVm spawned_copy=spawned;
+    assert(!presentation::present(spawned_copy,spawned));
+    assert(spawned_copy.position.x==100.f&&spawned_copy.position.y==60.f);
+    // The next tick interpolates normally between authored positions.
+    presentation::begin_tick();presentation::capture(spawned);
+    spawned.position={104,64,0};spawned.timer.current=12;
+    high_refresh::begin(.5f,true,true,true);
+    AnmVm next_copy=spawned;
+    assert(presentation::present(next_copy,spawned));
+    assert(std::fabs(next_copy.position.x-102.f)<1e-4f);
+    assert(std::fabs(next_copy.position.y-62.f)<1e-4f);
     presentation::reset();
     AnmVm vm;setup(vm);
     presentation::begin_tick();

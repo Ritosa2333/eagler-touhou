@@ -17,7 +17,8 @@ import {UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage} from '../../../src/launche
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
   interactive?: boolean;
-  variant: 'library' | 'lobby';
+  variant: 'library' | 'lobby' | 'help';
+  nativeLinks?: boolean;
   assetUrl: (path: string) => string;
   launcherHref: string;
   faqHref: string;
@@ -47,7 +48,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const profileOpen=/\/(?:profile|login)\.html\/?$/.test(useLocation().pathname);
   const {variant,menuOpen,onMenuOpenChange,interactive=true}=props;
   const padding=usePopupPadding(interactive&&menuOpen);
-  const Link=interactive?AppLink:'a';
+  const Link=interactive&&!props.nativeLinks?AppLink:'a';
   const trigger=useRef<HTMLButtonElement>(null),language=useRef<HTMLDivElement>(null),[host,setHost]=useState<HTMLElement>();
   return <header className={`masthead book-masthead${variant==='lobby'?' lobby-masthead':''}`}>
     <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="EAGLER TOUHOU"><SiteBrand assetUrl={props.assetUrl}/><time className="brand-version" id="brandUpdateAge" title={props.updatedAge?.title} dateTime={props.updatedAge?.dateTime}>{props.updatedAge?.text??t('brand.neverUpdated')}</time></Link>
@@ -83,6 +84,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           <DropdownMenu.Item className="ui-menu-item" id="firstUseNoticeOpen" onSelect={props.onFirstUse}><ReaderIcon/>{t('nav.firstUseNotice')}</DropdownMenu.Item>
           <DropdownMenu.Item asChild><a className="ui-menu-item" href={props.faqHref}><InfoCircledIcon/>{t('nav.faq')}</a></DropdownMenu.Item>
           <DropdownMenu.Item asChild><a className="ui-menu-item" href={props.aboutHref}><InfoCircledIcon/>{t('nav.about')}</a></DropdownMenu.Item>
+          <DropdownMenu.Item asChild><a className="ui-menu-item" href={withUiLanguage(props.assetUrl('uptime/'),locale)}><ActivityLogIcon/>{t('nav.serviceStatus')}</a></DropdownMenu.Item>
           <DropdownMenu.Item asChild><a className="ui-menu-item" href="https://github.com/YomotsuHisami/eagler-touhou" target="_blank" rel="noopener noreferrer"><GitHubLogoIcon/>GitHub</a></DropdownMenu.Item>
           {props.donationAvailable!==false&&<DropdownMenu.Item className="ui-menu-item book-menu-donation" onSelect={props.onDonation}><HeartIcon/>{t('nav.donate')}</DropdownMenu.Item>}
           </DropdownMenu.Group>

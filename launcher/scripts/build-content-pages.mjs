@@ -152,6 +152,7 @@ const faqHtml = `<!doctype html>
   <main class="about-page">
     <p class="about-back"><a href="./">← 返回 EAGLER TOUHOU</a></p>
     <nav class="about-languages" aria-label="界面语言"><a href="?lang=zh-CN" lang="zh-CN">简体中文</a><a href="?lang=en" lang="en">English</a><a href="?lang=ja" lang="ja">日本語</a></nav>
+    <nav class="about-navigation" aria-label="帮助"><a href="faq.html" data-help-link="nav.faq" aria-current="page">常见问题</a><a href="about.html" data-help-link="nav.about">关于</a><a href="uptime/" data-help-link="nav.serviceStatus">服务器运行状态</a></nav>
     <article class="faq-content" data-localized-content aria-label="常见问题列表">
 ${content.trimEnd()}
     </article>

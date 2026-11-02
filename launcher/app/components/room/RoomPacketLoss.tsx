@@ -4,7 +4,7 @@ import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/mul
 import {OptionSwitch} from '../settings/TouchSettingsFields';
 import type {RoomNetworkPresentation} from './types';
 
-export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnapshot; network: RoomNetworkPresentation; service: MultiplayerRoomService}) {
+export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnapshot; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; service: Pick<MultiplayerRoomService, 'setPreferTurn'>}) {
   const {t} = useLocale(), room = state.room;
   if (!room?.synced || room.phase !== 'lobby' || state.seat == null || state.spectatorRequested) return null;
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && !seat.offline && index !== state.seat ? [{seat, index}] : []);

@@ -49,11 +49,14 @@ async function start({selected = null, env = environment} = {}) {
 test('selected React root serves real routes and retirement worker and rejects old UI/missing resources', async () => {
   const server = await start();
   try {
-    for (const path of ['/', '/en.html', '/lobby.html']) {
+    for (const path of ['/', '/en.html', '/lobby.html', '/uptime/', '/uptime/index.html']) {
       const response = await fetch(server.base + path); assert.equal(response.status, 200);
       const html = await response.text(); assert.match(html, /__reactRouterContext/);
       assert.doesNotMatch(html, /<script[^>]+src=["'](?:\.\/)?app\.js/);
     }
+    const directory = await fetch(server.base + '/uptime?lang=ja', {redirect: 'manual'});
+    assert.equal(directory.status, 308);
+    assert.equal(directory.headers.get('location'), '/uptime/?lang=ja');
     const worker = await fetch(server.base + '/app-shell-sw.js');
     assert.equal(worker.status, 200);
     assert.match(await worker.text(), /registration\.unregister/);

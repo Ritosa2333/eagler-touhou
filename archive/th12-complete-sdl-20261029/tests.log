@@ -1,0 +1,54 @@
+✔ abort preserves stderr, state, memory and stacks without calling crashed WASM (14.6757ms)
+✔ warnings stay nonfatal; unhandled rejection and native errors retain original causes (1.4529ms)
+✔ rolling history stays bounded and circular values serialize safely (3.6832ms)
+✔ TH12 native gameplay getters wait until a session exists (1.0227ms)
+✔ TH12 reports its eight-word rollback ABI independently of TH15 (0.7598ms)
+✔ managed keyboard release retires Shift pressed before a mapping bridge was available (1.9761ms)
+✔ SDL keyboard uses one managed owner and processes modifier releases while Alt is held (1.389ms)
+✔ room preview animates for minutes without entering or loading a demo (10.027ms)
+✔ managed protocol: authenticates navigation, serializes resources and configures before launch (2.0058ms)
+✔ managed touch: accepts shared sensitivity bounds and rejects invalid values (0.3426ms)
+✔ room Start cannot announce gameplay while its native launch is still pending (1.7123ms)
+✔ managed gamepad: maps every semantic action and rejects retired owners (0.2595ms)
+✔ managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and 144 Hz (24.9636ms)
+✔ a saturated catch-up budget still publishes a fresh game picture on every browser frame (5.7584ms)
+✔ cooperative ending routes through the appropriate clear flow (3.8739ms)
+✔ cooperative result routes through the appropriate clear flow (0.7443ms)
+✔ cooperative playing routes through the appropriate clear flow (0.5312ms)
+✔ ending input keeps advancing with the cooperative runtime still active (0.9309ms)
+✔ remote body, shots, options and custom bomb meshes fade without changing authority (1.3469ms)
+✔ remote mesh opacity stays on the contiguous-buffer draw path without expanding vertices (0.3604ms)
+✔ guest uses the host dialogue route and renders patched Chinese; diagnostics do not serialize the world hash (17.1778ms)
+✔ multiplayer replay keeps its recorded machine loadout through each stage transition (0.9355ms)
+✔ multiplayer keyboard, mapped gamepad and touch strip Retry and preserve Enter/movement (0.5523ms)
+✔ replays using the former pause/retry rules require their original runtime (0.5677ms)
+✔ unconfirmed restart cannot load stage 1, even if a terminal flag is set (3.2992ms)
+✔ confirmed retry saves and loads once, freezes simulation and retains restart provenance (1.4171ms)
+✔ TH12 restores rollback and retains measured/manual delay (0.6251ms)
+✔ TH12 accepts restored rollback and unchanged delay sessions (6.2013ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases fullscreen (608.801ms)
+✔ reconfiguration preserves the local display limit when omitted (3.2099ms)
+✔ managed protocol: authenticates navigation, serializes resources and configures before launch (2.2111ms)
+✔ managed touch: accepts shared sensitivity bounds and rejects invalid values (0.4569ms)
+✔ managed gamepad: maps every semantic action and rejects retired owners (0.3877ms)
+✔ managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and 144 Hz (42.7879ms)
+✔ a saturated catch-up budget still publishes a fresh game picture on every browser frame (5.3418ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL clock keeps 60 logical ticks under 144 Hz presentation and rebases fullscreen (465.9048ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2246.7571

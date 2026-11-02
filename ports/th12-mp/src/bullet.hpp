@@ -1,0 +1,280 @@
+// TH12 1.00b hostile bullets. Retail 40aa60 dispatch, 4099e0 lifecycle,
+// 40b6f0/40bef0 motion, 437810/437980 collision. No translated x86 executes here.
+#pragma once
+#include "game/BulletGate.hpp"
+#include "game/BulletTargetMotion.hpp"
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdint>
+namespace th12::eb {
+constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;
+struct Record {float a=0,b=0;int32_t c=0,d=0;uint32_t kind=0;bool concurrent=false;};
+struct Program {std::array<Record,18> records{};int first=0;uint32_t flags=0;int transformSound=-1;};
+inline bool set(Program& p,int slot,bool concurrent,uint32_t kind,int c,int d,float a,float b){
+  if(slot<0||slot>=18||!std::isfinite(a)||!std::isfinite(b))return false;
+  p.records[slot]={a,b,c,d,kind,concurrent};return true;
+}
+enum class Phase:uint32_t {Inactive=0,Alive=1,Spawning=2,Cancelling=3};
+enum class Collision:uint32_t {None=0,Hit=1,Graze=2};
+enum class AnimationEvent:uint32_t {Interrupt=0,BirthTick=1,BulletTick=2,Retire=3,CancelEffect=4};
+struct Appearance {int script;float hitbox;int group,effect,width,height;};
+// 31 retail records at 4af280, stride d0: script +0, hitbox +c4,
+// draw group +c8, cancel effect class +cc. Sprite sizes are retail ANM body sizes.
+inline constexpr std::array<Appearance,31> appearances={{
+ {35,4,5,0,8,8},{36,4,5,0,8,8},{37,4,5,0,8,8},
+ {38,6,3,0,16,16},{39,6,3,0,16,16},{40,6,3,0,16,16},{41,6,3,0,16,16},
+ {42,4,4,0,16,14},{43,4,4,0,16,14},{44,4,4,0,16,14},{45,4,3,0,14,16},
+ {46,4,4,0,14,16},{47,4,4,0,14,14},{48,0,4,0,14,14},{49,4,4,0,14,16},
+ {50,6,3,0,14,16},{51,6,3,0,16,16},{69,10,1,1,32,32},{70,10,1,1,32,32},
+ {71,8,2,1,30,30},{72,8,2,1,30,30},{73,8,2,1,30,30},{74,8,2,1,30,30},
+ {98,6,2,3,30,30},{99,6,2,4,30,30},{161,10,3,1,32,32},
+ {75,14,0,2,64,64},{163,14,0,2,64,64},{215,4,5,0,16,16},
+ {216,6,2,5,30,30},{233,6,2,5,16,14}
+}};
+inline constexpr float playerHitboxes[3]={2.f,3.5f,3.f}; // 4b31a8; native replaces SHT hitbox.
+struct Motion {float a=0,b=0,vx=0,vy=0;int timer=0,duration=0,limit=0,count=0;float elapsed=0;};
+struct State {
+  uint32_t id=0;float x=0,y=0,vx=0,vy=0,angle=0,speed=0;
+  int type=0,color=0,age=0,collisionAge=0,visualAge=0,animation=35,interrupt=2;
+  Phase phase=Phase::Inactive;bool grazed=false,rotateToMotion=false,pendingRetire=false;
+  int spawnDuration=0,cancelAge=0,collisionDelay=0,offscreenGrace=10,cancelEffect=0;
+  uint32_t active=0;int cursor=0;Program program{};float ageTime=0;
+  Motion fast{},acceleration{},speedApproach{},polar{},turn{},bounce{},wait{},protect{},translation{};
+  int32_t tag=0;TargetMotion target{};
+  BulletGate gate{};
+};
+struct Emission {
+  float x=0,y=0,angle=0,spacing=0,speed=0,slow=0;
+  int type=0,color=0,count=1,layers=1,mode=0;Program program{};
+};
+struct World {
+  float playerX=0,playerY=0;
+  virtual ~World()=default;
+  virtual void emit(const Emission&)=0;
+  virtual void unsupported(uint32_t)=0;
+  virtual void sound(int,float){}
+  virtual float gameRate()const{return 1.f;}
+  // Native 454ee0 binds synchronously, before extension initialization. The
+  // caller owns the ANM registry/RNG; this module never executes its bytecode.
+  virtual void appearance(State&,bool /*initial*/){}
+  // A tick returns true when original 455630 would retire this embedded VM.
+  virtual bool stateAnimation(State&,AnimationEvent,int /*argument*/=0){return false;}
+  virtual bool ownsStateAnimation(const State&)const{return false;}
+  virtual int animationInteger(const State&,int /*index*/,int fallback){return fallback;}
+  // 4099e0 calls the native player query after each eligible movement slice.
+  // The world owns dialogue/player-state gates and graze/miss side effects.
+  virtual Collision playerCollision(State&){return Collision::None;}
+  // Native40c480 and409fb2 read the currently bound raw sprite dimensions
+  // (+38 width,+34 height), without applying VM scale. Scene worlds override
+  // this; the appearance sizes preserve standalone fixture compatibility.
+  virtual std::array<float,2> spriteDimensions(const State& s)const{
+    return {float(appearances[s.type].width),float(appearances[s.type].height)};
+  }
+  virtual bool spriteDimensionsAvailable(const State&)const{return true;}
+  // Native40b4fd changes only VM.flags bits5..7. No bind/tick/RNG occurs.
+  virtual void blendControl(State&,int /*blend*/){}
+};
+inline void advanceMotion(Motion& m,float rate){if(int(m.elapsed)!=m.timer)m.elapsed=float(m.timer);m.elapsed=float(double(m.elapsed)+rate);m.timer=int(m.elapsed);}
+inline float normalize(float a){while(a>pi)a-=tau;while(a<-pi)a+=tau;return a;}
+inline float aim(const State& s,const World& w){const float x=float(double(w.playerX)-s.x),y=float(double(w.playerY)-s.y);return x==0&&y==0?pi/2:float(std::atan2(double(y),double(x)));}
+inline void velocity(State& s,float speed){s.vx=float(std::cos(double(s.angle))*speed);s.vy=float(std::sin(double(s.angle))*speed);}
+inline float resolvedAngle(const State& s,const World& w,float value){return value<=-990?s.angle:value>=990?aim(s,w):value;}
+inline void beginTranslation(State& s,const Record& record){
+  auto& m=s.translation;m={};m.a=record.a;m.b=record.b;m.duration=record.c;
+  m.vx=float(std::cos(double(record.a))*record.b);m.vy=float(std::sin(double(record.a))*record.b);
+  s.active|=0x8000000u; // Native40b3b7: literal angle/speed, no live re-aim.
+}
+inline bool tickTranslation(State& s,float rate=1.f){
+  auto& m=s.translation;
+  if(m.timer>=m.duration){
+    // Preserve40c3c1's actual mask. Retail uses duration60000; its timer
+    // resets rather than advancing, so this exceptional branch is unreached.
+    s.active&=0xfffffff5u;return true;
+  }
+  s.x=float(double(s.x)+float(double(m.vx)*rate));
+  s.y=float(double(s.y)+float(double(m.vy)*rate));
+  m.timer=0; // Native40c433..40c46f resets the private timer each visit.
+  return false;
+}
+inline void appearance(State& s,int type,int color,bool initial=false){
+  s.type=std::clamp(type,0,30);s.color=std::clamp(color,0,15);s.animation=appearances[s.type].script;
+  static constexpr int effects[8]={4,8,12,16,20,24,28,34};
+  // Birth40a84f handles classes0..4 only. Class5 keeps this physical
+  // slot's previous+524 word; transforms40adf9/40b11b handle0..5.
+  switch(appearances[s.type].effect){case 0:s.cancelEffect=s.color*2+4;break;case 1:s.cancelEffect=effects[s.color%8];break;case 2:s.cancelEffect=-1;break;case 3:s.cancelEffect=16;break;case 4:s.cancelEffect=6;break;case 5:if(!initial)s.cancelEffect=12;break;}
+}
+inline void cancel(State& s,World* w=nullptr){
+  if(s.phase!=Phase::Alive&&s.phase!=Phase::Spawning)return;
+  s.phase=Phase::Cancelling;s.interrupt=1;s.visualAge=0;s.cancelAge=0;
+  // 40ca69 queues IRQ1 and sets Bullet.flags.bit3 outside the8px margin.
+  // The physical slot remains occupied until the next4099e0 visit.
+  s.pendingRetire=s.x+8<=-192||s.x-8>=192||s.y+8<=0||s.y-8>=448;
+  if(w){w->stateAnimation(s,AnimationEvent::Interrupt,1);if(!s.pendingRetire&&s.cancelEffect>=0)w->stateAnimation(s,AnimationEvent::CancelEffect,s.cancelEffect);}
+  // Only the in-bounds40ca41 path resets the Bullet lifetime timer. Direct
+  // collision enters state3 elsewhere and deliberately keeps that timer.
+  if(!s.pendingRetire){s.age=s.collisionAge=0;s.ageTime=0;}
+}
+inline void cancel(State& s,World& w){cancel(s,&w);}
+inline void finishAnimation(State& s,World& w,AnimationEvent event=AnimationEvent::BulletTick){
+  if(w.stateAnimation(s,event)){s.phase=Phase::Inactive;w.stateAnimation(s,AnimationEvent::Retire);}
+}
+inline void start(State& s,World& w){
+  for(int budget=0;s.cursor>=0&&s.cursor<18&&budget<4096;++budget){
+    const auto t=s.program.records[s.cursor];const auto kind=t.kind;
+    if(!kind||(!t.concurrent&&s.active)||(kind&s.active))return;
+    if(kind==0x80000000){++s.cursor;continue;}
+    switch(kind){
+    case 1:s.active|=kind;s.fast={};break;
+    case 2:break; // Spawn-only command, consumed by initialize at the selected start.
+    case 4:{s.active|=kind;auto& m=s.acceleration;m={};m.a=t.a;m.b=resolvedAngle(s,w,t.b);m.duration=t.c;m.vx=float(std::cos(double(m.b))*m.a);m.vy=float(std::sin(double(m.b))*m.a);break;}
+    // 40b468..40b4f2: a is the target speed; interpolate the scalar and
+    // velocity toward it over c ticks, preserving the selected heading.
+    case 0x20000000:{s.active|=kind;auto& m=s.speedApproach;m={};m.a=float((double(t.a)-s.speed)/t.c);m.b=resolvedAngle(s,w,t.b);m.duration=t.c;m.vx=float(std::cos(double(m.b))*m.a);m.vy=float(std::sin(double(m.b))*m.a);break;}
+    case 8:{s.active|=kind;s.polar={};s.polar.a=t.a;s.polar.b=t.b;s.polar.duration=t.c;break;}
+    case 0x10:case 0x20:case 0x40:{s.active|=kind;s.turn={};s.turn.b=resolvedAngle(s,w,t.a);s.turn.a=t.b<=-999?s.speed:t.b;s.turn.duration=t.c;s.turn.limit=t.d;break;}
+    case 0x100:s.active|=kind;s.bounce={};s.bounce.a=t.a;s.bounce.limit=t.c;s.bounce.count=t.d;break;
+    case 0x200:s.collisionDelay=t.c;break;
+    case 0x400:s.active|=kind;s.protect={};s.protect.timer=t.c;s.protect.count=t.d;s.gate.begin(t.c);break;
+    case 0x800:case 0x1000000:
+      appearance(s,t.c,t.d);s.visualAge=0;w.appearance(s,false);
+      // 40ad6c starts the normal fresh spawn animation. Only40b09a's
+      // immediate-body variant queues IRQ2 after the402520/454ee0 reset.
+      s.interrupt=kind==0x1000000?2:0;
+      if(s.interrupt)w.stateAnimation(s,AnimationEvent::Interrupt,s.interrupt);
+      break;
+    case 0x1000:s.active|=kind;s.wait={};s.wait.timer=t.c;s.wait.elapsed=float(t.c);break;
+    case 0x2000:cancel(s,w);break;
+    case 0x4000:w.sound(t.c,s.x);break;
+    case 0x80000:{
+      if(s.cursor>=17){w.unsupported(kind);s.cursor=18;return;}
+      const auto next=s.program.records[s.cursor+1];const uint32_t packed=uint32_t(t.c);
+      Emission e;e.x=s.x;e.y=s.y;e.speed=t.a;e.slow=t.b;e.type=(packed>>16)&255;e.color=int8_t((packed>>8)&255);e.mode=(packed>>24)&127;
+      e.count=int16_t(t.d);e.layers=int16_t(next.c);e.angle=next.a;e.spacing=next.b;e.program=s.program;e.program.flags=uint32_t(next.d);e.program.first=packed&255;e.program.transformSound=-1;
+      s.cursor+=2;w.emit(e);if(packed&0x80000000){cancel(s,w);++s.cursor;}continue;
+    }
+    case 0x100000:break; // Paired payload consumed by 80000, harmless if reached alone.
+    case 0x400000:s.cursor=t.c;continue;
+    case 0x4000000:
+      if(t.a>=990)s.angle=normalize(float(double(aim(s,w))+float(double(t.a)-999)));else if(t.a>=-990)s.angle=t.a;
+      if(t.b>=-990)s.speed=t.b;velocity(s,s.speed);break;
+    case 0x10000000:w.blendControl(s,t.c!=0?1:0);break;
+    case 0x200000:s.tag=t.c;break;
+    case 0x2000000:beginTargetMotion(s.target,s,t,w);break;
+    case 0x8000000:beginTranslation(s,t);break;
+    default:w.unsupported(kind);break;
+    }
+    if(s.cursor&&s.program.transformSound>=0&&(kind==4||kind==8||kind==0x20000000))w.sound(s.program.transformSound,s.x);
+    ++s.cursor;
+  }
+}
+inline void initialize(State& s,uint32_t id,const Program& p,int type,int color,float x,float y,float angle,float speed,World& w){
+  const int retainedCancelEffect=s.cancelEffect;
+  s={};s.cancelEffect=retainedCancelEffect;s.id=id;s.x=x;s.y=y;s.angle=normalize(angle);s.speed=speed;s.program=p;s.cursor=std::clamp(p.first,0,18);s.phase=Phase::Alive;
+  // 40d640 evaluates the original emitter angle. The stored heading is
+  // normalized separately; float32 Tau is not an exact trigonometric period.
+  appearance(s,type,color,true);s.vx=float(std::cos(double(angle))*speed);s.vy=float(std::sin(double(angle))*speed);
+  w.appearance(s,true);
+  if(s.cursor<18&&p.records[s.cursor].kind==2){
+    const int variant=p.records[s.cursor].c;s.interrupt=variant+7;s.phase=Phase::Spawning;
+    s.spawnDuration=variant==0?8:variant==1?15:25;
+    if(s.type==30){s.spawnDuration=0;s.phase=Phase::Alive;}
+    s.x=float(double(s.x)-float(double(s.vx)*4));s.y=float(double(s.y)-float(double(s.vy)*4));++s.cursor;
+  }
+  w.stateAnimation(s,AnimationEvent::Interrupt,s.interrupt);
+  start(s,w);
+  finishAnimation(s,w,AnimationEvent::BirthTick);
+}
+inline bool outside(const State& s,const std::array<float,2>& dimensions){
+  const double halfWidth=double(dimensions[0])*.5,halfHeight=double(dimensions[1])*.5;
+  return !(double(s.x)+halfWidth>-192&&double(s.x)-halfWidth<192&&double(s.y)+halfHeight>-64&&double(s.y)-halfHeight<448);
+}
+inline bool hitPlayer(State& s,World& w){
+  if(w.playerCollision(s)!=Collision::Hit)return false;
+  // 409b63/409e68 enter state3 directly. The scripted cancel helper40c8b0's
+  // separate offscreen-effect test is not part of this collision branch.
+  s.phase=Phase::Cancelling;s.interrupt=1;s.visualAge=0;s.cancelAge=0;
+  w.stateAnimation(s,AnimationEvent::Interrupt,1);
+  if(s.cancelEffect>=0)w.stateAnimation(s,AnimationEvent::CancelEffect,s.cancelEffect);
+  return true;
+}
+inline void tick(State& s,World& w,bool deferAnimation=false){
+  if(s.phase==Phase::Inactive)return;
+  if(s.pendingRetire){s.pendingRetire=false;s.phase=Phase::Inactive;w.stateAnimation(s,AnimationEvent::Retire);return;}
+  const float rate=w.gameRate();
+  s.collisionAge=s.age; // 40a020 advances lifetime only after 4099e0's collision.
+  const auto tail=[&]{
+    if(!(s.active&0x400)&&s.offscreenGrace<1&&w.spriteDimensionsAvailable(s)&&outside(s,w.spriteDimensions(s))){s.phase=Phase::Inactive;w.stateAnimation(s,AnimationEvent::Retire);return;}
+    // Bullet+4 is an opaque countdown, not a collision-disable timer.
+    // Both409dd7 (active motion passes) and409fe3 decrement any nonzero word.
+    if(s.collisionDelay!=0)s.collisionDelay=int32_t(uint32_t(s.collisionDelay)-1u);
+    if(s.offscreenGrace>0)--s.offscreenGrace;if(int(s.ageTime)!=s.age)s.ageTime=float(s.age);s.ageTime=float(double(s.ageTime)+rate);s.age=int(s.ageTime);++s.visualAge;
+    if(!deferAnimation)finishAnimation(s,w);
+  };
+  if(s.phase==Phase::Cancelling){s.x=float(double(s.x)+float(double(s.vx)*.5*rate));s.y=float(double(s.y)+float(double(s.vy)*.5*rate));++s.cancelAge;tail();if(!w.ownsStateAnimation(s)&&(s.cancelAge>=8||s.type==30)){s.phase=Phase::Inactive;w.stateAnimation(s,AnimationEvent::Retire);}return;}
+  // State2 queries the half-speed position before observing ANM int0. A hit
+  // jumps to the common ANM tail; a transition can then move/query once more.
+  if(s.phase==Phase::Spawning){
+    s.x=float(double(s.x)+float(double(s.vx)*.5*rate));s.y=float(double(s.y)+float(double(s.vy)*.5*rate));
+    if(s.collisionAge>=8&&hitPlayer(s,w)){tail();return;}
+    if(!w.animationInteger(s,0,s.age>=s.spawnDuration?1:0)){tail();return;}
+    s.phase=Phase::Alive;
+  }
+  // 409dda jumps back to 409c9a on any completed transform. Remaining motion
+  // callbacks may run again this tick, and newly started commands run at once.
+  for(int pass=0;pass<4096;++pass){
+  start(s,w);int completed=0;const bool hadActive=s.active!=0;
+  if(s.active&1){if(s.fast.timer<=16){velocity(s,float(double(s.speed)+(5-double(s.fast.elapsed)*5*.0625)));advanceMotion(s.fast,rate);}else{s.active&=~1u;++completed;}}
+  if(s.active&4){auto& m=s.acceleration;if(m.timer<m.duration){s.speed=float(double(s.speed)+double(m.a)*rate);s.vx=float(double(s.vx)+float(double(m.vx)*rate));s.vy=float(double(s.vy)+float(double(m.vy)*rate));if(std::abs(s.vx)>.0001f||std::abs(s.vy)>.0001f)s.angle=float(std::atan2(double(s.vy),double(s.vx)));advanceMotion(m,rate);}else{s.active&=~4u;++completed;}}
+  // Native409cde visits40b800 after acceleration and before polar motion.
+  if(s.active&0x20000000){auto& m=s.speedApproach;if(m.timer<m.duration){s.speed=float(double(s.speed)+double(m.a)*rate);s.vx=float(double(s.vx)+float(double(m.vx)*rate));s.vy=float(double(s.vy)+float(double(m.vy)*rate));if(std::abs(s.vx)>.0001f||std::abs(s.vy)>.0001f)s.angle=float(std::atan2(double(s.vy),double(s.vx)));advanceMotion(m,rate);}else{s.active&=~0x20000000u;++completed;}}
+  if(s.active&8){auto& m=s.polar;if(m.timer<m.duration){s.angle=normalize(float(double(s.angle)+float(double(m.b)*rate)));s.speed=float(double(s.speed)+double(m.a)*rate);velocity(s,s.speed);advanceMotion(m,rate);}else{s.active&=~8u;++completed;}}
+  for(uint32_t kind:{0x10u,0x40u,0x20u})if(s.active&kind){auto& m=s.turn;float speed;
+    if(m.timer<m.duration)speed=float(double(s.speed)-double(m.elapsed)*s.speed/m.duration);
+    else{++m.count;if(m.count>=m.limit)s.active&=~kind;s.angle=kind==0x10?float(double(m.b)+s.angle):kind==0x40?m.b:normalize(float(double(aim(s,w))+m.b));speed=s.speed=m.a;m.timer=0;m.elapsed=0;w.sound(s.program.transformSound,s.x);}
+    velocity(s,speed);advanceMotion(m,rate);if(!(s.active&kind))++completed;
+  }
+  if(s.active&0x100){auto& m=s.bounce;if(!(s.x>-192&&s.x<192&&s.y>0&&s.y<448)){
+    bool reflected=false;const bool detectOnly=m.count&16;
+    if((m.count&1)&&s.y<0){if(!detectOnly){s.y=-s.y;s.angle=-s.angle;}reflected=true;}
+    if((m.count&2)&&s.y>=448){if(!detectOnly){s.y=float((448-double(s.y))+448);s.angle=-s.angle;}reflected=true;}
+    if((m.count&8)&&s.x>=192){if(!detectOnly){s.x=float(384-double(s.x));s.angle=normalize(float(-double(s.angle)-pi));}reflected=true;}
+    if((m.count&4)&&s.x<-192){if(!detectOnly){s.x=float(-384-double(s.x));s.angle=normalize(float(-double(s.angle)-pi));}reflected=true;}
+    if(m.a>-990)s.speed=m.a;velocity(s,s.speed);if(reflected){++m.duration;w.sound(s.program.transformSound,s.x);}if(m.duration>=m.limit){s.active&=~0x100u;++completed;}
+  }}
+  if((s.active&0x2000000)&&tickTargetMotion(s.target,s,rate)){s.active&=~0x2000000u;++completed;}
+  // Native409d78: translation precedes protection and ordinary integration.
+  if((s.active&0x8000000)&&tickTranslation(s,rate))++completed;
+  if(s.active&0x400){
+    bool done;
+    if(s.protect.count){const auto dimensions=w.spriteDimensions(s);done=s.gate.tick({s.x,s.y,s.angle,dimensions[0],dimensions[1]},true,rate);}
+    else done=s.gate.tick(rate);
+    s.protect.timer=s.gate.remaining;
+    if(done){s.active&=~0x400u;++completed;}
+  }
+  if(s.active&0x1000){if(s.wait.timer<=0){s.active&=~0x1000u;++completed;}else advanceMotion(s.wait,-rate);}
+  if(hadActive&&s.collisionDelay!=0)s.collisionDelay=int32_t(uint32_t(s.collisionDelay)-1u);
+  if(!completed)break;
+  if(pass==4095)w.unsupported(0xffffffffu);
+  }
+  s.x=float(double(s.x)+float(double(s.vx)*rate));s.y=float(double(s.y)+float(double(s.vy)*rate));
+  hitPlayer(s,w);
+  tail();
+}
+inline Collision collide(const State& s,float x,float y,float playerHit){
+  if(s.phase==Phase::Inactive||s.phase==Phase::Cancelling||(s.phase==Phase::Spawning&&s.collisionAge<8))return Collision::None;
+  const auto& a=appearances[s.type];
+  if(a.effect==2){
+    // 43798e..4379ad retains x87 coordinate differences until the sum store.
+    const double dx=double(x)-s.x,dy=double(y)-s.y;
+    const float distance=float(dx*dx+dy*dy);const double r2=double(a.hitbox)*a.hitbox;
+    if(double(playerHit)*playerHit+r2>distance)return Collision::Hit;
+    const float graze=std::max(40.f,float(double(a.hitbox)/2.5));const double reach=double(playerHit)+graze;
+    return reach*reach+r2>distance?Collision::Graze:Collision::None;
+  }
+  const float playerLeft=float(double(x)-double(playerHit)*.5),playerRight=float(double(x)+double(playerHit)*.5),playerTop=float(double(y)-double(playerHit)*.5),playerBottom=float(double(y)+double(playerHit)*.5);
+  auto overlaps=[&](double half){const float left=float(double(s.x)-half),right=float(double(s.x)+half),top=float(double(s.y)-half),bottom=float(double(s.y)+half);return !(right<playerLeft||bottom<playerTop||left>playerRight||top>playerBottom);};
+  if(overlaps(double(a.hitbox)*.5))return Collision::Hit;
+  return overlaps(24)?Collision::Graze:Collision::None;
+}
+}

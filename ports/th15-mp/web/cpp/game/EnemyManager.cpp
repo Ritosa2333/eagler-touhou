@@ -24,7 +24,7 @@ bool EnemyManager::clear_field(bool suppress_death_script){
 }
 EnemyRuntime* EnemyManager::find(u32 identifier)noexcept{for(auto& enemy:active)if(enemy->state.id==identifier)return enemy.get();return nullptr;}
 EnemyRuntime* EnemyManager::at(u32 index)noexcept{for(auto& enemy:active)if(index--==0)return enemy.get();return nullptr;}
-bool EnemyManager::erase(std::list<std::unique_ptr<EnemyRuntime>>::iterator entry){auto* enemy=entry->get();if(!host.destroy(enemy->state)){error="Enemy cleanup failed";return false;}auto position=std::find(world.enemies.begin(),world.enemies.end(),&enemy->state);if(position!=world.enemies.end())world.enemies.erase(position);world.refresh_boss();if(!(enemy->state.lifecycle_flags&4))world.enemy_count=wrapping_add(world.enemy_count,-1);active.erase(entry);return true;}
+bool EnemyManager::erase(ActiveEnemies::iterator entry){auto* enemy=entry->get();if(!host.destroy(enemy->state)){error="Enemy cleanup failed";return false;}auto position=std::find(world.enemies.begin(),world.enemies.end(),&enemy->state);if(position!=world.enemies.end())world.enemies.erase(position);world.refresh_boss();if(!(enemy->state.lifecycle_flags&4))world.enemy_count=wrapping_add(world.enemy_count,-1);active.erase(entry);return true;}
 bool EnemyManager::update(){
     world.shot_damage=world.other_damage=0;
     auto next=active.begin();while(next!=active.end()){auto current=next++;auto& enemy=**current;const int result=enemy.state.flags&0x2000000?-1:enemy.step(rate,background_delta);if(result==-2){error=enemy.error;return false;}if(result){if(!erase(current))return false;}else enemy.clear_update_guard();}

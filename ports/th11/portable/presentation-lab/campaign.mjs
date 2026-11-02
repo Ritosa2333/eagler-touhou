@@ -26,6 +26,9 @@ try{
   await page.evaluate(()=>window.presentationLab.boot().then(()=>true));
   await page.waitForFunction(()=>!!window.presentationLab.controller);
   result.build=await page.evaluate(()=>({...window.presentationLab.identity}));
+  // Stop the rAF loop before loading: the Lab runtime skips the startup
+  // signature, so launch() completes and the session is running.
+  await page.evaluate(()=>window.presentationLab.controller.freeze());
   if(demo!==null)await page.evaluate(index=>window.presentationLab.controller.driver.loadDemo(Number(index)),demo);
   else if(replayPath)await page.evaluate(bytes=>window.presentationLab.controller.driver.loadReplay(Uint8Array.from(bytes)),Array.from(readFileSync(resolve(root,replayPath))));
   else throw Error('Pass --demo N or --replay PATH');

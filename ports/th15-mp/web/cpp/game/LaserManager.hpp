@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 namespace th15 {
+namespace multiplayer {class LaserFrameState;}
 enum class LaserKind:i32 { moving=0, stationary=1, curved=2, segmented=3 };
 class LaserObject {
 public:
@@ -13,6 +14,7 @@ public:
     virtual bool update(float rate,bool& finished)=0;
     virtual bool update_visual(float rate,bool paused)=0;
     virtual bool retire()=0;
+    virtual void release_visuals()noexcept{}
     virtual i32 cancel_rectangle(const Vec3&,const Vec2&,float angle,i32 reward,bool)=0;
     virtual i32 query_rectangle(const Vec3&,const Vec2&,float angle,i32,i32,i32)=0;
     virtual i32 cancel_circle(const Vec3&,float radius,i32 reward,bool)=0;
@@ -20,8 +22,10 @@ public:
     virtual i32 query_circle(const Vec3&,float radius)=0;
 };
 class LaserManager {
-    std::list<std::unique_ptr<LaserObject>> objects;
+    friend class multiplayer::LaserFrameState;
+    std::list<std::shared_ptr<LaserObject>> objects;
 public:
+    ~LaserManager(){for(auto& object:objects)object->release_visuals();}
     static constexpr u32 capacity=512;u32 generation=0;Vec3 query_position{},query_size{};i32 query_count=0;std::string error;
     u32 insert(std::unique_ptr<LaserObject>);
     LaserObject* find(u32)const noexcept;

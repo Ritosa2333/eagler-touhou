@@ -104,6 +104,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster{flex:0 0 auto;min-width:0;min-height:0;touch-action:pan-y}
 #player.room-workspace .room-workspace-roster .mp-seat-stage{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:auto!important;gap:10px!important;height:auto!important;flex:none!important;min-height:0!important;max-width:none!important;padding:0!important;margin:0!important;background:none!important;border:0!important}
 #player.room-workspace .room-workspace-roster .mp-seat-stage[data-player-count="3"]{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#player.room-workspace .room-workspace-roster .mp-seat[hidden],#player.room-workspace .room-workspace-roster .mp-seat [hidden]{display:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat{--seat-avatar-size:44px;position:relative!important;display:grid!important;grid-template-columns:var(--seat-avatar-size) minmax(0,1fr)!important;grid-template-rows:1fr!important;align-items:center!important;align-content:center!important;gap:14px!important;min-height:112px!important;height:auto!important;padding:16px!important;box-sizing:border-box;border:1px solid var(--line)!important;border-radius:10px!important;overflow:hidden;isolation:isolate;box-shadow:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat{transition:background-color var(--ui-feedback-duration) var(--ui-feedback-easing),border-color var(--ui-feedback-duration) var(--ui-feedback-easing)!important;background:var(--seat-background,var(--kit-card))!important;color:var(--paper);--paper:var(--kit-foreground);--muted:var(--kit-muted-foreground);--room-text:var(--kit-foreground);--room-muted:var(--kit-muted-foreground);--ink:var(--kit-background)}
 #player.room-workspace .room-workspace-roster .mp-seat.occupied{--paper:var(--kit-seat-foreground);--muted:var(--kit-seat-foreground);--room-text:var(--kit-seat-foreground);--room-muted:var(--kit-seat-foreground);border-color:transparent!important}
@@ -114,7 +115,6 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-seat-watermark{position:absolute;right:-9px;bottom:-15px;color:var(--kit-seat-watermark);font:900 italic 60px/1.1 "ET Yatra","ET Chill Round",system-ui,sans-serif;letter-spacing:-3px;white-space:nowrap;transform:rotate(-12deg);opacity:0;transition:opacity var(--ui-feedback-duration) var(--ui-feedback-easing)}
 .room-seat-watermark.active{opacity:.36}
 #player.room-workspace .room-workspace-roster .mp-seat{overflow:visible}
-#player.room-workspace .room-workspace-roster .mp-seat:has(.mp-seat-moderation[open]){z-index:10}
 #player.room-workspace .room-workspace-roster .mp-seat-face{position:relative!important;z-index:1;grid-column:1!important;grid-row:1!important;align-self:start!important;width:var(--seat-avatar-size)!important;height:calc(var(--seat-avatar-size) + 18px)!important;margin:0!important;min-height:0!important;border:0!important;background:none!important;border-radius:0!important;overflow:visible!important;transform:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-glyph{position:absolute!important;bottom:0;display:grid!important;place-items:center;width:100%;height:var(--seat-avatar-size);font:700 20px/1 "ET Chill Round",system-ui,sans-serif!important;border:3px solid transparent;box-sizing:border-box;border-radius:50%;background-clip:padding-box}
 .room-seat-ring{position:absolute;inset:auto 0 0;height:var(--seat-avatar-size);border-radius:50%;background:conic-gradient(var(--kit-seat-ring-ready) 0 var(--loading-angle),transparent var(--loading-angle) 360deg),conic-gradient(var(--kit-seat-ring-loading) 0 var(--base-angle),#ffffff40 var(--base-angle) 360deg);mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));pointer-events:none}
@@ -123,7 +123,8 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat-index>span:first-child{display:none}
 #player.room-workspace .room-workspace-roster .mp-seat-identity{position:relative!important;z-index:2;grid-column:2!important;grid-row:1!important;display:flex!important;flex-direction:column;justify-content:center;gap:5px;min-width:0;margin:0!important;padding:0!important;align-items:flex-start!important;pointer-events:none}
 .room-seat-player-tag{position:absolute;top:0;left:0;right:0;text-align:center;font:600 11px/14px var(--kit-font);letter-spacing:.02em;color:var(--muted)}
-#player.room-workspace .room-workspace-roster .mp-seat-name{position:static!important;display:block!important;margin:0!important;padding:0!important;font:600 17px/1.35 var(--kit-font)!important;letter-spacing:.01em;text-align:left!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;box-sizing:border-box}
+#player.room-workspace .room-workspace-roster .mp-seat-name{position:static!important;display:block!important;margin:0!important;padding:0!important;padding-inline-end:var(--seat-name-inset,0px)!important;width:100%;font:600 17px/1.35 var(--kit-font)!important;letter-spacing:.01em;text-align:left!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;box-sizing:border-box}
+#player.room-workspace .room-workspace-roster .mp-seat[data-manageable]{--seat-name-inset:44px}
 #player.room-workspace .room-workspace-roster .mp-seat-details{display:flex!important;gap:5px;max-width:100%;font-size:12px!important;align-items:center}
 #player.room-workspace .room-workspace-roster .mp-seat-loadout{font:500 12px/1.4 var(--kit-font)!important;opacity:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #player.room-workspace .room-workspace-roster .mp-seat-control{display:none!important}
@@ -135,9 +136,9 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat-state,#player.room-workspace .room-workspace-roster .mp-seat-me,#player.room-workspace .room-workspace-roster .mp-seat-resource{display:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-edit{position:absolute!important;inset:0!important;z-index:1!important;background:transparent!important;border:0!important;border-radius:10px!important}
 #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{position:absolute;bottom:-2px;right:-2px;width:15px;height:15px;z-index:2}
+#player.room-workspace .room-workspace-roster .mp-seat-owner-mark>svg{display:block;width:100%;height:100%}
+#player.room-workspace .room-workspace-roster .mp-seat-loadout{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #player.room-workspace .room-workspace-roster .mp-seat-moderation{position:absolute;top:4px;right:4px;z-index:4;font-size:12px}
-#player.room-workspace .room-workspace-roster .mp-seat-moderation-actions{top:auto!important;bottom:calc(100% + 6px);height:auto!important;min-width:160px;box-sizing:border-box;font:14px var(--ui-font)}
-#player.room-workspace .room-workspace-roster .mp-seat-moderation-actions button{min-height:40px;white-space:nowrap;font-size:14px!important}
 #player.room-workspace .room-workspace-roster .mp-seat-drop{position:absolute!important;inset:0!important;display:grid;place-items:center}
 #player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty]{background:var(--kit-muted)!important;border-style:dashed!important}
 #player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-face{position:absolute!important;inset:0!important;grid-column:auto!important;grid-row:auto!important;width:100%!important;height:100%!important;display:block!important;background:none!important}
@@ -145,8 +146,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-owner-mark{display:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-drop button{min-height:44px!important;padding:10px 14px!important;font-size:14px!important;border:1px dashed var(--line);border-radius:10px;background:none;color:var(--muted)}
 #player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button{display:flex!important;align-items:center;justify-content:center;gap:8px;width:100%!important;height:100%!important;border:0!important;border-radius:10px!important;background:none!important;color:var(--muted)!important;font:700 14px/1.4 "ET Chill Round",system-ui,sans-serif!important;transition:background-color var(--ui-feedback-duration) var(--ui-feedback-easing),color var(--ui-feedback-duration) var(--ui-feedback-easing),transform var(--ui-feedback-duration) var(--ui-feedback-easing)}
-#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button::before{flex:none;margin:0!important}
-#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button:focus-visible{outline:2px solid var(--red-bright);outline-offset:-4px}
+#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] .mp-seat-drop button:focus-visible{outline:2px solid var(--kit-ring);outline-offset:-4px}
 /* Motion follows actual entry, tab changes, messages and deliberate actions. */
 #player.room-workspace .room-workspace-roster .mp-seat{animation:room-card-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
 #player.room-workspace .room-workspace-roster .mp-seat:nth-child(2){animation-delay:60ms}
@@ -181,7 +181,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  #player.room-workspace .room-workspace-roster .mp-seat-stage{gap:6px!important}
  #player.room-workspace .room-workspace-roster .mp-seat{--seat-avatar-size:32px;grid-template-columns:var(--seat-avatar-size) minmax(0,1fr)!important;gap:10px!important;padding:12px!important;min-height:104px!important}
  #player.room-workspace .room-workspace-roster .mp-seat-glyph{font-size:14px!important}
- #player.room-workspace .room-workspace-roster .mp-seat-name{font-size:16px!important;padding:0!important}
+ #player.room-workspace .room-workspace-roster .mp-seat-name{font-size:16px!important}
  #player.room-workspace .room-workspace-roster .mp-seat-index>span:first-child{display:none}
  #player.room-workspace .room-workspace-roster .mp-seat-details{font-size:11px!important;gap:0}
  #player.room-workspace .room-workspace-roster .mp-seat-loadout{font-size:11px!important}

@@ -27,6 +27,431 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
         const signalUrl = new URL(relay.href);
         signalUrl.searchParams.set('signal', '1');
 
+        // BEGIN generated adaptive-peer-route
+        // Shared game transport policy. Embedded into BrowserPeerTransport by
+        // tools/sync-adaptive-peer-route.mjs; no runtime module download is required.
+        // Design references and the wire contract live in docs/architecture/netplay-routing.md.
+        function createAdaptivePeerRoute(options) {
+            const prefix = 'etr1:';
+            const now = options.now || (() => globalThis.performance?.now?.() ?? Date.now());
+            const later = options.later || setTimeout, cancel = options.cancel || clearTimeout;
+            const controller = options.localPlayer < options.peerId;
+            const primary = options.primary;
+            const pendingControl = new Map(), receivedControl = new Map();
+            let active = primary, backup = null, previous = null, previousUntil = 0;
+            let started = false, closed = false, supported = false, helloSent = false;
+            let timer = null, lastTick = 0, quietUntil = 0, retryAt = 0, generation = 0;
+            let sequence = 0, receivedSequence = 0, pendingBytes = 0, receivedBytes = 0;
+            let replayQueue = [];
+            let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
+            let recoveryUntil = 0, lastNeed = -Infinity, verifyAfter = 0;
+            let ackPending = false;
+            const policy = Object.freeze({
+                windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
+                standbyIntervalMs: 10000, verificationIntervalMs: 50,
+                verificationMs: 4000, minimumSamples: 12, cooldownMs: 60000,
+                maxControlMessages: 256, maxControlBytes: 1024 * 1024,
+                ...options.policy,
+            });
+            const initialize = path => {
+                path.samples = [];
+                path.probeSequence = 0;
+                path.lastProbe = -Infinity;
+                path.baseline = Infinity;
+                return path;
+            };
+            initialize(primary);
+            const open = dc => dc?.readyState === 'open';
+            const ready = path => !!path && open(path.controlDc) && open(path.inputDc) && !path.closed;
+            const alive = () => !closed && options.alive();
+            const eligible = () => alive() && options.running() && options.visible();
+            const paths = () => backup ? [primary, backup] : [primary];
+            const pathName = path => path === primary ? 'primary' : 'turn';
+            const diagnostic = reason => options.changed?.({
+                selected: pathName(active), generation, epoch, reason,
+                verifying: !!verification, standbyReady: ready(backup),
+            });
+            function sendMessage(path, message) {
+                if (!alive() || !open(path?.controlDc) || path.controlDc.bufferedAmount > 32768) return false;
+                try { path.controlDc.send(prefix + JSON.stringify(message)); return true; }
+                catch { return false; }
+            }
+            function sendEverywhere(message) {
+                let sent = false;
+                for (const path of paths()) sent = sendMessage(path, message) || sent;
+                return sent;
+            }
+            function envelope(payload, id) {
+                const packet = new Uint8Array(payload.byteLength + 8);
+                packet.set([69, 84, 82, 49]);
+                new DataView(packet.buffer).setUint32(4, id, true);
+                packet.set(payload, 8);
+                return packet;
+            }
+            function replay(path) {
+                if (!ready(path)) return;
+                while (replayQueue.length) {
+                    if (path.controlDc.bufferedAmount > 32768) break;
+                    const id = replayQueue[0], packet = pendingControl.get(id);
+                    if (!packet) { replayQueue.shift(); continue; }
+                    try { path.controlDc.send(packet); replayQueue.shift(); } catch { break; }
+                }
+            }
+            function stats(path, time, since = time - policy.windowMs) {
+                const samples = path.samples.filter(s => s.at >= since && time - s.at >= policy.probeTimeoutMs);
+                const rtts = samples.filter(s => s.rtt != null).map(s => s.rtt).sort((a, b) => a - b);
+                const loss = samples.length ? (samples.length - rtts.length) / samples.length : 1;
+                const p95 = rtts.length ? rtts[Math.ceil(rtts.length * .95) - 1] : Infinity;
+                return {count: samples.length, received: rtts.length, lost: samples.length - rtts.length,
+                    loss, p95, score: p95 + loss * 1000};
+            }
+            function discardBackup() {
+                const path = backup;
+                if (!path || active === path) return;
+                sendMessage(primary, {kind: 'retire', generation: path.generation});
+                path.closed = true;
+                try { path.pc.close(); } catch {}
+                backup = null;
+                retryAt = now() + policy.cooldownMs;
+                verification = null;
+                if (proposal?.path === path) proposal = null;
+                diagnostic('standby-unavailable');
+            }
+            async function ensureBackup() {
+                if (!started || !supported || !options.enabled || !alive() || backup || now() < retryAt) return;
+                // The initial ICE race may already have selected TURN. In that case
+                // keep that route and avoid allocating a redundant relay association.
+                if (primary.path !== 'direct') return;
+                const server = options.iceServers().find(server =>
+                    (Array.isArray(server.urls) ? server.urls : [server.urls]).some(url => /^turns?:/i.test(String(url))));
+                if (!server) return;
+                const urls = (Array.isArray(server.urls) ? server.urls : [server.urls]).filter(url => /^turns?:/i.test(String(url)));
+                if (!controller) return;
+                const path = makeBackup(++generation, [{...server, urls}]);
+                try {
+                    await path.pc.setLocalDescription(await path.pc.createOffer());
+                    if (!alive() || backup !== path) return;
+                    sendDescription(path);
+                } catch { if (backup === path) discardBackup(); }
+            }
+            function sendDescription(path) {
+                sendMessage(primary, {kind: 'description', generation: path.generation, description: path.pc.localDescription});
+                path.descriptionSent = true;
+                for (const candidate of path.localCandidates.splice(0))
+                    sendMessage(primary, {kind: 'candidate', generation: path.generation, candidate});
+            }
+            function makeBackup(id, iceServers) {
+                const pc = new (options.PeerConnection || RTCPeerConnection)({iceServers, iceTransportPolicy: 'relay'});
+                const path = initialize({pc, generation: id, inputDc: null, controlDc: null,
+                    pendingCandidates: [], localCandidates: [], createdAt: now(), path: 'turn'});
+                backup = path;
+                pc.onicecandidate = event => {
+                    if (!event.candidate || backup !== path || !alive()) return;
+                    const candidate = event.candidate.toJSON ? event.candidate.toJSON() : event.candidate;
+                    if (path.descriptionSent) sendMessage(primary, {kind: 'candidate', generation: id, candidate});
+                    else if (path.localCandidates.length < 64) path.localCandidates.push(candidate);
+                };
+                const attach = dc => {
+                    const kind = dc.label === options.tag + '-route-control' ? 'control' :
+                        dc.label === options.tag + '-route-input' ? 'input' : null;
+                    if (!kind) { dc.close(); return; }
+                    path[kind + 'Dc'] = dc;
+                    dc.binaryType = 'arraybuffer';
+                    dc.onmessage = event => receive(path, kind, event.data);
+                    dc.onopen = () => { path.lastProbe = -Infinity; diagnostic('standby-open'); };
+                    dc.onclose = dc.onerror = () => {
+                        if (!alive() || path.closed) return;
+                        if (active === path) {
+                            if (!recover()) options.failed('RTC active TURN channel unavailable');
+                        } else discardBackup();
+                    };
+                };
+                pc.onconnectionstatechange = () => {
+                    if (pc.connectionState !== 'failed' || backup !== path || !alive()) return;
+                    if (active === path) {
+                        if (!recover()) options.failed('RTC active TURN connection unavailable');
+                    } else discardBackup();
+                };
+                if (controller) {
+                    attach(pc.createDataChannel(options.tag + '-route-control', {ordered: true}));
+                    attach(pc.createDataChannel(options.tag + '-route-input', {ordered: false, maxRetransmits: 0}));
+                } else pc.ondatachannel = event => attach(event.channel);
+                return path;
+            }
+            let negotiation = Promise.resolve();
+            async function receiveNegotiation(message) {
+                const id = message.generation;
+                if (!supported || !options.enabled || !Number.isSafeInteger(id) || id < 1 || id > 1000000 || !alive()) return;
+                if (message.kind === 'description') {
+                    const description = message.description;
+                    if (!description || typeof description.sdp !== 'string' || description.sdp.length > 16384 ||
+                        description.type !== (controller ? 'answer' : 'offer')) return;
+                    if (!controller && id > generation && !backup) {
+                        const server = options.iceServers().find(server =>
+                            (Array.isArray(server.urls) ? server.urls : [server.urls]).some(url => /^turns?:/i.test(String(url))));
+                        if (!server) return;
+                        generation = id;
+                        makeBackup(id, [{...server, urls: (Array.isArray(server.urls) ? server.urls : [server.urls]).filter(url => /^turns?:/i.test(String(url)))}]);
+                    }
+                    const path = backup;
+                    if (!path || path.generation !== id || path.closed) return;
+                    await path.pc.setRemoteDescription(description);
+                    if (!alive() || backup !== path) return;
+                    for (const candidate of path.pendingCandidates.splice(0)) await path.pc.addIceCandidate(candidate);
+                    if (!controller) {
+                        await path.pc.setLocalDescription(await path.pc.createAnswer());
+                        if (alive() && backup === path) sendDescription(path);
+                    }
+                } else {
+                    const path = backup, candidate = message.candidate;
+                    if (!path || path.generation !== id || !candidate || typeof candidate.candidate !== 'string' ||
+                        candidate.candidate.length > 2048) return;
+                    if (path.pc.remoteDescription) await path.pc.addIceCandidate(candidate);
+                    else if (path.pendingCandidates.length < 64) path.pendingCandidates.push(candidate);
+                }
+            }
+            function select(path, id) {
+                if (!ready(path) || id < epoch) return false;
+                if (active !== path) {
+                    previous = active;
+                    previousUntil = now() + 5000;
+                    active = path;
+                    switchedAt = now();
+                    options.selected(path);
+                }
+                epoch = id;
+                recoveryUntil = 0;
+                replayQueue = [...pendingControl.keys()];
+                replay(path);
+                diagnostic('selected');
+                return true;
+            }
+            function verify(force = false) {
+                if (!supported || !eligible()) return;
+                const other = active === primary ? backup : primary;
+                if (!ready(other)) return;
+                if (!force && (now() < verifyAfter || now() - switchedAt < policy.cooldownMs)) return;
+                if (!verification) {
+                    verification = {since: now(), force};
+                    sendEverywhere({kind: 'verify'});
+                    diagnostic('verifying');
+                } else if (force) verification.force = true;
+            }
+            function recover() {
+                if (!started || !supported || !eligible()) return false;
+                const other = active === primary ? backup : primary;
+                if (!ready(other)) return false;
+                recoveryUntil ||= now() + 7000;
+                verify(true);
+                if (!controller && now() - lastNeed >= 1000) {
+                    lastNeed = now(); sendEverywhere({kind: 'need'});
+                }
+                return true;
+            }
+            function receive(path, kind, data) {
+                if (!alive() || path.closed) return true;
+                if (typeof data === 'string') {
+                    if (!data.startsWith(prefix) || data.length > 24576) return true;
+                    let m; try { m = JSON.parse(data.slice(prefix.length)); } catch { return true; }
+                    if (!m || typeof m !== 'object' || Array.isArray(m)) return true;
+                    if (m.kind === 'hello' && path === primary && kind === 'control') {
+                        supported = m.enabled === true && options.enabled;
+                        if (!helloSent) hello();
+                        ensureBackup().catch(() => {});
+                    } else if (supported && ['description', 'candidate'].includes(m.kind) && path === primary && kind === 'control') {
+                        negotiation = negotiation.then(() => receiveNegotiation(m)).catch(() => discardBackup());
+                    } else if (supported && m.kind === 'ping' && kind === 'input' && Number.isSafeInteger(m.id) && m.id > 0) {
+                        if (!eligible()) { sendMessage(path, {kind: 'pause'}); return true; }
+                        try { path.inputDc.send(prefix + JSON.stringify({kind: 'pong', id: m.id})); } catch {}
+                    } else if (supported && m.kind === 'pong' && kind === 'input') {
+                        const sample = path.samples.find(s => s.id === m.id);
+                        if (sample && sample.rtt == null) {
+                            sample.rtt = Math.max(0, now() - sample.at);
+                            path.baseline = Math.min(path.baseline, sample.rtt);
+                        }
+                    } else if (supported && kind === 'control') {
+                        if (m.kind === 'pause') suspend();
+                        else if (m.kind === 'retire' && path === primary && backup?.generation === m.generation && active !== backup) discardBackup();
+                        else if (m.kind === 'verify' && now() >= verifyAfter && eligible()) verification ||= {since: now(), force: false};
+                        else if (m.kind === 'need' && controller) verify(true);
+                        else if (m.kind === 'ack' && Number.isSafeInteger(m.sequence) && m.sequence >= 0 && m.sequence <= sequence) {
+                            for (const [id, packet] of pendingControl) {
+                                if (id <= m.sequence) { pendingBytes -= packet.byteLength; pendingControl.delete(id); }
+                            }
+                        } else if (m.kind === 'switch' && !controller && Number.isSafeInteger(m.epoch) && m.epoch === epoch + 1 &&
+                            m.generation === generation && ['primary', 'turn'].includes(m.path)) {
+                            const next = m.path === 'primary' ? primary : backup;
+                            if (!ready(next) || !eligible()) return true;
+                            proposal = {id: m.epoch, path: next, at: now()};
+                            sendMessage(next, {kind: 'accept', epoch: m.epoch, generation});
+                        } else if (m.kind === 'accept' && controller && proposal && m.epoch === proposal.id &&
+                            m.generation === generation && path === proposal.path && ready(path)) {
+                            // Commit travels on the new reliable channel before any
+                            // replayed controls. Receiver ordering spans both paths.
+                            if (sendMessage(path, {kind: 'commit', epoch: proposal.id, generation})) {
+                                select(path, proposal.id);
+                                proposal.committed = true; proposal.lastSent = now(); verification = null;
+                            }
+                        } else if (m.kind === 'commit' && !controller && proposal && m.epoch === proposal.id &&
+                            m.generation === generation && path === proposal.path) {
+                            select(path, proposal.id);
+                            sendMessage(path, {kind: 'committed', epoch: proposal.id, generation});
+                            proposal = null; verification = null;
+                        } else if (m.kind === 'commit' && !controller && m.epoch === epoch && m.generation === generation && path === active) {
+                            sendMessage(path, {kind: 'committed', epoch, generation});
+                        } else if (m.kind === 'committed' && controller && proposal?.committed &&
+                            m.epoch === proposal.id && m.generation === generation && path === proposal.path) {
+                            proposal = null;
+                        }
+                    }
+                    return true;
+                }
+                if (kind === 'control' && supported) {
+                    const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
+                        ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
+                    if (bytes?.length >= 8 && bytes[0] === 69 && bytes[1] === 84 && bytes[2] === 82 && bytes[3] === 49) {
+                        const id = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(4, true);
+                        if (!id || id > receivedSequence + policy.maxControlMessages || bytes.length > policy.maxControlBytes) return true;
+                        if (id > receivedSequence && !receivedControl.has(id)) {
+                            if (receivedBytes + bytes.length > policy.maxControlBytes) { options.failed('RTC route control receive limit exceeded'); return true; }
+                            receivedControl.set(id, bytes.slice(8)); receivedBytes += bytes.length;
+                            while (receivedControl.has(receivedSequence + 1)) {
+                                const payload = receivedControl.get(++receivedSequence);
+                                receivedControl.delete(receivedSequence); receivedBytes -= payload.length + 8;
+                                options.receive(payload);
+                            }
+                        }
+                        ackPending = !sendMessage(path, {kind: 'ack', sequence: receivedSequence});
+                        return true;
+                    }
+                }
+                if (path !== active && !(path === previous && now() <= previousUntil)) return true;
+                // Existing game input/repair packets retain their native frame/session
+                // identity. The native SessionChannel already owns their deduplication.
+                options.receive(data);
+                return true;
+            }
+            function suspend() {
+                quietUntil = now() + 2000;
+                verification = null;
+                // An accepted/committed epoch is a promise, not a quality sample.
+                // Keep it across browser suspension so a delayed commit cannot leave
+                // the two endpoints permanently selecting different paths.
+                if (proposal && controller && !proposal.committed) proposal = null;
+                else if (proposal) proposal.at = now();
+                for (const path of paths()) path.samples.length = 0;
+            }
+            function hello() {
+                if (!open(primary.controlDc) || helloSent) return;
+                helloSent = sendMessage(primary, {kind: 'hello', enabled: !!options.enabled});
+            }
+            function tick() {
+                timer = null;
+                if (!alive() || !started) return;
+                const time = now();
+                if (time - lastTick > 750 || !eligible()) {
+                    if (verification || time - lastTick > 750) sendEverywhere({kind: 'pause'});
+                    suspend();
+                }
+                lastTick = time;
+                if (supported && time >= quietUntil && eligible()) {
+                    if (ackPending) ackPending = !sendMessage(active, {kind: 'ack', sequence: receivedSequence});
+                    replay(active);
+                    ensureBackup().catch(() => {});
+                    if (backup && !ready(backup) && time - backup.createdAt > 15000) discardBackup();
+                    for (const path of paths()) {
+                        if (!ready(path)) continue;
+                        const interval = verification ? policy.verificationIntervalMs :
+                            path === active ? policy.primaryIntervalMs : policy.standbyIntervalMs;
+                        path.samples = path.samples.filter(s => time - s.at <= policy.windowMs).slice(-128);
+                        if (time - path.lastProbe < interval || path.inputDc.bufferedAmount > 4096) continue;
+                        const id = ++path.probeSequence;
+                        try {
+                            path.inputDc.send(prefix + JSON.stringify({kind: 'ping', id}));
+                            path.samples.push({id, at: time, rtt: null}); path.lastProbe = time;
+                        } catch {}
+                    }
+                    const current = stats(active, time);
+                    if (controller && !verification && current.count >= policy.minimumSamples &&
+                        ((current.lost >= 3 && current.loss >= .1) ||
+                         current.p95 > Math.max(120, active.baseline * 1.6 + 30))) verify();
+                    if (!controller && !verification && current.count >= policy.minimumSamples && current.lost >= 3 && current.loss >= .1)
+                        verify();
+                    if (verification && time - verification.since >= policy.probeTimeoutMs + 600) {
+                        const next = active === primary ? backup : primary;
+                        if (controller && ready(next) && !proposal) {
+                            const candidate = stats(next, time, verification.since);
+                            const present = stats(active, time, verification.since);
+                            if (candidate.count >= policy.minimumSamples && candidate.received >= policy.minimumSamples &&
+                                candidate.loss <= .05 && (verification.force && !ready(active) ||
+                                candidate.score * 1.1 + 5 < present.score)) {
+                                proposal = {id: epoch + 1, path: next, at: time};
+                                sendMessage(next, {kind: 'switch', path: pathName(next), epoch: proposal.id, generation});
+                            }
+                        }
+                        if (time - verification.since > policy.verificationMs) { verification = null; verifyAfter = time + 10000; }
+                    }
+                    if (proposal?.committed) {
+                        if (time - proposal.at > 7000) options.failed('RTC route commit confirmation exhausted');
+                        else if (time - proposal.lastSent >= 250) {
+                            sendMessage(proposal.path, {kind: 'commit', epoch: proposal.id, generation});
+                            proposal.lastSent = time;
+                        }
+                    } else if (controller && proposal && time - proposal.at > 3000) { proposal = null; verification = null; verifyAfter = time + 10000; }
+                    if (recoveryUntil && time > recoveryUntil) { recoveryUntil = 0; options.failed('RTC route recovery exhausted'); }
+                }
+                timer = later(tick, verification ? policy.verificationIntervalMs : policy.primaryIntervalMs);
+            }
+            return {
+                start() {
+                    if (started || closed) return;
+                    started = true; lastTick = now(); hello();
+                    timer = later(tick, policy.primaryIntervalMs);
+                    ensureBackup().catch(() => {});
+                },
+                opened(kind) { if (kind === 'control') hello(); },
+                receivePrimary(kind, data) { return receive(primary, kind, data); },
+                canSend(control, size = 0) {
+                    return open(control ? active.controlDc : active.inputDc) && (!control ||
+                        (!replayQueue.length && active.controlDc.bufferedAmount <= 32768)) && (!control || !supported ||
+                        (pendingControl.size < policy.maxControlMessages && pendingBytes + size + 8 <= policy.maxControlBytes));
+                },
+                send(payload, control) {
+                    if (!alive() || !this.canSend(control, payload.byteLength)) return false;
+                    const dc = control ? active.controlDc : active.inputDc;
+                    if (control && supported) {
+                        if (sequence >= 0xffffffff) { options.failed('RTC route control sequence exhausted'); return false; }
+                        const id = ++sequence, packet = envelope(payload, id);
+                        pendingControl.set(id, packet); pendingBytes += packet.byteLength;
+                        try { dc.send(packet); } catch {
+                            // Accepted reliable data owns this sequence even when the
+                            // browser temporarily refuses the send. Retry it before
+                            // admitting another control; a standby may not exist yet.
+                            replayQueue.push(id);
+                            recover();
+                        }
+                        return true;
+                    }
+                    try { dc.send(payload); return true; } catch { return false; }
+                },
+                recover,
+                recovering: () => recoveryUntil > 0,
+                snapshot: () => ({selected: pathName(active), epoch, generation, supported,
+                    pendingControl: pendingControl.size, pendingBytes, receivedBytes, standbyReady: ready(backup),
+                    primary: stats(primary, now()), turn: backup ? stats(backup, now()) : null}),
+                close() {
+                    if (closed) return;
+                    closed = true;
+                    if (timer != null) cancel(timer);
+                    if (backup) { backup.closed = true; try { backup.pc.close(); } catch {} }
+                    pendingControl.clear(); receivedControl.clear();
+                    replayQueue.length = 0;
+                    pendingBytes = receivedBytes = 0;
+                    primary.samples.length = 0;
+                },
+            };
+        }
+        // END generated adaptive-peer-route
         const state = {
             relay: null, signal: null, peers: new Map(), received: [], receivedHead: 0, pendingSignals: [],
             receivedBytes: 0, pendingReceivedBytes: 0, pendingReceivedPackets: 0,
@@ -34,6 +459,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             localPlayer, playerCount, tag, legacyGlobal,
             controlLabel: `${tag}-control`, inputLabel: `${tag}-input`,
             route: null, failed: false, disconnected: false, error: String(), closed: false,
+            channelEvents: [],
             spectatorCount: Math.max(0, Number(Module.eaglerOptions?.netplaySpectatorCount) || 0),
             retainSpectatorHistory: !!stageSpectatorHistory && localPlayer === 0,
             flushSpectatorSession() {
@@ -47,6 +473,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             iceServers: Array.isArray(Module.eaglerOptions?.netplayIceServers)
                 ? Module.eaglerOptions.netplayIceServers : [],
             iceTransportPolicy: Module.eaglerOptions?.netplayPreferTurn === true ? 'relay' : 'all',
+            allowWebsocketFallback: Module.eaglerOptions?.netplayAllowWebsocketFallback === true,
             sendSignal(payload) {
                 const message = JSON.stringify(payload);
                 if (this.signal?.readyState === WebSocket.OPEN) {
@@ -66,16 +493,20 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 // Keep the world intact and report a connection-ended state.
                 this.disconnected = true;
                 this.error = String(message || 'peer transport failed');
-                for(const peer of this.peers.values())this.clearPeerRecovery(peer);
+                for(const peer of this.peers.values()) { this.clearPeerRecovery(peer); peer.adaptive?.close(); }
                 this.onDisconnect?.();
                 this.onReceive?.();
             },
             isRecovering() {
                 return !this.disconnected && [...this.peers.values()].some(peer =>
-                    peer.recoveryPending || peer.recoveryTimer || peer.restartInFlight);
+                    peer.recoveryPending || peer.recoveryTimer || peer.restartInFlight || peer.adaptive?.recovering());
             },
             setRoute(mode) {
                 if (this.closed || this.route) return;
+                if (mode === 'failed' || (mode === 'relay' && !this.allowWebsocketFallback)) {
+                    this.fail(mode === 'failed' ? 'WebRTC connection unavailable' : 'WebRTC connection unavailable; WebSocket gameplay fallback is disabled', false);
+                    return;
+                }
                 this.route = mode;
                 globalThis.__eaglerNetplayTransport = mode;
                 if (mode === 'rtc') {
@@ -83,6 +514,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         try { this.relay?.close(1000, 'RTC route selected'); } catch {}
                     }
                     this.updateRtcPath().catch(() => {});
+                    for (const peer of this.peers.values()) peer.adaptive?.start();
                     // An SCTP association can remain "connected" after its TURN
                     // path stops carrying data. Probe a backed-up input lane
                     // before the confirmed-input watchdog has to end the game.
@@ -92,6 +524,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     }, 1000);
                 } else {
                     for (const peer of this.peers.values()) {
+                        peer.adaptive?.close();
                         try { peer.inputDc?.close(); } catch {}
                         try { peer.controlDc?.close(); } catch {}
                         try { peer.pc?.close(); } catch {}
@@ -137,12 +570,33 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     }, release);
                 }
             },
+            recordChannelEvent(peerId, dc, kind, event, error) {
+                const peer = this.peers.get(peerId), pc = peer?.pc;
+                const text = value => typeof value === 'string' ? value.slice(0, 512) : null;
+                const number = value => Number.isFinite(value) ? value : null;
+                this.channelEvents.push({time: new Date().toISOString(), peer: peerId, kind, event,
+                    frame: number(globalThis.__eaglerNetplayLanFrame),
+                    channel: {label: text(dc.label), readyState: text(dc.readyState), bufferedAmount: number(dc.bufferedAmount)},
+                    connection: {connectionState: text(pc?.connectionState), iceConnectionState: text(pc?.iceConnectionState),
+                        signalingState: text(pc?.signalingState), sctpState: text(pc?.sctp?.state)},
+                    error: error ? {name: text(error.name), message: text(error.message), errorDetail: text(error.errorDetail),
+                        sctpCauseCode: number(error.sctpCauseCode), receivedAlert: number(error.receivedAlert), sentAlert: number(error.sentAlert)} : null});
+                if (this.channelEvents.length > 8) this.channelEvents.shift();
+            },
             setupChannel(peerId, dc, kind) {
                 const peer = this.peers.get(peerId);
-                if (!peer) return;
+                if (!peer || (kind !== 'control' && kind !== 'input')) return;
+                const primary = peer.primary;
                 if (kind === 'control') peer.controlDc = dc;
                 else peer.inputDc = dc;
+                if (primary) primary[kind + 'Dc'] = dc;
                 dc.binaryType = 'arraybuffer';
+                // Events queued by a retired channel/peer cannot update its
+                // replacement. Primary messages may still arrive during the
+                // adaptive handoff's grace window; that route owns admission.
+                const current = () => !this.closed && !this.disconnected && this.peers.get(peerId) === peer &&
+                    (primary ? primary[kind + 'Dc'] === dc : peer[kind + 'Dc'] === dc);
+                const activePrimary = () => current() && (!primary || peer.pc === primary.pc);
                 // Route release is broadcast to every endpoint, so one peer
                 // can process `route=rtc` a task earlier than another and send
                 // its first HELLO/input immediately. Keep RTC packets that
@@ -152,29 +606,40 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 // traffic; if it selects RTC, the queued packet is already in
                 // order for DrainPackets().
                 dc.onmessage = event => {
-                    peer.lastReceivedAt = Date.now();
-                    if ((peer.restartInFlight && peer.lastReceivedAt > peer.restartObservedAt) ||
-                        (!peer.restartInFlight && (peer.recoveryPending || peer.recoveryTimer))) {
-                        this.clearPeerRecovery(peer);
-                        peer.restartAttempts = 0;
-                    }
-                    if (!this.route || this.route === 'rtc') this.receiveBinary(event.data);
+                    if (!current()) return;
+                    if (peer.adaptive) { peer.adaptive.receivePrimary(kind, event.data); return; }
+                    this.receivePeerData(peer, event.data);
                 };
                 dc.onopen = () => {
+                    if (!activePrimary()) return;
                     if (kind === 'control') peer.controlOpen = true;
                     else peer.inputOpen = true;
+                    peer.adaptive?.opened(kind);
                     this.maybeReportRtcReady();
                 };
                 dc.onclose = () => {
+                    if (!activePrimary()) return;
+                    this.recordChannelEvent(peerId, dc, kind, 'close');
                     if (kind === 'control') peer.controlOpen = false;
                     else peer.inputOpen = false;
                     if (!this.route) this.sendSignal({ type: 'rtc-failed' });
-                    else if (this.route === 'rtc' && !this.closed) this.fail(`RTC peer P${peerId + 1} ${kind} channel closed`);
+                    else if (this.route === 'rtc' && !this.closed && !peer.adaptive?.recover()) this.fail(`RTC peer P${peerId + 1} ${kind} channel closed`);
                 };
-                dc.onerror = () => {
+                dc.onerror = event => {
+                    if (!activePrimary()) return;
+                    this.recordChannelEvent(peerId, dc, kind, 'error', event?.error);
                     if (!this.route) this.sendSignal({ type: 'rtc-failed' });
-                    else if (this.route === 'rtc') this.fail(`RTC peer P${peerId + 1} ${kind} channel error`);
+                    else if (this.route === 'rtc' && !peer.adaptive?.recover()) this.fail(`RTC peer P${peerId + 1} ${kind} channel error`);
                 };
+            },
+            receivePeerData(peer, data) {
+                peer.lastReceivedAt = Date.now();
+                if ((peer.restartInFlight && peer.lastReceivedAt > peer.restartObservedAt) ||
+                    (!peer.restartInFlight && (peer.recoveryPending || peer.recoveryTimer))) {
+                    this.clearPeerRecovery(peer);
+                    peer.restartAttempts = 0;
+                }
+                if (!this.route || this.route === 'rtc') this.receiveBinary(data);
             },
             maybeReportRtcReady() {
                 if (this.rtcReadySent || this.peers.size !== this.playerCount - 1) return;
@@ -229,6 +694,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     (globalThis.__eaglerNetplayLanActive === true ||
                      Number(peer.inputDc?.bufferedAmount || 0) + Number(peer.controlDc?.bufferedAmount || 0) >= 32768);
                 if (!failed && !disconnected && !stalled) return;
+                if (peer.adaptive?.recover()) return;
                 peer.recoveryPending = true;
                 if (failed || immediate) {
                     this.requestPeerIceRestart(peerId);
@@ -259,6 +725,10 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             requestPeerIceRestart(peerId) {
                 const peer = this.peers.get(peerId);
                 if (!peer || this.closed || this.disconnected || this.route !== 'rtc' || peer.restartInFlight) return;
+                if (peer.primary && peer.pc !== peer.primary.pc) {
+                    if (!peer.adaptive?.recover()) this.fail(`RTC peer P${peerId + 1} TURN path unavailable`);
+                    return;
+                }
                 if (this.localPlayer < peerId) {
                     this.restartPeerIce(peerId).catch(error => {
                         peer.restartInFlight = false;
@@ -280,6 +750,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             async restartPeerIce(peerId) {
                 const peer = this.peers.get(peerId);
                 if (!peer || this.closed || this.disconnected || this.route !== 'rtc' || peer.restartInFlight) return;
+                if (peer.primary && peer.pc !== peer.primary.pc) return;
                 if (peer.restartAttempts >= 2) {
                     this.fail(`RTC peer P${peerId + 1} ICE restart exhausted`);
                     return;
@@ -354,7 +825,10 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 const summaries = [];
                 for (const [peerId, peer] of this.peers) {
                     const summary = await this.selectedCandidateSummary(peer.pc).catch(() => null);
-                    if (summary) summaries.push({ peer: peerId, ...summary });
+                    if (summary) {
+                        if (peer.pc === peer.primary?.pc) peer.primary.path = summary.path;
+                        summaries.push({ peer: peerId, ...summary });
+                    }
                 }
                 globalThis.__eaglerNetplayRtcPaths = summaries;
                 const paths = new Set(summaries.map(summary => summary.path));
@@ -370,11 +844,34 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     lastReceivedAt: Date.now(), lastInputSentAt: 0, restartObservedAt: 0
                 };
                 this.peers.set(peerId, peer);
+                peer.primary = {pc: peer.pc, inputDc: null, controlDc: null, path: null};
+                peer.adaptive = createAdaptivePeerRoute({
+                    primary: peer.primary, localPlayer: this.localPlayer, peerId, tag: this.tag,
+                    enabled: Module.eaglerOptions?.netplayAdaptiveTurn !== false && this.iceTransportPolicy !== 'relay',
+                    iceServers: () => this.iceServers,
+                    alive: () => !this.closed && !this.failed && !this.disconnected && this.route !== 'relay',
+                    running: () => this.route === 'rtc' && globalThis.__eaglerNetplayLanActive === true,
+                    visible: () => !globalThis.document?.hidden && !globalThis.__eaglerNetplayCalibrationSuspended,
+                    receive: data => this.receivePeerData(peer, data),
+                    failed: message => this.fail(message),
+                    selected: path => {
+                        this.clearPeerRecovery(peer);
+                        peer.pc = path.pc; peer.inputDc = path.inputDc; peer.controlDc = path.controlDc;
+                        peer.inputOpen = peer.controlOpen = true;
+                        peer.restartAttempts = 0;
+                        this.updateRtcPath().catch(() => {});
+                    },
+                    changed: diagnostic => {
+                        globalThis.__eaglerNetplayRouteSelection ||= {};
+                        globalThis.__eaglerNetplayRouteSelection[peerId] = diagnostic;
+                    },
+                });
+                const primaryPc = peer.pc;
                 peer.pc.onicecandidate = event => {
                     if (event.candidate) this.sendSignal({ type: 'signal', to: peerId, candidate: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate });
                 };
-                peer.pc.onconnectionstatechange = () => this.handlePeerConnectionState(peerId);
-                peer.pc.oniceconnectionstatechange = () => this.handlePeerConnectionState(peerId);
+                peer.pc.onconnectionstatechange = () => { if (peer.pc === primaryPc) this.handlePeerConnectionState(peerId); };
+                peer.pc.oniceconnectionstatechange = () => { if (peer.pc === primaryPc) this.handlePeerConnectionState(peerId); };
                 if (this.localPlayer > peerId) {
                     peer.pc.ondatachannel = event => {
                         if (event.channel.label === this.controlLabel) this.setupChannel(peerId, event.channel, 'control');
@@ -396,17 +893,18 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 await this.ensurePeer(peerId);
                 const peer = this.peers.get(peerId);
                 if (!peer) return;
+                const path = peer.primary || peer;
                 if (message.description) {
-                    await peer.pc.setRemoteDescription(message.description);
-                    while (peer.pendingCandidates.length) await peer.pc.addIceCandidate(peer.pendingCandidates.shift());
+                    await path.pc.setRemoteDescription(message.description);
+                    while (peer.pendingCandidates.length) await path.pc.addIceCandidate(peer.pendingCandidates.shift());
                     if (message.description.type === 'offer') {
-                        const answer = await peer.pc.createAnswer();
-                        await peer.pc.setLocalDescription(answer);
-                        this.sendSignal({ type: 'signal', to: peerId, description: peer.pc.localDescription });
+                        const answer = await path.pc.createAnswer();
+                        await path.pc.setLocalDescription(answer);
+                        this.sendSignal({ type: 'signal', to: peerId, description: path.pc.localDescription });
                     }
                 }
                 if (message.candidate) {
-                    if (peer.pc.remoteDescription) await peer.pc.addIceCandidate(message.candidate);
+                    if (path.pc.remoteDescription) await path.pc.addIceCandidate(message.candidate);
                     else peer.pendingCandidates.push(message.candidate);
                 }
             },
@@ -457,14 +955,14 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     }
                 };
                 socket.onerror = () => {
-                    if (!this.route && this.relay?.readyState === WebSocket.OPEN) this.setRoute('relay');
+                    if (!this.route && this.relay?.readyState !== WebSocket.OPEN) this.fail('WebRTC signaling unavailable', false);
                 };
                 socket.onclose = () => {
                     if (this.signal !== socket) return;
                     this.signal = null;
                     if (this.closed) return;
                     if (this.route === 'rtc') this.scheduleSignalReconnect();
-                    else if (!this.route && this.relay?.readyState === WebSocket.OPEN) this.setRoute('relay');
+                    else if (!this.route && this.relay?.readyState !== WebSocket.OPEN) this.fail('WebRTC signaling unavailable', false);
                 };
             },
             openRelay() {
@@ -473,19 +971,22 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 this.relay=socket;socket.binaryType='arraybuffer';
                 socket.onopen=()=>{
                     if(this.closed || this.relay!==socket)return;
-                    if(!this.route && this.signal && this.signal.readyState>=WebSocket.CLOSING)this.setRoute('relay');
                     this.onReceive?.();
                 };
                 socket.onmessage=event=>{
                     if(this.closed || this.relay!==socket)return;
                     if(typeof event.data==='string'){
                         let message;try{message=JSON.parse(event.data);}catch{return;}
-                        if(message?.type==='route' && (message.mode==='rtc'||message.mode==='relay'))this.setRoute(message.mode);
+                        if(message?.type==='route' && (message.mode==='rtc'||message.mode==='relay'||message.mode==='failed'))this.setRoute(message.mode);
                     }else if(!this.route || this.route==='relay')this.receiveBinary(event.data);
                 };
                 socket.onerror=()=>{if(this.route==='relay' && this.relay===socket)this.fail('WebSocket relay error');};
                 socket.onclose=event=>{
                     if(this.closed || this.relay!==socket || this.route==='rtc')return;
+                    if(!this.route && this.signal?.readyState!==WebSocket.OPEN) {
+                        this.fail('WebRTC connection unavailable', false);
+                        return;
+                    }
                     if(this.route!=='relay')return;
                     // The relay retires a run when its stream closes. Reusing
                     // that run would invent missing history; offer room return.
@@ -499,10 +1000,12 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 try { this.signal?.close(1000, 'transport close'); } catch {}
                 try { this.relay?.close(1000, 'transport close'); } catch {}
                 for (const peer of this.peers.values()) {
+                    peer.adaptive?.close();
                     this.clearPeerRecovery(peer);
                     try { peer.inputDc?.close(); } catch {}
                     try { peer.controlDc?.close(); } catch {}
                     try { peer.pc?.close(); } catch {}
+                    try { peer.primary?.pc?.close(); } catch {}
                 }
                 this.peers.clear();
                 this.received.length = 0;
@@ -515,6 +1018,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
         globalThis.__eaglerNetplayTransport = 'connecting';
         globalThis.__eaglerNetplayPath = 'connecting';
         globalThis.__eaglerNetplayRtcPaths = [];
+        globalThis.__eaglerNetplayRouteSelection = {};
 
         // Once the server releases the relay barrier, one peer may process the
         // route message a task earlier than another. Buffer packets that arrive
@@ -723,9 +1227,13 @@ EM_JS(int, eagler_peer_send, (const unsigned char *data, int size, int control),
         if (state.route === 'rtc') {
             for (const peer of state.peers.values()) {
                 const dc = control ? peer.controlDc : peer.inputDc;
-                if (dc?.readyState !== 'open') return 0;
+                if (dc?.readyState !== 'open' || peer.adaptive && !peer.adaptive.canSend(!!control, payload.byteLength)) return 0;
             }
-            for (const peer of state.peers.values()) (control ? peer.controlDc : peer.inputDc).send(payload);
+            for (const peer of state.peers.values()) {
+                if (peer.adaptive) { if (!peer.adaptive.send(payload, !!control)) return 0; }
+                else (control ? peer.controlDc : peer.inputDc).send(payload);
+                if (!control) peer.lastInputSentAt = Date.now();
+            }
             return 1;
         }
     } catch (error) {
@@ -750,9 +1258,10 @@ EM_JS(int, eagler_peer_send_to, (int peerId, const unsigned char *data, int size
             return 1;
         }
         if (state.route === 'rtc') {
-            const dc = state.peers.get(peerId)?.inputDc;
+            const peer = state.peers.get(peerId), dc = peer?.inputDc;
             if (dc?.readyState !== 'open') return 0;
-            dc.send(payload);
+            if (peer.adaptive) { if (!peer.adaptive.send(payload, false)) return 0; }
+            else dc.send(payload);
             state.peers.get(peerId).lastInputSentAt = Date.now();
             return 1;
         }
@@ -772,7 +1281,9 @@ EM_JS(int, eagler_peer_send_repair_to, (int peerId, const unsigned char *data, i
     // head-of-line work when an RTC association is already unhealthy.
     if (channel?.readyState !== 'open' || channel.bufferedAmount > 32768) return 0;
     try {
-        channel.send(HEAPU8.slice(data, data + size));
+        const peer = state.peers.get(peerId), payload = HEAPU8.slice(data, data + size);
+        if (peer.adaptive) { if (!peer.adaptive.send(payload, true)) return 0; }
+        else channel.send(payload);
         state.inputRepairSent = (state.inputRepairSent || 0) + 1;
         return 1;
     } catch {

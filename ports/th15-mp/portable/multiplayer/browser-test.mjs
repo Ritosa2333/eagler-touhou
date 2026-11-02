@@ -12,7 +12,8 @@ const launcher=resolve(process.env.TH15_LAUNCHER_ROOT||resolve(root,'../../launc
 const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(root,'../../services/relay'),'src/netplay-relay.mjs');
 const puppeteer=createRequire(resolve(launcher,'package.json'))('puppeteer-core');
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
-const runtime=resolve(root,'build-eagler-multiplayer');
+const runtime=resolve(root,process.env.TH15_TEST_RUNTIME||'build-eagler-multiplayer');
+const timingMode=Number(process.env.TH15_TEST_TIMING_MODE??1),delay=timingMode===0?0:2;
 const out=resolve(process.argv.find(value=>value.startsWith('--output='))?.slice(9)||resolve(root,'web/artifacts/sdl-multiplayer/browser-test'));await mkdir(out,{recursive:true});
 if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE to the Japanese TH15 1.00b archive');
 const archive=await readFile(process.env.TH15_TEST_ARCHIVE);
@@ -20,7 +21,7 @@ const fonts=[['msgothic.ttc',process.env.TH15_TEST_FONT||process.env.EAGLER_DEVE
  ['unifont.otf',process.env.TH15_TEST_UNICODE_FONT||process.env.EAGLER_DEVELOPMENT_UNICODE_FONT]];
 for(const [name,file] of fonts)if(!file)throw Error('Missing explicit shared font: '+name);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-await writeFile(resolve(out,'inputs.json'),JSON.stringify({scope:'TH15 MP production Runtime, pure-delay 2P/3P, spectator and offline Replay',
+await writeFile(resolve(out,'inputs.json'),JSON.stringify({scope:'TH15 MP production Runtime, mode '+timingMode+', 2P/3P, spectator and offline Replay',
  driver:{file:import.meta.filename,sha256:sha(await readFile(new URL(import.meta.url)))},
  archive:{file:process.env.TH15_TEST_ARCHIVE,sha256:sha(archive)},
  fonts:await Promise.all(fonts.map(async([name,file])=>({name,file,sha256:sha(await readFile(file))}))),
@@ -68,8 +69,8 @@ try{
   }
   await lobbySend(lobbies[0],{type:'settings',playerCount:count,difficulty:1,chapterThreshold:count===2?500000:5000000},m=>m.room?.chapterThreshold===(count===2?500000:5000000));
   for(let seat=0;seat<count;++seat)await lobbySend(lobbies[seat],{type:'set-ready',ready:true},m=>m.room?.seats[seat]?.ready);
-  const started=await lobbySend(lobbies[0],{type:'start',adonisMode:1,inputDelay:2,inputDelayAuto:false,predictionReserve:2},m=>m.type==='start');
-  options=Array.from({length:count+(watcher?1:0)},(_,seat)=>({netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(started.serial),member:members[seat].member}),netplayPlayer:seat<count?seat:null,netplayPlayerCount:count,netplayDifficulty:1,netplaySeed:417,netplayLoadouts:Array.from({length:count},(_,s)=>({character:count===2?s+2:s,shot:0})),netplayInputDelay:2,netplayInputDelayAuto:false,netplayAdonisMode:1,netplayPredictionLimit:0,netplayPredictionReserve:2,netplaySpectator:seat===count,netplaySpectatorId:seat===count?members[seat].client:'',netplaySpectatorCount:watcher?1:0,netplayChapterThreshold:count===2?500000:5000000,netplayChallengeMode:false,thpracEnabled:false,renderScale:1}));
+  const started=await lobbySend(lobbies[0],{type:'start',adonisMode:timingMode,inputDelay:delay,inputDelayAuto:false,predictionReserve:2},m=>m.type==='start');
+  options=Array.from({length:count+(watcher?1:0)},(_,seat)=>({netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(started.serial),member:members[seat].member}),netplayPlayer:seat<count?seat:null,netplayPlayerCount:count,netplayDifficulty:1,netplaySeed:417,netplayLoadouts:Array.from({length:count},(_,s)=>({character:count===2?s+2:s,shot:0})),netplayInputDelay:delay,netplayInputDelayAuto:false,netplayAdonisMode:timingMode,netplayPredictionLimit:timingMode===1?0:12,netplayPredictionReserve:2,netplaySpectator:seat===count,netplaySpectatorId:seat===count?members[seat].client:'',netplaySpectatorCount:watcher?1:0,netplayChapterThreshold:count===2?500000:5000000,netplayChallengeMode:false,thpracEnabled:false,renderScale:1}));
   const context=await browser.createBrowserContext(),page=await context.newPage(),errors=[];
   await page.setViewport({width:1280,height:1000});page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')console.log('browser:',m.text());});
   await page.goto(base);await page.evaluate(()=>addRuntime(0));await page.waitForFunction(()=>ready.has(1),{timeout:60000});await page.evaluate(()=>launchRuntime(0));
@@ -83,10 +84,24 @@ try{
   try{await frame(0).waitForFunction(()=>globalThis.__eaglerNetplayLanFrame>=180||document.querySelector('#error').textContent,{timeout:60000});}finally{clearInterval(observe);}
   for(let seat=0;seat<count;++seat){assert.equal(await frame(seat).$eval('#error',e=>e.textContent),'');assert.ok((await status(frame(seat)))[3]>=170);assert.equal(await frame(seat).evaluate(()=>Module._th15_phase()),1);}
   if(watcher){await frame(count).waitForFunction(()=>__eaglerNetplayLanFrame>=170||document.querySelector('#error').textContent,{timeout:60000});assert.equal(await frame(count).$eval('#error',e=>e.textContent),'');assert.equal((await status(frame(count)))[10],1);}
+  if(timingMode!==1){
+   // Hold the real incoming input lane while physical inputs keep changing.
+   await frame(0).evaluate(()=>{const t=__eaglerPeerTransport,receive=t.receiveBinary.bind(t);t.receiveBinary=data=>setTimeout(()=>receive(data),120);});
+   await frame(count-1).evaluate(()=>{globalThis.testMovement=setInterval(()=>{globalThis.testLeft=!globalThis.testLeft;Module._th15_key(203,testLeft?1:0);Module._th15_key(205,testLeft?0:1);},180);});
+   await frame(0).waitForFunction(()=>__eaglerNetplayLanRollback>0||document.querySelector('#error').textContent,{timeout:30000});
+   assert.equal(await frame(0).$eval('#error',e=>e.textContent),'');
+   const correction=await frame(0).evaluate(()=>__eaglerNetplayRollback);assert.ok(correction.corrections>0&&correction.replayedFrames>0&&correction.peakDepth<=12);
+   await frame(count-1).evaluate(()=>{clearInterval(testMovement);Module._th15_key(203,0);Module._th15_key(205,0);});
+  }
+  const scenePixels=async seat=>{const canvas=await frame(seat).$('canvas'),png=await canvas.screenshot();return page.evaluate(async base64=>{const raw=Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),image=await createImageBitmap(new Blob([raw],{type:'image/png'})),surface=new OffscreenCanvas(image.width,image.height),ctx=surface.getContext('2d');ctx.drawImage(image,0,0);const {data}=ctx.getImageData(0,0,image.width,image.height);let visible=0,total=0;for(let y=32;y<440;y+=2)for(let x=32;x<400;x+=2){const i=(y*image.width+x)*4;++total;if(Math.max(data[i],data[i+1],data[i+2])>24)++visible;}return visible/total;},Buffer.from(png).toString('base64'));};
+  for(let seat=0;seat<count+(watcher?1:0);++seat)assert.ok(await scenePixels(seat)>.5,'Live gameplay canvas was blank for seat '+seat);
   await page.screenshot({path:resolve(out,count+'p.png'),fullPage:true});
   // Stop one producer. The other peers must wait instead of inventing inputs.
   await frame(count-1).evaluate(()=>Module._th15_loop_stop());await new Promise(r=>setTimeout(r,500));
-  const waiting=await status(frame(0));await new Promise(r=>setTimeout(r,350));assert.equal((await status(frame(0)))[3],waiting[3],'Missing peer input advanced the world');
+  const waiting=await status(frame(0));await new Promise(r=>setTimeout(r,1300));assert.equal((await status(frame(0)))[3],waiting[3],'Missing peer input advanced the world');
+  const stalledFps=await frame(0).evaluate(()=>__eaglerNetplayPresentationFps);assert.ok(stalledFps<5,'Stalled world displayed '+stalledFps+' FPS');
+  const stalledScenePixels=[];for(let seat=0;seat<count+(watcher?1:0);++seat){const visible=await scenePixels(seat);assert.ok(visible>.5,'Waiting cleared the gameplay canvas for seat '+seat);stalledScenePixels.push(visible);}
+  await page.screenshot({path:resolve(out,count+'p-stalled.png'),fullPage:true});
   await frame(count-1).evaluate(()=>Module._th15_loop_start());await frame(0).waitForFunction(f=>__eaglerNetplayLanFrame>=f+30,{timeout:30000},waiting[3]);
   const recorder=count===3?2:0;
   await frame(recorder).evaluate(()=>Module._th15_mp_replay_save());
@@ -94,25 +109,24 @@ try{
   assert.equal(replay[21],recorder,'Replay metadata belongs to another seat');
   assert.equal(await frame(0).evaluate(bytes=>{const p=Module._malloc(bytes.length);try{Module.HEAPU8.set(bytes,p);return Module._th15_mp_replay_validate(p,bytes.length);}finally{Module._free(p);}},replay),1);
   await writeFile(resolve(out,count+'p.rpy'),new Uint8Array(replay));
-  assert.deepEqual(errors,[]);report.push({players:count,frame:(await status(frame(0)))[3],recordedSeat:recorder,frameZeroBarrier:true,missingInputWait:true,replayValidated:true,spectator:watcher});
+  assert.deepEqual(errors,[]);report.push({timingMode,players:count,stalledFps,stalledScenePixels,rollback:await frame(0).evaluate(()=>__eaglerNetplayRollback??null),frame:(await status(frame(0)))[3],recordedSeat:recorder,frameZeroBarrier:true,missingInputWait:true,replayValidated:true,spectator:watcher});
   for(let seat=0;seat<count+(watcher?1:0);++seat)await frame(seat).evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});await context.close();for(const socket of lobbies)socket.close();
-  // Fresh offline viewer: import through the hosted storage contract and use its real menu.
+  // Fresh offline viewer: import and play through the current hosted contract.
   options=[{replayViewer:true,thpracEnabled:false,renderScale:1}];
   const replayContext=await browser.createBrowserContext(),replayPage=await replayContext.newPage();
   await replayPage.goto(base);await replayPage.evaluate(()=>addRuntime(0));await replayPage.waitForFunction(()=>ready.has(1),{timeout:60000});
   await replayPage.evaluate(bytes=>rpc(0,'write',{path:'replay/th15mp_01.rpy',bytes}),replay);
   await replayPage.evaluate(()=>launchRuntime(0));const viewer=replayPage.frames().find(f=>f.url().includes('runtimeEpoch=1'));
-  await viewer.waitForSelector('.mp-replay-menu button');
+
   assert.equal(await viewer.evaluate(async()=>{
    const manifest=await(await fetch('./manifest.json')).json(),bytes=Module.FS.readFile('/save/replay/th15mp_01.rpy');
    const build=new Uint32Array(Array.from({length:4},(_,i)=>parseInt(manifest.execution.sha256.slice(i*8,i*8+8),16)>>>0));build[0]^=1;
    const p=Module._malloc(bytes.length),b=Module._malloc(16);try{Module.HEAPU8.set(bytes,p);Module.HEAPU32.set(build,b>>>2);return Module._th15_mp_replay_load(p,bytes.length,b);}finally{Module._free(p);Module._free(b);}
   }),0,'Viewer accepted a mismatched executable');
-  await viewer.click('.mp-replay-menu button');
-  await viewer.waitForFunction(()=>Module._th15_phase()===4||document.querySelector('#error').textContent,{timeout:60000});
+  await replayPage.evaluate(()=>rpc(0,'playback',{action:'open',path:'replay/th15mp_01.rpy',stage:1}));
+  await replayPage.waitForFunction(()=>events.some(e=>e.event==='runtime-info'&&e.playback?.ended)||document.querySelector('iframe')?.contentDocument?.querySelector('#error')?.textContent,{timeout:60000});
   assert.equal(await viewer.$eval('#error',e=>e.textContent),'');
-  await replayPage.waitForFunction(()=>events.some(e=>e.event==='exit'),{timeout:10000});
-  assert.ok(await replayPage.evaluate(()=>events.some(e=>e.event==='exit')),'Offline replay did not exit through the hosted lifecycle');
+  assert.ok(await replayPage.evaluate(()=>events.some(e=>e.event==='runtime-info'&&e.playback?.ended)),'Offline playback did not reach its confirmed end');
   report.at(-1).offlinePlayback=true;await replayContext.close();
  }
  await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

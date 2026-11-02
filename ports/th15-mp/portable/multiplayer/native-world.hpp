@@ -42,14 +42,14 @@ struct Presentation final:BattleWorldServices {
 };
 struct World {
  Rng visual{417,0,0};AnmEnvironment environment;AnmManager animations{visual,environment};StageAssets assets;Presentation output;SessionState progress;std::unique_ptr<GameBattle> battle;
- World(RetailAssets& files,unsigned count,unsigned local,std::array<int,3> selection,bool challenge=false):assets(files,animations){
+ World(RetailAssets& files,unsigned count,unsigned local,std::array<int,3> selection,bool challenge=false,unsigned stage=1):assets(files,animations){
   environment.game_rng={417,0,0};environment.playfield_origin={192,224};environment.screen_offsets={32,16,32,16};
-  require(assets.load(1,selection[0])&&assets.load_multiplayer(),assets.error);
+  require(assets.load(stage,selection[0])&&assets.load_multiplayer(),assets.error);
   battle=std::make_unique<GameBattle>(animations,environment,environment.game_rng,visual,output,assets.scripts,assets.shots,selection[0],BattleResources{assets.player,assets.bullet,assets.effect});
-  auto& b=*battle;progress.character=selection[0];progress.difficulty=1;b.bind_progress(progress);b.session.power=400;b.score.point_value=1000000;b.score.max_point_value=50000000;b.enemy_world.difficulty=1;
+  auto& b=*battle;progress.character=selection[0];progress.difficulty=stage==7?4:1;progress.stage=stage;b.bind_progress(progress);b.session.power=400;b.score.point_value=1000000;b.score.max_point_value=50000000;b.enemy_world.difficulty=progress.difficulty;
   require(b.initialize(),b.error);for(unsigned i=0;i<6;++i)b.enemy_visuals.map_resource(i,assets.enemy_banks[i]);b.spell_visuals=assets.spell_resources(0);
   require(b.player->life.base_bombs==3,"Retail base Bomb stock changed before co-op setup");
-  require(b.mp_enable({count,local,1,417,1,challenge,selection},assets.multiplayer_shots,assets.multiplayer_players),b.error);
+  require(b.mp_enable({count,local,stage,417,progress.difficulty,challenge,selection},assets.multiplayer_shots,assets.multiplayer_players),b.error);
   for(unsigned s=0;s<count;++s){auto& p=*b.pilots[s];p.player->life.state=1;p.player->life.invulnerability.set(30000);p.player->frame.ready_age.set(30);}
  }
  void step(const std::array<MultiplayerInput,3>& input){battle->mp_input(input);BattleFrame frame;frame.focus_allowed=true;require(battle->step(frame),battle->error);}

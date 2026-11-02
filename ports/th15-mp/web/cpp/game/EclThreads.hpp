@@ -19,7 +19,7 @@ public:
     int step(float elapsed,float interpolation_rate=1);
     u32 count()const noexcept{return u32(children.size())+1;}
     EclContext* at(u32 index)noexcept;
-    EclThreadsSnapshot snapshot()const;bool restore(const EclThreadsSnapshot&);
+    EclThreadsSnapshot snapshot()const;void snapshot(EclThreadsSnapshot&)const;bool restore(const EclThreadsSnapshot&);
     std::string error;
 };
 }

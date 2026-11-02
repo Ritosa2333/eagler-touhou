@@ -1,6 +1,8 @@
 # Relay 客户端协议
 
-Relay 使用 WebSocket 提供房间目录、等待室、信令、游戏传输和旁观服务。产品 ID、房间规则、时序策略、快捷聊天 ID 和昵称规则由 [`common/contracts/`](../../../common/contracts/README.md) 定义。
+Relay 使用 WebSocket 提供房间目录、等待室、WebRTC 信令和旁观服务。玩家之间的游戏输入走 WebRTC，直连与 TURN 均通过同一套信令建立。产品 ID、房间规则、时序策略、快捷聊天 ID 和昵称规则由 [`common/contracts/`](../../../common/contracts/README.md) 定义。
+
+WebRTC 建立失败时，服务向两端发送 `{"type":"route","mode":"failed"}` 并结束本局，等待室恢复到可重新准备的状态。WebSocket 游戏数据回退需要服务端 `EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK=1` 与客户端 `netplayAllowWebsocketFallback=true` 同时启用；默认对局不使用该路径。旁观上传继续使用独立的 WebSocket 连接。
 
 ## 连接入口
 

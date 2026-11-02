@@ -231,7 +231,15 @@ createServer(async (request, response) => {
       : null;
     let file;
     const publicPath = pathname.replace(/^\//, "");
-    const frontendPath = publicPath || "index.html";
+    let frontendPath = publicPath || "index.html";
+    const directoryDocument = publicPath.replace(/\/?$/, '/') + 'index.html';
+    if (!FRONTEND_PACKAGE_FILES.includes(frontendPath) && FRONTEND_PACKAGE_FILES.includes(directoryDocument)) {
+      if (!pathname.endsWith('/')) {
+        response.writeHead(308, {Location: `${url.pathname}/${url.search}`, 'Cache-Control': 'no-store'});
+        response.end(); return;
+      }
+      frontendPath = directoryDocument;
+    }
     const possibleLegacyPath = frontendPath.startsWith("public/") ? frontendPath.slice("public/".length) : frontendPath;
     if (!FRONTEND_PACKAGE_FILES.includes(frontendPath) &&
         (possibleLegacyPath === "app.js" || possibleLegacyPath.startsWith("assets/launcher/") ||

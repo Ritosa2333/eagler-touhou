@@ -35,6 +35,8 @@ public:
   Node* find(uint64_t key);
   const std::unordered_map<uint32_t, std::shared_ptr<Node>>& nodes() const;
   std::vector<const Node*> chain(Membership membership) const;
+  // Append a read-only traversal to caller-owned scratch storage.
+  void appendChain(Membership membership, std::vector<const Node*>& output) const;
   std::vector<const Node*> children(uint32_t id) const;
   Node* bind(uint64_t key, uint32_t owner, int bank, int script,
              Membership membership = Membership::Primary, float x = 0, float y = 0,

@@ -1,6 +1,19 @@
 #include "EclVm.hpp"
 #include <cmath>
 namespace th08 {
+const Vec3& EclVm::aimed_player()const noexcept {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(environment&&environment->aim_target)return selected_player;
+#endif
+    static const Vec3 empty{};return environment?environment->player:empty;
+}
+void EclVm::select_player_target()noexcept {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(environment&&environment->aim_target){
+        refresh_position();selected_player=environment->aim_target(environment->aim_context,resolved_position);
+    }
+#endif
+}
 void EclVm::refresh_position()noexcept {
     resolved_position={Scalar::add(position.x,position_offset.x),Scalar::add(position.y,position_offset.y),Scalar::add(position.z,position_offset.z)};
 }
@@ -27,7 +40,8 @@ float* EclVm::float_field(i32 id)noexcept {
     if(auto* local=context().float_variable(id))return local;
     if(environment){
         if(id>=10065&&id<=10068)return environment->float_arguments+id-10065;
-        switch(id){case 10045:return &environment->player.x;case 10046:return &environment->player.y;case 10047:return &environment->player.z;}
+        auto& player=const_cast<Vec3&>(aimed_player());
+        switch(id){case 10045:return &player.x;case 10046:return &player.y;case 10047:return &player.z;}
     }
     switch(id){
     case 10042:return &position.x;case 10043:return &position.y;case 10044:return &position.z;
@@ -75,7 +89,7 @@ Extended EclVm::resolve_float(float value)const noexcept {
     if(auto* field=self.integer_field(id))return Extended::from_int(*field);
     if(random)switch(id){case 10032:return Extended::from_int(i32(random->next32()&0x7fffffff));case 10033:return random->unit();case 10034:return Extended::from_int(signed_bits(random->next32()));case 10035:return random->signed_unit();case 10082:return random->range(6.283185482025147f)-number(3.1415927410125732f);}
     if(environment&&(id==10048||id==10050)){
-        const auto& player=environment->player;
+        const auto& player=aimed_player();
         const float x=(number(player.x)-resolve_float(10042.f)).to_float(),y=(number(player.y)-resolve_float(10043.f)).to_float();
         if(id==10048){if(x==0&&y==0)return number(1.5707963705062866f);return Extended::from_double(std::atan2(double(y),double(x)));}
         const float z=(number(player.z)-resolve_float(10044.f)).to_float();

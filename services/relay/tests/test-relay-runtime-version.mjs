@@ -5,7 +5,7 @@ import {once} from 'node:events';
 import {WebSocket} from 'ws';
 
 const relay=spawn(process.execPath,['src/netplay-relay.mjs'],{windowsHide:true,stdio:['ignore','pipe','pipe'],
-  env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''}});
+  env:{...process.env,EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''}});
 const sockets=[];let log='';
 try {
   const port=await new Promise((resolve,reject)=>{

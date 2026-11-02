@@ -8,16 +8,22 @@ namespace th15 {
 namespace {
 double distance2(const Vec3& a,const Vec3& b){const double x=double(a.x)-b.x,y=double(a.y)-b.y;return x*x+y*y;}
 }
-// TH11 MP: one shared fragment event, including ghosts banking extra lives.
-// TH15 retains its own three-piece Normal / native Extra threshold and cap.
+// A shared fragment reaches each pilot once through the native stock rules.
+// Full-life pilots convert their own piece to a Bomb piece; ghosts bank lives.
 bool GameBattle::mp_reward_fragment(){
-    std::array<PlayerLifeSession*,3> stocks{};for(unsigned s=0;s<mp_options.seat_count;++s)stocks[s]=&pilots[s]->session;
-    const auto added=multiplayer_fragment(mp_fragments,score.life_piece_tier,score.difficulty,stocks,mp_options.seat_count);
-    for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];
-        p.session.life_pieces=mp_fragments;p.owned_life_piece_tier=score.life_piece_tier;
-        if(added[s]&&(!p.sound(17,true)||!p.notice(4)))return false;
-        if(!p.life_hud(p.session.extra_lives,p.session.life_pieces))return false;
+    if(mp_options.replay_legacy_stage_flow){
+        std::array<PlayerLifeSession*,3> stocks{};for(unsigned s=0;s<mp_options.seat_count;++s)stocks[s]=&pilots[s]->session;
+        const auto added=multiplayer_legacy_fragment(mp_fragments,score.life_piece_tier,score.difficulty,stocks,mp_options.seat_count);
+        for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];p.owned_life_piece_tier=score.life_piece_tier;
+            if(added[s]&&(!p.sound(17,true)||!p.notice(4)))return false;
+            if(!p.life_hud(p.session.extra_lives,p.session.life_pieces))return false;
+        }
+        return true;
     }
+    for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];
+        if(!p.collection->award_life_piece())return fail(p.collection->error);
+    }
+    mp_fragments=session.life_pieces;
     return true;
 }
 bool MultiplayerPilot::revive(bool rescued){

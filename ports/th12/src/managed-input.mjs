@@ -10,7 +10,16 @@ export function keyboardCode(raw){
   return ({8:'Backspace',9:'Tab',13:'Enter',16:raw.location===2?'ShiftRight':'ShiftLeft',17:raw.location===2?'ControlRight':'ControlLeft',27:'Escape',32:'Space',37:'ArrowLeft',38:'ArrowUp',39:'ArrowRight',40:'ArrowDown'})[n]??'';
 }
 export class ManagedInput {
-  constructor(environment=window){this.environment=environment;this.epoch=Number(new URL(environment.location.href).searchParams.get('runtimeEpoch'));}
+  constructor(environment=window){
+    this.environment=environment;this.epoch=Number(new URL(environment.location.href).searchParams.get('runtimeEpoch'));
+    if(!Number.isSafeInteger(this.epoch)||this.epoch<=0)return;
+    const identity={protocol:'eagler-touhou/1',game:'th12',epoch:this.epoch,origin:environment.location.origin};
+    // Publish the existing mapping contract. Keyboard delivery stays on the managed shell queue.
+    environment.__eaglerKeyboardInputBridge=Object.freeze({...identity,schema:'eagler-touhou/keyboard-input/1',submit:()=>false});
+    environment.__eaglerGamepadInputBridge=Object.freeze({...identity,schema:'eagler-touhou/gamepad-input/1',
+      owned:()=>this.owner('__eaglerGamepadMapping','eagler-touhou/gamepad-input/1')?.enabled?.()===true,
+      sample:seat=>this.owner('__eaglerGamepadMapping','eagler-touhou/gamepad-input/1')?.sample?.(seat)??-1});
+  }
   owner(name,schema){
     const owner=this.environment[name];
     return owner&&owner.schema===schema&&owner.protocol==='eagler-touhou/1'&&owner.game==='th12'&&owner.epoch===this.epoch&&owner.origin===this.environment.location.origin?owner:null;

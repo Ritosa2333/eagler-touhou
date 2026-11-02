@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-27",
+  "target": {
+    "game": "th17",
+    "version": "1.00b",
+    "language": "Japanese",
+    "executable": "../[th17] 东方鬼形兽（汉化版+日文版）/th17.exe",
+    "sha256": "85cb011e2e43b316c8fa42a3c402565ecdf2f4379f3bab66d86bcb7beef8255f",
+    "imageBase": 4194304,
+    "completeGame": true
+  },
+  "coreSha256": "ec846c746343b491fa10c77f7f95908a547febfa693439094729466acd5ca480",
+  "passed": true,
+  "seedSamples": 65536,
+  "checks": 155648,
+  "functions": [
+    "0x402740",
+    "0x4027b0",
+    "0x402840",
+    "0x402880"
+  ]
+}

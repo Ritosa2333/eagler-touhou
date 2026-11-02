@@ -1,0 +1,149 @@
+{
+  "sourceBeforeWriteback": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+  "headAfterWriteback": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+  "pairs": [
+    {
+      "game": "th08",
+      "reviewedSource": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "mergedNormal": "3507684f56e6dff6c3da6a7212ac4724a221b2a3",
+      "mergedMultiplayer": "690a297814dc68d18eb2c85b2b30520a4aa70921",
+      "merge": "0772877d42679180fefec88177a4e2367f380577",
+      "writeback": "085e29cbb5740b3c87b9cd8b9b33400daf410638",
+      "mpTree": "ce28c5ed9b660dc85864849ce6372326ec810e58",
+      "writebackChangedFiles": [],
+      "currentProjection": {
+        "th08": {
+          "head": "3507684f56e6dff6c3da6a7212ac4724a221b2a3",
+          "ref": "refs/heads/port-history/th08",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th08mp": {
+          "head": "0772877d42679180fefec88177a4e2367f380577",
+          "ref": "refs/heads/port-history/th08mp",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      },
+      "aheadBehind": "0\t130"
+    },
+    {
+      "game": "th10",
+      "reviewedSource": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "mergedNormal": "85c5d06bd954f53fe2141e7f008541694ae70462",
+      "mergedMultiplayer": "e054249fefef9f1a47b33458d0cbcaacc8335055",
+      "merge": "d8e3071ff0aa228a7a3525d21db91976740befcd",
+      "writeback": "7563a8630f7793c0b9cb3ae0230a6523677c3d15",
+      "mpTree": "309b957daf570f49f6ea4c73be88e166e2ac6ff5",
+      "writebackChangedFiles": [],
+      "currentProjection": {
+        "th10": {
+          "head": "85c5d06bd954f53fe2141e7f008541694ae70462",
+          "ref": "refs/heads/port-history/th10",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th10mp": {
+          "head": "d8e3071ff0aa228a7a3525d21db91976740befcd",
+          "ref": "refs/heads/port-history/th10mp",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      },
+      "aheadBehind": "0\t113"
+    },
+    {
+      "game": "th11",
+      "reviewedSource": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "mergedNormal": "3158632fac91d1d1a3e83bb58029ea63e9aee0bf",
+      "mergedMultiplayer": "f54f4518278e117ba36d2d4ff00790ff161f3419",
+      "merge": "2cab8d0e59c759a5a92dd63d805493e5e341f75d",
+      "writeback": "30df7bd2ba36600d234feecf0a89d22e957bed95",
+      "mpTree": "91b4a55b6a27dfffe2c66a8cbeffc7c69547eb08",
+      "writebackChangedFiles": [],
+      "currentProjection": {
+        "th11": {
+          "head": "3158632fac91d1d1a3e83bb58029ea63e9aee0bf",
+          "ref": "refs/heads/port-history/th11",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th11mp": {
+          "head": "2cab8d0e59c759a5a92dd63d805493e5e341f75d",
+          "ref": "refs/heads/port-history/th11mp",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      },
+      "aheadBehind": "0\t79"
+    },
+    {
+      "game": "th12",
+      "reviewedSource": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "mergedNormal": "5c97937393c0b9815dd8eca548eedc2eae832c8b",
+      "mergedMultiplayer": "70127ba6eb5ee20b02fb4de354fd9452dba506f4",
+      "merge": "b8a616c7f0417a2df18737d601132bfff54773fb",
+      "writeback": "bbef516fab9ce6043573efbc244f7632f57e42a3",
+      "mpTree": "b8aaeaf1c3e8a5675ea72cca89971ecdf8a12fbf",
+      "writebackChangedFiles": [],
+      "currentProjection": {
+        "th12": {
+          "head": "5c97937393c0b9815dd8eca548eedc2eae832c8b",
+          "ref": "refs/heads/port-history/th12",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th12mp": {
+          "head": "b8a616c7f0417a2df18737d601132bfff54773fb",
+          "ref": "refs/heads/port-history/th12mp",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      },
+      "aheadBehind": "0\t50"
+    },
+    {
+      "game": "th15",
+      "reviewedSource": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "mergedNormal": "2d53d559b771bb0c4bc633c3ff8b713b7d974bf2",
+      "mergedMultiplayer": "40d2378ccfa64051754e54616134c15388d9c936",
+      "merge": "7968917295a7ebb0ee68c6eb9b9a6bd649507124",
+      "writeback": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+      "mpTree": "6137d607dd9f5b5ec371139ec517b532e3dc3c1e",
+      "writebackChangedFiles": [],
+      "currentProjection": {
+        "th15": {
+          "head": "2d53d559b771bb0c4bc633c3ff8b713b7d974bf2",
+          "ref": "refs/heads/port-history/th15",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th15mp": {
+          "head": "7968917295a7ebb0ee68c6eb9b9a6bd649507124",
+          "ref": "refs/heads/port-history/th15mp",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      },
+      "aheadBehind": "0\t89"
+    }
+  ],
+  "th075": "audio-output 范围保留目录同步记录，历史投影未接入该作导入锚点",
+  "deferredOrdinaryChanges": "见 README.md 的同步范围与 docs/adaptation/port-sync.json 中原基线监控",
+  "localStandardHistoryCheck": {
+    "sourceAnchors": 13,
+    "status": "export-process-failed",
+    "error": "Git for Windows git-subtree segmentation fault",
+    "head": "d1023c99c529dab2b5742b88436880c3dcf4220a"
+  }
+}

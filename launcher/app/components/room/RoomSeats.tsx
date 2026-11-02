@@ -1,5 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
-import {Ellipsis} from 'lucide-react';
+import {Ellipsis, Plus} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
@@ -12,8 +12,8 @@ import {animateSurface, type SurfaceAnimation} from '../../ui/surface-motion';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
 export interface RoomSeatsProps {
   state: RoomOwnerSnapshot;
-  service: MultiplayerRoomService;
-  network: RoomNetworkPresentation;
+  service: Pick<MultiplayerRoomService, 'takeSeat' | 'movePlayerToSpectator' | 'removePlayer' | 'getSnapshot'>;
+  network: Pick<RoomNetworkPresentation, 'metric'>;
   context: RoomViewContext;
   openPanel(kind: RoomPanelKind, trigger: HTMLElement, peerId?: string): void;
 }
@@ -134,6 +134,7 @@ function RoomSeat({
                 ? t('room.preparingResources')
                 : t('room.peerDownloading', { percent: resource.percent });
   const resourceReady = resource?.status === 'ready' || seat?.ready === true;
+  const canManage = index > 0 && ready && owner && room.phase === 'lobby' && !!seat;
   const base = resourceReady || resource?.stage === 'runtime' ? 100 : resource?.basePercent ?? resource?.percent;
   const loading = resourceReady ? 100 : resource?.stage === 'runtime' ? resource.runtimePercent ?? resource.percent : 0;
   const degrees = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) * 3.6 : 0;
@@ -157,6 +158,7 @@ function RoomSeat({
       className={`mp-seat${occupied ? ' occupied' : ''}${index === 0 && owner ? ' owner' : ''}${seat?.offline ? ' reconnecting' : ''}${occupied && seat?.ready ? ' is-ready' : ''}`}
       data-mp-seat={index}
       data-card-state={appearance}
+      data-manageable={canManage || undefined}
       hidden={!active}
       title={occupied ? seatLabel : ''}
     >
@@ -176,7 +178,7 @@ function RoomSeat({
               void service.takeSeat(index);
             }}
           >
-            {t('multiplayer.join')} P{index + 1}
+            <Plus className="size-4 shrink-0" aria-hidden="true"/>{t('multiplayer.join')} P{index + 1}
           </UiButton>
         </div>
         <span className="mp-seat-glyph" data-mp-seat-glyph={index} hidden={!occupied}>
@@ -239,8 +241,8 @@ function RoomSeat({
         aria-label={t('room.playerOptions')}
         onClick={(event) => openPanel('personal', event.currentTarget)}
       />
-      {index > 0 && <div key={seat?.clientId} className="mp-seat-moderation" hidden={!ready || !owner || room.phase!=='lobby' || !seat}>
-        <RoomActionMenu enabled={ready && owner && room.phase==='lobby' && !!seat} label={t('room.managePlayer',{seat:index+1})}
+      {index > 0 && <div key={seat?.clientId} className="mp-seat-moderation" hidden={!canManage}>
+        <RoomActionMenu enabled={canManage} label={t('room.managePlayer',{seat:index+1})}
           triggerContent={<Ellipsis aria-hidden="true"/>} triggerKind="player" menuClassName="room-member-menu" minimumWidth={180} align="end"
           items={[
             {id:'move-spectator',label:t('room.movePlayerToSpectator'),disabled:!!seat?.offline,select:()=>{if(seat)service.movePlayerToSpectator(index,seat.clientId);}},

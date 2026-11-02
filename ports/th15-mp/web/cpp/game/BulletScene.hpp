@@ -23,6 +23,7 @@ struct BulletSceneHost:PlayerDamageHost {
 // One owner connects the fixed-size bullet pool to its real ANM instances,
 // collision processing and game services. Slots and VM addresses stay stable.
 class BulletScene final:public BulletManagerHost {
+    friend class multiplayer::BulletFrameState;
     struct Slot;
     BulletSceneHost& host;Rng& game_random;Rng& visual_random;
     AnmManager* cancellation_owner=nullptr;i32 cancellation_bank=-1;

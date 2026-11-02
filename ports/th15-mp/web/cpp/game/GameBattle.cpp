@@ -260,7 +260,11 @@ bool GameBattle::refresh_world(){
 #endif
     enemy_world.player_position=player->motion.position;enemy_world.player_damage_state=player->life.state;enemy_world.game_state=session.bomb_state;
 #if TH15_MULTIPLAYER
-    if(mp_enabled){enemy_world.player_position=mp_target(enemy_world.boss?enemy_world.boss->motion.position:Vec3{});enemy_world.player_damage_state=1;enemy_world.game_state=mp_bomb_active()?1:0;i32 deaths=0;for(unsigned s=0;s<mp_options.seat_count;++s)deaths=wrapping_add(deaths,pilots[s]->session.deaths);enemy_world.counter3=std::min(deaths,999999);}
+    if(mp_enabled){enemy_world.player_position=mp_target(enemy_world.boss?enemy_world.boss->motion.position:Vec3{});enemy_world.player_damage_state=1;enemy_world.game_state=mp_bomb_active(!mp_options.replay_legacy_stage_flow)?1:0;
+        // Personal Reisen shields must not activate enemy Bomb immunity or
+        // retain startup damage protection after a shield hit.
+        if(!mp_options.replay_legacy_stage_flow&&(spell.flags&32)&&!mp_spell_startup_active())spell.flags&=~32u;
+        i32 deaths=0;for(unsigned s=0;s<mp_options.seat_count;++s)deaths=wrapping_add(deaths,pilots[s]->session.deaths);enemy_world.counter3=std::min(deaths,999999);}
 #endif
     // ECL, player deaths and Bomb activation share the native manager counters.
     session.enemy_deaths=enemy_world.counters[0];session.enemy_chain=enemy_world.counters[2];

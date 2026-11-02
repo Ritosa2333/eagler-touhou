@@ -3,13 +3,14 @@ import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-ide
 import type { RoomOwnerSnapshot, MultiplayerRoomService } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
 import { roomPresentation } from './presentation';
+type SpectatorActions = Pick<MultiplayerRoomService, 'removeSpectator' | 'spectate' | 'leaveSpectator'>;
 export function RoomSpectators({
   state,
   service,
   hidden,
 }: {
   state: RoomOwnerSnapshot;
-  service: MultiplayerRoomService;
+  service: SpectatorActions;
   hidden: boolean;
 }) {
   const { t } = useLocale(),
@@ -81,7 +82,7 @@ export function RoomSpectators({
 
 export function RoomSpectatorJoin({state, service, id = 'mpSpectatorJoin', className = 'mp-spectator-join'}: {
   state: RoomOwnerSnapshot;
-  service: MultiplayerRoomService;
+  service: SpectatorActions;
   id?: string;
   className?: string;
 }) {

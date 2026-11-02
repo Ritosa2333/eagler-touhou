@@ -35,6 +35,15 @@ export function initializeHelpPage(document: Document): () => void {
       link.href = withUiLanguage(window.location.href, language);
       if (language === locale) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
     }
+    const navigation = document.querySelector<HTMLElement>('.about-navigation');
+    navigation?.setAttribute('aria-label', t('nav.help'));
+    for (const link of navigation?.querySelectorAll<HTMLAnchorElement>('[data-help-link]') ?? []) {
+      const key = link.dataset.helpLink;
+      if (key === 'nav.faq' || key === 'nav.about' || key === 'nav.serviceStatus') {
+        link.textContent = t(key);
+        link.href = withUiLanguage(link.href, locale);
+      }
+    }
   };
   const storage = (event: StorageEvent) => {if (event.key === UI_LOCALE_STORAGE_KEY || event.key === null) render();};
   render();

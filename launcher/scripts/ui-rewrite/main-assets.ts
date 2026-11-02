@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import type {Plugin} from 'vite';
 import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWorkerSource, buildDocumentStyles, buildHelpPageOutputs} from '../../lib/frontend-assets.mjs';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
-import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
+import {STATIC_FRONTEND_PACKAGE_FILES, REACT_DOCUMENT_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {resolvePublicOrRepositorySource} from '../../lib/public-source.mjs';
 import {authoredSourcesPlugin} from '../../lib/authored-source-resolution.mjs';
 import {build} from 'esbuild';
@@ -93,7 +93,7 @@ export function mainAssets(): Plugin {
       mkdirSync(output, {recursive: true});
       // Consume the same public-file contract as main. Route documents and
       // generated CSS belong to their respective builders, not raw copying.
-      const generated = new Set(['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html', 'ui-review.html', 'styles.css', 'about.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js', 'site-help.mjs']);
+      const generated = new Set([...REACT_DOCUMENT_FILES, 'styles.css', 'about.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js', 'site-help.mjs']);
       for (const path of STATIC_FRONTEND_PACKAGE_FILES) {
         if (generated.has(path) || path.startsWith('legacy/')) continue;
         const source = resolvePublicOrRepositorySource(path);

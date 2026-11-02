@@ -6,7 +6,7 @@
 namespace th11::presentation {
 namespace {
 constexpr float tau=6.2831854820251465f;
-struct Entry {std::uint64_t tick=0;Sample sample;};
+struct Entry {std::uint64_t tick=0;std::uint32_t spawn_tick=0;Sample sample;};
 std::unordered_map<std::uint64_t,Entry> samples;
 std::uint64_t current_tick=1;
 std::uint32_t stats[8]{},watch[10]{},watch_id=0;
@@ -71,6 +71,11 @@ void capture(const AnmVm& vm) noexcept {
     if(entry.tick==current_tick)return;
     entry.tick=current_tick;entry.sample=sample_of(vm);
 }
+void note_spawn(const AnmVm& vm) noexcept {
+    // Only the spawn marker is written; capture() keeps publishing the
+    // pre-move endpoint for the following ticks.
+    samples[key(vm)].spawn_tick=std::uint32_t(current_tick);
+}
 void capture_if_needed(const AnmVm& vm) noexcept {
     auto& entry=samples[key(vm)];
     if(entry.tick==current_tick)return;
@@ -108,6 +113,11 @@ bool present(AnmVm& destination,const AnmVm& current) noexcept {
     const auto& entry=found->second;
     // A sample older than this tick has no prev/current pair to blend.
     if(entry.tick!=current_tick){++stats[2];if(watched)++watch[2];return false;}
+    // A VM created in this tick has no previous incarnation to blend from;
+    // present its current state (e.g. an enemy spawned at (0,0) and moved
+    // to its authored position within the same tick must not sweep in from
+    // the corner).
+    if(entry.spawn_tick==std::uint32_t(current_tick)){++stats[2];if(watched)++watch[2];return false;}
     const auto& before=entry.sample;
     // Lifecycle boundaries snap instead of blending a stale incarnation.
     if(before.id!=current.id||before.file!=current.resource||before.script!=current.script_index)return false;

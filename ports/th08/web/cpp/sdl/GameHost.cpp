@@ -1,3 +1,4 @@
+#include <eagler/thprac/PracticePointer.hpp>
 #ifdef TH_NATIVE_PLATFORM
 #include "PlatformHost.hpp"
 #include "GraphicsHost.hpp"
@@ -76,14 +77,21 @@ int touch_stage(){return runtime&&runtime->app.in_game()?runtime->app.game.globa
 void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)runtime->motion.touch_cancel(touch_stage());}
 // Ownership is acquired on pointer-down and retained through release, even
 // when the drag leaves an ImGui window. Other fingers remain game-owned.
-bool practice_pointer_active=false;int practice_pointer_id=0;
+eagler::thprac::PracticePointer practice_pointers;
 void pointer(int type,int id,float x,float y){
     if(type<0||type>2||!std::isfinite(x)||!std::isfinite(y))return;
-    if(type==0&&!practice_pointer_active&&ThpracUi::captures_pointer(x*640.f,y*480.f)){practice_pointer_active=true;practice_pointer_id=id;}
-    if(practice_pointer_active&&id==practice_pointer_id){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);if(type==2)practice_pointer_active=false;return;}
-    const auto state=touch_state();sync_touch_context(state);if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),type,id,x,y);touch.pointer(type,id,x,y,SDL_GetTicks(),state,runtime&&runtime->keyboard_state()[16]);
+    using Route=eagler::thprac::PracticePointer::TouchRoute;
+    if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();
+    const auto decision=practice_pointers.route_touch(unsigned(type),id,type==0&&ThpracUi::captures_pointer(x*640.f,y*480.f),type==0&&ThpracUi::passive_pointer(x*640.f,y*480.f),x*640.f,y*480.f);
+    if(decision.route==Route::Pending)return;
+    if(decision.route==Route::Tap){ThpracUi::mouse(1,decision.x,decision.y);ThpracUi::mouse(2,x*640.f,y*480.f);return;}
+    if(decision.route==Route::Ui){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);return;}
+    const auto state=touch_state();sync_touch_context(state);const auto now=SDL_GetTicks();
+    const auto forward=[&](int kind,float nx,float ny){if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),kind,id,nx,ny);touch.pointer(kind,id,nx,ny,now,state,runtime&&runtime->keyboard_state()[16]);};
+    if(decision.route==Route::BeginGame)forward(0,decision.x/640.f,decision.y/480.f);
+    forward(type,x,y);
 }
-void cancel_touch(){practice_pointer_active=false;ThpracUi::cancel_pointer();if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
+void cancel_touch(){practice_pointers.reset();ThpracUi::cancel_pointer();if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
 bool interpolation_ready(){
     if(!runtime||runtime->app.loading_game()||runtime->app.title.modal())return false;
     if(runtime->app.title.active())return true;

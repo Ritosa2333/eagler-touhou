@@ -41,6 +41,7 @@ bool ResourcesJournal::stable()const{
 bool ResourcesJournal::BeginFrame(u32 frame,bool extend){
     if(Failed()||!stable()||(!extend&&bytes.FrameCount()>=History)||!bytes.BeginFrame(frame,extend))return Fail();
     if(extend)return true;
+    CheckpointCapture capture(bytes);if(!capture.Valid())return Fail();
     if(!touch(bytes,library->rollback_failed)||!touch(bytes,library->force_16bit))return Fail();
     for(auto& id:identities){
         auto* owner=id.owner;if(!owner)continue;
@@ -55,7 +56,7 @@ bool ResourcesJournal::BeginFrame(u32 frame,bool extend){
         }
 #endif
     }
-    return true;
+    return capture.Finish()||Fail();
 }
 bool ResourcesJournal::BeforeScriptWrite(void* context,const AnmLoaded& file,void* address,std::size_t size){
     return static_cast<ResourcesJournal*>(context)->TouchScript(file,address,size);

@@ -75,6 +75,8 @@ public:
     const u32* practice_game_frame=nullptr;
     bool practice_replay_has_stage5=false;
 #ifdef TH11_MULTIPLAYER
+    // Native stage-entry clock, captured before the first chapter input.
+    i32 multiplayer_replay_background_frame=INT32_MIN;
     bool multiplayer_frozen_draw=false;
     unsigned multiplayer_tint_owner=0;
     u32 multiplayer_tint_source=0;

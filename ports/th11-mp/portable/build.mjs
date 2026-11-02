@@ -83,7 +83,7 @@ const linkFlags = multiplayer ? ['-lwebsocket'] : [];
 // export names stable when it is linked. Do not set private compiler options
 // or use DECLARE_ASM_MODULE_EXPORTS=0 (which changes module scoping).
 if(lto)linkFlags.push('-lexports.js');
-await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:source,headers:[resolve(imgui,'../../include/eagler/audio/WebSfx.hpp'),...headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input'))],flags});
 if (printPlan) {
   console.log(JSON.stringify({game: 'th11', profile, variant, outputDirectory: out,
     packageDirectory: resolve(workspace, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),

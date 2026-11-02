@@ -81,10 +81,6 @@ touhou::input::TouchState touch_state(){
  auto& stage=*app->scene();
  auto& player=*stage.battle.player;auto& motion=player.motion;
  value.context=stage.messages.active()?2:1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
- // A shield hit temporarily blocks movement before cancelling death.
- // Preserve the held finger for every absorbed layer, including the last.
- if(app->progress.character==3&&player.life.state==4&&stage.battle.session.bomb_state==1&&stage.battle.bomb&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000)))
-  value.retain_motion=static_cast<BombReisen*>(stage.battle.bomb.get())->charges>0;
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
  value.min_x=-184;value.max_x=184;value.min_y=32;value.max_y=432;return value;
 }
@@ -203,7 +199,18 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   if(completed||presented)th15_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
  },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
-EMSCRIPTEN_KEEPALIVE void th15_touch(unsigned type,int id,float x,float y){using namespace th15::sdl;if(type>2||!std::isfinite(x)||!std::isfinite(y))return;const float px=x*640,py=y*480;if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();if(practice_pointers.route(type,id,type==0&&ThpracUi::captures_pointer(px,py))){ThpracUi::mouse(type==0?1:type==2?2:0,px,py);return;}if(app&&app->practice.enabled&&app->practice.flip_screen_y)y=1-y;gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}
+EMSCRIPTEN_KEEPALIVE void th15_touch(unsigned type,int id,float x,float y){
+ using namespace th15::sdl;if(type>2||!std::isfinite(x)||!std::isfinite(y))return;
+ const float px=x*640,py=y*480;using Route=eagler::thprac::PracticePointer::TouchRoute;
+ if(type==0&&practice_pointers.route(1,id,false))ThpracUi::cancel_pointer();
+ const auto decision=practice_pointers.route_touch(type,id,type==0&&ThpracUi::captures_pointer(px,py),type==0&&ThpracUi::passive_pointer(px,py),px,py);
+ if(decision.route==Route::Pending)return;
+ if(decision.route==Route::Tap){ThpracUi::mouse(1,decision.x,decision.y);ThpracUi::mouse(2,px,py);return;}
+ if(decision.route==Route::Ui){ThpracUi::mouse(type==0?1:type==2?2:0,px,py);return;}
+ const bool flip=app&&app->practice.enabled&&app->practice.flip_screen_y;const auto state=touch_state();const auto now=SDL_GetTicks();
+ if(decision.route==Route::BeginGame)gestures.pointer(0,id,decision.x/640,flip?1-decision.y/480:decision.y/480,now,state,false);
+ gestures.pointer(type,id,x,flip?1-y:y,now,state,false);
+}
 EMSCRIPTEN_KEEPALIVE void th15_thprac_mouse(int type,float x,float y){th15::sdl::ThpracUi::mouse(type,x,y);}
 EMSCRIPTEN_KEEPALIVE void th15_always_hitbox(unsigned on){th15::presentation::always_hitbox=on!=0;}
 EMSCRIPTEN_KEEPALIVE void th15_touch_cancel(){using namespace th15::sdl;practice_pointers.reset();gestures.cancel();ThpracUi::cancel_pointer();if(app){app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}

@@ -1,4 +1,5 @@
 #include "AnmManager.hpp"
+#include "AnmPresentation.hpp"
 #include <cstring>
 #include <cstdlib>
 namespace th11 {
@@ -12,12 +13,20 @@ AnmVm* AnmManager::create(AnmResource& file,i32 script,u16 file_id,u32 layer,boo
     else{vm->position=vm->script_position=vm->child_position={};vm->flags|=0x40000000;
     vm->rectangle_columns=vm->rectangle_rows=16;vm->script_index=i16(script);vm->file_index=file_id;vm->resource=&file;
     vm->script_begin=vm->instruction=reinterpret_cast<AnmInstruction*>(file.scripts[script].bytes.data());vm->flags&=~0x601u;vm->timer.set(0,&rate);}
+    // Publish the spawn marker before the first update captures an endpoint;
+    // the first frame of a new VM is presented without interpolation.
+    presentation::note_spawn(*vm);
     ++spawn_depth;const int status=vm->update(*this);--spawn_depth;
     if(status<0){last_error=u32(u16(vm->instruction?vm->instruction->opcode:-1));destroy(*vm);return nullptr;}
     auto& node=vm->registry;node.value=vm;node.next=node.previous=nullptr;const u32 list=overlay?1:0;
     if(prepend){node.next=heads[list];if(heads[list])heads[list]->previous=&node;else tails[list]=&node;heads[list]=&node;}
     else{node.previous=tails[list];if(tails[list])tails[list]->next=&node;else heads[list]=&node;tails[list]=&node;}
-    if(++next_id==0)++next_id;vm->id=next_id;active.emplace(next_id,vm);return vm;
+    if(++next_id==0)++next_id;vm->id=next_id;active.emplace(next_id,vm);
+    // Mark after the id is assigned: the sidecar keys by id, and the first
+    // frame of a new VM must be presented as-is (owners write the authored
+    // position within this same tick).
+    presentation::note_spawn(*vm);
+    return vm;
 }
 AnmVm* AnmManager::spawn(AnmVm& parent,i32 script,u32 op){if(!parent.resource)return nullptr;return create(*parent.resource,script,parent.file_index,parent.layer,op==90||op==92,op==91||op==92);}
 void AnmManager::destroy(AnmVm& vm){

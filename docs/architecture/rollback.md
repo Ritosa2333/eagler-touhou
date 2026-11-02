@@ -22,7 +22,7 @@
 - TH09：[`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.cpp) 管理输入帧；[`Application.cpp`](../../ports/th09/web/cpp/sdl/Application.cpp) 的 `checkpoint`、`rollback_tick` 及 SDL 帧循环接管标题世界、恢复和重模拟。
 - TH10：[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 通过稀疏池捕获器和 `RollbackJournal` 接线各领域状态；`NetplayRuntime` 只提供网络和输入决策。
 - TH11：`NetplayRuntime` 持有帧前沿和提交水位；[`WorldRollback`](../../ports/th11-mp/web/cpp/game/WorldRollback.cpp) 与 `StageRollback`、`EnemyRollback`、`AnmRollback` 管理标题状态。
-- TH15：[`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 设 `allowPrediction=false`，当前多人运行按精确输入推进，不使用标题回滚日志。
+- th15：[`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 默认使用纯延迟；开启回滚后使用十二帧预测窗口，由 `AppFrameState` 保存应用与战斗快照，恢复后重演并在确认帧提交音频、录像和旁观输出。暂停、对话和场景工厂使用真实输入边界。实验构建与压力验证见[归档记录](../../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md)。
 
 ## 一帧的输入与恢复路径
 
@@ -101,7 +101,7 @@ TH09 输出环按“最旧未发布帧”保留空间，标题驱动同时管理
 | TH09MP | [`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.hpp) `History=8`，仅 2 人；DirectTouch 表示绝对场地目标。 | `Application.cpp` 在 Present 后安排异步恢复，并由 `RecoverySchedule` ticket/loop epoch 取消过期回调。短缺输入不再通过放慢本地采样节奏解决。 |
 | TH10MP | [`core_config`](../../ports/th10-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 设置 `maxRollbackFrames=12`；[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 包含稀疏对象池捕获和多个 typed slot owner。 | 产品目录 `rollbackLimit=12`；其未设置 `sendPredictionLimit`，公共策略函数回退到 8。C++ 核心历史窗为 12，发送预测上限为 8；修改时分别核对这两个字段。 |
 | TH11MP | [`SessionSetup::MaxRollbackFrames=12`](../../ports/th11-mp/web/cpp/multiplayer/SessionSetup.hpp)；世界、阶段、敌人和 ANM 各自有日志。 | 固定的提交水位与阶段租约参与资源退休；`WorldRollback::CanCapture()` 会拒绝暂停状态及暂停菜单拥有期间的捕获。 |
-| TH15MP | [`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 配置 `allowPrediction=false`；公共 core 保留 12 帧历史槽用于输入/ACK 管理。 | 产品目录 `rollbackLimit=0`，使用输入延迟模式；core 历史槽用于输入与 ACK。 |
+| th15 MP | [`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 按房间时序选择精确输入或十二帧预测；`AppFrameState`、`StageFrameState` 与 `BattleFrameState` 恢复应用及游戏世界。 | 产品目录 `rollbackLimit=12`、`rollbackDefault=false`；暂停、对话和场景工厂在真实输入边界执行，副作用沿确认前沿提交。 |
 
 ## TH08 与 TH09 的可复用经验
 

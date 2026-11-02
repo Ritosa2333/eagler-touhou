@@ -45,6 +45,7 @@ def prepare(job):
     output = Image.new('RGBA', (max(width, logical_width), max(height, logical_height)),
                        (0, 0, 0, 255 if texture_format == 3 else 0))
     output.paste(pixels, (0, 0))
+    source = output.copy()
     # thcrap anm.cpp sprite_patch: an empty replacement sprite is a no-op;
     # opaque destination sprites blend, other destinations are overwritten.
     x, y = struct.unpack_from('<HH', data, at + 20)
@@ -68,6 +69,7 @@ def prepare(job):
         if split_h:
             rectangles.append((sx, 0, sw, split_h))
         rectangles.append((sx, sy, sw, sh))
+    preserved = []
     for sx, sy, sw, sh in rectangles:
         sw, sh = min(sw, patch.width - x - sx, width - sx), min(sh, patch.height - y - sy, height - sy)
         if sw <= 0 or sh <= 0:
@@ -77,6 +79,7 @@ def prepare(job):
         if fmt == 5:
             replacement = replacement.point([v // 16 * 17 for v in range(256)] * 4)
         if replacement.getchannel('A').getextrema()[1] == 0:
+            preserved.append((sx, sy, sx + sw, sy + sh))
             continue
         original = output.crop((sx, sy, sx + sw, sy + sh))
         if original.getchannel('A').getextrema()[0] == 255:
@@ -88,6 +91,11 @@ def prepare(job):
                     merged.append(tuple((((dst[c] // factor) * (maximum - alpha) + (rep[c] // factor) * alpha) >> shift) * factor for c in range(3)) + (255,))
                 replacement.putdata(merged)
         output.paste(replacement, (sx, sy))
+    # Atlas sprites can overlap (front10's point icon and front18's stock
+    # cell). Transparent fallback sprites retain their entire source rectangle,
+    # including edges touched by another replacement's transparent padding.
+    for rectangle in preserved:
+        output.paste(source.crop(rectangle), rectangle[:2])
     output.save(job['out'], compress_level=9)
     return dict(job, width=output.width, height=output.height)
 

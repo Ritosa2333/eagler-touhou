@@ -18,13 +18,16 @@ import './components/launcher/options-sheet.css';
 import './components/settings/settings-ui.css';
 import {UiTheme} from './ui/theme';
 import {isLauncherHomePath} from './navigation/addresses';
+import UptimeRoute from './routes/uptime';
+
+const isStandalonePage = (pathname: string) => /\/uptime(?:\/(?:index\.html)?)?$/.test(pathname);
 
 // Overlay history shares the page's current scroll position.
 const pageScrollKey = (location: {pathname: string}) => location.pathname;
 
 export function Layout({children}: {children: ReactNode}) {
   const {pathname} = useLocation();
-  const review = /\/ui-review\.html\/?$/.test(pathname);
+  const review = /\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname);
   const home = isLauncherHomePath(pathname);
   const locale = useDocumentUiLocale();
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
@@ -35,9 +38,10 @@ export function Layout({children}: {children: ReactNode}) {
     <InitialDocumentBody lobby={lobby}><UiTheme/>{!review && <OriginalPreloads/>}{children}{!review && <OriginalNoscript lobby={lobby} locale={locale}/>}<ScrollRestoration getKey={pageScrollKey}/>{!review && <OriginalModuleRequestMark/>}<Scripts data-eagler-entry="true"/>{!review && <OriginalBootstrapTail/>}</InitialDocumentBody></html>;
 }
 /** Framework's index.html SPA fallback renders this rather than App. */
-export function HydrateFallback() {return <InitialLauncher/>;}
+export function HydrateFallback() {return isStandalonePage(useLocation().pathname) ? <UptimeRoute/> : <InitialLauncher/>;}
 /** The document root, not a route component, owns the unkeyed Player/iframe. */
 export default function App() {
-  const review = /\/ui-review\.html\/?$/.test(useLocation().pathname);
+  const pathname = useLocation().pathname;
+  const review = /\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname);
   return review ? <Outlet/> : <><BrowserLauncher/><Outlet/></>;
 }

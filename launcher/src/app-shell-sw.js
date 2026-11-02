@@ -12,14 +12,25 @@ const DEFERRED_PATHS = new Set(__APP_SHELL_DEFERRED_PATHS__.map(path => new URL(
 const metaPrefix = new URL("./__app-shell-meta__/", scopeUrl).href;
 const cacheMetaUrl = `${metaPrefix}__APP_SHELL_BUILD_ID__`;
 const updateStatusUrl = new URL("./__app-shell-update-status__", scopeUrl).href;
-// Kept in this worker, not a second independently updating Service Worker.
-const runtimeCache = typeof createRuntimeCache === "function" && self.__EAGLER_RUNTIME_MANIFEST
-  ? createRuntimeCache({ scopeUrl, catalog: self.__EAGLER_RUNTIME_MANIFEST }) : null;
 let currentMetadataUpdate = Promise.resolve();
 const manifestByPathname = new Map(PRECACHE_MANIFEST.map(entry => {
   const url = new URL(entry.url, scopeUrl);
   return [url.pathname, { ...entry, cacheUrl: url.href }];
 }));
+const networkEntry = manifestByPathname.get(new URL("site-network.json", scopeUrl).pathname);
+const siteRouting = networkEntry && typeof createSiteMirrorRouting === "function"
+  ? createSiteMirrorRouting({scopeUrl, loadConfig: async () => {
+    const cache = await caches.open(CACHE_NAME);
+    let response = await cache.match(networkEntry.cacheUrl);
+    if (!response) {
+      response = await fetchVerified(networkEntry, false);
+      await cache.put(networkEntry.cacheUrl, response.clone());
+    }
+    return response.json();
+  }}) : null;
+// Kept in this worker, not a second independently updating Service Worker.
+const runtimeCache = typeof createRuntimeCache === "function" && self.__EAGLER_RUNTIME_MANIFEST
+  ? createRuntimeCache({ scopeUrl, catalog: self.__EAGLER_RUNTIME_MANIFEST, siteRouting }) : null;
 
 async function cacheMetadata(name) {
   try {
@@ -46,20 +57,34 @@ function runtimeGroup(url) {
     : path.slice(0, path.lastIndexOf("/") + 1);
 }
 
-async function fetchVerified(entry) {
+async function fetchVerified(entry, routed = true) {
   if (!/^[a-f0-9]{64}$/i.test(entry.revision || "")) {
     throw new Error(`App Shell revision is not SHA-256: ${entry.cacheUrl}`);
   }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const response = await fetch(new Request(entry.cacheUrl, { cache: "reload", signal: controller.signal }));
+  const verify = async (response, progress = () => {}) => {
     if (!response.ok) throw new Error(`App Shell cache failed: ${entry.cacheUrl} HTTP ${response.status}`);
-    const bytes = await response.clone().arrayBuffer();
+    const reader = response.clone().body.getReader();
+    const chunks = []; let length = 0;
+    try {
+      while (true) {
+        const {value, done} = await reader.read();
+        if (done) break;
+        chunks.push(value); length += value.byteLength; progress();
+      }
+    } finally { reader.cancel().catch(() => {}); reader.releaseLock(); }
+    const bytes = new Uint8Array(length); let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     const actual = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
     if (actual !== entry.revision.toLowerCase()) throw new Error(`App Shell integrity mismatch: ${entry.cacheUrl}`);
     return response;
+  };
+  if (routed && siteRouting) return siteRouting.run(entry.cacheUrl, verify, {cache: "reload"});
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(new Request(entry.cacheUrl, { cache: "reload", signal: controller.signal }));
+    return await verify(response);
   } finally { clearTimeout(timer); }
 }
 
@@ -200,6 +225,34 @@ self.addEventListener("fetch", event => {
   }
   const url = new URL(event.request.url);
   if (url.origin !== scopeUrl.origin) return;
+  if (siteRouting && self.__EAGLER_RUNTIME_MANIFEST && url.pathname === new URL("runtime-manifest.json", scopeUrl).pathname) {
+    event.respondWith((async () => {
+      try {
+        return await siteRouting.run(url, async response => {
+          const text = await response.clone().text();
+          if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest too large");
+          EaglerRuntimeGenerations.validateRuntimeManifest(JSON.parse(text));
+          return response;
+        });
+      } catch (error) {
+        if (error?.siteAccessDenied) throw error;
+        return new Response(JSON.stringify(self.__EAGLER_RUNTIME_MANIFEST), {
+          headers: {"Content-Type": "application/json", "Cache-Control": "no-store"},
+        });
+      }
+    })());
+    return;
+  }
+  if (siteRouting && url.pathname === "/_eagler/resource-routes") {
+    event.respondWith(siteRouting.run(url, async response => {
+      const text = await response.clone().text();
+      if (text.length > 256 * 1024 || JSON.parse(text).schema !== "eagler-touhou/resource-routes/1") {
+        throw new Error("Invalid resource routing response");
+      }
+      return response;
+    }, {stallMs: 1500}));
+    return;
+  }
   const entry = manifestByPathname.get(url.pathname);
   if (entry) event.respondWith(shellCacheFirst(entry));
 });

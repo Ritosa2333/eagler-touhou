@@ -9,12 +9,16 @@ static bool cheat = false;
 static int bodies[3]{};
 static ImVec2 header_sizes[3];
 static void controls(bool enabled, bool visible) {
+#ifdef __EMSCRIPTEN__
     EM_ASM({
         Module.eaglerControls = {};
         Module.eaglerControls.thpracMobilePanelsEnabled = !!$0;
         Module.eaglerControls.thpracMobilePanelsVisible = !!$1;
     }, enabled, visible);
     m::poll();
+#else
+    m::update(enabled, visible);
+#endif
 }
 static void frame(bool click = false) {
     auto& io = ImGui::GetIO();
@@ -94,6 +98,14 @@ int main() {
     assert(cheat);
     controls(true, false); controls(true, true); frame();
     assert(!m::expanded[m::Advanced] && !m::expanded[m::Cheats] && cheat);
+    // The real Information window is registered as a passive touch surface.
+    auto* info=ImGui::FindWindowByName("Advanced status###i");
+    assert(info&&m::information_window==info->ID);
+    assert(m::passive_pointer(info->Pos.x+5,info->Pos.y+5));
+    assert(!m::passive_pointer(-100,-100));
+    m::expanded[m::Advanced]=true;
+    assert(!m::passive_pointer(info->Pos.x+5,info->Pos.y+5));
+    m::expanded[m::Advanced]=false;
     controls(false, false);
     assert(m::show(m::Cheats, true) && !m::show(m::Cheats, false));
     assert(m::captures_advanced(true) && !m::captures_advanced(false));

@@ -1,0 +1,12 @@
+[
+  {
+    "origin": "https://online-preview.ritosa.cyou/",
+    "valid": false,
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "origin": "https://eagler-edge.ritosa.cyou/",
+    "valid": false,
+    "error": "HTTP Error 403: Forbidden"
+  }
+]

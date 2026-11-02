@@ -1,0 +1,34 @@
+[
+  {
+    "id": "e668a0e7009d1b9d4bdcafe6433262f3",
+    "type": "A",
+    "name": "cn-relay.touhouonline.com",
+    "content": "129.211.174.65",
+    "ttl": 120,
+    "proxied": false
+  },
+  {
+    "id": "b09c3c44fa183ca3353f0444657d3a84",
+    "type": "A",
+    "name": "mail.touhouonline.com",
+    "content": "74.82.198.36",
+    "ttl": 120,
+    "proxied": false
+  },
+  {
+    "id": "ea51d6f86a6ee23c024d96d4b1fd104b",
+    "type": "A",
+    "name": "relay.touhouonline.com",
+    "content": "103.73.161.228",
+    "ttl": 120,
+    "proxied": false
+  },
+  {
+    "id": "2bb9fa98b14c62707f94be3accf6e99b",
+    "type": "A",
+    "name": "touhouonline.com",
+    "content": "103.73.161.228",
+    "ttl": 120,
+    "proxied": false
+  }
+]

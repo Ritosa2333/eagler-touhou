@@ -132,14 +132,18 @@ const std::unordered_map<uint32_t, std::shared_ptr<Node>>& Scene::nodes() const 
 }
 
 std::vector<const Node*> Scene::chain(Membership membership) const {
+  std::vector<const Node*> result;
+  appendChain(membership, result);
+  return result;
+}
+
+void Scene::appendChain(Membership membership, std::vector<const Node*>& output) const {
   const auto& list = membership == Membership::Primary     ? primary_
                      : membership == Membership::Secondary ? secondary_
                                                            : embedded_;
-  std::vector<const Node*> result;
   for (const auto& node : list)
     if (node->alive)
-      result.push_back(node.get());
-  return result;
+      output.push_back(node.get());
 }
 
 std::vector<const Node*> Scene::children(uint32_t id) const {

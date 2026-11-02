@@ -2,7 +2,14 @@
 #include "Presentation.hpp"
 namespace th08 {
 EnemySystem::EnemySystem(EclProgram& program,EclExecutor& executor,const FrameTiming& timing,Rng& random,GameGlobals& numbers,GameValues& values,GameRank& rank,GameGauge& gauge,PlayerSimulation& player,EffectSystem& effects,ItemSystem& items,BulletManagerState& bullets,AsciiManager& ascii,AsciiContext& ascii_context,AnmRenderer& renderer,EnemySystemActions& actions)
-    :population(executor,program),globals(executor.game_state()),numbers(numbers),values(values),player(player),effects(effects),items(items),projectiles(bullets),ascii(ascii),ascii_context(ascii_context),actions(actions),simulation(state,input,population,program,executor,timing,random,numbers,values,rank,gauge,player.status().shots.regions,player.status().frame,*this),drawing(renderer){globals.values=&numbers;globals.ascii=&ascii.state;globals.scene_actions=this;}
+    :population(executor,program),globals(executor.game_state()),numbers(numbers),values(values),player(player),effects(effects),items(items),projectiles(bullets),ascii(ascii),ascii_context(ascii_context),actions(actions),simulation(state,input,population,program,executor,timing,random,numbers,values,rank,gauge,player.status().shots.regions,player.status().frame,*this),drawing(renderer){globals.values=&numbers;globals.ascii=&ascii.state;globals.scene_actions=this;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    globals.aim_context=this;globals.aim_target=[](void* context,const Vec3& origin){
+        auto& owner=*static_cast<EnemySystem*>(context);
+        return owner.roster?owner.roster->target(origin):owner.player.status().motion.movement.position;
+    };
+#endif
+}
 void EnemySystem::read_player(){
     auto& p=player.status();globals.player=p.motion.movement.position;globals.player_state=p.life.state;globals.player_state_timer=p.life.timer;
     globals.paused=p.context.pause!=0;globals.game_flags=p.context.game_flags;globals.youkai=p.motion.form.youkai;globals.shot=p.context.character;
@@ -66,7 +73,7 @@ i32 EnemySystem::hit(const Vec3& p,const Vec3& size){publish_player();const i32 
 bool EnemySystem::participant(u32 seat,EnemyDamageParticipant& out){
     if(!roster||!roster->eligible(seat))return false;
     auto& state=roster->seats[seat].player->status();
-    out={state.motion.movement.position,&state.frame,roster->seats[seat].gauge,state.context.character,u8(state.bomb.active!=0),state.motion.form.focused,state.motion.form.youkai};
+    out={state.motion.movement.position,&state.frame,roster->seats[seat].gauge,state.context.character,u8(state.bomb.active!=0),state.motion.form.focused,state.motion.form.youkai,u8(state.life.state)};
     return true;
 }
 i32 EnemySystem::participant_damage(u32 seat,const Vec3& p,const Vec3& size,i32& count,i32& bomb){
