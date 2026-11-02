@@ -473,10 +473,12 @@ void ItemManager::collect_life_piece(i32 amount) {
         if (hud.extra_lives < 8) {
             hud.extra_lives += 1;
             if (hud.extra_lives > 8) hud.extra_lives = 8;
+            if (life_changed) life_changed(hud.extra_lives, hud.life_pieces);
             events_.push_back({ItemEvent::Kind::Extend, 1, c.x, c.y});
         }
         progress.life_piece_threshold_index += 1;
     }
+    if (life_changed) life_changed(hud.extra_lives, hud.life_pieces);
 }
 
 // 0x0043d480 灵击碎片 +amount：be800(+0x48) > 8 → be804=0 收；
@@ -495,7 +497,9 @@ void ItemManager::collect_bomb_piece(i32 amount) {
         hud.bombs += 1;
         if (hud.bombs > 9) hud.bombs = 9;
         else events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
+        if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
     }
+    if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
 }
 
 // 0x0043d2f0 1UP：be7f4 > 7 → 收；否则 +1、>8 钳 8。
@@ -504,6 +508,7 @@ void ItemManager::collect_extra_life() {
     if (hud.extra_lives > 7) return;
     hud.extra_lives += 1;
     if (hud.extra_lives > 8) hud.extra_lives = 8;
+    if (life_changed) life_changed(hud.extra_lives, hud.life_pieces);
 }
 
 // 0x0043d440 灵击：be7f4(+0x48) += 1；< 10 → sound 0x2e；否则钳 9。
@@ -516,6 +521,7 @@ void ItemManager::collect_bomb() {
     } else {
         hud.bombs = 9;
     }
+    if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
 }
 
 // 0x0043d530 灵界值：be808 += amount（cap 600）；跨 200 段 → sound 0x44 +
