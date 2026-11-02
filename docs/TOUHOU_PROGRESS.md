@@ -82,7 +82,11 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/e0c7b378ecc5741c9ab907ffcd6726f2f1ad6ad6)；[剩余验收](https://github.com/AdingApkgg/thp/blob/e0c7b378ecc5741c9ab907ffcd6726f2f1ad6ad6/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/4609501b10485a780a6781f33cc38edcb86e7e0f)；[剩余验收](https://github.com/AdingApkgg/thp/blob/4609501b10485a780a6781f33cc38edcb86e7e0f/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-02 分阶段震屏修复：[RNG返回值的实际栈来源](https://github.com/AdingApkgg/thp/blob/4609501b10485a780a6781f33cc38edcb86e7e0f/docs/porting/TH14_PHASED_SHAKE_STACK_NOV02.md) 已合入当前核心2f42560。新静音原版魔理沙A Easy在18,115回调处实际观察回调入口、DLL保存EBX、第二次RNG返回及原回调返回，确认复用栈字是最后随机返回值的低16位；不向引擎传入采样值。2,016组原版指令组件中480组随机分支／5,280个C++比较字一致，旧192组未知结果归零，192组相邻位置控制拒绝。三文件合入、141单元重编，16份自然记录共1,579,705回调严格及独立通过，正式Wasm与已测试候选逐字节相同，普通134导出一致；四作品八项编译检查及当前源码组件通过。此原版观察是按计划停止的诊断前缀，不是完整Replay通过。首次控制器写入、退休堆地址、旧RNG交错、指针Z／相机／全模式／普通GUI及浏览器等仍开放，30／27与整作未完成状态不变。
+
+2026-11-02 前一核心完整回归：[4acbbc的GLES／WebGPU Application](https://github.com/AdingApkgg/thp/blob/4609501b10485a780a6781f33cc38edcb86e7e0f/docs/porting/TH14_RNG_STORE_BOUNDARY_APPLICATION_FULL_NOV02.md) 各实际完成122,622帧、45项断言，八幅完整图像／全部捕获VM、所选日志、文件与89,969,664帧离线混音PCM与封存参考一致，物理音频设备打开数零；两份成功终态后独立检查通过。验收绑定其冻结源码／141对象和原始输出，缺失WebGPU终态的拒绝控制保留。结果仅适用于4acbbc，不继承给上述2f42560核心；新核心GLES已单独静音运行，浏览器146单元重编及传输检查通过，UI／帧率／持久化／导出仍未验收。
 
 2026-11-02 异步作用域回归：[当前 RNG 在 Asyncify 暂停／恢复中的检查](https://github.com/AdingApkgg/thp/blob/e0c7b378ecc5741c9ab907ffcd6726f2f1ad6ad6/docs/porting/TH14_RNG_ASYNC_SCOPE_NOV02.md) 共80组组合、320个生产队列回调通过。覆盖五个RNG边界、临界区开／关、script／visual RNG和失败状态；每组暂停期间扩展Wasm内存并排队输入、加载和帧回调，2,048个栈保护字、嵌套作用域恢复与递归观察抑制均正确。故意绕过输入队列的破坏控制检出顺序错误。未修改玩法，未创建浏览器／窗口或音频设备；完整ANM更新、原版线程时序、浏览器界面和帧率不在本项通过范围。模式表正文与结构化清单同步为30／27，旧严格失败继续保留；整作1:1未完成。
 
