@@ -53,7 +53,12 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
   let lastSave: TouchLayoutPersistResult | null = null, revision = 0;
   let snapshot: TouchLayoutSnapshot;
   function publish() {
-    snapshot = Object.freeze({isEditing: editing, dirty: editing && JSON.stringify(canonicalTouchLayout(draft)) !== JSON.stringify(saved),
+    const changes = cloneTouchLayout(draft);
+    if (changes) for (const [direction, defaults] of automaticDefaults) {
+      if (!saved?.profiles[direction] && defaults &&
+          JSON.stringify(changes.profiles[direction]) === JSON.stringify(defaults)) changes.profiles[direction] = null;
+    }
+    snapshot = Object.freeze({isEditing: editing, dirty: editing && JSON.stringify(canonicalTouchLayout(changes)) !== JSON.stringify(saved),
       saved: cloneTouchLayout(saved), draft: cloneTouchLayout(draft), orientation, selected, lastSave, revision: ++revision});
     for (const listener of listeners) listener();
   }
@@ -75,7 +80,7 @@ export function createTouchLayoutModel({storage}: {storage: TouchLayoutStorage |
     }
     normalizeTouchLayoutPriorityOrder(profile.controls);
     // Schema extensions are migration, not a user edit. Mirror only existing
-    // saved profiles. A first default profile remains a materialized draft.
+    // saved profiles. Untouched default previews are not user edits.
     const baseline = saved?.profiles[orientation];
     if (missing.length && baseline) {
       for (const name of missing) if (defaults.controls[name]) baseline.controls[name] = {...defaults.controls[name]!};

@@ -7,7 +7,7 @@ const entries = JSON.parse(await readFile(new URL('../messages/compatibility.jso
 const keys = new Map(entries.map(({ source, key }) => [source, key]));
 
 /** Old browsers receive literal colors from the same tokens as the modern UI. */
-export function compatibilityThemeHtml(source, tokens) {
+export function compatibilityThemeHtml(source, tokens, controls) {
   const themes = {dark: {}, light: {}};
   postcss.parse(tokens).walkRules(rule => {
     for (const theme of Object.keys(themes)) {
@@ -30,7 +30,7 @@ ${prefix}.pass{color:${c('success')}}${prefix}.fail{color:${c('destructive')}}
 ${prefix}a:focus,${prefix}button:focus{outline:2px solid ${c('ring')};outline-offset:3px}`;
   }).join('\n');
   if (!/<style id="siteTheme">[\s\S]*?<\/style>/.test(source)) throw new Error('Missing compatibility theme owner');
-  return source.replace(/<style id="siteTheme">[\s\S]*?<\/style>/, () => `<style id="siteTheme">\n${css}\n  </style>`)
+  return source.replace(/<style id="siteTheme">[\s\S]*?<\/style>/, () => `<style id="siteTheme">\n${css}\n${controls.trim()}\n  </style>`)
     .replace(/<meta name="theme-color"[^>]*>/, () => `<meta name="theme-color" content="${color('dark', 'background')}" data-light="${color('light', 'background')}">`);
 }
 
@@ -95,7 +95,7 @@ export function localizeCompatibilityHtml(source, locale, translate) {
   return result
     .replace('<html lang="zh-CN">', `<html lang="${locale}">`)
     .replace("location.href='./?compat=continue'", `location.href='${locale}.html?compat=continue'`)
-    .replace(/(<nav\s+)aria-label="[^"]*"/, (_match, prefix) => `${prefix}aria-label="${languageLabel}"`);
+    .replace(/(<nav\b[^>]*\s)aria-label="[^"]*"/, (_match, prefix) => `${prefix}aria-label="${languageLabel}"`);
 }
 
 /** These ES5-page messages are literals. Reject parameters instead of adding a

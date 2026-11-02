@@ -423,7 +423,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   async function requestRuntimeClose({nativeExit = false, leaveRoom = false}: {nativeExit?: boolean; leaveRoom?: boolean} = {}): Promise<boolean> {
     const owner = requiredRuntime();
     const currentRoom = roomSession?.service.getSnapshot();
-    if (!nativeExit && !leaveRoom && (owner.getSnapshot().launched || owner.getSnapshot().roomPreview) && !snapshot.replayViewer && currentRoom?.room &&
+    // A failed native engine can reject room-return while its filesystem still
+    // answers sync. Retire it through the ordinary save/close decision below.
+    if (!nativeExit && !leaveRoom && !owner.getSnapshot().error && (owner.getSnapshot().launched || owner.getSnapshot().roomPreview) && !snapshot.replayViewer && currentRoom?.room &&
         (!snapshot.th09NetworkOverlayOpen || owner.getSnapshot().runtimeVariant === 'multiplayer' && owner.getSnapshot().roomReturnSupported)) {
       try {if (owner.getSnapshot().launched) await owner.returnToRoom();}
       catch (error) {reportError(error); return false;}
@@ -566,7 +568,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   function reportGameLoaded() {
     const selected = activeSettings ?? settings.getSnapshot();
     feedback.playerStatus(t('runtime.readyStatus'));
-    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}));
+    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId, music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}));
   }
   function attachFrame(element: HTMLIFrameElement | null) {
     if (!element || element === frame) return;
@@ -796,7 +798,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       operation.recoverDirectPreloadTimeout(error);
       if (intent.throwErrors) throw error;
       if (await gameData.handleLaunchFailure(error)) return;
-      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId.toUpperCase()} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
+      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
     } finally {operation.finish();}
   }
   async function showRoomPlayer(context: RoomOperationContext, fullscreen: boolean, allowHelp = false) {
@@ -916,7 +918,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (snapshot.roomLaunchStage && snapshot.playerOpen) await finishFailedRoomOperation(); else publish({roomLaunchStage: null});
     feedback.status(reason); feedback.playerStatus(reason); feedback.toast(reason);
     const seat = roomSession?.service.getSnapshot().seat;
-    startupError.show(error, seat == null ? t('runtime.multiplayerContext', {game: gameIdForProduct(context.product).toUpperCase()}) : t('runtime.multiplayerPlayerContext', {game: gameIdForProduct(context.product).toUpperCase(), player: seat + 1}), true);
+    startupError.show(error, seat == null ? t('runtime.multiplayerContext', {game: gameIdForProduct(context.product)}) : t('runtime.multiplayerPlayerContext', {game: gameIdForProduct(context.product), player: seat + 1}), true);
   }
   let replayPreparation: Promise<void> | null = null;
   function prepareReplayWorkspace(product: ProductId): Promise<void> {

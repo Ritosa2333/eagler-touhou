@@ -5,14 +5,15 @@ import {useContext, useEffect, useRef, useState, useSyncExternalStore} from 'rea
 import {createPortal} from 'react-dom';
 import type {BrowserSession} from '../../session/browser-session';
 import {useSurfaceNavigation} from '../../navigation/surface-navigation';
-import {formatReplayBytes, groupReplayFolders} from '../../models/replays';
+import {groupReplayFolders} from '../../models/replays';
 import {isTh09ReplayDirectory} from '../../../src/launcher/th09-replay-match.mts';
 import {isReplayImportFileName} from '../../../src/launcher/replay-files.mts';
 import {FullscreenIcons} from './utility-icons';
 import {MainSelect} from '../launcher/MainSelect';
 import {PlayerStage} from './PlayerSurface';
 import {ReplayFileMenu} from './ReplayFileMenu';
-import {ReplaySeekBar, replayClock as clock} from './ReplaySeekBar';
+import {ReplayTransport, type ReplayTransportState} from './ReplayTransport';
+import {ReplayFileRow} from './ReplayFileRow';
 import {useLocale} from '../../i18n';
 import {errorText} from '../../services/error-text';
 import {gameIdForProduct, PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
@@ -20,14 +21,10 @@ import type {ReplayDescription} from '../../../src/launcher/replay-description.m
 import type {UiMessageKey} from '../../../src/launcher/i18n.mts';
 import './replay-workspace.css';
 
-export interface ReplayPlaybackState {
-  kind: 'replay'; path: string; frame: number; total: number; paused: boolean;
-  seeking: boolean; target: number | null; rate: number; ended: boolean;
-  difficulty: number; left: number; right: number; stage: number;
-  roundStarts?: number[]; description?: ReplayDescription;
-  startFrame?: number;
+export interface ReplayPlaybackState extends ReplayTransportState {
+  kind: 'replay'; difficulty: number; left: number; right: number; stage: number;
+  description?: ReplayDescription;
 }
-const rates = [.5, 1, 2, 4, 8, 0];
 
 /** Composes around the permanent game iframe. File selection never remounts it. */
 export function ReplayWorkspace({session}: {session: BrowserSession}) {
@@ -79,8 +76,6 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   }
   const icons = {'replay-upload-simple': Upload, 'replay-folder': Folder, 'replay-file-text': FileText, 'replay-dots-three': MoreHorizontal, 'player-play': Play, 'player-pause': Pause, 'replay-arrow-counter-clockwise': RotateCcw, 'replay-arrow-left': ArrowLeft};
   const icon = (name: string) => {const Icon = icons[name as keyof typeof icons]; return Icon ? <Icon aria-hidden="true"/> : <img src={new URL(`assets/${name}.svg`, session.baseUrl).href} alt=""/>;};
-  const speed = (id: string) => <MainSelect id={id} className="option-select" aria-label={t('replay.ui.speed')} value={playback?.rate ?? 1} disabled={!playback || busy}
-    onChange={event => {void control('rate', Number(event.target.value));}}>{rates.map(rate => <option key={rate} value={rate}>{rate ? `${rate}×` : t('replay.ui.fullSpeed')}</option>)}</MainSelect>;
   const timestamp = (value?: number) => value && value > 0 && value <= 8.64e15 ? <time dateTime={new Date(value).toISOString()}>{new Date(value).toLocaleString(app.locale, {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false})}</time> : <span>{t('replay.ui.unknownTime')}</span>;
   return <>
     <header className="replay-workspace-header" data-replay-versus={versus}>
@@ -90,17 +85,7 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
     {stage && !playback && stage.querySelector('.game-viewport') && createPortal(<div className="replay-workspace-idle" data-ui-surface="game">{icon('player-play')}<p>{versus ? t('replay.ui.choosePlay') : t('replay.ui.chooseStage')}</p><small>{t('replay.ui.browseWhileLoading')}</small></div>, stage.querySelector('.game-viewport')!)}
     {viewport && createPortal(<UiButton variant="icon" type="button" className="replay-fullscreen replay-fullscreen-exit replay-button" aria-label={t('replay.ui.exitFullscreen')} onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen="true"><FullscreenIcons/></UiButton>, viewport)}
     {stage && createPortal(<>
-    <section className="replay-transport" aria-label={t('replay.ui.transport')}>
-      <div className="replay-transport-buttons">
-        <UiButton variant="primary" size="icon" type="button" className="replay-toggle replay-button" aria-label={playback?.paused || playback?.ended ? t('replay.ui.play') : t('replay.ui.pause')} disabled={!playback || busy} onClick={() => {void control(playback?.paused || playback?.ended ? 'play' : 'pause');}}>{icon(`player-${playback?.paused || playback?.ended ? 'play' : 'pause'}`)}</UiButton>
-        <UiButton size="lg" type="button" className="replay-restart replay-button" aria-label={t('replay.ui.restart')} disabled={!playback || busy} onClick={() => {void control('seek', playback?.startFrame ?? 0);}}>{icon('replay-arrow-counter-clockwise')}<span>{t('replay.ui.restart')}</span></UiButton>
-        <div className="replay-speed">{speed('replaySpeedSelect')}</div>
-      </div>
-      <ReplaySeekBar key={`${playback?.path ?? ''}:${playback?.startFrame ?? 0}`} frame={Math.max(0, (playback?.frame ?? 0) - (playback?.startFrame ?? 0))} total={Math.max(0, (playback?.total ?? 0) - (playback?.startFrame ?? 0))}
-        roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => {void control('seek', target + (playback?.startFrame ?? 0));}}/>
-      <UiButton variant="icon" type="button" className="replay-fullscreen replay-button" aria-label={t('replay.ui.fullscreen')} onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen={session.nativeTouch.isFullscreen()}><FullscreenIcons/></UiButton>
-      <span className="replay-seek-status" role="status">{playback?.seeking ? t('replay.ui.seek',{time:clock(Math.max(0, (playback.target ?? 0) - (playback.startFrame ?? 0)))}) : playback?.ended ? t('replay.ui.ended') : ''}</span>
-    </section>
+    <ReplayTransport playback={playback} busy={busy} fullscreen={session.nativeTouch.isFullscreen()} speedId="replaySpeedSelect" onControl={(action, value) => {void control(action, value);}} onToggleFullscreen={() => {void session.togglePlayerFullscreen();}}/>
     <section className="replay-current" aria-label={t('replay.ui.info')}>
       <h2 title={playback?.path}>{playback?.path.split('/').pop() || (files.phase === 'loading' ? t('replay.ui.reading') : t('replay.ui.chooseOne'))}</h2>
       <p>{playback ? <><span>{PRODUCT_GAMES[game].title}</span><span>{['Easy','Normal','Hard','Lunatic','Extra'][playback.difficulty] ?? ''}</span>{versus ? <span>{characterName(playback.left, 0)} vs {characterName(playback.right, 1)}</span> : <span>{playback.description?.name} | {playback.description?.stages.find(item => item.id === playback.stage)?.label ?? t('replay.ui.stageNumber',{stage:playback.stage})}</span>}</> : t('replay.ui.chooseToPlay')}</p>
@@ -118,14 +103,15 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
       <div className="replay-workspace-files" key={folder ?? 'replay'} aria-busy={files.phase === 'loading' || busy}>
         {files.phase === 'loading' ? <p className="replay-workspace-empty">{t('replay.ui.loading')}</p> : files.phase === 'error' ? <div className="replay-workspace-empty"><p>{t('replay.ui.failed')}</p><UiButton type="button" onClick={() => {void model.refresh().catch(report);}}>{t('replay.ui.retry')}</UiButton></div> : <>
           {!folder && folders.map(item => <div className="replay-workspace-file replay-workspace-folder" key={item.key}><UiButton variant="unstyled" type="button" data-replay-folder={item.key} onClick={() => {setFolder(item.key); setMoving(null);}}>{icon('replay-folder')}<strong title={item.name}>{item.name}</strong><small>{t('replay.ui.count',{count:item.rows.length})}</small></UiButton><ReplayFileMenu disabled={busy} label={t('replay.ui.manageFolder',{name:item.name})} actions={[{label: t('replay.ui.download'), run: () => {void model.downloadFolder(item.key);}}]}/></div>)}
-          {rows.map(row => <div className={`replay-workspace-file${!versus ? ' replay-workspace-recording' : ''}${playback?.path === row.path ? ' selected' : ''}`} key={row.path} data-replay-file={row.path}>
-            <UiButton variant="unstyled" type="button" data-replay-watch={row.path} aria-expanded={versus ? undefined : expanded === row.path} disabled={busy} onClick={() => {setError(''); if (versus) {setBusy(true); void model.watch(row.path).finally(() => setBusy(false));} else {setExpanded(current => current === row.path ? null : row.path); void model.inspect(row.path);}}}>{versus && <>{playback?.path === row.path && <span className="replay-file-selected">{icon('player-play')}</span>}{icon('replay-file-text')}</>}<span className="replay-file-description"><span className="replay-file-heading"><strong title={row.name}>{row.name}</strong>{!versus && <small>{formatReplayBytes(row.size)}</small>}</span>{!versus && files.descriptions[row.path] ? <ReplaySummary description={files.descriptions[row.path]!} game={game}/> : <small title={row.replayMatch?.startedAt ? t('replay.ui.matchStarted') : t('replay.ui.modified')}>{timestamp(row.replayMatch?.startedAt || row.modifiedAt)}</small>}</span>{versus && <small>{formatReplayBytes(row.size)}</small>}</UiButton>
-            <ReplayFileMenu disabled={busy} label={t('replay.ui.manage',{name:row.name})} actions={[
+          {rows.map(row => <ReplayFileRow key={row.path} path={row.path} name={row.name} size={row.size} versus={versus} selected={playback?.path === row.path} expanded={expanded === row.path} busy={busy}
+            onOpen={() => {setError(''); if (versus) {setBusy(true); void model.watch(row.path).finally(() => setBusy(false));} else {setExpanded(current => current === row.path ? null : row.path); void model.inspect(row.path);}}}
+            metadata={!versus && files.descriptions[row.path] ? <ReplaySummary description={files.descriptions[row.path]!} game={game}/> : <small title={row.replayMatch?.startedAt ? t('replay.ui.matchStarted') : t('replay.ui.modified')}>{timestamp(row.replayMatch?.startedAt || row.modifiedAt)}</small>}
+            actions={[
               {label: t('replay.ui.download'), run: () => {void model.download(row.path);}},
               {label: t('replay.ui.move'), run: () => {setMoving(row.path); setDestination('replay'); setNewFolder('');}},
               {label: t('replay.ui.rename'), run: () => {void model.rename(row.path);}},
               {label: t('replay.ui.delete'), destructive: true, run: () => {void model.remove(row.path);}},
-            ]}/>
+            ]}>
             {!versus && expanded === row.path && <section className="replay-stage-list" aria-label={t('replay.ui.details',{name:row.name})}>
               {files.descriptions[row.path] ? <>
                 <ReplayMetadata description={files.descriptions[row.path]!} game={game}/>
@@ -134,7 +120,7 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
               </> : <p role="status">{files.inspecting === row.path ? t('replay.ui.parsing') : t('replay.ui.parseFailed')}{!files.inspecting && <UiButton type="button" onClick={() => {void model.inspect(row.path);}}>{t('replay.ui.retry')}</UiButton>}</p>}
             </section>}
 
-          </div>)}
+          </ReplayFileRow>)}
           {!files.rows.length && <p className="replay-workspace-empty">{t('replay.ui.empty')}<br/><small>{t('replay.ui.drop')}</small></p>}
         </>}
       </div>

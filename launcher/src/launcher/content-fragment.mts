@@ -1,12 +1,12 @@
 // Fetched content is untrusted even when the source build generated it.
 // Parse in an inert template, then build new HTML nodes from a narrow Markdown
 // vocabulary. Never attach parsed nodes or serialize them back into innerHTML.
-const elements = new Set([
+export const contentElements = new Set([
   "div", "section", "p", "h1", "h2", "h3", "h4", "h5", "h6",
   "ul", "ol", "li", "blockquote", "pre", "code", "strong", "em", "del",
   "br", "hr", "a", "img", "table", "thead", "tbody", "tr", "th", "td",
 ]);
-const classes = new Set(["first-use-notice-list", "first-use-notice-item", "markdown-blockquote"]);
+export const contentClasses = new Set(["first-use-notice-list", "first-use-notice-item", "markdown-blockquote"]);
 
 export function renderContentFragment(target: HTMLElement, html: string, documentObj: Document): void {
   const template = documentObj.createElement("template");
@@ -28,9 +28,9 @@ export function renderContentFragment(target: HTMLElement, html: string, documen
     if (source.nodeType !== 1) return;
     const element = source as Element;
     const tag = element.localName;
-    if (element.namespaceURI !== "http://www.w3.org/1999/xhtml" || !elements.has(tag)) return;
+    if (element.namespaceURI !== "http://www.w3.org/1999/xhtml" || !contentElements.has(tag)) return;
     const node = documentObj.createElement(tag);
-    const classNames = (element.getAttribute("class") || "").split(/\s+/).filter(name => classes.has(name));
+    const classNames = (element.getAttribute("class") || "").split(/\s+/).filter(name => contentClasses.has(name));
     if (classNames.length) node.className = classNames.join(" ");
     const title = element.getAttribute("title");
     if (title) node.title = title;

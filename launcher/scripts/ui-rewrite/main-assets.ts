@@ -1,15 +1,15 @@
 import {readFileSync, cpSync, existsSync, mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import type {Plugin} from 'vite';
-import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWorkerSource, buildDocumentStyles, buildHelpPageOutputs} from '../../lib/frontend-assets.mjs';
+import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWorkerSource} from '../../lib/frontend-assets.mjs';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES, REACT_DOCUMENT_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {resolvePublicOrRepositorySource} from '../../lib/public-source.mjs';
 import {authoredSourcesPlugin} from '../../lib/authored-source-resolution.mjs';
 import {build} from 'esbuild';
 import {reactDeploymentConfig} from './deployment-config.ts';
+import {buildAuthoredContent} from '../../lib/content-build.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 // Original lobby selectors stopped at the launcher iframe's document. Settings,
 // Player and their detached overlays now retain that ownership explicitly. The
@@ -27,18 +27,8 @@ export function mainAssets(): Plugin {
         const asset = pathname?.startsWith(deployment.mountPath) ? pathname.slice(deployment.mountPath.length) : '';
         // publicDir is disabled: serve the same explicit static asset inventory
         // in development that closeBundle copies into the production artifact.
-        if (['about.html', 'faq.html', 'migrate.html', 'compatibility.html', 'compatibility.en.html', 'compatibility.ja.html'].includes(asset)) {
+        if (['migrate.html', 'compatibility.html', 'compatibility.en.html', 'compatibility.ja.html'].includes(asset)) {
           res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(readFileSync(resolve(root,'public',asset)));return;
-        }
-        if (asset === 'about.css') {
-          try {const [file] = await buildDocumentStyles({project: root});res.setHeader('Content-Type','text/css');res.setHeader('Cache-Control','no-cache');res.end(file.contents);}
-          catch (error) {next(error);}
-          return;
-        }
-        if (asset === 'site-help.mjs') {
-          try {const [file] = await buildHelpPageOutputs({project: root});res.setHeader('Content-Type','application/javascript');res.setHeader('Cache-Control','no-cache');res.end(file.contents);}
-          catch (error) {next(error);}
-          return;
         }
         if ((asset.startsWith('assets/') || asset.startsWith('content/')) && STATIC_FRONTEND_PACKAGE_FILES.includes(asset)) {
           try {
@@ -74,10 +64,10 @@ export function mainAssets(): Plugin {
         .replace('.lobby-page.less-motion *{', `.lobby-page.less-motion *${outsideLauncherDocument}{`)
         .replace('.lobby-page *{', `.lobby-page *${outsideLauncherDocument}{`);
     },
-    buildStart() {
+    async buildStart() {
       if (this.environment.config.consumer !== 'client') return;
       // Use main's compiler so Markdown-only edits cannot publish stale copy.
-      execFileSync(process.execPath, [resolve(root, 'scripts/build-content-pages.mjs'), '--quiet'], {cwd: root, stdio: 'pipe'});
+      await buildAuthoredContent(root);
     },
     writeBundle(_options, bundle) {
       if (this.environment.config.consumer !== 'client') return;
@@ -93,7 +83,7 @@ export function mainAssets(): Plugin {
       mkdirSync(output, {recursive: true});
       // Consume the same public-file contract as main. Route documents and
       // generated CSS belong to their respective builders, not raw copying.
-      const generated = new Set([...REACT_DOCUMENT_FILES, 'styles.css', 'about.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js', 'site-help.mjs']);
+      const generated = new Set([...REACT_DOCUMENT_FILES, 'styles.css', 'features.css', 'runtime-program-sw.js']);
       for (const path of STATIC_FRONTEND_PACKAGE_FILES) {
         if (generated.has(path) || path.startsWith('legacy/')) continue;
         const source = resolvePublicOrRepositorySource(path);
@@ -116,7 +106,6 @@ export function mainAssets(): Plugin {
       for (const file of await buildLauncherStyleOutputs({project: root, outputDirectory: output})) {
         await writeFileAtomic(file.path, file.contents);
       }
-      for (const file of await buildHelpPageOutputs({project: root, outputDirectory: output})) await writeFileAtomic(file.path, file.contents);
     },
   };
 }

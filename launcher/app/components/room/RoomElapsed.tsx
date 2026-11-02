@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {useLocale} from '../../i18n';
 /** Wall-clock elapsed time is display-only; it never advances game/replay ticks. */
-export function RoomElapsed({phase, startedAt}: {phase: string; startedAt?: number}) {
+export function RoomElapsed({phase, startedAt, elapsedMinutes}: {phase: string; startedAt?: number; elapsedMinutes?: number}) {
   const {t} = useLocale(), [now, setNow] = useState(Date.now);
   const running = phase !== 'lobby' && !!startedAt;
   // biome-ignore lint/correctness/useExhaustiveDependencies: A new match start resets the display clock immediately, even when running stays true.
@@ -11,6 +11,6 @@ export function RoomElapsed({phase, startedAt}: {phase: string; startedAt?: numb
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [running, startedAt]);
-  const seconds = running ? Math.max(0, Math.floor((now - startedAt!) / 1000)) : 0;
+  const seconds = elapsedMinutes !== undefined ? Math.max(0,Math.floor(elapsedMinutes*60)) : running ? Math.max(0, Math.floor((now - startedAt!) / 1000)) : 0;
   return <span className="room-elapsed">{t('room.elapsedTime', {time: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`})}</span>;
 }

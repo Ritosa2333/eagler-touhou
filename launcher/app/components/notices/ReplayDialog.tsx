@@ -1,4 +1,5 @@
 import {Input} from '../../ui/input';
+import {X} from 'lucide-react';
 import {MainSelect} from '../launcher/MainSelect';
 import {Button as UiButton} from '../../ui/controls';
 import {useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties} from 'react';
@@ -52,7 +53,7 @@ export function ReplayDialog({model, onImportRequest, onDropFile, onImportError,
           await onDropFile(files[0]);
         })().catch(onImportError);
       }}>
-      <header><strong>{t('replay.manager')}</strong><UiButton type="button" data-replay-close="" aria-label={t('action.close')} onClick={dialog.requestClose}>×</UiButton></header>
+      <header><strong>{t('replay.manager')}</strong><UiButton variant="icon" type="button" data-replay-close="" aria-label={t('action.close')} onClick={dialog.requestClose}><X aria-hidden="true"/></UiButton></header>
       <div className="replay-drop-hint">{t('replay.dropHint')}</div>
       {folder && <nav className="replay-path" aria-label={t('th09.replayLocation')}><UiButton type="button" data-replay-parent="" aria-label={t('replay.parentFolder')} onClick={() => {setFolderKey(null); setMoving(null);}}>..</UiButton><strong title={folder.name}>{folder.name}</strong></nav>}
       {moving && <section className="replay-move" aria-label={t('replay.move')} aria-busy={moveBusy}>

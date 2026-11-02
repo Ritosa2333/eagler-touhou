@@ -1,17 +1,20 @@
 import {Input, Textarea} from '../../ui/input';
 import {Tabs} from 'radix-ui';
+import {UserRound} from 'lucide-react';
+import {OverflowText} from '../../ui/overflow-text';
 import {Toggle, Button as UiButton} from '../../ui/controls';
 import {BookButton} from './BookButton';
-import {useEffect, useState, type CSSProperties} from 'react';
+import {Fragment, useEffect, useState, type CSSProperties, type ReactNode} from 'react';
 import {flushSync} from 'react-dom';
 import {AppLink} from './AppLink';
+import {Link, useLocation, useNavigate} from 'react-router';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import {PRODUCT_GAMES, gameIdForProduct, isProductId} from '../../../src/contracts/product-catalog.mts';
 import {bookGameArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference, stringArray} from './book-preferences';
 import './profile-preview.css';
-import {CareerSummary, CareerShowcase} from './CareerShowcase';
+import {CareerShowcase} from './CareerShowcase';
 import {CAREER_STORAGE_KEY, loadCareerRecords, type CareerRecords} from './tracker-records';
 import {NavigationIcon} from './NavigationIcon';
 import {Button as NavigationButton} from '../../ui/button';
@@ -31,22 +34,32 @@ type ProfileDraft = Omit<Profile, 'links'> & {links: (SocialLink & {editId: numb
 let nextLinkEditId = 0;
 const editableLink = (link: SocialLink) => ({...link, editId: ++nextLinkEditId});
 type Guide = {id: string; title: string; body: string};
-type DisplayKey = 'friends' | 'career' | 'records' | 'content' | 'recent';
-type OverviewKey = 'career' | 'recent' | 'favorites';
+type DisplayKey = 'friends' | 'career' | 'records' | 'content';
+type OverviewKey = DisplayKey | 'favorites';
 type ProfileDisplay = {visible: Record<DisplayKey, boolean>; order: OverviewKey[]};
-const displayLabels: Record<DisplayKey, UiMessageKey> = {friends:'profile.tab.friends',career:'profile.tab.career',records:'profile.tab.records',content:'profile.tab.content',recent:'profile.recent'};
-const overviewLabels: Record<OverviewKey, UiMessageKey> = {career:'profile.clearChart',recent:'profile.recent',favorites:'profile.favorites'};
+const displayLabels: Record<DisplayKey, UiMessageKey> = {friends:'profile.tab.friends',career:'profile.tab.career',records:'profile.tab.records',content:'profile.tab.content'};
+const overviewLabels: Record<OverviewKey, UiMessageKey> = {career:'profile.clearChart',records:'profile.tab.records',content:'profile.tab.content',friends:'profile.tab.friends',favorites:'profile.favorites'};
 const tabLabels = {overview:'profile.tab.overview',career:'profile.tab.career',records:'profile.tab.records',content:'profile.tab.content',friends:'profile.tab.friends'} as const;
 type ProfileTab = keyof typeof tabLabels;
 const socialLabels = {friends:'profile.tab.friends',following:'profile.following'} as const;
-const defaultDisplay: ProfileDisplay = {visible: {friends: true, career: true, records: true, content: true, recent: true}, order: ['career', 'recent', 'favorites']};
-const displayStorageKey = 'player-profile-display-v1';
+const defaultDisplay: ProfileDisplay = {visible: {friends: true, career: true, records: true, content: true}, order: ['career', 'records', 'content', 'friends', 'favorites']};
+const displayStorageKey = 'player-profile-display-v2';
 const validDisplay = (value: unknown): value is ProfileDisplay => {
   if (!value || typeof value !== 'object') return false;
   const settings = value as ProfileDisplay;
   return !!settings.visible && Object.keys(displayLabels).every(key => typeof settings.visible[key as DisplayKey] === 'boolean') &&
-    Array.isArray(settings.order) && settings.order.length === 3 && new Set(settings.order).size === 3 && settings.order.every(key => Object.hasOwn(overviewLabels, key));
+    Array.isArray(settings.order) && settings.order.length === 5 && new Set(settings.order).size === 5 && settings.order.every(key => Object.hasOwn(overviewLabels, key));
 };
+function previousDisplay(): ProfileDisplay {
+  const old = readBookPreference('player-profile-display-v1', defaultDisplay, (value): value is ProfileDisplay => {
+    if (!value || typeof value !== 'object') return false;
+    const candidate = value as ProfileDisplay;
+    return !!candidate.visible && Object.keys(displayLabels).every(key => typeof candidate.visible[key as DisplayKey] === 'boolean') && Array.isArray(candidate.order);
+  });
+  const order = [...new Set([...old.order.map(key => String(key) === 'recent' ? 'records' as const : key).filter(key => Object.hasOwn(overviewLabels,key)), ...defaultDisplay.order])];
+  const visible = Object.fromEntries((Object.keys(displayLabels) as DisplayKey[]).map(key => [key,old.visible[key]])) as Record<DisplayKey,boolean>;
+  return {visible, order};
+}
 const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
@@ -74,13 +87,17 @@ export function ProfilePreview({interactive = true, active, href}: {interactive?
 
 export function ProfilePage() {
   const {locale,t}=useLocale();
+  const location=useLocation(),navigate=useNavigate();
+  const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
+  const sectionAddress=(key:ProfileTab)=>({pathname:location.pathname,search:location.search,hash:`#profile-${key}`});
+  const jumpTo=(key:ProfileTab,replace=false)=>navigate(sectionAddress(key),{replace});
   const [profile, setProfile] = useState(blankProfile), [draft, setDraft] = useState<ProfileDraft>({...blankProfile, links: []});
-  const [tab, setTab] = useState<ProfileTab>("overview"), [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [display, setDisplay] = useState(defaultDisplay), [displayDraft, setDisplayDraft] = useState(defaultDisplay);
   const [displayEditing, setDisplayEditing] = useState(false);
   const [settings, setSettings] = useState(false), [security, setSecurity] = useState(false);
   const [visitor, setVisitor] = useState(false);
-  const [recent, setRecent] = useState<string[]>([]), [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]), [guideDraft, setGuideDraft] = useState<Guide | null>(null);
   const [career, setCareer] = useState<CareerRecords>({});
   const [article, setArticle] = useState<Guide | null>(null), [socialTab, setSocialTab] = useState<keyof typeof socialLabels>("friends");
@@ -90,11 +107,11 @@ export function ProfilePage() {
   useEffect(() => () => {profileAnimation?.cancel(); profileAnimation = null;}, []);
   useEffect(() => {
     setProfile(readBookPreference('player-profile-v2', blankProfile, validProfile));
-    setDisplay(readBookPreference(displayStorageKey, defaultDisplay, validDisplay));
+    setDisplay(readBookPreference(displayStorageKey, previousDisplay(), validDisplay));
     setGuides(readBookPreference('player-guide-drafts-v1', [], validGuides));
     setCareer(loadCareerRecords());
     setNotifications(readBookPreference('friend-online-reminder', false, (value): value is boolean => typeof value === 'boolean'));
-    const refresh = () => {setRecent(readBookPreference('recent', [], stringArray)); setFavorites(readBookPreference('favorites', [], stringArray));};
+    const refresh = () => { setFavorites(readBookPreference('favorites', [], stringArray));};
     refresh(); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh); window.addEventListener('storage', refresh);
     return () => { window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh); window.removeEventListener('storage', refresh);};
   }, []);
@@ -124,7 +141,7 @@ export function ProfilePage() {
   const saveDisplay = () => {
     setDisplay(displayDraft); writeBookPreference(displayStorageKey, displayDraft); setNotice("profile.display.saved");
     const tabKey = tab==="overview" ? null : tab;
-    if (visitor && tabKey && !displayDraft.visible[tabKey]) setTab("overview");
+    if (visitor && tabKey && !displayDraft.visible[tabKey]) jumpTo('overview',true);
   };
   const moveOverview = (key: OverviewKey, offset: number) => setDisplayDraft(current => {
     const order = [...current.order], index = order.indexOf(key), target = index + offset;
@@ -133,25 +150,32 @@ export function ProfilePage() {
     return {...current, order};
   });
   const visible = visitor ? display.visible : defaultDisplay.visible;
-  const visibleTabs = (Object.keys(tabLabels) as ProfileTab[]).filter(key=>key==='overview'||visible[key]);
+  const visibleTabs: ProfileTab[] = ['overview',...display.order.filter((key): key is Exclude<ProfileTab,'overview'> => key!=='favorites' && visible[key])];
   const activeTab = settings ? editing ? 'settings-profile' : displayEditing ? 'settings-display' : 'settings-security' : tab;
   const selectTab = (value: string) => {
     if (value === activeTab) return;
     if (value === 'settings-profile') editProfile();
     else if (value === 'settings-display') editDisplay();
     else if (value === 'settings-security') transitionProfile(() => {setEditing(false); setDisplayEditing(false); setSecurity(true); setError(null);}, 'settings');
-    else transitionProfile(() => {setTab(value as ProfileTab); setDisplayEditing(false); setEditing(false); setArticle(null); setGuideDraft(null); setError(null);}, 'content');
+  };
+  const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
+  const sections: Record<OverviewKey,ReactNode> = {
+    career: visible.career && <div id="profile-career" className="profile-public-section"><CareerShowcase records={career} onSave={saveCareer} readOnly={visitor}/></div>,
+    records: visible.records && <section id="profile-records" className="profile-panel profile-public-section"><div className="profile-section-title"><h2>{t('profile.tab.records')}</h2></div><EmptyState title={t('profile.stats.empty')} detail={t('profile.stats.hint')}/></section>,
+    content: visible.content && <div id="profile-content" className="profile-public-section">{guideDraft ? <section className="profile-panel profile-editor"><h2>{guides.some(guide => guide.id === guideDraft.id) ? t('profile.draft.edit') : t('profile.draft.newHeading')}</h2><form onSubmit={event => {event.preventDefault(); saveGuide();}}><label>{t('profile.draft.title')}<Input value={guideDraft.title} maxLength={100} required onChange={event => setGuideDraft({...guideDraft, title: event.target.value})}/></label><label>{t('profile.draft.body')}<Textarea rows={14} value={guideDraft.body} maxLength={30000} required onChange={event => setGuideDraft({...guideDraft, body: event.target.value})}/></label>{error && <p role="alert">{t(error)}</p>}<div className="profile-actions"><BookButton variant="action" type="button" onClick={() => setGuideDraft(null)}>{t('action.cancel')}</BookButton><BookButton variant="primary" type="submit" className="profile-primary">{t('profile.draft.save')}</BookButton></div></form></section> : article ? <article className="profile-panel profile-article"><div className="profile-section-title"><BookButton variant="quiet" type="button" onClick={() => setArticle(null)}>{t('profile.draft.back')}</BookButton>{!visitor && <BookButton variant="quiet" type="button" onClick={() => setGuideDraft({...article})}>{t('profile.editAction')}</BookButton>}</div><h2>{article.title}</h2><div className="ui-document prose"><p className="profile-guide-body">{article.body}</p></div></article> : <section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.draft.heading')}</h2>{!visitor && <BookButton variant="quiet" type="button" onClick={startGuide}>{t('profile.draft.new')}</BookButton>}</div>{guides.length ? <div className="profile-draft-list">{guides.map(guide => <BookButton variant="action" key={guide.id} type="button" onClick={() => setArticle(guide)}><span><strong>{guide.title}</strong><small>{guide.body.slice(0, 100)}</small></span><span>{t('profile.draft.local')}</span></BookButton>)}</div> : <EmptyState title={t('profile.draft.empty')} detail={t('profile.draft.emptyHint')}/>}</section>}</div>,
+    friends: visible.friends && <section id="profile-friends" className="profile-panel profile-public-section"><div className="profile-section-title"><h2>{t('profile.social.heading')}</h2></div><div className="profile-social-tools"><div>{(["friends", "following"] as const).map(item => <BookButton variant="choice" type="button" key={item} aria-pressed={socialTab === item} onClick={() => {if (socialTab !== item) transitionProfile(() => setSocialTab(item), 'content');}}>{t(socialLabels[item])}</BookButton>)}</div>{!visitor && <label><Toggle checked={notifications} onCheckedChange={event => {setNotifications(event); if (!event) setOnlineNotice(false); writeBookPreference('friend-online-reminder', event);}}/>{t('profile.online.notifications')}</label>}</div>{demoOnline && socialTab === "friends" ? <div className="profile-demo-friend"><span className="profile-demo-avatar"><AvatarPlaceholder/><i/></span><div><strong>{t('profile.online.demoFriend')}</strong><p>{t('profile.online')}<small>{t('profile.online.simulated')}</small></p></div><BookButton variant="action" type="button" onClick={() => {setDemoOnline(false); setOnlineNotice(false);}}>{t('profile.online.stopDemo')}</BookButton></div> : <EmptyState title={socialTab === "friends" ? t('profile.friends.empty') : t('profile.following.empty')} detail={t('profile.social.emptyHint')}/>}{!visitor && <div className="profile-reminder-demo"><span>{t('profile.online.preview')}</span><BookButton variant="action" type="button" onClick={() => {setDemoOnline(true); setOnlineNotice(notifications); if (!notifications) setNotice("profile.online.disabledPreview");}}>{t('profile.online.simulate')}</BookButton></div>}</section>,
+    favorites: <section className="profile-panel profile-public-section"><div className="profile-section-title"><h2>{t('profile.favorites')}</h2><span>{t('profile.gameCount',{count:favorites.filter(isProductId).length})}</span></div><LocalGames ids={favorites} empty={t('profile.favorites.empty')}/></section>,
   };
   return <Tabs.Root value={activeTab} onValueChange={selectTab} asChild><main className={`player-profile${settings ? ' profile-editing profile-settings' : visitor ? ' profile-visitor' : ''}`} aria-label={settings ? t('profile.settings') : undefined} aria-labelledby={settings ? undefined : 'profile-name'}>
     {(settings || article || guideDraft) && <div className="profile-topbar"><BookButton variant="quiet" type="button" onClick={back}>{t('profile.back')}</BookButton></div>}
     <div className="profile-wrap">
       {settings && <div className="profile-settings-heading"><h1>{t('profile.settings')}</h1><Tabs.List asChild><nav aria-label={t('profile.settingsNavigation')}>{[['settings-profile',t('profile.edit')],['settings-display',t('profile.displayTab')],['settings-security',t('profile.security')]].map(([value,label]) => <Tabs.Trigger asChild key={value} value={value}><BookButton variant="tab" aria-current={activeTab===value ? 'page' : undefined}>{label}</BookButton></Tabs.Trigger>)}</nav></Tabs.List></div>}
-      <section className="profile-hero" style={imageData(profile.cover) ? {'--profile-cover': `url("${profile.cover}")`} as CSSProperties : undefined}>
+      <section id="profile-overview" className="profile-hero profile-public-section" style={imageData(profile.cover) ? {'--profile-cover': `url("${profile.cover}")`} as CSSProperties : undefined}>
         <div className={`profile-cover${imageData(profile.cover) ? ' has-image' : ''}`}/>
-        <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}>{imageData(profile.avatar) ? <img src={profile.avatar} alt={t('profile.avatar.alt')}/> : <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="17" r="8"/><path d="M9 42v-5a15 15 0 0 1 30 0v5"/></svg>}</UiButton><div className="profile-name"><h1 id="profile-name">{profile.name || t('profile.name.missing')}</h1><p>{profile.bio ? profile.bio.split('\n')[0] : t('profile.bio.missing')}</p></div><div className="profile-actions"><BookButton variant="action" type="button" className="profile-perspective" aria-label={t('profile.perspective.toggle')} aria-pressed={visitor} onClick={() => transitionProfile(() => {setVisitor(value => !value); setTab("overview"); setArticle(null); setGuideDraft(null);}, 'content')}>{t('profile.perspective.prefix')}{visitor ? t('profile.visitor') : t('profile.self')}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4"/></svg></BookButton><BookButton variant="action" type="button" onClick={editProfile}>{t('profile.settings')}</BookButton></div></div>
+        <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}>{imageData(profile.avatar) ? <img src={profile.avatar} alt={t('profile.avatar.alt')}/> : <AvatarPlaceholder/>}</UiButton><div className="profile-name"><h1 id="profile-name"><OverflowText>{profile.name || t('profile.name.missing')}</OverflowText></h1><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p></div><div className="profile-actions"><BookButton variant="action" type="button" className="profile-perspective" aria-label={t('profile.perspective.toggle')} aria-pressed={visitor} onClick={() => transitionProfile(() => {setVisitor(value => !value); jumpTo('overview',true); setArticle(null); setGuideDraft(null);}, 'content')}>{t('profile.perspective.prefix')}{visitor ? t('profile.visitor') : t('profile.self')}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4"/></svg></BookButton>{!visitor && <BookButton variant="action" type="button" onClick={editProfile}>{t('profile.settings')}</BookButton>}</div></div>
       </section>
-      <Tabs.List asChild><nav style={{'--profile-tab-count': visibleTabs.length} as CSSProperties} className="profile-tabs" aria-label={t('profile.navigationSections')}>{visibleTabs.map(item => <Tabs.Trigger asChild value={item} key={item}><BookButton variant="tab" aria-current={activeTab===item ? 'page' : undefined}>{t(tabLabels[item])}</BookButton></Tabs.Trigger>)}</nav></Tabs.List>
-      <Tabs.Content asChild forceMount value={activeTab}><div className="profile-tab-panel">{settings && security ? <AccountSecurity/> : displayEditing ? <section className="profile-panel profile-editor-shell profile-display-editor"><div className="profile-section-title"><h2><ProfileSectionIcon name="layout"/>{t('profile.display')}</h2></div><form onSubmit={event => {event.preventDefault(); saveDisplay();}}>
+      {!settings && <nav style={{'--profile-tab-count': visibleTabs.length} as CSSProperties} className="profile-tabs" aria-label={t('profile.navigationSections')}>{visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>)}</nav>}
+      <ProfileContent settings={settings} value={activeTab}>{settings && security ? <AccountSecurity/> : displayEditing ? <section className="profile-panel profile-editor-shell profile-display-editor"><div className="profile-section-title"><h2><ProfileSectionIcon name="layout"/>{t('profile.display')}</h2></div><form onSubmit={event => {event.preventDefault(); saveDisplay();}}>
         <div className="profile-display-columns"><fieldset><legend>{t('profile.display.visible')}</legend><div className="profile-display-options">{(Object.keys(displayLabels) as DisplayKey[]).map(key => <label key={key}><span className="profile-option-name"><ProfileSectionIcon name={key}/><span>{t(displayLabels[key])}</span></span><Toggle checked={displayDraft.visible[key]} onCheckedChange={event => setDisplayDraft({...displayDraft, visible: {...displayDraft.visible, [key]: event}})}/></label>)}</div></fieldset>
         <fieldset><legend>{t('profile.display.order')}</legend><ol className="profile-display-order">{displayDraft.order.map((key, index) => <li key={key} data-overview-key={key} className={key !== 'favorites' && !displayDraft.visible[key] ? 'is-hidden' : undefined}><div className={`profile-order-art profile-order-art-${key}`} aria-hidden="true"><ProfileSectionIcon name={key}/><i/><i/><i/></div><span className="profile-order-label"><small>{String(index + 1).padStart(2, '0')}</small>{t(overviewLabels[key])}</span><div><BookButton variant="action" type="button" aria-label={t('profile.moveUp',{name:t(overviewLabels[key])})} disabled={index === 0} onClick={() => moveOverview(key, -1)}>↑</BookButton><BookButton variant="action" type="button" aria-label={t('profile.moveDown',{name:t(overviewLabels[key])})} disabled={index === displayDraft.order.length - 1} onClick={() => moveOverview(key, 1)}>↓</BookButton></div></li>)}</ol></fieldset></div>
         <div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" type="submit" className="profile-primary">{t('profile.display.save')}</BookButton></div>
@@ -162,16 +186,20 @@ export function ProfilePage() {
         <label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
         <fieldset><legend>{t('profile.links')}</legend>{draft.links.map((link, index) => <div className="profile-link-editor" key={link.editId}><label>{t('profile.links.name')}<Input maxLength={40} value={link.label} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, label: event.target.value} : item)})}/></label><label>{t('profile.links.address')}<Input type="url" placeholder="https://" value={link.url} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, url: event.target.value} : item)})}/></label><BookButton variant="action" type="button" aria-label={t('profile.links.delete',{number:index + 1})} onClick={() => setDraft({...draft, links: draft.links.filter((_, i) => i !== index)})}>{t('action.delete')}</BookButton></div>)}<BookButton variant="action" type="button" onClick={() => setDraft({...draft, links: [...draft.links, editableLink({label: '', url: ''})]})}>{t('profile.links.add')}</BookButton></fieldset></div></div>
         {error && <p role="alert">{t(error)}</p>}<div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" className="profile-primary" type="submit">{t('profile.save')}</BookButton></div>
-      </form></section> : <div className="profile-columns" data-profile-overview={tab === "overview"}><aside className="profile-aside"><section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.bio.heading')}</h2>{!visitor && <BookButton variant="quiet" type="button" onClick={editProfile}>{t('profile.editAction')}</BookButton>}</div>{profile.bio ? <p className="profile-bio">{profile.bio}</p> : <p className="profile-muted">{t('profile.bio.missing')}</p>}{profile.links.length > 0 && <div className="profile-social-links">{/* biome-ignore lint/suspicious/noArrayIndexKey: Published links are a stateless ordered display and may contain identical labels and URLs. */}{profile.links.map((link, index) => <a key={index} href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div>}</section><section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.accountInfo')}</h2></div><dl className="profile-account-meta"><div><dt>{t('profile.registeredAt')}</dt><dd>—</dd></div></dl><p className="profile-muted">{t('profile.accountMissing')}</p><AppLink className="profile-account-login" href={withUiLanguage('login.html',locale)}>{t('profile.signIn')}</AppLink></section></aside>
-        <div className="profile-content">{tab === "overview" && display.order.map(key => key === 'career' ? (visible.career && <CareerSummary key={key} records={career}/>) : key === 'recent' ? (visible.recent && <section key={key} className="profile-panel"><div className="profile-section-title"><h2>{t('profile.recent')}</h2>{visible.records && <BookButton variant="quiet" type="button" onClick={() => transitionProfile(() => setTab("records"), 'content')}>{t('profile.viewAll')}</BookButton>}</div><LocalGames ids={recent.slice(0, 4)} empty={t('profile.recent.empty')}/></section>) : <section key={key} className="profile-panel"><div className="profile-section-title"><h2>{t('profile.favorites')}</h2><span>{t('profile.gameCount',{count:favorites.filter(isProductId).length})}</span></div><LocalGames ids={favorites} empty={t('profile.favorites.empty')}/></section>)}
-        {visible.career && tab === "career" && <CareerShowcase records={career} onSave={saveCareer} readOnly={visitor}/>}
-        {visible.records && tab === "records" && <><section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.stats')}</h2></div><EmptyState title={t('profile.stats.empty')} detail={t('profile.stats.hint')}/></section>{visible.recent && <section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.recent')}</h2><span>{t('profile.thisBrowser')}</span></div><LocalGames ids={recent} empty={t('profile.recent.empty')}/></section>}</>}
-        {visible.content && tab === "content" && (guideDraft ? <section className="profile-panel profile-editor"><h2>{guides.some(guide => guide.id === guideDraft.id) ? t('profile.draft.edit') : t('profile.draft.newHeading')}</h2><form onSubmit={event => {event.preventDefault(); saveGuide();}}><label>{t('profile.draft.title')}<Input value={guideDraft.title} maxLength={100} required onChange={event => setGuideDraft({...guideDraft, title: event.target.value})}/></label><label>{t('profile.draft.body')}<Textarea rows={14} value={guideDraft.body} maxLength={30000} required onChange={event => setGuideDraft({...guideDraft, body: event.target.value})}/></label>{error && <p role="alert">{error}</p>}<div className="profile-actions"><BookButton variant="action" type="button" onClick={() => setGuideDraft(null)}>{t('action.cancel')}</BookButton><BookButton variant="primary" type="submit" className="profile-primary">{t('profile.draft.save')}</BookButton></div></form></section> : article ? <article className="profile-panel profile-article"><div className="profile-section-title"><BookButton variant="quiet" type="button" onClick={() => setArticle(null)}>{t('profile.draft.back')}</BookButton>{!visitor && <BookButton variant="quiet" type="button" onClick={() => setGuideDraft({...article})}>{t('profile.editAction')}</BookButton>}</div><h2>{article.title}</h2><p className="profile-guide-body">{article.body}</p></article> : <section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.draft.heading')}</h2>{!visitor && <BookButton variant="quiet" type="button" onClick={startGuide}>{t('profile.draft.new')}</BookButton>}</div>{guides.length ? <div className="profile-draft-list">{guides.map(guide => <BookButton variant="action" key={guide.id} type="button" onClick={() => setArticle(guide)}><span><strong>{guide.title}</strong><small>{guide.body.slice(0, 100)}</small></span><span>{t('profile.draft.local')}</span></BookButton>)}</div> : <EmptyState title={t('profile.draft.empty')} detail={t('profile.draft.emptyHint')}/>}</section>)}
-        {visible.friends && tab === "friends" && <section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.social.heading')}</h2></div><div className="profile-social-tools"><div>{(["friends", "following"] as const).map(item => <BookButton variant="choice" type="button" key={item} aria-pressed={socialTab === item} onClick={() => {if (socialTab !== item) transitionProfile(() => setSocialTab(item), 'content');}}>{t(socialLabels[item])}</BookButton>)}</div><label><Toggle checked={notifications} onCheckedChange={event => {setNotifications(event); if (!event) setOnlineNotice(false); writeBookPreference('friend-online-reminder', event);}}/>{t('profile.online.notifications')}</label></div>{demoOnline && socialTab === "friends" ? <div className="profile-demo-friend"><span className="profile-demo-avatar"><AvatarPlaceholder/><i/></span><div><strong>{t('profile.online.demoFriend')}</strong><p>{t('profile.online')}<small>{t('profile.online.simulated')}</small></p></div><BookButton variant="action" type="button" onClick={() => {setDemoOnline(false); setOnlineNotice(false);}}>{t('profile.online.stopDemo')}</BookButton></div> : <EmptyState title={socialTab === "friends" ? t('profile.friends.empty') : t('profile.following.empty')} detail={t('profile.social.emptyHint')}/>}<div className="profile-reminder-demo"><span>{t('profile.online.preview')}</span><BookButton variant="action" type="button" onClick={() => {setDemoOnline(true); setOnlineNotice(notifications); if (!notifications) setNotice("profile.online.disabledPreview");}}>{t('profile.online.simulate')}</BookButton></div></section>}
+      </form></section> : <div className="profile-columns"><aside className="profile-aside">{links.length > 0 && <section className="profile-panel"><div className="profile-social-links">{links.map(link => <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div></section>}<section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.accountInfo')}</h2></div><dl className="profile-account-meta"><div><dt>{t('profile.registeredAt')}</dt><dd>—</dd></div></dl><p className="profile-muted">{t('profile.accountMissing')}</p><AppLink className="profile-account-login" href={withUiLanguage('login.html',locale)}>{t('profile.signIn')}</AppLink></section></aside>
+        <div className="profile-content">{display.order.map(key => <Fragment key={key}>{sections[key]}</Fragment>)}
         </div></div>}
-      </div></Tabs.Content>
+      </ProfileContent>
     </div>{notice && <div className="profile-toast" role="status">{t(notice)}</div>}
-  {onlineNotice && visible.friends && <aside className="profile-online-notice" role="status" aria-label={t('profile.online.notifications')}><span className="profile-demo-avatar"><AvatarPlaceholder/><i/></span><div className="profile-online-copy"><div><span>{t('profile.online.title')}</span><small>{t('profile.online.justNow')}</small></div><strong>{t('profile.online.demoFriend')}</strong><p>{t('profile.online.now')}</p><BookButton variant="quiet" type="button" onClick={() => {setTab("friends"); setSocialTab("friends"); setDisplayEditing(false); setEditing(false); setOnlineNotice(false);}}>{t('profile.online.view')}</BookButton></div><BookButton variant="icon" type="button" className="profile-notice-close" aria-label={t('profile.online.close')} onClick={() => setOnlineNotice(false)}>×</BookButton></aside>}</main></Tabs.Root>;
+  {!visitor && onlineNotice && visible.friends && <aside className="profile-online-notice" role="status" aria-label={t('profile.online.notifications')}><span className="profile-demo-avatar"><AvatarPlaceholder/><i/></span><div className="profile-online-copy"><div><span>{t('profile.online.title')}</span><small>{t('profile.online.justNow')}</small></div><strong>{t('profile.online.demoFriend')}</strong><p>{t('profile.online.now')}</p><BookButton variant="quiet" type="button" onClick={() => {
+    flushSync(() => {setSocialTab('friends');setSettings(false);setSecurity(false);setDisplayEditing(false);setEditing(false);setArticle(null);setGuideDraft(null);setOnlineNotice(false);});
+    jumpTo('friends');
+  }}>{t('profile.online.view')}</BookButton></div><BookButton variant="icon" type="button" className="profile-notice-close" aria-label={t('profile.online.close')} onClick={() => setOnlineNotice(false)}>×</BookButton></aside>}</main></Tabs.Root>;
+}
+
+function ProfileContent({settings,value,children}: {settings:boolean;value:string;children:ReactNode}) {
+  const content=<div className="profile-tab-panel">{children}</div>;
+  return settings ? <Tabs.Content asChild forceMount value={value}>{content}</Tabs.Content> : content;
 }
 
 function AccountSecurity() {
@@ -203,10 +231,10 @@ function EmptyState({title, detail}: {title: string; detail?: string}) {return <
 function LocalGames({ids, empty}: {ids: string[]; empty: string}) {
   const products = ids.filter(isProductId);
   if (!products.length) return <EmptyState title={empty}/>;
-  return <div className="profile-local-games">{products.map(id => {const gameId = gameIdForProduct(id), game = PRODUCT_GAMES[gameId]; return <div className="profile-local-game" key={id}>{bookGameArtwork(gameId) ? <img src={bookGameArtwork(gameId)} alt=""/> : <span className="profile-game-placeholder">th{game.number}</span>}<div><small>th{game.number}</small><strong>{game.title}</strong><p>{game.subtitle}</p></div></div>;})}</div>;
+  return <div className="profile-local-games">{products.map(id => {const gameId = gameIdForProduct(id), game = PRODUCT_GAMES[gameId]; return <div className="profile-local-game" key={id}>{bookGameArtwork(gameId) ? <img src={bookGameArtwork(gameId)} alt=""/> : <span className="profile-game-placeholder">th{game.number}</span>}<div><small>th{game.number}</small><strong title={game.title}>{game.title}</strong><p>{game.subtitle}</p></div></div>;})}</div>;
 }
 
-function AvatarPlaceholder() {return <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="17" r="8"/><path d="M9 42v-5a15 15 0 0 1 30 0v5"/></svg>;}
+function AvatarPlaceholder() {return <UserRound aria-hidden="true" strokeWidth={1.5}/>;}
 
 function ProfileSectionIcon({name}: {name: string}) {
   const paths: Record<string, string> = {
@@ -214,7 +242,6 @@ function ProfileSectionIcon({name}: {name: string}) {
     career: 'M4 20V10h4v10m4 0V4h4v16m4 0V8h2v12M2 20h21',
     records: 'M4 5h16v15H4zM8 2v6m8-6v6M8 12h8m-8 4h5',
     content: 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7m-7 4h5',
-    recent: 'M12 7v5l3 2M3 11a9 9 0 1 1 2 7M3 5v6h6',
     favorites: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z',
     layout: 'M3 3h18v18H3zM3 9h18M10 9v12',
     profile: 'M5 21v-2a7 7 0 0 1 14 0v2',

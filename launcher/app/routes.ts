@@ -4,6 +4,10 @@ import {index, route, type RouteConfig} from '@react-router/dev/routes';
 export default [
   index('routes/surface.tsx', {id: 'library'}),
   route('ui-review.html', 'routes/ui-review.tsx'),
+  route('faq.html', 'routes/help.tsx', {id:'help-faq'}),
+  route('about.html', 'routes/help.tsx', {id:'help-about'}),
+  route('guide.html', 'routes/help.tsx', {id:'help-guide'}),
+  route('multiplayer.html', 'routes/help.tsx', {id:'help-multiplayer'}),
   route('uptime', 'routes/uptime.tsx', {id: 'uptime'}),
   route('uptime/index.html', 'routes/uptime.tsx', {id: 'uptime-index'}),
   route('index.html', 'routes/surface.tsx', {id: 'library-html'}),

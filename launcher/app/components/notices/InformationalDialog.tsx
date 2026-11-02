@@ -1,4 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
+import {X} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {useMainDialog, type MainDialogProps} from './use-main-dialog';
 import './informational-dialog.css';
@@ -28,7 +29,7 @@ export function InformationalDialog({id, titleId, closeId, title, closeLabel, pr
     className={`informational-dialog informational-dialog--${presentation.layout}`}
     onCancel={dialog.onCancel} onClick={dialog.onClick}>
     <article className={`informational-window informational-window--${presentation.window}`}><header>
-      <h1 id={titleId}>{title}</h1><UiButton variant="icon" id={closeId} type="button" aria-label={closeLabel} onClick={dialog.requestClose}>×</UiButton>
+      <h1 id={titleId}>{title}</h1><UiButton variant="icon" id={closeId} type="button" aria-label={closeLabel} onClick={dialog.requestClose}><X aria-hidden="true"/></UiButton>
     </header>{typeof children === 'function' ? children({closeImmediately: dialog.requestImmediateClose}) : children}</article>
   </dialog>;
 }

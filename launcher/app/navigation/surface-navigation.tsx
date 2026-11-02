@@ -388,7 +388,10 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
         if (parent === 'directory' && parentProduct) pendingDirectorySelection.current = {position: history!.position + distance, product: parentProduct};
         navigateAfterCleanup(distance);
       }
-      else void navigate(pageAddress(location, parent, parentProduct ?? address.productId, locale), {replace: true, state: {}});
+      else {
+        const next=pageAddress(location,parent,parentProduct??address.productId,locale);
+        void navigate(next,{replace:true,state:{},preventScrollReset:next.pathname===location.pathname});
+      }
     } finally {roomPolicyNavigation.current = false;}
   }
   // biome-ignore lint/correctness/useExhaustiveDependencies: This pending POP operation belongs to one committed Router entry, never a metadata or callback render.

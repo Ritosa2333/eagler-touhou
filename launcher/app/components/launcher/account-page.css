@@ -11,21 +11,18 @@
 @keyframes account-mode-enter{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.account-mode-content{animation:none}}
 html:has(body.less-motion) .account-mode-content{animation:none}
-.account-tabs{display:flex;gap:26px;margin-bottom:28px;border-bottom:1px solid var(--book-border)}
-.account-page .account-tabs button{padding:0 0 11px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--book-muted);font-size:13px;cursor:pointer}
+.account-tabs{margin-bottom:28px}
 .account-content h1{margin:0 0 26px;font-size:24px;line-height:1.4;font-weight:700;letter-spacing:normal}
 .account-content form{display:grid;gap:17px}
 .account-content label{display:grid;gap:7px;min-width:0;font-size:12px;color:var(--book-ink)}
-.account-content input{display:block;width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-ink);font-size:13px;line-height:1.5;transition:border-color var(--ui-feedback-duration) var(--ui-feedback-easing),box-shadow var(--ui-feedback-duration) var(--ui-feedback-easing)}
-.account-content input::placeholder{color:var(--book-muted);opacity:.8}
-.account-content input:focus{outline:0;border-color:var(--book-accent);box-shadow:0 0 0 3px var(--book-accent-soft)}
+.account-content input{display:block;width:100%;min-width:0;min-height:44px}
 .account-page button{cursor:pointer}
 .account-page :is(button,a):focus-visible{outline:2px solid var(--book-accent);outline-offset:4px}
-.account-password{position:relative;display:block}.account-password input{padding-right:46px}
+.account-password{position:relative;display:block}
 .account-password-toggle{position:absolute;right:3px;top:3px;display:grid;place-items:center;width:38px;height:38px;border:0;background:transparent;color:var(--book-muted)}
 .account-password-toggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
 .account-code{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-.account-code button{min-width:105px;padding:0 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-surface);color:var(--book-accent);font-size:12px}
+.account-code button{min-width:105px;align-self:stretch;height:auto}
 .account-submit{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin-top:5px;padding:10px 16px;border:1px solid var(--book-accent);border-radius:7px;background:var(--book-accent);color:var(--book-on-accent);font-size:13px;font-weight:700}
 .account-submit>span{font-size:18px;font-weight:400}
 .account-divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--book-muted);font-size:11px}
@@ -34,7 +31,7 @@ html:has(body.less-motion) .account-mode-content{animation:none}
 .account-discord svg{width:20px;height:20px;color:var(--book-muted)}
 .account-demo-note{margin:20px 0 0;text-align:center;font-size:10px;color:var(--book-muted)}
 .account-feedback{margin:0;padding:10px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-muted);font-size:12px;overflow-wrap:anywhere}
-.account-feedback.is-error,.account-field-error{color:var(--book-accent)}
+.account-feedback.is-error,.account-field-error{color:var(--kit-destructive)}
 .account-field-error{font-size:11px}
 .account-captcha-field{display:grid;gap:7px;font-size:12px}
 .account-captcha-slot{min-height:66px;min-width:0;border:1px dashed var(--book-border);border-radius:7px;background:var(--book-raised)}
@@ -46,10 +43,10 @@ html:has(body.less-motion) .account-mode-content{animation:none}
  .account-shell{isolation:isolate;grid-template-columns:minmax(0,1fr);height:auto;min-height:calc(100svh - var(--account-header-height,108px));background:var(--book-bg)}
  .account-art{display:none}
  .account-content,.is-registering .account-content{position:relative;z-index:1;width:100%;max-width:440px;max-height:none;overflow:visible;align-self:start;padding:32px 24px 44px;justify-content:flex-start}
- .account-content input{min-height:50px;font-size:16px;background:var(--book-surface);border-radius:9px}
+ .account-content input{min-height:50px}
  .account-content form,.is-registering form{gap:20px}
  .account-content label{gap:9px;font-size:13px}
- .account-code button,.account-discord,.account-captcha-slot{background:var(--book-surface);border-radius:9px}
+ .account-captcha-slot{background:var(--book-surface);border-radius:9px}
  .account-password-toggle{height:44px;width:42px}
  .account-submit,.account-discord{min-height:48px}
  .account-tabs,.is-registering .account-tabs{margin-bottom:28px}

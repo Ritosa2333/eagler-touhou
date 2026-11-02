@@ -9,6 +9,7 @@ import {readBookPreference, writeBookPreference} from './book-preferences';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {ConfirmationDialog} from '../ConfirmationDialog';
 import './career-showcase.css';
+import '../../ui/document-body.css';
 
 const careerButtonClass = 'max-[780px]:min-w-0 max-[780px]:h-auto max-[780px]:min-h-11 max-[780px]:whitespace-normal max-[780px]:px-1 max-[780px]:text-xs';
 
@@ -48,7 +49,9 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
   const {t} = useLocale();
   const [options, setOptions] = useState(DEFAULT_OPTIONS);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [open, setOpen] = useState(initiallyOpen), [editing, setEditing] = useState(false), [draft, setDraft] = useState<CareerRecords>({});
+  const [open, setOpen] = useState(initiallyOpen), [editRequested, setEditing] = useState(false), [draft, setDraft] = useState<CareerRecords>({});
+  const editing = editRequested && !readOnly;
+  const writable = useRef(!readOnly); writable.current = !readOnly;
   const [selection, setSelection] = useState<string | null>(null), [brush, setBrush] = useState('details');
   const [cells, setCells] = useState<Cell[]>([]), [view, setView] = useState<View>({scale: 1, x: 0, y: 0});
   const [confirmClose, setConfirmClose] = useState(false), [message, setMessage] = useState<UiMessageKey | null>(null);
@@ -59,7 +62,7 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
   const height = chartHeight(options);
   const dirty = editing && JSON.stringify(draft) !== JSON.stringify(records);
   useEffect(() => {setOptions(readBookPreference('career-chart-options-v1', DEFAULT_OPTIONS, validOptions));}, []);
-  const changeOptions = (next: TrackerOptions) => {setOptions(next); writeBookPreference('career-chart-options-v1', next); fitted.current = false;};
+  const changeOptions = (next: TrackerOptions) => {setOptions(next); if (!readOnly) writeBookPreference('career-chart-options-v1', next); fitted.current = false;};
   const fitMap = (whole = false) => {
     const area = viewport.current; if (!area) return;
     const scale = Math.max(.15, Math.min((area.clientWidth - 48) / 800, whole ? (area.clientHeight - 48) / height : 6));
@@ -144,7 +147,7 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
 
     {open && <dialog ref={dialog} className="career-viewer" aria-labelledby="career-viewer-title" onCancel={event => {event.preventDefault(); close();}}>
       <header className="career-viewer-header"><div><h2 id="career-viewer-title">{editing ? t('career.editing') : t('career.title')}</h2><span className="career-viewer-count">{completed(shown)} / {TRACKER_CELLS.length}</span></div><div className="career-viewer-actions">
-        {editing ? <><UiButton className={careerButtonClass} type="button" onClick={() => {if (dirty) setConfirmClose(true); else {setEditing(false); setSelection(null);}}}>{t('career.cancelEdit')}</UiButton><UiButton variant="primary" type="button" className={careerButtonClass} onClick={() => {onSave(draft); setEditing(false); setSelection(null); setConfirmClose(false); setMessage('career.saved');}}>{t('career.save')}</UiButton></> : !readOnly && <UiButton className={careerButtonClass} type="button" onClick={() => {setDraft({...records}); setEditing(true);}}>{t('career.edit')}</UiButton>}
+        {editing ? <><UiButton className={careerButtonClass} type="button" onClick={() => {if (dirty) setConfirmClose(true); else {setEditing(false); setSelection(null);}}}>{t('career.cancelEdit')}</UiButton><UiButton variant="primary" type="button" className={careerButtonClass} onClick={() => {if (!writable.current) return; onSave(draft); setEditing(false); setSelection(null); setConfirmClose(false); setMessage('career.saved');}}>{t('career.save')}</UiButton></> : !readOnly && <UiButton className={careerButtonClass} type="button" onClick={() => {setDraft({...records}); setEditing(true);}}>{t('career.edit')}</UiButton>}
         <UiButton type="button" className={`${careerButtonClass} career-help-trigger`} onClick={() => setHelpOpen(true)}><span aria-hidden="true">?</span>{t('career.help')}</UiButton><UiButton className={careerButtonClass} type="button" onClick={exportPng}>{t('career.exportPng')}</UiButton><UiButton className={careerButtonClass} variant="icon" type="button" aria-label={t('career.close')} onClick={close}>×</UiButton></div></header>
       <div className="career-viewer-body"><div className="career-map-column">
         <div className="career-map-tools"><div><UiButton className={careerButtonClass} type="button" aria-label={t('career.zoomOut')} onClick={() => zoom(1 / 1.25)}>−</UiButton><output aria-label={t('career.zoomLevel')}>{Math.round(view.scale * 100)}%</output><UiButton className={careerButtonClass} type="button" aria-label={t('career.zoomIn')} onClick={() => zoom(1.25)}>＋</UiButton><UiButton className={careerButtonClass} type="button" onClick={() => fitMap(true)}>{t('career.fit')}</UiButton><UiButton className={careerButtonClass} type="button" onClick={() => zoom(1 / view.scale)}>{t('career.actualSize')}</UiButton></div><span>{editing ? t('career.selectHint') : t('career.gestureHint')}</span></div>
@@ -169,12 +172,12 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
 
         </section>
         <section className="career-tool-section"><h3>{t('career.display')}</h3>{([['easy', t('career.showEasy')], ['extra', t('career.showExtras')], ['transparent', t('career.transparent')]] as const).map(([key, label]) => <label className="career-check" key={key}><Check checked={options[key]} onCheckedChange={event => changeOptions({...options, [key]: event})}/>{label}</label>)}</section>
-        <section className="career-tool-section"><h3>{t('career.backup')}</h3><div className="career-backup-actions"><UiButton className={careerButtonClass} type="button" onClick={exportJson}>{t('career.exportJson')}</UiButton><UiButton className={careerButtonClass} type="button" onClick={() => input.current?.click()}>{t('career.importJson')}</UiButton></div><input hidden ref={input} type="file" accept="application/json,.json" onChange={async event => {
-          const file = event.target.files?.[0]; event.target.value = ''; if (!file) return;
+        <section className="career-tool-section"><h3>{t('career.backup')}</h3><div className="career-backup-actions"><UiButton className={careerButtonClass} type="button" onClick={exportJson}>{t('career.exportJson')}</UiButton>{!readOnly && <UiButton className={careerButtonClass} type="button" onClick={() => input.current?.click()}>{t('career.importJson')}</UiButton>}</div>{!readOnly && <input hidden ref={input} type="file" accept="application/json,.json" onChange={async event => {
+          const file = event.target.files?.[0]; event.target.value = ''; if (!file || !writable.current) return;
           try {if (file.size > 2_000_000) throw new Error(); const data = JSON.parse(await file.text()); if (data.version !== 2 || !validCareerRecords(data.records)) throw new Error();
-            setDraft(data.records); setEditing(true); setSelection(null); setMessage('career.imported'); if (validOptions(data.options)) changeOptions(data.options);
+            if (!writable.current) return; setDraft(data.records); setEditing(true); setSelection(null); setMessage('career.imported'); if (validOptions(data.options)) changeOptions(data.options);
           } catch {setMessage('career.importError');}
-        }}/><p>{t('career.importHint')}</p></section>
+        }}/>}{!readOnly && <p>{t('career.importHint')}</p>}</section>
       </aside></div>{message && <div className="career-viewer-status" role="status">{t(message)}</div>}
     {helpOpen && <CareerHelp onClose={() => setHelpOpen(false)}/>}
     </dialog>}
@@ -239,7 +242,7 @@ function CareerHelp({onClose}: {onClose: () => void}) {
   }, []);
   return <dialog ref={dialog} className="career-help-dialog" aria-labelledby="career-help-title" onCancel={event => {event.preventDefault(); event.stopPropagation(); onClose();}}>
     <header><h2 id="career-help-title">{t('career.helpTitle')}</h2><UiButton className={careerButtonClass} variant="icon" type="button" aria-label={t('career.closeHelp')} onClick={onClose}>×</UiButton></header>
-    <div className="career-help-content">
+    <div className="career-help-content ui-document prose">
       <section><h3>{t('career.readCell')}</h3><div className="career-help-example"><div className="career-example-cell" role="img" aria-label={t('career.exampleAria')}><span>2</span><span>0</span><span>3</span><b>F</b></div><p>{t('career.cellGuide')}</p></div></section>
       <section><h3>{t('career.difficultyClears')}</h3><dl className="career-help-definitions"><div><dt>E / N / H / L</dt><dd>Easy / Normal / Hard / Lunatic</dd></div><div><dt>X / P</dt><dd>Extra / Phantasm</dd></div><div><dt>1CC</dt><dd>{t('career.oneCreditGuide')}</dd></div><div><dt>NM / NB / NN</dt><dd>{t('career.noMissBombGuide')}</dd></div></dl><p>{t('career.countGuide')}</p></section>
       <section><h3>{t('career.restrictions')}</h3><dl className="career-help-definitions"><div><dt>{t('career.nvNotation')}</dt><dd>{t('career.nv')}</dd></div><div><dt>F / NF</dt><dd>{t('career.nf')}</dd></div><div><dt>P</dt><dd>{t('career.pacifist')}</dd></div><div><dt>U</dt><dd>{t('career.uniqueGuide')}</dd></div></dl></section>

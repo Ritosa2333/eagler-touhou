@@ -1,4 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
+import '../../ui/document-body.css';
 import {legacyFirstUseNoticeSeen} from '../../../src/contracts/compat/first-use-notice.mts';
 import {useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, type Ref} from 'react';
 import {renderLocalizedContent} from '../../../src/launcher/localized-content.mts';
@@ -127,7 +128,7 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
   // biome-ignore lint/a11y/useKeyWithClickEvents: Native cancel and labelled close buttons provide keyboard dismissal of this backdrop.
   return <dialog ref={dialog.ref} className="first-use-notice-dialog" id="firstUseNoticeDialog" aria-labelledby="firstUseNoticeTitle" onCancel={dialog.onCancel} onClick={dialog.onClick}>
     <article className="first-use-notice-window"><header><h1 id="firstUseNoticeTitle">{t('firstUseNotice.title')}</h1><UiButton variant="icon" id="firstUseNoticeClose" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}>×</UiButton></header>
-      <div ref={content} className="first-use-notice-text" id="firstUseNoticeText"/>
+      <div ref={content} className="first-use-notice-text ui-document prose" id="firstUseNoticeText"/>
       <footer><UiButton size="lg" id="firstUseNoticeCloseHint" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}>{t('action.close')}</UiButton></footer>
     </article>
   </dialog>;

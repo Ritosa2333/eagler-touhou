@@ -96,7 +96,7 @@ function identityPlan(input: FilePreparationInput, acquired: PackageAcquisitionR
   if (host && !hosted) throw new Error(input.translate('runtime.hostManifestMissingGame', {game}));
   const entry = runtimeVariant === 'normal' ? hosted?.runtime ?? product.runtime
     : hosted ? hosted.multiplayerRuntime : 'multiplayerRuntime' in product ? product.multiplayerRuntime : undefined;
-  if (!entry) throw new Error(input.translate('runtime.multiplayerRuntimeMissing', {game: game.toUpperCase()}));
+  if (!entry) throw new Error(input.translate('runtime.multiplayerRuntimeMissing', {game: game}));
   const publishedRuntime = !!host?.shared.runtimeManifest;
   return {game, runtimeVariant, generation: acquired.generation, entry, publishedRuntime,
     ...(!host ? {localCatalogRuntime: true} : !publishedRuntime ? {runtimeHost: host} : {}), configure: {music: 'none'}};

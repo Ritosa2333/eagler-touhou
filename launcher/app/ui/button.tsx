@@ -9,7 +9,7 @@ const buttonVariants = cva('ui-kit-button inline-flex shrink-0 items-center just
     variant: {
       default: 'bg-primary text-primary-foreground hover:bg-primary/90',
       secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/75',
-      outline: 'border-border bg-background text-foreground hover:bg-accent',
+      outline: 'border-[var(--kit-control-border)] bg-card text-foreground hover:bg-accent active:bg-secondary',
       ghost: 'bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground',
       destructive: 'bg-destructive/10 text-destructive hover:bg-destructive/20',
       link: 'bg-transparent text-foreground underline-offset-4 hover:underline',

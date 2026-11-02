@@ -1,50 +1,8 @@
 @layer foundation {
 /* Shared chrome and compatibility styles for the remaining launcher modules. */
-html:has(.book-masthead) .masthead{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);gap:18px;align-items:center;margin:0;padding:0 max(22px,calc((100% - 1360px)/2));min-height:61px;border:0;border-bottom:1px solid var(--book-border);border-radius:0;background:color-mix(in srgb,var(--book-bg) 92%,transparent);font:600 13px/1.25 var(--ui-font);box-shadow:none;backdrop-filter:blur(12px);letter-spacing:0;text-transform:none}
-html:has(.book-masthead) .book-brand{display:flex;align-items:center;gap:9px;width:max-content;min-height:40px;padding:0;color:var(--book-ink);text-decoration:none;font-size:16px;white-space:nowrap;font-family:Georgia,'Times New Roman',serif;letter-spacing:1.5px}
-html:has(.book-masthead) .book-brand b{color:var(--book-accent);font-weight:700}
-html:has(.book-masthead) .book-brand .brand-version{align-self:center;margin-left:3px;color:var(--book-muted);font:500 10px/1.2 var(--ui-font);letter-spacing:0}
-html:has(.book-masthead) .book-main-nav{display:flex;justify-content:center;align-self:stretch;gap:4px}
-html:has(.book-masthead) .book-main-nav :is(a,button){appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:88px;min-height:60px;box-sizing:border-box;padding:0 24px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--book-muted);font:600 16px/1.2 var(--ui-font);text-decoration:none;cursor:pointer;letter-spacing:.06em}
-html:has(.book-masthead) .book-main-nav :is(a,button):hover{color:var(--book-ink);background:var(--book-accent-soft)}
-html:has(.book-masthead) .book-main-nav [aria-current='page'],html:has(.book-masthead) .book-main-nav [aria-pressed='true']{border-bottom-color:var(--book-accent);color:var(--book-accent)}
-html:has(.book-masthead) .masthead-links{grid-column:3;gap:2px}
-html:has(.book-masthead) .masthead-link{min-height:35px;border:0;color:var(--book-muted);font-size:12px;letter-spacing:0;text-transform:none}
-html:has(.book-masthead) .masthead-link:hover{color:var(--book-accent)}
-.book-theme-toggle{width:35px;height:35px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-accent);font-size:18px;cursor:pointer}.book-theme-toggle:hover{background:var(--book-accent-soft)}
-@media(max-width:780px),(hover:none),(pointer:coarse){html:has(.book-masthead) .masthead{grid-template-columns:auto minmax(0,1fr) auto;gap:5px;min-height:56px;padding:0 13px}html:has(.book-masthead) .book-brand{gap:4px;font-size:0}.book-brand .brand-version{display:none}html:has(.book-masthead) .book-main-nav{justify-content:flex-start;gap:0}.book-main-nav :is(a,button){min-height:56px;padding:0 8px;font-size:12px}html:has(.book-masthead) .masthead-links{display:flex;gap:0}.book-directory .lobby-intro h1{font-size:22px}}
 
 /* Shared launcher chrome, including the existing real directory and menus. */
 body:not(.mp-room-active):has(.book-masthead){--ui-font:var(--kit-font);background:var(--book-bg);color:var(--book-ink)}
 body:not(.mp-room-active):has(.book-masthead):before,body:not(.mp-room-active):has(.book-masthead):after{display:none}
-.book-masthead .masthead-menu-icon{color:var(--book-ink)}
-.book-masthead :is(a,button):focus-visible{outline:2px solid var(--book-accent);outline-offset:3px}
-.book-main-nav button:disabled{opacity:.45;cursor:default}
-body:not(.mp-room-active):has(.book-directory){--lobby-paper:var(--book-ink);--lobby-muted:var(--book-muted);--lobby-pink:var(--book-accent-soft);--lobby-wine:var(--book-accent);background:var(--book-bg);color:var(--book-ink)}
-.book-directory{display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-areas:"head head" "survey survey" "intro intro" "warning warning" "notice notice" "membership membership" "games tools" "games rooms" "games connection" "count count";column-gap:28px;max-width:1360px;padding:0 24px 35px}
-.book-directory>.book-masthead{grid-area:head;position:relative;margin:0 -24px 24px;padding:0 24px}
-.book-directory>.lobby-survey-notice{grid-area:survey;margin-bottom:20px;padding:12px 16px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);font-size:12px}
-.book-directory>.lobby-intro{grid-area:intro;margin-bottom:20px;gap:12px}.book-directory .lobby-intro h1{font-size:24px;font-weight:700}
-.book-directory>#connectionWarning{grid-area:warning}.book-directory>#notice{grid-area:notice}.book-directory>#membership{grid-area:membership}
-.book-directory>.lobby-library{grid-area:games;display:block;align-self:start;min-width:0;padding:0;background:none}
-.book-directory>.lobby-room-tools{grid-area:tools;min-width:0;margin:0 0 13px}.book-directory>.lobby-list-surface{grid-area:rooms;min-width:0;align-self:start}
-.book-directory>#connectionNote{grid-area:connection}.book-directory>#roomCount{grid-area:count}
-.book-directory .lobby-library .game-shelf{display:flex;flex-direction:column;min-width:0;overflow:visible;background:none;border:0}
-.book-directory .lobby-library .game-rail{display:flex;flex-direction:column;gap:3px;height:auto;overflow:visible;mask-image:none;-webkit-mask-image:none;scroll-snap-type:none;touch-action:auto;padding:0}
-.book-directory .lobby-library .game{position:relative;display:flex;align-items:center;flex:0 0 auto;width:100%;min-width:0;max-width:none;height:auto;min-height:41px;padding:10px 12px;overflow:hidden;transform:none;opacity:1;filter:none;border:0;border-radius:6px;background:transparent;color:var(--book-muted);box-shadow:none}
-.book-directory .lobby-library .game:before,.book-directory .lobby-library .game:after{display:none}
-.book-directory .lobby-library .game.nav-preview,.book-directory .lobby-library .game:hover{background:var(--book-accent-soft);color:var(--book-accent)}
-.book-directory .lobby-library .game :is(.card-art,.card-glow,.mp-card-mark,.no,.game-copy){display:none}
-.book-directory .lobby-library .rail-title{position:static;display:block;width:100%;padding:0;color:inherit;font:0/1.4 var(--ui-font);white-space:normal;opacity:1;transform:none}
-.book-directory .lobby-library .rail-title strong{color:inherit;font:600 13px/1.4 var(--ui-font)}
-.book-directory .lobby-library .shelf-minimap{display:none}
-.book-directory .lobby-actions{gap:8px;flex-wrap:wrap}.book-directory .lobby-actions .lobby-button{min-width:0;min-height:35px}
-.book-directory .lobby-button{min-height:34px;padding:7px 13px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-surface);color:var(--book-ink);font-size:12px}
-.book-directory :is(.lobby-warning,.lobby-membership,.lobby-notice){border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-ink)}
-.book-directory .lobby-support-link{color:var(--book-muted);border-color:var(--book-border)}
-.book-directory .lobby-list-head{color:var(--book-muted);border-color:var(--book-border);font-size:11px}
-.book-directory .lobby-empty{padding:38px 18px;border:1px dashed var(--book-border);border-radius:9px;background:var(--book-surface);color:var(--book-muted)}
-.book-directory .lobby-empty h2{font-size:17px;color:var(--book-ink)}
-@media(max-width:780px),(hover:none),(pointer:coarse){.book-directory{display:block;padding:0 14px 25px}.book-directory>.book-masthead{margin:0 -14px 18px;padding:0 13px}.book-directory>.lobby-library{margin-bottom:15px}.book-directory .lobby-library .game-rail{flex-direction:row;overflow-x:auto;gap:5px;scrollbar-width:none}.book-directory .lobby-library .game{flex:0 0 auto;width:auto;min-height:34px;padding:7px 10px}.book-directory .lobby-intro h1{font-size:22px}.book-directory .lobby-survey-notice{padding:10px 12px;gap:9px}.book-directory .lobby-support-links{gap:6px}}
 
 }

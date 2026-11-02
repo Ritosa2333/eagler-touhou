@@ -46,6 +46,6 @@ export function filterBookProducts(products: readonly LibraryProduct[], category
   const term = query.trim().toLocaleLowerCase();
   return products.filter(product => !product.hidden && !product.multiplayer)
     .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === category))
-    .filter(product => `${product.id} TH${product.number} ${product.title} ${product.subtitle}`.toLocaleLowerCase().includes(term))
+    .filter(product => `${product.id} th${product.number} ${product.title} ${product.subtitle}`.toLocaleLowerCase().includes(term))
     .sort((a, b) => sort === 'name' ? a.title.localeCompare(b.title, 'zh-CN') : (Number(a.number) - Number(b.number)) * (sort === 'reverse' ? -1 : 1));
 }

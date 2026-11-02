@@ -1,4 +1,36 @@
 {
+  "document.toc": {
+    "id": "document_toc",
+    "params": []
+  },
+  "document.nextPage": {
+    "id": "document_nextPage",
+    "params": []
+  },
+  "document.previousPage": {
+    "id": "document_previousPage",
+    "params": []
+  },
+  "document.collapseNavigation": {
+    "id": "document_collapseNavigation",
+    "params": []
+  },
+  "document.openNavigation": {
+    "id": "document_openNavigation",
+    "params": []
+  },
+  "document.closeNavigation": {
+    "id": "document_closeNavigation",
+    "params": []
+  },
+  "document.lastModified": {
+    "id": "document_lastModified",
+    "params": []
+  },
+  "document.uncommitted": {
+    "id": "document_uncommitted",
+    "params": []
+  },
   "multiplayer.character.th075_0": {
     "id": "multiplayer_character_th075_0",
     "params": []
@@ -1613,6 +1645,14 @@
   },
   "lobby.replaced": {
     "id": "lobby_replaced",
+    "params": []
+  },
+  "lobby.roomLimit": {
+    "id": "lobby_roomLimit",
+    "params": []
+  },
+  "lobby.connectionLimit": {
+    "id": "lobby_connectionLimit",
     "params": []
   },
   "lobby.conflict": {
@@ -8485,6 +8525,18 @@
     "id": "directory_multiSelect",
     "params": []
   },
+  "directory.group.versus": {
+    "id": "directory_group_versus",
+    "params": []
+  },
+  "directory.group.original": {
+    "id": "directory_group_original",
+    "params": []
+  },
+  "directory.group.fighting": {
+    "id": "directory_group_fighting",
+    "params": []
+  },
   "directory.allGames": {
     "id": "directory_allGames",
     "params": []
@@ -8553,6 +8605,18 @@
   },
   "donation.title": {
     "id": "donation_title",
+    "params": []
+  },
+  "help.touchControls": {
+    "id": "help_touchControls",
+    "params": []
+  },
+  "help.touchMove": {
+    "id": "help_touchMove",
+    "params": []
+  },
+  "help.dialogueControls": {
+    "id": "help_dialogueControls",
     "params": []
   }
 }

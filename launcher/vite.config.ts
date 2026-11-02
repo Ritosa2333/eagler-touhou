@@ -5,6 +5,7 @@ import {originalBootstrap} from './scripts/ui-rewrite/original-bootstrap.ts';
 import {mainAssets} from './scripts/ui-rewrite/main-assets.ts';
 import {authoredSources} from './scripts/ui-rewrite/authored-sources.ts';
 import {uiTranslations} from './scripts/ui-rewrite/i18n.ts';
+import {documentHistory} from './scripts/ui-rewrite/document-history.ts';
 import {reactDeploymentConfig} from './scripts/ui-rewrite/deployment-config.ts';
 import {relative, resolve} from 'node:path';
 import {readFileSync} from 'node:fs';
@@ -44,6 +45,8 @@ function layoutWatch(): Plugin {
   return {name:'local-layout-watch',configureServer:install,configurePreviewServer:install};
 }
 export default defineConfig({base: deployment.mountPath,
+  ssr:{noExternal:['fumadocs-core','fumadocs-ui']},
+  optimizeDeps:{exclude:['fumadocs-core','fumadocs-ui']},
   // Generated fixtures are not authored UI inputs. Watching them also holds
   // directory handles that block publication/refresh renames on Windows.
   server: {proxy: serverProxy, watch: {ignored: path => /^(?:\.cache|artifacts|src\/paraglide)(?:\/|$)/.test(relative(sourceRoot, path).replaceAll('\\', '/'))}},
@@ -52,7 +55,7 @@ export default defineConfig({base: deployment.mountPath,
   // Keep generated JavaScript within the browser floor admitted by bootstrap.
   build: {manifest: true, target: 'chrome108'},
   define: {__REACT_APP_SHELL_DEPLOYMENT__: JSON.stringify(deployment.appShell)},
-  plugins: [uiTranslations(sourceRoot), layoutWatch(), tailwindcss(), {name: 'local-ui-site-manifest', configureServer(server) {
+  plugins: [uiTranslations(sourceRoot), documentHistory(sourceRoot), layoutWatch(), tailwindcss(), {name: 'local-ui-site-manifest', configureServer(server) {
     if (!uiSiteManifest) return;
     server.middlewares.use((req, res, next) => {
       if (req.url?.split('?')[0] !== deployment.mountPath + 'site-manifest.json') {next();return;}

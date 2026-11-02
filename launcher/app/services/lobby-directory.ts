@@ -85,7 +85,7 @@ export interface DirectorySocket {
   send(data: string): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
-  addEventListener(type: 'close', listener: (event: { code: number }) => void): void;
+  addEventListener(type: 'close', listener: (event: { code: number; reason?: string }) => void): void;
   addEventListener(type: 'error', listener: () => void): void;
 }
 export interface LobbyDirectoryOptions {

@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useLayoutEffect, useRef} from 'react';
 import {renderLocalizedContent} from '../../../src/launcher/localized-content.mts';
+import '../../ui/document-body.css';
 import {useLocale} from '../../i18n';
 import {buildRuleGuide, DEFAULT_GUIDE_GAME} from '../../../src/launcher/multiplayer-guide-content.mts';
 import type {MainDialogProps} from './use-main-dialog';
@@ -70,6 +71,6 @@ export function MultiplayerGuideDialog({gameId, contentUrl = 'content/MULTIPLAYE
   }, [props.open, gameId, status, renderContent]);
   return <InformationalDialog {...props} id="mpGuideDialog" titleId="mpGuideTitle" closeId="mpGuideClose"
     title={t('multiplayerGuide.title')} closeLabel={t('multiplayerGuide.close')} presentation={informationalDialogPresentation.scrollable}>
-    <div ref={content} className="multiplayer-guide-content" id="mpGuideContent"/>
+    <div ref={content} className="multiplayer-guide-content ui-document prose" id="mpGuideContent"/>
   </InformationalDialog>;
 }

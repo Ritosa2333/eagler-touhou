@@ -6,6 +6,7 @@
 .uptime-message{min-height:24px;margin:12px 0;color:var(--kit-muted-foreground);font-size:13px;line-height:24px}
 .uptime-message[role=alert]{color:var(--kit-destructive)}
 .uptime-list{min-height:100px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card);overflow:hidden}
+.uptime-list[data-empty-failure]{border-color:transparent;background:transparent}
 .uptime-columns,.uptime-row{display:grid;grid-template-columns:80px minmax(130px,1fr) minmax(180px,1.4fr) 90px 100px;gap:16px;align-items:center;padding:16px 20px}
 .uptime-columns{color:var(--kit-muted-foreground);font-size:12px}
 .uptime-group h2{margin:0;padding:10px 20px;border-top:1px solid var(--kit-border);background:var(--kit-muted);font-size:13px;line-height:1.5;font-weight:600}

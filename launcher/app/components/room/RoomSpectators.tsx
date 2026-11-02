@@ -1,4 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
+import {OverflowText} from '../../ui/overflow-text';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
 import type { RoomOwnerSnapshot, MultiplayerRoomService } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
@@ -45,7 +46,7 @@ export function RoomSpectators({
                   {multiplayerDisplayInitial(entry.name, '?')}
                 </span>
                 <div className="mp-spectator-copy">
-                  <strong>{title}</strong>
+                  <strong><OverflowText>{title}</OverflowText></strong>
                   <small>
                     {t(
                       state.product === 'th09mp' && room.phase !== 'lobby'

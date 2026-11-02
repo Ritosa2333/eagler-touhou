@@ -1,5 +1,5 @@
 import {Button as UiButton} from '../../ui/button';
-import {Play, Upload} from 'lucide-react';
+import {Play, FolderInput} from 'lucide-react';
 import type {ReactNode} from 'react';
 
 export interface LaunchAction {
@@ -18,7 +18,7 @@ export interface LaunchActionsProps {
 /** Shared play/import presentation; session and replay owners decide intent. */
 export function LaunchActions({primary, secondary, placement = 'standard'}: LaunchActionsProps) {
   return <div className={`launch-wrap launch-actions${placement === 'compact' ? ' launch-actions-compact' : ''}`}>
-    <UiButton size="lg" className="launch" id={primary.id} type="button" disabled={primary.disabled} onClick={primary.onClick}><span id={primary.textId}>{primary.label}</span><span className="launch-icon" aria-hidden="true"><Play/></span></UiButton>
-    <UiButton variant="outline" size="lg" className="launch launch-secondary" id={secondary.id} type="button" disabled={secondary.disabled} onClick={secondary.onClick}><span className="launch-icon" aria-hidden="true"><Upload/></span><span id={secondary.textId}>{secondary.label}</span></UiButton>
+    <UiButton size="lg" className="launch" id={primary.id} type="button" disabled={primary.disabled} onClick={primary.onClick}><Play aria-hidden="true"/><span id={primary.textId}>{primary.label}</span></UiButton>
+    <UiButton variant="outline" size="lg" className="launch launch-secondary" id={secondary.id} type="button" disabled={secondary.disabled} onClick={secondary.onClick}><FolderInput aria-hidden="true"/><span id={secondary.textId}>{secondary.label}</span></UiButton>
   </div>;
 }

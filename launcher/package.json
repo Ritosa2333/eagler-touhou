@@ -212,6 +212,9 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "fflate": "0.8.3",
+    "fs-native-extensions": "1.5.3",
+    "fumadocs-core": "16.17.9",
+    "fumadocs-ui": "16.17.9",
     "lucide-react": "1.65.0",
     "motion": "14.9.0",
     "radix-ui": "1.8.1",
@@ -243,10 +246,10 @@
     "puppeteer-core": "25.10.0",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
+    "undici": "8.11.2",
     "vite": "8.3.2",
     "vitest": "5.0.5",
-    "workbox-build": "^7.4.1",
-    "undici": "8.11.2"
+    "workbox-build": "^7.4.1"
   },
   "overrides": {
     "tldts-icann": {

@@ -21,11 +21,6 @@ export interface LibraryCardsProps {
   interactive?: boolean;
 }
 
-function titleMarkup(title: string) {
-  return title.startsWith('東方') && title.length > 2
-    ? <><span>東方</span><wbr/><span>{title.slice(2)}</span></>
-    : <span>{title}</span>;
-}
 function presentationStyle(product: LibraryProduct): CSSProperties | undefined {
   const p = product.presentation;
   return p ? {'--art-position': `${p.positionPercent}%`, '--card-art-brightness': p.artBrightness,
@@ -77,8 +72,8 @@ export function LibraryCards({products, selectedProduct, openedProduct, onSelect
       {product.artwork && <><span className="card-art" aria-hidden="true"><img className="card-art-image" src={product.artwork} onError={() => setFailedArt(previous => new Set(previous).add(product.id))} alt="" width={index === 0 && !product.multiplayer ? 640 : undefined} height={index === 0 && !product.multiplayer ? 480 : undefined} fetchPriority={index === 0 && !product.multiplayer ? 'high' : undefined} draggable={false}/><span className="card-art-shade"/></span><span className="card-glow" aria-hidden="true"><img className="card-art-image" src={product.artwork} onError={() => setFailedArt(previous => new Set(previous).add(product.id))} alt="" draggable={false}/></span></>}
       {product.multiplayer && <span className="mp-card-mark" aria-hidden="true">MULTIPLAYER</span>}
       <div className="no"><span className="no-label">{product.number}{product.multiplayer && <span className="no-mp">MP</span>}</span></div>
-      <div className="game-copy"><h2><span className="game-title">{titleMarkup(product.title)}</span>{product.multiplayer && <> <Badge className="mp-game-title-badge" aria-hidden="true">MULTIPLAYER</Badge></>}</h2><small>{product.subtitle}</small></div>
-      <span className="rail-title"><strong>{product.title}</strong> ~ {product.multiplayer ? 'Multiplayer' : product.subtitle}</span>
+      <div className="game-copy"><h2><span className="game-title">{product.title}</span>{product.multiplayer && <> <Badge className="mp-game-title-badge" aria-hidden="true">MULTIPLAYER</Badge></>}</h2></div>
+      <span className="rail-title"><strong>{product.title}</strong><small>{product.subtitle}</small></span>
     </a>;
   });
   const index = <div className="minimap-dock">{products.map(product => {

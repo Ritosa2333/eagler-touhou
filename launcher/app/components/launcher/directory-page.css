@@ -1,0 +1,81 @@
+@layer components {
+  body:has(.book-directory) {--lobby-paper:var(--book-ink);--lobby-muted:var(--book-muted);--lobby-pink:var(--book-accent-soft);--lobby-wine:var(--book-accent)}
+  .lobby-main.book-directory {display:block;width:100%;max-width:var(--launcher-layout-width);min-width:0;margin:0 auto;padding:12px var(--launcher-layout-gutter) max(24px,env(safe-area-inset-bottom));box-sizing:border-box;color:var(--book-ink)}
+  .book-directory .lobby-intro {margin:0 0 12px;padding:0;min-width:0}
+  .book-directory .lobby-support-links {display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin:0}
+  .book-directory .lobby-support-link {min-height:40px;padding-block:0;font-size:12px;color:var(--book-muted)}
+  .book-directory .lobby-directory-body {display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start;gap:24px;min-width:0;min-height:0}
+  .book-directory .lobby-library {min-width:0;padding:0;background:none}
+  .book-directory .lobby-rooms-column {display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
+  .book-directory .lobby-room-tools {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0;min-width:0}
+  .book-directory .lobby-actions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;min-width:0;width:auto}
+  .book-directory .lobby-actions .lobby-button {min-width:0;min-height:44px;white-space:nowrap}
+  .book-room-filter-trigger {margin-left:auto;min-height:44px;gap:6px;font-size:12px}
+  .book-room-filter-trigger svg {width:16px;height:16px}
+  .book-room-filter-trigger[data-active='true'] {background:var(--book-accent-soft);color:var(--book-accent)}
+  .book-directory .lobby-list-surface {position:relative;display:flex;flex-direction:column;min-width:0;min-height:280px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);overflow:hidden}
+  .book-directory .lobby-list-loading {position:absolute;inset:0;display:grid;place-items:center;min-height:0;padding:24px;pointer-events:none}
+  .book-directory .lobby-room-list {flex:1;min-height:0}
+  .book-directory .lobby-empty {display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:0;padding:32px 20px;border:0;background:transparent;color:var(--book-muted);text-align:center}
+  .book-directory .lobby-empty h2 {margin:0;font-size:17px;color:var(--book-ink)}
+  .book-directory .lobby-empty p {margin:0;max-width:36em}
+  .book-directory .lobby-directory-count {flex:none;margin:0;margin-top:auto;padding:8px 14px;font-size:12px;line-height:1.5;color:var(--book-muted);text-align:right}
+  .book-directory>.lobby-notice,.book-directory>.lobby-membership,.book-directory>.lobby-connection-warning {margin:0 0 12px;padding:12px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-ink);font-size:12px}
+  .book-lobby-games {min-width:0}
+  .book-lobby-full-list {display:flex;flex-direction:column;gap:4px;min-width:0}
+  .book-lobby-group {display:flex;flex-direction:column;gap:4px;min-width:0}
+  .book-lobby-group-label {margin:10px 0 0;padding:0 8px;color:var(--kit-muted-foreground);font:500 11px/1.5 var(--kit-font)}
+  .book-lobby-item {display:grid;grid-template-columns:28px minmax(0,1fr) 44px;align-items:center;min-width:0;gap:2px;padding:2px;border:1px solid transparent;border-radius:7px;color:var(--book-ink)}
+  .book-lobby-item[data-selected='true'] {background:var(--book-accent-soft);border-color:var(--book-border)}
+  .book-lobby-game {display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:7px;min-width:0;min-height:44px;padding:0;border:0;background:transparent;color:inherit;text-align:left}
+  .book-lobby-cover {display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:4px;overflow:hidden;background:var(--book-raised);font-size:10px}
+  .book-lobby-cover img {display:block;width:100%;height:100%;object-fit:cover}
+  .book-lobby-cover>svg {width:18px;height:18px}
+  .book-lobby-copy {display:flex;flex:1;flex-direction:column;gap:1px;min-width:0;font:400 10px/1.4 var(--ui-font)}
+  .book-lobby-name {display:flex;align-items:baseline;gap:4px;min-width:0}
+  .book-lobby-copy small {flex:none;color:var(--kit-muted-foreground);font-size:10px}
+  .book-lobby-copy strong,.book-lobby-subtitle {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .book-lobby-copy strong {font-size:11px;font-weight:600}
+  .book-lobby-subtitle {color:var(--kit-muted-foreground)}
+  .book-lobby-check {display:grid;place-items:center;flex:none;width:12px;height:12px;border:1px solid var(--kit-input);border-radius:3px;background:var(--kit-card);color:var(--kit-foreground)}
+  .book-lobby-check svg {display:block;width:10px;height:10px}
+  .book-lobby-check-control {display:grid;place-items:center;min-width:0;min-height:44px;padding:0;border:0;background:transparent}
+  .book-lobby-favorite {display:flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:0;border:0;background:transparent;color:var(--kit-muted-foreground)}
+  .book-lobby-favorite svg {width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+  .book-lobby-favorite:is([aria-pressed='true'],[data-state='checked']) {color:var(--kit-primary)}
+  .book-lobby-favorite:is([aria-pressed='true'],[data-state='checked']) svg {fill:currentColor}
+  .book-lobby-mobile {display:none}
+  .book-lobby-picker {width:min(400px,calc(100vw - 24px));max-width:calc(100vw - 24px)}
+  .book-lobby-menu-row {display:grid;grid-template-columns:36px minmax(0,1fr) 36px;height:48px;min-width:0;flex:none}
+  .book-lobby-menu-row[data-selected='true'] {background:var(--kit-accent);border-radius:4px}
+  .book-lobby-menu-choice {gap:8px;min-width:0}
+  .book-lobby-menu-choice .book-lobby-cover {width:28px;height:28px}
+  .book-lobby-tile {position:relative;flex:none;width:48px;height:48px}
+  .book-lobby-icon {position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:48px;height:48px;min-height:48px;margin:0;padding:4px;border:1px solid transparent;border-radius:6px;background:transparent}
+  .book-lobby-icon[aria-pressed='true'] {border-color:var(--book-border);background:var(--book-accent-soft)}
+  .book-lobby-icon .book-lobby-cover {width:32px;height:32px}
+  .book-lobby-tile-toggle {position:absolute;top:0;right:0;z-index:2;display:grid;justify-content:end;align-content:start;width:24px;height:24px;min-height:24px;padding:1px;border:0;background:transparent}
+  .book-lobby-short {position:absolute;right:1px;bottom:1px;z-index:1;display:grid;place-items:center;min-width:13px;height:13px;padding-inline:1px;border-radius:2px;background:var(--kit-card);color:var(--kit-foreground);font:600 10px/1 var(--kit-font);pointer-events:none}
+  @media(min-width:1001px) and (hover:hover) and (pointer:fine) {
+    html:has(.lobby-page),body:has(.lobby-page) {height:100%;overflow:hidden}
+    .launcher-page-surface:has(.book-directory) {height:calc(100dvh - 61px);min-height:0;overflow:hidden}
+    .lobby-main.book-directory {display:flex;flex-direction:column;height:100%;max-width:none;overflow:hidden}
+    .book-directory .lobby-directory-body {flex:1;align-items:stretch;overflow:hidden}
+    .book-directory .lobby-library {overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+    .book-directory .lobby-list-surface {flex:1;min-height:0}
+    .book-directory .lobby-room-list {overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  }
+  @media(max-width:1000px),(hover:none),(pointer:coarse) {
+    html:has(.lobby-page),body:has(.lobby-page) {height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+    .book-directory .lobby-directory-body {display:block}
+    .book-directory .lobby-library {margin-bottom:12px}
+    .book-lobby-desktop {display:none}
+    .book-lobby-mobile {display:flex;gap:6px;min-width:0}
+    .book-lobby-icon-strip {display:flex;align-items:center;gap:4px;min-width:0;padding:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none}
+    .book-lobby-picker-trigger {flex:none;width:48px;height:48px}
+    .book-directory .lobby-room-tools {align-items:center;gap:8px}
+    .book-directory .lobby-actions {display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 44px;align-items:stretch;gap:6px;width:100%}
+    .book-directory .lobby-actions .lobby-button {width:100%;padding-inline:4px;font-size:12px}
+    .book-directory .lobby-actions .lobby-refresh {align-self:center}
+  }
+}

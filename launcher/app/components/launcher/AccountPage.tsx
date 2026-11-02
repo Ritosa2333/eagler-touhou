@@ -1,5 +1,5 @@
 import {Input} from '../../ui/input';
-import {Tabs} from 'radix-ui';
+import {Tabs, TabsList, TabsTrigger, TabsContent} from '../../ui/tabs';
 import {BookButton} from './BookButton';
 import {useCallback, useEffect, useRef, useState, type ComponentType, type FormEvent} from 'react';
 import {useSearchParams} from 'react-router';
@@ -72,12 +72,12 @@ export function AccountPage({captcha: Captcha, artworkSrc = backgroundUrl}: {cap
     if (Captcha && !captchaToken) {setError('account.captchaRequired'); return;}
     setMessage('account.registerDemo');
   };
-  return <Tabs.Root value={registering ? 'register' : 'login'} onValueChange={mode => setSearch(previous => {const next = new URLSearchParams(previous); if (mode === 'register') next.set('mode', mode); else next.delete('mode'); return next;})} asChild><main ref={pageRef} className="account-page" aria-labelledby="account-title">
+  return <Tabs value={registering ? 'register' : 'login'} onValueChange={mode => setSearch(previous => {const next = new URLSearchParams(previous); if (mode === 'register') next.set('mode', mode); else next.delete('mode'); return next;})} asChild><main ref={pageRef} className="account-page" aria-labelledby="account-title">
     <section className={`account-shell${registering ? ' is-registering' : ''}`}>
       <aside className="account-art" aria-hidden="true"><img src={artworkSrc} alt="" className="account-art-image"/></aside>
       <div className="account-content">
-        <Tabs.List asChild><nav className="account-tabs" aria-label={t('account.actions')}>{[['login',t('account.login')],['register',t('account.register')]].map(([mode,label]) => <Tabs.Trigger asChild key={mode} value={mode}><BookButton variant="tab" aria-current={registering===(mode==='register') ? 'page' : undefined}>{label}</BookButton></Tabs.Trigger>)}</nav></Tabs.List>
-        <Tabs.Content asChild value={registering ? 'register' : 'login'}><div key={registering ? 'register' : 'login'} className="account-mode-content">
+        <TabsList asChild><nav className="account-tabs" aria-label={t('account.actions')}>{[['login',t('account.login')],['register',t('account.register')]].map(([mode,label]) => <TabsTrigger key={mode} value={mode} aria-current={registering===(mode==='register') ? 'page' : undefined}>{label}</TabsTrigger>)}</nav></TabsList>
+        <TabsContent asChild value={registering ? 'register' : 'login'}><div key={registering ? 'register' : 'login'} className="account-mode-content">
         <header><h1 id="account-title">{registering ? t('account.registerTitle') : t('account.login')}</h1></header>
         <form method="post" onSubmit={submit}>
           {registering ? <>
@@ -85,7 +85,7 @@ export function AccountPage({captcha: Captcha, artworkSrc = backgroundUrl}: {cap
             <label>{t('account.email')}<Input name="email" type="email" autoComplete="email" required value={email} onChange={event => {setEmail(event.target.value); setCaptchaToken('');}} placeholder="name@example.com"/></label>
             <label>{t('account.emailCode')}<span className="account-code"><Input name="code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('account.codePlaceholder')}/><BookButton variant="action" type="button" disabled={remaining > 0} onClick={sendCode}>{remaining ? `${remaining}s` : t('account.requestCode')}</BookButton></span></label>
           </> : <label>{t('account.identity')}<Input name="identity" autoComplete="username" required value={identity} onChange={event => setIdentity(event.target.value)} placeholder={t('account.identityPlaceholder')}/></label>}
-          <label>{t('account.password')}<span className="account-password"><Input name="password" type={showPassword ? 'text' : 'password'} autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} required value={password} onChange={event => setPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : t('account.passwordPlaceholder')}/><BookButton variant="icon" type="button" className="account-password-toggle" aria-label={showPassword ? t('account.hidePassword') : t('account.showPassword')} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>{showPassword && <path d="m3 3 18 18"/>}</svg></BookButton></span></label>
+          <label>{t('account.password')}<span className="account-password"><Input className="pr-12" aria-label={t('account.password')} name="password" type={showPassword ? 'text' : 'password'} autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} required value={password} onChange={event => setPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : t('account.passwordPlaceholder')}/><BookButton variant="icon" type="button" className="account-password-toggle" aria-label={showPassword ? t('account.hidePassword') : t('account.showPassword')} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>{showPassword && <path d="m3 3 18 18"/>}</svg></BookButton></span></label>
           {registering && <><label>{t('account.confirmPassword')}<Input name="confirmation" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required value={confirmation} onChange={event => setConfirmation(event.target.value)} placeholder={t('account.confirmationPlaceholder')} aria-invalid={confirmation.length > 0 && password !== confirmation ? true : undefined}/>{confirmation.length > 0 && password !== confirmation && <small className="account-field-error">{t('account.passwordMismatch')}</small>}</label>
             <div className="account-captcha-field"><span>{t('account.verification')}</span><div className="account-captcha-slot" data-captcha-slot="">{Captcha && <Captcha key={email} onVerify={verifyCaptcha} onExpire={clearCaptcha} onError={clearCaptcha}/>}</div></div>
           </>}
@@ -95,10 +95,10 @@ export function AccountPage({captcha: Captcha, artworkSrc = backgroundUrl}: {cap
         </form>
         {!registering && <><div className="account-divider"><span>{t('account.or')}</span></div><BookButton variant="action" type="button" className="account-discord" onClick={() => {setError(null); setMessage('account.discordPending');}}><DiscordIcon/>{t('account.discord')}</BookButton></>}
         <p className="account-demo-note">{t('account.preview')}</p>
-        </div></Tabs.Content>
+        </div></TabsContent>
       </div>
     </section>
-  </main></Tabs.Root>;
+  </main></Tabs>;
 }
 
 function DiscordIcon() {return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.7 5.2A18 18 0 0 0 15.5 4l-.5 1a15 15 0 0 0-6 0l-.5-1a18 18 0 0 0-4.2 1.2C1.7 9 1 12.6 1.4 16.2a17 17 0 0 0 5.2 2.6l1-1.6-1.6-.8.4-.3a13 13 0 0 0 11.2 0l.4.3-1.6.8 1 1.6a17 17 0 0 0 5.2-2.6c.5-4.2-.8-7.8-2.9-11ZM8.3 14.6c-1 0-1.7-.9-1.7-2s.7-2 1.7-2 1.8.9 1.7 2c0 1.1-.7 2-1.7 2Zm7.4 0c-1 0-1.7-.9-1.7-2s.7-2 1.7-2 1.8.9 1.7 2c0 1.1-.7 2-1.7 2Z"/></svg>;}

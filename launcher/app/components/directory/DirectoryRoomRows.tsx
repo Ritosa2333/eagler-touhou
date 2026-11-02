@@ -1,5 +1,7 @@
 import {BookButton} from '../launcher/BookButton';
 import { Fragment, useRef, useState } from 'react';
+import {UsersRound} from 'lucide-react';
+import {OverflowText} from '../../ui/overflow-text';
 import {
   PRODUCT_GAMES,
   gameIdForProduct,
@@ -16,6 +18,7 @@ import {
 import { useLocale } from '../../i18n';
 import { RoomElapsed } from '../room/RoomElapsed';
 import {bookGameArtwork} from '../launcher/book-artwork';
+import './directory-room-list.css';
 
 export interface DirectoryRoomRowsProps {
   snapshot: DirectorySnapshot;
@@ -59,12 +62,12 @@ function RoomRow({
   assetUrl(path: string): string;
   initial: boolean;
 }) {
-  const { locale, t } = useLocale(),
+  const { t, locale } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
   const [coverFailed, setCoverFailed] = useState(false);
   const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
   const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
-  const title = locale === 'en' ? meta.subtitle : meta.title;
+  const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
   const duel = room.product === 'th09mp';
   const score = room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS';
@@ -74,13 +77,14 @@ function RoomRow({
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
   const disabled =
+    snapshot.loading ||
     snapshot.connection !== 'live' ||
     !!snapshot.mine ||
     snapshot.leaving ||
     !directoryRoomCanEnter(room);
   return (
     <li
-      className={`lobby-room-row${initiallyHiddenMotion ? ' lobby-room-initial' : ''}`}
+      className={`lobby-room-row directory-room-grid${initiallyHiddenMotion ? ' lobby-room-initial' : ''}`}
       data-key={`${room.product}-${room.code}`}
     >
       <div className="lobby-room-identity">
@@ -93,42 +97,35 @@ function RoomRow({
             hidden={!artwork || coverFailed}
             onError={() => setCoverFailed(true)}
           />
-          <span className="lobby-cover-number">{meta.number}</span>
+          {(!artwork || coverFailed) && <span className="lobby-cover-number">{meta.number}</span>}
         </span>
         <div className="lobby-room-title">
-          <span className="lobby-room-code">#{room.code}</span>
-          <h2>{title}</h2>
-          <span className="lobby-room-subtitle">{meta.subtitle}</span>
-          <span className="lobby-mobile-difficulty" data-difficulty={difficulty.toLowerCase()} hidden={!difficulty}>{difficulty}</span>
-          <span className="lobby-movement-rule" hidden={!room.disableCheatMovement}>
-            {t('lobby.noCheat')}
-          </span>
-          <span className="lobby-movement-rule lobby-challengeMode" hidden={!room.challengeMode}>
-            {t('room.challengeMode')}
-          </span>
+          <h2><span className="lobby-work-name" title={title}>{title}</span>{difficulty && <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()}>{difficulty}</span>}</h2>
+          <div className="lobby-room-meta"><span className="lobby-room-code">#{room.code}</span>
+          <div className="lobby-room-rules" hidden={!room.disableCheatMovement && !room.challengeMode}>
+            {[room.disableCheatMovement ? t('lobby.noCheat') : '',room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map((rule,index)=><span key={rule}>{index>0&&(locale==='en'?', ':'、')}{rule}</span>)}
+          </div>
+          </div>
           <div className="lobby-room-facts">
             <span className="lobby-room-watchers" role="img" aria-label={t('th09.spectatorCount', {count: room.spectators})}
               title={t('th09.spectatorCount', {count: room.spectators})}>
-              <img src={assetUrl('assets/room-users.svg')} alt=""/>{t('th09.spectatorCount', {count: room.spectators})}
+              <UsersRound aria-hidden="true"/>{t('th09.spectatorCount', {count: room.spectators})}
             </span>
-            {room.phase !== 'lobby' && !!room.startedAt && <>
+            {room.phase !== 'lobby' && (duel || !!room.startedAt) && <>
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={room.startedAt}/>
+              <RoomElapsed phase={room.phase} startedAt={duel?undefined:room.startedAt} elapsedMinutes={duel?minutes:undefined}/>
             </>}
-            {duel && room.phase !== 'lobby' && !room.startedAt && <span className="room-elapsed">{t('th09.elapsed', {minutes})}</span>}
           </div>
         </div>
       </div>
-      <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()} hidden={!difficulty && !duel}>{difficulty || (t('directory.chooseInGame'))}</span>
-      <div className="lobby-room-rules">
-        {room.disableCheatMovement && <span>{t('lobby.noCheat')}</span>}
-        {room.challengeMode && <span>{t('room.challengeMode')}</span>}
-        {!room.disableCheatMovement && !room.challengeMode && <span className="lobby-rule-default">{t('directory.standard')}</span>}
+      <div className="lobby-room-status">
+        <span className="lobby-room-state" data-state={state}>{t(`lobby.${state}`)}</span>
       </div>
-      <div className="lobby-party">
-        <span className="lobby-occupancy">{count}</span>
+      <fieldset className="lobby-party" aria-label={count}>
         <div
           className={`lobby-seats${room.seats.some((seat) => !!seat?.controlMode) ? ' has-controls' : ''}`}
+          data-duel={duel ? 'true' : undefined}
+          data-capacity={room.capacity}
         >
           {room.seats.map((seat, index) => {
             const control = seat?.controlMode ? t(seat.name !== undefined && seat.controlMode === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${seat.controlMode}`) : '';
@@ -159,26 +156,25 @@ function RoomRow({
                 role="img"
               >
                 {seat?.initial || ''}
-                {seat?.name === undefined && controlCaption}
               </span>
             );
-            const name = seat?.name ?? (duel ? seat?.machineSign : undefined);
+            // An approved public name may literally be P1/P2. Legacy duel
+            // labels only apply when the relay did not publish a name field.
+            const name = !seat ? t('th09.waitingPlayer')
+              : (seat.name !== undefined ? seat.name : duel ? seat.machineSign || seat.initial : '') || `P${index + 1}`;
             // biome-ignore lint/suspicious/noArrayIndexKey: A numbered seat is the slot identity even when its occupant changes.
             return <Fragment key={index}>
-              {duel && index === 1 && <strong className="book-room-score" role="img" aria-label={`${t('th09.score')} ${score}`}>{score}</strong>}
-              {name !== undefined ? <span className="lobby-public-player">
-                {avatar}{controlCaption}<strong className="lobby-seat-name" title={name}>{/^P[12]$/.test(name) ? '' : name}</strong>
-              </span> : avatar}
+              {duel && index === 1 && <strong className="book-room-score" role="img" aria-label={`${t('th09.score')} ${score}`}>
+                {score!=='VS'&&<span className="book-room-score-caption" aria-hidden="true">{t('th09.score')}</span>}
+                <span className="book-room-score-value">{score === 'VS' ? score : <><span>{room.seats[0]?.stats?.wins ?? 0}</span><span className="book-room-score-separator"> : </span><span>{room.seats[1]?.stats?.wins ?? 0}</span></>}</span>
+              </strong>}
+              <span className="lobby-public-player" data-empty={String(!seat)}>
+                {avatar}<OverflowText className="lobby-seat-name" align={duel?'center':'start'}>{name}</OverflowText>{controlCaption}
+              </span>
             </Fragment>;
           })}
         </div>
-      </div>
-      <span className="lobby-player-count" role="img" aria-label={count}>
-        {room.players} / {room.capacity}
-      </span>
-      <span className="lobby-room-state" data-state={state}>
-        {t(`lobby.${state}`)}
-      </span>
+      </fieldset>
       <BookButton variant="primary"
         className="lobby-button lobby-join"
         type="button"

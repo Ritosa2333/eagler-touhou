@@ -2,12 +2,10 @@
 .informational-dialog{width:min(560px,calc(100vw - 32px));padding:0;overflow:hidden}
 .informational-window{font-family:var(--kit-font)}
 .informational-window>header{display:flex;align-items:center;justify-content:space-between;gap:16px}
-.informational-window h1{margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
+.informational-window>header h1{margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
 .apple-refresh-faq{padding:0 20px 4px;background:var(--kit-card);color:var(--kit-muted-foreground)}
 .apple-refresh-faq-item{padding:16px 0;border-bottom:1px solid var(--kit-border)}
 .apple-refresh-faq-item:last-child{border:0}
-.apple-refresh-faq-item h2{margin:0 0 8px;color:var(--kit-foreground);font:600 14px/1.5 var(--kit-font)}
-.apple-refresh-faq-item p{margin:8px 0;color:var(--kit-muted-foreground);font:400 13px/1.65 var(--kit-font)}
 .apple-refresh-path{padding:8px 10px;border-radius:6px;background:var(--kit-muted);color:var(--kit-foreground);overflow-wrap:anywhere}
 .donation-image-wrap{display:grid;place-items:center;gap:12px;padding:20px;background:var(--kit-card)}
 .donation-scan-hint{margin:0;color:var(--kit-muted-foreground);font:400 13px/1.5 var(--kit-font)}
@@ -15,13 +13,8 @@
 .informational-dialog--artwork{width:min(540px,calc(100vw - 28px))}
 .informational-dialog--scrollable{box-sizing:border-box;width:min(650px,calc(100vw - 32px));height:min(88dvh,720px);max-height:min(88dvh,720px)}
 .informational-window--scrollable{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;max-height:100%}
-.multiplayer-guide-content{min-height:0;padding:0 20px 20px;overflow:auto;scrollbar-gutter:stable;color:var(--kit-muted-foreground);font:400 13px/1.7 var(--kit-font);overflow-wrap:anywhere}
-.multiplayer-guide-content h2{margin:20px 0 8px;color:var(--kit-foreground);font:600 14px/1.5 var(--kit-font)}
-.multiplayer-guide-content p{margin:8px 0}
-.multiplayer-guide-content :is(ul,ol){margin:8px 0 16px;padding-left:20px}
-.multiplayer-guide-content li{margin:5px 0}
-.multiplayer-guide-content strong{color:var(--kit-foreground);font-weight:600}
-.multiplayer-guide-content code{padding:2px 5px;border-radius:4px;background:var(--kit-muted);color:var(--kit-foreground);font-family:ui-monospace,monospace}
+.informational-window--scrollable>.ui-document{min-height:0;overflow:auto}
+.multiplayer-guide-content{min-height:0;padding:0 20px 20px;overflow:auto;scrollbar-gutter:stable;overflow-wrap:anywhere}
 .multiplayer-guide-loading{color:var(--kit-muted-foreground)}
 .multiplayer-guide-error{color:var(--kit-destructive)}
 .multiplayer-rule-tabs-shell{position:sticky;z-index:3;top:0;margin:0 -20px;padding:8px 20px 12px;background:var(--kit-card);border-bottom:1px solid var(--kit-border)}

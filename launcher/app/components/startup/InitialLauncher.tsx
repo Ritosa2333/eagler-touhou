@@ -40,8 +40,7 @@ function InitialSurface({lobby, profile, account}: {lobby: boolean; profile: boo
     onGuide={inactive} onNetwork={inactive} roomTools={<LobbyRoomTools disabled/>} roomList={null} hasRooms={false}
     loading emptyState={null} roomCount="" roomUsersArtwork="assets/room-users.svg"/>
     : <LibrarySurface masthead={masthead} footer={<SiteFooter onDonation={inactive}/>} products={products}
-      interactive={false} onSelect={inactive} onActivate={inactive} optionsOpen={false} onBack={inactive}
-      lobbyHref="lobby.html" roomUsersArtwork="assets/room-users.svg"/>;
+      interactive={false} onSelect={inactive} onActivate={inactive} optionsOpen={false}/>;
 }
 
 /** Static help remains readable when scripting is unavailable. */

@@ -3,7 +3,7 @@
 .input-settings-body{display:flex;flex-direction:column;height:100%;max-height:var(--input-dialog-limit);min-height:0}
 .input-settings-body>header{display:flex;align-items:center;justify-content:space-between;flex:none;min-height:64px;padding:10px calc(var(--input-gutter) - 8px) 10px var(--input-gutter);border-bottom:1px solid var(--kit-border);background:var(--kit-card)}
 .input-settings-body>header h2{margin:0;font:600 17px/1.4 var(--kit-font);color:var(--kit-foreground)}
-.input-settings-dialog .input-dialog-scroll{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;padding:20px var(--input-gutter);scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--kit-border) transparent}
+.input-settings-dialog .input-dialog-scroll{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;padding:20px var(--input-gutter);scrollbar-gutter:stable;scrollbar-width:thin}
 .input-settings-dialog .input-dialog-close{position:static;margin:0;min-width:44px;width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:var(--kit-muted-foreground)}
 .input-settings-dialog .input-device-tabs{display:flex;flex:none;gap:24px;margin:0;padding:0 var(--input-gutter);border-bottom:1px solid var(--kit-border);background:transparent}
 .input-settings-dialog .input-device-tabs .ui-tabs-trigger{flex:none;position:relative}
@@ -51,7 +51,7 @@
 #touchLayoutEditor .touch-layout-editor-copy strong{font:600 14px/1.5 var(--kit-font);color:var(--kit-foreground)}
 #touchLayoutEditor .touch-layout-editor-copy em{padding:3px 6px;border-radius:4px;background:var(--kit-muted);font:400 11px/1.5 var(--kit-font);color:var(--kit-muted-foreground)}
 #touchLayoutEditor .touch-workbench-body{display:flex;flex-direction:column;min-height:0;max-height:calc(var(--workbench-height) - 56px)}
-#touchLayoutEditor .touch-workbench-scroll{min-height:0;overflow:auto;padding:14px 16px;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--kit-border) transparent}
+#touchLayoutEditor .touch-workbench-scroll{min-height:0;overflow:auto;padding:14px 16px;overscroll-behavior:contain;scrollbar-width:thin}
 #touchLayoutEditor :is(.touch-layout-arrangement,.touch-layout-settings,.touch-layout-settings-list){margin:0;padding:0;border:0;background:transparent;color:var(--kit-foreground)}
 #touchLayoutEditor .touch-layout-secondary-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
 #touchLayoutEditor .touch-workbench-note{margin:0;color:var(--kit-muted-foreground);font:400 12px/1.6 var(--kit-font)}

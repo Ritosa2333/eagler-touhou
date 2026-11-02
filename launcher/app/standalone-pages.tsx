@@ -4,7 +4,7 @@ import {LauncherMasthead} from './components/launcher/LauncherMasthead';
 import {MainSelect} from './components/launcher/MainSelect';
 import {DonationDialog} from './components/notices/DonationDialog';
 import {FirstUseNotice, type FirstUseNoticeHandle} from './components/notices/FirstUseNotice';
-import {LocaleProvider, useLocale} from './i18n';
+import {LocaleProvider, useLocale, type UiMessageKey} from './i18n';
 import {useDocumentUiLocale} from './navigation/document-locale';
 import {UI_LOCALES, UI_LOCALE_LABELS, UI_LOCALE_STORAGE_KEY, isUiLocale, localeHome, withUiLanguage} from '../src/launcher/i18n.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from './models/site-preferences';
@@ -14,11 +14,11 @@ import {validateSiteManifest, siteOriginMigrationAvailable} from '../src/contrac
 function localStorageOrNull() {try {return window.localStorage;} catch {return null;}}
 
 /** Read-only site pages share controls and preferences, without creating a game session. */
-export function StandalonePageShell({children}: {children: ReactNode}) {
-  return <LocaleProvider locale={useDocumentUiLocale()}><StandaloneShell>{children}</StandaloneShell></LocaleProvider>;
+export function StandalonePageShell({children, titleKey = 'nav.serviceStatus', mainClassName = 'uptime-page'}: {children: ReactNode; titleKey?: UiMessageKey; mainClassName?: string}) {
+  return <LocaleProvider locale={useDocumentUiLocale()}><StandaloneShell titleKey={titleKey} mainClassName={mainClassName}>{children}</StandaloneShell></LocaleProvider>;
 }
 
-function StandaloneShell({children}: {children: ReactNode}) {
+function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNode; titleKey: UiMessageKey; mainClassName: string}) {
   const {locale, t} = useLocale(), location = useLocation(), navigate = useNavigate(), base = useHref('/');
   const assetUrl = (path: string) => base + path;
   const [preferences, setPreferences] = useState(() => createSitePreferencesModel({storage: null}));
@@ -40,8 +40,8 @@ function StandaloneShell({children}: {children: ReactNode}) {
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dataset.uiLocale = locale;
-    document.title = `${t('nav.serviceStatus')} | EAGLER TOUHOU`;
-  }, [locale, t]);
+    document.title = `${t(titleKey)} | EAGLER TOUHOU`;
+  }, [locale, t, titleKey]);
   useEffect(() => {
     const controller = new AbortController();
     void fetch(base + 'site-manifest.json', {signal: controller.signal}).then(async response => {
@@ -51,8 +51,9 @@ function StandaloneShell({children}: {children: ReactNode}) {
     }).catch(() => {});
     return () => controller.abort();
   }, [base]);
+  const Main=mainClassName==='documentation-shell'?'div':'main';
   return <div className="standalone-page-shell">
-    <LauncherMasthead variant="help" nativeLinks assetUrl={assetUrl} launcherHref={assetUrl(localeHome(locale))}
+    <LauncherMasthead variant="help" nativeLinks compactDocumentation={mainClassName==='documentation-shell'} assetUrl={assetUrl} launcherHref={assetUrl(localeHome(locale))}
       faqHref={withUiLanguage(assetUrl('faq.html'), locale)} aboutHref={withUiLanguage(assetUrl('about.html'), locale)}
       migrationPolicyKnown={migration.known} migrationHref={migration.available ? assetUrl('migrate.html') : undefined}
       menuOpen={menu} onMenuOpenChange={setMenu} lessMotion={prefs.lessMotion} onToggleMotion={preferences.toggleMotion}
@@ -65,7 +66,7 @@ function StandaloneShell({children}: {children: ReactNode}) {
         try {localStorageOrNull()?.setItem(UI_LOCALE_STORAGE_KEY, value);} catch {}
         navigate(withUiLanguage(location.pathname + location.search + location.hash, value));
       }}>{UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}</MainSelect>}/>
-    <main className="uptime-page">{children}</main>
+    <Main className={mainClassName}>{children}</Main>
     <DonationDialog open={donation} onCloseRequest={() => setDonation(false)} assetUrl={assetUrl} onArtworkUnavailable={() => setDonationAvailable(false)}/>
     <FirstUseNotice ref={firstUse} open={notice} onOpenRequest={() => setNotice(true)} onCloseRequest={() => setNotice(false)} contentUrl={assetUrl('content/FIRST_USE_NOTICE.html')} edgeGestures={false}/>
   </div>;

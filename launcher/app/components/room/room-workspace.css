@@ -250,7 +250,8 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView :is(.mp-room-network header p,.mp-network-empty,.mp-network-footnote){margin:0;color:var(--kit-muted-foreground);font-size:12px;line-height:1.65}
 #mpRoomView .mp-network-peer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px 0;border-top:1px solid var(--kit-border)}
 #mpRoomView .mp-network-peer-name{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:13px}
-#mpRoomView .mp-network-peer-name span{color:var(--kit-muted-foreground);font-size:12px}
+#mpRoomView .mp-network-peer-name>span{color:var(--kit-muted-foreground);font-size:12px}
+#mpRoomView .mp-network-peer-name>strong{min-width:0;flex:1}
 #mpRoomView .mp-network-metric{display:grid;gap:4px;color:var(--kit-muted-foreground);font-size:12px}
 #mpRoomView .mp-network-metric strong{color:var(--kit-foreground);font:600 19px/1.5 var(--kit-font);font-variant-numeric:tabular-nums}
 #mpRoomView .mp-network-metric[data-quality='good'] strong{color:var(--kit-success)}

@@ -1,14 +1,18 @@
 import {createContext, forwardRef, useContext, useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactElement, type ReactNode} from 'react';
 import {DropdownMenu} from 'radix-ui';
+import {Check} from 'lucide-react';
 import {uiPortalHost} from './portal';
 import {cn} from './utils';
 import {usePopupPadding} from './use-popup-padding';
+import {listPopupPanelClass,listPopupItemClass,listPopupIndicatorClass} from './list-popup';
 const MenuAction = createContext<((action: () => void) => void) | null>(null);
+const MenuVariant=createContext<'action'|'selection'>('action');
 
 /** Menus share placement, keyboard navigation, theme scope and focus return. */
-export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end'}: {
+export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end',variant='action'}: {
   label: string; trigger: ReactElement; children: ReactNode; className?: string; minimumWidth?: number;
   side?: 'top' | 'right' | 'bottom' | 'left'; align?: 'start' | 'center' | 'end';
+  variant?: 'action'|'selection';
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
   const afterClose = useRef<(() => void) | null>(null);
@@ -20,22 +24,33 @@ export function ActionMenu({label, trigger, children, className, minimumWidth = 
     document.addEventListener('fullscreenchange', close); document.addEventListener('webkitfullscreenchange', close);
     return () => {document.removeEventListener('fullscreenchange', close);document.removeEventListener('webkitfullscreenchange', close);};
   }, [open]);
-  return <MenuAction.Provider value={action=>{afterClose.current=action;}}><DropdownMenu.Root modal={false} open={open} onOpenChange={next => {
+  return <MenuVariant value={variant}><MenuAction.Provider value={action=>{afterClose.current=action;}}><DropdownMenu.Root modal={false} open={open} onOpenChange={next => {
     if (next) {setHost(uiPortalHost(anchor.current));setSurface(anchor.current?.closest('[data-ui-surface]')?.getAttribute('data-ui-surface') ?? undefined);}
     setOpen(next);
   }}><DropdownMenu.Trigger asChild ref={anchor}>{trigger}</DropdownMenu.Trigger>
-    <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn('ui-menu', className)} aria-label={label} data-ui-surface={surface}
-      side={side} align={align} sideOffset={6} collisionPadding={padding} style={{minWidth: minimumWidth}} onCloseAutoFocus={event=>{
+    <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn(variant==='selection'?`${listPopupPanelClass} overflow-y-auto`:'ui-menu', className)} aria-label={label} data-ui-surface={surface}
+      side={side} align={align} sideOffset={6} collisionPadding={padding} style={{minWidth: minimumWidth,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
         const action=afterClose.current;afterClose.current=null;
         if(action){event.preventDefault();anchor.current?.focus({preventScroll:true});action();}
       }}>{children}</DropdownMenu.Content></DropdownMenu.Portal>
-  </DropdownMenu.Root></MenuAction.Provider>;
+  </DropdownMenu.Root></MenuAction.Provider></MenuVariant>;
 }
 export const ActionMenuItem = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof DropdownMenu.Item> & {destructive?: boolean; onAction?(): void}>(function ActionMenuItem({className, destructive, onSelect, onAction, ...props}, ref) {
   const queue=useContext(MenuAction);
-  return <DropdownMenu.Item {...props} ref={ref} className={cn('ui-menu-item', className)} data-danger={destructive || undefined} onSelect={event=>{
+  const variant=useContext(MenuVariant);
+  return <DropdownMenu.Item {...props} ref={ref} className={cn(variant==='selection'?listPopupItemClass:'ui-menu-item', className)} data-danger={destructive || undefined} onSelect={event=>{
     onSelect?.(event);
     // Focus the surviving trigger before a dialog or navigation acquires focus.
     if(!event.defaultPrevented&&onAction){if(queue)queue(onAction);else onAction();}
   }}/>;
+});
+
+export const ActionMenuRadioGroup=DropdownMenu.RadioGroup;
+export const ActionMenuGroup=DropdownMenu.Group;
+export const ActionMenuLabel=DropdownMenu.Label;
+export const ActionMenuRadioItem=forwardRef<HTMLDivElement,ComponentPropsWithoutRef<typeof DropdownMenu.RadioItem>>(function ActionMenuRadioItem({children,className,...props},ref){
+  return <DropdownMenu.RadioItem {...props} ref={ref} className={cn(listPopupItemClass,className)}>{children}<DropdownMenu.ItemIndicator className={listPopupIndicatorClass}><Check className="size-4"/></DropdownMenu.ItemIndicator></DropdownMenu.RadioItem>;
+});
+export const ActionMenuCheckboxItem=forwardRef<HTMLDivElement,ComponentPropsWithoutRef<typeof DropdownMenu.CheckboxItem>&{showIndicator?:boolean}>(function ActionMenuCheckboxItem({children,className,showIndicator=true,...props},ref){
+  return <DropdownMenu.CheckboxItem {...props} ref={ref} className={cn(listPopupItemClass,className)}>{children}{showIndicator&&<DropdownMenu.ItemIndicator className={listPopupIndicatorClass}><Check className="size-4"/></DropdownMenu.ItemIndicator>}</DropdownMenu.CheckboxItem>;
 });

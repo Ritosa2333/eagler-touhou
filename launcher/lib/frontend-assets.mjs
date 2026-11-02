@@ -67,28 +67,7 @@ export async function buildLauncherStyleOutputs({ project, outputDirectory }) {
     });
     outputs.push(...result.outputFiles);
   }
-  const touch = await build({ entryPoints: [resolve(project, "public/touch-guide.css")], outfile: resolve(outputDirectory, "touch-guide.css"),
-    bundle: true, minify: true, write: false, external: ["*.woff2", "*.webp", "*.png", "*.svg", "*.jpg"], logLevel: "warning" });
-  outputs.push(...touch.outputFiles);
-  outputs.push(...await buildDocumentStyles({project, outputDirectory}));
   return outputs;
-}
-
-/** Standalone documents consume the same tokens as the React application. */
-export async function buildDocumentStyles({project, outputDirectory = project}) {
-  const {build} = await import('esbuild');
-  const result = await build({entryPoints: [resolve(project, 'app/ui/document.css')],
-    outfile: resolve(outputDirectory, 'about.css'), bundle: true, minify: true, write: false,
-    external: ['*.woff2', '*.webp', '*.png', '*.svg', '*.jpg'], logLevel: 'warning'});
-  return result.outputFiles;
-}
-
-/** A self-contained module keeps standalone help in the offline shell. */
-export async function buildHelpPageOutputs({project, outputDirectory = project}) {
-  const {build} = await import('esbuild');
-  const result = await build({stdin: {resolveDir: project, contents: 'import {initializeHelpPage} from "./src/launcher/help-page.mts"; initializeHelpPage(document);'},
-    outfile: resolve(outputDirectory, 'site-help.mjs'), bundle: true, format: 'esm', platform: 'browser', target: 'chrome108', minify: true, write: false, logLevel: 'warning'});
-  return result.outputFiles;
 }
 
 /** The unchanged classic-worker contract can be compiled independently of

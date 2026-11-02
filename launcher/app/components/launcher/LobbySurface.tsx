@@ -1,9 +1,9 @@
 import {BookButton} from './BookButton';
-import {useEffect, useState, type ReactNode} from 'react';
-import {readBookPreference, writeBookPreference} from './book-preferences';
+import type {ReactNode} from 'react';
 import { useLocale } from '../../i18n';
 import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
+import './directory-page.css';
 
 export interface LobbySurfaceProps extends Omit<
   LibraryCardsProps,
@@ -27,7 +27,6 @@ export interface LobbySurfaceProps extends Omit<
     action?: { label: string; onClick: () => void };
   } | null;
   roomCount: string;
-  connectionNote?: string;
   roomUsersArtwork: string;
   children?: ReactNode;
   productFilters?: readonly string[];
@@ -50,20 +49,17 @@ export function LobbySurface({
   loading,
   emptyState,
   roomCount,
-  connectionNote,
   roomUsersArtwork,
   children,
   ...rail
 }: LobbySurfaceProps) {
   const {t} = useLocale();
-  const [roomView, setRoomView] = useState<'cards' | 'list'>('cards');
-  useEffect(() => setRoomView(readBookPreference('lobby-room-view', 'cards', (value): value is 'cards' | 'list' => value === 'cards' || value === 'list')), []);
   return (
     <>
-      <main className={`lobby-main book-directory book-rooms-${roomView}`} inert={rail.interactive === false}>
+      <main className="lobby-main book-directory" inert={rail.interactive === false}>
         {masthead}
         <header className="lobby-intro">
-          <h1>{t('lobby.title')}</h1>
+          <h1 className="visually-hidden">{t('lobby.title')}</h1>
           <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
             <BookButton variant="quiet" size="sm"
               className="lobby-support-link h-9 px-0 max-[780px]:h-11"
@@ -96,47 +92,21 @@ export function LobbySurface({
           {notice}
         </p>
         {membership}
+        <div className="lobby-directory-body">
         <section className="lobby-library" aria-label={t('lobby.game')}>
           <BookDirectoryGames {...rail}/>
         </section>
         <div className="lobby-rooms-column">
         <header className="lobby-room-tools">
           <div className="lobby-actions">{roomTools}</div>
-          <fieldset className="book-room-view-toggle" aria-label={t('directory.display')}>
-            {(['cards', 'list'] as const).map(view => <BookButton variant="choice" key={view} type="button" aria-pressed={roomView === view} onClick={() => {setRoomView(view); writeBookPreference('lobby-room-view', view);}}>{view === 'cards' ? (t('directory.displayNormal')) : (t('directory.displayList'))}</BookButton>)}
-          </fieldset>
+          {roomFilters}
         </header>
-        {roomFilters}
         <section
           className="lobby-list-surface"
           aria-label={t('lobby.rooms')}
           data-has-rooms={hasRooms}
         >
-          <div
-            className="lobby-list-head"
-            id="listHead"
-            aria-hidden="true"
-            hidden={!hasRooms}
-          >
-            {roomView === 'list' ? <>
-            <span>{t('directory.columnGame')}</span>
-            <span>{t('directory.columnRoom')}</span>
-            <span>{t('lobby.difficulty')}</span>
-            <span>{t('directory.columnRules')}</span>
-            <span>{t('directory.columnPlayers')}</span>
-            <span>{t('lobby.state')}</span>
-            <span />
-            </> : <>
-            <span>{t('lobby.gameAndRoom')}</span>
-            <span>{t('lobby.difficulty')}</span>
-            <span>{t('directory.columnRules')}</span>
-            <span />
-            <span>{t('lobby.capacity')}</span>
-            <span>{t('lobby.state')}</span>
-            <span />
-            </>}
-          </div>
-          <ul className="lobby-room-list" id="roomList" aria-busy={loading}>
+          <ul className="lobby-room-list" id="roomList" aria-busy={loading} hidden={!hasRooms}>
             {roomList}
           </ul>
           <div className="lobby-list-loading" id="listLoading" role="status" hidden={!loading}>
@@ -160,13 +130,9 @@ export function LobbySurface({
               )}
             </div>
           )}
+          <p className="lobby-directory-count" id="roomCount" aria-live="polite" hidden={!hasRooms}>{roomCount}</p>
         </section>
-        <p className="lobby-notice" id="connectionNote" role="status" hidden={!connectionNote}>
-          {connectionNote}
-        </p>
-        <p className="lobby-sr-only" id="roomCount" aria-live="polite">
-          {roomCount}
-        </p>
+        </div>
         </div>
       </main>
       {children}

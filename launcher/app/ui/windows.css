@@ -4,15 +4,12 @@
 .first-use-notice-window{display:grid;grid-template-rows:auto minmax(0,1fr) auto;box-sizing:border-box;height:100%;padding:0;font:400 13px/1.65 var(--kit-font)}
 .first-use-notice-window>header{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .first-use-notice-window h1{margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
-.first-use-notice-text{min-height:0;padding:4px 20px 20px;margin:0;overflow:auto;overflow-wrap:anywhere;color:var(--kit-muted-foreground)}
-.first-use-notice-list{margin:0}.first-use-notice-item{padding:12px 0;border:0}
-.first-use-notice-item :is(h2,h3){margin:12px 0 8px;color:var(--kit-foreground);font:600 14px/1.5 var(--kit-font)}
-.first-use-notice-item p{margin:8px 0}.first-use-notice-item ul{padding-left:20px;margin:8px 0}.first-use-notice-item li{margin:5px 0}
-.first-use-notice-item a,.first-use-notice-item a:visited{color:var(--kit-brand);text-underline-offset:3px}
+.first-use-notice-text{min-height:0;padding:4px 20px 20px;margin:0;overflow:auto;overflow-wrap:anywhere}
+.first-use-notice-text .first-use-notice-list{margin:0}.first-use-notice-text .first-use-notice-item{padding:12px 0;border:0}
 .first-use-notice-loading,.first-use-notice-empty{margin:16px 0;color:var(--kit-muted-foreground)}.first-use-notice-error{color:var(--kit-destructive)}
 .first-use-notice-window>footer{display:flex;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--kit-border)}
 .transfer,.startup-error,.th09-network-window,.netplay-connection-window{box-sizing:border-box;padding:16px;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground);box-shadow:0 8px 28px #0002;font:400 13px/1.5 var(--kit-font);text-shadow:none}
-.transfer{position:absolute;z-index:31;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));width:min(340px,calc(100% - 24px))}
+.transfer{position:absolute;z-index:31;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));width:min(340px,calc(100% - 24px));background:color-mix(in srgb,var(--kit-card) 84%,transparent);backdrop-filter:blur(16px)}
 .transfer[hidden],.startup-error[hidden],.th09-network-dialog[hidden],.netplay-connection-window[hidden],.game-data-import-window[hidden],.game-data-link-window[hidden]{display:none}
 .transfer strong{display:block;margin-bottom:8px;color:var(--kit-foreground);font:600 14px/1.4 var(--kit-font);letter-spacing:0}
 .transfer-line,.transfer-meta{display:flex;justify-content:space-between;gap:12px;color:var(--kit-muted-foreground);font-size:12px;font-variant-numeric:tabular-nums}
@@ -32,6 +29,7 @@
 .startup-error-reason{margin:0;padding:12px 16px;color:var(--kit-foreground);font:400 13px/1.5 var(--kit-font)}
 .game-data-import-window,.game-data-link-window{position:fixed;z-index:45;left:50%;top:50%;transform:translate(-50%,-50%);box-sizing:border-box;width:min(440px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;overflow:auto;font:400 13px/1.65 var(--kit-font)}
 .game-data-link-window{z-index:46;width:min(480px,calc(100vw - 24px));user-select:text}
+.game-data-import-window[data-state='closed'],.game-data-link-window[data-state='closed']{opacity:0;pointer-events:none}
 .game-data-import-window>header,.game-data-link-window>header{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .game-data-import-window p{margin:0;padding:16px 20px;color:var(--kit-muted-foreground);white-space:pre-line;font-size:13px}
 .game-data-import-busy{display:flex;align-items:center;gap:8px;margin:0 20px 16px;padding:10px;border-radius:6px;background:var(--kit-muted);color:var(--kit-foreground);font-size:12px}
@@ -115,17 +113,17 @@ html[data-book-theme='light'] .site-notice-brand-icon img:is([src*='notice-githu
 :is(.informational-window,.first-use-notice-window,.decision-window,.replay-window,.lobby-dialog form){background:var(--kit-card);color:var(--kit-foreground);font-family:var(--kit-font)}
 :is(.informational-window,.first-use-notice-window,.replay-window,.game-data-import-window,.game-data-link-window)>header,.decision-window header{min-height:56px;padding:10px 20px;border-bottom:1px solid var(--kit-border);background:var(--kit-card);color:var(--kit-foreground)}
 :is(.informational-window,.first-use-notice-window,.replay-window,.lobby-dialog,.game-data-import-window,.game-data-link-window,.decision-window) :is(header strong,header h2,.lobby-dialog-head h2){margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font);letter-spacing:-.015em}
-:is(.decision-body,.informational-content,.first-use-notice-item,.mp-guide-content,.apple-refresh-content,.donation-content,.lobby-form-note,.game-data-link-window,.game-data-import-window){color:var(--kit-muted-foreground);font-family:var(--kit-font)}
-:is(.decision-body,.informational-content,.first-use-notice-item,.mp-guide-content,.apple-refresh-content,.donation-content) :is(h2,h3,strong){color:var(--kit-foreground)}
+:is(.decision-body,.informational-content,.mp-guide-content,.apple-refresh-content,.donation-content,.lobby-form-note,.game-data-link-window,.game-data-import-window){color:var(--kit-muted-foreground);font-family:var(--kit-font)}
+:is(.decision-body,.informational-content,.mp-guide-content,.apple-refresh-content,.donation-content) :is(h2,h3,strong){color:var(--kit-foreground)}
 :is(.decision-window,.replay-window) footer{border-color:var(--kit-border);background:var(--kit-card)}
 .lobby-dialog form{padding:20px;gap:16px}.lobby-dialog .lobby-dialog-head{padding:0 0 12px;border-color:var(--kit-border)}
 .lobby-dialog .lobby-field{font:500 13px/1.5 var(--kit-font);color:var(--kit-foreground)}
 .lobby-dialog .lobby-form-note{font:400 12px/1.65 var(--kit-font)}
 .lobby-dialog .lobby-form-error{color:var(--kit-destructive)}
 .lobby-dialog .lobby-submit{width:100%}
-:is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input:not([type='checkbox']):not([type='range']):not([type='file']),textarea){min-height:36px;padding:7px 10px;border:1px solid var(--kit-input);border-radius:6px;background:var(--kit-background);color:var(--kit-foreground);box-shadow:none;font:400 13px/1.5 var(--kit-font)}
-:is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input,textarea):focus{outline:2px solid var(--kit-ring);outline-offset:1px;border-color:var(--kit-ring);box-shadow:none}
-:is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input,textarea)::placeholder{color:var(--kit-muted-foreground);opacity:1}
+:is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input:not(.ui-input):not([type='checkbox']):not([type='range']):not([type='file']),textarea:not(.ui-input)){min-height:36px;padding:7px 10px;border:1px solid var(--kit-input);border-radius:6px;background:var(--kit-background);color:var(--kit-foreground);box-shadow:none;font:400 13px/1.5 var(--kit-font)}
+:is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input:not(.ui-input),textarea:not(.ui-input)):focus{outline:2px solid var(--kit-ring);outline-offset:1px;border-color:var(--kit-ring);box-shadow:none}
+:is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input:not(.ui-input),textarea:not(.ui-input))::placeholder{color:var(--kit-muted-foreground);opacity:1}
 .player-profile h2{font-weight:600}.player-profile h3{font-weight:600}
 .profile-settings-heading h1{font-size:26px;font-weight:600;letter-spacing:-.025em}
 .player-profile .profile-detail-fields>label,.player-profile .profile-detail-fields legend{font-weight:500}
@@ -138,7 +136,7 @@ html[data-book-theme='light'] .site-notice-brand-icon img:is([src*='notice-githu
 .account-page .account-password input{padding-right:44px}
 .account-page .account-field-error,.account-page .account-feedback.is-error{color:var(--kit-destructive)}
 @media(max-width:780px),(pointer:coarse){
- :is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input:not([type='checkbox']):not([type='range']):not([type='file']),textarea){min-height:44px;font-size:16px}
+ :is(.profile-detail-fields,.profile-security-section,.lobby-dialog,.account-content,.input-config,.game-data-link-window) :is(input:not(.ui-input):not([type='checkbox']):not([type='range']):not([type='file']),textarea:not(.ui-input)){min-height:44px;font-size:16px}
  .account-page{--account-header-height:100px}.account-page .account-password-toggle{width:44px;height:44px;min-height:44px}
 }
 }

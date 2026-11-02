@@ -109,7 +109,7 @@ input[type='range'] {accent-color:var(--ui-accent);cursor:pointer}
 .room-action-menu {position:relative;inset:auto;width:auto;transform:none;transform-origin:var(--radix-dropdown-menu-content-transform-origin)}
 @layer components {
 .ui-tabs-list {display:flex;gap:20px;margin:0;padding:0;border:0;border-bottom:1px solid var(--ui-border);border-radius:0;background:transparent}
-.ui-tabs-trigger {display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 0;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--ui-muted);font:500 13px/1.5 var(--kit-font);cursor:pointer;touch-action:manipulation}
+.ui-tabs-trigger {display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:10px 0;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--ui-muted);font:500 13px/1.5 var(--kit-font);cursor:pointer;touch-action:manipulation}
 .ui-tabs-trigger[data-state='active'] {border-bottom-color:var(--ui-accent);color:var(--ui-text)}
 .ui-tabs-trigger:disabled {opacity:.45;cursor:default}
 }
@@ -132,8 +132,7 @@ input[type='range'] {accent-color:var(--ui-accent);cursor:pointer}
 .ui-menu-separator {height:1px;margin:5px;background:var(--ui-border)}
 .ui-menu-language {padding:5px}
 .masthead-links .masthead-menu-toggle {display:inline-flex;opacity:1;visibility:visible}
-html {color-scheme:dark;scrollbar-gutter:stable}
-html[data-book-theme='light'] {color-scheme:light}
+html {scrollbar-gutter:stable}
 /* Radix keeps focus and touch scrolling inside its layers. The root gutter
    already reserves the scrollbar, so body compensation would shrink the page. */
 @supports (scrollbar-gutter:stable) {

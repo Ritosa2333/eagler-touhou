@@ -10,6 +10,7 @@ import {PlayerSurface} from './components/player/PlayerSurface';
 import {LibrarySurface} from './components/launcher/LibrarySurface';
 import {LobbySurface, type LobbySurfaceProps} from './components/launcher/LobbySurface';
 import {OptionsPanel} from './components/launcher/OptionsPanel';
+import {OptionsBackdrop} from './components/launcher/OptionsBackdrop';
 import {LobbyOptionsHost} from './components/launcher/LobbyOptionsHost';
 import {OptionsOwnership} from './components/launcher/options-ownership';
 import {useLibraryOptionsPresence} from './components/launcher/use-library-options-presence';
@@ -104,7 +105,7 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
   if (navigation.productId && catalog.some(product => product.id === navigation.productId)) retainedProduct.current = navigation.productId;
   // Main keeps the selected panel in the DOM during its closing transition.
   const selectedProduct = catalog.find(product => product.id === retainedProduct.current);
-  const presence = useLibraryOptionsPresence({open: optionsOpen, context: navigation.context, product: selectedProduct, lessMotion: host.lessMotion === true, concealed: (host.runtimeLaunched === true || host.replayWorkspace === true) && navigation.surface !== 'touch'});
+  const presence = useLibraryOptionsPresence({open: optionsOpen, context: navigation.context, product: selectedProduct, lessMotion: host.lessMotion === true, concealed: (host.runtimeOpen === true || host.runtimeLaunched === true || host.replayWorkspace === true) && navigation.surface !== 'touch'});
   useLayoutEffect(() => {
     if (!optionsOpen && !roomOpen) {if (navigation.context === 'lobby') selectedLifetime.current = null; return;}
     if (!navigation.productId) return;
@@ -147,7 +148,7 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
     }
     navigation.openTouchLayout();
   };
-  const settingsPanel = presence.product && <OptionsPanel product={presence.product} coverArtwork={roomOpen ? undefined : bookArtwork(presence.product)} open={presence.open || roomOpen && navigation.context === 'lobby'}
+  const settingsPanel = presence.product && <OptionsPanel product={presence.product} coverArtwork={roomOpen ? undefined : bookArtwork(presence.product)} open={presence.open || roomOpen && navigation.context === 'lobby'} closing={presence.closing&&!roomOpen}
     onBack={roomOpen ? navigation.closeRoomSettings : navigation.closeSurface} roomDrawer={roomOpen} multiplayerDiagnostics={host.multiplayerDiagnostics} multiplayerOnline={host.multiplayerOnline} lobbyHref={host.lobbyHref} embeddedInLobby={navigation.context === 'lobby'} assetUrl={host.assetUrl} actions={host.optionsActions}>
     <SettingsBody model={host.settings} actions={host.settingsActions} onOpenTouchLayout={openTouchLayout} multiplayerControls={host.multiplayerControls}/>
   </OptionsPanel>;
@@ -163,10 +164,11 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
     <div className="launcher-page-surface" data-page={accountPage ? 'account' : profilePage ? 'profile' : navigation.context}>
     {accountPage ? <AccountPage/> : profilePage ? <ProfilePage/> : navigation.context === 'lobby' ? host.renderLobby ? host.renderLobby(lobbyProps) : <LobbySurface {...lobbyProps}/> : <LibrarySurface products={host.products} selectedProduct={preview} openedProduct={presence.openedProduct}
       onSelect={setPreview} onActivate={activate} masthead={null} footer={host.footer} serverStatusNote={host.serverStatusNote}
-      lobbyHref={host.lobbyHref} roomUsersArtwork={host.assetUrl('assets/room-users.svg')} optionsOpen={presence.open} roomOpen={roomOpen} roomDrawer={host.roomDrawer} onBack={navigation.closeSurface}>
-      {host.replayWorkspace && !roomOpen ? null : settingsPanel}{host.roomSurface}
+      optionsOpen={presence.open} roomOpen={roomOpen} roomDrawer={host.roomDrawer}>
+      {host.roomSurface}
     </LibrarySurface>}
     </div>
+    {!accountPage && !profilePage && navigation.context === 'library' && <><OptionsBackdrop onBack={navigation.closeSurface}/>{host.replayWorkspace && !roomOpen ? null : settingsPanel}</>}
     <PlayerSurface roomWorkspace={roomWorkspace} replayWorkspace={host.replayWorkspace} preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={roomWorkspace || roomOpen && host.roomPlayerExpanded === true || navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>
     {editor}{host.overlays}
   </OptionsOwnership>;

@@ -46,7 +46,7 @@
 .replay-breadcrumb{display:flex;align-items:center;flex:none;gap:6px;padding:8px 0;margin:0 16px;min-width:0;color:var(--kit-muted-foreground);border-block:1px solid var(--kit-border)}
 .replay-breadcrumb>svg{width:18px;height:18px;flex:none}
 .replay-breadcrumb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.replay-workspace-files{flex:1;min-height:160px;overflow:auto;overscroll-behavior:contain;padding:4px 8px;scrollbar-width:thin;scrollbar-color:var(--kit-border) transparent;touch-action:pan-y}
+.replay-workspace-files{flex:1;min-height:160px;overflow:auto;overscroll-behavior:contain;padding:4px 8px;scrollbar-width:thin;touch-action:pan-y}
 .replay-workspace-file{display:flex;align-items:center;gap:2px;min-height:48px;border-bottom:1px solid var(--kit-border);position:relative}
 .replay-workspace-file.selected{background:var(--kit-accent);border-radius:6px;border-color:transparent}
 .replay-workspace-file>button:first-child{display:flex;align-items:center;gap:12px;min-width:0;flex:1;min-height:48px;padding:10px 12px;text-align:left;background:transparent;border:0;border-radius:4px;color:var(--kit-foreground);font:400 13px/1.5 var(--kit-font);cursor:pointer;touch-action:manipulation}

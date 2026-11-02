@@ -1,6 +1,6 @@
 import {useDocumentUiLocale} from './navigation/document-locale';
 import {Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation} from 'react-router';
-import {useRef, type ReactNode} from 'react';
+import {useRef, lazy, Suspense, type ReactNode} from 'react';
 import {BrowserLauncher} from './BrowserLauncher';
 import {OriginalBootstrapHead, OriginalPreloads, OriginalModuleRequestMark, OriginalBootstrapTail} from './components/startup/OriginalBootstrap';
 import {AppShellDeploymentMeta} from './components/startup/AppShellDeploymentMeta';
@@ -14,16 +14,19 @@ import './components/room/room-light.css';
 import './ui/system.css';
 import './ui/tailwind.css';
 import './components/launcher/book-library.css';
+import './components/launcher/masthead.css';
 import './components/launcher/options-sheet.css';
 import './components/settings/settings-ui.css';
+import './ui/scrollbars.css';
 import {UiTheme} from './ui/theme';
+import {UiScrollbars} from './ui/scrollbars';
 import {isLauncherHomePath} from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
+import {helpDocumentAtPath,isStandalonePage} from './components/documents/catalog';
+const HelpRoute=lazy(()=>import('./routes/help'));
 
-const isStandalonePage = (pathname: string) => /\/uptime(?:\/(?:index\.html)?)?$/.test(pathname);
-
-// Overlay history shares the page's current scroll position.
-const pageScrollKey = (location: {pathname: string}) => location.pathname;
+// Overlay history shares page scroll. Profile anchors have separate history entries.
+const pageScrollKey = (location: {pathname: string; key: string}) => /\/profile\.html\/?$/.test(location.pathname) ? location.key : location.pathname;
 
 export function Layout({children}: {children: ReactNode}) {
   const {pathname} = useLocation();
@@ -34,11 +37,11 @@ export function Layout({children}: {children: ReactNode}) {
   // Original boot owns removal. Keep this initial prop constant so later SPA
   // route renders cannot reintroduce the document's retired loading gate.
   const initialLobby = useRef(lobby).current;
-  return <html data-ui-app="" lang={locale} data-ui-locale={locale} data-ui-home={home ? '' : undefined} className="dark" data-book-theme="dark" data-original-entry={initialLobby ? 'lobby' : 'library'} data-lobby-boot={initialLobby ? 'loading' : undefined} suppressHydrationWarning><head><meta charSet="utf-8"/><script>{`try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark'){document.documentElement.setAttribute('data-book-theme',theme);document.documentElement.className=theme;}}catch(e){}`}</script>{!review && <OriginalBootstrapHead/>}<AppShellDeploymentMeta/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/><Meta/><Links/></head>
-    <InitialDocumentBody lobby={lobby}><UiTheme/>{!review && <OriginalPreloads/>}{children}{!review && <OriginalNoscript lobby={lobby} locale={locale}/>}<ScrollRestoration getKey={pageScrollKey}/>{!review && <OriginalModuleRequestMark/>}<Scripts data-eagler-entry="true"/>{!review && <OriginalBootstrapTail/>}</InitialDocumentBody></html>;
+  return <html data-ui-app="" lang={locale} data-ui-locale={locale} data-ui-home={home ? '' : undefined} className="dark" data-book-theme="dark" data-original-entry={initialLobby ? 'lobby' : 'library'} data-lobby-boot={initialLobby ? 'loading' : undefined} suppressHydrationWarning><head><meta charSet="utf-8"/><style id="ui-style-layers">{'@layer properties,foundation,theme,base,components,utilities;'}</style><meta name="darkreader-lock"/><script>{`try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark'){document.documentElement.setAttribute('data-book-theme',theme);document.documentElement.className=theme;}}catch(e){}`}</script>{!review && <OriginalBootstrapHead/>}<AppShellDeploymentMeta/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/><Meta/><Links/></head>
+    <InitialDocumentBody lobby={lobby}><UiTheme/><UiScrollbars/>{!review && <OriginalPreloads/>}{children}{!review && <OriginalNoscript lobby={lobby} locale={locale}/>}<ScrollRestoration getKey={pageScrollKey}/>{!review && <OriginalModuleRequestMark/>}<Scripts data-eagler-entry="true"/>{!review && <OriginalBootstrapTail/>}</InitialDocumentBody></html>;
 }
 /** Framework's index.html SPA fallback renders this rather than App. */
-export function HydrateFallback() {return isStandalonePage(useLocation().pathname) ? <UptimeRoute/> : <InitialLauncher/>;}
+export function HydrateFallback() {const pathname=useLocation().pathname;return helpDocumentAtPath(pathname)?<Suspense><HelpRoute/></Suspense>:isStandalonePage(pathname) ? <UptimeRoute/> : <InitialLauncher/>;}
 /** The document root, not a route component, owns the unkeyed Player/iframe. */
 export default function App() {
   const pathname = useLocation().pathname;

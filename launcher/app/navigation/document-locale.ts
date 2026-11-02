@@ -10,10 +10,12 @@ function subscribeLocale(listener: () => void) {
 export function useDocumentUiLocale(): UiLocale {
   const {pathname, search} = useLocation();
   const explicit = new URLSearchParams(search).get('lang');
-  const publishedLocale = isUiLocale(explicit) ? explicit : localeFromPath(pathname);
+  // Static documents are prerendered per path, before any query is known.
+  const staticLocale=localeFromPath(pathname);
+  const publishedLocale = isUiLocale(explicit) ? explicit : staticLocale;
   return useSyncExternalStore(subscribeLocale, () => {
     if (isUiLocale(explicit) || /\/(?:en|ja)\.html\/?$/.test(pathname)) return publishedLocale;
     const value = document.documentElement.dataset.uiLocale;
     return isUiLocale(value) ? value : publishedLocale;
-  }, () => publishedLocale);
+  }, () => staticLocale);
 }

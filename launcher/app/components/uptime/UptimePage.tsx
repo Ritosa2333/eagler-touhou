@@ -78,8 +78,8 @@ export function UptimePage({endpoint}: {endpoint: string}) {
       </ChoiceGroup>
     </div>
     <p role={failed ? 'alert' : 'status'} className="uptime-message">{failed ? t('uptime.failed') : pending ? t('uptime.loading') : ''}</p>
-    <section className="uptime-list" aria-label={t('uptime.services')} aria-busy={pending && !failed}>
-      <div className="uptime-columns" aria-hidden="true"><span>{t('uptime.status')}</span><span>{t('uptime.service')}</span><span>{t('uptime.history', {range: data?.range ?? range})}</span><span>{t('uptime.response')}</span><span>{t('uptime.availability')}</span></div>
+    <section className="uptime-list" data-empty-failure={failed && !data || undefined} aria-label={t('uptime.services')} aria-busy={pending && !failed}>
+      {(!failed || data) && <div className="uptime-columns" aria-hidden="true"><span>{t('uptime.status')}</span><span>{t('uptime.service')}</span><span>{t('uptime.history', {range: data?.range ?? range})}</span><span>{t('uptime.response')}</span><span>{t('uptime.availability')}</span></div>}
       {groups.map(group => {
         const services = data?.services.filter(service => service.group === group) ?? [];
         return services.length > 0 && <section className="uptime-group" key={group} aria-label={t(`uptime.${group}`)}><h2>{t(`uptime.${group}`)}</h2>

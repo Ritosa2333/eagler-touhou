@@ -1,4 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
+import {OverflowText} from '../../ui/overflow-text';
 import {Ellipsis, Plus} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
@@ -140,7 +141,7 @@ function RoomSeat({
   const degrees = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) * 3.6 : 0;
   const appearance = !occupied ? 'empty' : seat?.offline || !resourceReady ? 'loading' : seat?.ready ? 'ready' : 'unready';
   const name = <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
-    {seat?.name || (state.seat === index ? state.displayName : '') || `P${index + 1}`}
+    <OverflowText>{seat?.name || (state.seat === index ? state.displayName : '') || `P${index + 1}`}</OverflowText>
   </strong>;
   const connection = <UiButton variant="unstyled"
     className="mp-seat-latency room-seat-network"

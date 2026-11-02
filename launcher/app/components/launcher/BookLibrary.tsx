@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, type ReactNode} from 'react';
+import {useEffect, useRef, useState, type ReactNode, type CSSProperties} from 'react';
 import {useSearchParams} from 'react-router';
 import {Search, Star, LayoutGrid, List, Monitor, Disc3, Gamepad2, Shapes, History, X, ArrowUpRight} from 'lucide-react';
 import {Button} from '../../ui/button';
@@ -11,6 +11,7 @@ import type {LibraryCardsProps} from './LibraryCards';
 import type {LibraryProduct} from './products';
 import {BOOK_PREFERENCES_EVENT, bookCategory, filterBookProducts, readBookPreference, writeBookPreference, stringArray, type BookCategory} from './book-preferences';
 import {bookArtwork} from './book-artwork';
+import {BookWorkNumber} from './BookWorkNumber';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {footer?: ReactNode};
 const categories: {id: BookCategory; Icon: typeof LayoutGrid}[] = [
@@ -52,7 +53,7 @@ export function BookLibrary({products, openedProduct, onSelect, onActivate, inte
     data-book-product={product.id} data-game={product.gameId} aria-current={openedProduct === product.id ? 'page' : 'false'}
     onClick={interactive ? event => {if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return; event.preventDefault(); activate(product);} : undefined}>
     <span className="book-art"><BookCover product={product}/></span>
-    <span className="book-identity"><small>th{product.number}</small><strong>{product.title}</strong>{!recentLink && <span>{product.subtitle}</span>}</span>
+    <span className="book-identity"><span className="book-title-line"><strong title={product.title}>{product.title}</strong><BookWorkNumber gameId={product.gameId} number={product.number}/></span><span title={product.subtitle}>{product.subtitle}</span></span>
     {recentLink && <ArrowUpRight className="book-recent-arrow" aria-hidden="true"/>}
   </a>;
   const displayedRecent = search.get('preview') === 'recent' ? available.slice(0, 7).map(product => product.id) : recent;
@@ -63,7 +64,7 @@ export function BookLibrary({products, openedProduct, onSelect, onActivate, inte
         {query && <Button variant="ghost" size="icon-sm" className="max-[780px]:size-11" aria-label={t('library.clearSearch')} onClick={()=>{setQuery('');input.current?.focus();}}><X/></Button>}
       </InputGroup>
       <ChoiceGroup asChild type="single" value={category} onValueChange={value=>{if(value)setCategory(value as BookCategory);}} disabled={!interactive} aria-label={t('library.category')}>
-        <nav>{categories.map(({id,Icon})=><ChoiceItem key={id} value={id} data-book-category={id} className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs">
+        <nav>{categories.map(({id,Icon})=><ChoiceItem key={id} value={id} data-book-category={id} className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-left text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs">
           <Icon aria-hidden="true"/><span>{labels[id]}</span><small>{available.filter(product=>id==='all'||(id==='favorites'?favorites.includes(product.id):bookCategory(product)===id)).length}</small>
         </ChoiceItem>)}</nav>
       </ChoiceGroup>
@@ -87,7 +88,7 @@ export function BookLibrary({products, openedProduct, onSelect, onActivate, inte
             </Select>
           </div>
         </div>
-        <div className="book-grid" id="bookGameGrid">{list.map(product=><article key={product.id} className="book-card">
+        <div className="book-grid" id="bookGameGrid">{list.map(product=><article key={product.id} className="book-card" style={{'--book-card-art': bookArtwork(product) ? `url("${bookArtwork(product)}")` : 'none'} as CSSProperties}>
           {gameLink(product)}
           <Button variant="ghost" size="icon" className="book-favorite rounded-full aria-pressed:text-[var(--kit-brand)]" data-book-favorite={product.id} disabled={!interactive} aria-label={t('library.favorite',{title:product.title})} aria-pressed={favorites.includes(product.id)} onClick={()=>toggleFavorite(product.id)}><Star aria-hidden="true"/></Button>
         </article>)}</div>

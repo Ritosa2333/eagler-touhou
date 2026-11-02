@@ -6,9 +6,11 @@ import {LobbySurface, type LobbySurfaceProps} from '../launcher/LobbySurface';
 import {DirectoryRoomRows} from './DirectoryRoomRows';
 import {LobbyRoomTools} from './LobbyRoomTools';
 import {filterDirectoryRooms, type DirectoryRoomFilter} from './directory-room-filter';
-import type {DirectoryFormMode, LobbyDirectoryService} from '../../services/lobby-directory';
+import {ListFilter} from 'lucide-react';
+import {ActionMenu,ActionMenuRadioGroup,ActionMenuRadioItem} from '../../ui/action-menu';
+import type {DirectoryFormMode, DirectoryRoom, LobbyDirectoryService} from '../../services/lobby-directory';
 
-type Derived = 'roomFilters' | 'selectedProduct' | 'connectionWarning' | 'membership' | 'notice' | 'roomTools' | 'roomList' | 'hasRooms' | 'loading' | 'emptyState' | 'roomCount' | 'connectionNote' | 'roomUsersArtwork';
+type Derived = 'roomFilters' | 'selectedProduct' | 'connectionWarning' | 'membership' | 'notice' | 'roomTools' | 'roomList' | 'hasRooms' | 'loading' | 'emptyState' | 'roomCount' | 'roomUsersArtwork';
 export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived> {
   service: LobbyDirectoryService;
   assetUrl(path: string): string;
@@ -27,9 +29,8 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
     refresh(); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh); window.addEventListener('storage', refresh);
     return () => {window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh); window.removeEventListener('storage', refresh);};
   }, []);
-  // Background reconnects keep the warning and last known rows on screen.
-  // Only the first connection presents a loading layer.
-  const visibleRooms = snapshot.connectionInterrupted && snapshot.loading
+  // Keep matching last-known rows while refreshing; the loading layer does not move them.
+  const visibleRooms = snapshot.loading
     ? snapshot.rooms.filter(room => !snapshot.selectedProduct || room.product === snapshot.selectedProduct)
     : snapshot.visibleRooms;
   const filteredRooms = surface.productFilters?.length ? visibleRooms.filter(room => surface.productFilters!.includes(room.product))
@@ -43,11 +44,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
   </aside>;
   const membership = <aside className="lobby-membership" id="membership" hidden={!state.mine}><strong id="membershipTitle">{state.mine ? t('lobby.mine', {code: state.mine.code}) : ''}</strong><p id="membershipHint">{t(state.supportsRecovery ? 'lobby.mineHint' : 'lobby.releaseUnsupported')}</p><BookButton variant="action" className="lobby-button" id="releaseMembership" type="button" hidden={!state.mine || !state.supportsRecovery} disabled={!!state.recovering || state.connection !== 'live' || state.leaving || !state.mine?.recoveryToken} onClick={service.releaseMembership}>{t(state.recovering ? 'lobby.releasing' : 'lobby.release')}</BookButton></aside>;
   const roomTools = <LobbyRoomTools disabled={disabled} onCreate={() => onOpenForm('create')} onReplay={onReplay} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
-  const roomFilters = <fieldset className="book-room-filters" aria-label={t('directory.filters')}>
-    {([{id: 'all', key: 'directory.filter.all'}, {id: 'open', key: 'directory.filter.open'}, {id: 'waiting', key: 'directory.filter.waiting'}, {id: 'spectate', key: 'directory.filter.spectate'}] as const).map(filter =>
-      <BookButton variant="choice" type="button" key={filter.id} data-room-filter={filter.id} aria-pressed={roomFilter === filter.id} onClick={() => setRoomFilter(filter.id)}>{t(filter.key)}<span>{filterDirectoryRooms(filteredRooms, filter.id).length}</span></BookButton>)}
-    <span className="book-room-filter-count" role="status">{t('directory.shown', {count: state.visibleRooms.length})}</span>
-  </fieldset>;
+  const roomFilters=<DirectoryRoomFilters rooms={filteredRooms} value={roomFilter} onChange={setRoomFilter}/>;
   const filtering = roomFilter !== 'all' || !!surface.productFilters?.length || !!surface.viewingProduct;
   const empty = state.loading || state.visibleRooms.length || state.connectionInterrupted ? null : {
     title: state.connection === 'live' && filtering ? (t('directory.noMatches')) : t(state.connection === 'live' ? 'lobby.empty' : state.connection === 'loading' ? 'lobby.connecting' : state.connection === 'unsupported' ? 'lobby.unsupported' : 'lobby.offline'),
@@ -56,6 +53,13 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
   };
   return <LobbySurface {...surface} selectedProduct={surface.viewingProduct || state.selectedProduct} connectionWarning={warning} membership={membership} notice={state.notice} roomTools={roomTools} roomFilters={roomFilters}
     roomList={<DirectoryRoomRows snapshot={state} service={service} assetUrl={assetUrl} initialRows={initialRows}/>}
-    hasRooms={!!state.visibleRooms.length} loading={state.loading} emptyState={empty} roomCount={state.loading ? '' : t('lobby.roomCount', {count: state.visibleRooms.length})}
+    hasRooms={!!state.visibleRooms.length} loading={state.loading} emptyState={empty} roomCount={state.loading && !state.visibleRooms.length ? '' : t('lobby.roomCount', {count: state.visibleRooms.length})}
     viewingProduct={surface.viewingProduct} roomUsersArtwork={assetUrl('assets/room-users.svg')}/>;
+}
+
+export function DirectoryRoomFilters({rooms,value,onChange}:{rooms:readonly DirectoryRoom[];value:DirectoryRoomFilter;onChange(value:DirectoryRoomFilter):void}) {
+  const {t}=useLocale();
+  return <ActionMenu variant="selection" label={t('directory.filters')} className="book-room-filter-popup" trigger={<BookButton variant="action" type="button" className="book-room-filter-trigger" data-active={value !== 'all'}><ListFilter aria-hidden="true"/>{t('directory.filters')}</BookButton>}>
+    <ActionMenuRadioGroup value={value} onValueChange={next=>onChange(next as DirectoryRoomFilter)}>{(['all','open','waiting','spectate'] as const).map(id=><ActionMenuRadioItem key={id} value={id} data-room-filter={id}>{t(`directory.filter.${id}`)}<span className="ml-auto text-xs text-muted-foreground">{filterDirectoryRooms(rooms,id).length}</span></ActionMenuRadioItem>)}</ActionMenuRadioGroup>
+  </ActionMenu>;
 }

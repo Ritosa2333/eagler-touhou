@@ -1,4 +1,5 @@
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, type ProductId, type GameId} from '../../../src/contracts/product-catalog.mts';
+const shortTitles:Record<GameId,string>={th06:'红',th07:'妖',th075:'萃',th08:'永',th09:'花',th10:'风',th11:'地',th12:'星',th15:'绀',th17:'兽',th20:'锦'};
 
 /** Host/publication decides membership and URLs before constructing this view data. */
 export interface LibraryProduct {
@@ -6,6 +7,7 @@ export interface LibraryProduct {
   gameId: GameId;
   title: string;
   subtitle: string;
+  shortTitle: string;
   number: string;
   multiplayer: boolean;
   artwork: string | null;
@@ -17,12 +19,19 @@ export interface LibraryProduct {
   credit?: {name: string; url: string};
 }
 
+export type MultiplayerGroup = 'versus' | 'original' | 'fighting';
+export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): MultiplayerGroup {
+  const game = PRODUCT_GAMES[product.gameId];
+  if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
+  return 'multiplayer' in game && game.multiplayer.gameplay === 'versus' ? 'versus' : 'original';
+}
+
 /** Same catalog fields as lib/frontend-assets.mjs; no copied product list. */
 export function createLibraryProducts(ids: readonly ProductId[], assetUrl: (path: string) => string, hrefForProduct: (id: ProductId) => string): LibraryProduct[] {
   return ids.map(id => {
     const gameId = gameIdForProduct(id), game = PRODUCT_GAMES[gameId], support = game.support;
     return {
-      id, gameId, title: game.title, subtitle: game.subtitle, number: game.number,
+      id, gameId, title: game.title, subtitle: game.subtitle, shortTitle:shortTitles[gameId], number: game.number,
       multiplayer: isMultiplayerProductId(id),
       artwork: 'cardArtwork' in game && game.cardArtwork ? assetUrl(`assets/${game.cardArtwork}`) : null,
       href: hrefForProduct(id),

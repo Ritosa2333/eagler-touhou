@@ -6,15 +6,17 @@
   --kit-muted:#26272c;--kit-muted-foreground:#b0b0b9;--kit-accent:#303138;
   --kit-destructive:#f09a9d;--kit-destructive-foreground:#232428;--kit-border:#37383f;--kit-input:#47484f;--kit-ring:#a8a9b4;
   --kit-success:#8ed3aa;--kit-warning:#e5bd7f;
+  --kit-control-border:#555660;
   --kit-brand:#e4868e;--kit-font:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;
 }
 html[data-book-theme='light'] {
-  color-scheme:light;
+  color-scheme:only light;
   --kit-background:#f7f7f8;--kit-foreground:#27272d;--kit-card:#ffffff;--kit-popover:#ffffff;
   --kit-primary:#34353d;--kit-primary-foreground:#ffffff;--kit-secondary:#eeeeF1;
   --kit-muted:#f2f2f4;--kit-muted-foreground:#66666f;--kit-accent:#eaeaf0;
   --kit-destructive:#ae2939;--kit-destructive-foreground:#ffffff;--kit-border:#e1e1e6;--kit-input:#d3d3db;--kit-ring:#8b8b9c;
   --kit-success:#247044;--kit-warning:#855914;
+  --kit-control-border:#b7b7c1;
   --kit-brand:#a93648;
 }
 :root,html[data-book-theme='light'],html[data-book-theme='dark'] {

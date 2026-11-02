@@ -1,4 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
+import {OverflowText} from '../../ui/overflow-text';
 import {useLocale} from '../../i18n';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
@@ -20,7 +21,7 @@ export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnaps
       <OptionSwitch id="mpPreferTurn" label={t('room.preferTurn')} describedBy="mpPreferTurnHint" checked={state.preferTurn} disabled={!state.connected || state.launchBusy || state.checkBusy} onChange={() => service.setPreferTurn(!state.preferTurn)}/>
     </div>
     <div role="status" aria-live="polite">{!peers.length ? <p>{t('room.waitPeer')}</p> : peers.map(({seat, index}) => <div className="room-packet-loss-peer" key={seat.clientId}>
-      <strong>{state.nickname ? seat.name || `P${index + 1}` : `P${index + 1}`}</strong>
+      <strong><OverflowText>{state.nickname ? seat.name || `P${index + 1}` : `P${index + 1}`}</OverflowText></strong>
       {lanes.map(lane => {
         const result = network.loss(seat.clientId, lane);
         return <div className="room-packet-loss-row" key={lane} data-loss-lane={lane} data-loss-peer={seat.clientId}>

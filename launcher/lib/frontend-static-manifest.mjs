@@ -8,6 +8,10 @@ export const REACT_DOCUMENTS = Object.freeze([
   {path: '/profile.html', file: 'profile.html'},
   {path: '/login.html', file: 'login.html'},
   {path: '/ui-review.html', file: 'ui-review.html'},
+  {path: '/faq.html', file: 'faq.html'},
+  {path: '/about.html', file: 'about.html'},
+  {path: '/guide.html', file: 'guide.html'},
+  {path: '/multiplayer.html', file: 'multiplayer.html'},
   {path: '/uptime/', file: 'uptime/index.html'},
 ].map(document => Object.freeze(document)));
 export const REACT_DOCUMENT_FILES = Object.freeze(REACT_DOCUMENTS.map(document => document.file));
@@ -31,9 +35,6 @@ const entries = [
   ['features.css', true],
   ['ui-fonts.css', false],
   ['ui-fonts-deferred.css', false],
-  ['touch-guide.css', true],
-  ['about.css', true],
-  ['site-help.mjs', true],
   // Origin migration must always use the current network document. Caching it
   // in the App Shell could leave either side of a cutover on stale protocol
   // code even when the server correctly marks the page for revalidation.
@@ -46,8 +47,6 @@ const entries = [
   ['legacy/legacy-game-pack.mjs', false],
   ['legacy/legacy-import-storage.mjs', false],
   ['legacy/legacy-package-adapter.mjs', false],
-  ['about.html', true],
-  ['faq.html', true],
   // Deliberately standalone ES5/CSS2-friendly help page: unsupported browsers
   // must be able to read it without loading the modern Launcher or its fonts.
   ['compatibility.html', true],

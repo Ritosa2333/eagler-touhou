@@ -43,6 +43,7 @@ const allowed = new Map([
   ['P', 'Player seat prefix'],
 ]);
 const contextualAllowed = new Map([
+  ['app/components/launcher/products.ts', new Map(['红', '妖', '萃', '永', '花', '风', '地', '星', '绀', '兽', '锦'].map(text => [text, 'Canonical work abbreviation used as a catalog identifier across locales']))],
   ['app/components/launcher/CareerShowcase.tsx', new Map(['F', 'E / N / H / L', 'Easy / Normal / Hard / Lunatic', 'X / P', 'Extra / Phantasm', '1CC', 'NM / NB / NN', 'F / NF', 'U', 'e1 / e2'].map(text => [text, 'Original chart notation; the adjacent explanation is localized']))],
   ['app/components/player/TouchHelp.tsx', new Map(['CONTINUE?', 'YES', 'NO', 'INPUT'].map(text => [text, 'Native game menu labels reproduced by the touch demonstration']))],
   ['app/components/settings/TouchControlPreview.tsx', new Map([['Tracker', 'Native practice tool name']])],
@@ -50,7 +51,10 @@ const contextualAllowed = new Map([
   ['app/components/launcher/OptionsPanel.tsx', new Map([['MULTIPLAYER', 'Decorative multiplayer artwork label']])],
   ['app/components/launcher/LibraryCards.tsx', new Map([['東方', 'Native artwork title prefix'], ...['MULTIPLAYER', 'Multiplayer'].map(text => [text, 'Decorative multiplayer artwork label'])])],
   ['app/services/startup.ts', new Map([['联机大厅東方紅魔郷妖々夢永夜抄花映塚風神録', 'Font coverage probe']])],
-  ['app/services/multiplayer-room.ts', new Map([['本局已经开始；已保留旁观席，将在下一局生效', 'Server protocol classifier; translated at display boundary']])],
+  ['app/services/multiplayer-room.ts', new Map([
+    ['本局已经开始；已保留旁观席，将在下一局生效', 'Server protocol classifier; translated at display boundary'],
+    ['已达到同时保留的房间数量限制，请关闭原房间后重试。', 'Exact server quota classifier; the terminal close supplies the localized notice'],
+  ])],
 ]);
 const errors = JSON.parse(readFileSync(resolve(project, 'messages/errors.json'), 'utf8'));
 const errorSources = new Set(errors.filter((entry) => !entry.source.includes('{')).map((entry) => entry.source));
@@ -62,9 +66,20 @@ const authoredReferenceSources = new Map([
   ['app/ui/catalog.ts', 'Chinese handbook data; catalogLocale is declared with the data'],
   ['app/ui/page-catalog.ts', 'Chinese handbook page inventory rendered inside the declared catalogLocale'],
   ['app/ui/page-inventory.tsx', 'Chinese handbook inventory controls inside the declared catalogLocale'],
+  ['app/ui/page-examples.tsx', 'Chinese handbook isolated examples inside the declared catalogLocale'],
   ['app/ui/room-example.tsx', 'Chinese handbook demo data and controls; production room views stay audited'],
 ]);
 const containsCopy = (text) => /[\p{L}]/u.test(text) && !allowed.has(text) && !/^P\d+$/.test(text);
+
+function gameIdentifier(node) {
+  if (node?.type === 'Identifier') return ['game','gameId','roomProduct'].includes(node.name);
+  if (node?.type === 'MemberExpression' && !node.computed) return ['game','gameId','product'].includes(node.property.name);
+  if (node?.type === 'CallExpression' && node.callee.type === 'Identifier') {
+    if (node.callee.name === 'gameIdForProduct') return true;
+    if (node.callee.name === 'String') return gameIdentifier(node.arguments[0]);
+  }
+  return node?.type === 'LogicalExpression' && (gameIdentifier(node.left) || gameIdentifier(node.right));
+}
 
 export function auditUiCopy(root = resolve(project, 'app')) {
   const findings = [];
@@ -103,8 +118,14 @@ export function auditUiCopy(root = resolve(project, 'app')) {
       }
       function visit(node, parent) {
         if (node.type === 'JSXElement' && ['style', 'script'].includes(node.openingElement.name.name)) return;
-        if (node.type === 'TemplateLiteral' && errorTemplates.has(node.quasis.map(part => part.value.cooked ?? part.value.raw).join('{}'))) return;
-        if (node.type === 'JSXText') {
+        if (node.type === 'TemplateLiteral' && errorTemplates.has(node.quasis.map(part => part.value.cooked ?? part.value.raw).join('{}'))) {
+          for (const expression of node.expressions) visit(expression, node);
+          return;
+        }
+        if (node.type === 'CallExpression' && node.callee.type === 'MemberExpression' && !node.callee.computed &&
+          node.callee.property.name === 'toUpperCase' && gameIdentifier(node.callee.object)) {
+          report(node, 'Game identifiers use their canonical lowercase spelling', 'game-id-case');
+        } else if (node.type === 'JSXText') {
           const value = node.value.replace(/\s+/g, ' ').trim();
           if (containsCopy(value)) report(node, value, 'jsx-text');
         } else if (

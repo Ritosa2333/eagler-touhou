@@ -1,0 +1,27 @@
+:where(html[data-ui-app],html[data-ui-app] *) {scrollbar-width:thin}
+html[data-ui-app],html[data-ui-app] * {
+  --ui-scrollbar-thumb:transparent;
+  --ui-scrollbar-active:var(--kit-muted-foreground);
+  scrollbar-color:var(--ui-scrollbar-thumb) transparent;
+}
+@supports(color:color-mix(in srgb,black,transparent)) {
+  html[data-ui-app],html[data-ui-app] * {--ui-scrollbar-active:color-mix(in srgb,var(--kit-muted-foreground) 48%,transparent)}
+}
+html[data-ui-app][data-ui-scrolling],html[data-ui-app] [data-ui-scrolling] {
+  --ui-scrollbar-thumb:var(--ui-scrollbar-active);
+}
+@media(hover:hover) and (pointer:fine) {
+  html[data-ui-app]:hover,html[data-ui-app] *:hover {
+    --ui-scrollbar-thumb:var(--ui-scrollbar-active);
+  }
+}
+html[data-ui-app]::-webkit-scrollbar,html[data-ui-app] *::-webkit-scrollbar {width:8px;height:8px}
+html[data-ui-app]::-webkit-scrollbar-track,html[data-ui-app] *::-webkit-scrollbar-track,
+html[data-ui-app]::-webkit-scrollbar-corner,html[data-ui-app] *::-webkit-scrollbar-corner {background:transparent}
+html[data-ui-app]::-webkit-scrollbar-thumb,html[data-ui-app] *::-webkit-scrollbar-thumb {
+  min-height:28px;border:2px solid transparent;border-radius:99px;
+  background:var(--ui-scrollbar-thumb);background-clip:padding-box;
+}
+@media(forced-colors:active) {
+  html[data-ui-app],html[data-ui-app] * {scrollbar-color:auto}
+}

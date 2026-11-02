@@ -5,7 +5,6 @@ import {spawn} from 'node:child_process';
 import {relative, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {sharedContractInputs,copySharedContractOutputs} from './shared-contract-sources.mjs';
-import {acquireBuildLock} from './build-lock.mjs';
 
 const defaultProject = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const activeBuilds = new Map();
@@ -74,6 +73,7 @@ async function outputFiles(directory, prefix = '') {
 async function prepare(project) {
   const sourceRoot = resolve(project, 'src/contracts');
   if (!existsSync(sourceRoot)) return Object.freeze({mode: 'prebuilt', root: project, contractsDirectory: resolve(project, 'assets/contracts'), inputHash: null});
+  const {acquireBuildLock} = await import('./build-lock.mjs');
   const cache = resolve(project, '.cache/build/contracts'); await mkdir(cache, {recursive: true});
   const release = await acquireBuildLock(resolve(cache, '.build.lock'));
   try {

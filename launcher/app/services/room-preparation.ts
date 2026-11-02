@@ -78,7 +78,7 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
             await acquisition.acquire({productId: context.product, gameVersion, music: 'none', language: 'ja', signal: context.signal});
           } else {
             const {catalog, catalogUrl} = await acquisition.getPublication(gameVersion, context.signal);
-            if (!catalog?.games[game]) throw new Error(t('package.releaseNotReadyNoLocal', {game: game.toUpperCase()}));
+            if (!catalog?.games[game]) throw new Error(t('package.releaseNotReadyNoLocal', {game: game}));
             await acquisition.installPublished(game, {catalog, catalogUrl, gameVersion, addComponents: [],
               fetchImpl: (input, init) => tracker.resourceFetch(input, init, packageNetworkMetadata(game, input, options.baseUrl, t)),
               signal: context.signal});

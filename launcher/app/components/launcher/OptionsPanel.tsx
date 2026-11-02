@@ -13,6 +13,7 @@ export interface OptionsPanelProps {
   product: LibraryProduct;
   coverArtwork?: string | null;
   open: boolean;
+  closing?: boolean;
   onBack: () => void;
   children: ReactNode;
   /** Original .launch-wrap.launch-actions is a direct aside child, not scroll content. */
@@ -27,18 +28,18 @@ export interface OptionsPanelProps {
   assetUrl: (path: string) => string;
 }
 /** Main index.html354–365 shell; body is the shared SettingsBody, never a copy. */
-export function OptionsPanel({product, coverArtwork, open, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics, assetUrl}: OptionsPanelProps) {
+export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics, assetUrl}: OptionsPanelProps) {
   const {t} = useLocale();
-  const panel = useRef<HTMLElement>(null); useOptionsViewport(panel); useOptionsInteractions(panel, open, onBack);
+  const panel = useRef<HTMLElement>(null); useOptionsViewport(panel); useOptionsInteractions(panel, open&&!closing, onBack);
   const panelTarget = useOptionsTarget('panel', panel);
   useRoomSettingsRelocation(panel, roomDrawer && product.multiplayer, product.id);
   const credit = product.credit ?? {name: t('gameNotice.credit'), url: 'https://b23.tv/WOQhahY'};
   // Main app.mts4626–4634 carries this product into the directory filter.
   const productLobbyHref = lobbyHref ? lobbyHrefForProduct(lobbyHref, product.id) : undefined;
-  return <aside ref={panelTarget} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open || undefined} aria-hidden={!open} inert={!open}>
+  return <aside ref={panelTarget} data-options-panel data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
     <div className="tools-head">
       <img className="options-cover" id="optionsCover" src={coverArtwork ?? product.artwork ?? undefined} hidden={!(coverArtwork ?? product.artwork)} alt="" decoding="async"/>
-      <div className="tools-title"><div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div><h3 id="gameTitle">{product.title}</h3><div className="options-subtitle-line"><span className="options-subtitle" id="optionsSubtitle">{product.subtitle}</span></div></div>
+      <div className="tools-title"><div className="game-id" id="gameId" data-game={product.gameId}>{product.gameId}{product.multiplayer ? ' | MP' : ''}</div><h3 id="gameTitle" title={product.title}>{product.title}</h3><p className="options-subtitle" id="optionsSubtitle" title={product.subtitle}>{product.subtitle}</p></div>
       <UiButton variant="secondary" size="icon" className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><X aria-hidden="true"/></UiButton>
     </div>
     <div className="options-scroll">

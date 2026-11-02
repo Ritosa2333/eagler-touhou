@@ -1,35 +1,41 @@
-import {mkdir} from 'node:fs/promises';
-import {rmSync} from 'node:fs';
+import {closeSync, fstatSync, openSync} from 'node:fs';
 import {parse, resolve} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
+import native from 'fs-native-extensions';
 
-const owned = new Map();
-function remove(owner) {
-  const lock = owner.path;
-  if (owned.get(lock) !== owner) return;
-  // Only directories created by this process can reach recursive removal.
-  if (lock !== resolve(lock) || lock === parse(lock).root || !lock.endsWith('.lock')) throw new Error('Invalid build lock path');
-  rmSync(lock, {recursive: true, force: true});
-  owned.delete(lock);
+const owned = new Set();
+function release(owner) {
+  if (!owned.delete(owner)) return;
+  try {native.unlock(owner.fd);} finally {closeSync(owner.fd);}
   if (!owned.size) process.removeListener('exit', cleanup);
 }
-function cleanup() {for (const owner of [...owned.values()]) {try {remove(owner);} catch {}}}
+function cleanup() {for (const owner of [...owned]) {try {release(owner);} catch {}}}
 
-/** A directory lock survives async work and is released on ordinary process exit. */
+/** A permanent guard file uses an OS lock, released even when its owner is killed.
+ * Never unlink the guard: waiters must continue locking the same file. */
 export async function acquireBuildLock(path, {timeout = 120000, interval = 25} = {}) {
   const lock = resolve(path);
-  if (lock === parse(lock).root || !lock.endsWith('.lock')) throw new Error('Build lock must name a .lock directory');
+  if (lock === parse(lock).root || !lock.endsWith('.lock')) throw new Error('Build lock must name a .lock file');
+  let fd;
+  try {fd = openSync(lock, 'a+');}
+  catch (error) {
+    if (error?.code === 'EISDIR' || error?.code === 'EPERM')
+      throw new Error(`Cannot open build lock: ${lock}. If this is a legacy lock directory, stop its build processes before moving it aside.`, {cause:error});
+    throw error;
+  }
+  if (!fstatSync(fd).isFile()) {
+    closeSync(fd);
+    throw new Error(`Build lock is a legacy lock directory: ${lock}. Stop its build processes before moving it aside.`);
+  }
   const started = Date.now();
-  for (;;) {
-    try {await mkdir(lock); break;}
-    catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
+  try {
+    while (!native.tryLock(fd)) {
       if (Date.now() - started >= timeout) throw new Error(`Timed out waiting for build lock: ${lock}`);
       await delay(interval);
     }
-  }
+  } catch (error) {closeSync(fd); throw error;}
   if (!owned.size) process.once('exit', cleanup);
-  const owner = {path: lock};
-  owned.set(lock, owner);
-  return () => remove(owner);
+  const owner = {fd};
+  owned.add(owner);
+  return () => release(owner);
 }

@@ -1,5 +1,4 @@
 import type {ReactNode} from 'react';
-import {OptionsBackdrop} from './OptionsBackdrop';
 import type {LibraryCardsProps} from './LibraryCards';
 import {BookLibrary} from './BookLibrary';
 import {useLocale} from '../../i18n';
@@ -8,16 +7,13 @@ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' |
   masthead: ReactNode;
   footer: ReactNode;
   serverStatusNote?: ReactNode;
-  lobbyHref: string;
-  roomUsersArtwork: string;
   optionsOpen: boolean;
   roomOpen?: boolean;
   roomDrawer?: ReactNode;
-  onBack: () => void;
   children?: ReactNode;
 }
-/** OptionsPanel must be a direct child of .main.library-layout for main's CSS. */
-export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, roomUsersArtwork, optionsOpen, roomOpen = false, roomDrawer, onBack, children, ...rail}: LibrarySurfaceProps) {
+/** The page holds library content. Settings occupy the application overlay layer. */
+export function LibrarySurface({masthead, footer, serverStatusNote, optionsOpen, roomOpen = false, roomDrawer, children, ...rail}: LibrarySurfaceProps) {
   const {t} = useLocale();
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
     {masthead}
@@ -26,7 +22,6 @@ export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, r
       <div className="game-library" inert={optionsOpen}>
         <BookLibrary {...rail} footer={footer}/>
       </div>
-      <OptionsBackdrop onBack={onBack}/>
       {children}
     </main>
     {roomDrawer}{serverStatusNote}

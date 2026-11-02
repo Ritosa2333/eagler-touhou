@@ -1,10 +1,12 @@
 @layer components {
 /* CSS owns final states; the shared surface animator owns their transitions. */
 .library-backdrop,.settings-room-backdrop{opacity:0;visibility:hidden;pointer-events:none;transform:none;will-change:auto;transition:none;animation:none}
+.library-backdrop{z-index:30}
+.tools[data-options-panel][data-state='closed']{opacity:0;pointer-events:none}
 body.library-tools-open .library-backdrop,.settings-room-backdrop:not(.closing){opacity:1;visibility:visible;pointer-events:auto}
 body.library-tools-closing .library-backdrop,.settings-room-backdrop.closing{opacity:0;visibility:visible;pointer-events:none}
-:is(.main.library-layout>.tools,.mp-settings-room-drawer.settings-ui){opacity:0;visibility:hidden;pointer-events:none;transform:none;will-change:auto;contain:none;transition:none;animation:none}
-body.library-tools-open .main.library-layout>.tools.is-open,.mp-settings-room-drawer.settings-ui:not([hidden]):not(.closing){opacity:1;visibility:visible;pointer-events:auto}
-body.library-tools-closing .main.library-layout>.tools.is-open,.mp-settings-room-drawer.settings-ui.closing{opacity:0;visibility:visible;pointer-events:none}
-.main.library-layout>.tools{z-index:31}
+:is(.tools[data-options-panel],.mp-settings-room-drawer.settings-ui){opacity:0;visibility:hidden;pointer-events:none;transform:none;will-change:auto;contain:none;transition:none;animation:none}
+body.library-tools-open .tools[data-options-panel].is-open,.mp-settings-room-drawer.settings-ui:not([hidden]):not(.closing){opacity:1;visibility:visible;pointer-events:auto}
+body.library-tools-closing .tools[data-options-panel].is-open,.mp-settings-room-drawer.settings-ui.closing{opacity:0;visibility:visible;pointer-events:none}
+.tools[data-options-panel]{z-index:31}
 }

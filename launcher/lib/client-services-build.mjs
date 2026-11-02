@@ -1,5 +1,5 @@
 import {existsSync} from 'node:fs';
-import {mkdir, readFile, readdir, writeFile, rm, cp} from 'node:fs/promises';
+import {mkdir, mkdtemp, readFile, readdir, writeFile, rm, cp} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 import {isAbsolute, relative, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -10,6 +10,7 @@ import {localModuleClosure} from './browser-module-graph.mjs';
 import {sharedContractInputs,copySharedContractOutputs} from './shared-contract-sources.mjs';
 import {acquireBuildLock} from './build-lock.mjs';
 import {ensureI18nBuild, i18nBuildInputs} from './i18n-build.mjs';
+import {writeFileAtomic} from './atomic-file.mjs';
 const project = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const output = resolve(project, '.cache/build/browser');
 async function sources(directory) {
@@ -45,15 +46,28 @@ export async function ensureClientServicesBuild({force=false}={}) {
         if(previous.identity===identity && complete && unchanged) return {built:false,sourceCount:files.length};
       } catch {}
     }
-    await new Promise((yes,no)=>{
-      const child=spawn(process.execPath,[resolve(project,'node_modules/typescript/bin/tsc'),'-p','tsconfig.launcher.json','--pretty','false'],{cwd:project,stdio:'inherit'});
-      child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Client service compilation failed (${code})`)));
-    });
-    await new Promise((yes,no)=>{
-      const child=spawn(process.execPath,[resolve(project,'scripts/build-service-translations.mjs')],{cwd:project,stdio:'inherit'});
-      child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Service translation build failed (${code})`)));
-    });
-    await copySharedContractOutputs(project,resolve(output,'assets'));
+    // Child compilers never write shared outputs. If their parent is killed,
+    // surviving children can only finish their own unpublished staging area.
+    const staging = await mkdtemp(resolve(project,'.cache/client-services-staging-'));
+    try {
+      await new Promise((yes,no)=>{
+        const child=spawn(process.execPath,[resolve(project,'node_modules/typescript/bin/tsc'),'-p','tsconfig.launcher.json','--outDir',resolve(staging,'assets'),'--pretty','false'],{cwd:project,stdio:'inherit'});
+        child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Client service compilation failed (${code})`)));
+      });
+      await new Promise((yes,no)=>{
+        const child=spawn(process.execPath,[resolve(project,'scripts/build-service-translations.mjs'),'--outdir',resolve(staging,'assets/launcher')],{cwd:project,stdio:'inherit'});
+        child.once('error',no);child.once('exit',code=>code===0?yes():no(Error(`Service translation build failed (${code})`)));
+      });
+      await copySharedContractOutputs(project,resolve(staging,'assets'));
+      async function publish(directory, prefix='') {
+        for(const entry of await readdir(directory,{withFileTypes:true})) {
+          const path=prefix+entry.name;
+          if(entry.isDirectory()) await publish(resolve(directory,entry.name),path+'/');
+          else if(entry.isFile()) await writeFileAtomic(resolve(output,path),await readFile(resolve(directory,entry.name)));
+        }
+      }
+      await publish(staging);
+    } finally {await rm(staging,{recursive:true,force:true});}
     const generated=[];
     async function collect(directory,prefix='') {
       for (const entry of await readdir(directory,{withFileTypes:true})) {
