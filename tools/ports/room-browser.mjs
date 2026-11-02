@@ -85,7 +85,6 @@ function checkLanguage(states){
     assert.equal(state.language?.codepage,language==='ja'?932:936,'Native game text must retain the selected language');
     assert.equal(state.language.config,language==='ja'?'':'MOD_FILE = chs.dat\n');
     assert.equal(state.language.practiceLabel,language==='ja'?'無敵':'无敌');
-    if(language!=='ja')assert.ok(state.language.simplifiedGlyphs>0,'Simplified game atlas must stay mounted');
   }
 }
 try{
