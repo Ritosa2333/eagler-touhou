@@ -172,6 +172,14 @@ int CDialogue::StepScript()
 	}
 }
 
+// Fades and a single text opcode return before executing the resource VM.
+// Text advance itself is reversible; the following opcode is checked next tick.
+bool CDialogue::RollbackPredictable() const
+{
+ return m_bRunning && m_pScript &&
+  (m_dialogBGFadeTimer<35 || m_bFading || m_pScript[0]==13);
+}
+
 int CDialogue::Step()
 {
 	if (m_bRunning==false)

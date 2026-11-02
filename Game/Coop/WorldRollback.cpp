@@ -39,7 +39,12 @@
 
 namespace th5w {
 bool CStage::RollbackPredictable() const {
- if(!Cooperative()||m_bLogo||m_bPaused||m_bContinueScr||m_bQuit||BrowserDialogue())return false;
+ if(!Cooperative()||m_bPaused||m_bContinueScr)return false;
+ // These animation ticks only change journaled scalar state. Keep exact-input
+ // barriers at their resource/scene transitions, rather than once per frame.
+ if(m_bQuit)return m_nQuitFrameLeft>0;
+ if(m_bLogo)return m_logoFrame+1<145;
+ if(BrowserDialogue())return m_pDialogue->RollbackPredictable();
  // Resource-changing dialogue VMs, actor factories and scene destruction run
  // after the complete preceding input prefix has been reconciled.
  static const int mid[]={2500,2750,5750,3900,4800,300000,5800};

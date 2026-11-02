@@ -5,6 +5,7 @@
 #include "../Game/Stage/Chara/Chara.h"
 #include "../Game/Stage/Laser/Laser.h"
 #include "../Game/Stage/StageResource.h"
+#include "../Game/Stage/Dialogue/Dialogue.h"
 #include "../Game/Stage/Background/Background.h"
 #include "../Game/Stage/Boss/Boss.h"
 #include "../Game/Stage/Boss/BossStage4.h"
@@ -57,6 +58,10 @@ struct PracticeTests {
    case 14:p->m_nextLifeComeTimeLeft=0;p->m_cannotControlTimeLeft=0;p->m_invulnerableTimeLeft=0;p->m_bDraw=true;break;
    case 15:{auto* boss=dynamic_cast<CBossStage4*>(s->m_pBoss);if(!boss)return 0;boss->m_whichDie=value;boss->m_curPhase=0xff;boss->m_curPhaseFrame=0;break;}
    case 16:if(!s->m_pMidBoss)return 0;s->m_pMidBoss->m_curPhase=0xff;s->m_pMidBoss->m_curPhaseFrame=0;break;
+   case 17:s->m_pDialogue->Run();break;
+   case 18:s->m_bLogo=true;s->m_logoFrame=0;break;
+   case 19:s->SetQuit(STAGE_END_CLEAR);break;
+   case 20:s->SaveSeat();s->BindSeat(0);return s->RollbackPredictable();
    case 12:s->SetQuit(STAGE_END_CLEAR);s->m_nQuitFrameLeft=0;break;
    default:return 0;
   }
