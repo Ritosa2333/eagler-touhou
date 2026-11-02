@@ -13,6 +13,38 @@ const functions = ['apply', 'command'].map(name => {
   return source.slice(node.start, node.end);
 }).join('\n');
 
+test('managed DATA accepts a parent-realm ArrayBuffer and rejects invalid buffers', async () => {
+  let managed;
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'IfStatement' && source.slice(node.test.start, node.test.end) === "query.get('managedData') === '1'") managed = node;
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === 'object') visit(value);
+    }
+  }
+  visit(ast);
+  assert.ok(managed);
+  const view = managed.consequent.body.find(node => node.type === 'VariableDeclaration' &&
+    node.declarations.some(declaration => declaration.id.name === 'view'));
+  assert.ok(view);
+  const preflight = source.slice(managed.consequent.start + 1, view.start);
+  const validate = buffer => runInNewContext('(async () => {' + preflight + ';return buffer.byteLength;})()', {
+    window: {}, validEpoch: true, epoch: 7, game: 'th13',
+    query: new URLSearchParams({gameGeneration: 'installed-generation'}),
+    parent: {async __eaglerPrepareManagedRuntimeDataV1(request) {
+      assert.equal(request.game, 'th13'); assert.equal(request.epoch, 7);
+      assert.equal(request.generation, 'installed-generation'); return {buffer};
+    }},
+  });
+  assert.equal(await validate(new ArrayBuffer(32)), 32);
+  const detached = new ArrayBuffer(32); structuredClone(detached, {transfer: [detached]});
+  for (const invalid of [null, {}, new Uint8Array(32), new ArrayBuffer(0), detached,
+    new SharedArrayBuffer(32), {byteLength: 32, [Symbol.toStringTag]: 'ArrayBuffer'}]) {
+    await assert.rejects(validate(invalid), /游戏资源包无效/);
+  }
+});
+
 function adapter(options = {}) {
   const calls = [];
   const context = {options, music: true, launched: true, stopping: false,
