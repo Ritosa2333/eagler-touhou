@@ -133,6 +133,9 @@ export function createManagedTransport(options, roles, fail, environment = globa
   }
   const status=environment.__th05PeerTransport={peers,disconnected:false,failed:false,error:'',get relay(){return data;},get rtcReadySent(){return rtcReported;}};
   return {
+    beginSpectatorSession(message){if(data?.readyState!==1)throw Error('Spectator upload socket unavailable');data.send(JSON.stringify(message));},
+    sendSpectator(payload){if(data?.readyState!==1||data.bufferedAmount>512*1024)throw Error('Spectator upload is behind');const bytes=new Uint8Array(payload.length+1);bytes[0]=0xe8;bytes.set(payload,1);data.send(bytes);},
+    stopSpectator(){if(data?.readyState===1)data.send(new Uint8Array([0xe8,0x53,0x54,0x4f,0x50,1]));},
     channelFor(role) { const peer=peers.get(roles.indexOf(role)); if (!peer) throw Error('未知玩家'); return peer.channel; },
     connect() {
       if (data || closed) throw Error('重复连接');

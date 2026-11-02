@@ -52,6 +52,7 @@ export function commandHandler(api){let configured=false;const savedPath=value=>
  }
  case 'remove':if(api.running()&&!api.viewer())throw Error('Exit the game before removing files');api.store.remove(savedPath(message.path));await api.store.sync();return {};
  case 'sync':await api.sync();return {};
+ case 'spectator-playback':return api.spectatorPlayback(message);
  case 'playback':return api.playback(message);
  default:throw Error('Unsupported TH05 command: '+message.command);
  }
