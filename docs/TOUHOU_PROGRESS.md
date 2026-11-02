@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/8cbc1673b9300bbcb75322a7177acc39ccc581b6)；[剩余验收](https://github.com/AdingApkgg/thp/blob/8cbc1673b9300bbcb75322a7177acc39ccc581b6/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/d54e8c0b0ccb0556926920ee1042b992018e5a82)；[剩余验收](https://github.com/AdingApkgg/thp/blob/d54e8c0b0ccb0556926920ee1042b992018e5a82/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [静音原版种子写入采样及当前核心GLES](https://github.com/AdingApkgg/thp/blob/d54e8c0b0ccb0556926920ee1042b992018e5a82/docs/porting/TH14_OBSERVED_SEED_STORE_GLES_NOV03.md)：原版实际26,000回调，worker种子写入前后主线程均在系统等待，未证旧样本的交错。两种时间输入下所选状态／相机／HUD、341战斗检查点与3,835初始发布一致，720行VM仍有七处Z字差，严格失败。当前22c4f85核心GLES实际122,622帧／45断言并独立复核；WebGPU沙箱设备创建失败后重新运行中，双后端尚未接受。原版整局像素／PCM、独立调度、全模式与浏览器仍开放，整作1:1未完成。
 
 2026-11-03 [三面加载RNG时序诊断](https://github.com/AdingApkgg/thp/blob/8cbc1673b9300bbcb75322a7177acc39ccc581b6/docs/porting/TH14_STAGE3_SEED_ORDER_NOV03.md)：旧原版栈与指令确认场景对象索引6，单个VM身份未证；原版RNG轨迹的4／7／11次推进与三个种子相符，但历史跨线程顺序未知。隔离实验假设较早初始化时，36,826回调所选状态、相机／HUD、360战斗检查点和3,834初始发布独立一致，538行VM仍有两处Z字不同；较早时间没有原版证据，严格失败并被新增时间校验拒绝。16份正式回归的原版Initialize时间均通过校验，没有修改正式玩法；全模式、独立调度及整作1:1仍未完成。
 
