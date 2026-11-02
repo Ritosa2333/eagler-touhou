@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/d54e8c0b0ccb0556926920ee1042b992018e5a82)；[剩余验收](https://github.com/AdingApkgg/thp/blob/d54e8c0b0ccb0556926920ee1042b992018e5a82/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/52106c1c376b59e928c9c631e6c68ec1ea597360)；[剩余验收](https://github.com/AdingApkgg/thp/blob/52106c1c376b59e928c9c631e6c68ec1ea597360/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [Initialize时间覆盖检查及严格组合入口](https://github.com/AdingApkgg/thp/blob/52106c1c376b59e928c9c631e6c68ec1ea597360/docs/porting/TH14_INITIALIZE_TIME_COVERAGE_NOV03.md)：逐项核验全部应出现的原版事件，16份自然记录通过，时间／来源／漏项／重复／事件流篡改五种负控制均拒绝；组合入口先查时间再运行既有严格验收。未证明的较早交付假设在严格检查前被拒绝。此项仅覆盖Initialize时间，没有修改玩法，其他线程时序和整作1:1仍未完成。
 
 2026-11-03 [静音原版种子写入采样及当前核心GLES](https://github.com/AdingApkgg/thp/blob/d54e8c0b0ccb0556926920ee1042b992018e5a82/docs/porting/TH14_OBSERVED_SEED_STORE_GLES_NOV03.md)：原版实际26,000回调，worker种子写入前后主线程均在系统等待，未证旧样本的交错。两种时间输入下所选状态／相机／HUD、341战斗检查点与3,835初始发布一致，720行VM仍有七处Z字差，严格失败。当前22c4f85核心GLES实际122,622帧／45断言并独立复核；WebGPU沙箱设备创建失败后重新运行中，双后端尚未接受。原版整局像素／PCM、独立调度、全模式与浏览器仍开放，整作1:1未完成。
 
