@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/3d6c63aa23d4110587e16ce0e87eb04adb9d4321)；[剩余验收](https://github.com/AdingApkgg/thp/blob/3d6c63aa23d4110587e16ce0e87eb04adb9d4321/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/90b457a21892160d3dfde9199135709a61af9c33)；[剩余验收](https://github.com/AdingApkgg/thp/blob/90b457a21892160d3dfde9199135709a61af9c33/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [启动堆跟踪与释放入口修正](https://github.com/AdingApkgg/thp/blob/90b457a21892160d3dfde9199135709a61af9c33/docs/porting/TH14_CRT_BOOT_FREE_NOV03.md)：旧观测遗漏直接调用CRT释放主体的路径；修正后独立静音原版600回调记录281次释放入口，但完整堆历史和worldZ字差仍未闭合。旧模型比较只覆盖部分事件，生产核心未因此改动。
 
 2026-11-03 [进程堆模型有限候选与反例](https://github.com/AdingApkgg/thp/blob/3d6c63aa23d4110587e16ce0e87eb04adb9d4321/docs/porting/TH14_PROCESS_HEAP_MODEL_NOV03.md)：实际原版敌人工厂经CRT向进程堆请求0x530c字节。隔离WASI候选匹配五种释放顺序的15次独立x86进程实验；混合大小的9次实验中相对布局只匹配8次，说明模型尚不完整。候选未接入游戏，原版堆历史与worldZ字差仍未解决。
 
