@@ -25,6 +25,7 @@ const entries = [
   ['site.webmanifest', true],
   ['favicon.ico', true],
   ['assets/favicon.ico', true],
+  ['assets/favicon.png', true],
   ['assets/site-brand.mjs', true],
   ['assets/brand/LICENSE.txt', false],
   ['assets/brand/portrait.png', false],

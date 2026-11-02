@@ -1,6 +1,6 @@
 import {createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode} from 'react';
 import {useBlocker, useLocation, useNavigate, useNavigationType, type Location, type To, type NavigateOptions} from 'react-router';
-import {initialPageChain, nextPageHistory, pageOf, pageAddress, parentDistance, readPageHistory, PAGE_HISTORY_KEY, PAGE_PARENTS} from './page-history';
+import {initialPageChain, nextPageHistory, pageOf, pageAddress, parentDistance, readPageHistory, PAGE_HISTORY_KEY, PAGE_PARENTS, LOCAL_LAYERS_KEY} from './page-history';
 import {isProductId, isMultiplayerProductId, DEFAULT_MULTIPLAYER_PRODUCT_ID, DEFAULT_PRODUCT_ID, gameIdForProduct, type ProductId} from '../../src/contracts/product-catalog.mts';
 import {FullscreenTransient} from '../components/FullscreenTransient';
 import {ConfirmationDialog} from '../components/ConfirmationDialog';
@@ -10,6 +10,7 @@ import {resolveRoomInvite, normalizeRoomCode, roomRouteHistoryOperation, launche
 import {encodeRoomInvite, ROOM_INVITE_KEY} from '../../src/launcher/room-invite.mts';
 import {localeHome, uiLocaleSearch, type UiLocale} from '../../src/launcher/i18n.mts';
 import {updateSearchParameters} from '../../src/launcher/url-query.mts';
+import {SurfaceLayersContext, type LayerEntry, type LayerValue} from './surface-layer';
 const noDecisionSubscription = () => () => {};
 const noDecisionSnapshot = () => null;
 let dialogSessionSequence = 0;
@@ -66,6 +67,13 @@ const href = (location: Pick<Location, 'pathname' | 'search' | 'hash'>) => locat
 function plainState(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? {...value} : {};
 }
+function localLayerTransition(current: Location, next: Location) {
+  if (href(current) !== href(next)) return false;
+  const before = plainState(current.state), after = plainState(next.state);
+  if (JSON.stringify(before[LOCAL_LAYERS_KEY]) === JSON.stringify(after[LOCAL_LAYERS_KEY])) return false;
+  for (const state of [before, after]) {delete state[LOCAL_LAYERS_KEY]; delete state[PAGE_HISTORY_KEY];}
+  return JSON.stringify(before) === JSON.stringify(after);
+}
 function withoutEntry(value: unknown) {
   const state = plainState(value);
   delete state[entryKey];
@@ -78,6 +86,7 @@ function withoutEntry(value: unknown) {
   delete state[hiddenSelectionKey];
   delete state[gameEntryKey];
   delete state[roomFullscreenKey];
+  delete state[LOCAL_LAYERS_KEY];
   return state;
 }
 export interface HostSelection {productId: ProductId; hasSelection: boolean}
@@ -128,13 +137,14 @@ export function useSurfaceNavigation(): SurfaceNavigation {
 }
 
 /** Sole UI history owner. State is immediate-entry provenance, never a second stack. */
-export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decisions, playerOpen = false, requestRuntimeClose, requestRoomLeave, requestRoomFullscreenExit, titleOverlayOpen = false, productAvailable = () => true, onRouteSelection, children}: {
+export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decisions, playerOpen = false, requestRuntimeClose, requestReplayClose, requestRoomLeave, requestRoomFullscreenExit, titleOverlayOpen = false, productAvailable = () => true, onRouteSelection, children}: {
   dirty: boolean;
   isEditing: boolean;
   onDiscard(): void;
   decisions?: DecisionStore;
   playerOpen?: boolean;
   requestRuntimeClose?(): Promise<boolean>;
+  requestReplayClose?(): Promise<boolean>;
   requestRoomLeave?(): void;
   requestRoomFullscreenExit?(): Promise<void>;
   titleOverlayOpen?: boolean;
@@ -172,6 +182,10 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const navigationType = useNavigationType();
   const pendingLocaleAddress = useRef<{sourceKey: string; target: string} | null>(null);
   const [dialogSession] = useState(newDialogSession);
+  const localEntry = plainState(plainState(location.state)[LOCAL_LAYERS_KEY]);
+  const validLocalLayers = localEntry.session === dialogSession && localEntry.href === href(location);
+  const localValues = validLocalLayers ? plainState(localEntry.values) as Record<string, LayerEntry> : {};
+  const staleLocalLayers = LOCAL_LAYERS_KEY in plainState(location.state) && !validLocalLayers;
   const infoEntry = plainState(plainState(location.state)[infoEntryKey]);
   const activeInfo = INFORMATION_DIALOG_IDS.includes(infoEntry.active as InformationDialogId)
     ? infoEntry.active as InformationDialogId : null;
@@ -200,7 +214,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const sameAddress = href(selectionLocation.current) === href(location);
   const overlayTransition = sameAddress && (
     previousSurface.current === 'touch' || (navigationType === 'PUSH' && touchEntryKey in nextState) ||
-    [infoEntryKey, roomPanelKey, roomSettingsKey, directoryFormKey, gameEntryKey].some(key =>
+    [infoEntryKey, roomPanelKey, roomSettingsKey, directoryFormKey, gameEntryKey, LOCAL_LAYERS_KEY].some(key =>
       JSON.stringify(previousState[key]) !== JSON.stringify(nextState[key])));
   const localeTransition = pendingLocaleAddress.current?.sourceKey === selectionLocation.current.key &&
     pendingLocaleAddress.current.target === href(location);
@@ -292,7 +306,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (pendingRoomReturn.current?.destination === location.key || pendingRoomReturn.current?.appliedKey === location.key) return;
     const params = new URLSearchParams(location.search);
     const obsoleteTouchQuery = params.has('touchLayout');
-    if (!staleTouch && !staleHidden && !staleInfo && !retiredLobbyOptions && !retiredForm && !stalePanel && !staleSettings && !retiredGameEntry && !obsoleteTouchQuery) return;
+    if (!staleTouch && !staleHidden && !staleInfo && !retiredLobbyOptions && !retiredForm && !stalePanel && !staleSettings && !retiredGameEntry && !staleLocalLayers && !obsoleteTouchQuery) return;
     params.delete('touchLayout');
     const normalizedSearch = params.toString();
     const search = obsoleteTouchQuery ? (normalizedSearch ? `?${normalizedSearch}` : '') : location.search;
@@ -305,12 +319,13 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
         if (staleHidden) delete state[hiddenSelectionKey];
         if (retiredForm) delete state[directoryFormKey];
         if (retiredGameEntry) delete state[gameEntryKey];
+        if (staleLocalLayers) delete state[LOCAL_LAYERS_KEY];
         if (stalePanel) {delete state[roomPanelKey]; state[MP_PANEL_HISTORY_KEY] = false;}
         if (staleSettings) {delete state[roomSettingsKey]; state[MP_SETTINGS_HISTORY_KEY] = false; delete state[touchEntryKey];}
         return state;
       })()});
-  }, [staleTouch, staleHidden, staleInfo, retiredLobbyOptions, retiredForm, stalePanel, staleSettings, retiredGameEntry, location, navigate]);
-  const pendingBlockKind = useRef<'touch' | 'runtime' | 'room' | 'page' | 'room-fullscreen' | null>(null);
+  }, [staleTouch, staleHidden, staleInfo, retiredLobbyOptions, retiredForm, stalePanel, staleSettings, retiredGameEntry, staleLocalLayers, location, navigate]);
+  const pendingBlockKind = useRef<'touch' | 'runtime' | 'room' | 'page' | 'room-fullscreen' | 'replay' | null>(null);
   const roomPolicyNavigation = useRef(false);
   // Browser POP arrives later than cleanup, unlike a synchronous MemoryRouter.
   // Authorize only the exact cleanup destination until that event arrives.
@@ -330,6 +345,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (staleInfo) delete initialState[infoEntryKey];
     if (staleHidden) delete initialState[hiddenSelectionKey];
     if (retiredGameEntry) delete initialState[gameEntryKey];
+    if (staleLocalLayers) delete initialState[LOCAL_LAYERS_KEY];
     if (retiredForm) delete initialState[directoryFormKey];
     if (stalePanel) {delete initialState[roomPanelKey]; initialState[MP_PANEL_HISTORY_KEY] = false;}
     if (staleSettings) {delete initialState[roomSettingsKey]; initialState[MP_SETTINGS_HISTORY_KEY] = false;}
@@ -351,9 +367,8 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   }, []);
   const manualRoomPlayerExit = useRef(false);
   const pageHistory = readPageHistory(location.state);
-  // Loading/retiring the persistent iframe adds joint browser history entries
-  // that the parent Router cannot count. Its Back buttons use explicit parents.
-  const replayChildHistory = useRef(false);
+  // Runtime launch and retirement replace the iframe's current child entry,
+  // leaving BrowserHistory Back ownership with the parent Router.
   const gameEntry = plainState(plainState(location.state)[gameEntryKey]);
   const roomFullscreen = plainState(plainState(location.state)[roomFullscreenKey]);
   const ownsRoomFullscreen = address.roomCode !== null && roomFullscreen.session === dialogSession && roomFullscreen.href === href(location);
@@ -381,7 +396,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   function returnToPageParent(parentProduct?: ProductId) {
     const history = readPageHistory(location.state), parent = history && PAGE_PARENTS[history.page];
     if (!parent) return;
-    const distance = replayChildHistory.current ? null : parentDistance(history);
+    const distance = parentDistance(history);
     roomPolicyNavigation.current = true;
     try {
       if (distance !== null) {
@@ -413,10 +428,18 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       pendingPolicyPop.current = null; return false;
     }
     if (roomPolicyNavigation.current || currentLocation.key === nextLocation.key) return false;
-    const nextInformation = plainState(plainState(nextLocation.state)[infoEntryKey]);
-    if (selectionHidden && historyAction === 'POP' && (validInfo || nextInformation.session === dialogSession)) {
+    // Child-window Back never tears down its enclosing editor, Runtime or room.
+    if (localLayerTransition(currentLocation, nextLocation)) return false;
+    if (selectionHidden && historyAction === 'POP' && (validInfo || plainState(plainState(nextLocation.state)[infoEntryKey]).session === dialogSession)) {
       pendingHiddenSelection.current = {destination: nextLocation.key, productId: address.productId};
     }
+    // Replay owns its Back intent. Settle its close policy while the manager
+    // owns the current entry, even if an ordinary Runtime remains underneath.
+    if (historyAction === 'POP' && validInfo && activeInfo === 'replayDialog') {
+      pendingBlockKind.current = 'replay';
+      return true;
+    }
+    const nextInformation = plainState(plainState(nextLocation.state)[infoEntryKey]);
     if (pendingLocaleAddress.current?.sourceKey === currentLocation.key &&
         pendingLocaleAddress.current.target === href(nextLocation)) return false;
     const nextTouch = plainState(plainState(nextLocation.state)[touchEntryKey]);
@@ -486,6 +509,33 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   });
   const latestBlocker = useRef(blocker);
   latestBlocker.current = blocker;
+  const replayCloseTask = useRef<Promise<void> | null>(null);
+  useEffect(() => {
+    if (blocker.state !== 'blocked' || pendingBlockKind.current !== 'replay' || replayCloseTask.current) return;
+    const task = (async () => {
+      const closed = await (requestReplayClose?.() ?? Promise.resolve(true));
+      const current = latestBlocker.current;
+      if (current.state !== 'blocked' || pendingBlockKind.current !== 'replay') return;
+      if (!closed) {pendingBlockKind.current = null; current.reset(); return;}
+      const target = current.location;
+      const targetInfo = plainState(plainState(target.state)[infoEntryKey]);
+      const info = plainState(plainState(currentLocation.current.state)[infoEntryKey]);
+      const hasRouterParent = typeof info.parentKey === 'string' && info.parentKey !== currentLocation.current.key &&
+        target.key === info.parentKey && targetInfo.active !== 'replayDialog';
+      pendingBlockKind.current = null;
+      if (hasRouterParent) {
+        current.proceed();
+        return;
+      }
+      current.reset();
+      const source = currentLocation.current, state = plainState(source.state);
+      delete state[infoEntryKey]; delete state[LOCAL_LAYERS_KEY];
+      void navigate({pathname: source.pathname, search: source.search, hash: source.hash},
+        {replace: true, preventScrollReset: true, state});
+    })().catch(() => {pendingBlockKind.current = null; const current = latestBlocker.current; if (current.state === 'blocked') current.reset();})
+      .finally(() => {if (replayCloseTask.current === task) replayCloseTask.current = null;});
+    replayCloseTask.current = task;
+  }, [blocker, requestReplayClose, navigate]);
   const roomLeaveTaskKey = useRef<string | null>(null);
   const runtimeCloseTask = useRef<{destination: string; settled: boolean; manualRoomExit: boolean; titleOverlayWasOpen: boolean} | null>(null);
   const mounted = useRef(true);
@@ -624,6 +674,26 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const search = params.toString();
     return {pathname: location.pathname, search: search ? `?${search}` : '', hash: location.hash};
   }
+  const layerWrite = useRef<{key: string; id: string; value: LayerValue} | null>(null);
+  function setSurfaceLayer(id: string, value: LayerValue) {
+    if (blocker.state !== 'unblocked') return;
+    const prior = localValues[id];
+    if ((prior?.value ?? null) === value) return;
+    if (layerWrite.current?.key === location.key && layerWrite.current.id === id && layerWrite.current.value === value) return;
+    layerWrite.current = {key: location.key, id, value};
+    if (value === null && prior && pageHistory && prior.parentPosition < pageHistory.position) {
+      void navigate(prior.parentPosition - pageHistory.position);
+      return;
+    }
+    const values = {...localValues};
+    if (value === null) delete values[id];
+    else values[id] = {value, parentPosition: prior?.parentPosition ?? pageHistory?.position ?? 0};
+    const state = plainState(location.state);
+    if (Object.keys(values).length) state[LOCAL_LAYERS_KEY] = {session: dialogSession, href: href(location), values};
+    else delete state[LOCAL_LAYERS_KEY];
+    void navigate({pathname: location.pathname, search: location.search, hash: location.hash},
+      {replace: !!prior, preventScrollReset: true, state});
+  }
   function infoDialogOpen(id: InformationDialogId) {
     return validInfo && infoVisible[id] === true;
   }
@@ -631,15 +701,18 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (!INFORMATION_DIALOG_IDS.includes(id) || infoDialogOpen(id) || blocker.state !== 'unblocked' ||
         infoOpenIssuedKey.current === location.key) return;
     infoOpenIssuedKey.current = location.key;
-    if (id === 'replayDialog' && options?.replace) replayChildHistory.current = true;
+    // A manager opened from a non-running Launcher needs a physical parent,
+    // especially when its carrier is the first BrowserHistory entry. Runtime
+    // file actions still replace their carrier so Back cannot restore an old iframe.
+    const replace = options?.replace === true && (id !== 'replayDialog' || playerOpen || (pageHistory?.position ?? 0) > 0);
     // Bounded visible flags are the current Router-rendered UI, not retained
     // history receipts. Main keeps an open parent native dialog beneath child.
     const visible = Object.fromEntries(INFORMATION_DIALOG_IDS.map(name => [name, infoDialogOpen(name)]));
     visible[id] = true;
     const next = {pathname: location.pathname, search: location.search, hash: location.hash};
-    void navigate(next, {replace: options?.replace, preventScrollReset: true, state: {
+    void navigate(next, {replace, preventScrollReset: true, state: {
       ...plainState(location.state),
-      [infoEntryKey]: {session: dialogSession, active: id, visible, ...(options?.replace ? {} : {parentKey: location.key}), href: href(next)},
+      [infoEntryKey]: {session: dialogSession, active: id, visible, ...(replace ? {} : {parentKey: location.key, parentPosition: pageHistory?.position}), href: href(next)},
     }});
   }
   function closeInfoDialog(id?: InformationDialogId) {
@@ -647,9 +720,11 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
         closeIssuedKey.current === location.key) return;
     closeIssuedKey.current = location.key;
     if (typeof infoEntry.parentKey === 'string' && infoEntry.parentKey !== location.key) {
-      void navigate(-1);
+      const distance = typeof infoEntry.parentPosition === 'number' && pageHistory
+        ? infoEntry.parentPosition - pageHistory.position : -1;
+      void navigate(distance < 0 ? distance : -1);
     } else {
-      const state = plainState(location.state); delete state[infoEntryKey];
+      const state = plainState(location.state); delete state[infoEntryKey]; delete state[LOCAL_LAYERS_KEY];
       void navigate({pathname: location.pathname, search: location.search, hash: location.hash},
         {replace: true, preventScrollReset: true, state});
     }
@@ -709,7 +784,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const state = plainState(location.state);
     // main keeps history.state through locale replacement. Our href checks are
     // provenance validation, so rebase only the current entry's known owners.
-    for (const key of [entryKey, touchEntryKey, infoEntryKey, directoryFormKey, roomPanelKey, roomSettingsKey]) {
+    for (const key of [entryKey, touchEntryKey, infoEntryKey, directoryFormKey, roomPanelKey, roomSettingsKey, LOCAL_LAYERS_KEY]) {
       const owner = plainState(state[key]);
       if (owner.href === href(location)) state[key] = {...owner, href: href(next)};
     }
@@ -894,15 +969,14 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (gameEntry.replayManager === true) {
       completedRuntimeCloseKey.current = location.key;
       const state = plainState(location.state); delete state[gameEntryKey];
-      // Retained room layers now close in place too: their pre-playback history
-      // offsets no longer describe the browser's joint iframe history.
+      // The Replay viewer reused this carrier. Clear child room layers in place
+      // because their parent offsets describe the route that preceded it.
       for (const key of [roomPanelKey, roomSettingsKey]) {
         if (!(key in state)) continue;
         const entry = {...plainState(state[key])}; delete entry.parentKey; delete entry.parentPosition;
         state[key] = entry;
       }
-      // Restore the manager in place after native storage has flushed. Never
-      // traverse a joint iframe history entry to recover an earlier runtime.
+      // Restore the manager in the reused carrier after native storage flushes.
       applyRoomOperations([{kind: 'replace', url: currentUrl().href, state: {...state,
         [PLAYER_HISTORY_KEY]: false, [infoEntryKey]: {session: dialogSession, active: 'replayDialog',
           visible: {replayDialog: true}, href: href(location)}}}]);
@@ -913,10 +987,10 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       applyRoomOperations([completedRoomReturnOperation(address.productId, address.roomCode)]);
       return;
     }
-    if (typeof gameEntry.parentPosition === 'number' && pageHistory && gameEntry.parentPosition <= pageHistory.position) {
+    if (!validInfo && typeof gameEntry.parentPosition === 'number' && pageHistory && gameEntry.parentPosition <= pageHistory.position) {
       completedRuntimeCloseKey.current = location.key;
-      // The game covers these same options. Replace its current entry after
-      // cleanup instead of traversing a joint history snapshot of an old iframe.
+      // The game covers these same options. After cleanup, clear its route
+      // ownership in place so browser history cannot restore the retired Runtime.
       applyRoomOperations([{kind: 'replace', url: currentUrl().href,
         state: {...withoutEntry(location.state), [PLAYER_HISTORY_KEY]: false}}]);
       return;
@@ -935,6 +1009,8 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     } else applyRoomOperations([launcherHomeHistoryOperation({currentUrl: currentUrl(), currentState: withoutEntry(location.state)})]);
   }
   function closeSurface() {
+    const localTop = Object.entries(localValues).sort((a, b) => b[1].parentPosition - a[1].parentPosition)[0];
+    if (localTop) {setSurfaceLayer(localTop[0], null); return;}
     if (topGame && blocker.state === 'unblocked' && closeIssuedKey.current !== location.key) {
       closeIssuedKey.current = location.key;
       manualRoomPlayerExit.current = address.surface === 'room';
@@ -985,7 +1061,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     void navigate(target(params), {replace: true, preventScrollReset: true, state: withoutEntry(location.state)});
   }
   return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog}}>
-    {children}
+    <SurfaceLayersContext.Provider value={{values: localValues, set: setSurfaceLayer}}>{children}</SurfaceLayersContext.Provider>
     <FullscreenTransient><ConfirmationDialog key={applicationDecision ? `application:${applicationDecision.requestId}` : 'navigation'}
       open={applicationDecision !== null || (blocker.state === 'blocked' && pendingBlockKind.current === 'touch')}
       title={applicationDecision?.title || t('dialog.confirmTitle')}

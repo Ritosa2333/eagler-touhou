@@ -185,16 +185,61 @@ for (const locale of ['zh-CN', 'en', 'ja']) test(`Member card artwork follows pr
     [{...peer,resource:resources},'unready','UNREADY','room.notReady'],
     [{...peer,ready:true,resource:resources},'ready','READY','room.ready'],
     [{...peer,ready:true,resource:resources,offline:true},'loading','LOADING','multiplayer.playerReconnecting'],
+    [{...peer,ready:true,resource:{status:'failed',stage:'package',percent:80}},'failed','FAILED','room.resourcesUnavailable'],
+    [{...peer,ready:true,offline:true,resource:{status:'cancelled',stage:'runtime',percent:80}},'cancelled','CANCELLED','room.resourcesCancelled'],
+    [{...peer,resource:{status:'preparing',stage:'package',percent:null}},'loading','LOADING','room.preparingResources'],
+    [{...peer,ready:true,resource:resources},'ready','READY','room.ready'],
     [null,'empty',null,null],
   ]) {
     await f.receive({seats:[host,seat]});
     const card=n('[data-mp-seat="1"]'); assert.equal(card.dataset.cardState,state);
     if (!seat) {assert.equal(card.querySelector('.room-seat-decoration'),null);continue;}
     assert.equal(n('.room-seat-decoration',card).getAttribute('aria-hidden'),'true');
-    assert.equal(n('.room-seat-watermark.active',card).textContent,word);
-    assert.equal(all('.room-seat-watermark.active',card).length,1);
+    assert.equal(n('.room-seat-watermark',card).textContent,word);
+    assert.equal(all('.room-seat-watermark',card).length,1);
     assert.equal(n('[role="status"]',card).textContent,t(locale,key));
+    const stopped = state === 'failed' || state === 'cancelled';
+    assert.equal(n('[role="status"]',card).classList.contains('sr-only'),!stopped);
+    assert.equal(card.classList.contains('is-ready'),state === 'ready');
+    assert.equal(all('[role="progressbar"]',card).length,stopped ? 0 : 1);
+    if (stopped) {
+      assert.equal(n('.room-seat-ring',card).classList.contains('indeterminate'),false);
+      assert.equal(n('.mp-seat-loadout',card).hidden,true);
+    }
   }
+});
+test('seat status watermark animates once per appearance change and skips telemetry and reduced-motion updates', async () => {
+  const animations = animationFixture(), f = await fixture().live(), {m} = await mountRoom(f);
+  const host = {clientId: f.id, name: 'A', loadout: 0, ready: false};
+  const preparing = {clientId: 'peer-b123', name: 'B', loadout: 1, ready: false,
+    resource: {status: 'preparing', stage: 'package', percent: 4}};
+  await f.receive({seats: [host, preparing]});
+  const seat = n('[data-mp-seat="1"]'), watermark = n('.room-seat-watermark', seat);
+  const watermarks = () => animations.filter(item => item.node === watermark);
+  const watermarkFrames = () => Object.assign({}, ...watermarks().map(item => item.keyframes));
+  assert.equal(watermark.textContent, 'LOADING');
+  assert.deepEqual(watermarkFrames(), {opacity: ['0', '.36'], translate: ['12px 0', '0 0']});
+  assert.ok(watermarks().every(item => item.options.duration === 180));
+  const loading = [...watermarks()];
+
+  await f.receive({seats: [host, {...preparing, resource: {...preparing.resource, percent: 58}}]});
+  await f.network.publish();
+  assert.equal(watermarks().length, loading.length, 'resource and network telemetry do not replay a stable status watermark');
+  assert.ok(loading.every(item => !item.cancelled));
+
+  await f.receive({seats: [host, {...preparing, ready: true, resource: {status: 'ready', stage: 'runtime', percent: 100}}]});
+  assert.equal(watermark.textContent, 'READY');
+  assert.equal(watermarks().length, loading.length * 2);
+  assert.ok(loading.every(item => item.cancelled), 'a new appearance retires the previous watermark animation');
+  assert.deepEqual(watermarkFrames(), {opacity: ['0', '.36'], translate: ['12px 0', '0 0']});
+  await finishNative(watermark);
+
+  env.window.matchMedia = query => ({matches: query.includes('prefers-reduced-motion'), media: query,
+    addEventListener() {}, removeEventListener() {}});
+  await f.receive({seats: [host, {...preparing, ready: false, resource: {status: 'ready', stage: 'runtime', percent: 100}}]});
+  assert.equal(watermark.textContent, 'UNREADY');
+  assert.equal(watermarks().length, loading.length * 2, 'reduced motion updates status without starting a watermark animation');
+  await m.unmount();
 });
 for (const locale of ['zh-CN', 'en']) test(`Room workspace follows authoritative state: ${locale}, unsynced/owner/offline/unseated/spectator/ready/running`, async () => {
   const f = await fixture({locale}).enter(), {m} = await mountRoom(f, {panel: {kind: 'game'}});
@@ -235,7 +280,8 @@ for (const locale of ['zh-CN', 'en']) test(`Original ${locale} preparation rende
     {status: 'importing'}, {status: 'cancelled'},
   ]) {await f.report(progress); compare(f, {panel: {kind: 'personal'}}); assert.ok(n('#mpDisplayName') === originalInput); assert.ok(n('#mpReady') === originalReady);}
   await f.report({loaded: 137, total: 1000});
-  assert.equal(n('.mp-seat-resource-label').textContent, t(locale, 'room.peerDownloading', {percent: 14}));
+  assert.equal(n('[data-mp-seat="0"] [role="status"]').textContent, t(locale, 'room.peerDownloading', {percent: 14}));
+  assert.equal(n('[data-mp-seat="0"] [role="progressbar"]').getAttribute('aria-valuetext'), t(locale, 'room.peerDownloading', {percent: 14}));
   assert.equal(f.socket.sent.findLast(message => message.type === 'resource-progress').percent, 10, 'Wire percent buckets do not replace local precise display');
   // Current-program preparation must finish before a Ready intent is sent.
   await click('#mpReady'); assert.equal(f.service.getSnapshot().ready, false);
@@ -485,15 +531,20 @@ test('guests see authoritative rollback and delay values but cannot change them'
 });
 
 test('missing resources never render a default filled or completed resource bar', async () => {
-  const f=await fixture().live();await mountRoom(f);
+  const f=await fixture({locale:'zh-CN'}).live();await mountRoom(f);
   await f.report({status:'failed',stage:'package',percent:null,loaded:undefined,total:undefined,error:'Missing game package'});
   for(const selector of ['#mpRoomResourceFill','#mpRoomLoadingFill'])assert.equal(n(selector).style.width,'0%');
   for(const selector of ['#mpRoomResourceTrack','#mpRoomLoadingTrack']){
     assert.equal(n(selector).getAttribute('aria-valuenow'),'0');
     assert.equal(n(selector).classList.contains('indeterminate'),false);
   }
-  for(const row of all('.mp-seat-resource .mp-resource-row'))assert.equal(row.querySelector('.mp-room-resource-track>span').style.width,'0%');
+  const card = n('[data-mp-seat="0"]');
+  assert.equal(card.dataset.cardState,'failed');
+  assert.equal(all('[role="progressbar"]',card).length,0);
+  assert.equal(n('[role="status"]',card).textContent,t('zh-CN','room.resourcesUnavailable'));
   await f.report({status:'preparing',stage:'package',percent:null,error:''});
+  assert.equal(card.dataset.cardState,'loading');
+  assert.equal(n('.room-seat-ring',card).classList.contains('indeterminate'),true);
   assert.equal(n('#mpRoomResourceTrack').getAttribute('aria-valuenow'),null);
   assert.equal(n('#mpRoomLoadingTrack').getAttribute('aria-valuenow'),'0');
   assert.equal(n('#mpRoomResourceTrack').parentElement.querySelector('.mp-resource-percent').textContent,'—');
@@ -557,10 +608,14 @@ test('Reduced-motion modal closes synchronously; room trigger focus and settings
 test('Seat occupant changes animate only existing contents for 180ms and preserve mounted controls', async () => {
   const animations = animationFixture(), f = await fixture().live(), {m} = await mountRoom(f); const seat = n('[data-mp-seat="1"]');
   await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 1}]});
-  const changes = animations.filter(item => seat.contains(item.node)); assert.equal(changes.length, 3);
+  const watermark = n('.room-seat-watermark', seat);
+  const changes = animations.filter(item => seat.contains(item.node) && item.node !== watermark); assert.equal(changes.length, 3);
   assert.ok(changes.every(item => item.options.duration === 180 && ['mp-seat-face', 'mp-seat-index', 'mp-seat-name', 'mp-seat-identity', 'mp-seat-state'].some(name => item.node.classList.contains(name))));
   assert.ok(changes.every(item => !JSON.stringify(item.keyframes).includes('transform'))); const count = animations.length;
-  await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 2, ready: true}]}); assert.equal(animations.length, count); assert.ok(n('[data-mp-seat="1"]') === seat);
+  const watermarkEffects = animations.filter(item => item.node === watermark);
+  await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 2, ready: true}]});
+  assert.equal(animations.length, count + watermarkEffects.length, 'ready transition animates only the status watermark');
+  assert.ok(watermarkEffects.every(item => item.cancelled)); assert.ok(n('[data-mp-seat="1"]') === seat);
   await m.unmount(); assert.ok(changes.every(item => item.cancelled));
 });
 test('Room views and domain owner add no independent History/Router controller', () => {

@@ -58,13 +58,13 @@ for(const requestedMode of [0,2])for(const challengeMode of [false,true])for(con
   assert.equal(options.netplayPredictionLimit,12);assert.equal(options.netplayInputDelay,0);
   assert.equal(options.netplayInputDelayAuto,false);assert.equal(options.netplayChallengeMode,challengeMode);
 }
-for(const limit of [0,1,8,11,13,1.5,NaN])assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:limit},policy),/TH11/);
+for(const limit of [0,1,8,11,13,1.5,NaN])assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:limit},policy),/th11mp/);
 for(const patch of [{adonisMode:3},{adonisMode:-1},{predictionReserve:0},
   {inputDelay:10,inputDelayAuto:false},{challengeMode:'true'},{difficulty:5},
   {loadouts:[{character:0,shot:0},{character:2,shot:0}]}])
   assert.throws(()=>buildMultiplayerRuntimeOptions({...base,...patch},policy),JSON.stringify(patch));
 assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,inputDelayAuto:true},policy),/时序/);
-assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:8},PRODUCT_GAMES.th10.multiplayer),/TH11/,'room URL chooses actual title policy');
+assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:8},PRODUCT_GAMES.th10.multiplayer),/th11mp/,'room URL chooses actual title policy');
 for(const options of [base,direct]){
   const watcher=buildMultiplayerRuntimeOptions({...options,challengeMode:true,player:null,spectator:true,spectatorId:'watcher_test_123'},policy);
   assert.equal(watcher.netplayPlayer,null);assert.equal(watcher.netplayPredictionLimit,options.adonisMode===1?0:12);assert.equal(watcher.netplayChallengeMode,true);

@@ -25,6 +25,7 @@ import '../../app/components/room/room-light.css';
 import '../../app/components/player/workspace-viewport.css';
 import '../../app/components/room/room-presentation.css';
 import '../../app/ui/system.css';
+import '../../app/ui/scrollbars.css';
 import '../../app/ui/tailwind.css';
 import '../../app/components/launcher/options-sheet.css';
 import '../../app/components/settings/settings-ui.css';

@@ -38,6 +38,7 @@ import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts'
 import type { DecisionStore } from '../models/decisions';
 import type { DirectorySocket } from './lobby-directory';
 import { errorText } from './error-text';
+import {isAbortError} from './abort-signals';
 
 export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
@@ -356,13 +357,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       })
       .catch((error) => {
         if (!owned.isCurrent()) return;
+        const cancelled = isAbortError(error);
         reportProgress({
-          status: 'failed',
+          status: cancelled ? 'cancelled' : 'failed',
           stage: state.preparation?.stage || 'package',
           percent: null,
-          error: errorText(error),
+          error: cancelled ? '' : errorText(error),
         });
-        ports.preparationFailed(error, owned);
+        if (!cancelled) ports.preparationFailed(error, owned);
       });
     return taskOwner.task;
   }

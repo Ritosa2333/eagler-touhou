@@ -1,3 +1,4 @@
+@layer base {
 :where(html[data-ui-app],html[data-ui-app] *) {scrollbar-width:thin}
 html[data-ui-app],html[data-ui-app] * {
   --ui-scrollbar-thumb:transparent;
@@ -24,4 +25,5 @@ html[data-ui-app]::-webkit-scrollbar-thumb,html[data-ui-app] *::-webkit-scrollba
 }
 @media(forced-colors:active) {
   html[data-ui-app],html[data-ui-app] * {scrollbar-color:auto}
+}
 }

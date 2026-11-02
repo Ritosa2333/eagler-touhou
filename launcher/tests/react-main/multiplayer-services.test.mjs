@@ -1331,7 +1331,7 @@ for (const aborted of [false, true])
         assert.ok(
           visible.some((value) =>
             value.active.some(
-              (task) => task.label === 'TH06 WebAssembly' && task.loaded === 2048 && task.total === 4096,
+              (task) => task.label === 'th06 WebAssembly' && task.loaded === 2048 && task.total === 4096,
             ),
           ),
         );
@@ -1660,7 +1660,7 @@ test('TH11 owner switches Direct D0/P12 and pure delay while preserving 2P/3P Ex
         inputDelayAuto: false,
       }),
     });
-    assert.throws(() => f.service.runtimeOptions(), /TH11/);
+    assert.throws(() => f.service.runtimeOptions(), /th11mp/);
     f.service.dispose();
   }
 });

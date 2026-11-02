@@ -1,7 +1,7 @@
 import {gameIdForProduct, isMultiplayerProductId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import {createReplayMutationQueue, isReplayFilePath, isReplayTargetAvailable, replayStoragePathKey, allocateReplayName,
   type ReplayMutationQueue} from '../../src/launcher/replay-files.mts';
-import type {RuntimeService, RuntimeFileSession} from '../services/runtime';
+import {RuntimeSessionSupersededError, type RuntimeService, type RuntimeFileSession} from '../services/runtime';
 import type {RuntimeResponseMessage} from '../../src/contracts/runtime-protocol.mts';
 import type {SettingsDecision} from '../components/settings/types';
 import {parseTh09ReplayMatch, isTh09ReplayDirectory, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
@@ -103,7 +103,8 @@ export function createReplayModel(options: ReplayModelOptions) {
         await options.afterPaint();
       }
     }).catch(error => {
-      if (valid(token, product) && !watching) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));
+      if (valid(token, product) && !watching && !(error instanceof RuntimeSessionSupersededError))
+        options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));
     });
   }
   function responseBytes(response: RuntimeResponseMessage): number[] {

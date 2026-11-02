@@ -29,7 +29,7 @@ export function ActionMenu({label, trigger, children, className, minimumWidth = 
     setOpen(next);
   }}><DropdownMenu.Trigger asChild ref={anchor}>{trigger}</DropdownMenu.Trigger>
     <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn(variant==='selection'?`${listPopupPanelClass} overflow-y-auto`:'ui-menu', className)} aria-label={label} data-ui-surface={surface}
-      side={side} align={align} sideOffset={6} collisionPadding={padding} style={{minWidth: minimumWidth,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
+      side={side} align={align} sideOffset={6} collisionPadding={padding} style={{minWidth:`min(${minimumWidth}px, var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px)))`,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
         const action=afterClose.current;afterClose.current=null;
         if(action){event.preventDefault();anchor.current?.focus({preventScroll:true});action();}
       }}>{children}</DropdownMenu.Content></DropdownMenu.Portal>

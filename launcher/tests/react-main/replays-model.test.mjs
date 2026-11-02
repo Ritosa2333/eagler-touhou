@@ -7,7 +7,7 @@ import {resolve, dirname} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 const root = fileURLToPath(new URL('../../', import.meta.url));
-let work, createReplayModel, formatReplayBytes;
+let work, createReplayModel, formatReplayBytes, RuntimeSessionSupersededError;
 before(async () => {
   await mkdir(resolve(root, '.cache'), {recursive: true}); work = await mkdtemp(resolve(root, '.cache/replays-main-'));
   const outfile = resolve(work, 'replays.mjs');
@@ -15,8 +15,9 @@ before(async () => {
     plugins: [{name: 'authored-main', setup(ctx) {ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {
       const path = resolve(dirname(args.importer), args.path), source = path.slice(0, -4) + '.mts';
       if (path.startsWith(resolve(root, 'src') + '/') && existsSync(source)) return {path: source};
-    });}}]});
+    });ctx.onResolve({filter: /^\.\.\/services\/runtime$/}, args => ({path: pathToFileURL(resolve(dirname(args.importer), `${args.path}.ts`)).href, external: true}));}}]});
   ({createReplayModel, formatReplayBytes} = await import(pathToFileURL(outfile).href));
+  ({RuntimeSessionSupersededError} = await import(pathToFileURL(resolve(root, 'app/services/runtime.ts')).href));
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 function deferred() {let resolve, reject; const promise = new Promise((r, j) => {resolve = r; reject = j;}); return {promise, resolve, reject};}
@@ -299,6 +300,17 @@ test('closing before game readiness cancels a queued Watch and suppresses late l
   f.state.game='th09';await f.model.open('th09');const watching=f.model.watch(path);await tick();
   f.model.close();gate.reject(Error('cancelled load'));await watching;await tick();
   assert.deepEqual(selected,[]);assert.equal(f.model.isOpen(),false);assert.deepEqual(f.toasts,[]);
+});
+
+test('closing Replay while its viewer preparation is pending suppresses the expected superseded error',async()=>{
+  const gate=deferred(),f=fixture({cold:true,viewer:true,prepareGate:gate,
+    storage:{async read(){return [];}}});
+  f.state.game='th06';await f.model.open('th06');await tick();
+  assert.ok(f.events.includes('viewer'));
+  gate.reject(new RuntimeSessionSupersededError());await tick();
+  assert.deepEqual(f.toasts,[]);
+  f.model.close();await tick();
+  assert.equal(f.model.isOpen(),false);assert.ok(f.events.includes('closeViewer'));
 });
 
 test('closing independent manager during a committed cold rename releases its eventual file Runtime',async()=>{

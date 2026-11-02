@@ -5,6 +5,7 @@ import {useContext, useEffect, useRef, useState, useSyncExternalStore} from 'rea
 import {createPortal} from 'react-dom';
 import type {BrowserSession} from '../../session/browser-session';
 import {useSurfaceNavigation} from '../../navigation/surface-navigation';
+import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {groupReplayFolders} from '../../models/replays';
 import {isTh09ReplayDirectory} from '../../../src/launcher/th09-replay-match.mts';
 import {isReplayImportFileName} from '../../../src/launcher/replay-files.mts';
@@ -40,8 +41,9 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   const files = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const open = navigation.infoDialogOpen('replayDialog') && files.open;
   const game = files.productId ? gameIdForProduct(files.productId) : 'th09', versus = game === 'th09';
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [folder, setFolder] = useState<string | null>(null), [moving, setMoving] = useState<string | null>(null);
+  const [expanded, setExpanded] = useSurfaceLayerState<string | null>('replay-details', null);
+  const [folder, setFolder] = useSurfaceLayerState<string | null>('replay-folder', null);
+  const [moving, setMoving] = useSurfaceLayerState<string | null>('replay-move', null);
   const [destination, setDestination] = useState('replay'), [newFolder, setNewFolder] = useState(''), [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const closing = useRef(false), routeVisible = useRef(false), routeOpen = navigation.infoDialogOpen('replayDialog');
@@ -52,7 +54,7 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
     else if (routeVisible.current) {routeVisible.current = false; if (files.open) model.close();}
   }, [routeOpen, model, files.open, files.productId, session.reportError]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: File navigation state resets when switching the manager's product.
-  useEffect(() => {setExpanded(null); setFolder(null); setMoving(null); setError('');}, [files.productId]);
+  useEffect(() => {setExpanded(null); if (folder) setFolder(null); else setMoving(null); setError('');}, [files.productId]);
   const folderExists = !folder || folders.some(item => item.key === folder);
   useEffect(() => {if (!folderExists) setFolder(null);}, [folderExists]);
   if (!open) return null;
@@ -94,7 +96,7 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
     </>, stage)}
     <aside className="replay-file-browser" aria-label={t('replay.ui.files')} onDragOver={event => {if (!busy && event.dataTransfer.types.includes('Files')) event.preventDefault();}} onDrop={event => {event.preventDefault(); if (busy || files.phase !== 'ready') return; const list = [...event.dataTransfer.files]; if (list.length !== 1) {report(Error('请每次导入一个文件')); return;} void importFile(list[0]).catch(report);}}>
       <header><h2>{t('replay.ui.heading')}</h2><UiButton type="button" className="replay-button" disabled={busy || files.phase !== 'ready'} onClick={() => {setBusy(true); void session.chooseReplayFile(files.productId!).catch(report).finally(() => setBusy(false));}}>{icon('replay-upload-simple')}<span>{t('replay.ui.import')}</span></UiButton></header>
-      <nav className="replay-breadcrumb" aria-label={t('replay.ui.location')}>{icon('replay-folder')}<UiButton variant="quiet" size="sm" type="button" onClick={() => {setFolder(null); setMoving(null);}}>{t('replay.ui.all')}</UiButton>{folder && <span title={folder.slice(7)}>/ {folder.slice(7)}</span>}</nav>
+      <nav className="replay-breadcrumb" aria-label={t('replay.ui.location')}>{icon('replay-folder')}<UiButton variant="quiet" size="sm" type="button" onClick={() => {if (folder) setFolder(null); else setMoving(null);}}>{t('replay.ui.all')}</UiButton>{folder && <span title={folder.slice(7)}>/ {folder.slice(7)}</span>}</nav>
       {moving && <form className="replay-workspace-move" onSubmit={event => {event.preventDefault();setBusy(true); void model.move(moving, destination === 'new' ? `replay/${newFolder.trim()}` : destination).then(ok => {if (ok) setMoving(null);}).finally(() => setBusy(false));}}>
         <strong title={moving}>{t('replay.ui.moving',{name:moving.split('/').pop()})}</strong><MainSelect id="replayMoveSelect" className="option-select" aria-label={t('replay.ui.moveTo')} value={destination} onChange={event => setDestination(event.target.value)}><option value="replay">{t('replay.ui.all')}</option>{folders.map(item => <option key={item.key} value={item.key}>{item.name}</option>)}<option value="new">{t('replay.ui.newFolder')}</option></MainSelect>
         {destination === 'new' && <Input aria-label={t('replay.ui.folderName')} maxLength={128} value={newFolder} onChange={event => setNewFolder(event.target.value)}/>}
@@ -102,7 +104,7 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
       </form>}
       <div className="replay-workspace-files" key={folder ?? 'replay'} aria-busy={files.phase === 'loading' || busy}>
         {files.phase === 'loading' ? <p className="replay-workspace-empty">{t('replay.ui.loading')}</p> : files.phase === 'error' ? <div className="replay-workspace-empty"><p>{t('replay.ui.failed')}</p><UiButton type="button" onClick={() => {void model.refresh().catch(report);}}>{t('replay.ui.retry')}</UiButton></div> : <>
-          {!folder && folders.map(item => <div className="replay-workspace-file replay-workspace-folder" key={item.key}><UiButton variant="unstyled" type="button" data-replay-folder={item.key} onClick={() => {setFolder(item.key); setMoving(null);}}>{icon('replay-folder')}<strong title={item.name}>{item.name}</strong><small>{t('replay.ui.count',{count:item.rows.length})}</small></UiButton><ReplayFileMenu disabled={busy} label={t('replay.ui.manageFolder',{name:item.name})} actions={[{label: t('replay.ui.download'), run: () => {void model.downloadFolder(item.key);}}]}/></div>)}
+          {!folder && folders.map(item => <div className="replay-workspace-file replay-workspace-folder" key={item.key}><UiButton variant="unstyled" type="button" data-replay-folder={item.key} onClick={() => {setFolder(item.key);}}>{icon('replay-folder')}<strong title={item.name}>{item.name}</strong><small>{t('replay.ui.count',{count:item.rows.length})}</small></UiButton><ReplayFileMenu disabled={busy} label={t('replay.ui.manageFolder',{name:item.name})} actions={[{label: t('replay.ui.download'), run: () => {void model.downloadFolder(item.key);}}]}/></div>)}
           {rows.map(row => <ReplayFileRow key={row.path} path={row.path} name={row.name} size={row.size} versus={versus} selected={playback?.path === row.path} expanded={expanded === row.path} busy={busy}
             onOpen={() => {setError(''); if (versus) {setBusy(true); void model.watch(row.path).finally(() => setBusy(false));} else {setExpanded(current => current === row.path ? null : row.path); void model.inspect(row.path);}}}
             metadata={!versus && files.descriptions[row.path] ? <ReplaySummary description={files.descriptions[row.path]!} game={game}/> : <small title={row.replayMatch?.startedAt ? t('replay.ui.matchStarted') : t('replay.ui.modified')}>{timestamp(row.replayMatch?.startedAt || row.modifiedAt)}</small>}

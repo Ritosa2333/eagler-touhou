@@ -19,6 +19,7 @@
   "dependencies": {
     "acorn": "8.18.0",
     "fflate": "0.8.3",
+    "fs-native-extensions": "1.5.3",
     "parse5": "8.0.1",
     "workbox-build": "7.4.1"
   },

@@ -7,9 +7,8 @@ import { touchMovementUsesJoystick } from '../../../src/launcher/game-preference
 import type { MultiplayerRoomService, RoomOwnerSnapshot } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
 import { networkMessage, roomPresentation } from './presentation';
-import {ResourceTracks} from './RoomProgress';
 import {RoomActionMenu} from './RoomActionMenu';
-import {animateSurface, type SurfaceAnimation} from '../../ui/surface-motion';
+import {animateSurface, animateUiFrames, type SurfaceAnimation} from '../../ui/surface-motion';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
 export interface RoomSeatsProps {
   state: RoomOwnerSnapshot;
@@ -42,7 +41,7 @@ function RoomSeat({
   const { t } = useLocale(),
     presentation = roomPresentation(state, t)!;
   const { room, ready, owner, label } = presentation;
-  const node = useRef<HTMLElement>(null),
+  const node = useRef<HTMLElement>(null), watermark = useRef<HTMLSpanElement>(null),
     previous = useRef<{ room: string; occupant: string; animations: SurfaceAnimation[] } | null>(null);
   const active = index < room.playerCount,
     seat = room.synced ? room.seats?.[index] || null : null;
@@ -134,12 +133,21 @@ function RoomSeat({
               : resource.percent == null
                 ? t('room.preparingResources')
                 : t('room.peerDownloading', { percent: resource.percent });
-  const resourceReady = resource?.status === 'ready' || seat?.ready === true;
+  const resourceStopped = resource?.status === 'failed' || resource?.status === 'cancelled';
+  const resourceReady = !resourceStopped && (resource?.status === 'ready' || seat?.ready === true);
   const canManage = index > 0 && ready && owner && room.phase === 'lobby' && !!seat;
-  const base = resourceReady || resource?.stage === 'runtime' ? 100 : resource?.basePercent ?? resource?.percent;
-  const loading = resourceReady ? 100 : resource?.stage === 'runtime' ? resource.runtimePercent ?? resource.percent : 0;
+  const base = resourceStopped ? 0 : resourceReady || resource?.stage === 'runtime' ? 100 : resource?.basePercent ?? resource?.percent;
+  const loading = resourceStopped ? 0 : resourceReady ? 100 : resource?.stage === 'runtime' ? resource.runtimePercent ?? resource.percent : 0;
   const degrees = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) * 3.6 : 0;
-  const appearance = !occupied ? 'empty' : seat?.offline || !resourceReady ? 'loading' : seat?.ready ? 'ready' : 'unready';
+  const appearance = !occupied ? 'empty' : resourceStopped ? resource.status : seat?.offline || !resourceReady ? 'loading' : seat?.ready ? 'ready' : 'unready';
+  useLayoutEffect(() => {
+    if (!watermark.current || !occupied || !active) return;
+    const animation = animateUiFrames(watermark.current, {opacity: ['0', '.36'], translate: ['12px 0', '0 0']}, {kind: 'content'});
+    return () => animation?.cancel();
+  }, [appearance, occupied, active]);
+  const status = resourceStopped ? resourceLabel : seat?.offline ? t('multiplayer.playerReconnecting') :
+    !resourceReady ? resourceLabel || t('room.resourceLoading') : t(seat?.ready ? 'room.ready' : 'room.notReady');
+  const ringClass = `room-seat-ring${resource?.status === 'preparing' && (resource.stage === 'runtime' ? loading == null : base == null) ? ' indeterminate' : ''}`;
   const name = <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
     <OverflowText>{seat?.name || (state.seat === index ? state.displayName : '') || `P${index + 1}`}</OverflowText>
   </strong>;
@@ -156,7 +164,7 @@ function RoomSeat({
   return (
     <article
       ref={node}
-      className={`mp-seat${occupied ? ' occupied' : ''}${index === 0 && owner ? ' owner' : ''}${seat?.offline ? ' reconnecting' : ''}${occupied && seat?.ready ? ' is-ready' : ''}`}
+      className={`mp-seat${occupied ? ' occupied' : ''}${index === 0 && owner ? ' owner' : ''}${seat?.offline ? ' reconnecting' : ''}${appearance === 'ready' ? ' is-ready' : ''}`}
       data-mp-seat={index}
       data-card-state={appearance}
       data-manageable={canManage || undefined}
@@ -164,13 +172,21 @@ function RoomSeat({
       title={occupied ? seatLabel : ''}
     >
       {occupied && <span className="room-seat-decoration" aria-hidden="true">
-        {(['loading', 'unready', 'ready'] as const).map(status => <span key={status} className={`room-seat-watermark${appearance === status ? ' active' : ''}`}>{status.toUpperCase()}</span>)}
+        <span ref={watermark} className="room-seat-watermark">{appearance.toUpperCase()}</span>
       </span>}
       <div className="mp-seat-face" style={occupied ? {'--base-angle': `${degrees(base)}deg`, '--loading-angle': `${degrees(loading)}deg`} as CSSProperties : undefined}>
         {occupied && <span className="room-seat-player-tag">P{index + 1}</span>}
-        {occupied && <span className={`room-seat-ring${resource?.status === 'preparing' && (resource.stage === 'runtime' ? loading == null : base == null) ? ' indeterminate' : ''}`}
-          role="progressbar" aria-label={t(resource?.stage === 'runtime' || resourceReady ? 'room.resourceLoading' : 'room.baseResources')}
-          aria-valuemin={0} aria-valuemax={100} aria-valuenow={resourceReady ? 100 : (resource?.stage === 'runtime' ? loading : base) ?? undefined}/>}
+        {occupied && (resourceStopped ? (
+          <span className={ringClass} aria-hidden="true" />
+        ) : (
+          <span className={ringClass}
+            role="progressbar"
+            aria-label={t(resource?.stage === 'runtime' || resourceReady ? 'room.resourceLoading' : 'room.baseResources')}
+            aria-valuetext={resourceLabel || undefined}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={resourceReady ? 100 : (resource?.stage === 'runtime' ? loading : base) ?? undefined}/>
+        ))}
         <div className="mp-seat-drop" data-mp-seat-drop={index} hidden={occupied}>
           <UiButton variant="unstyled"
             type="button"
@@ -207,11 +223,11 @@ function RoomSeat({
         <div className="mp-seat-identity">
           {name}
           <span className="mp-seat-details">
-            <span className="mp-seat-loadout" title={seatLabel}>
+            <span className="mp-seat-loadout" hidden={resourceStopped} title={seatLabel}>
               {seatLabel}
             </span>
             {controlCaption}
-            <span className="sr-only" role="status">{t(seat?.offline?'multiplayer.playerReconnecting':appearance==='loading'?'room.resourceLoading':seat?.ready?'room.ready':'room.notReady')}</span>
+            <span className={resourceStopped ? 'mp-seat-loadout' : 'sr-only'} title={resourceStopped ? resourceLabel : undefined} role="status">{status}</span>
           </span>
           {connection}
         </div>
@@ -252,10 +268,6 @@ function RoomSeat({
             }},
           ]}/>
       </div>}
-      <div className="mp-seat-resource" hidden={!seat || !resource} data-status={resource?.status}>
-        <span className="mp-seat-resource-label">{resourceLabel}</span>
-        <ResourceTracks progress={resource ?? null}/>
-      </div>
     </article>
   );
 }

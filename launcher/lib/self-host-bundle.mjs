@@ -41,6 +41,7 @@ const hostRuntimeRoots = [
   "src/runtime-cache-sw.js",
   "src/runtime-program-sw.js",
   "legacy/runtime-generation-reader.js",
+  "compat/runtime-generation-reader.js",
   "assets/contracts/runtime-generations-worker.js",
   "assets/contracts/runtime-generations.mjs",
   "config/runtime-builds.json",
@@ -165,6 +166,7 @@ export const SELF_HOST_BUNDLE_COPY_RULES = Object.freeze([
 export const SELF_HOST_BUNDLE_NODE_DEPENDENCIES = Object.freeze([
   "acorn",
   "fflate",
+  "fs-native-extensions",
   "parse5",
   "workbox-build",
 ]);

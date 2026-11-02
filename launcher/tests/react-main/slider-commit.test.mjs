@@ -21,7 +21,16 @@ before(async () => {
     import {useState} from 'react';
     import {Slider} from './app/ui/slider';
     export {ReplaySeekBar} from './app/components/player/ReplaySeekBar';
-    export {ReplayTransport} from './app/components/player/ReplayTransport';
+    import {ReplayTransport} from './app/components/player/ReplayTransport';
+    export {ReplayTransport};
+    export function ReplayRestartFixture({control}) {
+      const [playback,setPlayback]=useState({path:'replay/th10_01.rpy',frame:600,total:18000,paused:true,seeking:false,target:null,rate:1,ended:false});
+      return <ReplayTransport playback={playback} onToggleFullscreen={()=>{}} onControl={(action,value)=>{control(action,value);if(action==='seek')setPlayback(current=>({...current,frame:value}));}}/>;
+    }
+    export function OrderedFixture({record}) {
+      const [value,setValue]=useState(50);
+      return <Slider value={value} min={0} max={100} step={5} aria-label="Ordered" onValueChange={v=>{record('change',v);setValue(v);}} onValueCommit={v=>record('commit',v)}/>;
+    }
     export function Fixture({commit, cancel, disabled=false}) {
       const [value,setValue]=useState(50), [saved,setSaved]=useState(50);
       return <Slider min={0} max={100} step={5} value={value} disabled={disabled} aria-label="Sensitivity"
@@ -83,4 +92,42 @@ test('shared Replay transport submits absolute frames, full speed and runtime ac
   await act(() => n('.replay-toggle').click());
   await key('Home');
   assert.equal(actions.length, 4);
+});
+
+
+test('keyboard preview precedes commit exactly once for every adjustment', async () => {
+  const events=[];
+  await mount(api.OrderedFixture, {record:(...args)=>events.push(args)});
+  await key('End');await key('Home');await key('ArrowRight');
+  assert.deepEqual(events,[['change',100],['commit',100],['change',0],['commit',0],['change',5],['commit',5]]);
+});
+
+test('Replay End then restart follows the runtime frame, with no stale keyboard preview', async () => {
+  const actions=[];
+  await mount(api.ReplayRestartFixture,{control:(...args)=>actions.push(args)});
+  await key('End');
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'18000');
+  await act(()=>n('.replay-restart').click());
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'0');
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuetext'),'0:00');
+  await key('ArrowRight');
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'1');
+  await pointer('pointerdown',640);assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'9000');
+  assert.deepEqual(actions,[['seek',18000],['seek',0],['seek',1]]);
+  await pointer('pointercancel',640);await pointer('pointerup',640);
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'1');
+  await pointer('pointerdown',960);await pointer('pointerup',960);
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'13500');
+  assert.deepEqual(actions,[['seek',18000],['seek',0],['seek',1],['seek',13500]]);
+  await act(()=>n('.replay-restart').click());
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'0');
+});
+
+test('dragging back to the original Replay frame releases preview without seeking', async () => {
+  const seeks=[],props={frame:600,total:18000,disabled:false,onSeek:value=>seeks.push(value)};
+  await mount(api.ReplaySeekBar,props);
+  await pointer('pointerdown',640);await pointer('pointermove',1280*600/18000);await pointer('pointerup',1280*600/18000);
+  assert.deepEqual(seeks,[]);
+  await act(()=>root.render(React.createElement(api.ReplaySeekBar,{...props,frame:1200})));
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuenow'),'1200');
 });

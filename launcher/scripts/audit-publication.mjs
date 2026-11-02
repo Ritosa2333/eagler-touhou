@@ -25,6 +25,7 @@ const quickChatVoiceClipAssets = new Set([
 ].map(id => `assets/quick-chat/${id}.wav`));
 const publicAssets = new Set([
   'assets/site-brand.mjs', 'assets/brand/LICENSE.txt', 'assets/brand/portrait.png',
+  'assets/favicon.png',
   ...SITE_BRAND_FACES.map(face=>`assets/brand/${face}.svg`),
   "assets/launcher-background.webp",
   ...quickChatVoiceClipAssets,

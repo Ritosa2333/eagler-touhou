@@ -69,7 +69,7 @@ for (const file of ["assets/notice-github.svg", "vendor/fflate.min.js"]) {
     `authored browser source must be copied from public/ without changing its self-host target: ${file}`);
 }
 for (const file of ["index.html", "en.html", "styles.css"]) {
-  assert.match(targets.get(file), /^\.cache\/build\/ui-rewrite\/client\//,
+  assert.match(targets.get(file), /^\.cache\/build\/[^/]+\/client\//,
     `optimized browser output must be used for ${file}`);
 }
 assert.ok([...targets.keys()].every(target => !target.startsWith("public/")),
@@ -79,6 +79,7 @@ for (const required of [
   "host/build.mjs",
   "host/build-import.mjs",
   "host/lib/site-builder.mjs",
+  "compat/runtime-generation-reader.js",
   "scripts/package-external-site.mjs",
   "scripts/package-server.mjs",
   "scripts/verify-deployed-site.mjs",
@@ -120,6 +121,8 @@ for (const target of targets.keys()) {
 // launcher-build module incorrectly treated this as a source checkout and
 // failed with "Application TypeScript source tree is empty".
 const smokeRoot = await mkdtemp(resolve(project, ".cache", "self-host-bundle-smoke-"));
+const inheritedReactBuildDirectory = process.env.EAGLER_REACT_BUILD_DIRECTORY;
+delete process.env.EAGLER_REACT_BUILD_DIRECTORY;
 try {
   for (const rule of SELF_HOST_BUNDLE_COPY_RULES) {
     const source = resolve(project, rule.source);
@@ -147,6 +150,17 @@ try {
     "self-host bundle must preserve split Launcher chunks for offline feature loading");
   assert.ok(packagedManifest.APP_SHELL_FILES.includes("features.css"));
 
+  const packagedAppShell = await import(pathToFileURL(resolve(smokeRoot, "lib/app-shell-build.mjs")).href);
+  const appShellOutput = resolve(smokeRoot, ".cache", "app-shell-sw.js");
+  const appShell = await packagedAppShell.buildAppShell({
+    quiet: true,
+    globDirectory: smokeRoot,
+    swDest: appShellOutput,
+    shellFiles: packagedManifest.APP_SHELL_FILES,
+  });
+  assert.match(appShell.buildId, /^[a-f0-9]{20}$/, "packaged App Shell build must consume its private migration reader");
+  assert.match(await readFile(appShellOutput, "utf8"), /App Shell integrity mismatch/);
+
   // A fresh bundle has no node_modules yet. Doctor must still reach its own
   // environment/input diagnostics instead of failing during module loading.
   const doctor = spawnSync(process.execPath, [
@@ -172,6 +186,8 @@ try {
     "packaged External entrypoint must load its complete module closure and reach argument validation");
 } finally {
   await rm(smokeRoot, { recursive: true, force: true });
+  if (inheritedReactBuildDirectory === undefined) delete process.env.EAGLER_REACT_BUILD_DIRECTORY;
+  else process.env.EAGLER_REACT_BUILD_DIRECTORY = inheritedReactBuildDirectory;
 }
 
 const allowedBareImports = new Set(SELF_HOST_BUNDLE_NODE_DEPENDENCIES);

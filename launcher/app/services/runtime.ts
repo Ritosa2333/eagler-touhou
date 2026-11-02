@@ -63,8 +63,6 @@ export interface RuntimeMidiEventContext {
 }
 export interface RuntimeFrame {
   readonly contentWindow: RuntimeWindow | null;
-  setAttribute(name: 'src', value: string): void;
-  removeAttribute(name: 'src'): void;
   /** Emergency cleanup is allowed only with positive evidence of DOM removal. */
   readonly isConnected?: boolean;
   addEventListener(type: 'load', listener: EventListener): void;
@@ -471,11 +469,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     }
     const runtime = frame.contentWindow;
     if (!runtime) throw new Error('Runtime iframe browsing context is unavailable');
-    // Match main's iframe navigation owner: launch sets src and retirement
-    // removes it. Direct Window.location replacement leaves retired documents
-    // in joint history snapshots when the same iframe launches a second game.
-    if (target === 'about:blank') frame.removeAttribute('src');
-    else frame.setAttribute('src', target);
+    // Replace the active child history slot for both launch and retirement.
+    // Setting/removing iframe.src appends joint-history entries in Chrome, so
+    // Back can otherwise navigate the child while leaving the Launcher route
+    // and a retired Runtime epoch active.
+    runtime.location.replace(target);
   }
   function runtimeIdentity(token: RuntimeSessionToken) {
     assertCurrent(token);

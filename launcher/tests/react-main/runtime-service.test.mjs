@@ -81,8 +81,6 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
     postMessage(data, target) {assert.equal(target, origin); outbound.push(data);},
     addEventListener() {}, removeEventListener() {}};
   const frame = {contentWindow: runtime, isConnected: true,
-    setAttribute(name, value) {assert.equal(name, 'src'); runtime.location.replace(value);},
-    removeAttribute(name) {assert.equal(name, 'src'); runtime.location.replace('about:blank');},
     addEventListener(type, listener) {assert.equal(type, 'load'); loadListeners.add(listener);}, removeEventListener(_type, listener) {loadListeners.delete(listener);}};
   const service = owners.createRuntimeService({translate: key => key, frame, hostWindow: host, baseUrl, timers,
     onFrameRetired, onUpdateReady, onNetworkChange, worker,
@@ -316,15 +314,14 @@ test('runtime: save consent precedes native presentation cleanup, which precedes
   assert.equal(f.navigations.at(-1), 'about:blank');
 });
 
-test('runtime: the validated iframe src owner launches and removes the source without Window history replacement', async () => {
+test('runtime: launch and retirement replace the active child history entry', async () => {
   const f = fixture(), navigate = f.runtime.location.replace.bind(f.runtime.location), calls = [];
-  f.frame.setAttribute = (name, value) => {calls.push(['set', name, value]); navigate(value);};
-  f.frame.removeAttribute = name => {calls.push(['remove', name]); navigate('about:blank');};
-  f.runtime.location.replace = () => {assert.fail('Player must use the original iframe navigation owner');};
+  f.runtime.location.replace = value => {calls.push(value); navigate(value);};
   await f.prepare(directPlan());
-  assert.equal(calls.length, 1); assert.deepEqual(calls[0].slice(0, 2), ['set', 'src']);
+  const launchedSource = f.service.getSnapshot().source;
+  assert.deepEqual(calls, [launchedSource]);
   assert.equal(await f.service.close({discardUnsaved: true}), true);
-  assert.deepEqual(calls.at(-1), ['remove', 'src']);
+  assert.deepEqual(calls, [launchedSource, 'about:blank']);
 });
 
 test('runtime: Stay after failed save keeps fullscreen and iframe intact', async () => {

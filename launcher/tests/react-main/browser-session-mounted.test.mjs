@@ -226,7 +226,7 @@ function siteManifest(mode = 'hosted') {
       languages: [], languageOptions: [{id: 'ja', title: '日本語', pack: null}], music: {midi: {files: []}}}}};
 }
 async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', noticeEnabled = false, touchDevice = false, mobileDevice = false,
-  hydrate = false, host = siteManifest(resourceMode), holdHost = false, holdFirstUse = false, seedStorage = () => {}, seedPackages = [], socketBoundary = false, directoryTransport = false, actualHistory = false, fetchBoundary = () => null} = {}) {
+  hydrate = false, host = siteManifest(resourceMode), holdHost = false, holdFirstUse = false, seedStorage = () => {}, seedPackages = [], socketBoundary = false, directoryTransport = false, actualHistory = false, fetchBoundary = () => null, extra = null} = {}) {
   api.validateSiteManifest(host); api.validateReleaseCatalog({schema: 'eagler-touhou/release-catalog/1', games: {}});
   Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable:true,value:touchDevice ? 2 : 0});
   Object.defineProperty(env.window.navigator, 'userAgentData', {configurable:true,value:{mobile:mobileDevice}});
@@ -274,7 +274,7 @@ async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = tru
     fail() {assert.fail('Original bootstrap failure is unexpected');}};
   env.window.__eaglerBoot = boot;
   mounted = {storage, sessionStorage, sockets: [], scrolls: [], order, fetches, releaseHost, releaseFirstUse, autoReady, syncMode: 'auto', pendingSync: [], writeMode: 'auto', pendingWrite: [], pendingList: [], holdImportedList: false, storedFiles: new Map(), corruptRead: false, outbound: [], navigations: [], nativeWrites: [], dataReads: [], downloads: [], fullscreen: null, routeEvents: [], warnings: []};
-  const element = React.createElement(api.BrowserLauncher);
+  const element = React.createElement(React.Fragment, null, React.createElement(api.BrowserLauncher), extra);
   const routes = [{path: '*', element: strictMode ? React.createElement(React.StrictMode, null, element) : element}];
   // Opt-in address integration for actual directory→room navigation. The
   // production session reads window.location after a committed Router change.
@@ -312,6 +312,15 @@ async function click(selector) {await React.act(async () => {
   } else element.click();
 }); await tick();}
 async function back() {await React.act(async () => {void mounted.router.navigate(-1);}); await tick();}
+async function browserBack() {
+  const before = mounted.router.state.location.key;
+  await React.act(async () => {
+    env.window.history.back();
+    const deadline = Date.now() + 5000;
+    while (mounted.router.state.location.key === before && Date.now() < deadline)
+      await new Promise(resolve => setTimeout(resolve, 10));
+  });
+}
 async function start() {
   await click('#launch');
   assert.equal(node('#decisionDialog').open, true, 'main no-music warning gates launch');
@@ -2329,6 +2338,206 @@ test('directory Replay entry opens the existing multiplayer workspace without cr
   assert.equal(f.outbound.findLast(message => message.command === 'configure').options.netplayMode, undefined);
 });
 
+test('Replay root Back uses real BrowserHistory and folder, move, then manager layers unwind one at a time', async () => {
+  const opener = React.createElement('button', {id: 'testReplayOpen', type: 'button', hidden: true,
+    onClick: () => {const session = api.getTestSession(); void session.openReplayViewer('th09mp').catch(session.reportError);}}, 'open Replay');
+  const f = await mountBrowser({initial: '/?keep=a%20b', actualHistory: true, host: subsetHost(['th09']), seedPackages: ['th09'], extra: opener});
+  const session = api.getTestSession();
+  const database = await new Promise((resolve, reject) => {
+    const request = env.window.indexedDB.open('/savesth09mp', 21);
+    request.onupgradeneeded = () => request.result.createObjectStore('FILE_DATA');
+    request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+  });
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction('FILE_DATA', 'readwrite');
+    transaction.objectStore('FILE_DATA').put({mode: 0o100666, timestamp: new Date(2000), contents: new Uint8Array([3, 4, 5])}, '/savesth09mp/replay/group/th9_01.rpy');
+    transaction.oncomplete = resolve; transaction.onabort = () => reject(transaction.error);
+  });
+  database.close();
+  const openReplay = async () => {
+    await click('#testReplayOpen');
+    await until(() => !!env.document.querySelector('[data-replay-folder="replay/group"]'), 'Replay folder appears in the manager');
+    await until(() => session.getRuntime().getSnapshot().launched, 'standalone Replay Runtime is ready');
+  };
+  await openReplay();
+  const frame = node('#gameFrame'), parentKey = f.router.state.location.state.launcherInformationDialogs.parentKey;
+  assert.equal(typeof parentKey, 'string', 'home Replay owns a real Router parent even from the first browser entry');
+
+  await click('[data-replay-folder="replay/group"]');
+  await until(() => node('.replay-breadcrumb').textContent.includes('group'), 'folder layer opens');
+  const manageLabel = api.translate(session.getSnapshot().locale, 'replay.ui.manage', {name: 'th9_01.rpy'});
+  await click(`[aria-label=${JSON.stringify(manageLabel)}]`);
+  const moveLabel = api.translate(session.getSnapshot().locale, 'replay.ui.move');
+  const moveItem = [...env.document.querySelectorAll('.replay-file-menu [role="menuitem"]')].find(item => item.textContent.trim() === moveLabel);
+  assert.ok(moveItem, 'file action menu exposes Move');
+  await React.act(async () => {moveItem.click();}); await tick();
+  await until(() => !!env.document.querySelector('.replay-workspace-move'), 'move layer opens above the folder');
+
+  await browserBack();
+  await until(() => !env.document.querySelector('.replay-workspace-move') && node('.replay-breadcrumb').textContent.includes('group'), 'first BrowserHistory Back closes only Move');
+  assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame);
+  await browserBack();
+  await until(() => !node('.replay-breadcrumb').textContent.includes('group') && !!env.document.querySelector('.replay-file-browser'), 'second BrowserHistory Back closes only the folder');
+  assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame);
+
+  await browserBack();
+  await until(() => f.router.state.location.key === parentKey && !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer,
+    'manager Back closes its owned Replay Runtime and returns to the home Router parent');
+  assert.equal(currentUrl(), '/?keep=a%20b'); assert.equal(playerOpen(), false); assert.equal(node('#gameFrame'), frame);
+  assert.equal('launcherLocalLayers' in (f.router.state.location.state ?? {}), false, 'no folder or move state leaks into the parent');
+
+  await openReplay();
+  assert.ok(env.document.querySelector('.replay-file-browser') && session.getRuntime().getSnapshot().launched,
+    'manager can be entered again after BrowserHistory cleanup');
+  const secondParent = f.router.state.location.state.launcherInformationDialogs.parentKey;
+  assert.equal(typeof secondParent, 'string');
+  await browserBack();
+  await until(() => f.router.state.location.key === secondParent && !env.document.querySelector('.replay-file-browser'),
+    'second Replay Back returns to its parent without stale child layers');
+  assert.equal(playerOpen(), false);
+  // jsdom dispatches browser Back's asynchronous POP outside React's test act
+  // scope; those development-only warnings are not page errors in Chromium.
+  const nonActErrors = env.errors.filter(message => !message.includes('not wrapped in act'));
+  assert.deepEqual(nonActErrors, [], 'BrowserHistory Back produces no DOM or application errors');
+  env.errors.length = 0;
+});
+
+test('replace-root Replay Back preserves an ordinary running Runtime and can be repeated', async () => {
+  const opener = React.createElement('button', {id: 'testReplayOpen', type: 'button', hidden: true,
+    onClick: () => {const session = api.getTestSession(); void session.openReplayViewer('th06').catch(session.reportError);}}, 'open Replay');
+  const f = await mountBrowser({initial: '/?game=th06&keep=a%20b', actualHistory: true, host: subsetHost(['th06']), seedPackages: ['th06'], extra: opener});
+  const session = api.getTestSession(), frame = node('#gameFrame');
+  await start(); await until(() => session.getRuntime().getSnapshot().launched, 'ordinary Runtime starts');
+  const retired = f.navigations.filter(url => url === 'about:blank').length;
+  await click('#testReplayOpen');
+  await until(() => !!env.document.querySelector('.replay-file-browser'), 'Replay manager opens over the running game');
+  const carrierKey = f.router.state.location.key;
+  assert.equal(f.router.state.location.state.launcherInformationDialogs.parentKey, undefined, 'running-game Replay replaces its carrier');
+  await browserBack();
+  await until(() => f.router.state.location.key !== carrierKey && !env.document.querySelector('.replay-file-browser'),
+    'replace-root BrowserHistory Back clears Replay in its carrier');
+  assert.equal(playerOpen(), true); assert.equal(session.getRuntime().getSnapshot().launched, true);
+  assert.equal(f.navigations.filter(url => url === 'about:blank').length, retired, 'closing the manager does not retire the underlying Runtime');
+  assert.equal(node('#gameFrame'), frame);
+
+  await click('#testReplayOpen');
+  await until(() => !!env.document.querySelector('.replay-file-browser'), 'manager reopens over the same Runtime');
+  const nextCarrierKey = f.router.state.location.key;
+  await browserBack();
+  await until(() => f.router.state.location.key !== nextCarrierKey && !env.document.querySelector('.replay-file-browser'),
+    'manager cleanup remains repeatable');
+  assert.equal(session.getRuntime().getSnapshot().launched, true); assert.equal(node('#gameFrame'), frame);
+  assert.equal(env.errors.length, 0);
+});
+
+function replayOptionsOpener(product = 'th06') {
+  return React.createElement('button', {id: 'testReplayOpen', type: 'button', hidden: true,
+    onClick: () => {const session = api.getTestSession(); void session.openReplayViewer(product).catch(session.reportError);}}, 'open Replay');
+}
+
+async function openReplayFromOptions({autoReady}) {
+  const f = await mountBrowser({initial: '/?keep=a%20b', actualHistory: true, autoReady,
+    host: subsetHost(['th06']), seedPackages: ['th06'], extra: replayOptionsOpener()});
+  const session = api.getTestSession();
+  await click('.book-game-link[data-game="th06"]');
+  await until(() => f.router.state.location.state.launcherSurfaceEntry?.surface === 'options', 'options owns its BrowserHistory parent');
+  const parentKey = f.router.state.location.state.launcherSurfaceEntry.parentKey;
+  assert.equal(typeof parentKey, 'string');
+  await click('#testReplayOpen');
+  await until(() => !!env.document.querySelector('.replay-file-browser'), 'Replay manager opens from Options');
+  if (autoReady) await until(() => session.getRuntime().getSnapshot().launched, 'Replay viewer preload completes');
+  else await until(() => session.getRuntime().getSnapshot().phase === 'loading', 'Replay viewer preload enters native loading');
+  return {f, session, parentKey};
+}
+
+function assertReplayPreloadRetired(session, f) {
+  const routeState = f.router.state.location.state ?? {};
+  const runtime = session.getRuntime().getSnapshot();
+  assert.equal(session.getSnapshot().playerOpen, false);
+  assert.equal(session.getSnapshot().replayViewer, false);
+  assert.equal(runtime.epoch, null);
+  assert.equal(runtime.game, null);
+  for (const key of ['launcherGameEntry', 'launcherInformationDialogs', 'launcherClosedPlayerSelection'])
+    assert.equal(key in routeState, false, `${key} is cleared from the Replay carrier`);
+}
+
+test('Replay Options close during native preload cancels once and the next Back leaves Options', async () => {
+  const {f, session, parentKey} = await openReplayFromOptions({autoReady: false});
+  assert.equal(session.getSnapshot().playerOpen, true);
+  assert.equal(session.getSnapshot().replayViewer, true);
+  assert.equal(session.getRuntime().getSnapshot().ready, false);
+
+  await click('.replay-workspace-header .replay-back');
+  await until(() => !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer &&
+    f.router.state.location.state.launcherSurfaceEntry?.surface === 'options', 'closing the loading manager returns to its Options carrier');
+  assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
+  assertReplayPreloadRetired(session, f);
+
+  await click('#libraryBack');
+  await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
+    'the Options Back button commits a real BrowserHistory POP to its parent');
+  assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');
+  assert.equal(session.getSnapshot().playerOpen, false);
+  assert.equal(env.errors.filter(message => !message.includes('not wrapped in act')).length, 0);
+});
+
+test('Browser Back cancels Replay preload, returns to Options, then a second Back leaves it', async () => {
+  const {f, session, parentKey} = await openReplayFromOptions({autoReady: false});
+  await browserBack();
+  await until(() => !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer &&
+    f.router.state.location.state.launcherSurfaceEntry?.surface === 'options', 'first BrowserHistory Back clears only the Replay manager');
+  assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
+  assertReplayPreloadRetired(session, f);
+
+  await browserBack();
+  await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
+    'second BrowserHistory Back reaches the Options page parent');
+  assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');
+  assert.equal(session.getSnapshot().playerOpen, false);
+  assert.equal(env.errors.filter(message => !message.includes('not wrapped in act')).length, 0);
+});
+
+test('Replay Options close cancels an in-flight native configure before the next Back', async () => {
+  const {f, session, parentKey} = await openReplayFromOptions({autoReady: false});
+  const postMessage = f.native.postMessage;
+  let pendingConfigure = null;
+  f.native.postMessage = (message, target) => {
+    if (message.command === 'configure' && message.options?.replayViewer) {pendingConfigure = message; return;}
+    postMessage(message, target);
+  };
+  await React.act(async () => {f.native.emit('ready');});
+  await until(() => session.getRuntime().getSnapshot().phase === 'configuring' && pendingConfigure,
+    'Replay preload is held in native configure');
+  assert.equal(session.getRuntime().getSnapshot().ready, true);
+  await click('.replay-workspace-header .replay-back');
+  await until(() => !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer &&
+    session.getRuntime().getSnapshot().epoch === null && f.router.state.location.state.launcherSurfaceEntry?.surface === 'options',
+    'closing during configure retires its pending Runtime epoch and returns to Options');
+  assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
+  assertReplayPreloadRetired(session, f);
+
+  await click('#libraryBack');
+  await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
+    'the next Options exit reaches its physical parent after configure cancellation');
+  assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');
+  assert.equal(env.errors.filter(message => !message.includes('not wrapped in act')).length, 0);
+});
+
+test('completed Replay preload closes from Options and leaves its parent on the next Back', async () => {
+  const {f, session, parentKey} = await openReplayFromOptions({autoReady: true});
+  await click('.replay-workspace-header .replay-back');
+  await until(() => !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer &&
+    f.router.state.location.state.launcherSurfaceEntry?.surface === 'options', 'closing the ready Replay viewer returns to Options');
+  assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
+  assertReplayPreloadRetired(session, f);
+
+  await browserBack();
+  await until(() => f.router.state.location.key === parentKey && currentUrl() === '/?keep=a%20b',
+    'Options still leaves to its real parent after a completed Replay preload');
+  assert.equal(f.router.state.location.state.launcherPageHistory.page, 'launcher');
+  assert.equal(env.errors.filter(message => !message.includes('not wrapped in act')).length, 0);
+});
+
 test('opening Replay in a prepared room pauses its iframe owner and closing resumes preload without losing membership', async () => {
   const {session, f, socket} = await actualTerminalRoom({fromDirectory: false, locale: 'en'});
   const epoch = session.getRuntime().getSnapshot().epoch;
@@ -2896,6 +3105,38 @@ for(const saveFailure of [false,true])test(`actual BrowserLauncher: failed room 
  assert.equal(node('#player').classList.contains('room-workspace'),true);
  const closingOrder=f.order.slice(order);assert.ok(closingOrder.indexOf('sync')<closingOrder.indexOf('native-retired'));
  assert.ok(f.navigations.slice(navigations).includes('about:blank'),'the failed native document retires after save acknowledgement');
+});
+
+test('cancelling room music preparation closes its transfer and retries the same loaded program',async()=>{
+ const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06'],autoReady:false,
+  seedStorage(storage){storage.values.set(api.gamePreferenceStorageKey('th06mp'),JSON.stringify({music:'none',options:{touchEnabled:false,thpracEnabled:false}}));}});
+ const session=api.getTestSession();
+ await until(()=>f.native?.envelope,'room program loading',15_000);
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ await React.act(async()=>{
+  socket.open();socket.message({type:'state',room:{code:'1234',playerCount:2,difficulty:1,phase:'lobby',
+   seats:[{clientId:localId,name:'A',loadout:0,ready:false},null],spectators:[]}});
+  f.native.emit('transfer',{kind:'game',mode:'runtime',loaded:1048576,total:1048576});
+  f.native.emit('ready',{roomPreview:true});
+ });
+ await until(()=>node('#decisionDialog').open,'room music confirmation');
+ const epoch=session.getRuntime().getSnapshot().epoch,navigations=f.navigations.length,reads=f.dataReads.length;
+ assert.equal(node('#transfer').hidden,false);
+ await click('#decisionCancel');
+ await until(()=>['failed','cancelled'].includes(session.room.service.getSnapshot().preparation?.status),'preparation stopped');
+ assert.equal(session.room.service.getSnapshot().preparation.status,'cancelled');
+ assert.equal(node('#transfer').hidden,true,'a completed transfer is not left loading after cancellation');
+ assert.equal(node('.room-preparation-caption strong').textContent,node('[data-mp-seat="0"] [role="status"]').textContent);
+ assert.equal(node('#mpRoomResourceLabel').hidden,true,'the primary cancellation status is not repeated below its heading');
+ await click('#mpRoomResourceRetry');
+ await until(()=>node('#decisionDialog').open,'retry asks for music consent');
+ await click('#decisionConfirm');
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','the prepared native menu resumes',15_000);
+ assert.equal(node('#transfer').hidden,true);
+ assert.equal(session.getRuntime().getSnapshot().epoch,epoch);
+ assert.equal(f.navigations.length,navigations,'retry reuses the already loaded native document');
+ assert.equal(f.dataReads.length,reads,'retry does not reread completed DATA');
 });
 
 test('actual BrowserLauncher: room loading renders authenticated Runtime byte progress inside the game viewport',async()=>{

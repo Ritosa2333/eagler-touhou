@@ -5,6 +5,7 @@ import {resolveRoomInvite, normalizeRoomCode, launcherHomeHistoryOperation, PLAY
 
 export type Page = 'launcher' | 'account' | 'profile' | 'directory' | 'single-options' | 'multi-options' | 'room';
 export const PAGE_HISTORY_KEY = 'launcherPageHistory';
+export const LOCAL_LAYERS_KEY = 'launcherLocalLayers';
 export const PAGE_PARENTS: Readonly<Record<Page, Page | null>> = Object.freeze({
   launcher: null, account: 'launcher', profile: 'launcher', directory: 'launcher', 'single-options': 'launcher', 'multi-options': 'directory', room: 'directory',
 });
@@ -60,7 +61,7 @@ export function initialPageChain(location: PageLocation, product?: ProductId | n
   const leaf = pageOf(location), pages: Page[] = leaf === 'launcher' ? [leaf]
     : leaf === 'account' || leaf === 'profile' || leaf === 'directory' || leaf === 'single-options' ? ['launcher', leaf] : ['launcher', 'directory', leaf];
   const parentState = {...object(location.state)};
-  for (const key of [PAGE_HISTORY_KEY, PLAYER_HISTORY_KEY, MP_ROOM_HISTORY_KEY, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY,
+  for (const key of [PAGE_HISTORY_KEY, LOCAL_LAYERS_KEY, PLAYER_HISTORY_KEY, MP_ROOM_HISTORY_KEY, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY,
     'launcherSurfaceEntry', 'launcherTouchEntry', 'launcherInformationDialogs', 'launcherDirectoryForm', 'launcherRoomPanel',
     'launcherRoomSettings', 'launcherRoomProductSelection', 'launcherClosedPlayerSelection', 'launcherGameEntry']) delete parentState[key];
   let previous: PageHistory | null = null;

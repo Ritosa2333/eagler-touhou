@@ -54,7 +54,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const selecting = state.seat != null && !state.spectatorRequested;
   const preparation = state.preparation;
   const loading = !!context.launchStage || preparation?.status === 'preparing' || preparation?.status === 'importing';
-  const loadingText = t(context.launchStage ? 'room.preparingRuntime' : loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : 'room.resourcesUnavailable');
+  const loadingText = t(context.launchStage ? 'room.preparingRuntime' : loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
   const icon = (name:string)=><img className="room-icon" src={assetUrl(`assets/${name}.svg`)} alt=""/>;
   const lounge = <RoomSpectatorPreview state={state} service={service} assetUrl={assetUrl} open={props.panel?.kind==='spectators'} onOpen={element=>openPanel('spectators',element)}/>;
   const roster = <div className="room-workspace-roster" data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
@@ -93,7 +93,7 @@ export function RoomWorkspace(props: RoomViewProps) {
         <p role="status">{t('room.reloadSettingsPrompt')}</p>
         <div><UiButton variant="primary" type="button" className="room-resource-reload-confirm" onClick={props.onReloadResources}>{t('room.reloadResources')}</UiButton><UiButton type="button" onClick={props.onRestoreSettings}>{t('room.restoreSettings')}</UiButton></div>
       </section>}
-      <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || context.launched || undefined} hidden={props.reloadPending || !context.launchStage && (context.previewReady || context.launched)}><div className="room-preparation-caption">{loading && <i className="room-preparation-spinner" aria-hidden="true"/>}<strong>{loadingText}</strong><span id="mpRoomConnection">{!ready && roomConnectionMessage(state,t)}</span><RoomProgress state={state} service={service} transfer={context.transfer}/>{preparation?.error && <p>{preparation.error}</p>}</div></div>
+      <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || context.launched || undefined} hidden={props.reloadPending || !context.launchStage && (context.previewReady || context.launched)}><div className="room-preparation-caption">{loading && <i className="room-preparation-spinner" aria-hidden="true"/>}<strong>{loadingText}</strong><span id="mpRoomConnection">{!ready && roomConnectionMessage(state,t)}</span><RoomProgress state={state} service={service} transfer={context.transfer} showLabel={preparation?.status !== 'failed' && preparation?.status !== 'cancelled'}/>{preparation?.error && preparation.error !== loadingText && <p>{preparation.error}</p>}</div></div>
       <UiButton variant="icon" className="room-workspace-fullscreen" type="button" aria-label={t('player.enterFullscreen')} onClick={props.onFullscreen}><FullscreenIcons/></UiButton>
     </>,viewport)}
   </>;

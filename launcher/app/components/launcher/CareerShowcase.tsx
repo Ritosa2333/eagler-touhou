@@ -17,7 +17,11 @@ type Cell = {key: string; x: number; y: number};
 type View = {scale: number; x: number; y: number};
 const chartHeight = (options: TrackerOptions) => trackerLayout(options).height;
 const completed = (records: CareerRecords) => Object.values(records).filter(record => record.done).length;
-function saveFile(name: string, url: string) {const link = document.createElement('a'); link.download = name; link.href = url; link.click();}
+function saveFile(name: string, file: Blob) {
+  const url = URL.createObjectURL(file);
+  const link = document.createElement('a'); link.download = name; link.href = url; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function Chart({records, options, onCells}: {records: CareerRecords; options: TrackerOptions; onCells?: (cells: Cell[]) => void}) {
   const {t} = useLocale();
@@ -135,11 +139,13 @@ export function CareerShowcase({records, onSave, initiallyOpen = false, readOnly
     const cell = cells.find(cell => x >= cell.x && x < cell.x + 17 && y >= cell.y && y < cell.y + 17);
     if (cell) select(cell.key);
   };
-  const exportPng = async () => {
+  const exportPng = () => {
     const canvas = document.createElement('canvas'); createTrackerRenderer(canvas).draw(shown, options, document.documentElement.dataset.bookTheme !== 'light', t);
-    saveFile('touhou-1cc-chart.png', canvas.toDataURL('image/png'));
+    const encoded = canvas.toDataURL('image/png').split(',')[1] ?? '';
+    const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+    saveFile('touhou-1cc-chart.png', new Blob([bytes], {type: 'image/png'}));
   };
-  const exportJson = () => {const url = URL.createObjectURL(new Blob([JSON.stringify({version: 2, records: shown, options}, null, 2)], {type: 'application/json'})); saveFile('touhou-career.json', url); setTimeout(() => URL.revokeObjectURL(url), 1000);};
+  const exportJson = () => saveFile('touhou-career.json', new Blob([JSON.stringify({version: 2, records: shown, options}, null, 2)], {type: 'application/json'}));
   return <section className="profile-panel career-showcase" aria-label={t('career.sectionAria')}>
     <div className="profile-section-title career-heading"><h2>{t('career.title')}</h2><span className="career-total"><b>{completed(records)}</b>{t('career.completedUnit')}</span></div>
     <UiButton variant="unstyled" type="button" className="career-thumbnail" onClick={() => launch()} aria-label={t('career.fullscreen')}><Chart records={records} options={options}/></UiButton>

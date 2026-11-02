@@ -14,6 +14,7 @@ import '../../app/components/launcher/book-surfaces.css';
 import '../../app/components/launcher/lobby-options.css';
 import '../../app/components/room/room-presentation.css';
 import '../../app/ui/system.css';
+import '../../app/ui/scrollbars.css';
 import '../../app/ui/tailwind.css';
 
 // Actual directory owner, room rows and form. Only the manifest and transport

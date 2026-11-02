@@ -915,5 +915,5 @@ test('persistent Replay workspace replaces its options layer and closes without 
   assert.equal(state().unrelated, 7);
   await settle(() => controls.navigation.closeSurface());
   assert.equal(controls.navigation.surface, 'library', 'the options Back button closes with one click after Replay return');
-  assert.equal(mounted.router.state.historyAction, 'REPLACE', 'numeric parent offsets cannot traverse a retired iframe');
+  assert.equal(mounted.router.state.historyAction, 'POP', 'options returns to its real page parent after the Replay carrier is retired');
 });

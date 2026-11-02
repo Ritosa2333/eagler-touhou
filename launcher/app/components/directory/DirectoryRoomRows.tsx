@@ -169,7 +169,7 @@ function RoomRow({
                 <span className="book-room-score-value">{score === 'VS' ? score : <><span>{room.seats[0]?.stats?.wins ?? 0}</span><span className="book-room-score-separator"> : </span><span>{room.seats[1]?.stats?.wins ?? 0}</span></>}</span>
               </strong>}
               <span className="lobby-public-player" data-empty={String(!seat)}>
-                {avatar}<OverflowText className="lobby-seat-name" align={duel?'center':'start'}>{name}</OverflowText>{controlCaption}
+                {avatar}<OverflowText className="lobby-seat-name" align={duel && index === 0 ? 'end' : 'start'}>{name}</OverflowText>{controlCaption}
               </span>
             </Fragment>;
           })}

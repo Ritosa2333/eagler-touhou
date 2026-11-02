@@ -108,12 +108,11 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat{--seat-avatar-size:44px;position:relative!important;display:grid!important;grid-template-columns:var(--seat-avatar-size) minmax(0,1fr)!important;grid-template-rows:1fr!important;align-items:center!important;align-content:center!important;gap:14px!important;min-height:112px!important;height:auto!important;padding:16px!important;box-sizing:border-box;border:1px solid var(--line)!important;border-radius:10px!important;overflow:hidden;isolation:isolate;box-shadow:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat{transition:background-color var(--ui-feedback-duration) var(--ui-feedback-easing),border-color var(--ui-feedback-duration) var(--ui-feedback-easing)!important;background:var(--seat-background,var(--kit-card))!important;color:var(--paper);--paper:var(--kit-foreground);--muted:var(--kit-muted-foreground);--room-text:var(--kit-foreground);--room-muted:var(--kit-muted-foreground);--ink:var(--kit-background)}
 #player.room-workspace .room-workspace-roster .mp-seat.occupied{--paper:var(--kit-seat-foreground);--muted:var(--kit-seat-foreground);--room-text:var(--kit-seat-foreground);--room-muted:var(--kit-seat-foreground);border-color:transparent!important}
-#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=loading]{--seat-background:var(--kit-seat-loading)}
-#player.room-workspace .room-workspace-roster .mp-seat[data-card-state=unready]{--seat-background:var(--kit-seat-unready)}
+#player.room-workspace .room-workspace-roster .mp-seat:is([data-card-state=loading],[data-card-state=cancelled]){--seat-background:var(--kit-seat-loading)}
+#player.room-workspace .room-workspace-roster .mp-seat:is([data-card-state=unready],[data-card-state=failed]){--seat-background:var(--kit-seat-unready)}
 #player.room-workspace .room-workspace-roster .mp-seat[data-card-state=ready]{--seat-background:var(--kit-seat-ready)}
 .room-seat-decoration{position:absolute;inset:0;z-index:0;border-radius:inherit;overflow:hidden;pointer-events:none}
-.room-seat-watermark{position:absolute;right:-9px;bottom:-15px;color:var(--kit-seat-watermark);font:900 italic 60px/1.1 "ET Yatra","ET Chill Round",system-ui,sans-serif;letter-spacing:-3px;white-space:nowrap;transform:rotate(-12deg);opacity:0;transition:opacity var(--ui-feedback-duration) var(--ui-feedback-easing)}
-.room-seat-watermark.active{opacity:.36}
+.room-seat-watermark{position:absolute;right:-9px;bottom:-15px;color:var(--kit-seat-watermark);font:900 italic 60px/1.1 "ET Yatra","ET Chill Round",system-ui,sans-serif;letter-spacing:-3px;white-space:nowrap;transform:rotate(-12deg);opacity:.36}
 #player.room-workspace .room-workspace-roster .mp-seat{overflow:visible}
 #player.room-workspace .room-workspace-roster .mp-seat-face{position:relative!important;z-index:1;grid-column:1!important;grid-row:1!important;align-self:start!important;width:var(--seat-avatar-size)!important;height:calc(var(--seat-avatar-size) + 18px)!important;margin:0!important;min-height:0!important;border:0!important;background:none!important;border-radius:0!important;overflow:visible!important;transform:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-glyph{position:absolute!important;bottom:0;display:grid!important;place-items:center;width:100%;height:var(--seat-avatar-size);font:700 20px/1 "ET Chill Round",system-ui,sans-serif!important;border:3px solid transparent;box-sizing:border-box;border-radius:50%;background-clip:padding-box}
@@ -121,7 +120,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-seat-ring.indeterminate{background:conic-gradient(transparent 0 270deg,var(--kit-seat-ring-loading) 270deg 360deg);animation:room-loading-spin 1.2s linear infinite}
 #player.room-workspace .room-workspace-roster .mp-seat-index{position:static!important;grid-column:1/-1!important;grid-row:2!important;display:flex!important;align-items:center;gap:6px;margin:0!important;font-size:11px!important}
 #player.room-workspace .room-workspace-roster .mp-seat-index>span:first-child{display:none}
-#player.room-workspace .room-workspace-roster .mp-seat-identity{position:relative!important;z-index:2;grid-column:2!important;grid-row:1!important;display:flex!important;flex-direction:column;justify-content:center;gap:5px;min-width:0;margin:0!important;padding:0!important;align-items:flex-start!important;pointer-events:none}
+#player.room-workspace .room-workspace-roster .mp-seat-identity{position:relative!important;z-index:2;grid-column:2!important;grid-row:1!important;display:flex!important;flex-direction:column;justify-content:center;gap:2px;min-width:0;margin:0!important;padding:0!important;align-items:flex-start!important;pointer-events:none}
 .room-seat-player-tag{position:absolute;top:0;left:0;right:0;text-align:center;font:600 11px/14px var(--kit-font);letter-spacing:.02em;color:var(--muted)}
 #player.room-workspace .room-workspace-roster .mp-seat-name{position:static!important;display:block!important;margin:0!important;padding:0!important;padding-inline-end:var(--seat-name-inset,0px)!important;width:100%;font:600 17px/1.35 var(--kit-font)!important;letter-spacing:.01em;text-align:left!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;box-sizing:border-box}
 #player.room-workspace .room-workspace-roster .mp-seat[data-manageable]{--seat-name-inset:44px}
@@ -133,7 +132,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-seat-network-label{color:var(--muted)}
 .room-seat-network-value{font-variant-numeric:tabular-nums}
 #player.room-workspace .room-workspace-roster .mp-seat-latency:disabled{opacity:1!important;text-decoration:none}
-#player.room-workspace .room-workspace-roster .mp-seat-state,#player.room-workspace .room-workspace-roster .mp-seat-me,#player.room-workspace .room-workspace-roster .mp-seat-resource{display:none!important}
+#player.room-workspace .room-workspace-roster .mp-seat-state,#player.room-workspace .room-workspace-roster .mp-seat-me{display:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-edit{position:absolute!important;inset:0!important;z-index:1!important;background:transparent!important;border:0!important;border-radius:10px!important}
 #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{position:absolute;bottom:-2px;right:-2px;width:15px;height:15px;z-index:2}
 #player.room-workspace .room-workspace-roster .mp-seat-owner-mark>svg{display:block;width:100%;height:100%}
@@ -198,7 +197,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-lounge-host{position:relative;align-self:stretch}
  #player.room-workspace .room-workspace-roster .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]){grid-template-columns:minmax(0,1fr)!important}
  #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat{min-height:84px!important;padding:8px 10px!important}
- #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat-identity{gap:3px}
+ #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat-identity{gap:2px}
  #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat-latency{margin-top:2px!important}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-spectators{--preview-avatar-size:28px;position:absolute;inset:0;box-sizing:border-box;width:100%;height:100%;min-height:0;flex-direction:column;gap:6px;padding:6px 4px}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-spectator-preview-trigger{flex-wrap:wrap;justify-content:center;gap:2px;min-height:24px;font-size:11px;line-height:1.3}
@@ -266,8 +265,6 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-spectator-copy strong{overflow:hidden;font-size:13px;text-overflow:ellipsis;white-space:nowrap}
 #mpRoomView :is(.mp-spectator-copy small,.mp-spectator-marker,.mp-spectator-empty){color:var(--kit-muted-foreground);font-size:12px}
 #mpRoomView .mp-room-setting-title{height:auto;margin:12px 0 8px;color:var(--kit-muted-foreground);font-size:12px}
-#mpRoomView .mp-room-choice-group{display:flex;flex-wrap:nowrap;gap:2px;margin:0;padding:3px;border-radius:8px;background:var(--kit-muted)}
-#mpRoomView .mp-room-choice-group button{flex:1;min-width:0;min-height:36px;padding:7px 3px;font-size:12px}
 #mpRoomView .room-workspace-tabs{flex:none;gap:16px;padding:0 16px}
 #mpRoomView .room-workspace-tabs button{flex:1;min-width:0}
 #mpRoomView .room-workspace-actions button{flex:1;min-height:44px;height:44px;font-size:14px}

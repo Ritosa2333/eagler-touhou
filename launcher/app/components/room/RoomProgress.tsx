@@ -29,7 +29,7 @@ export function ResourceTracks({progress, transfer, identifiers = false}: {progr
   })}</div>;
 }
 
-export function RoomProgress({state, service, transfer}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; transfer?: TransferSnapshot}) {
+export function RoomProgress({state, service, transfer, showLabel = true}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; transfer?: TransferSnapshot; showLabel?: boolean}) {
   const {t} = useLocale(), progress = state.preparation, status = progress?.status ?? 'preparing';
   const spectatorLoading = state.spectatorRequested && state.launchBusy && status === 'ready';
   const label = t(spectatorLoading ? 'room.loadingSpectator' : status === 'ready' ? 'room.resourcesReady' :
@@ -38,7 +38,7 @@ export function RoomProgress({state, service, transfer}: {state: RoomOwnerSnapsh
   const displayed = spectatorLoading ? {...progress!, status: 'preparing' as const, stage: 'runtime' as const, runtimePercent: null, percent: null} : progress;
   return <div className="mp-room-resource-progress" id="mpRoomResourceProgress" hidden={!state.room}
     data-status={spectatorLoading ? 'preparing' : status} title={progress?.error || ''}>
-    <span id="mpRoomResourceLabel" role="status">{label}</span>
+    <span id="mpRoomResourceLabel" role="status" hidden={!showLabel}>{label}</span>
     <span id="mpRoomResourceAmount">{progress?.total ? roomMiB(progress.loaded) + ' / ' + roomMiB(progress.total) : ''}</span>
     <UiButton id="mpRoomResourceCancel" type="button" hidden={status !== 'preparing' || progress?.stage !== 'package'} onClick={service.cancelPreparation}>{t('room.cancelDownload')}</UiButton>
     <UiButton id="mpRoomResourceRetry" type="button" hidden={status !== 'failed' && status !== 'cancelled'} onClick={service.retryPreparation}>{t('room.retryDownload')}</UiButton>

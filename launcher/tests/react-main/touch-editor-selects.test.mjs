@@ -22,6 +22,7 @@ before(async () => {
   const outfile = resolve(work, 'components.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {MainSelect,closeMainSelectMenus} from './app/components/launcher/MainSelect.tsx';
+    export {Select,SelectTrigger,SelectValue,SelectContent,SelectItem,closeSelectMenus} from './app/ui/select.tsx';
     export {TouchLayoutEditor} from './app/components/settings/TouchLayoutEditor.tsx';
     export {createGameSettingsModel} from './app/models/game-settings.ts';
     export {createTouchLayoutModel} from './app/models/touch-layout.ts';
@@ -44,7 +45,30 @@ async function mount(children) {
   await React.act(async () => root.render(el(React.StrictMode, null, children)));
 }
 async function click(target) {await React.act(async () => (typeof target === 'string' ? n(target) : target).click());}
+async function touchTap(target, pointerId) {await React.act(async () => {
+  const bounds = target.getBoundingClientRect();
+  const pointer = {bubbles: true, cancelable: true, pointerId, pointerType: 'touch', button: 0, clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2};
+  target.dispatchEvent(new env.window.PointerEvent('pointerdown', pointer));
+  target.dispatchEvent(new env.window.PointerEvent('pointerup', pointer));
+  target.dispatchEvent(new env.window.MouseEvent('click', {bubbles: true, cancelable: true}));
+});}
+async function touchRetargetedTap(downTarget, clickTarget, pointerId) {
+  const bounds = clickTarget.getBoundingClientRect();
+  const pointer = {bubbles: true, cancelable: true, pointerId, pointerType: 'touch', button: 0, clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2};
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.PointerEvent('pointerdown', pointer));});
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.Event('touchstart', {bubbles: true, cancelable: true}));});
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.PointerEvent('pointerup', pointer));});
+  await React.act(async () => {downTarget.dispatchEvent(new env.window.Event('touchend', {bubbles: true, cancelable: true}));});
+  await React.act(async () => {clickTarget.dispatchEvent(new env.window.MouseEvent('click', {bubbles: true, cancelable: true, detail: 1}));});
+}
 function select() {return el(api.MainSelect, {id: 'hostSelect', className: 'option-select', defaultValue: 'a'}, el('option', {value: 'a'}, 'A'), el('option', {value: 'b'}, 'B'));}
+function uiKitSelect() {
+  return el(api.Select, {defaultValue: 'number'},
+    el(api.SelectTrigger, {id: 'sort-trigger', 'aria-label': 'Sort'}, el(api.SelectValue)),
+    el(api.SelectContent, null,
+      el(api.SelectItem, {value: 'number'}, 'By number'),
+      el(api.SelectItem, {value: 'name'}, 'By name')));
+}
 
 for (const target of ['windowed', 'player', 'webkit-player', 'root', 'foreign', 'dialog']) test(`Main select keeps the menu above its ${target} player`, async () => {
   await mount(el('section', {id: 'player'}, target === 'dialog' ? el('dialog', {open: true, id: 'nativeDialog'}, select()) : select()));
@@ -87,6 +111,125 @@ async function editor({storage = null} = {}) {
   return {player, model, settings, errors};
 }
 async function openMovementMenu() {await click(n('#touchMovementMode').closest('.mizuki-select').querySelector('.mizuki-select-trigger')); return n('.ui-select-content');}
+
+test('Touch select trigger toggles its popup closed on a second activation', async () => {
+  const f = await editor(), trigger = n('#touchMovementMode-trigger');
+  await click(trigger);
+  assert.equal(n('.ui-select-content').isConnected, true);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  await click(trigger);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.deepEqual(f.errors, []);
+});
+
+test('Touch taps close the currently open selector without reopening it', async () => {
+  const f = await editor(), trigger = n('#touchMovementMode-trigger');
+  await touchTap(trigger, 41);
+  assert.equal(n('.ui-select-content').isConnected, true);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  await touchTap(trigger, 42);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(env.document.activeElement, trigger);
+  let outsideClicks = 0;
+  const outside = env.document.createElement('button'); outside.id = 'outsideSelectAction'; outside.addEventListener('click', () => outsideClicks++); env.document.body.append(outside);
+  await click(outside); assert.equal(outsideClicks, 1, 'consuming the compatibility click must not swallow another control');
+  const nextTrigger = n('#touchFocusMode-trigger'); await touchTap(nextTrigger, 53);
+  assert.equal(nextTrigger.getAttribute('aria-expanded'), 'true', 'the next selector has its own activation sequence');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1);
+  assert.deepEqual(f.errors, []);
+});
+
+test('A touch compatibility click cannot reopen a selector dismissed by the earlier pointerdown', async () => {
+  const f = await editor(), trigger = n('#touchMovementMode-trigger');
+  await touchTap(trigger, 51);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  assert.equal(n('.ui-select-content').isConnected, true);
+  await touchRetargetedTap(env.document.body, trigger, 52);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(env.document.activeElement, trigger);
+  assert.deepEqual(f.errors, []);
+});
+
+test('UI-kit select uses the same touch toggle, focus return, and popup styling as MainSelect', async () => {
+  await mount(uiKitSelect());
+  const trigger = n('#sort-trigger');
+  assert.equal(trigger.classList.contains('ui-select-trigger'), true);
+  assert.equal(trigger.classList.contains('ui-kit-select-trigger'), true);
+  await touchTap(trigger, 61);
+  assert.equal(n('.ui-select-content').classList.contains('ui-kit-select-content'), true);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  await touchTap(trigger, 62);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(env.document.activeElement, trigger);
+});
+
+test('UI-kit select consumes only the retargeted touch click and leaves other controls active', async () => {
+  await mount(uiKitSelect());
+  const trigger = n('#sort-trigger');
+  await touchTap(trigger, 71);
+  await touchRetargetedTap(env.document.body, trigger, 72);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.equal(env.document.activeElement, trigger);
+  let outsideClicks = 0;
+  const outside = env.document.createElement('button');
+  outside.addEventListener('click', () => outsideClicks++);
+  env.document.body.append(outside);
+  await click(outside);
+  assert.equal(outsideClicks, 1);
+});
+
+test('controlled UI-kit select reports close requests while its open prop remains authoritative', async () => {
+  const requests = [];
+  await mount(el(api.Select, {open: true, defaultValue: 'number', onOpenChange: (next) => requests.push(next)},
+    el(api.SelectTrigger, {id: 'controlled-sort-trigger', 'aria-label': 'Sort'}, el(api.SelectValue)),
+    el(api.SelectContent, null, el(api.SelectItem, {value: 'number'}, 'By number'))));
+  const trigger = n('#controlled-sort-trigger');
+  await click(trigger);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true', 'a controlled parent still owns the displayed state');
+  await click(trigger);
+  assert.deepEqual(requests, [false, false], 'a rejected close request does not corrupt the next interaction');
+});
+
+test('UI-kit and native form selects share one open popup and keyboard selection flow', async () => {
+  await mount(el('div', null, uiKitSelect(), select()));
+  n('#sort-trigger').getBoundingClientRect = () => new env.window.DOMRect(100, 50, 150, 44);
+  await click('#sort-trigger');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1);
+  await click('.mizuki-select-trigger');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1, 'opening a second adapter closes the first popup');
+  await React.act(async () => n('#hostSelect-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown', {key: 'Escape', bubbles: true, cancelable: true})));
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  await React.act(async () => n('#sort-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown', {key: 'ArrowDown', bubbles: true, cancelable: true})));
+  assert.ok(n('.ui-select-content'));
+  const nameOption = [...env.document.querySelectorAll('[role="option"]')].find((option) => option.textContent.includes('By name'));
+  assert.ok(nameOption);
+  nameOption.getBoundingClientRect = () => new env.window.DOMRect(300, 120, 120, 40);
+  await touchTap(nameOption, 81);
+  assert.equal(env.document.querySelector('.ui-select-content'), null);
+  assert.match(n('#sort-trigger').textContent, /By name/);
+});
+
+test('Changing touch opacity does not clear the editor layout or reset its opacity style', async () => {
+  const f = await editor(), control = n('#touchBomb');
+  const layoutX = control.style.getPropertyValue('--touch-layout-x');
+  const classObserver = new env.window.MutationObserver(() => {}), styleObserver = new env.window.MutationObserver(() => {});
+  classObserver.observe(f.player, {attributes: true, attributeFilter: ['class'], attributeOldValue: true});
+  styleObserver.observe(f.player, {attributes: true, attributeFilter: ['style'], attributeOldValue: true});
+  await React.act(async () => {f.settings.setOption('touchControlOpacity', 75); await Promise.resolve();});
+  const classChanges = classObserver.takeRecords(), styleChanges = styleObserver.takeRecords();
+  classObserver.disconnect(); styleObserver.disconnect();
+  assert.equal(f.player.classList.contains('touch-layout-custom'), true);
+  assert.equal(f.player.style.getPropertyValue('--touch-control-opacity'), '0.75');
+  assert.equal(control.style.getPropertyValue('--touch-layout-x'), layoutX);
+  assert.deepEqual(classChanges, [], 'an option update must not remove and reapply the custom-layout class');
+  assert.ok(styleChanges.every(change => change.oldValue?.includes('--touch-control-opacity:')),
+    'the opacity style should update directly without briefly falling back to its default');
+  assert.deepEqual(f.errors, []);
+});
 
 test('Keyboard-style workbench collapse closes the real fullscreen menu and expansion does not resurrect it', async () => {
   const f = await editor(), menu = await openMovementMenu();

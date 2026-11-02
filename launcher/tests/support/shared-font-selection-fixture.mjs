@@ -10,6 +10,7 @@ export async function fontSelectionFixture() {
 await mkdir('.cache',{recursive:true});const work=await mkdtemp(resolve('.cache/font-selection-'));
 const outfile=resolve(work,'actual.mjs');
 await build({stdin:{contents:"export * from './app/services/game-resources.ts';export {PRODUCT_GAMES as TEST_PRODUCTS} from 'test-products';",resolveDir:resolve(),loader:'ts'},outfile,bundle:true,platform:'node',format:'esm',logLevel:'silent',
+ external:['fs-native-extensions'],
  plugins:[{name:'test-product-port',setup(ctx){
   ctx.onResolve({filter:/^(?:test-products|.*contracts\/product-catalog\.mts)$/},args=>{if(args.path==='test-products'||args.importer.replaceAll('\\','/').endsWith('/app/services/game-resources.ts'))return{path:'products',namespace:'fixture'};});
   ctx.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:'export const PRODUCT_GAMES={fixture:{}};'}));

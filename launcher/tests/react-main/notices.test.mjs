@@ -153,6 +153,16 @@ for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotic
     assert.equal(close.getAttribute('aria-label'),owners.translate(locale,'firstUseNotice.close'));
     actual.querySelector('footer').remove();reference.querySelector('footer').remove();
   }
+  if(name!=='FirstUseNotice'){
+    const close=actual.querySelector('header button'), previous=reference.querySelector('header button');
+    const icon=close.querySelector('svg');
+    assert.equal(icon?.getAttribute('aria-hidden'),'true');
+    assert.equal(icon.getAttribute('stroke'),'currentColor');
+    assert.equal(icon.getAttribute('fill'),'none');
+    assert.equal(close.getAttribute('aria-label'),previous.getAttribute('aria-label'));
+    // Compare button identity and semantics independently of decorative artwork.
+    close.replaceChildren();previous.replaceChildren();
+  }
   assert.deepEqual(normalize(actual),normalize(reference));
 });
 test('First use: original fetch options/sanitizer/cache with intentional concurrent dedup',async()=>{const pending=deferred(),ref=React.createRef(),calls=[];await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:(...args)=>{calls.push(args);return pending.promise;}});const p=ref.current.load(),p2=ref.current.load();assert.equal(calls.length,1);pending.resolve(response(html));await flush();assert.equal((await p).kind,'available');assert.equal((await p2).kind,'available');assert.deepEqual(calls,[['content/FIRST_USE_NOTICE.html',{cache:'no-store'}]]);const expected=env.document.createElement('div');owners.renderContentFragment(expected,html,env.document);assert.equal(n('#firstUseNoticeText').innerHTML,expected.innerHTML);await ref.current.load();assert.equal(calls.length,1);assert.equal(n('#firstUseNoticeDialog').open,false);});

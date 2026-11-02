@@ -11,6 +11,5 @@ body.mp-room-active {
 html[data-book-theme='light'] #mpRoomView .room-icon,
 html[data-book-theme='light'] #player.room-workspace .room-spectator-preview-trigger .room-icon{filter:brightness(0) opacity(.72)}
 #mpRoomView .room-challenge-on{color:var(--kit-warning)}
-#mpRoomView .mp-resource-row[data-resource-stage=package] .mp-room-resource-track>span,
-#mpRoomView .mp-seat-resource[data-status=ready] .mp-room-resource-track>span{background:var(--kit-success)!important}
+#mpRoomView .mp-resource-row[data-resource-stage=package] .mp-room-resource-track>span{background:var(--kit-success)!important}
 }

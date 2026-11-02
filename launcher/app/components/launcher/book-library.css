@@ -1,94 +1,509 @@
 @layer components {
-/* Homepage layout owns geometry. Controls use the shared UI components. */
-html[data-ui-home] body:not(.mp-room-active) {--ui-font:var(--kit-font);background:var(--kit-background);color:var(--kit-foreground)}
-html[data-ui-home] body:not(.mp-room-active)::before,
-html[data-ui-home] body:not(.mp-room-active)::after {display:none}
-html[data-ui-home] body:not(.mp-room-active) .sheet {display:block;min-height:100dvh;height:auto;padding:0;background:var(--kit-background)}
-html[data-ui-home] .library-background {display:none}
-html[data-ui-home] .main.library-layout {display:block;min-height:0;padding:0;perspective:none}
-html[data-ui-home] .game-library {display:block;min-width:0;padding:0}
-html[data-ui-home] .book-library {display:grid;grid-template-columns:188px minmax(0,1fr);gap:32px;width:100%;max-width:1280px;margin:0 auto;padding:28px 28px 0;font:400 14px/1.5 var(--kit-font);color:var(--kit-foreground)}
-.book-sidebar {position:sticky;top:100px;align-self:start;min-width:0}
-.book-search {margin-bottom:20px}
-.book-search input::-webkit-search-cancel-button {display:none}
-.book-sidebar nav {display:grid;gap:4px}
-.book-sidebar nav small {justify-self:end;text-align:right;font:500 11px/1.2 var(--kit-font);color:var(--kit-muted-foreground);font-variant-numeric:tabular-nums}
-.book-sidebar nav [data-book-category='windows'] {margin-top:16px}
-.book-content {min-width:0;container-type:inline-size}
-.book-recent {margin:0 0 28px}
-.book-section-heading {display:flex;align-items:center;gap:8px;margin:0 0 12px;color:var(--kit-muted-foreground)}
-.book-section-heading>svg {width:16px;height:16px}
-.book-section-heading h2 {margin:0;color:var(--kit-foreground);font:600 14px/1.4 var(--kit-font)}
-.book-recent-games {display:flex;gap:10px;overflow-x:auto;padding:0 0 4px;scrollbar-width:thin}
-.book-recent-games article {flex:0 0 208px}
-.book-recent-link {display:flex;align-items:center;gap:10px;min-width:0;min-height:78px;padding:12px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card);color:var(--kit-foreground);text-decoration:none;transition:border-color var(--ui-feedback-duration)}
-.book-recent-link:hover {border-color:var(--kit-ring)}
-.book-recent-link .book-art {flex:none;width:46px;height:46px;aspect-ratio:1;border-radius:5px}
-.book-recent-link .book-identity {padding:0;gap:3px;min-width:0;flex:1}
-.book-recent-link .book-identity strong {font-size:12px}
-.book-recent-arrow {flex:none;width:14px;height:14px;color:var(--kit-muted-foreground)}
-.book-view-header {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
-.book-current {display:flex;align-items:baseline;gap:10px;flex:none}
-.book-current h2 {margin:0;font:600 21px/1.3 var(--kit-font);letter-spacing:-.025em}
-.book-current>span {color:var(--kit-muted-foreground);font-size:12px;white-space:nowrap}
-.book-tools {display:flex;align-items:center;gap:12px;min-width:0}
-.book-view-switch {display:flex;align-items:center;gap:3px;flex:none;min-height:36px;padding:3px;border:1px solid var(--kit-border);border-radius:7px;background:var(--kit-muted)}
-.book-view-switch .ui-kit-choice[data-state='on'] {box-shadow:0 1px 3px #00000012}
-.book-sort {min-width:140px}
-.book-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px 16px}
-.book-card {position:relative;min-width:0;overflow:hidden;border:1px solid var(--kit-border);border-radius:9px;background:var(--kit-card);transition:border-color var(--ui-feedback-duration),box-shadow var(--ui-feedback-duration)}
-.book-card:hover {border-color:var(--kit-ring);box-shadow:0 2px 7px #0000000a}
-.book-game-link {display:flex;flex-direction:column;height:100%;color:var(--kit-foreground);text-decoration:none}
-.book-art {position:relative;display:block;aspect-ratio:1;overflow:hidden;background:var(--kit-muted)}
-.book-art img {display:block;width:100%;height:100%;object-fit:cover}
-.book-identity {display:flex;min-width:0;flex-direction:column;gap:5px;padding:12px}
-.book-identity .book-title-line {display:flex;align-items:center;gap:6px;min-width:0;overflow:visible;white-space:normal}
-.book-title-line>strong {min-width:0;flex:0 1 auto}
-.book-identity strong {overflow:hidden;color:var(--kit-foreground);font:600 14px/1.4 var(--kit-font);white-space:nowrap;text-overflow:ellipsis}
-.book-identity>span {overflow:hidden;color:var(--kit-muted-foreground);font:400 11px/1.45 var(--kit-font);white-space:nowrap;text-overflow:ellipsis}
-.book-view-covers .book-card .book-identity {position:relative;isolation:isolate;overflow:hidden;background:color-mix(in srgb,var(--kit-card) 88%,transparent)}
-.book-view-covers .book-card .book-identity::before {content:'';position:absolute;inset:-18px;z-index:-1;background-image:var(--book-card-art);background-size:cover;background-position:center 75%;filter:blur(16px) saturate(.7);opacity:.16;pointer-events:none}
-.book-cover-fallback {display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;width:100%;height:100%;padding:16px;color:var(--kit-muted-foreground);font-size:13px;text-align:center}
-.book-cover-fallback strong {font-size:13px;font-weight:500}
-.book-favorite.ui-kit-button {position:absolute;top:3px;right:3px;isolation:isolate}
-.book-favorite::before {content:"";position:absolute;inset:5px;z-index:-1;border:1px solid color-mix(in srgb,var(--kit-border) 65%,transparent);border-radius:50%;background:color-mix(in srgb,var(--kit-card) 76%,transparent);backdrop-filter:blur(8px)}
-.book-favorite.ui-kit-button:hover::before {background:var(--kit-accent)}
-.book-favorite[aria-pressed='true'] svg {fill:currentColor}
-.book-empty {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:240px;border:1px dashed var(--kit-border);border-radius:8px;background:var(--kit-muted);color:var(--kit-muted-foreground)}
-.book-empty>svg {width:24px;height:24px}
-.book-empty h3 {margin:0;color:var(--kit-foreground);font:500 14px/1.5 var(--kit-font)}
-.book-view-list .book-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px}
-.book-view-list .book-card {display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;overflow:visible;border:0;border-bottom:1px solid var(--kit-border);border-radius:0;background:transparent;box-shadow:none}
-.book-view-list .book-card:hover {background:var(--kit-muted)}
-.book-view-list .book-game-link {display:grid;grid-template-columns:56px minmax(0,1fr);align-items:center;gap:12px;min-height:89px;padding:12px 0}
-.book-view-list .book-game-link .book-art {width:56px;height:56px;border-radius:5px;aspect-ratio:1}
-.book-view-list .book-game-link .book-identity {gap:3px;padding:0}
-.book-view-list .book-identity strong {font-size:13px}
-.book-view-list .book-favorite.ui-kit-button {position:static}
-.book-view-list .book-favorite::before {display:none}
-html[data-ui-home] .site-footer {margin-top:32px;padding:22px 0 24px;border-top:1px solid var(--kit-border)}
-html[data-ui-home] .server-status-note {position:static;inset:auto;z-index:auto;min-height:0;max-width:1216px;margin:0 auto;padding:0 32px 20px;background:transparent;color:var(--kit-muted-foreground);font:400 11px/1.6 var(--kit-font);text-align:right}
+  /* Homepage layout owns geometry. Controls use the shared UI components. */
+  html[data-ui-home] body:not(.mp-room-active) {
+    --ui-font: var(--kit-font);
+    background: var(--kit-background);
+    color: var(--kit-foreground);
+  }
+  html[data-ui-home] body:not(.mp-room-active)::before,
+  html[data-ui-home] body:not(.mp-room-active)::after {
+    display: none;
+  }
+  html[data-ui-home] body:not(.mp-room-active) .sheet {
+    display: block;
+    min-height: 100dvh;
+    height: auto;
+    padding: 0;
+    background: var(--kit-background);
+  }
+  html[data-ui-home] .library-background {
+    display: none;
+  }
+  html[data-ui-home] .main.library-layout {
+    display: block;
+    min-height: 0;
+    padding: 0;
+    perspective: none;
+  }
+  html[data-ui-home] .game-library {
+    display: block;
+    min-width: 0;
+    padding: 0;
+  }
+  html[data-ui-home] .book-library {
+    display: grid;
+    grid-template-columns: 188px minmax(0, 1fr);
+    gap: 32px;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 28px 0;
+    font: 400 14px / 1.5 var(--kit-font);
+    color: var(--kit-foreground);
+  }
+  .book-sidebar {
+    position: sticky;
+    top: 100px;
+    align-self: start;
+    min-width: 0;
+  }
+  .book-search {
+    margin-bottom: 20px;
+  }
+  .book-search input::-webkit-search-cancel-button {
+    display: none;
+  }
+  .book-sidebar nav {
+    display: grid;
+    gap: 4px;
+  }
+  .book-sidebar nav small {
+    justify-self: end;
+    text-align: right;
+    font: 500 11px / 1.2 var(--kit-font);
+    color: var(--kit-muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .book-sidebar nav [data-book-category="windows"] {
+    margin-top: 16px;
+  }
+  .book-content {
+    min-width: 0;
+    container-type: inline-size;
+  }
+  .book-recent {
+    margin: 0 0 28px;
+  }
+  .book-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    color: var(--kit-muted-foreground);
+  }
+  .book-section-heading > svg {
+    width: 16px;
+    height: 16px;
+  }
+  .book-section-heading h2 {
+    margin: 0;
+    color: var(--kit-foreground);
+    font: 600 14px / 1.4 var(--kit-font);
+  }
+  .book-recent-games {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 0 0 4px;
+    scrollbar-width: thin;
+  }
+  .book-recent-games article {
+    flex: 0 0 208px;
+  }
+  .book-recent-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 78px;
+    padding: 12px;
+    border: 1px solid var(--kit-border);
+    border-radius: 8px;
+    background: var(--kit-card);
+    color: var(--kit-foreground);
+    text-decoration: none;
+    transition: border-color var(--ui-feedback-duration);
+  }
+  .book-recent-link:hover {
+    border-color: var(--kit-ring);
+  }
+  .book-recent-link .book-art {
+    flex: none;
+    width: 46px;
+    height: 46px;
+    aspect-ratio: 1;
+    border-radius: 5px;
+  }
+  .book-recent-link .book-identity {
+    padding: 0;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+  }
+  .book-recent-link .book-identity strong {
+    font-size: 12px;
+  }
+  .book-recent-arrow {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--kit-muted-foreground);
+  }
+  .book-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .book-current {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex: none;
+  }
+  .book-current h2 {
+    margin: 0;
+    font: 600 21px / 1.3 var(--kit-font);
+    letter-spacing: -0.025em;
+  }
+  .book-current > span {
+    color: var(--kit-muted-foreground);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .book-tools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .book-view-switch {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex: none;
+    min-height: 36px;
+    padding: 3px;
+    border: 1px solid var(--kit-border);
+    border-radius: 7px;
+    background: var(--kit-muted);
+  }
+  .book-view-switch .ui-kit-choice[data-state="on"] {
+    box-shadow: 0 1px 3px #00000012;
+  }
+  .book-sort {
+    min-width: 140px;
+  }
+  .book-grid {
+    display: grid;
+    align-content: start;
+    overflow-anchor: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px 16px;
+  }
+  .book-card {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--kit-border);
+    border-radius: 9px;
+    background: var(--kit-card);
+    transition:
+      border-color var(--ui-feedback-duration),
+      box-shadow var(--ui-feedback-duration);
+  }
+  .book-card:hover {
+    border-color: var(--kit-ring);
+    box-shadow: 0 2px 7px #0000000a;
+  }
+  .book-game-link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: var(--kit-foreground);
+    text-decoration: none;
+  }
+  .book-art {
+    position: relative;
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--kit-muted);
+    container: book-cover / inline-size;
+  }
+  .book-art img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .book-identity {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px;
+  }
+  .book-identity .book-title-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: visible;
+    white-space: normal;
+  }
+  .book-title-line > strong {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+  .book-identity strong {
+    overflow: hidden;
+    color: var(--kit-foreground);
+    font: 600 14px / 1.4 var(--kit-font);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .book-identity > span {
+    overflow: hidden;
+    color: var(--kit-muted-foreground);
+    font: 400 11px / 1.45 var(--kit-font);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .book-view-covers .book-card .book-identity {
+    overflow: hidden;
+    background: var(--kit-card);
+  }
+  .book-cover-fallback {
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    height: 100%;
+    padding: 16px;
+    color: var(--kit-muted-foreground);
+    font-size: 13px;
+    text-align: center;
+  }
+  .book-cover-fallback strong {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  @container book-cover (max-width: 80px) {
+    .book-cover-fallback {
+      padding: 4px;
+      gap: 0;
+      font-size: 11px;
+    }
+    .book-cover-fallback strong {
+      display: none;
+    }
+  }
+  .book-favorite.ui-kit-button {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    isolation: isolate;
+  }
+  .book-favorite::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    z-index: -1;
+    border: 1px solid color-mix(in srgb, var(--kit-border) 65%, transparent);
+    border-radius: 50%;
+    background: var(--kit-card);
+  }
+  .book-favorite.ui-kit-button:hover::before {
+    background: var(--kit-accent);
+  }
+  .book-favorite[aria-pressed="true"] svg {
+    fill: currentColor;
+  }
+  .book-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 240px;
+    border: 1px dashed var(--kit-border);
+    border-radius: 8px;
+    background: var(--kit-muted);
+    color: var(--kit-muted-foreground);
+  }
+  .book-grid[data-empty="true"] {
+    display: block;
+  }
+  .book-grid > .book-empty {
+    position: sticky;
+    top: calc(var(--site-header-height, 61px) + 12px);
+  }
+  .book-empty > svg {
+    width: 24px;
+    height: 24px;
+  }
+  .book-empty h3 {
+    margin: 0;
+    color: var(--kit-foreground);
+    font: 500 14px / 1.5 var(--kit-font);
+  }
+  .book-view-list .book-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 20px;
+  }
+  .book-view-list .book-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
+    overflow: visible;
+    border: 0;
+    border-bottom: 1px solid var(--kit-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .book-view-list .book-card:hover {
+    background: var(--kit-muted);
+  }
+  .book-view-list .book-game-link {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-height: 89px;
+    padding: 12px 0;
+  }
+  .book-view-list .book-game-link .book-art {
+    width: 56px;
+    height: 56px;
+    border-radius: 5px;
+    aspect-ratio: 1;
+  }
+  .book-view-list .book-game-link .book-identity {
+    gap: 3px;
+    padding: 0;
+  }
+  .book-view-list .book-identity strong {
+    font-size: 13px;
+  }
+  .book-view-list .book-favorite.ui-kit-button {
+    position: static;
+  }
+  .book-view-list .book-favorite::before {
+    display: none;
+  }
+  html[data-ui-home] .site-footer {
+    margin-top: 32px;
+    padding: 22px 0 24px;
+    border-top: 1px solid var(--kit-border);
+  }
+  html[data-ui-home] .server-status-note {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    min-height: 0;
+    max-width: 1216px;
+    margin: 0 auto;
+    padding: 0 32px 20px;
+    background: transparent;
+    color: var(--kit-muted-foreground);
+    font: 400 11px / 1.6 var(--kit-font);
+    text-align: right;
+  }
 
-@container(max-width:720px) {.book-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@container(max-width:560px) {.book-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}.book-view-list .book-grid{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:780px) {
-  html[data-ui-home] .book-library {display:block;padding:20px 16px 0}
-  .book-sidebar {position:static;margin-bottom:20px}
-  .book-search {height:44px;margin-bottom:14px}
-  .book-search .ui-kit-button {margin-right:-8px}
-  .book-sidebar nav {display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-  .book-sidebar nav small {display:none}
-  .book-sidebar nav [data-book-category='windows'] {margin-top:0}
-  .book-recent {margin-bottom:26px}
-  .book-recent-games article {flex-basis:205px}
-  .book-current h2 {font-size:20px}
-  .book-view-header {align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:16px}
-  .book-tools {width:100%;justify-content:space-between;gap:10px}
-  .book-view-switch {min-height:48px;padding:2px;border:0}
-  .book-sort {min-height:48px;min-width:140px}
-  .book-identity {gap:5px;padding:12px 10px}
-  .book-identity strong {font-size:13px}
-  html[data-ui-home] .site-footer {margin-top:26px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
-}
-@media(min-width:781px) and (pointer:coarse) {.book-sort{min-height:44px}}
+  @container (max-width: 720px) {
+    .book-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @container (max-width: 560px) {
+    .book-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 12px;
+    }
+    .book-view-list .book-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 780px) {
+    html[data-ui-home] .book-library {
+      display: block;
+      padding: 16px 16px 0;
+    }
+    .book-sidebar {
+      position: static;
+      margin-bottom: 12px;
+    }
+    .book-search {
+      height: 44px;
+      margin-bottom: 8px;
+    }
+    .book-search .ui-kit-button {
+      margin-right: -8px;
+    }
+    .book-sidebar nav {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .book-sidebar nav small {
+      display: none;
+    }
+    .book-sidebar nav [data-state="on"] small {
+      display: inline;
+    }
+    .book-sidebar nav [data-book-category="windows"] {
+      margin-top: 0;
+    }
+    .book-recent {
+      margin-bottom: 26px;
+    }
+    .book-recent-games article {
+      flex-basis: 205px;
+    }
+    .book-current h2 {
+      font-size: 20px;
+    }
+    .book-view-header {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0;
+      margin-bottom: 12px;
+    }
+    .book-view-header .book-current {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .book-tools {
+      width: 100%;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .book-view-switch {
+      min-height: 44px;
+      padding: 2px;
+      border: 0;
+    }
+    .book-sort {
+      min-height: 44px;
+      min-width: 140px;
+    }
+    .book-identity {
+      gap: 5px;
+      padding: 12px 10px;
+    }
+    .book-identity strong {
+      font-size: 13px;
+    }
+    html[data-ui-home] .site-footer {
+      margin-top: 26px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+  }
+  @media (min-width: 781px) and (pointer: coarse) {
+    .book-sort {
+      min-height: 44px;
+    }
+  }
 }
