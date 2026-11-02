@@ -753,7 +753,7 @@ void CStage::Draw()
  // while player shots, bullets and lasers remain in front of the indicator.
  if(practice::Options().ringBar)DrawBossRings();
 
-	if(Cooperative())DrawPlayers(1);else {m_pCharaBullet->Draw();m_pChara->Draw();}
+	if(Cooperative()){DrawPlayers(1);DrawPlayers(2);}else {m_pCharaBullet->Draw();m_pChara->Draw();}
 	if (m_pBoss)
 		m_pBoss->DrawSpecialBullet();
 	m_pLaser->Draw();
@@ -763,7 +763,7 @@ void CStage::Draw()
 	m_pPopupNumber->Draw();
 	m_pEnemyBullet->Draw();
 	m_pCircle->Draw();
-	if(Cooperative())DrawPlayers(2);else m_pChara->DrawCollisionArea();
+	if(Cooperative())DrawPlayers(3);else m_pChara->DrawCollisionArea();
 	m_pTextOverlay->Draw();
 	m_pDialogue->Draw();
 

@@ -133,7 +133,11 @@ void CStage::GrazePlayers(float x,float y,unsigned char& mask){
 }
 void CStage::ProtectPlayers(int time){
  if(!Cooperative()){m_pChara->m_invulnerableTimeLeft=time;return;}
- for(int i=0;i<m_seatCount;i++)m_seats[i].player->m_invulnerableTimeLeft=time;
+ for(int i=0;i<m_seatCount;i++){
+  auto& seat=m_seats[i];if(seat.stock.ghost||seat.stock.offline)continue;
+  seat.player->m_invulnerableTimeLeft=std::max(seat.player->m_invulnerableTimeLeft,time);
+  seat.player->m_bMiss=false;
+ }
 }
 void CStage::DisablePlayerBombs(){
  if(!Cooperative()){m_pChara->m_bBombDisabled=true;return;}
@@ -289,8 +293,8 @@ void CStage::DrawPlayers(int layer){
  if(layer==0){if(m_bInCharaBomb){BindSeat(m_bombOwner);m_pChara->DrawBomb();}BindSeat(saved);return;}
  if(layer==1){
   for(int i=0;i<m_seatCount;i++){BindSeat(i);m_pStageRes->m_playerOpacity=PlayerOpacity(i);m_pCharaBullet->Draw();m_pStageRes->m_playerOpacity=1;}
- }else{
-  // All bodies follow bullets/effects; the local player's body is the last body.
+ }else if(layer==2){
+  // Keep the local body above teammates; enemy bullets and lasers follow all bodies.
   for(int i=0;i<m_seatCount;i++)if(m_seats[i].stock.ghost){
    BindSeat(i);m_pStageRes->m_playerOpacity=PlayerOpacity(i);
    m_pStageRes->DrawStageObjectImage(m_pStageRes->m_pCoopGhost,m_pChara->m_curX,m_pChara->m_curY);m_pStageRes->m_playerOpacity=1;
@@ -299,8 +303,9 @@ void CStage::DrawPlayers(int layer){
    const int i=n==m_seatCount-1?coop::Run().local:(n>=coop::Run().local?n+1:n);
    BindSeat(i);if(m_seats[i].stock.ghost)continue;
    m_pStageRes->m_playerOpacity=PlayerOpacity(i);m_pChara->Draw();m_pStageRes->m_playerOpacity=1;
-   if(i==coop::Run().local)m_pChara->DrawCollisionArea();
   }
+ }else{
+  BindSeat(coop::Run().local);if(!m_seats[m_boundSeat].stock.ghost)m_pChara->DrawCollisionArea();
   if(coop::Run().localVisibility){auto* p=m_seats[coop::Run().local].player;m_pStageRes->DrawCircle(p->m_curX,p->m_curY,80,1,1,1,false,.9f);}
  }
  BindSeat(saved);
