@@ -1,6 +1,6 @@
 # 文档总表
 
-共 432 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 433 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -228,6 +228,7 @@
 | 历史记录 | [archive/th05-mp-language-20261102/README.md](../archive/th05-mp-language-20261102/README.md) | TH05 多人语言保持 |
 | 历史记录 | [archive/th05-mp-performance-20261102/README.md](../archive/th05-mp-performance-20261102/README.md) | TH05 多人性能验收 |
 | 历史记录 | [archive/th05-native-eagler-20261101/README.md](../archive/th05-native-eagler-20261101/README.md) | TH05 原生 Eagler 验收 |
+| 历史记录 | [archive/th05-pen-20261102/README.md](../archive/th05-pen-20261102/README.md) | TH05 数位笔输入 |
 | 历史记录 | [archive/th05-render-input-20261101/README.md](../archive/th05-render-input-20261101/README.md) | TH05 渲染、冷启动输入与简体显示 |
 | 历史记录 | [archive/th05-rollback-20261102/README.md](../archive/th05-rollback-20261102/README.md) | TH05 原生多人回滚 |
 | 历史记录 | [archive/th05-room-stock-20261102/README.md](../archive/th05-room-stock-20261102/README.md) | TH05 资源侧栏与房间设置 |
