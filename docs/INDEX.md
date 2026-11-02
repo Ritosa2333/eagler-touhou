@@ -1,6 +1,6 @@
 # 文档总表
 
-共 437 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 438 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -226,6 +226,7 @@
 | 历史记录 | [archive/th05-dialogue-20261102/README.md](../archive/th05-dialogue-20261102/README.md) | TH05 多人对话与切面同步 |
 | 历史记录 | [archive/th05-frame-pacing-20261101/README.md](../archive/th05-frame-pacing-20261101/README.md) | TH05 原生帧调度、关卡背景与低帧率触控 |
 | 历史记录 | [archive/th05-independent-multiplayer-20261101/README.md](../archive/th05-independent-multiplayer-20261101/README.md) | TH05 独立多人版构建与验收 |
+| 历史记录 | [archive/th05-lifecycle-20261102/README.md](../archive/th05-lifecycle-20261102/README.md) | TH05 幽灵过面状态一致性 |
 | 历史记录 | [archive/th05-main-20261102/README.md](../archive/th05-main-20261102/README.md) | TH05 主站接入 |
 | 历史记录 | [archive/th05-mobile-music-room-20261101/README.md](../archive/th05-mobile-music-room-20261101/README.md) | TH05 手机触控、Music Room 与原版音效 |
 | 历史记录 | [archive/th05-mp-language-20261102/README.md](../archive/th05-mp-language-20261102/README.md) | TH05 多人语言保持 |
