@@ -23,7 +23,8 @@ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' |
 export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, roomUsersArtwork, optionsOpen, roomOpen = false, roomDrawer, classicsAssetUrl, onBack, children, ...rail}: LibrarySurfaceProps) {
   const {t} = useLocale();
   const Link = rail.interactive === false ? 'a' : AppLink;
-  const standalone = classicsAssetUrl ? [{...createLibraryProducts(['th05'], classicsAssetUrl, () => classicsAssetUrl('th05'))[0]!, id: 'th05-standalone', title: t('game.th05Legacy'), multiplayer: true, external: true as const}] : [];
+  const th05AssetUrl=classicsAssetUrl??((path:string)=>roomUsersArtwork.replace(/assets\/room-users\.svg(?:\?.*)?$/,path));
+  const standalone = classicsAssetUrl || rail.products.some(p=>p.id==='th05') ? [{...createLibraryProducts(['th05'], th05AssetUrl, () => th05AssetUrl('th05'))[0]!, id: 'th05-standalone', title: t('game.th05Legacy'), multiplayer: true, external: true as const}] : [];
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
     {masthead}
     <main className={`main library-layout${roomOpen ? ' mp-room-open' : ''}`} id="main">

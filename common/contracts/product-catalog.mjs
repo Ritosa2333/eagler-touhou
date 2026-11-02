@@ -85,7 +85,7 @@ export const PRODUCT_GAMES = Object.freeze({
     // Launcher UI. False keeps unfinished adapters honest; it does not waive
     // the required presentation-cadence acceptance gate.
     th05: Object.freeze({
-        testOnly: true, number: "05", title: "東方怪綺談", subtitle: "Mystic Square", cardArtwork: "th05-card.webp",
+        testOnly: false, number: "05", title: "東方怪綺談", subtitle: "Mystic Square", cardArtwork: "th05-card.webp",
         storage: Object.freeze({saveRoot: "/savesth05", scoreFile: "score.dat", configFiles: Object.freeze(["game.cfg", "thprac-uth05.ini"])}),
         multiplayerRuntime: "./runtime/th05/multiplayer/th05.html",
         multiplayer: Object.freeze({

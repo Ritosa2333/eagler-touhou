@@ -30,7 +30,7 @@ export declare function isHostRuntimeFeatureId(value: string): value is HostRunt
 export declare function languagePriority(id: string): number;
 export declare const PRODUCT_GAMES: Readonly<{
     th05: Readonly<{
-        testOnly: true; number: "05"; title: "東方怪綺談"; subtitle: "Mystic Square"; cardArtwork: "th05-card.webp";
+        testOnly: false; number: "05"; title: "東方怪綺談"; subtitle: "Mystic Square"; cardArtwork: "th05-card.webp";
         storage: Readonly<{saveRoot: "/savesth05"; scoreFile: "score.dat"; configFiles: readonly string[]}>;
         multiplayerRuntime: "./runtime/th05/multiplayer/th05.html";
         multiplayer: Readonly<MultiplayerProductConfig>;
