@@ -18,7 +18,7 @@ namespace th5w { namespace coop {
 namespace {
 Netplay::RollbackCore core;
 Netplay::RollbackJournal journal;
-unsigned nextFrame=0,frontier=0,rollbacks=0,resimulated=0,predicted=0,lastBytes=0;
+unsigned nextFrame=0,frontier=0,rollbacks=0,resimulated=0,predicted=0,lastBytes=0,worldRevision=0;
 bool active=false,audioOpen=false;
 unsigned audioFrame=0;
 struct AudioEvent {int kind,index;double value;std::string name;};
@@ -57,7 +57,11 @@ bool Simulate(){
  if(boundary&&!exact)return false;
  if(!exact){
   if(!journal.BeginFrame(nextFrame))throw std::runtime_error("TH05 rollback history unavailable");
+  // This whole pass only reads world bytes. Batch its large ranges into one
+  // native TypedArray copy before any input or gameplay mutation begins.
+  if(!journal.BeginReadOnlyCapture())throw std::runtime_error("TH05 rollback capture unavailable");
   JournalSink sink;stage->CaptureRollback(sink);
+  if(!journal.EndReadOnlyCapture())throw std::runtime_error("TH05 rollback capture failed");
   if(!journal.EndFrame())throw std::runtime_error("TH05 rollback capture incomplete");
   lastBytes=unsigned(journal.BytesForFrame(nextFrame));
  }
@@ -66,9 +70,10 @@ bool Simulate(){
   const bool absolute=in.analogMode==Netplay::AnalogMode::DirectTouch;
   Run().input[seat]={in.buttons,in.x,in.y,(absolute?2:0)+int(in.unlimited)};
  }
- audioFrame=nextFrame;audio[audioFrame].clear();audioOpen=true;
+ audioFrame=nextFrame;audio.erase(audioFrame);audioOpen=true;
  const int success=th05_tick(0);audioOpen=false;
  if(!success)throw std::runtime_error("TH05 netplay simulation failed");
+ ++worldRevision;
  if(!core.MarkSimulated(nextFrame,decision))throw std::runtime_error("TH05 input decision rejected");
  if(decision.predictedMask)++predicted;
  ++nextFrame;
@@ -86,12 +91,12 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE int th05_net_reset(int delay,int limit){
  using namespace th5w::coop;
  if(delay<0||delay>9||limit<0||limit>8)return 0;
- active=false;audioOpen=false;audio.clear();hashes.clear();nextFrame=frontier=rollbacks=resimulated=predicted=lastBytes=0;
+ active=false;audioOpen=false;audio.clear();hashes.clear();nextFrame=frontier=rollbacks=resimulated=predicted=lastBytes=worldRevision=0;
  Netplay::CoreConfig config;config.playerCount=Run().count;config.localPlayer=Run().local;config.inputDelay=delay;
  config.maxRollbackFrames=limit?limit:8;config.allowPrediction=limit!=0;
  config.predictableButtons=15|32|64;config.directionButtons=15;config.maxDirectionPredictionFrames=2;
  config.directTouchIsAbsolute=true;
- Netplay::RollbackJournalConfig storage;storage.maxFrames=10;storage.maxBytesPerFrame=1024*1024;storage.maxBlocksPerFrame=64;storage.coalesceRestore=true;
+ Netplay::RollbackJournalConfig storage;storage.maxFrames=10;storage.maxBytesPerFrame=1024*1024;storage.maxBlocksPerFrame=64;storage.coalesceRestore=true;storage.fastBulkCopy=true;
  if(!core.Reset(config)||!journal.Reset(storage))return 0;
  for(int frame=0;frame<delay;frame++)for(int seat=0;seat<Run().count;seat++)if(seat!=Run().local)core.SubmitRemoteInput(seat,frame,{});
  active=true;return 1;
@@ -124,7 +129,7 @@ static int Advance(){
 }
 EMSCRIPTEN_KEEPALIVE int th05_net_advance(){try{return Advance();}catch(const std::exception& error){th5w::coop::active=false;th5w::coop::audioOpen=false;th5w::web::ReportError(error.what());return -1;}}
 EMSCRIPTEN_KEEPALIVE int th05_net_confirmed(){using namespace th5w::coop;int through=std::min(Confirmed(),int(nextFrame)-1);if(core.HasRollbackRequest())through=std::min(through,int(core.RollbackFrame())-1);return through;}
-EMSCRIPTEN_KEEPALIVE unsigned th05_net_stat(int field){using namespace th5w::coop;switch(field){case 0:return rollbacks;case 1:return resimulated;case 2:return predicted;case 3:return lastBytes;case 4:return unsigned(journal.FrameCount());case 5:return nextFrame;case 6:return frontier;case 7:return unsigned(audio.size());default:return 0;}}
+EMSCRIPTEN_KEEPALIVE unsigned th05_net_stat(int field){using namespace th5w::coop;switch(field){case 0:return rollbacks;case 1:return resimulated;case 2:return predicted;case 3:return lastBytes;case 4:return unsigned(journal.FrameCount());case 5:return nextFrame;case 6:return frontier;case 7:return unsigned(audio.size());case 8:return worldRevision;default:return 0;}}
 EMSCRIPTEN_KEEPALIVE unsigned th05_net_hash(unsigned frame){using namespace th5w::coop;auto it=hashes.find(frame);return it==hashes.end()?0:it->second;}
 EMSCRIPTEN_KEEPALIVE void th05_net_close(){using namespace th5w::coop;active=false;audioOpen=false;audio.clear();hashes.clear();journal.Clear();core.Clear();}
 }

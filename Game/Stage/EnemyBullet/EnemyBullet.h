@@ -108,6 +108,8 @@ protected:
 	ENEMY_BULLET m_bullets[ENEMY_BULLET_N_RECORD];
 protected:
 	CStage *m_pStage;
+ // Conservative occupied prefixes. Flag 2 stays covered until Step clears it.
+ int m_dotEnd=0,m_imageEnd=ENEMY_BULLET_N_RECORD_DOT;
 public:
 	void Initialize();
 	void Step();
