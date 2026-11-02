@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/22c4f853fc1cb81b8a0c0891b88023f2f5dc065e)；[剩余验收](https://github.com/AdingApkgg/thp/blob/22c4f853fc1cb81b8a0c0891b88023f2f5dc065e/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/8cbc1673b9300bbcb75322a7177acc39ccc581b6)；[剩余验收](https://github.com/AdingApkgg/thp/blob/8cbc1673b9300bbcb75322a7177acc39ccc581b6/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [三面加载RNG时序诊断](https://github.com/AdingApkgg/thp/blob/8cbc1673b9300bbcb75322a7177acc39ccc581b6/docs/porting/TH14_STAGE3_SEED_ORDER_NOV03.md)：旧原版栈与指令确认场景对象索引6，单个VM身份未证；原版RNG轨迹的4／7／11次推进与三个种子相符，但历史跨线程顺序未知。隔离实验假设较早初始化时，36,826回调所选状态、相机／HUD、360战斗检查点和3,834初始发布独立一致，538行VM仍有两处Z字不同；较早时间没有原版证据，严格失败并被新增时间校验拒绝。16份正式回归的原版Initialize时间均通过校验，没有修改正式玩法；全模式、独立调度及整作1:1仍未完成。
 
 2026-11-03 [震屏随机数计数碰撞修复](https://github.com/AdingApkgg/thp/blob/22c4f853fc1cb81b8a0c0891b88023f2f5dc065e/docs/porting/TH14_SHAKE_COUNTER_RESTORE_NOV03.md)：受控交错执行原版worker计数清零指令，480组随机分支的C++对照由旧192个栈字错误降为零；每版本312组效果生命周期独立检查通过。两文件合入、141对象重编，16份自然记录共1,579,705回调严格及独立通过，134项导出一致，四作品12项语法检查通过。交错和输入为合成控制，不证明历史线程总顺序或完整原版worker／控制器读取。旧36,826回调RNG差异仍未关闭；此前完整双后端只绑定2f42560，新核心需重新验收，30／27和整作未完成状态不变。
 
