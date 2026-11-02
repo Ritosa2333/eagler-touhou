@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/ea2ee61313f70ddef18c768ac8222463ccfb4987)；[剩余验收](https://github.com/AdingApkgg/thp/blob/ea2ee61313f70ddef18c768ac8222463ccfb4987/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/b15036269c78e406bca61008ad914c830517e70a)；[剩余验收](https://github.com/AdingApkgg/thp/blob/b15036269c78e406bca61008ad914c830517e70a/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [魔理沙B Lunatic新录像](https://github.com/AdingApkgg/thp/blob/b15036269c78e406bca61008ad914c830517e70a/docs/porting/TH14_MARISAB_LUNATIC_SIX_STAGE_NOV03.md)：静音原版实际81,077回调、一至六面进入结束菜单；核心22c4f85的所选状态／相机／HUD、1,408行VM、1,074战斗检查点和1,873初始发布通过严格、独立及Initialize时间覆盖检查。30组中28组已观察到全部目标关卡入口，魔理沙A Normal和Hard仍缺第六面；源录像EOF未证明，整作1:1未完成。
 
 2026-11-03 [22c4f85核心完整双后端Application](https://github.com/AdingApkgg/thp/blob/ea2ee61313f70ddef18c768ac8222463ccfb4987/docs/porting/TH14_SHAKE_COUNTER_APPLICATION_FULL_NOV03.md)：GLES／WebGPU各实际完成122,622帧、45断言并独立复核，八幅完整图像／捕获VM、所选日志、文件和89,969,664帧离线PCM与封存参考一致，物理音频设备为零。WebGPU首次沙箱内初始化失败记录保留，沙箱外同构建重试通过；不证明整局原版像素／PCM、独立调度或浏览器。
 
