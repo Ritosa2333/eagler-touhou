@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/07d3686e94688d71f64602366af08f6fa5616bc7)；[剩余验收](https://github.com/AdingApkgg/thp/blob/07d3686e94688d71f64602366af08f6fa5616bc7/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/628f1d41b5d27c8298e8fc8e2c2f3ce84145935f)；[剩余验收](https://github.com/AdingApkgg/thp/blob/628f1d41b5d27c8298e8fc8e2c2f3ce84145935f/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [活动关卡初始化覆盖](https://github.com/AdingApkgg/thp/blob/628f1d41b5d27c8298e8fc8e2c2f3ce84145935f/docs/porting/TH14_INITIALIZE_ACTIVE_STAGE_NOV03.md)：新增检查拒绝已推进关卡的原版事件与模型输入同时遗漏；16份旧记录的时间部分通过，其中一份仍因异常未过独立门槛。46份清单记录有45份无报告异常，30组各有无异常记录，28组有无异常的全部目标关卡入口；入口不代表整局通过。
 
 2026-11-03 [原版采集异常门槛](https://github.com/AdingApkgg/thp/blob/07d3686e94688d71f64602366af08f6fa5616bc7/docs/porting/TH14_DEBUG_EXCEPTION_COVERAGE_NOV03.md)：先前16组的所选字段和独立复算结果保持不变；灵梦B Easy报告含12个首次机会异常，新增门槛下15组无异常。新Hard 32,000回调前缀含10个首次机会异常，字段复算相等但不计严格通过。异常成因尚未确定。
 
