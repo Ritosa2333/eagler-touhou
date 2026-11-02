@@ -1,0 +1,41 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "previous": "/var/www/eagler-touhou-test/releases/th05-room-stock-20261102-e15d1e8172dc",
+  "candidate": "/var/www/eagler-touhou-test/releases/th05-performance-20261102-0786b04dee0f",
+  "releaseId": "sha256-bed3cfe7deedc322e29352ebd9b543fc347418b2e77ed4844b19700834ba4333",
+  "buildId": "9483c0ce143f02dfdca7",
+  "generation": "7939a3cee41237fc895d6f034757c7500e4586d2533469093b75e09d0579d5d7",
+  "multiplayerGeneration": "e263c94d16676c1d21736a1cd9fbcc36edec069e0280f69c823e3c99d64d298d",
+  "packageRevision": "c2bdca7b5b842835",
+  "files": 7923,
+  "preserved": 7780,
+  "sourceExceptions": [],
+  "publishedAt": "2026-11-02T01:16:08Z",
+  "nginxBefore": "e373e635293c7076ee129067ae30e51ba72eeff5d65a3d1bebea15c653727ead",
+  "nginxAfter": "e373e635293c7076ee129067ae30e51ba72eeff5d65a3d1bebea15c653727ead",
+  "protected": {
+    "eagler-touhou": {
+      "target": "/var/www/eagler-touhou/releases/mandatory-migration-20261031-01",
+      "deployment": "bb9cdb5261e517b3e604ec798967991ebe575ac5041d13cee90a3a08fff46764"
+    },
+    "eagler-touhou-beta": {
+      "target": "/var/www/eagler-touhou-beta/releases/relay-session-d48252551-20261028",
+      "deployment": "34c5ab9d5ca4b8e9c3921087fae0941af50909334029e60a9ad6b3c45e6e0d46"
+    }
+  },
+  "relay": {
+    "service": "eagler-netplay-test-th05-native-20261101.service",
+    "before": {
+      "netplay-relay.mjs": "6e00cd717512d6b2bcf3d894a1cb31eb472ff3a4d17897576c685900fb85ff57",
+      "nickname-worker.mjs": "e38104eb0b6b958287d7512c09183a199af9dafd2b2670cb05839414213b65e9",
+      "room-probe-policy.mjs": "ef738471b71a71ee33e52078722129a1facb08f5ea59cd15053dfbbc6e031741",
+      "spectator-frame.mjs": "559a5d2fde63c40ca49110eac987671ddd0a9acb1445d29300e89be8fdd0df4d"
+    },
+    "after": {
+      "netplay-relay.mjs": "6e00cd717512d6b2bcf3d894a1cb31eb472ff3a4d17897576c685900fb85ff57",
+      "nickname-worker.mjs": "e38104eb0b6b958287d7512c09183a199af9dafd2b2670cb05839414213b65e9",
+      "room-probe-policy.mjs": "ef738471b71a71ee33e52078722129a1facb08f5ea59cd15053dfbbc6e031741",
+      "spectator-frame.mjs": "559a5d2fde63c40ca49110eac987671ddd0a9acb1445d29300e89be8fdd0df4d"
+    }
+  }
+}
