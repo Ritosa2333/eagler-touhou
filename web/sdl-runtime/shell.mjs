@@ -352,7 +352,12 @@ const initialized = (async () => {
       throw Error('请从 eagler-touhou 启动此运行时');
     }
     const {buffer} = await parent.__eaglerPrepareManagedRuntimeDataV1({game, generation: query.get('gameGeneration'), epoch});
-    if (!(buffer instanceof ArrayBuffer) || buffer.byteLength < 16 || buffer.byteLength > 256 * 1024 * 1024)
+    // The Launcher owns this buffer in the parent realm. Check the native
+    // ArrayBuffer brand instead of comparing its constructor with the iframe's.
+    let byteLength = 0;
+    try { byteLength = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength').get.call(buffer); }
+    catch { /* Non-ArrayBuffer values are invalid package data. */ }
+    if (byteLength < 16 || byteLength > 256 * 1024 * 1024)
       throw Error('游戏资源包无效');
     const view = new DataView(buffer);
     const magic = new TextDecoder().decode(new Uint8Array(buffer, 0, 8));
