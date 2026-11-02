@@ -4,6 +4,7 @@
 #include "../Game/Stage/Stage.h"
 #include "../Game/Stage/Chara/Chara.h"
 #include "../Game/Stage/CharaBullet/CharaBullet.h"
+#include "../Game/Stage/EnemyBullet/EnemyBullet.h"
 #include "../Game/Stage/Laser/Laser.h"
 #include "../Game/Stage/StageResource.h"
 #include "../Game/Stage/Dialogue/Dialogue.h"
@@ -36,6 +37,18 @@ struct PracticeTests {
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
   auto* s=static_cast<CStage*>(game->m_pCurScheme);if(!s->Cooperative()||seat<0||seat>=s->m_seatCount)return 0;
   s->BindSeat(seat);auto* p=s->m_pChara;
+  if(op==32){
+   auto* bullets=s->m_pEnemyBullet;bullets->Initialize();auto& bullet=bullets->m_bullets[ENEMY_BULLET_N_RECORD_DOT];
+   bullet={};bullet.flag=1;bullet.imgIdx=100;bullet.curX=p->m_curX;bullet.curY=p->m_curY;bullets->m_imageEnd=ENEMY_BULLET_N_RECORD_DOT+1;
+   s->SaveSeat();s->BindSeat(0);return 1;
+  }
+  if(op==33){
+   s->BindSeat(0);web::graphics::BeginFrame();if(value)s->DrawPlayers(2);else s->m_pEnemyBullet->Draw();web::graphics::Present();s->SaveSeat();s->BindSeat(0);return 1;
+  }
+  if(op==31){
+   int result=value==0?p->m_invulnerableTimeLeft:value==1?p->m_nextLifeComeTimeLeft:value==2?p->m_bMiss:value==3?p->m_bombInvulnerableTime:value==4?s->m_bInCharaBomb:s->m_bombOwner;
+   s->SaveSeat();s->BindSeat(0);return result;
+  }
   if(op>=27&&op<=29){
    web::graphics::BeginFrame();glDisable(GL_SCISSOR_TEST);glColorMask(1,1,1,1);glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);
    if(op==27)p->DrawCollisionArea();

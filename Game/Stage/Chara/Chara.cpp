@@ -146,7 +146,7 @@ void CChara::DropBomb()
 	m_pStage->m_bInCharaBomb=true;
  m_pStage->m_bombOwner=m_pStage->BoundSeat();
 	m_bombTimer=0;
-	m_invulnerableTimeLeft=m_bombInvulnerableTime;
+	m_pStage->ProtectPlayers(m_bombInvulnerableTime);
 	m_pStage->m_pEnemyBullet->SetClearBulletTimeLeft(m_bombClearEnemyBulletTime);
 	m_pStage->m_bPlaySound[13]=true;
 	m_pStage->m_bInCharaBombForItem=true;
