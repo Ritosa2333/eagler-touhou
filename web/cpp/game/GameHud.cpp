@@ -53,6 +53,7 @@ void GameHud::release_opening_signature() {
     if (opening_signature) animations.retire(opening_signature);
     opening_signature = 0;
     opening_signature_right = 0;
+    opening_signature_frames = 0;
 }
 
 bool GameHud::begin_opening_signature() {
