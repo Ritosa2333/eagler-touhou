@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/e4b6a1464ea497f41f2ada3ab1b4cefa72d58d24)；[剩余验收](https://github.com/AdingApkgg/thp/blob/e4b6a1464ea497f41f2ada3ab1b4cefa72d58d24/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/22c4f853fc1cb81b8a0c0891b88023f2f5dc065e)；[剩余验收](https://github.com/AdingApkgg/thp/blob/22c4f853fc1cb81b8a0c0891b88023f2f5dc065e/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [震屏随机数计数碰撞修复](https://github.com/AdingApkgg/thp/blob/22c4f853fc1cb81b8a0c0891b88023f2f5dc065e/docs/porting/TH14_SHAKE_COUNTER_RESTORE_NOV03.md)：受控交错执行原版worker计数清零指令，480组随机分支的C++对照由旧192个栈字错误降为零；每版本312组效果生命周期独立检查通过。两文件合入、141对象重编，16份自然记录共1,579,705回调严格及独立通过，134项导出一致，四作品12项语法检查通过。交错和输入为合成控制，不证明历史线程总顺序或完整原版worker／控制器读取。旧36,826回调RNG差异仍未关闭；此前完整双后端只绑定2f42560，新核心需重新验收，30／27和整作未完成状态不变。
 
 2026-11-03 [2f42560核心完整双后端Application](https://github.com/AdingApkgg/thp/blob/e4b6a1464ea497f41f2ada3ab1b4cefa72d58d24/docs/porting/TH14_PHASED_SHAKE_STACK_APPLICATION_FULL_NOV02.md)：GLES／WebGPU各实际完成122,622帧、45项断言并独立复核；每后端八幅完整图像／全部捕获VM、所选日志、文件、录像与89,969,664帧离线混音PCM和封存参考一致，物理音频设备打开数为零。该结果绑定此核心，后续修复须重新验收；不代表整局原版像素／PCM、独立调度、普通GUI或浏览器通过。旧36,826回调RNG交错和全模式等仍开放，30／27与整作1:1未完成状态不变。
 
