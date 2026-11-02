@@ -715,7 +715,7 @@ function maybeStartRouteTimer(roomId, runId, room, run) {
 function maybeResolveRoute(roomId, runId, room, run) {
   if (run.route || run.playerCount < 2) return;
   if (run.rtcFailed) {
-    if (!allowGameplayRelayFallback) {
+    if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) {
       failRoute(roomId, runId, run, 'WebRTC connection unavailable');
       return;
     }
@@ -2195,7 +2195,7 @@ server.on('connection', (socket, request) => {
         }
       return;
     }
-    if (!allowGameplayRelayFallback) return;
+    if (!allowGameplayRelayFallback && !roomId.startsWith('th05mp-')) return;
     let requestedPeer = null;
     let forwardedPayload = incoming;
     if (incoming.length >= 2 && incoming[0] === targetedEnvelopeMarker) {

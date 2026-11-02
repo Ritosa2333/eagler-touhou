@@ -285,10 +285,11 @@ try{
         }
       });
       assert.deepEqual(record.errors,[]);
-      // Resource discovery explicitly falls back to the same-origin download
-      // on 404/405 (resource-download.mts). Retain discovery misses as evidence;
+      // Discovery falls back to the same-origin download when unavailable;
+      // the router also returns 503 when no media node has this file yet.
+      // Retain discovery misses as evidence;
       // actual DATA, language, Runtime and artwork responses must still succeed.
-      const discoveryUnavailable=failure=>[404,405].includes(failure.status)&&new URL(failure.url).pathname==='/_eagler/resource-routes';
+      const discoveryUnavailable=failure=>[404,405,503].includes(failure.status)&&new URL(failure.url).pathname==='/_eagler/resource-routes';
       record.discoveryMisses=record.httpErrors.filter(discoveryUnavailable);
       const requiredFailures=record.httpErrors.filter(failure=>!discoveryUnavailable(failure));
       const nonCardFailures=requiredFailures.filter(failure=>!/\/assets\/th\d+-card\.(?:webp|png|jpe?g)$/.test(new URL(failure.url).pathname));
