@@ -117,7 +117,7 @@ bool Session::stageLoaded(){
 }
 bool Session::replayBytes(std::vector<uint8_t>& out,const char* name){
   if(network.Spectator())return replay_.Loaded()&&replay_.Encode(out,name,replay_.Score(),replay_.Completed());
-  return replay_.Encode(out,name,uint32_t(score),(fullGameFlow.status==FullGameStatus::Result||fullGameFlow.status==FullGameStatus::Ending)&&!options.challenge);
+  return replay_.Encode(out,name,uint32_t(score),fullGameFlow.status==FullGameStatus::Result||fullGameFlow.status==FullGameStatus::Ending);
 }
 bool Session::completeSpectator(const uint8_t* bytes,size_t count){
   if(!network.Spectator()||network.Retired())return false;
