@@ -110,6 +110,17 @@ with sync_playwright() as p:
                     assert case['results']['ending'][0] == 6, ('Ending did not reach native results', case['results'])
                     call(pages[0], 'multiplayerSmoke.ticks(20)')
                     assert state(pages[0])['native'][9] >= case['results']['native'][9]+20
+                    # Use physical local Confirm through the real high-score,
+                    # statistics, slot and name-entry screens after retirement.
+                    for _ in range(32):
+                        call(pages[0], "multiplayerSmoke.key('KeyZ',true)")
+                        call(pages[0], 'multiplayerSmoke.ticks(1)')
+                        call(pages[0], "multiplayerSmoke.key('KeyZ',false)")
+                        call(pages[0], 'multiplayerSmoke.ticks(35)')
+                        if call(pages[0], 'multiplayerSmoke.savedReplays()'):
+                            break
+                    case['savedReplays'] = call(pages[0], 'multiplayerSmoke.savedReplays()')
+                    assert case['savedReplays'] and all(row['valid'] for row in case['savedReplays']), ('Native result Replay was not saved', state(pages[0]))
                 assert not report['errors'], report['errors']
                 case['passed'] = True
                 print(f'th08 {players}P ending {ending}: PASS', flush=True)

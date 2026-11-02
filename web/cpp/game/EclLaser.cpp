@@ -22,7 +22,7 @@ bool EclExecutor::configure_laser(EclVm& vm,const EclInstruction& i){
     if(!laser)return true;
     switch(i.opcode){
     case 117:laser->angle=add_angle(laser->angle,real(1));break;
-    case 118:{const float offset=real(1);laser->angle=(bullet_aim_extended(laser->position,globals.player)+number(offset)).to_float();break;}
+    case 118:{const float offset=real(1);laser->angle=(bullet_aim_extended(laser->position,vm.aimed_player())+number(offset)).to_float();break;}
     case 119:
         laser->position.x=(number(real(1))+number(vm.resolved_position.x)).to_float();laser->position.y=(number(real(2))+number(vm.resolved_position.y)).to_float();laser->position.z=(number(real(3))+number(vm.resolved_position.z)).to_float();break;
     case 121:if(laser->in_use&&laser->state<2){laser->state=2;laser->timer.set(0);laser->width=laser->width2;}break;

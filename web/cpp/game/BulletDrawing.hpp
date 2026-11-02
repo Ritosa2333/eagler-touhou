@@ -13,6 +13,10 @@ struct BulletDrawingActions {
     virtual void items()=0;
     virtual void effects()=0;
     virtual void draw(AnmVm& vm)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual bool before_cancel_vm(BulletState&){return true;}
+    virtual bool before_cancel_vms(){return true;}
+#endif
 };
 // Original 00432b50 / 00432f20, including the six linked drawing layers,
 // laser origins and the deathbomb tint shared with the item/effect passes.
@@ -30,7 +34,7 @@ class BulletDrawing {
 public:
     BulletDrawing(BulletManagerState& s,BulletDrawingActions& a):state(s),actions(a){}
     void snapshot();
-    void bullet(BulletState&,const Vec2&,u32 previous_opacity_factor=128,u32 current_opacity_factor=128);
+    bool bullet(BulletState&,const Vec2&,u32 previous_opacity_factor=128,u32 current_opacity_factor=128);
     bool draw(u32 game_flags,const Vec2& arcade);
 };
 }

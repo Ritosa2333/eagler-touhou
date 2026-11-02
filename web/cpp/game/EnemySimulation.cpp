@@ -72,7 +72,13 @@ JobResult EnemySimulation::update(){
         if(enemy->flags&0x400){enemy->refresh_position();enemy->resolved_position.z=0;die=true;}
         else{
             state.active_count=wrapping_add(state.active_count,1);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            // Last Spells may start while P1 is still dead or a spirit.
+            // Any eligible pilot ready to play can advance the shared spell.
+            const bool frozen=((enemy->flags&0x40000000)&&last_spell_waits_for_players(actions))||(enemy->flags2&0x80);
+#else
             const bool frozen=((enemy->flags&0x40000000)&&(input.familiar.bomb||globals.player_state!=0))||(enemy->flags2&0x80);
+#endif
             if(frozen)enemy->lifetime.decrement(1,timing);
             else{
                 if(enemy->flags&0x100)update_enemy_form(*enemy,globals.youkai,actions);
@@ -96,7 +102,12 @@ JobResult EnemySimulation::update(){
 #else
                 const u32 damage_blockers=0x830u;
 #endif
-                if(!(enemy->flags&damage_blockers)&&(!(enemy->flags&0x80000000)||!input.familiar.bomb)){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                const bool bomb_protected=enemy_bomb_protected(*enemy,actions);
+#else
+                const bool bomb_protected=(enemy->flags&0x80000000)&&input.familiar.bomb;
+#endif
+                if(!(enemy->flags&damage_blockers)&&!bomb_protected){
                     if(!contact_enemy_and_trail(*enemy,input.familiar.character,actions)){failed=true;return JobResult::Error;}
                     // ECL may begin/end a spell during this enemy's update.
                     // Damage reduction must observe the current spell flags.

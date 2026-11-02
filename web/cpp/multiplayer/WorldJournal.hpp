@@ -83,7 +83,7 @@ private:
     i32 stage=-1;const void *stdData=nullptr,*quads=nullptr,*msgData=nullptr;
     std::size_t stdSize=0,quadCount=0,msgSize=0;
     EnemyJournal enemies;PoolsJournal pools;ResourcesJournal resources;Netplay::RollbackJournal main;
-    std::vector<Block> blocks;std::deque<Record> records;
+    std::vector<Block> blocks;std::deque<Record> records;std::vector<Record> recycled_records;
 #ifdef TH_MULTIPLAYER_FIXTURES
     std::array<double,5> diagnostic_capture_ms{}; // main, enemy, pools, resources, recording
 #endif

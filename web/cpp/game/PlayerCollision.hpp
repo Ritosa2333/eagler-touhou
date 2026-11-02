@@ -36,6 +36,7 @@ public:
     PlayerCollision(PlayerMovementState& m,PlayerLifeState& l,PlayerLifeContext& c,DamageRegions& r,i32& item,PlayerCollisionActions& a)
         :movement(m),life(l),context(c),regions(r),cancel_item(item),actions(a){}
     i32 barrier(const Vec2& position);
+    bool definitely_misses(const Vec3&,const Vec3& size,bool grazing)const;
     i32 bullet(const Vec3& position,const Vec3& size,bool cancellation=true);
     i32 graze(const Vec3& position,const Vec3& size);
     bool item(const Vec3& position,const Vec3& size)const;

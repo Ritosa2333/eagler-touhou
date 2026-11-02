@@ -30,6 +30,8 @@ npm --prefix launcher run dev:workspace
 
 双人和三人对局按席位消费移动、射击与低速输入，共享菜单和对话沿独立的合并输入推进。`portable/multiplayer/check-admission.py` 在真实原生帧与输入包交接中逐席核对实际消费的按键。
 
+同一房间可由不同 Relay 入口接入。会话 ID 绑定作品、房间和局次，实际连接地址独立选择。Launcher 的 `test:room-title-preload:browser -- th08 0` 在 `ROOM_PREVIEW_MIXED_RELAY=1` 下使用同一 Relay 的两个地址，检查标题预加载、双人开局与相同逻辑帧的世界状态。
+
 通关后的 Ending 与结果界面使用本地 60 Hz 时钟，持续完成更新、绘制和键盘／触控采样。最后一个已确认游戏帧保留为对局历史终点，各玩家独立推进结局与保存录像。
 
 `portable/multiplayer/check-ending-lifecycle.py --url http://127.0.0.1:8140/ --output /absolute/results.json` 使用 `--multiplayer-fixtures` 构建与本作测试服务，检查坏结局、Final A、Final B 和三人结局。夹具从原生最后游戏帧进入 Supervisor 的 Ending 交接，后续使用真实结局脚本、SDL 单帧入口与浏览器动画循环，核对绘制、时间、独立确认、触屏点击和原生结果菜单。私有素材与字体沿用 `portable/multiplayer/serve.mjs` 的环境变量配置。

@@ -14,7 +14,42 @@
 namespace th08 {
 #ifdef TH_MULTIPLAYER_FIXTURES
 namespace {bool diagnostic_projection_reuse=true;}
+namespace {bool diagnostic_native_clip=true;}
 bool fixture_projection_reuse(bool enabled){diagnostic_projection_reuse=enabled;return enabled;}
+void fixture_native_clip(bool enabled)noexcept{diagnostic_native_clip=enabled;}
+#endif
+namespace {
+bool outside_viewport(float min_x,float max_x,float min_y,float max_y,const Viewport& viewport){
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(!diagnostic_native_clip)return number(max_x)<Extended::from_int64(viewport.x)||number(max_y)<Extended::from_int64(viewport.y)||
+        Extended::from_int64(viewport.x+viewport.width)<number(min_x)||Extended::from_int64(viewport.y+viewport.height)<number(min_y);
+#endif
+    // f64 represents every f32 coordinate and u32 viewport edge exactly.
+    // Keep the original u32 addition (including wrap) before conversion.
+    return double(max_x)<double(viewport.x)||double(max_y)<double(viewport.y)||
+        double(viewport.x+viewport.width)<double(min_x)||double(viewport.y+viewport.height)<double(min_y);
+}
+}
+// Compare original Extended bounds with exact f64 comparisons across all
+// arithmetic modes, arbitrary f32 bits, and wrapped u32 viewport edges.
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool fixture_native_clip_probe(){
+    const auto precision=arithmetic_precision();const auto rounding=arithmetic_rounding();const bool enabled=diagnostic_native_clip;
+    struct Restore {Precision p;Rounding r;bool enabled;~Restore(){arithmetic_mode(p,r);diagnostic_native_clip=enabled;}} restore{precision,rounding,enabled};
+    u32 bits=0x10263008u;
+    const auto next=[&](){bits=bits*1664525u+1013904223u;return bits;};
+    const auto random=[&](){const u32 value=next();float f;std::memcpy(&f,&value,4);return f;};
+    for(auto p:{Precision::Single,Precision::Double,Precision::Extended})for(auto r:{Rounding::NearestEven,Rounding::TowardZero,Rounding::Down,Rounding::Up}){
+        arithmetic_mode(p,r);
+        for(u32 n=0;n<4096;++n){
+            Viewport viewport;viewport.x=next();viewport.y=next();viewport.width=next();viewport.height=next();
+            const float min_x=random(),max_x=random(),min_y=random(),max_y=random();
+            diagnostic_native_clip=false;const bool reference=outside_viewport(min_x,max_x,min_y,max_y,viewport);
+            diagnostic_native_clip=true;if(outside_viewport(min_x,max_x,min_y,max_y,viewport)!=reference)return false;
+        }
+    }
+    return true;
+}
 #endif
 AnmRenderer::AnmRenderer(SpriteBackend& output) : backend(output) {
     pending.reserve(6 * 4096);
@@ -229,7 +264,12 @@ i32 AnmRenderer::draw_inner(AnmVm& vm, u32 flags) {
     if (flags & 1) {
         // Preserve subpixel motion for all sprites while retaining the original
         // half-pixel raster convention and the current quad's depth.
-        const auto raster_position = [](float value) { return (number(value) - number(.5f)).to_float(); };
+        const auto raster_position = [](float value) {
+#ifdef TH_MULTIPLAYER_FIXTURES
+            if(!diagnostic_native_clip)return (number(value)-number(.5f)).to_float();
+#endif
+            return Scalar::sub(value,.5f);
+        };
         quad[0].pos.x = quad[2].pos.x = raster_position(quad[0].pos.x);
         quad[1].pos.x = quad[3].pos.x = raster_position(quad[1].pos.x);
         quad[0].pos.y = quad[1].pos.y = raster_position(quad[0].pos.y);
@@ -246,9 +286,7 @@ i32 AnmRenderer::draw_inner(AnmVm& vm, u32 flags) {
         max_x = std::max(quad[i].pos.x, max_x); min_x = std::min(quad[i].pos.x, min_x);
         max_y = std::max(quad[i].pos.y, max_y); min_y = std::min(quad[i].pos.y, min_y);
     }
-    if (number(max_x) < Extended::from_int64(viewport.x) || number(max_y) < Extended::from_int64(viewport.y) ||
-        Extended::from_int64(viewport.x + viewport.width) < number(min_x) ||
-        Extended::from_int64(viewport.y + viewport.height) < number(min_y)) return 0;
+    if(outside_viewport(min_x,max_x,min_y,max_y,viewport))return 0;
     if (current_texture != sprite.texture) {
         current_texture = sprite.texture;
         flush();

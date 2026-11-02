@@ -236,6 +236,7 @@ void shutdown(){
 void process_event(const SDL_Event& event){if(!initialized)return;if(event.type==SDL_EVENT_MOUSE_MOTION){if(event.motion.which==SDL_TOUCH_MOUSEID||event.motion.which==SDL_PEN_MOUSEID)return;desktop_pointer=true;mouse(0,event.motion.x,event.motion.y);}else if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN||event.type==SDL_EVENT_MOUSE_BUTTON_UP){if(event.button.which==SDL_TOUCH_MOUSEID||event.button.which==SDL_PEN_MOUSEID)return;desktop_pointer=true;if(event.button.button==SDL_BUTTON_LEFT)mouse(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN?1:2,event.button.x,event.button.y);}else if(event.type==SDL_EVENT_MOUSE_WHEEL){ImGui::GetIO().MouseWheel+=event.wheel.y;ImGui::GetIO().MouseWheelH+=event.wheel.x;}}
 void mouse(int type,float x,float y){mouse_x=x;mouse_y=y;if(type==1||type==2){const bool down=type==1;if(down!=mouse_down){if(pointer_edges.size()>=64){cancel_pointer();return;}pointer_edges.push_back({down,x,y});mouse_down=down;}}}
 void cancel_pointer(){pointer_edges.clear();mouse_down=pointer_sample_down=false;mouse_x=mouse_y=-FLT_MAX;}
+bool passive_pointer(float x,float y){if(!initialized||captures_game_input())return false;return MobileThprac::passive_pointer(x,y);}
 bool captures_pointer(float x,float y){
  if(!initialized)return false;
  if(ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel))return true;

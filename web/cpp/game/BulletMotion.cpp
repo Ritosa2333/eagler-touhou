@@ -3,8 +3,30 @@
 #include <cmath>
 namespace th08 {
 namespace {
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool interior_view_enabled=true;
+#endif
 void direction(Vec3& vector,float angle,float speed){vector.x=(cosine(angle)*number(speed)).to_float();vector.y=(sine(angle)*number(speed)).to_float();}
 }
+#ifdef TH_MULTIPLAYER_FIXTURES
+void fixture_interior_view(bool enabled)noexcept{interior_view_enabled=enabled;}
+bool fixture_interior_view_probe(){
+    const auto precision=arithmetic_precision();const auto rounding=arithmetic_rounding();const bool enabled=interior_view_enabled;
+    struct Restore {Precision p;Rounding r;bool enabled;~Restore(){arithmetic_mode(p,r);interior_view_enabled=enabled;}} restore{precision,rounding,enabled};
+    u32 bits=0x08002026u;
+    const auto random=[&](){bits=bits*1664525u+1013904223u;float f;std::memcpy(&f,&bits,4);return f;};
+    for(auto p:{Precision::Single,Precision::Double,Precision::Extended})for(auto r:{Rounding::NearestEven,Rounding::TowardZero,Rounding::Down,Rounding::Up}){
+        arithmetic_mode(p,r);
+        for(u32 n=0;n<4096;++n){
+            Vec3 position{random(),random(),0};float width=random(),height=random();
+            if(n&1){position={float(n%385),float(n%449),0};width=float(n%65);height=float(n%33);}
+            interior_view_enabled=false;const bool reference=bullet_in_view(position,width,height);
+            interior_view_enabled=true;if(bullet_in_view(position,width,height)!=reference)return false;
+        }
+    }
+    return true;
+}
+#endif
 Extended bullet_aim_extended(const Vec3& origin,const Vec3& target)noexcept{
     const float x=Scalar::sub(target.x,origin.x),y=Scalar::sub(target.y,origin.y);
     if(x==0&&y==0)return number(1.5707963705062866f);
@@ -12,6 +34,12 @@ Extended bullet_aim_extended(const Vec3& origin,const Vec3& target)noexcept{
 }
 float bullet_aim(const Vec3& origin,const Vec3& target)noexcept{return bullet_aim_extended(origin,target).to_float();}
 bool bullet_in_view(const Vec3& p,float width,float height)noexcept{
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(interior_view_enabled)
+#endif
+    // A nonnegative sprite centered inside the playfield intersects it under
+    // every supported arithmetic mode. Fringe and unusual values stay exact.
+    if(width>=0&&height>=0&&p.x>=0&&p.x<=384&&p.y>=0&&p.y<=448)return true;
     return !(number(width)/number(2)+number(p.x)<number(0))&&!(number(384)<number(p.x)-number(width)/number(2))
         &&!(number(height)/number(2)+number(p.y)<number(0))&&!(number(448)<number(p.y)-number(height)/number(2));
 }
