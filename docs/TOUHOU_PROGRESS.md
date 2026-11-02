@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/4609501b10485a780a6781f33cc38edcb86e7e0f)；[剩余验收](https://github.com/AdingApkgg/thp/blob/4609501b10485a780a6781f33cc38edcb86e7e0f/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/e4b6a1464ea497f41f2ada3ab1b4cefa72d58d24)；[剩余验收](https://github.com/AdingApkgg/thp/blob/e4b6a1464ea497f41f2ada3ab1b4cefa72d58d24/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [2f42560核心完整双后端Application](https://github.com/AdingApkgg/thp/blob/e4b6a1464ea497f41f2ada3ab1b4cefa72d58d24/docs/porting/TH14_PHASED_SHAKE_STACK_APPLICATION_FULL_NOV02.md)：GLES／WebGPU各实际完成122,622帧、45项断言并独立复核；每后端八幅完整图像／全部捕获VM、所选日志、文件、录像与89,969,664帧离线混音PCM和封存参考一致，物理音频设备打开数为零。该结果绑定此核心，后续修复须重新验收；不代表整局原版像素／PCM、独立调度、普通GUI或浏览器通过。旧36,826回调RNG交错和全模式等仍开放，30／27与整作1:1未完成状态不变。
 
 2026-11-02 分阶段震屏修复：[RNG返回值的实际栈来源](https://github.com/AdingApkgg/thp/blob/4609501b10485a780a6781f33cc38edcb86e7e0f/docs/porting/TH14_PHASED_SHAKE_STACK_NOV02.md) 已合入当前核心2f42560。新静音原版魔理沙A Easy在18,115回调处实际观察回调入口、DLL保存EBX、第二次RNG返回及原回调返回，确认复用栈字是最后随机返回值的低16位；不向引擎传入采样值。2,016组原版指令组件中480组随机分支／5,280个C++比较字一致，旧192组未知结果归零，192组相邻位置控制拒绝。三文件合入、141单元重编，16份自然记录共1,579,705回调严格及独立通过，正式Wasm与已测试候选逐字节相同，普通134导出一致；四作品八项编译检查及当前源码组件通过。此原版观察是按计划停止的诊断前缀，不是完整Replay通过。首次控制器写入、退休堆地址、旧RNG交错、指针Z／相机／全模式／普通GUI及浏览器等仍开放，30／27与整作未完成状态不变。
 
