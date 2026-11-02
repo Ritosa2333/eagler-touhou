@@ -49,21 +49,14 @@ void AnmRenderer::flush(){if(vertices.empty())return;graphics.set_layout(VertexL
 void AnmRenderer::invalidate(){flush();bound_texture=~0u;}
 // 视口切换只冲顶点批，不丢纹理缓存：原版 SetViewport（0x45d2f0:30 每帧）
 // 不清精灵侧纹理缓存 mgr+0xb78188（oracle f1-8 tex=None 的缓存语义）。
-// 但「重复设置同一个视口/相机」不得冲批：原生 UP 队列只按纹理/渲染状态
-// 变更冲批（0x467350 line157-162 / 0x4670e0），自机 pass 开头重复选
-// Fullscreen 相机曾把层11 的 5 个弹 quad 与自机 quad 拆成 10+2（原生 12）。
-namespace {
-bool same_viewport(const GraphicsViewport& a,const GraphicsViewport& b)noexcept{
-    return a.x==b.x&&a.y==b.y&&a.width==b.width&&a.height==b.height
-        &&a.near_depth==b.near_depth&&a.far_depth==b.far_depth;
-}
-bool same_camera(const AnmCamera& a,const AnmCamera& b)noexcept{
-    return std::memcmp(a.view.m,b.view.m,sizeof a.view.m)==0
-        &&std::memcmp(a.projection.m,b.projection.m,sizeof a.projection.m)==0;
-}
-}
-void AnmRenderer::set_viewport(const GraphicsViewport& value){if(!same_viewport(viewport,value))flush();viewport=value;graphics.set_viewport(value);}
-void AnmRenderer::set_camera(const AnmCamera& value){if(!same_camera(camera,value))flush();graphics.presentation_camera(false);camera=value;graphics.set_matrix(MatrixKind::View,camera.view);graphics.set_matrix(MatrixKind::Projection,camera.projection);}
+// ⚠ 回退 19551dd1e 的「同值视口/相机跳过 flush」优化：实机（用户浏览器）
+// 与无头双页复现该优化使画面 99% 像素静止（对局逻辑/VM/draw 流/顶点上传
+// 全部活跃，Bisect 到 1d94ea297 构建画面即正常演进）。同值跳过使层间
+// 失去强制 flush 边界，Renderer 批合并把跨层 quad 折叠进错误状态批；
+// 具体失效面待定案，但用户画面恢复优先。原生 0x467350 的批边界语义
+// 需要用不破坏显示的方式重做（对照捕获帧逐层验证后再上）。
+void AnmRenderer::set_viewport(const GraphicsViewport& value){flush();viewport=value;graphics.set_viewport(value);}
+void AnmRenderer::set_camera(const AnmCamera& value){flush();graphics.presentation_camera(false);camera=value;graphics.set_matrix(MatrixKind::View,camera.view);graphics.set_matrix(MatrixKind::Projection,camera.projection);}
 u32 AnmRenderer::tint_color(u32 color)const noexcept{return tint_enabled?multiply_color(color,tint):color;}
 bool AnmRenderer::material(AnmVm& vm,bool textured){
     if(textured){auto* source=vm.sprite_resource?vm.sprite_resource:vm.resource;const auto* sprite=vm.texture_sprite();if(!source||!sprite){error="Animation texture source unavailable: script="+std::to_string(vm.source_script)+" sprite="+std::to_string(vm.visual.sprite)+" mode="+std::to_string(vm.visual.draw_mode())+" flags="+std::to_string(vm.visual.flags)+" resource="+(source&&!source->textures.empty()?source->textures[0].name:"none")+" sprites="+std::to_string(source?source->sprites.size():0);return false;}
