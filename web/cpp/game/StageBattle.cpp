@@ -235,6 +235,12 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
     player_prepared_ = false;
     // 道具/神霊管理器接线（R/E）：game RNG 共享实例 + StageItemHost 注入。
     item_manager.bind_random(sim.random);
+    item_manager.life_changed = [this](i32 stock, i32 pieces) {
+        if (!host_->life_hud(stock, pieces)) error_ = "Item life HUD refresh failed";
+    };
+    item_manager.bombs_changed = [this](i32 stock, i32 pieces) {
+        if (!host_->bomb_hud(stock, pieces)) error_ = "Item bomb HUD refresh failed";
+    };
     item_manager.option_power_changed = [this] {
         rebuild_options_for_power();
         if (option_power_changed && !option_power_changed(*this))
