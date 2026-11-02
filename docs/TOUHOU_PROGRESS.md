@@ -82,7 +82,11 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/55a4a84bddc7e523f7a952aa8ab735c4c06646e5)；[剩余验收](https://github.com/AdingApkgg/thp/blob/55a4a84bddc7e523f7a952aa8ab735c4c06646e5/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/ea2ee61313f70ddef18c768ac8222463ccfb4987)；[剩余验收](https://github.com/AdingApkgg/thp/blob/ea2ee61313f70ddef18c768ac8222463ccfb4987/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [22c4f85核心完整双后端Application](https://github.com/AdingApkgg/thp/blob/ea2ee61313f70ddef18c768ac8222463ccfb4987/docs/porting/TH14_SHAKE_COUNTER_APPLICATION_FULL_NOV03.md)：GLES／WebGPU各实际完成122,622帧、45断言并独立复核，八幅完整图像／捕获VM、所选日志、文件和89,969,664帧离线PCM与封存参考一致，物理音频设备为零。WebGPU首次沙箱内初始化失败记录保留，沙箱外同构建重试通过；不证明整局原版像素／PCM、独立调度或浏览器。
+
+2026-11-03 [魔理沙A Normal新录像](https://github.com/AdingApkgg/thp/blob/ea2ee61313f70ddef18c768ac8222463ccfb4987/docs/porting/TH14_MARISAA_NORMAL_ALTERNATE_NOV03.md)：静音原版实际66,909回调、一至五面进入结束菜单，核心22c4f85的所选状态／相机／HUD、2,867行VM、752战斗检查点及1,748初始发布严格、独立和Initialize时间覆盖通过。第六面和源录像EOF未观察，全部目标关卡入口仍为27，整作1:1未完成。
 
 2026-11-03 [震屏销毁栈来源更正](https://github.com/AdingApkgg/thp/blob/55a4a84bddc7e523f7a952aa8ab735c4c06646e5/docs/porting/TH14_CONTROLLER_SHAKE_THIS_NOV03.md)：新增静音原版36,823回调，23次控制器读取和13,013次栈写入中一次与震屏对象this关联，其值不同于被删回调节点；四组合成对象／节点地址的原版析构和ntdll指令组件复现该关系。此前节点地址的说法不成立；便携堆地址模型仍未实现，未注入采样值，VM Z及严格验收仍开放。
 
