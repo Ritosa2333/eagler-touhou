@@ -1,9 +1,10 @@
+import {uiContractAttributes} from './mounted-dom-environment.mjs';
 import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Independent mounted synthetic-DOM regression. No browser/native top-layer/CSS claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
-import {readFileSync, existsSync} from 'node:fs';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
@@ -23,7 +24,7 @@ const extendPinnedGuideCatalog = source => {
   assert.equal(source.split(anchor).length, 2, 'pinned guide has one TH08 catalog entry');
   return source.replace(anchor, anchor + th09CatalogEntry);
 };
-let env, React, createRoot, owners, changedMotionOwners, baselineHTML, current = null;
+let env, React, createRoot, owners, baselineHTML, current = null;
 const alive = new Set();
 const originalSetTimeout = globalThis.setTimeout, originalClearTimeout = globalThis.clearTimeout;
 let reduce = true, clock, motions = [];
@@ -32,13 +33,8 @@ before(async () => {
   env.window.HTMLElement.prototype.scrollIntoView = function () {};
   env.window.AnimationEvent = class extends env.window.Event {}; // React event capability detection, synthetic only
   globalThis.matchMedia = env.window.matchMedia = query => ({matches: reduce, media:query, addEventListener(){}, removeEventListener(){}});
-  env.window.HTMLDialogElement.prototype.animate = function (keyframes, options) {
-    const done=deferred(), record={node:this,keyframes,options,cancelled:false,settled:false,
-      finished:done.promise,
-      finish(){if(!this.settled){this.settled=true;done.resolve();}},
-      cancel(){this.cancelled=true;if(!this.settled){this.settled=true;done.reject(new env.window.DOMException('Cancelled','AbortError'));}}};
-    motions.push(record);return record;
-  };
+  const {installNativeTimeline} = await import('./native-animation-environment.mjs');
+  installNativeTimeline(env.window, motions);
   React = await import(pathToFileURL(require.resolve('react')));
   ({createRoot} = await import(pathToFileURL(require.resolve('react-dom/client'))));
   baselineHTML = pinned('public/index.html');
@@ -66,27 +62,16 @@ before(async () => {
       resolveDir:resolve(project,'src/launcher'),loader:'ts'
     }));
   }},{name:'existing-deps-and-original-mts',setup(ctx){
-    ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));
+    ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));
     ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});
   }}]};
   await build(buildOptions);
   owners = await import(pathToFileURL(resolve(buildDirectory,'actual-bundle.mjs')));
-  // An isolated in-memory edit of the one production motion source proves
-  // consumers inherit actual behavior, rather than merely sharing JSX names.
-  let replacements=0;
-  await build({...buildOptions,outfile:resolve(buildDirectory,'changed-motion.mjs'),plugins:[{name:'shared-motion-proof',setup(ctx){
-    ctx.onLoad({filter:/[/\\]informational-dialog-motion\.ts$/},args=>{
-      const source=readFileSync(args.path,'utf8');assert.equal(source.split('duration: 180').length,2);replacements++;
-      return {contents:source.replace('duration: 180','duration: 90'),loader:'tsx',resolveDir:dirname(args.path)};
-    });
-  }},...buildOptions.plugins]});
-  assert.equal(replacements,1);
-  changedMotionOwners=await import(pathToFileURL(resolve(buildDirectory,'changed-motion.mjs')));
 });
 afterEach(async () => {
   globalThis.setTimeout = originalSetTimeout; globalThis.clearTimeout = originalClearTimeout; clock = null;
   for(const m of alive) await React.act(async()=>m.root.unmount());
-  alive.clear(); motions=[]; current=null; env.document.body.replaceChildren(); reduce=true;
+  alive.clear(); motions.length=0; current=null; env.document.body.replaceChildren(); reduce=true;
   assert.deepEqual(env.errors.splice(0),[], 'No React/DOM errors');
 });
 after(async () => {
@@ -95,6 +80,12 @@ after(async () => {
   }
 });
 function n(selector, scope=env.document){const v=scope.querySelector(selector);assert.ok(v,`missing ${selector}`);return v;}
+// Compare authored markup independently of the component's new disclosure defaults.
+function guideSourceMarkup(scope=env.document) {
+  const copy=n('#mpGuideContent',scope).cloneNode(true);
+  for(const details of copy.querySelectorAll('details')) details.removeAttribute('open');
+  return copy.innerHTML;
+}
 function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
 const response = (text, status=200)=>({ok:status>=200&&status<300,status,text:async()=>text});
 const flush = ()=>React.act(async()=>{await Promise.resolve();await Promise.resolve();});
@@ -109,11 +100,11 @@ async function mount(Component, initial={}, {strict=false,locale='zh-CN',parent=
   alive.add(m);current=m;await render();return m;
 }
 function fakeClock(){let now=0,serial=0;const timers=new Map();globalThis.setTimeout=(fn,delay)=>{timers.set(++serial,{at:now+delay,fn});return serial;};globalThis.clearTimeout=id=>timers.delete(id);clock={timers,async advance(ms){now+=ms;await React.act(async()=>{for(const [id,t] of [...timers])if(t.at<=now){timers.delete(id);t.fn();}});}};return clock;}
-function activeMotion(dialog){const motion=motions.findLast(item=>item.node===dialog&&!item.cancelled&&!item.settled);assert.ok(motion,'active native motion');return motion;}
-async function finishMotion(dialog){const motion=activeMotion(dialog);await React.act(async()=>motion.finish());}
+function activeMotion(dialog){const motion=motions.findLast(item=>item.node===dialog&&!item.cancelled&&!item.settled&&item.keyframes.opacity);assert.ok(motion,'active native motion');return motion;}
+async function finishMotion(dialog){activeMotion(dialog);await React.act(async()=>{for(const motion of motions.filter(item=>item.node===dialog&&!item.cancelled&&!item.settled))motion.finish();});}
 async function click(selector){await React.act(async()=>n(selector).click());}
 async function cancel(selector){const e=new env.window.Event('cancel',{cancelable:true});await React.act(async()=>n(selector).dispatchEvent(e));assert.equal(e.defaultPrevented,true);}
-function normalize(element){if(element.nodeType===3)return element.textContent.replace(/\s+/g,' ').trim()||null;if(element.nodeType!==1)return null;const attrs=[...element.attributes].filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [element.localName,attrs,[...element.childNodes].map(normalize).filter(Boolean)];}
+function normalize(element){if(element.nodeType===3)return element.textContent.replace(/\s+/g,' ').trim()||null;if(element.nodeType!==1)return null;const attrs=uiContractAttributes(element).filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [element.localName,attrs,[...element.childNodes].map(normalize).filter(Boolean)];}
 function baselineDialog(id,locale='zh-CN'){const doc=new env.window.DOMParser().parseFromString(baselineHTML,'text/html'),el=n('#'+id,doc);for(const e of el.querySelectorAll('[data-i18n]'))e.textContent=owners.translate(locale,e.dataset.i18n);for(const e of el.querySelectorAll('[data-i18n-aria-label]'))e.setAttribute('aria-label',owners.translate(locale,e.getAttribute('data-i18n-aria-label')));return el;}
 const html='<h2>通用规则</h2><h3>网络</h3><p class="markdown-blockquote unsafe" onclick="bad()">Safe <a href="javascript:alert(1)">bad link</a><a href="/safe" target="_blank">safe link</a></p><script>window.bad=1</script><svg onload="bad()"><text>badsvg</text></svg><img src="data:bad"><img src="/safe.png" onerror="bad()"><h2>TH06 红魔乡</h2><h3>本作特有规则</h3><h4>Six</h4><p>TH06 rules</p><h2>TH07 妖妖梦</h2><h3>本作特有规则</h3><p>TH07 rules</p><h2>TH08 永夜抄</h2><h3>规则</h3><h4>Sub</h4><p>TH08 rules</p>';
 const firstDefaults=()=>({onOpenRequest(){},edgeGestures:false,storage:storage(),fetchImpl:async()=>response('<p>Notice</p>')});
@@ -138,7 +129,27 @@ for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotic
     // original structure, ID, accessible name, body class and copy assertion.
     actual.className=legacyRoot; actual.firstElementChild.className=legacyWindow; actual.removeAttribute('style');
   }
-  assert.deepEqual(normalize(actual),normalize(baselineDialog(id,locale)));
+  const reference=baselineDialog(id,locale);
+  if(name==='DonationDialog'){
+    reference.querySelector('#donationTitle').textContent=owners.translate(locale,'donation.title');
+    reference.querySelector('#donationClose').setAttribute('aria-label',owners.translate(locale,'donation.close'));
+    reference.querySelector('.donation-scan-hint').textContent=owners.translate(locale,'donation.scan');
+    reference.querySelector('#donationImage').setAttribute('alt',owners.translate(locale,'donation.image'));
+  }
+
+  if(name==='AppleRefreshDialog'){
+    assert.equal(actual.querySelector('.apple-refresh-faq').localName,'section','the labelled FAQ uses a native region');
+    const prior=reference.querySelector('.apple-refresh-faq'), region=reference.ownerDocument.createElement('section');
+    for(const {name,value} of prior.attributes) region.setAttribute(name,value);
+    region.append(...prior.childNodes); prior.replaceWith(region);
+  }
+  if(name==='FirstUseNotice'){
+    const close=actual.querySelector('#firstUseNoticeCloseHint');
+    assert.equal(close.textContent,owners.translate(locale,'action.close'));
+    assert.equal(close.getAttribute('aria-label'),owners.translate(locale,'firstUseNotice.close'));
+    actual.querySelector('footer').remove();reference.querySelector('footer').remove();
+  }
+  assert.deepEqual(normalize(actual),normalize(reference));
 });
 test('First use: original fetch options/sanitizer/cache with intentional concurrent dedup',async()=>{const pending=deferred(),ref=React.createRef(),calls=[];await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:(...args)=>{calls.push(args);return pending.promise;}});const p=ref.current.load(),p2=ref.current.load();assert.equal(calls.length,1);pending.resolve(response(html));await flush();assert.equal((await p).kind,'available');assert.equal((await p2).kind,'available');assert.deepEqual(calls,[['content/FIRST_USE_NOTICE.html',{cache:'no-store'}]]);const expected=env.document.createElement('div');owners.renderContentFragment(expected,html,env.document);assert.equal(n('#firstUseNoticeText').innerHTML,expected.innerHTML);await ref.current.load();assert.equal(calls.length,1);assert.equal(n('#firstUseNoticeDialog').open,false);});
 test('First use: auto available opens once and records current seen marker',async()=>{const ref=React.createRef(),store=storage();let opens=0;const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:store,onOpenRequest:()=>{opens++;}});await React.act(async()=>assert.equal(await ref.current.maybeShowAutomatically(),true));assert.equal(opens,1);assert.equal(store.getItem(owners.FIRST_USE_NOTICE_SEEN_STORAGE_KEY),'1');assert.equal(await ref.current.maybeShowAutomatically(),false);assert.equal(opens,1);await m.update({open:true});assert.equal(ref.current.isOpen(),true);});
@@ -147,13 +158,19 @@ for(const kind of ['empty','error'])test(`First use: ${kind} suppresses auto, ma
 test('First use: transient failure retries and succeeds; storage denial does not block',async()=>{const ref=React.createRef();let calls=0,opens=0;await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:{getItem(){throw Error('denied');},setItem(){throw Error('denied');}},onOpenRequest:()=>opens++,fetchImpl:async()=>{if(++calls===1)throw Error('offline');return response('<p>Recovered</p>');}});assert.equal(await ref.current.maybeShowAutomatically(),false);assert.equal(await ref.current.maybeShowAutomatically(),true);assert.equal(opens,1);assert.equal(calls,2);assert.equal(n('#firstUseNoticeText').textContent,'Recovered');});
 test('First use: unmounted pending manual cannot open or mark seen',async()=>{const d=deferred(),ref=React.createRef(),store=storage();let opens=0;const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,storage:store,onOpenRequest:()=>opens++,fetchImpl:()=>d.promise});const p=ref.current.showManual();await m.unmount();d.resolve(response('<p>Late</p>'));assert.equal((await p).kind,'error');assert.equal(opens,0);assert.equal(store.writes.length,0);});
 test('First use: StrictMode open fetches reject stale result and retain latest content',async()=>{const ds=[],ref=React.createRef(),store=storage();await mount(owners.FirstUseNotice,{...firstDefaults(),ref,open:true,storage:store,fetchImpl:()=>{const d=deferred();ds.push(d);return d.promise;}},{strict:true});assert.equal(ds.length,2);ds[1].resolve(response('<p>Current</p>'));await flush();ds[0].resolve(response('<p>Stale</p>'));await flush();assert.equal(n('#firstUseNoticeText').textContent,'Current');assert.equal(n('#firstUseNoticeDialog').open,true);});
-test('Multiplayer: opens before fetch, sanitizer/builder output matches original pinned controller',async()=>{const d=deferred();let calls=[];await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th08',fetchImpl:(...a)=>{calls.push(a);return d.promise;}});assert.equal(n('#mpGuideDialog').open,true);assert.equal(n('#mpGuideContent p').className,'multiplayer-guide-loading');d.resolve(response(html));await flush();assert.deepEqual(calls,[['content/MULTIPLAYER.html']]);const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};const controller=owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(html),getGameId:()=> 'th08'});await controller.show();assert.equal(n('#mpGuideContent').innerHTML,n('#mpGuideContent',baseline.window.document).innerHTML);baseline.window.close();assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th08');});
+test('Multiplayer: opens before fetch, sanitizer/builder output matches original pinned controller',async()=>{const d=deferred();let calls=[];await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th08',fetchImpl:(...a)=>{calls.push(a);return d.promise;}});assert.equal(n('#mpGuideDialog').open,true);assert.equal(n('#mpGuideContent p').className,'multiplayer-guide-loading');d.resolve(response(html));await flush();assert.deepEqual(calls,[['content/MULTIPLAYER.html']]);const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};const controller=owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(html),getGameId:()=> 'th08'});await controller.show();assert.equal(guideSourceMarkup(),guideSourceMarkup(baseline.window.document));baseline.window.close();assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th08');});
 test('Multiplayer: current game changes while pending and on reopening; cache retained',async()=>{const d=deferred();let calls=0;const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th06',fetchImpl:()=>{calls++;return d.promise;}});await m.update({gameId:'th10'});d.resolve(response(html));await flush();assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th10');await m.update({open:false});await m.update({open:true,gameId:'th08'});assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th08');assert.equal(calls,1);});
 test('Multiplayer: errors retry after reopening, empty success is cached',async()=>{let calls=0;const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th07',fetchImpl:async()=>++calls===1?response('fail',502):response('')});await flush();assert.equal(n('#mpGuideContent p').className,'multiplayer-guide-error');assert.equal(n('#mpGuideContent').textContent,owners.translate('zh-CN','multiplayerGuide.readFailed',{reason:'HTTP 502'}));await m.update({open:false});await m.update({open:true});assert.equal(n('#mpGuideContent').innerHTML,'');await m.update({open:false});await m.update({open:true});assert.equal(calls,2);});
-test('Multiplayer: tabs, keyboard wrap, scroll reset, collapsed disclosures and fallback game',async()=>{await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'unknown',fetchImpl:async()=>response(html)});await flush();assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th07');assert.equal(env.document.querySelectorAll('details[open]').length,0);n('#mpGuideContent').scrollTop=123;await click('[role=tab][data-game=th06]');assert.equal(n('#mpGuideContent').scrollTop,0);const first=n('[role=tab][data-game=th06]');first.focus();const e=new env.window.KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true,cancelable:true});first.dispatchEvent(e);assert.equal(e.defaultPrevented,true);assert.equal(env.document.activeElement,[...env.document.querySelectorAll('[role=tab]')].at(-1));assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th06');assert.equal(n('.multiplayer-rule-panel[data-game=th10] .multiplayer-rule-disclosure-specific').textContent,'本作特有规则无');});
+test('Multiplayer: tabs, keyboard wrap, scroll reset, expanded common rules and fallback game',async()=>{await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'unknown',fetchImpl:async()=>response(html)});await flush();assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th07');assert.equal(env.document.querySelectorAll('details[open]').length,7);n('#mpGuideContent').scrollTop=123;await click('[role=tab][data-game=th06]');assert.equal(n('#mpGuideContent').scrollTop,0);const first=n('[role=tab][data-game=th06]');first.focus();const e=new env.window.KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true,cancelable:true});first.dispatchEvent(e);assert.equal(e.defaultPrevented,true);assert.equal(env.document.activeElement,[...env.document.querySelectorAll('[role=tab]')].at(-1));assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th06');assert.equal(n('.multiplayer-rule-panel[data-game=th10] .multiplayer-rule-disclosure-specific').textContent,'本作特有规则无');});
 test('Multiplayer: StrictMode stale failure cannot overwrite newer success',async()=>{const ds=[];await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th07',fetchImpl:()=>{const d=deferred();ds.push(d);return d.promise;}},{strict:true});assert.equal(ds.length,2);ds[1].resolve(response(html));await flush();ds[0].reject(Error('stale fail'));await flush();assert.ok(n('[data-mp-rule-guide]'));assert.equal(n('#mpGuideDialog').open,true);});
 test('Multiplayer: resolution after unmount does not alter detached content',async()=>{const d=deferred();const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th07',fetchImpl:()=>d.promise});const content=n('#mpGuideContent'),before=content.innerHTML;await m.unmount();d.resolve(response(html));await flush();assert.equal(content.innerHTML,before);});
-test('FirstUseNotice: timed cancel/backdrop/dedupe and native parent preserved',async()=>{reduce=false;let callbacks=0;const m=await mount(owners.FirstUseNotice,{...firstDefaults(),open:true,onCloseRequest:()=>callbacks++},{parent:true});const c=fakeClock(),dialog=n('#firstUseNoticeDialog');await click('#firstUseNoticeDialog article');assert.equal(dialog.classList.contains('closing'),false);await cancel('#firstUseNoticeDialog');await click('#firstUseNoticeDialog');assert.equal(dialog.open,true);assert.equal(c.timers.size,1);await c.advance(219);assert.equal(dialog.open,true);await c.advance(1);assert.equal(dialog.open,false);assert.equal(callbacks,1);assert.equal(m.nativeParent.open,true);});
+test('FirstUseNotice: completion-driven cancel/backdrop/dedupe and native parent preserved',async()=>{
+  reduce=false;let callbacks=0;const m=await mount(owners.FirstUseNotice,{...firstDefaults(),open:true,onCloseRequest:()=>callbacks++},{parent:true});
+  const c=fakeClock(),dialog=n('#firstUseNoticeDialog');await click('#firstUseNoticeDialog article');assert.equal(dialog.classList.contains('closing'),false);
+  await cancel('#firstUseNoticeDialog');await click('#firstUseNoticeDialog');assert.equal(dialog.open,true);assert.equal(c.timers.size,0);
+  await c.advance(10000);assert.equal(dialog.open,true);await finishMotion(dialog);
+  assert.equal(dialog.open,false);assert.equal(callbacks,1);assert.equal(m.nativeParent.open,true);
+});
 for(const [name,id,extra] of [['MultiplayerGuideDialog','mpGuideDialog',()=>({gameId:'th07',fetchImpl:async()=>response(html)})],['AppleRefreshDialog','appleRefreshDialog',()=>({})],['DonationDialog','donationDialog',()=>({assetUrl:x=>x,onArtworkUnavailable(){}})]])test(`${name}: completion-driven cancel/backdrop/dedupe and native parent preserved`,async()=>{
   reduce=false;let callbacks=0;const m=await mount(owners[name],{...extra(),open:true,onCloseRequest:()=>callbacks++},{parent:true});const c=fakeClock(),dialog=n('#'+id);
   await click('#'+id+' article');assert.equal(dialog.classList.contains('closing'),false);
@@ -184,7 +201,7 @@ test('First use: stale StrictMode manual load must not emit an open request',asy
 for(const [name,id,extra,key] of [['FirstUseNotice','firstUseNoticeText',firstDefaults,'firstUseNotice.loading'],['MultiplayerGuideDialog','mpGuideContent',()=>({gameId:'th07'}),'multiplayerGuide.loading']])test(`${name}: initial loading copy follows a live locale change`,async()=>{const m=await mount(owners[name],extra());await m.setLocale('en');assert.equal(n('#'+id).textContent,owners.translate('en',key));});
 test('First use: cached empty manual re-show uses current locale like original',async()=>{const ref=React.createRef();const m=await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(' ')});await ref.current.showManual();await m.setLocale('en');await ref.current.showManual();assert.equal(n('#firstUseNoticeText').textContent,owners.translate('en','firstUseNotice.empty'));});
 test('Authored first-use document: fetched fragment equals pinned main sanitization',async()=>{const authored=pinned('public/content/FIRST_USE_NOTICE.html'),ref=React.createRef();await mount(owners.FirstUseNotice,{...firstDefaults(),ref,fetchImpl:async()=>response(authored)});await ref.current.load();const expected=env.document.createElement('div');owners.renderContentFragment(expected,authored.trim(),env.document);assert.equal(n('#firstUseNoticeText').innerHTML,expected.innerHTML);});
-test('Authored multiplayer document: all seven game renderings equal the pinned controller plus TH09 catalog entry',async()=>{const authored=pinned('public/content/MULTIPLAYER.html');for(const gameId of ['th06','th07','th08','th09','th10','th11','th15']){const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId,fetchImpl:async()=>response(authored)});await flush();const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};await owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(authored),getGameId:()=>gameId}).show();assert.equal(n('#mpGuideContent').innerHTML,n('#mpGuideContent',baseline.window.document).innerHTML,gameId);baseline.window.close();await m.unmount();m.container.remove();}});
+test('Authored multiplayer document: all seven game renderings equal the pinned controller plus TH09 catalog entry',async()=>{const authored=pinned('public/content/MULTIPLAYER.html');for(const gameId of ['th06','th07','th08','th09','th10','th11','th15']){const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId,fetchImpl:async()=>response(authored)});await flush();const baseline=new JSDOM('<!doctype html>'+baselineDialog('mpGuideDialog').outerHTML,{url:'https://launcher.invalid/'});baseline.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};baseline.window.HTMLDialogElement.prototype.close=function(){this.open=false;};baseline.window.HTMLElement.prototype.scrollIntoView=function(){};await owners.createMultiplayerGuideController({documentObj:baseline.window.document,fetchImpl:async()=>response(authored),getGameId:()=>gameId}).show();assert.equal(guideSourceMarkup(),guideSourceMarkup(baseline.window.document),gameId);baseline.window.close();await m.unmount();m.container.remove();}});
 test('Donation: original lobby closes immediately without library exit animation',async()=>{reduce=false;let closes=0;await mount(owners.DonationDialog,{open:true,closeDurationMs:0,assetUrl:x=>x,onArtworkUnavailable(){},onCloseRequest:()=>closes++});const c=fakeClock();await click('#donationClose');assert.equal(n('#donationDialog').open,false);assert.equal(n('#donationDialog').classList.contains('closing'),false);assert.equal(c.timers.size,0);assert.equal(closes,1);});
 
 for (const locale of ['zh-CN', 'en']) test(`First use ${locale}: failed explicit show preserves pinned error until a later explicit retry`, async () => {
@@ -220,7 +237,9 @@ for (const locale of ['zh-CN', 'en']) test(`First use ${locale}: failed explicit
     assert.equal((await original.showManual()).kind, 'available');
     await React.act(async () => {assert.equal((await ref.current.showManual()).kind, 'available');});
     assert.deepEqual(counts, {main: 2, react: 2}, 'A later explicit reopen retries exactly once');
-    assert.equal(n('#firstUseNoticeText').innerHTML, n('#firstUseNoticeText', originalDom.window.document).innerHTML);
+    const expectedContent = env.document.createElement('div');
+    owners.renderContentFragment(expectedContent, owners.translate(locale, 'content.firstUse'), env.document);
+    assert.equal(n('#firstUseNoticeText').innerHTML, expectedContent.innerHTML, 'available authored content follows the selected interface language');
     assert.equal(ref.current.isOpen(), original.isOpen());
   } finally {originalDom.window.close();}
 });
@@ -255,7 +274,8 @@ for(const [name,id,closeId,extra] of [
   await m.update({suspended:false});assert.equal(n('#'+closeId),button);assert.equal(env.document.activeElement,button);assert.equal(article.scrollTop,65);
   await click('#'+closeId);await m.update({open:false});await m.update({open:true});await c.advance(1000);
   assert.equal(dialog.open,true);assert.equal(requests,0);assert.equal(closed,0);
-  await click('#'+closeId);assert.deepEqual(activeMotion(dialog).options,{duration:180,easing:'cubic-bezier(.2,0,0,1)',fill:'both'});
+  await click('#'+closeId);const timing=activeMotion(dialog).options;
+  assert.equal(timing.duration,180);assert.equal(timing.easing,'cubic-bezier(0.2, 0, 0, 1)');assert.equal(timing.fill,'both');
   const event=new env.window.Event('animationend',{bubbles:true});Object.defineProperty(event,'animationName',{value:'replay-window-out'});
   await React.act(async()=>article.dispatchEvent(event));assert.equal(dialog.open,true);await finishMotion(dialog);
   assert.equal(requests,1);assert.equal(closed,1);assert.equal(c.timers.size,0);assert.equal(m.nativeParent.open,true);
@@ -265,21 +285,22 @@ for(const [name,id,closeId,extra] of [
   ['AppleRefreshDialog','appleRefreshDialog','appleRefreshClose',()=>({})],
   ['DonationDialog','donationDialog','donationClose',()=>({assetUrl:x=>x,onArtworkUnavailable(){}})],
   ['MultiplayerGuideDialog','mpGuideDialog','mpGuideClose',()=>({gameId:'th07',fetchImpl:async()=>response(html)})],
-])test(`${name}: changing the single shared motion changes all consumers without a mirrored timer`,async()=>{
-  reduce=false;let closes=0;await mount(changedMotionOwners[name],{...extra(),open:true,onCloseRequest:()=>closes++});
-  const dialog=n('#'+id),c=fakeClock();assert.equal(activeMotion(dialog).options.duration,90);
+])test(`${name}: surface timing tokens control the shared motion without a mirrored timer`,async()=>{
+  reduce=false;let closes=0;await mount(owners[name],{...extra(),open:true,onCloseRequest:()=>closes++});
+  const dialog=n('#'+id),c=fakeClock();assert.equal(activeMotion(dialog).options.duration,180);
+  dialog.style.setProperty('--ui-surface-duration','90ms');
   await click('#'+closeId);assert.equal(activeMotion(dialog).options.duration,90);assert.equal(c.timers.size,0);assert.equal(dialog.classList.contains('closing'),true);
   await c.advance(10000);assert.equal(dialog.open,true);assert.equal(closes,0);
   await finishMotion(dialog);assert.equal(dialog.open,false);assert.equal(closes,1);assert.equal(c.timers.size,0);
 });
 
 for(const mode of ['missing','throws','partial'])test(`Informational motion: ${mode} WAAPI degrades immediately without a timeout`,async()=>{
-  reduce=false;const prototype=env.window.HTMLDialogElement.prototype,original=prototype.animate;let requests=0,closed=0,cancels=0;
+  reduce=false;const prototype=env.window.HTMLDialogElement.prototype,original=prototype.animate;let requests=0,closed=0;const incomplete=[];
   try {
-    prototype.animate=mode==='missing'?undefined:mode==='throws'?()=>{throw new Error('unsupported');}:()=>({cancel(){cancels++;}});
+    prototype.animate=mode==='missing'?undefined:mode==='throws'?()=>{throw new Error('unsupported');}:()=>{const animation={cancelled:false,cancel(){this.cancelled=true;}};incomplete.push(animation);return animation;};
     await mount(owners.AppleRefreshDialog,{open:true,onCloseRequest:()=>requests++,onClosed:()=>closed++});const c=fakeClock();
     await click('#appleRefreshClose');assert.equal(n('#appleRefreshDialog').open,false);assert.equal(requests,1);assert.equal(closed,1);assert.equal(c.timers.size,0);
-    if(mode==='partial')assert.equal(cancels,2,'Both incomplete native animations are released');
+    if(mode==='partial'){assert.ok(incomplete.length);assert.ok(incomplete.every(animation=>animation.cancelled),'Every incomplete native animation is released');}
   }finally{prototype.animate=original;}
 });
 test('Informational motion: already-finished animations settle once and release fill after native close',async()=>{
@@ -287,9 +308,11 @@ test('Informational motion: already-finished animations settle once and release 
   try {
     prototype.animate=function(...args){const animation=original.apply(this,args),cancel=animation.cancel.bind(animation);animation.cancel=()=>{events.push(['cancel',this.open]);cancel();};animation.finish();return animation;};
     await mount(owners.AppleRefreshDialog,{open:true,onCloseRequest:()=>events.push('request'),onClosed:()=>events.push('closed')});
-    assert.equal(n('#appleRefreshDialog').open,true);assert.deepEqual(events,[['cancel',true]]);
+    assert.equal(n('#appleRefreshDialog').open,true);assert.equal(events.includes('request'),false);
     const c=fakeClock();await click('#appleRefreshClose');assert.equal(c.timers.size,0);assert.equal(n('#appleRefreshDialog').open,false);
-    assert.deepEqual(events,[['cancel',true],['cancel',false],'closed','request']);
+    assert.deepEqual(events.filter(event=>typeof event==='string'),['closed','request']);
+    assert.ok(motions.every(animation=>animation.playState==='idle'));
+    assert.equal(n('#appleRefreshDialog').style.opacity,'');
   }finally{prototype.animate=original;}
 });
 test('Informational motion: active animation cancellation settles close, stale completion cannot close a reopened dialog',async()=>{
@@ -302,12 +325,16 @@ test('Informational motion: active animation cancellation settles close, stale c
 });
 test('Informational motion: interruption samples current appearance before cancelling either direction',async()=>{
   reduce=false;const m=await mount(owners.AppleRefreshDialog,{open:true}),dialog=n('#appleRefreshDialog'),original=env.window.getComputedStyle;
-  const entry=activeMotion(dialog);assert.deepEqual(entry.keyframes[0],{opacity:0,transform:'translateY(12px) scale(.98)'});
+  const entry=activeMotion(dialog);assert.deepEqual(entry.keyframes.opacity,['0','1']);
   try {
-    env.window.getComputedStyle=node=>{assert.equal(node,dialog);assert.equal(entry.cancelled,false);return {opacity:'.4',transform:'matrix(.99, 0, 0, .99, 0, 6)'};};
-    await click('#appleRefreshClose');const exit=activeMotion(dialog);assert.equal(entry.cancelled,true);assert.deepEqual(exit.keyframes[0],{opacity:'.4',transform:'matrix(.99, 0, 0, .99, 0, 6)'});
-    env.window.getComputedStyle=node=>{assert.equal(node,dialog);assert.equal(exit.cancelled,false);return {opacity:'.2',transform:'matrix(.98, 0, 0, .98, 0, 10)'};};
-    await m.update({open:false});await m.update({open:true});assert.equal(exit.cancelled,true);assert.deepEqual(activeMotion(dialog).keyframes[0],{opacity:'.2',transform:'matrix(.98, 0, 0, .98, 0, 10)'});
+    const appearance=(opacity,previous)=>node=>new Proxy(original.call(env.window,node),{get(style,name){
+      if(node===dialog&&name==='opacity'){assert.equal(previous.cancelled,false);return opacity;}
+      const value=Reflect.get(style,name);return typeof value==='function'?value.bind(style):value;
+    }});
+    env.window.getComputedStyle=appearance('.4',entry);
+    await click('#appleRefreshClose');const exit=activeMotion(dialog);assert.equal(entry.cancelled,true);assert.deepEqual(exit.keyframes.opacity,['.4','0']);
+    env.window.getComputedStyle=appearance('.2',exit);
+    await m.update({open:false});await m.update({open:true});assert.equal(exit.cancelled,true);assert.deepEqual(activeMotion(dialog).keyframes.opacity,['.2','1']);
   }finally{env.window.getComputedStyle=original;}
 });
 test('Informational motion: reduced preference and less-motion skip native motion; immediate donation close cancels entry',async()=>{
@@ -361,4 +388,26 @@ test('content fetch callbacks retain standalone invocation required by browser f
     ['content/FIRST_USE_NOTICE.html', {cache: 'no-store'}],
     ['content/MULTIPLAYER.html'],
   ]);
+});
+
+test('Multiplayer: changing language preserves selected game, disclosure choices and scroll without refetching', async () => {
+  let calls=0;
+  const source=await readFile(resolve(project,'public/content/MULTIPLAYER.html'),'utf8');
+  const m=await mount(owners.MultiplayerGuideDialog,{open:true,gameId:'th07',fetchImpl:async()=>{calls++;return response(source);}});
+  await flush();
+  await click('[role=tab][data-game=th10]');
+  const active='.multiplayer-rule-panel:not([hidden])';
+  assert.equal(n(active+' .multiplayer-rule-disclosure-common').open,true);
+  n(active+' .multiplayer-rule-disclosure-common').open=false;
+  n(active+' .multiplayer-rule-disclosure-specific').open=true;
+  n('#mpGuideContent').scrollTop=174;
+  for(const locale of ['en','ja']) {
+    await m.setLocale(locale);
+    assert.equal(n('#mpGuideContent').lang,locale);
+    assert.equal(n('[role=tab][aria-selected=true]').dataset.game,'th10');
+    assert.equal(n(active+' .multiplayer-rule-disclosure-common').open,false);
+    assert.equal(n(active+' .multiplayer-rule-disclosure-specific').open,true);
+    assert.equal(n('#mpGuideContent').scrollTop,174);
+  }
+  assert.equal(calls,1);
 });

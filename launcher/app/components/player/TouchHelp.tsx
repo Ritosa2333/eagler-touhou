@@ -1,8 +1,10 @@
-import {useLayoutEffect, useRef} from 'react';
+import {Button as UiButton} from '../../ui/controls';
+import {memo, useLayoutEffect, useRef} from 'react';
 import type {TouchFocusMode} from '../../../src/launcher/game-preferences.mts';
 import {useLocale} from '../../i18n';
 import {useTouchGuidePlayback} from './use-touch-guide-playback';
 import {FightingGuide} from './FightingGuide';
+import './touch-help-ui.css';
 
 export interface TouchHelpProps {
   open: boolean;
@@ -15,7 +17,7 @@ export interface TouchHelpProps {
 /** Original index.html938–1065 and app.mts2216–2225/3674–3782/4816.
  * This hidden Player overlay never adds a native dialog or history entry.
  * Seen gating and game refocus stay with the actual Player session owner. */
-export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp,nativeControls=false}: TouchHelpProps) {
+export const TouchHelp = memo(function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp,nativeControls=false}: TouchHelpProps) {
   const {t} = useLocale(), root = useRef<HTMLDivElement>(null);
   const playback = useTouchGuidePlayback(root, open);
   const close = () => {playback.collapse(); onCloseRequest();};
@@ -24,18 +26,19 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
     player?.classList.toggle('help-visible', open);
     return () => {player?.classList.remove('help-visible');};
   }, [open]);
+  // biome-ignore lint/a11y/useKeyWithClickEvents: Player keyboard ownership and the labelled close button handle dismissal; this handler closes only direct backdrop clicks.
   return <div id="touchHelp" role="dialog" aria-modal="true" aria-labelledby="touchHelpTitle" className={`touch-help${touchEnabled ? ' touch-help-touch-input' : ''}`} hidden={!open} ref={root} onClick={event => {if (event.target === event.currentTarget) close();}}>
       <div className="touch-help-window">
         <header className="touch-help-bar">
           <div className="touch-help-heading"><strong id="touchHelpTitle" data-i18n="help.title">{t("help.title")}</strong><small data-i18n="help.subtitle">{t("help.subtitle")}</small></div>
-          <button id="touchHelpClose" type="button" data-i18n-aria-label="help.close" data-i18n-title="action.close" aria-label={t("help.close")} title={t("action.close")} onClick={close}>
+          <UiButton variant="icon" id="touchHelpClose" type="button" data-i18n-aria-label="help.close" data-i18n-title="action.close" aria-label={t("help.close")} title={t("action.close")} onClick={close}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"></path></svg>
-          </button>
+          </UiButton>
         </header>
         <main className="touch-guide">
           <section className="guide-panels">
             <article className="guide-scene guide-panel orientation-guide help-mobile-only" id="orientationGuideSource" data-guide-panel="orientation">
-              <button className="guide-tab-card" id="guideTabOrientation" type="button" aria-controls="guideOrientation" data-guide-tab="orientation" aria-expanded={playback.active === 'orientation'} onClick={() => playback.toggle('orientation')}><span><strong id="guideOrientationTitle" data-i18n="help.manualLandscape">{t(showIosFullscreenHelp ? 'help.iphoneFullscreen' : 'help.manualLandscape')}</strong><small id="guideOrientationSummary" data-i18n="help.orientationSummary">{t(showIosFullscreenHelp ? 'help.iphoneFullscreenSummary' : 'help.orientationSummary')}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"></path></svg></i></button>
+              <UiButton variant="unstyled" className="guide-tab-card" id="guideTabOrientation" type="button" aria-controls="guideOrientation" data-guide-tab="orientation" aria-expanded={playback.active === 'orientation'} onClick={() => playback.toggle('orientation')}><span><strong id="guideOrientationTitle" data-i18n="help.manualLandscape">{t(showIosFullscreenHelp ? 'help.iphoneFullscreen' : 'help.manualLandscape')}</strong><small id="guideOrientationSummary" data-i18n="help.orientationSummary">{t(showIosFullscreenHelp ? 'help.iphoneFullscreenSummary' : 'help.orientationSummary')}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></i></UiButton>
               <div className="guide-demo-body" id="guideOrientation" hidden={playback.active !== 'orientation'}>
                 <div id="guideOrientationAndroid" hidden={showIosFullscreenHelp}>
                   <div className="orientation-guide-copy">
@@ -59,7 +62,7 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
             </article>
             {nativeControls ? <FightingGuide open={playback.active==='game-controls'} onToggle={()=>playback.toggle('game-controls')}/> : <>
             <article className="guide-scene guide-panel help-desktop-only" data-guide-panel="game-controls">
-              <button className="guide-tab-card" id="guideTabGameControls" type="button" aria-controls="guideGameControls" data-guide-tab="game-controls" aria-expanded={playback.active === 'game-controls'} onClick={() => playback.toggle('game-controls')}><span><strong data-i18n="help.gameControls">{t("help.gameControls")}</strong><small data-i18n="help.gameControlsSummary">{t("help.gameControlsSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"></path></svg></i></button>
+              <UiButton variant="unstyled" className="guide-tab-card" id="guideTabGameControls" type="button" aria-controls="guideGameControls" data-guide-tab="game-controls" aria-expanded={playback.active === 'game-controls'} onClick={() => playback.toggle('game-controls')}><span><strong data-i18n="help.gameControls">{t("help.gameControls")}</strong><small data-i18n="help.gameControlsSummary">{t("help.gameControlsSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></i></UiButton>
               <div className="guide-demo-body" id="guideGameControls" hidden={playback.active !== 'game-controls'}>
                 <div className="guide-info">
                   <p className="guide-info-lead" data-i18n="help.gameControlsIntro">{t("help.gameControlsIntro")}</p>
@@ -76,7 +79,7 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
               </div>
             </article>
             <article className="guide-scene guide-panel menu-demo help-mobile-only" data-guide-panel="menu">
-              <button className="guide-tab-card" id="guideTabMenu" type="button" aria-controls="guideMenu" data-guide-tab="menu" aria-expanded={playback.active === 'menu'} onClick={() => playback.toggle('menu')}><span><strong data-i18n="help.menu">{t("help.menu")}</strong><small data-i18n="help.menuSummary">{t("help.menuSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"></path></svg></i></button>
+              <UiButton variant="unstyled" className="guide-tab-card" id="guideTabMenu" type="button" aria-controls="guideMenu" data-guide-tab="menu" aria-expanded={playback.active === 'menu'} onClick={() => playback.toggle('menu')}><span><strong data-i18n="help.menu">{t("help.menu")}</strong><small data-i18n="help.menuSummary">{t("help.menuSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></i></UiButton>
               <div className="guide-demo-body" id="guideMenu" hidden={playback.active !== 'menu'}>
                 <div className="menu-stage">
                   <div className="menu-question">CONTINUE?</div>
@@ -88,11 +91,11 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
                   <span className="menu-phase phase-select" data-i18n="help.slideConfirm">{t("help.slideConfirm")}</span>
                   <span className="menu-phase phase-back" data-i18n="help.twoFingerBack">{t("help.twoFingerBack")}</span>
                 </div>
-                <button className="guide-replay" type="button" data-i18n="action.replay" onClick={() => playback.play('menu')}>{t("action.replay")}</button>
+                <UiButton className="guide-replay" type="button" data-i18n="action.replay" onClick={() => playback.play('menu')}>{t("action.replay")}</UiButton>
               </div>
             </article>
             <article className="guide-scene guide-panel focus-demo help-mobile-only" data-guide-panel="focus" data-focus-mode={focusMode}>
-              <button className="guide-tab-card" id="guideTabFocus" type="button" aria-controls="guideFocus" data-guide-tab="focus" aria-expanded={playback.active === 'focus'} onClick={() => playback.toggle('focus')}><span><strong data-i18n="help.inGame">{t("help.inGame")}</strong><small id="guideFocusSummary" data-i18n="help.focusSummary">{t(focusMode === 'two-finger' ? 'help.focusTwoFingerSummary' : focusMode === 'toggle-button' ? 'help.focusToggleSummary' : 'help.focusHoldSummary')}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"></path></svg></i></button>
+              <UiButton variant="unstyled" className="guide-tab-card" id="guideTabFocus" type="button" aria-controls="guideFocus" data-guide-tab="focus" aria-expanded={playback.active === 'focus'} onClick={() => playback.toggle('focus')}><span><strong data-i18n="help.inGame">{t("help.inGame")}</strong><small id="guideFocusSummary" data-i18n="help.focusSummary">{t(focusMode === 'two-finger' ? 'help.focusTwoFingerSummary' : focusMode === 'toggle-button' ? 'help.focusToggleSummary' : 'help.focusHoldSummary')}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></i></UiButton>
               <div className="guide-demo-body" id="guideFocus" hidden={playback.active !== 'focus'}>
                 <div className="focus-stage">
                   <span className="shot-stream" aria-hidden="true"></span>
@@ -103,22 +106,22 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
                   <span className="move-trace"></span>
                   <b className="focus-label" id="guideFocusLabel">{t(focusMode === 'two-finger' ? 'help.focusTwoFingerLabel' : focusMode === 'toggle-button' ? 'help.focusToggleLabel' : 'help.holdFocus')}</b>
                 </div>
-                <button className="guide-replay" type="button" data-i18n="action.replay" onClick={() => playback.play('focus')}>{t("action.replay")}</button>
+                <UiButton className="guide-replay" type="button" data-i18n="action.replay" onClick={() => playback.play('focus')}>{t("action.replay")}</UiButton>
               </div>
             </article>
             <article className="guide-scene guide-panel dialogue-demo help-mobile-only" data-guide-panel="dialogue">
-              <button className="guide-tab-card" id="guideTabDialogue" type="button" aria-controls="guideDialogue" data-guide-tab="dialogue" aria-expanded={playback.active === 'dialogue'} onClick={() => playback.toggle('dialogue')}><span><strong data-i18n="help.dialogue">{t("help.dialogue")}</strong><small data-i18n="help.dialogueSummary">{t("help.dialogueSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"></path></svg></i></button>
+              <UiButton variant="unstyled" className="guide-tab-card" id="guideTabDialogue" type="button" aria-controls="guideDialogue" data-guide-tab="dialogue" aria-expanded={playback.active === 'dialogue'} onClick={() => playback.toggle('dialogue')}><span><strong data-i18n="help.dialogue">{t("help.dialogue")}</strong><small data-i18n="help.dialogueSummary">{t("help.dialogueSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></i></UiButton>
               <div className="guide-demo-body" id="guideDialogue" hidden={playback.active !== 'dialogue'}>
                 <div className="dialogue-stage">
                   <div className="dialogue-portrait">?</div>
                   <div className="dialogue-box"><div className="dialogue-ticker"><span data-i18n="help.dialogue1">{t("help.dialogue1")}</span><span data-i18n="help.dialogue2">{t("help.dialogue2")}</span><span data-i18n="help.dialogue3">{t("help.dialogue3")}</span><span data-i18n="help.dialogue4">{t("help.dialogue4")}</span><span data-i18n="help.dialogue1">{t("help.dialogue1")}</span></div></div>
                   <i className="demo-finger dialogue-finger"></i><i className="hold-ring"></i>
                 </div>
-                <button className="guide-replay" type="button" data-i18n="action.replay" onClick={() => playback.play('dialogue')}>{t("action.replay")}</button>
+                <UiButton className="guide-replay" type="button" data-i18n="action.replay" onClick={() => playback.play('dialogue')}>{t("action.replay")}</UiButton>
               </div>
             </article>
             <article className="guide-scene guide-panel" data-guide-panel="thprac">
-              <button className="guide-tab-card" id="guideTabThprac" type="button" aria-controls="guideThprac" data-guide-tab="thprac" aria-expanded={playback.active === 'thprac'} onClick={() => playback.toggle('thprac')}><span><strong>thprac</strong><small data-i18n="help.thpracSummary">{t("help.thpracSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"></path></svg></i></button>
+              <UiButton variant="unstyled" className="guide-tab-card" id="guideTabThprac" type="button" aria-controls="guideThprac" data-guide-tab="thprac" aria-expanded={playback.active === 'thprac'} onClick={() => playback.toggle('thprac')}><span><strong>thprac</strong><small data-i18n="help.thpracSummary">{t("help.thpracSummary")}</small></span><i className="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></i></UiButton>
               <div className="guide-demo-body" id="guideThprac" hidden={playback.active !== 'thprac'}>
                 <div className="guide-info">
                   <p className="guide-info-lead" data-i18n="help.thpracIntro">{t("help.thpracIntro")}</p>
@@ -147,4 +150,4 @@ export function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIo
         </main>
       </div>
     </div>;
-}
+});

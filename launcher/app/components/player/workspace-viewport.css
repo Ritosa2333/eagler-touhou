@@ -1,3 +1,4 @@
+@layer foundation {
 /* Desktop uses the available width/height; stacked layouts follow image height. */
 #player:is(.room-workspace,.replay-workspace) #gameViewport:not(:fullscreen,:-webkit-full-screen){
   flex:1;box-sizing:border-box;min-height:0;min-width:0;width:100%!important;
@@ -10,3 +11,5 @@
 }
 /* Workspace controls own these surfaces; gameplay hit areas stay inactive. */
 #player:is(.room-workspace,.replay-workspace):not(.touch-layout-edit) :is(.touch-hud,.touch-escape,.touch-restart,.touch-joystick,.touch-direct-surface,.touch-layout-safe-zone,.touch-layout-reserved-zone,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu,.touch-utility-row,.touch-help-open){display:none!important}
+
+}

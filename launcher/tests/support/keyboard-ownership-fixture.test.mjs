@@ -1,7 +1,7 @@
 import {readUiHistoryText} from './ui-history.mjs';
 /** Current keyboard fixture wiring only. Synthetic DOM/protocol ports; no
  * candidate Runtime, SDL state, multiplayer or confirmed-hash proof. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {readFile, mkdir, mkdtemp, writeFile, rm} from 'node:fs/promises';

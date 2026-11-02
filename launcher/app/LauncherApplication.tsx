@@ -21,6 +21,7 @@ import type {GameSettingsModel, SettingsContext} from './models/game-settings';
 import type {DecisionStore} from './models/decisions';
 import type {TouchLayoutModel} from './models/touch-layout';
 import {SurfaceNavigationProvider, useSurfaceNavigation} from './navigation/surface-navigation';
+import {useStoreSelector, shallowEqual} from './shared/react-store';
 
 export type LobbyPresentation = Omit<LobbySurfaceProps, 'products' | 'selectedProduct' | 'openedProduct' | 'onSelect' | 'onActivate' | 'children' | 'roomUsersArtwork'>;
 /** One document-lived domain host. Tests may explicitly inject fixture ports;
@@ -76,7 +77,7 @@ export interface LauncherHost {
 /** Actual React entry shared by Framework routes and the mounted regression.
  * It deliberately has no hidden default ports, demo preferences or fake room. */
 export function LauncherApplication({host}: {host: LauncherHost}) {
-  const layout = useSyncExternalStore(host.touchLayout.subscribe, host.touchLayout.getSnapshot, host.touchLayout.getSnapshot);
+  const layout = useStoreSelector(host.touchLayout, value => ({dirty: value.dirty, isEditing: value.isEditing}), shallowEqual);
   return <LocaleProvider locale={host.locale}>
     <SurfaceNavigationProvider dirty={layout.dirty} isEditing={layout.isEditing} onDiscard={host.touchLayout.discard} decisions={host.decisions}
       playerOpen={host.runtimeOpen} requestRuntimeClose={host.requestRuntimeClose} requestRoomLeave={host.requestRoomLeave} requestRoomFullscreenExit={host.requestRoomFullscreenExit} titleOverlayOpen={host.titleOverlayOpen} productAvailable={host.productAvailable} onRouteSelection={host.onRouteSelection}>
@@ -90,7 +91,7 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
   const accountPage = /\/login\.html\/?$/.test(useLocation().pathname);
   const profilePage = /\/profile\.html\/?$/.test(useLocation().pathname);
   const settings = useSyncExternalStore(host.settings.subscribe, host.settings.getSnapshot, host.settings.getSnapshot);
-  const layout = useSyncExternalStore(host.touchLayout.subscribe, host.touchLayout.getSnapshot, host.touchLayout.getSnapshot);
+  const isEditing = useStoreSelector(host.touchLayout, value => value.isEditing);
   const [preview, setPreview] = useState<string | undefined>(navigation.productId ?? host.products[0]?.id);
   const selectedLifetime = useRef<string | null>(settings ? `${navigation.context}:${settings.context.productId}` : null);
   const contextRevision = useRef<number | undefined>(undefined);
@@ -115,20 +116,20 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
       if (!host.onRouteSelection) host.settings.hydrate(context, {resetDisclosure: navigation.context === 'lobby'});
     } else if (settings?.context.uiLocale !== host.locale || contextRevision.current !== host.metadataRevision) host.settings.refreshContext(context);
     contextRevision.current = host.metadataRevision;
-  }, [host, navigation.productId, optionsOpen, roomOpen, settings?.context.uiLocale]);
+  }, [host, navigation.productId, navigation.context, optionsOpen, roomOpen, settings?.context.uiLocale, settings?.context.productId]);
   useEffect(() => {
     // Draft lifetime ends only after Router commits leaving the editor. A
     // cancelled blocker leaves both the surface and draft intact.
-    if (navigation.surface !== 'touch' && layout.isEditing) {
+    if (navigation.surface !== 'touch' && isEditing) {
       host.touchLayout.discard();
       host.settingsActions.feedback(translate(host.locale, 'touch.layoutEditorClosed'));
     }
-  }, [navigation.surface, layout.isEditing, host.touchLayout]);
+  }, [navigation.surface, isEditing, host.touchLayout, host.locale, host.settingsActions.feedback]);
   useLayoutEffect(() => {
     document.body.classList.toggle('lobby-page', navigation.context === 'lobby');
     document.body.classList.toggle('mp-room-active', roomOpen);
     return () => {document.body.classList.remove('lobby-page', 'mp-room-active');};
-  }, [navigation.context, optionsOpen, roomOpen]);
+  }, [navigation.context, roomOpen]);
   const activate = (id: string) => {
     if (!isProductId(id)) return;
     if (navigation.context === 'library' && isMultiplayerProductId(id)) navigation.openDirectory(id);

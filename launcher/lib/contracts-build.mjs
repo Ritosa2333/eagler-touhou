@@ -3,9 +3,9 @@ import {existsSync} from 'node:fs';
 import {mkdir, mkdtemp, readFile, readdir, rename, rm, stat, writeFile} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 import {relative, resolve} from 'node:path';
-import {setTimeout as delay} from 'node:timers/promises';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {sharedContractInputs,copySharedContractOutputs} from './shared-contract-sources.mjs';
+import {acquireBuildLock} from './build-lock.mjs';
 
 const defaultProject = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const activeBuilds = new Map();
@@ -24,7 +24,7 @@ async function identity(project) {
   const inputs = [...await sources(resolve(project, 'src/contracts')), ...sharedContractInputs(project),
     resolve(project, 'tsconfig.launcher.json'), resolve(project, 'tsconfig.contracts.json'),
     resolve(project, 'lib/contracts-build.mjs'), resolve(project, 'lib/frontend-assets.mjs'),
-    resolve(project, 'lib/shared-contract-sources.mjs'),
+    resolve(project, 'lib/shared-contract-sources.mjs'), resolve(project, 'lib/build-lock.mjs'),
     resolve(project, 'node_modules/typescript/package.json'), resolve(project, 'node_modules/esbuild/package.json')];
   const entries = await Promise.all(inputs.map(async path => [relative(project, path).replaceAll('\\', '/'), digest(await readFile(path))]));
   return {hash: digest(JSON.stringify(entries)), entries,
@@ -45,17 +45,6 @@ async function valid(root, input) {
   } catch (error) {
     if (error?.code === 'ENOENT' || error instanceof SyntaxError || error instanceof TypeError) return false;
     throw error;
-  }
-}
-async function lock(path) {
-  const started = Date.now();
-  while (true) {
-    try {await mkdir(path); return;}
-    catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      if (Date.now() - started > 120000) throw new Error(`Timed out waiting for contracts-only build lock: ${path}`);
-      await delay(25);
-    }
   }
 }
 async function compile(project, staging) {
@@ -86,7 +75,7 @@ async function prepare(project) {
   const sourceRoot = resolve(project, 'src/contracts');
   if (!existsSync(sourceRoot)) return Object.freeze({mode: 'prebuilt', root: project, contractsDirectory: resolve(project, 'assets/contracts'), inputHash: null});
   const cache = resolve(project, '.cache/build/contracts'); await mkdir(cache, {recursive: true});
-  const lockPath = resolve(cache, '.build.lock'); await lock(lockPath);
+  const release = await acquireBuildLock(resolve(cache, '.build.lock'));
   try {
     for (let attempt = 0; attempt < 3; attempt++) {
       const input = await identity(project), root = resolve(cache, input.hash);
@@ -115,7 +104,7 @@ async function prepare(project) {
       } finally {await rm(staging, {recursive: true, force: true});}
     }
     throw new Error('Contract sources changed repeatedly during compilation; no mixed generation was published');
-  } finally {await rm(lockPath, {recursive: true, force: true});}
+  } finally {release();}
 }
 /** Maintainer-only source fallback; prebuilt Node 22+ installs need no compiler. */
 export function ensureContractsBuild({project = defaultProject} = {}) {

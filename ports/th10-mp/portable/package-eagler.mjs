@@ -2,9 +2,10 @@ import {
   readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync,
 } from 'node:fs';
 import {resolve, dirname, relative, sep} from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {TH10_PRESENTATION_LAB_EXPORTS} from './presentation-lab/native-abi.mjs';
+const {renderLocalReplayShell}=await import(pathToFileURL(resolve(process.env.EAGLER_COMMON_ROOT??resolve(import.meta.dirname,'../../../common'),'tools/sync-local-replay.mjs')).href);
 
 const SHA256 = /^[a-f0-9]{64}$/i;
 
@@ -142,6 +143,7 @@ export function packageEagler({
   const html = readFileSync(resolve(shellRoot, game + '.html'), 'utf8')
     .replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">');
   const shellFiles = Object.fromEntries(runtimeNames.map(name => [name, readFileSync(resolve(shellRoot, name))]));
+  shellFiles['shell.mjs']=Buffer.from(renderLocalReplayShell(shellFiles['shell.mjs'].toString('utf8'),resolve(shellRoot,'shell.mjs')));
   shellFiles['save-sync.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'browser/save-sync.mjs'));
   if(multiplayer)shellFiles['adonis-calibration.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'browser/adonis-calibration.mjs'));
   const replayHelper = readFileSync(resolve(root, 'portable/browser/motion-replay.mjs'));

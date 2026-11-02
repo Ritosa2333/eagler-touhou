@@ -1,16 +1,23 @@
+import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
 // Repository-owned non-module frontend delivery manifest. Original-game-
 // derived artwork is intentionally absent: host assembly supplies it later.
 /** @type {Array<[string, boolean]>} */
 const entries = [
   ['index.html', true],
   ['en.html', true],
+  ['ja.html', true],
   ['lobby.html', true],
   ['profile.html', true],
   ['login.html', true],
+  ['ui-review.html', true],
   ['lobby.css', true],
   ['site.webmanifest', true],
   ['favicon.ico', true],
   ['assets/favicon.ico', true],
+  ['assets/site-brand.mjs', true],
+  ['assets/brand/LICENSE.txt', false],
+  ['assets/brand/portrait.png', false],
+  ...SITE_BRAND_FACES.map(face=>/** @type {[string,boolean]} */([`assets/brand/${face}.svg`,face===SITE_BRAND_DEFAULT])),
   ['robots.txt', true],
   ['sitemap.xml', false],
   ['styles.css', true],
@@ -19,6 +26,7 @@ const entries = [
   ['ui-fonts-deferred.css', false],
   ['touch-guide.css', true],
   ['about.css', true],
+  ['site-help.mjs', true],
   // Origin migration must always use the current network document. Caching it
   // in the App Shell could leave either side of a cutover on stale protocol
   // code even when the server correctly marks the page for revalidation.
@@ -36,6 +44,8 @@ const entries = [
   // Deliberately standalone ES5/CSS2-friendly help page: unsupported browsers
   // must be able to read it without loading the modern Launcher or its fonts.
   ['compatibility.html', true],
+  ['compatibility.en.html', true],
+  ['compatibility.ja.html', true],
   ['vendor/fflate.min.js', true],
   ['vendor/webaudio-tinysynth.min.js', true],
   ['vendor/fflate.LICENSE', false],

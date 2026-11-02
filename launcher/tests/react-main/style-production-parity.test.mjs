@@ -1,5 +1,5 @@
 /** Public CSS partition/output ownership; authored style edits are permitted. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {resolve, basename} from 'node:path';
@@ -30,7 +30,7 @@ test('stale partition markers fail instead of silently changing CSS cascade', ()
 });
 test('standalone pages receive parseable CSS at the three public URLs without browser JavaScript', async () => {
   const outputs = await buildLauncherStyleOutputs({project: root, outputDirectory: resolve(root, '.cache/standalone-style-proof')});
-  assert.deepEqual(outputs.map(file => basename(file.path)), ['styles.css', 'features.css', 'touch-guide.css']);
+  assert.deepEqual(outputs.map(file => basename(file.path)), ['styles.css', 'features.css', 'touch-guide.css', 'about.css']);
   for (const file of outputs) {
     assert.ok(postcss.parse(file.text).nodes.length, basename(file.path));
     assert.doesNotMatch(file.text, /@import|<script|__reactRouterContext/);

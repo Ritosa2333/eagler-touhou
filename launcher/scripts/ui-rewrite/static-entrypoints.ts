@@ -4,7 +4,7 @@ import {resolve} from 'node:path';
 /** RR prerenders the flat launcher document addresses as directories. Preserve
  * those original .html addresses without broad server rewrites. */
 export async function finalizeOriginalEntrypoints(clientDirectory: string, mountPath = '/') {
-  for (const filename of ['en.html', 'lobby.html', 'profile.html', 'login.html']) {
+  for (const filename of ['en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html', 'ui-review.html']) {
     // Supported basename prerenders include the mount in their output path.
     // Flatten the file in the mount-local publication without changing HTML.
     const directory = resolve(clientDirectory, '.' + mountPath, filename), source = resolve(directory, 'index.html');

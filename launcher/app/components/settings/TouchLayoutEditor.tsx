@@ -1,6 +1,8 @@
+import {Button as UiButton} from '../../ui/button';
 import {createPortal} from 'react-dom';
-import {useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
-import {touchLayoutControlMeta, touchLayoutControlNames, touchLayoutScaleMin, touchLayoutScaleMax, type TouchLayoutControlName} from '../../../src/launcher/touch-layout-model.mts';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
+import {animateSurface, type SurfaceAnimation} from '../../ui/surface-motion';
+import {touchLayoutControlNames, touchLayoutScaleMin, touchLayoutScaleMax, type TouchLayoutControlName} from '../../../src/launcher/touch-layout-model.mts';
 import {touchMovementUsesJoystick} from '../../../src/launcher/game-preferences.mts';
 import type {GameSettingsModel} from '../../models/game-settings';
 import type {TouchLayoutModel, TouchLayoutOrientation} from '../../models/touch-layout';
@@ -35,22 +37,22 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
   const state = useSyncExternalStore(settings.subscribe, settings.getSnapshot, settings.getSnapshot);
   const {t} = useLocale();
   const surface = useRef<HTMLElement>(playerElement), panel = useRef<HTMLElement>(null), preview = useRef<HTMLDivElement>(null);
-  const gesture = useRef<Gesture | null>(null), animation = useRef<Animation | null>(null);
+  const gesture = useRef<Gesture | null>(null), animation = useRef<SurfaceAnimation | null>(null);
   const [collapsed, setCollapsed] = useState(false), [viewportEditing, setViewportEditing] = useState(false), [orientationPending, setOrientationPending] = useState(false);
   const viewportMode = useRef(false), previousViewportEditing = useRef(false), lifetime = useRef(0);
   const latest = useRef({actions, native, t}); latest.current = {actions, native, t};
   const wheel = state ? touchMovementUsesJoystick(state.options.touchMovementMode) : false;
-  function orientation(): TouchLayoutOrientation {
+  const orientation = useCallback((): TouchLayoutOrientation => {
     const host = surface.current!;
     const width = window.visualViewport?.width || document.documentElement.clientWidth || host.clientWidth;
     const height = window.visualViewport?.height || document.documentElement.clientHeight || host.clientHeight;
     return width >= height ? 'landscape' : 'portrait';
-  }
-  function defaults() {
+  }, []);
+  const defaults = useCallback(() => {
     return latest.current.native.measureDefaults?.(surface.current!) ?? captureTouchLayoutDefaults(surface.current!, latest.current.t('touch.previewUnavailable'));
-  }
-  function stopAnimation() {animation.current?.cancel(); animation.current = null;}
-  function rememberPanel() {
+  }, []);
+  const stopAnimation = useCallback(() => {animation.current?.cancel(); animation.current = null;}, []);
+  const rememberPanel = useCallback(() => {
     const host = surface.current, element = panel.current;
     if (!host || !element || element.hidden) return;
     const h = host.getBoundingClientRect(), p = element.getBoundingClientRect();
@@ -58,16 +60,16 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
     const left = Math.max(16, Math.min(h.width - p.width - 16, p.left - h.left));
     const top = Math.max(16, Math.min(h.height - p.height - 16, p.top - h.top));
     model.windowPositions.set(model.getSnapshot().orientation, 'editor', {x: rangeX ? (left - 16) / rangeX : .5, y: rangeY ? (top - 16) / rangeY : .5});
-  }
-  function clampPanel() {
+  }, [model]);
+  const clampPanel = useCallback(() => {
     const host = surface.current, element = panel.current;
     if (!host || !element || element.hidden) return;
     const h = host.getBoundingClientRect(), p = element.getBoundingClientRect();
     element.style.left = `${Math.max(16, Math.min(Math.max(16, h.width - p.width - 16), p.left - h.left))}px`;
     element.style.top = `${Math.max(16, Math.min(Math.max(16, h.height - p.height - 16), p.top - h.top))}px`;
     element.style.transform = 'none';
-  }
-  function positionPanel() {
+  }, []);
+  const positionPanel = useCallback(() => {
     const host = surface.current, element = panel.current;
     if (!host || !element || element.hidden) return;
     model.windowPositions.reload();
@@ -76,19 +78,19 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
     element.style.left = `${saved ? 16 + saved.x * Math.max(0, h.width - p.width - 32) : h.height > h.width ? (h.width - p.width) / 2 : h.width - p.width - 16}px`;
     element.style.top = `${saved ? 16 + saved.y * Math.max(0, h.height - p.height - 32) : Math.min(76, Math.max(16, h.height - p.height - 16))}px`;
     element.style.transform = 'none'; clampPanel();
-  }
-  function resetPreview() {
+  }, [model, clampPanel]);
+  const resetPreview = useCallback(() => {
     if (!preview.current) return;
     preview.current.classList.remove('active'); preview.current.style.left = '50%'; preview.current.style.top = '50%';
-  }
-  function endGesture(event?: PointerEvent) {
+  }, []);
+  const endGesture = useCallback((event?: PointerEvent) => {
     const active = gesture.current;
     if (!active || event && event.pointerId !== active.pointer) return;
     gesture.current = null; surface.current?.classList.remove('touch-layout-manipulating');
     if (active.kind === 'panel') rememberPanel();
     if (active.kind === 'preview') resetPreview();
     try {if (surface.current?.hasPointerCapture(active.pointer)) surface.current.releasePointerCapture(active.pointer);} catch {}
-  }
+  }, [rememberPanel, resetPreview]);
   function moveGesture(event: PointerEvent) {
     const active = gesture.current, host = surface.current;
     if (!active || !host || event.pointerId !== active.pointer) return;
@@ -176,10 +178,7 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
       model.begin(orientation(), defaults(), visibleTouchControls(host));
       positionPanel();
       host.classList.remove('touch-layout-preparing');
-      if (!document.body.classList.contains('less-motion') && !matchMedia('(prefers-reduced-motion: reduce)').matches && typeof host.animate === 'function') {
-        animation.current = host.animate([{opacity: 0}, {opacity: 1}], {duration: 340, easing: 'cubic-bezier(.2,0,.2,1)'});
-        animation.current.onfinish = () => stopAnimation();
-      }
+      animation.current = animateSurface(host, 'enter', {kind: 'content'});
       latest.current.actions.feedback('', latest.current.t('touch.editorStatus'));
     })().catch(error => {if (!disposed) {host.classList.remove('touch-layout-preparing'); latest.current.actions.reportError(error);}});
     return () => {
@@ -195,8 +194,9 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
       queueMicrotask(() => {if (lifetime.current === retired) void latest.current.native.exitFullscreen().catch(latest.current.actions.reportError);});
       // The root's sole exit owner calls discard only after its decision.
     };
-  }, [model, settings]);
+  }, [model, orientation, defaults, positionPanel, clampPanel, rememberPanel, stopAnimation]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: A settings revision changes the rendered touch controls before this geometry pass.
   useLayoutEffect(() => {
     const host = surface.current;
     if (!host || !layout.isEditing) return;
@@ -226,7 +226,8 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
     viewport.style.transform = `translate(${(profile?.viewport.x ?? 0) * host.clientWidth}px, 0px)`;
     model.reconcileVisibleControls(visible);
     if (wheel) {if (gesture.current?.kind === 'preview') endGesture(); resetPreview();}
-  }, [layout.revision, state?.revision, model, wheel]);
+  }, [layout, state?.revision, model, wheel, endGesture, resetPreview]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Collapsing changes panel geometry even though its value is not needed to clamp the resulting DOM.
   useLayoutEffect(() => {
     // Main syncTouchLayoutWorkbench closes detached menus when collapsing or
     // restoring the workbench, including keyboard activation without pointerdown.
@@ -236,7 +237,7 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
     }
     clampPanel();
     previousViewportEditing.current = viewportEditing;
-  }, [collapsed, viewportEditing]);
+  }, [collapsed, viewportEditing, positionPanel, clampPanel]);
 
   function pointerDown(event: PointerEvent) {
     if (!layout.isEditing || gesture.current || event.pointerType === 'mouse' && event.button !== 0) return;
@@ -315,14 +316,14 @@ export function TouchLayoutEditor({playerElement, model, settings, actions, nati
     <div className="touch-layout-safe-zone" id="touchLayoutSafeZone" aria-hidden="true"/>
     <div ref={preview} className="touch-sensitivity-preview" id="touchSensitivityPreview" aria-hidden="true" hidden={wheel || viewportEditing}/>
     <TouchReservedZone/>
-    <section ref={panel} className={`touch-layout-editor${collapsed ? ' is-collapsed' : ''}`} id="touchLayoutEditor" role="region" aria-labelledby="touchWorkbenchTitle" hidden={viewportEditing}>
-      <header className="touch-workbench-header"><div className="touch-layout-editor-copy" id="touchLayoutEditorDragHandle" title={t('touch.dragWindow')}><span className="touch-workbench-grip" aria-hidden="true">⠿</span><strong id="touchWorkbenchTitle">{t('touch.workbenchTitle')}</strong><em id="touchLayoutOrientation">{t(layout.orientation === 'landscape' ? 'touch.landscape' : 'touch.portrait')}</em></div><button className="touch-workbench-collapse" id="touchLayoutCollapse" type="button" aria-expanded={!collapsed} aria-controls="touchWorkbenchBody" aria-label={t(collapsed ? 'touch.expandPanel' : 'touch.collapsePanel')} onClick={() => {endGesture(); setCollapsed(!collapsed);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg></button></header>
+    <section ref={panel} className={`touch-layout-editor${collapsed ? ' is-collapsed' : ''}`} id="touchLayoutEditor" data-ui-surface="application" aria-labelledby="touchWorkbenchTitle" hidden={viewportEditing}>
+      <header className="touch-workbench-header"><div className="touch-layout-editor-copy" id="touchLayoutEditorDragHandle" title={t('touch.dragWindow')}><span className="touch-workbench-grip" aria-hidden="true">⠿</span><strong id="touchWorkbenchTitle">{t('touch.workbenchTitle')}</strong><em id="touchLayoutOrientation">{t(layout.orientation === 'landscape' ? 'touch.landscape' : 'touch.portrait')}</em></div><UiButton variant="ghost" size="icon" className="touch-workbench-collapse" id="touchLayoutCollapse" type="button" aria-expanded={!collapsed} aria-controls="touchWorkbenchBody" aria-label={t(collapsed ? 'touch.expandPanel' : 'touch.collapsePanel')} onClick={() => {endGesture(); setCollapsed(!collapsed);}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg></UiButton></header>
       <div className="touch-workbench-body" id="touchWorkbenchBody" hidden={collapsed}><div className="touch-workbench-scroll">
-        <section id="touchLayoutArrangement" className="touch-layout-arrangement" aria-label={t('touch.layoutTab')}><div className="touch-layout-secondary-actions"><button id="touchLayoutOrientationHelpOpen" type="button" hidden={!native.canSwitchOrientation()} disabled={orientationPending} onClick={() => {void switchOrientation();}}>{t(layout.orientation === 'landscape' ? 'player.switchPortrait' : 'player.switchLandscape')}</button><button id="touchLayoutReset" type="button" disabled={!layout.isEditing} onClick={() => {void resetOrientation().catch(actions.reportError);}}>{t('touch.restoreDirection')}</button></div><p className="touch-workbench-note">{t(state.gameId === 'th075' ? 'touch.independentLayoutHint' : 'touch.profileHint')}</p></section><hr className="touch-workbench-divider"/>
+        <section id="touchLayoutArrangement" className="touch-layout-arrangement" aria-label={t('touch.layoutTab')}><div className="touch-layout-secondary-actions"><UiButton variant="outline" id="touchLayoutOrientationHelpOpen" type="button" hidden={!native.canSwitchOrientation()} disabled={orientationPending} onClick={() => {void switchOrientation();}}>{t(layout.orientation === 'landscape' ? 'player.switchPortrait' : 'player.switchLandscape')}</UiButton><UiButton variant="outline" id="touchLayoutReset" type="button" disabled={!layout.isEditing} onClick={() => {void resetOrientation().catch(actions.reportError);}}>{t('touch.restoreDirection')}</UiButton></div><p className="touch-workbench-note">{t(state.gameId === 'th075' ? 'touch.independentLayoutHint' : 'touch.profileHint')}</p></section><hr className="touch-workbench-divider"/>
         <TouchSettingsFields model={settings} actions={actions} onAdjustViewport={() => viewportModeSet(true)} onResetViewport={() => {if (!model.getSnapshot().isEditing) return; model.setViewport(0); actions.feedback(t('touch.restoreViewport', {orientation: t(layout.orientation === 'landscape' ? 'touch.landscape' : 'touch.portrait')}));}}/>
-      </div><footer className="touch-workbench-footer"><small id="touchLayoutSaveHint">{t('touch.settingsAutoSaveHint')}</small><div className="touch-layout-editor-actions"><button id="touchLayoutExit" type="button" onClick={() => {if (viewportMode.current) viewportModeSet(false); rememberPanel(); onCloseIntent();}}>{t('action.exit')}</button><button id="touchLayoutSave" type="button" disabled={!layout.isEditing} onClick={save}>{t('touch.saveLayout')}</button></div></footer></div>
+      </div><footer className="touch-workbench-footer"><small id="touchLayoutSaveHint">{t('touch.settingsAutoSaveHint')}</small><div className="touch-layout-editor-actions"><UiButton variant="outline" id="touchLayoutExit" type="button" onClick={() => {if (viewportMode.current) viewportModeSet(false); rememberPanel(); onCloseIntent();}}>{t('action.exit')}</UiButton><UiButton id="touchLayoutSave" type="button" disabled={!layout.isEditing} onClick={save}>{t('touch.saveLayout')}</UiButton></div></footer></div>
     </section>
-    <div className="touch-viewport-drag-surface" id="touchViewportDragSurface" aria-hidden="true" hidden={!viewportEditing}/><button className="touch-viewport-done" id="touchViewportDone" type="button" hidden={!viewportEditing} onClick={() => viewportModeSet(false)}>{t('touch.adjustDone')}</button>
+    <div className="touch-viewport-drag-surface" id="touchViewportDragSurface" aria-hidden="true" hidden={!viewportEditing}/><UiButton variant="outline" className="touch-viewport-done" id="touchViewportDone" type="button" hidden={!viewportEditing} onClick={() => viewportModeSet(false)}>{t('touch.adjustDone')}</UiButton>
     <TouchControlPreview settings={state} fireEnabled={fireEnabled} editing/>
   </>, playerElement);
 }

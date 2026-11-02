@@ -15,7 +15,7 @@ const click = async (page, scope, text) => {
     await page.waitForFunction(() => !document.documentElement.classList.contains('profile-transition'));
   } else if (scope === '.profile-identity' && ['编辑资料', '编辑展示'].includes(text)) {
     await press(scope, '账户设置');
-    if (text === '编辑展示') await press('.profile-settings-heading', '隐私与个性化');
+    if (text === '编辑展示') await press('.profile-settings-heading', '隐私');
   } else {
     await press(scope, text);
     if (['保存资料', '保存展示'].includes(text)) await press('.profile-topbar', '← 返回主页');

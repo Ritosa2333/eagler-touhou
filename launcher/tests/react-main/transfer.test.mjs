@@ -2,7 +2,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Actual transfer presentation owner, deterministic synthetic time/frames/ports.
  * Main app1206–1270,3288–3316,3445–3547,3577–3668,6068–6129,9632–9641.
  * No native network, rendering, browser animation or engine claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

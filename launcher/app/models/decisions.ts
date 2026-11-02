@@ -1,5 +1,11 @@
 /** Main app.mts askDecision contract. Decisions own no browser history entry. */
 export type DecisionChoice = 'confirm' | 'cancel' | 'secondary';
+export interface DecisionInput {
+  readonly label: string;
+  readonly defaultValue: string;
+  readonly description?: string;
+  readonly validate?: (value: string) => string | null;
+}
 export interface DecisionOptions {
   title?: string;
   message?: string;
@@ -10,6 +16,7 @@ export interface DecisionOptions {
   variant?: string;
   hideCancel?: boolean;
   confirmOnEnter?: boolean;
+  input?: DecisionInput;
 }
 export interface DecisionRequest extends Readonly<DecisionOptions> {readonly requestId: number;}
 export interface DecisionStore {
@@ -17,7 +24,8 @@ export interface DecisionStore {
   getSnapshot(): DecisionRequest | null;
   askDecision(options?: DecisionOptions): Promise<DecisionChoice>;
   askConfirmation(options?: DecisionOptions): Promise<boolean>;
-  resolve(choice: DecisionChoice): void;
+  askText(options: DecisionOptions & {input: DecisionInput}): Promise<string | null>;
+  resolve(choice: DecisionChoice, value?: string): void;
   /** Reserves the one native decision surface for Router's dirty-close prompt. */
   setNavigationDecisionOpen(open: boolean): void;
   dispose(): void;
@@ -25,33 +33,35 @@ export interface DecisionStore {
 export function createDecisionStore(): DecisionStore {
   let pending: DecisionRequest | null = null;
   let requestSequence = 0;
-  let resolver: ((choice: DecisionChoice) => void) | null = null;
+  let resolver: ((choice: DecisionChoice, value?: string) => void) | null = null;
   let navigationDecisionOpen = false;
   let disposed = false;
   const listeners = new Set<() => void>();
   const emit = () => {for (const listener of listeners) listener();};
-  function askDecision(options: DecisionOptions = {}): Promise<DecisionChoice> {
+  function request(options: DecisionOptions, resolve: NonNullable<typeof resolver>) {
     // Main does not replace the existing request or queue a second prompt.
-    if (disposed || resolver || navigationDecisionOpen) return Promise.resolve('cancel');
-    return new Promise(resolve => {
-      resolver = resolve;
-      pending = Object.freeze({...options, requestId: ++requestSequence});
-      emit();
-    });
+    if (disposed || resolver || navigationDecisionOpen) {resolve('cancel'); return;}
+    resolver = resolve;
+    pending = Object.freeze({...options, requestId: ++requestSequence});
+    emit();
   }
-  function settle(choice: DecisionChoice) {
+  function askDecision(options: DecisionOptions = {}): Promise<DecisionChoice> {
+    return new Promise(resolve => request(options, resolve));
+  }
+  function settle(choice: DecisionChoice, value?: string) {
     const resolve = resolver;
     if (!resolve) return;
     resolver = null;
     pending = null;
     emit();
-    resolve(choice);
+    resolve(choice, value);
   }
   return {
     subscribe(listener) {listeners.add(listener); return () => {listeners.delete(listener);};},
     getSnapshot: () => pending,
     askDecision,
     askConfirmation: options => askDecision(options).then(choice => choice === 'confirm'),
+    askText: options => new Promise(resolve => request(options, (choice, value) => resolve(choice === 'confirm' ? value ?? options.input.defaultValue : null))),
     resolve: settle,
     setNavigationDecisionOpen(open) {navigationDecisionOpen = open;},
     dispose() {

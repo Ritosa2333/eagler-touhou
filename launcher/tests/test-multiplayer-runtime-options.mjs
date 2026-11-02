@@ -1,7 +1,9 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { buildMultiplayerRuntimeOptions } from "../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
+test("multiplayer runtime options", async () => {
 const th06 = {
   playerCounts: PRODUCT_GAMES.th06.multiplayer.playerCounts,
   difficulties: PRODUCT_GAMES.th06.multiplayer.difficulties,
@@ -132,3 +134,4 @@ console.log(JSON.stringify({
   productConstraints: ["playerCounts", "difficulties", "loadouts"],
   spectator: "explicit-role",
 }));
+});

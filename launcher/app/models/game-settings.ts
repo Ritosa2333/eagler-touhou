@@ -129,7 +129,8 @@ export function createGameSettingsModel({storage, onChange}: {
     const shareSingleplayerSettings = true;
     const preferenceId = gameId;
     const disclosureKey = multiplayer ? 'multiplayer' : 'singleplayer';
-    const disclosure = disclosures[disclosureKey] ??= {touch: context.mobile, files: true, display: true, advanced: false};
+    const disclosure = disclosures[disclosureKey] ?? {touch: context.mobile, files: true, display: true, advanced: false};
+    disclosures[disclosureKey] = disclosure;
     const normalized = loadStoredGamePreferences({storage, preferenceId,
       fallbackPreferenceId: multiplayer ? gameId : null,
       context: {uiLocale: context.uiLocale, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),

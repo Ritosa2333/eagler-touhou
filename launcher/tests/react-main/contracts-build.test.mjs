@@ -1,6 +1,6 @@
 /** Cold maintainer contracts and compiler-free distribution boundary. No UI,
  * browser, published endpoint or native game is initialized by these checks. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -22,7 +22,7 @@ function run(cwd, code, environment = {}) {
 }
 before(async () => {
   work = await mkdtemp(resolve(project, '.cache/contracts-only-test-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
+  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
     await mkdir(resolve(cold, path, '..'), {recursive: true});
     await cp(resolve(project, path), resolve(cold, path), {recursive: true});
   }
@@ -107,6 +107,7 @@ test('published-only Node distribution reads contracts and worker without source
   await mkdir(resolve(distribution, 'lib'), {recursive: true}); await mkdir(resolve(distribution, 'assets'), {recursive: true});
   await cp(resolve(cold, 'lib/contracts'), resolve(distribution, 'lib/contracts'), {recursive: true});
   await cp(resolve(cold, 'lib/contracts-build.mjs'), resolve(distribution, 'lib/contracts-build.mjs'));
+  await cp(resolve(cold, 'lib/build-lock.mjs'), resolve(distribution, 'lib/build-lock.mjs'));
   await cp(resolve(cold, 'lib/shared-contract-sources.mjs'), resolve(distribution, 'lib/shared-contract-sources.mjs'));
   await cp(built.contractsDirectory, resolve(distribution, 'assets/contracts'), {recursive: true});
   const result = JSON.parse(await run(distribution, `import{readFile}from'node:fs/promises';import{DEFAULT_PRODUCT_ID}from'./lib/contracts/product-catalog.mjs';import{resolveRuntimeGenerationWorkerSource,ensureContractsBuild}from'./lib/contracts-build.mjs';console.log(JSON.stringify({product:DEFAULT_PRODUCT_ID,worker:(await readFile(await resolveRuntimeGenerationWorkerSource(),'utf8')).includes('EaglerRuntimeGenerations'),mode:(await ensureContractsBuild()).mode}));`, {EAGLER_FRONTEND: 'react'}));

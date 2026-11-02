@@ -5,7 +5,7 @@ import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {linkAbortSignals, waitWithAbort} from '../services/abort-signals';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
-import {detectUiLocale, isUiMessageKey, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
+import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAccept} from '../../src/launcher/replay-files.mts';
 import {discouragedBrowserId} from '../../src/launcher/browser-support.mts';
 import {createMultiplayerIdentityStore, multiplayerMemberId} from '../../src/launcher/multiplayer-identity.mts';
@@ -36,6 +36,7 @@ import {createTitleNetwork} from '../models/title-network';
 import {describeBrowserEnvironment} from '../../src/launcher/runtime-diagnostics-model.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from '../models/site-preferences';
 import {createReplayModel, type ReplayModel} from '../models/replays';
+import {relocateReplayPlayback} from '../services/replay-relocation';
 import {createMetadataService} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
@@ -44,7 +45,7 @@ import {createRoomPreparation} from '../services/room-preparation';
 import {createRoomSession, type RoomSession} from './room-session';
 import type {RoomLaunchContext, RoomOperationContext} from '../services/multiplayer-room';
 import {isGameDataAcquisitionFailure} from '../services/game-data-acquisition';
-import {createRuntimeService, RuntimeSessionSupersededError, type RuntimeService, type RuntimeSnapshot} from '../services/runtime';
+import {createRuntimeService, RuntimeSessionSupersededError, RuntimeWaitTimeoutError, type RuntimeService, type RuntimeSnapshot} from '../services/runtime';
 import {bindPixelPerfectDisplay} from '../services/pixel-perfect-display';
 import {createExternalMidiPort} from '../services/external-midi';
 import {createMidiBridge} from '../services/midi-bridge';
@@ -123,7 +124,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   try {externalInputConfirmed = storage?.getItem('eagler-external-input-confirmed-v1') === '1';} catch {}
   let touchFireEnabled = true;
   const touchFireState = {getEnabled: () => touchFireEnabled, setEnabled(value: boolean) {touchFireEnabled = value;}};
-  let roomReturnTimer: number | null = null, pendingRoomReturnProduct: ProductId | null = null;
+  let pendingRoomReturnProduct: ProductId | null = null;
   let playerOrientationPending = false;
   let playerRelayout: (() => Promise<boolean>) | null = null;
   let disposed = false, navigation: BrowserNavigationPorts | null = null;
@@ -253,7 +254,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   const network = createNetworkActivityTracker({fetchImpl: window.fetch.bind(window), onChange: transfer.networkSnapshot});
   const metadata = createMetadataService({baseUrl, storage, getGameVersion: selectedVersion, indexedDBFactory: window.indexedDB,
-    translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(locale === 'en' ? 'en' : 'zh-CN', key, params);},
+    translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(isUiLocale(locale) ? locale : 'zh-CN', key, params);},
     webAudioAvailable: audio, webMidiAvailable: 'requestMIDIAccess' in window.navigator, mobile: preferTouchSettings(), locale: () => snapshot.locale,
     testBuild: new URL(window.location.href).searchParams.has('test')});
   function settingsContext(product: ProductId, locale: string) {const room = roomSession?.service.getSnapshot(); return {...metadata.settingsContext(product, locale), mobile: preferTouchSettings(), forbidUnlimitedMovement: !!room?.room?.disableCheatMovement && room.seat != null};}
@@ -319,7 +320,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     loadSiteManifest: signal => loadCompatibleSiteManifest(async file => {const response = await window.fetch(new URL(file, baseUrl), {cache: 'no-store', signal}); if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status}); return response.json();}),
     createSocket: url => new WebSocket(url), memberId: multiplayerMemberId,
     identity, sessions, sessionStorage, translate: t,
-    launcherUrl: () => new URL(snapshot.locale === 'en' ? 'en.html' : './', baseUrl).href,
+    launcherUrl: () => new URL(localeHome(snapshot.locale), baseUrl).href,
     navigateToRoom: url => requiredNavigation().navigateToRoom(url),
     selectedProduct: new URL(window.location.href).searchParams.has('games') ? undefined : new URL(window.location.href).searchParams.get('game') ?? undefined,
     onSelectedProductNormalized: product => requiredNavigation().selectLobbyProduct(product),
@@ -408,7 +409,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (await owner.close({decide: closeDecision})) temporaryFiles.delete(product);
   }
   async function closeDecision(error: unknown): Promise<'retry' | 'leave' | 'stay'> {
-    const choice = await decisions.askDecision({message: t('dialog.saveSyncFailed', {reason: errorText(error)}),
+    const choice = await decisions.askDecision({message: t('dialog.saveSyncFailed', {reason: errorText(error, t)}),
       confirmText: t('action.retrySave'), secondaryText: t('action.leaveAnyway'), cancelText: t('action.stayInGame'), tone: 'danger'});
     return choice === 'confirm' ? 'retry' : choice === 'secondary' ? 'leave' : 'stay';
   }
@@ -654,7 +655,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         }
         return replayStorage.read(product, {...selection, language: activeSettings?.context.productId === product ? activeSettings.language : capturedSettings(product).language});
       }},
-      prompt: (message, initial) => window.prompt(message, initial), confirm: decisions.askConfirmation,
+      prompt: (message, initial, validation) => decisions.askText({title: t('action.rename'), confirmText: t('action.rename'), confirmOnEnter: true,
+        input: {label: message, defaultValue: initial, ...validation}}), confirm: decisions.askConfirmation,
       download: ports.download, toast: feedback.toast, afterPaint: ports.afterPaint,
       closeViewer: () => {if (snapshot.replayViewer) void requestRuntimeClose().catch(reportError);},
       afterClose: () => {
@@ -665,6 +667,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         if (snapshot.playerOpen && !snapshot.replayViewer) frame?.focus({preventScroll: true});
       },
       inspect: async (_product, path) => (await requiredRuntime().send('playback', {action: 'inspect', path})).description,
+      relocatePlayback: async (product, access, source, target) => {
+        await relocateReplayPlayback(requiredRuntime(), product, access.epoch, source, target, access.playback);
+        if (selectedReplayPath === source) selectedReplayPath = target;
+      },
       watch: async (_product, path, stage) => {await requiredRuntime().send('playback', {action: 'open', path, ...(stage !== undefined ? {stage} : {})});}});
     files = createFileActions({runtime, prepareFiles, releasePrepared, translate: stringTranslate, confirm: decisions.askConfirmation,
       pickFile: ports.pickFile, download: ports.download, feedback, replayMutations: replays.mutations,
@@ -757,7 +763,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         // its startup failure. Runtime may already have reset its failed epoch;
         // the existing launch/attempt identities fence this presentation instead.
         if (launchAbort === controller && !signal.aborted && directAttemptId !== null &&
-            gameData.getSnapshot().attempt?.id === directAttemptId && /超时/.test(errorText(error))) gameData.unlock(t('runtime.loadTimedOutImport'));
+            gameData.getSnapshot().attempt?.id === directAttemptId && error instanceof RuntimeWaitTimeoutError &&
+            error.waitKind === 'ready') gameData.unlock(t('runtime.loadTimedOutImport'));
       },
       finish() {linked.dispose(); if (launchAbort === controller) {launchAbort = null; updateAbort = null; musicAbort = null; updating = false; downloadingMusic = false; downloadingPackage = false; downloadingLanguage = false; transfer.setCancellation(null); publish({});}}};
   }
@@ -793,7 +800,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const player = document.querySelector<HTMLElement>('#player');
     if (!player) throw new Error('Launcher Player is not mounted');
     player.classList.add('open'); player.setAttribute('aria-hidden', 'false'); document.body.classList.add('player-active');
-    if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error)}));}}
+      if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}}
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
   }
   async function launchRoom(context: RoomLaunchContext) {
@@ -1121,11 +1128,6 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         const destination = requiredNavigation().leaveRoomRoute(input);
         if (!input.message && destination === 'options') {
           pendingRoomReturnProduct = settings.getSnapshot()!.context.productId;
-          if (roomReturnTimer !== null) window.clearTimeout(roomReturnTimer);
-          roomReturnTimer = null;
-          const reduced = preferences.getSnapshot().lessMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          document.body.classList.toggle('mp-room-returning', !reduced);
-          if (!reduced) roomReturnTimer = window.setTimeout(() => {document.body.classList.remove('mp-room-returning'); roomReturnTimer = null;}, 180);
           publish({});
         }
         if (input.message && destination === 'options') feedback.toast(input.message);
@@ -1258,7 +1260,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     reportError,
     async dispose() {
       unbindPixelPerfectDisplay?.();
-      if (disposed) return; disposed = true; if (telemetryTimer !== null) window.clearInterval(telemetryTimer); launchAbort?.abort(); if (roomReturnTimer !== null) window.clearTimeout(roomReturnTimer); document.body.classList.remove('mp-room-returning'); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchLayoutGame(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
+      if (disposed) return; disposed = true; if (telemetryTimer !== null) window.clearInterval(telemetryTimer); launchAbort?.abort(); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchLayoutGame(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
       document.removeEventListener('fullscreenchange', fullscreenChanged); document.removeEventListener('webkitfullscreenchange', fullscreenChanged); unsubscribeTitle(); titleNetwork.dispose(); calibration.dispose(); gameData.dispose(); transfer.dispose(); startupError.dispose(); gameUpdates?.dispose(); decisions.dispose(); feedback.dispose(); replays?.dispose(); unsubscribeRuntime?.(); diagnostics?.dispose(); gameplayNetwork?.dispose(); midi?.dispose(); externalMidi.dispose();
       await nativeTouch.dispose();
       if (runtime && frame?.isConnected === false) runtime.disposeDetachedFrame();

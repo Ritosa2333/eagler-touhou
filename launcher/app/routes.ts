@@ -3,8 +3,10 @@ import {index, route, type RouteConfig} from '@react-router/dev/routes';
  * application fallbacks and must retain the existing publication routing. */
 export default [
   index('routes/surface.tsx', {id: 'library'}),
+  route('ui-review.html', 'routes/ui-review.tsx'),
   route('index.html', 'routes/surface.tsx', {id: 'library-html'}),
   route('en.html', 'routes/surface.tsx', {id: 'library-en'}),
+  route('ja.html', 'routes/surface.tsx', {id: 'library-ja'}),
   route('login.html', 'routes/surface.tsx', {id: 'account'}),
   route('profile.html', 'routes/surface.tsx', {id: 'profile'}),
   route('lobby.html', 'routes/surface.tsx', {id: 'directory-html'}),

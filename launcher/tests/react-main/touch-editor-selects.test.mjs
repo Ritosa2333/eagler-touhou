@@ -1,7 +1,7 @@
 /** Pinned main app.mts4504–4510,6933–6945,7433–7449,9490–9527: native
  * fullscreen menu hosts, workbench dismissal and editor lifecycle. Synthetic DOM only;
  * not evidence of real fullscreen top-layer paint or browser focus behavior. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -21,7 +21,7 @@ before(async () => {
   work = await mkdtemp(resolve(project, '.cache/touch-editor-selects-'));
   const outfile = resolve(work, 'components.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
-    export {MainSelect} from './app/components/launcher/MainSelect.tsx';
+    export {MainSelect,closeMainSelectMenus} from './app/components/launcher/MainSelect.tsx';
     export {TouchLayoutEditor} from './app/components/settings/TouchLayoutEditor.tsx';
     export {createGameSettingsModel} from './app/models/game-settings.ts';
     export {createTouchLayoutModel} from './app/models/touch-layout.ts';
@@ -31,7 +31,7 @@ before(async () => {
 });
 afterEach(async () => {
   if (root) {await React.act(async () => root.unmount()); root = null;}
-  assert.equal(env.document.querySelectorAll('.mizuki-select-menu').length, 0);
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0);
   assert.equal(env.document.querySelectorAll('.mizuki-select').length, 0);
   assert.deepEqual(env.errors.splice(0), []);
   fullscreen = null; webkitFullscreen = null; env.document.body.replaceChildren();
@@ -46,28 +46,29 @@ async function mount(children) {
 async function click(target) {await React.act(async () => (typeof target === 'string' ? n(target) : target).click());}
 function select() {return el(api.MainSelect, {id: 'hostSelect', className: 'option-select', defaultValue: 'a'}, el('option', {value: 'a'}, 'A'), el('option', {value: 'b'}, 'B'));}
 
-for (const target of ['body', 'player', 'webkit-player', 'root', 'foreign', 'dialog']) test(`Main custom select chooses original ${target} host`, async () => {
+for (const target of ['windowed', 'player', 'webkit-player', 'root', 'foreign', 'dialog']) test(`Main select keeps the menu above its ${target} player`, async () => {
   await mount(el('section', {id: 'player'}, target === 'dialog' ? el('dialog', {open: true, id: 'nativeDialog'}, select()) : select()));
   if (target === 'player' || target === 'dialog') fullscreen = n('#player');
   if (target === 'webkit-player') webkitFullscreen = n('#player');
   if (target === 'root') fullscreen = env.document.documentElement;
   if (target === 'foreign') {fullscreen = env.document.createElement('section'); env.document.body.append(fullscreen);}
   await click('.mizuki-select-trigger');
-  const menu = n('.mizuki-select-menu:not([hidden])');
-  assert.equal(menu.parentElement, target === 'dialog' ? n('#nativeDialog') : ['player', 'webkit-player'].includes(target) ? n('#player') : env.document.body);
+  const menu = n('.ui-select-content');
+  assert.equal(menu.closest('[data-radix-popper-content-wrapper]').parentElement.id, target === 'dialog' ? 'nativeDialog' : 'player');
   await click(menu.querySelector('[data-value="b"]'));
-  assert.equal(n('#hostSelect').value, 'b'); assert.equal(menu.hidden, true);
-  assert.equal(env.document.activeElement, n('.mizuki-select-trigger'));
+  assert.equal(n('#hostSelect').value, 'b'); assert.equal(!menu.isConnected, true);
+  assert.equal(env.document.activeElement.classList.contains('mizuki-select-trigger'), true);
 });
 
 test('Main select reopens the same menu in the current fullscreen host', async () => {
   await mount(el('section', {id: 'player'}, select()));
-  await click('.mizuki-select-trigger'); const menu = n('.mizuki-select-menu'); assert.equal(menu.parentElement, env.document.body);
-  await click('.mizuki-select-trigger'); fullscreen = n('#player');
-  await click('.mizuki-select-trigger'); assert.equal(menu.parentElement, n('#player'));
-  await click('.mizuki-select-trigger'); fullscreen = null;
-  await click('.mizuki-select-trigger'); assert.equal(menu.parentElement, env.document.body);
-  assert.equal(env.document.querySelectorAll('.mizuki-select-menu').length, 1);
+  const viewport=env.document.createElement('div');viewport.id='gameViewport';n('#player').append(viewport);
+  await click('.mizuki-select-trigger'); const menu = n('.ui-select-content'); assert.equal(menu.closest('[data-radix-popper-content-wrapper]').parentElement.id,'player');
+  await React.act(async()=>api.closeMainSelectMenus()); fullscreen = viewport;
+  await click('.mizuki-select-trigger'); const reopened = n('.ui-select-content'); assert.equal(reopened.closest('[data-radix-popper-content-wrapper]').parentElement.id,'gameViewport');
+  await React.act(async()=>api.closeMainSelectMenus()); fullscreen = null;
+  await click('.mizuki-select-trigger'); const again = n('.ui-select-content'); assert.equal(again.closest('[data-radix-popper-content-wrapper]').parentElement.id,'player');
+  assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1);
 });
 
 async function editor({storage = null} = {}) {
@@ -85,18 +86,19 @@ async function editor({storage = null} = {}) {
   assert.equal(model.getSnapshot().isEditing, true); assert.deepEqual(errors, []);
   return {player, model, settings, errors};
 }
-async function openMovementMenu() {await click(n('#touchMovementMode').closest('.mizuki-select').querySelector('.mizuki-select-trigger')); return n('.mizuki-select-menu:not([hidden])');}
+async function openMovementMenu() {await click(n('#touchMovementMode').closest('.mizuki-select').querySelector('.mizuki-select-trigger')); return n('.ui-select-content');}
 
 test('Keyboard-style workbench collapse closes the real fullscreen menu and expansion does not resurrect it', async () => {
   const f = await editor(), menu = await openMovementMenu();
-  assert.equal(menu.parentElement, f.player); assert.equal(menu.hidden, false);
+  assert.equal(menu.closest('[data-radix-popper-content-wrapper]').parentElement, f.player); assert.equal(!menu.isConnected, false);
   // HTMLElement.click emits no pointerdown: the workbench itself must dismiss
   // the detached menu, rather than relying on the document pointer listener.
   await click('#touchLayoutCollapse');
-  assert.equal(n('#touchWorkbenchBody').hidden, true); assert.equal(menu.hidden, true);
+  assert.equal(n('#touchWorkbenchBody').hidden, true); assert.equal(!menu.isConnected, true);
   assert.equal(n('#touchMovementMode').closest('.mizuki-select').querySelector('.mizuki-select-trigger').getAttribute('aria-expanded'), 'false');
-  await click('#touchLayoutCollapse'); assert.equal(n('#touchWorkbenchBody').hidden, false); assert.equal(menu.hidden, true);
-  assert.equal(await openMovementMenu(), menu); assert.deepEqual(f.errors, []);
+  await click('#touchLayoutCollapse'); assert.equal(n('#touchWorkbenchBody').hidden, false); assert.equal(!menu.isConnected, true);
+  const reopened = await openMovementMenu();
+  assert.equal(reopened.isConnected, true); assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1); assert.deepEqual(f.errors, []);
 });
 
 test('Restoring the workbench after viewport adjustment closes its detached select', async () => {
@@ -104,8 +106,8 @@ test('Restoring the workbench after viewport adjustment closes its detached sele
   await click('#touchViewportAdjust'); assert.equal(n('#touchLayoutEditor').hidden, true);
   // A retained/programmatically reopened menu must follow main's explicit
   // syncTouchLayoutWorkbench close when viewport editing finishes.
-  const menu = await openMovementMenu(); assert.equal(menu.hidden, false);
-  await click('#touchViewportDone'); assert.equal(n('#touchLayoutEditor').hidden, false); assert.equal(menu.hidden, true);
+  const menu = await openMovementMenu(); assert.equal(!menu.isConnected, false);
+  await click('#touchViewportDone'); assert.equal(n('#touchLayoutEditor').hidden, false); assert.equal(!menu.isConnected, true);
   assert.deepEqual(f.errors, []);
 });
 
@@ -159,10 +161,10 @@ test('Safe-zone resize and orientation events refresh the real draft; teardown r
   const previousObserver = globalThis.ResizeObserver, orientationDescriptor = Object.getOwnPropertyDescriptor(env.window.screen, 'orientation');
   const width = Object.getOwnPropertyDescriptor(env.document.documentElement, 'clientWidth'), height = Object.getOwnPropertyDescriptor(env.document.documentElement, 'clientHeight');
   const observed = [], orientation = new env.window.EventTarget();
-  globalThis.ResizeObserver = class {constructor(callback) {this.callback = callback; observed.push(this);} observe(node) {this.node = node;} disconnect() {this.disconnected = true;}};
+  globalThis.ResizeObserver = class {constructor(callback) {this.callback = callback; observed.push(this);} observe(node) {this.node = node;} unobserve(node) {if(this.node === node) this.disconnected = true;} disconnect() {this.disconnected = true;}};
   Object.defineProperty(env.window.screen, 'orientation', {configurable: true, value: orientation});
   try {
-    const f = await editor(), observer = observed.findLast(value => !value.disconnected);
+    const f = await editor(), observer = observed.findLast(value => value.node === n('#touchLayoutSafeZone') && !value.disconnected);
     assert.equal(observer.node, n('#touchLayoutSafeZone'));
     let revision = f.model.getSnapshot().revision;
     await React.act(async () => observer.callback([]));
@@ -222,4 +224,25 @@ test('TH075 layout is independent from shared shooters and persists across game 
   model.setGame('th075');assert.equal(model.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
   const reopened=api.createTouchLayoutModel({storage});reopened.hydrate();reopened.setGame('th075');
   assert.equal(reopened.getSnapshot().saved.profiles.landscape.controls.joystick.x,.7);
+});
+
+test('responsive defaults resample within an orientation while edited and saved layouts keep their positions', () => {
+  const values=new Map(),storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+  const defaults=y=>({controls:Object.fromEntries(api.touchLayoutControlNames.map(name=>[name,{x:.2,y,scale:1,priority:api.touchLayoutControlMeta[name].priority}])),viewport:{x:0}});
+  const model=api.createTouchLayoutModel({storage});model.hydrate();
+  model.begin('landscape',defaults(.8),['bomb']);
+  model.ensureOrientation('landscape',defaults(.6));
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.y,.6);
+  assert.equal(values.size,0,'resizing a default preview never writes an override');
+  model.updateControl('bomb',{y:.4,scale:1.5});
+  model.ensureOrientation('landscape',defaults(.3));
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.y,.4);
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.scale,1.5);
+  model.ensureOrientation('portrait',defaults(.7));model.ensureOrientation('portrait',defaults(.5));
+  assert.equal(model.getSnapshot().draft.profiles.portrait.controls.bomb.y,.5);
+  model.save();model.discard();model.begin('landscape',defaults(.2),['bomb']);
+  model.ensureOrientation('landscape',defaults(.1));
+  assert.equal(model.getSnapshot().draft.profiles.landscape.controls.bomb.y,.4);
+  model.ensureOrientation('portrait',defaults(.1));
+  assert.equal(model.getSnapshot().draft.profiles.portrait.controls.bomb.y,.5);
 });

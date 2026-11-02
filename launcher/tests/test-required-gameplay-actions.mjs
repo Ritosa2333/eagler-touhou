@@ -1,11 +1,18 @@
-/** Cross-repository semantic input contract for Launcher-owned controls.
- * Existing titles may keep different native bitmasks/state machines, but the
- * shared Restart control depends on one stable behavior: R restarts the current
- * run while the pause UI owns gameplay input. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
+
+test("required gameplay actions", async () => {
+/** Cross-repository semantic input contract for Launcher-owned controls.
+ * Existing titles may keep different native bitmasks/state machines, but the
+ * shared Restart control depends on one stable behavior: R restarts the current
+ * run while the pause UI owns gameplay input. */
+
+
+
+
 
 const coveredGames = new Set();
 
@@ -75,3 +82,4 @@ coveredGames.add("th15");
 assert.deepEqual([...coveredGames].sort(), Object.keys(PRODUCT_GAMES).sort(),
   "required restart-action verification must be updated when a formal game adapter is registered");
 console.log(`Required gameplay actions: PASS (R -> pause restart for ${Object.keys(PRODUCT_GAMES).map(game => game.toUpperCase()).join("/")})`);
+});

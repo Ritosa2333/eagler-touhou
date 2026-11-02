@@ -4,17 +4,19 @@
 
 | 工作 | 命令 | 输入 |
 | --- | --- | --- |
-| 前端修改 | `npm run typecheck`、`npm test` | `npm ci --ignore-scripts` 安装的依赖 |
-| Launcher 全部核心模块 | `npm run check` | 源码及 `services/` 中被检查的模块 |
-| 跨作品集成 | `npm run check:workspace` | 按工作区配方准备的源码与本地资源 |
-| 单个 Node 测试 | `node tests/test-名称.mjs` | 文件中声明的夹具 |
+| 前端修改 | `bun run typecheck`、`bun run test:unit` | Bun 1.4.4 与冻结锁文件安装的依赖 |
+| Launcher 全部核心模块 | `bun run check` | 源码及 `services/` 中被检查的模块 |
+| 跨作品集成 | `bun run check:workspace` | 按工作区配方准备的源码与本地资源 |
+| 单个仓库测试 | `bun --bun run vitest run tests/test-名称.mjs` | 文件中声明的夹具 |
 | 浏览器与设备 | `package.json` 中对应的 `test:*:browser` | 浏览器及该测试声明的游戏包、地址和资源 |
 
-核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行，每个测试入口在同一计划中执行一次。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。
+测试分组与工具命令见[前端检查](../docs/frontend-tooling.md)。
 
-房间丢包测量的状态和双端计数由 `npm run check` 检查；`npm run test:room-packet-loss:browser` 在本机浏览器中验证真实 DataChannel 与房间面板。
+核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行，每个测试入口在同一计划中执行一次。新测试归入计划或稳定命令入口；`test-test-ownership.mjs` 检查归属。
 
-th075 生产配置的语言包边界由 `npm run check:workspace` 检查；`npm run test:th075-language-upgrade:browser` 使用历史导入包、现行站点和原生 Runtime 验证升级流程。th12 中文贴图合成由 `npm run check` 检查。
+房间丢包测量的状态和双端计数由 `bun run check` 检查；`npm run test:room-packet-loss:browser` 在本机浏览器中验证真实 DataChannel 与房间面板。
+
+th075 生产配置的语言包边界由 `bun run check:workspace` 检查；`npm run test:th075-language-upgrade:browser` 使用历史导入包、现行站点和原生 Runtime 验证升级流程。th12 中文贴图合成由 `bun run check` 检查。
 
 Host 工作区检查覆盖 th12 的原始音轨输入与 `assets-eagler` 成品内容标记，确保两种内容准备方式都能被识别。
 
@@ -38,7 +40,7 @@ Host 工作区检查覆盖 th12 的原始音轨输入与 `assets-eagler` 成品�
 
 旧界面的对照输入保存在 [`fixtures/ui-history/`](fixtures/ui-history/README.md)，按固定 SHA-256 校验；完整检出与稀疏检出使用同一组输入。Python 场景比较通过标准输入接收检查脚本，支持 Windows 下的大份历史输入。
 
-`npm test` 最后会运行 [`site-notice.run.mjs`](react-main/site-notice.run.mjs)。该检查把临时 bundle 与源目录分开构建，历史输入仍由 [`ui-history.mjs`](support/ui-history.mjs) 从固定夹具读取并校验。
+`bun run test` 最后会运行 [`site-notice.run.mjs`](react-main/site-notice.run.mjs)。该检查把临时 bundle 与源目录分开构建，历史输入仍由 [`ui-history.mjs`](support/ui-history.mjs) 从固定夹具读取并校验。
 
 `npm run test:netplay-windows:browser` 挂载生产连接窗口、标定模型、报告、更新确认和资源导入组件，检查桌面、手机竖屏和横屏的按钮可达性，以及全屏中的报告和更新选择。缺字体的导入提示、下载链接与启动错误分别验证房间内和全屏中的实际点击命中，关闭后恢复房间操作。截图和结果位于 `.cache/netplay-windows/`。网络事件由明确的展示夹具提供。
 
@@ -67,6 +69,6 @@ Node 测试使用锁定的 `puppeteer-core`，通过 `EAGLER_CHROME_PATH` 或标
 
 ## 资源切换与房间返回
 
-`react-main/resource-download.test.mjs` 检查失败节点切换、首包与断流超时、慢传输、取消、静态托管、版本参数和跨节点凭据隔离。`transfer.test.mjs` 通过实际语言包准备入口检查换节点、单一进度任务与完整归档校验。分流服务的 `npm test` 检查发布库存和有序节点发现。`browser-session-mounted.test.mjs` 在桌面与手机环境下覆盖七作旁观各三次往返，同时检查不自动全屏、隐藏游戏操作按键和保留原生实例。th09 构建直接验证正式 Wasm 中的房间返回导出。
+`react-main/resource-download.test.mjs` 检查失败节点切换、首包与断流超时、慢传输、取消、静态托管、版本参数和跨节点凭据隔离。`transfer.test.mjs` 通过实际语言包准备入口检查换节点、单一进度任务与完整归档校验。分流服务的 `bun run test` 检查发布库存和有序节点发现。`browser-session-mounted.test.mjs` 在桌面与手机环境下覆盖七作旁观各三次往返，同时检查不自动全屏、隐藏游戏操作按键和保留原生实例。th09 构建直接验证正式 Wasm 中的房间返回导出。
 
 联机介绍通过固定历史转换器对照当前原文，另用独立的对战章节输入覆盖 th09 分组；正文按内容文档维护。

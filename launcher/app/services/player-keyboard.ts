@@ -79,7 +79,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     options.releaseHeldTouchFire(); options.cancelTouchFunction(); keyboard.clear();
     const context = options.runtime.getInputContext();
     const bridge = keyboardInputBridge(context);
-    if (bridge && bridge.submit({protocol:context.protocol,game:context.game,epoch:context.epoch,command:'keyboard-clear'})) return;
+    if (bridge?.submit({protocol:context.protocol,game:context.game,epoch:context.epoch,command:'keyboard-clear'})) return;
     if (!context.launched || !options.frame.contentWindow) return;
     options.runtime.postInput('keyboard-clear', {});
   }

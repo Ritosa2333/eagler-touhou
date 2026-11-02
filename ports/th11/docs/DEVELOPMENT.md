@@ -6,10 +6,10 @@
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th11.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th11.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 node launcher/scripts/prepare-th11-content.mjs --original='C:\Games\TH11' --output='ports/th11/assets-ogg'
 $env:EAGLER_FONT_ROOT='C:\local-content\th11-fonts'
 $env:EAGLER_TH11_CONTENT_DIR=(Resolve-Path 'ports/th11/assets-ogg').Path
@@ -18,7 +18,7 @@ $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf
 $env:EAGLER_DEVELOPMENT_GAMES='th11'
 node launcher/scripts/build-runtime.mjs --game=th11 --variant=normal --emsdk='C:\tools\emsdk'
 node ports/th11/portable/package-eagler.mjs
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 

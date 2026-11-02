@@ -1,3 +1,5 @@
+import {Button as UiButton} from '../../ui/controls';
+import {Badge} from '../../ui/badge';
 import {useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode} from 'react';
 import {useOptionsTarget} from './options-ownership';
 import {useLocale} from '../../i18n';
@@ -36,18 +38,20 @@ export function LibraryCards({products, selectedProduct, openedProduct, onSelect
   const {t} = useLocale();
   const selectedCard = useOptionsTarget('selectedCard');
   const shelf = useRef<HTMLElement>(null), controller = useRef<ReturnType<typeof bindLibraryRail> | null>(null);
-  const callbacks = useRef({onSelect, onActivate, selectBeforeActivate, products}); callbacks.current = {onSelect, onActivate, selectBeforeActivate, products};
   const [failedArt, setFailedArt] = useState<ReadonlySet<string>>(() => new Set());
   const [preview, setPreview] = useState(() => interactive ? products.some(p => p.id === selectedProduct && !p.hidden) ? selectedProduct : products.find(p => !p.hidden)?.id : undefined);
+  const callbacks = useRef({onSelect, onActivate, selectBeforeActivate, products, initialProduct: selectedProduct ?? preview});
+  callbacks.current = {onSelect, onActivate, selectBeforeActivate, products, initialProduct: selectedProduct ?? preview};
   const members = products.map(p => `${p.id}:${!!p.hidden}`).join('|');
+  const externalSelection = products.some(p => p.id === selectedProduct && !p.hidden) ? selectedProduct : undefined;
   const directory = variant === 'lobby';
   const railId = directory ? 'lobbyGameRail' : `${variant}Rail`;
   const headingId = `${variant}Heading`, minimapLabelId = `${variant}MinimapLabel`;
   useLayoutEffect(() => {
-    if (!interactive || !shelf.current) return;
+    if (!interactive || !members || !shelf.current) return;
     let ready = false;
     const current = bindLibraryRail(shelf.current, {
-      initialProduct: selectedProduct ?? preview,
+      initialProduct: callbacks.current.initialProduct,
       openOnFirstClick: id => !callbacks.current.selectBeforeActivate && callbacks.current.products.some(p => p.id === id && p.multiplayer),
       onSelectionChange: id => {setPreview(id); if (ready) callbacks.current.onSelect(id);},
     });
@@ -57,10 +61,10 @@ export function LibraryCards({products, selectedProduct, openedProduct, onSelect
     // Callback and external-selection updates do not recreate pointer ownership.
   }, [members, interactive]);
   useLayoutEffect(() => {
-    if (selectedProduct && products.some(p => p.id === selectedProduct && !p.hidden) && controller.current?.getSelectedProduct() !== selectedProduct) {
-      controller.current?.selectProduct(selectedProduct);
+    if (externalSelection && controller.current?.getSelectedProduct() !== externalSelection) {
+      controller.current?.selectProduct(externalSelection);
     }
-  }, [selectedProduct, members]);
+  }, [externalSelection]);
   const cards = products.map((product, index) => {
     const classes = ['game', `game-${product.gameId}`, product.multiplayer ? `game-${product.id} game-multiplayer` : '',
       interactive && (!product.artwork || failedArt.has(product.id)) ? 'card-art-missing' : '', preview === product.id ? 'nav-preview' : '', openedProduct === product.id ? 'selected' : ''].filter(Boolean).join(' ');
@@ -73,21 +77,22 @@ export function LibraryCards({products, selectedProduct, openedProduct, onSelect
       {product.artwork && <><span className="card-art" aria-hidden="true"><img className="card-art-image" src={product.artwork} onError={() => setFailedArt(previous => new Set(previous).add(product.id))} alt="" width={index === 0 && !product.multiplayer ? 640 : undefined} height={index === 0 && !product.multiplayer ? 480 : undefined} fetchPriority={index === 0 && !product.multiplayer ? 'high' : undefined} draggable={false}/><span className="card-art-shade"/></span><span className="card-glow" aria-hidden="true"><img className="card-art-image" src={product.artwork} onError={() => setFailedArt(previous => new Set(previous).add(product.id))} alt="" draggable={false}/></span></>}
       {product.multiplayer && <span className="mp-card-mark" aria-hidden="true">MULTIPLAYER</span>}
       <div className="no"><span className="no-label">{product.number}{product.multiplayer && <span className="no-mp">MP</span>}</span></div>
-      <div className="game-copy"><h2><span className="game-title">{titleMarkup(product.title)}</span>{product.multiplayer && <> <span className="mp-game-title-badge" aria-hidden="true">MULTIPLAYER</span></>}</h2><small>{product.subtitle}</small></div>
+      <div className="game-copy"><h2><span className="game-title">{titleMarkup(product.title)}</span>{product.multiplayer && <> <Badge className="mp-game-title-badge" aria-hidden="true">MULTIPLAYER</Badge></>}</h2><small>{product.subtitle}</small></div>
       <span className="rail-title"><strong>{product.title}</strong> ~ {product.multiplayer ? 'Multiplayer' : product.subtitle}</span>
     </a>;
   });
   const index = <div className="minimap-dock">{products.map(product => {
-    return <button key={product.id} className={`minimap-toggle${preview === product.id ? ' is-current' : ''}`} type="button" data-minimap-preview={product.id}
+    return <UiButton variant="unstyled" key={product.id} className={`minimap-toggle${preview === product.id ? ' is-current' : ''}`} type="button" data-minimap-preview={product.id}
       aria-label={product.title} aria-current={interactive ? preview === product.id : undefined}
       aria-controls={railId} aria-describedby={minimapLabelId} hidden={product.hidden}>
       <span className="minimap-index" aria-hidden="true">{product.number}</span>
-    </button>;
+    </UiButton>;
   })}</div>;
   // Shared cards retain Launcher font, focus and reduced-motion rules even
   // when their surrounding page owns the directory's room controls.
   return <section ref={shelf} className="game-shelf" data-launcher-document="" data-shelf={directory ? undefined : variant} aria-labelledby={directory ? undefined : headingId} hidden={interactive && !products.some(p => !p.hidden)} inert={inert}>
     {!directory && <header className="shelf-heading"><h2 id={headingId}>{t(variant === 'multiplayer' ? 'library.multiplayer' : 'library.singleplayer')}</h2><span className="shelf-caption">{t(variant === 'multiplayer' ? 'library.multiplayerHint' : 'library.singleplayerHint')}</span>{lobbyLink}</header>}
+    {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: The conditional group role and its accessible name are enabled together. */}
     <div className="game-rail" id={railId} role={directory ? undefined : 'group'} aria-labelledby={directory ? undefined : headingId}>{cards}</div>
     {directory ? <nav className="shelf-minimap" id="filters" aria-label={t('lobby.game')}>{interactive || products.length ? <>{index}<span className="sr-only" id={minimapLabelId}>{t('library.holdNav')}</span></> : null}</nav>
       : <div className="shelf-minimap">{index}<span className="sr-only" id={minimapLabelId}>{t('library.holdNav')}</span></div>}

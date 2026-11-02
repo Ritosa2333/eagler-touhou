@@ -88,7 +88,7 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
 // Generated from eagler-common/browser/local-replay*.mjs.
 // The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
 // This host owns only asynchronous command ordering and presentation pacing.
-function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},audioState=()=>true,onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
+function createLocalReplay({inspect,open,step,state,relocate,canRelocate=()=>!!relocate,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},audioState=()=>true,onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
   let selected=null,path='',paused=false,rate=1,target=null,startFrame=0,last=null,credit=0,animation=0,continuation=0,closed=false,lastReport=-Infinity;
   let channel=null,pendingTask=null,taskSerial=0;
   function soon(fn){
@@ -100,7 +100,7 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
     const id=++taskSerial;pendingTask={id,fn};channel.port2.postMessage(id);return id;
   }
   function cancelScheduled(){if(animation)cancel(animation);if(continuation){if(cancelDeferred)cancelDeferred(continuation);else pendingTask=null;}animation=continuation=0;}
-  function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected});}
+  function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected,...(canRelocate()?{fileRelocation:1}:{})});}
   function syncAudio(){return audioState({paused:closed||!selected||paused,hidden:hidden(),seeking:target!==null,ended:!!selected&&!!state().ended})!==false;}
   function schedule(){if(animation||continuation||closed)return;if(target!==null&&!hidden())continuation=soon(draw);else animation=raf(draw);}
   function draw(time){animation=continuation=0;if(closed||!selected)return;
@@ -141,6 +141,12 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
       if(closed)throw Error('录像播放器已关闭');
       const {action,value}=message;
       if(action==='inspect')return {description:await inspect(message.path)};
+      if(action==='relocate'){
+        // A file mutation may finish after the user selects another recording.
+        if(!selected||path!==message.path)return {};
+        if(!canRelocate()||!relocate)throw Error('Replay relocation is not supported');
+        await relocate(path,message.target);path=message.target;report();return {};
+      }
       if(action==='open'){
         const next=await inspect(message.path),stage=message.stage??next.stages[0]?.id;
         if(!next.stages.some(item=>item.id===stage))throw Error('录像没有此关卡');
@@ -213,6 +219,10 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
     try{heap().set(bytes,p);return fn(p,bytes.length);}finally{free(p);}
   }
   const bridge=createLocalReplay({
+    canRelocate:()=>typeof api('eagler_replay_relocate')==='function',
+    relocate(from,to){return bytesCall(cbytes(physical(from)),source=>bytesCall(cbytes(physical(to)),target=>{
+      if(api('eagler_replay_relocate')(source,target)!==1)throw Error('Native replay path relocation failed');
+    }));},
     async prepare(){const ready=api('eagler_replay_ready');if(!ready)return;const deadline=performance.now()+30000;
       while(!ready()){if(performance.now()>deadline)throw Error('录像播放器初始化超时');await new Promise(requestAnimationFrame);}},
     inspect(path){const p=physical(path),fn=api('eagler_replay_inspect');if(!fn)throw Error('此 Runtime 需要更新后才能解析录像');
@@ -438,7 +448,10 @@ function save(){if(app)core.application_save(app);return sync(false);}
 async function resumeForegroundAudio(forcePause=false){
  if(localReplay.active&&localReplay.audioPaused)return false;
  if(!core||!app||!launched||closing||touchRetired||document.hidden||!ownsTouchDocument())return false;
- if(forcePause)core.sdl_loop_pause(1);
+ // The Replay workspace can initialize its native menu while audio permission
+ // is pending. Its playback clock takes over the output gate after selection.
+ if(options.replayViewer&&!localReplay.active)core.sdl_loop_pause(0);
+ else if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>(!localReplay.active||!localReplay.audioPaused)&&!!core&&!!app&&launched&&!closing&&!touchRetired&&!document.hidden&&ownsTouchDocument());
 }
 async function stop(){if(closing)return;if(roomOwned&&!options.replayViewer){closing=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{closing=false;}return;}closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}

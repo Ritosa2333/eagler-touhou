@@ -1,4 +1,4 @@
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -66,7 +66,7 @@ test('adjacent squares share one aligned border while exposed edges retain thick
 test('three chronological sections keep game tables separate and inside the chart', () => {
   for (const easy of [true, false]) for (const extra of [true, false]) {
     const layout = api.trackerLayout({...api.DEFAULT_OPTIONS, easy, extra});
-    assert.deepEqual(layout.sections.map(section => section.title), ['整数作', '对战作', '小数点作']);
+    assert.deepEqual(layout.sections.map(section => section.titleKey), ['career.section.main', 'career.section.versus', 'career.section.spinOff']);
     assert.deepEqual(layout.sections[1].games.map(block => block.game.name), ['PODD', 'POFV', 'UDOALG']);
     const blocks = layout.sections.flatMap(section => section.games);
     assert.equal(blocks.length, extra ? 33 : 26);
@@ -85,12 +85,12 @@ test('three chronological sections keep game tables separate and inside the char
 
 test('TH20 has five difficulties and four colors for both R and M in the integer section', () => {
   const game = api.TRACKER_GAMES.find(game => game.name === 'TH20');
-  assert.equal(api.trackerDisplayName(game), 'Th20');
+  assert.equal(api.trackerDisplayName(game), 'th20');
   assert.deepEqual(game.difficulties, ['E', 'N', 'H', 'L', 'X']);
   assert.deepEqual(game.characters, ['Rr', 'Ry', 'Rb', 'Rg', 'Mr', 'My', 'Mb', 'Mg']);
   assert.equal(api.TRACKER_CELLS.filter(cell => cell.game.name === 'TH20').length, 40);
   assert.equal(api.trackerLayout(api.DEFAULT_OPTIONS).sections[0].games.at(-1).game.name, 'TH20');
-  assert.equal(api.cellLabel('TH20-Rr-X'), '东方锦上京 · Rr · Extra');
+  assert.equal(api.cellLabel('TH20-Rr-X'), '东方锦上京 | Rr | Extra');
 });
 
 
@@ -115,12 +115,12 @@ test('shared difficulty labels align every standard game including games without
 });
 
 
-test('every work uses a unique Th number for its display label', () => {
+test('every work uses a unique th number for its display label', () => {
   const labels = api.TRACKER_GAMES.map(api.trackerDisplayName);
   assert.equal(new Set(labels).size, 33);
-  assert.ok(labels.every(label => /^Th[0-9]{2}(?:\.[0-9])?$/.test(label)));
-  assert.equal(api.trackerDisplayName({name: 'STB'}), 'Th09.5');
-  assert.equal(api.trackerDisplayName({name: 'H.SOKU'}), 'Th12.3');
+  assert.ok(labels.every(label => /^th[0-9]{2}(?:\.[0-9])?$/.test(label)));
+  assert.equal(api.trackerDisplayName({name: 'STB'}), 'th09.5');
+  assert.equal(api.trackerDisplayName({name: 'H.SOKU'}), 'th12.3');
 });
 
 

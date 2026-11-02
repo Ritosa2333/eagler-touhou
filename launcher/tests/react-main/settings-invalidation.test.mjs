@@ -1,7 +1,7 @@
 /** Supplemental source-derived policy tests. Original browser scenarios remain
  * primary acceptance; this does not exercise native Runtime or saved files.
  * Main app.mts4880–4904,6587–6617,8680–8705,8737–8739,8914–8943,8531–8538. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

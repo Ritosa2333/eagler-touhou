@@ -1,4 +1,4 @@
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -6,9 +6,11 @@ import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {installMountedDom} from './mounted-dom-environment.mjs';
+import {installNativeTimeline} from './native-animation-environment.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url)), require = createRequire(resolve(project, 'package.json'));
 const {build} = require('esbuild');
 let env, React, createRoot, MemoryRouter, owners, work;
+let nativeTimeline=[];
 const mounts = new Set(), fixtures = new Set();
 const n = (selector, scope = env.document) => {const node = scope.querySelector(selector); assert.ok(node, `Missing ${selector}`); return node;};
 const all = (selector, scope = env.document) => [...scope.querySelectorAll(selector)];
@@ -36,7 +38,7 @@ before(async () => {
     export * from './src/launcher/game-preferences.mts';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual.mjs'), logLevel: 'silent',
   plugins: [{name: 'installed-deps-authored-mts', setup(ctx) {
-    ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+    ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
     ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
   }}]}); owners = await import(pathToFileURL(resolve(work, 'actual.mjs')));
 });
@@ -46,6 +48,7 @@ afterEach(async () => {
   env.document.body.replaceChildren(); env.document.body.className = '';
   env.window.matchMedia = query => ({matches: query.includes('prefers-reduced-motion'), media: query, addEventListener() {}, removeEventListener() {}}); globalThis.matchMedia = env.window.matchMedia;
   delete env.window.HTMLElement.prototype.animate;
+  delete env.window.HTMLElement.prototype.getAnimations;
   assert.deepEqual(env.errors.splice(0), [], 'No unexpected React or DOM errors');
 });
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
@@ -122,7 +125,12 @@ async function mountRoom(f, extra = {}, options = {}) {
     onLeave: () => {intents.push(['leave']); f.service.leave();}, onCopyRoomCode: code => intents.push(['copy', code]), onGuide: () => intents.push(['guide']),
     onOpenSettings: () => intents.push(['settings']), settingsOpen: false, panel: null, onOpenPanel: (...args) => intents.push(['panel', ...args]), onClosePanel: () => intents.push(['close']), ...extra}, {locale: f.locale, ...options}); return {m, intents};
 }
-const click = (selector, scope) => act(() => n(selector, scope).click());
+const click = (selector, scope) => act(() => {
+  const node = n(selector, scope);
+  if (node.getAttribute('role') === 'tab' || node.getAttribute('aria-haspopup') === 'menu') {
+    node.dispatchEvent(new env.window.KeyboardEvent('keydown', {key: node.getAttribute('role') === 'tab' ? 'Enter' : 'ArrowDown', bubbles:true}));
+  } else node.click();
+});
 test('TH09 local charge rule defaults on, restores native Replay by room agreement, and locks during play', async () => {
   const f=await fixture({product:'th09mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
   const toggle=n('#mpDisableLocalChargePriority');
@@ -167,6 +175,27 @@ function compare(f) {
     if(seat)assert.equal(n(`[data-mp-seat="${index}"] .mp-seat-name`).textContent,seat.name);
   }
 }
+for (const locale of ['zh-CN', 'en', 'ja']) test(`Member card artwork follows preparation and reconnect state with a localized status: ${locale}`, async () => {
+  const f = await fixture({locale}).live(); await mountRoom(f);
+  const host = {clientId:f.id,name:'A',loadout:0,ready:false};
+  const peer = {clientId:'peer-b123',name:'B',loadout:1,ready:false};
+  const resources = {status:'ready',stage:'runtime',percent:100};
+  for (const [seat,state,word,key] of [
+    [peer,'loading','LOADING','room.resourceLoading'],
+    [{...peer,resource:resources},'unready','UNREADY','room.notReady'],
+    [{...peer,ready:true,resource:resources},'ready','READY','room.ready'],
+    [{...peer,ready:true,resource:resources,offline:true},'loading','LOADING','multiplayer.playerReconnecting'],
+    [null,'empty',null,null],
+  ]) {
+    await f.receive({seats:[host,seat]});
+    const card=n('[data-mp-seat="1"]'); assert.equal(card.dataset.cardState,state);
+    if (!seat) {assert.equal(card.querySelector('.room-seat-decoration'),null);continue;}
+    assert.equal(n('.room-seat-decoration',card).getAttribute('aria-hidden'),'true');
+    assert.equal(n('.room-seat-watermark.active',card).textContent,word);
+    assert.equal(all('.room-seat-watermark.active',card).length,1);
+    assert.equal(n('[role="status"]',card).textContent,t(locale,key));
+  }
+});
 for (const locale of ['zh-CN', 'en']) test(`Room workspace follows authoritative state: ${locale}, unsynced/owner/offline/unseated/spectator/ready/running`, async () => {
   const f = await fixture({locale}).enter(), {m} = await mountRoom(f, {panel: {kind: 'game'}});
   compare(f, {panel: {kind: 'game'}});
@@ -285,13 +314,16 @@ test('Ready/start gates use synchronized occupied seats and check-game calls rea
 test('Seat/spectator removal calls real danger decisions and rejects a departed stale target', async () => {
   const f = await fixture().live({seats: null});
   const room = {seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 1}], spectators: [{clientId: 'watch12345', name: 'W'}]};
-  await f.receive(room); await mountRoom(f, {panel: {kind: 'spectators'}});
-  await click('[data-mp-seat="1"] .room-member-menu-trigger');await click('.room-member-menu [data-phrase="remove-player"]'); assert.equal(f.decisions.getSnapshot().tone, 'danger');
+  await f.receive(room); const {m}=await mountRoom(f);
+  const decisionAfterMenuClose=async()=>{for(let i=0;i<25&&!f.decisions.getSnapshot();i++)await act(()=>new Promise(resolve=>setTimeout(resolve,10)));assert.ok(f.decisions.getSnapshot(),'Menu focus handoff opens the decision');};
+  await click('[data-mp-seat="1"] .room-member-menu-trigger');await click('.room-member-menu [data-phrase="remove-player"]'); await decisionAfterMenuClose(); assert.equal(f.decisions.getSnapshot().tone, 'danger');
   assert.equal(f.decisions.getSnapshot().message, t('en', 'room.removePlayerConfirm', {seat: 2}));
   await act(() => f.decisions.resolve('confirm')); assert.deepEqual(f.socket.sent.at(-1), {type: 'remove-player', seat: 1, clientId: 'peer12345'});
+  await m.update({panel:{kind:'spectators'}});
   await click('.mp-spectator-remove'); assert.equal(f.decisions.getSnapshot().message, t('en', 'room.removeSpectatorConfirm'));
   await act(() => f.decisions.resolve('confirm')); assert.deepEqual(f.socket.sent.at(-1), {type: 'remove-spectator', clientId: 'watch12345'});
-  await click('[data-mp-seat="1"] .room-member-menu-trigger');await click('.room-member-menu [data-phrase="remove-player"]'); await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'successor', name: 'S', loadout: 2}]});
+  await m.update({panel:null});
+  await click('[data-mp-seat="1"] .room-member-menu-trigger');await click('.room-member-menu [data-phrase="remove-player"]'); await decisionAfterMenuClose(); await f.receive({seats: [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'successor', name: 'S', loadout: 2}]});
   const count = f.socket.sent.filter(message => message.type === 'remove-player').length; await act(() => f.decisions.resolve('confirm'));
   assert.equal(f.socket.sent.filter(message => message.type === 'remove-player').length, count);
 });
@@ -462,33 +494,38 @@ test('room shows two real resource stages, names/roles and challenge difficulty 
 });
 function animationFixture() {
   globalThis.matchMedia = env.window.matchMedia = query => ({matches: false, media: query, addEventListener() {}, removeEventListener() {}});
-  const animations = []; env.window.HTMLElement.prototype.animate = function (keyframes, options) {const done = deferred(), record = {node: this, keyframes, options, cancelled: false, finished: done.promise, cancel() {record.cancelled = true; done.reject(Error('Synthetic animation cancelled'));}, finish: done.resolve}; done.promise.catch(() => {}); animations.push(record); return record;}; return animations;
+  nativeTimeline=[];installNativeTimeline(env.window,nativeTimeline);return nativeTimeline;
 }
+function nativeEffects(node){return nativeTimeline.filter(item=>item.node===node&&!item.settled&&!item.cancelled);}
+async function finishNative(node){const active=nativeEffects(node);assert.ok(active.length);await act(()=>{for(const animation of active)animation.finish();});}
 async function panelFixture({strict = false} = {}) {
   const trigger = env.document.createElement('button'); trigger.textContent = 'Original trigger'; env.document.body.append(trigger); let requests = 0, closures = 0;
   const m = await mount(owners.RoomPanel, {open: true, kind: 'personal', onCloseRequest: () => requests++, onClosed: () => closures++, trigger: {current: trigger}, children: React.createElement('button', {id: 'child-action'}, 'Child')}, {strict});
   return {m, trigger, get requests() {return requests;}, get closures() {return closures;}, node: n('#mpRoomPanel')};
 }
-test('Native modal Escape/backdrop request close; committed 160ms closure restores the exact original trigger', async () => {
-  const animations = animationFixture(), h = await panelFixture(); assert.equal(h.node.open, true);
-  const cancel = new env.window.Event('cancel', {cancelable: true}); await act(() => h.node.dispatchEvent(cancel)); assert.equal(cancel.defaultPrevented, true); assert.equal(h.requests, 1); assert.equal(h.node.open, true);
-  await click('#child-action'); assert.equal(h.requests, 1);
-  for (const [clientX, clientY, expected] of [[0, 0, 1], [1280, 800, 1], [-1, 20, 2], [1281, 20, 3]]) {
-    await act(() => h.node.dispatchEvent(new env.window.MouseEvent('click', {bubbles: true, clientX, clientY}))); assert.equal(h.requests, expected, 'Only strictly outside dialog bounds dismisses');
+test('Native modal Escape/backdrop request close; shared completion restores the exact original trigger', async () => {
+  animationFixture();const h=await panelFixture();assert.equal(h.node.open,true);
+  const cancel=new env.window.Event('cancel',{cancelable:true});await act(()=>h.node.dispatchEvent(cancel));assert.equal(cancel.defaultPrevented,true);assert.equal(h.requests,1);
+  await click('#child-action');assert.equal(h.requests,1);
+  for(const [clientX,clientY,expected] of [[0,0,1],[1280,800,1],[-1,20,2],[1281,20,3]]){
+    await act(()=>h.node.dispatchEvent(new env.window.MouseEvent('click',{bubbles:true,clientX,clientY})));assert.equal(h.requests,expected);
   }
-  await h.m.update({open: false}); assert.equal(h.node.open, true); assert.equal(h.closures, 0); assert.equal(animations.length, 1);
-  assert.deepEqual(animations[0].options, {duration: 160, easing: 'cubic-bezier(.4,0,1,1)'});
-  assert.deepEqual(animations[0].keyframes, [{opacity: 1, transform: 'translateY(0) scale(1)'}, {opacity: 0, transform: 'translateY(14px) scale(.985)'}]);
-  await act(() => animations[0].finish()); assert.equal(h.node.open, false); assert.equal(h.closures, 1); assert.ok(env.document.activeElement === h.trigger);
+  await h.m.update({open:false});assert.equal(h.node.open,true);assert.equal(h.closures,0);
+  const effects=nativeEffects(h.node);assert.equal(effects.length,2);assert.ok(effects.every(effect=>effect.options.duration===180));
+  assert.deepEqual(effects.find(effect=>effect.keyframes.opacity).keyframes.opacity,['1','0']);
+  assert.ok(effects.every(effect=>!effect.keyframes.transform));
+  await finishNative(h.node);assert.equal(h.node.open,false);assert.equal(h.closures,1);assert.equal(env.document.activeElement,h.trigger);
 });
-test('Reopen during native close cancels stale animation; StrictMode subscriptions and closing promise clean up on unmount', async () => {
-  const animations = animationFixture(), h = await panelFixture({strict: true}); assert.equal(h.node.open, true);
-  await h.m.update({open: false}); assert.equal(animations.length, 1);
-  await h.m.update({open: true, kind: 'network', peerId: 'peer12345'}); assert.equal(animations[0].cancelled, true); assert.equal(h.node.open, true); assert.equal(h.closures, 0);
-  await act(() => animations[0].finish()); assert.equal(h.node.open, true); assert.equal(h.closures, 0);
-  await h.m.update({open: false}); await h.m.unmount(); assert.equal(animations[1].cancelled, true); await act(() => animations[1].finish()); assert.equal(h.closures, 0);
-  const f = await fixture().live(), {m} = await mountRoom(f, {}, {strict: true}); assert.equal(f.network.subscriberCount, 1); await m.unmount(); assert.equal(f.network.subscriberCount, 0);
+
+test('Reopen during native close cancels stale animation; StrictMode subscriptions clean up on unmount',async()=>{
+  animationFixture();const h=await panelFixture({strict:true});await h.m.update({open:false});const stale=nativeEffects(h.node);
+  await h.m.update({open:true,kind:'network',peerId:'peer12345'});assert.ok(stale.every(animation=>animation.cancelled));assert.equal(h.closures,0);
+  await act(()=>{for(const animation of stale)animation.finish();});assert.equal(h.node.open,true);assert.equal(h.closures,0);
+  await h.m.update({open:false});const closing=nativeEffects(h.node);await h.m.unmount();assert.ok(closing.every(animation=>animation.cancelled));
+  await act(()=>{for(const animation of closing)animation.finish();});assert.equal(h.closures,0);
+  const f=await fixture().live(),{m}=await mountRoom(f,{}, {strict:true});assert.equal(f.network.subscriberCount,1);await m.unmount();assert.equal(f.network.subscriberCount,0);
 });
+
 test('Reduced-motion modal closes synchronously; room trigger focus and settings state settle together', async () => {
   const f = await fixture().live(), {m} = await mountRoom(f); const trigger = n('[data-mp-seat="0"] .mp-seat-edit');
   await click('[data-mp-seat="0"] .mp-seat-edit'); await m.update({panel: {kind: 'personal'}}); assert.equal(f.service.getSnapshot().roomSettingsOpen, false);
@@ -619,20 +656,22 @@ test('Real shared SettingsBody moves one header/fold into drawer and back across
 });
 
 test('Drawer preserves shared controls through editor foreground suspension and resumes the same focused field', async () => {
-  const f = await fixture().live(), h = await sharedDrawer(f), nodes = sharedNodes(), focused = n('#mpTouchLayoutEdit');
-  await act(() => focused.focus()); await h.m.update({foregroundActive: true}); assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(n('#mpSettingsRoomDrawer').hasAttribute('inert'), true); assert.equal(n('#mpSettingsRoomBackdrop').hidden, true); assertSharedNodes(nodes);
+  const f = await fixture().live(), h = await sharedDrawer(f);
+  await act(() => h.model.setDisclosure('touch', true));
+  const nodes = sharedNodes(), focused = n('#mpTouchLayoutEdit');
+  await act(() => focused.focus()); assert.ok(env.document.activeElement === focused, 'Expanded touch entry can acquire focus'); await h.m.update({foregroundActive: true}); assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(n('#mpSettingsRoomDrawer').hasAttribute('inert'), true); assert.equal(n('#mpSettingsRoomBackdrop').hidden, true); assertSharedNodes(nodes);
   await act(() => n('#mpCopyRoomCode').focus()); await h.m.update({foregroundActive: false}); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').hasAttribute('inert'), false); assert.ok(env.document.activeElement === focused, 'Restores exact focused control'); assertSharedNodes(nodes);
 });
 
-test('Drawer close uses 220ms completion, retained fading backdrop and immediate inert release and then visible cue focus; reopen retires stale timer', async () => {
+test('Drawer shared completion retains the fading backdrop, releases inertness and restores visible cue focus; reopen retires stale effects', async () => {
   animationFixture(); const f = await fixture().live(), h = await sharedDrawer(f), clock = fakeTimers();
   try {
     const cue = n('#mpSettingsRoomDrawerToggle'), focusCalls = [], originalFocus = cue.focus.bind(cue); cue.focus = options => {focusCalls.push({hidden: cue.hidden, roomInert: n('#mpRoomView').hasAttribute('inert')}); originalFocus(options);};
     await h.m.update({open: false}); assert.equal(n('#mpSettingsRoomBackdrop').hidden, false); assert.equal(n('#mpSettingsRoomBackdrop').classList.contains('closing'), true); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), true); assert.equal(cue.hidden, false);
-    assert.equal([...clock.tasks.values()].filter(task => task.delay === 220).length, 1); await clock.tick(219); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); await clock.tick(1);
+    assert.equal(clock.tasks.size,0);await clock.tick(10000);assert.equal(n('#mpSettingsRoomDrawer').hidden,false);await finishNative(n('#mpSettingsRoomDrawer'));
     assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(n('#mpSettingsRoomBackdrop').hidden, true); assert.equal(cue.hidden, false); assert.deepEqual(focusCalls, [{hidden: false, roomInert: false}]);
-    await h.m.update({open: true}); await h.m.update({open: false}); const stale = [...clock.tasks.values()].find(task => task.delay === 220); await h.m.update({open: true}); assert.equal([...clock.tasks.values()].some(task => task === stale), false);
-    await act(stale.fn); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), false);
+    await h.m.update({open: true}); await h.m.update({open: false}); const stale=nativeEffects(n('#mpSettingsRoomDrawer'));await h.m.update({open:true});assert.ok(stale.every(animation=>animation.cancelled));
+    await act(()=>{for(const animation of stale)animation.finish();});assert.equal(n('#mpSettingsRoomDrawer').hidden,false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), false);
     await h.m.update({open: false}); await h.m.update({roomOpen: false}); assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(clock.tasks.size, 0);
     await h.m.unmount();
   } finally {clock.restore();}
@@ -653,11 +692,11 @@ test('Relocated shared settings controls retain Escape/backdrop close and cyclic
   const forward = new env.window.KeyboardEvent('keydown', {key: 'Tab', bubbles: true, cancelable: true}); await act(() => last.dispatchEvent(forward));
   assert.equal(forward.defaultPrevented, true); assert.ok(env.document.activeElement === first);
 });
-test('Drawer departure and unmount cancel retained 220ms timers with no stale focus or detached selects', async () => {
+test('Drawer departure and unmount cancel retained effects with no stale focus or detached selects', async () => {
   animationFixture(); const f = await fixture().live(), h = await sharedDrawer(f, {strict: true}), clock = fakeTimers();
   try {
-    await h.m.update({open: false}); const task = [...clock.tasks.values()].find(task => task.delay === 220); assert.ok(task);
-    await h.m.unmount(); assert.equal(clock.tasks.size, 0); await act(task.fn); assert.equal(env.document.querySelector('#mpSettingsRoomDrawer'), null); assert.equal(all('.mizuki-select-menu').length, 0);
+    await h.m.update({open: false}); const effects=nativeEffects(n('#mpSettingsRoomDrawer'));assert.ok(effects.length);
+    await h.m.unmount(); assert.equal(clock.tasks.size, 0); await act(()=>{for(const effect of effects)effect.finish();});assert.equal(env.document.querySelector('#mpSettingsRoomDrawer'),null); assert.equal(all('.mizuki-select-menu').length, 0);
   } finally {clock.restore();}
 });
 

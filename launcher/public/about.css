@@ -1,26 +1,21 @@
-html{background:#0d0d0c}
-html[data-book-theme='light']{background:#f7f6f2;color-scheme:light}
-.about-body{min-height:100vh;margin:0;overflow:auto;background:#0d0d0c;color:#d8d5ce;font:13px/1.65 var(--ui-font)}
-.about-page{width:min(680px,calc(100% - 32px));margin:0 auto;padding:34px 0 42px}
-.about-page a{color:#eee;text-underline-offset:3px}.about-page a:visited{color:#bbb}
-.about-back{margin:0;color:#999;font-size:11px}
-.about-page h1{margin:22px 0 5px;color:#eee;font:700 22px/1.2 var(--ui-font);letter-spacing:.03em}
-.about-page h1.brand-title{font-family:"touhou98",monospace;font-weight:400;text-transform:none;letter-spacing:.03em}
-.about-page h2{position:relative;margin:22px 0 8px;padding-left:14px;color:#eee;font:700 13px/1.35 var(--ui-font)}
-.about-page h2:before{content:"";position:absolute;left:0;top:.675em;width:4px;height:16px;border-radius:999px;background:var(--red-bright);transform:translateY(-50%)}
-.about-page h3{margin:17px 0 5px 14px;color:#ddd;font:700 12px/1.4 var(--ui-font)}
-.about-page p{margin:7px 0}.about-page hr{display:none}
-.about-page h2~p{margin-left:14px}
-.about-page code{padding:1px 3px;background:#222;color:#fff;font:inherit}
-.faq-content>p:first-of-type{margin:5px 0 18px;color:#aaa}.faq-content h2{margin:22px 0 7px;font-size:14px}.faq-content p{margin:7px 0;color:#b8b4ad}.faq-content ul{margin:8px 0;padding-left:22px;color:#b8b4ad}.faq-content li+li{margin-top:6px}.faq-content strong{color:#eee}.faq-content code{white-space:nowrap}
-@media(max-width:520px){.about-page{width:min(100% - 24px,680px);padding-top:22px}}
-
-html[data-book-theme='light'] .about-body{background:#f7f6f2;color:#2b302c}
-html[data-book-theme='light'] .about-page a{color:#8e2730}
-html[data-book-theme='light'] .about-page a:visited{color:#6c4550}
-html[data-book-theme='light'] .about-back{color:#757d73}
-html[data-book-theme='light'] .about-page h1,html[data-book-theme='light'] .about-page h2,html[data-book-theme='light'] .about-page h3{color:#2b302c}
-html[data-book-theme='light'] .about-page code{background:#e8e6df;color:#2b302c}
-html[data-book-theme='light'] .faq-content>p:first-of-type{color:#757d73}
-html[data-book-theme='light'] .faq-content p,html[data-book-theme='light'] .faq-content ul{color:#555d54}
-html[data-book-theme='light'] .faq-content strong{color:#2b302c}
+html{background:var(--kit-background);scrollbar-gutter:stable}
+.about-body{min-height:100vh;margin:0;overflow:auto;background:var(--kit-background);color:var(--kit-foreground);font:400 14px/1.75 var(--kit-font)}
+.about-page{width:min(720px,calc(100% - 48px));margin:0 auto;padding:24px 0 48px;overflow-wrap:anywhere}
+.about-page a{color:var(--kit-foreground);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--kit-ring)}
+.about-page a:visited{color:var(--kit-muted-foreground)}
+.about-page a:hover{color:var(--kit-brand)}
+.about-page a:focus-visible{outline:2px solid var(--kit-ring);outline-offset:3px;border-radius:2px}
+.about-back{margin:0 0 12px;font-size:12px;color:var(--kit-muted-foreground)}
+.about-back a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:inherit}
+.about-page h1,.about-page h1.brand-title{margin:16px 0 24px;color:var(--kit-foreground);font:600 28px/1.35 var(--kit-font);letter-spacing:-.025em}
+.brand-title img{display:block;width:min(280px,100%);height:auto}
+.about-page h2{margin:28px 0 10px;color:var(--kit-foreground);font:600 18px/1.5 var(--kit-font);letter-spacing:-.015em}
+.about-page h3{margin:20px 0 8px;color:var(--kit-foreground);font:600 15px/1.5 var(--kit-font)}
+.about-page p{margin:10px 0}
+.about-page hr{margin:24px 0;border:0;border-top:1px solid var(--kit-border)}
+.about-page code{padding:2px 5px;border-radius:4px;background:var(--kit-muted);color:var(--kit-foreground);font:400 12px/1.6 ui-monospace,monospace;overflow-wrap:anywhere}
+.faq-content>p:first-of-type{color:var(--kit-muted-foreground)}
+.faq-content :is(ul,ol){margin:10px 0 20px;padding-left:22px}
+.faq-content li+li{margin-top:8px}
+.faq-content strong{font-weight:600;color:var(--kit-foreground)}
+@media(max-width:520px){.about-page{padding-top:12px}.about-page h1{font-size:24px}.about-page h2{font-size:16px}}

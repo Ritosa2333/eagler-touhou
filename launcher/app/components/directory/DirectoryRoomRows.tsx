@@ -67,6 +67,7 @@ function RoomRow({
   const title = locale === 'en' ? meta.subtitle : meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
   const duel = room.product === 'th09mp';
+  const score = room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS';
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
@@ -78,9 +79,8 @@ function RoomRow({
     snapshot.leaving ||
     !directoryRoomCanEnter(room);
   return (
-    <article
+    <li
       className={`lobby-room-row${initiallyHiddenMotion ? ' lobby-room-initial' : ''}`}
-      role="listitem"
       data-key={`${room.product}-${room.code}`}
     >
       <div className="lobby-room-identity">
@@ -107,7 +107,7 @@ function RoomRow({
             {t('room.challengeMode')}
           </span>
           <div className="lobby-room-facts">
-            <span className="lobby-room-watchers" aria-label={t('th09.spectatorCount', {count: room.spectators})}
+            <span className="lobby-room-watchers" role="img" aria-label={t('th09.spectatorCount', {count: room.spectators})}
               title={t('th09.spectatorCount', {count: room.spectators})}>
               <img src={assetUrl('assets/room-users.svg')} alt=""/>{t('th09.spectatorCount', {count: room.spectators})}
             </span>
@@ -119,13 +119,13 @@ function RoomRow({
           </div>
         </div>
       </div>
-      <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()} hidden={!difficulty && !duel}>{difficulty || (locale === 'en' ? 'In game' : '局内选择')}</span>
-      <div className="lobby-room-rules" aria-label={locale === 'en' ? 'Rules' : '玩法'}>
+      <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()} hidden={!difficulty && !duel}>{difficulty || (t('directory.chooseInGame'))}</span>
+      <div className="lobby-room-rules">
         {room.disableCheatMovement && <span>{t('lobby.noCheat')}</span>}
         {room.challengeMode && <span>{t('room.challengeMode')}</span>}
-        {!room.disableCheatMovement && !room.challengeMode && <span className="lobby-rule-default">{locale === 'en' ? 'Standard' : '标准'}</span>}
+        {!room.disableCheatMovement && !room.challengeMode && <span className="lobby-rule-default">{t('directory.standard')}</span>}
       </div>
-      <div className="lobby-party" aria-label={count}>
+      <div className="lobby-party">
         <span className="lobby-occupancy">{count}</span>
         <div
           className={`lobby-seats${room.seats.some((seat) => !!seat?.controlMode) ? ' has-controls' : ''}`}
@@ -163,8 +163,9 @@ function RoomRow({
               </span>
             );
             const name = seat?.name ?? (duel ? seat?.machineSign : undefined);
+            // biome-ignore lint/suspicious/noArrayIndexKey: A numbered seat is the slot identity even when its occupant changes.
             return <Fragment key={index}>
-              {duel && index === 1 && <strong className="book-room-score" aria-label={t('th09.score')}>{room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS'}</strong>}
+              {duel && index === 1 && <strong className="book-room-score" role="img" aria-label={`${t('th09.score')} ${score}`}>{score}</strong>}
               {name !== undefined ? <span className="lobby-public-player">
                 {avatar}{controlCaption}<strong className="lobby-seat-name" title={name}>{/^P[12]$/.test(name) ? '' : name}</strong>
               </span> : avatar}
@@ -172,7 +173,7 @@ function RoomRow({
           })}
         </div>
       </div>
-      <span className="lobby-player-count" aria-label={count}>
+      <span className="lobby-player-count" role="img" aria-label={count}>
         {room.players} / {room.capacity}
       </span>
       <span className="lobby-room-state" data-state={state}>
@@ -194,6 +195,6 @@ function RoomRow({
               : `lobby.${state}`,
         )}
       </BookButton>
-    </article>
+    </li>
   );
 }

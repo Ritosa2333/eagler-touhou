@@ -1,15 +1,14 @@
-.account-page{position:relative;z-index:1;width:100%;margin:0 auto;padding:0;color:var(--book-ink);font:14px/1.6 var(--ui-font)}
+@layer foundation {
+.account-page{position:relative;z-index:1;width:calc(100% - 48px);max-width:1040px;margin:28px auto;padding:0;color:var(--book-ink);font:14px/1.6 var(--ui-font)}
 .account-page *{box-sizing:border-box}
 .account-page :is(button,input){font:inherit}
-.account-shell{position:relative;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);height:calc(100dvh - var(--account-header-height,61px));min-height:0;background:var(--book-surface)}
-/* Continue both surfaces behind the masthead's rounded bottom corners. */
-.account-shell:before{content:'';position:absolute;left:0;right:0;top:calc(-1 * var(--account-header-overlap,0px));height:var(--account-header-overlap,0px);background:var(--book-surface);pointer-events:none}
+.account-shell{position:relative;display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1fr);height:auto;min-height:min(700px,calc(100dvh - 116px));border:1px solid var(--book-border);border-radius:12px;overflow:hidden;background:var(--book-surface)}
 .account-art{position:relative;min-width:0;margin-top:calc(-1 * var(--account-header-overlap,0px));isolation:isolate;background:#292c2c;overflow:hidden;border-right:1px solid var(--book-border)}
 .account-art-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:40% center;filter:grayscale(.25);opacity:.85}
 .account-content{width:100%;max-width:520px;padding:42px 48px;align-self:stretch;justify-self:center;min-width:0;max-height:100%;overflow-y:auto;display:flex;flex-direction:column;justify-content:safe center;scrollbar-width:thin}
 .account-content>*{flex-shrink:0}
-.account-mode-content{animation:account-mode-enter 140ms steps(3,end) both}
-@keyframes account-mode-enter{from{opacity:.45}to{opacity:1}}
+.account-mode-content{animation:account-mode-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
+@keyframes account-mode-enter{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.account-mode-content{animation:none}}
 html:has(body.less-motion) .account-mode-content{animation:none}
 .account-tabs{display:flex;gap:26px;margin-bottom:28px;border-bottom:1px solid var(--book-border)}
@@ -17,7 +16,7 @@ html:has(body.less-motion) .account-mode-content{animation:none}
 .account-content h1{margin:0 0 26px;font-size:24px;line-height:1.4;font-weight:700;letter-spacing:normal}
 .account-content form{display:grid;gap:17px}
 .account-content label{display:grid;gap:7px;min-width:0;font-size:12px;color:var(--book-ink)}
-.account-content input{display:block;width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-ink);font-size:13px;line-height:1.5;transition:border-color .15s,box-shadow .15s}
+.account-content input{display:block;width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-ink);font-size:13px;line-height:1.5;transition:border-color var(--ui-feedback-duration) var(--ui-feedback-easing),box-shadow var(--ui-feedback-duration) var(--ui-feedback-easing)}
 .account-content input::placeholder{color:var(--book-muted);opacity:.8}
 .account-content input:focus{outline:0;border-color:var(--book-accent);box-shadow:0 0 0 3px var(--book-accent-soft)}
 .account-page button{cursor:pointer}
@@ -42,13 +41,10 @@ html:has(body.less-motion) .account-mode-content{animation:none}
 .account-captcha-slot:not(:empty){border:0;background:transparent}
 .is-registering .account-content{padding-block:28px}.is-registering .account-tabs{margin-bottom:20px}.is-registering h1{margin-bottom:20px}.is-registering form{gap:13px}
 @media(max-width:900px){.account-content{padding-inline:28px}.account-shell{grid-template-columns:minmax(0,.8fr) minmax(0,1fr)}}
-/* A blurred backdrop supplies atmosphere without consuming form space. */
+/* Compact screens put the form on a plain reading surface. */
 @media(max-width:959px){
  .account-shell{isolation:isolate;grid-template-columns:minmax(0,1fr);height:auto;min-height:calc(100svh - var(--account-header-height,108px));background:var(--book-bg)}
- .account-art{position:absolute;z-index:0;inset:0;margin:0;min-height:100%;border:0;background:var(--book-surface);overflow:clip;pointer-events:none;user-select:none}
- .account-art-image{position:sticky;top:var(--account-header-height,108px);display:block;width:100%;height:calc(100svh - var(--account-header-height,108px));min-height:500px;object-fit:cover;object-position:40% center;filter:blur(7px) saturate(.55);opacity:1;transform:scale(1.12)}
- .account-art:after{content:'';position:absolute;inset:0;background:var(--book-surface);opacity:.72;pointer-events:none}
- html[data-book-theme='light'] .account-art:after{opacity:.78}
+ .account-art{display:none}
  .account-content,.is-registering .account-content{position:relative;z-index:1;width:100%;max-width:440px;max-height:none;overflow:visible;align-self:start;padding:32px 24px 44px;justify-content:flex-start}
  .account-content input{min-height:50px;font-size:16px;background:var(--book-surface);border-radius:9px}
  .account-content form,.is-registering form{gap:20px}
@@ -64,5 +60,6 @@ html:has(body.less-motion) .account-mode-content{animation:none}
 }
 @media(prefers-reduced-motion:reduce){.account-content input{transition:none}}
 
-@media(min-width:781px) and (hover:hover) and (pointer:fine){.account-page{width:calc(100% - 48px);max-width:1312px;--account-header-overlap:16px}}
-@media(max-width:780px),(hover:none),(pointer:coarse){.account-page{--account-header-height:108px}}
+@media(max-width:780px),(hover:none),(pointer:coarse){.account-page{width:100%;margin:0;--account-header-height:108px}.account-shell{border:0;border-radius:0;background:var(--book-surface)}}
+
+}

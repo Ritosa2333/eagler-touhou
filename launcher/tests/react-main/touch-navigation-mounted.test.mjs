@@ -2,7 +2,7 @@
  * No browser, CSS geometry, mobile, native Runtime, durable storage or game pass.
  * Original tests/test-route-state.mjs and test-touch-settings-browser.py remain intact.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -37,7 +37,7 @@ before(async () => {
       export {touchLayoutStorageKey, touchLayoutVersion, touchLayoutControlNames,
         touchLayoutControlMeta, normalizeTouchLayoutPriorityOrder} from './src/launcher/touch-layout-model.mts';
     `},
-    bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: output,
+    bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile: output,
     packages: 'external', logLevel: 'silent',
     plugins: [authoredSourcesPlugin(project)],
   });
@@ -49,7 +49,7 @@ afterEach(async () => {
     const current = mounted; mounted = null;
     await React.act(async () => {current.root.unmount();});
     current.router.dispose(); current.host.decisions?.dispose();
-    assert.equal(env.document.querySelectorAll('.mizuki-select-menu').length, 0, 'generated select menus are removed after full entry unmount');
+    assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0, 'generated select menus are removed after full entry unmount');
     assert.equal(env.document.querySelectorAll('.mizuki-select').length, 0, 'generated select wrappers are removed after full entry unmount');
     assert.deepEqual(current.errors, [], 'actual entry must not report unexpected errors');
     assert.deepEqual(env.errors, [], 'uncaught DOM and React errors fail the synthetic test, even if route assertions pass');
@@ -159,13 +159,14 @@ async function tick() {await React.act(async () => {await new Promise(resolve =>
 async function until(predicate, message) {
   const deadline = Date.now() + 2500;
   while (!predicate() && Date.now() < deadline) await tick();
-  assert.ok(predicate(), message);
+  assert.ok(predicate(), `${message} | ${JSON.stringify({url:url(),editor:hasEditor(),visibleOptions:visibleOptions(),decision:env.document.querySelector('#decisionDialog')?.open,dirty:mounted.host.touchLayout.getSnapshot().dirty})}`);
 }
 async function click(selector) {await React.act(async () => {node(selector).click();}); await tick();}
 // Main lobby retains the embedded options document while its native carrier
 // closes; only an open carrier makes those controls a visible options surface.
 function visibleOptions() {
-  const panel = env.document.querySelector('.tools[aria-hidden="false"]');
+  // Radix may restore an absent aria-hidden attribute. It is visible too.
+  const panel = env.document.querySelector('.tools.is-open:not([aria-hidden="true"])');
   const carrier = panel?.closest('dialog.lobby-options-host');
   return !!panel && (!carrier || carrier.open);
 }
@@ -458,20 +459,21 @@ test('synthetic mounted StrictMode: touch movement applies without warnings acro
     const trigger = wrapper.querySelector('.mizuki-select-trigger'), before = select.value;
     const next = ['touch', 'joystick-free', 'touch-unlimited'][cycle];
     await React.act(async () => {trigger.click();});
-    const menu = node('.mizuki-select-menu:not([hidden])');
+    const menu = node('.ui-select-content');
     await React.act(async () => {menu.querySelector(`[data-value="${next}"]`).click();}); await tick();
     assert.equal(node('#decisionDialog').open, false);
     assert.notEqual(select.value, before); assert.equal(select.value, next);
     assert.equal(mounted.host.settings.getSnapshot().options.touchMovementMode, next);
     assert.equal(JSON.parse(mounted.storage.getItem('eagler-touhou-touch-options-v1')).touchMovementMode, next);
-    assert.equal(env.document.querySelectorAll('.mizuki-select-menu:not([hidden])').length, 0);
+    assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0);
+    assert.equal(mounted.host.touchLayout.getSnapshot().dirty, false, `Movement setting preserves layout geometry in cycle ${cycle}`);
     await click('#touchLayoutExit'); await until(() => !hasEditor() && hasOptions('th06'), 'StrictMode editor Exit retains parent');
     assert.equal(env.document.querySelector('#touchMovementMode'), null);
     await click('#libraryBack'); await until(() => hasParent('library'), 'StrictMode repeated Back has no duplicate owner');
     // Main retains the selected settings panel during its closing transition.
     // Only editor owners unmount here; full entry teardown is checked afterEach.
     assert.equal(env.document.querySelectorAll('.mizuki-select').length, retainedSelects, 'no editor wrapper leaks into the retained options panel');
-    assert.equal(env.document.querySelectorAll('.mizuki-select-menu:not([hidden])').length, 0);
+    assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0);
     for (const live of env.document.querySelectorAll('select.custom-select-native')) assert.equal(live.closest('.mizuki-select').querySelectorAll('.mizuki-select-trigger').length, 1);
   }
 });

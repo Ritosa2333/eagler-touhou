@@ -108,7 +108,7 @@ def _encode_site_icon(source: bytes, name: str) -> tuple[bytes, tuple[int, int]]
             image.load()
             normalized = image.convert("RGBA")
             target_size = max(1, round(size * scale))
-            resized = normalized.resize((target_size, target_size), Image.Resampling.NEAREST)
+            resized = normalized.resize((target_size, target_size), Image.Resampling.LANCZOS)
             canvas = Image.new("RGBA", (size, size), background or (0, 0, 0, 0))
             offset = ((size - target_size) // 2, (size - target_size) // 2)
             canvas.alpha_composite(resized, offset)
@@ -274,11 +274,12 @@ def prepare_host_artwork(
                 icon_override = override_dir / "favicon.ico" if override_dir else None
                 if icon_override is not None and icon_override.is_file():
                     raw = icon_override.read_bytes()
+                    _validate_artwork("favicon.ico", raw)
                     source = "override-derived"
                 else:
-                    raw = _default_artwork("th06", "favicon.ico", roots, thdat, thanm)
+                    raw = (Path(__file__).resolve().parent.parent / "public/assets/brand/portrait.png").read_bytes()
+                    _validate_artwork("portrait.png", raw)
                     source = "site-brand-derived"
-                _validate_artwork("favicon.ico", raw)
                 data, dimensions = _encode_site_icon(raw, name)
                 source_bytes = len(raw)
             else:

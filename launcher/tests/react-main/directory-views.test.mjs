@@ -1,7 +1,7 @@
 import {synchronizedMainAuthority} from './source-text.mjs';
 /** Independent pinned-main component/service regression. SYNTHETIC DOM + MEMORY
  * ROUTER ONLY: not production-host wiring, browser top layer, CSS, relay or runtime QA. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -9,7 +9,7 @@ import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
-import {installMountedDom} from './mounted-dom-environment.mjs';
+import {installMountedDom, uiContractAttributes} from './mounted-dom-environment.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url)), project = resolve(here, '../..');
 const require = createRequire(resolve(project, 'package.json'));
@@ -49,7 +49,7 @@ before(async () => {
     export * from './src/launcher/room-invite.mts';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
     plugins: [{name: 'installed-deps-original-mts', setup(ctx) {
-      ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+      ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
       ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
     }}]});
   owners = await import(pathToFileURL(resolve(work, 'actual-bundle.mjs')));
@@ -130,8 +130,10 @@ async function submit() {const event = new env.window.Event('submit', {bubbles: 
 function normalize(element) {
   if (element.nodeType === 3) return element.textContent.replace(/\s+/g, ' ').trim() || null;
   if (element.nodeType !== 1) return null;
-  const attrs = [...element.attributes].filter(a => !a.name.startsWith('data-i18n') && a.name !== 'open' && !(a.name === 'value' && element.localName === 'input'))
-    .map(a => [a.name, a.value]).sort(([a], [b]) => a.localeCompare(b));
+  if (element.classList.contains('ui-select')) return normalize(element.querySelector('select.custom-select-native'));
+  const kitButton = element.localName === 'button' && element.dataset.slot === 'button';
+  const attrs = uiContractAttributes(element).filter(a => !a.name.startsWith('data-i18n') && a.name !== 'open' && a.name !== 'data-ui-variant' && !(kitButton && ['data-slot','data-variant','data-size'].includes(a.name)) && !(element.localName === 'select' && ['tabindex','aria-hidden'].includes(a.name)) && !(element.localName === 'button' && a.name === 'type' && a.value === 'submit') && !(a.name === 'value' && element.localName === 'input'))
+    .map(a => [a.name, a.name === 'class' ? a.value.split(/\s+/).filter(value=>kitButton ? value.startsWith('lobby-') : !['ui-button','ui-control','custom-select-native'].includes(value)).join(' ') : a.value]).filter(([name,value])=>name!=='class'||value).sort(([a], [b]) => a.localeCompare(b));
   const children = []; let text = '';
   const flushText = () => {const value = text.replace(/\s+/g, ' ').trim(); if (value) children.push(value); text = '';};
   for (const child of element.childNodes) {if (child.nodeType === 3) text += child.textContent; else if (child.nodeType === 1) {flushText(); children.push(normalize(child));}}
@@ -170,6 +172,7 @@ function expectedDialog(f, locale) {
   n('#createFields', doc).hidden = n('#policyFields', doc).hidden = !create; n('#codeField', doc).hidden = create;
   n('#roomCodeInput', doc).required = !create;
   n('#formNote', doc).textContent = t(locale, create ? form.visibility === 'private' ? 'room.privateHint' : 'lobby.publicRoom' : 'lobby.codeHint');
+  for (const [id, key] of [['gameSelect','lobby.game'], ['capacitySelect','lobby.capacity'], ['difficultySelect','lobby.difficulty'], ['visibilitySelect','room.visibility'], ['cheatSelect','room.cheatMovement']]) n('#'+id, doc).setAttribute('aria-label', t(locale,key));
   return n('#roomDialog', doc);
 }
 
@@ -406,11 +409,12 @@ for (const locale of ['zh-CN', 'en']) for (const mode of ['create', 'join']) tes
   const f = await fixture({locale}).live(); await mountDialog(f, mode, {}, {locale});
   assert.deepEqual(normalize(n('#roomDialog')), normalize(expectedDialog(f, locale)));
   assert.equal(n('#roomDialog').open, true); assert.equal(n('#roomDialog').getAttribute('aria-labelledby'), 'dialogTitle');
-  assert.deepEqual(all('#roomDialog select').map(s => s.id), ['gameSelect', 'capacitySelect', 'difficultySelect', 'visibilitySelect', 'cheatSelect']);
-  assert.equal(all('.mizuki-select, .mizuki-select-menu, [role="combobox"]').length, 0);
+  assert.deepEqual(all('#roomDialog select.custom-select-native').map(s => s.id), ['gameSelect', 'capacitySelect', 'difficultySelect', 'visibilitySelect', 'cheatSelect']);
+  assert.equal(all('#roomDialog [role="combobox"]').length, 5);
+  for (const select of all('#roomDialog select.custom-select-native')) assert.equal(select.nextElementSibling.getAttribute('aria-label'), select.getAttribute('aria-label'));
   assert.equal(n('#gameSelect').value, 'th06mp'); assert.equal(n('#capacitySelect').value, '2'); assert.equal(n('#difficultySelect').value, '1');
   assert.equal(n('#roomCodeInput').required, mode === 'join'); if (mode === 'join') assert.equal(env.document.activeElement, n('#roomCodeInput'));
-  assert.equal(all('#roomDialog input, #roomDialog select').length, 6, 'No extra room-policy fields');
+  assert.equal(all('#roomDialog input, #roomDialog select.custom-select-native').length, 6, 'No extra room-policy fields');
 });
 test('Dialog retains code/visibility/cheat fields while each open/game change resets capacity and difficulty', async () => {
   const f = await fixture().live(); const {m} = await mountDialog(f);

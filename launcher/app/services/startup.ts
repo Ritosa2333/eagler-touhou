@@ -120,7 +120,7 @@ export function createStartupController(options: StartupOptions) {
   async function notices(id: number, ports: StartupPorts) {
     const params = new URL(ports.url).searchParams;
     if (ports.lobbyOptionsEmbed) return;
-    if (ports.context === 'lobby' || /\/profile\.html\/?$/.test(new URL(ports.url).pathname)) return;
+    if (ports.context === 'lobby') return;
     const debug = params.get('debug'), preview = params.get('preview');
     // Main's browser-warning condition intentionally has no room exclusion.
     if (!debug && !preview) {
@@ -158,7 +158,8 @@ export function createStartupController(options: StartupOptions) {
       }
       if (ports.context === 'library' && hotEntry) void revealLibrary(id).catch(error => {if (current(id)) ports.onError(error);});
       else if (ports.context === 'lobby' && !hotEntry) void revealLobby(id, ports).catch(error => {if (current(id)) ports.onError(error);});
-      if (!noticesCompleted.has(ports.context)) void notices(id, ports).then(() => {if (current(id)) noticesCompleted.add(ports.context);}).catch(error => {if (current(id)) ports.onError(error);});
+      const accountDocument = /\/(?:profile|login)\.html\/?$/.test(new URL(ports.url).pathname);
+      if (!accountDocument && !noticesCompleted.has(ports.context)) void notices(id, ports).then(() => {if (current(id)) noticesCompleted.add(ports.context);}).catch(error => {if (current(id)) ports.onError(error);});
     });
     return () => {if (active?.id === id) {active = null; generation++; clearScheduled();}};
   }

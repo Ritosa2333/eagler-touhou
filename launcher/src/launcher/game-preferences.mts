@@ -193,19 +193,19 @@ export function normalizeStoredGamePreferences(
   if (saved && savedOptions) {
     const sanitizedOptions = { ...savedOptions };
     let changed = false;
-    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "limitPresentationTo60")) {
+    if (Object.hasOwn(sanitizedOptions, "limitPresentationTo60")) {
       delete sanitizedOptions.limitPresentationTo60;
       changed = true;
     }
-    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "th06FocusHitbox")) {
-      if (!Object.prototype.hasOwnProperty.call(sanitizedOptions, "focusHitboxEnabled")) {
+    if (Object.hasOwn(sanitizedOptions, "th06FocusHitbox")) {
+      if (!Object.hasOwn(sanitizedOptions, "focusHitboxEnabled")) {
         sanitizedOptions.focusHitboxEnabled = sanitizedOptions.th06FocusHitbox;
       }
       delete sanitizedOptions.th06FocusHitbox;
       changed = true;
     }
-    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "enhanceLocalPlayerVisibility")) {
-      if (!Object.prototype.hasOwnProperty.call(sanitizedOptions, "multiplayerLocalPlayerVisibility")) {
+    if (Object.hasOwn(sanitizedOptions, "enhanceLocalPlayerVisibility")) {
+      if (!Object.hasOwn(sanitizedOptions, "multiplayerLocalPlayerVisibility")) {
         sanitizedOptions.multiplayerLocalPlayerVisibility = sanitizedOptions.enhanceLocalPlayerVisibility;
       }
       delete sanitizedOptions.enhanceLocalPlayerVisibility;

@@ -2,6 +2,7 @@ import type {ReactNode} from 'react';
 import {OptionsBackdrop} from './OptionsBackdrop';
 import type {LibraryCardsProps} from './LibraryCards';
 import {BookLibrary} from './BookLibrary';
+import {useLocale} from '../../i18n';
 
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
@@ -17,10 +18,11 @@ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' |
 }
 /** OptionsPanel must be a direct child of .main.library-layout for main's CSS. */
 export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, roomUsersArtwork, optionsOpen, roomOpen = false, roomDrawer, onBack, children, ...rail}: LibrarySurfaceProps) {
+  const {t} = useLocale();
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
     {masthead}
     <main className={`main library-layout${roomOpen ? ' mp-room-open' : ''}`} id="main">
-      <h1 className="visually-hidden">东方Project 原作 STG ~ EAGLER TOUHOU</h1>
+      <h1 className="visually-hidden">{t('site.documentTitle')}</h1>
       <div className="game-library" inert={optionsOpen}>
         <BookLibrary {...rail} footer={footer}/>
       </div>

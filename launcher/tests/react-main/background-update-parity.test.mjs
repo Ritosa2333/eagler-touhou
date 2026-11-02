@@ -8,7 +8,7 @@ import {readUiHistoryText} from '../support/ui-history.mjs';
  * or durable IndexedDB validation; the BrowserSession mounted fixture checks
  * that its diagnostics callback does not become visible status/toast feedback.
  */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

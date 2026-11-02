@@ -15,6 +15,7 @@ export function SpectatorPlayback({session}: {session: BrowserSession}) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<ReturnType<typeof createSpectatorTimelineView> | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: The timeline view and its action port belong to one Runtime session.
   useLayoutEffect(() => () => {view.current?.destroy(); view.current = null;}, [session]);
   useLayoutEffect(() => {
     if (!state || !host.current) {view.current?.destroy(); view.current = null; return;}

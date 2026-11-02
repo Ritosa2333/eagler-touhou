@@ -86,7 +86,7 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
   async function sampleQuality() {
     if (disposed || !runtime.getSnapshot().launched) return;
     const net = read(), transport = net?.peerState;
-    if (!net || net.transport !== 'rtc' || !transport?.peers) {if (qualityTransport) resetQuality(); return;}
+    if (net?.transport !== 'rtc' || !transport?.peers) {if (qualityTransport) resetQuality(); return;}
     if (qualityTransport !== transport) resetQuality(transport);
     if (sampling) return;
     sampling = true; const id = qualitySerial, token = runtime.getMidiEventContext();

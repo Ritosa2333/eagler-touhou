@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import type {Plugin} from 'vite';
-import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWorkerSource} from '../../lib/frontend-assets.mjs';
+import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWorkerSource, buildDocumentStyles, buildHelpPageOutputs} from '../../lib/frontend-assets.mjs';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {resolvePublicOrRepositorySource} from '../../lib/public-source.mjs';
@@ -27,10 +27,23 @@ export function mainAssets(): Plugin {
         const asset = pathname?.startsWith(deployment.mountPath) ? pathname.slice(deployment.mountPath.length) : '';
         // publicDir is disabled: serve the same explicit static asset inventory
         // in development that closeBundle copies into the production artifact.
-        if (asset.startsWith('assets/') && STATIC_FRONTEND_PACKAGE_FILES.includes(asset)) {
+        if (['about.html', 'faq.html', 'migrate.html', 'compatibility.html', 'compatibility.en.html', 'compatibility.ja.html'].includes(asset)) {
+          res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(readFileSync(resolve(root,'public',asset)));return;
+        }
+        if (asset === 'about.css') {
+          try {const [file] = await buildDocumentStyles({project: root});res.setHeader('Content-Type','text/css');res.setHeader('Cache-Control','no-cache');res.end(file.contents);}
+          catch (error) {next(error);}
+          return;
+        }
+        if (asset === 'site-help.mjs') {
+          try {const [file] = await buildHelpPageOutputs({project: root});res.setHeader('Content-Type','application/javascript');res.setHeader('Cache-Control','no-cache');res.end(file.contents);}
+          catch (error) {next(error);}
+          return;
+        }
+        if ((asset.startsWith('assets/') || asset.startsWith('content/')) && STATIC_FRONTEND_PACKAGE_FILES.includes(asset)) {
           try {
             const source = resolvePublicOrRepositorySource(asset);
-            res.setHeader('Content-Type', asset.endsWith('.svg') ? 'image/svg+xml' : asset.endsWith('.png') ? 'image/png' : asset.endsWith('.webp') ? 'image/webp' : asset.endsWith('.ico') ? 'image/x-icon' : 'application/octet-stream');
+            res.setHeader('Content-Type', asset.endsWith('.html') ? 'text/html; charset=utf-8' : asset.endsWith('.mjs') ? 'application/javascript' : asset.endsWith('.svg') ? 'image/svg+xml' : asset.endsWith('.png') ? 'image/png' : asset.endsWith('.webp') ? 'image/webp' : asset.endsWith('.ico') ? 'image/x-icon' : 'application/octet-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.end(readFileSync(source));
           } catch (error) {next(error);}
@@ -80,7 +93,7 @@ export function mainAssets(): Plugin {
       mkdirSync(output, {recursive: true});
       // Consume the same public-file contract as main. Route documents and
       // generated CSS belong to their respective builders, not raw copying.
-      const generated = new Set(['index.html', 'en.html', 'lobby.html', 'profile.html', 'login.html', 'styles.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js']);
+      const generated = new Set(['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html', 'ui-review.html', 'styles.css', 'about.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js', 'site-help.mjs']);
       for (const path of STATIC_FRONTEND_PACKAGE_FILES) {
         if (generated.has(path) || path.startsWith('legacy/')) continue;
         const source = resolvePublicOrRepositorySource(path);
@@ -103,6 +116,7 @@ export function mainAssets(): Plugin {
       for (const file of await buildLauncherStyleOutputs({project: root, outputDirectory: output})) {
         await writeFileAtomic(file.path, file.contents);
       }
+      for (const file of await buildHelpPageOutputs({project: root, outputDirectory: output})) await writeFileAtomic(file.path, file.contents);
     },
   };
 }

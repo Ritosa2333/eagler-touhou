@@ -4,7 +4,6 @@ import {
   defaultTh15ChapterThreshold,
 } from "../../src/launcher/th15-chapter-reward.mts";
 import {
-  gameIdForProduct,
   isMultiplayerProductId,
   multiplayerConfigForProduct,
   multiplayerInputTimingPolicy,
@@ -199,7 +198,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let reportedSocket: RoomSocket | null = null,
     reportedResourceKey = '',
     lastActivity = 0;
-  let state = {
+  const state = {
     fromDirectory: false,
     connected: false,
     directorySupported: false,
@@ -481,7 +480,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const ownedRoom = room,
       ownedEpoch = epoch;
     clientId = ports.identity.lobbyClientId(product);
-    let relay;
+    let relay: ReturnType<typeof buildMultiplayerLobbyRelayUrl>;
     try {
       relay = buildMultiplayerLobbyRelayUrl(ports.relayUrl(product), {
         product,
@@ -858,7 +857,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     return changeRole(() => {
-      if (!room || room.phase !== 'lobby' || room.seats?.[index]) return;
+      if (room?.phase !== 'lobby' || room.seats?.[index]) return;
       send({
         type: 'take-seat',
         seat: index,

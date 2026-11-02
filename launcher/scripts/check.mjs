@@ -4,9 +4,7 @@ import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { availableParallelism } from "node:os";
 import {
-  REPOSITORY_NODE_TESTS,
   REPOSITORY_PYTHON_TESTS,
-  WORKSPACE_NODE_TESTS,
   WORKSPACE_PRECHECKS,
   WORKSPACE_PYTHON_TESTS,
 } from "../tests/test-plan.mjs";
@@ -81,12 +79,13 @@ const pythonFiles = sourceFiles.filter(file => extname(file) === ".py");
 // because generated output happens to look fresh on disk.
 // Check authored generated pages before a build can silently refresh them.
 await run(process.execPath, ["scripts/build-content-pages.mjs", "--check"]);
+await run(process.execPath, ['scripts/compile-i18n.mjs']);
 for (const config of ['tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json']) {
   await run(process.execPath, [resolve(project, 'node_modules/typescript/bin/tsc'), '-p', config]);
 }
 await run(process.execPath, ["scripts/build-launcher.mjs", "--force"]);
 
-await runPool(javascriptFiles.map(file => [process.execPath, ["--check", file]]));
+await run(process.execPath, ['scripts/check-javascript-syntax.mjs', ...javascriptFiles]);
 if (pythonFiles.length) await run("python", ["scripts/check-python-syntax.py", ...pythonFiles]);
 
 // App Shell generation is build output only. The repository gate exercises the
@@ -96,7 +95,7 @@ await run(process.execPath, ["scripts/build-app-shell.mjs", "--check"]);
 // Repo-local, deterministic behavior/format gates. These must work in an
 // ordinary standalone clone without sibling game repositories or private game
 // resources.
-await runPool(REPOSITORY_NODE_TESTS.map(test => [process.execPath, [test]]), Math.min(jobs, 6));
+await run(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--project', 'repository']);
 await runPool(REPOSITORY_PYTHON_TESTS.map(test => ["python", [test]]), Math.min(jobs, 4));
 await run(process.execPath, ["scripts/audit-publication.mjs"]);
 
@@ -104,7 +103,7 @@ await run(process.execPath, ["scripts/audit-publication.mjs"]);
 // valuable, but they are not reproducible from the Launcher repository alone.
 if (workspaceMode) {
   for (const [command, args] of WORKSPACE_PRECHECKS) await run(command, [...args]);
-  for (const test of WORKSPACE_NODE_TESTS) await run(process.execPath, [test]);
+  await run(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config', 'vitest.workspace.config.ts']);
   for (const test of WORKSPACE_PYTHON_TESTS) await run("python", [test]);
 }
 

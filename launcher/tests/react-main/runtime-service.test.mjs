@@ -3,7 +3,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * first rendered pixel claim. Main app:4241–4289,5948–5983 and unchanged
  * runtime-session/generation-lease/preparation tests supply the expectations.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -16,7 +16,7 @@ before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/react-main-runtime-'));
   const outfile = resolve(work, 'actual-service.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
-    export {createRuntimeService} from './app/services/runtime.ts';
+    export {createRuntimeService, RuntimeWaitTimeoutError} from './app/services/runtime.ts';
     export {readManagedRuntimeData} from './src/launcher/runtime-preparation.mts';
     export {RUNTIME_EPOCH_QUERY_PARAMETER} from './src/contracts/runtime-protocol.mts';
     export {PRODUCT_GAMES} from './src/contracts/product-catalog.mts';
@@ -110,6 +110,28 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
   const result = {service, host, frame, runtime, timers, eventContexts, outbound, navigations, retained, released, codeCalls, dataReads, emit, event, ack, prepare, loadListeners};
   fixtures.push(result); return result;
 }
+
+for (const cleanupFails of [false, true]) test(`game check preserves its original failure${cleanupFails ? ' together with failed frame retirement' : ''} and releases its owner`, async () => {
+  const f=fixture(), plan=managedPlan(); plan.runtimeVariant='multiplayer';
+  const primary=new Error('check callback failed'), replace=f.runtime.location.replace;
+  const check=f.service.checkMultiplayer(plan,new AbortController().signal,()=>{
+    if(cleanupFails) f.runtime.location.replace=url=>{if(url==='about:blank')throw new Error('blocked check cleanup');replace(url);};
+    throw primary;
+  });
+  const rejected=assert.rejects(check,error=>{
+    if(!cleanupFails){assert.equal(error,primary);return true;}
+    assert.equal(error.name,'AggregateError');assert.equal(error.cause,primary);assert.equal(error.errors[0],primary);
+    assert.match(error.errors[1].message,/blocked check cleanup/);assert.match(error.message,/check callback failed.*blocked check cleanup/);return true;
+  });
+  try {
+    await flush(); f.event('ready'); await flush(); f.ack('configure'); await rejected;
+    if(cleanupFails) assert.match(f.service.getSnapshot().closeError,/blocked check cleanup/);
+  } finally {f.runtime.location.replace=replace;}
+  await f.service.close({discardUnsaved:true});
+  const retry=f.service.checkMultiplayer(plan,new AbortController().signal,()=>{throw primary;});
+  const retried=assert.rejects(retry,error=>error===primary);
+  await flush();f.event('ready');await flush();f.ack('configure');await retried;
+});
 
 test('runtime: worker downloads share document network accounting and cannot survive cancellation', async () => {
   const states=[];let report,release;
@@ -327,6 +349,25 @@ test('runtime: child browsing context is retired only after accepted close and b
   assert.equal(await closed, true); assert.equal(retired, 1);
 });
 
+test('Replay mutation keeps playback path handoff inside the same exclusive file owner', async () => {
+  const f = fixture(); await f.prepare(directPlan());
+  const launch = f.service.launch(); f.ack('launch'); await launch;
+  let retained;
+  const operation = f.service.withFileSession('th06', async access => {
+    retained = access;
+    await assert.rejects(f.service.send('playback', {action: 'pause'}), /already in progress/);
+    const handoff = access.playback({action: 'relocate', path: 'replay/th6_01.rpy', target: 'replay/th6_02.rpy'});
+    assert.equal(f.outbound.at(-1).command, 'playback');
+    assert.equal(f.outbound.at(-1).action, 'relocate');
+    f.ack('playback'); await handoff;
+  }, {replayMutation: true});
+  await flush(); await operation;
+  await assert.rejects(retained.playback({action: 'pause'}), {name: 'AbortError'});
+  await f.service.withFileSession('th06', async access => {
+    await assert.rejects(access.playback({action: 'pause'}), /active Replay mutation/);
+  }, {readOnly: true});
+});
+
 test('runtime: Player retirement waits for the blank child document to commit before resolving close', async () => {
   const f = fixture(); await f.prepare(directPlan());
   const starting = f.service.launch(); f.ack('launch'); await starting;
@@ -349,7 +390,10 @@ test('runtime: Player retirement waits for the blank child document to commit be
 test('runtime: optional first-frame wait remains pending after ACK; 14-second failure keeps acknowledged runtime alive', async () => {
   const f = fixture(); await f.prepare(directPlan());
   let settled = false; const launch = f.service.launch({awaitFirstFrame: true}).finally(() => {settled = true;});
-  const rejected = assert.rejects(launch, /runtime\.firstFrameLate/); f.ack('launch'); await flush();
+  const rejected = assert.rejects(launch, error => {
+    assert.ok(error instanceof owners.RuntimeWaitTimeoutError); assert.equal(error.waitKind, 'first-frame');
+    assert.equal(error.message, 'runtime.firstFrameLate'); return true;
+  }); f.ack('launch'); await flush();
   assert.equal(settled, false); assert.equal(f.service.getSnapshot().launched, true);
   f.timers.advance(13999); await flush(); assert.equal(settled, false);
   f.timers.advance(1); await rejected;
@@ -574,7 +618,10 @@ test('runtime: original readiness, RPC timeout and response fallback keys remain
   const f = fixture();
   await assert.rejects(f.service.sync(), {message: 'runtime.notReady'});
   const preparing = f.service.prepare(directPlan());
-  const readyFailure = assert.rejects(preparing, {message: 'runtime.gameLoadTimeout'});
+  const readyFailure = assert.rejects(preparing, error => {
+    assert.ok(error instanceof owners.RuntimeWaitTimeoutError); assert.equal(error.waitKind, 'ready');
+    assert.equal(error.message, 'runtime.gameLoadTimeout'); return true;
+  });
   await flush(); f.timers.advance(120000); await readyFailure;
   await f.prepare(directPlan());
   const syncing = f.service.sync(), timeout = assert.rejects(syncing, {message: 'runtime.operationTimeout'});

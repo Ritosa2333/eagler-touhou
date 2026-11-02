@@ -1,0 +1,7 @@
+@layer foundation;
+@import '../../public/styles.css' layer(foundation);
+@import '../../public/lobby.css' layer(foundation);
+@import '../../public/touch-guide.css' layer(foundation);
+@layer foundation {
+  :where(fieldset[class]){min-inline-size:0;margin:0;padding:0;border:0}
+}

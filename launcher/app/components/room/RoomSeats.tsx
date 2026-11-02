@@ -1,3 +1,5 @@
+import {Button as UiButton} from '../../ui/controls';
+import {Ellipsis} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
@@ -6,6 +8,7 @@ import { useLocale } from '../../i18n';
 import { networkMessage, roomPresentation } from './presentation';
 import {ResourceTracks} from './RoomProgress';
 import {RoomActionMenu} from './RoomActionMenu';
+import {animateSurface, type SurfaceAnimation} from '../../ui/surface-motion';
 import type { RoomNetworkPresentation, RoomPanelKind, RoomViewContext } from './types';
 export interface RoomSeatsProps {
   state: RoomOwnerSnapshot;
@@ -39,7 +42,7 @@ function RoomSeat({
     presentation = roomPresentation(state, t)!;
   const { room, ready, owner, label } = presentation;
   const node = useRef<HTMLElement>(null),
-    previous = useRef<{ room: string; occupant: string; animations: Animation[] } | null>(null);
+    previous = useRef<{ room: string; occupant: string; animations: SurfaceAnimation[] } | null>(null);
   const active = index < room.playerCount,
     seat = room.synced ? room.seats?.[index] || null : null;
   const occupied = room.synced === true && (!!seat || state.seat === index),
@@ -48,36 +51,28 @@ function RoomSeat({
     const element = node.current,
       before = previous.current;
     if (!element || (before && before.room === room.code && before.occupant === occupant)) return;
-    before?.animations.forEach((animation) => animation.cancel());
-    const next = { room: room.code, occupant, animations: [] as Animation[] };
+    before?.animations.forEach((animation) => {animation.cancel();});
+    const next = { room: room.code, occupant, animations: [] as SurfaceAnimation[] };
     previous.current = next;
     if (
       !before ||
       before.room !== room.code ||
       !room.synced ||
-      element.hidden ||
-      document.body.classList.contains('less-motion') ||
-      matchMedia('(prefers-reduced-motion: reduce)').matches
+      element.hidden
     )
       return;
     for (const child of element.querySelectorAll<HTMLElement>(
       ':scope > .mp-seat-face, :scope > .mp-seat-index, :scope > .mp-seat-name, :scope > .mp-seat-identity, :scope > .mp-seat-state',
     )) {
-      if (!child.hidden && typeof child.animate === 'function') {
-        const animation = child.animate([{ opacity: 0.25 }, { opacity: 1 }], {
-          duration: 180,
-          easing: 'cubic-bezier(.2,.8,.2,1)',
-        });
-        // A superseded occupant or React teardown cancels these visual leaves.
-        // Cancellation is expected and must not become an unhandled rejection.
-        void animation.finished.catch(() => {});
-        next.animations.push(animation);
+      if (!child.hidden) {
+        const animation = animateSurface(child, 'enter', {kind: 'content'});
+        if (animation) next.animations.push(animation);
       }
     }
   }, [room.code, room.synced, occupant]);
   useEffect(
     () => () => {
-      previous.current?.animations.forEach((animation) => animation.cancel());
+      previous.current?.animations.forEach((animation) => {animation.cancel();});
     },
     [],
   );
@@ -146,7 +141,7 @@ function RoomSeat({
   const name = <strong className="mp-seat-name" data-mp-seat-name={index} title={seat?.name || `P${index + 1}`}>
     {seat?.name || (state.seat === index ? state.displayName : '') || `P${index + 1}`}
   </strong>;
-  const connection = <button
+  const connection = <UiButton variant="unstyled"
     className="mp-seat-latency room-seat-network"
     type="button" hidden={!seat} disabled={local || !!message || !!seat?.offline}
     aria-haspopup="dialog" aria-controls="mpRoomPanel"
@@ -155,7 +150,7 @@ function RoomSeat({
     onClick={event => {if (seat) openPanel('network', event.currentTarget, seat.clientId);}}
   >{local ? <span className="room-seat-network-label">{t('room.localDevice')}</span> : diagnostics.map(metric =>
     <span className="room-seat-network-pair" key={metric.lane}><span className="room-seat-network-label">{metric.label}</span><span className="room-seat-network-value">{metric.value}</span></span>
-  )}</button>;
+  )}</UiButton>;
   return (
     <article
       ref={node}
@@ -166,9 +161,7 @@ function RoomSeat({
       title={occupied ? seatLabel : ''}
     >
       {occupied && <span className="room-seat-decoration" aria-hidden="true">
-        {(['loading', 'unready', 'ready'] as const).map(status => <span key={status} className={`room-seat-watermark${appearance === status ? ' active' : ''}`}>
-          {[...status.toUpperCase()].map((letter, glyph) => <span key={glyph} className="room-seat-letter" style={{'--glyph': glyph} as CSSProperties}>{letter}</span>)}
-        </span>)}
+        {(['loading', 'unready', 'ready'] as const).map(status => <span key={status} className={`room-seat-watermark${appearance === status ? ' active' : ''}`}>{status.toUpperCase()}</span>)}
       </span>}
       <div className="mp-seat-face" style={occupied ? {'--base-angle': `${degrees(base)}deg`, '--loading-angle': `${degrees(loading)}deg`} as CSSProperties : undefined}>
         {occupied && <span className="room-seat-player-tag">P{index + 1}</span>}
@@ -176,7 +169,7 @@ function RoomSeat({
           role="progressbar" aria-label={t(resource?.stage === 'runtime' || resourceReady ? 'room.resourceLoading' : 'room.baseResources')}
           aria-valuemin={0} aria-valuemax={100} aria-valuenow={resourceReady ? 100 : (resource?.stage === 'runtime' ? loading : base) ?? undefined}/>}
         <div className="mp-seat-drop" data-mp-seat-drop={index} hidden={occupied}>
-          <button
+          <UiButton variant="unstyled"
             type="button"
             disabled={!ready || !active || occupied}
             onClick={() => {
@@ -184,7 +177,7 @@ function RoomSeat({
             }}
           >
             {t('multiplayer.join')} P{index + 1}
-          </button>
+          </UiButton>
         </div>
         <span className="mp-seat-glyph" data-mp-seat-glyph={index} hidden={!occupied}>
           {multiplayerDisplayInitial(
@@ -215,6 +208,7 @@ function RoomSeat({
               {seatLabel}
             </span>
             {controlCaption}
+            <span className="sr-only" role="status">{t(seat?.offline?'multiplayer.playerReconnecting':appearance==='loading'?'room.resourceLoading':seat?.ready?'room.ready':'room.notReady')}</span>
           </span>
           {connection}
         </div>
@@ -238,7 +232,7 @@ function RoomSeat({
         {t('multiplayer.you')}
       </span>
       {!occupied && controlCaption}
-      <button
+      <UiButton variant="icon"
         className="mp-seat-edit"
         type="button"
         hidden={state.seat !== index || !occupied}
@@ -247,10 +241,12 @@ function RoomSeat({
       />
       {index > 0 && <div key={seat?.clientId} className="mp-seat-moderation" hidden={!ready || !owner || room.phase!=='lobby' || !seat}>
         <RoomActionMenu enabled={ready && owner && room.phase==='lobby' && !!seat} label={t('room.managePlayer',{seat:index+1})}
-          triggerContent={<span aria-hidden="true">⋯</span>} triggerClassName="room-member-menu-trigger" menuClassName="room-member-menu" minimumWidth={180} align="end"
+          triggerContent={<Ellipsis aria-hidden="true"/>} triggerKind="player" menuClassName="room-member-menu" minimumWidth={180} align="end"
           items={[
             {id:'move-spectator',label:t('room.movePlayerToSpectator'),disabled:!!seat?.offline,select:()=>{if(seat)service.movePlayerToSpectator(index,seat.clientId);}},
-            {id:'remove-player',label:t('room.removePlayer',{seat:index+1}),danger:true,select:()=>{void service.removePlayer(index);}},
+            {id:'remove-player',label:t('room.removePlayer',{seat:index+1}),danger:true,select:()=>{
+              if(seat&&service.getSnapshot().room?.seats?.[index]?.clientId===seat.clientId)void service.removePlayer(index);
+            }},
           ]}/>
       </div>}
       <div className="mp-seat-resource" hidden={!seat || !resource} data-status={resource?.status}>

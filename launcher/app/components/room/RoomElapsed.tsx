@@ -4,6 +4,7 @@ import {useLocale} from '../../i18n';
 export function RoomElapsed({phase, startedAt}: {phase: string; startedAt?: number}) {
   const {t} = useLocale(), [now, setNow] = useState(Date.now);
   const running = phase !== 'lobby' && !!startedAt;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: A new match start resets the display clock immediately, even when running stays true.
   useEffect(() => {
     if (!running) return;
     setNow(Date.now());

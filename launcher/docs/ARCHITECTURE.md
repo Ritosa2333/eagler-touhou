@@ -13,7 +13,7 @@
 | `launcher/host/` | 按输入装配可部署的站点 |
 | `launcher/integrations/` | 字体、汉化及外部资源格式 |
 | `launcher/server/`、`launcher/scripts/serve.mjs` | 本地 HTTP 与 THCRAP 服务 |
-| `launcher/lib/` | Node 构建、策略和产物模块 |
+| `launcher/lib/` | 构建、策略和产物模块 |
 | `launcher/scripts/` | 命令行入口 |
 | `launcher/public/` | 浏览器静态资源 |
 | `ports/<owner>/` | 各作游戏源码及 Runtime 构建、打包 |
@@ -101,11 +101,11 @@
 
 | 命令（从 `launcher/` 运行） | 结果 |
 | --- | --- |
-| `npm run dev` | 启动带热更新的 React 开发服务器 |
-| `npm run build` | 准备锁定版本的浏览器库，构建内容页面、客户端模块和 React 产物 |
-| `npm run typecheck`、`npm test` | 检查前端类型与行为 |
-| `npm run check` | 检查启动器核心模块 |
-| `npm run check:workspace` | 检查跨作品 Runtime 集成 |
+| `bun run dev` | 启动带热更新的 React 开发服务器 |
+| `bun run build` | 准备锁定版本的浏览器库，构建内容页面、客户端模块和 React 产物 |
+| `bun run typecheck`、`bun run test` | 检查前端类型与行为 |
+| `bun run check` | 检查启动器核心模块 |
+| `bun run check:workspace` | 检查跨作品 Runtime 集成 |
 
 具体输入和步骤见[本地联调](DEVELOPMENT.md)与[测试入口](../tests/README.md)。脚本职责见[命令目录](../scripts/README.md)。
 

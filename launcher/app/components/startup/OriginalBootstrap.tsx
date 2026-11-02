@@ -1,28 +1,12 @@
-import faviconUrl from '../../../public/assets/favicon.png?url';
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import touhouFontUrl from '../../../public/assets/fonts/touhou98.woff2?url';
 import yatraFontUrl from '../../../public/assets/fonts/yatra-one-latin.woff2?url';
 import mediumFontUrl from '../../../public/assets/fonts/chill-round-gothic-site-medium-critical.woff2?url';
 import boldFontUrl from '../../../public/assets/fonts/chill-round-gothic-site-bold-critical.woff2?url';
 import {originalBootstrap as original} from 'virtual:original-bootstrap';
-import {useSyncExternalStore} from 'react';
 import {useLocation} from 'react-router';
-import {isUiLocale, type UiLocale} from '../../../src/launcher/i18n.mts';
 import {translate} from '../../i18n';
-
-function subscribeLocale(listener: () => void) {
-  window.addEventListener('eagler-ui-locale-change', listener);
-  return () => window.removeEventListener('eagler-ui-locale-change', listener);
-}
-
-export function useDocumentUiLocale(): UiLocale {
-  const {pathname} = useLocation();
-  const publishedLocale: UiLocale = /\/en\.html\/?$/.test(pathname) ? 'en' : 'zh-CN';
-  return useSyncExternalStore(subscribeLocale, () => {
-    const value = document.documentElement.dataset.uiLocale;
-    return isUiLocale(value) ? value : publishedLocale;
-  }, () => publishedLocale);
-}
+import {useDocumentUiLocale} from '../../navigation/document-locale';
 
 // ES5 dispatch only: the original compatibility gate must precede the modern
 // bundle. Static SPA fallback HTML serves both original document contexts.
@@ -39,22 +23,24 @@ export function OriginalBootstrapHead() {
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
   const account = /\/login\.html\/?$/.test(pathname);
   const profile = /\/profile\.html\/?$/.test(pathname);
-  const title = account ? '登录 / 注册 ~ EAGLER TOUHOU' : lobby ? `${translate(locale, 'lobby.title')} ~ EAGLER TOUHOU` : profile ? locale === 'en' ? 'Player Profile ~ EAGLER TOUHOU' : '玩家主页 ~ EAGLER TOUHOU' : translate(locale, 'site.documentTitle');
+  const title = account ? translate(locale, 'account.documentTitle') : lobby ? `${translate(locale, 'lobby.title')} ~ EAGLER TOUHOU` : profile ? `${translate(locale, 'profile.navigation')} ~ EAGLER TOUHOU` : translate(locale, 'site.documentTitle');
   const description = translate(locale, 'site.description');
   return <>
-    <script dangerouslySetInnerHTML={{__html: dispatch}}/>
-    <style dangerouslySetInnerHTML={{__html: original.library.css + '\n' + original.lobby.css + '\n' + sharedLobbyPreloadCss +
-      '\nhtml[data-original-entry="lobby"] #eaglerPreload,html:not([data-original-entry="lobby"]) #lobbyPreload{display:none}'}}/>
+    <script>{dispatch}</script>
+    <style>{original.library.css + '\n' + original.lobby.css + '\n' + sharedLobbyPreloadCss +
+      '\nhtml[data-original-entry="lobby"] #eaglerPreload,html:not([data-original-entry="lobby"]) #lobbyPreload{display:none}'}</style>
     <style id="launcherNavigationTransition">{'@view-transition{navigation:auto}'}</style>
-    <style id="bookStartupTheme">{`
-      html[data-book-theme="light"]{background:#f7f6f2;color-scheme:light}
-      html[data-book-theme="light"] body:not(.mp-room-active){background-color:#f7f6f2}
-      html[data-book-theme="light"] :is(#eaglerPreload,#lobbyPreload){background:#f7f6f2;color:#2b302c}
-      html[data-book-theme="light"] :is(.eagler-preload-card,.lobby-preload-card){background:#fffefa;border-color:#dfdfd6;box-shadow:0 14px 38px #24291f14}
-      html[data-book-theme="light"] :is(.eagler-preload-spinner,.lobby-preload-spinner){border-color:#dfdfd6;border-top-color:#a5353d}
-      html[data-book-theme="light"] .lobby-preload-failure a{color:#a5353d}
-      html[data-book-theme="light"] #eaglerBootEmergency>div{background:#fffefa!important;color:#2b302c!important;border-color:#dfdfd6!important;box-shadow:0 14px 38px #24291f14!important}
-      html[data-book-theme="light"] #eaglerBootEmergency :is(strong,button,pre){color:#2b302c!important}
+    <style id="bookStartupTheme">{original.theme+`
+      html{background:var(--kit-background)}
+      body:not(.mp-room-active){background-color:var(--kit-background)}
+      :is(#eaglerPreload,#lobbyPreload){background:var(--kit-background);color:var(--kit-foreground);font-family:var(--kit-font)}
+      :is(.eagler-preload-card,.lobby-preload-card){width:72px;height:72px;border-radius:12px;background:var(--kit-card);border-color:var(--kit-border);box-shadow:none}
+      :is(.eagler-preload-spinner,.lobby-preload-spinner){border-color:var(--kit-border);border-top-color:var(--kit-brand)}
+      .lobby-preload-failure a{color:var(--kit-foreground)}
+      #eaglerBootEmergency>div{border-radius:12px!important;background:var(--kit-card)!important;color:var(--kit-foreground)!important;border-color:var(--kit-border)!important;box-shadow:0 16px 48px #0003!important;font-family:var(--kit-font)!important}
+      #eaglerBootEmergency :is(strong,pre){color:var(--kit-foreground)!important}
+      #eaglerBootEmergency button{border-radius:6px!important;background:var(--kit-secondary)!important;color:var(--kit-foreground)!important}
+      #eaglerBootEmergency button:first-of-type{background:var(--kit-primary)!important;color:var(--kit-primary-foreground)!important}
     `}</style>
     <title data-i18n={lobby || profile || account ? undefined : 'site.documentTitle'}>{title}</title>
     <meta name="theme-color" content={lobby ? '#111210' : '#10100f'}/>
@@ -73,7 +59,7 @@ export function OriginalBootstrapHead() {
       <link rel="apple-touch-icon" sizes="180x180" href="assets/pwa/apple-touch-icon.png"/>
     </>}
     <link rel="icon" href={lobby ? 'favicon.ico' : 'assets/favicon.ico'} type={lobby ? undefined : 'image/x-icon'}/>
-    <link rel="icon" type="image/png" sizes="256x256" href={faviconUrl}/>
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/brand/portrait.png"/>
     <link rel="preload" href={backgroundUrl} as="image" fetchPriority="high"/>
     <link rel="preload" href={touhouFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>
     <link rel="preload" href={yatraFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>
@@ -84,12 +70,13 @@ export function OriginalBootstrapHead() {
 export function OriginalPreloads() {
   // The original boot owns cold entry. Templates retain that same authored cue
   // for later same-document page entries without restarting its watchdog.
+  // biome-ignore lint/security/noDangerouslySetInnerHtml: Build-extracted repository HTML supplies the cold boot and inert templates; request and user data never enter it.
   return <div style={{display: 'contents'}} data-surface-preload-host="" dangerouslySetInnerHTML={{__html:
     original.library.preload + original.lobby.preload +
     `<template data-surface-preload="library">${original.library.preload}</template>` +
     `<template data-surface-preload="lobby">${original.lobby.preload}</template>`}}/>;
 }
 export function OriginalModuleRequestMark() {
-  return <script dangerouslySetInnerHTML={{__html: 'window.__eaglerBoot && window.__eaglerBoot.mark("app-module-request");'}}/>;
+  return <script>{'window.__eaglerBoot && window.__eaglerBoot.mark("app-module-request");'}</script>;
 }
-export function OriginalBootstrapTail() {return <script dangerouslySetInnerHTML={{__html: tail}}/>;}
+export function OriginalBootstrapTail() {return <script>{tail}</script>;}

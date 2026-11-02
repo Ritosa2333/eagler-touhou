@@ -1,4 +1,5 @@
 node_modules/
+.env*.local
 node_modules.stale-*/
 .npm-cache/
 .cache/
@@ -62,6 +63,10 @@ __pycache__/
 
 # Generated React Router type metadata
 .react-router/
+
+# Compiled UI messages
+/src/paraglide/
+/project.inlang/cache/
 
 /th06-card.webp
 

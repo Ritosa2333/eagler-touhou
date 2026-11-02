@@ -127,7 +127,7 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   if (initial.length < 2) return {generation, music: fallback};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
-  let publication;
+  let publication: Awaited<ReturnType<typeof acquisition.getPublication>>;
   try {publication = await acquisition.getPublication(gameVersion, signal);} catch {onWarning?.(t("music.initialOggIncomplete")); return {generation, music: fallback};}
   const {catalog, catalogUrl} = publication;
   if (metadata.siteManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {

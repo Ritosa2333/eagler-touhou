@@ -1,12 +1,18 @@
-import {useEffect, useLayoutEffect, useRef, type ReactNode} from 'react';
+import {useRef, useState, type ReactNode} from 'react';
+import {DropdownMenu} from 'radix-ui';
+import {GitHubLogoIcon} from '@radix-ui/react-icons';
+import {Heart as HeartIcon, Info as InfoCircledIcon, Bell as BellIcon, Activity as ActivityLogIcon, BookOpen as ReaderIcon, Check as CheckIcon} from 'lucide-react';
+import {Button} from '../../ui/button';
+import {uiPortalHost} from '../../ui/portal';
+import {usePopupPadding} from '../../ui/use-popup-padding';
 import {useLocale} from '../../i18n';
-import {mastheadIcons} from './masthead-icons';
 import {AppLink} from './AppLink';
-import {closeMainSelectMenus, MainSelectPrefix} from './MainSelect';
 import {BookThemeToggle} from './BookThemeToggle';
 import {useLocation} from 'react-router';
 import {ProfilePreview} from './ProfilePreview';
 import {NavigationIcon} from './NavigationIcon';
+import {SiteBrand} from './SiteBrand';
+import {UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage} from '../../../src/launcher/i18n.mts';
 
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
@@ -36,87 +42,52 @@ export interface LauncherMastheadProps {
   replayActive?: boolean;
 }
 
-/** Original index.html320–345 / lobby.html45–70 shared masthead.
- * Menu keyboard/outside-click behavior: main app.mts8749–8774.
- */
 export function LauncherMasthead(props: LauncherMastheadProps) {
-  const {t, locale} = useLocale();
-  const profileOpen = /\/(?:profile|login)\.html\/?$/.test(useLocation().pathname);
-  const {variant, menuOpen, onMenuOpenChange, interactive = true} = props;
-  const Link = interactive ? AppLink : 'a';
-  const menu = useRef<HTMLDivElement>(null), toggle = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null);
-  const focusFirst = useRef(false), callbacks = useRef(onMenuOpenChange); callbacks.current = onMenuOpenChange;
-  const focusMenu = () => {
-    const items = panel.current?.querySelectorAll<HTMLElement>('.mizuki-select-trigger, .masthead-menu-item');
-    const first = Array.from(items ?? []).find(item => {
-      const mobileNav = item.closest('.book-mobile-nav');
-      return getComputedStyle(item).display !== 'none' && (!mobileNav || getComputedStyle(mobileNav).display !== 'none');
-    });
-    first?.focus();
-  };
-  useEffect(() => {
-    if (!interactive) return;
-    const outside = (event: MouseEvent) => {
-      if (variant === 'lobby' && event.target instanceof Element && event.target.closest('.mizuki-select-menu')) return;
-      if (event.target instanceof Node && !menu.current?.contains(event.target)) callbacks.current(false);
-    };
-    document.addEventListener('click', outside);
-    return () => document.removeEventListener('click', outside);
-  }, [variant, interactive]);
-  useLayoutEffect(() => {
-    if (!interactive) return;
-    if (!menuOpen && variant === 'lobby') closeMainSelectMenus();
-    if (menuOpen && focusFirst.current) {
-      focusFirst.current = false;
-      focusMenu();
-    }
-  }, [menuOpen, variant, interactive]);
-  return <header className={`masthead book-masthead${variant === 'lobby' ? ' lobby-masthead' : ''}`}>
-    <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="EAGLER TOUHOU"><span className="book-brand-symbol" aria-hidden="true">☯</span><span>EAGLER <b>TOUHOU</b></span><time className="brand-version" id="brandUpdateAge" title={props.updatedAge?.title} dateTime={props.updatedAge?.dateTime}>{props.updatedAge?.text ?? t('brand.neverUpdated')}</time></Link>
-    <nav className="book-main-nav" aria-label={locale === 'en' ? 'Main navigation' : '主导航'}>
-      <Link href={props.launcherHref} aria-current={variant === 'library' && !props.replayActive && !profileOpen ? 'page' : undefined}>{locale === 'en' ? 'Solo' : '单机'}</Link>
-      <Link className="book-lobby-link" href={props.assetUrl('lobby.html')} aria-current={variant === 'lobby' && !props.replayActive && !profileOpen ? 'page' : undefined}>{locale === 'en' ? 'Multiplayer' : '联机'}</Link>
+  const {t,locale}=useLocale();
+  const profileOpen=/\/(?:profile|login)\.html\/?$/.test(useLocation().pathname);
+  const {variant,menuOpen,onMenuOpenChange,interactive=true}=props;
+  const padding=usePopupPadding(interactive&&menuOpen);
+  const Link=interactive?AppLink:'a';
+  const trigger=useRef<HTMLButtonElement>(null),language=useRef<HTMLDivElement>(null),[host,setHost]=useState<HTMLElement>();
+  return <header className={`masthead book-masthead${variant==='lobby'?' lobby-masthead':''}`}>
+    <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="EAGLER TOUHOU"><SiteBrand assetUrl={props.assetUrl}/><time className="brand-version" id="brandUpdateAge" title={props.updatedAge?.title} dateTime={props.updatedAge?.dateTime}>{props.updatedAge?.text??t('brand.neverUpdated')}</time></Link>
+    <nav className="book-main-nav" aria-label={t('nav.main')}>
+      <Link href={props.launcherHref} aria-current={variant==='library'&&!props.replayActive&&!profileOpen?'page':undefined}>{t('nav.single')}</Link>
+      <Link className="book-lobby-link" href={withUiLanguage(props.assetUrl('lobby.html'),locale)} aria-current={variant==='lobby'&&!props.replayActive&&!profileOpen?'page':undefined}>{t('nav.lobby')}</Link>
     </nav>
     <nav className="masthead-links" aria-label={t('nav.siteInfo')}>
-      <BookThemeToggle interactive={interactive}/>
-      <ProfilePreview interactive={interactive} active={profileOpen} href={props.assetUrl('profile.html')}/>
-      <a className="masthead-link" id="originMigrationOpen" href={props.migrationHref ?? 'migrate.html'} hidden={!props.migrationHref} data-policy={props.migrationPolicyKnown ? 'host-manifest-origin-migration-policy/1' : undefined}><span className="masthead-label"><span>{t('nav.oldSitePart1')}</span><wbr/><span>{t('nav.migrationPart2')}</span></span></a>
-      <a className="masthead-link book-top-faq" href={props.faqHref}><span className="masthead-label"><span>{t('nav.faqFirst')}</span><wbr/><span>{t('nav.faqSecond')}</span></span></a>
-      <div ref={menu} className="masthead-menu" id="mastheadMenu" onKeyDown={event => {
-        if (event.key !== 'Escape') return;
-        if (variant === 'lobby') event.stopPropagation();
-        event.preventDefault(); onMenuOpenChange(false); toggle.current?.focus();
-      }}>
-        <button ref={toggle} className="masthead-link masthead-menu-toggle" id="mastheadMenuToggle" type="button" aria-label={t('nav.more')} aria-expanded={menuOpen} aria-controls="mastheadMenuPanel" onClick={() => onMenuOpenChange(!menuOpen)} onKeyDown={event => {
-          if (event.key !== 'ArrowDown') return;
-          event.preventDefault();
-          if (menuOpen) focusMenu();
-          else {focusFirst.current = true; onMenuOpenChange(true);}
-        }}><NavigationIcon name="menu"/></button>
-        <div ref={panel} className="masthead-menu-panel" id="mastheadMenuPanel" aria-hidden={!menuOpen} inert={!menuOpen}>
-          <nav className="book-mobile-nav" aria-label={locale === 'en' ? 'Main navigation' : '主导航'}>
-            <Link className="masthead-menu-item" href={props.launcherHref} aria-current={variant === 'library' && !props.replayActive && !profileOpen ? 'page' : undefined} onClick={() => onMenuOpenChange(false)}>{locale === 'en' ? 'Solo' : '单机'}</Link>
-            <Link className="masthead-menu-item" href={props.assetUrl('lobby.html')} aria-current={variant === 'lobby' && !props.replayActive && !profileOpen ? 'page' : undefined} onClick={() => onMenuOpenChange(false)}>{locale === 'en' ? 'Multiplayer' : '联机'}</Link>
-          </nav>
-          <Link className="masthead-menu-item" href={props.assetUrl('login.html')} onClick={() => onMenuOpenChange(false)}><NavigationIcon name="profile"/><span>{locale === 'en' ? 'Log in / Sign up' : '登录 / 注册'}</span></Link>
-          <Link className="masthead-menu-item book-mobile-faq" href={props.faqHref}>{locale === 'en' ? 'FAQ' : '常见问题'}</Link>
-          <button className="masthead-menu-item motion-menu-toggle" id={variant === 'lobby' ? 'lobbyLessMotion' : 'lessMotionToggle'} type="button" aria-pressed={props.lessMotion} title={t(props.lessMotion ? 'nav.motionFullTitle' : 'nav.motionLessTitle')} onClick={props.onToggleMotion}><MenuIcon name="motion"/><span>{t('nav.lessMotion')}</span><i className="site-notice-toggle-state" aria-hidden="true"/></button>
-          <button className="masthead-menu-item" id="siteNoticeToggle" type="button" role="switch" aria-checked={props.noticeEnabled} onClick={props.onToggleNotice}><MenuIcon name="notice"/><span>{t('notice.label')}</span><i className="site-notice-toggle-state" aria-hidden="true"/></button>
-          <button className="masthead-menu-item" id="runtimeDiagnosticsToggle" type="button" role="switch" aria-checked={props.diagnosticsEnabled} onClick={props.onToggleDiagnostics}><MenuIcon name="diagnostics"/><span>{t('diagnostics.toggle')}</span><i className="site-notice-toggle-state" aria-hidden="true"/></button>
-          <div className="ui-language-control masthead-menu-language"><MainSelectPrefix prefix={<MenuIcon name="language"/>}>{props.languageControl}</MainSelectPrefix><template data-select-trigger-prefix="" dangerouslySetInnerHTML={{__html: mastheadIcons.language}}/></div>
-          <button className="masthead-menu-item" id="firstUseNoticeOpen" type="button" onClick={() => {onMenuOpenChange(false); props.onFirstUse();}}><MenuIcon name="firstUse"/><span>{t('nav.firstUseNotice')}</span></button>
-          <a className="masthead-menu-item" href={props.aboutHref}><MenuIcon name="about"/><span>{t('nav.about')}</span></a>
-          <a className="masthead-menu-item" href="https://github.com/YomotsuHisami/eagler-touhou" target="_blank" rel="noopener noreferrer"><MenuIcon name="github"/><span>GitHub</span></a>
-          <button className="masthead-menu-item book-menu-donation" type="button" hidden={props.donationAvailable === false} onClick={() => {onMenuOpenChange(false); props.onDonation();}}><MenuIcon name="donation"/><span>{t('nav.donate')}</span></button>
-        </div>
-      </div>
+      <BookThemeToggle interactive={interactive}/><ProfilePreview interactive={interactive} active={profileOpen} href={withUiLanguage(props.assetUrl('profile.html'),locale)}/>
+      <a className="masthead-link" id="originMigrationOpen" href={props.migrationHref??'migrate.html'} hidden={!props.migrationHref} data-policy={props.migrationPolicyKnown?'host-manifest-origin-migration-policy/1':undefined}>{t('nav.oldSitePart1')}{t('nav.migrationPart2')}</a>
+      <a className="masthead-link book-top-faq" href={props.faqHref}>{t('nav.faq')}</a>
+      <div hidden ref={language}>{props.languageControl}</div>
+      <DropdownMenu.Root modal={false} open={interactive&&menuOpen} onOpenChange={open=>{if(open)setHost(uiPortalHost(trigger.current));onMenuOpenChange(open);}}>
+        <DropdownMenu.Trigger asChild><Button ref={trigger} variant="ghost" size="icon" className="masthead-action masthead-menu-toggle [&_svg]:size-5" id="mastheadMenuToggle" aria-label={t('nav.more')} disabled={!interactive}><NavigationIcon name="menu"/></Button></DropdownMenu.Trigger>
+        <DropdownMenu.Portal container={host}><DropdownMenu.Content className="ui-menu masthead-menu-panel" id="mastheadMenuPanel" align="end" sideOffset={8} collisionPadding={padding}>
+          <DropdownMenu.Group aria-label={t('nav.account')}>
+          <DropdownMenu.Item asChild><Link className="ui-menu-item" href={withUiLanguage(props.assetUrl('profile.html'),locale)}><NavigationIcon name="profile"/>{t('nav.profile')}</Link></DropdownMenu.Item>
+          <DropdownMenu.Item asChild><Link className="ui-menu-item" href={withUiLanguage(props.assetUrl('login.html'),locale)}>{t('nav.account')}</Link></DropdownMenu.Item>
+          </DropdownMenu.Group>
+          <DropdownMenu.Separator className="ui-menu-separator"/>
+          <DropdownMenu.Group aria-label={t('nav.settings')}>
+          <DropdownMenu.CheckboxItem className="ui-menu-item" id={variant==='lobby'?'lobbyLessMotion':'lessMotionToggle'} checked={props.lessMotion} onCheckedChange={props.onToggleMotion}><ActivityLogIcon/>{t('nav.lessMotion')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator></DropdownMenu.CheckboxItem>
+          <DropdownMenu.CheckboxItem className="ui-menu-item" id="siteNoticeToggle" checked={props.noticeEnabled} onCheckedChange={props.onToggleNotice}><BellIcon/>{t('notice.label')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator></DropdownMenu.CheckboxItem>
+          <DropdownMenu.CheckboxItem className="ui-menu-item" id="runtimeDiagnosticsToggle" checked={props.diagnosticsEnabled} onCheckedChange={props.onToggleDiagnostics}><ActivityLogIcon/>{t('diagnostics.toggle')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator></DropdownMenu.CheckboxItem>
+          </DropdownMenu.Group>
+          <DropdownMenu.Label className="masthead-menu-label">{t('ui.language')}</DropdownMenu.Label>
+          <DropdownMenu.RadioGroup className="masthead-menu-language" aria-label={t('ui.language')} value={locale} onValueChange={value=>{const select=language.current?.querySelector('select');if(select){select.value=value;select.dispatchEvent(new Event('change',{bubbles:true}));}}}>
+            {UI_LOCALES.map(value=><DropdownMenu.RadioItem key={value} className="ui-menu-item" value={value}>{t(UI_LOCALE_LABELS[value])}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator></DropdownMenu.RadioItem>)}
+          </DropdownMenu.RadioGroup>
+          <DropdownMenu.Separator className="ui-menu-separator"/>
+          <DropdownMenu.Group aria-label={t('nav.help')}>
+          <DropdownMenu.Item asChild><a className="ui-menu-item" href={withUiLanguage(props.assetUrl('ui-review.html'),locale)} target="_blank" rel="noopener noreferrer">{t('nav.uiHandbook')}</a></DropdownMenu.Item>
+          <DropdownMenu.Item className="ui-menu-item" id="firstUseNoticeOpen" onSelect={props.onFirstUse}><ReaderIcon/>{t('nav.firstUseNotice')}</DropdownMenu.Item>
+          <DropdownMenu.Item asChild><a className="ui-menu-item" href={props.faqHref}><InfoCircledIcon/>{t('nav.faq')}</a></DropdownMenu.Item>
+          <DropdownMenu.Item asChild><a className="ui-menu-item" href={props.aboutHref}><InfoCircledIcon/>{t('nav.about')}</a></DropdownMenu.Item>
+          <DropdownMenu.Item asChild><a className="ui-menu-item" href="https://github.com/YomotsuHisami/eagler-touhou" target="_blank" rel="noopener noreferrer"><GitHubLogoIcon/>GitHub</a></DropdownMenu.Item>
+          {props.donationAvailable!==false&&<DropdownMenu.Item className="ui-menu-item book-menu-donation" onSelect={props.onDonation}><HeartIcon/>{t('nav.donate')}</DropdownMenu.Item>}
+          </DropdownMenu.Group>
+        </DropdownMenu.Content></DropdownMenu.Portal>
+      </DropdownMenu.Root>
     </nav>
   </header>;
-}
-
-function MenuIcon({name}: {name: keyof typeof mastheadIcons}) {
-  // Preserve the original SVG as the direct child, with no layout wrapper.
-  const svg = mastheadIcons[name];
-  const path = svg.match(/<path d="([^"]*)"/)![1];
-  return <svg className="masthead-menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={path}/></svg>;
 }

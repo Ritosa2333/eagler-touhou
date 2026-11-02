@@ -19,7 +19,7 @@ export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived
 }
 /** Original lobby.mts349–385 render conditions, composed once in LobbySurface. */
 export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
-  const {t, locale} = useLocale(), snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
+  const {t} = useLocale(), snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const [roomFilter, setRoomFilter] = useState<DirectoryRoomFilter>('all');
   const [favorites, setFavorites] = useState<string[]>([]);
   useEffect(() => {
@@ -43,16 +43,16 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
   </aside>;
   const membership = <aside className="lobby-membership" id="membership" hidden={!state.mine}><strong id="membershipTitle">{state.mine ? t('lobby.mine', {code: state.mine.code}) : ''}</strong><p id="membershipHint">{t(state.supportsRecovery ? 'lobby.mineHint' : 'lobby.releaseUnsupported')}</p><BookButton variant="action" className="lobby-button" id="releaseMembership" type="button" hidden={!state.mine || !state.supportsRecovery} disabled={!!state.recovering || state.connection !== 'live' || state.leaving || !state.mine?.recoveryToken} onClick={service.releaseMembership}>{t(state.recovering ? 'lobby.releasing' : 'lobby.release')}</BookButton></aside>;
   const roomTools = <LobbyRoomTools disabled={disabled} onCreate={() => onOpenForm('create')} onReplay={onReplay} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
-  const roomFilters = <div className="book-room-filters" role="group" aria-label={locale === 'en' ? 'Filter rooms' : '筛选房间'}>
-    {([{id: 'all', zh: '全部房间', en: 'All rooms'}, {id: 'open', zh: '有空位', en: 'Open seats'}, {id: 'waiting', zh: '等待开始', en: 'Waiting'}, {id: 'spectate', zh: '可旁观', en: 'Spectate'}] as const).map(filter =>
-      <BookButton variant="choice" type="button" key={filter.id} data-room-filter={filter.id} aria-pressed={roomFilter === filter.id} onClick={() => setRoomFilter(filter.id)}>{locale === 'en' ? filter.en : filter.zh}<span>{filterDirectoryRooms(filteredRooms, filter.id).length}</span></BookButton>)}
-    <span className="book-room-filter-count" role="status">{locale === 'en' ? `${state.visibleRooms.length} rooms shown` : `显示 ${state.visibleRooms.length} 个房间`}</span>
-  </div>;
+  const roomFilters = <fieldset className="book-room-filters" aria-label={t('directory.filters')}>
+    {([{id: 'all', key: 'directory.filter.all'}, {id: 'open', key: 'directory.filter.open'}, {id: 'waiting', key: 'directory.filter.waiting'}, {id: 'spectate', key: 'directory.filter.spectate'}] as const).map(filter =>
+      <BookButton variant="choice" type="button" key={filter.id} data-room-filter={filter.id} aria-pressed={roomFilter === filter.id} onClick={() => setRoomFilter(filter.id)}>{t(filter.key)}<span>{filterDirectoryRooms(filteredRooms, filter.id).length}</span></BookButton>)}
+    <span className="book-room-filter-count" role="status">{t('directory.shown', {count: state.visibleRooms.length})}</span>
+  </fieldset>;
   const filtering = roomFilter !== 'all' || !!surface.productFilters?.length || !!surface.viewingProduct;
   const empty = state.loading || state.visibleRooms.length || state.connectionInterrupted ? null : {
-    title: state.connection === 'live' && filtering ? (locale === 'en' ? 'No matching rooms' : '没有符合条件的房间') : t(state.connection === 'live' ? 'lobby.empty' : state.connection === 'loading' ? 'lobby.connecting' : state.connection === 'unsupported' ? 'lobby.unsupported' : 'lobby.offline'),
-    hint: state.connection === 'live' && filtering ? (locale === 'en' ? 'Try another game or room filter.' : '可以切换作品或房间条件，查看其他房间。') : t(state.connection === 'live' ? 'lobby.emptyHint' : state.connection === 'loading' ? 'lobby.loadingHint' : state.connection === 'unsupported' ? 'lobby.unsupportedHint' : state.connection === 'missing' ? 'lobby.noService' : 'lobby.offlineHint'),
-    action: state.connection === 'loading' || (state.connection === 'live' && !!state.mine) ? undefined : {label: state.connection === 'live' && filtering ? (locale === 'en' ? 'Clear filters' : '清除筛选') : t(state.connection === 'live' ? 'lobby.create' : 'lobby.retry'), onClick: () => {if (state.connection !== 'live') service.retry(); else if (filtering) {setRoomFilter('all'); if (surface.onProductFiltersChange) surface.onProductFiltersChange([]); else surface.onSelect('');} else onOpenForm('create');}},
+    title: state.connection === 'live' && filtering ? (t('directory.noMatches')) : t(state.connection === 'live' ? 'lobby.empty' : state.connection === 'loading' ? 'lobby.connecting' : state.connection === 'unsupported' ? 'lobby.unsupported' : 'lobby.offline'),
+    hint: state.connection === 'live' && filtering ? (t('directory.filterHint')) : t(state.connection === 'live' ? 'lobby.emptyHint' : state.connection === 'loading' ? 'lobby.loadingHint' : state.connection === 'unsupported' ? 'lobby.unsupportedHint' : state.connection === 'missing' ? 'lobby.noService' : 'lobby.offlineHint'),
+    action: state.connection === 'loading' || (state.connection === 'live' && !!state.mine) ? undefined : {label: state.connection === 'live' && filtering ? (t('directory.clearFilters')) : t(state.connection === 'live' ? 'lobby.create' : 'lobby.retry'), onClick: () => {if (state.connection !== 'live') service.retry(); else if (filtering) {setRoomFilter('all'); if (surface.onProductFiltersChange) surface.onProductFiltersChange([]); else surface.onSelect('');} else onOpenForm('create');}},
   };
   return <LobbySurface {...surface} selectedProduct={surface.viewingProduct || state.selectedProduct} connectionWarning={warning} membership={membership} notice={state.notice} roomTools={roomTools} roomFilters={roomFilters}
     roomList={<DirectoryRoomRows snapshot={state} service={service} assetUrl={assetUrl} initialRows={initialRows}/>}

@@ -1,7 +1,6 @@
-import {pinnedUiAuthorityText} from './source-text.mjs';
 /** Executed pinned transformation/sanitizer oracle. Synthetic DOM only: layout,
  * native details activation and browser XSS enforcement are separate gates. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
@@ -13,8 +12,6 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {readUiHistoryText} from '../support/ui-history.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const pinned = name => readUiHistoryText('8bdf6dbf4a81032f0725cc841b86d03e1465fe07', `src/launcher/${name}`);
-const original = pinned('multiplayer-guide.mts');
-const originalBuilder = original.slice(original.indexOf('interface AuthoredGuideGroup'), original.indexOf('function isDialogElement'));
 const th09CatalogEntry = '  Object.freeze({ id: "th09", short: "TH09", title: "花映塚" }),\n';
 const th15CatalogEntry = '  Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),\n';
 // The shared guide gained its TH09 and TH15 player-facing tabs after the
@@ -45,13 +42,10 @@ before(async () => {
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 
-test('one framework-independent builder retains pinned bytes after the legacy controller retires', () => {
+test('one framework-independent builder owns the guide after the legacy controller retires', () => {
   const current = readFileSync(resolve(project, 'src/launcher/multiplayer-guide-content.mts'), 'utf8').replaceAll('\r\n', '\n');
-  const body = current.slice(current.indexOf('interface AuthoredGuideGroup')).replace('export const DEFAULT_GUIDE_GAME', 'const DEFAULT_GUIDE_GAME').replace('export function buildRuleGuide', 'function buildRuleGuide');
-  assert.equal(body, extendCatalog(originalBuilder));
   assert.equal(existsSync(resolve(project, 'src/launcher/multiplayer-guide.mts')), false);
   assert.equal(api.DEFAULT_GUIDE_GAME, 'th07');
-  assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, 'src/launcher/content-fragment.mts'), 'utf8')), pinned('content-fragment.mts'));
   assert.equal(existsSync(resolve(project, 'app/components/notices/multiplayer-guide-content.ts')), false);
   assert.ok(readFileSync(resolve(project, 'app/components/notices/MultiplayerGuideDialog.tsx'), 'utf8').includes("from '../../../src/launcher/multiplayer-guide-content.mts'"));
   assert.equal(inputs.filter(path => path === 'src/launcher/multiplayer-guide-content.mts').length, 1);

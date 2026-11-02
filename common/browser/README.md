@@ -33,4 +33,6 @@ node --test tests/browser-keyboard-owners.test.mjs tests/keyboard-input-bridge.t
 
 对应行为测试在 [`tests/`](../tests/)；需要确认所有接入副本时，运行相关同步脚本的 `--check`。
 
+th10 普通版和 MP 打包时直接从共用源码生成本地 Replay 桥。本地 Shell 副本继续通过 `tools/sync-local-replay.mjs` 维护。产物回归实际执行生成桥，核对原生路径交接能力与播放状态。
+
 下一步：[公共库开发入口](../../docs/README.md)。

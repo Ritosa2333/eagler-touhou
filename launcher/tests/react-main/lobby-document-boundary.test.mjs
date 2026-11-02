@@ -2,7 +2,7 @@ import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Original document ownership, not browser rendering: parse the actual adapted
  * stylesheet and match its selectors against mounted production components.
  * Authority: pinned edee9633 main iframe/body styles and transient host rules. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
@@ -40,7 +40,7 @@ before(async () => {
     export {LibraryCards} from './app/components/launcher/LibraryCards.tsx';
     export {createLibraryProducts} from './app/components/launcher/products.ts';
     export {MainSelect} from './app/components/launcher/MainSelect.tsx';
-    export {createMainSelectController} from './app/components/launcher/main-select-controller.ts';
+    export {uiPortalHost} from './app/ui/portal.ts';
     export {OptionSwitch} from './app/components/settings/TouchSettingsFields.tsx';
     export {PlayerSurface} from './app/components/player/PlayerSurface.tsx';
     export {FullscreenTransient} from './app/components/FullscreenTransient.tsx';
@@ -92,12 +92,12 @@ async function mount({lessMotion = false} = {}) {
       el(api.Feedback, {model: feedback}), el(api.StartupError, {model: error})),
     el(api.AppleRefreshDialog, {open: true, onCloseRequest: noop}),
     el(api.ReplayDialog, {model: replay, open: false, onCloseRequest: noop, onImportRequest: noop, onDropFile: async () => {}, onImportError: noop}),
-    el(api.NetplayCalibrationReport, {model: calibration, english: true, currentNetwork: () => ''}),
+    el(api.NetplayCalibrationReport, {model: calibration, currentNetwork: () => ''}),
     el(api.DonationDialog, {open: false, onCloseRequest: noop, assetUrl: value => value, onArtworkUnavailable: noop}),
     el(api.MultiplayerGuideDialog, {open: false, onCloseRequest: noop, gameId: 'th06', contentUrl: 'content/MULTIPLAYER.html'}))));
   await act(() => render()); return {render: value => act(() => render(value))};
 }
-async function openMenu(id) {await act(() => n(`#${id}`).closest('.mizuki-select').querySelector('button').click()); return n('.mizuki-select-menu:not([hidden])');}
+async function openMenu(id) {await act(() => n(`#${id}`).closest('.mizuki-select').querySelector('button').click()); return n('.ui-select-content');}
 async function fullscreen(target, event = 'fullscreenchange') {
   Object.defineProperty(env.document, 'fullscreenElement', {configurable: true, value: target});
   await act(() => env.document.dispatchEvent(new env.window.Event(event)));
@@ -150,7 +150,7 @@ test('marked root inheritance comes only from pinned main body and embedded root
     assert.equal(values.font, undefined); assert.equal(values['font-size'], undefined); assert.equal(values['line-height'], undefined);
   }
   assert.equal(declarations('html.lobby-options-embed')['color-scheme'], 'only light');
-  const inherited = postcss.parse(read('app/components/launcher/lobby-options.css')).nodes.find(node => node.selector === ':where(.lobby-page [data-launcher-document])');
+  let inherited; postcss.parse(read('app/components/launcher/lobby-options.css')).walkRules(node => {if (node.selector === ':where(.lobby-page [data-launcher-document])') inherited = node;});
   assert.deepEqual(inherited.nodes.map(({prop, value}) => [prop, value]), [['color-scheme', 'only light'], ['color', 'var(--paper)'], ['font', 'medium/normal var(--ui-font)']]);
   assert.equal(declarations('.mizuki-select-menu').color, '#e7e1d9');
   assert.equal(declarations('.replay-window').font, '13px/1.4 var(--ui-font)');
@@ -172,51 +172,22 @@ test('real settings, Player and main-only dialog controls escape lobby focus and
     assert.equal(matches(button, focus), true, selector);
     for (const motion of motions) assert.equal(matches(button, motion), true, selector);
   }
-  // Pin the original winning switch and focus declarations. A DOM selector
-  // test establishes exclusion, not pixels or the browser's CSS cascade.
-  const main = postcss.parse(pinned('public/styles.css'));
-  for (const [selector, value] of [['.less-motion .option-switch', 'border-color .14s ease,background-color .14s ease'], ['.less-motion .option-switch i', 'transform .16s ease-out,background-color .14s ease']]) {
-    let transition; main.walkRules(candidate => {if (candidate.selector === selector) transition = candidate.nodes.find(node => node.prop === 'transition');});
-    assert.equal(transition.value, value); assert.equal(transition.important, true);
-    assert.ok(n(selector.includes(' i') ? '#settingsSwitch i' : '#settingsSwitch').matches(selector));
-  }
-  assert.ok(pinned('public/styles.css').includes('.ui-language-control .mizuki-select-trigger:focus-visible{outline:2px solid rgba(217,77,85,.72);outline-offset:2px}'));
+  assert.equal(n('#settingsSwitch').getAttribute('role'), 'switch');
+  assert.ok(n('#settingsSwitch').classList.contains('ui-switch'));
+  assert.ok(n('#settingsSwitch .ui-switch-thumb'));
+
 });
 
-test('settings menu retains document ownership in outer dialog, body and fullscreen Player carriers', async () => {
-  const mounted = await mount({lessMotion: true});
-  const settings = await openMenu('settingsSelect');
-  assert.equal(settings.parentElement, n('#lobbyOptionsDialog'));
-  assert.ok(settings.hasAttribute('data-launcher-document'));
-  assert.equal(settings.closest('.lobby-options-document'), null);
-  const focus = rule(selectors[3]).selector, motion = rule(selectors[4]).selector;
-  for (const node of [settings, settings.querySelector('button')]) assert.equal(matches(node, motion), false);
-  assert.equal(matches(settings.querySelector('button'), focus), false);
-  await mounted.render(true); // Original outer modal is suspended for Player.
-  await act(() => n('#settingsSelect').closest('.mizuki-select').querySelector('button').click()); // close
-  const bodyMenu = await openMenu('settingsSelect'); assert.equal(bodyMenu, settings); assert.equal(settings.parentElement, env.document.body);
+test('Radix portal hosts follow native top layers and fullscreen ownership', async () => {
+  await mount({lessMotion: true});
+  const select = n('#settingsSelect');
+  assert.equal(api.uiPortalHost(select), n('#lobbyOptionsDialog'));
+  const plain = env.document.createElement('button'); env.document.body.append(plain);
+  assert.equal(api.uiPortalHost(plain), env.document.body);
   await fullscreen(n('#player'));
-  await act(() => n('#settingsSelect').closest('.mizuki-select').querySelector('button').click()); // close before opening in the new host
-  const playerMenu = await openMenu('settingsSelect'); assert.equal(playerMenu, settings); assert.equal(settings.parentElement, n('#player'));
-  assert.ok(settings.hasAttribute('data-launcher-document'));
+  assert.equal(api.uiPortalHost(plain), n('#player'));
   await fullscreen(null);
-  const lobbyMenu = await openMenu('lobbyLanguage');
-  assert.equal(lobbyMenu.parentElement, env.document.body); assert.equal(lobbyMenu.hasAttribute('data-launcher-document'), false);
-  assert.equal(matches(lobbyMenu.querySelector('button'), focus), true); assert.equal(matches(lobbyMenu, motion), true);
-});
-
-test('menu ownership is recomputed when a native select changes document owner', () => {
-  const owner = env.document.createElement('div'); owner.dataset.launcherDocument = '';
-  const select = env.document.createElement('select'); select.innerHTML = '<option>A</option>'; owner.append(select); env.document.body.append(owner);
-  const controller = api.createMainSelectController({translate: key => key});
-  try {
-    controller.installCustomSelect(select); select.parentElement.querySelector('button').click();
-    const menu = n('.mizuki-select-menu'), wrapper = select.parentElement;
-    assert.ok(menu.hasAttribute('data-launcher-document'));
-    controller.closeOtherCustomSelects(); env.document.body.append(wrapper); wrapper.querySelector('button').click();
-    assert.equal(n('.mizuki-select-menu'), menu); assert.equal(menu.hasAttribute('data-launcher-document'), false);
-    owner.append(wrapper); controller.syncAllCustomSelects(); assert.ok(menu.hasAttribute('data-launcher-document'));
-  } finally {controller.dispose();}
+  assert.equal(api.uiPortalHost(plain), env.document.body);
 });
 
 test('fullscreen transient carrier and original dialog nodes keep ownership and identity on both fullscreen events', async () => {

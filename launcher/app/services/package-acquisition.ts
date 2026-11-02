@@ -320,7 +320,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const game = gameIdForProduct(request.productId);
     if (!metadata.getSnapshot().releaseCatalog) {try {await metadata.initialize();} catch {}}
     checkPreparationAbort(request.signal);
-    let publication;
+    let publication: Awaited<ReturnType<typeof getPublication>>;
     try {publication = await getPublication(request.gameVersion ?? 'original', request.signal);}
     catch {checkPreparationAbort(request.signal); return {kind: 'managed', generation: installed.generation, deferredUpdate: null};}
     const published = publication.catalog?.games[game];

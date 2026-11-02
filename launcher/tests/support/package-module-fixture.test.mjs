@@ -1,6 +1,6 @@
 /** Canonical module/staging/HTTP setup only. No browser or IndexedDB scenario
  * is executed; the original browser's synthetic package bytes stay original. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
@@ -18,7 +18,7 @@ const python = source => JSON.parse(execFileSync('python', ['-c', source], {cwd:
 let work, cold, fixture, coldInitially;
 before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/package-module-setup-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
+  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
     'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json', 'scripts/serve-static.mjs', 'server/static-content-policy.mjs', 'tests/support/package-module-fixture.mjs',
     'public/faq.html', 'public/styles.css', 'public/about.css', 'public/assets/fonts', 'public/assets/launcher-background.webp']) {
     await mkdir(dirname(resolve(cold, path)), {recursive: true}); await cp(resolve(project, path), resolve(cold, path), {recursive: true});
@@ -55,11 +55,14 @@ test('cold isolated source stages current canonical contracts and their module c
   const store = await import(pathToFileURL(resolve(fixture.root, 'package/package-store.mjs')).href);
   const installer = await import(pathToFileURL(resolve(fixture.root, 'package/package-installer.mjs')).href);
   assert.equal(store.PACKAGE_STORE_DB, 'eagler-touhou-package-store-v1'); assert.equal(typeof installer.installPackageFromAcquisition, 'function');
-  t.diagnostic(JSON.stringify({contractsInputHash: fixture.contracts.inputHash, moduleHashes: Object.fromEntries(fixture.files.filter(file => fixture.modules.includes(file.path)).map(file => [file.path, file.sha256]))}));
+  await t.annotate(JSON.stringify({contractsInputHash: fixture.contracts.inputHash, moduleHashes: Object.fromEntries(fixture.files.filter(file => fixture.modules.includes(file.path)).map(file => [file.path, file.sha256]))}));
 });
 
 test('FAQ and its actual local styles/fonts are copied unchanged; absent optional artwork remains absent instead of fabricated', async () => {
-  for (const path of ['faq.html', 'styles.css', 'about.css', 'assets/fonts/yatra-one-latin.woff2', 'assets/fonts/chill-round-gothic-site-medium.woff2']) assert.deepEqual(await readFile(resolve(fixture.root, path)), await readFile(resolve(cold, 'public', path)));
+  const documents = fixture.files.filter(file => file.path === 'faq.html' || /\.(?:css|woff2?)$/.test(file.path));
+  assert.ok(documents.some(file => file.path === 'faq.html')); assert.ok(documents.some(file => file.path === 'about.css'));
+  for (const {path} of documents) assert.deepEqual(await readFile(resolve(fixture.root, path)), await readFile(resolve(cold, 'public', path)));
+  assert.equal(existsSync(resolve(fixture.root, 'styles.css')), false, 'the current FAQ no longer references the old Launcher stylesheet');
   assert.ok(fixture.optionalMissing.includes('assets/favicon.ico')); assert.equal(existsSync(resolve(fixture.root, 'assets/favicon.ico')), false);
 });
 

@@ -1,3 +1,5 @@
+// Browser-facing Request semantics, independent of the server runtime's defaults.
+import {Request} from 'undici/index.js';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash, webcrypto } from "node:crypto";

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import {translateUi} from '../../../src/launcher/i18n.mts';
 import {trackerCellEdges} from './tracker-grid';
 // Canvas layout and pixel drawing adapted from Doopu's Touhou 1CC Tracker.
 // Source: https://github.com/doopu/1ccTracker/blob/main/index.js
@@ -224,12 +225,12 @@ const trackerNumbers = {
     AOCF: '15.5', HSIFS: '16', VD: '16.5', WBAWC: '17', GI: '17.5',
     UM: '18', '100BM': '18.5', UDOALG: '19', TH20: '20',
 };
-export const trackerDisplayName = game => `Th${trackerNumbers[game.name]}`;
+export const trackerDisplayName = game => `th${trackerNumbers[game.name]}`;
 export const trackerGames = [htrp, soew, podd, ls, ms, eosd, stb, ds, isc, vd, bm, pcb, imp, pofv, mof, sa, ufo, gfw, td, ddc, lolk, hsifs, wbawc, um, udoalg, iamp, swr, hsoku, hm, ulil, aocf, gi, th20];
 export const trackerSections = [
-    {title: '整数作', games: [htrp, soew, ls, ms, eosd, pcb, imp, mof, sa, ufo, td, ddc, lolk, hsifs, wbawc, um, th20]},
-    {title: '对战作', games: [podd, pofv, udoalg]},
-    {title: '小数点作', games: [iamp, swr, hsoku, hm, ulil, aocf, gi, gfw, stb, ds, isc, vd, bm],
+    {titleKey: 'career.section.main', games: [htrp, soew, ls, ms, eosd, pcb, imp, mof, sa, ufo, td, ddc, lolk, hsifs, wbawc, um, th20]},
+    {titleKey: 'career.section.versus', games: [podd, pofv, udoalg]},
+    {titleKey: 'career.section.spinOff', games: [iamp, swr, hsoku, hm, ulil, aocf, gi, gfw, stb, ds, isc, vd, bm],
         groups: [[iamp, swr, hsoku, hm], [ulil, aocf, gi], [gfw, stb, ds, isc, vd, bm]]},
 ];
 const additionalGames = new Set([iamp, swr, hsoku, hm, ulil, aocf, gi]);
@@ -279,7 +280,7 @@ export function trackerLayout(options) {
             finishRow();
         }
         y += 12;
-        return {title: section.title, top, games, rows};
+        return {titleKey: section.titleKey, top, games, rows};
     });
     return {width: 800, height: y, sections};
 }
@@ -302,7 +303,7 @@ let paper = '#ffffff', ink = '#48443d', grid = '#d8d4cb', darkMode = false;
 let state = new Map();
 function getBoxFromState(key) {return state.get(key) ?? new BoxObject(key);}
 const boxWidth = 17;
-function drawBoxContentsAux(x, y, done, misses, bombs, lives, vertical, focus, pacifist, unique, cellColour, textColour, colour) {
+function drawBoxContentsAux(x, y, done, misses, bombs, lives, vertical, focus, pacifist, unique, _cellColour, textColour, colour) {
     textColour = ink;
     if (ctx) {
         if (done) {
@@ -347,7 +348,7 @@ function drawBoxContentsAux(x, y, done, misses, bombs, lives, vertical, focus, p
         }
     }
 }
-function drawBoxContents(x, y, boxName, colour) {
+function drawBoxContents(x, y, boxName, _colour) {
     const box = getBoxFromState(boxName);
     drawBoxContentsAux(x, y, box.done, box.misses, box.bombs, box.lives, box.vertical, box.focus, box.pacifist, box.unique, paper, ink, trackerDifficultyColour(boxName.split('-').slice(2).join('-'), darkMode));
 }
@@ -418,7 +419,7 @@ function drawGame(game, baseX, baseY, drawDifficulties = false) {
     drawDot(game.colour, baseX + nameOffset + dotOffset, baseY - 5);
     drawText(trackerDisplayName(game), baseX + nameOffset + 4 + dotOffset, baseY - 2);
     const gameCells = [];
-    characters.forEach((character, column) => difficulties.forEach((difficulty, row) => {
+    characters.forEach((character, column) => {difficulties.forEach((difficulty, row) => {
         if ((game.name === 'GFW' && character === 'EX' && difficulty !== 'N') ||
             (game.name === 'LOLK' && !character.endsWith('l') && difficulty === 'X') ||
             (game.name === 'HSIFS' && !character.endsWith('sp') && difficulty === 'X') ||
@@ -428,7 +429,7 @@ function drawGame(game, baseX, baseY, drawDifficulties = false) {
         gameCells.push(cell);
         boxes.push(cell);
         drawBoxContents(cell.x, cell.y, cell.key, game.colour);
-    }));
+    });});
     drawCellGrid(gameCells);
     if (game.name === 'IN') {
         // Upstream places route markers below short ticks in the label gutter.
@@ -463,7 +464,7 @@ function drawGame(game, baseX, baseY, drawDifficulties = false) {
     }
     drawUILine(baseX + column * boxWidth, bottom, boxWidth - 8, 2);
 }
-function drawScreen(layout) {
+function drawScreen(layout, t) {
     boxes = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!transparentPng) {
@@ -471,18 +472,18 @@ function drawScreen(layout) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     for (const section of layout.sections) {
-        drawText(section.title, 24, section.top + 14, 'left', `700 14px ${fontFamily}`);
+        drawText(t(section.titleKey), 24, section.top + 14, 'left', `700 14px ${fontFamily}`);
         ctx.strokeStyle = grid;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(106, section.top + 9); ctx.lineTo(776, section.top + 9); ctx.stroke();
         for (const row of section.rows) row.labels.forEach((difficulty, index) =>
-            drawText(difficulty, 48, row.y + (index + 1) * boxWidth - 5, 'right'));
+            {drawText(difficulty, 48, row.y + (index + 1) * boxWidth - 5, 'right');});
         for (const block of section.games) drawGame(block.game, block.x, block.y, block.drawDifficulties);
     }
 
 }
 
-return {draw(records, options, dark = false) {
+return {draw(records, options, dark = false, t = key => translateUi('zh-CN', key)) {
     darkMode = dark;
     paper = dark ? '#20242b' : '#ffffff';
     ink = dark ? '#edf2fa' : '#48443d';
@@ -495,7 +496,7 @@ return {draw(records, options, dark = false) {
     surface.width = canvas.width * 2;
     surface.height = canvas.height * 2;
     ctx.scale(2, 2);
-    drawScreen(layout);
+    drawScreen(layout, t);
     return boxes.map(({key, x, y}) => ({key, x, y}));
 }};
 }

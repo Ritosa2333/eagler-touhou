@@ -277,6 +277,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const initial =
         [
           ...String(seat?.initial ?? value)
+            // biome-ignore lint/suspicious/noControlCharactersInRegex: Strip C0 and DEL controls from remote player initials.
             .replace(/[\u0000-\u001f\u007f]/g, '')
             .trim(),
         ][0] || '?';
@@ -291,6 +292,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
                   ? [
                       ...seat.machineSign
                         .replace(
+                          // biome-ignore lint/suspicious/noControlCharactersInRegex: Remote machine labels must exclude C0, DEL and invisible direction controls.
                           /[\u0000-\u001f\u007f\u061c\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g,
                           '',
                         )

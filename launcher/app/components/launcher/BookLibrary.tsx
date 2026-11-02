@@ -1,7 +1,10 @@
-import {BookButton} from './BookButton';
-import {impressFavorite} from './ink-feedback';
-import {useEffect, useState, type ReactNode} from 'react';
+import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {useSearchParams} from 'react-router';
+import {Search, Star, LayoutGrid, List, Monitor, Disc3, Gamepad2, Shapes, History, X, ArrowUpRight} from 'lucide-react';
+import {Button} from '../../ui/button';
+import {ChoiceGroup, ChoiceItem} from '../../ui/choice-group';
+import {InputGroup, InputGroupInput} from '../../ui/input-group';
+import {Select, SelectTrigger, SelectValue, SelectContent, SelectItem} from '../../ui/select';
 import {useLocale} from '../../i18n';
 import {useOptionsTarget} from './options-ownership';
 import type {LibraryCardsProps} from './LibraryCards';
@@ -10,18 +13,21 @@ import {BOOK_PREFERENCES_EVENT, bookCategory, filterBookProducts, readBookPrefer
 import {bookArtwork} from './book-artwork';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {footer?: ReactNode};
-const categories: BookCategory[] = ['all', 'favorites', 'windows', 'pc98', 'spin-off', 'doujin'];
+const categories: {id: BookCategory; Icon: typeof LayoutGrid}[] = [
+  {id:'all',Icon:LayoutGrid},{id:'favorites',Icon:Star},{id:'windows',Icon:Monitor},
+  {id:'pc98',Icon:Disc3},{id:'spin-off',Icon:Gamepad2},{id:'doujin',Icon:Shapes},
+];
 
-/** Presentation only: activation still enters the existing Router/settings owner. */
+/** Product membership, settings activation and persistence stay with their existing owners. */
 export function BookLibrary({products, openedProduct, onSelect, onActivate, interactive = true, footer}: Props) {
-  const {locale} = useLocale(), en = locale === 'en';
-  const [search] = useSearchParams();
+  const {t} = useLocale(), [search] = useSearchParams();
   const [category, setCategory] = useState<BookCategory>('all');
   const [query, setQuery] = useState(''), [sort, setSort] = useState('number');
   const [view, setView] = useState<'covers' | 'list'>('covers');
   const [favorites, setFavorites] = useState<string[]>([]), [recent, setRecent] = useState<string[]>([]);
-  const selectedCard = useOptionsTarget('selectedCard');
-  const labels: Record<BookCategory, string> = {all: en ? 'All games' : '全部', favorites: en ? 'Favorites' : '我的收藏', pc98: en ? 'Classics' : '旧作', windows: en ? 'Main series' : '正作', 'spin-off': en ? 'Spin-offs' : '小数点', doujin: en ? 'Doujin' : '同人'};
+  const input = useRef<HTMLInputElement>(null), selectedCard = useOptionsTarget('selectedCard');
+  const labels: Record<BookCategory, string> = {all:t('library.category.all'),favorites:t('library.category.favorites'),pc98:t('library.category.pc98'),windows:t('library.category.windows'),'spin-off':t('library.category.spinOff'),doujin:t('library.category.doujin')};
+  const sortOptions = [{value:'number',label:t('library.sort.number')},{value:'reverse',label:t('library.sort.reverse')},{value:'name',label:t('library.sort.name')}];
   const available = products.filter(product => !product.multiplayer && !product.hidden);
   useEffect(() => {
     if (!interactive) return;
@@ -45,33 +51,47 @@ export function BookLibrary({products, openedProduct, onSelect, onActivate, inte
     className={recentLink ? 'book-recent-link' : 'book-game-link'} href={product.href}
     data-book-product={product.id} data-game={product.gameId} aria-current={openedProduct === product.id ? 'page' : 'false'}
     onClick={interactive ? event => {if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return; event.preventDefault(); activate(product);} : undefined}>
-    {(view === 'covers' || !recentLink) && <span className="book-art"><BookCover product={product}/></span>}
-    <span className="book-identity"><small>TH{product.number}</small><strong>{product.title}</strong><span>{product.subtitle}</span></span>
-    {view === 'list' && <span className="book-row-action" aria-hidden="true">{en ? 'Play' : '开始游玩'} →</span>}
+    <span className="book-art"><BookCover product={product}/></span>
+    <span className="book-identity"><small>th{product.number}</small><strong>{product.title}</strong>{!recentLink && <span>{product.subtitle}</span>}</span>
+    {recentLink && <ArrowUpRight className="book-recent-arrow" aria-hidden="true"/>}
   </a>;
   const displayedRecent = search.get('preview') === 'recent' ? available.slice(0, 7).map(product => product.id) : recent;
-  const history = displayedRecent.map(id => available.find(product => product.id === id)).filter((product): product is LibraryProduct => !!product).slice(0, view === 'list' ? 5 : 20);
-  return <div className={`book-library book-view-${view}`}>
-    <aside className="book-sidebar" aria-label={en ? 'Game categories' : '游戏分类'}>
-      <label className="book-search"><span aria-hidden="true">⌕</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} disabled={!interactive} placeholder={en ? 'Search games…' : '搜索游戏或代号…'} aria-label={en ? 'Search games' : '搜索游戏'}/></label>
-      <nav>{categories.map(item => <BookButton variant="choice" key={item} type="button" data-book-category={item} className={category === item ? 'active' : ''} aria-pressed={category === item} disabled={!interactive} onClick={() => setCategory(item)}>
-        <span className="book-cat-icon" aria-hidden="true">{item === 'all' ? '▤' : item === 'favorites' ? '★' : '•'}</span><span>{labels[item]}</span>
-        <small>{available.filter(product => item === 'all' || (item === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === item)).length}</small>
-      </BookButton>)}</nav>
-      <p className="book-sidebar-note">EAGLER TOUHOU</p>
+  const history = displayedRecent.map(id => available.find(product => product.id === id)).filter((product): product is LibraryProduct => !!product).slice(0, 20);
+  return <div className={`book-library book-view-${view}`} data-ui-kit="home">
+    <aside className="book-sidebar" aria-label={t('library.categories')}>
+      <InputGroup className="book-search"><Search aria-hidden="true"/><InputGroupInput ref={input} id="librarySearch" type="search" value={query} onChange={event => setQuery(event.target.value)} disabled={!interactive} placeholder={t('library.searchPlaceholder')} aria-label={t('library.search')} aria-controls="bookGameGrid"/>
+        {query && <Button variant="ghost" size="icon-sm" className="max-[780px]:size-11" aria-label={t('library.clearSearch')} onClick={()=>{setQuery('');input.current?.focus();}}><X/></Button>}
+      </InputGroup>
+      <ChoiceGroup asChild type="single" value={category} onValueChange={value=>{if(value)setCategory(value as BookCategory);}} disabled={!interactive} aria-label={t('library.category')}>
+        <nav>{categories.map(({id,Icon})=><ChoiceItem key={id} value={id} data-book-category={id} className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs">
+          <Icon aria-hidden="true"/><span>{labels[id]}</span><small>{available.filter(product=>id==='all'||(id==='favorites'?favorites.includes(product.id):bookCategory(product)===id)).length}</small>
+        </ChoiceItem>)}</nav>
+      </ChoiceGroup>
     </aside>
     <div className="book-content">
       <div className="book-content-main">
-      <section className={`book-recent${history.length ? '' : ' is-empty'}`} aria-labelledby="bookRecentTitle"><div className="book-section-heading"><h2 id="bookRecentTitle">{en ? 'Recently played' : '最近游玩'}</h2><span>{en ? 'Your latest adventures' : '按最近启动顺序'}</span></div>
-        <div className="book-recent-games">{history.length ? history.map(product => <article key={product.id}>{gameLink(product, true)}</article>) : <p className="book-recent-empty">{en ? 'Choose a game below to begin your collection.' : '还没有游玩记录，从下方选择一部作品开始吧。'}</p>}</div>
-      </section>
-      <div className="book-view-header"><div className="book-current"><h2>{labels[category]}</h2><span role="status">{list.length} {en ? 'games' : '部作品'}</span></div>
-        <div className="book-tools"><div className="book-view-switch" role="group" aria-label={en ? 'Library view' : '书库显示方式'}>{(['covers', 'list'] as const).map(mode => <BookButton variant="choice" key={mode} type="button" data-book-view={mode} disabled={!interactive} aria-pressed={view === mode} onClick={() => {setView(mode); writeBookPreference('view', mode);}}>{mode === 'covers' ? en ? '▦ Covers' : '▦ 封面' : en ? '☷ List' : '☷ 列表'}</BookButton>)}</div>
-          <select aria-label={en ? 'Sort games' : '作品排序'} value={sort} disabled={!interactive} onChange={event => setSort(event.target.value)}><option value="number">{en ? 'Number' : '按作品编号'}</option><option value="reverse">{en ? 'Number, descending' : '编号倒序'}</option><option value="name">{en ? 'Title' : '按作品名称'}</option></select>
+        {history.length>0&&<section className="book-recent" aria-labelledby="bookRecentTitle">
+          <div className="book-section-heading"><History aria-hidden="true"/><h2 id="bookRecentTitle">{t('library.recent')}</h2></div>
+          <div className="book-recent-games">{history.map(product=><article key={product.id}>{gameLink(product,true)}</article>)}</div>
+        </section>}
+        <div className="book-view-header">
+          <div className="book-current"><h2>{labels[category]}</h2><span role="status" aria-live="polite">{t('library.count',{count:list.length})}</span></div>
+          <div className="book-tools">
+            <ChoiceGroup type="single" className="book-view-switch" value={view} onValueChange={value=>{if(value==='covers'||value==='list'){setView(value);writeBookPreference('view',value);}}} disabled={!interactive} aria-label={t('library.view')}>
+              <ChoiceItem value="covers" data-book-view="covers" className="min-h-7 px-2.5 pointer-coarse:min-h-11 py-1.5 text-xs data-[state=on]:bg-card max-[780px]:min-h-11"><LayoutGrid aria-hidden="true"/><span>{t('library.covers')}</span></ChoiceItem>
+              <ChoiceItem value="list" data-book-view="list" className="min-h-7 px-2.5 pointer-coarse:min-h-11 py-1.5 text-xs data-[state=on]:bg-card max-[780px]:min-h-11"><List aria-hidden="true"/><span>{t('library.list')}</span></ChoiceItem>
+            </ChoiceGroup>
+            <Select value={sort} onValueChange={setSort} disabled={!interactive}>
+              <SelectTrigger className="book-sort text-xs" aria-label={t('library.sort')}><SelectValue>{sortOptions.find(option=>option.value===sort)?.label}</SelectValue></SelectTrigger>
+              <SelectContent>{sortOptions.map(option=><SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
-      <div className="book-grid">{list.map(product => <article key={product.id} className="book-card">{gameLink(product)}<BookButton variant="icon" className="book-favorite" data-book-favorite={product.id} type="button" disabled={!interactive} aria-label={`${en ? 'Favorite' : '收藏'} ${product.title}`} aria-pressed={favorites.includes(product.id)} onClick={event => {impressFavorite(event.currentTarget); toggleFavorite(product.id);}}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3 2.78 5.63L21 9.54l-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.93 1.06-6.2L3 9.54l6.22-.91Z"/></svg></BookButton></article>)}</div>
-      {!list.length && <div className="book-empty"><h3>{en ? 'No matching games' : '未找到匹配的游戏'}</h3><p>{en ? 'Try another search or category.' : '请尝试搜索其他关键词或选择其他分类。'}</p><BookButton variant="action" type="button" onClick={() => {setQuery(''); setCategory('all');}}>{en ? 'Reset filters' : '重置筛选'}</BookButton></div>}
+        <div className="book-grid" id="bookGameGrid">{list.map(product=><article key={product.id} className="book-card">
+          {gameLink(product)}
+          <Button variant="ghost" size="icon" className="book-favorite rounded-full aria-pressed:text-[var(--kit-brand)]" data-book-favorite={product.id} disabled={!interactive} aria-label={t('library.favorite',{title:product.title})} aria-pressed={favorites.includes(product.id)} onClick={()=>toggleFavorite(product.id)}><Star aria-hidden="true"/></Button>
+        </article>)}</div>
+        {!list.length&&<div className="book-empty"><Search aria-hidden="true"/><h3>{t(category==='favorites'&&!query?'library.emptyFavorites':'library.emptySearch')}</h3><Button variant="outline" className="max-[780px]:h-11" disabled={!interactive} onClick={()=>{setQuery('');setCategory('all');}}>{t('library.viewAll')}</Button></div>}
       </div>
       {footer}
     </div>
@@ -79,7 +99,6 @@ export function BookLibrary({products, openedProduct, onSelect, onActivate, inte
 }
 
 function BookCover({product}: {product: LibraryProduct}) {
-  const [failed, setFailed] = useState(false);
-  const source = bookArtwork(product);
-  return source && !failed ? <img src={source} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)}/> : <span className="book-cover-fallback">TH{product.number}<strong>{product.title}</strong></span>;
+  const [failed, setFailed] = useState(false), source = bookArtwork(product);
+  return source && !failed ? <img src={source} alt="" loading="lazy" decoding="async" onError={()=>setFailed(true)}/> : <span className="book-cover-fallback">th{product.number}<strong>{product.title}</strong></span>;
 }

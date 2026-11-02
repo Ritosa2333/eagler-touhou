@@ -17,7 +17,7 @@ export function installMountedDom() {
     Object.defineProperty(globalThis, key, {configurable: true, writable: true, value});
   };
   for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement',
-    'HTMLSelectElement', 'HTMLDialogElement', 'Element', 'Node', 'Event', 'MouseEvent', 'KeyboardEvent',
+    'HTMLSelectElement', 'HTMLFormElement', 'DocumentFragment', 'NodeFilter', 'HTMLDialogElement', 'Element', 'Node', 'Event', 'MouseEvent', 'KeyboardEvent',
     'SubmitEvent', 'CustomEvent', 'MutationObserver', 'DOMRect', 'CSS', 'FormData', 'File', 'Blob']) expose(key, key === 'window' ? window : window[key]);
   expose('getComputedStyle', window.getComputedStyle.bind(window));
   expose('requestAnimationFrame', window.requestAnimationFrame.bind(window));
@@ -44,6 +44,10 @@ export function installMountedDom() {
   if (!window.HTMLDialogElement.prototype.close) window.HTMLDialogElement.prototype.close = function (value = '') {
     this.returnValue = value; this.open = false; this.dispatchEvent(new window.Event('close'));
   };
+  window.HTMLElement.prototype.scrollIntoView = function () {};
+  window.HTMLElement.prototype.hasPointerCapture = function () {return false;};
+  window.HTMLElement.prototype.setPointerCapture = function () {};
+  window.HTMLElement.prototype.releasePointerCapture = function () {};
   window.HTMLElement.prototype.scrollTo = function (options) {
     if (typeof options === 'object') {this.scrollLeft = options.left ?? this.scrollLeft; this.scrollTop = options.top ?? this.scrollTop;}
   };
@@ -69,4 +73,20 @@ export function installMountedDom() {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key];
     }
   }};
+}
+
+/** Copy contracts compare native semantics and business hooks. Button recipes
+ * are covered by the shared interaction and browser appearance checks. */
+export function uiContractAttributes(element) {
+  const button = element.localName === 'button', control = ['button','input','textarea'].includes(element.localName);
+  const recipe = control && (element.classList.contains('ui-kit-button') || element.classList.contains('ui-input')) || element.classList.contains('ui-badge');
+  return [...element.attributes].filter(attribute => attribute.name !== 'data-ui-variant' &&
+    !(control && attribute.name === 'class') &&
+    !(recipe && ['data-slot','data-variant','data-size'].includes(attribute.name)) &&
+    !(button && attribute.name === 'type' && attribute.value === 'button' && !element.closest('form') && !element.hasAttribute('form')) &&
+    !(button && attribute.name === 'type' && attribute.value === 'submit'))
+    .map(attribute => ({name: attribute.name, value: attribute.name === 'class'
+      ? attribute.value.split(/\s+/).filter(name => !['ui-button','ui-control'].includes(name) && !/^ui-badge(?:-|$)/.test(name)).join(' ')
+      : attribute.value}))
+    .filter(attribute => attribute.name !== 'class' || attribute.value);
 }

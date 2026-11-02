@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import { runNativeCpp } from "./support/native-cpp.mjs";
 
+test("gamepad contract", async () => {
 // Gamepad is a required adapter capability. Physical device button indices are
 // not a stable product contract, so every Runtime must normalize controllers
 // before KeyConfig/gameplay consumes them.
@@ -122,3 +124,4 @@ int main(){
 }`, {includes:[directory]});
 }
 console.log(`All-game normalized gamepad/KeyConfig contract: PASS (SDL slots: ${Object.keys(sources).join('/')}; native browser ABI: ${browserGames.join('/')})`);
+});

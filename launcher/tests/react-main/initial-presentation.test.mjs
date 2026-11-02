@@ -1,6 +1,6 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Pinned-main published HTML before JS/hydration; no browser/rendering claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdtemp, readFile, rm} from 'node:fs/promises';
@@ -31,7 +31,7 @@ function expectedBookContract() {
   return [...expectedCards.querySelectorAll('.game:not([hidden]):not([data-product])')].map(card => ({
     id: card.dataset.game, href: card.getAttribute('href'),
     title: normal(card.querySelector('h2').textContent), subtitle: card.querySelector('small').textContent,
-    number: 'TH' + card.querySelector('.no-label').textContent,
+    number: 'th' + card.querySelector('.no-label').textContent,
   })).sort((a,b) => Number(a.number.slice(2)) - Number(b.number.slice(2)));
 }
 function assertUniqueIds(document) {
@@ -66,17 +66,23 @@ afterEach(async () => {
 });
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 function initialMarkup(path) {return renderToStaticMarkup(el(MemoryRouter, {initialEntries: [path]}, el(api.BrowserLauncher)));}
-for (const path of ['/', '/index.html', '/en.html', '/nested/', '/nested/en.html', '/?game=th20&test=1']) {
+for (const path of ['/', '/index.html', '/en.html', '/ja.html', '/nested/', '/nested/en.html', '/nested/ja.html', '/?game=th20&test=1']) {
   test(`actual BrowserLauncher server render publishes only supported default book cards: ${path}`, () => {
-    const document = parse(initialMarkup(path)), locale = path.includes('en.html') ? 'en' : 'zh-CN';
+    const document = parse(initialMarkup(path)), locale = path.includes('ja.html') ? 'ja' : path.includes('en.html') ? 'en' : 'zh-CN';
     assert.deepEqual(bookContract(document), expectedBookContract());
     for (const game of ['th08', 'th10', 'th15', 'th11']) assert.ok(document.querySelector(`.book-game-link[data-game=${game}]`));
     assert.equal(document.querySelector('.book-game-link[data-game=th20]'), null);
     assert.equal(document.querySelector('[data-book-category=doujin] small').textContent, '0');
     assert.equal(document.querySelectorAll('.book-recent-link').length, 0);
     assert.equal(document.querySelector('#uiLanguageSelect').value, locale);
-    assert.deepEqual([...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent)), [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
-    assert.equal(document.querySelector('.book-lobby-link').getAttribute('href'), 'lobby.html');
+    const footer = [...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent));
+    if (locale === 'zh-CN') assert.deepEqual(footer, [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
+    else {
+      assert.notEqual(footer[0], normal(originalLibrary.querySelectorAll('.site-footer p')[1].textContent));
+      assert.equal(footer[1], '赣ICP备2025074288号-1');
+      assert.equal(document.querySelector('#donationOpen').textContent, locale === 'en' ? 'Support the server' : 'サーバーを支援する');
+    }
+    assert.equal(document.querySelector('.book-lobby-link').getAttribute('href'), `lobby.html?lang=${locale}`);
     assert.equal(document.querySelector('#originMigrationOpen').hidden, true);
     assert.equal(document.querySelector('iframe'), null);
     assert.equal(document.querySelector('dialog[open]'), null);
@@ -118,7 +124,7 @@ test('initial presentation starts no rail observers/RAF and removes its document
     const container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);
     await React.act(async () => root.render(el(MemoryRouter, null, el(api.InitialLauncher))));
     const initial = [...container.querySelectorAll('[id]')];
-    assert.ok(initial.some(node => node.id === 'bookRecentTitle')); assert.equal(observers, 0); assert.equal(frames, 0); assert.equal(activeClicks.size, 0);
+    assert.ok(initial.some(node => node.id === 'bookGameGrid')); assert.equal(observers, 0); assert.equal(frames, 0); assert.equal(activeClicks.size, 0);
     await React.act(async () => root.render(el('main', {id: 'real-session-boundary'})));
     assert.equal(activeClicks.size, 0); assert.ok(initial.every(node => !node.isConnected)); assertUniqueIds(env.document);
   } finally {

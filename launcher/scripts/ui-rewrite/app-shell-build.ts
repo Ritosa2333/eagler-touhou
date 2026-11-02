@@ -8,7 +8,7 @@ import {buildRuntimeGenerationWorkerSource} from '../../lib/frontend-assets.mjs'
 import * as runtimeContract from '../../src/contracts/runtime-generations.mts';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {normalizeReactMountPath, REACT_APP_SHELL_META, validateReactAppShellDeployment, type ReactAppShellDeployment} from '../../app/services/app-shell-deployment.ts';
-import {readReactFrontendArtifact} from '../../lib/react-frontend-artifact.mjs';
+import {readReactFrontendArtifact, reactDocumentAssetUrl} from '../../lib/react-frontend-artifact.mjs';
 import {writeAppShellRetirementWorker} from '../../lib/app-shell-retirement.mjs';
 
 interface ReactShellGraph {schema: string; mountPath: string; appShell: ReactAppShellDeployment | null; shellFiles: string[]}
@@ -60,7 +60,7 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
   if (appShell && validateReactAppShellDeployment(appShell).mountPath !== mountPath) throw new Error('React App Shell configuration does not match this mount');
   const shellFiles = [...new Set([...graph.shellFiles, ...additionalShellFiles])].sort();
   const hasModule = shellFiles.some(path => /^assets\/.+\.js$/.test(path));
-  if (!hasModule || ['index.html', 'en.html', 'lobby.html', 'profile.html', 'login.html', 'about.html', 'faq.html', 'styles.css'].some(path => !shellFiles.includes(path))) throw new Error('Incomplete React App Shell graph');
+  if (!hasModule || ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html', 'about.html', 'faq.html', 'styles.css'].some(path => !shellFiles.includes(path))) throw new Error('Incomplete React App Shell graph');
   for (const path of shellFiles) {
     if (!/^[A-Za-z0-9_.\/-]+$/.test(path) || path.split('/').some(part => !part || part.startsWith('.')) || path.startsWith('/') ||
       /^(?:runtime\/|legacy\/|docs\/|src\/|app\/|tests\/|tools\/|package\/|assets\/(?:launcher|contracts)\/)/.test(path) ||
@@ -68,7 +68,7 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
     const info = await stat(resolve(clientDirectory, path));
     if (!info.isFile() || info.size === 0) throw new Error(`React App Shell input is empty or missing: ${path}`);
   }
-  for (const file of ['index.html', 'en.html', 'lobby.html', 'profile.html', 'login.html']) {
+  for (const file of ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html', 'login.html']) {
     const nodes = elements(await readFile(resolve(clientDirectory, file), 'utf8'));
     const metadata = nodes.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === REACT_APP_SHELL_META));
     if (metadata.length !== (appShell ? 1 : 0) || appShell && metadata[0].attrs.find(attr => attr.name === 'content')?.value !== JSON.stringify(appShell)) throw new Error(`React App Shell metadata mismatch: ${file}`);
@@ -78,13 +78,13 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
       // React Router writes its generated route manifest after Vite's client
       // writeBundle hook. Its exact document reference is a build-owned input,
       // not a glob that could accidentally admit unrelated files.
-      const relative = url.startsWith(mountPath) ? url.slice(mountPath.length) : '';
+      const relative = url.startsWith(mountPath) ? reactDocumentAssetUrl(url, node.tagName).slice(mountPath.length) : '';
       if (/^assets\/manifest-[a-f0-9]+\.js$/.test(relative) && !shellFiles.includes(relative)) {
         const info = await stat(resolve(clientDirectory, relative));
         if (!info.isFile() || !info.size) throw new Error('Missing React Router route manifest');
         shellFiles.push(relative);
       }
-      if (!url.startsWith(mountPath + 'assets/') || !shellFiles.includes(url.slice(mountPath.length))) throw new Error(`React document asset escapes its graph/mount: ${url}`);
+      if (!url.startsWith(mountPath + 'assets/') || !shellFiles.includes(relative)) throw new Error(`React document asset escapes its graph/mount: ${url}`);
     }
   }
   await writeFileAtomic(resolve(clientDirectory, '.vite/react-app-shell-graph.json'), JSON.stringify({...graph, shellFiles: shellFiles.slice().sort()}, null, 2) + '\n');

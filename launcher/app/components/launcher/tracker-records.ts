@@ -1,5 +1,7 @@
 import {trackerGames} from './tracker-renderer';
 import {readBookPreference} from './book-preferences';
+import {translateUi} from '../../../src/launcher/i18n.mts';
+import type {Translate, UiMessageKey} from '../../i18n';
 
 export type TrackerRecord = {name: string; done: boolean; misses: string | null; bombs: string | null; lives: string | null;
   vertical: boolean; focus: boolean; pacifist: boolean; unique: boolean; cellColour: string; textColour: string;
@@ -8,11 +10,45 @@ export type CareerRecords = Record<string, TrackerRecord>;
 export type TrackerOptions = {easy: boolean; extra: boolean; legend: boolean; transparent: boolean};
 export const DEFAULT_OPTIONS: TrackerOptions = {easy: true, extra: true, legend: true, transparent: false};
 export const CAREER_STORAGE_KEY = 'player-career-chart-v2';
-const titles = ['东方灵异传', '东方封魔录', '东方梦时空', '东方幻想乡', '东方怪绮谈', '东方红魔乡', '东方文花帖', '东方文花帖 DS', '弹幕天邪鬼', '秘封噩梦日记', '弹幕狂们的黑市', '东方妖妖梦', '东方永夜抄', '东方花映塚', '东方风神录', '东方地灵殿', '东方星莲船', '妖精大战争', '东方神灵庙', '东方辉针城', '东方绀珠传', '东方天空璋', '东方鬼形兽', '东方虹龙洞', '东方兽王园', '东方萃梦想', '东方绯想天', '东方非想天则', '东方心绮楼', '东方深秘录', '东方凭依华', '东方刚欲异闻', '东方锦上京'];
-export type TrackerGame = {name: string; colour: string; title: string; characters: string[]; difficulties: string[]};
+const titleKeys: Record<string, UiMessageKey> = {
+  "HRTP": "career.game.HRTP",
+  "SOEW": "career.game.SOEW",
+  "PODD": "career.game.PODD",
+  "LS": "career.game.LS",
+  "MS": "career.game.MS",
+  "EOSD": "career.game.EOSD",
+  "STB": "career.game.STB",
+  "DS": "career.game.DS",
+  "ISC": "career.game.ISC",
+  "VD": "career.game.VD",
+  "100BM": "career.game.100BM",
+  "PCB": "career.game.PCB",
+  "IN": "career.game.IN",
+  "POFV": "career.game.POFV",
+  "MOF": "career.game.MOF",
+  "SA": "career.game.SA",
+  "UFO": "career.game.UFO",
+  "GFW": "career.game.GFW",
+  "TD": "career.game.TD",
+  "DDC": "career.game.DDC",
+  "LOLK": "career.game.LOLK",
+  "HSIFS": "career.game.HSIFS",
+  "WBAWC": "career.game.WBAWC",
+  "UM": "career.game.UM",
+  "UDOALG": "career.game.UDOALG",
+  "IAMP": "career.game.IAMP",
+  "SWR": "career.game.SWR",
+  "H.SOKU": "career.game.H_SOKU",
+  "HM": "career.game.HM",
+  "ULIL": "career.game.ULIL",
+  "AOCF": "career.game.AOCF",
+  "GI": "career.game.GI",
+  "TH20": "career.game.TH20"
+};
+export type TrackerGame = {name: string; colour: string; titleKey: UiMessageKey; characters: string[]; difficulties: string[]};
 type SourceGame = {name: string; colour: string; characters: {name: string; subcharacters: string[]}[]; difficulties: string[]};
-export const TRACKER_GAMES: TrackerGame[] = (trackerGames as unknown as SourceGame[]).map((game, index) => ({
-  name: game.name, colour: game.colour, title: titles[index],
+export const TRACKER_GAMES: TrackerGame[] = (trackerGames as unknown as SourceGame[]).map(game => ({
+  name: game.name, colour: game.colour, titleKey: titleKeys[game.name]!,
   characters: game.characters.flatMap(character => character.subcharacters.length ? character.subcharacters.map(sub => character.name + sub) : [character.name]),
   difficulties: game.name === 'IN' ? ['X', 'B-L', 'B-H', 'B-N', 'B-E', 'A-L', 'A-H', 'A-N', 'A-E'] : [...game.difficulties, ...(game.difficulties.at(-1) === 'N' ? ['E'] : [])],
 }));
@@ -43,10 +79,10 @@ export const validOptions = (value: unknown): value is TrackerOptions => !!value
   Object.keys(DEFAULT_OPTIONS).every(key => typeof (value as Record<string, unknown>)[key] === 'boolean');
 const difficultyNames: Record<string, string> = {E: 'Easy', N: 'Normal', H: 'Hard', L: 'Lunatic', X: 'Extra', P: 'Phantasm'};
 const cellsByKey = new Map(TRACKER_CELLS.map(cell => [cell.key, cell]));
-export function cellLabel(key: string) {
+export function cellLabel(key: string, t: Translate = key => translateUi('zh-CN', key)) {
   const cell = cellsByKey.get(key);
   if (!cell) return key;
-  return `${cell.game.title} · ${cell.character} · ${difficultyNames[cell.difficulty] ?? cell.difficulty}`;
+  return `${t(cell.game.titleKey)} | ${cell.character} | ${difficultyNames[cell.difficulty] ?? cell.difficulty}`;
 }
 export function loadCareerRecords() {
   return readBookPreference(CAREER_STORAGE_KEY, {}, validCareerRecords);

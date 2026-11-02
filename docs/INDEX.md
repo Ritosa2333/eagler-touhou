@@ -1,6 +1,6 @@
 # 文档总表
 
-共 267 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 275 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -63,7 +63,7 @@
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
 | 作品源码文档 | [ports/th06/docs/DEVELOPMENT.md](../ports/th06/docs/DEVELOPMENT.md) | TH06 开发指南 |
-| 作品源码文档 | [ports/th06/docs/records/2026-10-26-spectator-browser.md](../ports/th06/docs/records/2026-10-26-spectator-browser.md) | th06 普通局旁观检查 |
+| 作品源码文档 | [ports/th06/docs/records/2026-10-26-spectator-browser.md](../ports/th06/docs/records/2026-10-26-spectator-browser.md) | 合作旁观状态验收 |
 | 作品源码文档 | [ports/th07/docs/DEVELOPMENT.md](../ports/th07/docs/DEVELOPMENT.md) | TH07 开发指南 |
 | 作品源码文档 | [ports/th07/vendored/README.md](../ports/th07/vendored/README.md) | 第三方构建依赖 |
 | 作品源码文档 | [ports/th075-mp/docs/DEVELOPMENT.md](../ports/th075-mp/docs/DEVELOPMENT.md) | 萃梦想多人版开发 |
@@ -78,7 +78,7 @@
 | 作品源码文档 | [ports/th10/docs/DEVELOPMENT.md](../ports/th10/docs/DEVELOPMENT.md) | TH10 开发指南 |
 | 作品源码文档 | [ports/th11-mp/docs/DEVELOPMENT.md](../ports/th11-mp/docs/DEVELOPMENT.md) | TH11 多人版开发指南 |
 | 作品源码文档 | [ports/th11-mp/docs/records/2026-10-24-display-high-refresh.md](../ports/th11-mp/docs/records/2026-10-24-display-high-refresh.md) | th11 高刷新呈现 ｜ 2026-10-24 |
-| 作品源码文档 | [ports/th11-mp/docs/records/2026-10-25-spectator-stage6.md](../ports/th11-mp/docs/records/2026-10-25-spectator-stage6.md) | th11 六面旁观逐帧对照 |
+| 作品源码文档 | [ports/th11-mp/docs/records/2026-10-25-spectator-stage6.md](../ports/th11-mp/docs/records/2026-10-25-spectator-stage6.md) | 第六关多人 Replay 一致性 |
 | 作品源码文档 | [ports/th11-mp/portable/presentation-lab/CAMPAIGN.md](../ports/th11-mp/portable/presentation-lab/CAMPAIGN.md) | th11 帧间位移巡检 |
 | 作品源码文档 | [ports/th11-mp/portable/presentation-lab/README.md](../ports/th11-mp/portable/presentation-lab/README.md) | th11 Presentation Lab |
 | 作品源码文档 | [ports/th11/docs/DEVELOPMENT.md](../ports/th11/docs/DEVELOPMENT.md) | TH11 开发指南 |
@@ -119,6 +119,7 @@
 | Launcher | [launcher/README.en.md](../launcher/README.en.md) | launcher README |
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
 | Launcher | [launcher/THIRD_PARTY.md](../launcher/THIRD_PARTY.md) | 第三方软件与资源致谢 |
+| Launcher | [launcher/app/components/launcher/tracker-attribution.md](../launcher/app/components/launcher/tracker-attribution.md) | Touhou 1CC chart |
 | Launcher | [launcher/compat/README.md](../launcher/compat/README.md) | 旧数据迁移 |
 | Launcher | [launcher/content/MULTIPLAYER.md](../launcher/content/MULTIPLAYER.md) | 联机玩法介绍 |
 | Launcher | [launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md](../launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md) | Adapter 行为不变量 |
@@ -137,6 +138,9 @@
 | Launcher | [launcher/docs/TOUCH_FUNCTION_KEY.md](../launcher/docs/TOUCH_FUNCTION_KEY.md) | 移动端 C 功能键 |
 | Launcher | [launcher/docs/TOUHOU_PROGRESS.md](../launcher/docs/TOUHOU_PROGRESS.md) | 东方作品进度 |
 | Launcher | [launcher/docs/assets/game-covers/README.md](../launcher/docs/assets/game-covers/README.md) | 游戏封面 |
+| Launcher | [launcher/docs/frontend-tooling.md](../launcher/docs/frontend-tooling.md) | 前端检查与测试 |
+| Launcher | [launcher/docs/paraglide-i18n.md](../launcher/docs/paraglide-i18n.md) | 界面语言与消息编译 |
+| Launcher | [launcher/docs/ui-controls.md](../launcher/docs/ui-controls.md) | 启动器 UI ｜ 源码研究与扩展设计 |
 | Launcher | [launcher/examples/deployment/README.md](../launcher/examples/deployment/README.md) | HTTP 配置示例 |
 | Launcher | [launcher/integrations/LOCALIZATION.md](../launcher/integrations/LOCALIZATION.md) | 语言包与字体 |
 | Launcher | [launcher/integrations/RUNTIME_CONTRACT.md](../launcher/integrations/RUNTIME_CONTRACT.md) | Runtime 语言包与 thprac 接口 |
@@ -184,6 +188,7 @@
 | 许可证与声明 | [launcher/NOTICE.txt](../launcher/NOTICE.txt) | 本项目是[车万云](https://cloud.touhou.best/)的一个子项目。 |
 | 许可证与声明 | [launcher/content/FIRST_USE_NOTICE.md](../launcher/content/FIRST_USE_NOTICE.md) | 首次使用须知 |
 | 许可证与声明 | [launcher/public/assets/LICENSE-Phosphor.txt](../launcher/public/assets/LICENSE-Phosphor.txt) | MIT License |
+| 许可证与声明 | [launcher/public/assets/brand/LICENSE.txt](../launcher/public/assets/brand/LICENSE.txt) | Creative Commons Legal Code |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-ChillRoundGothic.txt](../launcher/public/assets/fonts/OFL-ChillRoundGothic.txt) | OFL ChillRoundGothic |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-Unifont.txt](../launcher/public/assets/fonts/OFL-Unifont.txt) | OFL Unifont |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-YatraOne.txt](../launcher/public/assets/fonts/OFL-YatraOne.txt) | OFL YatraOne |

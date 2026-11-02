@@ -1,4 +1,15 @@
+import {test} from 'vitest';
+import {nativeNodeExecutable} from './support/node-runtime.mjs';
 import {selectedPortGames} from './support/port-selection.mjs';
+import assert from "node:assert/strict";
+import { access, readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { workspacePath } from "../lib/workspace-layout.mjs";
+import { WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
+import { runNativeCpp } from "./support/native-cpp.mjs";
+
+test("presentation contract coverage", async () => {
 /**
  * Required presentation-cadence coverage gate.
  *
@@ -7,13 +18,13 @@ import {selectedPortGames} from './support/port-selection.mjs';
  * Product Catalog entry without presentation verification makes this test fail
  * immediately instead of silently leaving the new adapter untested.
  */
-import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
-import { workspacePath } from "../lib/workspace-layout.mjs";
-import { WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
-import { runNativeCpp } from "./support/native-cpp.mjs";
+
+
+
+
+
+
+
 
 const verification = Object.freeze({
   th06: Object.freeze({ kind: "shared-preload", tests: Object.freeze([
@@ -48,7 +59,7 @@ const selectedGames = selectedPortGames(Object.keys(verification));
 for (const [game, lane] of Object.entries(verification).filter(([game]) => selectedGames.includes(game))) {
   const product = PRODUCT_GAMES[game];
   if (lane.kind === 'managed-web') {
-    const result=spawnSync(process.execPath,['--test','--test-name-pattern=managed presentation:',workspacePath(game,lane.test)],
+    const result=spawnSync(nativeNodeExecutable(),['--test','--test-name-pattern=managed presentation:',workspacePath(game,lane.test)],
       {cwd:workspacePath(game),encoding:'utf8',windowsHide:true});
     assert.equal(result.status,0,`${game}: presentation verification failed\n${result.stdout}\n${result.stderr}`);
     continue;
@@ -124,3 +135,4 @@ console.log(JSON.stringify({
   games: selectedGames,
   lanes: Object.fromEntries(Object.entries(verification).map(([game, lane]) => [game, lane.kind])),
 }));
+});

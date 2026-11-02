@@ -1,0 +1,23 @@
+@layer components {
+.touch-help{--tc-surface:var(--kit-card);--tc-raised:var(--kit-muted);--tc-text:var(--kit-foreground);--tc-muted:var(--kit-muted-foreground);--tc-line:var(--kit-border);--tc-accent:var(--kit-primary);--tc-on-accent:var(--kit-primary-foreground)}
+.touch-help .touch-help-window{border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground);font-family:var(--kit-font);box-shadow:0 16px 48px #0003}
+.touch-help .touch-help-bar{min-height:56px;padding:10px 16px 10px 20px;border-color:var(--kit-border);background:var(--kit-card)}
+.touch-help .touch-help-heading strong{color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
+.touch-help .touch-help-heading small{color:var(--kit-muted-foreground);font:400 12px/1.5 var(--kit-font);letter-spacing:0}
+.touch-help .touch-guide{padding:12px;background:var(--kit-card)}
+.touch-help .guide-scene{border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card);box-shadow:none}
+.touch-help .guide-tab-card{min-height:56px;border:0;border-radius:0;background:transparent;color:var(--kit-foreground);box-shadow:none;transform:none}
+.touch-help .guide-tab-card:hover{background:var(--kit-accent)}
+.touch-help .guide-tab-card:focus-visible{outline:2px solid var(--kit-ring);outline-offset:-2px}
+.touch-help .guide-tab-card strong{color:var(--kit-foreground);font:500 13px/1.5 var(--kit-font);letter-spacing:0}
+.touch-help .guide-tab-card small{color:var(--kit-muted-foreground);font:400 12px/1.5 var(--kit-font)}
+.touch-help .guide-tab-card[aria-expanded=true]{background:var(--kit-muted)}
+.touch-help :is(.guide-demo-body,.orientation-guide-copy){border-color:var(--kit-border)}
+.touch-help :is(.guide-info,.orientation-guide-copy){background:var(--kit-card)}
+.touch-help :is(.guide-info-note,.rotation-auto-tip){background:var(--kit-muted);border-color:var(--kit-border)}
+.touch-help :is(.orientation-steps,.orientation-guide-copy p,.rotation-auto-tip strong){color:var(--kit-foreground)}
+.touch-help :is(.rotation-auto-tip span,.android-rotation-example figcaption){color:var(--kit-muted-foreground)}
+.touch-help :is(.guide-info-lead,.guide-info-note,.orientation-guide-copy){color:var(--kit-muted-foreground);font:400 13px/1.65 var(--kit-font)}
+.touch-help .guide-key-row{border:1px solid var(--kit-border);border-radius:6px;background:var(--kit-muted);color:var(--kit-foreground);font:400 12px/1.5 var(--kit-font)}
+.touch-help .guide-key-row kbd{border-color:var(--kit-border);background:var(--kit-secondary);color:var(--kit-foreground);font:500 12px/1.5 var(--kit-font);box-shadow:none}
+}

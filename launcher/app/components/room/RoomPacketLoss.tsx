@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../ui/controls';
 import {useLocale} from '../../i18n';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
@@ -12,7 +13,7 @@ export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnaps
   const ready = state.connected && peers.some(({seat}) => lanes.some(lane => network.lossReady(seat.clientId, lane)));
   return <section className="room-packet-loss" aria-labelledby="mpPacketLossTitle">
     <header><div><h3 id="mpPacketLossTitle">{t('room.packetLoss')}</h3><p>{t('room.packetLossHint')}</p></div>
-      <button id="mpPacketLossTest" type="button" disabled={!ready || running || state.launchBusy} onClick={() => network.testLoss()}>{t(running ? 'room.packetLossRunning' : 'room.packetLossTest')}</button>
+      <UiButton id="mpPacketLossTest" type="button" disabled={!ready || running || state.launchBusy} onClick={() => network.testLoss()}>{t(running ? 'room.packetLossRunning' : 'room.packetLossTest')}</UiButton>
     </header>
     <div className="room-turn-preference">
       <div><label htmlFor="mpPreferTurn">{t('room.preferTurn')}</label><p id="mpPreferTurnHint">{t('room.preferTurnHint')}</p></div>

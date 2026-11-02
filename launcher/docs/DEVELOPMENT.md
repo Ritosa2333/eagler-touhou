@@ -1,6 +1,6 @@
 # 前端与一个游戏的本地联调
 
-使用 Git、Node.js 24（最低 22.18）和 npm。编译游戏还需要 Emscripten SDK；其他依赖和本地资源由该作[开发指南](../../ports/README.md)列出。
+前端使用 Git 和 Bun 1.4.4，工作区工具使用 Node.js 24。编译游戏还需要 Emscripten SDK；其他依赖和本地资源由该作[开发指南](../../ports/README.md)列出。
 
 ## 1. 取前端和 TH10
 
@@ -8,7 +8,7 @@
 git clone --filter=blob:none --sparse https://github.com/YomotsuHisami/eagler-touhou.git
 cd eagler-touhou
 git sparse-checkout set launcher common tools docs ports/th10
-npm --prefix launcher ci --ignore-scripts
+bun install --cwd launcher --frozen-lockfile --ignore-scripts
 ```
 
 之后的命令都从仓库根目录运行。只改页面时，可从检出列表中去掉 `ports/th10`。
@@ -18,17 +18,25 @@ npm --prefix launcher ci --ignore-scripts
 已有完整打包 Runtime 的本地预览可指定 `EAGLER_DEVELOPMENT_SITE_MANIFEST`，由正常 Site Manifest 校验器读取运营者提供的 JSON。相对地址从预览站点解析；`EAGLER_TOUHOU_NETPLAY_RELAY` 可覆盖其联机地址。该选项只供源码开发服务器使用，不修改 Host 发布输入。
 
 ```sh
-npm run dev
+bun run dev
 ```
 
 打开终端显示的地址，修改页面并查看刷新结果。接下来运行游戏时，停止这个命令，使用第 4 步的集成服务器。
+
+界面开发先查 [UI 设计与扩展](ui-controls.md) 中对应的完整模块、官方源码和组件组合，再沿通用 UI 与业务模块的边界修改。视觉与交互按同状态的亮暗、横竖屏对照验收。
+
+界面消息与语言地址按[三语指南](paraglide-i18n.md)维护。开发、类型检查和构建共用翻译生成入口；修改词库后先运行 `bun --bun run --cwd launcher i18n:check`。
+
+本地开发服务器的 `/__ui-audit/` 提供实时布局检测，`?page=lobby` 从大厅开始。操作页面时记录位移与尺寸变化，点击记录可查看前后位置，也可暂停、标记预期变化和导出记录。“检查当前页”同时检查输入设置对齐、弹层遮挡与浮层重复的 CSS 动效。检测页不进入发布构建。
+
+`tests/visual/layout.html` 的“记录下一次动效”从真实操作开始逐帧检查透明度、状态和动画清理。浏览器回归使用 `npm run test:ui-motion:browser -- <开发地址>`，分别验证正常动效、站内减弱动效和系统减弱动效，覆盖亮暗与横竖屏。结果保存实际资源地址和逐帧记录；静态截图的减弱动效设置不代替正常动效验收。
 
 ## 3. 构建并打包 TH10
 
 先按 [TH10 开发指南](../../ports/th10/docs/DEVELOPMENT.md)准备 SDK 和字体目录，再编译普通版：
 
 ```sh
-npm run build:runtime -- --game=th10 --variant=normal --emsdk=/absolute/path/to/emsdk
+bun run build:runtime -- --game=th10 --variant=normal --emsdk=/absolute/path/to/emsdk
 EAGLER_FONT_ROOT=/absolute/path/to/th10-fonts node ports/th10/portable/package-eagler.mjs
 ```
 
@@ -39,11 +47,11 @@ EAGLER_FONT_ROOT=/absolute/path/to/th10-fonts node ports/th10/portable/package-e
 ## 4. 启动集成服务器
 
 ```sh
-npm run build
+bun run build
 EAGLER_DEVELOPMENT_GAMES=th10 npm start
 ```
 
-打开 <http://127.0.0.1:8130/>，导入 TH10 游戏数据后启动。修改前端后重新运行 `npm run build`；修改游戏后重新编译、打包。
+打开 <http://127.0.0.1:8130/>，导入 TH10 游戏数据后启动。修改前端后重新运行 `bun run build`；修改游戏后重新编译、打包。
 
 开发服务器按内容目录中实际完整存在的音乐文件集提供音乐选项。DATA 已准备、OGG 尚未准备时，可先使用无背景音乐模式运行游戏。
 
@@ -79,9 +87,9 @@ th11 与 th11mp 均提供高刷新呈现设置，首次开放时默认关闭，�
 
 ```sh
 npm run docs:check
-npm run typecheck
-npm run build
-npm test
+bun run typecheck
+bun run build
+bun run test
 ```
 
 游戏行为按本作 `ADAPTATION.md` 逐项验证。需要核心模块、服务或真实浏览器测试时，按[测试入口](../tests/README.md)准备其输入并运行对应命令。

@@ -1,5 +1,5 @@
 /** Original main6440–6580 Replay behavior through synthetic native ports only. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -21,7 +21,7 @@ before(async () => {
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 function deferred() {let resolve, reject; const promise = new Promise((r, j) => {resolve = r; reject = j;}); return {promise, resolve, reject};}
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function fixture({cold = false, launched = false, prepareGate = null, broken = false, watch = null, inspect = null, viewer = false, storage = null} = {}) {
+function fixture({cold = false, launched = false, prepareGate = null, broken = false, watch = null, inspect = null, viewer = false, storage = null, relocatePlayback = null} = {}) {
   const files = new Map([['replay/th6_02.rpy', [2]], ['replay/th6_01.rpy', [1, 1]], ['score.dat', [9]]]);
   const events = [], toasts = [], downloads = [], confirms = [], matches = new Map();
   const state = {ready: !cold, epoch: cold ? null : 1, launched, game: 'th06'};
@@ -43,6 +43,7 @@ function fixture({cold = false, launched = false, prepareGate = null, broken = f
     ...(viewer ? {prepareViewer: async () => {events.push('viewer'); if (prepareGate) await prepareGate.promise; state.ready = state.launched = true; state.epoch ??= 1;}, closeViewer: () => events.push('closeViewer')} : {}),
     ...(watch ? {watch: async (...args) => {events.push('watch'); await watch(...args);}} : {}),
     ...(inspect ? {inspect} : {}),
+    ...(relocatePlayback ? {relocatePlayback} : {}),
     async prepareFiles() {events.push('prepare'); if (prepareGate) await prepareGate.promise; state.ready = true; state.epoch ??= 1;},
     async releasePrepared(product, epoch) {events.push(`release:${product}:${epoch}`); state.ready = false; state.epoch = null;},
     translate: (key, params) => key + (params ? JSON.stringify(params) : ''),
@@ -88,8 +89,30 @@ test('rename refreshes current collision list, writes new bytes before removing 
   const f = fixture(); await f.model.open('th06'); f.events.length = 0; f.answer('th6_03.rpy');
   await f.model.rename('replay/th6_01.rpy');
   assert.ok(f.events[0].startsWith('prompt:replay.renamePrompt:th6_01.rpy'));
-  assert.deepEqual(f.events.slice(1, 9), ['prepare', 'lock', 'sync', 'list:', 'read:replay/th6_01.rpy', 'write:replay/th6_03.rpy', 'remove:replay/th6_01.rpy', 'unlock']);
+  assert.deepEqual(f.events.slice(1, 11), ['prepare', 'lock', 'sync', 'list:', 'read:replay/th6_01.rpy', 'write:replay/th6_03.rpy', 'sync', 'read:replay/th6_03.rpy', 'remove:replay/th6_01.rpy', 'unlock']);
   assert.deepEqual(f.files.get('replay/th6_03.rpy'), [1, 1]); assert.equal(f.files.has('replay/th6_01.rpy'), false);
+});
+test('rename notifies the active player after destination verification and before deleting source',async()=>{
+  let f;
+  f=fixture({relocatePlayback:async(product,access,from,to)=>{
+    assert.equal(product,'th06');assert.equal(access.epoch,1);assert.deepEqual(f.files.get(to),f.files.get(from));
+    f.events.push('relocate');
+  }});
+  await f.model.open('th06');f.events.length=0;
+  await f.model.rename('replay/th6_01.rpy','th6_03.rpy');
+  assert.ok(f.events.indexOf('read:replay/th6_03.rpy')<f.events.indexOf('relocate'));
+  assert.ok(f.events.indexOf('relocate')<f.events.indexOf('remove:replay/th6_01.rpy'));
+  assert.equal(f.files.has('replay/th6_01.rpy'),false);f.model.dispose();
+});
+test('rename keeps source data if persistence verification or playback relocation fails',async()=>{
+  for(const failure of ['verify','playback']){
+    const f=fixture({relocatePlayback:async()=>{throw Error('playback relocation rejected');}});
+    if(failure==='verify')f.state.corruptRead='replay/th6_03.rpy';
+    await f.model.open('th06');await f.model.rename('replay/th6_01.rpy','th6_03.rpy');
+    assert.deepEqual(f.files.get('replay/th6_01.rpy'),[1,1]);assert.equal(f.events.includes('remove:replay/th6_01.rpy'),false);
+    assert.deepEqual(f.model.getSnapshot().rows.map(row=>row.path).sort(),['replay/th6_01.rpy','replay/th6_02.rpy','replay/th6_03.rpy']);
+    assert.ok(f.toasts.length);f.model.dispose();
+  }
 });
 test('rename cancellation/empty/invalid/case-only no-op never mutates file storage', async () => {
   const f = fixture(); await f.model.open('th06'); f.events.length = 0;

@@ -55,7 +55,7 @@ export function LobbySurface({
   children,
   ...rail
 }: LobbySurfaceProps) {
-  const { t, locale } = useLocale();
+  const {t} = useLocale();
   const [roomView, setRoomView] = useState<'cards' | 'list'>('cards');
   useEffect(() => setRoomView(readBookPreference('lobby-room-view', 'cards', (value): value is 'cards' | 'list' => value === 'cards' || value === 'list')), []);
   return (
@@ -65,8 +65,8 @@ export function LobbySurface({
         <header className="lobby-intro">
           <h1>{t('lobby.title')}</h1>
           <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
-            <BookButton variant="quiet"
-              className="lobby-support-link"
+            <BookButton variant="quiet" size="sm"
+              className="lobby-support-link h-9 px-0 max-[780px]:h-11"
               id="lobbyGuideOpen"
               type="button"
               disabled={!onGuide}
@@ -75,8 +75,8 @@ export function LobbySurface({
               <span>{t('multiplayerGuide.action')}</span>
               <span aria-hidden="true">›</span>
             </BookButton>
-            <BookButton variant="quiet"
-              className={`lobby-support-link${networkRunning ? ' running' : ''}`}
+            <BookButton variant="quiet" size="sm"
+              className={`lobby-support-link h-9 px-0 max-[780px]:h-11${networkRunning ? ' running' : ''}`}
               id="lobbyNetworkCheck"
               aria-disabled={networkRunning ? 'true' : undefined}
               type="button"
@@ -86,9 +86,9 @@ export function LobbySurface({
               <span>{t('networkCheck.action')}</span>
               <span aria-hidden="true">›</span>
             </BookButton>
-            <a className="lobby-support-link lobby-survey-link" href="https://v.wjx.cn/vm/QqmTdwh.aspx#" target="_blank" rel="noopener noreferrer" title={t('lobby.surveyNotice')}>
+            <BookButton variant="quiet" size="sm" className="lobby-support-link lobby-survey-link h-9 px-0 max-[780px]:h-11" asChild><a href="https://v.wjx.cn/vm/QqmTdwh.aspx#" target="_blank" rel="noopener noreferrer" title={t('lobby.surveyNotice')}>
               <span>{t('lobby.surveyAction')}</span><span aria-hidden="true">›</span>
-            </a>
+            </a></BookButton>
           </nav>
         </header>
         {connectionWarning}
@@ -102,9 +102,9 @@ export function LobbySurface({
         <div className="lobby-rooms-column">
         <header className="lobby-room-tools">
           <div className="lobby-actions">{roomTools}</div>
-          <div className="book-room-view-toggle" role="group" aria-label={locale === 'en' ? 'Room display' : '房间显示模式'}>
-            {(['cards', 'list'] as const).map(view => <BookButton variant="choice" key={view} type="button" aria-pressed={roomView === view} onClick={() => {setRoomView(view); writeBookPreference('lobby-room-view', view);}}>{view === 'cards' ? (locale === 'en' ? 'Normal' : '普通模式') : (locale === 'en' ? 'List' : '列表模式')}</BookButton>)}
-          </div>
+          <fieldset className="book-room-view-toggle" aria-label={t('directory.display')}>
+            {(['cards', 'list'] as const).map(view => <BookButton variant="choice" key={view} type="button" aria-pressed={roomView === view} onClick={() => {setRoomView(view); writeBookPreference('lobby-room-view', view);}}>{view === 'cards' ? (t('directory.displayNormal')) : (t('directory.displayList'))}</BookButton>)}
+          </fieldset>
         </header>
         {roomFilters}
         <section
@@ -119,26 +119,26 @@ export function LobbySurface({
             hidden={!hasRooms}
           >
             {roomView === 'list' ? <>
-            <span>{locale === 'en' ? 'Game' : '游戏'}</span>
-            <span>{locale === 'en' ? 'Room' : '房间'}</span>
+            <span>{t('directory.columnGame')}</span>
+            <span>{t('directory.columnRoom')}</span>
             <span>{t('lobby.difficulty')}</span>
-            <span>{locale === 'en' ? 'Rules' : '玩法'}</span>
-            <span>{locale === 'en' ? 'Players' : '玩家 / 人数'}</span>
+            <span>{t('directory.columnRules')}</span>
+            <span>{t('directory.columnPlayers')}</span>
             <span>{t('lobby.state')}</span>
             <span />
             </> : <>
             <span>{t('lobby.gameAndRoom')}</span>
             <span>{t('lobby.difficulty')}</span>
-            <span>{locale === 'en' ? 'Rules' : '玩法'}</span>
+            <span>{t('directory.columnRules')}</span>
             <span />
             <span>{t('lobby.capacity')}</span>
             <span>{t('lobby.state')}</span>
             <span />
             </>}
           </div>
-          <div className="lobby-room-list" id="roomList" role="list" aria-busy={loading}>
+          <ul className="lobby-room-list" id="roomList" aria-busy={loading}>
             {roomList}
-          </div>
+          </ul>
           <div className="lobby-list-loading" id="listLoading" role="status" hidden={!loading}>
             <i className="lobby-preload-spinner" aria-hidden="true" />
             <span className="lobby-sr-only">{t('lobby.loadingHint')}</span>

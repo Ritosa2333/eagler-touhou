@@ -139,7 +139,9 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
     else publish();
   }
   async function closeOrReset() {
-    return getContext().playerOpen ? ports.closePlayer() : (await ports.resetUnlaunchedRuntime(), true);
+    if (getContext().playerOpen) return ports.closePlayer();
+    await ports.resetUnlaunchedRuntime();
+    return true;
   }
   async function cancelledDirectDownload() {
     if (disposed) return;

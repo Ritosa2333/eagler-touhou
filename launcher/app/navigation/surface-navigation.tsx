@@ -6,9 +6,10 @@ import {FullscreenTransient} from '../components/FullscreenTransient';
 import {ConfirmationDialog} from '../components/ConfirmationDialog';
 import {useLocale} from '../i18n';
 import type {DecisionStore} from '../models/decisions';
-import {resolveRoomInvite, normalizeRoomCode, roomRouteHistoryOperation, launcherOptionsHistoryOperation, launcherHomeHistoryOperation, returnToRoomHistoryOperation, roomPanelHistoryOperation, roomSettingsHistoryOperation, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY, MP_ROOM_HISTORY_KEY, PLAYER_HISTORY_KEY, type HistoryOperation} from '../../src/launcher/route-state.mts';
+import {resolveRoomInvite, normalizeRoomCode, roomRouteHistoryOperation, launcherHomeHistoryOperation, returnToRoomHistoryOperation, roomPanelHistoryOperation, roomSettingsHistoryOperation, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY, MP_ROOM_HISTORY_KEY, PLAYER_HISTORY_KEY, type HistoryOperation} from '../../src/launcher/route-state.mts';
 import {encodeRoomInvite, ROOM_INVITE_KEY} from '../../src/launcher/room-invite.mts';
-import type {UiLocale} from '../../src/launcher/i18n.mts';
+import {localeHome, uiLocaleSearch, type UiLocale} from '../../src/launcher/i18n.mts';
+import {updateSearchParameters} from '../../src/launcher/url-query.mts';
 const noDecisionSubscription = () => () => {};
 const noDecisionSnapshot = () => null;
 let dialogSessionSequence = 0;
@@ -205,6 +206,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     pendingLocaleAddress.current.target === href(location);
   const retainHostSelection = !locationChanged || overlayTransition || localeTransition;
   const activeHostSelection = retainHostSelection ? hostSelection : null;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Commit selection once per Router entry; Host metadata and callback renders must not replay a navigation intent.
   useLayoutEffect(() => {
     if (!locationChanged) return;
     selectionLocation.current = location;
@@ -271,7 +273,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const roomVisible = baseAddress.roomCode !== null && selectedProductId !== null && isMultiplayerProductId(selectedProductId);
   const address: SurfaceAddress = {...baseAddress, productId: selectedProductId,
     surface: ownedTouch && !staleTouch ? 'touch' : roomVisible ? 'room' : hasSelection ? 'options' : 'library'};
-  useLayoutEffect(() => {previousSurface.current = address.surface; if (address.productId) previousSelectedProduct.current = address.productId;}, [address.surface, address.productId, location.key]);
+  useLayoutEffect(() => {previousSurface.current = address.surface; if (address.productId) previousSelectedProduct.current = address.productId;}, [address.surface, address.productId]);
   function applyHostSelection(selection: HostSelection) {
     setHostSelection(previous => previous?.productId === selection.productId && previous.hasSelection === selection.hasSelection ? previous : {...selection});
   }
@@ -318,6 +320,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (current) pendingPolicyPop.current = current.position + distance;
     void navigate(distance);
   }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Seed physical Back parents from this document's initial address exactly once, before later Router and Host updates.
   useEffect(() => {
     if (seeded.current) return;
     seeded.current = true;
@@ -357,7 +360,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const fullscreenCloseTask = useRef<{promise: Promise<void>; resolve(): void} | null>(null);
   useLayoutEffect(() => {
     if (!ownsRoomFullscreen) {fullscreenCloseTask.current?.resolve();fullscreenCloseTask.current = null;}
-  }, [ownsRoomFullscreen,location.key]);
+  }, [ownsRoomFullscreen]);
   useEffect(() => () => {fullscreenCloseTask.current?.resolve();fullscreenCloseTask.current = null;}, []);
   function openRoomFullscreen() {
     if (address.roomCode === null || ownsRoomFullscreen) return;
@@ -388,6 +391,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       else void navigate(pageAddress(location, parent, parentProduct ?? address.productId, locale), {replace: true, state: {}});
     } finally {roomPolicyNavigation.current = false;}
   }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: This pending POP operation belongs to one committed Router entry, never a metadata or callback render.
   useLayoutEffect(() => {
     const pending = pendingDirectorySelection.current;
     if (!pending || pageHistory?.page !== 'directory' || pageHistory.position !== pending.position) return;
@@ -483,6 +487,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const runtimeCloseTask = useRef<{destination: string; settled: boolean; manualRoomExit: boolean; titleOverlayWasOpen: boolean} | null>(null);
   const mounted = useRef(true);
   useEffect(() => {mounted.current = true; return () => {mounted.current = false;};}, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: A blocker transition consumes one page-Back intent using its committed address.
   useEffect(() => {
     if (blocker.state !== 'blocked' || pendingBlockKind.current !== 'page') return;
     blocker.reset(); returnToPageParent();
@@ -499,6 +504,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       if (mounted.current && current.state === 'blocked' && current.location.key === destination) current.proceed();
     });
   }, [blocker, requestRoomFullscreenExit]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: One blocked navigation owns the asynchronous Runtime close and its captured return destination; later renders cannot restart it.
   useEffect(() => {
     if (blocker.state !== 'blocked') {
       if (runtimeCloseTask.current?.settled) runtimeCloseTask.current = null;
@@ -555,6 +561,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (requestRoomLeave) requestRoomLeave();
     else {closeIssuedKey.current = null; blocker.reset();}
   }, [blocker, requestRoomLeave]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Normalize this pending hidden selection once its exact Router entry commits.
   useLayoutEffect(() => {
     const pending = pendingHiddenSelection.current;
     if (!pending || location.key !== pending.destination) return;
@@ -562,6 +569,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     applyRoomOperations([{kind: 'replace', url: currentUrl().href, state: {...plainState(location.state),
       [hiddenSelectionKey]: {session: dialogSession, productId: pending.productId}}}]);
   }, [location.key]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Apply the captured room return once on the destination Router key; changing callbacks must not replace history again.
   useLayoutEffect(() => {
     const pending = pendingRoomReturn.current;
     if (!pending) return;
@@ -580,6 +588,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const surfaceOpenIssuedKey = useRef<string | null>(null);
   const roomRestoreIssuedKey = useRef<string | null>(null);
   const completedRuntimeCloseKey = useRef<string | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Each new Router entry starts a fresh set of navigation intents.
   useEffect(() => {
     closeIssuedKey.current = null; infoOpenIssuedKey.current = null; surfaceOpenIssuedKey.current = null;
     pendingLocaleAddress.current = null;
@@ -665,12 +674,9 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   function selectLobbyProduct(productId: ProductId | '') {
     if (address.context !== 'lobby' || address.surface !== 'library' ||
         (productId && !isMultiplayerProductId(productId)) || blocker.state !== 'unblocked') return;
-    const params = new URLSearchParams(location.search);
-    params.delete('games');
-    if (productId) params.set('game', productId);
-    else params.delete('game');
-    if (params.toString() === location.search.replace(/^\?/, '')) return;
-    void navigate(target(params), {replace: true, preventScrollReset: true, state: withoutEntry(location.state)});
+    const search = updateSearchParameters(location.search, {games: null, game: productId || null});
+    if (search === location.search) return;
+    void navigate({pathname: location.pathname, search, hash: location.hash}, {replace: true, preventScrollReset: true, state: withoutEntry(location.state)});
   }
   function openOptions(productId: ProductId) {
     if (!isProductId(productId) || !productAvailable(productId) || blocker.state !== 'unblocked' || surfaceOpenIssuedKey.current === location.key ||
@@ -694,8 +700,9 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   }
   function setLocaleAddress(locale: UiLocale) {
     const base = new URL(href(location), 'https://launcher.invalid');
-    const destination = new URL(/\/login\.html\/?$/.test(location.pathname) ? 'login.html' : /\/profile\.html\/?$/.test(location.pathname) ? 'profile.html' : address.context === 'lobby' ? 'lobby.html' : locale === 'en' ? 'en.html' : './', base);
-    const next = {pathname: destination.pathname, search: location.search, hash: location.hash};
+    const shared = /\/(?:login|profile)\.html\/?$/.test(location.pathname) || address.context === 'lobby';
+    const destination = new URL(/\/login\.html\/?$/.test(location.pathname) ? 'login.html' : /\/profile\.html\/?$/.test(location.pathname) ? 'profile.html' : address.context === 'lobby' ? 'lobby.html' : localeHome(locale), base);
+    const next = {pathname: destination.pathname, search: uiLocaleSearch(location.search, locale, shared), hash: location.hash};
     const state = plainState(location.state);
     // main keeps history.state through locale replacement. Our href checks are
     // provenance validation, so rebase only the current entry's known owners.
@@ -763,7 +770,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (!isMultiplayerProductId(input.product) || !normalizeRoomCode(input.code) || surfaceOpenIssuedKey.current === location.key) return;
     surfaceOpenIssuedKey.current = location.key;
     const source = currentUrl();
-    const roomUrl = new URL(source); roomUrl.pathname = new URL(locale === 'en' ? 'en.html' : './', source).pathname;
+    const roomUrl = new URL(source); roomUrl.pathname = new URL(localeHome(locale), source).pathname;
     applyRoomOperations([preserveSameRoomDirectoryOrigin(roomRouteHistoryOperation({currentUrl: roomUrl, currentState: withoutEntry(location.state),
       product: input.product, roomCode: normalizeRoomCode(input.code), push: true}), source)]);
   }
@@ -986,6 +993,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       tone={applicationDecision ? applicationDecision.tone || 'normal' : 'danger'}
       variant={applicationDecision?.variant || ''} hideCancel={applicationDecision?.hideCancel || false}
       confirmOnEnter={applicationDecision?.confirmOnEnter || false}
+      input={applicationDecision?.input}
       onSecondary={() => {if (applicationDecision) decisions?.resolve('secondary');}}
       onCancel={() => {
         if (applicationDecision) decisions?.resolve('cancel');
@@ -993,8 +1001,8 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
           closeIssuedKey.current = null; surfaceOpenIssuedKey.current = null; blocker.reset();
         }
       }}
-      onConfirm={() => {
-        if (applicationDecision) {decisions?.resolve('confirm'); return;}
+      onConfirm={value => {
+        if (applicationDecision) {decisions?.resolve('confirm', value); return;}
         if (blocker.state !== 'blocked' || pendingKey.current !== blocker.location.key) return;
         onDiscard();
         blocker.proceed();
