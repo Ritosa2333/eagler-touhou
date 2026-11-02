@@ -305,8 +305,11 @@ void Scene::capture(const Options& o){
         // Native looks up ascii2 (sprite 261); both strings use its alpha.
         if(const Pose* history=find_logical(BankAscii,261)){
             const u32 alpha=u32(std::clamp<long>(std::lround(history->a.alpha*255),0,255)),color=(alpha<<24)|0xffffff;
-            push_text(spell.flags&2?font_text(width_integer(spell.bonusDisplayed,8),2,261,51,color,1):font_text("$",2,275,51,color,1),45,-1,0);
-            push_text(font_text(precision_integer(spell.loadoutRecord.captures,2)+"/"+precision_integer(spell.loadoutRecord.attempts,2),2,356,51,color,1),45,-1,0);
+            // Match spellTextDescriptors: complete history uses the outer ASCII
+            // pass; the setting never suppresses the game scene.
+            const i32 draw_flag=o.complete_spell_history?0:1,priority=o.complete_spell_history?69:45;
+            push_text(spell.flags&2?font_text(width_integer(spell.bonusDisplayed,8),2,261,51,color,draw_flag):font_text("$",2,275,51,color,draw_flag),priority,-1,0);
+            push_text(font_text(precision_integer(spell.loadoutRecord.captures,2)+"/"+precision_integer(spell.loadoutRecord.attempts,2),2,356,51,color,draw_flag),priority,-1,0);
         }
     }
     // Boss timer hundredths (whole seconds are core VMs).
