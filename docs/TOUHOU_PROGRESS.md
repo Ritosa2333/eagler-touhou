@@ -82,7 +82,11 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/06b8b815b5037cc65500ea219f424c6c2ba17414)；[剩余验收](https://github.com/AdingApkgg/thp/blob/06b8b815b5037cc65500ea219f424c6c2ba17414/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/4acbbc398fe3648ca8362e4fe803f56ee87818b7)；[剩余验收](https://github.com/AdingApkgg/thp/blob/4acbbc398fe3648ca8362e4fe803f56ee87818b7/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-02 RNG 内部交付修复：[读取／写回之间的初始化恢复](https://github.com/AdingApkgg/thp/blob/4acbbc398fe3648ca8362e4fe803f56ee87818b7/docs/porting/TH14_RNG_STORE_BOUNDARY_NOV02.md) 已合入当前核心。新的实际原版灵梦B Normal受控采样完成34,000回调：主线程保持已读出的旧种子，worker执行原始Sleep、恢复及全局复制后，主线程再写回缓存结果。982行VM／303字段、318个战斗检查点、所选状态、相机／HUD及初始3,275次发布严格及独立一致；此前子动画指令中的另一条34,000回调也保持通过。800组原指令组件覆盖两种临界区模式，初版遗漏的40处16位返回重读错误在发布前修正并保留失败；不向生产引擎提供原版种子／VM字段或推进次数。141对象全重编，不含新测试接口的普通形态十六份自然记录共1,579,705回调全部严格及独立通过。旧36,826回调独立交错仍有种子／计数14,403／1,702及VM719／战斗488处差异；十条首个Player前的首次异常通知保留，冷启动与异常原因未验收。新核心完整Application和浏览器需另验，不继承此前结果；模式仍为30／27、全部wholeModeEquivalent为假，原版普通GUI、全模式、整局原版像素／PCM、指针Z及独立调度等继续，整作1:1未完成。
+
+2026-11-02 前一核心完整回归：[50d212 的 GLES／WebGPU Application](https://github.com/AdingApkgg/thp/blob/7acf5ec0c0049e2eb72894987390bbe9c8a964d7/docs/porting/TH14_INSTRUCTION_INITIALIZATION_APPLICATION_FULL_NOV02.md) 各实际完成122,622帧／45项断言，独立双后端检查通过；八幅整图、活动VM、日志、文件及静音音频输出与封存参考一致。版本只绑定50d212，不能作为上述新核心的完整验收。
 
 2026-11-02 初始化交错修复：[动画指令间加载初始化交付](https://github.com/AdingApkgg/thp/blob/50d212bab4114ecb05472b2ad805873f11840cd2/docs/porting/TH14_INSTRUCTION_INITIALIZATION_NOV02.md) 已合入当前核心。原版灵梦 B Normal 在加载子脚本16第三个随机表达式前的受控交错实际完成34,000回调，全部所选状态、956行VM／303字段、322个战斗检查点、相机／HUD和初始3,274次发布严格及独立复核一致；旧3,287种子／95计数／1 owner、1,823 VM、135战斗差异归零。生产只增加通用指令间初始化轮询，不注入原版种子／VM状态或推进次数。141对象全重编，普通形态Wasm另实际重跑十五份自然结束记录共1,571,493回调全部通过。原版十条启动前首次异常通知保留，冷启动不验收；另一灵梦A前缀五处script149指针Z仍严格失败。此前完整双后端结果绑定54cbc，新核心完整Application／浏览器正在重新验证；全模式仍为30／27、全部wholeModeEquivalent为假，原版普通GUI、独立调度、原版整局像素／PCM等继续，整作1:1未完成。
 
