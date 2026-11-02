@@ -67,7 +67,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
   for(let seat=0;seat<count;seat++)if(seat!==local)for(const [inputFrame,input] of rows[seat])if(inputFrame>=delay&&!module._th05_net_input(seat,inputFrame,...input))throw Error('TH05 bootstrap input rejected');
   if(local===0&&typeof module._th05_spectator_serial==='function'){publisher=createSpectatorPublisher(module,transport,count,options.netplaySeed,rows,emit);publisher.begin();}
   started=true;clearTimer(deadline);clearTimer(probeTimer);lastProgress=now();
-  globalThis.__eaglerNetplayLanActive=true;globalThis.__eaglerNetplayInputDelay=globalThis.__eaglerNetplayLanInputDelay=delay;
+  globalThis.__eaglerNetplaySpectator=false;globalThis.__eaglerNetplayLanActive=true;globalThis.__eaglerNetplayInputDelay=globalThis.__eaglerNetplayLanInputDelay=delay;
   globalThis.__eaglerNetplayRollback=globalThis.__eaglerNetplayLanRollback=0;globalThis.__eaglerNetplayResimulated=globalThis.__eaglerNetplayLanResimulated=0;
   emit('netplay-status',{state:'running',players:count,inputDelay:delay});resolveStart();
  }
