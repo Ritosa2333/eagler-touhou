@@ -27,10 +27,14 @@ export function createSpectator(options,{module,emit=()=>{},fail,now=()=>perform
  let api;let socket,closed=false,session=null,serial=0,frame=0,revision=0,target=null,complete=false,queue=[],index=0,bytes=0,stage=0,resolveStart,rejectStart,started=false;
  let minimum=0,frontier=0,paused=false,following=true,seekTarget=null,rewinding=false,lastReport=0,reportRevision=0;
  const run=()=>session===null?null:"s"+session.toString(16).padStart(16,"0")+"_0";
- function report(force=false){if(!started||closed||!force&&now()-lastReport<200)return;lastReport=now();const state={version:1,run:run(),revision:++reportRevision,min:minimum,position:frame,received:frontier,edge:frontier,target:seekTarget??(following?frontier:frame),paused,seeking:seekTarget!==null,following,ended:complete,nodes:[{id:1,kind:"stage",frame:minimum,stage:stage+1,bossSlots:0}]};emit("runtime-info",{spectatorPlayback:state});return state;}
+ function report(force=false){if(!started||closed||!force&&now()-lastReport<200)return;lastReport=now();const state={version:1,run:run(),revision:++reportRevision,min:minimum,position:frame,received:frontier,edge:frontier,target:seekTarget??(following?frontier:frame),paused,seeking:seekTarget!==null||target===null||following&&frame<target-8,following,ended:complete,nodes:[{id:1,kind:"stage",frame:minimum,stage:stage+1,bossSlots:0}]};emit("runtime-info",{spectatorPlayback:state});return state;}
+ // The shared Launcher removes its loading cover only after the native
+ // playback report and this title-owned receive socket are both ready.
+ const status=globalThis.__th05PeerTransport={peers:new Map(),disconnected:false,failed:false,error:'',get relay(){return socket;},isRecovering:()=>target===null||rewinding||seekTarget!==null};
+ globalThis.__eaglerNetplayFailed=false;globalThis.__eaglerNetplayError='';globalThis.__eaglerNetplaySpectator=true;globalThis.__eaglerNetplayTransport='spectator';globalThis.__eaglerNetplayPath='spectator';
  const ready=new Promise((a,b)=>{resolveStart=a;rejectStart=b;});ready.catch(()=>{});
- function close(){if(closed)return;closed=true;if(socket){socket.onmessage=socket.onerror=socket.onclose=null;socket.close();}queue=[];emit("runtime-info",{spectatorPlayback:null});module.eaglerAudio?.playback(false);globalThis.__eaglerNetplayLanActive=false;}
- const fatal=error=>{if(closed)return;close();rejectStart(error);fail(error);};
+ function close(){if(closed)return;closed=true;status.disconnected=true;if(socket){socket.onmessage=socket.onerror=socket.onclose=null;socket.close();}queue=[];emit("runtime-info",{spectatorPlayback:null});module.eaglerAudio?.playback(false);globalThis.__eaglerNetplayLanActive=false;}
+ const fatal=error=>{if(closed)return;status.failed=true;status.error=error.message;globalThis.__eaglerNetplayFailed=true;globalThis.__eaglerNetplayError=error.message;close();rejectStart(error);fail(error);};
  const push=packet=>{bytes+=packet.length;if(bytes>16*1024*1024)throw Error('TH05 spectator backlog exceeded');queue.push(packet);};
  function receive(buffer){const p=new Uint8Array(buffer),v=new DataView(p.buffer,p.byteOffset,p.byteLength);
   if(p.length<24||p[0]!==69||p[1]!==MARKER||p[6]!==count||p[7])throw Error('Invalid TH05 spectator packet');
