@@ -1016,7 +1016,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "69aac738aa2e61d191adfcaa4d35093d70096234",
+      "base": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
       "history": [
         {
           "kind": "manual",
@@ -1033,6 +1033,16 @@
           "multiplayerHistory": "809747ec0e53c76942343fc21ac074b45ab99b0d",
           "integration": "committed",
           "note": "普通版完整目录历史已合入独立 MP，人工迁入的普通版修复得到真实合并祖先。合并树与已验证多人源码完全相同。"
+        },
+        {
+          "kind": "manual",
+          "base": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "source": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "targetHead": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "paths": [
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "单人和独立多人均将数位笔接触交给原生触控；保留多人会话，CDP 数位笔和手机路径验证通过"
         }
       ]
     }
