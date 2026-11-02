@@ -1,6 +1,6 @@
 # 文档总表
 
-共 436 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 437 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -221,6 +221,7 @@
 | 历史记录 | [archive/rollback-zero-delay-th12-performance-20261028/README.md](../archive/rollback-zero-delay-th12-performance-20261028/README.md) | 回滚零输入延迟与 TH12 采集开销 |
 | 历史记录 | [archive/shared-input-audio-20261030/README.md](../archive/shared-input-audio-20261030/README.md) | 全作触点与音效核对 ｜ 2026-10-30 |
 | 历史记录 | [archive/site-recovery-20261028/README.md](../archive/site-recovery-20261028/README.md) | 网页入口回退发布 |
+| 历史记录 | [archive/th05-battle-20261102/README.md](../archive/th05-battle-20261102/README.md) | TH05 多人战斗与双 Boss 转场 |
 | 历史记录 | [archive/th05-boss-demo-20261101/README.md](../archive/th05-boss-demo-20261101/README.md) | TH05 Boss 小图合批与待机演示 |
 | 历史记录 | [archive/th05-dialogue-20261102/README.md](../archive/th05-dialogue-20261102/README.md) | TH05 多人对话与切面同步 |
 | 历史记录 | [archive/th05-frame-pacing-20261101/README.md](../archive/th05-frame-pacing-20261101/README.md) | TH05 原生帧调度、关卡背景与低帧率触控 |
