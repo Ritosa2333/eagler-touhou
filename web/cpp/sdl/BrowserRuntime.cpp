@@ -313,6 +313,10 @@ EMSCRIPTEN_KEEPALIVE int th13_initialize() {
     return 1;
 }
 
+EMSCRIPTEN_KEEPALIVE void th13_music_enabled(unsigned enabled) {
+    if (th13::sdl::app) th13::sdl::app->audio_device.music_enabled = enabled != 0;
+}
+
 EMSCRIPTEN_KEEPALIVE void th13_render_scale(unsigned scale) {
     if (!th13::sdl::running) th13::sdl::render_scale = scale >= 2 ? 2 : 1;
 }
