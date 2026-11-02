@@ -18,7 +18,8 @@ test('every advertised logo ships with attribution, face geometry and both theme
     const path=siteBrandPath(id),svg=await readFile(new URL('../../public/'+path,import.meta.url),'utf8');
     assert.ok(STATIC_FRONTEND_PACKAGE_FILES.includes(path));
     assert.ok(svg.includes('plasticparakeet')&&svg.includes('CC BY-NC-SA 3.0'));
-    assert.ok(svg.includes('data-face=')&&svg.includes('prefers-color-scheme:dark'));
+    assert.ok(svg.includes('data-face='));
+    assert.ok(svg.includes('<style>.wordmark{fill:#202124}@media(prefers-color-scheme:dark){.wordmark{fill:#f0f0f2}}</style>'));
     assert.match(svg,/viewBox="0 0 1000 320"/);
   }
   assert.ok(STATIC_APP_SHELL_FILES.includes(siteBrandPath(SITE_BRAND_DEFAULT)));

@@ -1,74 +1,497 @@
-/** Chinese maintainer inventory. Locale variants share the same page contract. */
-export interface CatalogPage {
-  id: string; name: string; area: string; href: string; entryPath?: string; views: readonly string[];
-  regions: readonly {name: string; parts: string; states: string; sample: string}[];
+/** Chinese maintainer inventory. Locale variants share page boundaries. */
+export interface CatalogPart {
+  id: string;
+  name: string;
+  states: readonly string[];
 }
+export interface CatalogRegion {
+  id: string;
+  name: string;
+  parts: readonly CatalogPart[];
+  live?: string;
+}
+export interface CatalogPage {
+  id: string;
+  name: string;
+  area: string;
+  href: string;
+  entryPath?: string;
+  views: readonly string[];
+  regions: readonly CatalogRegion[];
+}
+type Part = [id: string, name: string, states: string];
+const region = (id: string, name: string, ...parts: Part[]): CatalogRegion => ({
+  id,
+  name,
+  parts: parts.map(([id, name, states]) => ({ id, name, states: states.split('、') })),
+});
 export const catalogPages: readonly CatalogPage[] = [
-  {id: 'library', name: '游戏书库', area: '浏览', href: './', views: ['中文 / English / 日本語', '封面 / 列表'], regions: [
-    {name: '作品查找', parts: '搜索、作品分类、收藏、排序、视图选择', states: '无结果、长标题、排序切换、键盘焦点', sample: '#actions'},
-    {name: '书库', parts: '大封面、作品名、收藏按钮、最近游玩', states: '缺失封面、没有记录、选中作品、打开和关闭选项', sample: '#navigation-current'},
-    {name: '站点导航', parts: '徽标、单机与联机、主题、账户、帮助菜单', states: '亮暗、窄屏、语言选中、Esc 和焦点返回', sample: '#navigation'},
-  ]},
-  {id: 'launch', name: '启动选项', area: '游玩', href: './?game=th10', views: ['普通版 / 多人版', '常用 / 高级设置'], regions: [
-    {name: '作品与启动', parts: '大封面标题、返回书库、资源提示、启动操作', states: '缺少 DATA、准备中、返回后位置一致', sample: '#feedback'},
-    {name: '选项栏', parts: '存档、录像、显示、输入、语言与音乐、触控、高级分组', states: '折叠、禁用、不同能力、并列选项和长文案', sample: '#settings'},
-    {name: '资源工具', parts: '导入文件、资源状态、下载和更新入口', states: '校验、取消、失败、重试', sample: '#feedback'},
-  ]},
-  {id: 'bindings', name: '键盘与手柄', area: '游玩', href: './?game=th10', entryPath: '作品选项 | 输入设置 | 键盘改键 / 手柄改键', views: ['键盘改键', '手柄改键', '本地玩家设备分配'], regions: [
-    {name: '设备与预设', parts: '设备页签、键位布局、配置场景、连接设备', states: '无设备、切换预设、窄屏菜单、转屏', sample: '#settings'},
-    {name: '映射表', parts: '动作行、按键捕获、冲突提示、重置', states: '捕获中、取消捕获、长键名、重复映射', sample: './?game=th10'},
-    {name: '窗口', parts: '固定标题、内部滚动、关闭和焦点返回', states: '嵌套菜单打开、关闭后选项栏几何一致', sample: '#overlays'},
-  ]},
-  {id: 'touch', name: '触控工作台', area: '游玩', href: './?game=th10', entryPath: '作品选项 | 触控设置', views: ['操作方式', '按键布局', '位置与尺寸'], regions: [
-    {name: '触控选项', parts: '移动方式、灵敏度、透明度、预设', states: '拖动预览、松手提交、取消手势', sample: '#fields'},
-    {name: '布局画布', parts: '摇杆、按键、边界、位置和尺寸工具', states: '选中、拖动、缩放、转屏、安全区', sample: './?game=th10'},
-    {name: '草稿', parts: '保存、重置、取消、放弃修改确认', states: '未修改、已修改、确认返回、取消不写盘', sample: '#overlays'},
-  ]},
-  {id: 'runtime', name: '游戏播放器', area: '游玩', href: './?game=th10', entryPath: '作品选项 | 启动', views: ['普通游戏', '全屏 / 窗口', '触控 / 键盘 / 手柄'], regions: [
-    {name: '运行区域', parts: '游戏画面、缩放、全屏、触控叠层', states: '首帧、暂停、横竖屏、退出全屏', sample: './?game=th10'},
-    {name: '会话工具', parts: '暂停、输入、返回、保存交接、诊断', states: '资源失败、保存失败、继续游戏、退出后清理', sample: '#feedback'},
-  ]},
-  {id: 'replays', name: '录像管理器', area: '浏览', href: './?game=th10', entryPath: '作品选项 | 录像', views: ['目录管理', '文件操作', '播放工作区'], regions: [
-    {name: '文件区', parts: '目录、搜索、导入、选择、文件菜单', states: '空目录、重命名错误、移动、删除确认', sample: '#replay'},
-    {name: '播放区', parts: '画面、暂停与继续、速度、进度条、轮次和返回', states: '拖动预览、提交跳转、跨关、重播、短横屏', sample: '#replay'},
-  ]},
-  {id: 'directory', name: '多人大厅', area: '联机', href: './lobby.html', views: ['作品筛选', '房间列表', '创建 / 加入'], regions: [
-    {name: '作品与房间', parts: '作品筛选、房间行、成员、旁观人数、连接状态', states: '空列表、断线、满员、长昵称', sample: '#feedback'},
-    {name: '房间入口', parts: '建房按钮、房间代码表单、联机说明、网络检查', states: '输入错误、连接中、取消、服务不可用', sample: '#fields'},
-  ]},
-  {id: 'room', name: '多人房间', area: '联机', href: './lobby.html?game=th10mp', entryPath: '联机大厅 | 创建 / 加入房间', views: ['等待与准备', '聊天 / 房间设置', '观战席 / 网络详情'], regions: [
-    {name: '玩家席位', parts: '三色卡片、资源环、艺术字、透明管理菜单', states: '加载、重连、未准备、已准备、空席、两人 / 三人', sample: '#room-components'},
-    {name: '聊天与观战', parts: '快捷发言、SVG 箭头、消息、观战列表和身份操作', states: '菜单展开、Esc、外部关闭、移到观战席、加入 / 离开', sample: '#room-components'},
-    {name: '房间设置', parts: '可见性、人数、难度、回滚与延迟、规则开关', states: '房主可编辑、成员只读、长选项、窄屏', sample: '#room-components'},
-    {name: '网络与运行', parts: '连接详情、重试、准备、启动、离房和保存交接', states: '检查中、已连接、不可用、开局和返回', sample: '#room-components'},
-  ]},
-  {id: 'spectating', name: '旁观与联机回放', area: '联机', href: './lobby.html?game=th10mp', entryPath: '联机大厅 | 选择进行中的房间 | 旁观', views: ['实时旁观', '回看', '联机录像'], regions: [
-    {name: '观看控制', parts: '观看时间线、暂停、速度、回到直播、退出旁观', states: '追赶、落后、暂停、定位、回到直播', sample: '#replay'},
-    {name: '身份与连接', parts: '观众席、资源准备、断线提示、换局与返回', states: '加入、重连、保存交接、身份切换', sample: '#room-components'},
-  ]},
-  {id: 'profile', name: '玩家资料与账户设置', area: '账户', href: './profile.html', entryPath: '玩家主页 | 账户设置 | 编辑资料 / 隐私与个性化 / 账户与安全', views: ['概览 / 生涯 / 游玩记录 / 内容 / 好友', '编辑资料', '隐私与个性化', '账户与安全'], regions: [
-    {name: '玩家资料', parts: '头像、昵称、简介、栏目页签、最近游玩与空状态', states: '长昵称、空记录、隐藏栏目、窄屏', sample: '#actions'},
-    {name: '生涯图', parts: '作品与难度网格、记录编辑、缩放、筛选、全屏', states: '选中格子、草稿、取消不写盘、长表滚动', sample: '#fields'},
-    {name: '账户设置', parts: '资料表单、隐私开关、密码和安全表单', states: '未保存草稿、校验、保存反馈、亮暗主题', sample: '#settings'},
-  ]},
-  {id: 'account', name: '登录与注册', area: '账户', href: './login.html', views: ['登录', '注册'], regions: [
-    {name: '账户表单', parts: '模式页签、标识、密码、错误和提交', states: '空值、无效输入、提交中、服务错误', sample: '#fields'},
-    {name: '导航', parts: '返回、登录与注册切换、语言', states: '保留查询参数、返回资料页；账户后端后续接入', sample: '#actions'},
-  ]},
-  {id: 'resources', name: '资源与更新', area: '支持', href: './?game=th10', entryPath: '作品选项 | 导入游戏包 / 资源操作', views: ['导入游戏包', '下载与节点回退', '程序更新'], regions: [
-    {name: '资源输入', parts: '文件选择、链接输入、类型和校验反馈', states: '错误文件、校验中、取消、重新选择', sample: '#fields'},
-    {name: '任务', parts: '下载进度、节点、速度、取消、重试和完成', states: '失败回退、慢传输、下载取消、更新可用', sample: '#feedback'},
-  ]},
-  {id: 'help', name: '帮助与首次提醒', area: '支持', href: './faq.html', views: ['常见问题', '关于', '首次使用须知', '中文 / English / 日本語兼容帮助'], regions: [
-    {name: '说明正文', parts: '标题层级、列表、链接、语言导航与返回', states: '长文、无脚本、亮暗、窄屏、语言传递', sample: './about.html'},
-    {name: '站内提醒', parts: '首次须知、捐赠、苹果刷新率提示、错误详情', states: '打开、滚动、关闭、复制诊断与焦点返回', sample: '#overlays'},
-    {name: '浏览器兼容', parts: '诊断结果、操作建议、返回入口', states: '检测通过 / 不通过、旧浏览器、三语', sample: './compatibility.html'},
-  ]},
-  {id: 'status', name: '服务运行状态', area: '支持', href: './uptime/', views: ['24 小时', '7 天', '90 天'], regions: [
-    {name: '历史与服务', parts: '历史范围、服务分组、状态、历史条、响应和可用率', states: '读取中、正常、异常、未知、空列表、失败重试', sample: './uptime/'},
-    {name: '站点导航', parts: '共用顶栏、三语、主题、帮助与偏好', states: '切范围保留列表、后台暂停、跨页返回', sample: '#navigation-current'},
-  ]},
-  {id: 'migration', name: '旧站数据迁移', area: '支持', href: './migrate.html', views: ['来源检查', '授权与复制', '迁移结果'], regions: [
-    {name: '授权与数据', parts: '源站确认、存档与录像统计、授权、复制和结果', states: '来源不允许、无数据、部分失败、重试；实际迁移需单独验收', sample: './migrate.html'},
-  ]},
+  {
+    id: 'library',
+    name: '游戏书库',
+    area: '浏览',
+    href: './',
+    views: ['封面 / 列表', '中文 / English / 日本語'],
+    regions: [
+      region(
+        'find',
+        '作品查找',
+        ['search', '搜索与清除', '正常、无结果、长输入、键盘焦点'],
+        ['category', '作品分类与收藏筛选', '全部、分类选中、空收藏'],
+        ['sort', '排序与显示', '编号正序、编号倒序、作品名称、封面 / 列表'],
+      ),
+      region(
+        'shelf',
+        '作品书库',
+        ['cover', '大封面、作品名与英文副标题', '正常封面、缺失封面、长标题截断'],
+        ['number', '作品名后的小号灰字编号', '亮暗对比、窄屏标题截断'],
+        ['favorite', '收藏操作', '已收藏、未收藏、键盘焦点'],
+        ['recent', '最近游玩', '有记录、无记录、打开作品选项'],
+      ),
+      region(
+        'navigation',
+        '站点导航',
+        ['brand', '徽标与单机 / 联机入口', '当前页面、窄屏、触屏横放'],
+        ['tools', '主题与账户入口', '亮色、暗色、账户页选中'],
+        ['more', '帮助、语言与偏好菜单', '展开、语言选中、Esc、焦点返回'],
+      ),
+    ],
+  },
+  {
+    id: 'launch',
+    name: '启动选项',
+    area: '游玩',
+    href: './?game=th10',
+    views: ['普通版 / 多人版', '常用 / 高级设置'],
+    regions: [
+      region(
+        'launch',
+        '作品与启动',
+        ['heading', '封面、作品名与返回', '长标题、缺失封面、关闭重开'],
+        ['resources', '资源提示', '缺少 DATA、准备中、资源就绪、失败'],
+        ['actions', '启动与导入', '可启动、准备中禁用、导入入口'],
+      ),
+      region(
+        'files',
+        '存档与录像',
+        ['save', '存档上传 / 下载', '有存档、无存档、导入错误'],
+        ['replay', '录像下载 / 管理', '有录像、空目录、打开管理器'],
+        ['hint', 'Hint 上传 / 删除', '已有文件、无文件、删除确认'],
+      ),
+      region(
+        'options',
+        '游戏设置',
+        ['display', '显示与高刷新率', '开 / 关、作品不支持、苹果提示'],
+        ['input', '键盘与手柄入口', '正常、嵌套窗口、捕获按键'],
+        ['language', '游戏语言与音乐', '选中、资源缺失、长选项'],
+        ['advanced', '高级与触控分组', '折叠 / 展开、作品能力差异、窄屏'],
+      ),
+    ],
+  },
+  {
+    id: 'bindings',
+    name: '键盘与手柄',
+    area: '游玩',
+    href: './?game=th10',
+    entryPath: '作品选项 | 输入设置',
+    views: ['键盘改键', '手柄改键', '本地玩家设备分配'],
+    regions: [
+      region(
+        'devices',
+        '设备与预设',
+        ['tabs', '键盘 / 手柄页签', '选中、切换、窄屏'],
+        ['preset', '键位布局与配置场景', '预设、自定义、菜单展开'],
+        ['connection', '连接设备与玩家分配', '无设备、已连接、设备断开、设备冲突'],
+      ),
+      region(
+        'mapping',
+        '动作映射',
+        ['bindings', '动作行与按键', '默认、长键名、多键、未绑定'],
+        ['capture', '按键捕获', '等待输入、取消、冲突、恢复原键位'],
+        ['reset', '预设恢复与保存布局', '已修改、保存、恢复预设'],
+      ),
+      region(
+        'window',
+        '窗口与返回',
+        ['frame', '固定标题与内部滚动', '长映射表、短横屏、转屏'],
+        ['menu', '嵌套选择菜单', '打开、Esc、外部关闭'],
+        ['close', '关闭与焦点返回', '捕获中、菜单展开、返回选项栏'],
+      ),
+    ],
+  },
+  {
+    id: 'touch',
+    name: '触控工作台',
+    area: '游玩',
+    href: './?game=th10',
+    entryPath: '作品选项 | 触控设置',
+    views: ['操作方式', '按键布局', '位置与尺寸'],
+    regions: [
+      region(
+        'options',
+        '触控选项',
+        ['movement', '移动方式与预设', '摇杆、跟随触摸、禁用'],
+        ['sliders', '灵敏度与透明度', '拖动预览、松手提交、取消手势'],
+        ['actions', '按住 / 切换与功能键', '按住、切换、作品能力差异'],
+      ),
+      {
+        ...region(
+          'canvas',
+          '布局画布',
+          ['controls', '摇杆与游戏按键', '选中、隐藏、拖动、缩放'],
+          ['geometry', '位置、尺寸与边界', '横屏、竖屏、安全区、越界约束'],
+        ),
+        live: './?game=th10',
+      },
+      region(
+        'draft',
+        '草稿与退出',
+        ['save', '保存 / 重置 / 取消', '未修改、已修改、重置确认'],
+        ['discard', '放弃修改确认', '继续编辑、放弃、返回选项栏'],
+      ),
+    ],
+  },
+  {
+    id: 'runtime',
+    name: '游戏播放器',
+    area: '游玩',
+    href: './?game=th10',
+    entryPath: '作品选项 | 启动',
+    views: ['普通游戏', '全屏 / 窗口', '触控 / 键盘 / 手柄'],
+    regions: [
+      {
+        ...region(
+          'viewport',
+          '运行区域',
+          ['screen', '游戏画面与缩放', '准备中、首帧、暂停、退出全屏'],
+          ['touch', '触控叠层', '横屏、竖屏、隐藏、外接设备'],
+        ),
+        live: './?game=th10',
+      },
+      region(
+        'tools',
+        '会话工具',
+        ['controls', '暂停、输入与返回', '运行、暂停、嵌套设置'],
+        ['saving', '保存与退出交接', '保存中、保存失败、留在游戏、退出'],
+        ['diagnostics', '诊断与错误', '连接等待、资源失败、复制诊断'],
+      ),
+    ],
+  },
+  {
+    id: 'replays',
+    name: '录像管理器',
+    area: '浏览',
+    href: './?game=th10',
+    entryPath: '作品选项 | 录像 | 管理',
+    views: ['目录管理', '文件操作', '播放工作区'],
+    regions: [
+      region(
+        'files',
+        '文件区',
+        ['folders', '目录与导入', '空目录、文件校验'],
+        ['selection', '关卡展开与文件菜单', '文件展开、菜单展开'],
+        ['operations', '重命名、移动与删除', '重名、无效名称、移动、删除确认'],
+      ),
+      region(
+        'playback',
+        '播放区',
+        ['controls', '暂停、继续与速度', '播放、暂停、倍速、重播'],
+        ['seek', '进度条与选段', '拖动预览、提交跳转、跳转中、跨关'],
+        ['return', '轮次与返回', '普通录像、联机录像、短横屏、返回目录'],
+      ),
+    ],
+  },
+  {
+    id: 'directory',
+    name: '多人大厅',
+    area: '联机',
+    href: './lobby.html',
+    views: ['作品筛选', '房间列表', '创建 / 加入'],
+    regions: [
+      region(
+        'filters',
+        '作品与房间筛选',
+        ['games', '作品图标与完整列表', '全部、正文单作、复选框多选、汉字简称、两行条目、贴按钮展开'],
+        ['filters', '房间筛选', '菜单展开、选中、空结果'],
+      ),
+      region(
+        'rooms',
+        '房间列表',
+        ['identity', '正方形封面与日文作品名', '长标题截断、缺失封面、规则跟随房间号、窄屏自然换行'],
+        ['count', '列表内结果计数', '底部对齐、单行列表、末条操作可见、无结果'],
+        ['members', '玩家姓名与操作方式', '长昵称、操作方式在姓名下方、两人 / 三人平铺'],
+        ['facts', '标题后的难度与房间状态', '难度标识、招募中、已满、游戏中、重连'],
+        ['duel', 'th09 对称头像与比分', '镜像排列、完整昵称、长昵称横向查看、统一时长分隔符'],
+        ['entry', '加入 / 旁观操作', '可加入、已满、游戏中、断线'],
+      ),
+      region(
+        'entry',
+        '创建与加入',
+        ['create', '建房与房间代码', '正常、空值、无效代码、连接中'],
+        ['help', '联机说明与网络检查', '打开、检查中、服务不可用、取消'],
+      ),
+    ],
+  },
+  {
+    id: 'room',
+    name: '联机房间',
+    area: '联机',
+    href: './lobby.html?game=th10mp',
+    entryPath: '联机大厅 | 创建 / 加入房间',
+    views: ['房主 / 成员 / 观战', '两人 / 三人', '等待 / 游戏中'],
+    regions: [
+      region(
+        'seats',
+        '玩家席位与准备状态',
+        ['status', '三色卡片与艺术字', '加载、未准备、已准备、重连、空席'],
+        ['identity', '昵称、角色与操作方式', '本人、其他成员、长昵称、两人 / 三人'],
+        ['resources', '资源环与进度', '准备中、已完成、资源失败'],
+      ),
+      region(
+        'management',
+        '玩家管理',
+        ['menu', '三个点管理菜单', '房主、普通成员、空席、游戏中'],
+        ['transfer', '移到观战席 / 移除玩家', '允许操作、权限受限、操作后空席'],
+        ['personal', '本人角色与昵称', '角色切换、起身、未入座、昵称过长'],
+      ),
+      region(
+        'chat',
+        '聊天与快捷发言',
+        ['messages', '消息记录', '空消息、本人消息、观战发言、长昵称'],
+        ['phrases', '快捷发言菜单与箭头', '展开、Esc、外部关闭、断线禁用'],
+      ),
+      region(
+        'spectators',
+        '观战席',
+        ['list', '观众头像与完整名单', '空名单、多名观众、本人、长昵称'],
+        ['membership', '加入 / 离开观战席', '玩家转观战、观战退出、尚未同步'],
+        ['moderation', '观众管理', '房主可移除、成员只读、游戏中'],
+      ),
+      region(
+        'settings',
+        '房间设置',
+        ['basic', '可见性、人数与难度', '房主可编辑、成员只读、私密、两人 / 三人'],
+        ['timing', '回滚、延迟与规则', '自动、手动延迟、开关选中、长选项'],
+      ),
+      region(
+        'network',
+        '网络详情',
+        ['links', '直连 / TURN 指标', '检查中、已连接、不可用、重连'],
+        ['retry', '重试与连接检查', '可重试、检查中、断线'],
+      ),
+      region(
+        'session',
+        '准备、启动与离房',
+        ['preparation', '本人资源准备', '准备中、失败重试、取消、就绪'],
+        ['ready', '准备与启动', '尚未准备、已准备、等待成员、可启动'],
+        ['leave', '返回与保存交接', '房间等待、游戏中、保存中、留在游戏'],
+      ),
+    ],
+  },
+  {
+    id: 'spectating',
+    name: '旁观与联机回放',
+    area: '联机',
+    href: './lobby.html?game=th10mp',
+    entryPath: '联机大厅 | 进行中的房间 | 加入旁观',
+    views: ['实时旁观', '回看', '联机录像'],
+    regions: [
+      region(
+        'playback',
+        '观看控制',
+        ['timeline', '时间线与关卡标记', '追赶、落后、暂停、定位'],
+        ['live', '暂停 / 继续 / 回到直播', '直播、回看、定位中、等待新数据'],
+        ['exit', '退出旁观与全屏', '嵌入、全屏、横竖屏、返回房间'],
+      ),
+      region(
+        'connection',
+        '身份与连接',
+        ['membership', '观众席与资源准备', '加入、资源准备、退出、换局'],
+        ['recovery', '断线与返回', '重连、保存交接、身份切换'],
+      ),
+    ],
+  },
+  {
+    id: 'profile',
+    name: '玩家资料与账户设置',
+    area: '账户',
+    href: './profile.html',
+    entryPath: '玩家主页 | 账户设置 | 编辑资料 / 隐私与个性化 / 账户与安全',
+    views: ['公开主页', '本人 / 访客', '账户设置'],
+    regions: [
+      region(
+        'identity',
+        '玩家资料与栏目',
+        ['hero', '头像、昵称与简介', '未填写、长昵称、本人、访客只读'],
+        ['anchors', '栏目导航与顺序', '隐藏栏目、调整顺序、锚点、前进 / 后退'],
+        ['records', '收藏与游玩记录', '空记录、有记录、长列表'],
+      ),
+      region(
+        'career',
+        '生涯通关图',
+        ['map', '作品、难度与格子', '选中、未通关、通关、长表滚动'],
+        ['tools', '缩放、筛选与全屏', '放大、缩小、适应屏幕、窄屏'],
+        ['editing', '编辑与本地备份', '本人编辑、访客只读、未保存、导入校验、取消'],
+      ),
+      region(
+        'social',
+        '内容与好友',
+        ['draft', '内容草稿', '空内容、编辑、空白校验、保存、访客只读'],
+        ['friends', '好友与关注', '空列表、切换、提醒开关、上线提醒'],
+      ),
+      region(
+        'settings',
+        '账户设置',
+        ['profile', '资料编辑', '未保存、校验、保存反馈、取消'],
+        ['privacy', '隐私与个性化', '可见 / 隐藏、栏目顺序、访客预览'],
+        ['security', '账户与安全', '未绑定、表单校验、服务尚未接入'],
+      ),
+    ],
+  },
+  {
+    id: 'account',
+    name: '登录与注册',
+    area: '账户',
+    href: './login.html',
+    views: ['登录', '注册'],
+    regions: [
+      region(
+        'form',
+        '账户表单',
+        ['mode', '登录 / 注册切换', '登录、注册、窄屏'],
+        ['credentials', '标识与密码字段', '空值、无效输入、密码确认'],
+        ['submit', '提交与反馈', '提交中、服务错误、服务尚未接入'],
+      ),
+      region(
+        'navigation',
+        '返回与语言',
+        ['return', '返回个人页', '保留语言、保留返回地址'],
+        ['language', '界面语言', '中文、English、日本語、长标签'],
+      ),
+    ],
+  },
+  {
+    id: 'resources',
+    name: '资源与更新',
+    area: '支持',
+    href: './?game=th10',
+    entryPath: '作品选项 | 导入 / 资源操作',
+    views: ['导入游戏包', '下载与节点回退', '程序更新'],
+    regions: [
+      region(
+        'import',
+        '资源输入',
+        ['file', '文件 / 链接输入', '未选择、错误文件、校验中、重新选择'],
+        ['validation', '类型与校验反馈', '支持格式、资源不匹配、导入失败'],
+      ),
+      region(
+        'transfer',
+        '下载任务',
+        ['progress', '进度、速度与节点', '未知总量、慢传输、节点回退、完成'],
+        ['recovery', '取消与重试', '下载中、已取消、失败、重试'],
+        ['update', '程序更新入口', '已是最新、更新可用、游戏运行中'],
+      ),
+    ],
+  },
+  {
+    id: 'help',
+    name: '帮助与首次提醒',
+    area: '支持',
+    href: './faq.html',
+    views: ['常见问题', '关于', '首次须知', '兼容帮助'],
+    regions: [
+      region(
+        'content',
+        '说明正文',
+        ['typography', '标题、正文与列表', '长文、长链接、窄屏、无脚本'],
+        ['navigation', '语言与返回入口', '中文、English、日本語、跨页返回'],
+      ),
+      region(
+        'notices',
+        '站内提醒',
+        ['notice', '首次须知、捐赠与苹果提示', '打开、内部滚动、关闭、焦点返回'],
+        ['error', '错误详情与诊断', '简短错误、长诊断、复制反馈'],
+      ),
+      {
+        ...region(
+          'compatibility',
+          '浏览器兼容',
+          ['result', '检测结果与建议', '检测通过、能力缺失、旧浏览器'],
+          ['return', '帮助与返回', '三语、窄屏、无脚本'],
+        ),
+        live: './compatibility.html',
+      },
+    ],
+  },
+  {
+    id: 'status',
+    name: '服务运行状态',
+    area: '支持',
+    href: './uptime/',
+    views: ['24 小时', '7 天', '90 天'],
+    regions: [
+      region(
+        'history',
+        '历史与服务',
+        ['range', '时间范围与服务分组', '24 小时、7 天、90 天、空列表'],
+        ['service', '状态、历史条与指标', '正常、异常、未知、读取失败'],
+        ['retry', '刷新与重试', '读取中、超时、失败重试、后台暂停'],
+      ),
+      region(
+        'navigation',
+        '站点导航',
+        ['tools', '徽标、主题与帮助', '亮色、暗色、窄屏、语言'],
+        ['return', '跨页返回', '切范围保留列表、回到启动器'],
+      ),
+    ],
+  },
+  {
+    id: 'migration',
+    name: '旧站数据迁移',
+    area: '支持',
+    href: './migrate.html',
+    views: ['来源检查', '授权与复制', '迁移结果'],
+    regions: [
+      region(
+        'source',
+        '来源与数据',
+        ['origin', '源站与授权', '来源不允许、来源可用、等待授权'],
+        ['summary', '存档与录像统计', '无数据、有数据、部分可用'],
+      ),
+      {
+        ...region(
+          'copy',
+          '复制与结果',
+          ['progress', '迁移进度', '等待、复制中、完成'],
+          ['recovery', '失败与重试', '部分失败、全部失败、重试、返回'],
+        ),
+        live: './migrate.html',
+      },
+    ],
+  },
 ];
+export function catalogAnchor(page: string, region?: string, part?: string, state?: number): string {
+  return ['page', page, region, part, state === undefined ? undefined : `state-${state}`].filter(Boolean).join('-');
+}
+export function catalogTarget(hash: string) {
+  let id: string;
+  try {
+    id = decodeURIComponent(hash.replace(/^#/, ''));
+  } catch {
+    return null;
+  }
+  if (id === 'room-components') id = 'page-room';
+  for (const page of catalogPages) {
+    if (id === catalogAnchor(page.id)) return { page, id };
+    for (const region of page.regions) {
+      if (id === catalogAnchor(page.id, region.id) || id === `example-${page.id}-${region.id}`)
+        return { page, region, id };
+      for (const part of region.parts) {
+        if (id === catalogAnchor(page.id, region.id, part.id)) return { page, region, part, id };
+        const state = part.states.findIndex((_, index) => id === catalogAnchor(page.id, region.id, part.id, index));
+        if (state >= 0) return { page, region, part, state, id };
+      }
+    }
+  }
+  return null;
+}

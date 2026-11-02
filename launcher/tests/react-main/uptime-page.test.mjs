@@ -78,6 +78,17 @@ test('invalid refresh keeps historical data and exposes the failure as unknown',
   assert.equal(element('.uptime-history').children.length, 1);
 });
 
+test('an initial failure shows one error without empty table headings and recovers on refresh', async () => {
+  let response={ok:false};globalThis.fetch=async()=>response;
+  await mount('en');
+  assert.equal(element('[role=alert]').textContent,owners.translate('en','uptime.failed'));
+  assert.equal(element('.uptime-list').dataset.emptyFailure,'true');
+  assert.equal(env.document.querySelector('.uptime-columns'),null);
+  response=respond(summary());await act(()=>env.document.dispatchEvent(new env.window.Event('visibilitychange')));
+  assert.equal(element('.uptime-list').hasAttribute('data-empty-failure'),false);
+  assert.ok(element('.uptime-columns'));assert.equal(element('.uptime-latency').textContent,'42 ms');
+});
+
 test('hidden pages pause polling and unmount cancels requests and timers', async () => {
   vi.useFakeTimers();
   const calls = [];

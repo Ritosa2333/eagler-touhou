@@ -43,10 +43,11 @@ test('third launch consumer shares shell/icon order and retains current intent, 
   const play = n('#thirdPlay'), secondary = n('#thirdImport');
   assert.equal(play.parentElement.className, 'launch-wrap launch-actions launch-actions-compact');
   assert.ok(play.classList.contains('launch')); assert.ok(secondary.classList.contains('launch-secondary'));
-  assert.equal(play.firstElementChild.id, 'thirdText'); assert.equal(play.lastElementChild.className, 'launch-icon');
-  assert.equal(secondary.firstElementChild.className, 'launch-icon'); assert.equal(secondary.lastElementChild.textContent, 'Import');
-  assert.ok(play.querySelector('svg.lucide-play'));
-  for (const button of [play, secondary]) {assert.equal(button.type, 'button'); assert.equal(button.querySelector('.launch-icon').getAttribute('aria-hidden'), 'true');}
+  assert.equal(play.lastElementChild.id, 'thirdText');
+  assert.equal(secondary.lastElementChild.textContent, 'Import');
+  assert.ok(play.firstElementChild.matches('svg.lucide-play'));
+  assert.ok(secondary.firstElementChild.matches('svg.lucide-folder-input'));
+  for (const button of [play, secondary]) {assert.equal(button.type, 'button'); assert.equal(button.firstElementChild.getAttribute('aria-hidden'), 'true');}
   play.click(); secondary.click(); assert.deepEqual(calls, ['Preview', 'import']); assert.equal(submits, 0);
   await update('Busy', true); assert.equal(n('#thirdPlay'), play); play.click(); assert.deepEqual(calls, ['Preview', 'import']);
   await update('Retry'); play.click(); assert.deepEqual(calls, ['Preview', 'import', 'Retry']); assert.equal(submits, 0);

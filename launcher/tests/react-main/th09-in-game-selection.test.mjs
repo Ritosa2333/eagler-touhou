@@ -70,7 +70,7 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
       if(native){
         const label='';
         assert.equal(q('#mpLocalRoleLabel').textContent,label);
-        assert.equal(q('.lobby-difficulty').textContent,locale==='en'?'In game':'局内选择');
+        assert.equal(container.querySelector('.lobby-difficulty'),null,'Native selection does not publish an unchosen difficulty');
         assert.match(q('#mpRoomSettings').textContent,locale==='zh-CN'?/双方/:/Both players/);
         assert.match(q('#roomForm').textContent,locale==='zh-CN'?/双方/:/Both players/);
         assert.deepEqual(calls,[]);

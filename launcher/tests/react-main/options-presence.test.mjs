@@ -30,6 +30,7 @@ before(async () => {
     export {OptionsOwnership} from './app/components/launcher/options-ownership.ts';
     export {useLibraryOptionsPresence} from './app/components/launcher/use-library-options-presence.ts';
     export {OptionsPanel} from './app/components/launcher/OptionsPanel.tsx';
+    export {OptionsBackdrop} from './app/components/launcher/OptionsBackdrop.tsx';
     export {LibrarySurface} from './app/components/launcher/LibrarySurface.tsx';
     export {LibraryCards} from './app/components/launcher/LibraryCards.tsx';
     export {LobbyOptionsHost} from './app/components/launcher/LobbyOptionsHost.tsx';
@@ -103,14 +104,14 @@ async function mount({entry = '/?game=th06', mobile = true, coarse = false, noHo
     observed.push(presence);
     const onBack = () => navigate(context === 'lobby' ? '/lobby.html' : '/');
     const panel = presence.product && React.createElement(owners.OptionsPanel, {product: presence.product,
-      open: presence.open, onBack, assetUrl: path => `/fixtures/${path}`},
+      open: presence.open, closing:presence.closing, onBack, assetUrl: path => `/fixtures/${path}`},
     React.createElement(owners.MainSelect, {id: 'presenceSelect', 'aria-label': 'Synthetic options select', defaultValue: 'a'},
       React.createElement('option', {value: 'a'}, 'A'), React.createElement('option', {value: 'b'}, 'B')));
     return React.createElement(owners.OptionsOwnership, {value: presence.targets}, React.createElement(owners.LocaleProvider, {locale: 'en'},
-      context === 'library' ? React.createElement(owners.LibrarySurface, {products,
+      context === 'library' ? React.createElement(React.Fragment,null,React.createElement(owners.LibrarySurface, {products,
         selectedProduct: 'th06', openedProduct: presence.openedProduct, optionsOpen: presence.open,
         onSelect() {}, onActivate: id => navigate(`/?game=${id}`), onBack,
-        masthead: null, footer: null, lobbyHref: '/lobby.html', roomUsersArtwork: '/fixtures/room-users.svg'}, panel)
+        masthead: null, footer: null, lobbyHref: '/lobby.html', roomUsersArtwork: '/fixtures/room-users.svg'}), React.createElement(owners.OptionsBackdrop,{onBack}),panel)
         : React.createElement('div', {'data-fixture-lobby': true, className: 'main library-layout'},
           React.createElement('div', {className: 'game-library', inert: presence.open},
             React.createElement(owners.LibraryCards, {products, variant: 'lobby', selectedProduct: 'th06', openedProduct: presence.openedProduct,
@@ -142,12 +143,12 @@ function watchFocus(element) {
   };
   return calls;
 }
-function assertOpen(product = 'th06') {
+function assertOpen(product = 'th06',closing=false) {
   assert.equal(hasBodyClass('library-tools-open'), true);
   assert.equal(node('.tools').getAttribute('role'), 'dialog');
-  assert.equal(node('.tools').getAttribute('aria-modal'), 'true');
-  assert.notEqual(node('.tools').getAttribute('aria-hidden'), 'true', 'popup cleanup may remove false while the closing panel stays exposed');
-  assert.equal(node('.tools').hasAttribute('inert'), false);
+  assert.equal(node('.tools').getAttribute('aria-modal'),closing?null:'true');
+  assert.equal(node('.tools').getAttribute('data-state'),closing?'closed':'open');
+  assert.equal(node('.tools').hasAttribute('inert'),closing);
   assert.equal(node('.tools').classList.contains('is-open'), true);
   assert.ok(node('.game-library').hasAttribute('inert'));
   assert.equal(node(':is(.game.selected,.book-game-link[aria-current="page"])').dataset.game, product);
@@ -158,7 +159,6 @@ function assertClosed() {
   assert.equal(hasBodyClass('library-tools-closing'), false);
   assert.equal(node('.tools').getAttribute('role'), 'dialog');
   assert.equal(node('.tools').hasAttribute('aria-modal'), false, 'a closed inert surface does not claim modal ownership');
-  assert.equal(node('.tools').getAttribute('aria-hidden'), 'true');
   assert.equal(node('.tools').hasAttribute('inert'), true);
   assert.equal(node('.tools').classList.contains('is-open'), false);
   assert.equal(node('.game-library').hasAttribute('inert'), false);
@@ -184,11 +184,11 @@ for(const context of ['library','lobby'])for(const device of ['desktop','mobile'
   await React.act(async()=>{panel.querySelector('.ui-select-trigger').click();});
   assert.ok(node('.ui-select-content'));
   await navigate(home);
-  assert.equal(mounted.router.state.location.search,'');assertOpen();assert.equal(hasBodyClass('library-tools-closing'),true);
+  assert.equal(mounted.router.state.location.search,'');assertOpen('th06',true);assert.equal(hasBodyClass('library-tools-closing'),true);
   assert.equal(node('.tools'),panel);assert.equal(observed.at(-1).closing,true);
   assert.equal(env.document.querySelector('.ui-select-content'),null);assert.deepEqual(focus,[]);
   if(context==='lobby')assert.equal(node('#lobbyOptionsDialog').open,true);
-  await clock.advance(10000);assertOpen();assert.deepEqual(focus,[]);
+  await clock.advance(10000);assertOpen('th06',true);assert.deepEqual(focus,[]);
   await finishOptions();assertClosed();assert.equal(node('.tools'),panel);
   assert.equal(observed.at(-1).closing,false);assert.equal(env.document.activeElement,card);
   assert.equal(focus.length,1);assert.equal(focus[0].inert,false);
@@ -248,7 +248,7 @@ test('launched Player conceals retained options and restores the same nodes when
 for(const context of ['library','lobby'])test(context+': a surface timing token controls the real animation, with no mirrored deadline',async()=>{
   const home=context==='lobby'?'/lobby.html':'/';const {clock}=await mount({entry:home+'?game=th06'});
   node('.tools').style.setProperty('--ui-surface-duration','360ms');await navigate(home);
-  assert.equal(currentMotion().options.duration,360);await clock.advance(10000);assertOpen();await finishOptions();assertClosed();
+  assert.equal(currentMotion().options.duration,360);await clock.advance(10000);assertOpen('th06',true);await finishOptions();assertClosed();
 });
 
 test('enabling less motion during close finishes the active effect and restores focus once',async()=>{

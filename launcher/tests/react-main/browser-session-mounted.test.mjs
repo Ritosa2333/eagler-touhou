@@ -558,7 +558,7 @@ for(const choice of ['next','restart','save-stay']) test(`actual BrowserLauncher
   const original=session.getRuntime().getSnapshot(),nativeDocument=f.native.document;
   assert.equal(node('#decisionDialog').open,false);
   await React.act(async()=>{finishDescriptor(Response.json({...installed.generation.descriptor,revision:'published-next'}));});
-  await until(()=>node('#decisionDialog').open&&node('#decisionTitle').textContent==='TH06 update ready','verified download displays update popup');
+  await until(()=>node('#decisionDialog').open&&node('#decisionTitle').textContent==='th06 update ready','verified download displays update popup');
   assert.equal(node('#decisionConfirm').textContent,'Restart now');assert.equal(node('#decisionCancel').textContent,'Use on next launch');
   assert.equal(node('#decisionSecondary').hidden,true);assert.equal(env.document.activeElement,node('#decisionCancel'));
   assert.equal(f.native.document,nativeDocument);assert.equal(session.getRuntime().getSnapshot().generationId,original.generationId);
@@ -611,9 +611,16 @@ test('actual BrowserLauncher: fullscreen locks Escape before delayed native prep
   assert.equal(f.fullscreen,null);assert.equal(calls.at(-1).type,'unlock');
 });
 
-test('actual BrowserLauncher: Back during native preparation cancels before configure or launch', async () => {
+test('actual BrowserLauncher: fullscreen exit during native preparation conceals options; Back cancels before configure or launch', async () => {
   const f = await mountBrowser({autoReady: false}); await start();
   await until(() => f.navigations.some(url => url !== 'about:blank'), 'actual native preparation started');
+  const frame=node('#gameFrame'),panel=node('[data-options-panel]'),url=currentUrl();
+  assert.equal(api.getTestSession().getRuntime().getSnapshot().launched,false);
+  assert.equal(panel.dataset.state,'closed');assert.equal(panel.hasAttribute('inert'),true);
+  await React.act(async()=>env.document.exitFullscreen());await tick();
+  assert.equal(f.fullscreen,null);assert.equal(playerOpen(),true);
+  assert.equal(node('#gameFrame'),frame);assert.equal(currentUrl(),url);
+  assert.equal(node('[data-options-panel]'),panel);assert.equal(panel.dataset.state,'closed');assert.equal(panel.hasAttribute('inert'),true);
   await back(); await until(() => !playerOpen(), 'Back closes unlaunched Player');
   await React.act(async () => {f.native.emit('ready');}); await tick();
   assert.equal(commands().includes('configure'), false); assert.equal(commands().includes('launch'), false);
@@ -673,9 +680,9 @@ test('actual BrowserLauncher: same-card reopen preserves session-only settings a
   await click('#focusHitboxToggle'); await click('#mobileOptionsToggle');
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true');
   assert.equal(node('#mobileOptionsToggle').getAttribute('aria-expanded'), 'true');
-  await click('#libraryBack'); await until(() => !env.document.querySelector('.tools[aria-hidden="false"]'), 'options close');
+  await click('#libraryBack'); await until(() => !env.document.querySelector('.tools[data-state="open"]:not([inert])'), 'options close');
   await click('.book-game-link[data-game="th06"]');
-  await until(() => !!env.document.querySelector('.tools[aria-hidden="false"]'), 'same selected product reopens');
+  await until(() => !!env.document.querySelector('.tools[data-state="open"]:not([inert])'), 'same selected product reopens');
   assert.equal(node('#status').textContent, 'Selected 東方紅魔郷', 'main app1790/8652 uses the product title for selection status');
   assert.equal(node('#toast').classList.contains('show'), false, 'status-only selection must not open an empty toast');
   assert.equal(node('#toastText').textContent, '');
@@ -926,7 +933,7 @@ for (const oldResult of ['success', 'failure', 'native-error']) test(`actual Bro
     await until(() => edge.requests.has('th10') && !session.transfer.getSnapshot().hidden, 'new Start owns real package acquisition');
     assert.equal(session.getRuntime().getSnapshot().epoch, null);
     const before = session.transfer.getSnapshot();
-    assert.equal(before.label, 'TH10 fixture-th10.data'); assert.equal(before.cancelVisible, true); assert.equal(node('#transferCancel').hidden, false);
+    assert.equal(before.label, 'th10 fixture-th10.data'); assert.equal(before.cancelVisible, true); assert.equal(node('#transferCancel').hidden, false);
     unsubscribe = session.transfer.subscribe(() => transfers.push(session.transfer.getSnapshot()));
     f.autoReady = false;
     await React.act(async () => {if (oldResult === 'failure') rejectRead(new Error('Held old acquisition failure')); else releaseRead();});
@@ -962,7 +969,7 @@ for (const startState of ['none', 'warning', 'accepted']) test(`actual BrowserLa
     await until(() => !node('#transferCancel').hidden, 'file task owns an actual cancellable package acquisition');
     if (newerStart) {
       await start(); await React.act(async () => {await edge.waitForRequest('th11');});
-      await until(() => session.transfer.getSnapshot().label.startsWith('TH11 '), 'new Start owns the visible network request');
+      await until(() => session.transfer.getSnapshot().label.startsWith('th11 '), 'new Start owns the visible network request');
     }
     if (startState === 'warning') {await click('#launch'); assert.equal(node('#decisionDialog').open, true); await click('#decisionCancel');}
     assert.equal(session.getRuntime().getSnapshot().epoch, null); assert.equal(node('#transferCancel').hidden, false);
@@ -1136,7 +1143,7 @@ async function acceptHeldHost(f) {
   await React.act(async () => {f.releaseHost();});
   await until(() => f.order.includes('boot-ready'), 'first real Host finished');
 }
-function visibleOptions() {return env.document.querySelector('.tools[aria-hidden="false"]');}
+function visibleOptions() {return env.document.querySelector('.tools[data-state="open"]:not([inert])');}
 
 for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot ${preview} is a one-time preference override before Host, with no native or history side effects`, async () => {
   const initial = `/?game=th07&preview=${preview}&keep=a%20b#retained`;
@@ -1149,7 +1156,7 @@ for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true', 'routed TH07 preferences precede preview');
   assert.equal(playerOpen(), true); assert.equal(player.classList.contains('touch-preview'), true);
   assert.equal(player.classList.contains('touch-enabled'), true); assert.match(image, /th07-card\.webp/);
-  assert.equal(help.hidden, preview !== 'touch');
+  assert.equal(help.open, preview === 'touch');
   assert.equal(currentUrl(), initial); assert.equal(f.routeEvents.length, f.initialRouteCount);
   assert.deepEqual(f.navigations, []); assert.deepEqual(commands(), []); assert.equal(f.fullscreen, null);
   assert.equal(f.storage.getItem('eagler-touch-help-seen-v8'), null);
@@ -1159,7 +1166,7 @@ for (const preview of ['touch', 'touch-hud']) test(`actual BrowserLauncher: boot
   assert.equal(node('#gameFrame'), frame); assert.equal(node('#player'), player); assert.equal(node('#touchHelp'), help);
   assert.equal(playerOpen(), true); assert.equal(player.classList.contains('touch-preview'), true);
   assert.equal(player.classList.contains('touch-enabled'), false);
-  assert.equal(player.style.getPropertyValue('--touch-preview-image'), image); assert.equal(help.hidden, preview !== 'touch');
+  assert.equal(player.style.getPropertyValue('--touch-preview-image'), image); assert.equal(help.open, preview === 'touch');
   assert.equal(currentUrl(), initial); assert.equal(f.routeEvents.length, f.initialRouteCount);
   assert.deepEqual(f.navigations, []); assert.deepEqual(commands(), []); assert.equal(f.order.includes('fullscreen-enter'), false);
   assert.equal(f.storage.getItem('eagler-touch-help-seen-v8'), null);
@@ -1538,32 +1545,39 @@ test('actual BrowserLauncher: late Host fallback before Start uses the current m
   }
 });
 
-test('actual BrowserLauncher: checkbox multi-filtering and game-only viewing remain independent', async () => {
-  const {directorySocket} = await liveActualDirectory();
-  await until(() => !node('#lobbyGameRail [data-lobby-product="th07mp"] [role=checkbox]').disabled, 'TH07 checkbox becomes interactive');
-  await click('#lobbyGameRail [data-lobby-product="th06mp"] [role=checkbox]');
+test('actual BrowserLauncher: desktop rows and mobile icons share the multi-filter', async () => {
+  const {session,directorySocket} = await liveActualDirectory();
+  await until(() => !node('.book-lobby-desktop [data-lobby-product="th07mp"] [role=checkbox]').disabled, 'TH07 checkbox becomes interactive');
+  await click('.book-lobby-desktop .book-lobby-all');
+  await click('.book-lobby-desktop [data-lobby-product="th06mp"] [role=checkbox]');
   await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('games') === 'th06mp', 'first checkbox creates an explicit filter');
-  await click('#lobbyGameRail [data-lobby-product="th07mp"] [role=checkbox]');
+  await click('.book-lobby-desktop [data-lobby-product="th07mp"] [role=checkbox]');
   await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('games') === 'th06mp,th07mp', 'second checkbox adds to the multi-filter');
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th06mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), true);
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), true);
-  await click('#lobbyGameRail [data-lobby-product="th07mp"] .book-lobby-game');
-  await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('game') === 'th07mp' &&
-    !new URL(currentUrl(), env.window.location.href).searchParams.has('games'), 'game button replaces checkboxes with one viewed game');
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th06mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), false);
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), false);
-  assert.equal(node('#lobbyGameRail [data-lobby-product="th07mp"]').dataset.viewing, 'true');
+  assert.equal((node('.book-lobby-desktop [data-lobby-product="th06mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), true);
+  assert.equal((node('.book-lobby-desktop [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), true);
+  await click('.book-lobby-desktop [data-lobby-product="th07mp"] .book-lobby-game');
+  await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('games') === 'th07mp', 'main action selects only that work');
+  assert.equal(node('.book-lobby-desktop [data-lobby-product="th06mp"] [role=checkbox]').getAttribute('aria-checked'), 'false');
+  assert.equal(node('.book-lobby-mobile [data-lobby-toggle="th07mp"]').getAttribute('aria-checked'), 'true');
+  await click('.book-lobby-mobile [data-lobby-icon="th06mp"]');
+  await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('games') === 'th06mp','Mobile cover also selects one work');
+  await click('.book-lobby-mobile [data-lobby-toggle="th07mp"]');
+  await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('games') === 'th06mp,th07mp', 'mobile checkbox adds to the same selected products');
+  assert.equal(node('.book-lobby-desktop [data-lobby-product="th07mp"]').dataset.selected, 'true');
+  assert.equal(session.directory.getSnapshot().selectedProduct,'','Multiple checked products subscribe to all rooms');
+  await React.act(async()=>directorySocket.message({type:'directory',version:1,product:'',total:1,rooms:[{product:'th07mp',code:'4321',capacity:2,phase:'lobby',joinable:true,seats:[{initial:'R'},null],difficulty:2}]}));
+  assert.equal(node('.lobby-room-row').dataset.key,'th07mp-4321','The all-product response is filtered using the same checked products');
   assert.equal(node('#lobbyOptionsDialog').open, false, 'view-only does not open options');
   assert.ok(directorySocket, 'real directory transport remained mounted during filter changes');
 });
 
-// A direct game query and the explicit room-filter checkboxes have separate state.
-for (const timing of ['together', 'after-directory']) test(`actual BrowserLauncher: lobby guide follows the viewed game without checking its box (Host ${timing})`, async () => {
+// A direct game query seeds the common filter before or after Launcher Host resolves.
+for (const timing of ['together', 'after-directory']) test(`actual BrowserLauncher: lobby guide follows the selected product across Host timing (${timing})`, async () => {
   const f = await mountBrowser({initial: '/lobby.html?game=th07mp&keep=a%20b', holdHost: timing === 'after-directory' ? 'launcher' : true, host: subsetHost(['th06', 'th07'])});
-  if (timing === 'after-directory') await until(() => env.document.querySelector('#lobbyGameRail [data-lobby-product="th07mp"][data-viewing="true"]'), 'actual directory views TH07 before Launcher Host');
+  if (timing === 'after-directory') await until(() => env.document.querySelector('.book-lobby-desktop [data-lobby-product="th07mp"][data-selected="true"]'), 'actual directory views TH07 before Launcher Host');
   await React.act(async () => {f.releaseHost();}); await tick();
-  await until(() => env.document.querySelector('#lobbyGameRail [data-lobby-product="th07mp"][data-viewing="true"]'), 'actual directory views TH07');
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), false);
+  await until(() => env.document.querySelector('.book-lobby-desktop [data-lobby-product="th07mp"][data-selected="true"]'), 'actual directory views TH07');
+  assert.equal(node('.book-lobby-desktop [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('aria-checked'), 'true');
   assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/site-manifest.json')).length, 2);
   assert.equal(node('#lobbyOptionsDialog').open, false, 'the directory filter is not an instruction to open game settings');
   await click('#lobbyGuideOpen');
@@ -1575,30 +1589,30 @@ for (const timing of ['together', 'after-directory']) test(`actual BrowserLaunch
   await click('#mpGuideClose'); await until(() => !node('#mpGuideDialog').open, 'guide closes its own entry');
   await click('.book-lobby-all');
   await until(() => !new URL(currentUrl(), env.window.location.href).searchParams.has('game'), 'all multiplayer clears the viewed game');
-  await click('#lobbyGameRail [data-lobby-product="th07mp"] .book-lobby-game');
-  await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('game') === 'th07mp', 'game button views only that game');
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), false, 'viewing a game does not toggle its checkbox');
+  await click('.book-lobby-desktop [data-lobby-product="th07mp"] .book-lobby-game');
+  await until(() => new URL(currentUrl(), env.window.location.href).searchParams.get('games') === 'th07mp', 'row selects that product');
+  assert.equal(node('.book-lobby-desktop [data-lobby-product="th07mp"] [role=checkbox]').getAttribute('aria-checked'), 'true');
   assert.equal(node('#lobbyOptionsDialog').open, false, 'game options are not opened from the directory card');
   await click('#lobbyGuideOpen'); await until(() => node('#mpGuideDialog').open, 'guide reopens for viewed product');
   assert.equal(node('#mpGuideContent .multiplayer-rule-game-tab.selected').dataset.game, 'th07');
   await click('#mpGuideClose'); await until(() => !node('#mpGuideDialog').open, 'guide closes');
   await click('.book-lobby-all');
-  await click('#lobbyGameRail [data-lobby-product="th06mp"] .book-lobby-game');
+  await click('.book-lobby-desktop [data-lobby-product="th06mp"] .book-lobby-game');
   assert.equal(node('#lobbyOptionsDialog').open, false, 'viewing another game does not open settings');
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th06mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), false);
+  assert.equal(node('.book-lobby-desktop [data-lobby-product="th06mp"] [role=checkbox]').getAttribute('aria-checked'), 'true');
   await click('#lobbyGuideOpen'); await until(() => node('#mpGuideDialog').open, 'directory guide reopens after another product settings');
   assert.equal(node('#mpGuideContent .multiplayer-rule-game-tab.selected').dataset.game, 'th06');
   assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/content/MULTIPLAYER.html')).length, 1, 'cached authored guide follows the filter on reopen');
 });
 
-test('directory can view TH11MP without a hosted multiplayer Runtime or checking its box', async () => {
+test('directory can filter th11mp without a hosted multiplayer Runtime', async () => {
   const host = developmentAcquisitionHost(['th11']); delete host.games.th11.multiplayerRuntime; host.shared.testBuild = true;
   await mountBrowser({initial: '/lobby.html?game=th11mp', host, actualHistory: true});
-  await until(() => env.document.querySelector('#lobbyGameRail [data-lobby-product="th11mp"][data-viewing="true"]'), 'directory advertises TH11MP');
+  await until(() => env.document.querySelector('.book-lobby-desktop [data-lobby-product="th11mp"][data-selected="true"]'), 'directory advertises TH11MP');
   const session = api.getTestSession();
   assert.equal(session.metadata.getSnapshot().products.includes('th11mp'), false);
   assert.equal(session.directory.getSnapshot().products.includes('th11mp'), true);
-  assert.equal((node('#lobbyGameRail [data-lobby-product="th11mp"] [role=checkbox]').getAttribute('data-state') === 'checked'), false);
+  assert.equal(node('.book-lobby-desktop [data-lobby-product="th11mp"] [role=checkbox]').getAttribute('aria-checked'), 'true');
   assert.equal(node('#lobbyOptionsDialog').open, false);
 });
 
@@ -1947,7 +1961,8 @@ for (const strictMode of [false, true]) for (const action of ['create', 'join by
       if (new URLSearchParams(state.location.search).has('j') && !navigationObservations.some(item => item.location.key === state.location.key)) navigationObservations.push({location: state.location, dialogOpen: env.document.querySelector('#roomDialog')?.open === true});
     });
     if (action === 'join row') {
-      await click('#lobbyGameRail [data-lobby-product="th07mp"] .book-lobby-game');
+      await click('.book-lobby-desktop .book-lobby-all');
+      await click('.book-lobby-desktop [data-lobby-product="th07mp"] .book-lobby-game');
       await React.act(async () => {directorySocket.message({type: 'directory', version: 1, product: 'th07mp', total: 1,
         rooms: [{product: 'th07mp', code: '4321', capacity: 2, phase: 'lobby', joinable: true, seats: [{initial: 'R'}, null], difficulty: 2}]});});
       await click('.lobby-join');
@@ -1982,7 +1997,8 @@ for (const strictMode of [false, true]) for (const action of ['create', 'join by
     if (action !== 'create') assert.equal(roomSocket.sent.findLast(message => message.type === 'take-seat')?.seat, 1);
     await click('#mpLeaveRoom'); await until(() => currentUrl().startsWith('/lobby.html'), 'full leave returns to directory');
     const returnedProduct = action === 'join row' ? 'th07mp' : 'th06mp';
-    assertLobbyAddress(returnedProduct); assert.equal(session.room.service.getSnapshot().room, null);
+    assertLobbyAddress(returnedProduct);
+    assert.equal(session.room.service.getSnapshot().room, null);
     assert.equal(session.directory.getSnapshot().selectedProduct, returnedProduct); assert.equal(node('#gameFrame'), frame);
     assert.equal(f.sockets.filter(socket => new URL(socket.url).searchParams.has('lobby')).length, 1);
     assert.equal(node('#roomDialog').open, false);
@@ -2115,6 +2131,23 @@ for (const locale of ['en', 'zh-CN']) for (const code of [4004, 4007, 4008, 4009
     assert.equal(f.sockets.filter(value => new URL(value.url).searchParams.has('lobby')).length, socketCount, 'terminal closes cannot be revived by reconnect wakes or stale socket messages');
   });
 }
+for (const locale of ['en', 'ja', 'zh-CN']) for (const reason of ['room creation limit', 'connection limit']) {
+  test(`actual BrowserLauncher terminal quota rejection ${reason} ${locale} explains the limit`, async () => {
+    const {session, socket} = await actualTerminalRoom({fromDirectory: true, locale});
+    const feedback = captureTerminalFeedback(session);
+    const expected = api.translate(locale, reason === 'room creation limit' ? 'lobby.roomLimit' : 'lobby.connectionLimit');
+    await React.act(async () => {
+      if (reason === 'room creation limit') socket.message({type: 'error', code: 'rate-limited',
+        error: '已达到同时保留的房间数量限制，请关闭原房间后重试。'});
+      socket.close(4008, reason);
+    });
+    await until(() => session.room.service.getSnapshot().room === null && currentUrl().startsWith('/lobby.html'), 'quota rejection returns to the directory');
+    feedback.unsubscribe();
+    assert.equal(session.directory.getSnapshot().notice, expected);
+    assert.equal(node('#notice').textContent, expected);
+    assert.deepEqual(feedback.toasts, [], 'the departure notice owns quota feedback');
+  });
+}
 for (const fromDirectory of [false, true]) test(`actual BrowserLauncher terminal launched ${fromDirectory ? 'directory' : 'direct'} room retains one pinned toast and membership`, async () => {
   const {f, session, socket} = await actualTerminalRoom({fromDirectory}), code = 4009;
   await click('[data-mp-seat="0"] .mp-seat-edit'); await click('#mpCheckGame');
@@ -2199,7 +2232,7 @@ test('actual BrowserLauncher: leaving a directly loaded TH07 room selects TH07 a
   await until(() => session.directory.getSnapshot().initialized, 'returned directory loads its own manifest');
   assertLobbyAddress('th07mp');
   assert.equal(session.directory.getSnapshot().selectedProduct, 'th07mp');
-  assert.ok(node('#lobbyGameRail [data-lobby-product="th07mp"][data-viewing="true"]'), 'visible card matches the return URL');
+  assert.ok(node('.book-lobby-desktop [data-lobby-product="th07mp"][data-selected="true"]'), 'visible card matches the return URL');
 });
 
 for (const origin of ['directory create', 'directory join', 'direct']) test(`actual BrowserLauncher: ${origin} native Exit keeps its room, then Leave returns to lobby`, async () => {
@@ -2816,6 +2849,53 @@ for(const game of multiplayerGames) test(`actual BrowserLauncher: ${game} Return
  assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
  await React.act(async()=>f.native.emit('first-frame'));
  await until(()=>session.getSnapshot().roomLaunchStage===null,'second run presented');
+});
+
+for(const saveFailure of [false,true])test(`actual BrowserLauncher: failed room engine saves before replacement${saveFailure?' and Stay preserves the writer':''}`,async()=>{
+ const game='th10',product='th10mp',host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:`/?game=${product}&mpRoom=1234`,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
+  storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{thpracEnabled:false}}));
+ }});
+ const session=api.getTestSession();await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','room native menu prepared',15_000);
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,adonisMode:0,predictionLimit:8,startSerial:2,
+  seats:[{clientId:localId,name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[]};
+ await React.act(async()=>{socket.open();socket.message({type:'start',serial:2,room});});
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room launch music choice');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched,'room player launched',15_000);
+ const native=f.native,epoch=session.getRuntime().getSnapshot().epoch,frame=node('#gameFrame');
+ native.Module={eaglerOptions:{netplayMode:'lan'}};native.__eaglerNetplayTransport='relay';
+ const peer={peers:new Map(),relay:{readyState:1}};
+ native[api.multiplayerConfigForProduct(product).peerTransportGlobal]=peer;
+ await React.act(async()=>native.emit('first-frame'));
+ await until(()=>session.getSnapshot().roomLaunchStage===null,'gameplay is presented before its native engine fails');
+ await React.act(async()=>{
+  peer.disconnected=true;native.__eaglerNetplayFailed=true;native.__eaglerNetplayError='Game error -6';
+  native.emit('error',{error:'Game error -6'});
+  socket.message({type:'state',room:{...room,phase:'lobby',seats:room.seats.map(seat=>({...seat,ready:false}))}});
+ });
+ await until(()=>session.getGameplayNetwork().getSnapshot().returnToRoom,'failed native engine offers Return to room');
+ const navigations=f.navigations.length,order=f.order.length;
+ if(saveFailure){
+  f.syncMode='fail';await click('#netplayConnectionReturn');
+  await until(()=>node('#decisionDialog').open,'save failure requires an explicit choice');
+  assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(f.navigations.length,navigations);
+  await click('#decisionCancel');
+  assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(session.getRuntime().getSnapshot().launched,true);
+  assert.equal(session.room.service.getSnapshot().room.code,'1234');assert.equal(f.navigations.length,navigations);
+ }
+ f.syncMode='hold';await click('#netplayConnectionReturn');
+ await until(()=>f.pendingSync.length===1,'replacement waits for the failed engine filesystem to acknowledge sync');
+ assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(f.navigations.length,navigations);
+ assert.equal(f.outbound.some(message=>message.command==='return-room'),false,'a failed engine is not asked to restore its unusable title');
+ await React.act(async()=>native.respond(f.pendingSync.shift()));f.syncMode='auto';
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready'&&session.getRuntime().getSnapshot().epoch!==epoch,'same room prepares a replacement native engine',15_000);
+ assert.equal(session.room.service.getSnapshot().room.code,'1234');assert.equal(node('#gameFrame'),frame);
+ assert.equal(session.getRuntime().getSnapshot().launched,false);assert.equal(session.getRuntime().getSnapshot().error,null);
+ assert.equal(node('#player').classList.contains('room-workspace'),true);
+ const closingOrder=f.order.slice(order);assert.ok(closingOrder.indexOf('sync')<closingOrder.indexOf('native-retired'));
+ assert.ok(f.navigations.slice(navigations).includes('about:blank'),'the failed native document retires after save acknowledgement');
 });
 
 test('actual BrowserLauncher: room loading renders authenticated Runtime byte progress inside the game viewport',async()=>{

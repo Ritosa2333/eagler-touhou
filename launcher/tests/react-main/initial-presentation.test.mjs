@@ -23,14 +23,14 @@ function bookContract(document) {
   return [...document.querySelectorAll('.book-grid .book-game-link')].map(card => ({
     id: card.dataset.bookProduct, href: card.getAttribute('href'),
     title: normal(card.querySelector('strong').textContent),
-    subtitle: card.querySelector('.book-identity>span').textContent,
-    number: card.querySelector('small').textContent,
+    subtitle: card.querySelector('.book-identity>span:last-child').textContent,
+    number: card.querySelector('.book-work-number').textContent,
   }));
 }
 function expectedBookContract() {
   return [...expectedCards.querySelectorAll('.game:not([hidden]):not([data-product])')].map(card => ({
     id: card.dataset.game, href: card.getAttribute('href'),
-    title: normal(card.querySelector('h2').textContent), subtitle: card.querySelector('small').textContent,
+    title: normal(card.querySelector('h2').textContent), subtitle:card.querySelector('small').textContent,
     number: 'th' + card.querySelector('.no-label').textContent,
   })).sort((a,b) => Number(a.number.slice(2)) - Number(b.number.slice(2)));
 }
@@ -101,7 +101,7 @@ for (const path of ['/lobby.html', '/lobby', '/nested/lobby.html?game=th09mp']) 
     const actual = document.getElementById(id), original = originalLobby.getElementById(id);
     assert.equal(actual.disabled, original.disabled, id); assert.equal(normal(actual.textContent), normal(original.textContent), id);
   }
-  assert.equal(document.querySelector('#listHead').hidden, true);
+  assert.equal(document.querySelector('#listHead'),null);
   assert.equal(document.querySelector('#listLoading').hidden, false);
   assert.equal(document.querySelector('#roomList').getAttribute('aria-busy'), 'true');
   assert.equal(document.querySelector('.site-footer'), null); assert.ok(document.querySelector('.book-brand'));

@@ -6,6 +6,15 @@ import {fileURLToPath} from 'node:url';
 import {auditUiCopy} from '../../scripts/audit-ui-copy.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
+test('copy audit catches dynamically capitalized game labels and permits HTTP methods and status watermarks',async()=>{
+  const work=await mkdtemp(resolve(project,'.cache/copy-audit-'));
+  try {
+    await writeFile(resolve(work,'dynamic.ts'),'const labels=[game.toUpperCase(),plan.game.toUpperCase(),context.product.toUpperCase(),selected.gameId.toUpperCase(),gameIdForProduct(context.product).toUpperCase(),String(gameId || "game").toUpperCase()]; const protocol=method.toUpperCase(); const watermark=status.toUpperCase();');
+    const findings=auditUiCopy(work);
+    assert.equal(findings.length,6);
+    assert.ok(findings.every(item=>item.kind==='game-id-case'));
+  } finally {await rm(work,{recursive:true,force:true});}
+});
 test('copy audit sees rendered conditional text, accessible names and interpolated Chinese without executing source', async () => {
   const work = await mkdtemp(resolve(project, '.cache/copy-audit-'));
   try {

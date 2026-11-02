@@ -9,8 +9,10 @@
 | `webaudio-tinysynth@1.1.3` | [g200kg/webaudio-tinysynth](https://github.com/g200kg/webaudio-tinysynth) | Apache-2.0 | MIDI Web 构建中的免采样 General MIDI 合成；随包文件为 `public/vendor/webaudio-tinysynth.min.js`。 |
 | `fflate@0.8.3` | [101arrowz/fflate](https://github.com/101arrowz/fflate) | MIT | 导入、导出保持 `.rpy` 字节不变的原格式 Replay；随包文件为 `public/vendor/fflate.min.js`。 |
 | `marked@18.0.12` | [marked.js.org](https://marked.js.org/) | MIT | 将 FAQ、首次使用说明和多人指南 Markdown 构建为静态 HTML；属于构建依赖，不在 Launcher 运行时加载。 |
+| `fs-native-extensions@1.5.3` | [holepunchto/fs-native-extensions](https://github.com/holepunchto/fs-native-extensions) | Apache-2.0 | 构建任务的操作系统文件锁，不在浏览器加载。 |
 | Tailwind CSS、CVA、clsx、tailwind-merge | [Tailwind](https://github.com/tailwindlabs/tailwindcss)、[CVA](https://github.com/joe-bell/cva)、[clsx](https://github.com/lukeed/clsx)、[tailwind-merge](https://github.com/dcastil/tailwind-merge) | MIT | 通用 UI 的样式生成、组件变体与类名组合，版本由锁文件固定。 |
 | shadcn/ui | [官方 Radix 源码](https://github.com/shadcn-ui/ui/tree/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/radix) | MIT | 本地 UI 组件的组合、变体与部件设计参考。 |
+| Fumadocs Core / UI | [fuma-nama/fumadocs](https://github.com/fuma-nama/fumadocs) | MIT | 文档布局、目录与正文排版。文档和应用内说明共享阅读样式，版本由锁文件固定。 |
 
 重新生成随包 JavaScript：
 

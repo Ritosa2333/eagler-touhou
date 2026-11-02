@@ -166,7 +166,7 @@ async function click(selector) {await React.act(async () => {node(selector).clic
 // closes; only an open carrier makes those controls a visible options surface.
 function visibleOptions() {
   // Radix may restore an absent aria-hidden attribute. It is visible too.
-  const panel = env.document.querySelector('.tools.is-open:not([aria-hidden="true"])');
+  const panel = env.document.querySelector('.tools[data-state="open"]:not([inert])');
   const carrier = panel?.closest('dialog.lobby-options-host');
   return !!panel && (!carrier || carrier.open);
 }
@@ -357,7 +357,7 @@ test('synthetic mounted lobby: another room product opens settings without repla
   await mountEntry([entry], {roomOptionsProduct: 'th07mp'});
   await click('#fixtureRoomSettings'); await until(() => hasOptions('th07mp'), 'real shared settings use the room product');
   assert.equal(url(), entry, 'settings product is independent of directory filter');
-    assert.equal(node('#lobbyGameRail [data-lobby-product][data-viewing="true"]').dataset.lobbyProduct, 'th06mp', 'directory rail retains its viewed game');
+    assert.equal(node('.book-lobby-desktop [data-lobby-product][data-selected="true"]').dataset.lobbyProduct, 'th06mp', 'directory rail retains its viewed game');
   await openEditor(); await click('#touchLayoutExit'); await until(() => !hasEditor(), 'room-origin editor closes');
   await traverse(1); await until(() => hasOptions('th07mp') && !hasEditor(), 'retired Forward retains room product options');
   assert.equal(url(), entry, 'retired marker cleanup preserves raw query encoding');
@@ -492,7 +492,7 @@ for (const context of ['library', 'lobby']) test(`synthetic mounted reload: old 
   assert.ok(!hasEditor()); assert.deepEqual(mounted.nativeCalls, []);
   if (context === 'lobby') {
     assert.ok(hasParent('lobby')); assert.equal(mounted.router.state.location.state.launcherSurfaceEntry, undefined);
-    assert.equal(node('#lobbyGameRail [data-lobby-product][data-viewing="true"]').dataset.lobbyProduct, product);
+    assert.equal(node('.book-lobby-desktop [data-lobby-product][data-selected="true"]').dataset.lobbyProduct, product);
   } else assert.ok(hasOptions(product));
 });
 

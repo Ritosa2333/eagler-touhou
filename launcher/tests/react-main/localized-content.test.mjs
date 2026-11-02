@@ -15,7 +15,7 @@ before(async () => {
   await ensureI18nBuild();
   work = await mkdtemp(resolve(project, '.cache/localized-content-'));
   const outfile = resolve(work, 'actual.mjs');
-  await build({stdin: {resolveDir: project, loader: 'ts', contents: 'export * from "./src/launcher/i18n.mts"; export * from "./src/launcher/localized-content.mts"; export * from "./src/launcher/multiplayer-guide-content.mts"; export * from "./src/launcher/help-page.mts";'}, outfile, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent'});
+  await build({stdin: {resolveDir: project, loader: 'ts', contents: 'export * from "./src/launcher/i18n.mts"; export * from "./src/launcher/localized-content.mts"; export * from "./src/launcher/multiplayer-guide-content.mts";'}, outfile, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent'});
   api = await import(pathToFileURL(outfile).href);
   compatibility = await readFile(resolve(project, 'public/compatibility.html'), 'utf8');
   entries = JSON.parse(await readFile(resolve(project, 'messages/compatibility.json'), 'utf8'));
@@ -104,8 +104,9 @@ test('operator help edits use actual sanitized content instead of a stale transl
 
 test('standalone compatibility colors follow both canonical themes without CSS variable support', async () => {
   const tokens = await readFile(resolve(project, 'app/ui/tokens.css'), 'utf8');
+  const controls = await readFile(resolve(project, 'app/ui/document-controls.css'), 'utf8');
   for (const [theme, expected] of [['dark', 'rgb(23, 24, 27)'], ['light', 'rgb(247, 247, 248)']]) {
-    const html = compatibilityThemeHtml(compatibility, tokens);
+    const html = compatibilityThemeHtml(compatibility, tokens, controls);
     assert.equal(html, compatibility, 'checked-in help uses current tokens');
     const dom = new JSDOM(html, {url: 'https://eagler.invalid/compatibility.html', runScripts: 'outside-only'});
     try {
@@ -115,44 +116,8 @@ test('standalone compatibility colors follow both canonical themes without CSS v
       assert.equal(style.backgroundColor, expected);
       assert.equal(dom.window.document.querySelector('meta[name="theme-color"]').content, theme === 'light' ? '#f7f7f8' : '#17181b');
       assert.doesNotMatch(dom.window.document.getElementById('siteTheme').textContent, /var\(/);
-      const changed = compatibilityThemeHtml(html, tokens.replace('--kit-background:#f7f7f8', '--kit-background:#e0e1e2'));
+      const changed = compatibilityThemeHtml(html, tokens.replace('--kit-background:#f7f7f8', '--kit-background:#e0e1e2'), controls);
       assert.match(changed, /\.light body\{[^}]*background:#e0e1e2/);
     } finally {dom.window.close();}
   }
-});
-
-test('published FAQ and About localize titles, body, links and history while preserving the approved brand', async () => {
-  for (const kind of ['faq', 'about']) {
-    const source = await readFile(resolve(project, `public/${kind}.html`), 'utf8');
-    const dom = new JSDOM(source, {url: `https://eagler.invalid/${kind}.html?keep=a%20b&lang=en#section`});
-    const document = dom.window.document, brand = document.querySelector('[data-site-brand]');
-    const stop = api.initializeHelpPage(document);
-    try {
-      for (const locale of ['en', 'ja', 'zh-CN']) {
-        dom.window.history.replaceState(null, '', api.withUiLanguage(dom.window.location.href, locale));
-        dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate'));
-        assert.equal(document.documentElement.lang, locale);
-        assert.equal(document.title, api.translateUi(locale, `content.${kind}Title`));
-        const expected = new JSDOM(api.translateUi(locale, `content.${kind}`));
-        try {assert.equal(document.querySelector('[data-localized-content] h1,[data-localized-content] h2').textContent, expected.window.document.querySelector('h1,h2').textContent);}
-        finally {expected.window.close();}
-        assert.equal(document.querySelector('[data-site-brand]'), brand);
-        assert.equal(document.querySelector('.about-languages [aria-current="page"]').lang, locale);
-        assert.equal(document.querySelector('.about-back a').href, new URL(api.localeHome(locale), dom.window.location.href).href);
-        for (const link of document.querySelectorAll('.about-languages a')) assert.ok(link.href.includes('keep=a%20b&lang=' + link.lang + '#section'));
-        if (kind === 'about') assert.equal(document.querySelector('a[href^="mailto:"]').href, 'mailto:ayanews@outlook.com');
-      }
-      stop();
-      dom.window.history.replaceState(null, '', '?lang=ja'); dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate'));
-      assert.equal(document.documentElement.lang, 'zh-CN', 'disposed page no longer follows history');
-    } finally {stop(); dom.window.close();}
-  }
-});
-
-test('standalone help preserves operator updates through language changes', async () => {
-  const source = (await readFile(resolve(project, 'public/faq.html'), 'utf8')).replace('<h1>常见问题</h1>', '<h1>Operator notice</h1>');
-  const dom = new JSDOM(source, {url: 'https://eagler.invalid/faq.html?lang=ja'});
-  const stop = api.initializeHelpPage(dom.window.document);
-  try {assert.equal(dom.window.document.querySelector('[data-localized-content] h1').textContent, 'Operator notice');}
-  finally {stop(); dom.window.close();}
 });

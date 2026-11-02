@@ -121,7 +121,7 @@ for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotic
     const [layout,window,legacyRoot,legacyWindow] = name==='MultiplayerGuideDialog'
       ? ['scrollable','scrollable','multiplayer-guide-dialog','multiplayer-guide-window']
       : name==='DonationDialog' ? ['artwork','standard','apple-refresh-dialog donation-dialog','apple-refresh-window donation-window']
-      : ['standard','standard','apple-refresh-dialog','apple-refresh-window'];
+      : ['scrollable','scrollable','apple-refresh-dialog','apple-refresh-window'];
     assert.equal(actual.className,`informational-dialog informational-dialog--${layout}`);
     assert.equal(actual.firstElementChild.className,`informational-window informational-window--${window}`);
     assert.equal(actual.hasAttribute('style'),false,'No CSS duration mirror');
@@ -130,6 +130,10 @@ for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotic
     actual.className=legacyRoot; actual.firstElementChild.className=legacyWindow; actual.removeAttribute('style');
   }
   const reference=baselineDialog(id,locale);
+  if(name!=='DonationDialog'){
+    const reading=reference.querySelector(name==='FirstUseNotice'?'#firstUseNoticeText':name==='MultiplayerGuideDialog'?'#mpGuideContent':'.apple-refresh-faq');
+    reading.classList.add('ui-document','prose');
+  }
   if(name==='DonationDialog'){
     reference.querySelector('#donationTitle').textContent=owners.translate(locale,'donation.title');
     reference.querySelector('#donationClose').setAttribute('aria-label',owners.translate(locale,'donation.close'));

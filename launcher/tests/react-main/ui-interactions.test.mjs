@@ -1,13 +1,37 @@
 /** Mounted Radix behavior. Pixel layout and real device input are checked separately. */
 import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
+import {parse} from '@babel/parser';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {installMountedDom, uiContractAttributes} from './mounted-dom-environment.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
+
+function assertSharedControls(source,path){
+    const tree=parse(source,{sourceType:'module',plugins:['typescript','jsx']});
+    const visit=node=>{
+      if(node.type==='JSXOpeningElement'&&node.name.type==='JSXIdentifier'){
+        assert.ok(!['button','input','select','textarea'].includes(node.name.name),`${path}: use the shared control entry for ${node.name.name}`);
+      }
+      for(const value of Object.values(node)){
+        if(Array.isArray(value)){for(const child of value){if(child?.type)visit(child);}}
+        else if(value&&typeof value==='object'&&value.type){visit(value);}
+      }
+    };
+    visit(tree);
+}
+test('library and directory compose controls through the shared UI entry',async()=>{
+  assert.throws(()=>assertSharedControls('const Example=()=> <div><button>Duplicate</button></div>','probe'),/shared control entry/);
+  assertSharedControls('const Example=()=> <BookButton/>','probe');
+  for(const path of ['launcher/BookLibrary.tsx','launcher/BookDirectoryGames.tsx','directory/LobbyRoomTools.tsx','directory/DirectoryRoomRows.tsx']){
+    assertSharedControls(await readFile(resolve(project,'app/components',path),'utf8'),path);
+  }
+  const bridge=await readFile(resolve(project,'app/components/launcher/BookButton.tsx'),'utf8');
+  assert.match(bridge,/export\s*\{Button as BookButton\}\s*from '\.\.\/\.\.\/ui\/controls'/);
+});
 let env, React, createRoot, root, work, api;
 const act = fn => React.act(async () => {fn(); await new Promise(resolve => setTimeout(resolve, 20));});
 const node = selector => {const result = env.document.querySelector(selector); assert.ok(result, selector); return result;};

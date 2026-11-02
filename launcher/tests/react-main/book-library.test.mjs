@@ -31,39 +31,35 @@ afterEach(async () => {
 });
 after(async () => {env.close(); await rm(work, {recursive: true, force: true});});
 const node = selector => {const value = env.document.querySelector(selector); assert.ok(value, selector); return value;};
-const click = selector => React.act(async () => node(selector).click());
+const click = selector => React.act(async () => {
+  const target=node(selector);
+  if(target.getAttribute('aria-haspopup')==='menu'){target.focus();target.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));}
+  else target.click();
+  await new Promise(resolve=>setTimeout(resolve,0));
+});
 const ids = () => [...env.document.querySelectorAll('.book-grid [data-book-product]')].map(node => node.dataset.bookProduct);
-test('multiplayer filters allow several games, all resets them, and favorites persist and sort first', async () => {
-  const products = api.createLibraryProducts(['th06mp', 'th07mp', 'th08mp'], p => p, id => '?game=' + id);
-  const viewed = [];
-  function Fixture() {
-    const [filters, setFilters] = React.useState([]);
-    const [viewing, setViewing] = React.useState('');
-    return React.createElement(api.BookDirectoryGames, {products, productFilters: filters, viewingProduct: viewing,
-    onProductFiltersChange: ids => {setFilters(ids); setViewing('');}, onSelect: id => {if (id) viewed.push(id); setViewing(id); if (!id) setFilters([]);}});
-  }
-  const container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);
-  const render = () => React.act(async () => root.render(React.createElement(api.LocaleProvider, {locale: 'en'}, React.createElement(Fixture))));
+test('multiplayer icon and desktop checkboxes share selection while favorites persist and sort first', async () => {
+  const products=api.createLibraryProducts(['th06mp','th07mp','th08mp'],p=>p,id=>'?game='+id);
+  function Fixture(){const[filters,setFilters]=React.useState([]);return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:'',onProductFiltersChange:setFilters,onSelect(){assert.fail('Filtering does not open game options');}});}
+  const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
+  const render=()=>React.act(async()=>root.render(React.createElement(api.LocaleProvider,{locale:'en'},React.createElement(Fixture))));
+  const checked=()=>[...env.document.querySelectorAll('.book-lobby-desktop [data-lobby-product] [role="checkbox"][aria-checked="true"]')].map(n=>n.closest('[data-lobby-product]').dataset.lobbyProduct).sort();
   await render();
-  await click('[data-lobby-product="th06mp"] [role="checkbox"]'); await click('[data-lobby-product="th08mp"] [role="checkbox"]');
-  assert.deepEqual([...env.document.querySelectorAll('[role=checkbox][data-state=checked]')].map(n => n.closest('[data-lobby-product]').dataset.lobbyProduct), ['th06mp', 'th08mp']);
-  await click('[data-lobby-product="th08mp"] .book-lobby-favorite');
-  assert.equal(node('[data-lobby-product]').dataset.lobbyProduct, 'th08mp');
-  assert.equal(env.document.querySelectorAll('[role=checkbox][data-state=checked]').length, 2);
-  await click('.book-lobby-all'); assert.equal(env.document.querySelectorAll('[role=checkbox][data-state=checked]').length, 0);
-  await click('[data-lobby-product="th07mp"] .book-lobby-game');
-  assert.deepEqual([...env.document.querySelectorAll('[role=checkbox][data-state=checked]')].map(n => n.closest('[data-lobby-product]').dataset.lobbyProduct), []);
-  assert.deepEqual(viewed, ['th07mp']);
-  assert.equal(node('[data-lobby-product="th07mp"]').dataset.viewing, 'true');
-  await click('[data-lobby-product="th07mp"] .book-lobby-game'); assert.deepEqual(viewed, ['th07mp', 'th07mp']);
-  assert.deepEqual([...env.document.querySelectorAll('[role=checkbox][data-state=checked]')].map(n => n.closest('[data-lobby-product]').dataset.lobbyProduct), [], 'viewing does not change filters');
-  await click('[data-lobby-product="th06mp"] [role="checkbox"]'); await click('[data-lobby-product="th08mp"] [role="checkbox"]');
-  assert.deepEqual([...env.document.querySelectorAll('[role=checkbox][data-state=checked]')].map(n => n.closest('[data-lobby-product]').dataset.lobbyProduct), ['th08mp', 'th06mp'], 'only checkboxes control multi-select');
-  assert.equal(node('[data-lobby-product="th07mp"] .book-lobby-game').getAttribute('aria-pressed'), 'false', 'checkbox filtering clears the view-only selection');
-  assert.equal(env.document.querySelector('[data-lobby-product] .book-lobby-settings'), null, 'the directory has no game settings button');
-  await React.act(async () => root.unmount()); root = createRoot(container); await render();
-  assert.equal(node('[data-lobby-product]').dataset.lobbyProduct, 'th08mp');
-  assert.equal(node('[data-lobby-product="th08mp"] .book-lobby-favorite').getAttribute('aria-pressed'), 'true');
+  await click('.book-lobby-desktop [data-lobby-product="th06mp"] [role="checkbox"]');
+  await click('[data-lobby-toggle="th08mp"]');assert.deepEqual(checked(),['th06mp','th08mp']);
+  assert.equal(node('[data-lobby-toggle="th06mp"]').getAttribute('aria-checked'),'true');
+  await click('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-favorite');
+  assert.equal(node('.book-lobby-desktop [data-lobby-product]').dataset.lobbyProduct,'th08mp');
+  assert.deepEqual(checked(),['th06mp','th08mp']);
+  await click('[data-lobby-icon="th07mp"]');assert.deepEqual(checked(),['th07mp'],'Main cover selects only one work');
+  await click('[data-lobby-toggle="th08mp"]');assert.deepEqual(checked(),['th07mp','th08mp'],'Only the checkbox adds a work');
+  await click('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-game');assert.deepEqual(checked(),['th08mp']);
+  await click('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-game');assert.deepEqual(checked(),['th08mp'],'Repeating the main action stays on that work');
+  await click('.book-lobby-desktop .book-lobby-all');assert.deepEqual(checked(),[]);
+  assert.equal(env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]').length,0);
+  await React.act(async()=>root.unmount());root=createRoot(container);await render();
+  assert.equal(node('.book-lobby-desktop [data-lobby-product]').dataset.lobbyProduct,'th08mp');
+  assert.equal(node('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-favorite').getAttribute('aria-pressed'),'true');
 });
 async function mount(products, locale = 'en') {
   const activated = [], container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);
@@ -71,6 +67,40 @@ async function mount(products, locale = 'en') {
     React.createElement(api.BookLibrary, {products, onSelect() {}, onActivate(id) {activated.push(id);}})))));
   return activated;
 }
+
+test('anchored multiplayer menu preserves deep-link selection and shares multi-selection with the icon rail', async () => {
+  const products=api.createLibraryProducts(['th06mp','th075mp','th09mp','th10mp','th15mp'],p=>p,id=>'?game='+id);
+  function Fixture(){const[filters,setFilters]=React.useState([]),[viewing,setViewing]=React.useState('th09mp');return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:viewing,onProductFiltersChange:ids=>{setFilters(ids);setViewing('');},onSelect(){assert.fail('Checkboxes must not replace a multi-selection');}});}
+  const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
+  await React.act(async()=>root.render(React.createElement(api.LocaleProvider,{locale:'en'},React.createElement(Fixture))));
+  assert.equal(node('[data-lobby-toggle="th09mp"]').getAttribute('aria-checked'),'true');
+  for(const[id,title]of [['th06mp','红'],['th075mp','萃'],['th10mp','风'],['th15mp','绀']])assert.equal(node(`[data-lobby-icon="${id}"] .book-lobby-short`).textContent,title);
+  await click('[data-lobby-toggle="th06mp"]');
+  await click('.book-lobby-picker-trigger');
+  assert.equal(node('.book-lobby-picker').getAttribute('role'),'menu');assert.equal(env.document.querySelector('[role="dialog"]'),null);
+  const grouping=scope=>[...env.document.querySelectorAll(`${scope} [data-lobby-category]`)].map(group=>[group.dataset.lobbyCategory,[...group.querySelectorAll('[data-lobby-product]')].map(row=>row.dataset.lobbyProduct)]);
+  const expectedGroups=[['versus',['th09mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']]];
+  assert.deepEqual(grouping('.book-lobby-desktop'),expectedGroups);
+  assert.deepEqual(grouping('.book-lobby-picker'),expectedGroups,'Both presentations consume the same catalog classification');
+  assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] strong').textContent,'東方風神録');
+  assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] .book-lobby-subtitle').textContent,'Mountain of Faith');
+  for(const id of ['th06mp','th09mp'])assert.equal(node(`.book-lobby-picker [data-lobby-product="${id}"] .book-lobby-menu-check`).getAttribute('aria-checked'),'true');
+  await click('.book-lobby-picker [data-lobby-product="th10mp"] .book-lobby-menu-check');
+  assert.equal(node('[data-lobby-toggle="th10mp"]').getAttribute('aria-checked'),'true');
+  assert.equal(node('.book-lobby-picker-trigger').getAttribute('aria-expanded'),'true');
+  await click('.book-lobby-picker [data-lobby-product="th09mp"] .book-lobby-menu-check');
+  assert.equal(node('[data-lobby-toggle="th09mp"]').getAttribute('aria-checked'),'false');
+  assert.equal(env.document.querySelectorAll('.book-lobby-desktop [data-lobby-product] [role="checkbox"][aria-checked="true"]').length,2);
+  await click('.book-lobby-picker [data-lobby-product="th15mp"] .book-lobby-menu-choice');
+  assert.equal(node('.book-lobby-picker-trigger').getAttribute('aria-expanded'),'false');
+  assert.deepEqual([...env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]')].map(n=>n.dataset.lobbyToggle),['th15mp']);
+  await React.act(async()=>new Promise(resolve=>env.window.requestAnimationFrame(()=>env.window.requestAnimationFrame(resolve))));
+  await click('.book-lobby-picker-trigger');
+  await click('.book-lobby-picker .book-lobby-menu-check');
+  assert.equal(env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]').length,0);
+  await React.act(async()=>{env.document.activeElement.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));await new Promise(resolve=>setTimeout(resolve,0));});
+  assert.equal(env.document.querySelector('.book-lobby-picker'),null);
+});
 test('only supplied published products become cards; hidden/MP/demo titles never appear; doujin stays empty', async () => {
   const products = api.createLibraryProducts(['th06', 'th07', 'th075', 'th06mp', 'th20'], p => p, id => '?game=' + id);
   products.find(p => p.id === 'th20').hidden = true;

@@ -21,6 +21,7 @@ before(async () => {
     import {useState} from 'react';
     import {Slider} from './app/ui/slider';
     export {ReplaySeekBar} from './app/components/player/ReplaySeekBar';
+    export {ReplayTransport} from './app/components/player/ReplayTransport';
     export function Fixture({commit, cancel, disabled=false}) {
       const [value,setValue]=useState(50), [saved,setSaved]=useState(50);
       return <Slider min={0} max={100} step={5} value={value} disabled={disabled} aria-label="Sensitivity"
@@ -61,4 +62,25 @@ test('Replay does not seek while dragging or after cancellation and commits rele
   await pointer('pointercancel', 640); await pointer('pointerup', 640); assert.deepEqual(seeks, []);
   assert.equal(n('[role="slider"]').getAttribute('aria-valuetext'), '0:10');
   await pointer('pointerdown', 960); await pointer('pointerup', 960); assert.deepEqual(seeks, [13500]);
+});
+
+test('shared Replay transport submits absolute frames, full speed and runtime actions', async () => {
+  const actions = [];
+  let fullscreen = 0;
+  const props = {playback: {path:'replay/th10_01.rpy', frame:1800, total:7200, startFrame:1200, paused:true, seeking:false, target:null, rate:1, ended:false}, onControl:(...args) => actions.push(args), onToggleFullscreen:() => fullscreen++};
+  await mount(api.ReplayTransport, props);
+  assert.equal(n('[role="slider"]').getAttribute('aria-valuetext'), '0:10');
+  await act(() => n('.replay-toggle').click());
+  await act(() => n('.replay-restart').click());
+  await key('End');
+  const select = n('.replay-speed select');
+  assert.deepEqual([...select.options].map(option => option.value), ['0.5','1','2','4','8','0']);
+  await act(() => {select.value='0'; select.dispatchEvent(new env.window.Event('change', {bubbles:true}));});
+  await act(() => n('.replay-fullscreen').click());
+  assert.deepEqual(actions, [['play'], ['seek',1200], ['seek',7200], ['rate',0]]);
+  assert.equal(fullscreen, 1);
+  await act(() => root.render(React.createElement(api.ReplayTransport, {...props, busy:true})));
+  await act(() => n('.replay-toggle').click());
+  await key('Home');
+  assert.equal(actions.length, 4);
 });

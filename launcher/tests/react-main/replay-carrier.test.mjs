@@ -66,8 +66,13 @@ async function animation(name,target='#replayDialog'){const event=new env.window
 function normalize(el){if(el.nodeType===3)return el.textContent.replace(/\s+/g,' ').trim()||null;if(el.nodeType!==1)return null;const attrs=uiContractAttributes(el).filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [el.localName,attrs,[...el.childNodes].map(normalize).filter(Boolean)];}
 function normalizedActualReplay(){
  const actual=n('#replayDialog').cloneNode(true);
- // Explicit replacement for the old iframe document boundary; all other
- // attributes, descendants and copy must still equal the pinned main markup.
+ // Keep the original accessible close command while accepting its shared icon.
+ const close=actual.querySelector('[data-replay-close]'),icon=close.querySelector('svg');
+ assert.equal(icon?.getAttribute('aria-hidden'),'true');
+ assert.ok(close.getAttribute('aria-label'));
+ close.replaceChildren('×');
+ // Explicit replacement for the old iframe document boundary; other controls
+ // and copy still match the pinned main markup.
  assert.equal(actual.getAttribute('data-launcher-document'),'');
  actual.removeAttribute('data-launcher-document');
  for(const row of actual.querySelectorAll('[data-replay-file]'))row.removeAttribute('data-replay-file');

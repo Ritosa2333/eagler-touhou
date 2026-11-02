@@ -20,7 +20,7 @@ before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/package-module-setup-')); cold = resolve(work, 'source');
   for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
     'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json', 'scripts/serve-static.mjs', 'server/static-content-policy.mjs', 'tests/support/package-module-fixture.mjs',
-    'public/faq.html', 'public/styles.css', 'public/about.css', 'public/assets/fonts', 'public/assets/launcher-background.webp']) {
+    'public/compatibility.html']) {
     await mkdir(dirname(resolve(cold, path)), {recursive: true}); await cp(resolve(project, path), resolve(cold, path), {recursive: true});
   }
   await cp(resolve(project, '../common/contracts'), resolve(work, 'common/contracts'), {recursive: true});
@@ -58,12 +58,12 @@ test('cold isolated source stages current canonical contracts and their module c
   await t.annotate(JSON.stringify({contractsInputHash: fixture.contracts.inputHash, moduleHashes: Object.fromEntries(fixture.files.filter(file => fixture.modules.includes(file.path)).map(file => [file.path, file.sha256]))}));
 });
 
-test('FAQ and its actual local styles/fonts are copied unchanged; absent optional artwork remains absent instead of fabricated', async () => {
-  const documents = fixture.files.filter(file => file.path === 'faq.html' || /\.(?:css|woff2?)$/.test(file.path));
-  assert.ok(documents.some(file => file.path === 'faq.html')); assert.ok(documents.some(file => file.path === 'about.css'));
+test('self-contained compatibility document establishes the test origin without a Launcher graph', async () => {
+  const documents = fixture.files.filter(file => file.path === 'compatibility.html' || /\.(?:css|woff2?)$/.test(file.path));
+  assert.deepEqual(documents.map(file=>file.path),['compatibility.html']);
   for (const {path} of documents) assert.deepEqual(await readFile(resolve(fixture.root, path)), await readFile(resolve(cold, 'public', path)));
-  assert.equal(existsSync(resolve(fixture.root, 'styles.css')), false, 'the current FAQ no longer references the old Launcher stylesheet');
-  assert.ok(fixture.optionalMissing.includes('assets/favicon.ico')); assert.equal(existsSync(resolve(fixture.root, 'assets/favicon.ico')), false);
+  assert.equal(existsSync(resolve(fixture.root, 'styles.css')), false);
+  assert.deepEqual(fixture.optionalMissing,[]);
 });
 
 test('missing source/modules and corrupted compiled contracts fail closed without using inherited Launcher cache', async () => {
@@ -109,7 +109,7 @@ test('CLI serves canonical modules and HTTP headers, then releases its port and 
     selectedRoot = JSON.parse(output.split('\n').find(line => line.startsWith('{"packageModuleFixture":'))).packageModuleFixture;
     assert.equal(existsSync(selectedRoot), true);
     const base = `http://127.0.0.1:${port}`;
-    for (const path of ['faq.html', ...fixture.modules]) {
+    for (const path of ['compatibility.html', ...fixture.modules]) {
       const response = await fetch(base + '/' + path); assert.equal(response.status, 200, path);
       assert.equal(response.headers.get('content-type'), path.endsWith('.html') ? 'text/html; charset=utf-8' : 'text/javascript; charset=utf-8');
       assert.equal(response.headers.get('cache-control'), 'public, max-age=0, must-revalidate'); assert.ok(response.headers.get('etag')); assert.ok(response.headers.get('last-modified')); assert.equal(response.headers.get('vary'), 'Accept-Encoding');
@@ -129,5 +129,5 @@ test('CLI serves canonical modules and HTTP headers, then releases its port and 
   assert.ok(selectedRoot); assert.equal(existsSync(selectedRoot), false, 'runner must clean its private fixture after the original harness terminates it');
   const released = createServer(); await new Promise((yes, no) => {released.once('error', no); released.listen(port, '127.0.0.1', yes);});
   await new Promise(yes => released.close(yes));
-  assert.equal(existsSync(resolve(cold, 'public/faq.html')), true, 'source inputs must remain untouched');
+  assert.equal(existsSync(resolve(cold, 'public/compatibility.html')), true, 'source inputs must remain untouched');
 });

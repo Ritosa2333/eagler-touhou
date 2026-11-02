@@ -17,9 +17,10 @@ export function installMountedDom() {
     Object.defineProperty(globalThis, key, {configurable: true, writable: true, value});
   };
   for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement',
-    'HTMLSelectElement', 'HTMLFormElement', 'DocumentFragment', 'NodeFilter', 'HTMLDialogElement', 'Element', 'Node', 'Event', 'MouseEvent', 'KeyboardEvent',
+    'HTMLSelectElement', 'HTMLFormElement', 'DocumentFragment', 'ShadowRoot', 'NodeFilter', 'HTMLDialogElement', 'Element', 'Node', 'Event', 'MouseEvent', 'KeyboardEvent',
     'SubmitEvent', 'CustomEvent', 'MutationObserver', 'DOMRect', 'CSS', 'FormData', 'File', 'Blob']) expose(key, key === 'window' ? window : window[key]);
   expose('getComputedStyle', window.getComputedStyle.bind(window));
+  for (const key of ['innerWidth', 'innerHeight', 'scrollX', 'scrollY']) expose(key, window[key]);
   expose('requestAnimationFrame', window.requestAnimationFrame.bind(window));
   expose('cancelAnimationFrame', window.cancelAnimationFrame.bind(window));
   expose('IS_REACT_ACT_ENVIRONMENT', true);
@@ -30,6 +31,8 @@ export function installMountedDom() {
   // are quiet because each explicit geometry measurement remains constant.
   window.ResizeObserver = class {observe() {} unobserve() {} disconnect() {}};
   expose('ResizeObserver', window.ResizeObserver);
+  window.IntersectionObserver = class {observe() {} unobserve() {} disconnect() {} takeRecords() {return [];}};
+  expose('IntersectionObserver', window.IntersectionObserver);
   const Pointer = window.PointerEvent ?? class extends window.MouseEvent {
     constructor(type, options = {}) {
       super(type, options);

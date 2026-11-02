@@ -2,7 +2,7 @@
 import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile} from 'node:fs/promises';
+import {cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
@@ -38,6 +38,8 @@ before(async () => {
     const path = resolve(coldSource, file);
     await writeFile(path, await readFile(path, 'utf8') + '\n\nReact build authored-content freshness probe\n');
   }
+  const touchStyle=resolve(coldSource,'app/components/player/touch-help-ui.css');
+  await writeFile(touchStyle,await readFile(touchStyle,'utf8')+'\n.game-help-content{--build-authored-touch-proof:1}\n');
   await symlink(resolve('node_modules'), resolve(coldSource, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
   assert.equal(await exists(resolve(coldSource, '.cache/build/browser')), false);
   assert.equal(await exists(resolve(coldSource, 'assets/contracts')), false);
@@ -80,8 +82,8 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
   assert.ok(result); assert.equal(result.warnings.length, 0);
   const files = result.contract.entries;
   assert.ok(files.includes('./')); assert.ok(files.includes('about.html')); assert.ok(files.includes('faq.html')); assert.ok(files.includes('styles.css'));
-  for (const path of ['site-help.mjs', 'compatibility.html', 'compatibility.en.html', 'compatibility.ja.html']) assert.ok(files.includes(path), `${path}: help is available offline`);
-  assert.ok((await readFile(resolve(directory, 'site-help.mjs'), 'utf8')).length > 1000);
+  for (const path of ['guide.html','multiplayer.html','compatibility.html', 'compatibility.en.html', 'compatibility.ja.html']) assert.ok(files.includes(path), `${path}: help is available offline`);
+  for(const path of ['about.css','site-help.mjs'])assert.equal(await exists(resolve(directory,path)),false,`${path}: retired document resource`);
   assert.equal(await exists(resolve(directory, 'migrate.html')), true); assert.equal(files.includes('migrate.html'), false);
   assert.equal(files.some(path => path.startsWith('legacy/')), false);
   assert.ok(files.some(path => /^assets\/manifest-.+\.js$/.test(path)));
@@ -136,14 +138,21 @@ test('mismatched graph mount, forbidden additions and missing graph inputs fail 
 test('actual build keeps canonical public URLs including bounded legacy readers', async () => {
   for (const {directory} of outputs.values()) {
     for (const file of STATIC_FRONTEND_PACKAGE_FILES) assert.equal(await exists(resolve(directory, file)), true, file);
+    for(const file of ['index.html','faq.html','about.html','guide.html','multiplayer.html']){
+      const html=await readFile(resolve(directory,file),'utf8');
+      const order=html.indexOf('id="ui-style-layers"'),style=html.indexOf('rel="stylesheet"');
+      assert.ok(order>=0&&order<style,`${file}: layer order precedes split stylesheets`);
+      assert.equal([...html.matchAll(/name="darkreader-lock"/g)].length,1,`${file}: explicit theme ownership`);
+    }
     for (const file of ['README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'NOTICE.txt']) {
       assert.deepEqual(await readFile(resolve(directory, file)), await readFile(resolve(file)));
     }
     for (const file of ['faq.html', 'content/FIRST_USE_NOTICE.html', 'content/MULTIPLAYER.html']) {
       assert.match(await readFile(resolve(directory, file), 'utf8'), /React build authored-content freshness probe/);
     }
-    const touch = await readFile(resolve(directory, 'touch-guide.css'));
-    assert.equal(createHash('sha256').update(touch).digest('hex'), 'c205a923d1ad5b439fbd5d8dc0237766bfdcc528c321aae4bd840ce8f8e90407');
+    const styles = (await readdir(resolve(directory, 'assets'))).filter(file => file.endsWith('.css'));
+    const touch = (await Promise.all(styles.map(file => readFile(resolve(directory,'assets',file),'utf8')))).join('\n');
+    assert.match(touch,/--build-authored-touch-proof:\s*1/,'Shared help styles must come from current authored CSS');
     for (const file of STATIC_FRONTEND_PACKAGE_FILES.filter(file => file.startsWith('legacy/'))) {
       const source = await readFile(resolve(directory, file), 'utf8');
       assert.doesNotMatch(source, /node:|__vite-browser-external/);

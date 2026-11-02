@@ -170,8 +170,8 @@ async function windows(){
   for(const[label,module]of [['旁观控制','spectator-controls'],['资源导入','resource-import'],['下载任务','transfer-progress'],['下载失败','transfer-error'],['错误详情','startup-error'],['标题联机','title-network'],['联机状态','netplay-connection'],['网络诊断','network-results'],['标定报告','calibration-report']]){
     await button(label,'.window-specimen-nav button');await shot(module);if(module==='calibration-report')await button('关闭','dialog[open] button');
   }
-  await button('触控帮助','.window-specimen-nav button');await shot('touch-help');await click('#guideTabFocus');await shot('touch-help-focus');
-  await button('格斗操作','.window-specimen-nav button');await click('#guideTabGameControls');await shot('fighting-help');
+  await button('触控帮助','.window-specimen-nav button');await shot('touch-help');await click('#help-controls .options-group-head');await shot('touch-help-focus');
+  await button('格斗操作','.window-specimen-nav button');await shot('fighting-help');
 }
 async function verifyMotion(name,end,action,{waitForInput=true,expectMotion=true}={}) {
   const pending=page.evaluate(captureSurfaceMotion,{waitForInput,duration:expectMotion?1000:600});
