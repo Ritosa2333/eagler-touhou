@@ -1,3 +1,4 @@
+import {createSpectatorPublisher} from './spectator.mjs';
 import {applyDisplay} from './display.mjs';
 import {createManagedTransport} from './managed-transport.mjs';
 
@@ -5,7 +6,7 @@ const roles=['host','guest','guest2'];
 const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
 export function multiplayerOptions(value){
  const count=value.netplayPlayerCount,local=value.netplayPlayer;
- if(value.netplayMode!=='lan'||![2,3].includes(count)||!integer(local,0,count-1)||value.netplaySpectator===true)throw Error('Invalid TH05 multiplayer seats');
+ if(value.netplayMode!=='lan'||![2,3].includes(count)||(value.netplaySpectator===true?local!==null||!/^[-A-Za-z0-9_]{8,64}$/.test(value.netplaySpectatorId??''):!integer(local,0,count-1)))throw Error('Invalid TH05 multiplayer seats');
  const url=new URL(value.netplayUrl);
  const localDevelopment=url.protocol==='ws:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
  if(!['ws:','wss:'].includes(url.protocol)||!['room','run','member'].every(key=>url.searchParams.get(key))||!localDevelopment&&!/^[a-f0-9]{64}$/.test(url.searchParams.get('runtimeGeneration')??''))throw Error('Missing TH05 room run identity');
@@ -32,7 +33,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
  const reserve=options.netplayPredictionReserve??2;
  const identity=JSON.stringify({protocol:'th05-native-coop/2',mode,limit,run:url.searchParams.get('run'),generation:url.searchParams.get('runtimeGeneration'),count,challenge:options.netplayChallengeMode===true,spares:options.netplayInitialSpares??2,bombs:options.netplayInitialBombs??3,seed:options.netplaySeed,difficulty:options.netplayDifficulty,characters:options.netplayLoadouts.map(p=>p.character)});
  const rows=Array.from({length:count},()=>new Map()),peers=new Map(),proposals=new Map(),acknowledged=new Set(),checks=new Map();
- let transport,started=false,closed=false,ending=false,frame=0,delay=0,lastProgress=now(),lastWarning=0,proposalTimer,deadline,probeTimer,resolveStart,rejectStart,endTask,nextCheck=120;
+ let publisher;let transport,started=false,closed=false,ending=false,frame=0,delay=0,lastProgress=now(),lastWarning=0,proposalTimer,deadline,probeTimer,resolveStart,rejectStart,endTask,nextCheck=120;
  const startTask=new Promise((resolve,reject)=>{resolveStart=resolve;rejectStart=reject;});
  // A rejection can precede the caller awaiting start (e.g. early transport
  // failure); retain it without generating an unhandled rejection.
@@ -64,6 +65,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
   if(!module._th05_net_reset(delay,limit))throw Error('TH05 rollback session could not start');
   for(let i=0;i<delay;i++)for(const row of rows)row.set(i,[0,0,0,0]);
   for(let seat=0;seat<count;seat++)if(seat!==local)for(const [inputFrame,input] of rows[seat])if(inputFrame>=delay&&!module._th05_net_input(seat,inputFrame,...input))throw Error('TH05 bootstrap input rejected');
+  if(local===0&&typeof module._th05_spectator_serial==='function'){publisher=createSpectatorPublisher(module,transport,count,options.netplaySeed,rows,emit);publisher.begin();}
   started=true;clearTimer(deadline);clearTimer(probeTimer);lastProgress=now();
   globalThis.__eaglerNetplayLanActive=true;globalThis.__eaglerNetplayInputDelay=globalThis.__eaglerNetplayLanInputDelay=delay;
   globalThis.__eaglerNetplayRollback=globalThis.__eaglerNetplayLanRollback=0;globalThis.__eaglerNetplayResimulated=globalThis.__eaglerNetplayLanResimulated=0;
@@ -111,7 +113,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
   if(serial<6)probeTimer=setTimer(guarded(()=>probe(serial+1)),55);
  }
  function end(){
-  if(endTask)return endTask;if(closed)return Promise.resolve();ending=true;broadcast({type:'end'});
+  if(endTask)return endTask;if(closed)return Promise.resolve();ending=true;publisher?.end();broadcast({type:'end'});
   endTask=(async()=>{try{await transport.finish();close();emit('netplay-ended');}catch(error){fatal(error);throw error;}})();endTask.catch(()=>{});return endTask;
  }
 
@@ -136,6 +138,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
    }
    const advanced=module._th05_net_advance();if(advanced<0)throw Error('TH05 rollback simulation failed');
    const confirmed=module._th05_net_confirmed();
+   publisher?.flush(confirmed);
    globalThis.__eaglerNetplayConfirmed=globalThis.__eaglerNetplayLanConfirmed=confirmed;
    globalThis.__eaglerNetplayRollback=globalThis.__eaglerNetplayLanRollback=module._th05_net_stat(0);
    globalThis.__eaglerNetplayResimulated=globalThis.__eaglerNetplayLanResimulated=module._th05_net_stat(1);

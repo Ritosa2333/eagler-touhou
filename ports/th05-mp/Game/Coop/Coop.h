@@ -18,5 +18,6 @@ struct Session {
  bool continuing=false,finished=false,challenge=false,localVisibility=false;
 };
 Session& Run();
+void CaptureSpectatorStage();
 void Reset();
 } }

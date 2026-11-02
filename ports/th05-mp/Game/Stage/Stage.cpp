@@ -205,6 +205,9 @@ void CStage::InitChara()
 
 void CStage::Initialize()
 {
+ #ifdef __EMSCRIPTEN__
+ coop::CaptureSpectatorStage();
+ #endif
 	if (original::DemoActive()) {}
 	else if (CGame::GVar().m_bReplayMode==false)
 		CGame::GVar().m_replay.OpenStage(CGame::GVar().m_playStage,false);

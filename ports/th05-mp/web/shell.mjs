@@ -1,3 +1,4 @@
+import {createSpectator} from './spectator.mjs';
 import {createMultiplayer} from './multiplayer.mjs';
 import {FrameClock,PresentationClock} from './clock.mjs';
 import createModule from './th05.mjs';
@@ -105,16 +106,17 @@ const api={multiplayer,saveRoot:multiplayer?"/savesth05mp":SAVE_ROOT,running:()=
  async returnRoom(){if(netplay)await netplay.end();return {presented:true};},
  async launch(message){if(!configured||closed)throw Error('Runtime cannot launch');clearAll();cstring(language,game=>cstring(options.thpracLocale??(language==='ja'?'ja-JP':'zh-CN'),locale=>module._th05_language_configure(game,locale)));module._th05_viewer(+!!options.replayViewer);module._th05_practice_configure(+(options.thpracEnabled===true&&!options.replayViewer));if(!initialized){if(!module._th05_initialize())throw Error('TH05 initialization failed');initialized=true;}module._th05_options(+(options.alwaysHitbox===true),+(options.focusHitboxEnabled===true));if(options.replayPath)openReplay(options.replayPath);if(multiplayer){
  if(!options.netplayMode)throw Error('TH05 multiplayer requires a room run');
- netplay=createMultiplayer(options,{module,emit:(event,payload)=>{if(event==='netplay-ended')roomView();else emit(event,payload);},fail:reason=>{error(reason);void finish(1);},sample(){touch.tick();const value=[module._th05_sample_buttons()|menuPulse,...motion];motion=[0,0,0];menuPulse=0;return value;}});
+ netplay=(options.netplaySpectator?createSpectator:createMultiplayer)(options,{module,emit:(event,payload)=>{if(event==='netplay-ended')roomView();else emit(event,payload);},fail:reason=>{error(reason);void finish(1);},sample(){touch.tick();const value=[module._th05_sample_buttons()|menuPulse,...motion];motion=[0,0,0];menuPulse=0;return value;}});
  module.eaglerCoopAction=index=>{menuPulse=index===0?4096:index===1?32768:16384;};
  await netplay.start();
  }
  launched=true;launchSerial=message.launchSerial;clock.reset();clock.credit=1/56;presentation.reset();lastHealth=performance.now();emit('runtime-info',{renderer:'C++ / WebGL GLES2',architecture:'uth05win-native-cpp',version:'1.0.0',protocol});raf=requestAnimationFrame(frame);saveTimer=setInterval(()=>{unloadSync=sync().catch(error);},3000);},
+ spectatorPlayback(message){if(!launched||!options.netplaySpectator)throw Error('Spectator playback is not active');return netplay.command(message);},
  async playback(message){if(!launched||!options.replayViewer)throw Error('Launch the Replay workspace first');return playback.command(message);},
- key(message){if(!options.replayViewer)keyboard.event(message,message.down,'hosted');audio.resume();},clearKeyboard,cancelTouch,
- touch(message){if(!options.replayViewer){audio.resume();touch.controls(message);module.eaglerControls={thpracMobilePanelsEnabled:options.thpracEnabled===true&&message.thpracMobilePanelsEnabled===true,thpracMobilePanelsVisible:message.thpracMobilePanelsVisible===true};}},
- pointer(message){if(!options.replayViewer){audio.resume();const rect=canvas.getBoundingClientRect();pointers.pointer(hostedPoint(message,rect.width,rect.height));}},
- practicePointer(message){if(!options.replayViewer)pointers.pointer({...message,id:message.id??0},true);},
+ key(message){if(!options.replayViewer&&!options.netplaySpectator)keyboard.event(message,message.down,'hosted');audio.resume();},clearKeyboard,cancelTouch,
+ touch(message){if(!options.replayViewer&&!options.netplaySpectator){audio.resume();touch.controls(message);module.eaglerControls={thpracMobilePanelsEnabled:options.thpracEnabled===true&&message.thpracMobilePanelsEnabled===true,thpracMobilePanelsVisible:message.thpracMobilePanelsVisible===true};}},
+ pointer(message){if(!options.replayViewer&&!options.netplaySpectator){audio.resume();const rect=canvas.getBoundingClientRect();pointers.pointer(hostedPoint(message,rect.width,rect.height));}},
+ practicePointer(message){if(!options.replayViewer&&!options.netplaySpectator)pointers.pointer({...message,id:message.id??0},true);},
 };
 try{
  bridge=installManagedShell(api,window);
@@ -128,10 +130,10 @@ try{
  pointers=createPointerRouter(module,touch);
  playback=createPlayback({emit,read:path=>store.read(path),validate:path=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_validate(ptr)),open:(path,stage)=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_open(ptr,stage)),clear:clearAll,resetClock:()=>clock.reset(),step:()=>module._th05_step(),draw:()=>{module._th05_draw();module._th05_present();},frame:()=>module._th05_replay_frame(),stage:()=>module._th05_replay_stage(),scene:()=>module._th05_scene(),gate:value=>audio.playback(value),yield:()=>new Promise(resolve=>setTimeout(resolve,0))});
  globalThis.__eaglerDirectInputBridge=createDirectInputBridge({protocol,game:'th05',epoch:bridge.epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!closed,dispatch(message){switch(message.command){case 'keyboard':api.key(message);break;case 'keyboard-clear':clearKeyboard();break;case 'touch-controls':api.touch(message);break;case 'touch-cancel':cancelTouch();break;case 'direct-touch':api.pointer(message);break;default:return false;}return true;}});
- addEventListener('keydown',event=>{if(!options.replayViewer&&keyboard.event(event,true))event.preventDefault();audio.resume();});addEventListener('keyup',event=>{if(!options.replayViewer&&keyboard.event(event,false))event.preventDefault();});addEventListener('blur',clearAll);
+ addEventListener('keydown',event=>{if(!options.replayViewer&&!options.netplaySpectator&&keyboard.event(event,true))event.preventDefault();audio.resume();});addEventListener('keyup',event=>{if(!options.replayViewer&&!options.netplaySpectator&&keyboard.event(event,false))event.preventDefault();});addEventListener('blur',clearAll);
  document.addEventListener('visibilitychange',()=>{clearAll();clock.reset();presentation.reset();module._th05_focus(+!document.hidden);audio.visibility(document.hidden);if(document.hidden)unloadSync=sync().catch(error);});
  const pointer=event=>{const rect=canvas.getBoundingClientRect(),scale=Math.min(rect.width/640,rect.height/480),left=rect.left+(rect.width-640*scale)/2,top=rect.top+(rect.height-480*scale)/2;return {id:event.pointerId,x:(event.clientX-left)/scale,y:(event.clientY-top)/scale,type:event.type==='pointerdown'?'down':event.type==='pointermove'?'move':'up'};};
- for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(options.replayViewer)return;pointers.pointer(message,event.pointerType!=='touch'&&event.pointerType!=='pen');audio.resume();event.preventDefault();});
+ for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(options.replayViewer||options.netplaySpectator)return;pointers.pointer(message,event.pointerType!=='touch'&&event.pointerType!=='pen');audio.resume();event.preventDefault();});
  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();error(Error('TH05 WebGL context lost'));void finish(1);});
  addEventListener('pagehide',()=>{netplay?.close();clearAll();cancelAnimationFrame(raf);clearInterval(saveTimer);module._th05_save();unloadSync=store.sync().catch(console.error);audio.close();bridge.close();closed=true;});
  bridge.ready();

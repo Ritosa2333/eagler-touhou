@@ -9,6 +9,12 @@ test('native room configuration rejects absent identity and unsupported seats/mo
  for(const patch of [{netplayPlayerCount:4},{netplayPlayer:3},{netplaySeed:-1},{netplayDifficulty:5},{netplayAdonisMode:3},{netplayPredictionLimit:6},{netplaySpectator:true},{netplayLoadouts:[{character:0,shot:1}]},{netplayUrl:'wss://example.test/relay'}])assert.throws(()=>multiplayerOptions({...good,...patch}));
 });
 
+test('spectators require a receive-only identity without an owned player seat',()=>{
+ const observer={...options(3,null),netplaySpectator:true,netplaySpectatorId:'observer_123456'};
+ assert.equal(runtimeOptions(observer,true).netplayPlayer,null);
+ for(const patch of [{netplayPlayer:0},{netplaySpectatorId:''},{netplaySpectatorId:'bad/path'}])assert.throws(()=>multiplayerOptions({...observer,...patch}));
+});
+
 test('rollback and mixed timing use the common eight-frame ceiling',()=>{
  assert.equal(multiplayerOptions({...options(2,0),netplayAdonisMode:1,netplayPredictionLimit:8}).netplayAdonisMode,1);
  for(const mode of [0,2])assert.equal(multiplayerOptions({...options(2,0),netplayAdonisMode:mode,netplayPredictionLimit:8}).netplayAdonisMode,mode);

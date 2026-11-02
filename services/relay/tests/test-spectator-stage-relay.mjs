@@ -24,6 +24,7 @@ try{
  await wait(()=>log.includes('listening'),'relay');let n=0;
  for(const ending of ['failure','upload','signal'])for(const [product,marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)){
   const id=`${product}-${6300+n++}`,base=`room=${id}&run=1&players=2`,prefix=product+'_';
+  const forwarded=values=>Buffer.from([...(multiplayerConfigForProduct(product).relaySourceEnvelope?[0xe6,0]:[]),...values]);
   const host=await open(`room=${id}&lobby=${prefix}host&member=${prefix}member_host`),guest=await open(`room=${id}&lobby=${prefix}guest&member=${prefix}member_guest`);
   send(host,{type:'take-seat',seat:0,loadout:0});send(guest,{type:'take-seat',seat:1,loadout:1});
   await wait(()=>room(host)?.seats?.[0]&&room(host)?.seats?.[1],'seats');
@@ -113,13 +114,13 @@ try{
     send(s0,{type:'signal',to:1,candidate:{candidate:'after-completion'}});
     await wait(()=>s1.json.some(m=>m.type==='signal'&&m.candidate?.candidate==='after-completion'),'stop signaling barrier');
     p0.ws.send(Buffer.from([0xe7,1,4,5,6]));
-    await wait(()=>p1.binary.some(b=>b.equals(Buffer.from([4,5,6]))),'stop upload barrier');
+    await wait(()=>p1.binary.some(b=>b.equals(forwarded([4,5,6]))),'stop upload barrier');
     assert.ok([early,viewer,returning].every(s=>!s.closed),'completed replay stays available to buffered viewers');
     assert.deepEqual([early,viewer,returning].map(s=>s.binary.length),lengths,'stop adds no replay packet');
   }
   assert.equal(p0.closed,false);assert.equal(p1.closed,false);p0.ws.send(new Uint8Array([0xe7,1,9,8,7]));
-  await wait(()=>p1.binary.some(b=>b.equals(Buffer.from([9,8,7]))),'player traffic survives');
+  await wait(()=>p1.binary.some(b=>b.equals(forwarded([9,8,7]))),'player traffic survives');
   for(const s of sockets)s.close();await wait(()=>sockets.every(s=>s.readyState===3),'cleanup');sockets.length=0;
  }
- console.log('PASS six cooperative products: native-gated admission, current-stage prefix, Boss dependency, explicit entry frontier, stage rollover, repeated same-run spectator return, completed replay retention after upload/signal stop and player failure isolation');
+ console.log('PASS cooperative products: native-gated admission, current-stage prefix, Boss dependency, explicit entry frontier, stage rollover, repeated same-run spectator return, completed replay retention after upload/signal stop and player failure isolation');
 }finally{for(const s of sockets)s.close();child.kill();}
