@@ -144,6 +144,8 @@ try {
       return {ok, path};
     },
     captureEnd() { return mod._th13_debug_capture_end(); },
+    // 分段捕获（长窗 OOM 修复）：读取并删除已排空段文件，释放 wasm 堆。
+    fsUnlink(path = '/th13-capture.jsonl') { mod.FS.unlink(path); },
     captureDrawList(path = '/th13-capture.jsonl') {
       const bytes = mod.FS.readFile(path);
       return new TextDecoder().decode(bytes);

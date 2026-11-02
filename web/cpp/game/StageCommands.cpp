@@ -1222,8 +1222,9 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_="Enemy death sound failed";return -2;
         }
         if(e.death_effect>=0 && sim.enemy_death_effect) {
-            const double dx=double(e.position[0])-e.previous_position[0];
-            const double dy=double(e.position[1])-e.previous_position[1];
+            // 0x41aad0：参考点 = 最近一次玩家判定命中中心（enemy+0x27C/0x280）。
+            const double dx=double(e.position[0])-double(e.last_hit_position[0]);
+            const double dy=double(e.position[1])-double(e.last_hit_position[1]);
             const float distance=float(dx*dx+dy*dy);
             const float angle=distance>=0.040000003f?float(std::atan2(dy,dx)):-1.5707964f;
             if(!sim.enemy_death_effect(e.death_effect_file,e.death_effect,

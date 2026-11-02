@@ -64,6 +64,11 @@ inline i32 truncate_int(float value) noexcept {
     if (!std::isfinite(value) || value >= 2147483648.f || value < -2147483648.f) return INT32_MIN;
     return static_cast<i32>(value);
 }
+// double 重载：ANM op409 alpha 步进的原生 x87 链（乘积+起点 80-bit，_ftol 只截断一次）。
+inline i32 truncate_int(double value) noexcept {
+    if (!std::isfinite(value) || value >= 2147483648.0 || value < -2147483648.0) return INT32_MIN;
+    return static_cast<i32>(value);
+}
 
 // 就近取整（banker's rounding，x87 fistp 默认舍入模式）。
 // 依据：th13.exe 0x4971f0 为 MSVC _ftol 家族（ROUND + 负数修正），

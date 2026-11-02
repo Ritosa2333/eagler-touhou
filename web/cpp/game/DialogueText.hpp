@@ -54,6 +54,10 @@ public:
     static constexpr i32 kLineCount = 2;   // 0x428ae0 正文两行
     static constexpr i32 kVmCount = 4;     // 正文 2 + ruby 2（0x4282b0 四槽）
 
+    // 0x4282b0 构造入口：对话 open 时立即建四条文本 VM（不等首行 submit）。
+    bool begin(AnmManager& manager, DialogueTextureSink& sink, std::string& error) {
+        return ensure(manager, sink, error);
+    }
     // row ∈ [0,2)：0 → script0，1 → script1。box_x/box_y 是对话对象
     // +0x194/+0x198（0x4282b0 默认或 opcode 28 写入）。
     bool submit(AnmManager& manager, DialogueTextureSink& sink, i32 row, const MsgLine& line,

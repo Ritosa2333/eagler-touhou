@@ -1,4 +1,5 @@
 #include "AnmManager.hpp"
+
 namespace th13 {
 using AnmRandomObserver = void (*)(const AnmVm&, i32, i32, i32, u32, u32, u32, u32, bool);
 extern AnmRandomObserver anm_random_observer;
@@ -38,8 +39,20 @@ bool AnmManager::bind_template(AnmVm& vm,i32 id,i32 script){
     auto* source=script>=0?script_template(id,u32(script)):nullptr;if(!source){error="Animation template unavailable";return false;}
     const Vec3 translation=vm.visual.translation;vm=*source;vm.presentation_generation=++AnmVm::presentation_counter;vm.presentation_motion=false;vm.visual.translation=translation;vm.rotation_parent=vm.creation_parent=nullptr;vm.slowdown=0;vm.pending_interrupt=0;vm.reset_runtime_timers();vm.instruction_offset=0;if(anm_random_observer)anm_random_observer(vm,-5,0,0,0,0,0,0,false);return true;
 }
+bool AnmManager::bind_template_preserve_ip(AnmVm& vm,i32 id,i32 script){
+    auto* source=script>=0?script_template(id,u32(script)):nullptr;
+    if(!source){error="Animation template unavailable";return false;}
+    const i32 saved=source->instruction_offset;
+    if(!bind_template(vm,id,script))return false;
+    vm.instruction_offset=saved;
+    return true;
+}
 AnmVm* AnmManager::instantiate(AnmResource& resource,i32 script){
     for(const auto& bank:banks)if(&bank.second->data==&resource){auto* vm=registry.allocate();if(bind_template(*vm,bank.first,script))return vm;registry.discard(*vm);return nullptr;}
+    error="Animation source resource not owned by manager";return nullptr;
+}
+AnmVm* AnmManager::instantiate_preserve_ip(AnmResource& resource,i32 script){
+    for(const auto& bank:banks)if(&bank.second->data==&resource){auto* vm=registry.allocate();if(bind_template_preserve_ip(*vm,bank.first,script))return vm;registry.discard(*vm);return nullptr;}
     error="Animation source resource not owned by manager";return nullptr;
 }
 bool AnmManager::initial_tick(AnmVm& vm){if(vm.tick(random,rate)<0){error=vm.error;registry.destroy_tree(vm);return false;}return true;}
@@ -52,6 +65,15 @@ u32 AnmManager::create(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& tran
     vm->visual.translation=translation;
     if(game_coordinates){vm->visual.translation.x=float(vm->visual.translation.x+320.f);vm->visual.translation.y=float(vm->visual.translation.y+16.f);}
     vm->variables.rotation.z=anm_arg;  // anmArg 落 vm+0x50（变量 10025 槽）
+    if(!initial_tick(*vm))return 0;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=ordering;return registry.submit(*vm,ordering);
+}
+u32 AnmManager::create_preserve_ip(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& translation,float anm_arg,bool game_coordinates){
+    auto* source=resource(id);if(!source){error="Animation resource unavailable";return 0;}auto* vm=instantiate_preserve_ip(*source,script);if(!vm)return 0;
+    vm->visual.render_flags|=0x200;
+    if(layer>=0){vm->visual.layer=layer;if(layer<21)vm->visual.render_flags|=0x40000;}
+    vm->visual.translation=translation;
+    if(game_coordinates){vm->visual.translation.x=float(vm->visual.translation.x+320.f);vm->visual.translation.y=float(vm->visual.translation.y+16.f);}
+    vm->variables.rotation.z=anm_arg;
     if(!initial_tick(*vm))return 0;if(anm_random_observer)anm_random_observer(*vm,-1,0,0,0,0,0,0,false);vm->ordering=ordering;return registry.submit(*vm,ordering);
 }
 AnmVm* AnmManager::spawn_child(AnmVm& source,i32 script,u32 ordering){

@@ -25,8 +25,12 @@
 namespace th13 {
 
 // 诊断开关（不参与逻辑）：由 th13_debug_damage_probe() 打开，
-// 打印 0x446870/0x419a90 的每次注册项伤害贡献。
+// 打印 0x446870/0x419a90 的每次注册项伤害贡献。打印窗口默认 7970..7985
+// （round-16 S5 判例帧），可由 th13_debug_damage_probe_window() 覆盖
+// （round-19 调试脚手架扩展，不改任何比较语义）。
 extern bool damage_probe_enabled;
+extern int damage_probe_first_frame;
+extern int damage_probe_last_frame;
 
 struct StageBattleServices {
     virtual ~StageBattleServices() = default;
@@ -41,6 +45,14 @@ struct StageBattleServices {
     virtual bool stop_sound(i32 id) { (void)id; return true; }
     virtual bool set_voice_pan(i32 id, float x) { (void)id; (void)x; return true; }
     virtual bool trance_music(bool active) { (void)active; return true; }
+    // 0x42b030 → HUD script172 标签无条件重写（Update pass 内调用）。
+    // 默认空实现：无头/无 HUD 测试路径不失败。
+    virtual bool trance_gauge_refresh() { return true; }
+    // 0x44ad60：道具得分弹字入池（value/位置/颜色）。默认空实现。
+    virtual bool score_popup(i32 value, float x, float y, u32 color) {
+        (void)value; (void)x; (void)y; (void)color;
+        return true;
+    }
     // 敌机死亡回收钩（0x418e00 销毁支路的 ANM 侧）：宿主回收该敌机全部
     // 槽位 VM（enemies_from_ecl 路径句柄归零防泄漏）。默认空实现——
     // 无头契约路径（stage1/replay 事件窗）无 ANM 面。
@@ -53,6 +65,8 @@ struct PlayerShot {
     float angle = -1.5707964f;  // 弹向（渲染旋转用；主弹恒 -π/2 直上）
     i32 script = -1;            // plXX.anm 弹型脚本（.sht 记录；-1 = 精灵直贴回退）
     bool alive = false;
+    // 446bf0 generic hit sets +0x34=0.1f; 4474b0/4475b0/4471f0 do not.
+    bool hit_fade = false;
     i32 state = 1;              // 445c40 +70: 1 active, 2 hit fade, 0 retired.
     bool animation_finished = false; // VM termination observed by presentation.
     float speed = 12.0f;       // 无 SHT 的旧回退；生产弹从 SHT +0x18 取值。

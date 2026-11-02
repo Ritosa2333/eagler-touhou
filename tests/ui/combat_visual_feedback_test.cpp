@@ -36,7 +36,7 @@ TEST(real_enemy_bullets_initialize_before_interrupt_and_survive_pool_growth) {
  CHECK(presentation.sync(battle,0));g.vertices=0;CHECK(presentation.draw(3));renderer.flush();CHECK_EQ(g.vertices,40u*6);
 }
 TEST(enemy_death_emits_one_sound_and_oriented_effect_before_retirement) {
- StageSim sim;StageEnemy enemy;enemy.life=10;enemy.position[0]=10;enemy.position[1]=100;enemy.previous_position[0]=10;enemy.previous_position[1]=100;
+ StageSim sim;StageEnemy enemy;enemy.life=10;enemy.position[0]=10;enemy.position[1]=100;enemy.last_hit_position[0]=10;enemy.last_hit_position[1]=100;
  enemy.death_sound=4;enemy.death_effect=34;enemy.death_effect_file=1;
  int sounds=0,effects=0,retired=0;
  sim.enemy_position_sound=[&](i32 id,float x){CHECK_EQ(id,4);CHECK_EQ(x,10.f);CHECK_EQ(retired,0);++sounds;return true;};

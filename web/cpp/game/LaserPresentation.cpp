@@ -13,7 +13,7 @@ LaserPresentation::LaserPresentation(AnmManager& a, AnmRenderer& r, StageSim& s,
                fail(animations.error);
     };
 }
-LaserPresentation::~LaserPresentation() {
+LaserPresentation::~LaserPresentation() { std::fprintf(stderr,"[dtor] LaserPresentation start\n");
     sim.laser_birth = {}; sim.laser_animation = {}; sim.laser_retire = {};
     sim.laser_cancel_effect = {};
     while (!visuals.empty()) retire(visuals.begin()->first);

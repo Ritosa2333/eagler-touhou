@@ -1,9 +1,11 @@
 #include "AnmRenderer.hpp"
+#include "SceneMatrices.hpp"
 #include "AnmOverlay.hpp"
 #include "Probe.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <unordered_map>
 #if TH13_DRAW_CAPTURE
 #include "DrawCapture.hpp"  // 语义绘制清单钩子（draw-contract.md；仅 harness 构建）
@@ -47,8 +49,21 @@ void AnmRenderer::flush(){if(vertices.empty())return;graphics.set_layout(VertexL
 void AnmRenderer::invalidate(){flush();bound_texture=~0u;}
 // 视口切换只冲顶点批，不丢纹理缓存：原版 SetViewport（0x45d2f0:30 每帧）
 // 不清精灵侧纹理缓存 mgr+0xb78188（oracle f1-8 tex=None 的缓存语义）。
-void AnmRenderer::set_viewport(const GraphicsViewport& value){flush();viewport=value;graphics.set_viewport(value);}
-void AnmRenderer::set_camera(const AnmCamera& value){flush();graphics.presentation_camera(false);camera=value;graphics.set_matrix(MatrixKind::View,camera.view);graphics.set_matrix(MatrixKind::Projection,camera.projection);}
+// 但「重复设置同一个视口/相机」不得冲批：原生 UP 队列只按纹理/渲染状态
+// 变更冲批（0x467350 line157-162 / 0x4670e0），自机 pass 开头重复选
+// Fullscreen 相机曾把层11 的 5 个弹 quad 与自机 quad 拆成 10+2（原生 12）。
+namespace {
+bool same_viewport(const GraphicsViewport& a,const GraphicsViewport& b)noexcept{
+    return a.x==b.x&&a.y==b.y&&a.width==b.width&&a.height==b.height
+        &&a.near_depth==b.near_depth&&a.far_depth==b.far_depth;
+}
+bool same_camera(const AnmCamera& a,const AnmCamera& b)noexcept{
+    return std::memcmp(a.view.m,b.view.m,sizeof a.view.m)==0
+        &&std::memcmp(a.projection.m,b.projection.m,sizeof a.projection.m)==0;
+}
+}
+void AnmRenderer::set_viewport(const GraphicsViewport& value){if(!same_viewport(viewport,value))flush();viewport=value;graphics.set_viewport(value);}
+void AnmRenderer::set_camera(const AnmCamera& value){if(!same_camera(camera,value))flush();graphics.presentation_camera(false);camera=value;graphics.set_matrix(MatrixKind::View,camera.view);graphics.set_matrix(MatrixKind::Projection,camera.projection);}
 u32 AnmRenderer::tint_color(u32 color)const noexcept{return tint_enabled?multiply_color(color,tint):color;}
 bool AnmRenderer::material(AnmVm& vm,bool textured){
     if(textured){auto* source=vm.sprite_resource?vm.sprite_resource:vm.resource;const auto* sprite=vm.texture_sprite();if(!source||!sprite){error="Animation texture source unavailable: script="+std::to_string(vm.source_script)+" sprite="+std::to_string(vm.visual.sprite)+" mode="+std::to_string(vm.visual.draw_mode())+" flags="+std::to_string(vm.visual.flags)+" resource="+(source&&!source->textures.empty()?source->textures[0].name:"none")+" sprites="+std::to_string(source?source->sprites.size():0);return false;}
@@ -122,10 +137,13 @@ int AnmRenderer::quad(AnmVm& vm,bool pixel){
 int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied){
     // 临时探针：四边形顶点取证（-96px 排查；按 layer+script 去重）
     if(probe::enabled){static u32 seen_count=0;const u64 key=(u64(vm.visual.layer)<<32)|u32(vm.source_script)*2654435761u+u32(vm.visual.draw_mode());static u64 seen[256]={};bool dup=false;for(u32 i=0;i<seen_count&&i<256;i++)if(seen[i]==key){dup=true;break;}if(!dup&&seen_count<256){seen[seen_count++]=key;std::printf("[probe-quad] layer=%u script=%d mode=%u rflags=%06x p0=(%.3f,%.3f) p2=(%.3f,%.3f) envoff2=%d\n",vm.visual.layer,vm.source_script,vm.visual.draw_mode(),vm.visual.render_flags,double(p[0].x),double(p[0].y),double(p[2].x),double(p[2].y),vm.environment?vm.environment->screen_offsets[2]:-1);}}
-    for(auto& point:p){point.x=float(point.x+offset.x);point.y=float(point.y+offset.y);}if(pixel&&!vm.presentation_motion&&vm.interpolators.position.duration<=0){const float scale=vm.environment?vm.environment->raster_scale:1;const auto snap=[scale](float value){return float(std::nearbyint(value*scale)/scale-.5f);};p[0].x=snap(p[0].x);p[1].x=snap(p[1].x);p[0].y=snap(p[0].y);p[2].y=snap(p[2].y);p[1].y=p[0].y;p[2].x=p[0].x;p[3].x=p[1].x;p[3].y=p[2].y;}
-    if(pixel&&(vm.presentation_motion||vm.interpolators.position.duration>0))for(auto& point:p){point.x-=.5f;point.y-=.5f;}
+    for(auto& point:p){point.x=float(point.x+offset.x);point.y=float(point.y+offset.y);}if(pixel&&!vm.presentation_motion){const float scale=vm.environment?vm.environment->raster_scale:1;const auto snap=[scale](float value){return float(std::nearbyint(value*scale)/scale-.5f);};p[0].x=snap(p[0].x);p[1].x=snap(p[1].x);p[0].y=snap(p[0].y);p[2].y=snap(p[2].y);p[1].y=p[0].y;p[2].x=p[0].x;p[3].x=p[1].x;p[3].y=p[2].y;}
+    if(pixel&&vm.presentation_motion)for(auto& point:p){point.x-=.5f;point.y-=.5f;}
     std::copy(std::begin(p),std::end(p),vm.visual.quad.begin());float left=p[0].x,right=left,top=p[0].y,bottom=top;for(u32 i=1;i<4;i++){left=std::min(left,p[i].x);right=std::max(right,p[i].x);top=std::min(top,p[i].y);bottom=std::max(bottom,p[i].y);}
-    if(right<float(viewport.x)||bottom<float(viewport.y)||left>float(viewport.x+viewport.width)||top>float(viewport.y+viewport.height))return 0;
+    // 0x467350 的裁剪矩形来自 2D 视口块（clip），不是当前 D3D viewport；
+    // 战场层用 {116,2,408,476}，HUD/全屏层沿用 viewport。
+    const GraphicsViewport& cull=clip_set?clip:viewport;
+    if(right<float(cull.x)||bottom<float(cull.y)||left>float(cull.x+cull.width)||top>float(cull.y+cull.height))return 0;
     auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;u32 colors[4];if(supplied)std::copy(supplied,supplied+4,colors);else if(color_mode<2){u32 color=color_mode?v.secondary_color:v.color;if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);v.inherited_color=color;for(auto& c:colors)c=tint_color(color);}else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
     if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);Vec2 uv[4];uv[0]={float(v.uv_offset.x+v.uv[0].x),float(v.uv[0].y+v.uv_offset.y)};uv[1]={float(float(float(v.uv[1].x-v.uv[0].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[0].x,float(v.uv_offset.y+v.uv[1].y)};uv[2]={float(v.uv_offset.x+v.uv[2].x),float(float(float(v.uv[2].y-v.uv[0].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[0].y};uv[3]={float(float(float(v.uv[3].x-v.uv[2].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[2].x,float(float(float(v.uv[3].y-v.uv[1].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[1].y};
     graphics.presentation_offset(offset);graphics.presentation_range(vm,vertices.size(),6,presentation_instance);
@@ -154,18 +172,33 @@ int AnmRenderer::world_quad(AnmVm& vm){
     // 0x46ef60（layer21 draw 回调，AnmDrawSchedule {21,54}）切 Fullscreen 之前
     // 绘制；22+ 的副链/界面层（如 layer31 ascii/loading 世界 quad，原生
     // view t=(-320,240,895.69) 全屏相机）必须保留调用方相机。
+    // 原生 0x46ed80（layer4 回调）用 0x43b900 切 2D 屏幕相机（eye=(320,240,
+    // 240*cot(fov/2))、up=(0,-1,0)、zn=1/zf=10000）并保持到 layer20；
+    // layer0-3 仍在 STD 舞台相机下。旧实现把 layer0-20 一律强制舞台相机，
+    // 使 layer16 特效的世界矩阵 view/proj 全错。
     const bool inherit_stage_camera =
-        scenery_camera_ready && v.layer >= 0 && v.layer <= 20;
+        scenery_camera_ready && v.layer >= 0 && v.layer <= 3;
+    const bool inherit_overlay_camera =
+        scenery_camera_ready && v.layer >= 4 && v.layer <= 20;
     const auto saved_camera=camera;const auto saved_viewport=viewport;
     if(inherit_stage_camera){set_viewport(scenery_viewport);set_camera(scenery_camera);}
+    else if(inherit_overlay_camera){
+        const float cot=scenery_camera.projection.m[5];
+        const float fov=float(2.0*std::atan(1.0/double(cot)));
+        AnmCamera overlay;
+        overlay.view=scene_look_at({320,240,float(240.0*cot)},{320,240,0},{0,-1,0});
+        overlay.projection=scene_perspective(fov,1.3333334f,1.f,10000.f);
+        set_viewport({0,0,640,480,0,1});
+        set_camera(overlay);
+    }
     flush();
-    if(!material(vm)){if(inherit_stage_camera){set_viewport(saved_viewport);set_camera(saved_camera);}return -2;}
+    if(!material(vm)){if(inherit_stage_camera||inherit_overlay_camera){set_viewport(saved_viewport);set_camera(saved_camera);}return -2;}
     TH13_DRAW_SPRITE(vm);auto& state=graphics.pipeline();state.depthWrite=!(v.flags&0x2000);state.textureTransform=true;state.color.second=state.alpha.second={ArgumentSource::Factor};state.textureFactor=tint_color(v.flags&0x60000?v.secondary_color:v.color);
     graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldUv);
     struct Vertex {Vec3 position;Vec2 uv;};constexpr float xs[3][2]={{-128,128},{0,256},{-256,0}},ys[3][2]={{-128,128},{0,256},{-256,0}};
     const Vertex data[]={{{xs[ax][0],ys[ay][0],0},{0,0}},{{xs[ax][1],ys[ay][0],0},{1,0}},{{xs[ax][0],ys[ay][1],0},{0,1}},{{xs[ax][1],ys[ay][1],0},{1,1}}};
     const bool fog=state.fog;if(v.draw_mode()==15)state.fog=true;submit(vm,Topology::Strip,2,data,sizeof(Vertex));if(v.draw_mode()==15)state.fog=false;else state.fog=fog;
-    if(inherit_stage_camera){set_viewport(saved_viewport);set_camera(saved_camera);}
+    if(inherit_stage_camera||inherit_overlay_camera){set_viewport(saved_viewport);set_camera(saved_camera);}
     return 0;
 }
 int AnmRenderer::mesh(AnmVm& vm){

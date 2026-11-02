@@ -135,7 +135,18 @@ int AnmVm::tick_inner(GameRandom& rng,float rate){
         }else switch(opcode){
             case 0:case 5:break;
             case 3:case 4:if(opcode==4){visible=false;visual.flags&=~1u;}if(pending_interrupt){if(interrupt())continue;}else{visual.flags|=0x4000;timer.decrement(&rate);if(!advance(rate))return -1;timer.tick(&rate);visible=visual.visible();return 0;}break;
-            case 6:{const float frames=float(integer(0));timer.previous=timer.current;timer.fractional=float(timer.fractional-frames);timer.current=truncate_int(timer.fractional);break;}
+            case 6:{
+                // 0x462450:390-400 → 0x4732c0:10-21：op6 的等待帧数在写入计时器
+                // 时按当前 rate 缩放（rate≈1 时退化为 frac += -frames；否则
+                // frac = rate*(-frames) + frac）。S6 23352 的 7-vs-3 相位差即
+                // 缺此缩放（原生 -3.5 → 7 帧，port -7.5 → 14 帧）。
+                const float frames=float(integer(0));
+                timer.previous=timer.current;
+                const float scaled=(rate>0.99f&&rate<1.01f)?frames:float(rate*frames);
+                timer.fractional=float(timer.fractional-scaled);
+                timer.current=truncate_int(timer.fractional);
+                break;
+            }
             case 7:timer.set(saved_timer.current);instruction_offset=i32(saved_offset);continue;
             case 122:{GameRandom::tag(16);const u32 bound=u32(integer(1));const i32 value=bound?signed_bits(rng.next32()%bound):0;*int_dest(0)=value;break;}
             case 124:case 125:{const double angle=double(floating(1));const float value=float(opcode==124?std::sin(angle):std::cos(angle));*float_dest(0)=value;break;}

@@ -260,7 +260,7 @@ TEST(stage_file3_script_offset_resolves_local_to_global) {
     CHECK(!fx.presentation.error().empty());
 }
 
-TEST(item_vm_two_scripts_layer0_and_collect_retire) {
+TEST(item_vm_two_scripts_layer15_and_collect_retire) {
     PresentationFixture fx;
     StageBattle battle;
     battle.item_manager.bind_random(battle.sim.random);
@@ -288,8 +288,12 @@ TEST(item_vm_two_scripts_layer0_and_collect_retire) {
     if (body && side) {
         CHECK_EQ(body->source_script, 90);
         CHECK_EQ(side->source_script, 99);
-        CHECK_EQ(body->visual.layer, 0);  // 模板层（运行时 +0x24 实证）
-        CHECK_EQ(side->visual.layer, 0);
+        // 绘制层 15（2026-11-02 round-18 裁决）：原生 draw 捕获该 op 的
+        // layer watch=15（layer15 之后、layer16 之前）；VM+0x24 模板层虽为
+        // 0，port 的 visual.layer 同时承担绘制桶层，故运行时置 15。旧断言
+        // 的 layer0 会让道具提前绘制并继承背景 tfactor（激光窗 bullet3 双批）。
+        CHECK_EQ(body->visual.layer, 15);
+        CHECK_EQ(side->visual.layer, 15);
         CHECK_NEAR(body->visual.translation.x, 10.0f, 1e-4f);
         CHECK_NEAR(body->visual.translation.y, 205.0f, 1e-4f);  // 出生位（未步进）
         CHECK(body->visible && side->visible);

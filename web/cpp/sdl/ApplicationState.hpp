@@ -219,6 +219,16 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // fore-pool draw at the layer31 schedule position (Draw priority 72, after
     // the main manager's layer31 at 71 and before the ASCII text at 78).
     FrameCallback loading_battle_draw{};
+    // 原版 FPSInf 的场内整数帧率文本（font0 "60" @391.5,449.5）与调试叠加
+    // "%2.1ffps"（font1 @588,470）在同一 Draw 阶段按 HUD(76) → 77 → ASCII(78)
+    // 顺序入队；旧实现把 fps 文本在 step 里提前入队，导致字形顺序/首个字形
+    // 颜色对拍错位，并缺场内 "60" 两个字形。
+    FrameCallback fps_text_draw{};
+    float last_fps_ = 60;
+    // 捕获 harness 用：原生 oracle 的实测 fps≈0.1 决定 FPS 文本颜色；
+    // 生产路径不设置（-1 = 用真实 last_fps_）。
+    float fps_color_override_ = -1;
+    void set_fps_color_override(float value) { fps_color_override_ = value; }
     unsigned pending_load = 0, loading_frames = 0;
     bool loading_startup = false;
     double loading_debt = 0;
@@ -309,6 +319,9 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // (native caption handoff) and retire it at frame 10. Draw-phase only;
     // the loader gate's own tick count and RNG draws are untouched.
     bool draw_loading_battle();
+    // 原版 FPSInf：场内整数帧率（font0）+ 调试 "%2.1ffps"（font1），在
+    // Draw 优先级 77（HUD 76 之后、ASCII drain 78 之前）入队。
+    bool draw_fps_text();
     bool fail(const std::string&);
     bool prepare_platform();
     bool prepare_loading();
@@ -494,6 +507,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool stop_sound(i32) override;
     bool set_voice_pan(i32, float) override;
     // 对话正文 → text.anm texture0（0x4282b0 四 VM / 0x428ae0 行块）
+    bool dialogue_begin() override;
     bool dialogue_line(i32 row, const MsgLine& line, float box_x, float box_y) override;
     bool dialogue_fade(i32 label) override;
     bool dialogue_anchor_y(float) override;
@@ -510,6 +524,16 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     }
     bool trance_music(bool active) override {
         return audio_device.trance_music(active) || fail(audio_device.error);
+    }
+    // 0x42b030 的 HUD 侧：无条件重写 script172 标签（Update pass 内调用）。
+    bool trance_gauge_refresh() override {
+        if (!run) return true;
+        return run->hud.trance_label_refresh() || fail(run->hud.error);
+    }
+    // 0x44ad60 道具得分弹字入池。
+    bool score_popup(i32 value, float x, float y, u32 color) override {
+        if (!run) return true;
+        return run->spawn_score_popup(value, x, y, color);
     }
     // RunPausePlatform
     bool suspend_music() override;

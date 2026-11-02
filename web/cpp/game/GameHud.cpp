@@ -1,6 +1,7 @@
 // GameHud 生命周期：建句柄、interrupt 布局（与 th15 GameHud.cpp 逐行同构；
 // 脚本号按 th13 front.anm dump 锁定：残机 script30–37、灵击 script38–45）。
 #include "GameHud.hpp"
+#include <cstdio>
 
 namespace th13 {
 
@@ -79,10 +80,12 @@ bool GameHud::begin_opening_signature() {
         error = "sig.anm script1 child VM missing";
         return false;
     }
-    // 原版 VM 层是 25（script1 ins_304 0x19）；捕获里的 26 是 0x43b900 在层 26
-    // 遍历期冲批的提交层。DrawCapture 记 VM 层，设 26 才复刻基线 op 层
-    //（与 Application::draw_loading 的既有 26 约定一致）。
-    right->visual.layer = 26;
+    // 右半 VM 保持脚本层 25（sig.anm script1 ins_304 0x19），不得改成 26：
+    // 捕获里的 26 是 0x4679a0 在层 26 遍历期冲批的提交层，不是 VM 层。
+    // 原生 frame 5560 实证：对话气泡（front.anm script 176/192/208，层 25）
+    // 出现后，右半在层 25 批内被气泡左端帽的纹理切换冲刷（layer=25），且
+    // 排在气泡之前（同层按主链创建序）；若强设 26，port 会把右半排到气泡
+    // 之后，op 顺序与原生相反。
     opening_signature_right = animations.registry.handle(*right);
     // 单 VM tick（tick_instance）只推进这两条 VM，不碰本帧之前已建好的战斗
     // VM（自机/背景/特效在 RunScene::initialize 更早处创建）。
@@ -251,6 +254,9 @@ bool GameHud::initialize(const HudEntryContext& context) {
         trance_skull_label = 0;
         if (!update_trance()) return false;
     }
+    // 0x425170:527（新建 HUD）与 0x42b990→0x42d3c0（换关沿用 HUD）都以
+    // 0x42b030 无条件重写 script172 标签；new_run=false 时上面不会走到。
+    if (!trance_label_refresh()) return false;
     return true;
 }
 
@@ -263,7 +269,7 @@ bool GameHud::reset_for_retry() {
 //（DAT_004be808 灵界计，旧登记名白点/ending_points），不持第二份计量。
 // 172: 标签 2 (>=200) / 3；173: scale.x=uv_scale.x=floor(g/200)/3；
 // 175: scale.x=uv_scale.x=(g%200)/200、offset.x=floor(g/200)*16；174 原版不写。
-bool GameHud::update_trance() {
+bool GameHud::update_trance(bool force_label) {
     if (!gauge_main) return true;
     auto* root = animations.registry.find(gauge_main);
     if (!root) {
@@ -277,9 +283,10 @@ bool GameHud::update_trance() {
     if (value > kTranceMax) value = kTranceMax;
     if (auto* skull = animations.registry.find_child_script(*root, 172, 0)) {
         const i32 label = value >= kTranceSegment ? 2 : 3;
-        // pending_interrupt 每 tick 被解释器清零；仅在目标档变化时重发，
-        // 避免每帧重入标签 2 把循环动画复位（原版 +0x4a0 仅在值变时写）。
-        if (trance_skull_label != label) {
+        // 0x42b030:35/52 每次调用都无条件写 VM+0x4a0；pending_interrupt
+        // 每 tick 被解释器清零，因此同一标签也必须重发才能复位 script172
+        // 计时器/颜色插值。非 force 的 Draw 兜底保持条件写，避免每帧复位。
+        if (force_label || trance_skull_label != label) {
             skull->pending_interrupt = label;
             trance_skull_label = label;
         }

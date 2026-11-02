@@ -264,6 +264,7 @@ struct Scene {
         progress.chapter = entry == 2 ? 4 : 6;
         closed = false;
         for (int frame = 0; frame < max_frames; ++frame) {
+            if (frame % 100 == 0) std::fprintf(stderr,"[portrait-debug] entry=%d frame=%d stage=%d\n", int(entry), frame, int(progress.stage));
             input.held = input.pressed = (frame % 30 == 0) ? 1u : 0u;
             input.duration[0] = input.held ? 1 : 0;
             if (!scene->update()) {

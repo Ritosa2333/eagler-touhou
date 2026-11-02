@@ -22,6 +22,9 @@ class AnmManager final:public AnmObjectHost {
     std::vector<std::unique_ptr<Bank>> retired_banks;
     GameRandom& random;AnmEnvironment& environment;
     AnmVm* instantiate(AnmResource&,i32);
+    // 0x403800 模板拷贝保留 IP/插值通道：神霊拾取（0x438730→0x46f820）等
+    // 创建点必须从模板预跑停点续跑，不能从指令 0 重放。
+    AnmVm* instantiate_preserve_ip(AnmResource&,i32);
     bool initial_tick(AnmVm&);
     bool adopt_bank(i32,std::unique_ptr<Bank>);
 public:
@@ -64,8 +67,14 @@ public:
     bool sprite_fallback(i32 id)noexcept{auto* bank=resource(id);if(!bank)return false;environment.fallback_sprite_resource=bank;return true;}
     AnmVm* script_template(i32 id,u32 script)const noexcept;
     bool bind_template(AnmVm&,i32 id,i32 script);
+    // 0x403800 模板拷贝只重置 time，不重置 IP；道具内嵌 VM 用此包装。
+    bool bind_template_preserve_ip(AnmVm&,i32 id,i32 script);
     // game_coordinates：flags bit0 —— 位置从游戏坐标系平移 (+320,+16,0)。
     u32 create(i32 id,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float anm_arg=0,bool game_coordinates=false);
+    // 0x46f820 同路径，但按 0x403800 原语义保留模板 IP 与插值通道相位
+    //（只重置 VM 计时器）。神霊拾取 0x438730 创建点需要此语义：模板预跑
+    // 已把 op412 插值推进一拍，重放指令 0 会丢掉该相位。
+    u32 create_preserve_ip(i32 id,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float anm_arg=0,bool game_coordinates=false);
     // 副链尾创建（th15 调用面保留；0xc000 清除已并入 Registry::submit）。
     u32 create_overlay(i32 resource,i32 script){return create(resource,script,-1,4);}
     AnmVm* spawn_child(AnmVm&,i32 script,u32 ordering)override;

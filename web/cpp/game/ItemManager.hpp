@@ -124,10 +124,12 @@ struct ItemEvent {
         Extend = 4,      // 0x43d330 满碎片 +1 命（sound 0x11）
         SpiritGained = 5,// 0x438730 → 0x43d530（灵界值累加）
         BombGained = 6,  // 0x43d440/0x43d480 灵击 +1（sound 0x2e）
+        TranceGained = 7,// 0x43d530 每次灵界加值 → 0x42b030 无条件刷新（无音）
     };
     Kind kind = Kind::Collected;
     i32 value = 0;          // 弹出值/灵力增量/灵界增量
     float x = 0, y = 0;
+    u32 color = 0xffffffffu;  // 0x44ad60 第三参数（得分弹字 RGB，alpha 由绘制期距离覆盖）
 };
 
 class ItemManager final : public StageItemHost {

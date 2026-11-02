@@ -30,6 +30,10 @@ public:
     u32 presentation_instance=0;
     void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;
+    // 0x467350 的四角裁剪用 0x4dcc18+0xd8 的 2D 视口块（战场为 0x43be9b 的
+    // {116,2,408,476}），与 D3D viewport（0x43b900 设置，可为全屏）不同。
+    // 战场层 0..20 的绘制必须用该块裁剪，否则顶部/边缘的 quad 会多画。
+    GraphicsViewport clip;bool clip_set=false;
     AnmCamera scenery_camera;GraphicsViewport scenery_viewport;bool scenery_camera_ready=false;
     std::string error;explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(6144);shapes.reserve(192);}
     void flush();void invalidate();void set_viewport(const GraphicsViewport&);void set_camera(const AnmCamera&);
