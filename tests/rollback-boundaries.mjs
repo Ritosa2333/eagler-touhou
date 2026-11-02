@@ -12,17 +12,17 @@ try {
  for(let seat=0;seat<2;seat++)for(const [command,payload] of [['configure',{music:'none',language:'ja',sharedResources:[{path:'/data/gothic.ttf',url:'/font'}],options:{}}],['prepare-room',{}]]){
   const result=await page.evaluate(({seat,command,payload})=>window.command(seat,command,payload),{seat,command,payload});assert.equal(result.ok,true,JSON.stringify(result));
  }
- for(const kind of ['dialogue','stage-logo','stage-fade','midboss-create','midboss-retire','mai-branch','yuki-branch','next-stage','pause-restart','ghost-rescue','death']){
+ for(const kind of ['dialogue','stage-logo','stage-fade','midboss-create','midboss-retire','mai-branch','yuki-branch','mai-explosion','yuki-explosion','next-stage','pause-restart','ghost-rescue','death']){
   const result=await page.evaluate(kind=>{
    const modules=[...document.querySelectorAll('iframe')].map(f=>f.contentWindow.Module),frames=720;
-   const check=(v,message)=>{if(!v)throw Error(kind+': '+message);};
+   const check=(v,message)=>{if(!v)throw Error(kind+': '+message);},branching=kind.endsWith('branch')||kind.endsWith('explosion');
    for(let client=0;client<2;client++){
-    const m=modules[client],stage=kind.endsWith('branch')?3:0,warp=kind.startsWith('midboss')?1:kind.endsWith('branch')?2:0;
+    const m=modules[client],stage=branching?3:0,warp=kind.startsWith('midboss')?1:branching?2:0;
     check(m._th05_coop_start(3,client,1,747,0,1,3,0,0),'start');check(m._th05_native_coop_stage(stage,warp),'stage');
     for(let seat=0;seat<3;seat++){m._th05_native_coop_probe(3,seat,128);m._th05_native_coop_probe(6,seat,10000);}
     if(kind==='midboss-retire'){check(m._th05_tick(0),'create');check(m._th05_native_coop_probe(16,0,0),'defeat');}
-    if(kind.endsWith('branch')){for(let seat=0;seat<3;seat++)m._th05_coop_input(seat,0,0,0,0);check(m._th05_tick(0),'boss intro');}
-    if(kind.endsWith('branch'))check(m._th05_native_coop_probe(15,0,kind==='mai-branch'?1:0),'branch setup');
+    if(branching){for(let seat=0;seat<3;seat++)m._th05_coop_input(seat,0,0,0,0);check(m._th05_tick(0),'boss intro');}
+    if(branching)check(m._th05_native_coop_probe(kind.endsWith('explosion')?22:15,0,kind.startsWith('mai')?1:0),'branch setup');
     if(kind==='dialogue')check(m._th05_native_coop_probe(17,0,0),'dialogue');
     if(kind==='stage-logo')check(m._th05_native_coop_probe(18,0,0),'logo');
     if(kind==='stage-fade')check(m._th05_native_coop_probe(19,0,0),'fade');
@@ -32,7 +32,7 @@ try {
    }
    const input=(seat,f)=>{
     let buttons=kind==='ghost-rescue'?seat===2&&f<10&&f%2===0?64:0:32;
-    if(kind.endsWith('branch')||kind==='dialogue'&&f>55)buttons|=128;
+    if(branching||kind==='dialogue'&&f>55)buttons|=128;
     if(kind==='pause-restart'){if(seat===0&&(f===70||f===90))buttons|=4096;if(seat===2&&f===180)buttons|=32768;}
     return [buttons,0,0,0];
    };

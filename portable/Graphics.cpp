@@ -43,23 +43,33 @@ void TexCoord(float x,float y){u=x;v=y;}
 void Color(float r,float g,float b,float a){color={r,g,b,a};}
 void End(){
  if(vertices.empty())return;triangles.clear();GLenum mode=primitive;
+ const bool quads=primitive==GL_QUADS&&state.polygon!=GL_LINE&&vertices.size()%4==0;
  auto triangle=[&](int a,int b,int c){triangles.push_back(vertices[a]);triangles.push_back(vertices[b]);triangles.push_back(vertices[c]);};
- if(primitive==GL_QUADS){mode=GL_TRIANGLES;for(size_t i=0;i+3<vertices.size();i+=4){if(state.polygon==GL_LINE){for(int j=0;j<4;j++){triangles.push_back(vertices[i+j]);triangles.push_back(vertices[i+(j+1)%4]);}mode=GL_LINES;}else{triangle(i,i+1,i+2);triangle(i,i+2,i+3);}}}
+ if(quads)mode=GL_TRIANGLES;
+ else if(primitive==GL_QUADS){mode=GL_TRIANGLES;for(size_t i=0;i+3<vertices.size();i+=4){if(state.polygon==GL_LINE){for(int j=0;j<4;j++){triangles.push_back(vertices[i+j]);triangles.push_back(vertices[i+(j+1)%4]);}mode=GL_LINES;}else{triangle(i,i+1,i+2);triangle(i,i+2,i+3);}}}
  else if(primitive==GL_POLYGON){mode=state.polygon==GL_LINE?GL_LINE_LOOP:GL_TRIANGLES;if(mode==GL_TRIANGLES)for(size_t i=1;i+1<vertices.size();i++)triangle(0,i,i+1);else triangles=vertices;}
  else if(primitive==GL_TRIANGLE_STRIP){mode=GL_TRIANGLES;for(size_t i=0;i+2<vertices.size();i++)if(i&1)triangle(i+1,i,i+2);else triangle(i,i+1,i+2);}
  else triangles=vertices;
  if(mode==GL_LINE_LOOP){triangles.clear();for(size_t i=0;i<vertices.size();i++){triangles.push_back(vertices[i]);triangles.push_back(vertices[(i+1)%vertices.size()]);}mode=GL_LINES;}
+ const auto& points=quads?vertices:triangles;
+ const size_t count=quads?vertices.size()/4*6:triangles.size();
  State drawState=state;const Texture* region=nullptr;int atlasSize=1;
- if(spriteAtlases&&state.textured){auto found=textures.find(state.texture);if(found!=textures.end()&&found->second.atlas&&std::all_of(triangles.begin(),triangles.end(),[](const VertexData& p){return p.u>=0&&p.u<=1&&p.v>=0&&p.v<=1;})){region=&found->second;drawState.texture=region->atlas;atlasSize=textures.at(region->atlas).width;}}
+ if(spriteAtlases&&state.textured){auto found=textures.find(state.texture);if(found!=textures.end()&&found->second.atlas&&std::all_of(points.begin(),points.end(),[](const VertexData& p){return p.u>=0&&p.u<=1&&p.v>=0&&p.v<=1;})){region=&found->second;drawState.texture=region->atlas;atlasSize=textures.at(region->atlas).width;}}
  const auto texture=[](const State& value){return value.textured&&value.texture?value.texture:white;};
  const bool matches=texture(drawState)==texture(batchState)&&drawState.stipple==batchState.stipple&&drawState.blend==batchState.blend&&drawState.depth==batchState.depth&&drawState.scissor==batchState.scissor&&drawState.src==batchState.src&&drawState.dst==batchState.dst&&drawState.env==batchState.env&&drawState.textured==batchState.textured&&drawState.mask==batchState.mask&&(!drawState.scissor||drawState.clip==batchState.clip)&&mode==batchMode;
- if(!batch.empty()&&(!matches||batch.size()+triangles.size()>65536))Flush();
+ if(!batch.empty()&&(!matches||batch.size()+count>65536))Flush();
  if(batch.empty()){batchState=drawState;batchMode=mode;}
  const Matrix transform=Multiply(projection,model);
- for(auto point:triangles){if(region){point.u=(region->x+point.u*region->width)/atlasSize;point.v=(region->y+point.v*region->height)/atlasSize;}const float x=point.x,y=point.y,z=point.z;
+ const auto transformed=[&](VertexData point){if(region){point.u=(region->x+point.u*region->width)/atlasSize;point.v=(region->y+point.v*region->height)/atlasSize;}const float x=point.x,y=point.y,z=point.z;
   point.x=transform[0]*x+transform[4]*y+transform[8]*z+transform[12];point.y=transform[1]*x+transform[5]*y+transform[9]*z+transform[13];
-  point.z=transform[2]*x+transform[6]*y+transform[10]*z+transform[14];point.w=transform[3]*x+transform[7]*y+transform[11]*z+transform[15];batch.push_back(point);
- }
+  point.z=transform[2]*x+transform[6]*y+transform[10]*z+transform[14];point.w=transform[3]*x+transform[7]*y+transform[11]*z+transform[15];return point;
+ };
+ // A sprite's shared triangle corners have identical attributes. Transform its
+ // four source vertices once, then preserve the original six-vertex draw order.
+ if(quads){for(size_t i=0;i<vertices.size();i+=4){
+  const auto a=transformed(vertices[i]),b=transformed(vertices[i+1]),c=transformed(vertices[i+2]),d=transformed(vertices[i+3]);
+  batch.push_back(a);batch.push_back(b);batch.push_back(c);batch.push_back(a);batch.push_back(c);batch.push_back(d);
+ }}else for(const auto& point:triangles)batch.push_back(transformed(point));
 }
 void Flush(){
  if(batch.empty())return;
@@ -78,7 +88,7 @@ void MatrixMode(GLenum value){matrixMode=value;}
 void PushMatrix(){(matrixMode==GL_PROJECTION?ps:ms).push_back(Current());}
 void PopMatrix(){auto& s=matrixMode==GL_PROJECTION?ps:ms;if(s.empty())throw std::runtime_error("Graphics matrix stack underflow");Current()=s.back();s.pop_back();}
 void Identity(){Current()=Unit();}
-void Ortho(double l,double r,double b,double t,double n,double f){Matrix m=Unit();m[0]=2/(r-l);m[5]=2/(t-b);m[10]=-2/(f-n);m[12]=-(r+l)/(r-l);m[13]=-(t+b)/(t-b);m[14]=-(f+n)/(f-n);Current()=Multiply(Current(),m);}
+void Ortho(double l,double r,double b,double t,double n,double f){Matrix m=Unit();m[0]=2/(r-l);m[5]=2/(t-b);m[10]=-2/(f-n);m[12]=-(r+l)/(r-l);m[13]=-(t+b)/(t-b);m[14]=-(f+n)/(f-n);Current()=Current()==Unit()?m:Multiply(Current(),m);}
 void Translate(float x,float y,float z){Matrix m=Unit();m[12]=x;m[13]=y;m[14]=z;Current()=Multiply(Current(),m);}
 void Scale(float x,float y,float z){Matrix m=Unit();m[0]=x;m[5]=y;m[10]=z;Current()=Multiply(Current(),m);}
 void Enable(GLenum value){if(value==GL_TEXTURE_2D)state.textured=true;else if(value==GL_POLYGON_STIPPLE)state.stipple=true;else{if(value==GL_BLEND)state.blend=true;if(value==GL_DEPTH_TEST)state.depth=true;if(value==GL_SCISSOR_TEST)state.scissor=true;}}

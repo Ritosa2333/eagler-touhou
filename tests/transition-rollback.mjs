@@ -15,15 +15,17 @@ try {
  for(const [command,payload] of [['configure',{music:'none',language:'ja',sharedResources:[{path:'/data/gothic.ttf',url:'/font'}],options:{}}],['prepare-room',{}]]){
   const result=await page.evaluate(({command,payload})=>window.command(0,command,payload),{command,payload});assert.equal(result.ok,true,JSON.stringify(result));
  }
- for(const count of [2,3])for(const kind of ['dialogue','stage-logo','stage-fade']){
-  const frames=kind==='dialogue'?360:kind==='stage-logo'?120:35,stage=0,warp=0;
+ for(const count of [2,3])for(const kind of ['dialogue','stage-logo','stage-fade','mai-explosion','yuki-explosion']){
+  const branch=kind.endsWith('explosion'),frames=branch?150:kind==='dialogue'?360:kind==='stage-logo'?120:35,stage=branch?3:0,warp=branch?2:0;
   const result=await page.evaluate(({count,stage,warp,frames,spares,bombs,kind})=>{
    const m=document.querySelector('iframe').contentWindow.Module;
    const check=(value,message)=>{if(!value)throw Error(message);};
    check(m._th05_coop_start_stock(count,0,stage===6?4:1,741,stage%4,(stage+1)%4,(stage+2)%4,0,0,spares,bombs),'start');
    check(m._th05_native_coop_stage(stage,warp),'stage');
    for(let seat=0;seat<count;seat++){m._th05_native_coop_probe(3,seat,128);m._th05_native_coop_probe(6,seat,10000);}
-   if(kind==='dialogue'){
+   if(kind.endsWith('explosion')){
+    for(let seat=0;seat<count;seat++)m._th05_coop_input(seat,0,0,0,0);check(m._th05_tick(0),'boss intro');check(m._th05_native_coop_probe(22,0,kind==='mai-explosion'?1:0),'defeat');check(m._th05_native_coop_probe(21,0,0)===0xfd,'explosion phase');
+   }else if(kind==='dialogue'){
     check(m._th05_native_coop_probe(17,0,0),'dialogue');
     for(let f=0;f<55;f++){for(let seat=0;seat<count;seat++)m._th05_coop_input(seat,0,0,0,0);check(m._th05_tick(0),'text warmup');}
    }else check(m._th05_native_coop_probe(kind==='stage-logo'?18:19,0,0),'animation');
@@ -60,7 +62,7 @@ try {
     return {kind,count,stage,warp,frames,comparisons,stalls,rollbacks:m._th05_net_stat(0),resimulated:m._th05_net_stat(1),predicted:m._th05_net_stat(2),maxBytes,maxHistory,audioEvents:actualSounds.length,finalGame};
    }finally{m._th05_net_close();m.eaglerAudio=originalAudio;}
   },{count,stage,warp,frames,spares,bombs,kind});
-  assert.ok(result.rollbacks>0,JSON.stringify(result));assert.ok(result.comparisons>0);assert.ok(result.maxHistory<=8);report.cases.push(result);
+  if(process.env.TH05_BOUNDARY_BASELINE!=='1'||!kind.endsWith('explosion'))assert.ok(result.rollbacks>0,JSON.stringify(result));assert.ok(result.comparisons>0);assert.ok(result.maxHistory<=8);report.cases.push(result);
   console.log(`PASS ${count}P ${kind}: ${result.rollbacks} corrections, ${result.maxBytes} bytes/checkpoint`);
  }
  assert.deepEqual(errors,[]);report.errors=errors;await writeFile(resolve(out,'transitions.json'),JSON.stringify(report,null,2)+'\n');

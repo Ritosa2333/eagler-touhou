@@ -62,6 +62,8 @@ struct PracticeTests {
    case 18:s->m_bLogo=true;s->m_logoFrame=0;break;
    case 19:s->SetQuit(STAGE_END_CLEAR);break;
    case 20:s->SaveSeat();s->BindSeat(0);return s->RollbackPredictable();
+   case 22:{auto* boss=dynamic_cast<CBossStage4*>(s->m_pBoss);if(!boss)return 0;boss->m_whichDie=value;boss->m_curPhase=0xfd;boss->m_curPhaseFrame=0;boss->m_bSuccessDefeat=true;boss->m_bDrawCurvingBullet=false;s->m_pLaser->RemoveLaser(0);break;}
+   case 21:{int phase=s->m_pBoss?s->m_pBoss->GetCurPhase():-1;s->SaveSeat();s->BindSeat(0);return phase;}
    case 12:s->SetQuit(STAGE_END_CLEAR);s->m_nQuitFrameLeft=0;break;
    default:return 0;
   }

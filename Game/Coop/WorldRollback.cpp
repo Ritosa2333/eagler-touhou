@@ -54,8 +54,9 @@ bool CStage::RollbackPredictable() const {
   const int pos=m_pBackground->m_curPos,speed=m_pBackground->m_curSpeed,next=pos+speed;
   if((next+1279)/1280>(pos+1279)/1280&&m_pStageRes->m_pStageStd->m_pBGScrollSpeedArray[(next+1279)/1280+4]==0)return false;
  }
- // Mai/Yuki's branch replaces the combined actor and runs another resource VM.
- if(dynamic_cast<CBossStage4*>(m_pBoss)&&m_pBoss->GetCurPhase()>=0xfd)return false;
+ // Only 0xff installs the branch dialogue or replaces the combined actor.
+ // Its 0xfd/0xfe explosion ticks mutate fixed rollback storage for 160 frames.
+ if(dynamic_cast<CBossStage4*>(m_pBoss)&&m_pBoss->GetCurPhase()==0xff)return false;
  return true;
 }
 
