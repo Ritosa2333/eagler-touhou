@@ -36,7 +36,8 @@ try{
     if(head&&actual._th05_net_stat(5)===head&&actual._th05_net_confirmed()>=head-1){check((actual._th05_coop_checksum()>>>0)===expected[head-1],'confirmed mismatch at '+head);comparisons++;}clock++;
    }
    check(head===frames&&actual._th05_net_confirmed()===frames-1&&comparisons>0,'confirmed drain');check(actual._th05_coop_value(ghost,3)===1&&actual._th05_coop_value(ghost,0)===0,'ghost carried');
-   return {count,characters,ghost,frames,comparisons,rollbacks:actual._th05_net_stat(0),passed:true};
+   const confirmedHashes=[];for(let frame=120;frame<=frames;frame+=120){const expected=oracle._th05_net_hash(frame)>>>0,observed=actual._th05_net_hash(frame)>>>0;check(observed===expected,'room checksum mismatch at '+frame);confirmedHashes.push({frame,hash:observed});}
+   return {count,characters,ghost,frames,comparisons,confirmedHashes,rollbacks:actual._th05_net_stat(0),passed:true};
   },{count,characters,ghost});report.cases.push(row);console.log('PASS '+JSON.stringify(row));
  }
  assert.deepEqual(errors,[]);report.errors=errors;report.passed=true;await writeFile(resolve(out,'ghost-transition.json'),JSON.stringify(report,null,2)+'\n');
