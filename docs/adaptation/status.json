@@ -2282,10 +2282,10 @@
       "game": "th13",
       "variant": "normal",
       "directory": "ports/th13",
-      "sourceDigest": "e97663c56bf5f070c05ed6de911ee455b52d15e1d4cc56f60973e5c194c4c35f",
+      "sourceDigest": "fc07eafee970f94053333b54ab6d3fb0b8e1fd10987fcc09c452b2b1af83d534",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 105,
+      "translationUnits": 109,
       "features": {
         "thcrap": false,
         "thprac": false

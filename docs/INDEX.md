@@ -1,6 +1,6 @@
 # 文档总表
 
-共 360 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 363 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -45,7 +45,7 @@
 | 作品入口 | [ports/th11/README.md](../ports/th11/README.md) | 東方地霊殿 TH11 |
 | 作品入口 | [ports/th12-mp/README.md](../ports/th12-mp/README.md) | 东方星莲船多人合作版 |
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
-| 作品入口 | [ports/th13/README.md](../ports/th13/README.md) | 东方神灵庙 · th13 |
+| 作品入口 | [ports/th13/README.md](../ports/th13/README.md) | 东方神灵庙（th13）移植 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
@@ -134,6 +134,7 @@
 | 作品源码文档 | [ports/th13/docs/plans/draw-contract.md](../ports/th13/docs/plans/draw-contract.md) | 语义绘制清单契约（draw contract）v1 |
 | 作品源码文档 | [ports/th13/docs/plans/ecl-vm.md](../ports/th13/docs/plans/ecl-vm.md) | th13 ECL 虚拟机（ECL v13）行为规格 |
 | 作品源码文档 | [ports/th13/docs/plans/event-contract.md](../ports/th13/docs/plans/event-contract.md) | stage1 事件契约（oracle 对拍合同） |
+| 作品源码文档 | [ports/th13/docs/plans/feedback-closure-todo.md](../ports/th13/docs/plans/feedback-closure-todo.md) | TH13 feedback closure todo |
 | 作品源码文档 | [ports/th13/docs/plans/hud-capture-plan.md](../ports/th13/docs/plans/hud-capture-plan.md) | 对局窗 HUD 捕获面扩展方案（S2 前置研究报告） |
 | 作品源码文档 | [ports/th13/docs/plans/oracle-entry.md](../ports/th13/docs/plans/oracle-entry.md) | TH13 原版可直调入口施工图（Unicorn oracle） |
 | 作品源码文档 | [ports/th13/docs/plans/render-chain.md](../ports/th13/docs/plans/render-chain.md) | TH13 渲染提交链逆向 —— 假设备语义捕获施工图 |
@@ -145,6 +146,7 @@
 | 作品源码文档 | [ports/th13/docs/plans/title-anm-blueprint.md](../ports/th13/docs/plans/title-anm-blueprint.md) | th13 主菜单 ANM 蓝图（title.anm / titlev.anm 脚本号总表与重锚方案） |
 | 作品源码文档 | [ports/th13/docs/plans/ui-base.md](../ports/th13/docs/plans/ui-base.md) | TH13–15 同代引擎 UI 基座移植方案 |
 | 作品源码文档 | [ports/th13/tools/replay-verifier/README.md](../ports/th13/tools/replay-verifier/README.md) | replay-verifier |
+| 作品源码文档 | [ports/th13/web/sdl-runtime/build-badge.txt](../ports/th13/web/sdl-runtime/build-badge.txt) | af9bd64b |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
@@ -362,6 +364,7 @@
 | 许可证与声明 | [services/turn/LICENSE](../services/turn/LICENSE) | LICENSE |
 | 协作约定 | [AGENTS.md](../AGENTS.md) | 普通版与 MP 维护 |
 | 协作约定 | [launcher/tools/maintainer/operator-delivery/payload/AGENTS.md](../launcher/tools/maintainer/operator-delivery/payload/AGENTS.md) | 部署代理约定 |
+| 协作约定 | [ports/th13/AGENTS.md](../ports/th13/AGENTS.md) | th13 端口局部入口 |
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
