@@ -56,6 +56,18 @@ try{
  }
  assert.ok(report.running.every(r=>r.route===route));assert.ok(report.running.every(r=>r.saveRoot==='/savesth05mp'));
  const beforeX=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(1,5));
+ // Chromium emits real pen PointerEvents through the iframe canvas path.
+ const pen=await page.context().newCDPSession(page),surface=await page.frameLocator('iframe').first().locator('canvas').boundingBox();
+ const penX=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(0,5));
+ const stylus=async(type,x,down=false)=>pen.send('Input.dispatchMouseEvent',{type,pointerType:'pen',x:surface.x+x,y:surface.y+300,button:type==='mouseMoved'?'none':'left',buttons:down?1:0});
+ await stylus('mouseMoved',200);await page.waitForTimeout(100);
+ assert.equal(await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(0,5)),penX,'Pen hover must not move the player');
+ await stylus('mousePressed',200,true);await stylus('mouseMoved',230,true);await page.waitForTimeout(180);await stylus('mouseReleased',230);await page.waitForTimeout(150);
+ const penAfter=await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>f.contentWindow.Module._th05_coop_value(0,5)));
+ assert.ok(penAfter.every(x=>x>penX&&x-penX<1600),JSON.stringify({penX,penAfter}));
+ await stylus('mouseMoved',280);await page.waitForTimeout(150);
+ const penHover=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(0,5));assert.equal(penHover,penAfter[0],'Lifted pen must release movement');
+ report.pen={penX,penAfter,penHover};await pen.detach();
  await page.evaluate(()=>command(1,'keyboard',{code:'ArrowLeft',down:true}));await page.waitForTimeout(300);await page.evaluate(()=>command(1,'keyboard',{code:'ArrowLeft',down:false}));
  const positions=await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>Array.from({length:2},(_,seat)=>f.contentWindow.Module._th05_coop_value(seat,5))));assert.ok(positions[0][1]<beforeX,JSON.stringify({beforeX,positions}));report.positions=positions;
  // The phone path owns a real short touch edge in the native pause menu.
