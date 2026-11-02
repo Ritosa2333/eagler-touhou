@@ -3,6 +3,7 @@
 #include "../Game/Game.h"
 #include "../Game/Stage/Stage.h"
 #include "../Game/Stage/Chara/Chara.h"
+#include "../Game/Stage/CharaBullet/CharaBullet.h"
 #include "../Game/Stage/Laser/Laser.h"
 #include "../Game/Stage/StageResource.h"
 #include "../Game/Stage/Dialogue/Dialogue.h"
@@ -35,14 +36,23 @@ struct PracticeTests {
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
   auto* s=static_cast<CStage*>(game->m_pCurScheme);if(!s->Cooperative()||seat<0||seat>=s->m_seatCount)return 0;
   s->BindSeat(seat);auto* p=s->m_pChara;
-  if(op==13){
+  if(op>=27&&op<=29){
+   web::graphics::BeginFrame();glDisable(GL_SCISSOR_TEST);glColorMask(1,1,1,1);glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);
+   if(op==27)p->DrawCollisionArea();
+   else if(op==28){
+    if(value<0||value>=16)return 0;
+    s->m_pCharaBullet->Initialize();s->m_pCharaBullet->AddBullet(p->m_curX,p->m_curY,20+value,CHARA_BULLET_TYPE_NORMAL,0,0,0,1);s->m_pCharaBullet->Draw();
+   }else{practice::Options().numericPower=value!=0;s->DrawCoopStatistics();}
+   web::graphics::Present();s->SaveSeat();s->BindSeat(0);return 1;
+  }
+  if(op==13||op==30){
    if(value<0||value>19)return 0;
    auto* image=value==19?s->m_pStageRes->m_pCoopGhost:s->m_pStageRes->m_patternArray.GetImagePtr(value<3?value:20+value-3);
    if(!image)return 0;
    glBindTexture(GL_TEXTURE_2D,image->GetTexID());GLint width,height;
    glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&width);glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,&height);
    std::vector<unsigned char> pixels(width*height*4);glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
-   unsigned hash=2166136261u;for(int y=0;y<image->m_height;y++)for(int x=0;x<image->m_width*4;x++)hash=(hash^pixels[y*width*4+x])*16777619u;
+   unsigned hash=2166136261u;for(int y=0;y<image->m_height;y++)for(int x=0;x<image->m_width;x++)for(int channel=0;channel<(op==30?3:4);channel++){const auto* pixel=&pixels[(y*width+x)*4];hash=(hash^(op==30&&!pixel[3]?0:pixel[channel]))*16777619u;}
    s->SaveSeat();s->BindSeat(0);return int(hash);
   }
   switch(op){

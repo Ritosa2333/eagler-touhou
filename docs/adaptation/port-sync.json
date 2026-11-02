@@ -1016,7 +1016,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+      "base": "194f57e4a93025b3a215fb10407297acb9738ae7",
       "history": [
         {
           "kind": "manual",
@@ -1053,6 +1053,16 @@
             "ports/th05-mp/tests/pen-browser.mjs"
           ],
           "note": "普通版数位笔测试使用单人初始化；多人保留自己的双端数位笔与触控验收，不迁入单人测试夹具"
+        },
+        {
+          "kind": "manual",
+          "base": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+          "source": "194f57e4a93025b3a215fb10407297acb9738ae7",
+          "targetHead": "fcf0ae6c6700989d8c92dc885351c4f0e00a7f19",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp"
+          ],
+          "note": "Merged the normal port's centered 2x2 display indicator through projected history; MP keeps its local-seat rendering and rollback ownership."
         }
       ]
     }
