@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/628f1d41b5d27c8298e8fc8e2c2f3ce84145935f)；[剩余验收](https://github.com/AdingApkgg/thp/blob/628f1d41b5d27c8298e8fc8e2c2f3ce84145935f/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/8ed7ff490fba2fc445f2b73acd90829dec92468b)；[剩余验收](https://github.com/AdingApkgg/thp/blob/8ed7ff490fba2fc445f2b73acd90829dec92468b/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [魔理沙A Hard无异常前缀](https://github.com/AdingApkgg/thp/blob/8ed7ff490fba2fc445f2b73acd90829dec92468b/docs/porting/TH14_HARD_CLEAN_EXCEPTION_PREFIX_NOV03.md)：同录像静音31,200回调实际一至二面，无报告异常且通过异常、活动关卡时间和字段组合检查；先前异常未复现、原因未明，该前缀未到第三面，也未证明录像EOF。
 
 2026-11-03 [活动关卡初始化覆盖](https://github.com/AdingApkgg/thp/blob/628f1d41b5d27c8298e8fc8e2c2f3ce84145935f/docs/porting/TH14_INITIALIZE_ACTIVE_STAGE_NOV03.md)：新增检查拒绝已推进关卡的原版事件与模型输入同时遗漏；16份旧记录的时间部分通过，其中一份仍因异常未过独立门槛。46份清单记录有45份无报告异常，30组各有无异常记录，28组有无异常的全部目标关卡入口；入口不代表整局通过。
 
