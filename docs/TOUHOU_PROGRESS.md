@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/4acbbc398fe3648ca8362e4fe803f56ee87818b7)；[剩余验收](https://github.com/AdingApkgg/thp/blob/4acbbc398fe3648ca8362e4fe803f56ee87818b7/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/e0c7b378ecc5741c9ab907ffcd6726f2f1ad6ad6)；[剩余验收](https://github.com/AdingApkgg/thp/blob/e0c7b378ecc5741c9ab907ffcd6726f2f1ad6ad6/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-02 异步作用域回归：[当前 RNG 在 Asyncify 暂停／恢复中的检查](https://github.com/AdingApkgg/thp/blob/e0c7b378ecc5741c9ab907ffcd6726f2f1ad6ad6/docs/porting/TH14_RNG_ASYNC_SCOPE_NOV02.md) 共80组组合、320个生产队列回调通过。覆盖五个RNG边界、临界区开／关、script／visual RNG和失败状态；每组暂停期间扩展Wasm内存并排队输入、加载和帧回调，2,048个栈保护字、嵌套作用域恢复与递归观察抑制均正确。故意绕过输入队列的破坏控制检出顺序错误。未修改玩法，未创建浏览器／窗口或音频设备；完整ANM更新、原版线程时序、浏览器界面和帧率不在本项通过范围。模式表正文与结构化清单同步为30／27，旧严格失败继续保留；整作1:1未完成。
 
 2026-11-02 RNG 内部交付修复：[读取／写回之间的初始化恢复](https://github.com/AdingApkgg/thp/blob/4acbbc398fe3648ca8362e4fe803f56ee87818b7/docs/porting/TH14_RNG_STORE_BOUNDARY_NOV02.md) 已合入当前核心。新的实际原版灵梦B Normal受控采样完成34,000回调：主线程保持已读出的旧种子，worker执行原始Sleep、恢复及全局复制后，主线程再写回缓存结果。982行VM／303字段、318个战斗检查点、所选状态、相机／HUD及初始3,275次发布严格及独立一致；此前子动画指令中的另一条34,000回调也保持通过。800组原指令组件覆盖两种临界区模式，初版遗漏的40处16位返回重读错误在发布前修正并保留失败；不向生产引擎提供原版种子／VM字段或推进次数。141对象全重编，不含新测试接口的普通形态十六份自然记录共1,579,705回调全部严格及独立通过。旧36,826回调独立交错仍有种子／计数14,403／1,702及VM719／战斗488处差异；十条首个Player前的首次异常通知保留，冷启动与异常原因未验收。新核心完整Application和浏览器需另验，不继承此前结果；模式仍为30／27、全部wholeModeEquivalent为假，原版普通GUI、全模式、整局原版像素／PCM、指针Z及独立调度等继续，整作1:1未完成。
 
