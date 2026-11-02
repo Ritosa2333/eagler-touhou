@@ -1,6 +1,6 @@
 # 文档总表
 
-共 438 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 440 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -24,6 +24,7 @@
 | 适配指南 | [docs/adaptation/room-start-20261019.md](adaptation/room-start-20261019.md) | 房间预加载与首帧确认 ｜ 2026-10-19 |
 | 适配指南 | [docs/adaptation/runtime.md](adaptation/runtime.md) | 启动与资源 |
 | 适配指南 | [docs/adaptation/storage.md](adaptation/storage.md) | 存档与 Replay |
+| 适配指南 | [docs/adaptation/th05-presentation.md](adaptation/th05-presentation.md) | TH05 判定点与多人配色 |
 | 适配指南 | [docs/adaptation/th05-spectators.md](adaptation/th05-spectators.md) | TH05 合作观战 |
 | 适配指南 | [docs/adaptation/th07-border-dialogue-20261019.md](adaptation/th07-border-dialogue-20261019.md) | th07 共享结界与对话 ｜ 2026-10-19 |
 | 适配指南 | [docs/adaptation/th11-spell-time-20261019.md](adaptation/th11-spell-time-20261019.md) | th11 多人符卡结算计时 ｜ 2026-10-19 |
@@ -233,6 +234,7 @@
 | 历史记录 | [archive/th05-mp-performance-20261102/README.md](../archive/th05-mp-performance-20261102/README.md) | TH05 多人性能验收 |
 | 历史记录 | [archive/th05-native-eagler-20261101/README.md](../archive/th05-native-eagler-20261101/README.md) | TH05 原生 Eagler 验收 |
 | 历史记录 | [archive/th05-pen-20261102/README.md](../archive/th05-pen-20261102/README.md) | TH05 数位笔输入 |
+| 历史记录 | [archive/th05-pixels-20261102/README.md](../archive/th05-pixels-20261102/README.md) | TH05 四像素判定点与多人配色验收 |
 | 历史记录 | [archive/th05-render-input-20261101/README.md](../archive/th05-render-input-20261101/README.md) | TH05 渲染、冷启动输入与简体显示 |
 | 历史记录 | [archive/th05-rollback-20261102/README.md](../archive/th05-rollback-20261102/README.md) | TH05 原生多人回滚 |
 | 历史记录 | [archive/th05-room-stock-20261102/README.md](../archive/th05-room-stock-20261102/README.md) | TH05 资源侧栏与房间设置 |
