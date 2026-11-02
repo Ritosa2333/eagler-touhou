@@ -519,7 +519,7 @@ bool AudioDevice::mix(float* pcm, u32 frames) {
         const float volume = float(std::clamp(music_volume, 0, 100)) / 100.f;
         const float inverse = 1.f - volume;
         const i32 base = a.fade_total ? i32(i64(a.fade) * 5000 / a.fade_total) - 5000 : 0;
-        const float gain = volume == 0.f ? 0.f : amplitude(i32((1.f - inverse * inverse) * (base + 5000)) - 5000);
+        const float gain = !music_enabled || volume == 0.f ? 0.f : amplitude(i32((1.f - inverse * inverse) * (base + 5000)) - 5000);
         for (u32 frame = 0; frame < frames; ++frame) {
             // Normal tracks are 44100 Hz. Original alternate/spirit tracks
             // carry 22050 Hz PCM in the same archive and consume half as fast.

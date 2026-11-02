@@ -32,6 +32,7 @@ public:
     };
     std::string error;
     i32 music_volume = 100;
+    bool music_enabled = true;
     // Global SE volume = original DAT_004e4770. 0x44ed70 writes it from the
     // config byte DAT_004dc893 every time the options change (0x44dd00), so it
     // is live state, not a startup constant. 0x4613c0 reads it at each voice
