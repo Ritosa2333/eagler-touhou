@@ -2,7 +2,7 @@
 // belong to Launcher. Tap is the default; future titles can explicitly opt
 // into hold semantics for charge/release mechanics.
 export const functionKeySpec = Object.freeze({ code: "KeyC", key: "c", keyCode: 67 });
-export const functionKeyGames: ReadonlySet<string> = new Set(["th11"]);
+export const functionKeyGames: ReadonlySet<string> = new Set(["th11", "th13"]);
 
 export function createFunctionKeyOwner(send: (down: boolean) => void,
   mode: "tap" | "hold" = "tap",
