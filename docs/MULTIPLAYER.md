@@ -23,6 +23,8 @@
 
 素材来源与 PNG 哈希见 `resources/player-art/source.json`。运行 `python scripts/generate-player-art.py --zip /path/to/th05-four-player-colors.zip` 从审定包生成内置纹理；构建通过 `--check` 验证生成内容。纹理在关卡载入时解码并组成精灵图集，游戏帧内复用。
 
+判定点与普通版共用居中的 2×2 原生像素方点。低速／常驻开关控制显示，不影响碰撞范围。`tests/player-pixels-browser.mjs` 检查整数与小数位置的四个像素，以及四角色三配色的 192 个射弹帧和原火力槽／数字火力两种侧栏的 24 个机型标记；与 `tests/player-art-browser.mjs` 的 240 张审定纹理校验配合，核对 ZIP 素材和实际 WebGL 输出。
+
 ## 画面与显示配置
 
 侧栏沿用 PR #143 的原生像素字形、分数位置、各席生命／Bomb／Power 资源行、公共点数／擦弹／梦槽及底部 Enemy 血条。两人和三人共用固定的 128 像素侧栏，游戏世界保留 384 像素宽度。
