@@ -189,7 +189,7 @@ async function motionAcceptance(mode){
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:mode==='system-reduced'?'reduce':'no-preference'}]);
   await page.evaluateOnNewDocument(({theme,mode})=>{
     localStorage.setItem('eagler.book.theme',JSON.stringify(theme));
-    localStorage.setItem('eagler.book.less-motion',JSON.stringify(mode==='site-reduced'));
+    localStorage.setItem('eagler-touhou-less-motion-v1',mode==='site-reduced'?'1':'0');
     localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');
   },{theme,mode});
   await go('/');await page.waitForSelector('#mastheadMenuToggle:not(:disabled)');await page.waitForSelector('#eaglerPreload',{hidden:true});await closeNotice();
@@ -198,7 +198,11 @@ async function motionAcceptance(mode){
   await verifyMotion(mode+'-close','closed',()=>click('#libraryBack'),options);
   if(mode==='normal'){
     await click('#bookGameGrid .book-game-link');await page.waitForSelector('.tools.is-open',{visible:true});
-    await verifyMotion('normal-back-forward','open',async()=>{await page.goBack();await page.goForward();},{waitForInput:false});
+    await verifyMotion('normal-back-forward','open',async()=>{
+      await page.goBack();await page.waitForFunction(()=>!document.body.classList.contains('library-tools-open'));
+      await page.goForward();await page.waitForFunction(()=>document.body.classList.contains('library-tools-open'));
+    },{waitForInput:false});
+    await page.waitForFunction(()=>document.activeElement?.id==='libraryBack');
     await verifyMotion('normal-escape','closed',()=>page.keyboard.press('Escape'));
   }
 }

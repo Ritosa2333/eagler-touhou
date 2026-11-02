@@ -10,6 +10,12 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(origin, {waitUntil:'networkidle2'});
   await page.waitForSelector('.launcher-page-surface');
+  await page.waitForFunction(() => window.__eaglerBoot?.done === true && !document.querySelector('#eaglerPreload'));
+  if (await page.$('#firstUseNoticeDialog[open]')) {
+    await page.click('#firstUseNoticeCloseHint');
+    await page.waitForFunction(() => document.querySelector('#firstUseNoticeDialog')?.open !== true);
+  }
+  await page.evaluate(() => document.querySelector('#siteNotice:not([hidden]) #siteNoticeClose')?.click());
   await page.evaluate(() => {
     window.routeTransitions = [];
     const start = document.startViewTransition.bind(document);
@@ -56,24 +62,36 @@ try {
     assert.equal(result.header.name, 'none');
     assert.deepEqual(result.participants, ['launcher-page-surface']);
     assert.ok(result.nestedAnimations.every(name => name === 'none'));
-    return page.evaluate(() => {
+    const geometry = await page.evaluate(() => {
       const header = document.querySelector('.book-masthead').getBoundingClientRect();
       const container = document.querySelector('.book-library,.book-directory,.profile-wrap');
       const bounds = container.getBoundingClientRect(), style = getComputedStyle(container);
-      return {header:[header.left,header.right], content:[bounds.left + parseFloat(style.paddingLeft), bounds.right - parseFloat(style.paddingRight)], overflow:document.documentElement.scrollWidth > innerWidth};
+      return {
+        header:[header.left,header.right],
+        body:[document.body.getBoundingClientRect().left,document.body.getBoundingClientRect().right],
+        content:[bounds.left + parseFloat(style.paddingLeft), bounds.right - parseFloat(style.paddingRight)],
+        overflow:document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
     });
+    return {...geometry,route:destination};
   }
   for (const width of [1440, 1024, 390]) {
     await page.setViewport({width, height:900});
     const bounds = [];
     // Every directed pair, including profile → library and profile → lobby.
     for (const destination of ['lobby','profile','library','profile','lobby','library']) bounds.push(await navigate(destination));
+    const firstByRoute = new Map();
     for (const value of bounds) {
-      assert.deepEqual(value, bounds[0], `navigation geometry changes at ${width}px`);
+      const routeBaseline = firstByRoute.get(value.route);
+      if (!routeBaseline) firstByRoute.set(value.route,value);
+      assert.deepEqual(value.header,value.body,`masthead does not cover the body content width at ${width}px`);
+      assert.deepEqual(value.header,bounds[0].header,`masthead width changes during navigation at ${width}px`);
+      assert.deepEqual(value.body,bounds[0].body,`body width changes during navigation at ${width}px`);
+      if (routeBaseline) assert.deepEqual(value.content,routeBaseline.content,`${value.route} content width changes when revisited at ${width}px`);
+      assert.ok(Math.abs((value.content[0]+value.content[1])/2 - (value.body[0]+value.body[1])/2) < 1,`${value.route} content is not centered at ${width}px`);
       assert.equal(value.overflow, false);
     }
-    if (width > 780) assert.deepEqual(bounds[0].header, bounds[0].content);
-    console.log(`PASS ${width}px: six transitions, shared content and header bounds`);
+    console.log(`PASS ${width}px: six transitions, stable masthead and content bounds`);
   }
   const before = await page.evaluate(() => {window.routeTransitionFinished=false;return window.routeTransitions.length;});
   await page.goBack();

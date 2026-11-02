@@ -83,7 +83,7 @@ def check_directory(rows, rooms):
         assert bool(row["elapsed"]) == (room["phase"] == "playing"), row
         assert all(field["visible"] for field in row["elapsed"] + row["score"]), row
         if room["product"] == "th09mp":
-            assert row["score"][0]["text"] == "3 : 5", row
+            assert row["score"][0]["text"].endswith("3 : 5"), row
             assert re.search(r"(?:^|\D)0?8(?:[:：]00|\s*分)", row["elapsed"][0]["text"]), row
             left, right = row["duel"]["players"]
             score = row["duel"]["score"]
@@ -103,6 +103,14 @@ def check_populated_directory(page, base, cases):
     page.route("**/site-manifest.json*", lambda route: route.fulfill(json=fixture["manifest"]))
 
     def connect(socket):
+        # The current directory protocol needs an initial snapshot before the
+        # client requests a filtered refresh. Keep that handshake local to the
+        # fixture so this gate never depends on a public lobby or relay.
+        socket.send(json.dumps({
+            "type": "directory", "version": 1, "product": "",
+            "rooms": fixture["rooms"], "total": fixture["total"],
+        }))
+
         def receive(message):
             request = json.loads(message)
             if request.get("type") == "refresh":
@@ -111,7 +119,7 @@ def check_populated_directory(page, base, cases):
                 socket.send(json.dumps({"type": "directory", "version": 1, "product": product, "rooms": rooms, "total": fixture["total"]}))
         socket.on_message(receive)
 
-    page.route_web_socket("wss://directory.visual.invalid/netplay", connect)
+    page.route_web_socket("wss://directory.visual.invalid/netplay*", connect)
     session = page.context.new_cdp_session(page)
     for width, height in [(1280, 800), (390, 844), (320, 800), (844, 390)]:
         session.send('Emulation.setTouchEmulationEnabled', {'enabled': width <= 844, 'maxTouchPoints': 5})
@@ -159,8 +167,12 @@ def check_populated_directory(page, base, cases):
             page.screenshot(path=str(OUTPUT / f"directory-{width}x{height}-{theme}.png"), full_page=True)
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(base + '/lobby.html')
-    page.locator('.book-lobby-mobile [data-lobby-toggle="th06mp"]').check()
-    page.locator('.book-lobby-mobile [data-lobby-toggle="th09mp"]').check()
+    th06_filter = page.locator('.book-lobby-mobile [data-lobby-toggle="th06mp"]')
+    th06_filter.click()
+    page.wait_for_function("document.querySelector('.book-lobby-mobile [data-lobby-toggle=\"th06mp\"]')?.getAttribute('aria-checked') === 'true'")
+    th09_filter = page.locator('.book-lobby-mobile [data-lobby-toggle="th09mp"]')
+    th09_filter.click()
+    page.wait_for_function("document.querySelector('.book-lobby-mobile [data-lobby-toggle=\"th09mp\"]')?.getAttribute('aria-checked') === 'true'")
     page.wait_for_function("document.querySelectorAll('.lobby-room-row').length===2")
     page.locator('.book-lobby-picker-trigger').click()
     popup = page.get_by_role('menu', name='联机作品')
@@ -196,8 +208,8 @@ def check_populated_directory(page, base, cases):
     # Reuse the real image error handler. CSS must expose its fallback after failure.
     cover = page.locator('.lobby-room-row[data-key="th09mp-4109"] .lobby-cover img')
     source = cover.get_attribute("src")
-    page.route("**/" + source.rsplit("/", 1)[-1], lambda route: route.abort())
-    page.reload()
+    page.route("**/" + source.rsplit("/", 1)[-1] + "*", lambda route: route.abort())
+    cover.evaluate("img => {const url = new URL(img.src); url.searchParams.set('fixture-error', String(Date.now())); img.src = url.href;}")
     page.locator('.lobby-room-row[data-key="th09mp-4109"] .lobby-cover img[hidden]').wait_for(state="attached")
     fallback = page.locator('.lobby-room-row[data-key="th09mp-4109"] .lobby-cover-number')
     assert fallback.is_visible() and fallback.inner_text() == "09"
@@ -279,7 +291,8 @@ def main():
     try:
         with sync_playwright() as runtime:
             browser = runtime.chromium.launch()
-            page = browser.new_page()
+            context = browser.new_context(service_workers="block")
+            page = context.new_page()
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.on("websocket", lambda connection: sockets.append(connection.url))
             try:

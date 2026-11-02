@@ -199,6 +199,7 @@
     "test:career:browser": "node tests/browser/test-career-chart.mjs",
     "test:career-hover:browser": "node tests/browser/test-career-thumbnail-hover.mjs",
     "test:page-transitions:browser": "node tests/browser/test-launcher-page-transitions.mjs",
+    "test:cross-document-transition:browser": "node tests/browser/test-cross-document-transition-opt-in.mjs",
     "test:lobby-hover:browser": "node tests/browser/test-lobby-hover.mjs",
     "test:profile:browser": "node tests/browser/test-profile-display.mjs",
     "test:profile-motion:browser": "node tests/browser/test-profile-motion.mjs",

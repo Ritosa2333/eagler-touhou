@@ -3,6 +3,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNaviga
 import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { BrowserLauncher } from './BrowserLauncher';
 import {
+  LauncherNavigationTransitionOptIn,
   OriginalBootstrapHead,
   OriginalPreloads,
   OriginalModuleRequestMark,
@@ -60,6 +61,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <style id="ui-style-layers">{'@layer properties,foundation,theme,base,components,utilities;'}</style>
+        <LauncherNavigationTransitionOptIn />
         <meta name="darkreader-lock" />
         <script>{`try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark'){document.documentElement.setAttribute('data-book-theme',theme);document.documentElement.className=theme;}}catch(e){}`}</script>
         {!review && <OriginalBootstrapHead />}

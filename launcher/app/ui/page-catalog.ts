@@ -353,6 +353,7 @@ export const catalogPages: readonly CatalogPage[] = [
     name: '登录与注册',
     area: '账户',
     href: './login.html',
+    entryPath: '账户预览 | 服务尚未接入',
     views: ['登录', '注册'],
     regions: [
       region(

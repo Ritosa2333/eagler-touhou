@@ -72,7 +72,12 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
     try {
       // Runtime owns save confirmation and teardown. Retire the workspace only
       // after it commits the close, keeping the current view usable on cancel.
-      if (!app.replayViewer || await session.requestRuntimeClose()) {model.close(); navigation.closeInfoDialog('replayDialog');}
+      if (!app.replayViewer || await session.requestRuntimeClose()) {
+        // The route effect retires the model after the Router commits Back.
+        // Closing here publishes open=false while the old route is still live;
+        // a delayed BrowserHistory commit then makes that effect open it again.
+        navigation.closeInfoDialog('replayDialog');
+      }
     } catch (error) {report(error);}
     finally {closing.current=false; setBusy(false);}
   }

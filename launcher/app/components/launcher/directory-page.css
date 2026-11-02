@@ -57,7 +57,6 @@
   .book-lobby-tile-toggle {position:absolute;top:0;right:0;z-index:2;display:grid;justify-content:end;align-content:start;width:24px;height:24px;min-height:24px;padding:1px;border:0;background:transparent}
   .book-lobby-short {position:absolute;right:1px;bottom:1px;z-index:1;display:grid;place-items:center;min-width:13px;height:13px;padding-inline:1px;border-radius:2px;background:var(--kit-card);color:var(--kit-foreground);font:600 10px/1 var(--kit-font);pointer-events:none}
   @media(min-width:1001px) and (hover:hover) and (pointer:fine) {
-    html:has(.lobby-page) {scrollbar-gutter:auto}
     html:has(.lobby-page),body:has(.lobby-page) {height:100%;overflow:hidden}
     .launcher-page-surface:has(.book-directory) {height:calc(100dvh - 61px);min-height:0;overflow:hidden}
     .lobby-main.book-directory {display:flex;flex-direction:column;height:100%;max-width:none;overflow:hidden}

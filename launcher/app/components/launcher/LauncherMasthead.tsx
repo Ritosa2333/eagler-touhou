@@ -156,8 +156,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           hidden={!props.migrationHref}
           data-policy={props.migrationPolicyKnown ? 'host-manifest-origin-migration-policy/1' : undefined}
         >
-          {t('nav.oldSitePart1')}
-          {t('nav.migrationPart2')}
+          {t('nav.oldSiteMigration')}
         </a>
         <a className="masthead-link book-top-faq" href={props.faqHref}>
           {t('nav.faq')}
@@ -338,8 +337,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                           }
                         >
                           <ReaderIcon />
-                          {t('nav.oldSitePart1')}
-                          {t('nav.migrationPart2')}
+                          {t('nav.oldSiteMigration')}
                         </a>
                       </DropdownMenu.Item>
                     )}

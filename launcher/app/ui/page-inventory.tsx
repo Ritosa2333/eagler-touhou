@@ -12,7 +12,7 @@ export function PageInventory({ announce = () => {} }: { announce?(message: stri
   const location = useLocation();
   const [query, setQuery] = useState(''),
     [area, setArea] = useState('全部');
-  const [openPage, setOpenPage] = useState<string | null>(() => catalogTarget(location.hash)?.page.id ?? null);
+  const [openPage, setOpenPage] = useState<string | null>(null);
   const [request, setRequest] = useState<ReturnType<typeof catalogTarget>>(null);
   const reveal = useCallback((hash: string) => {
     const target = catalogTarget(hash);

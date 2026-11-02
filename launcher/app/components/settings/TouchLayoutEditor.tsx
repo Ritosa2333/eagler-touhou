@@ -41,6 +41,36 @@ type Gesture =
   | { kind: 'viewport'; pointer: number; x: number }
   | { kind: 'preview'; pointer: number; x: number; y: number };
 
+function visibleViewport(host: HTMLElement) {
+  const rect = host.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const left = viewport?.offsetLeft ?? 0;
+  const top = viewport?.offsetTop ?? 0;
+  const width = viewport?.width || document.documentElement.clientWidth || window.innerWidth;
+  const height = viewport?.height || document.documentElement.clientHeight || window.innerHeight;
+  return {
+    left: left - rect.left,
+    top: top - rect.top,
+    right: left + width - rect.left,
+    bottom: top + height - rect.top,
+  };
+}
+
+function clampPanelPosition(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  bounds: ReturnType<typeof visibleViewport>,
+) {
+  const minLeft = bounds.left + 16;
+  const minTop = bounds.top + 16;
+  return {
+    left: Math.max(minLeft, Math.min(Math.max(minLeft, bounds.right - width - 16), left)),
+    top: Math.max(minTop, Math.min(Math.max(minTop, bounds.bottom - height - 16), top)),
+  };
+}
+
 export interface TouchLayoutEditorProps {
   playerElement: HTMLElement;
   model: TouchLayoutModel;
@@ -101,12 +131,14 @@ export function TouchLayoutEditor({
     const host = surface.current,
       element = panel.current;
     if (!host || !element || element.hidden) return;
-    const h = host.getBoundingClientRect(),
-      p = element.getBoundingClientRect();
-    const rangeX = Math.max(0, h.width - p.width - 32),
-      rangeY = Math.max(0, h.height - p.height - 32);
-    const left = Math.max(16, Math.min(h.width - p.width - 16, p.left - h.left));
-    const top = Math.max(16, Math.min(h.height - p.height - 16, p.top - h.top));
+    const p = element.getBoundingClientRect(),
+      hostRect = host.getBoundingClientRect(),
+      bounds = visibleViewport(host),
+      rangeX = Math.max(0, bounds.right - bounds.left - p.width - 32),
+      rangeY = Math.max(0, bounds.bottom - bounds.top - p.height - 32),
+      position = clampPanelPosition(p.left - hostRect.left, p.top - hostRect.top, p.width, p.height, bounds),
+      left = position.left - bounds.left,
+      top = position.top - bounds.top;
     model.windowPositions.set(model.getSnapshot().orientation, 'editor', {
       x: rangeX ? (left - 16) / rangeX : 0.5,
       y: rangeY ? (top - 16) / rangeY : 0.5,
@@ -116,10 +148,17 @@ export function TouchLayoutEditor({
     const host = surface.current,
       element = panel.current;
     if (!host || !element || element.hidden) return;
-    const h = host.getBoundingClientRect(),
-      p = element.getBoundingClientRect();
-    element.style.left = `${Math.max(16, Math.min(Math.max(16, h.width - p.width - 16), p.left - h.left))}px`;
-    element.style.top = `${Math.max(16, Math.min(Math.max(16, h.height - p.height - 16), p.top - h.top))}px`;
+    const hostRect = host.getBoundingClientRect(),
+      p = element.getBoundingClientRect(),
+      position = clampPanelPosition(
+        p.left - hostRect.left,
+        p.top - hostRect.top,
+        p.width,
+        p.height,
+        visibleViewport(host),
+      );
+    element.style.left = `${position.left}px`;
+    element.style.top = `${position.top}px`;
     element.style.transform = 'none';
   }, []);
   const positionPanel = useCallback(() => {
@@ -127,11 +166,20 @@ export function TouchLayoutEditor({
       element = panel.current;
     if (!host || !element || element.hidden) return;
     model.windowPositions.reload();
-    const h = host.getBoundingClientRect(),
-      p = element.getBoundingClientRect();
+    const p = element.getBoundingClientRect(),
+      bounds = visibleViewport(host),
+      width = bounds.right - bounds.left,
+      height = bounds.bottom - bounds.top;
     const saved = model.windowPositions.get(model.getSnapshot().orientation, 'editor');
-    element.style.left = `${saved ? 16 + saved.x * Math.max(0, h.width - p.width - 32) : h.height > h.width ? (h.width - p.width) / 2 : h.width - p.width - 16}px`;
-    element.style.top = `${saved ? 16 + saved.y * Math.max(0, h.height - p.height - 32) : Math.min(76, Math.max(16, h.height - p.height - 16))}px`;
+    const left = saved
+      ? bounds.left + 16 + saved.x * Math.max(0, width - p.width - 32)
+      : bounds.left + (width >= height ? width - p.width - 16 : (width - p.width) / 2);
+    const top = saved
+      ? bounds.top + 16 + saved.y * Math.max(0, height - p.height - 32)
+      : bounds.top + Math.min(76, Math.max(16, height - p.height - 16));
+    const position = clampPanelPosition(left, top, p.width, p.height, bounds);
+    element.style.left = `${position.left}px`;
+    element.style.top = `${position.top}px`;
     element.style.transform = 'none';
     clampPanel();
   }, [model, clampPanel]);
@@ -162,16 +210,16 @@ export function TouchLayoutEditor({
     event.preventDefault();
     if (active.kind === 'panel') {
       const element = panel.current!,
-        h = host.getBoundingClientRect(),
-        p = element.getBoundingClientRect();
-      active.left = Math.max(
-        16,
-        Math.min(Math.max(16, h.width - p.width - 16), active.left + event.clientX - active.x),
-      );
-      active.top = Math.max(
-        16,
-        Math.min(Math.max(16, h.height - p.height - 16), active.top + event.clientY - active.y),
-      );
+        p = element.getBoundingClientRect(),
+        position = clampPanelPosition(
+          active.left + event.clientX - active.x,
+          active.top + event.clientY - active.y,
+          p.width,
+          p.height,
+          visibleViewport(host),
+        );
+      active.left = position.left;
+      active.top = position.top;
       active.x = event.clientX;
       active.y = event.clientY;
       element.style.left = `${active.left}px`;
@@ -388,13 +436,14 @@ export function TouchLayoutEditor({
     if (target.closest('#touchLayoutEditorDragHandle')) {
       const h = host.getBoundingClientRect(),
         p = panel.current!.getBoundingClientRect();
+      const position = clampPanelPosition(p.left - h.left, p.top - h.top, p.width, p.height, visibleViewport(host));
       gesture.current = {
         kind: 'panel',
         pointer: event.pointerId,
         x: event.clientX,
         y: event.clientY,
-        left: p.left - h.left,
-        top: p.top - h.top,
+        left: position.left,
+        top: position.top,
       };
     } else if (target.closest('#touchViewportDragSurface') && viewportMode.current) {
       gesture.current = { kind: 'viewport', pointer: event.pointerId, x: event.clientX };
@@ -421,7 +470,9 @@ export function TouchLayoutEditor({
     } else if (
       !viewportMode.current &&
       !wheel &&
-      !target.closest('.touch-layout-editor,.touch-layout-settings,button,select,input,.mizuki-select-menu')
+      !target.closest(
+        '.touch-layout-editor,.touch-layout-settings,[data-ui-surface="application"],button,select,input,.mizuki-select-menu',
+      )
     ) {
       gesture.current = { kind: 'preview', pointer: event.pointerId, x: event.clientX, y: event.clientY };
       resetPreview();

@@ -234,6 +234,10 @@ test('Changing touch opacity does not clear the editor layout or reset its opaci
 test('Keyboard-style workbench collapse closes the real fullscreen menu and expansion does not resurrect it', async () => {
   const f = await editor(), menu = await openMovementMenu();
   assert.equal(menu.closest('[data-radix-popper-content-wrapper]').parentElement, f.player); assert.equal(!menu.isConnected, false);
+  assert.equal(menu.getAttribute('data-ui-surface'), 'application');
+  await pointer('pointerdown', menu, 81, 120);
+  assert.equal(n('#touchSensitivityPreview').classList.contains('active'), false, 'application portal input is not treated as canvas preview');
+  await pointer('pointerup', menu, 81, 120);
   // HTMLElement.click emits no pointerdown: the workbench itself must dismiss
   // the detached menu, rather than relying on the document pointer listener.
   await click('#touchLayoutCollapse');
@@ -242,6 +246,16 @@ test('Keyboard-style workbench collapse closes the real fullscreen menu and expa
   await click('#touchLayoutCollapse'); assert.equal(n('#touchWorkbenchBody').hidden, false); assert.equal(!menu.isConnected, true);
   const reopened = await openMovementMenu();
   assert.equal(reopened.isConnected, true); assert.equal(env.document.querySelectorAll('.ui-select-content').length, 1); assert.deepEqual(f.errors, []);
+});
+
+test('Game-marked surface remains an active touch-layout preview target', async () => {
+  const f = await editor(), surface = n('#gameViewport');
+  surface.setAttribute('data-ui-surface', 'game');
+  await pointer('pointerdown', surface, 420, 240);
+  assert.equal(n('#touchSensitivityPreview').classList.contains('active'), true);
+  await pointer('pointerup', env.document, 420, 240);
+  assert.equal(n('#touchSensitivityPreview').classList.contains('active'), false);
+  assert.deepEqual(f.errors, []);
 });
 
 test('Restoring the workbench after viewport adjustment closes its detached select', async () => {
@@ -346,7 +360,7 @@ test('Viewport Done restores the current orientation’s saved workbench positio
     assert.equal(f.model.getSnapshot().orientation, 'portrait'); assert.equal(panel.hidden, true);
     await click('#touchViewportDone');
     assert.equal(panel.hidden, false);
-    assert.equal(panel.style.left, '263px'); assert.equal(panel.style.top, '200px');
+    assert.equal(panel.style.left, '143px'); assert.equal(panel.style.top, '440px');
     assert.deepEqual(f.errors, []);
   } finally {
     for (const [name, descriptor] of [['clientWidth', width], ['clientHeight', height]]) {if (descriptor) Object.defineProperty(env.document.documentElement, name, descriptor); else delete env.document.documentElement[name];}

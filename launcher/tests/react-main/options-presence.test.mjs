@@ -100,7 +100,7 @@ async function mount({entry = '/?game=th06', mobile = true, coarse = false, noHo
     const productId = new URLSearchParams(location.search).get('game');
     const context = location.pathname === '/lobby.html' ? 'lobby' : 'library';
     const presence = owners.useLibraryOptionsPresence({open: productId !== null, context,
-      product: products.find(product => product.id === productId), lessMotion, concealed: location.hash === '#playing'});
+      product: products.find(product => product.id === productId), lessMotion, concealed: location.hash === '#playing', focusActive: location.hash !== '#touch'});
     observed.push(presence);
     const onBack = () => navigate(context === 'lobby' ? '/lobby.html' : '/');
     const panel = presence.product && React.createElement(owners.OptionsPanel, {product: presence.product,
@@ -237,6 +237,19 @@ test('StrictMode and unmount cancel effects and stale callbacks without body sta
 test('initial closed state never creates an animation, selection or focus return',async()=>{
   const {observed}=await mount({entry:'/',strict:true});assert.equal(observed.at(-1).open,false);
   assert.equal(env.document.querySelector(':is(.game.selected,.book-game-link[aria-current="page"])'),null);assert.equal(motions.length,0);
+});
+
+test('touch foreground suspends options focus until the same options surface returns', async () => {
+  await mount();
+  const back = node('#libraryBack'), focus = watchFocus(back);
+  await navigate('/?game=th06#touch');
+  assertOpen();
+  assert.deepEqual(focus, [], 'a retained options panel must not steal focus from the touch editor');
+  await navigate('/?game=th06');
+  assertOpen();
+  assert.equal(focus.length, 1);
+  assert.equal(focus[0].options.preventScroll, true);
+  assert.equal(env.document.activeElement, back);
 });
 
 test('launched Player conceals retained options and restores the same nodes when it leaves',async()=>{

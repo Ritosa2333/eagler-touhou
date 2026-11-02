@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import {BookDirectoryGames} from '../components/launcher/BookDirectoryGames';
 import {BookWorkNumber} from '../components/launcher/BookWorkNumber';
@@ -19,6 +19,8 @@ import { type InputAction, InputBindingsTable } from '../components/settings/Inp
 import { OptionRow } from '../components/settings/OptionRow';
 import { OptionsGroup } from '../components/settings/OptionsGroup';
 import { SettingsSelect } from '../components/settings/SettingsSelect';
+import {TouchSettingsFields} from '../components/settings/TouchSettingsFields';
+import {createGameSettingsModel} from '../models/game-settings';
 import { Button } from './button';
 import { ButtonGroup } from './button-group';
 import { ChoiceGroup, ChoiceItem } from './choice-group';
@@ -28,7 +30,6 @@ import { Field, FieldGroup, FieldLabel } from './field';
 import { Input } from './input';
 import { InputGroup, InputGroupInput } from './input-group';
 import type { CatalogPage, CatalogRegion } from './page-catalog';
-import { Slider } from './slider';
 
 type Props = { page: CatalogPage; region: CatalogRegion; announce(message: string): void };
 
@@ -47,7 +48,7 @@ export function PageExample({ page, region, announce }: Props) {
     case 'launch/files':
       return <FileTools announce={announce} />;
     case 'launch/options':
-      return <SettingsRecipe kind="launch" />;
+      return <SettingsRecipe />;
     case 'bindings/devices':
       return <DeviceExample />;
     case 'bindings/mapping':
@@ -55,9 +56,13 @@ export function PageExample({ page, region, announce }: Props) {
     case 'bindings/window':
       return <WindowExample />;
     case 'touch/options':
-      return <SettingsRecipe kind="touch" />;
+      return <TouchOptionsExample page={page} region={region} announce={announce} />;
     case 'touch/draft':
-      return <DraftExample />;
+    case 'profile/identity':
+    case 'profile/social':
+    case 'profile/settings':
+    case 'account/form':
+      return <WorkspaceEntry page={page} region={region} />;
     case 'runtime/tools':
       return <ExitExample />;
     case 'replays/files':
@@ -73,9 +78,7 @@ export function PageExample({ page, region, announce }: Props) {
     case 'spectating/playback':
       return <WorkspaceEntry page={page} region={region} />;
     case 'spectating/connection':
-      return <ResourceExample />;
-    case 'profile/identity':
-      return <ProfileIdentity />;
+      return <ResourceExample page={page} region={region} />;
     case 'profile/career':
       return (
         <div className="catalog-recipe">
@@ -86,16 +89,10 @@ export function PageExample({ page, region, announce }: Props) {
           </a>
         </div>
       );
-    case 'profile/social':
-      return <DraftExample social />;
-    case 'profile/settings':
-      return <SettingsRecipe kind="profile" />;
-    case 'account/form':
-      return <AccountExample />;
     case 'resources/import':
       return <ImportExample />;
     case 'resources/transfer':
-      return <ResourceExample />;
+      return <ResourceExample page={page} region={region} />;
     case 'help/content':
       return <HelpExample />;
     case 'help/notices':
@@ -308,21 +305,29 @@ function FileTools({ announce }: { announce(message: string): void }) {
     </div>
   );
 }
-function SettingsRecipe({ kind }: { kind: 'launch' | 'touch' | 'profile' }) {
+function TouchOptionsExample({page, region, announce}: Props) {
+  const {locale} = useLocale();
+  const model = useMemo(() => {
+    const owner = createGameSettingsModel({storage: null});
+    owner.hydrate({productId: 'th10', uiLocale: locale, languages: [], mobile: true, webMidiAvailable: false,
+      musicAvailability: {audio: false, midiAvailable: false, importServer: false, remoteOggAdvertised: false}});
+    return owner;
+  }, [locale]);
+  return <div className="catalog-recipe settings-ui" data-example="production">
+    <TouchSettingsFields model={model} actions={{feedback: announce, reportError: error => announce(String(error))}}
+      onAdjustViewport={() => announce('请在触控工作台调整视口')}
+      onResetViewport={() => announce('请在触控工作台重置视口')}/>
+    <WorkspaceEntry page={page} region={region}/>
+  </div>;
+}
+function SettingsRecipe() {
   const id = useId(),
     [open, setOpen] = useState(true),
     [checked, setChecked] = useState(false),
-    [value, setValue] = useState(''),
-    [level, setLevel] = useState(50),
-    [committed, setCommitted] = useState(50);
-  const labels =
-    kind === 'launch'
-      ? ['显示与声音', '高刷新率', '音乐格式', 'OGG', 'MIDI']
-      : kind === 'touch'
-        ? ['触控设置', '启用触控', '移动方式', '摇杆', '跟随触摸']
-        : ['隐私与个性化', '向访客展示好友', '栏目顺序', '生涯在前', '游玩记录在前'];
+    [value, setValue] = useState('');
+  const labels = ['显示与声音', '高刷新率', '音乐格式', 'OGG', 'MIDI'];
   return (
-    <div className="catalog-settings options-settings" data-example="production">
+    <div className="catalog-settings options-settings" data-example="pattern">
       <OptionsGroup
         id={id}
         title={labels[0]}
@@ -347,26 +352,6 @@ function SettingsRecipe({ kind }: { kind: 'launch' | 'touch' | 'profile' }) {
             <option>{labels[3]}</option>
             <option>{labels[4]}</option>
           </SettingsSelect>
-          {kind === 'touch' && (
-            <Field>
-              <FieldLabel htmlFor={`${id}-slider`}>灵敏度</FieldLabel>
-              <Slider
-                id={`${id}-slider`}
-                min={0}
-                max={100}
-                step={1}
-                value={level}
-                onValueChange={setLevel}
-                onValueCommit={(value) => {
-                  setLevel(value);
-                  setCommitted(value);
-                }}
-                onValueCancel={() => setLevel(committed)}
-                aria-label="样例触控灵敏度"
-              />
-              <output>{level}%</output>
-            </Field>
-          )}
         </FieldGroup>
       </OptionsGroup>
     </div>
@@ -461,76 +446,6 @@ function WindowExample({ notice = false }: { notice?: boolean }) {
     </Dialog>
   );
 }
-function DraftExample({ social = false }: { social?: boolean }) {
-  const id = useId(),
-    [draft, setDraft] = useState(''),
-    [saved, setSaved] = useState(''),
-    [decision, setDecision] = useState(false),
-    [error, setError] = useState(''),
-    [remind, setRemind] = useState(false);
-  return (
-    <div className="catalog-recipe">
-      <Field>
-        <FieldLabel htmlFor={id}>{social ? '内容标题' : '布局名称'}</FieldLabel>
-        <Input
-          id={id}
-          value={draft}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            setError('');
-          }}
-        />
-      </Field>
-      {error && (
-        <p role="alert" className="catalog-error">
-          {error}
-        </p>
-      )}
-      <div className="catalog-row">
-        <Button
-          onClick={() => {
-            if (!draft.trim()) {
-              setError('请填写名称');
-              return;
-            }
-            setSaved(draft);
-            setError('');
-          }}
-        >
-          保存样例
-        </Button>
-        <Button variant="outline" onClick={() => (draft !== saved ? setDecision(true) : setDraft(saved))}>
-          取消
-        </Button>
-        <span role="status">{draft === saved ? '没有未保存修改' : '有未保存修改'}</span>
-      </div>
-      {social && (
-        <OptionRow
-          className="catalog-option"
-          label="好友上线提醒"
-          control={
-            <Toggle id={`${id}-reminder`} checked={remind} onCheckedChange={setRemind} aria-label="样例好友上线提醒" />
-          }
-        />
-      )}
-      <ConfirmationDialog
-        idPrefix={`${id}-discard`}
-        open={decision}
-        title="放弃修改？"
-        message="此处的草稿只在本页保存。"
-        cancelText="继续编辑"
-        confirmText="放弃修改"
-        tone="danger"
-        onCancel={() => setDecision(false)}
-        onConfirm={() => {
-          setDraft(saved);
-          setDecision(false);
-          setError('');
-        }}
-      />
-    </div>
-  );
-}
 function ExitExample() {
   const id = useId(),
     [open, setOpen] = useState(false),
@@ -617,61 +532,6 @@ function RoomCodeExample() {
     </form>
   );
 }
-function ProfileIdentity() {
-  const id = useId(),
-    [role, setRole] = useState('本人'),
-    [name, setName] = useState('演示玩家');
-  return (
-    <div className="catalog-recipe">
-      <Choices label="资料示例视角" value={role} onChange={setRole} items={['本人', '访客']} />
-      <Field>
-        <FieldLabel htmlFor={id}>昵称</FieldLabel>
-        <Input id={id} disabled={role === '访客'} value={name} onChange={(event) => setName(event.target.value)} />
-      </Field>
-      <strong className="catalog-profile-name">{name || '未设置名字'}</strong>
-    </div>
-  );
-}
-function AccountExample() {
-  const id = useId(),
-    [mode, setMode] = useState('登录'),
-    [error, setError] = useState('');
-  return (
-    <form
-      className="catalog-recipe"
-      onSubmit={(event) => {
-        event.preventDefault();
-        setError('手册表单仅演示校验，账户服务从实际页面接入。');
-      }}
-    >
-      <Choices
-        label="账户表单样例"
-        value={mode}
-        onChange={(value) => {
-          setMode(value);
-          setError('');
-        }}
-        items={['登录', '注册']}
-      />
-      <Field>
-        <FieldLabel htmlFor={`${id}-account`}>邮箱或用户名</FieldLabel>
-        <Input id={`${id}-account`} autoComplete="off" required />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor={`${id}-password`}>密码</FieldLabel>
-        <Input id={`${id}-password`} type="password" autoComplete="new-password" required minLength={8} />
-      </Field>
-      {mode === '注册' && (
-        <Field>
-          <FieldLabel htmlFor={`${id}-confirm`}>确认密码</FieldLabel>
-          <Input id={`${id}-confirm`} type="password" autoComplete="new-password" required minLength={8} />
-        </Field>
-      )}
-      <Button type="submit">{mode}</Button>
-      {error && <p role="status">{error}</p>}
-    </form>
-  );
-}
 function ImportExample() {
   const id = useId(),
     [file, setFile] = useState('');
@@ -685,10 +545,10 @@ function ImportExample() {
     </div>
   );
 }
-function ResourceExample() {
+function ResourceExample({page, region}: Pick<Props, 'page' | 'region'>) {
   const [state, setState] = useState('下载中');
   return (
-    <div className="catalog-recipe" data-example="production">
+    <div className="catalog-recipe" data-example="component">
       <Choices label="资源任务样例" value={state} onChange={setState} items={['下载中', '完成', '失败', '已取消']} />
       <ResourceTracks
         progress={{
@@ -712,6 +572,7 @@ function ResourceExample() {
           )
         )}
       </div>
+      <WorkspaceEntry page={page} region={region}/>
     </div>
   );
 }

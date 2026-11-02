@@ -17,6 +17,9 @@ const tail = `(function(){var module=document.querySelector('script[type="module
 const sharedLobbyPreloadCss = original.library.css.replaceAll('#eaglerPreload', '#lobbyPreload').replaceAll('eagler-preload-', 'lobby-preload-') +
   '\n.lobby-preload-card{padding:0;gap:normal}html[data-lobby-boot="failed"] .lobby-preload-card{width:min(420px,calc(100vw - 48px));height:auto;min-height:132px;padding:24px;gap:18px;animation:none}';
 /** Source-extracted original pre-module safety gate and preload presentation. */
+export function LauncherNavigationTransitionOptIn() {
+  return <style id="launcherNavigationTransition">{'@view-transition{navigation:auto}'}</style>;
+}
 export function OriginalBootstrapHead() {
   const {pathname} = useLocation();
   const locale = useDocumentUiLocale();
@@ -29,7 +32,6 @@ export function OriginalBootstrapHead() {
     <script>{dispatch}</script>
     <style>{original.library.css + '\n' + original.lobby.css + '\n' + sharedLobbyPreloadCss +
       '\nhtml[data-original-entry="lobby"] #eaglerPreload,html:not([data-original-entry="lobby"]) #lobbyPreload{display:none}'}</style>
-    <style id="launcherNavigationTransition">{'@view-transition{navigation:auto}'}</style>
     <style id="bookStartupTheme">{original.theme+`
       html{background:var(--kit-background)}
       body:not(.mp-room-active){background-color:var(--kit-background)}

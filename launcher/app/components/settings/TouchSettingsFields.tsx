@@ -1,3 +1,4 @@
+import './settings-ui.css';
 import {Toggle} from '../../ui/controls';
 import {Button as UiButton} from '../../ui/button';
 import {ChoiceGroup,ChoiceItem} from '../../ui/choice-group';
@@ -17,7 +18,7 @@ export function OptionSwitch({id, checked, onChange, label, describedBy, title, 
     title={title} disabled={disabled} onCheckedChange={onChange}/>;
 }
 export function TouchSettingsFields({model, actions, onAdjustViewport, onResetViewport}: {
-  model: GameSettingsModel; actions: SettingsActions; onAdjustViewport(): void; onResetViewport(): void;
+  model: GameSettingsModel; actions: Pick<SettingsActions, 'feedback' | 'reportError'>; onAdjustViewport(): void; onResetViewport(): void;
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const {t} = useLocale(), [customOpen, setCustomOpen] = useState(false);
@@ -35,7 +36,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
   }
   const rowSwitch = (id: string, name: 'doubleTapBombEnabled' | 'restartButtonEnabled' | 'thpracTouchControlsEnabled', title: string, hint: string) =>
     <div className="touch-layout-setting-row"><span><span>{title}</span><small>{hint}</small></span><OptionSwitch id={id} checked={options[name]} label={title} onChange={() => model.setOption(name, !options[name])}/></div>;
-  return <section className="touch-layout-settings" id="touchLayoutSettingsPanel" aria-label={t('touch.settingsAria')}><div className="touch-layout-settings-list">
+  return <section className="touch-layout-settings touch-settings-fields" id="touchLayoutSettingsPanel" aria-label={t('touch.settingsAria')}><div className="touch-layout-settings-list">
     <div className="touch-layout-setting-row"><label htmlFor="touchMovementMode">{t('touch.movement')}</label><MainSelect className="option-select" id="touchMovementMode" value={options.touchMovementMode} aria-label={t('touch.movement')} onChange={event => setMovement(event.target.value)}>
       <option value="touch" hidden={nativeActions}>{t('touch.movement.touch')}</option><option value="touch-unlimited" hidden={nativeActions}>{t('touch.movement.unlimited')}</option><option value="joystick">{t('touch.movement.joystick')}</option><option value="joystick-free">{t('touch.movement.joystickFree')}</option>
     </MainSelect></div>

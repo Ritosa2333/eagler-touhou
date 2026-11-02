@@ -306,6 +306,122 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
+  .touch-settings-fields {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: block;
+    width: auto;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--kit-foreground);
+    font: 400 13px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-layout-settings-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+  .touch-settings-fields .touch-layout-setting-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid var(--kit-border);
+    background: transparent;
+    color: var(--kit-foreground);
+    font: 500 13px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-layout-setting-row > label {
+    color: inherit;
+    font: inherit;
+  }
+  .touch-settings-fields .touch-layout-setting-row:has(> label + .ui-select) {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding-block: 10px;
+  }
+  .touch-settings-fields .touch-layout-setting-row:has(> .ui-switch) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 12px;
+  }
+  .touch-settings-fields .touch-layout-setting-row .ui-switch {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    min-width: 44px;
+    background: transparent;
+  }
+  .touch-settings-fields .touch-layout-setting-row small {
+    display: block;
+    margin: 2px 0 0;
+    color: var(--kit-muted-foreground);
+    font: 400 11px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-sensitivity-presets {
+    display: flex;
+    width: 100%;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--kit-border);
+    border-radius: 6px;
+    background: var(--kit-muted);
+  }
+  .touch-settings-fields .touch-sensitivity-presets button {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    min-height: 32px;
+    padding: 6px 4px;
+    box-shadow: none;
+    font: 500 12px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields .touch-sensitivity-custom > span {
+    color: var(--kit-muted-foreground);
+    font: 400 12px / 1.5 var(--kit-font);
+  }
+  .touch-settings-fields :is(.touch-sensitivity-heading, .touch-opacity-heading) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--kit-foreground);
+    font-size: 13px;
+  }
+  .touch-settings-fields output {
+    color: var(--kit-muted-foreground);
+    font: 500 12px / 1.5 var(--kit-font);
+    font-variant-numeric: tabular-nums;
+  }
+  .touch-settings-fields .touch-layout-viewport-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .touch-settings-fields .touch-layout-viewport-actions > button {
+    flex: 1;
+  }
   /* Game buttons retain their layout geometry. The workbench is application UI. */
   #touchLayoutEditor.touch-layout-editor {
     --workbench-height: min(520px, calc(100dvh - 32px));
@@ -363,7 +479,7 @@
     overscroll-behavior: contain;
     scrollbar-width: thin;
   }
-  #touchLayoutEditor :is(.touch-layout-arrangement, .touch-layout-settings, .touch-layout-settings-list) {
+  #touchLayoutEditor .touch-layout-arrangement {
     margin: 0;
     padding: 0;
     border: 0;
@@ -386,90 +502,11 @@
     border: 0;
     border-top: 1px solid var(--kit-border);
   }
-  #touchLayoutEditor .touch-layout-setting-row {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-    min-width: 0;
-    margin: 0;
-    padding: 10px 0;
-    border: 0;
-    border-bottom: 1px solid var(--kit-border);
-    background: transparent;
-    color: var(--kit-foreground);
-    font: 500 13px / 1.5 var(--kit-font);
-  }
-  #touchLayoutEditor .touch-layout-setting-row > label {
-    color: inherit;
-    font: inherit;
-  }
-  #touchLayoutEditor .touch-layout-setting-row:has(> label + .ui-select) {
-    display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-    padding-block: 10px;
-  }
-  #touchLayoutEditor .touch-layout-setting-row:has(> .ui-switch) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px;
-    align-items: center;
-    gap: 12px;
-  }
-  #touchLayoutEditor .touch-layout-setting-row .ui-switch {
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
-    min-width: 44px;
-    background: transparent;
-  }
-  #touchLayoutEditor .touch-layout-setting-row small {
-    display: block;
-    margin: 2px 0 0;
-    color: var(--kit-muted-foreground);
-    font: 400 11px / 1.5 var(--kit-font);
-  }
-  #touchLayoutEditor .touch-sensitivity-presets {
-    display: flex;
-    width: 100%;
-    padding: 3px;
-    gap: 2px;
-    border: 1px solid var(--kit-border);
-    border-radius: 6px;
-    background: var(--kit-muted);
-  }
-  #touchLayoutEditor .touch-sensitivity-presets button {
-    flex: 1;
-    min-width: 0;
-    height: 32px;
-    min-height: 32px;
-    padding: 6px 4px;
-    box-shadow: none;
-    font: 500 12px / 1.5 var(--kit-font);
-  }
-  #touchLayoutEditor .touch-sensitivity-custom > span {
-    color: var(--kit-muted-foreground);
-    font: 400 12px / 1.5 var(--kit-font);
-  }
-  #touchLayoutEditor :is(.touch-sensitivity-heading, .touch-opacity-heading) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    color: var(--kit-foreground);
-    font-size: 13px;
-  }
-  #touchLayoutEditor output {
-    color: var(--kit-muted-foreground);
-    font: 500 12px / 1.5 var(--kit-font);
-    font-variant-numeric: tabular-nums;
-  }
-  #touchLayoutEditor :is(.touch-layout-viewport-actions, .touch-layout-editor-actions) {
+  #touchLayoutEditor .touch-layout-editor-actions {
     display: flex;
     gap: 8px;
   }
-  #touchLayoutEditor :is(.touch-layout-viewport-actions, .touch-layout-editor-actions) > button {
+  #touchLayoutEditor .touch-layout-editor-actions > button {
     flex: 1;
   }
   #touchLayoutEditor .touch-workbench-footer {
@@ -514,7 +551,7 @@
     .input-config .input-layout-toolbar {
       column-gap: 8px;
     }
-    #touchLayoutEditor .touch-sensitivity-presets button {
+    .touch-settings-fields .touch-sensitivity-presets button {
       height: 44px;
       min-height: 44px;
     }

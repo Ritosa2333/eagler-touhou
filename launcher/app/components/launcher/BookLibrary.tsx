@@ -61,7 +61,8 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     if (!results.current) return;
     // Keep the exposed canvas in the same viewport when filtering shortens it.
     const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
-    setResultsMinHeight(Math.max(0, Math.ceil(viewportHeight - results.current.getBoundingClientRect().top)));
+    const canvas = results.current.getBoundingClientRect();
+    setResultsMinHeight(Math.max(0, Math.min(canvas.height, Math.ceil(viewportHeight - canvas.top))));
   }
   const labels: Record<BookCategory, string> = {
     all: t('library.category.all'),
