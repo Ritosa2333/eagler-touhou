@@ -82,11 +82,15 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/d5af49ae77da820334cb55572713a245eef1a910)；[剩余验收](https://github.com/AdingApkgg/thp/blob/d5af49ae77da820334cb55572713a245eef1a910/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/c5e2fb69643e06ad2b7fcfa3122c23c79a34e3ec)；[剩余验收](https://github.com/AdingApkgg/thp/blob/c5e2fb69643e06ad2b7fcfa3122c23c79a34e3ec/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [魔理沙A Hard六面入口与异常](https://github.com/AdingApkgg/thp/blob/c5e2fb69643e06ad2b7fcfa3122c23c79a34e3ec/docs/porting/TH14_MARISAA_HARD_SIX_STAGE_NOV03.md)：静音原版114,588回调实际进入一至六面；所选状态、相机、HUD、2,488行VM、998个战斗检查点和2,133次初始发布经独立原始载荷复算一致。原版报告两次首次机会异常，严格组合验收未通过。30组均观察到全部目标入口，其中29组有同一次无报告异常的全部入口记录；源录像EOF和完整模式等价未证明。
+
+2026-11-03 [Normal场景逐字采样](https://github.com/AdingApkgg/thp/blob/c5e2fb69643e06ad2b7fcfa3122c23c79a34e3ec/docs/porting/TH14_NORMAL_SCENE_WORD_ORDER_NOV03.md)：另一次静音15,000回调原版前缀记录75次复制迭代和三个相机字；本次所选状态、相机和HUD差异为零。单步会改变时序，先前107,388回调录像的16,055个相机字差仍未解决。旧36,826回调录像当前核心的随机状态差异亦仍存在。
 
 2026-11-03 [魔理沙A Normal六面入口](https://github.com/AdingApkgg/thp/blob/d5af49ae77da820334cb55572713a245eef1a910/docs/porting/TH14_MARISAA_NORMAL_SIX_STAGE_NOV03.md)：静音原版107,388回调实际进入一至六面，无报告异常；当前核心完整对照因第二面相机right.x 16,055个字差失败。全部目标入口组合28→29，源录像EOF和整作1:1未证明。
 
-2026-11-03 [录像输入边界观察候选](https://github.com/AdingApkgg/thp/blob/7cb561b8a3a9ef1d4be2d4f141935e369240c81b/docs/porting/TH14_REPLAY_INPUT_BOUNDARIES_NOV03.md)：原版终止标记和本关录入帧数用尽是两条不同路径；新增只读观察器通过原指令及合成控制，真实进程命中尚未验证。两份新候选录像共12段输入无FFFF标记，文件扫描不证明播放或EOF。
+2026-11-03 [录像输入边界观察候选](https://github.com/AdingApkgg/thp/blob/7cb561b8a3a9ef1d4be2d4f141935e369240c81b/docs/porting/TH14_REPLAY_INPUT_BOUNDARIES_NOV03.md)：原版终止标记和本关录入帧数用尽是两条不同路径；新增只读观察器通过原指令及合成控制，当时真实进程命中尚未验证。两份新候选录像共12段输入无FFFF标记，文件扫描不证明播放或EOF。
 
 2026-11-03 [魔理沙A Hard无异常前缀](https://github.com/AdingApkgg/thp/blob/8ed7ff490fba2fc445f2b73acd90829dec92468b/docs/porting/TH14_HARD_CLEAN_EXCEPTION_PREFIX_NOV03.md)：同录像静音31,200回调实际一至二面，无报告异常且通过异常、活动关卡时间和字段组合检查；先前异常未复现、原因未明，该前缀未到第三面，也未证明录像EOF。
 
@@ -94,9 +98,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 2026-11-03 [原版采集异常门槛](https://github.com/AdingApkgg/thp/blob/07d3686e94688d71f64602366af08f6fa5616bc7/docs/porting/TH14_DEBUG_EXCEPTION_COVERAGE_NOV03.md)：先前16组的所选字段和独立复算结果保持不变；灵梦B Easy报告含12个首次机会异常，新增门槛下15组无异常。新Hard 32,000回调前缀含10个首次机会异常，字段复算相等但不计严格通过。异常成因尚未确定。
 
-2026-11-03 [魔理沙A Hard换关时序诊断](https://github.com/AdingApkgg/thp/blob/21fd430c27be2edd1d78b758bd4a6de8d94cdc37/docs/porting/TH14_HARD_TRANSITION_WINDOW_NOV03.md)：原版75,855回调实际一至五面，基准在第三面随机状态与第四面相机失败。实验性调度可对齐所列状态、相机与采样对象，但初始化时间校验拒绝其中未证时间；真实线程顺序、第六面及源录像EOF仍未证明，不计作通过。
+2026-11-03 [魔理沙A Hard换关时序诊断](https://github.com/AdingApkgg/thp/blob/21fd430c27be2edd1d78b758bd4a6de8d94cdc37/docs/porting/TH14_HARD_TRANSITION_WINDOW_NOV03.md)：原版75,855回调实际一至五面，基准在第三面随机状态与第四面相机失败。实验性调度可对齐所列状态、相机与采样对象，但初始化时间校验拒绝其中未证时间；该旧样本的真实线程顺序、第六面及源录像EOF仍未证明，不计作通过。
 
-2026-11-03 [魔理沙B Lunatic新录像](https://github.com/AdingApkgg/thp/blob/b15036269c78e406bca61008ad914c830517e70a/docs/porting/TH14_MARISAB_LUNATIC_SIX_STAGE_NOV03.md)：静音原版实际81,077回调、一至六面进入结束菜单；核心22c4f85的所选状态／相机／HUD、1,408行VM、1,074战斗检查点和1,873初始发布通过严格、独立及Initialize时间覆盖检查。30组中28组已观察到全部目标关卡入口，魔理沙A Normal和Hard仍缺第六面；源录像EOF未证明，整作1:1未完成。
+2026-11-03 [魔理沙B Lunatic新录像](https://github.com/AdingApkgg/thp/blob/b15036269c78e406bca61008ad914c830517e70a/docs/porting/TH14_MARISAB_LUNATIC_SIX_STAGE_NOV03.md)：静音原版实际81,077回调、一至六面进入结束菜单；核心22c4f85的所选状态／相机／HUD、1,408行VM、1,074战斗检查点和1,873初始发布通过严格、独立及Initialize时间覆盖检查。30组中28组已观察到全部目标关卡入口，当时魔理沙A Normal和Hard仍缺第六面；源录像EOF未证明，整作1:1未完成。
 
 2026-11-03 [22c4f85核心完整双后端Application](https://github.com/AdingApkgg/thp/blob/ea2ee61313f70ddef18c768ac8222463ccfb4987/docs/porting/TH14_SHAKE_COUNTER_APPLICATION_FULL_NOV03.md)：GLES／WebGPU各实际完成122,622帧、45断言并独立复核，八幅完整图像／捕获VM、所选日志、文件和89,969,664帧离线PCM与封存参考一致，物理音频设备为零。WebGPU首次沙箱内初始化失败记录保留，沙箱外同构建重试通过；不证明整局原版像素／PCM、独立调度或浏览器。
 
