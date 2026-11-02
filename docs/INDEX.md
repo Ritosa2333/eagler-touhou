@@ -1,6 +1,6 @@
 # 文档总表
 
-共 440 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 441 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -239,6 +239,7 @@
 | 历史记录 | [archive/th05-rollback-20261102/README.md](../archive/th05-rollback-20261102/README.md) | TH05 原生多人回滚 |
 | 历史记录 | [archive/th05-room-stock-20261102/README.md](../archive/th05-room-stock-20261102/README.md) | TH05 资源侧栏与房间设置 |
 | 历史记录 | [archive/th05-spectator-20261102/README.md](../archive/th05-spectator-20261102/README.md) | TH05 多人观战接入 |
+| 历史记录 | [archive/th05-team-bomb-20261102/README.md](../archive/th05-team-bomb-20261102/README.md) | TH05 多人雷保护与弹幕图层验收 |
 | 历史记录 | [archive/th05-test-deployment-20261101/README.md](../archive/th05-test-deployment-20261101/README.md) | TH05 原生测试站发布 |
 | 历史记录 | [archive/th06-miss-feedback-20261031/README.md](../archive/th06-miss-feedback-20261031/README.md) | TH06 多人 Miss 与符卡呈现 |
 | 历史记录 | [archive/th06-th08-multiplayer-bugs-20261028/README.md](../archive/th06-th08-multiplayer-bugs-20261028/README.md) | TH06／TH08 多人索敌与 Last Spell 修复验证 |

@@ -9,3 +9,5 @@
 `ports/th05-mp/tests/player-art-browser.mjs` 对比审定素材的 240 张纹理哈希。`ports/th05-mp/tests/player-pixels-browser.mjs` 读取实际 WebGL 输出，检查四角色在整数／小数位置的四像素判定点、192 个射弹帧以及两种侧栏的 24 个机型标记。
 
 [像素与配色验收](../../archive/th05-pixels-20261102/README.md)保存本次构建的像素检查、来源历史合并和发布身份。
+
+[雷保护与遮挡验收](../../archive/th05-team-bomb-20261102/README.md)记录多人雷保护时长、到期碰撞和 36 组敌弹遮挡画面的验证范围，及迟到放雷输入的完整状态与音频回滚检查。
