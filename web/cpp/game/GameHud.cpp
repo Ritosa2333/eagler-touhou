@@ -6,6 +6,9 @@
 namespace th13 {
 
 namespace {
+// 0x4265a0:85-96 灵界槽淡化位（GameHudFrame.cpp 状态机使用；4fc0f57ce
+// 起存在，round-19 误删后 2026-11-02 恢复）。
+constexpr u32 kTranceGaugeDimmed = 1u;
 // sig.anm = 常驻 ANM 管理器槽 1（Application kBanks 表；原版 0x439730 在
 // 全局帧 0 以槽 1 打开 sig.anm，0x4398e0 注册的开场任务 0x439ce0 随即创建
 // 其 script0，左半 512×480 + op500 子 script1 右半 128×480 拼满 640 宽）。
@@ -251,6 +254,9 @@ bool GameHud::initialize(const HudEntryContext& context) {
         // 172–175 are created by the script and survive along with the HUD.
         gauge_main = widget(171);
         if (!gauge_main) return false;
+        // fresh stage ctx（0x4264f0 memset）bit0 从 0 开始；仅此路径清 dim
+        //（4fc0f57ce 起存在，round-19 重写时误删，2026-11-02 恢复）。
+        flags &= ~kTranceGaugeDimmed;
         trance_skull_label = 0;
         if (!update_trance()) return false;
     }
