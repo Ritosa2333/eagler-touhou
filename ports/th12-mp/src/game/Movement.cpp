@@ -20,6 +20,7 @@ float mirrorAngle(float angle) {
 void combinePosition(Enemy& e) {
   const float x = float(double(e.ax) + e.rx), y = float(double(e.ay) + e.ry);
   const float vx = float(double(x) - e.x), vy = float(double(y) - e.y);
+  e.animationVelocityX = vx;
   e.x = enemy_motion::quantize(float(double(e.x) + vx));
   e.y = enemy_motion::quantize(float(double(e.y) + vy));
   // Native413700 also applies this when called synchronously by ECL setters.

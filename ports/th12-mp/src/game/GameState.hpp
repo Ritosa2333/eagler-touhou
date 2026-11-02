@@ -97,6 +97,7 @@ void resetPhase(Enemy&, const std::string&);
 void dropItems(Enemy&);
 void drop(Enemy&);
 void synchronizeEnemyHitPresentation(Enemy&);
+void synchronizeEnemyMovementAnimation(Enemy&);
 void emit(Enemy&, Shooter&, bool audible = true);
 void emitHostileEmission(const eb::Emission&, bool audible = true);
 Enemy* spawn(const std::string&, float x, float y, int life, int points, int drop,

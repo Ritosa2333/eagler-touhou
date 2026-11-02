@@ -10,7 +10,7 @@ import {stageClearText,stageTransitionPose} from './stage-clear-presentation.mjs
 import {readCoreDrawSchedule,orderPresentation,animationLayerPriority} from './draw-scheduler.mjs';
 import {localizedHex,localizedFontFamily,localizedMessage} from './localization/loader.mjs';
 import {thcrapLayout} from './localization/layout.mjs';
-import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
+import {capturePresentationOwners,interpolatePresentation,extrapolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
 import {VertexBatch} from './vertex-batch.mjs';
 import {copyMeshPose,meshVertexCount,meshCoordinate,translateMesh} from './mesh-vertices.mjs';
 import {applyMultiplayerOpacity,readMultiplayerVisualOwners} from './multiplayer-presentation.mjs';
@@ -211,17 +211,23 @@ export class Renderer {
     if(!Number.isInteger(stage)||stage<1||stage>7)throw Error('关卡编号无效');
     if(activate)this.requestedStage=stage;
     if(!this.stageJobs.has(stage)){const name='stage'+String(stage).padStart(2,'0'),enemy='stgenm'+String(stage).padStart(2,'0'),logo='st'+String(stage).padStart(2,'0')+'logo';
-      const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]));this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
+      const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]),{background:!activate});this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
     const background=await this.stageJobs.get(stage);if(activate&&this.requestedStage===stage)this.background=background;return background;
   }
-  async loadAtlases(names){
+  async loadAtlases(names,{background=false}={}){
     const gl=this.gl;
     // Atlas metadata may include virtual duplicate names; each physical entry
     // gets its own generated image, so images never silently overwrite others.
     const entries=[];for(const name of names){const atlas=this.atlases[name];if(!atlas)throw Error('动画资源不存在 '+name);for(let index=0;index<atlas.entries.length;index++){const e=atlas.entries[index];if(e.image&&!this.textures.has(name+':'+index))entries.push({name,index,e});}}
-    for(let start=0;start<entries.length;start+=8)await Promise.all(entries.slice(start,start+8).map(async({name,index,e})=>{
+    // A running clear scene keeps rendering while the next stage warms.
+    // Submit one texture after a display frame instead of eight uploads in
+    // the same turn; foreground loading retains its parallel fast path.
+    const parallel=background?1:8;
+    for(let start=0;start<entries.length;start+=parallel)await Promise.all(entries.slice(start,start+parallel).map(async({name,index,e})=>{
       const response=await this.fetch('/assets/'+e.image);if(!response.ok)throw Error('贴图加载失败 '+e.image);
-      const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'}),texture=gl.createTexture();
+      const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'});
+      if(background)await new Promise(done=>requestAnimationFrame(()=>setTimeout(done,0)));
+      const texture=gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bitmap);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);const wrap=gl.REPEAT; // Native4514c5/4514db defaults both texture axes to WRAP1.
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,wrap);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,wrap);
@@ -530,8 +536,9 @@ export class Renderer {
         const y=104+p.seat*80;
         text((p.seat+1)+'P'+(p.ghost?' GHOST':''),428,y-14,1,1,{colorARGB:p.seat===fps.localSeat?0xffffff00:0xffffffff});
         for(const [script,dy]of [[8,y-102],[10,y+24-126],[9,y+48-150]])add('front',script,frame,0,dy,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,entityId:'label-'+p.seat+'-'+script});
+        if(fps.multiplayer.challenge)text(String(p.misses>>>0),520,y,3);
         for(let i=0;i<8;i++){
-          add('front',13+i,frame,0,y-102,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,Math.max(0,p.lives),p.lifeFragments),entityId:'life-'+p.seat+'-'+i});
+          if(!fps.multiplayer.challenge)add('front',13+i,frame,0,y-102,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,Math.max(0,p.lives),p.lifeFragments),entityId:'life-'+p.seat+'-'+i});
           add('front',21+i,frame,0,y+24-126,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,p.bombs,p.bombFragments),entityId:'bomb-'+p.seat+'-'+i});
         }
         const powerStyle={colorARGB:0xffff8030},decimalStyle={...powerStyle,scaleX:.6,scaleY:.6};
@@ -579,7 +586,7 @@ export class Renderer {
     return this.renderPresentation(null,this.capturePresentation(core,{...fps,presentationContinuity:false}),1);
   }
   renderPresentation(previous,current,interpolationAlpha=1,live={}){
-    const endpoint=interpolatePresentation(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
+    const endpoint=(live.extrapolate?extrapolatePresentation:interpolatePresentation)(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
       source=this.stageBackgrounds.get(endpoint.stage),background=source&&endpoint.logicalBackground!==current.logicalBackground&&endpoint.logicalBackground?.loaded
         ?source.geometry(endpoint.logicalBackground.frame,endpoint.logicalBackground):endpoint.background;
     this.begin();const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);

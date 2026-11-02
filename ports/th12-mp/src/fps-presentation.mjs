@@ -35,7 +35,7 @@ export function createFrameRateMeter() {
   };
 }
 
-// Count new visible game time, including real interpolation subframes. Browser
+// Count new visible game time, including interpolation and forward-predicted subframes. Browser
 // redraws of the same stalled world are not additional gameplay pictures.
 export function createPresentationFrameRateMeter(){
   const meter=createFrameRateMeter();let endpoint=null,progress=null;
@@ -48,7 +48,7 @@ export function createPresentationFrameRateMeter(){
         const identity=String(current.stage);
         const continuous=previous&&previous.epoch===current.epoch&&previous.stage===current.stage&&
           current.frame===previous.frame+1&&((previous.nativeMotion&&current.nativeMotion)||(previous.motion&&current.motion));
-        const position=current.frame-(continuous?1-Math.max(0,Math.min(1,alpha)):0);
+        const position=current.frame-(continuous?1-Math.max(0,Math.min(2,alpha)):0);
         fresh=endpoint!==identity||progress===null||position>progress+1e-7;
         if(endpoint!==identity){endpoint=identity;progress=position;}
         else progress=Math.max(progress??position,position);

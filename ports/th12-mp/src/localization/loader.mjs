@@ -290,6 +290,7 @@ class Localization {
     rebuildMessage(data,patch);
     this.messagePresentations.set(name,messagePresentation(data,patch));
   }
+  messageStates(resource){return this.messagePresentations.get(resource)?.entries??null;}
   presentMessage(message){return this.messagePresentations.get(this.context)?.(message)??message;}
   applyMenuResources(base){
     if(!this.overlay)return base;
