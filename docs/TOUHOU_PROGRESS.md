@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/7cb561b8a3a9ef1d4be2d4f141935e369240c81b)；[剩余验收](https://github.com/AdingApkgg/thp/blob/7cb561b8a3a9ef1d4be2d4f141935e369240c81b/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/d5af49ae77da820334cb55572713a245eef1a910)；[剩余验收](https://github.com/AdingApkgg/thp/blob/d5af49ae77da820334cb55572713a245eef1a910/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [魔理沙A Normal六面入口](https://github.com/AdingApkgg/thp/blob/d5af49ae77da820334cb55572713a245eef1a910/docs/porting/TH14_MARISAA_NORMAL_SIX_STAGE_NOV03.md)：静音原版107,388回调实际进入一至六面，无报告异常；当前核心完整对照因第二面相机right.x 16,055个字差失败。全部目标入口组合28→29，源录像EOF和整作1:1未证明。
 
 2026-11-03 [录像输入边界观察候选](https://github.com/AdingApkgg/thp/blob/7cb561b8a3a9ef1d4be2d4f141935e369240c81b/docs/porting/TH14_REPLAY_INPUT_BOUNDARIES_NOV03.md)：原版终止标记和本关录入帧数用尽是两条不同路径；新增只读观察器通过原指令及合成控制，真实进程命中尚未验证。两份新候选录像共12段输入无FFFF标记，文件扫描不证明播放或EOF。
 
