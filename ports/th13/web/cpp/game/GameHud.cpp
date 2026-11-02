@@ -122,11 +122,12 @@ bool GameHud::life(i32 lives, i32 pieces) {
 
 bool GameHud::bombs(i32 stock, i32 pieces) {
     if (!bomb_icons[0]) return true;
-    if (stock < 0 || stock > 8) {
+    if (stock < 0 || stock > 9) {
         error = "HUD bomb stock outside original limits";
         return false;
     }
-    for (i32 i = 0; i < stock; i++)
+    // Inventory may hold nine bombs; the HUD has eight visible slots.
+    for (i32 i = 0; i < stock && i < 8; i++)
         if (!direct_interrupt(bomb_icons[u32(i)], 2)) return false;
     if (stock > 7) return true;
     // 0x42af60:38：label = (pieces*6)/8+7（灵击分母固定 8）。

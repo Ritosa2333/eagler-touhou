@@ -143,6 +143,9 @@ public:
     std::function<bool(i32 script, float x, float y, float z)> spirit_pickup_effect;
     // 42edc0/42e380 call 444df0 synchronously when collected power crosses a level.
     std::function<void()> option_power_changed;
+    // 43d2f0/43d330 -> 42ae90; 43d440/43d480 -> 42af60.
+    // Fragment-only pickups also refresh the existing HUD VMs.
+    std::function<void(i32 stock, i32 pieces)> life_changed, bombs_changed;
     // 原版槽量：0x42e380 循环上界 0xa57+1 = 2648（道具）；0x438ec0 扫描
     // 0x100 = 256 槽（步长 0x22 float）——满时静默丢弃（本函数返回不产件）。
     static constexpr i32 kItemCapacity = 2648;
