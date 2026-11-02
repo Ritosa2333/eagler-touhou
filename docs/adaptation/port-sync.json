@@ -494,13 +494,33 @@
           ],
           "base": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
           "history": []
+        },
+        "tablet-output": {
+          "paths": [
+            "web/cpp/sdl/BrowserRuntime.cpp",
+            "web/sdl-runtime/shell.mjs"
+          ],
+          "base": "0173889788ff35464fc105beb0728c98f444cede",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "8ee5ac9570f97cce0edfeeab657da1c9ca41eca7",
+              "source": "0173889788ff35464fc105beb0728c98f444cede",
+              "targetHead": "2464f4317532fdad05d5bf2ce5e2d8ddd936d4ea",
+              "paths": [
+                "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp",
+                "ports/th15-mp/web/sdl-runtime/shell.mjs"
+              ],
+              "note": "普通版与多人版对应接入平板默认渲染倍率和绘制前音频补充；保留两侧联机调度与呈现边界。"
+            }
+          ]
         }
       }
     },
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "5123bb2235990418919564368d042ae6b873257e",
+      "base": "b03980c588dc083006e3974c83b7f4620c5fe055",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -1061,6 +1081,20 @@
             "ports/th12-mp/tests/transition-performance.test.mjs"
           ],
           "note": "PR 168 汇总普通版与多人版对话本地化、字形缓存、高刷外推、视口及换面呈现优化；多人版保留现有回滚存储并补齐挑战规则与 Miss。"
+        },
+        {
+          "kind": "manual",
+          "base": "5123bb2235990418919564368d042ae6b873257e",
+          "source": "b03980c588dc083006e3974c83b7f4620c5fe055",
+          "targetHead": "2464f4317532fdad05d5bf2ce5e2d8ddd936d4ea",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs"
+          ],
+          "note": "完整符卡收率显示为普通版 THPrac 选项；多人版不启用 THPrac，本次显示层级与刷新修改不适用于 MP。"
         }
       ]
     }
