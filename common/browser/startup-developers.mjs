@@ -1,6 +1,6 @@
 // STARTUP_DEVELOPERS is embedded by the shared generation tool.
 export async function installStartupBranding(core,{game,builtAt,fs=core.FS}={}){
-  const top={th10:312,th11:312,th15:336,th20:336}[game];
+  const top={th10:312,th11:312,th13:336,th15:336,th20:336}[game];
   if(top===undefined)throw Error('Unsupported startup credit layout');
   const date=new Date(builtAt);
   if(!Number.isFinite(date.getTime()))throw Error('Missing Runtime build timestamp');
