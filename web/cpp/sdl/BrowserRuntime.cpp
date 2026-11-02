@@ -1360,6 +1360,34 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th13_debug_stats() {
                : nullptr;
 }
 
+// 排队状态快照（只读；Replay 启动链定位用）：目的地处方、装载挡板与
+// 回放槽排队是否仍在场。不推进任何帧、不写状态。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_pending() {
+    using namespace th13::sdl;
+    static std::string report;
+    if (!app) return "{}";
+    report = "{\"pending_destination\":" + std::to_string(app->pending_destination) +
+        ",\"pending_load\":" + std::to_string(app->pending_load) +
+        ",\"loading_startup\":" + (app->loading_startup ? "true" : "false") +
+        ",\"loading_frames\":" + std::to_string(app->loading_frames) +
+        ",\"pending_replay_file\":" + std::to_string(app->pending_replay_file) +
+        ",\"pending_replay_stage_slot\":" + std::to_string(app->pending_replay_stage_slot) +
+        ",\"replay_active\":" + (app->replay_active ? "true" : "false") +
+        ",\"has_run\":" + (app->run ? "true" : "false") +
+        ",\"has_title\":" + (app->title ? "true" : "false") +
+        ",\"failure\":" + (app->failure.empty() ? "null"
+                                                : "\"" + app->failure + "\"");
+    if (app->title) {
+        const auto& state = app->title->state;
+        report += ",\"title_screen\":" + std::to_string(th13::i32(state.screen)) +
+            ",\"title_substate\":" + std::to_string(state.substate) +
+            ",\"title_age\":" + std::to_string(state.age.current) +
+            ",\"replay_index\":" + std::to_string(state.replay_index);
+    }
+    report += "}";
+    return report.c_str();
+}
+
 // 探针读数：calls/quads/shapes/strips/glyphs + 按精灵聚合表。
 EMSCRIPTEN_KEEPALIVE const char* th13_debug_draw_report() {
     using namespace th13::sdl;

@@ -76,7 +76,13 @@ public:
     // 开场签名条（sig.anm 槽 1 script0 左半层 23 + ins_500 子 script1 右半
     // 层 26）：原版在加速战斗入口（回放 harness）保留全局帧 0 建的两条 VM，
     // 正常标题流程已在开场 f180 卸载槽 1，故只在回放/调试直入路径重建。
+    // 生命周期（原生 terra-udsr 回放窗 draws 实证）：sig 两半 op 只画到
+    // battle frame 3，frame 4 起捕获里不再出现——0x439ce0 开场任务对回放
+    // 入口只有 4 帧寿命。port 的 VM 脚本在 t=10 op1 自灭（pc=-1）但链
+    // 遍历不回收已死 VM，alpha=0xff 的全屏幕会永远盖住战场（2026-11-02
+    // Replay 画面冻结根因）。在 HUD 逻辑帧计数处按原生窗口退休。
     u32 opening_signature = 0, opening_signature_right = 0;
+    i32 opening_signature_frames = 0;
     bool begin_opening_signature();
     void release_opening_signature();
     // Independent per-stage logo ANM bank, injected by the run scene.
