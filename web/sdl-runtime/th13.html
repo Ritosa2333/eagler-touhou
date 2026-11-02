@@ -27,6 +27,7 @@
 <input type="file" id="replay-file" accept=".rpy" multiple hidden>
 <script type="module">
 import {runtimeAssets} from './runtime-assets.mjs';
+import {scanCodes} from './keyboard.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
 const status = text => document.getElementById('loading').textContent = text;
 const fail = text => { document.getElementById('loading').textContent = ''; document.getElementById('error').textContent = text; };
@@ -114,11 +115,18 @@ try {
     mod.FS.writeFile('/assets/musiccmt.txt', new Uint8Array(await cmt.arrayBuffer()));
 
   // 键盘事件经 SDL3 emscripten 端口进入 SDL 键位态；截获方向键/空格防滚动。
+  // 按键转发 _th13_key（scanCodes 与 shell.mjs/keyboard.mjs 同表）：漏了这步
+  // 时菜单收不到任何输入（正式页此前只 preventDefault 不转发）。
+  // 绑 window 而非 canvas：焦点在 body/document 时 keydown 目标不是 canvas，
+  // canvas-only 监听会吞掉全部按键（用户实测菜单无响应的根因）。
   canvas.addEventListener('click', () => canvas.focus());
   for (const type of ['keydown', 'keyup'])
-    canvas.addEventListener(type, e => {
+    window.addEventListener(type, e => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code))
         e.preventDefault();
+      const scan = scanCodes[e.code];
+      if (scan !== undefined) mod._th13_key(scan, type === 'keydown' ? 1 : 0);
     });
 
   // 启动序：装载挡板（sig+ascii）→ 启动品牌动画 → 初始化七 bank + 标题 → RAF 循环。
@@ -173,6 +181,34 @@ try {
       e.preventDefault();
       if (type === 'drop') for (const file of e.dataTransfer?.files ?? []) importReplay(file);
     });
+
+  // ---- 内置 Replay 预装（[R3-M] 目录 replays/ → catalog 槽）----
+  // 没有这一步 replay_slots 全空：菜单 Replay 列表只有 Import 行可选，
+  // 网页版无处播放录像。经与手动导入同一 _th13_replay_import 路径入槽
+  //（th13_NN.rpy → 编号槽 NN-1，其余 → 首个空闲用户槽，0x452300 语义）。
+  // 现有清单见 sdl-runtime/replays/；fetch 404（文件未部署）只跳过不报错。
+  const builtinReplayList = [
+    'demo0.rpy', 'th13_01.rpy', 'th13_udMy25.rpy', 'th13_udN01.rpy', 'th13_udPn16.rpy',
+  ];
+  for (const name of builtinReplayList) {
+    try {
+      const response = await fetch('replays/' + name);
+      if (!response.ok) continue;
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const dataPtr = mod._malloc(bytes.length);
+      const namePtr = mod.allocateUTF8(name);
+      try {
+        mod.HEAPU8.set(bytes, dataPtr);
+        if (!mod._th13_replay_import(dataPtr, bytes.length, namePtr))
+          note('replay-builtin', '内置录像入槽失败：' + name + '：' + replayImportError());
+      } finally {
+        mod._free(dataPtr);
+        mod._free(namePtr);
+      }
+    } catch (e) {
+      note('replay-builtin', '内置录像跳过：' + name);
+    }
+  }
 
   // 帧泵看门狗：requestAnimationFrame 停摆的宿主（后台/嵌入式 webview）经
   // setTimeout 以 60fps 节奏持续驱动 th13_frame_tick；rAF 心跳恢复即让位。
