@@ -586,7 +586,7 @@ const initialized=(async()=>{
   practice?.tick();
   updateNetplayDiagnostics();
   const now=performance.now(),p=u32(core.sdl_stats(),6)[5];if(p!==lastPresented){frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;lastPresented=p;if(!first){first=true;emit('first-frame');}}
-  if(result||core.application_error(app)){const code=core.application_error(app);if(code){let message='Game error '+code;if(multiplayerRuntime&&(code===-4||code===-5)){const describe=core.multiplayer_error_detail||(code===-5?core.multiplayer_network_error:null);const detail=describe?readCString(describe(app)):'';if(detail)message+=': '+detail;}error(message);core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
+  if(result||core.application_error(app)){const code=core.application_error(app);if(code){let message='Game error '+code;if(multiplayerRuntime&&(code===-4||code===-5||code===-6)){const describe=core.multiplayer_error_detail||(code===-5?core.multiplayer_network_error:null);const detail=describe?readCString(describe(app)):'';if(detail)message+=': '+detail;}error(message);core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}
  };
  Module.runtimeFileChanged=()=>{if(saveTimer!==null)return;saveTimer=setTimeout(()=>{saveTimer=null;queue=queue.then(()=>sync(false)).catch(error);},0);};
