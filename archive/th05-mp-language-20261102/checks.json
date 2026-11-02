@@ -1,0 +1,31 @@
+{
+  "unit": {
+    "passed": true,
+    "tests": 95,
+    "suites": [
+      "game-preparation",
+      "runtime-service"
+    ]
+  },
+  "settingsInvalidation": {
+    "passed": true,
+    "tests": 17
+  },
+  "typecheck": {
+    "passed": true,
+    "commands": [
+      "tsc -p tsconfig.ui-rewrite.json",
+      "tsc -p tsconfig.ui-rewrite.tools.json"
+    ]
+  },
+  "frontendBuild": {
+    "passed": true,
+    "command": "node scripts/build-launcher.mjs",
+    "sourceCommit": "093c5c80028aab61cf85e536af30a20c05ee5a0e"
+  },
+  "regressionTest": {
+    "failedBeforeFix": true,
+    "assertion": "configure.language must equal lang_zh-hans independently of runtimePack",
+    "passedAfterFix": true
+  }
+}
