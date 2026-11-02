@@ -37,6 +37,7 @@ protected:
 public:
 	void Initialize();
 	int Step();
+ bool RollbackPredictable() const;
 	void Draw();
 	void Run();
 	__forceinline void SetDialogueScript(unsigned char *pScript) {m_pScript=pScript;}
