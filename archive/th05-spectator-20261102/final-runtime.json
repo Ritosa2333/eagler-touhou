@@ -1,0 +1,21 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/th05-spectator-slot-20261102",
+  "candidate": "/var/www/eagler-touhou/releases/th05-spectator-status-20261102",
+  "releaseId": "sha256-411e1c77384f63f8ae2b50dae504823290fd61d5af845af2d1a7ac2ed9ff1fb3",
+  "buildId": "df3103b828271d4469ae",
+  "siteUrl": "https://touhouonline.com/",
+  "files": 8048,
+  "preserved": 8016,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "e3b56986611a9d55a8479cfae452111ea9999af5fbb8dc143217f781fcc0faf4",
+      "generation": "bb14d39b3f0daf05ea9f999cd93b3f3262bd4c7671e1344f539bc4b2ddb11b4f",
+      "files": 26
+    }
+  ],
+  "revision": "0f0f21ea12341a43dba24e924f4d6bbea47f9c0b",
+  "syncPointerExceptions": []
+}

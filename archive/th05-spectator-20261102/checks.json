@@ -1,0 +1,21 @@
+{
+  "nativeBrowser": [
+    "2P RTC",
+    "3P relay",
+    "2P RTC rollback"
+  ],
+  "unitTests": 42,
+  "relayStageLifecycle": "passed all cooperative markers including E5; admission, late join, stage rollover, repeated spectator return, completion, player failure isolation",
+  "checkpoints": {
+    "bytes": 360,
+    "transitions": [
+      1,
+      2,
+      3
+    ],
+    "deterministicFramesPerStage": 180
+  },
+  "sourceCommit": "0f0f21ea12341a43dba24e924f4d6bbea47f9c0b",
+  "launcherViewSlot": "reserved slot 0 accepted without an owned input seat",
+  "launcherReceivePath": "title-owned peer status exposes read-only socket and reconstruction status"
+}
