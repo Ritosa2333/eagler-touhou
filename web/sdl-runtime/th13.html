@@ -137,7 +137,18 @@ try {
   mod._th13_loop_start();
   bindTouchControls(mod, canvas);
   status('');  // 启动完成：装载文字退场，画面交给游戏（操作说明在游戏内，页面不常驻 UI）
-  mod.onGameFrame = (ok) => { if (!ok) fail('运行时错误：' + runtime_error()); };
+  mod.onGameFrame = (ok) => {
+    note('frame', 'ok=' + ok);
+    if (!ok) fail('运行时错误：' + runtime_error());
+  };
+  // 版本角标：右上角显示 wasm 构建哈希前 8 位（判别浏览器是否跑旧缓存）。
+  {
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position:fixed;top:4px;right:6px;font:11px monospace;color:#6cf;'
+      + 'opacity:.7;z-index:9;pointer-events:none;text-shadow:0 0 2px #000';
+    fetch('build-badge.txt').then(r => r.ok ? r.text() : '').then(t => { badge.textContent = 'th13 ' + t.trim(); });
+    document.body.appendChild(badge);
+  }
 
   // ---- [R3-M] Replay 菜单本地 .rpy 导入（文件选择 + 拖放；不碰音频段）----
   // 文件字节经堆指针传给 wasm（th13_replay_import → import_replay_bytes）：
