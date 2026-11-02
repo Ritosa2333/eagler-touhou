@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/2397939fb4221d1d0d936c3e38ad57266623e724)；[剩余验收](https://github.com/AdingApkgg/thp/blob/2397939fb4221d1d0d936c3e38ad57266623e724/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/3d6c63aa23d4110587e16ce0e87eb04adb9d4321)；[剩余验收](https://github.com/AdingApkgg/thp/blob/3d6c63aa23d4110587e16ce0e87eb04adb9d4321/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [进程堆模型有限候选与反例](https://github.com/AdingApkgg/thp/blob/3d6c63aa23d4110587e16ce0e87eb04adb9d4321/docs/porting/TH14_PROCESS_HEAP_MODEL_NOV03.md)：实际原版敌人工厂经CRT向进程堆请求0x530c字节。隔离WASI候选匹配五种释放顺序的15次独立x86进程实验；混合大小的9次实验中相对布局只匹配8次，说明模型尚不完整。候选未接入游戏，原版堆历史与worldZ字差仍未解决。
 
 2026-11-03 [种子边界复算与地址布局](https://github.com/AdingApkgg/thp/blob/2397939fb4221d1d0d936c3e38ad57266623e724/docs/porting/TH14_RETAINED_SEED_BOUNDARY_CURRENT_NOV03.md)：原指令种子写入边界的26,000回调诊断中，所选状态、相机、HUD、291个战斗检查点及3,835次初始发布经原始载荷复算一致；1,111行动画仍有5个worldZ字差，严格初始化时间门槛拒绝将单个边界当成完整初始化。两份同录像原版记录的57对相同敌人字段样本出现15种地址差值，单一基址平移仅匹配14对；对象生命周期和分配器原因仍未证明。
 
