@@ -587,6 +587,10 @@ bool RunScene::update() {
         if (!presentation->sync(battle, selected_input.held)) return fail(presentation->error());
         hud.tick_stage_clear();
         HudFrameContext frame;
+    // 0x4265a0:85-96 灵界槽淡化状态机消费 DAT_004c22c4+0x5b8/+0x5bc 世界位
+    //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
+    const Vec3 player_position{battle.player_x, battle.player_y, 0};
+    frame.player_position = &player_position;
     hud.update(frame, host);
         return hud.error.empty() || fail(hud.error);
     }
@@ -665,6 +669,10 @@ bool RunScene::update() {
     HudFrameContext frame;
     frame.dialogue = boss_view.dialog_active;
     frame.boss = &boss_view; // a vacant boss slot must also retire its HUD
+    // 0x4265a0:85-96 灵界槽淡化状态机消费 DAT_004c22c4+0x5b8/+0x5bc 世界位
+    //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
+    const Vec3 player_position{battle.player_x, battle.player_y, 0};
+    frame.player_position = &player_position;
     hud.update(frame, host);
     // 覆盖层/通关演出推进（0x43dbc0 行为子集 + GameInf 0x4000 路径）。
     post_flow.update();
