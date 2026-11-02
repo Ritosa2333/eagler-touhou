@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/c5e2fb69643e06ad2b7fcfa3122c23c79a34e3ec)；[剩余验收](https://github.com/AdingApkgg/thp/blob/c5e2fb69643e06ad2b7fcfa3122c23c79a34e3ec/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/2397939fb4221d1d0d936c3e38ad57266623e724)；[剩余验收](https://github.com/AdingApkgg/thp/blob/2397939fb4221d1d0d936c3e38ad57266623e724/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [种子边界复算与地址布局](https://github.com/AdingApkgg/thp/blob/2397939fb4221d1d0d936c3e38ad57266623e724/docs/porting/TH14_RETAINED_SEED_BOUNDARY_CURRENT_NOV03.md)：原指令种子写入边界的26,000回调诊断中，所选状态、相机、HUD、291个战斗检查点及3,835次初始发布经原始载荷复算一致；1,111行动画仍有5个worldZ字差，严格初始化时间门槛拒绝将单个边界当成完整初始化。两份同录像原版记录的57对相同敌人字段样本出现15种地址差值，单一基址平移仅匹配14对；对象生命周期和分配器原因仍未证明。
 
 2026-11-03 [魔理沙A Hard六面入口与异常](https://github.com/AdingApkgg/thp/blob/c5e2fb69643e06ad2b7fcfa3122c23c79a34e3ec/docs/porting/TH14_MARISAA_HARD_SIX_STAGE_NOV03.md)：静音原版114,588回调实际进入一至六面；所选状态、相机、HUD、2,488行VM、998个战斗检查点和2,133次初始发布经独立原始载荷复算一致。原版报告两次首次机会异常，严格组合验收未通过。30组均观察到全部目标入口，其中29组有同一次无报告异常的全部入口记录；源录像EOF和完整模式等价未证明。
 
