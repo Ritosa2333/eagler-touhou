@@ -12,7 +12,8 @@ test('native room configuration rejects absent identity and unsupported seats/mo
 test('spectators require a receive-only identity without an owned player seat',()=>{
  const observer={...options(3,null),netplaySpectator:true,netplaySpectatorId:'observer_123456'};
  assert.equal(runtimeOptions(observer,true).netplayPlayer,null);
- for(const patch of [{netplayPlayer:0},{netplaySpectatorId:''},{netplaySpectatorId:'bad/path'}])assert.throws(()=>multiplayerOptions({...observer,...patch}));
+ assert.equal(runtimeOptions({...observer,netplayPlayer:0},true).netplayPlayer,0);
+ for(const patch of [{netplayPlayer:1},{netplaySpectatorId:''},{netplaySpectatorId:'bad/path'}])assert.throws(()=>multiplayerOptions({...observer,...patch}));
 });
 
 test('rollback and mixed timing use the common eight-frame ceiling',()=>{

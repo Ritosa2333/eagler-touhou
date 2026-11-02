@@ -6,7 +6,7 @@ const roles=['host','guest','guest2'];
 const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
 export function multiplayerOptions(value){
  const count=value.netplayPlayerCount,local=value.netplayPlayer;
- if(value.netplayMode!=='lan'||![2,3].includes(count)||(value.netplaySpectator===true?local!==null||!/^[-A-Za-z0-9_]{8,64}$/.test(value.netplaySpectatorId??''):!integer(local,0,count-1)))throw Error('Invalid TH05 multiplayer seats');
+ if(value.netplayMode!=='lan'||![2,3].includes(count)||(value.netplaySpectator===true?![null,0].includes(local)||!/^[-A-Za-z0-9_]{8,64}$/.test(value.netplaySpectatorId??''):!integer(local,0,count-1)))throw Error('Invalid TH05 multiplayer seats');
  const url=new URL(value.netplayUrl);
  const localDevelopment=url.protocol==='ws:'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname);
  if(!['ws:','wss:'].includes(url.protocol)||!['room','run','member'].every(key=>url.searchParams.get(key))||!localDevelopment&&!/^[a-f0-9]{64}$/.test(url.searchParams.get('runtimeGeneration')??''))throw Error('Missing TH05 room run identity');
