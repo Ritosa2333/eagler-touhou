@@ -199,7 +199,10 @@ struct StageEnemy {
     float bullet_protect_radius2=0; // inner+4044, ECL526
     StageMover vel, pos;
     float position[3] = {0, 0, 0};  // vm+0x44 主位置
-    float previous_position[3] = {};
+    // 原生 context+0x1468/+0x146C（= 敌机 +0x27C/+0x280）：最近一次玩家
+    // 判定命中该敌机的判定中心（0x446870 param_4，0x419a90:106 传入）。
+    // 0x41aad0 死亡特效角 = atan2(主位置 − 该点)，不是逐帧上一位置。
+    float last_hit_position[2] = {0, 0};
     float motion_delta[3] = {};  // inner+0x78, before position quantization/clamping
     i32 death_sound = 0, death_effect = 0, death_effect_file = 0;
     float age = 0;                  // vm+0x14AC（TIME）

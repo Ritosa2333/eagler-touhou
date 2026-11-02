@@ -290,16 +290,23 @@ bool ApplicationState::draw_loading_battle() {
     // visual RNG, which the original avoids by interrupting the root at battle
     // start. The script14/15/16 children have no random opcodes left after
     // their initial tick, so this tick adds no visual-RNG draw (b2-boot 300).
-    if (battle_frame == 0) {
+    // 原生 battle f0：装载树保持装载末帧状态（f0 不再额外 tick），f1..f9
+    // 每帧整链 tick。旧实现在 f0 整链 tick：script16 的 world 矩阵前进到
+    // 原生 f1 且之后冻结（draw 门 boot 首差）。script14/15/16 无 random
+    // opcode，不耗 RNG。
+    if (battle_frame >= 1) {
         if (!loading_animations.update(true)) return fail(loading_animations.error);
     }
-    // Native fades the still-live loading sheet with the loader's 30-frame
-    // fade-out: the drawn vertex alpha is floor(base * (30 - f) / 30) with
-    // base 0x9F at battle frame 0, giving the measured 0x9F,0x99,0x94,0x8F,
-    // 0x89,0x84,0x7F,0x79,0x74,0x6F ramp (H loading-op-ownership.json). The
-    // port has no equivalent global loader-fade multiplier, so apply it to
-    // the fore-pool VM colors for this draw only and restore them afterwards;
-    // no Update phase, timer or RNG state is touched.
+    // 原生 0x4172e0 在 battle f0 以 0x46fc30(label1) 中断装载树；三个 layer31
+    // 子体的绘制 alpha 由各自脚本给出（round-opening-20261031/ascii-loading/
+    // summary.json + vm-draws.jsonl 实证）：
+    //   script14 text(sprite302, mode0): 0x9F*(30-f)/30 = 0x9F,0x99,…,0x6F；
+    //   script15 nowloading(sprite303, mode0): 原生 alpha 恒 0，从不绘制；
+    //   script16 flower(sprite304, mode8 world quad): tfactor 0x66*(10-f)/10。
+    // 端口装载树相位不等于原版 battle f0，故在绘制侧按原生实测值覆盖 alpha
+    // 并在绘制后恢复；不碰 VM 状态/timer/RNG。旧实现按 draw_mode 9-14 判
+    // UP strip（实际三枚是 0/0/8），else 分支把 script15 的 0 alpha 改成
+    // 0x66，使其与 script14 同批 flush 成 12 顶点/4 三角形（原生 6/2）。
     struct SavedColor {
         AnmVm* vm;
         u32 color;
@@ -311,16 +318,22 @@ bool ApplicationState::draw_loading_battle() {
     const u32 fade = u32(30 - battle_frame);
     for (auto* vm : fore) {
         saved.push_back({vm, vm->visual.color, vm->visual.secondary_color});
-        vm->visual.color = (vm->visual.color & 0x00ffffffu) |
-                           (u32(u8((vm->visual.color >> 24) * fade / 30u)) << 24);
+        u32 alpha;
+        switch (vm->source_script) {
+        case 14: alpha = u32(u8(0x9Fu * fade / 30u)); break;
+        case 15: alpha = 0; break;
+        case 16: alpha = u32(u8(0x66u * (10u - u32(battle_frame)) / 10u)); break;
+        default: continue;
+        }
+        vm->visual.color = (vm->visual.color & 0x00ffffffu) | (alpha << 24);
         vm->visual.secondary_color = (vm->visual.secondary_color & 0x00ffffffu) |
-                                     (u32(u8((vm->visual.secondary_color >> 24) * fade / 30u)) << 24);
+                                     (alpha << 24);
     }
     // Same submission context as AnmDrawSchedule's layer31 entry
     // ({31,71,2,false,true,true,true,false}): full-screen camera, fog off,
     // depth write off/compare always, no presentation offset.
     renderer.invalidate();
-    bool drawn = views.camera(DrawCamera::Fullscreen, false);
+    bool drawn = views.loading_camera();
     if (drawn) {
         graphics.set_fog(false);
         graphics.set_depth_mask(false);
@@ -334,6 +347,48 @@ bool ApplicationState::draw_loading_battle() {
     }
     if (!drawn) return fail(renderer.error.empty() ? "Loading caption camera unavailable"
                                                    : renderer.error);
+    return true;
+}
+
+bool ApplicationState::draw_fps_text() {
+    if (!run) return true;
+    // 原版 front 调试显示 FUN_004483e0：位置 (383,450)、格式 "%3d"、颜色
+    // 阈值 30/50（0x4aebb0/0x4aeba8）；渲染几何再 -0.5，故 " 60" 的 '6'/'0'
+    // 落 391.5/400.5。颜色在捕获 harness 下可由 th13_debug_fps 覆盖（原生
+    // oracle 实测 fps≈0.1，决定调试行颜色）。
+    const float color_fps = fps_color_override_ >= 0 ? fps_color_override_ : last_fps_;
+    // 整数行 FUN_004483e0 只在回放播放态（回放管理器 +0x10==1）绘制，数值
+    // 不是宿主帧率，而是 0x448200 每帧从 .rpy 慢速率流（+0xd4 游标）写入
+    // +0x20c 的字节。游标仅在 +0x210 % 0x1e == 0 的读取之后前移，故战斗帧
+    // F 显示 events[ceil(F/30)]，比 slow_rate(F) 的 floor 节拍领先一拍；
+    // 绘制发生在第 F 帧输入消费之后（replay_consumed = F+1），下标即
+    // (replay_consumed + 28) / 30。捕获 harness 的 fps 覆盖只作用于调试行。
+    if (replay_active) {
+        i32 integer_fps = i32(last_fps_);
+        if (replay_cursor) {
+            if (const ReplayStage* stage = replay_cursor->stage()) {
+                const u32 tick = (replay_consumed + 28) / 30;
+                if (tick < stage->events.size()) integer_fps = i32(stage->events[tick]);
+            }
+        }
+        HudTextStyle integer_style;
+        integer_style.font = 0;
+        integer_style.color = integer_fps < 30 ? 0xff5050ffu
+                            : integer_fps < 50 ? 0xffa0a0ffu : 0xffffffffu;
+        char integer_text[16];
+        std::snprintf(integer_text, sizeof integer_text, "%3d", integer_fps);
+        if (!captions.enqueue({{383.0f, 450.0f, 0}, integer_style, integer_text}))
+            return fail(captions.error);
+    }
+    // 原版 FPSInf 0x424a90：格式参数恒为常量 0.05（0x4aec18）→ 永远输出
+    // "0.1fps"；实测 fps 只决定颜色（<30 红、<40 淡红、否则白）。
+    HudTextStyle style;
+    style.font = 1;
+    style.color = color_fps < 30 ? 0xff5050ffu
+                : color_fps < 40 ? 0xffa0a0ffu : 0xffffffffu;
+    char text[32];
+    std::snprintf(text, sizeof text, "%2.1ffps", 0.05);
+    if (!captions.enqueue({{588, 470, 0}, style, text})) return fail(captions.error);
     return true;
 }
 
@@ -434,6 +489,13 @@ bool ApplicationState::initialize(bool device) {
     };
     if (scheduler.add(loading_battle_draw, FramePass::Draw, 72) < 0)
         return fail("Loading caption draw callback registration failed");
+    fps_text_draw.owner = this;
+    fps_text_draw.enabled = true;
+    fps_text_draw.run = [](void* p) -> i32 {
+        return static_cast<ApplicationState*>(p)->draw_fps_text() ? 1 : 5;
+    };
+    if (scheduler.add(fps_text_draw, FramePass::Draw, 77) < 0)
+        return fail("FPS text draw callback registration failed");
     initialized = true;
     return begin_title(0);
 }
@@ -762,10 +824,16 @@ bool ApplicationState::begin_run() {
     // The old port suppressed this branch whenever replay_session was true,
     // leaving replay playback silent after the title handoff.
     if (progress.stage >= 1 && progress.stage <= 7) {
-        if (!audio_device.queue_music(2, -1,
+        // 0042b990:210-215：关首预载槽 0=道中曲、槽 1=Boss 曲，随后才播。
+        // 槽 0 必须预载：stage 2-5/7 的 MainMBossSpell → dialogRead(-3) 走
+        // 0x428820 → code2(0)，读 prepared[0]；漏预载会播空/陈旧槽 0，
+        // 冷启动直接 "Missing TH13 music track:" 失败（stage1 窗不暴露）。
+        if (!audio_device.queue_music(1, 0,
                                       std::string(kStageMusic[progress.stage - 1]) + ".wav") ||
             !audio_device.queue_music(1, 1,
-                                      std::string(kStageBossMusic[progress.stage - 1]) + ".wav"))
+                                      std::string(kStageBossMusic[progress.stage - 1]) + ".wav") ||
+            !audio_device.queue_music(2, -1,
+                                      std::string(kStageMusic[progress.stage - 1]) + ".wav"))
             return fail(audio_device.error);
     }
     // 0x42b990:70-72: entering an ordinary stage marks its played byte, not
@@ -1168,14 +1236,7 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
     audio_device.update();
     if (!audio_device.error.empty()) return fail(audio_device.error);
     frames++;
-    if (run) {
-        HudTextStyle style;
-        style.font = 1;
-        style.color = fps < 30 ? 0xff5050ffu : fps < 40 ? 0xffa0a0ffu : 0xffffffffu;
-        char text[32];
-        std::snprintf(text, sizeof text, "%2.1ffps", double(fps) + .05);
-        if (!captions.enqueue({{588,470,0}, style, text})) return fail(captions.error);
-    }
+    if (run) last_fps_ = fps;
     if (pause && !pause->draw_overlay(static_cast<RunSceneServices&>(*this))) return fail(pause->error);
     if (!display->draw()) return fail(display->error);
     if (pending_destination == i32(Destination::Run) || pending_destination == i32(Destination::Ending)) {

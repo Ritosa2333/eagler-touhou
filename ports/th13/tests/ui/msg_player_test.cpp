@@ -539,14 +539,15 @@ TEST(msg_side_and_box_position) {
     CHECK_EQ(player.state().box_y, 272.f);
     CHECK_EQ(player.state().lines_meta.size(), 1u);
     // 右侧文字位置 = box_x-(bubble_width+30)（0x428ae0:499）；气泡宽度
-    // ((len-1)*8)&~0xf-28，len=5 → 4。
+    // len*8 & ~0xf - 28（round-18 按 00428ae0 反编译更正），len=5 → 4。
     CHECK_EQ(player.state().lines_meta[0].side, 1);
     CHECK_EQ(player.state().lines_meta[0].bubble_width, 4.0f);
 }
 
 TEST(msg_bubble_width_excludes_nul_terminator) {
-    // 0x428ae0:474：len = pcVar5-(pcVar3+1)（NUL 前字节数）。
-    // 3 个 CP932 汉字 = 6 字节 → ((6-1)*8)&~0xf-28 = 4。
+    // 0x428ae0:474：len = pcVar5-(pcVar3+1)（NUL 前字节数）；宽度公式
+    // len*8 & ~0xf - 28（round-18 按 00428ae0 反编译更正，旧 (len-1)*8 少 16px）。
+    // 3 个 CP932 汉字 = 6 字节 → (6*8)&~0xf-28 = 20。
     InstructionBuilder entry;
     entry.text(0, "\x82\xa0\x82\xa2\x82\xa4");
     entry.end(5);
@@ -559,7 +560,7 @@ TEST(msg_bubble_width_excludes_nul_terminator) {
     CHECK(player.open(file, 0, host, error));
     player.step(false);
     CHECK_EQ(player.state().lines_meta.size(), 1u);
-    CHECK_EQ(player.state().lines_meta[0].bubble_width, 4.0f);
+    CHECK_EQ(player.state().lines_meta[0].bubble_width, 20.0f);
 }
 
 TEST(msg_real_st01a_bytes) {

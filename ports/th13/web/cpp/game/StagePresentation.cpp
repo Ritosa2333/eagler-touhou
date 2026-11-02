@@ -175,7 +175,8 @@ bool StagePresentation::tick_bullet(StageBullet& bullet, bool birth) {
         bullet.animation_blend = -1;
     }
     vm.visual.translation = {bullet.x, bullet.y, bullet.z};
-    vm.variables.rotation.z = bullet.angle + kBulletSpriteForward;
+    // 原版 0x40e840 出生只 bind+tick，从不写 VM rotation；旋转只由脚本
+    // op401 控制（bullet.anm #40 label1 死亡段才 op302(1)+op401）。
     const int result = vm.tick(random, animations.rate);
     if (result < 0) return fail("Bullet animation: " + vm.error);
     bullet_animation_geometry(bullet, vm);
@@ -834,8 +835,12 @@ bool StagePresentation::spirit_animation_alive(u32 slot, u32 serial) const noexc
 // flags=0（0x46f3f0 主链尾插）、layer=-1、anmArg=0、位置=神霊位，并丢弃
 // 返回句柄（ESI=0）；脚本自灭，链扫描回收。创建发生在神霊管理器更新内
 //（port：battle.step → update_item_side，优先级 20），早于主链 walk。
+// 必须走 create_preserve_ip：0x46f820 的 0x403800 模板拷贝保留 IP 与
+// 插值通道相位（只重置 VM 计时器），脚本 96-110 的模板预跑已把 op412
+// 生长插值推进一拍；从指令 0 重放会丢掉该相位（原生 5560 拾取
+// scale.y=0.75 vs 端口 0.5，且后续逐帧落后一拍）。
 bool StagePresentation::spirit_pickup(i32 script, const Vec3& position) {
-    if (!animations.create(banks.front, script, -1, 0, position, 0, false))
+    if (!animations.create_preserve_ip(banks.front, script, -1, 0, position, 0, false))
         return fail("Spirit pickup animation creation failed: " + animations.error);
     return true;
 }
@@ -1023,9 +1028,9 @@ bool StagePresentation::sync_items(StageBattle& battle) {
             vm = std::make_unique<AnmVm>();
             vm->environment = &animations.scene_environment();
             vm->object_host = &animations;
-            if (!animations.bind_template(*vm, banks.bullet, script))
+            if (!animations.bind_template_preserve_ip(*vm, banks.bullet, script))
                 return fail("Item animation template unavailable: " + animations.error);
-            vm->visual.layer = 0;
+            vm->visual.layer = 15;
             vm->visual.render_flags |= 0x200u | 0x40000u;
             if (vm->tick(random, animations.rate) < 0)
                 return fail("Item animation initialization: " + vm->error);
@@ -1034,10 +1039,10 @@ bool StagePresentation::sync_items(StageBattle& battle) {
             side = std::make_unique<AnmVm>();
             side->environment = &animations.scene_environment();
             side->object_host = &animations;
-            if (!animations.bind_template(*side, banks.bullet, side_script))
+            if (!animations.bind_template_preserve_ip(*side, banks.bullet, side_script))
                 return fail("Item side animation template unavailable: " +
                             animations.error);
-            side->visual.layer = 0;
+            side->visual.layer = 15;
             side->visual.render_flags |= 0x200u | 0x40000u;
             if (side->tick(random, animations.rate) < 0)
                 return fail("Item side animation initialization: " + side->error);
@@ -1048,6 +1053,19 @@ bool StagePresentation::sync_items(StageBattle& battle) {
             return fail("Item animation: " + vm->error);
         if (side->tick(random, animations.rate) < 0)
             return fail("Item side animation: " + side->error);
+        // 0042ee90:17-49：每件道具二选一绘制——item.y >= -8 只画本体 VM1；
+        // 否则画 VM2 并把锚点钉到屏幕顶 y=8（离屏指示器）。port 旧实现无条件
+        // 两枚都画，激光窗因此每帧多出 10 个 bullet3 sprite（u=0.5 列）。
+        // 层号 15：原生该 op 的 layer watch=15（layer15 之后、16 之前）。
+        const bool on_screen = item.y >= -8.0f;
+        vm->visual.flags = (vm->visual.flags & ~1u) | (on_screen ? 1u : 0u);
+        side->visual.flags = (side->visual.flags & ~1u) | (on_screen ? 0u : 1u);
+        vm->visual.layer = 15;
+        side->visual.layer = 15;
+        vm->visual.translation = {item.x, item.y, item.z};
+        side->visual.translation = on_screen
+            ? Vec3{item.x, item.y, item.z}
+            : Vec3{item.x, 8.0f, item.z};
     }
     return true;
 }
@@ -1224,6 +1242,11 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     if (!sync_player_effects(battle)) return false;
     if (!sync_items(battle)) return false;
     if (!sync_item_spirits(battle)) return false;
+    // 无外部 youmu_bomb_update（RunScene.cpp 生产接线）时，表现层 sync
+    // 自持斩击池更新：消费 youmu_slash_spawns_ 并逐帧回填槽。生产路径已在
+    // StageBattle::step_bomb 注册矩形前经回调执行；不能重复调用
+    //（set_vm 每调一次会推进槽计时器 scale += rate）。
+    if (!battle.youmu_bomb_update && !sync_youmu_slash(battle)) return false;
 
     if (!flush_ecl_animations(battle)) return false;
     // 槽位 VM 位置跟随（0x41a8a0:84-93：敌机管理器每帧把敌机 ECL 位置
@@ -1421,7 +1444,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         }
         slot.vm->visual.translation = {bullet.x + kGameToScreenX, bullet.y + kGameToScreenY,
                                        bullet.z};
-        slot.vm->variables.rotation.z = bullet.angle + kBulletSpriteForward;
+        // 同上：原版不写 VM rotation，脚本 op401 是唯一来源。
         if (slot.vm->tick(random, animations.rate) < 0) return fail("Bullet animation: " + slot.vm->error);
     }
     for (size_t i = 0; i < bullets_.size(); ++i)
@@ -1529,7 +1552,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 shot.beam_interrupt = 0;
             }
             vm->visual.translation = {shot.x + kGameToScreenX, shot.y + kGameToScreenY,
-                                      shot.state == 2 && !shot.sine_moving ? 0.1f : 0.0f};
+                                      shot.hit_fade && !shot.sine_moving ? 0.1f : 0.0f};
             // 0x446670：仅当脚本 op424 置 render_flags bit6 时写角度与
             // visual.flags|=4；pl03 script11/12（无 op424）保留脚本 op401
             // 的旋转值（raw pl03.anm：script11/12 op401 z=-π/2）。
@@ -1538,9 +1561,13 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 vm->variables.rotation.z = shot.angle;
             }
             if (shot.behavior == 2 && shot.state == 1) {
-                // 446f20 writes VM+80 length and +78 scale each frame.
-                vm->visual.scale.x = shot.beam_visual_width / 512.f;
-                vm->visual.secondary_scale.x = shot.beam_visual_width;
+                // 446f20 writes VM+80 (sprite/anchor size) and +78 (UV scale)
+                // each frame; 0x467b50 用 +0x80 做几何锚点尺寸，0x467350 用
+                // +0x78 做 UV 缩放。port 的对应字段是 sprite_size（+0x80）与
+                // uv_scale（+0x78）——旧实现误写 scale/secondary_scale，几何
+                // 宽变成 sprite_size*(w/512)*w，产生上万像素顶点。
+                vm->visual.sprite_size.x = shot.beam_visual_width;
+                vm->visual.uv_scale.x = shot.beam_visual_width / 512.f;
                 vm->visual.flags |= 0x18u;
             }
             // 0x4464d0 只写位姿（LAB_00446619）；VM tick 由同一帧稍后的
@@ -1659,6 +1686,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     if (battle.player_visible()) {
         const i32 tilt = ((held & 0x80) ? 1 : 0) - ((held & 0x40) ? 1 : 0);
         if (!player_) player_ = std::make_unique<AnmVm>();
+        bool rebound = false;
         if (!player_->resource || tilt != player_tilt_) {
             const i32 script = tilt < 0 ? 1 : tilt > 0 ? 3
                                 : player_tilt_ < 0 ? 2 : player_tilt_ > 0 ? 4 : 0;
@@ -1670,10 +1698,17 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             player_->visual.set_layer(12);
             player_tilt_ = tilt;
             player_script_ = script;
+            rebound = true;
         }
         player_->visual.translation = {battle.player_x + kGameToScreenX,
                                        battle.player_y + kGameToScreenY, 0.0f};
         if (player_->tick(random, animations.rate) < 0) return fail("Player animation: " + player_->error);
+        // 原生 0x442960 经 0x46f820 创建时 initial tick 一次，同帧主链
+        // 0x46f170 再 tick 一次（出生/换向重绑帧双拍）；port 的 player_ 不入链，
+        // 旧实现只 tick 一次，pl01 换帧边界整体晚 1 帧（f5/f10/f15 vs 原生
+        // f4/f9/f14）。pl01 script0-4 无 RNG 指令，补拍不影响 core。
+        if (rebound && player_->tick(random, animations.rate) < 0)
+            return fail("Player animation: " + player_->error);
         // 0044378x：无敌时每3个状态帧使用蓝色secondary通道；不是隐藏精灵。
         // 原生 00443240.c:242-243 在 phase_frame 递增前比较
         // (phase_frame != prev && phase_frame % 3 == 0)；port 的 sync 在
@@ -1792,10 +1827,20 @@ bool StagePresentation::draw(u32 pass) {
         for (auto& enemy : enemies_)
             if (enemy.vm) one(*enemy.vm);
         break;
-    case 3:
+    case 3: {
+        // 原版敌弹按池/链序（新生在前 = generation 降序）绘制；port 旧实现
+        // 按 bullets_ 槽位序，同一 UP 批内两精灵顺序反转（f0-47 48 帧）。
+        std::vector<BulletSlot*> order;
+        order.reserve(bullets_.size());
         for (auto& slot : bullets_)
-            if (slot.active && slot.vm) one(*slot.vm);
+            if (slot.active && slot.vm) order.push_back(&slot);
+        std::stable_sort(order.begin(), order.end(),
+            [](const BulletSlot* a, const BulletSlot* b) {
+                return a->generation > b->generation;
+            });
+        for (auto* slot : order) one(*slot->vm);
         break;
+    }
     default:
         return fail("Stage draw pass outside schedule");
     }

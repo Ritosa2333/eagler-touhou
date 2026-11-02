@@ -97,7 +97,10 @@ public:
         displayed_score = score.score;
         boss_hud.prepare_stage_assets();
     }
-    bool update_trance();  // 0x42b030 值→172/173/175 显示映射（无状态副作用）
+    bool update_trance(bool force_label = false);  // 0x42b030 值→172/173/175 显示映射
+    // 0x42b030:35/52 无条件重写 script172 的 VM+0x4a0；收集/启停/死亡/
+    // 续关/换关必须在 Update pass 调用，保证同帧主链 tick 生效。
+    bool trance_label_refresh() { return update_trance(true); }
     bool begin_stage_clear();  // 0042abf0: front115 and HUD+180 bit100
     bool finish_stage_clear(); // 0042ad40: label1, clear flag and clock
     void tick_stage_clear() noexcept {

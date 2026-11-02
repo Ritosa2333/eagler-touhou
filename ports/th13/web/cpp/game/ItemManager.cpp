@@ -161,16 +161,24 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
         s.lifetime_clock.set(0);
         s.flags = 2u | ((session_ && trance_active(*session_)) ? 1u : 0u);
         s.alive = true;
-        if (kind != 3 && kind != 4) {
-            // 0x438ec0:132-135：置 60 帧弹窗窗（mgr+0x8828=0x3c、+0x882c=60.0）
-            // 并累计溢出计数；>9 时同位补一件 kind3（不再累计、不再递归）。
-            spirit_window_ = 60;
-            spirit_window_clock_.set(60);
-            if (++spirit_overflow_ > 9) {
-                spawn_value_item(3, x, y, z, 0.5f, true);
-            }
+        break;
+    }
+    // 0x438ec0:124-139：溢出窗/计数块在 256 槽扫描循环结束之后无条件执行
+    //（池满未 spawn 时同样执行——这正是 round-19 死亡窗分叉的根因：web 旧
+    // 实现把该块放在「找到空槽 spawn 成功」分支内，池满时计数器不前进，
+    // sfx id62 少 30 次且溢出 kind3 补件从未发起（f3924 game RNG 差 8 index
+    // → seed 10889 vs 34447）。原生证据：/work/artifacts/decomp/jp/functions/
+    // 00438ec0.c:124-139，do-while(0x100) 循环之后：
+    //   if (param_3 != 3 && != 4) { 置窗 0x3c/60.0；++0x8838；
+    //     if (9 < 0x8838) FUN_00438ec0(mgr, x, 3, pos, 0.5, 1.4e-45); }
+    // 递归调用 param_6=1.4e-45（非零）会再播音，但 kind3 分支只置窗条件
+    // 不满足（param_3==3），不二次累计。
+    if (kind != 3 && kind != 4) {
+        spirit_window_ = 60;
+        spirit_window_clock_.set(60);
+        if (++spirit_overflow_ > 9) {
+            spawn_value_item(3, x, y, z, 0.5f, true);
         }
-        return;
     }
 }
 
@@ -324,6 +332,11 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
         if (collect_power_small()) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
+            // 0x42edc0: 跨 be7f0 档 → 0x44ad60(-1, 道具位, 0xffffff40)
+            // 哨兵弹字（digit10→sprite206）。漏掉会改变 10 槽环形池的
+            // 游标，使后续弹字绘制顺序与原生相反（5507 首批次序实证）。
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
+                               0xffffff40u});
         }
         break;
     case 2: {  // 点（0x42e380 case2）：得分 = 显示值/10（0x413bf0）
@@ -331,7 +344,9 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
         score_state.score += value / 10;
         if (score_state.score > 999999999) score_state.score = 999999999;
         ++point_items_;  // 0x4be7d8
-        events_.push_back({ItemEvent::Kind::ScorePopup, value, item.x, item.y});
+        events_.push_back({ItemEvent::Kind::ScorePopup, value, item.x, item.y,
+                           (player.y > 128.0f && item.state != 3)
+                               ? 0xffffffffu : 0xffffff00u});
         break;
     }
     case 3: {  // 大P（0x42e959）
@@ -340,12 +355,16 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
             //（显示 +20000）；popup 0x4e20（无 0x42a430 演出）。
             score_state.score += 20000 / 10;
             if (score_state.score > 999999999) score_state.score = 999999999;
-            events_.push_back({ItemEvent::Kind::ScorePopup, 20000, item.x, item.y});
+            events_.push_back({ItemEvent::Kind::ScorePopup, 20000, item.x, item.y,
+                               0xff808080u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
         if (collect_power_big(hud.power_step)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
+            // 0x42e959: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
+                               0xffffff40u});
         }
         break;
     }
@@ -365,12 +384,16 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
         if (hud.power >= hud.max_power) {
             // 0042e8ca loads 004aeaf0=100.0; 0042f510 converts to raw x100.
             add_max_point(100.0f);
-            events_.push_back({ItemEvent::Kind::ScorePopup, 100, item.x, item.y});
+            events_.push_back({ItemEvent::Kind::ScorePopup, 100, item.x, item.y,
+                               0xff40ff40u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
         if (collect_power_big(hud.power_step)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
+            // 0x42e8bd: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
+                               0xffffff40u});
         }
         break;
     }
@@ -404,7 +427,8 @@ bool ItemManager::collect_power_small() {
     if (hud.power >= hud.max_power) {
         score_state.score += 1000;
         if (score_state.score > 999999999) score_state.score = 999999999;
-        events_.push_back({ItemEvent::Kind::ScorePopup, 10000, c.x, c.y});
+        events_.push_back({ItemEvent::Kind::ScorePopup, 10000, c.x, c.y,
+                           0xffffffffu});
         return false;
     }
     const i32 before = hud.power;
@@ -505,6 +529,10 @@ void ItemManager::collect_trance(i32 amount) {
                            progress.ending_points / 200, last_player_.x,
                            last_player_.y});
     }
+    // 0x43d530:33-35：每次加值后（ANM 管理器非空）都调 0x42b030，与是否
+    // 跨 200 段无关；封顶 600 时也一样。
+    events_.push_back({ItemEvent::Kind::TranceGained, progress.ending_points,
+                       last_player_.x, last_player_.y});
 }
 
 // 点值（0x42e380 case2，asm 0x42e9e5-0x42ea94 直读；A = be7dc/100）：
@@ -739,7 +767,7 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
         HudScoreState& score_state = *player.score;
         score_state.score += v / 10;
         if (score_state.score > 999999999) score_state.score = 999999999;
-        events_.push_back({ItemEvent::Kind::ScorePopup, v, s.x, s.y});
+        events_.push_back({ItemEvent::Kind::ScorePopup, v, s.x, s.y, 0xffffff00u});
         break;
     }
     default:

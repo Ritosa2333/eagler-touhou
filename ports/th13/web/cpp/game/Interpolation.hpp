@@ -196,12 +196,18 @@ struct IntegerInterpolation {
         } else {
             const float weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));
             for (u32 i = 0; i < N; i++) {
-                const float delta =
-                    static_cast<float>(static_cast<float>(wrapping_sub(end[i], start[i])) * weight);
-                if constexpr (N == 1)
-                    current[i] = truncate_int(static_cast<float>(delta + static_cast<float>(start[i])));
-                else
+                if constexpr (N == 1) {
+                    // 0x4662ca fimul / 0x4662cd fiadd：权重×(end-start) 与 +start
+                    // 全程 x87 80-bit，0x4662d0 _ftol 只截断一次。double 在本
+                    // 取值域（|start|,|end|<=255、weight 为 f32）精确等价。
+                    const double delta = static_cast<double>(wrapping_sub(end[i], start[i])) *
+                                         static_cast<double>(weight);
+                    current[i] = truncate_int(static_cast<double>(start[i]) + delta);
+                } else {
+                    const float delta = static_cast<float>(
+                        static_cast<float>(wrapping_sub(end[i], start[i])) * weight);
                     current[i] = wrapping_add(start[i], truncate_int(delta));
+                }
             }
         }
         return current;

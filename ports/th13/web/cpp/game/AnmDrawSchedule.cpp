@@ -48,5 +48,11 @@ const std::array<AnmDrawSchedule::Entry,31> AnmDrawSchedule::entries{{
 AnmDrawSchedule::AnmDrawSchedule(FrameScheduler& f,AnmManager& a,AnmRenderer& r,ZunGraphics& g,AnmDrawServices& s):scheduler(f),animations(a),renderer(r),graphics(g),services(s){for(u32 i=0;i<callbacks.size();i++){auto& c=callbacks[i];c.owner=this;c.index=i;c.callback.owner=&c;c.callback.enabled=true;c.callback.run=[](void* p){auto& c=*static_cast<Callback*>(p);return c.owner->draw(c.index)?i32(FrameAction::Continue):i32(FrameAction::Error);};if(scheduler.add(c.callback,FramePass::Draw,entries[i].priority)<0)error="Animation draw callback registration failed";}}
 AnmDrawSchedule::~AnmDrawSchedule(){for(auto& c:callbacks)scheduler.remove(c.callback);}
 bool AnmDrawSchedule::draw(u32 index){if(!error.empty())return false;const auto& e=entries[index];if(e.camera>=0){renderer.invalidate();if(!services.camera(DrawCamera(e.camera),e.refresh)){error="Animation camera selection failed";return false;}if(e.disable_fog)graphics.set_fog(false);if(e.disable_depth_write)graphics.set_depth_mask(false);if(e.disable_fog||e.disable_depth_write)graphics.set_depth_compare(touhou::graphics::Compare::Always);if(e.zero_offset)renderer.offset={};if(e.clear_shake)animations.scene_environment().screen_shake_offset={};}
+ // 战场层 4..20 的 2D 裁剪块是 0x43be9b 的 {116,2,408,476}（随屏幕尺寸居中）；
+ // 背景层 0..3 与 HUD/前景层（21+）用全屏 viewport（原生 layer2 背景 quad
+ // 可到 x=-256，layer22/23 前栏在 x>=540，均证明这两段不是战场块）。
+ // 原生 0x467350 只读该块，与 D3D viewport 无关，故这里只切换
+ // renderer.clip，不动 camera/viewport。
+ if(e.layer>=4&&e.layer<=20){const auto& env=animations.scene_environment();renderer.clip={u32(truncate_int(float(float(env.screen_width)-408.f)*.5f)),u32(truncate_int(float(float(env.screen_height)-476.f)*.5f)),408,476,0,1};renderer.clip_set=true;}else renderer.clip_set=false;
  if(!renderer.draw_layer(animations.registry.layer(e.layer))){error=renderer.error;return false;}if(e.restore){renderer.invalidate();if(!services.camera(DrawCamera::Fullscreen,false)){error="Animation full-screen camera restoration failed";return false;}}return true;}
 }
