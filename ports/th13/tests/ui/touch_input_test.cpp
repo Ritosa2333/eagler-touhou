@@ -128,8 +128,11 @@ TEST(touch_deathbomb_preserves_drag_only_during_deathbomb) {
     CHECK(resumed.motion != 0);
     CHECK(touch.active());
 
-    // Dying/Entering: retain_motion is false, so the old drag is discarded and
-    // must not resurrect after the player becomes ready again.
+    // Dying/Entering（裁决 2026-11-02）：retain_motion=false 时移动被压制
+    //（motion=0）但拖拽所有权按上游 held-touch 契约保留（TouchController.hpp
+    // pointer() 分支注释：『只压制位移，不丢弃运动手指』，c5bf4712d 对齐），
+    // ready 后同指继续接管（sample() motion_blocked 解除）。旧断言『丢弃且
+    // 不得复活』与实现契约矛盾（4fc0f57ce 自相矛盾提交），按实现裁决更新。
     TouchController dying;
     auto p = play_state();
     drag(dying, p);
@@ -138,9 +141,10 @@ TEST(touch_deathbomb_preserves_drag_only_during_deathbomb) {
     dead.ready = false;
     dead.retain_motion = false;
     CHECK_EQ(dying.sample(dead, 30, false, false).motion, 0);
-    CHECK(!dying.active());
-    CHECK_EQ(dying.sample(p, 40, false, false).motion, 0);
-    CHECK(!dying.active());
+    CHECK(dying.active());
+    // ready 后同指继续接管（sample() 解除 motion_blocked，恢复位移）。
+    CHECK(dying.sample(p, 40, false, false).motion != 0);
+    CHECK(dying.active());
 }
 
 TEST(touch_cancel_and_reset_have_distinct_control_semantics) {
@@ -153,12 +157,13 @@ TEST(touch_cancel_and_reset_have_distinct_control_semantics) {
     CHECK(held.keys[16]);  // focus
     CHECK(held.keys[39]);  // stick right
 
-    // cancel() owns gesture cancellation only; launcher controls stay held.
+    // cancel() 裁决（2026-11-02，TouchController.hpp:31-34 注释）：cancel 丢弃
+    // 瞬态手势与控制所有权（focus/stick 清零），fire 是文档级开关存续。
     touch.cancel();
     const TouchSample after_cancel = touch.sample(state, 20, false, false);
     CHECK(after_cancel.keys[90]);
-    CHECK(after_cancel.keys[16]);
-    CHECK(after_cancel.keys[39]);
+    CHECK(!after_cancel.keys[16]);
+    CHECK(!after_cancel.keys[39]);
 
     // reset() clears all transient controls as well.
     touch.reset();

@@ -515,6 +515,11 @@ ApplicationState::~ApplicationState() {
 }
 
 void ApplicationState::release_run(bool preserve_hud) {
+    // 0x44a373（ThreadInf 声音对象销毁）：or eax,-1 → 0x460d40(-1) 停全部
+    // SE voice。原版场景退出销毁声音线程对象时 loop 声（se_lazer00.wav id55、
+    // se_lazer02.wav id20）随之终止；web 的 voices 与 BGM 流分离，stop(-1)
+    // 只清 12 槽 SE 表（0x00460d40 负 id 语义），不触碰曲目播放。
+    audio_device.stop(-1);
     graphics.presentation.reset();
     pause.reset();
     playfield_targets.reset();
