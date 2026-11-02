@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/21fd430c27be2edd1d78b758bd4a6de8d94cdc37)；[剩余验收](https://github.com/AdingApkgg/thp/blob/21fd430c27be2edd1d78b758bd4a6de8d94cdc37/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/07d3686e94688d71f64602366af08f6fa5616bc7)；[剩余验收](https://github.com/AdingApkgg/thp/blob/07d3686e94688d71f64602366af08f6fa5616bc7/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [原版采集异常门槛](https://github.com/AdingApkgg/thp/blob/07d3686e94688d71f64602366af08f6fa5616bc7/docs/porting/TH14_DEBUG_EXCEPTION_COVERAGE_NOV03.md)：先前16组的所选字段和独立复算结果保持不变；灵梦B Easy报告含12个首次机会异常，新增门槛下15组无异常。新Hard 32,000回调前缀含10个首次机会异常，字段复算相等但不计严格通过。异常成因尚未确定。
 
 2026-11-03 [魔理沙A Hard换关时序诊断](https://github.com/AdingApkgg/thp/blob/21fd430c27be2edd1d78b758bd4a6de8d94cdc37/docs/porting/TH14_HARD_TRANSITION_WINDOW_NOV03.md)：原版75,855回调实际一至五面，基准在第三面随机状态与第四面相机失败。实验性调度可对齐所列状态、相机与采样对象，但初始化时间校验拒绝其中未证时间；真实线程顺序、第六面及源录像EOF仍未证明，不计作通过。
 
