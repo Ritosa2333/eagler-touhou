@@ -1016,7 +1016,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+      "base": "625c8de0b57c6b71becb7c6297721c74e0284d71",
       "history": [
         {
           "kind": "manual",
@@ -1043,6 +1043,16 @@
             "ports/th05-mp/web/shell.mjs"
           ],
           "note": "单人和独立多人均将数位笔接触交给原生触控；保留多人会话，CDP 数位笔和手机路径验证通过"
+        },
+        {
+          "kind": "manual",
+          "base": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "source": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+          "targetHead": "0d01535ee8965b8f9c070b2c751061c4870cd481",
+          "paths": [
+            "ports/th05-mp/tests/pen-browser.mjs"
+          ],
+          "note": "普通版数位笔测试使用单人初始化；多人保留自己的双端数位笔与触控验收，不迁入单人测试夹具"
         }
       ]
     }
