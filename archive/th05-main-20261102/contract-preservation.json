@@ -1,0 +1,11 @@
+{
+  "siteUrl": "https://touhouonline.com/",
+  "passed": true,
+  "site-manifest.json": true,
+  "retainedRuntimeGroups": 19,
+  "release-catalog.json": true,
+  "replicas": {
+    "touhouonline.com": "sha256-33726161e01911e8ab4b3d8262fc1afc72631930bd747a9296c124b770ee85a7",
+    "ritosa.cyou": "sha256-33726161e01911e8ab4b3d8262fc1afc72631930bd747a9296c124b770ee85a7"
+  }
+}

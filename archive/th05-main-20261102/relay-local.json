@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "game": "th05mp",
+      "passed": true,
+      "initialSpares": 5,
+      "initialBombs": 0,
+      "version": 4
+    },
+    {
+      "game": "th06mp",
+      "passed": true,
+      "version": 3
+    }
+  ]
+}
