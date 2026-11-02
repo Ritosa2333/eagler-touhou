@@ -66,8 +66,8 @@ function frame(time){raf=0;if(closed||!launched)return;
    // Draw UI independently of confirmation waits so a short tap is captured
    // even while a peer is late. Its action travels in the next owned input.
    audio.pump();
-   if(presentation.present(time,true)&&(!netplay?.recovering||module._th05_input_scene()===0)){module._th05_coop_draw();module._th05_present();}
-   healthFrames+=steps;
+   const revision=netplay?.revision??0,fresh=revision!==presentation.worldRevision;
+   if(presentation.world(time,revision,module._th05_input_scene()===0,netplay?.recovering)){module._th05_coop_draw();module._th05_present();if(fresh)healthFrames++;}
    if(time-lastHealth>=1000){emit('frame-health',{fps:healthFrames*1000/Math.max(1,time-lastHealth),maxGapMs:maxGap,frameMs:1000/56,scene:module._th05_scene(),ticks:module._th05_ticks(),confirmed:netplay?.confirmed??-1,inputDelay:netplay?.delay??0});lastHealth=time;healthFrames=0;maxGap=0;}
    if(steps&&!firstFrame){firstFrame=true;emit('first-frame',launchSerial===undefined?{}:{launchSerial});}
    raf=requestAnimationFrame(frame);return;

@@ -28,6 +28,7 @@ CEnemyBullet::~CEnemyBullet(void)
 void CEnemyBullet::Initialize()
 {
 	memset(m_bullets,0,sizeof(m_bullets));
+ m_dotEnd=0;m_imageEnd=ENEMY_BULLET_N_RECORD_DOT;
 	m_noEnemyBullet=false;
 	m_clearEnemyBulletTimeLeft=0;
 
@@ -398,6 +399,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 		if (freeRecIdx[i]==-1)
 			break;
 		m_bullets[freeRecIdx[i]].flag=1;
+  int& end=freeRecIdx[i]<ENEMY_BULLET_N_RECORD_DOT?m_dotEnd:m_imageEnd;if(end<=freeRecIdx[i])end=freeRecIdx[i]+1;
   m_bullets[freeRecIdx[i]].coopGrazeMask=0;
 		m_bullets[freeRecIdx[i]].bornStageAndGrazeFlag=bornStage;
 		m_bullets[freeRecIdx[i]].curX=shootInfo->shootOrigX;
@@ -558,13 +560,16 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 
 void CEnemyBullet::Step()
 {
+ const bool demo=original::DemoActive();
+ const int dotEnd=demo?ENEMY_BULLET_N_RECORD_DOT:m_dotEnd;
+ const int count=demo?ENEMY_BULLET_N_RECORD:dotEnd+m_imageEnd-ENEMY_BULLET_N_RECORD_DOT;
 	int nAvailBullet=0;
 
 	if (m_noEnemyBullet==false)
 	{
-		for (int iteration=0;iteration<ENEMY_BULLET_N_RECORD;iteration++)
+		for (int iteration=0;iteration<count;iteration++)
 		{
-   const int i=original::DemoActive()?ENEMY_BULLET_N_RECORD-1-iteration:iteration;
+   const int i=demo?ENEMY_BULLET_N_RECORD-1-iteration:(iteration<dotEnd?iteration:ENEMY_BULLET_N_RECORD_DOT+iteration-dotEnd);
 			if (m_bullets[i].flag==0||m_bullets[i].flag==2)
 			{
 				m_bullets[i].flag=0;
@@ -603,7 +608,7 @@ void CEnemyBullet::Step()
 					m_pStage->AddScore(removeBulletScore);
 				}
 			}
-			if(original::DemoActive())++m_bullets[i].age;
+			if(demo)++m_bullets[i].age;
 			if (m_bullets[i].bornStageAndGrazeFlag==2)	//set grazed flag to false for bullets just ended born stage
 				m_bullets[i].bornStageAndGrazeFlag=0;
 			if (m_bullets[i].bornStageAndGrazeFlag>2)	//bullets still in born stage
@@ -629,8 +634,8 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].lastX=m_bullets[i].curX;		//move forward with 1/3x speed
 						m_bullets[i].lastY=m_bullets[i].curY;
-						m_bullets[i].curX+=(original::DemoActive()?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
-						m_bullets[i].curY+=(original::DemoActive()?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
+						m_bullets[i].curX+=(demo?float(int(m_bullets[i].velX)/3):m_bullets[i].velX/3);
+						m_bullets[i].curY+=(demo?float(int(m_bullets[i].velY)/3):m_bullets[i].velY/3);
 						m_bullets[i].bornStageAndGrazeFlag++;
 					}
 				if (m_bullets[i].bornStageAndGrazeFlag>=20)			//born stage end, change to normal mode
@@ -652,7 +657,7 @@ void CEnemyBullet::Step()
 					{
 						m_bullets[i].accumulator--;
 						//speed transit from 72 to origSpeed linearly within 32 frames
-						m_bullets[i].curSpeed=m_bullets[i].origSpeed+(original::DemoActive()?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
+						m_bullets[i].curSpeed=m_bullets[i].origSpeed+(demo?float((int(m_bullets[i].delta)*m_bullets[i].accumulator)/32):m_bullets[i].delta*m_bullets[i].accumulator/32.0f);
 						if (m_bullets[i].accumulator==0)			//end of fade in frames
 						{
 							m_bullets[i].curSpeed=m_bullets[i].origSpeed;
@@ -672,7 +677,7 @@ void CEnemyBullet::Step()
 					m_bullets[i].flag=2;						//outside play area, remove
 					continue;
 				}
-				if (m_clearEnemyBulletTimeLeft>0 || (original::DemoActive()&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
+				if (m_clearEnemyBulletTimeLeft>0 || (demo&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
 					continue;
  if(m_pStage->Cooperative()) {
   m_pStage->GrazePlayers(m_bullets[i].curX,m_bullets[i].curY,m_bullets[i].coopGrazeMask);
@@ -685,8 +690,8 @@ void CEnemyBullet::Step()
 				{
 					//the graze area inf PC98 ver is very strange: left 16, right 20, up/down 22
 					//we rotate it 90 degrees clockwise here: up 16, down 20, left/right 22
-					if (original::DemoActive()?(m_bullets[i].curX>=charaX-256&&m_bullets[i].curX<=charaX+320):(m_bullets[i].curX>=charaX-352&&m_bullets[i].curX<=charaX+352))
-						if (original::DemoActive()?(m_bullets[i].curY>=charaY-352&&m_bullets[i].curY<=charaY+352):(m_bullets[i].curY>=charaY-256&&m_bullets[i].curY<=charaY+320))
+					if (demo?(m_bullets[i].curX>=charaX-256&&m_bullets[i].curX<=charaX+320):(m_bullets[i].curX>=charaX-352&&m_bullets[i].curX<=charaX+352))
+						if (demo?(m_bullets[i].curY>=charaY-352&&m_bullets[i].curY<=charaY+352):(m_bullets[i].curY>=charaY-256&&m_bullets[i].curY<=charaY+320))
 						{
 							m_pStage->m_pSparkEffect->AddEffect(m_bullets[i].curX,m_bullets[i].curY,32,2,false);
 							m_bullets[i].bornStageAndGrazeFlag=1;
@@ -717,9 +722,9 @@ void CEnemyBullet::Step()
 		int nAvailBullet=0;
 		int bonusLimit[]={960,1280,1280,1280,1600};
 		int maxSingleBonus=bonusLimit[CGame::GVar().m_playDifficulty];
-		for (int iteration=0;iteration<ENEMY_BULLET_N_RECORD;iteration++)
+		for (int iteration=0;iteration<count;iteration++)
 		{
-   const int i=original::DemoActive()?ENEMY_BULLET_N_RECORD-1-iteration:iteration;
+   const int i=demo?ENEMY_BULLET_N_RECORD-1-iteration:(iteration<dotEnd?iteration:ENEMY_BULLET_N_RECORD_DOT+iteration-dotEnd);
 			if (m_bullets[i].flag==1)
 			{
 				m_bullets[i].velX=m_bullets[i].velY=0;
@@ -744,6 +749,10 @@ void CEnemyBullet::Step()
 		m_noEnemyBullet=false;
 	}
 
+ if(!demo){
+  while(m_dotEnd>0&&!m_bullets[m_dotEnd-1].flag)--m_dotEnd;
+  while(m_imageEnd>ENEMY_BULLET_N_RECORD_DOT&&!m_bullets[m_imageEnd-1].flag)--m_imageEnd;
+ }
 	if (m_clearEnemyBulletTimeLeft>0)
 		m_clearEnemyBulletTimeLeft--;
 }
@@ -751,7 +760,7 @@ void CEnemyBullet::Step()
 void CEnemyBullet::Draw()
 {
 	//draw imaged bullets
-	for (int i=ENEMY_BULLET_N_RECORD_DOT;i<ENEMY_BULLET_N_RECORD;i++)
+	for (int i=ENEMY_BULLET_N_RECORD_DOT;i<m_imageEnd;i++)
 	{
 		if (m_bullets[i].flag!=1)
 			continue;
@@ -796,7 +805,7 @@ void CEnemyBullet::Draw()
 
 	if (m_noEnemyBullet||m_clearEnemyBulletTimeLeft!=0)
 	{
-		for (int i=0;i<ENEMY_BULLET_N_RECORD_DOT;i++)
+		for (int i=0;i<m_dotEnd;i++)
 			if (m_bullets[i].flag==1)
 				if (m_bullets[i].dieStageAndMoveType>=4)
 					m_pStage->m_pStageRes->DrawStageObjectImage(m_pStage->m_pStageRes->m_patternArray.GetImagePtr(m_bullets[i].imgIdx),
@@ -805,7 +814,7 @@ void CEnemyBullet::Draw()
 	}
 	else
 	{
-		for (int i=0;i<ENEMY_BULLET_N_RECORD_DOT;i++)
+		for (int i=0;i<m_dotEnd;i++)
 		{
 			if (m_bullets[i].flag!=1)
 				continue;

@@ -18,3 +18,14 @@ for(const hz of [75,90,120,144]){
  assert.ok(Math.abs(visible-60*30)<=1,'accelerated game retains 60 Hz cap');
 }
 console.log('TH05 cadence, 75/90 Hz fresh-frame delivery, jitter and accelerated cap: PASS');
+for(const hz of [60,75,90,120,144]){
+ const logic=new FrameClock(),screen=new PresentationClock();logic.add(0);let revision=0,draws=0;
+ screen.world(0,revision,false,false);
+ for(let n=1;n<=hz*10;n++){const time=n*1000/hz;logic.add(time);while(logic.consume(1/56))revision++;if(screen.world(time,revision,false,false))draws++;}
+ assert.equal(draws,revision,`MP ${hz} Hz must present every fresh game frame once`);
+ for(let n=0;n<100;n++)assert.equal(screen.world(11000+n,revision,false,false),false,'Network wait must reuse the last image');
+ assert.equal(screen.world(12000,++revision,false,true),false,'Intermediate recovery must stay hidden');
+ assert.equal(screen.world(12001,revision,false,false),true,'A corrected endpoint at the same logical frame must be visible');
+ assert.equal(screen.world(13000,revision,true,false),true,'Pause UI must poll even without confirmed input');
+}
+console.log('TH05 MP fresh world delivery, waits, corrections and paused input: PASS');

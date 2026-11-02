@@ -143,7 +143,9 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
     const hash=module._th05_net_hash(nextCheck)>>>0,record=checks.get(nextCheck)??new Map();record.set(local,hash);checks.set(nextCheck,record);checkState(record);broadcast({type:'check',frame:nextCheck,hash});nextCheck+=120;
    }
    for(const old of checks.keys())if(old<frame-480)checks.delete(old);
-   for(const row of rows)for(const old of row.keys())if(old<frame-64)row.delete(old);
+   // The frontier advances one frame at a time. Retire its single expired row
+   // without walking every seat's 64-frame ledger on each browser callback.
+   if(frame>64)for(const row of rows)row.delete(frame-65);
    if(!advanced){
     const wait=now()-lastProgress;if(wait>3000&&now()-lastWarning>1000){emit('netplay-status',{state:'waiting',frame,waitMs:wait});lastWarning=now();}
     if(wait>15000)fatal(Error('TH05 multiplayer input timed out'));return false;
@@ -151,6 +153,6 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
    ++frame;lastProgress=now();globalThis.__eaglerNetplayFrame=globalThis.__eaglerNetplayLanFrame=frame;
    if(module._th05_coop_finished())void end();return true;
   },
-  end,close,get frame(){return frame;},get delay(){return delay;},get confirmed(){return module._th05_net_confirmed();},get recovering(){return module._th05_net_stat(5)<frame;},get active(){return started&&!closed&&!ending;},
+  end,close,get frame(){return frame;},get delay(){return delay;},get confirmed(){return module._th05_net_confirmed();},get revision(){return module._th05_net_stat(8);},get recovering(){return module._th05_net_stat(5)<frame;},get active(){return started&&!closed&&!ending;},
  };
 }

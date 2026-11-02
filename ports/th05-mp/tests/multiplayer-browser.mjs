@@ -36,7 +36,7 @@ try{
    for(const peer of w.__th05PeerTransport.peers.values()){
     const send=peer.channel.send.bind(peer.channel);
     peer.channel.send=text=>{const message=JSON.parse(text);if(message.type!=='input')return send(text);
-     ++w.__rollbackTestDelays;w.setTimeout(()=>{if(peer.channel.readyState==='open')send(text);},30+(message.frame*37+peer.id*17)%95);
+     ++w.__rollbackTestDelays;w.setTimeout(()=>{if(peer.channel.readyState==='open')send(text);},Math.max(30+(message.frame*37+peer.id*17)%95,(w.__holdInputUntil??0)-w.performance.now()));
     };
    }
   }});
@@ -44,6 +44,15 @@ try{
   await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].every(f=>f.contentWindow.__eaglerNetplayLanFrame>750),null,{timeout:30000});
   report.rollback=await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>({corrections:f.contentWindow.__eaglerNetplayRollback,replayed:f.contentWindow.__eaglerNetplayResimulated,delayed:f.contentWindow.__rollbackTestDelays,confirmed:f.contentWindow.__eaglerNetplayConfirmed,frame:f.contentWindow.__eaglerNetplayFrame})));
   assert.ok(report.rollback.every(r=>r.delayed>0&&(mode===1?r.corrections===0&&r.replayed===0:r.corrections>0&&r.replayed>0)),JSON.stringify(report.rollback));
+  report.waitReuse=await page.evaluate(async()=>{
+   const worlds=[...document.querySelectorAll('iframe')].map(f=>f.contentWindow),saved=[];
+   for(const w of worlds){w.__holdInputUntil=w.performance.now()+900;w.__waitDraws=0;const draw=w.Module._th05_coop_draw;saved.push(draw);w.Module._th05_coop_draw=(...args)=>{++w.__waitDraws;return draw(...args);};}
+   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+   try{await pause(550);const before=worlds.map(w=>({frame:w.__eaglerNetplayLanFrame,draws:w.__waitDraws}));await pause(160);return worlds.map((w,i)=>({before:before[i],after:{frame:w.__eaglerNetplayLanFrame,draws:w.__waitDraws}}));}
+   finally{worlds.forEach((w,i)=>{w.Module._th05_coop_draw=saved[i];w.__holdInputUntil=0;});}
+  });
+  assert.ok(report.waitReuse.every(r=>r.before.frame===r.after.frame&&r.before.draws===r.after.draws),JSON.stringify(report.waitReuse));
+  await page.waitForTimeout(600);
  }
  assert.ok(report.running.every(r=>r.route===route));assert.ok(report.running.every(r=>r.saveRoot==='/savesth05mp'));
  const beforeX=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(1,5));
@@ -52,6 +61,7 @@ try{
  // The phone path owns a real short touch edge in the native pause menu.
  await page.evaluate(()=>command(0,'keyboard',{code:'Escape',down:true}));await page.waitForTimeout(80);await page.evaluate(()=>command(0,'keyboard',{code:'Escape',down:false}));
  await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].every(f=>f.contentWindow.Module._th05_input_scene()===0),null,{timeout:5000});
+ if(jitter){await page.evaluate(()=>{for(const frame of document.querySelectorAll('iframe')){const w=frame.contentWindow;w.__holdInputUntil=w.performance.now()+500;}});await page.waitForTimeout(180);}
  await page.evaluate(()=>command(0,'direct-touch',{type:'down',id:23,x:200/640,y:195/480}));await page.waitForTimeout(35);await page.evaluate(()=>command(0,'direct-touch',{type:'up',id:23,x:200/640,y:195/480}));
  await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].every(f=>f.contentWindow.Module._th05_input_scene()===4),null,{timeout:5000});report.touchPause=true;
  const touchBefore=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(0,5));

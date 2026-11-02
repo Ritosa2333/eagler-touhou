@@ -48,7 +48,7 @@ void CCharaBullet::Draw()
 void CCharaBullet::AddBullet(float bulletX, float bulletY, unsigned char imgIdx,unsigned char bulletType,
 							 float velX, float velY, float moveAngle,unsigned char damage)
 {
-	for (int i=0;i<Capacity();i++)
+	for (int i=0,capacity=Capacity();i<capacity;i++)
 		if (m_bullets[i].flag==0)
 		{
 			m_bullets[i].flag=1;
@@ -88,7 +88,7 @@ void CCharaBullet::ShootOriginal(int character,int level,int timer,float x,float
 
 void CCharaBullet::StepBullets()
 {
-	for (int i=0;i<Capacity();i++)
+	for (int i=0,capacity=Capacity();i<capacity;i++)
 	{
 		if (m_bullets[i].flag%2==0)
 		{
@@ -180,7 +180,7 @@ void CCharaBullet::StepHitBullets()
 
 void CCharaBullet::DrawBullets()
 {
-	for (int i=0;i<Capacity();i++)
+	for (int i=0,capacity=Capacity();i<capacity;i++)
 		if (m_bullets[i].flag==1)
 			m_pStage->m_pStageRes->DrawStageObjectImage(m_pStage->m_pStageRes->m_patternArray.GetImagePtr(m_bullets[i].imgIdx+m_bullets[i].age%2),
 										   m_bullets[i].curX,m_bullets[i].curY);
@@ -224,7 +224,7 @@ int CCharaBullet::GetDamage(float ctrX,float ctrY,float halfWidth,float halfHeig
 	int nHit=0;
 	int totalDamage=0;
 
-	for (int i=0;i<Capacity();i++)
+	for (int i=0,capacity=Capacity();i<capacity;i++)
 		if (m_bullets[i].flag==1)
 			if (m_bullets[i].curX>=ctrX-halfWidth&&m_bullets[i].curX<=ctrX+halfWidth)
 				if (m_bullets[i].curY>=ctrY-halfHeight&&m_bullets[i].curY<=ctrY+halfHeight)
