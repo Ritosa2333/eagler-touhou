@@ -13,6 +13,7 @@
 #include "../portable/Graphics.hpp"
 #include "../Game/Practice/Practice.h"
 #include <cmath>
+#include <new>
 #include <stdexcept>
 #include <eagler/netplay/RollbackJournal.hpp>
 
@@ -29,6 +30,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rollback_checkpoint(int restore)
 }
 namespace th5w {
 struct PracticeTests {
+ inline static int stagePoison=-1;
  static int CoopProbe(int op,int seat,int value){
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
   auto* s=static_cast<CStage*>(game->m_pCurScheme);if(!s->Cooperative()||seat<0||seat>=s->m_seatCount)return 0;
@@ -63,18 +65,31 @@ struct PracticeTests {
    case 19:s->SetQuit(STAGE_END_CLEAR);break;
    case 20:s->SaveSeat();s->BindSeat(0);return s->RollbackPredictable();
    case 22:{auto* boss=dynamic_cast<CBossStage4*>(s->m_pBoss);if(!boss)return 0;boss->m_whichDie=value;boss->m_curPhase=0xfd;boss->m_curPhaseFrame=0;boss->m_bSuccessDefeat=true;boss->m_bDrawCurvingBullet=false;s->m_pLaser->RemoveLaser(0);break;}
+   case 24:stagePoison=value;break;
+   case 25:return CoopTransition(value);
+   case 26:s->SaveSeat();s->BindSeat(0);return CGame::GVar().m_playStage;
+   case 23:if(!s->m_pBoss||dynamic_cast<CBossStage4*>(s->m_pBoss))return 0;s->m_pBoss->m_curPhase=0xfd;s->m_pBoss->m_curPhaseFrame=0;s->m_pBoss->m_bSuccessDefeat=true;break;
    case 21:{int phase=s->m_pBoss?s->m_pBoss->GetCurPhase():-1;s->SaveSeat();s->BindSeat(0);return phase;}
    case 12:s->SetQuit(STAGE_END_CLEAR);s->m_nQuitFrameLeft=0;break;
    default:return 0;
   }
   s->SaveSeat();s->BindSeat(0);return 1;
  }
+ static int CoopTransition(int fill){
+  auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;auto* previous=static_cast<CStage*>(game->m_pCurScheme);
+  previous->UploadVarToGlobal();previous->PersistCoop();delete previous;game->m_pCurScheme=nullptr;
+  auto& g=CGame::GVar();++g.m_playStage;g.m_playChara=coop::Run().characters[0];
+  void* memory=::operator new(sizeof(CStage));memset(memory,fill,sizeof(CStage));auto* next=new(memory)CStage;
+  game->m_pCurScheme=next;next->Initialize();next->m_bLogo=false;return 1;
+ }
  static int CoopStage(int stage,int warp){
   auto* game=CGame::s_pCurGame;if(!game||coop::Run().count<2||stage<0||stage>6||warp<0||warp>2)return 0;
   delete game->m_pCurScheme;game->m_pCurScheme=nullptr;coop::Run().continuing=false;
   auto& g=CGame::GVar();g.m_playStage=stage;g.m_playChara=coop::Run().characters[0];g.m_bPracticeMode=false;g.OnBeginGame();
   for(int i=0;i<7;i++)g.m_randomSeed[i]=coop::Run().seed+i*7919;
-  auto* s=new CStage;game->m_pCurScheme=s;s->Initialize();s->m_bLogo=false;
+  CStage* s;
+  if(stagePoison>=0){void* memory=::operator new(sizeof(CStage));memset(memory,stagePoison,sizeof(CStage));s=new(memory)CStage;}else s=new CStage;
+  game->m_pCurScheme=s;s->Initialize();s->m_bLogo=false;
   if(warp){g.m_bPracticeMode=true;g.m_practiceConfig=practice::Config();g.m_practiceConfig.mode=1;g.m_practiceConfig.stage=stage;g.m_practiceConfig.warp=warp;s->ApplyPracticeWarp();g.m_bPracticeMode=false;g.m_practiceConfig=practice::Config();}
   return 1;
  }

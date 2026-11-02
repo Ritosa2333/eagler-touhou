@@ -230,6 +230,8 @@ void CStage::Initialize()
 	m_bInCharaBomb=false;
 	m_bInCharaBombForItem=false;
 	m_bInBossBattle=false;
+ // Player shots step before the enemy target scan on the first active tick.
+ m_bHomingEnemyExist=false;m_homingEnemyX=0;m_homingEnemyY=0;
 
 	m_nMiss=0;
 	m_nBomb=0;
