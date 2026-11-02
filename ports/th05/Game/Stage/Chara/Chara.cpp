@@ -495,10 +495,8 @@ void CChara::DrawCollisionArea()
 	{
 		float drawX=floor(m_curX/16.0f)*16.0f;
 		float drawY=floor(m_curY/16.0f)*16.0f;
-		m_pStage->m_pStageRes->DrawCircle(drawX,drawY,6.0f*16.0f,0.5f,0.25f,0.25f,true,(float)alpha/100.0f*0.75f*0.3f);
-		m_pStage->m_pStageRes->DrawCircle(drawX,drawY,5.0f*16.0f,0.5f,0.25f,0.25f,true,(float)alpha/100.0f*0.75f*0.6f);
-		m_pStage->m_pStageRes->DrawCircle(drawX,drawY,4.0f*16.0f,0.5f,0.25f,0.25f,true,(float)alpha/100.0f*0.75f*0.9f);
-		m_pStage->m_pStageRes->DrawCircle(drawX,drawY,3.0f*16.0f,1.0f,1.0f,1.0f,true,(float)alpha/100.0f);
+		// Four native pixels centered on the player; display only.
+		m_pStage->m_pStageRes->DrawRectangle(drawX-16.0f,drawY-16.0f,32.0f,32.0f,1.0f,1.0f,1.0f,true,(float)alpha/100.0f);
 	}
 }
 
