@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/b70925c8ce1794a8583d9f9b3f9e6306ad25c505)；[剩余验收](https://github.com/AdingApkgg/thp/blob/b70925c8ce1794a8583d9f9b3f9e6306ad25c505/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/5c71a2f98f0cc5c19fb18bcbc3d6795606c377a1)；[剩余验收](https://github.com/AdingApkgg/thp/blob/5c71a2f98f0cc5c19fb18bcbc3d6795606c377a1/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [原版HeapFree返回值观察](https://github.com/AdingApkgg/thp/blob/5c71a2f98f0cc5c19fb18bcbc3d6795606c377a1/docs/porting/TH14_HEAP_FREE_RETURN_NOV03.md)：独立静音原版600回调中，273次非空堆释放调用均实际返回成功；按入口或返回事件重放隔离模型时，32个同尺寸请求的相对位置均只匹配1次。跨线程实际顺序、附加前堆状态和其他路径未证明；完整堆历史、worldZ差异及整作1:1未完成。
 
 2026-11-03 [同进程堆跟踪与独立Windows堆对照](https://github.com/AdingApkgg/thp/blob/b70925c8ce1794a8583d9f9b3f9e6306ad25c505/docs/porting/TH14_EXTRA_HEAP_CALLS_NOV03.md)：原版600回调记录到此前遗漏的130次清零分配。将合成生命周期输入隔离模型及6个独立x86 Windows进程堆后，32个同尺寸请求的相对位置仍各只匹配1次。附加前堆状态、实际跨线程顺序及其他路径尚未证明；完整堆历史和worldZ差异未闭合。
 
