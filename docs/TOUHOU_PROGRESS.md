@@ -82,7 +82,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ### th14 还原、移植与 Web 适配
 
-独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/8ed7ff490fba2fc445f2b73acd90829dec92468b)；[剩余验收](https://github.com/AdingApkgg/thp/blob/8ed7ff490fba2fc445f2b73acd90829dec92468b/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+独立 C++／Wasm 移植继续。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/7cb561b8a3a9ef1d4be2d4f141935e369240c81b)；[剩余验收](https://github.com/AdingApkgg/thp/blob/7cb561b8a3a9ef1d4be2d4f141935e369240c81b/docs/porting/TH14_REMAINING_ACCEPTANCE.md)。只推进 TH14，整作 1:1 未完成。
+
+2026-11-03 [录像输入边界观察候选](https://github.com/AdingApkgg/thp/blob/7cb561b8a3a9ef1d4be2d4f141935e369240c81b/docs/porting/TH14_REPLAY_INPUT_BOUNDARIES_NOV03.md)：原版终止标记和本关录入帧数用尽是两条不同路径；新增只读观察器通过原指令及合成控制，真实进程命中尚未验证。两份新候选录像共12段输入无FFFF标记，文件扫描不证明播放或EOF。
 
 2026-11-03 [魔理沙A Hard无异常前缀](https://github.com/AdingApkgg/thp/blob/8ed7ff490fba2fc445f2b73acd90829dec92468b/docs/porting/TH14_HARD_CLEAN_EXCEPTION_PREFIX_NOV03.md)：同录像静音31,200回调实际一至二面，无报告异常且通过异常、活动关卡时间和字段组合检查；先前异常未复现、原因未明，该前缀未到第三面，也未证明录像EOF。
 
