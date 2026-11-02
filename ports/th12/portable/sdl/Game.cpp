@@ -652,12 +652,13 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha,bool draw
     // One capture per displayed frame; the sampler simulates any skipped ages.
     const bool in_game=session&&phase==Phase::Menu;
     game_fps=picture_counter.frame(now,session?session->stage:0,double(th12::frame)+(scene->continuous_motion()&&presentation_alpha<1?presentation_alpha:0),in_game&&menus->state.scene==MenuScene::Playing);
-    const bool hide_game=in_game&&menus->state.scene==MenuScene::Playing&&th12::practice::toolSettings().disable_master_display;
-    if(in_game&&!captured&&!hide_game){const double t0=host::seconds();
+    const bool complete_history=th12::practice::toolSettings().disable_master_display;
+    if(in_game&&(!captured||complete_history!=captured_complete_spell_history)){const double t0=host::seconds();
         scene->capture({game_fps,session->hud_age,session->replay?0:th12::fullGameFlow.continueCount,session->run.mode==ModePractice||(session->replay&&session->replay->info.practice),
-            th12::fullGameFlow.status==th12::FullGameStatus::StageClear,session->high_score,session->replay?session->replay->recorded_fps(session->stage,session->cursor):-1});
+            th12::fullGameFlow.status==th12::FullGameStatus::StageClear,session->high_score,session->replay?session->replay->recorded_fps(session->stage,session->cursor):-1,complete_history});
+        captured_complete_spell_history=complete_history;
         captured=true;++capture_serial;const double t=host::seconds()-t0;timing[1]+=t;frame_timing[1]=t*1000;}
-    {const double t0=host::seconds();if(hide_game)gpu.begin({0,0,0,1});else draw();practice_ui.render(gpu);const double t=host::seconds()-t0;timing[2]+=t;frame_timing[2]=t*1000;}
+    {const double t0=host::seconds();draw();practice_ui.render(gpu);const double t=host::seconds()-t0;timing[2]+=t;frame_timing[2]=t*1000;}
     // Once a minute of play: average CPU time per frame and frame pacing for the log.
     const bool continued=timed_frame;timed_frame=in_game&&menus->state.scene==MenuScene::Playing;
     if(timed_frame){
