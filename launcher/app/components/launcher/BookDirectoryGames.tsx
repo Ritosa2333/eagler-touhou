@@ -5,7 +5,7 @@ import {ActionMenu,ActionMenuItem,ActionMenuCheckboxItem,ActionMenuGroup,ActionM
 import {useLocale} from '../../i18n';
 import {BookButton} from './BookButton';
 import {impressFavorite} from './ink-feedback';
-import {beginFavoriteReorder,useFavoriteReorder} from './favorite-reorder';
+import {beginFavoriteReorder,beginFilterReorder,useFavoriteReorder} from './favorite-reorder';
 import {multiplayerGroup,type LibraryProduct,type MultiplayerGroup} from './products';
 import {bookArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT,readBookPreference,writeBookPreference,stringArray} from './book-preferences';
@@ -29,6 +29,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   const filters=productFilters??localFilters,viewProduct=viewingProduct??selectedProduct??'';
   const selected=filters.length?filters:viewProduct?[viewProduct]:[];
   const change=(ids:string[])=>{
+    beginFilterReorder();
     if(onProductFiltersChange)onProductFiltersChange(ids);
     else {setLocalFilters(ids);if(viewProduct)onSelect('');}
   };
