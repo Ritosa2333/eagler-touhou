@@ -88,7 +88,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     <BookButton variant="action" className="lobby-button" id="connectionRefresh" type="button" onClick={service.retry}>{t('lobby.refresh')}</BookButton>
   </aside>;
   const membership = <aside className="lobby-membership" id="membership" hidden={!state.mine}><strong id="membershipTitle">{state.mine ? t('lobby.mine', {code: state.mine.code}) : ''}</strong><p id="membershipHint">{t(state.supportsRecovery ? 'lobby.mineHint' : 'lobby.releaseUnsupported')}</p><BookButton variant="action" className="lobby-button" id="releaseMembership" type="button" hidden={!state.mine || !state.supportsRecovery} disabled={!!state.recovering || state.connection !== 'live' || state.leaving || !state.mine?.recoveryToken} onClick={service.releaseMembership}>{t(state.recovering ? 'lobby.releasing' : 'lobby.release')}</BookButton></aside>;
-  const roomTools = <LobbyRoomTools disabled={disabled} onCreate={() => onOpenForm('create')} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
+  const roomTools = <LobbyRoomTools disabled={disabled} loading={state.loading} onCreate={() => onOpenForm('create')} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
   const roomFilters=<DirectoryRoomFilters rooms={filteredRooms} value={roomFilter} onChange={next => {beginFilterReorder(); setRoomFilter(next);}}/>;
   const filtering = roomFilter !== 'all' || !!surface.productFilters?.length || !!surface.viewingProduct;
   const empty = state.loading || state.visibleRooms.length || state.connectionInterrupted ? null : {

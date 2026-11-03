@@ -263,11 +263,15 @@ test('Running cooperative room admits an observer even when its engine must wait
 for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list conditions and original static sections: ${locale}`, async () => {
   const f = fixture({locale}); const {opens} = await mountLobby(f, {}, {locale});
   assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listLoading').hidden, false);
+  assert.equal(n('#refreshRooms').getAttribute('aria-busy'), 'true');
+  assert.equal(n('#refreshRooms').dataset.loading, 'true');
+  assert.equal(env.document.querySelector('#listLoading .lobby-preload-spinner'), null);
   assert.equal(n('#roomList').hidden, true, 'An unloaded list cannot displace the loading indicator');
   assert.equal(n('#roomCount').hidden, true);
   assert.equal(env.document.querySelector('#listHead'),null); assert.equal(env.document.querySelector('#emptyState'), null);
   assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true); assert.equal(n('#roomCount').textContent, '');
   await f.live(); assert.equal(n('#roomList').getAttribute('aria-busy'), 'false'); assert.equal(n('#listLoading').hidden, true);
+  assert.equal(n('#refreshRooms').getAttribute('aria-busy'), 'false');
   assert.equal(n('#emptyTitle').textContent, t(locale, 'lobby.empty')); assert.equal(n('#emptyHint').textContent, t(locale, 'lobby.emptyHint'));
   assert.equal(n('#roomList').hidden,true,'An empty list cannot consume the empty-state layout space');
   assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 0}));
@@ -293,6 +297,7 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   assert.equal(n('#roomCount').getAttribute('aria-live'), 'polite'); assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 1}));
   assert.equal(n('#roomCount').hidden, false);
   await click('#refreshRooms'); assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(env.document.querySelector('#listHead'),null);
+  assert.equal(n('#refreshRooms').dataset.loading, 'true');
   assert.equal(n('#roomCount').hidden, false, 'Refreshing existing rows preserves the footer geometry');
   assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 1}));
   assert.equal(n('.lobby-join').disabled,true,'Stale room data cannot be joined during refresh');

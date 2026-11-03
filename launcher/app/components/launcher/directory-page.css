@@ -16,7 +16,8 @@
   .book-room-filter-trigger svg {width:16px;height:16px}
   .book-directory .book-room-filter-trigger[data-active='true'] {background:var(--kit-accent);border-color:var(--kit-foreground);color:var(--kit-foreground)}
   .book-directory .lobby-list-surface {position:relative;display:flex;flex-direction:column;min-width:0;min-height:280px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);overflow:hidden}
-  .book-directory .lobby-list-loading {position:absolute;inset:0;display:grid;place-items:center;min-height:0;padding:24px;pointer-events:none}
+  .book-directory .lobby-refresh[data-loading='true'] svg {animation:lobby-refresh-loading 1.1s linear infinite}
+  @keyframes lobby-refresh-loading {to {transform:rotate(360deg)}}
   .book-directory .lobby-room-list {flex:1;min-height:0}
   .book-directory .lobby-empty {display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:0;padding:32px 20px;border:0;background:transparent;color:var(--book-muted);text-align:center}
   .book-directory .lobby-empty h2 {margin:0;font-size:17px;color:var(--book-ink)}
@@ -90,4 +91,6 @@
 .book-directory :is(.lobby-actions .lobby-button,.book-room-filter-trigger,.lobby-room-row>.lobby-join) {font-family:var(--kit-font);font-weight:600;letter-spacing:0}
 .book-directory .ui-button.book-lobby-favorite[aria-pressed='true'] {background:transparent;border-color:transparent;color:var(--kit-warning)}
 @media(prefers-reduced-motion:reduce) {.book-lobby-check,.book-lobby-check svg {transition:none}}
+@media(prefers-reduced-motion:reduce) {.book-directory .lobby-refresh[data-loading='true'] svg {animation:none}}
+.less-motion .book-directory .lobby-refresh[data-loading='true'] svg {animation:none}
 .less-motion .book-lobby-check,.less-motion .book-lobby-check svg {transition:none}
