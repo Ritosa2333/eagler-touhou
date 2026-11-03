@@ -129,10 +129,25 @@ try{
  await page.screenshot({path:resolve(out,'complete-spell-history.png')});
  console.log('COMPLETE_SPELL_HISTORY_PASS',{beforeCompleteHistory,completeHistoryPanel,playing:await state()});
  const fullscreen=[];
+ // Mobile browser chrome and launcher layout can resize the iframe during play.
+ // The CSS viewport should move without reallocating the game's WebGL buffer.
+ const backingSize=()=>frame.evaluate(()=>{
+   const canvas=document.querySelector('#screen');
+   return [canvas.width,canvas.height];
+ });
+ for(const [width,height] of [[390,310],[390,270],[640,480]]){
+   await page.locator('#p0').evaluate((element,[w,h])=>{
+     element.style.width=w+'px';element.style.height=h+'px';
+   },[width,height]);
+   await frame.waitForFunction(([w,h])=>innerWidth===w&&innerHeight===h,[width,height]);
+   await page.waitForTimeout(120);
+   assert.deepEqual(await backingSize(),[640,480],'window resize keeps the WebGL backing size');
+ }
  for(let i=0;i<2;i++){
    await frame.evaluate(async()=>{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('#screen').requestFullscreen();});
    await page.waitForTimeout(500);fullscreen.push(await state());
  }
+ assert.deepEqual(await backingSize(),[640,480],'exiting fullscreen restores the fixed WebGL backing size');
  await press('Escape');await wait(s=>s.scene==='paused'&&s.menuReady);await page.screenshot({path:resolve(out,'pause.png')});
  await press('ArrowDown');await press('ArrowDown');await press('Enter');await wait(s=>s.scene==='pause-confirm'&&s.menuReady);
  await press('ArrowUp');await press('Enter');await wait(s=>s.scene==='replay-save'&&s.menuReady);
