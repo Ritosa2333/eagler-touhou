@@ -49,6 +49,8 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 
 Package Store 在领取暂存区和切换当前版本的 IndexedDB 事务中核对预期代次。后台 OGG 下载和共享字体升级携带所属安装代次，多个标签页同时导入或更新时，以完整的新安装为准。Web Locks 用于协调并发，持久化代次检查覆盖没有 Web Locks 的浏览器。
 
+后台 OGG 逐首提交资源，整批结束或中断后统一刷新安装状态。单曲挂载完成后的进度提示沿共用延时关闭，新的网络请求继续显示，失败与重试提示按各自状态处理。
+
 更新提示绑定当前 Runtime 实例。新版本完整下载并校验后才提示，关闭或替换实例后，其过期检查不会占用后继实例的通知标识。启动时先补齐必需资源，再固定 DATA 身份。
 
 对应检查：[`test-package-generation-conditions.mjs`](../../launcher/tests/test-package-generation-conditions.mjs)、[`game-preparation.test.mjs`](../../launcher/tests/react-main/game-preparation.test.mjs) 与 [`runtime-service.test.mjs`](../../launcher/tests/react-main/runtime-service.test.mjs)。

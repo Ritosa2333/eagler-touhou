@@ -575,10 +575,12 @@ test('main 5768 and music availability original: exactly two OGG tracks gate sta
   // Main installs these with two Promise.all workers; completion order is unspecified.
   assert.deepEqual(r.writes.filter(path => path.endsWith('.ogg')).sort(), ['/bgm/track-1.ogg', '/bgm/track-2.ogg']);
   const localEvents = progress.length;
+  const refreshes = f.calls.filter(value => value === 'refresh:th06').length;
   await r.service.launch(); let complete = false; const background = result.startBackground().then(() => {complete = true;});
   await flush(); assert.equal(complete, false); assert.equal(r.service.getSnapshot().launched, true);
   assert.deepEqual(installs.at(-1), ['track-3']); third.resolve(); await background;
   assert.deepEqual(installs, [['track-1', 'track-2'], ['track-3'], ['track-4']]);
+  assert.equal(f.calls.filter(value => value === 'refresh:th06').length, refreshes + 1, 'publish installed metadata once for the background batch');
   assert.equal(JSON.stringify([...state.storage]), before); assert.equal(r.dataReads.length, 0, 'DATA bridge remains native-pulled; no optional task replaces it');
   assert.ok(r.retained.some(value => value.id === initial.id)); assert.ok(r.writes.includes('/bgm/track-4.ogg'));
   assert.ok(localEvents > 0); assert.equal(progress.length, localEvents,
@@ -806,4 +808,20 @@ for (const productId of ['th09', 'th09mp']) for (const mode of ['ogg-stream', 'o
   assert.deepEqual(result.plan.localOgg.fileIds, ['track-1', 'track-2', 'track-3', 'track-4']);
   assert.deepEqual(r.writes.filter(path => path.endsWith('.ogg')).sort(), ['track-1', 'track-2', 'track-3', 'track-4'].map(id => `/music/${id}.ogg`));
   assert.deepEqual(result.plan.generation.files['game-data'], initial.files['game-data']);
+});
+
+for (const mode of ['failure','cancel']) test(`background OGG publishes committed partial metadata once on ${mode}`, async () => {
+  const initial=generation({ogg:['track-1','track-2']}),warnings=[];let f;
+  f=acquisitionFixture({current:initial,catalogValue:catalog(),dependencies:{installPublished:async(_game,options)=>{
+    const id=options.addFileIds[0];
+    if(id==='track-4')throw mode==='cancel'?new DOMException('cancelled','AbortError'):new Error('fixture failed');
+    const next=added(f.current,[id]);f.setCurrent(next);return {generation:next,installation:null};
+  }}});
+  const r=runtimeFixture(),result=await api.prepareGame(gameInput(f,settingsFixture({music:'ogg-stream'}),{runtime:r.service,onWarning:value=>warnings.push(value)}));
+  const before=f.calls.filter(value=>value==='refresh:th06').length;
+  await r.service.launch();await result.startBackground();
+  assert.equal(f.calls.filter(value=>value==='refresh:th06').length,before+1);
+  assert.ok(f.current.files['track-3']?.objectId);assert.equal(f.current.files['track-4'],undefined);
+  assert.ok(r.writes.includes('/bgm/track-3.ogg'));assert.equal(r.writes.includes('/bgm/track-4.ogg'),false);
+  assert.equal(warnings.length,1);
 });
