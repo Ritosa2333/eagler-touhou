@@ -80,9 +80,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码与复核工具](https://github.com/AdingApkgg/thp/commit/90402e3b07d776aa73a752e5a759346ac327028f)已按原版关卡激活流程[修正录像加速计数](https://github.com/AdingApkgg/thp/blob/90402e3b07d776aa73a752e5a759346ac327028f/docs/porting/TH14_REPLAY_ACTIVATION_RESET_NOV04.md)：56 组原版／42 组 Wasm 激活检查及两关加速 Application 2,289 帧／27 断言通过，呈现 2,289 次；此前计数跨关卡保留的判断已更正，额外 FPS 指针候选已撤回。141 核心对象与 146 浏览器单元全量重编。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码与复核工具](https://github.com/AdingApkgg/thp/commit/2b0bc1c67ddeb57aa7ce2208f08cbf08ffc8bdda)已补齐[绘制摄像机发布后、透视前的加载交付](https://github.com/AdingApkgg/thp/blob/2b0bc1c67ddeb57aa7ce2208f08cbf08ffc8bdda/docs/porting/TH14_CAMERA_PUBLICATION_NOV04.md)：50 组原版指令组件、200 组 Wasm 受控组合通过，旧组件的 72 次复制 right 差异归零。141 核心对象与 146 浏览器单元全部重编，实际静音 Application 两关加速／换关／暂停 2,289 帧／27 断言通过，呈现 2,289 次；两幅检查画面与离线混音哈希符合封存参考。
 
-该核心的灵梦 B Normal 122,537 回调、灵梦 A Extra 38,403 回调重新通过 v4 四项门槛，新增[咲夜 A Extra 38,977 回调完整记录](https://github.com/AdingApkgg/thp/blob/90402e3b07d776aa73a752e5a759346ac327028f/docs/porting/TH14_SAKUYAA_EXTRA_CURRENT_NOV04.md)通过，6,461 行／303 字段 VM、48 个战斗检查点及初始发布顺序一致。还原、移植与 Web 适配均为进行中；旧 Hard 相机／RNG 分歧、完整原版加速图像／音频、普通浏览器等见[当前清单](https://github.com/AdingApkgg/thp/blob/90402e3b07d776aa73a752e5a759346ac327028f/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+本核心的灵梦 B Normal 122,537、灵梦 A Extra 38,403、咲夜 A Extra 38,977 回调留存记录重新通过 v4 四项门槛，共 199,917 回调。还原、移植与 Web 适配均为进行中；逐字复制与透视内部写入、旧 Hard 相机／RNG 分歧、完整模式、原版整局画面／音频、浏览器及存档等价继续见[当前清单](https://github.com/AdingApkgg/thp/blob/2b0bc1c67ddeb57aa7ce2208f08cbf08ffc8bdda/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
