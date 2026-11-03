@@ -84,6 +84,7 @@ private:
     struct BackgroundQuad {bool ready=false;std::array<std::array<double,3>,4> corners{};};
     std::vector<BackgroundQuad> background_quads;
     std::vector<Pose> poses;std::vector<u32> sorted;std::vector<TextDescriptor> texts;std::vector<Dialogue> dialogues;std::vector<Triangle> triangles;
+    std::array<i32,8> stage_backdrops{};
     std::vector<Appearance> scratch;std::vector<Pose> logical_poses;std::vector<u32> owners;FrameLookup schedule_ids;PriorityBuckets draw_buckets,menu_buckets;std::vector<u32> menu_order;Pose shaken; // per-frame scratch
     struct ClipVertex {double cx,cy,depth,u,v;};
     std::vector<ClipVertex> clip_polygon,clip_output;std::vector<Vertex> clip_projected;

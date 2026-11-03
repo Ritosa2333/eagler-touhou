@@ -102,6 +102,11 @@ function paths(FS,directory){
   return FS.readdir(directory).filter(name=>name!=='.'&&name!=='..').flatMap(name=>{const path=directory+'/'+name;return FS.isDir(FS.stat(path).mode)?paths(FS,path):[path];});
 }
 function mountSave(path,bytes){if(!core)return;core.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));core.FS.writeFile(path,bytes);}
+async function writeSave(path,bytes){
+  await store.write(path,bytes);
+  mountSave(path,bytes);
+  oldFiles.set(path,copy(bytes));
+}
 async function loadSaves(){oldFiles=new Map();for(const path of await store.list()){const bytes=await store.read(path);if(bytes){oldFiles.set(path,copy(bytes));mountSave(path,bytes);}}}
 function syncRuntime(saveReplay=true,incremental=false){
   syncQueue=syncQueue.catch(()=>{}).then(async()=>{
@@ -119,7 +124,7 @@ function syncRuntime(saveReplay=true,incremental=false){
         current.add(path);const bytes=core.FS.readFile(path);
         if(!equal(oldFiles.get(path),bytes)){await store.write(path,bytes);oldFiles.set(path,bytes);}
       }
-      if(!incremental)for(const path of oldFiles.keys())if(!current.has(path)){await store.remove(path);oldFiles.delete(path);}
+      if(!incremental)for(const path of oldFiles.keys())if(!current.has(path)&&!core.FS.analyzePath(path).exists){await store.remove(path);oldFiles.delete(path);}
       await store.sync();
     }catch(error){
       for(const path of pending)dirtySaves.add(path);
@@ -234,7 +239,12 @@ async function bootNative(){
     await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!(options.alwaysHitbox||options.touchAlwaysHitbox)),0,locale,Number(music!=='none'));
     core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));
-    core.th12SaveWritten=path=>dirtySaves.add(path);
+    core.th12SaveWritten=path=>{
+      dirtySaves.add(path);
+      // A confirmed slot save must reach browser storage even if the
+      // player immediately leaves the native replay menu.
+      if(path.startsWith('/savesth12/replay/'))void syncRuntime(false,true).catch(fail);
+    };
     const exitCode=core.callMain(['--data-dir','/game','--save-dir','/savesth12']);
     if(terminated||exitCode)throw sdlStopError(exitCode??1,lastFailure,{source:'call-main'},{started:false,logs:startupLog});
     canvas.focus();
@@ -245,7 +255,7 @@ async function bootNative(){
       onExit:async()=>{
         const world=multiplayer.state();if(world.returnRequested)return returnRoom();
         core._th12_host_mp_finish(Number(!!world.saveRequested));
-      },store:()=>store});
+      },store:()=>({read:path=>store.read(path),write:writeSave,sync:()=>store.sync()})});
     core.th12MultiplayerTick=(ui,mode,x,y,now)=>{
       if(fatalError||terminated)return 2;
       try{
@@ -264,7 +274,7 @@ async function bootstrap(){
   store=await openStore();
   if(assets.managed){
     document.documentElement.dataset.managed='true';
-    const boundaryStore={list:()=>store.list(),read:path=>store.read(path),sync:()=>store.sync(),write:async(path,bytes)=>{await store.write(path,bytes);mountSave(path,bytes);oldFiles.set(path,copy(bytes));},remove:async path=>{await store.remove(path);if(core?.FS.analyzePath(path).exists)core.FS.unlink(path);oldFiles.delete(path);}};
+    const boundaryStore={list:()=>store.list(),read:path=>store.read(path),sync:()=>store.sync(),write:writeSave,remove:async path=>{await store.remove(path);if(core?.FS.analyzePath(path).exists)core.FS.unlink(path);oldFiles.delete(path);}};
     emit=installManagedShell({store:boundaryStore,running:()=>launched||launching,replayViewer:()=>!!options.replayViewer,configure,resources:installResources,launch,playback,prepareRoom,returnRoom,spectatorPlayback:message=>multiplayer.spectatorCommand(message),validateReplay:async bytes=>{await initializeNative();return multiplayer.inspect(bytes);},
       key:(code,down,message)=>{if(!input.key(message,down,message.inputSource==='physical'?'physical':'virtual',key))key(keyboardCode(message),down);},
       clearKeyboard,cancelTouch,touch:message=>{touch.controls(message,state);core?._th12_host_mobile(Number(!!message.thpracMobilePanelsEnabled),Number(!!message.thpracMobilePanelsVisible));},pointer:message=>pointer(hostedPointer(message,true)),practicePointer:message=>practicePointer(hostedPointer({...message,pointerType:message.pointerType??'mouse'},false)),sync:syncRuntime},window,{announceReady:false});
