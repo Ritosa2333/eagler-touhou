@@ -13,7 +13,7 @@ class ItemPresentation {
     uint64_t body = 0, arrow = 0, hint = 0;
     int script = 0, lastVisualAge = 0;
     uint32_t interruptVersion = 0, hintGeneration = 0;
-    bool aggregate = false, bodyReleased = false;
+    bool aggregate = false, bodyReleased = false, seenInSync = false;
   };
   std::unordered_map<uint32_t, ItemBinding> items_;
   std::array<uint64_t, 3> stock_{};
