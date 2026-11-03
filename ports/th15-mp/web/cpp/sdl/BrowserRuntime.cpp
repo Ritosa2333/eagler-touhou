@@ -522,6 +522,8 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   // presentation remains governed by the real cadence and the 60Hz limiter.
   app->graphics.presentation.enabled=true;
 #endif
+  // Refill before simulation/drawing can consume a slow frame's budget.
+  app->audio_device.pump();
   const auto ticks=cadence.advance(
 #if TH15_MULTIPLAYER
  mp_started?network.PacedElapsed(delta):

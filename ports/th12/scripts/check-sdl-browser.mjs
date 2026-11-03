@@ -112,7 +112,22 @@ try{
  const openVertices=(await state()).practiceVertices;assert(openVertices>closedVertices+100,'hosted THPrac mouse must expand the speed settings');
  await page.screenshot({path:resolve(out,'thprac-mouse-expanded.png')});console.log('THPRAC_HOSTED_MOUSE_PASS',{closedVertices,openVertices});
 
+ // This display option must refresh cached text without hiding the game,
+ // including while the advanced panel has frozen the simulation.
+ async function clickPractice(x,y){
+  const point=await frame.evaluate(({x,y})=>{const r=document.querySelector('#screen').getBoundingClientRect();return {x:r.left+x*r.width/640,y:r.top+y*r.height/480};},{x,y});
+  for(const type of ['move','down','up']){await page.evaluate(p=>rpc(0,'thprac-mouse',p),{type,...point});await page.waitForTimeout(100);}
+ }
+ await clickPractice(20,42); // Close speed settings before opening Gameplay.
+ await clickPractice(20,69);
+ const beforeCompleteHistory=await state();
+ await clickPractice(18,278); // Complete spellcard capture rate.
+ const completeHistoryPanel=await state();
+ assert(completeHistoryPanel.captureSerial>beforeCompleteHistory.captureSerial,'changing history display refreshes the frozen presentation');
  await press('F12');await wait(s=>!s.capturing);
+ assert((await state()).vertices>100,'complete spell history must not blank the game');
+ await page.screenshot({path:resolve(out,'complete-spell-history.png')});
+ console.log('COMPLETE_SPELL_HISTORY_PASS',{beforeCompleteHistory,completeHistoryPanel,playing:await state()});
  const fullscreen=[];
  for(let i=0;i<2;i++){
    await frame.evaluate(async()=>{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('#screen').requestFullscreen();});

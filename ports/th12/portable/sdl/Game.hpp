@@ -114,6 +114,7 @@ private:
     bool quit=false;       // title Quit
     u32 capture_serial=0;
     bool captured=false;   // the scene holds the current game frame
+    bool captured_complete_spell_history=false;
     float presentation_alpha=1;
     u32 slow_frames=0;     // replay slow motion: one tick every fourth frame
     int motion_mode=0,motion_x=0,motion_y=0;
