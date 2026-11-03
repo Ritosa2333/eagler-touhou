@@ -326,13 +326,16 @@
 
 .book-masthead .book-profile-trigger {position:relative;overflow:visible}
 .book-masthead .book-profile-trigger .book-profile-trace {position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;fill:none;stroke:var(--kit-ring);stroke-width:1;stroke-linecap:round}
-.book-masthead .book-profile-trigger .book-profile-trace rect {stroke-dasharray:0 100;stroke-dashoffset:0;transition:stroke-dasharray 1100ms ease-in-out,stroke-dashoffset 1100ms ease-in-out}
-.book-masthead .book-profile-trigger:is(:hover,:focus-visible,[aria-current='page']) .book-profile-trace rect {stroke-dasharray:100 0;stroke-dashoffset:-25}
+.book-masthead .book-profile-trigger .book-profile-trace rect {opacity:0;stroke-dasharray:0 100;stroke-dashoffset:0;transition:opacity 160ms ease,stroke-dasharray 1100ms ease-in-out,stroke-dashoffset 1100ms ease-in-out}
+.book-masthead .book-profile-trigger:is(:hover,:focus-visible,[aria-current='page']) .book-profile-trace rect {opacity:1;stroke-dasharray:100 0;stroke-dashoffset:-25}
+.book-masthead .book-theme-toggle svg {rotate:0deg;transition:rotate 500ms cubic-bezier(.2,.65,.25,1)}
+@media (hover:hover) and (pointer:fine) {.book-masthead .book-theme-toggle:not(:disabled):hover svg {rotate:15deg}}
 .book-masthead .masthead-menu-toggle svg path {transition:translate 400ms ease;}
 .book-masthead .masthead-menu-toggle:is(:hover,:focus-visible,[aria-expanded='true']) svg path:nth-child(2) {translate:2px 0}
 .book-masthead .masthead-menu-toggle[aria-expanded='true'] {color:var(--kit-foreground);background:var(--kit-accent)}
-@media (prefers-reduced-motion:reduce) {.book-masthead .book-profile-trigger .book-profile-trace rect {transition:none}.book-masthead .masthead-menu-toggle svg path {transition:none;translate:none!important}}
+@media (prefers-reduced-motion:reduce) {.book-masthead .book-profile-trigger .book-profile-trace rect {transition:none}.book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}.book-masthead .masthead-menu-toggle svg path {transition:none;translate:none!important}}
 .less-motion .book-masthead .book-profile-trigger .book-profile-trace rect {transition:none}
+.less-motion .book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}
 .less-motion .book-masthead .masthead-menu-toggle svg path {transition:none;translate:none!important}
 
 @media (hover:hover) and (pointer:fine) {
