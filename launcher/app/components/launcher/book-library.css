@@ -32,8 +32,8 @@
   }
   html[data-ui-home] .book-library {
     display: grid;
-    grid-template-columns: 188px minmax(0, 1fr);
-    gap: 32px;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 24px;
     width: 100%;
     max-width: var(--launcher-layout-width);
     box-sizing: border-box;
