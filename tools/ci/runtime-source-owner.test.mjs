@@ -2,9 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
 import {existsSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 import {runtimeSourceOwner} from '../../launcher/tests/support/runtime-source-owner.mjs';
 import {targets,inspectInputs} from '../ports/inputs.mjs';
 const root=resolve(import.meta.dirname,'../..');
+test('source entry checks skip prebuilt-only targets and still inspect declared builds',()=>{
+  const result=spawnSync(process.execPath,[resolve(root,'tools/ci/validate-source-entries.mjs')],{cwd:root,encoding:'utf8',
+    env:{...process.env,EAGLER_CI_AFFECTED:JSON.stringify(['ports/th05','ports/th05-mp','ports/th06'])}});
+  assert.equal(result.status,0,result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout),{sourceEntries:2,scope:'source/input contracts; not compilation or gameplay'});
+});
 for(const game of ['th075','th08','th10','th11','th15'])test(`${game} ordinary and MP source stay bound on integrated main`,{skip:!existsSync(resolve(root,`ports/${game}`))},()=>{
   const ordinary=resolve(root,`ports/${game}`),mp=resolve(root,`ports/${game}-mp`);
   assert.equal(runtimeSourceOwner({source:ordinary,game}).component,`ports/${game}`);
