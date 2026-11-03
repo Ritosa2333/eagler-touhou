@@ -55,7 +55,7 @@
   .book-directory .lobby-seat-control {position:static;display:block;grid-column:2;grid-row:2;min-width:0;width:auto;max-width:none;overflow:visible;color:var(--book-muted);font:400 11px/1.5 var(--ui-font);text-align:left;white-space:normal;overflow-wrap:anywhere;transform:none}
   .book-directory .lobby-public-player[data-empty='true'] .lobby-seat-name {color:var(--book-muted);font-weight:400}
   .book-directory .lobby-public-player[data-empty='true'] .lobby-seat-name {grid-row:1/span 2;align-self:center}
-  .book-directory .book-room-score {position:relative;grid-column:2;grid-row:1;justify-self:center;transform:translateX(-8px);display:flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;min-height:40px;margin:0;padding:0 4px;border-block:1px solid var(--kit-border);color:var(--kit-foreground);white-space:nowrap}
+  .book-directory .book-room-score {position:relative;grid-column:2;grid-row:1;justify-self:center;transform:translateX(-12px);display:flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;min-height:40px;margin:0;padding:0 4px;border-block:1px solid var(--kit-border);color:var(--kit-foreground);white-space:nowrap}
   .book-directory .book-room-score-value {display:flex;align-items:center;justify-content:center;gap:6px;font:750 32px/1.1 var(--kit-font);font-variant-numeric:tabular-nums}
   .book-directory .book-room-score-separator {color:var(--kit-muted-foreground);font-size:18px;white-space:normal}
   .book-directory .lobby-room-state {display:flex;align-items:center;justify-content:flex-start;gap:5px;min-width:0;padding:0;background:transparent;color:var(--kit-muted-foreground);font:600 11px/1.5 var(--kit-font);white-space:nowrap}
