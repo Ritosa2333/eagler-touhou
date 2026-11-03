@@ -61,7 +61,7 @@ test('parser initializer restores the session face before any client hydration',
 
 test('document layout runs the brand initializer after rendered marks and before client scripts',async()=>{
   const source=await readFile(new URL('../../app/root.tsx',import.meta.url),'utf8');
-  const children=source.indexOf('{children}'),initializer=source.indexOf('<script>{SITE_BRAND_PREPAINT_SCRIPT}</script>'),clientScripts=source.indexOf('<Scripts ');
+  const children=source.indexOf('{children}'),initializer=source.search(/<script\b(?=[^>]*\bsuppressHydrationWarning\b)[^>]*>\s*\{SITE_BRAND_PREPAINT_SCRIPT\}\s*<\/script>/),clientScripts=source.indexOf('<Scripts ');
   assert.ok(children>=0&&initializer>children&&clientScripts>initializer);
 });
 

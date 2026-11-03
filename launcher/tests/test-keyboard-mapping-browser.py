@@ -24,6 +24,13 @@ def bundle_launcher():
                           capture_output=True, text=True, encoding="utf-8", check=True).stdout
 
 
+def declared_source_targets():
+    script = """import {targets} from './tools/ports/inputs.mjs';
+    process.stdout.write(JSON.stringify(targets().map(({game,variant})=>({game,variant}))));"""
+    return json.loads(subprocess.run(["node", "--input-type=module", "-e", script], cwd=ROOT.parent,
+                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+
+
 def runtime_source(workspace, target):
     game = target["game"]
     repo = workspace / target["directory"]
@@ -224,7 +231,17 @@ def main():
     command = ["node", str(ROOT.parent / "tools/ports/runtime-targets.mjs"), "--input-profile=standard", "--variant=" + args.variant]
     if args.game is not None:
         command.append("--game=" + args.game)
-    targets = json.loads(subprocess.run(command, capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    catalog_targets = json.loads(subprocess.run(command, capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    declared = {(target["game"], target["variant"]) for target in declared_source_targets()}
+    targets = [target for target in catalog_targets if (target["game"], target["variant"]) in declared]
+    source_less = [target for target in catalog_targets if (target["game"], target["variant"]) not in declared]
+    builds = json.loads((ROOT / "config/runtime-builds.json").read_text(encoding="utf-8"))["games"]
+    for target in source_less:
+        build = builds[target["game"]]
+        definition = build["variants"][target["variant"]]
+        assert build.get("builder") == "prebuilt" and build.get("sourceBuild") is None and definition.get("sourceBuild") is None, (
+            f"{target['game']}/{target['variant']} has no declared source-build test owner")
+    assert targets, "No source-declared Runtime targets for keyboard receiver extraction"
     launcher = bundle_launcher()
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -247,7 +264,9 @@ def main():
                 raise AssertionError("Known disconnected receiver passed")
         finally:
             browser.close()
-    print(json.dumps({"scope": "STG Launcher mapping to production JS receiver and recorded key sink", "required": len(targets), "executed": len(results), "negativeControl": "PASS", "keyboardMappingBrowser": results}, ensure_ascii=False))
+    print(json.dumps({"scope": "STG Launcher mapping to source-declared production JS receivers and recorded key sink",
+                      "required": len(targets), "executed": len(results), "prebuiltWithoutSourceEvidence": source_less,
+                      "negativeControl": "PASS", "keyboardMappingBrowser": results}, ensure_ascii=False))
     if any(row["keyboardBoundary"] != "PASS" for row in results):
         sys.exit(1)
 
