@@ -174,7 +174,7 @@ function RoomRow({
           })}
         </div>
       </fieldset>
-      <BookButton variant={spectating ? 'action' : 'primary'}
+      <BookButton variant="primary"
         className="lobby-button lobby-join"
         type="button"
         disabled={disabled}
