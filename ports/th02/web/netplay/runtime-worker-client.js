@@ -1,5 +1,10 @@
+import {Fat12} from '../solo-fat12.js';
+import {extractOriginalPmd} from '../pmd-archives.mjs';
+import {PmdPlayer} from '../pmd-player.mjs';
+import {OriginalSfx} from '../original-sfx.mjs';
+import {assetBytes} from '../preload-cache.js';
 import {keyboardBits,isBound,isFormTarget,useControlSnapshot,controlsSummary} from '../control-settings.js';
-import {LocalSfx} from './local-sfx.js';
+
 import {LocalBgm} from './local-bgm.js';
 const PROTOCOL='th02-rollback/6',canvas=document.getElementById('canvas');
 let bitmapContext;try{bitmapContext=canvas.getContext('bitmaprenderer',{alpha:false});}catch{bitmapContext=null;}
@@ -7,7 +12,7 @@ const ctx=bitmapContext||canvas.getContext('2d',{alpha:false});
 if(!ctx)throw Error('浏览器无法创建游戏画面');
 if(!bitmapContext)ctx.imageSmoothingEnabled=false;
 let worker,serial=0,stopped=false,settings,configuration=[0,0,2],volume=.7,blocked=false,listener=()=>{},keys=new Set();
-let context,sfx,bgm,musicTask,musicError='',playedName='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
+let fat,pmd,context,sfx,bgm,musicTask,musicError='',playedName='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
 let raw=false,points={focus:true,always:false},lastPoints='',acknowledgedPrefix=0,sentPrefix=0,stagedMode=false,preparedReady=false,bootPromise;
 const requests=new Map();
 const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',roundTripMs:0,commands:0,workerExecutionMs:0,loadRoundTripMs:0,loadExecutionMs:0,displayMs:0,displayed:0,replaced:0,expired:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
@@ -36,11 +41,13 @@ function music(event){
  else if(playedName)pendingMusic.push([event.ax,playedName]);
  if(pendingMusic.length>64)pendingMusic.splice(0,pendingMusic.length-64);
  if(bgm?.manifest){for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);return;}
- if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{bgm=new LocalBgm(context,()=>{});bgm.setVolume(volume);await bgm.load({warmOpening:false});if(stopped)return;for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);}).catch(e=>{musicError=e.message;});
+ if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th02',fat),engine:pmd};bgm.setVolume(volume);await bgm.load({warmOpening:false});if(stopped)return;for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);}).catch(e=>{musicError=e.message;});
 }
 async function load(config){
  settings=config;context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});await context.resume().catch(()=>{});
- sfx=new LocalSfx(context);await sfx.load();
+ const patch=await (await fetch(new URL('../local-patch.json',import.meta.url))).json(),entry=patch.disks[config.language];
+ fat=new Fat12(await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true}));
+ [sfx,pmd]=await Promise.all([OriginalSfx.create('th02',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
  if(stopped){sfx.dispose();throw Error('TH02 worker 已停止');}
  worker=new Worker(new URL('./runtime-worker.js',import.meta.url),{type:'module'});
  worker.onerror=e=>fatal(e.message||'TH02 worker 失败');
@@ -80,7 +87,7 @@ const sync={
  updateControls(value,editing=false){clearKeys();useControlSnapshot(value);blocked=editing;document.getElementById('controls-summary').textContent=controlsSummary('online');},
  setPointPreferences(value){points={...value};const next=JSON.stringify(value);if(next!==lastPoints){lastPoints=next;fire('setPointPreferences',[value]);}},
  setRawPresentation(value){raw=!!value;fire('setRawPresentation',[raw]);},
- async unlockAudio(){if(context?.state!=='running')await context?.resume();return context?.state==='running';},
+ async unlockAudio(){await sfx?.resume();if(context?.state!=='running')await context?.resume();return context?.state==='running';},
  touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,canPredict:()=>cache.reason==='',predictionBlockReason:()=>cache.reason??'原版菜单或关卡加载',
  rollbackInfo:()=>cache.rollback??{},renderInfo:()=>({...cache.render,worker:true}),
  performanceInfo:()=>({worker:{...cache.performance},page:{...rpcMetrics},slowSteps:cache.slowSteps?.slice()??[],scope:'cumulative wall-clock observations; nested native/step/restore costs overlap; RPC round trip includes queue/transport/page scheduling; not physical input latency'}),

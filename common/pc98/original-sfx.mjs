@@ -19,11 +19,13 @@ export class OriginalSfx {
     });
     return instance;
   }
-  constructor(context,node,worker){this.context=context;this.node=node;this.worker=worker;this.played=0;this.peak=0;
+  constructor(context,node,worker){this.context=context;this.node=node;this.worker=worker;this.played=0;this.peak=0;this.sequence=0;this.status='原版 FM 音效';
     node.port.onmessage=({data})=>{this.peak=Math.max(this.peak,data.peak);};}
   command(ax){if((ax>>>8)===12)this.play(ax&255);}
   play(id){this.worker.postMessage({type:'effect',id});this.played++;}
+  confirm({sequence,ring}){const count=(sequence-this.sequence)&65535;for(let i=0;i<count;i++)this.play(ring[(this.sequence+i)&7]);this.sequence=sequence;}
+  async resume(){await this.context.resume();}
   stop(){this.worker.postMessage({type:'effect',id:0});}
-  info(){return {mode:'original-pmd',played:this.played,peak:this.peak};}
+  info(){return {mode:'original-pmd',ready:true,sequence:this.sequence,played:this.played,peak:this.peak};}
   dispose(){this.worker.postMessage({type:'stop'});this.node.disconnect();void this.context.close();}
 }

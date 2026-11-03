@@ -1,6 +1,12 @@
+import {gameVersion} from '../game-version.js';
+import {Fat12} from '../solo-fat12.js';
+import {extractOriginalPmd} from '../pmd-archives.mjs';
+import {PmdPlayer} from '../pmd-player.mjs';
+import {OriginalSfx} from '../original-sfx.mjs';
+import {assetBytes} from '../preload-cache.js';
 import {keyboardBits,isBound} from './controls.js';
 import {isFormTarget,useControlSnapshot,controlsSummary} from '../control-settings.js';
-import {LocalSe} from './local-se.js';
+
 import {LocalBgm} from './local-bgm.js';
 const PROTOCOL='th04-rollback/4',canvas=document.getElementById('canvas');
 let bitmapContext;try{bitmapContext=canvas.getContext('bitmaprenderer',{alpha:false});}catch{bitmapContext=null;}
@@ -8,7 +14,7 @@ const ctx=bitmapContext||canvas.getContext('2d',{alpha:false});
 if(!ctx)throw Error('浏览器无法创建游戏画面');
 if(!bitmapContext)ctx.imageSmoothingEnabled=false;
 let worker,serial=0,stopped=false,settings,configuration=[0,0,2],volume=.7,blocked=false,listener=()=>{},keys=new Set();
-let context,se,bgm,musicTask,musicError='',seError='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
+let fat,pmd,context,se,bgm,musicTask,musicError='',seError='',pendingMusic=[],cache={},check=null,queuedFrame=null,preparedFrame=null,raf=0,presentPending=false;
 let raw=false,points={focus:true,always:false},lastPoints='',acknowledgedPrefix=0,sentPrefix=0,stagedMode=false,preparedReady=false,bootPromise,lastFaultCpu=null;
 let drawn=0,replaced=0,lastDraw=0,intervals=[],executionMs=0,stoppedMusic=null;
 const rpcMetrics={renderer:bitmapContext?'bitmaprenderer':'2d',displayMs:0,expired:0,hiddenDiscarded:0,queuedConfirmations:0,presentationRpcs:0};
@@ -42,7 +48,7 @@ function music(event){
  pendingMusic.push([event.ax,event.name]);if(pendingMusic.length>64)pendingMusic.splice(0,pendingMusic.length-64);
  if(bgm?.manifest){for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);return;}
  if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{
-  if(stopped)return;bgm=new LocalBgm(context,()=>{});bgm.setVolume(volume);
+  if(stopped)return;bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th04',fat),engine:pmd};bgm.setVolume(volume);
   await bgm.load({...settings,warmOpening:false});if(stopped)return;
   for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);
  }).catch(e=>{if(!stopped)musicError=e.message;});
@@ -50,7 +56,9 @@ function music(event){
 async function load(config){
  settings=config;context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});await context.resume().catch(()=>{});
  if(context.sampleRate!==44100)throw Error('此浏览器未提供统一的 44100 Hz 音频');
- se=new LocalSe(context);await se.load().catch(e=>{seError='浏览器音效加载失败：'+e.message;});
+ const selected=gameVersion(config.language),meta=await (await fetch(new URL('../'+selected.coopMeta,import.meta.url))).json();
+ fat=new Fat12(await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}));
+ [se,pmd]=await Promise.all([OriginalSfx.create('th04',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
  if(stopped){se.dispose();throw Error('TH04 Worker 已停止');}
  worker=new Worker(new URL('./runtime-worker.js',import.meta.url),{type:'module'});
  worker.onerror=e=>fatal(e.message||'TH04 Worker 失败');
@@ -107,7 +115,7 @@ const sync={
  updateControls(value,editing=false){clearKeys();useControlSnapshot(value);blocked=editing;document.getElementById('controls-summary').textContent=controlsSummary('online');},
  setPointPreferences(value){points={...value};const next=JSON.stringify(value);if(next!==lastPoints){lastPoints=next;fire('setPointPreferences',[value]);}},
  setRawPresentation(value){raw=!!value;fire('setRawPresentation',[raw]);},
- async unlockAudio(){if(context?.state!=='running')await context?.resume();return context?.state==='running';},
+ async unlockAudio(){await se?.resume();if(context?.state!=='running')await context?.resume();return context?.state==='running';},
  touchContext:()=>cache.touch??{key:'boot',play:false},readyForRollback:()=>!!cache.ready,
  canPredict:()=>cache.reason==='',predictionBlockReason:()=>cache.reason??'游戏尚未就绪',
  rollbackInfo:()=>cache.rollback??{},
