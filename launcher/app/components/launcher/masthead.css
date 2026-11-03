@@ -325,27 +325,23 @@
 }
 
 @property --masthead-trace {syntax:'<angle>';inherits:false;initial-value:0deg}
-@property --masthead-trace-start {syntax:'<angle>';inherits:false;initial-value:-90deg}
-.book-masthead :is(.book-profile-trigger,.book-theme-toggle,.masthead-menu-toggle) {position:relative;overflow:visible}
+@property --profile-trace-start {syntax:'<angle>';inherits:false;initial-value:-90deg}
+.book-masthead .book-profile-trigger {position:relative;overflow:visible}
 .book-masthead .book-profile-trigger::after {
-  content:'';position:absolute;inset:1px;box-sizing:border-box;padding:1.5px;border-radius:7px;pointer-events:none;
-  background:conic-gradient(from var(--masthead-trace-start),var(--kit-foreground),var(--kit-ring) 22%,var(--kit-border) 70%,var(--kit-foreground));
-  mask:linear-gradient(#000 0 0) content-box,conic-gradient(from var(--masthead-trace-start), #000 0deg, #000 var(--masthead-trace), transparent var(--masthead-trace));
+  content:'';position:absolute;inset:1px;box-sizing:border-box;padding:1px;border-radius:7px;pointer-events:none;
+  background:conic-gradient(from var(--profile-trace-start),var(--kit-foreground),var(--kit-ring) 30%,var(--kit-ring) 75%,var(--kit-foreground));
+  mask:linear-gradient(#000 0 0) content-box,conic-gradient(from var(--profile-trace-start),#000 0deg,#000 var(--masthead-trace),transparent var(--masthead-trace));
   mask-composite:exclude;
   transition:--masthead-trace 550ms cubic-bezier(.22,.7,.2,1);
 }
-.book-masthead .book-profile-trigger:is(:hover,:focus-visible,[aria-current='page'])::after {--masthead-trace:360deg;animation:profile-trace-orbit 10s linear infinite}
-@keyframes profile-trace-orbit {from {--masthead-trace-start:-90deg} to {--masthead-trace-start:270deg}}
-.book-masthead .book-theme-toggle::after {content:'';position:absolute;inset:5px;border-radius:50%;background:var(--kit-accent);opacity:0;scale:.65;pointer-events:none;z-index:0;transition:opacity 400ms ease,scale 500ms cubic-bezier(.2,.7,.2,1)}
-.book-masthead .book-theme-toggle svg {position:relative;z-index:1}
-.book-masthead .book-theme-toggle:is(:hover,:focus-visible)::after {opacity:1;scale:1}
-.book-masthead .masthead-menu-toggle svg :is(line,path) {transform-box:fill-box;transform-origin:center;transition:transform 400ms ease,opacity 250ms ease}
-.book-masthead .masthead-menu-toggle[aria-expanded='true'] svg :is(line,path):first-child {transform:translateY(6px) rotate(45deg)}
-.book-masthead .masthead-menu-toggle[aria-expanded='true'] svg :is(line,path):nth-child(2) {opacity:0}
-.book-masthead .masthead-menu-toggle[aria-expanded='true'] svg :is(line,path):last-child {transform:translateY(-6px) rotate(-45deg)}
-@media (prefers-reduced-motion:reduce) {.book-masthead .book-profile-trigger::after {transition:none;animation:none!important}.book-masthead .book-theme-toggle::after,.book-masthead .masthead-menu-toggle svg :is(line,path) {transition:none}}
+.book-masthead .book-profile-trigger:is(:hover,:focus-visible,[aria-current='page'])::after {--masthead-trace:360deg;animation:profile-trace-orbit 14s linear infinite}
+@keyframes profile-trace-orbit {from {--profile-trace-start:-90deg} to {--profile-trace-start:270deg}}
+.book-masthead .masthead-menu-toggle svg path {transition:translate 400ms ease;}
+.book-masthead .masthead-menu-toggle:is(:hover,:focus-visible,[aria-expanded='true']) svg path:nth-child(2) {translate:2px 0}
+.book-masthead .masthead-menu-toggle[aria-expanded='true'] {color:var(--kit-foreground);background:var(--kit-accent)}
+@media (prefers-reduced-motion:reduce) {.book-masthead .book-profile-trigger::after {transition:none;animation:none!important}.book-masthead .masthead-menu-toggle svg path {transition:none;translate:none!important}}
 .less-motion .book-masthead .book-profile-trigger::after {transition:none;animation:none!important}
-.less-motion .book-masthead .book-theme-toggle::after,.less-motion .book-masthead .masthead-menu-toggle svg :is(line,path) {transition:none}
+.less-motion .book-masthead .masthead-menu-toggle svg path {transition:none;translate:none!important}
 
 @media (hover:hover) and (pointer:fine) {
   .book-masthead .book-main-nav :is(a,button),
