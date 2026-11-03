@@ -1438,6 +1438,7 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
     assert.equal(api.getTestSession().getRuntime().getSnapshot().ready, false, 'the file list is usable before game readiness');
     const document = f.native.document;
     await click('[aria-label='+JSON.stringify(api.translate(api.getTestSession().getSnapshot().locale,'replay.ui.manage',{name:'th9_01.rpy'}))+']');await click('.replay-file-menu [role="menuitem"]');
+    await until(() => f.downloads.length === 1, 'TH09 file download completes before inspecting its name');
     assert.equal(f.downloads[0].name, 'th9_01.rpy', 'direct download succeeds while the native ready message is withheld');
     let imported;
     await React.act(async () => {imported = api.getTestSession().importFile('replay', new NativeFile([new Uint8Array([8,9])], 'th9_02.rpy'), product);});
