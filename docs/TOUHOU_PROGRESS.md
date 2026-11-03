@@ -80,9 +80,11 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码与复核工具](https://github.com/AdingApkgg/thp/commit/2b0bc1c67ddeb57aa7ce2208f08cbf08ffc8bdda)已补齐[绘制摄像机发布后、透视前的加载交付](https://github.com/AdingApkgg/thp/blob/2b0bc1c67ddeb57aa7ce2208f08cbf08ffc8bdda/docs/porting/TH14_CAMERA_PUBLICATION_NOV04.md)：50 组原版指令组件、200 组 Wasm 受控组合通过，旧组件的 72 次复制 right 差异归零。141 核心对象与 146 浏览器单元全部重编，实际静音 Application 两关加速／换关／暂停 2,289 帧／27 断言通过，呈现 2,289 次；两幅检查画面与离线混音哈希符合封存参考。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码与复核工具](https://github.com/AdingApkgg/thp/commit/7babb540918c13f7d813eb14ea09db1da2112bcd)已接入[录像换关 RNG 的逐步恢复](https://github.com/AdingApkgg/thp/blob/7babb540918c13f7d813eb14ea09db1da2112bcd/docs/porting/TH14_REPLAY_RNG_STEP_NOV04.md)：依原版顺序写入 gameplay seed、script seed、计数，实际 Session／Battle／StagedLoader 支持在写入之间等待、继续和失败传播。15,840 组原版指令组件及三套同规模 C++ 矩阵通过，旧顺序控制的 2,880 处最终 RNG 差异归零；实际 Session 的受控等待与部分失败单独验证。
 
-本核心的灵梦 B Normal 122,537、灵梦 A Extra 38,403、咲夜 A Extra 38,977 回调留存记录重新通过 v4 四项门槛，共 199,917 回调。还原、移植与 Web 适配均为进行中；逐字复制与透视内部写入、旧 Hard 相机／RNG 分歧、完整模式、原版整局画面／音频、浏览器及存档等价继续见[当前清单](https://github.com/AdingApkgg/thp/blob/2b0bc1c67ddeb57aa7ce2208f08cbf08ffc8bdda/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+141 核心对象与 146 浏览器单元全部重编；本核心的灵梦 B Normal 122,537、灵梦 A Extra 38,403、咲夜 A Extra 38,977 回调留存记录重新通过 v4 四项门槛，共 199,917 回调。静音 Application 两关加速／换关／暂停 2,289 帧／27 断言通过，呈现 2,289 次，两幅检查画面和离线混音哈希符合封存参考。
+
+还原、移植与 Web 适配均为进行中。首次录像创建仍同步，默认浏览器后端各写入立即就绪，全局快照仍整体恢复；旧录像缺失的线程顺序及旧 RNG／剩余弹／相机／指针 Z 失败未据此关闭。完整模式、原版整局画面／音频、浏览器及存档等价继续见[当前清单](https://github.com/AdingApkgg/thp/blob/7babb540918c13f7d813eb14ea09db1da2112bcd/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
