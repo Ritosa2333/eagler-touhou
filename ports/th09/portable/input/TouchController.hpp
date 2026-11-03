@@ -42,7 +42,7 @@ public:
             if(fingers.size()>=4){escape_ticks=3;cancel();return;}const float dx=px-tap_x,dy=py-tap_y;
             if(s.context==1&&double_tap&&tap_armed&&now-tap_time<=320&&dx*dx+dy*dy<=38.4f*38.4f){bomb_ticks=3;tap_armed=false;tap={};return;}
             tap_armed=false;if(s.context==1&&double_tap){tap={true,id,1,px,py,px,py,now};tap_moved=false;}
-            if(!s.ready||mode>=2||dragging)return;dragging=true;primary=id;previous_x=x;previous_y=y;target_x=s.x;target_y=s.y;instance=s.instance;return;
+            if(mode>=2||dragging)return;motion_blocked=!s.ready;dragging=true;primary=id;previous_x=x;previous_y=y;target_x=s.x;target_y=s.y;instance=s.instance;return;
         }
         if(s.context==2)dialogue.move(id,px,py,s.choice);
         if(menu.active&&menu.id==id){menu.last_x=px;menu.last_y=py;return;}
@@ -58,7 +58,7 @@ public:
     TouchSample sample(const TouchState& s,std::uint64_t now,bool key_slow,bool arrows){
         TouchSample out;sync_context(s);if(arrows)clear_motion();
         if(!s.ready&&dragging)motion_blocked=true;
-        else if(s.ready&&motion_blocked&&dragging){motion_blocked=false;target_x=s.x;target_y=s.y;instance=s.instance;}
+        else if(s.ready&&dragging&&(motion_blocked||instance!=s.instance)){motion_blocked=false;target_x=s.x;target_y=s.y;instance=s.instance;}
         if(confirm_ticks>0){out.keys[90]=true;--confirm_ticks;}if(escape_ticks>0){out.keys[27]=true;--escape_ticks;}
         // Actions remain available while movement is blocked (deathbomb).
         // Consume the pulse every tick so a late press cannot wait for respawn.
