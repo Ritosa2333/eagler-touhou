@@ -80,11 +80,13 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码与复核工具](https://github.com/AdingApkgg/thp/commit/7babb540918c13f7d813eb14ea09db1da2112bcd)已接入[录像换关 RNG 的逐步恢复](https://github.com/AdingApkgg/thp/blob/7babb540918c13f7d813eb14ea09db1da2112bcd/docs/porting/TH14_REPLAY_RNG_STEP_NOV04.md)：依原版顺序写入 gameplay seed、script seed、计数，实际 Session／Battle／StagedLoader 支持在写入之间等待、继续和失败传播。15,840 组原版指令组件及三套同规模 C++ 矩阵通过，旧顺序控制的 2,880 处最终 RNG 差异归零；实际 Session 的受控等待与部分失败单独验证。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码与证据](https://github.com/AdingApkgg/thp/commit/7b8b66f523219662dbe084948917039d263f0bc0)的玩法核心仍为 [7babb540](https://github.com/AdingApkgg/thp/commit/7babb540918c13f7d813eb14ea09db1da2112bcd)。录像换关 RNG 已按原版顺序逐步恢复，Session／Battle／StagedLoader 支持等待、继续和失败传播；15,840 组原版指令组件及三套同规模 C++ 矩阵通过，旧顺序控制的 2,880 处最终差异归零。
 
-141 核心对象与 146 浏览器单元全部重编；本核心的灵梦 B Normal 122,537、灵梦 A Extra 38,403、咲夜 A Extra 38,977 回调留存记录重新通过 v4 四项门槛，共 199,917 回调。静音 Application 两关加速／换关／暂停 2,289 帧／27 断言通过，呈现 2,289 次，两幅检查画面和离线混音哈希符合封存参考。
+[当前核心扩展复核](https://github.com/AdingApkgg/thp/blob/7b8b66f523219662dbe084948917039d263f0bc0/docs/porting/TH14_REPLAY_RNG_STEP_MODES_NOV04.md)新跑 13 份并复核同核心三份收据，共 16 份通过记录、1,379,760 回调，覆盖 14 个不同组合，其中 11 个组合观察到全部目标关卡入口。旧灵梦 B Easy 的 12 次首次机会异常继续拒绝。141 核心／146 浏览器单元重编，静音 Application 两关 2,289 帧／27 断言通过。
 
-还原、移植与 Web 适配均为进行中。首次录像创建仍同步，默认浏览器后端各写入立即就绪，全局快照仍整体恢复；旧录像缺失的线程顺序及旧 RNG／剩余弹／相机／指针 Z 失败未据此关闭。完整模式、原版整局画面／音频、浏览器及存档等价继续见[当前清单](https://github.com/AdingApkgg/thp/blob/7babb540918c13f7d813eb14ea09db1da2112bcd/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+[新原版换关采样](https://github.com/AdingApkgg/thp/blob/7b8b66f523219662dbe084948917039d263f0bc0/docs/porting/TH14_REPLAY_RNG_STORE_TRACE_NOV04.md)保留进入二面、三面时三个 RNG 写入及全局复制前的八个硬件断点事件。这份新采样的 40,000 回调前缀严格对照失败：script seed／calls／活动自机子弹数分别差 9,228／615／77 次，首差异在第 30,773 回调。调试暂停影响调度，这些事件不恢复旧录像缺失的线程顺序。
+
+旧 36,826 回调用当前核心重跑并独立重算，seed／计数仍有 14,403／1,702 处差异，首差异在第 22,336 回调。首次录像同步、默认浏览器各写入立即就绪、全局整体恢复，以及剩余弹／相机／指针 Z、全模式、原版整局图像／音频、存档和浏览器等价继续见[当前清单](https://github.com/AdingApkgg/thp/blob/7b8b66f523219662dbe084948917039d263f0bc0/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
