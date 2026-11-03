@@ -364,8 +364,8 @@ async function prepareRoomResources(value){
  const report=text=>{if(generation===preloadGeneration&&state?.phase==='lobby'&&!stopped)$('resource-status').textContent=text;};
  preloadPromise=(async()=>{
   report('正在预载游戏磁盘、DOSBox-X、音效和开场音乐…');
-  const [patch,manifest,sfxManifest,bgmManifest,alternate,midi]=await Promise.all([
-   freshJSON('local-patch.json'),freshJSON('netplay/runtime.json'),freshJSON('sfx/manifest.json'),
+  const [patch,manifest,bgmManifest,alternate,midi]=await Promise.all([
+   freshJSON('local-patch.json'),freshJSON('netplay/runtime.json'),
    freshJSON('bgm/manifest.json'),freshJSON('bgm/akyu/manifest.json'),loadMidiTracks()]);
   const disk=patch.disks[value.settings.language];if(!disk)throw Error('找不到所选语言的游戏磁盘');
   const supports=WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
@@ -375,8 +375,7 @@ async function prepareRoomResources(value){
    parallelAssets(Object.entries(manifest.assets),async([path,hash])=>assetBytes(path,{hash})),
    assetBytes(disk.file,{hash:disk.sha256,size:disk.size,gzip:true}),
    assetBytes(coreEntry.file,{hash:coreEntry.sha256}),
-   parallelAssets(Object.entries(sfxManifest.effects),async([,item])=>assetBytes(`sfx/${item.file}`,{hash:item.sha256})),
-   track&&assetBytes(`bgm/${track.url}`,{hash:track.audioSha256||track.sha256,size:track.bytes})
+   track&&['new','midi'].includes(bgmVersion())&&assetBytes(`bgm/${track.url}`,{hash:track.audioSha256||track.sha256,size:track.bytes})
   ]);
   if(generation===preloadGeneration)report('游戏磁盘、核心、音效和当前关卡音乐已校验并预载');
  })();

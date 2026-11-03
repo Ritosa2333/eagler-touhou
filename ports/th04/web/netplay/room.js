@@ -394,9 +394,9 @@ async function prepareRoomAssets(value){
   preloadPromise=(async()=>{
     report('正在预载游戏磁盘、DOSBox-X、音效与开场音乐…');
     const selected=gameVersion(language);
-    const [meta,version,patch,soundManifest,bgmManifest,alternate]=await Promise.all([
+    const [meta,version,patch,bgmManifest,alternate]=await Promise.all([
       freshJSON(selected.coopMeta),freshJSON('netplay/runtime.json'),freshJSON(selected.coopPatch),
-      freshJSON('assets/se-manifest.json'),freshJSON('bgm/manifest.json'),freshJSON('bgm/akyu/manifest.json')]);
+      freshJSON('bgm/manifest.json'),freshJSON('bgm/akyu/manifest.json')]);
     const tracked=rollback&&WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
     const core=tracked?'wdosbox-x-rollback-tracked.wasm':'wdosbox-x-rollback.wasm';
     const coreHash=tracked?version.write_journal?.wasm_sha256:version.rollback_wasm?.sha256;
@@ -406,8 +406,7 @@ async function prepareRoomAssets(value){
     const assets=[
       assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}),
       assetBytes(`vendor/dosbox-x/${core}`,{hash:coreHash}),
-      ...soundManifest.clips.map(clip=>assetBytes(`assets/${clip.url}`,{hash:clip.sha256,size:clip.bytes})),
-      ...tracks.map(track=>assetBytes(`bgm/${track.url}`,{hash:track.audioSha256,size:track.bytes}))
+      ...(bgmVersion()==='new'?tracks:[]).map(track=>assetBytes(`bgm/${track.url}`,{hash:track.audioSha256,size:track.bytes}))
     ];
     await Promise.all(assets);
     if(generation!==preloadGeneration)return;
