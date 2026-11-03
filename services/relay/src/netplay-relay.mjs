@@ -11,6 +11,7 @@ import { createTurnConfigReader } from './turn-config.mjs';
 import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
+import { createRoomBroadcaster } from './room-broadcast.mjs';
 import {
   createRelayAbuseGuard,
   relayAbuseConfig,
@@ -277,6 +278,12 @@ const abuseConfig = relayAbuseConfig();
 const abuseGuard = createRelayAbuseGuard(abuseConfig);
 const targetedEnvelopeMarker = 0xe7;
 const sendBounded = createBoundedRelaySender();
+const lobbyBroadcaster = createRoomBroadcaster({
+  snapshot: room => ({ type: 'state', room: lobbySnapshot(room) }),
+  send: sendRoomMessage,
+  changed: () => roomDirectory.changed(),
+  coalesceMs: lobbyStateCoalesceMs,
+});
 
 function iceServersFor(roomId, runId, player) {
   const servers = [];
@@ -597,10 +604,7 @@ function maybeDeleteRoom(roomId, room) {
     room.runs.size === 0 &&
     rooms.get(roomId) === room
   ) {
-    if (room.lobbyStateTimer) {
-      clearTimeout(room.lobbyStateTimer);
-      room.lobbyStateTimer = null;
-    }
+    lobbyBroadcaster.clear(room);
     rooms.delete(roomId);
     abuseGuard.releaseRoom(roomId);
   }
@@ -921,27 +925,7 @@ function sendRoomMessage(room, message) {
 }
 
 function broadcastLobby(room, payload = null) {
-  roomDirectory.changed();
-  // Event-like payloads (start, quick-chat) are delivered immediately. State
-  // snapshots keep the original sync speed for isolated changes (the leading
-  // edge is immediate) while additional mutations inside the window coalesce
-  // into one trailing send, so bursts of legal mutations collapse to at most
-  // one broadcast per window instead of multiplying fan-out by the members.
-  if (payload) {
-    sendRoomMessage(room, JSON.stringify(payload));
-    return;
-  }
-  if (room.lobbyStateTimer) {
-    room.lobbyStateDirty = true;
-    return;
-  }
-  sendRoomMessage(room, JSON.stringify({ type: 'state', room: lobbySnapshot(room) }));
-  room.lobbyStateTimer = setTimeout(() => {
-    room.lobbyStateTimer = null;
-    const dirty = room.lobbyStateDirty;
-    room.lobbyStateDirty = false;
-    if (dirty) broadcastLobby(room);
-  }, lobbyStateCoalesceMs);
+  lobbyBroadcaster.publish(room, payload);
 }
 
 function clearLobbySeat(room, clientId) {
@@ -1893,11 +1877,7 @@ server.on('close', () => {
   void nicknameService?.close();
   roomDirectory.close();
   clearInterval(abuseMaintenance);
-  for (const room of rooms.values())
-    if (room.lobbyStateTimer) {
-      clearTimeout(room.lobbyStateTimer);
-      room.lobbyStateTimer = null;
-    }
+  for (const room of rooms.values()) lobbyBroadcaster.clear(room);
 });
 
 server.on('connection', (socket, request) => {
