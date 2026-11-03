@@ -115,8 +115,9 @@ function RoomRow({
           </div>
         </div>
       </div>
-      <div className="lobby-room-rules" hidden={!room.disableCheatMovement && !room.challengeMode}>
-        {[room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+      <div className="lobby-room-rules">
+        {!room.disableCheatMovement && !room.challengeMode ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <div className="lobby-room-status">
         <span className="lobby-room-state" data-state={state}>{t(`lobby.${state}`)}</span>
