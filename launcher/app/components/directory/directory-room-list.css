@@ -48,8 +48,8 @@
   .book-directory .lobby-seats[data-duel='true'] {grid-template-columns:repeat(3,minmax(0,1fr));align-items:center}
   .book-directory .lobby-seats[data-duel='true'] .lobby-public-player:first-child {grid-column:1;grid-row:1}
   .book-directory .lobby-seats[data-duel='true'] .lobby-public-player:last-child {grid-column:3;grid-row:1}
-  .book-directory .lobby-public-player {display:grid;grid-template-columns:26px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;gap:1px 7px;min-width:0;max-width:none}
-  .book-directory .lobby-seat {position:relative;display:grid;place-items:center;grid-column:1;grid-row:1/span 2;flex:none;width:26px;height:28px;border-radius:5px;border-color:var(--book-border);background:var(--book-raised);color:var(--book-ink);font-size:12px}
+  .book-directory .lobby-public-player {display:grid;grid-template-columns:32px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;gap:1px 7px;min-width:0;max-width:none}
+  .book-directory .lobby-seat {position:relative;display:grid;place-items:center;grid-column:1;grid-row:1/span 2;flex:none;width:32px;height:32px;border-radius:5px;border-color:var(--book-border);background:var(--book-raised);color:var(--book-ink);font-size:12px}
   .book-directory .lobby-seat[data-ready='true']::after {background:var(--kit-success);box-shadow:0 0 0 2px var(--book-surface)}
   .book-directory .lobby-seat-name {grid-column:2;grid-row:1;color:var(--book-ink);font:600 12px/1.5 var(--ui-font)}
   .book-directory .lobby-seat-control {position:static;display:block;grid-column:2;grid-row:2;min-width:0;width:auto;max-width:none;overflow:visible;color:var(--book-muted);font:400 11px/1.5 var(--ui-font);text-align:left;white-space:normal;overflow-wrap:anywhere;transform:none}
@@ -79,8 +79,8 @@
     .book-directory .lobby-room-list .lobby-room-row>.lobby-join {grid-column:var(--room-action-column);grid-row:5}
   }
   @media(max-width:380px) {
-    .book-directory .lobby-seats[data-capacity='3'] .lobby-public-player {grid-template-columns:22px minmax(0,1fr);column-gap:5px}
-    .book-directory .lobby-seats[data-capacity='3'] .lobby-seat {width:22px;height:24px}
+    .book-directory .lobby-seats[data-capacity='3'] .lobby-public-player {grid-template-columns:26px minmax(0,1fr);column-gap:5px}
+    .book-directory .lobby-seats[data-capacity='3'] .lobby-seat {width:26px;height:26px}
     .book-directory .lobby-seats[data-capacity='3'] .lobby-seat-control {font-size:10px}
   }
 }
