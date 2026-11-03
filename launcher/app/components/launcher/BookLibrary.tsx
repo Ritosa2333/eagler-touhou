@@ -311,7 +311,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="book-favorite rounded-full aria-pressed:text-[var(--kit-brand)]"
+                  className="book-favorite rounded-full"
                   data-book-favorite={product.id}
                   disabled={!interactive}
                   aria-label={t('library.favorite', { title: product.title })}

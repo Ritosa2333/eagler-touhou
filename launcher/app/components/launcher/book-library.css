@@ -507,3 +507,5 @@
     }
   }
 }
+.book-favorite.ui-kit-button:is(:hover,[aria-pressed="true"]) {background:transparent;border-color:transparent}
+.book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
