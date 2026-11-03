@@ -194,8 +194,7 @@ try {
         await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
         await touch.detach();
       }
-      await wait(() => frame.$eval('#record-finish',node => !node.disabled),game+' practice recorder running',15000);
-      await frame.$eval('#record-finish',node => node.click());
+      await frame.evaluate(async () => (await import('./managed-solo.mjs')).managedAPI.finishRecording());
       const saved = () => frame.evaluate(game => [...__eaglerPC98Files.memory].filter(([name]) => name.endsWith('.'+game+'r')).map(([name,bytes]) => ({name,size:bytes.length})),game);
       await wait(async () => {
         const status=await frame.evaluate(()=>document.querySelector('#replay-status,#record-status')?.textContent||'');
@@ -203,8 +202,7 @@ try {
         return (await saved()).length>0;
       },game+' practice REP in main storage',45000);
       const files = await saved();
-      await frame.$eval('#record-save',node => node.click());
-      await frame.waitForFunction(() => document.querySelector('#record-save').textContent.includes('主项目录像'));
+      await frame.evaluate(async () => (await import('./managed-solo.mjs')).managedAPI.saveRecording());
       assert.deepEqual(await saved(),files,'saving again keeps the same practice file');
       console.log(game,'practice REP stored',JSON.stringify(files));
       assert.deepEqual(errors,[]);

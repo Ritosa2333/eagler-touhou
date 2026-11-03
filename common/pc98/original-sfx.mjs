@@ -23,5 +23,7 @@ export class OriginalSfx {
     node.port.onmessage=({data})=>{this.peak=Math.max(this.peak,data.peak);};}
   command(ax){if((ax>>>8)===12)this.play(ax&255);}
   play(id){this.worker.postMessage({type:'effect',id});this.played++;}
+  stop(){this.worker.postMessage({type:'effect',id:0});}
+  info(){return {mode:'original-pmd',played:this.played,peak:this.peak};}
   dispose(){this.worker.postMessage({type:'stop'});this.node.disconnect();void this.context.close();}
 }

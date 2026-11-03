@@ -13,7 +13,7 @@ const sources=['../practice-attempt.js','../direct-drag.js','../player-ui.js','.
   '../touch-input.js','../control-settings.js','./external-host.js','./external-loader.js','./external-codec.js','./external-recorder.js','./external-ui.js','./external-lifecycle.js',
   '../practice-config.js','../practice-engine.js','../practice-assets.js','../practice-assets.json','../practice-core.json','../practice-start.com','../practice-cn.exe.gz','../practice-jp.exe.gz','../vendor/dosbox-x/wdosbox-x-practice.wasm',
   '../solo-music.js','../solo-music.json','../solo-music.com','../solo-native-music.js','../netplay/local-bgm.js','../bgm/manifest.json'];
-let canvas=document.getElementById('canvas'),attempt,emulator,music,recorder,patch,mailbox=-1,cursor=0,lastKeys=0,loop=0,playback=false,options={},language='jp',musicMode='ogg',recordBlob,lastPractice;
+let canvas=document.getElementById('canvas'),attempt,retrySlot,retryBlocked=false,lastRetry=null,emulator,music,recorder,patch,mailbox=-1,cursor=0,lastKeys=0,loop=0,playback=false,options={},language='jp',musicMode='ogg',recordBlob,lastPractice,currentSettings;
 const report=error=>globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});
 function valid(heap,at){
   if(!patch||at<0||at+104>heap.length)return false;
@@ -46,16 +46,18 @@ function applyAssist(value){
   }else if(value.touchAction==='clear'){view.setUint16(touch,0,true);view.setInt32(touch+2,0,true);}
 }
 function release(){input.releaseGameplay();if(emulator)for(const [code,bit] of nativeKeys)if(lastKeys&bit)emulator.key(code,false);lastKeys=0;}
-async function saveReplay(blob){recordBlob=blob;const name=`replay/th02_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th02r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());}
+const savedReplays=new WeakMap();
+async function saveReplay(blob){recordBlob=blob;if(savedReplays.has(blob))return savedReplays.get(blob);const task=(async()=>{const name=`replay/th02_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th02r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());return name;})();savedReplays.set(blob,task);return task;}
 async function syncFiles(){if(!emulator||playback)return;const fat=new Fat12(await emulator.getDiskImage('th02-solo.hdi'));
   for(const name of ['HUUHI.DAT','HUUMA.CFG']){const entry=fat.find('HUMAROKU/'+name,{optional:true});if(entry!==undefined)await globalThis.__eaglerPC98Files.write(name,fat.read(entry));}}
 async function naturalExit(){recorder?.finish();const until=performance.now()+10000;while(recorder?.state.ending&&!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,50));await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
-const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>emulator?.practiceOptions(value),
-  onStart:value=>void restart(value),onRetry:()=>void restart(lastPractice),onSave:()=>{if(recordBlob)void saveReplay(recordBlob).catch(report);},
+const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);if(!value.preparedRetry)discardRetry();else retryBlocked=false;},
+  onStart:value=>void restart(value).catch(report),onRetry:()=>void restart({...lastPractice,options:practiceUI.options},true).catch(report),onSave:()=>{if(recordBlob)void saveReplay(recordBlob).catch(report);},
   onPause:()=>{if(emulator){emulator.key('Escape',true);setTimeout(()=>emulator?.key('Escape',false),120);}}});
 const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.practice?.status})});
 function tick(now){
-  if(!emulator)return;const state=readState(),ps=emulator.practice?.status;practiceUI.update({practice:ps,retryReady:false});
+  if(!emulator)return;const state=readState(),ps=emulator.practice?.status;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});
+  prepareRetry(ps);
   if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recordBlob,failed:recorder?.state.failed});
   if(emulator.state==='running'&&!playback){
     const playing=state?.mode===1&&!state.hit;let bits=input.sample({play:playing});
@@ -69,21 +71,34 @@ function tick(now){
   if(music){if(document.hidden||emulator.state!=='running'||state?.mode===2||ps&&(ps.preparing||ps.waiting||ps.outcome))music.suspend();else music.resume();}
   loop=requestAnimationFrame(tick);
 }
-async function launch(config,replay=null){
+function discardRetry(){retrySlot?.stop();retrySlot=undefined;}
+function makeAttempt(target,practice,settings,replay=null,standby=false){return createSoloAttempt({canvas:target,practice,settings,replay,standby,sources,applyReplayInput:applyAssist,callbacks:{onError:report,onFile:blob=>void saveReplay(blob).catch(report),onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
+function prepareRetry(ps){
+  if(playback||lastPractice?.mode!=='target'||!practiceUI.options.preparedRetry){discardRetry();return;}
+  if(retrySlot?.cancelled||retrySlot?.error){discardRetry();retryBlocked=true;}
+  if(retrySlot||retryBlocked||document.hidden||!ps?.ready||ps.error)return;
+  const slot=makeAttempt(canvas.cloneNode(false),{...lastPractice,options:practiceUI.options},currentSettings,null,true);retrySlot=slot;
+  slot.task.catch(()=>{if(retrySlot===slot){retrySlot=undefined;retryBlocked=true;}});
+}
+async function launch(config,replay=null,cached=null){
   playback=!!replay;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
   const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'main',recordEnabled:!playback,volume:musicMode==='none'?0:.7};
-  attempt=createSoloAttempt({canvas,practice:lastPractice,settings,replay,sources,applyReplayInput:applyAssist,callbacks:{onError:report,onFile:blob=>void saveReplay(blob).catch(report),onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{if(!matches)report(Error('Replay 终态内存校验不一致'));}}});
-  await attempt.task;emulator=attempt.core;patch=attempt.patch;music=attempt.music;recorder=attempt.recorder;attempt.foreground=true;
+  currentSettings=settings;attempt=cached||makeAttempt(canvas,lastPractice,settings,replay);
+  const started=performance.now(),cachedReady=!!cached?.ready;await attempt.task;if(cached)await attempt.core.activatePractice(practiceUI.options);
+  if(cached){canvas.replaceWith(attempt.canvas);canvas=attempt.canvas;lastRetry={cached:true,cachedReady,milliseconds:Math.round(performance.now()-started)};}
+  emulator=attempt.core;patch=attempt.patch;music=attempt.music;recorder=attempt.recorder;attempt.foreground=true;
   if(emulator.practice?.debug.csBase>=0)mailbox=emulator.practice.debug.csBase+patch.entries.mailbox;
   canvas.focus();managedPractice.start({readOnly:playback});loop=requestAnimationFrame(tick);
 }
-async function restart(config){release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;cursor=0;recordBlob=undefined;await launch(config);}
+async function restart(config,retry=false){const cached=retry&&practiceUI.options.preparedRetry?retrySlot:undefined;if(cached)retrySlot=undefined;discardRetry();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;cursor=0;recordBlob=undefined;retryBlocked=false;await launch(config,null,cached);}
 export const managedAPI={
   async start(value){options=value.options;language=value.language==='ja'?'jp':'cn';musicMode=value.music;let replay;
     if(options.replayPath){const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(options.replayPath));if(!bytes)throw Error('录像不存在');replay=await decodeExternalReplay(new Blob([bytes]),'02');}
     await launch(practiceUI.configuration(),replay);},
   health(){return {frames:emulator?.module.renderMetrics?.drawn??emulator?.module.framePresenter?.info().drawn??0,audio:{state:emulator?.audio.context.state,musicStatus:music?.player.status??null,effectsPeak:attempt?.sfx?.peak??0}};},
-  practiceState(){return {...managedPractice.state(),retry:{state:'idle',last:null}};},
+  practiceState(){return {...managedPractice.state(),retry:{state:retrySlot?(retrySlot.ready?'ready':'preparing'):retryBlocked?'unavailable':'idle',last:lastRetry}};},
+  finishRecording(){recorder?.finish();},
+  saveRecording(){return recordBlob?saveReplay(recordBlob):null;},
   async files(message){const store=globalThis.__eaglerPC98Files;if(message.command==='sync'){await syncFiles();return {};}
     if(message.command==='list'){await syncFiles();return {files:[...store.memory].map(([path,bytes])=>({path,size:bytes.length}))};}
     const path=userPath(message.path);if(message.command==='read'){await syncFiles();const bytes=store.memory.get(path);if(!bytes)throw Error('文件不存在');return {bytes:Array.from(bytes)};}
@@ -91,5 +106,5 @@ export const managedAPI={
     if(message.command==='write'){const bytes=new Uint8Array(message.bytes);if(path.endsWith('.th02r'))await decodeExternalReplay(new Blob([bytes]),'02');await store.write(path,bytes);return {};}
     throw Error('用户文件操作无效');},
   async playback(message){if(message.action!=='open'||emulator)throw Error('请从启动器打开录像');const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(message.path));if(!bytes)throw Error('录像不存在');await launch(practiceUI.configuration(),await decodeExternalReplay(new Blob([bytes]),'02'));return {};},
-  stop(){managedPractice.stop();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;},
+  stop(){managedPractice.stop();discardRetry();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;},
 };

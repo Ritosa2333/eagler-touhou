@@ -20,11 +20,18 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   await writeFile(resolve(output,'solo.js'),await readFile(resolve(output,'solo.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-solo-api.js'),'utf8'));
   await patch('startup-assets.js',text=>replaceOnce(text,'async function cache(mode, key, value) {','async function cache(mode, key, value) {if(globalThis.__eaglerPC98Content)return undefined;','managed content cache').replace("new URL('runtime.json', vendor)","new URL('./vendor/dosbox-x/runtime.json', import.meta.url)").replace("new URL('wdosbox-x-fast.wasm', vendor).href","new URL('./vendor/dosbox-x/wdosbox-x-fast.wasm', import.meta.url).href"));
   await patch('app.js',text=>{
+    text="import {PmdPlayer} from './pmd-player.mjs';\nimport {extractOriginalPmd} from './pmd-archives.mjs';\nimport {OriginalSfx} from './original-sfx.mjs';\n"+text;
     text=replaceOnce(text,"&& /^[0-9]{4}$/.test(netQuery.get('room') || '')", "&& !!netQuery.get('room')",'main room identity');
     text=replaceOnce(text,"const response = await fetch(`/api/state?${query}`, {cache: 'no-store'});",'const response={ok:true,json:async()=>globalThis.th03RoomHost.state};','managed room settings');
     text=replaceOnce(text,'function report(error) {',"function report(error) {globalThis.__eaglerPC98Emit({event:'error',message:String(error.message||error)});",'managed error');
     text=replaceOnce(text,"if(netQuery.get('role')==='host')replayRecorder.connectNetwork",'if(false)replayRecorder.connectNetwork','standalone replay service');
     text=replaceOnce(text,"if (!controlsOnly&&(restartOnLoad || embedded || roomHost)) $('start').click();",'// The managed shell starts after configure.','managed lifecycle');
+    text=replaceOnce(text,"localBgm = new LocalBgm(emulator.module.SDL2.audioContext, () => {});",`localBgm = new LocalBgm(emulator.module.SDL2.audioContext, () => {});
+    localBgm.pmd={tracks:extractOriginalPmd('th03',new Fat12(disk)),engine:await PmdPlayer.prepare(localBgm.context,import.meta.url)};`,'original music');
+    text=replaceOnce(text,`localSfx=new LocalSfx(emulator.module.SDL2.audioContext);
+      // Load every small effect before simulation: no downloads/decoding on a
+      // shot, and no muted-PCM game if any local effect failed to load.
+      await localSfx.load(networkAssets.soundAssets);`,`localSfx=await OriginalSfx.create('th03',new Fat12(disk));`,'original effects');
     return text;
   });
   await writeFile(resolve(output,'app.js'),await readFile(resolve(output,'app.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-room-api.js'),'utf8'));
