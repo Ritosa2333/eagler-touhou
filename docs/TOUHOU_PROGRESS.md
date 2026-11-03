@@ -80,13 +80,13 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码与证据](https://github.com/AdingApkgg/thp/commit/7b8b66f523219662dbe084948917039d263f0bc0)的玩法核心仍为 [7babb540](https://github.com/AdingApkgg/thp/commit/7babb540918c13f7d813eb14ea09db1da2112bcd)。录像换关 RNG 已按原版顺序逐步恢复，Session／Battle／StagedLoader 支持等待、继续和失败传播；15,840 组原版指令组件及三套同规模 C++ 矩阵通过，旧顺序控制的 2,880 处最终差异归零。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/a3ef0132e50444378e9a1804c153e53df0826060)已在正常动画 VM 调用前、返回后接入带实际对象身份的加载交付；调用前只轮询初始化，返回后继续完整加载，失败沿 Battle 返回 Session，不包装 VM 方法指针。
 
-[当前核心扩展复核](https://github.com/AdingApkgg/thp/blob/7b8b66f523219662dbe084948917039d263f0bc0/docs/porting/TH14_REPLAY_RNG_STEP_MODES_NOV04.md)新跑 13 份并复核同核心三份收据，共 16 份通过记录、1,379,760 回调，覆盖 14 个不同组合，其中 11 个组合观察到全部目标关卡入口。旧灵梦 B Easy 的 12 次首次机会异常继续拒绝。141 核心／146 浏览器单元重编，静音 Application 两关 2,289 帧／27 断言通过。
+[当前复核](https://github.com/AdingApkgg/thp/blob/a3ef0132e50444378e9a1804c153e53df0826060/docs/porting/TH14_NORMAL_VM_BOUNDARY_NOV04.md)：一份包含原版 VM 身份及同一暂停事件初始化时间的灵梦 B Normal 35,000 回调记录，全部所选状态／相机／HUD、1,057 行 VM 的 303 字段及 393 个战斗池检查点一致。没有向引擎传入 RNG 或子弹状态，也没有提前移动时钟或改变 60 ms 等待。该结论对应这份观察输入记录，未验收普通浏览器独立调度。
 
-[新原版换关采样](https://github.com/AdingApkgg/thp/blob/7b8b66f523219662dbe084948917039d263f0bc0/docs/porting/TH14_REPLAY_RNG_STORE_TRACE_NOV04.md)保留进入二面、三面时三个 RNG 写入及全局复制前的八个硬件断点事件。这份新采样的 40,000 回调前缀严格对照失败：script seed／calls／活动自机子弹数分别差 9,228／615／77 次，首差异在第 30,773 回调。调试暂停影响调度，这些事件不恢复旧录像缺失的线程顺序。
+新核心重新执行 16 份有效留存录像，共 1,379,760 回调，均通过严格组合门槛和原始载荷复算；灵梦 B Easy 的旧异常记录继续拒绝。141 个核心对象全重编，7 个无效输入、2 个真实 VM 边界失败、12 项共享代码编译检查通过。实际静音 Application 两关 2,289 帧／27 断言通过，图像与离线 PCM 匹配封存参考，物理音频设备打开数零；146 个浏览器单元完成重编。
 
-旧 36,826 回调用当前核心重跑并独立重算，seed／计数仍有 14,403／1,702 处差异，首差异在第 22,336 回调。首次录像同步、默认浏览器各写入立即就绪、全局整体恢复，以及剩余弹／相机／指针 Z、全模式、原版整局图像／音频、存档和浏览器等价继续见[当前清单](https://github.com/AdingApkgg/thp/blob/7b8b66f523219662dbe084948917039d263f0bc0/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+另一份 35,000 回调原版记录在本核心仍有 script seed／calls／活动自机弹数 4,137／283／1 处差异，保留严格失败。旧 40,000 和 36,826 回调记录的缺失线程顺序未关闭。默认 readiness、首次录像同步、全局整体恢复、剩余弹／相机／指针 Z、完整模式与 EOF、普通 GUI、原版整局图像／音频、存档及浏览器继续见[当前清单](https://github.com/AdingApkgg/thp/blob/a3ef0132e50444378e9a1804c153e53df0826060/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
