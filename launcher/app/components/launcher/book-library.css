@@ -509,3 +509,11 @@
 }
 .book-favorite.ui-kit-button:is(:hover,[aria-pressed="true"]) {background:transparent;border-color:transparent}
 .book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
+@media (hover:hover) and (pointer:fine) {
+  .book-card:has(.book-game-link:hover) {border-color:var(--kit-ring);box-shadow:0 5px 16px #0000001c}
+  .book-card .book-game-link .book-art img {transition:transform 550ms cubic-bezier(.2,.65,.25,1)}
+  .book-card .book-game-link:hover .book-art img {transform:scale(1.035)}
+  .book-view-list .book-card:has(.book-game-link:hover) {box-shadow:none}
+}
+@media (prefers-reduced-motion:reduce) {.book-card .book-game-link .book-art img {transition:none!important;transform:none!important}}
+.less-motion .book-card .book-game-link .book-art img {transition:none!important;transform:none!important}
