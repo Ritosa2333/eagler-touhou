@@ -86,4 +86,4 @@
   }
 }
 .book-directory :is(.lobby-actions .lobby-button,.book-room-filter-trigger,.lobby-room-row>.lobby-join) {font-family:var(--kit-font);font-weight:600;letter-spacing:0}
-.book-directory .book-lobby-favorite[aria-pressed='true'] {background:transparent;border-color:transparent;color:var(--kit-primary)}
+.book-directory .ui-button.book-lobby-favorite[aria-pressed='true'] {background:transparent;border-color:transparent;color:var(--kit-primary)}
