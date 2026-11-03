@@ -1,5 +1,7 @@
 import {BookButton} from '../launcher/BookButton';
 import {useLocale} from '../../i18n';
+import {MoreHorizontal} from 'lucide-react';
+import {ActionMenu, ActionMenuItem} from '../../ui/action-menu';
 
 /** Shared original lobby.html room actions, including its disabled boot state. */
 export function LobbyRoomTools({disabled, onCreate, onJoin, onRefresh, onReplay}: {
@@ -9,8 +11,10 @@ export function LobbyRoomTools({disabled, onCreate, onJoin, onRefresh, onReplay}
   const buttonClass='lobby-button h-auto whitespace-normal px-3 max-[1000px]:px-1 [@media(pointer:coarse)]:px-1 text-xs';
   return <>
     <BookButton variant="primary" className={`${buttonClass} lobby-primary`} id="createButton" type="button" disabled={disabled} onClick={onCreate}>{t('lobby.create')}</BookButton>
-    {onReplay && <BookButton variant="action" className={`${buttonClass} lobby-secondary`} id="watchReplayButton" type="button" onClick={onReplay}>{t('lobby.watchReplay')}</BookButton>}
     <BookButton variant="action" className={`${buttonClass} lobby-secondary`} id="codeButton" type="button" disabled={disabled} onClick={onJoin}>{t('lobby.byCode')}</BookButton>
-    <BookButton variant="action" size="icon" className="lobby-button lobby-refresh" id="refreshRooms" type="button" aria-label={t('lobby.refresh')} onClick={onRefresh}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.16 7v5h-5M20 12a8 8 0 1 0-2.3 5.7"/></svg></BookButton>
+    <ActionMenu label={t('nav.more')} trigger={<BookButton variant="action" size="icon" className="lobby-button lobby-more" type="button" aria-label={t('nav.more')}><MoreHorizontal aria-hidden="true"/></BookButton>}>
+      {onReplay && <ActionMenuItem id="watchReplayButton" onAction={onReplay}>{t('lobby.watchReplay')}</ActionMenuItem>}
+      <ActionMenuItem id="refreshRooms" onAction={onRefresh}>{t('lobby.refresh')}</ActionMenuItem>
+    </ActionMenu>
   </>;
 }
