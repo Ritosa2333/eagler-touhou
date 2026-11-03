@@ -534,6 +534,7 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th17: Object.freeze({
+        testOnly: true,
         number: "17", title: "東方鬼形獣", subtitle: "Wily Beast and Weakest Creature", cardArtwork: "th17-card.webp",
         storage: Object.freeze({saveRoot: "/savesth17", scoreFile: "scoreth17.dat", configFiles: Object.freeze(["th17.cfg"])}),
         runtime: "./runtime/th17/th17.html",

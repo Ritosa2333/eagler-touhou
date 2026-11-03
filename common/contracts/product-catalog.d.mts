@@ -786,6 +786,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         }>;
     }>;
     th17: Readonly<{
+        testOnly: true;
         number: "17";
         title: "東方鬼形獣";
         subtitle: "Wily Beast and Weakest Creature";
