@@ -19,9 +19,15 @@ export interface LibraryProduct {
   credit?: {name: string; url: string};
 }
 
-export type MultiplayerGroup = 'versus' | 'original' | 'fighting';
+export function isPc98Product(product: Pick<LibraryProduct, 'number'>): boolean {
+  const number = Number(product.number);
+  return Number.isInteger(number) && number <= 5;
+}
+
+export type MultiplayerGroup = 'versus' | 'original' | 'fighting' | 'pc98';
 export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): MultiplayerGroup {
   const game = PRODUCT_GAMES[product.gameId];
+  if (isPc98Product(game)) return 'pc98';
   if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
   return 'multiplayer' in game && game.multiplayer.gameplay === 'versus' ? 'versus' : 'original';
 }

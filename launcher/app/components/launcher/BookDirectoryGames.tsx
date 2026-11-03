@@ -39,8 +39,8 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
     writeBookPreference('multiplayer-favorites',latest.includes(id)?latest.filter(value=>value!==id):[...latest,id]);
   };
   const visible=products.filter(p=>!p.hidden).sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))||Number(a.number)-Number(b.number));
-  const groups=(['versus','original','fighting'] as const).map(id=>({id,products:visible.filter(product=>multiplayerGroup(product)===id)})).filter(group=>group.products.length);
-  const groupLabel=(id:MultiplayerGroup)=>t(id==='versus'?'directory.group.versus':id==='fighting'?'directory.group.fighting':'directory.group.original');
+  const groups=(['versus','original','fighting','pc98'] as const).map(id=>({id,products:visible.filter(product=>multiplayerGroup(product)===id)})).filter(group=>group.products.length);
+  const groupLabel=(id:MultiplayerGroup)=>t(id==='pc98'?'library.category.pc98':id==='versus'?'directory.group.versus':id==='fighting'?'directory.group.fighting':'directory.group.original');
   const cover=(product:LibraryProduct)=>{
     const art=bookArtwork(product);
     return <span className="book-lobby-cover" aria-hidden="true">{art&&!failedArt.has(product.id)?<img src={art} alt="" loading="lazy" decoding="async" onError={()=>setFailedArt(previous=>new Set(previous).add(product.id))}/>:<span>th{product.number}</span>}</span>;

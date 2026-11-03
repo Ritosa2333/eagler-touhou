@@ -1,4 +1,4 @@
-import type {LibraryProduct} from './products';
+import {isPc98Product, type LibraryProduct} from './products';
 
 export const BOOK_PREFERENCES_EVENT = 'eagler-book-preferences';
 const prefix = 'eagler.book.';
@@ -39,7 +39,7 @@ export type BookCategory = 'all' | 'favorites' | 'pc98' | 'windows' | 'spin-off'
 export function bookCategory(product: LibraryProduct): BookCategory {
   const number = Number(product.number);
   if (!Number.isInteger(number)) return 'spin-off';
-  return number <= 5 ? 'pc98' : 'windows';
+  return isPc98Product(product) ? 'pc98' : 'windows';
 }
 
 export function filterBookProducts(products: readonly LibraryProduct[], category: BookCategory, favorites: readonly string[], query: string, sort: string) {
