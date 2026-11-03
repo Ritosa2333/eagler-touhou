@@ -351,7 +351,7 @@
     overflow: visible;
     border: 0;
     border-bottom: 1px solid var(--kit-border);
-    border-radius: 0;
+    border-radius: 8px;
     background: transparent;
     box-shadow: none;
   }
@@ -364,7 +364,7 @@
     align-items: center;
     gap: 12px;
     min-height: 89px;
-    padding: 12px 0;
+    padding: 12px 10px;
   }
   .book-view-list .book-game-link .book-art {
     width: 56px;
