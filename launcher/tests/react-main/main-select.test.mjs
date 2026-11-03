@@ -50,6 +50,21 @@ test('Escape closes the popup and restores its trigger',async()=>{
 });
 test('disabled select stays disabled and cannot open',async()=>{await mount({disabled:true});assert.equal(node('.ui-select-trigger').disabled,true);assert.equal(node('select#game').disabled,true);});
 
+test('disabled selects skip document handlers and attach or remove them with enabled state',async()=>{
+ const types=['fullscreenchange','webkitfullscreenchange','pointerdown','click'],active=new Map(types.map(type=>[type,new Set()]));
+ const add=env.document.addEventListener,remove=env.document.removeEventListener;
+ env.document.addEventListener=function(type,listener,options){if(active.has(type))active.get(type).add(listener);return add.call(this,type,listener,options);};
+ env.document.removeEventListener=function(type,listener,options){if(active.has(type))active.get(type).delete(listener);return remove.call(this,type,listener,options);};
+ const counts=()=>types.map(type=>[type,active.get(type).size]);
+ try{
+  await mount({disabled:true});assert.deepEqual(counts(),types.map(type=>[type,0]));
+  await act(()=>root.render(React.createElement(api.Fixture,{disabled:false})));
+  assert.deepEqual(counts(),types.map(type=>[type,1]));
+  await act(()=>root.render(React.createElement(api.Fixture,{disabled:true})));
+  assert.deepEqual(counts(),types.map(type=>[type,0]));
+ }finally{env.document.addEventListener=add;env.document.removeEventListener=remove;}
+});
+
 test('settings select uses its visible field label as the accessible name',async()=>{
  const host=env.document.createElement('div');env.document.body.append(host);root=createRoot(host);
  await act(()=>root.render(React.createElement(api.LocaleProvider,{locale:'en'},React.createElement(api.SettingsSelect,{id:'language',label:'Game language',value:'ja',onChange(){}},React.createElement('option',{value:'ja'},'Japanese')))));

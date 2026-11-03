@@ -70,6 +70,7 @@ export function Select({
   open: openProp,
   defaultOpen,
   onOpenChange,
+  disabled,
   children,
   ...props
 }: ComponentPropsWithoutRef<typeof Primitive.Root>) {
@@ -109,6 +110,7 @@ export function Select({
   useSurfaceMotion(content, open ? 'enter' : null, { kind: 'menu' });
 
   useLayoutEffect(() => {
+    if (disabled) return;
     closers.add(close);
     document.addEventListener('fullscreenchange', close);
     document.addEventListener('webkitfullscreenchange', close);
@@ -117,9 +119,10 @@ export function Select({
       document.removeEventListener('fullscreenchange', close);
       document.removeEventListener('webkitfullscreenchange', close);
     };
-  }, [close]);
+  }, [close, disabled]);
 
   useLayoutEffect(() => {
+    if (disabled) return;
     const closeFromRetargetedTouch = (event: PointerEvent) => {
       // A stale marker belongs to the previous pointer sequence. Clear it before
       // deciding whether this new touch needs the compatibility-click guard.
@@ -155,12 +158,12 @@ export function Select({
       document.removeEventListener('pointerdown', closeFromRetargetedTouch, true);
       document.removeEventListener('click', consumeRetargetedClick, true);
     };
-  }, [close]);
+  }, [close, disabled]);
 
   const context: SelectContextValue = { trigger, content, host, surface, open, setOpen };
   return (
     <SelectContext.Provider value={context}>
-      <Primitive.Root {...props} open={open} onOpenChange={setOpen}>
+      <Primitive.Root {...props} disabled={disabled} open={open} onOpenChange={setOpen}>
         {children}
       </Primitive.Root>
     </SelectContext.Provider>

@@ -119,7 +119,7 @@ int main(){for(unsigned hz:{60u,75u,90u,120u,144u,165u,240u}){
   for (const script of lane.scripts) {
     const path = workspacePath(game, ...script.split("/"));
     await access(path);
-    const result = spawnSync(process.execPath, [path], {
+    const result = spawnSync(nativeNodeExecutable(), [path], {
       cwd: workspacePath(game),
       encoding: "utf8",
       windowsHide: true,

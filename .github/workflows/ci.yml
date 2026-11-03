@@ -129,7 +129,9 @@ jobs:
 
           ports/th12-mp/src
 
-          services/relay'
+          services/relay
+
+          services/telemetry'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
@@ -237,6 +239,9 @@ jobs:
         node-version: 24
         cache: npm
         cache-dependency-path: launcher/package-lock.json
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
     - uses: msys2/setup-msys2@v2
       if: runner.os == 'Windows'
       id: msys

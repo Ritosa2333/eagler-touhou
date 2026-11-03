@@ -73,6 +73,7 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
           aria-label={t('ui.language')}
           data-trigger-i18n="ui.language.menu"
           defaultValue={locale}
+          disabled
         >
           {UI_LOCALES.map((value) => (
             <option key={value} value={value}>

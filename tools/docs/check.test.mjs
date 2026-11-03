@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { adaptationMarkdown, notApplicable, portDefinitions } from './new-adaptation.mjs';
+import { adaptationMarkdown, MANUAL_EVIDENCE, notApplicable, portDefinitions, preserveManualEvidence } from './new-adaptation.mjs';
 import {
   assertIndexWriteAllowed,
   checkDocumentLinks,
@@ -91,6 +91,17 @@ function rowWithStatus(markdown, id, variantColumn, status, note) {
 test('generated adaptation table covers all 117 IDs and matches recipe columns', () => {
   const markdown = adaptationMarkdown(port);
   assert.deepEqual(validateAdaptationMarkdown(markdown, { port, checklist }), []);
+});
+
+for (const newline of ['\n', '\r\n']) test(`status refresh follows the existing ${newline === '\n' ? 'LF' : 'CRLF'} prefix and preserves manual evidence exactly`, () => {
+  const manual = `${MANUAL_EVIDENCE}\r\n\r\n## 运行验收记录\n保留原始字节\r\n`;
+  const existingPrefix = ['# 旧表', '旧内容', ''].join(newline);
+  const generated = `# 新表\n\n自动检查内容\n\n${MANUAL_EVIDENCE}\n\n默认人工记录\n`;
+  const existing = existingPrefix + manual;
+  const updated = preserveManualEvidence(generated, existing);
+  const generatedPrefix = generated.slice(0, generated.indexOf(MANUAL_EVIDENCE)).replace(/\r\n|\n/g, newline);
+  assert.equal(updated, generatedPrefix + manual);
+  assert.equal(updated.slice(updated.indexOf(MANUAL_EVIDENCE)), manual, 'the marker and manual section remain byte-for-byte identical');
 });
 
 test('cooperative multiplayer rules do not apply to TH09 versus mode', () => {
