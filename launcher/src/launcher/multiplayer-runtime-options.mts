@@ -1,3 +1,4 @@
+import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
   validTh15ChapterThreshold,
   defaultTh15ChapterThreshold,
@@ -22,6 +23,8 @@ export interface MultiplayerRuntimeOptionConstraints {
 }
 
 export interface MultiplayerRuntimeOptionInput {
+  initialSpares?: number;
+  initialBombs?: number;
   url: string;
   player: number | null;
   playerCount: number;
@@ -48,6 +51,8 @@ export interface MultiplayerRuntimeOptionInput {
 }
 
 export interface MultiplayerRuntimeOptions {
+  netplayInitialSpares?: number;
+  netplayInitialBombs?: number;
   netplayMode: 'lan';
   netplayUrl: string;
   netplayPlayer: number | null;
@@ -90,6 +95,7 @@ export function buildMultiplayerRuntimeOptions(
   }
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if(input.initialSpares!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares))||input.initialBombs!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs)))throw new Error('TH05 initial stocks are invalid');
   if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
     throw new Error('WebSocket 回退开关必须为布尔值');
   if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
@@ -194,6 +200,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: 'lan',
+    ...(roomProduct==='th05mp'?{netplayInitialSpares:input.initialSpares??TH05_INITIAL_STOCK.spares,netplayInitialBombs:input.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
     ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
     ...(roomProduct === "th15mp"
       ? {

@@ -1,3 +1,4 @@
+import {TH05_DATA_LAYOUT,TH05_MUSIC_FILES} from "./th05-content-layout.mjs";
 import {TH17_MUSIC_FILES} from "./th17-content-layout.mjs";
 import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
@@ -10,10 +11,24 @@ const TH06_ARCHIVES = Object.freeze([
   "紅魔郷CM.DAT", "紅魔郷ED.DAT", "紅魔郷IN.DAT",
   "紅魔郷MD.DAT", "紅魔郷ST.DAT", "紅魔郷TL.DAT",
 ]);
+const TH05_PREPARED_CONTENT = Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze([
+  "th05.data", ...TH05_MUSIC_FILES.map(file => `music/${file}`), "artwork/th05-card.webp",
+])});
 
 // Product content shape only. This file declares names and Runtime mounts, but
 // never points at a workstation build, asset directory, or generated identity.
 export const PRODUCT_CONTENT = Object.freeze({
+  th05: Object.freeze({
+    original: Object.freeze({files: Object.freeze(["kaiki1.dat", "kaiki2.dat", "zun.com"]), preparedAlternative: TH05_PREPARED_CONTENT}),
+    dataLayout: TH05_DATA_LAYOUT,
+    music: Object.freeze({ogg: Object.freeze({mount: "/music", files: TH05_MUSIC_FILES})}),
+    hostPreparation: Object.freeze({
+      preparedContent: TH05_PREPARED_CONTENT,
+      artwork: Object.freeze({kind: "prepared-content", directory: "artwork"}),
+      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
+      languagePack: Object.freeze({kind: "retail-overlay-compiler", script: "scripts/prepare-th05-language-pack.mjs", optional: true, languages: Object.freeze(["lang_zh-hans"])}),
+    }),
+  }),
   th06: Object.freeze({
     original: Object.freeze({
       files: TH06_ARCHIVES,

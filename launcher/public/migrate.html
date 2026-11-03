@@ -104,8 +104,10 @@ html[data-book-theme='light'] {
   "use strict";
   const PROTOCOL = "eagler-touhou/origin-migration/1";
   const AUTH_KEY = "eagler-touhou-origin-migration-authorized-v1";
-  const DATABASES = new Set(["/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth15", "/savesth17", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]);
+  const DATABASES = new Set(["/savesth05", "/savesth05mp", "/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth15", "/savesth17", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]);
   const DATABASE_LABELS = new Map([
+    ["/savesth05", "th05 存档 / Replay"],
+    ["/savesth05mp", "th05 多人存档 / Replay"],
     ["/savesth06", "th06 存档 / Replay"],
     ["/savesth07", "th07 存档 / Replay"],
     ["/savesth075", "th075 存档 / Replay"],
@@ -818,15 +820,32 @@ const SITE_BRAND_FACES=Object.freeze(["face-F001","face-F022","face-F01B","face-
 const SITE_BRAND_DEFAULT="face-F02B";
 const SITE_BRAND_RATIO=3.125;
 const ordinary=SITE_BRAND_FACES.filter(id=>id!=="face-F02B"&&id!=="face-F055");
-/** One draw per document; the two preferred characters each have 10% weight. */
+/** The two preferred characters each have 10% weight. */
 function chooseSiteBrandFace(random=Math.random){const roll=random();return roll<.1?"face-F02B":roll<.2?"face-F055":ordinary[Math.min(ordinary.length-1,Math.floor(random()*ordinary.length))];}
+const SITE_BRAND_SESSION_KEY="eagler.site.brand.face";
+const sessionFaces=new WeakMap();
+function sessionSiteBrandFace(view,random=Math.random){
+  if(!view)return chooseSiteBrandFace(random);
+  if(sessionFaces.has(view))return sessionFaces.get(view);
+  let face=SITE_BRAND_DEFAULT;
+  try{
+    const storage=view.sessionStorage,saved=storage.getItem(SITE_BRAND_SESSION_KEY);
+    if(SITE_BRAND_FACES.includes(saved))face=saved;
+    else{face=chooseSiteBrandFace(random);storage.setItem(SITE_BRAND_SESSION_KEY,face);}
+  }catch{face=SITE_BRAND_DEFAULT;}
+  sessionFaces.set(view,face);return face;
+}
+function resetSiteBrandFace(view){
+  if(view){sessionFaces.set(view,SITE_BRAND_DEFAULT);try{view.sessionStorage.setItem(SITE_BRAND_SESSION_KEY,SITE_BRAND_DEFAULT);}catch{}}
+  return SITE_BRAND_DEFAULT;
+}
 function siteBrandPath(face=SITE_BRAND_DEFAULT){if(!SITE_BRAND_FACES.includes(face))throw Error("Unknown site brand character");return "assets/brand/"+face+".svg";}
 function initializeStaticSiteBrand(document,moduleUrl){
-  const face=chooseSiteBrandFace();
+  const face=sessionSiteBrandFace(document.defaultView);
   for(const mark of document.querySelectorAll('img[data-site-brand]')){
     const fallback=mark.src;
     mark.src=new URL('../'+siteBrandPath(face),moduleUrl).href;
-    mark.onerror=()=>{mark.onerror=null;mark.src=fallback;mark.dataset.brandFace=SITE_BRAND_DEFAULT;};
+    mark.onerror=()=>{mark.onerror=null;mark.src=fallback;mark.dataset.brandFace=resetSiteBrandFace(document.defaultView);};
     mark.dataset.brandFace=face;
   }
 }

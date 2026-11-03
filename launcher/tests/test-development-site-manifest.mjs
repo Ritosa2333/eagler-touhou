@@ -63,6 +63,7 @@ for (const [game, entry] of Object.entries(manifest.games)) {
   assert.match(entry.gameData.layout, /^sha256-[a-f0-9]{64}$/i);
 }
 const multiplayerRuntimeOwners = {
+  th05: "../ports/th05-mp/artifacts/runtime/th05.html",
   th06: "../ports/th06/build/web/multiplayer/th06.html",
   th07: "../ports/th07/build/web/multiplayer/th07.html",
   th075: "../ports/th075-mp/build-eagler-multiplayer/th075.html",

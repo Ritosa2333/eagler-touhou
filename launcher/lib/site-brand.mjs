@@ -3,15 +3,32 @@ export const SITE_BRAND_FACES=Object.freeze(["face-F001","face-F022","face-F01B"
 export const SITE_BRAND_DEFAULT="face-F02B";
 export const SITE_BRAND_RATIO=3.125;
 const ordinary=SITE_BRAND_FACES.filter(id=>id!=="face-F02B"&&id!=="face-F055");
-/** One draw per document; the two preferred characters each have 10% weight. */
+/** The two preferred characters each have 10% weight. */
 export function chooseSiteBrandFace(random=Math.random){const roll=random();return roll<.1?"face-F02B":roll<.2?"face-F055":ordinary[Math.min(ordinary.length-1,Math.floor(random()*ordinary.length))];}
+export const SITE_BRAND_SESSION_KEY="eagler.site.brand.face";
+const sessionFaces=new WeakMap();
+export function sessionSiteBrandFace(view,random=Math.random){
+  if(!view)return chooseSiteBrandFace(random);
+  if(sessionFaces.has(view))return sessionFaces.get(view);
+  let face=SITE_BRAND_DEFAULT;
+  try{
+    const storage=view.sessionStorage,saved=storage.getItem(SITE_BRAND_SESSION_KEY);
+    if(SITE_BRAND_FACES.includes(saved))face=saved;
+    else{face=chooseSiteBrandFace(random);storage.setItem(SITE_BRAND_SESSION_KEY,face);}
+  }catch{face=SITE_BRAND_DEFAULT;}
+  sessionFaces.set(view,face);return face;
+}
+export function resetSiteBrandFace(view){
+  if(view){sessionFaces.set(view,SITE_BRAND_DEFAULT);try{view.sessionStorage.setItem(SITE_BRAND_SESSION_KEY,SITE_BRAND_DEFAULT);}catch{}}
+  return SITE_BRAND_DEFAULT;
+}
 export function siteBrandPath(face=SITE_BRAND_DEFAULT){if(!SITE_BRAND_FACES.includes(face))throw Error("Unknown site brand character");return "assets/brand/"+face+".svg";}
 export function initializeStaticSiteBrand(document,moduleUrl){
-  const face=chooseSiteBrandFace();
+  const face=sessionSiteBrandFace(document.defaultView);
   for(const mark of document.querySelectorAll('img[data-site-brand]')){
     const fallback=mark.src;
     mark.src=new URL('../'+siteBrandPath(face),moduleUrl).href;
-    mark.onerror=()=>{mark.onerror=null;mark.src=fallback;mark.dataset.brandFace=SITE_BRAND_DEFAULT;};
+    mark.onerror=()=>{mark.onerror=null;mark.src=fallback;mark.dataset.brandFace=resetSiteBrandFace(document.defaultView);};
     mark.dataset.brandFace=face;
   }
 }

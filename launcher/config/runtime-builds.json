@@ -8,6 +8,27 @@
     }
   },
   "games": {
+    "th05": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th05",
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th05mp",
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {}
+        }
+      }
+    },
     "th06": {
       "builder": "cmake",
       "sourceBuild": { "kind": "cmake" },

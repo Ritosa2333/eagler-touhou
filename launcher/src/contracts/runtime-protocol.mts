@@ -80,7 +80,17 @@ export type RuntimeConfigureOptionRequirement = "required" | "profile-required" 
 // Canonical Runtime-owned configuration. Launcher-only preferences such as the
 // touch layout editor, magnifier and Restart-button visibility do not belong on
 // this wire object. Compatibility aliases are listed separately below.
+export interface Th05MultiplayerDisplay {
+  bossBar: "native" | "eosd" | "ring";
+  phaseMarkers: boolean;
+  phaseStars: boolean;
+  phaseTimeout: boolean;
+  timeoutAsTime: boolean;
+  numericDream: boolean;
+  numericPower: boolean;
+}
 export interface RuntimeConfigureOptions {
+  th05MultiplayerDisplay?: Readonly<Th05MultiplayerDisplay>;
   thpracEnabled?: boolean;
   limitPresentationTo60?: boolean;
   touchEnabled?: boolean;
@@ -98,6 +108,7 @@ export interface RuntimeConfigureOptions {
   multiplayerPreflight?: boolean;
   thpracLocale?: string;
   oggDecodeMode?: RuntimeOggDecodeMode;
+  musicSource?: "original" | "akyu";
   debugHarness?: string | null;
   netplayMode?: "lan";
   netplayUrl?: string;
@@ -108,6 +119,8 @@ export interface RuntimeConfigureOptions {
   netplayChallengeMode?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayChapterThreshold?: number;
+  netplayInitialSpares?: number;
+  netplayInitialBombs?: number;
   netplayInputDelay?: number;
   netplayInputDelayAuto?: boolean;
   netplayPredictionReserve?: number;
@@ -137,6 +150,7 @@ export interface RuntimeConfigureOptions {
  * aliases live in RUNTIME_CONFIGURE_LEGACY_OPTION_KEYS instead.
  */
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
+  th05MultiplayerDisplay: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH05 multiplayer local presentation"}),
   netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),
@@ -154,6 +168,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),
   thpracLocale: Object.freeze({ requirement: "profile-required", capability: "thprac", when: "thprac" }),
   oggDecodeMode: Object.freeze({ requirement: "required", capability: "normal-music-ogg" }),
+  musicSource: Object.freeze({ requirement: "profile-required", capability: "music-source-selection", productDeclaration: "musicRuntime.sources", when: "product declares musicRuntime.sources" }),
   debugHarness: Object.freeze({ requirement: "diagnostic", capability: "runtime-health-diagnostics", when: "explicit debug/test launch" }),
   netplayMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplayUrl: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
@@ -163,6 +178,8 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH06/TH07/TH08/TH10 multiplayer; fixed before start" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
   netplayChapterThreshold: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH15 multiplayer chapter reward; 500000–5000000 in steps of 250000; immutable after start"}),
+  netplayInitialSpares: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH05 multiplayer; team spare lives 0–5 excluding the current life; fixed before HELLO"}),
+  netplayInitialBombs: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH05 multiplayer; team starting Bombs 0–3; fixed before HELLO"}),
   netplayDifficulty: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
   netplayInputDelay: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH08 multiplayer player session" }),
   netplayAdonisMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", productDeclaration: "multiplayer.inputTiming.measuredStartup", when: "measured multiplayer player session; 0 rollback, 1 exact-input delay, 2 hybrid; fixed before HELLO" }),

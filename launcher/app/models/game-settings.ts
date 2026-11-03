@@ -3,7 +3,7 @@ import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {
   gamePreferenceStorageKey, applySharedTouchPreferences, loadOrInitializeSharedTouchPreferences,
   loadStoredGamePreferences, loadStoredLanguagePreference, persistSharedTouchPreferences,
-  persistStoredGamePreferences, touchMovementUsesJoystick,
+  persistStoredGamePreferences, touchMovementUsesJoystick, normalizeTh05MultiplayerDisplay,
   type GameOptions, type GamePreferenceStorage, type MusicMode,
 } from '../../src/launcher/game-preferences.mts';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, productFeatureAvailable,
@@ -24,6 +24,10 @@ export interface SettingsContext {
   /** A seated player's room may prohibit touch-unlimited. */
   forbidUnlimitedMovement?: boolean;
   beautyInstalled?: boolean;
+}
+function musicAvailabilityForContext(context: SettingsContext): MusicAvailabilityInput & {musicSources: readonly string[]} {
+  const policy = PRODUCT_GAMES[gameIdForProduct(context.productId)].musicRuntime;
+  return {...context.musicAvailability, musicSources: 'sources' in policy ? policy.sources : []};
 }
 export interface SettingsDisclosureState {touch: boolean; files: boolean; display: boolean; advanced: boolean}
 export interface SettingsSnapshot {
@@ -148,7 +152,7 @@ export function createGameSettingsModel({storage, onChange}: {
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
       ...(context.productId === 'th09mp' ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
-      music: resolveEffectiveMusicMode({...context.musicAvailability, requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
+      music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
       gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
       language: resolvePreferredGameLanguage(context.languages, savedLanguage, context.uiLocale)}, reason);
@@ -189,7 +193,7 @@ export function createGameSettingsModel({storage, onChange}: {
       // choices, including language and disconnected MIDI output, stay in memory.
       if (state.multiplayer || !productFeatureAvailable(state.gameId, 'thprac', context.hostFeatures)) options.thpracEnabled = false;
       publish({...state, context, options,
-        music: resolveEffectiveMusicMode({...context.musicAvailability, requested: state.musicPreference, explicit: state.musicPreferenceExplicit})}, 'context');
+        music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: state.musicPreference, explicit: state.musicPreferenceExplicit})}, 'context');
     },
     setMovementRestriction(forbidden: boolean) {
       const state = required();
@@ -212,6 +216,7 @@ export function createGameSettingsModel({storage, onChange}: {
       if (name === 'thpracEnabled' && (state.multiplayer || !productFeatureAvailable(state.gameId, 'thprac', state.context.hostFeatures))) return;
       if (state.options[name] === value) return;
       const options = {...state.options, [name]: value};
+      if (name === 'th05MultiplayerDisplay') options.th05MultiplayerDisplay = normalizeTh05MultiplayerDisplay(value);
       if (name === 'touchMovementMode' && touchMovementUsesJoystick(value) && options.touchFocusMode === 'two-finger') options.touchFocusMode = 'hold-button';
       if (name === 'touchSensitivity') options.touchSensitivity = Math.max(100, Math.min(300, Math.round(Number(value) || 100)));
       if (name === 'touchControlOpacity') options.touchControlOpacity = Math.max(20, Math.min(100, Math.round(Number(value) / 5) * 5 || 20));
@@ -237,6 +242,7 @@ export function createGameSettingsModel({storage, onChange}: {
     },
     setMusic(value: MusicMode) {
       const state = required(), availability = resolveMusicAvailability(state.context.musicAvailability);
+      if (value === 'ogg-akyu' && !musicAvailabilityForContext(state.context).musicSources.includes('akyu')) return;
       if (value === 'midi' && !availability.midi || value.startsWith('ogg-') && !availability.ogg) return;
       publish({...state, music: value, musicPreference: value, musicPreferenceExplicit: true}, 'music'); commitPreferences();
     },

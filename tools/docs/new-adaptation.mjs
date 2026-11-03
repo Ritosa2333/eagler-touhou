@@ -3,10 +3,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRODUCT_GAMES } from '../../common/contracts/product-catalog.mjs';
+import {targets as sourceTargets} from '../ports/inputs.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const spec = JSON.parse(readFileSync(resolve(root, 'docs/adaptation/checklist.json'), 'utf8'));
-const layout = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json'), 'utf8'));
 const builds = JSON.parse(readFileSync(resolve(root, 'launcher/config/runtime-builds.json'), 'utf8'));
 const slash = path => path.replaceAll('\\', '/');
 export const MANUAL_EVIDENCE = '<!-- manual-verification -->';
@@ -22,17 +22,12 @@ export function preserveManualEvidence(generated, existing = '') {
 
 export function portDefinitions() {
   const ports = new Map();
-  for (const [game, entry] of Object.entries(builds.games)) {
-    for (const variant of ['normal', 'multiplayer']) {
-      const definition = entry.variants[variant];
-      if (!definition) continue;
-      const directory = layout.repositories[definition.workspaceRepository ?? entry.workspaceRepository];
-      if (!directory?.startsWith('ports/')) throw new Error(`${game}/${variant} 缺少 ports/ 源码目录。`);
-      const port = ports.get(directory) ?? { directory, game, variants: [] };
-      if (port.game !== game) throw new Error(`${directory} 同时归属两个作品。`);
-      port.variants.push(variant);
-      ports.set(directory, port);
-    }
+  for (const {game, variant, directory} of sourceTargets()) {
+    if (!directory?.startsWith('ports/')) throw new Error(`${game}/${variant} 缺少 ports/ 源码目录。`);
+    const port = ports.get(directory) ?? { directory, game, variants: [] };
+    if (port.game !== game) throw new Error(`${directory} 同时归属两个作品。`);
+    port.variants.push(variant);
+    ports.set(directory, port);
   }
   return [...ports.values()].sort((a, b) => a.directory.localeCompare(b.directory, 'en'));
 }

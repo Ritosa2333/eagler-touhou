@@ -86,6 +86,13 @@ export const catalogPages: readonly CatalogPage[] = [
         ['language', '游戏语言与音乐', '选中、资源缺失、长选项'],
         ['advanced', '高级与触控分组', '折叠 / 展开、作品能力差异、窄屏'],
       ),
+      {...region('th05-music', '怪绮谈音源',
+        ['source', '原版 / 幺乐团专辑', '原版、专辑、无音乐、偏好恢复、资源缺失'],
+      ), live: './?game=th05'},
+      {...region('th05-display', '怪绮谈联机显示',
+        ['boss-bar', '血条与阶段提示', '原版侧栏、顶部、环形、关联选项禁用'],
+        ['meters', '梦槽 / 火力数字', '开启、关闭、偏好恢复、普通版不显示'],
+      ), live: './?game=th05mp'},
     ],
   },
   {
@@ -273,6 +280,9 @@ export const catalogPages: readonly CatalogPage[] = [
         ['basic', '可见性、人数与难度', '房主可编辑、成员只读、私密、两人 / 三人'],
         ['timing', '回滚、延迟与规则', '自动、手动延迟、开关选中、长选项'],
       ),
+      {...region('th05-stock', '怪绮谈房间设置',
+        ['stock', '初始残机 / Bomb', '默认 2 / 3、零值、房主可编辑、成员只读、开局后禁用、修改后重新准备'],
+      ), live: './lobby.html?game=th05mp'},
       region(
         'network',
         '网络详情',

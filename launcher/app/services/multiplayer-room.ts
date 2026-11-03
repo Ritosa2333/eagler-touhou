@@ -1,4 +1,5 @@
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
+import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
 import {
   validTh15ChapterThreshold,
   defaultTh15ChapterThreshold,
@@ -231,6 +232,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         playerCount: room.playerCount,
         difficulty: room.difficulty,
         created: room.created,
+        ...(product==='th05mp'?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
         disableLocalChargePriority: room.disableLocalChargePriority,
@@ -411,6 +413,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       type: 'settings',
       playerCount: room.playerCount,
       difficulty: room.difficulty,
+      ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
@@ -445,6 +448,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
+      ...(product==='th05mp'?{initialSpares:normalized.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:normalized.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
       prankMode: false,
       inputDelayAuto: normalized.inputDelayAuto ?? false,
@@ -756,6 +760,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
+      ...(product==='th05mp'?{initialSpares:saved?.room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:saved?.room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       challengeMode: saved?.room.challengeMode ?? false,
       prankMode: false,
       seats: null,
@@ -984,6 +989,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         MultiplayerRoomState,
         | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
         | "chapterThreshold"
+        | 'initialSpares' | 'initialBombs'
       >
     >,
   ) {
@@ -999,6 +1005,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(product!=='th05mp'||room.phase!=='lobby'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))return;
     if (
       patch.chapterThreshold !== undefined &&
       (product !== "th15mp" ||
@@ -1038,6 +1045,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       playerCount,
       difficulty,
       ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
+      ...(product==='th05mp'?{initialSpares:patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
@@ -1174,6 +1182,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         playerCount: room.playerCount,
         seed: Number.parseInt(room.code, 10) & 0xffff,
         difficulty: Math.max(0, Math.min(config.difficulties.length - 1, room.difficulty)),
+        ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
         ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0 } : {}),
         ...(config.inputTiming?.measuredStartup
           ? {

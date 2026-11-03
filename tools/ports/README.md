@@ -10,6 +10,8 @@
 
 命令先编译当前前端模块，再执行各项检查。模块 gate 中的 Vitest 测试需要 Bun 1.4.4；`shared-checks.json` 按测试计划选择 `repository`、`unit` 或 `workspace` 项目。原生 `node:test` gate 仍由 Node 运行。CI 在 Windows 和 Linux 都安装该 Bun 版本。
 
+源码检查只包含声明了 `sourceBuild` 的目标。仅接入预制 Runtime Release 的作品不写入源码验收状态；显式选择这类作品时会报告尚未声明源码构建。浏览器 Runtime 验收仍按实际发布产品覆盖。
+
 从根目录运行 `npm run ports:check -- --all`，或用 `--game=th08 --variant=both` 选择一作。安装依赖使用 `npm --prefix launcher ci --ignore-scripts`，原生时钟组件检查使用 C++17 编译器（默认 `g++`，可设置 `CXX`）。
 
 `--write-status` 将实际结果写入 `docs/adaptation/status.json` 并生成各作 `ADAPTATION.md`。`--check-status` 检查当前源码身份是否与已登记结果一致。完整日志、源码输入与报告保存在 `artifacts/validation/ports/`，可用 `--output=DIR` 指定证据目录。

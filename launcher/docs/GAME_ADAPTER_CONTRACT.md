@@ -21,6 +21,10 @@
 
 共享代码读取产品声明中的 provider、布局与功能字段；游戏编号用于选择对应的产品记录。产品 capability 由 `PRODUCT_GAMES` 声明；`content-definition.mjs` 中的 `hostPreparation` 描述内容构建配方。
 
+多音源作品通过 `musicRuntime.sources` 声明可选来源。启动器同时在偏好恢复、资源准备与 `configure.options.musicSource` 中使用该声明；当前 th05 的原版与幺乐团专辑都通过 OGG 资源路径加载。其他作品不接受未声明的专辑选项。
+
+th05 的练习菜单由原生程序维护，声明 `thpracRuntime.session: "native"`，通过 `configure.options.thpracEnabled` 启用。它不使用 `integrations/thprac.mjs` 的 Windows 作品参数会话；两者的支持范围分别核对。
+
 ## Runtime 消息
 
 每条消息都带 `protocol: "eagler-touhou/1"`、`game`、正整数 `epoch`。Launcher 把同一 epoch 放入 Runtime URL 的 `runtimeEpoch` 查询参数。命令增加 `command`，可用 `request` 关联响应；响应带 `request` 与布尔值 `ok`，失败时可带 `error`、`errno`；事件增加 `event`。

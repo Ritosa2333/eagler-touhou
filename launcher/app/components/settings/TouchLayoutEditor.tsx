@@ -78,6 +78,7 @@ export interface TouchLayoutEditorProps {
   actions: SettingsActions;
   native: TouchEditorNativePorts;
   onCloseIntent(): void;
+  onClosed?(): void;
   /** CSS image value from the same product artwork owner used by the cards. */
   previewImage?: string;
   fireEnabled?: boolean;
@@ -90,6 +91,7 @@ export function TouchLayoutEditor({
   actions,
   native,
   onCloseIntent,
+  onClosed,
   previewImage,
   fireEnabled,
 }: TouchLayoutEditorProps) {
@@ -108,8 +110,8 @@ export function TouchLayoutEditor({
   const viewportMode = useRef(false),
     previousViewportEditing = useRef(false),
     lifetime = useRef(0);
-  const latest = useRef({ actions, native, t });
-  latest.current = { actions, native, t };
+  const latest = useRef({ actions, native, t, onClosed });
+  latest.current = { actions, native, t, onClosed };
   const wheel = state ? touchMovementUsesJoystick(state.options.touchMovementMode) : false;
   const orientation = useCallback((): TouchLayoutOrientation => {
     const host = surface.current!;
@@ -367,7 +369,9 @@ export function TouchLayoutEditor({
       // owned fullscreen, including fullscreen acquired later by rotation.
       queueMicrotask(() => {
         if (lifetime.current === retired)
-          void latest.current.native.exitFullscreen().catch(latest.current.actions.reportError);
+          void latest.current.native.exitFullscreen().catch(latest.current.actions.reportError).then(() => {
+            if (lifetime.current === retired) latest.current.onClosed?.();
+          });
       });
       // The root's sole exit owner calls discard only after its decision.
     };

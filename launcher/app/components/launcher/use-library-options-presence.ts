@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { closeMainSelectMenus } from './MainSelect';
 import type { OptionsTargets } from './options-ownership';
 import type { LibraryProduct } from './products';
@@ -24,9 +24,10 @@ export interface LibraryOptionsPresence {
   product: LibraryProduct | undefined;
   targets: OptionsTargets;
   openedProduct: LibraryProduct['id'] | undefined;
+  restoreFocus(onlyIfLost?: boolean): void;
 }
 
-type Presence = Omit<LibraryOptionsPresence, 'openedProduct' | 'targets'>;
+type Presence = Omit<LibraryOptionsPresence, 'openedProduct' | 'targets' | 'restoreFocus'>;
 /** Router state commits immediately; the visual surface retires on completion. */
 export function useLibraryOptionsPresence({
   open,
@@ -41,11 +42,22 @@ export function useLibraryOptionsPresence({
   const panel = useRef<HTMLElement>(null),
     backdrop = useRef<HTMLElement>(null);
   const previous = useRef({ open, context });
+  const focusReady = useRef(false);
+  const restoreFocus = useCallback((onlyIfLost = false) => {
+    const panel = targets.current.panel;
+    if (!focusReady.current || !panel?.isConnected) return;
+    if (onlyIfLost && panel.contains(document.activeElement)) return;
+    panel.querySelector<HTMLElement>('#libraryBack')?.focus({ preventScroll: true });
+  }, []);
+  useLayoutEffect(() => {
+    focusReady.current = open && presence.open && !!presence.product?.id && !presence.closing && !concealed && focusActive;
+  });
   const closingCard = useRef<HTMLElement | null>(null),
     pendingFocus = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(
     () => () => {
+      focusReady.current = false;
       document.body.classList.remove('library-tools-open', 'library-tools-closing');
     },
     [],
@@ -101,11 +113,12 @@ export function useLibraryOptionsPresence({
   useSurfaceMotion(backdrop, phase, { kind: 'backdrop', reduced: lessMotion });
   useLayoutEffect(() => {
     if (!presence.open || !presence.product?.id || concealed || !focusActive) return;
-    targets.current.panel?.querySelector<HTMLElement>('#libraryBack')?.focus({ preventScroll: true });
-  }, [presence.open, presence.product?.id, concealed, focusActive]);
+    restoreFocus();
+  }, [presence.open, presence.product?.id, concealed, focusActive, restoreFocus]);
   return {
     ...presence,
     targets: targets.current,
+    restoreFocus,
     open: presence.open && !concealed,
     closing: presence.closing && !concealed,
     openedProduct: presence.open && !concealed ? presence.product?.id : undefined,

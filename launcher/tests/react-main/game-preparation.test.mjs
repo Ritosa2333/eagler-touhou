@@ -143,6 +143,86 @@ function gameInput(fixture, state = settingsFixture(), extra = {}) {
     touchLayout: null, prepareMidi: async () => {}, ...extra};
 }
 
+test('TH05 album preference survives settings restore and maps to its configure music source', () => {
+  const state = settingsFixture({productId: 'th05', music: 'ogg-akyu'});
+  assert.equal(state.model.getSnapshot().musicPreference, 'ogg-akyu');
+  const restored = api.createGameSettingsModel({storage: {
+    getItem: key => state.storage.get(key) ?? null,
+    setItem: (key, value) => state.storage.set(key, value),
+    removeItem: key => state.storage.delete(key),
+  }});
+  restored.hydrate(state.snapshot.context);
+  assert.equal(restored.getSnapshot().musicPreference, 'ogg-akyu');
+  assert.equal(restored.getSnapshot().music, 'ogg-akyu');
+  const album = api.gameRuntimeOptions({productId: 'th05', settings: restored.getSnapshot()}, 'ja', 'ogg-akyu', null);
+  assert.equal(album.musicSource, 'akyu');
+  assert.equal(album.oggDecodeMode, 'stream');
+  const original = api.gameRuntimeOptions({productId: 'th05', settings: restored.getSnapshot()}, 'ja', 'ogg-full', null);
+  assert.equal(original.musicSource, 'original');
+  assert.equal(original.oggDecodeMode, 'full');
+
+  const ordinary = settingsFixture({productId: 'th06'});
+  ordinary.model.setMusic('ogg-akyu');
+  assert.notEqual(ordinary.model.getSnapshot().musicPreference, 'ogg-akyu');
+});
+
+test('TH05 native thprac preference reaches configure without a Windows session payload', () => {
+  const state = settingsFixture({productId: 'th05'});
+  state.model.setOption('thpracEnabled', true);
+  const options = api.gameRuntimeOptions({productId: 'th05', settings: state.model.getSnapshot()}, 'ja', 'none', null);
+  assert.equal(options.thpracEnabled, true);
+  assert.equal(options.thpracLocale, 'ja-JP');
+  assert.equal('thpracSession' in options, false);
+});
+
+test('TH05 album preparation sends the source to Runtime and reads its declared OGG targets', async () => {
+  const current = generation({ogg: ['track-1', 'track-2']});
+  current.game = current.descriptor.game = 'th05';
+  current.descriptor.runtimeRequirement.target = 'th05';
+  current.descriptor.files['game-data'].source = 'th05.data';
+  current.descriptor.files['game-data'].target = '/th05.data';
+  for (const id of current.descriptor.components.ogg.files) {
+    current.descriptor.files[id].source = `music/${id}.ogg`;
+    current.descriptor.files[id].target = `/music/${id}.ogg`;
+  }
+  const f = acquisitionFixture({current}), r = runtimeFixture();
+  const result = await api.prepareGame(gameInput(f, settingsFixture({productId: 'th05', music: 'ogg-akyu'}),
+    {productId: 'th05', runtime: r.service}));
+  assert.equal(result.music, 'ogg-akyu');
+  assert.equal(result.plan.configure.music, 'ogg');
+  assert.equal(result.plan.configure.options.musicSource, 'akyu');
+  assert.deepEqual(result.plan.localOgg.fileIds, ['track-1', 'track-2']);
+  const delivered = r.outbound.filter(message => message.command === 'resources')
+    .flatMap(message => message.resources.map(resource => resource.path)).filter(path => path.endsWith('.ogg'));
+  assert.deepEqual(delivered, ['/music/track-1.ogg', '/music/track-2.ogg']);
+});
+
+test('TH05 album acquisition includes its declared soundtrack files', async () => {
+  const base = host(), declared = base.games.th06;
+  const development = api.validateSiteManifest({...base, profile: 'web-development',
+    shared: {...base.shared, testBuild: true},
+    games: {th05: {...declared, runtime: api.PRODUCT_GAMES.th05.runtime,
+      gameData: {...declared.gameData, path: 'th05.data', source: 'development/th05.data'},
+      music: {midi: {files: [], supported: false}, ogg: {base: 'music/', mount: '/music',
+        files: ['op.ogg', 'akyu-01.ogg'], sizes: [bytes.length, bytes.length], sha256: [hash, hash], version: `sha256-${hash}`}}}}});
+  let current = null;
+  const downloaded = [];
+  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true,
+    metadata: {getSnapshot: () => ({siteManifest: development, releaseCatalog: null}), initialize: async () => {}},
+    fetchImpl: async url => {downloaded.push(new URL(url).pathname); return new Response(bytes);},
+    dependencies: {readCurrent: async () => ({generation: current, installation: null}),
+      installAcquired: async options => {
+        assert.deepEqual(options.desiredFileIds, ['game-data', 'ogg:op.ogg', 'ogg:akyu-01.ogg']);
+        for (const id of options.desiredFileIds) await options.acquire(id, options.descriptor.files[id]);
+        current = {id: 'dev-th05', game: 'th05', descriptor: options.descriptor,
+          files: Object.fromEntries(options.desiredFileIds.map(id => [id, ref(id)]))};
+        return {generation: current};
+      }}});
+  const result = await acquisition.acquire({productId: 'th05', music: 'ogg-akyu', language: 'ja'});
+  assert.equal(result.generation, current);
+  assert.deepEqual(downloaded, ['/deploy/development/th05.data', '/deploy/music/op.ogg', '/deploy/music/akyu-01.ogg']);
+});
+
 for (const productId of ['th11', 'th11mp']) test(`${productId} high refresh setting reaches Runtime without changing room options`, () => {
   const state = settingsFixture({productId});
   const multiplayer = productId.endsWith('mp') ? {kind: 'room', options: {

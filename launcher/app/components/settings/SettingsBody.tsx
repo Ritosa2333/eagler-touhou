@@ -48,6 +48,9 @@ export function SettingsBody({
   const item = (extra: string) => `item ${extra}`;
   const hasFaith = 'display' in product && product.display.faithBar;
   const hasHints = 'hintFiles' in product.storage && product.storage.hintFiles.length > 0;
+  const th05Display = options.th05MultiplayerDisplay;
+  const setTh05Display = (patch: Partial<typeof th05Display>) =>
+    model.setOption('th05MultiplayerDisplay', {...th05Display, ...patch});
   const switchOption =
     (
       name:
@@ -304,6 +307,22 @@ export function SettingsBody({
             />
           }
         />
+        {state.gameId === 'th05' && multiplayer && <>
+          <SettingsSelect id="mpTh05BossBarSelect" label={t('settings.th05.bossBar')} value={th05Display.bossBar}
+            onChange={event => {
+              const bossBar = event.target.value;
+              if (bossBar === 'native' || bossBar === 'eosd' || bossBar === 'ring') setTh05Display({bossBar});
+            }}>
+            {(['native', 'eosd', 'ring'] as const).map(style => <option key={style} value={style}>{t(`settings.th05.bar.${style}`)}</option>)}
+          </SettingsSelect>
+          {(['phaseMarkers', 'phaseStars', 'phaseTimeout', 'timeoutAsTime', 'numericDream', 'numericPower'] as const).map(key =>
+            <OptionRow key={key} className="item" label={t(`settings.th05.${key}`)} control={
+              <OptionSwitch id={`mpTh05${key[0].toUpperCase()}${key.slice(1)}Toggle`} label={t(`settings.th05.${key}`)} checked={th05Display[key]}
+                disabled={key === 'phaseMarkers' && th05Display.bossBar !== 'native' || key === 'phaseStars' && th05Display.bossBar !== 'eosd'
+                  || key === 'phaseTimeout' && th05Display.bossBar !== 'native' || key === 'timeoutAsTime' && !th05Display.phaseTimeout}
+                onChange={() => setTh05Display({[key]: !th05Display[key]})}/>
+            }/>)}
+        </>}
       </OptionsGroup>
       {(actions.keyboard || actions.gamepad) && (
         <InputSettings
@@ -356,6 +375,9 @@ export function SettingsBody({
             <option value="ogg-full" disabled={!availability.ogg}>
               {t('settings.music.oggFull')}
             </option>
+            {'sources' in product.musicRuntime && product.musicRuntime.sources.includes('akyu') && (
+              <option value="ogg-akyu" disabled={!availability.ogg}>{t('settings.music.akyu')}</option>
+            )}
             <option value="midi" disabled={!availability.midi}>
               midi
             </option>

@@ -262,6 +262,7 @@ export interface GameOptionClassification {
 // This closes a common ambiguity where a Launcher switch existed before anyone
 // decided whether the next Runtime had to implement it.
 export const GAME_OPTION_CLASSIFICATION = Object.freeze({
+  th05MultiplayerDisplay: {capability: "multiplayer", class: "optional", owner: "product"},
   thpracEnabled: { capability: "thprac", class: "optional", owner: "product" },
   thpracTouchControlsEnabled: { capability: "thprac-touch-bridge", class: "profile-required", owner: "launcher-runtime" },
   magnifierEnabled: { capability: "magnifier", class: "inherited", owner: "launcher" },
@@ -320,6 +321,9 @@ export const PROFILE_REQUIRED_CAPABILITIES = Object.freeze([
 // their declarations; a new adapter is not incomplete merely because one is
 // false or absent.
 export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
+  { id: "music-source-selection", class: "optional", owner: "product", declaration: "musicRuntime.sources",
+    verification: ["unit:tests/react-main/game-preparation.test.mjs"],
+    summary: "select a declared OGG music source while keeping preference, acquired files and Runtime configuration aligned" },
   { id: "midi-music", class: "optional", owner: "product", declaration: "musicCapabilities.midi",
     verification: ["workspace:tests/test-midi-capability-contract.mjs", "browser:tests/browser/test-music-selection.py"],
     summary: "MIDI playback in addition to normal OGG music" },

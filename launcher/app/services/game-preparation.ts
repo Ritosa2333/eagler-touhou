@@ -15,7 +15,7 @@ import type {SettingsSnapshot} from '../models/game-settings';
 import {prepareLanguagePack, type PreparedLanguagePack} from './language-pack';
 import {checkPreparationAbort, preparationErrorText, type AcquisitionRequest, type PackageAcquisition,
   type PackageAcquisitionResult, type PreparationProgress} from './package-acquisition';
-import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, oggMusic, packageResourceIds, remoteMusicResources,
+import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
@@ -111,7 +111,9 @@ async function initialGamePlan(input: GamePreparationInput, acquired: PackageAcq
 }
 function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: SiteManifest | null) {
   const {settings, acquisition} = input, hosted = host?.games[settings.gameId];
+  const policy = PRODUCT_GAMES[settings.gameId].musicRuntime;
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
+    musicSources: 'sources' in policy ? policy.sources : [],
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
     importServer: host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg,
     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
@@ -130,10 +132,12 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
     touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
+    ...('sources' in product.musicRuntime ? {musicSource: music === 'ogg-akyu' ? 'akyu' as const : 'original' as const} : {}),
     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
       ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
     ...(productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
+    ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
     ...(isMultiplayer ? {multiplayerLocalPlayerVisibility: options.multiplayerLocalPlayerVisibility,
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),
       ...(multiplayer?.kind === 'preflight' && 'multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight: true} : {}),
@@ -176,7 +180,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   const shared = sharedResources({game: settings.gameId, generation, host, language,
     thprac: settings.options.thpracEnabled, baseUrl: input.baseUrl, translate: t});
   const plan: RuntimePlan = {...initial, ...(generation && generation !== initial.generation ? {resourceGeneration: generation} : {}),
-    configure: {music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
+    configure: {language, music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
       runtimeResources: remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
     ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
@@ -184,7 +188,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};
   const resource = runtimePack ? `${entry?.title || entry?.id || t('language.fallbackName')} ${t('settings.language')}`
-    : `${music === 'ogg-stream' ? t('settings.music.oggStream') : music === 'ogg-full' ? t('settings.music.oggFull') : music === 'none' ? t('settings.music.none') : 'midi'} ${t('settings.music')}`;
+    : `${musicModeLabel(music, t)} ${t('settings.music')}`;
   input.onStatus?.(t('runtime.preparingResources', {resource}));
   return {plan, language, music};
 }

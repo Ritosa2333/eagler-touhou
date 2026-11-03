@@ -2,9 +2,25 @@ import { TOUCH_SENSITIVITY_MAX, TOUCH_SENSITIVITY_MIN } from "../contracts/runti
 
 export type TouchMovementMode = "touch" | "touch-unlimited" | "joystick" | "joystick-free";
 export type TouchFocusMode = "two-finger" | "hold-button" | "toggle-button";
-export type MusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
+export type MusicMode = "ogg-stream" | "ogg-full" | "ogg-akyu" | "midi" | "none";
+
+export type {Th05MultiplayerDisplay} from "../contracts/runtime-protocol.mts";
+import type {Th05MultiplayerDisplay} from "../contracts/runtime-protocol.mts";
+export const DEFAULT_TH05_MULTIPLAYER_DISPLAY: Readonly<Th05MultiplayerDisplay> = Object.freeze({
+  bossBar: "native", phaseMarkers: false, phaseStars: false, phaseTimeout: false,
+  timeoutAsTime: false, numericDream: false, numericPower: false,
+});
+export function normalizeTh05MultiplayerDisplay(value: unknown): Readonly<Th05MultiplayerDisplay> {
+  const saved = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const bossBar = saved.bossBar === "eosd" || saved.bossBar === "ring" ? saved.bossBar : "native";
+  const flag = (key: string) => saved[key] === true;
+  return Object.freeze({bossBar, phaseMarkers: bossBar === "native" && flag("phaseMarkers"),
+    phaseStars: bossBar === "eosd" && flag("phaseStars"), phaseTimeout: bossBar !== "native" || flag("phaseTimeout"),
+    timeoutAsTime: flag("timeoutAsTime"), numericDream: flag("numericDream"), numericPower: flag("numericPower")});
+}
 
 export interface GameOptions {
+  th05MultiplayerDisplay: Readonly<Th05MultiplayerDisplay>;
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
@@ -29,6 +45,7 @@ export interface GameOptions {
 }
 
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
+  th05MultiplayerDisplay: DEFAULT_TH05_MULTIPLAYER_DISPLAY,
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
@@ -54,10 +71,10 @@ export const TOUCH_MOVEMENT_MODES = new Set<TouchMovementMode>([
 export const TOUCH_FOCUS_MODES = new Set<TouchFocusMode>([
   "two-finger", "hold-button", "toggle-button",
 ]);
-export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "midi", "none"]);
+export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "ogg-akyu", "midi", "none"]);
 
 export function isMusicMode(value: string): value is MusicMode {
-  return value === "ogg-stream" || value === "ogg-full" || value === "midi" || value === "none";
+  return value === "ogg-stream" || value === "ogg-full" || value === "ogg-akyu" || value === "midi" || value === "none";
 }
 
 export function isTouchMovementMode(value: string): value is TouchMovementMode {
@@ -238,6 +255,7 @@ export function normalizeStoredGamePreferences(
     : DEFAULT_GAME_OPTIONS.touchSensitivity;
 
   const options: GameOptions = {
+    th05MultiplayerDisplay: normalizeTh05MultiplayerDisplay(rawOptions?.th05MultiplayerDisplay),
     thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", /^zh(?:-|$)/i.test(context.uiLocale || "") || DEFAULT_GAME_OPTIONS.thpracEnabled),
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),

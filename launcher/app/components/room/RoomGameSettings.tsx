@@ -1,5 +1,6 @@
 import {Button as UiButton} from '../../ui/controls';
 import {defaultTh15ChapterThreshold} from "../../../src/launcher/th15-chapter-reward.mts";
+import {TH05_INITIAL_STOCK} from '../../../src/launcher/th05-initial-stock.mts';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import {useLocale} from '../../i18n';
 import {RoomChoiceGroup} from './RoomChoiceGroup';
@@ -7,6 +8,7 @@ import {roomPresentation} from './presentation';
 import {MainSelect} from '../launcher/MainSelect';
 import {RoomTiming, type RoomTimingActions} from './RoomTiming';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
+import {SettingsSelect} from '../settings/SettingsSelect';
 export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setRoomSettings' | 'takeSeat'> & RoomTimingActions; hidden: boolean}) {
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
   const disabled = !ready || !owner || room.phase !== 'lobby';
@@ -25,6 +27,19 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
+      {state.product === 'th05mp' && <>
+        <fieldset className="room-basic-fields" aria-describedby="mpTh05InitialStockHint">
+          <SettingsSelect id="mpTh05InitialSpares" label={t('room.th05InitialSpares')} value={room.initialSpares ?? TH05_INITIAL_STOCK.spares}
+            disabled={disabled} onChange={event => service.setRoomSettings({initialSpares: Number(event.target.value)})}>
+            {[0, 1, 2, 3, 4, 5].map(value => <option key={value} value={value}>{value}</option>)}
+          </SettingsSelect>
+          <SettingsSelect id="mpTh05InitialBombs" label={t('room.th05InitialBombs')} value={room.initialBombs ?? TH05_INITIAL_STOCK.bombs}
+            disabled={disabled} onChange={event => service.setRoomSettings({initialBombs: Number(event.target.value)})}>
+            {[0, 1, 2, 3].map(value => <option key={value} value={value}>{value}</option>)}
+          </SettingsSelect>
+        </fieldset>
+        <p className="room-setting-description" id="mpTh05InitialStockHint">{t('room.th05InitialStockHint')}</p>
+      </>}
       {state.product === 'th15mp' && <><label className="room-reward-field" htmlFor="mpTh15ChapterThreshold">{t('room.th15ChapterThreshold')}<MainSelect className="option-select" id="mpTh15ChapterThreshold" aria-label={t('room.th15ChapterThreshold')} aria-describedby="mpTh15ChapterGraze" value={String(room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))} disabled={disabled} onChange={event => service.setRoomSettings({chapterThreshold:Number(event.target.value)})}>
         {Array.from({length:19},(_,index)=>500000+index*250000).map(value=><option key={value} value={value}>{value.toLocaleString()}</option>)}
       </MainSelect></label><p className="room-setting-description" id="mpTh15ChapterGraze">{t('room.th15ChapterGraze',{count:(room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))/5000})}</p></>}
