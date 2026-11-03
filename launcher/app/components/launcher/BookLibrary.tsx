@@ -11,7 +11,6 @@ import {
   Shapes,
   History,
   X,
-  ArrowUpRight,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { ChoiceGroup, ChoiceItem } from '../../ui/choice-group';
@@ -143,7 +142,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
         </span>
         <span title={product.subtitle}>{product.subtitle}</span>
       </span>
-      {recentLink && <ArrowUpRight className="book-recent-arrow" aria-hidden="true" />}
     </a>
   );
   const displayedRecent =

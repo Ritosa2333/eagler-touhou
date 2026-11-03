@@ -93,35 +93,40 @@
   }
   .book-recent-games {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     overflow-x: auto;
     padding: 0 0 4px;
     scrollbar-width: thin;
   }
   .book-recent-games article {
-    flex: 0 0 208px;
+    flex: 0 0 230px;
   }
   .book-recent-link {
     display: flex;
     align-items: center;
     gap: 10px;
     min-width: 0;
-    min-height: 78px;
-    padding: 12px;
-    border: 1px solid var(--kit-border);
+    min-height: 68px;
+    padding: 6px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
     border-radius: 8px;
-    background: var(--kit-card);
+    background: transparent;
     color: var(--kit-foreground);
     text-decoration: none;
-    transition: border-color var(--ui-feedback-duration);
+    transition: background-color 320ms ease, border-color 320ms ease;
   }
-  .book-recent-link:hover {
-    border-color: var(--kit-ring);
+  .book-recent-link:is(:hover,:focus-visible) {
+    background: var(--kit-muted);
+  }
+  .book-recent-link:focus-visible {
+    outline: 2px solid var(--kit-ring);
+    outline-offset: -2px;
   }
   .book-recent-link .book-art {
     flex: none;
-    width: 46px;
-    height: 46px;
+    width: 56px;
+    height: 56px;
     aspect-ratio: 1;
     border-radius: 5px;
   }
@@ -133,12 +138,6 @@
   }
   .book-recent-link .book-identity strong {
     font-size: 12px;
-  }
-  .book-recent-arrow {
-    flex: none;
-    width: 14px;
-    height: 14px;
-    color: var(--kit-muted-foreground);
   }
   .book-view-header {
     display: flex;
@@ -377,7 +376,7 @@
     gap: 3px;
     padding: 0;
   }
-  .book-view-list .book-identity strong {
+  .book-view-list .book-game-link .book-identity strong {
     font-size: 13px;
   }
   .book-view-list .book-favorite.ui-kit-button {
@@ -455,8 +454,11 @@
       margin-bottom: 26px;
     }
     .book-recent-games article {
-      flex-basis: 205px;
+      flex-basis: 68px;
     }
+    .book-recent-link {position:relative;width:68px;height:68px;min-height:0;padding:0;border:0;border-radius:6px;overflow:hidden}
+    .book-recent-link .book-art {width:100%;height:100%;border-radius:6px}
+    .book-recent-link .book-identity {position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
     .book-current h2 {
       font-size: 20px;
     }
@@ -507,6 +509,8 @@
     }
   }
 }
+@media (prefers-reduced-motion:reduce) {.book-recent-link {transition:none}}
+.less-motion .book-recent-link {transition:none}
 .book-favorite.ui-kit-button:is(:hover,[aria-pressed="true"]) {background:transparent;border-color:transparent}
 .book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
 .book-view-switch .ui-kit-choice:is([data-state="on"],:hover) {background:transparent;box-shadow:none}
