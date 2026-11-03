@@ -26,6 +26,7 @@ export interface DirectoryRoomRowsProps {
   assetUrl(path: string): string;
   /** Rows created during main's first visual gate permanently skip arrival motion. */
   initialRows?: boolean;
+  arrivals?: ReadonlySet<string>;
 }
 /** Original public/lobby.html165–177 row template + lobby.mts260–347 renderer. */
 export function DirectoryRoomRows({
@@ -33,6 +34,7 @@ export function DirectoryRoomRows({
   service,
   assetUrl,
   initialRows = false,
+  arrivals,
 }: DirectoryRoomRowsProps) {
   return (
     <>
@@ -44,6 +46,7 @@ export function DirectoryRoomRows({
           service={service}
           assetUrl={assetUrl}
           initial={initialRows}
+          arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
         />
       ))}
     </>
@@ -55,12 +58,14 @@ function RoomRow({
   service,
   assetUrl,
   initial,
+  arriving,
 }: {
   room: DirectoryRoom;
   snapshot: DirectorySnapshot;
   service: LobbyDirectoryService;
   assetUrl(path: string): string;
   initial: boolean;
+  arriving: boolean;
 }) {
   const { t } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
@@ -84,7 +89,7 @@ function RoomRow({
     !directoryRoomCanEnter(room);
   return (
     <li
-      className={`lobby-room-row directory-room-grid${initiallyHiddenMotion ? ' lobby-room-initial' : ''}`}
+      className={`lobby-room-row directory-room-grid${initiallyHiddenMotion ? ' lobby-room-initial' : ''}${arriving ? ' lobby-room-arriving' : ''}`}
       data-key={`${room.product}-${room.code}`}
       data-state={state}
     >

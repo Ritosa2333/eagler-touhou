@@ -1,5 +1,5 @@
 import {BookButton} from '../launcher/BookButton';
-import {useEffect, useState, useSyncExternalStore} from 'react';
+import {useEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, stringArray} from '../launcher/book-preferences';
 import {useLocale} from '../../i18n';
 import {LobbySurface, type LobbySurfaceProps} from '../launcher/LobbySurface';
@@ -23,6 +23,24 @@ export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived
 export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
   const {t} = useLocale(), snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const [roomFilter, setRoomFilter] = useState<DirectoryRoomFilter>('all');
+  const seenRooms = useRef<Set<string> | null>(null);
+  const arrivalTimers = useRef(new Set<number>());
+  const [arrivals, setArrivals] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => () => {arrivalTimers.current.forEach(timer => window.clearTimeout(timer)); arrivalTimers.current.clear();}, []);
+  useEffect(() => {
+    if (snapshot.connection !== 'live' || snapshot.loading) return;
+    const keys = snapshot.rooms.map(room => `${room.product}-${room.code}`);
+    if (!seenRooms.current) {seenRooms.current = new Set(keys); return;}
+    const added = keys.filter(key => !seenRooms.current!.has(key));
+    seenRooms.current = new Set(keys);
+    if (!added.length) return;
+    setArrivals(current => new Set([...current, ...added]));
+    const timer = window.setTimeout(() => {
+      arrivalTimers.current.delete(timer);
+      setArrivals(current => {const next = new Set(current); added.forEach(key => next.delete(key)); return next;});
+    }, 850);
+    arrivalTimers.current.add(timer);
+  }, [snapshot.rooms, snapshot.connection, snapshot.loading]);
   const [favorites, setFavorites] = useState<string[]>([]);
   useEffect(() => {
     const refresh = () => setFavorites(readBookPreference('multiplayer-favorites', [], stringArray));
@@ -52,7 +70,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
     action: state.connection === 'loading' || (state.connection === 'live' && !!state.mine) ? undefined : {label: state.connection === 'live' && filtering ? (t('directory.clearFilters')) : t(state.connection === 'live' ? 'lobby.create' : 'lobby.retry'), onClick: () => {if (state.connection !== 'live') service.retry(); else if (filtering) {setRoomFilter('all'); if (surface.onProductFiltersChange) surface.onProductFiltersChange([]); else surface.onSelect('');} else onOpenForm('create');}},
   };
   return <LobbySurface {...surface} selectedProduct={surface.viewingProduct || state.selectedProduct} connectionWarning={warning} membership={membership} notice={state.notice} roomTools={roomTools} roomFilters={roomFilters}
-    roomList={<DirectoryRoomRows snapshot={state} service={service} assetUrl={assetUrl} initialRows={initialRows}/>}
+    roomList={<DirectoryRoomRows snapshot={state} service={service} assetUrl={assetUrl} initialRows={initialRows} arrivals={arrivals}/>}
     hasRooms={!!state.visibleRooms.length} loading={state.loading} emptyState={empty} roomCount={state.loading && !state.visibleRooms.length ? '' : t('lobby.roomCount', {count: state.visibleRooms.length})}
     viewingProduct={surface.viewingProduct} roomUsersArtwork={assetUrl('assets/room-users.svg')}/>;
 }
