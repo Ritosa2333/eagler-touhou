@@ -94,3 +94,8 @@
 @media(prefers-reduced-motion:reduce) {.book-directory .lobby-refresh[data-loading='true'] svg {animation:none}}
 .less-motion .book-directory .lobby-refresh[data-loading='true'] svg {animation:none}
 .less-motion .book-lobby-check,.less-motion .book-lobby-check svg {transition:none}
+.book-lobby-game > :is(.book-lobby-cover,.book-lobby-copy),.book-lobby-icon > .book-lobby-cover {transition:translate 380ms cubic-bezier(.22,.7,.2,1),scale 380ms cubic-bezier(.22,.7,.2,1)}
+.book-lobby-game:is(:hover,:focus-visible):not(:disabled) > :is(.book-lobby-cover,.book-lobby-copy) {translate:4px 0}
+.book-lobby-game:is(:hover,:focus-visible):not(:disabled) > .book-lobby-cover,.book-lobby-icon:is(:hover,:focus-visible):not(:disabled) > .book-lobby-cover {scale:1.06}
+@media(prefers-reduced-motion:reduce) {.book-lobby-game > :is(.book-lobby-cover,.book-lobby-copy),.book-lobby-icon > .book-lobby-cover {transition:none;translate:none!important;scale:none!important}}
+.less-motion .book-lobby-game > :is(.book-lobby-cover,.book-lobby-copy),.less-motion .book-lobby-icon > .book-lobby-cover {transition:none;translate:none!important;scale:none!important}

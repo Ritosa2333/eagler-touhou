@@ -510,6 +510,11 @@
 .book-favorite.ui-kit-button:is(:hover,[aria-pressed="true"]) {background:transparent;border-color:transparent}
 .book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
 .book-view-switch .ui-kit-choice:is([data-state="on"],:hover) {background:transparent;box-shadow:none}
+.book-sidebar [data-book-category] {transition:background-color 320ms cubic-bezier(.22,.7,.2,1),color 320ms cubic-bezier(.22,.7,.2,1)}
+.book-sidebar [data-book-category] > :is(svg,span) {transition:translate 380ms cubic-bezier(.22,.7,.2,1)}
+.book-sidebar [data-book-category]:is(:hover,:focus-visible):not(:disabled) > :is(svg,span) {translate:4px 0}
+@media(prefers-reduced-motion:reduce) {.book-sidebar [data-book-category],.book-sidebar [data-book-category] > :is(svg,span) {transition:none;translate:none!important}}
+.less-motion .book-sidebar [data-book-category],.less-motion .book-sidebar [data-book-category] > :is(svg,span) {transition:none;translate:none!important}
 @media (prefers-reduced-motion:reduce) {.book-view-switch::before {transition:none}}
 .less-motion .book-view-switch::before {transition:none}
 @media (hover:hover) and (pointer:fine) {
