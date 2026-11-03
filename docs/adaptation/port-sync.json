@@ -1129,6 +1129,26 @@
               "note": "普通版与多人版同步字形描边、Web 输出缓冲、顶点缓冲、背景裁剪和增量存档。普通版浏览器回归检查自动保存，多人版保留显式联机录像导出流程。"
             }
           ]
+        },
+        "sdl-stage-backdrops": {
+          "paths": [
+            "portable/sdl/Scene.cpp",
+            "portable/sdl/Scene.hpp"
+          ],
+          "base": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "7d18ec5c6e9322517dc217a76736e4de55e00e7e",
+              "source": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "targetHead": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp"
+              ],
+              "note": "单人与多人同步原版背景动画绘制顺序；录像落盘与槽位刷新属于多人版。"
+            }
+          ]
         }
       }
     }
