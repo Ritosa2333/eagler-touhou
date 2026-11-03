@@ -16,6 +16,7 @@ import { WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
 import { runNativeCpp } from "./support/native-cpp.mjs";
 
 const verification = Object.freeze({
+  th05: {kind: "runtime", scripts: ["tests/presentation.mjs"]},
   th06: Object.freeze({ kind: "shared-preload", tests: Object.freeze([
     "tests/test-mobile-frame-pacing.mjs",
     "tests/test-native-frame-pacing.mjs",

@@ -5,6 +5,12 @@
   "originMigration": "http-to-https",
   "netplayRelay": "absent",
   "games": {
+    "th05": {
+      "languages": ["ja", "lang_zh-hans"],
+      "music": ["ogg"],
+      "thprac": true,
+      "runtimeVariants": ["normal", "multiplayer"]
+    },
     "th06": {
       "languages": ["ja", "lang_zh-hans", "lang_en"],
       "music": ["midi", "ogg"],

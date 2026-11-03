@@ -14,6 +14,7 @@ const directoryGames = Object.entries(PRODUCT_GAMES)
   .sort();
 for (const game of directoryGames) {
   const directory = resolve(game === 'th10' && process.argv[2] ? process.argv[2]
+    : game === 'th05' ? workspacePath(game, 'artifacts', 'runtime')
     : game === 'th09' ? workspacePath(game, 'web', 'build-eagler')
     : workspacePath(game, 'build-eagler'));
   const manifest = JSON.parse(await readFile(resolve(directory, 'runtime-files.json'), 'utf8'));

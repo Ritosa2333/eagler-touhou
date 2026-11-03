@@ -64,7 +64,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 20);
+  assert.equal(plans.length, 22);
   const th12mp = plans.find(plan => plan.game === 'th12' && plan.variant === 'multiplayer');
   assert.equal(th12mp.source, layout.path('th12mp'));
   assert.equal(th12mp.features.thprac, false);

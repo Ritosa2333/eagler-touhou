@@ -19,6 +19,8 @@ const launcherSource = await readFile(new URL("../app/components/launcher/Option
 const document = parse(html);
 const cards = [];
 const navigationChoices = [];
+const legacyCards = [];
+const legacyChoices = [];
 
 function attribute(node, name) {
   return node.attrs?.find(item => item.name === name)?.value ?? null;
@@ -26,6 +28,7 @@ function attribute(node, name) {
 function walk(node) {
   if (attribute(node, "data-minimap-preview")) {
     const id = attribute(node, "data-minimap-preview");
+    if (id === "th05-standalone") {legacyChoices.push(id); return;}
     navigationChoices.push(id);
     const number = node.childNodes?.find(child => attribute(child, "class") === "minimap-index");
     assert.equal(number?.childNodes?.[0]?.value, PRODUCT_GAMES[gameIdForProduct(id)].number);
@@ -39,11 +42,18 @@ function walk(node) {
       for (const nested of child.childNodes || []) collectImages(nested);
     };
     collectImages(node);
-    cards.push({ game, product, images, style: attribute(node, "style") || "", rail: attribute(node.parentNode, "id") });
+    const card = { game, product, images, style: attribute(node, "style") || "", rail: attribute(node.parentNode, "id") };
+    if (product === "th05-standalone") legacyCards.push(card); else cards.push(card);
   }
   for (const child of node.childNodes || []) walk(child);
 }
 walk(document);
+assert.ok(legacyCards.length <= 1);
+assert.equal(legacyChoices.length, legacyCards.length);
+if (legacyCards.length) {
+  assert.equal(legacyCards[0].game, "th05");
+  assert.equal(legacyCards[0].rail, "multiplayerRail", "legacy TH05 remains an external multiplayer entry");
+}
 assert.doesNotMatch(html, /id="cardFilterBar"/, "the removed category filter must not return");
 assert.deepEqual(navigationChoices.sort(), [...PRODUCT_IDS].sort(), "every catalog product needs a numbered navigation choice");
 assert.doesNotMatch(html, /minimap-swatch|--swatch-|minimap-panel/, "retired color-sample navigation must not return");
