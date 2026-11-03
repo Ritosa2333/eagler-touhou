@@ -158,9 +158,14 @@ bool AnmManager::spawn_effect(AnmVm& vm,i32 script){if(effect)return effect(vm,s
  }
  vm.geometry.allocation_bytes=0x78;
  vm.visual.translation={};vm.visual.layer=13;
- if(script==1)vm.visual.flags=(vm.visual.flags&0xfffffe3fu)|0x20u;
+ if(script==1)vm.visual.flags=(vm.visual.flags&~0xfffffe3fu)|0x20u;
  return true;
- }error="Scene effect manager not bound";return false;}
+ }
+ // 0x402ff0 族表外 script（含 4 = 0x4bba80 表行 -1）：原版 0x415650/0x46fab0
+ // 对该输入无「错误」概念（表行 script<0 直接返回），ANM ins_508 的表外
+ // script 同降级为无几何空操作并留证——不让对局失败（Game Over 卡死同族）。
+ std::fprintf(stderr,"[scene-effect] spawn_effect unhandled script %d (no-op)\n",script);
+ return true;}
 i32 AnmManager::update_effect(AnmVm& vm,float rate){if(effect_update)return effect_update(vm,rate);if(vm.geometry.overlay)return vm.geometry.overlay->tick(random,rate);if(vm.geometry.circle){
  auto& circle=*vm.geometry.circle;if(circle.age.current>=50)return 1;
  if(circle.age.current!=circle.age.previous){
