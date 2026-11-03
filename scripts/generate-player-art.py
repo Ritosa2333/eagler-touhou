@@ -12,7 +12,7 @@ target = root / 'Game/Coop/PlayerArt.inc'
 source = root / 'resources/player-art/source.json'
 if args.check:
     info = json.loads(source.read_text(encoding='utf-8'))
-    assert hashlib.sha256(target.read_bytes()).hexdigest() == info['generated']['sha256']
+    assert hashlib.sha256(target.read_bytes().replace(b'\r\n', b'\n')).hexdigest() == info['generated']['sha256']
     print('Reviewed TH05 player art: verified')
     raise SystemExit()
 if not args.zip:
@@ -67,7 +67,7 @@ for character in range(4):
         lines.append('{' + ','.join(map(vector, records[character*3+variant])) + '},')
     lines.append('},')
 lines += ['};', 'static const unsigned char kArtColors[4][3][3]={' + ','.join('{' + ','.join(map(vector, row)) + '}' for row in colors) + '};']
-target.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+target.write_bytes(('\n'.join(lines) + '\n').encode('utf-8'))
 info = {'schema': 'eagler-touhou/th05-reviewed-player-art/1',
         'archiveSha256': hashlib.sha256(args.zip.read_bytes()).hexdigest(), 'sourceArchive': args.zip.name,
         'referenceCommit': '659e65658d4cd1bcfee1670f4c5cc63d79d2819f',
