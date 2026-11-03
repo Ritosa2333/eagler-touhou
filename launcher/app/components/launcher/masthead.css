@@ -176,19 +176,15 @@
     width: 24px;
     height: 24px;
     border: 0;
-    border-radius: 50%;
+    border-radius: 6px;
     background: transparent;
   }
   .book-masthead .book-profile-trigger img {
     display: block;
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 6px;
     object-fit: cover;
-  }
-  .book-masthead .book-profile-trigger[aria-current="page"] > span {
-    outline: 2px solid var(--kit-ring);
-    outline-offset: 2px;
   }
   .book-masthead .book-navigation-icon {
     display: block;
@@ -327,6 +323,17 @@
     }
   }
 }
+
+@property --masthead-trace {syntax:'<angle>';inherits:false;initial-value:0deg}
+.book-masthead :is(.book-profile-trigger,.book-theme-toggle,.masthead-menu-toggle) {position:relative;overflow:visible}
+.book-masthead :is(.book-profile-trigger,.book-theme-toggle,.masthead-menu-toggle)::after {
+  content:'';position:absolute;inset:1px;box-sizing:border-box;border:1.5px solid var(--kit-ring);border-radius:7px;pointer-events:none;
+  mask:conic-gradient(from -90deg, #000 0deg, #000 var(--masthead-trace), transparent var(--masthead-trace));
+  transition:--masthead-trace 550ms cubic-bezier(.22,.7,.2,1);
+}
+.book-masthead :is(.book-profile-trigger,.book-theme-toggle,.masthead-menu-toggle):is(:hover,:focus-visible,[aria-current='page'],[aria-expanded='true'])::after {--masthead-trace:360deg}
+@media (prefers-reduced-motion:reduce) {.book-masthead :is(.book-profile-trigger,.book-theme-toggle,.masthead-menu-toggle)::after {transition:none}}
+.less-motion .book-masthead :is(.book-profile-trigger,.book-theme-toggle,.masthead-menu-toggle)::after {transition:none}
 
 @media (hover:hover) and (pointer:fine) {
   .book-masthead .book-main-nav :is(a,button),
