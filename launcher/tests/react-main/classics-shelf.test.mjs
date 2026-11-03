@@ -5,7 +5,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {installMountedDom} from './mounted-dom-environment.mjs';
-test('test shelf keeps TH01–04 links and moves standalone TH05 into multiplayer',async()=>{
+test('test shelf keeps TH01–04 links and omits standalone TH05',async()=>{
  const env=installMountedDom(),React=await import('react'),{createRoot}=await import('react-dom/client');
  const work=await mkdtemp(resolve('.cache/classics-test-')),out=resolve(work,'fixture.mjs');let root;
  try{
@@ -21,9 +21,7 @@ test('test shelf keeps TH01–04 links and moves standalone TH05 into multiplaye
   let prevented;holder.addEventListener('click',e=>{prevented=e.defaultPrevented;e.preventDefault();},{once:true});
   await React.act(()=>links[0].dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true})));assert.equal(prevented,false);
   assert.equal(holder.querySelectorAll('.classics-shelf button').length,4);
-  const old=holder.querySelector('[data-shelf=multiplayer] a[data-game=th05]');assert.ok(old);assert.equal(old.href,'https://example.invalid/th05');assert.equal(old.dataset.product,'th05-standalone');
-  assert.equal(holder.querySelector('.classics-shelf a[data-game=th05]'),null);
-  let externalPrevented;holder.addEventListener('click',event=>{externalPrevented=event.defaultPrevented;event.preventDefault();},{once:true});
-  await React.act(()=>old.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true})));assert.equal(externalPrevented,false);
+  assert.equal(holder.querySelector('a[data-game=th05]'),null);
+  assert.equal(holder.querySelector('[data-minimap-preview=th05-standalone]'),null);
  }finally{if(root)await React.act(()=>root.unmount());env.close();await rm(work,{recursive:true,force:true});}
 });

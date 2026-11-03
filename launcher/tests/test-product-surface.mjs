@@ -48,12 +48,8 @@ function walk(node) {
   for (const child of node.childNodes || []) walk(child);
 }
 walk(document);
-assert.ok(legacyCards.length <= 1);
-assert.equal(legacyChoices.length, legacyCards.length);
-if (legacyCards.length) {
-  assert.equal(legacyCards[0].game, "th05");
-  assert.equal(legacyCards[0].rail, "multiplayerRail", "legacy TH05 remains an external multiplayer entry");
-}
+assert.deepEqual(legacyCards, []);
+assert.deepEqual(legacyChoices, []);
 assert.doesNotMatch(html, /id="cardFilterBar"/, "the removed category filter must not return");
 assert.deepEqual(navigationChoices.sort(), [...PRODUCT_IDS].sort(), "every catalog product needs a numbered navigation choice");
 assert.doesNotMatch(html, /minimap-swatch|--swatch-|minimap-panel/, "retired color-sample navigation must not return");
