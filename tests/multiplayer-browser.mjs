@@ -81,9 +81,45 @@ try{
  await page.evaluate(()=>command(0,'direct-touch',{type:'up',id:24,x:.55,y:.75}));
  const touchAfter=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(0,5));assert.ok(touchAfter>touchBefore&&touchAfter-touchBefore<1600,JSON.stringify({touchBefore,touchAfter}));report.touchMovement={touchBefore,touchAfter};
  await page.screenshot({path:resolve(out,`${count}p-${route}.png`)});
+ const replayFrame=jitter?720:120;
+ const replayHash=await page.evaluate(frame=>document.querySelector('iframe').contentWindow.Module._th05_net_hash(frame)>>>0,replayFrame);
  const returned=await page.evaluate(()=>command(0,'return-room'));assert.equal(returned.presented,true,JSON.stringify(returned));
  await page.waitForFunction(count=>events.filter(e=>e.event==='room-menu'&&e.launchSerial===1).length===count,count,{timeout:15000});
  report.returned=true;report.errors=errors;report.runtimeErrors=await page.evaluate(()=>events.filter(e=>e.event==='error'));assert.deepEqual(errors,[]);assert.deepEqual(report.runtimeErrors,[]);
+ if(process.env.TH05_MP_REPLAY==='1'){
+  assert.ok(replayHash);
+  report.replay=await page.evaluate(async({replayHash,replayFrame,count})=>{
+   const expect=(value,message)=>{if(!value)throw Error(message);};
+   const request=async(commandName,payload,seat=0)=>{
+    const result=await command(seat,commandName,payload);
+    expect(result.ok,JSON.stringify(result));return result;
+   };
+   const records=await Promise.all(Array.from({length:count},(_,seat)=>request('list',{},seat)));
+   const paths=records.map(record=>record.files.find(f=>/^replay\/th05mp_ud[0-9a-f]{4}\.rpy$/.test(f.path))?.path);
+   expect(paths.every(Boolean),'every seat should save its confirmed run');
+   const path=paths[0],{bytes}=await request('read',{path});
+   const rejected=await command(0,'write',{path:'replay/invalid.rpy',bytes:bytes.slice(0,-1)});
+   expect(!rejected.ok,'truncated multiplayer replay accepted');
+   const imported='replay/th05mp_udf000.rpy';
+   await request('write',{path:imported,bytes});
+   await request('configure',{music:'none',language:'ja',options:{replayViewer:true}});
+   await request('launch',{launchSerial:2});
+   const opened=await request('playback',{action:'inspect',path:imported});
+   const stage=opened.description.stages[0];
+   expect(stage.id===1&&stage.frames>=250&&opened.description.characters.length===count,'incorrect stage metadata');
+   await request('playback',{action:'open',path:imported,stage:stage.id});
+   await request('playback',{action:'pause'});
+   const seek=await request('playback',{action:'seek',value:replayFrame});
+   expect(seek.playback.frame===replayFrame&&seek.playback.paused,'paused seek failed');
+   const runtime=document.querySelector('iframe').contentWindow;
+   expect(runtime.Module._th05_coop_checksum()>>>0===replayHash,'replay differs from confirmed live world');
+   const speed=await request('playback',{action:'rate',value:4});
+   expect(speed.playback.rate===4,'rate update failed');
+   const end=await request('playback',{action:'seek',value:stage.frames});
+   expect(end.playback.ended&&end.playback.frame===stage.frames,'replay end was not reached');
+   return {paths,stage,seek:seek.playback.frame,hash:replayHash,bytes:bytes.length};
+  },{replayHash,replayFrame,count});
+ }
  // The same native documents can start a new confirmed run after room return.
  report.secondStart=await page.evaluate(count=>{
   return [...document.querySelectorAll('iframe')].map((f,seat)=>f.contentWindow.Module._th05_coop_start(count,seat,1,740,0,1,2));

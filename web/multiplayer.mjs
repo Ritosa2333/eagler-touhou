@@ -1,3 +1,4 @@
+import {createCoopRecorder} from './coop-replay.mjs';
 import {createSpectatorPublisher} from './spectator.mjs';
 import {applyDisplay} from './display.mjs';
 import {createManagedTransport} from './managed-transport.mjs';
@@ -26,19 +27,24 @@ export function multiplayerOptions(value){
 
 // The authenticated transport carries immutable physical samples. The native
 // shared RollbackCore owns prediction, correction and confirmed output commits.
-export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()=>performance.now(),transportFactory=createManagedTransport,setTimer=setTimeout,clearTimer=clearTimeout}){
+export function createMultiplayer(options,{module,sample,saveReplay,emit=()=>{},fail,now=()=>performance.now(),transportFactory=createManagedTransport,setTimer=setTimeout,clearTimer=clearTimeout}){
  multiplayerOptions(options);
  const count=options.netplayPlayerCount,local=options.netplayPlayer,url=new URL(options.netplayUrl);
  const mode=options.netplayAdonisMode??1,limit=mode===1?0:8;
  const reserve=options.netplayPredictionReserve??2;
  const identity=JSON.stringify({protocol:'th05-native-coop/2',mode,limit,run:url.searchParams.get('run'),generation:url.searchParams.get('runtimeGeneration'),count,challenge:options.netplayChallengeMode===true,spares:options.netplayInitialSpares??2,bombs:options.netplayInitialBombs??3,seed:options.netplaySeed,difficulty:options.netplayDifficulty,characters:options.netplayLoadouts.map(p=>p.character)});
  const rows=Array.from({length:count},()=>new Map()),peers=new Map(),proposals=new Map(),acknowledged=new Set(),checks=new Map();
- let publisher;let transport,started=false,closed=false,ending=false,frame=0,delay=0,lastProgress=now(),lastWarning=0,proposalTimer,deadline,probeTimer,resolveStart,rejectStart,endTask,nextCheck=120;
+ let publisher,recorder;
+ function record(action){
+  if(!recorder)return;
+  try{action(recorder);}catch(error){recorder=null;emit('runtime-info',{replaySaveError:error.message});}
+ }
+ let transport,started=false,closed=false,ending=false,frame=0,delay=0,lastProgress=now(),lastWarning=0,proposalTimer,deadline,probeTimer,resolveStart,rejectStart,endTask,nextCheck=120;
  const startTask=new Promise((resolve,reject)=>{resolveStart=resolve;rejectStart=reject;});
  // A rejection can precede the caller awaiting start (e.g. early transport
  // failure); retain it without generating an unhandled rejection.
  startTask.catch(()=>{});
- const fatal=reason=>{if(closed)return;closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport?.close();module._th05_net_close();rejectStart(reason);fail(reason);};
+ const fatal=reason=>{if(closed)return;record(r=>r.stop());closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport?.close();module._th05_net_close();rejectStart(reason);fail(reason);};
  const send=(peer,message)=>peer.channel.send(JSON.stringify(message));
  const broadcast=message=>{for(const peer of peers.values())send(peer,message);};
  const guarded=fn=>(...args)=>{if(closed)return;try{return fn(...args);}catch(error){fatal(error);}};
@@ -66,6 +72,9 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
   for(let i=0;i<delay;i++)for(const row of rows)row.set(i,[0,0,0,0]);
   for(let seat=0;seat<count;seat++)if(seat!==local)for(const [inputFrame,input] of rows[seat])if(inputFrame>=delay&&!module._th05_net_input(seat,inputFrame,...input))throw Error('TH05 bootstrap input rejected');
   if(local===0&&typeof module._th05_spectator_serial==='function'){publisher=createSpectatorPublisher(module,transport,count,options.netplaySeed,rows,emit);publisher.begin();}
+  if(saveReplay&&options.netplayReplayAutoSave!==false){
+   recorder=createCoopRecorder({module,rows,count,save:saveReplay});record(r=>r.begin());
+  }
   started=true;clearTimer(deadline);clearTimer(probeTimer);lastProgress=now();
   globalThis.__eaglerNetplaySpectator=false;globalThis.__eaglerNetplayLanActive=true;globalThis.__eaglerNetplayInputDelay=globalThis.__eaglerNetplayLanInputDelay=delay;
   globalThis.__eaglerNetplayRollback=globalThis.__eaglerNetplayLanRollback=0;globalThis.__eaglerNetplayResimulated=globalThis.__eaglerNetplayLanResimulated=0;
@@ -113,12 +122,12 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
   if(serial<6)probeTimer=setTimer(guarded(()=>probe(serial+1)),55);
  }
  function end(){
-  if(endTask)return endTask;if(closed)return Promise.resolve();ending=true;publisher?.end();broadcast({type:'end'});
+  if(endTask)return endTask;if(closed)return Promise.resolve();ending=true;record(r=>r.stop());publisher?.end();broadcast({type:'end'});
   endTask=(async()=>{try{await transport.finish();close();emit('netplay-ended');}catch(error){fatal(error);throw error;}})();endTask.catch(()=>{});return endTask;
  }
 
  function close(){
-  if(closed)return;closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport.close();
+  if(closed)return;record(r=>r.stop());closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport.close();
   module._th05_net_close();globalThis.__eaglerNetplayLanActive=false;for(const row of rows)row.clear();
  }
  transport=transportFactory(options,roles,fatal);
@@ -138,6 +147,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
    }
    const advanced=module._th05_net_advance();if(advanced<0)throw Error('TH05 rollback simulation failed');
    const confirmed=module._th05_net_confirmed();
+   record(r=>r.flush(confirmed));
    publisher?.flush(confirmed);
    globalThis.__eaglerNetplayConfirmed=globalThis.__eaglerNetplayLanConfirmed=confirmed;
    globalThis.__eaglerNetplayRollback=globalThis.__eaglerNetplayLanRollback=module._th05_net_stat(0);
