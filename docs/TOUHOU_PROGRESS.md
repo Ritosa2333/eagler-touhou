@@ -80,13 +80,15 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/02eccdb19b81d10e5a1a1b9fe2eeb70880ee15eb)已将实际背景对象动画的调用前／返回后边界接入加载，只推进 Initialize，避免在正在执行的 Stage 内替换或释放场景。录像换关三次 RNG 写入完成后，全局快照恢复可另行等待并传播失败；默认 readiness 仍立即完成，首次录像仍同步，快照仍整体恢复。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/e08d4630fabf5e72aa0071aea7f4116800e3438e)已合入相机逐字发布与动画实时引用刷新。借用中的背景对象只允许已进入的 Scene 阶段推进，保留 owner、等待和失败传播；不在该处推进 Timeline。
 
-[当前复核](https://github.com/AdingApkgg/thp/blob/02eccdb19b81d10e5a1a1b9fe2eeb70880ee15eb/docs/porting/TH14_STAGE_OBJECT_SNAPSHOT_NOV04.md)：141 核心对象全新编译，16 份有效留存录像新跑严格通过，共 1,379,760 回调；实测正常 VM 身份输入下的一份灵梦 B Normal 35,000 回调记录，所选状态／相机／HUD、1,057 行 VM 的 303 字段及 393 个战斗池检查点相同。另有实际背景边界失败两项、快照等待恢复／失败两项、16 项共享编译及七项无效输入检查通过。
+[当前证据](https://github.com/AdingApkgg/thp/blob/e08d4630fabf5e72aa0071aea7f4116800e3438e/docs/porting/TH14_CAMERA_WORD_PUBLICATION_NOV04.md)：原版 76 个复制前缀及六段 ANM 读取共 456 次执行，C++ 的 74 个映射前缀／每前缀六字段相同，私有旧候选的 255 个引用字错误归零。原版复制 75 DWORD，目前仅映射 73 DWORD，尾部两个仍未验收。十项加载协议、三项复制失败及实际 Session 三项控制通过，受控就绪不视为恢复原版旧现场时间。
 
-静音 Application 两关 2,289 帧／27 断言通过，两幅图像及 1,526,784 帧离线 PCM 与封存参考一致，物理音频设备打开数零；浏览器 146 单元全新编译。上述不是原版整局像素／音频或浏览器 UI 验收。
+141 核心对象全新编译。16 份有效录像新跑严格通过，共 1,379,760 回调；带实测正常 VM 身份的一份 35,000 回调记录、1,057 行 VM／303 字段及 393 个战斗检查点相同。新增 [18,000 回调原版相机源读取采样](https://github.com/AdingApkgg/thp/blob/e08d4630fabf5e72aa0071aea7f4116800e3438e/docs/porting/TH14_CAMERA_SOURCE_READ_NOV04.md)严格通过，使用未修改的标准 driver；实测读取发生在绘制透视阶段，没有据此认定捕获到逐字发布交错。
 
-旧 35,000 回调记录仍有 script seed／calls／活动自机弹数 4,137／283／1 处差异；只读诊断定位到退场背景对象动画消耗的 22 次脚本 RNG。原版写入前停点不视为完成时间，末尾未观察返回没有补造，旧记录身份与精确交错尚未恢复。独立调度、完整模式／EOF、普通 GUI、原版整局图像／PCM、存档和浏览器继续见[当前清单](https://github.com/AdingApkgg/thp/blob/02eccdb19b81d10e5a1a1b9fe2eeb70880ee15eb/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+当前核心静音 Application 两关 2,289 帧／27 断言、两幅图像及 1,526,784 帧离线 PCM 与封存参考一致，物理音频设备打开数零；16 项共享编译、七项无效输入及浏览器 146 单元编译通过。另有[上一公开核心 02eccdb 的全长 Application 复核](https://github.com/AdingApkgg/thp/blob/e08d4630fabf5e72aa0071aea7f4116800e3438e/docs/porting/TH14_STAGE_OBJECT_FULL_APPLICATION_NOV04.md)：GLES／WebGPU 各 122,622 帧／45 断言、八幅图像及 89,969,664 帧 PCM 相同，单独绑定历史核心，不继承为本核心全长验收；报告披露旧 GLES 计划中的 runner 哈希修正。
+
+旧 35,000 回调记录的 script seed／calls／活动自机弹数 4,137／283／1 处差异及另一份旧相机失败仍保留。旧线程精确交错、默认独立调度、全模式／原始 EOF、普通原版 GUI、原版整局像素／PCM、存档及浏览器见[当前清单](https://github.com/AdingApkgg/thp/blob/e08d4630fabf5e72aa0071aea7f4116800e3438e/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
