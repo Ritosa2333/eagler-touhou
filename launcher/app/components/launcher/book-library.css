@@ -200,12 +200,8 @@
     border-radius: 9px;
     background: var(--kit-card);
     transition:
-      border-color var(--ui-feedback-duration),
-      box-shadow var(--ui-feedback-duration);
-  }
-  .book-card:hover {
-    border-color: var(--kit-ring);
-    box-shadow: 0 2px 7px #0000000a;
+      transform 480ms cubic-bezier(.2,.65,.25,1),
+      box-shadow 480ms cubic-bezier(.2,.65,.25,1);
   }
   .book-game-link {
     display: flex;
@@ -510,10 +506,8 @@
 .book-favorite.ui-kit-button:is(:hover,[aria-pressed="true"]) {background:transparent;border-color:transparent}
 .book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
 @media (hover:hover) and (pointer:fine) {
-  .book-card:has(.book-game-link:hover) {border-color:var(--kit-ring);box-shadow:0 5px 16px #0000001c}
-  .book-card .book-game-link .book-art img {transition:transform 550ms cubic-bezier(.2,.65,.25,1)}
-  .book-card .book-game-link:hover .book-art img {transform:scale(1.035)}
-  .book-view-list .book-card:has(.book-game-link:hover) {box-shadow:none}
+  .book-card:has(.book-game-link:hover) {z-index:1;transform:translateY(-4px) scale(1.025);box-shadow:0 8px 22px #00000024}
 }
-@media (prefers-reduced-motion:reduce) {.book-card .book-game-link .book-art img {transition:none!important;transform:none!important}}
-.less-motion .book-card .book-game-link .book-art img {transition:none!important;transform:none!important}
+.book-card:has(.book-game-link:focus-visible) {z-index:1;box-shadow:0 8px 22px #00000024}
+@media (prefers-reduced-motion:reduce) {.book-card {transition:none!important;transform:none!important}}
+.less-motion .book-card {transition:none!important;transform:none!important}
