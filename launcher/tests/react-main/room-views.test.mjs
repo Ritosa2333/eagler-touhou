@@ -107,7 +107,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true, checkGame =
     async enter() {await act(() => service.enterRoom(product, '1234', created)); return f;},
     async receive(patch = {}) {await act(() => f.socket.message({code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, startSerial: 0,
       ...(product === 'th11mp' ? {adonisMode: 0, predictionLimit: 12} : {}),
-      ...(product === 'th15mp' ? {adonisMode: 1, predictionLimit: 0} : {}),
+      ...(['th12mp', 'th15mp'].includes(product) ? {adonisMode: 0, predictionLimit: 12} : {}),
       seats: [{clientId: f.id, name: 'A', loadout: 0, ready: false, controlMode: 'normal'}, null], spectators: [], ...patch})); return f;},
     async live(patch = {}) {await f.enter(); await act(() => f.socket.open()); await f.receive(patch); return f;},
     async report(progress) {await act(() => preparations.at(-1).report({status: 'preparing', stage: 'package', percent: null, error: '', ...progress}));},
@@ -503,6 +503,14 @@ test('seated players may enter the spectator lounge before start, never during a
   await f.receive({phase:'running'});
   assert.equal(n('#mpSpectatorJoin').hidden, true);
   const count = f.socket.sent.length; await act(() => f.service.spectate()); assert.equal(f.socket.sent.length, count);
+});
+
+for (const product of ['th12mp', 'th15mp']) test(`${product} defaults to rollback and permits pure delay`, async () => {
+  const f = await fixture({product}).live(); await mountRoom(f);
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'), 'true');
+  await click('#mpRollbackToggle');
+  assert.equal(f.service.getSnapshot().rollbackEnabled, false);
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'), 'false');
 });
 
 test('difficulty labels use the approved plain text without texture images', async () => {
