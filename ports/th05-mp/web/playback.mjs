@@ -1,18 +1,18 @@
 import {inspectReplay} from './replay.mjs';
-import {userPath,validateUserFile} from './storage.mjs';
+import {userPath} from './storage.mjs';
 
 // A selected native stage is the Replay workspace's timeline. Seeking always
 // reconstructs its saved initial state and consumes the recorded input stream.
 export function createPlayback(api){
  let state=null,busy=false,serial=0,lastPublished=0;
  const publish=()=>{if(state)api.emit('runtime-info',{playback:{...state}});};
- function inspect(path){path=userPath(path);const bytes=api.read(path);validateUserFile(path,bytes);if(!api.validate(path))throw Error('Native Replay validation failed');return {path,description:inspectReplay(bytes)};}
- function restart(){api.clear();if(!api.open(state.path,state.stage-1))throw Error('Native Replay initialization failed');state.frame=0;state.ended=false;api.resetClock();}
+ function inspect(path){path=userPath(path);const bytes=api.read(path),description=(api.inspect??inspectReplay)(bytes);if(api.validate&&!api.validate(path))throw Error('Native Replay validation failed');return {path,description};}
+ function restart(refresh=false){api.clear();if(!api.open(state.path,state.stage-1,refresh))throw Error('Native Replay initialization failed');state.frame=0;state.ended=false;api.resetClock();}
  function tick(){
   if(!state||state.ended)return false;
   if(!api.step())throw Error('Native Replay frame failed');
   state.frame=Math.min(state.total,api.frame());
-  if(state.frame>=state.total||api.scene()!==4||api.stage()!==state.stage-1){state.frame=state.total;state.ended=true;state.paused=true;api.gate(true);publish();}
+  if(state.frame>=state.total||api.scene&&api.scene()!==4||api.stage()!==state.stage-1){state.frame=state.total;state.ended=true;state.paused=true;api.gate(true);publish();}
   return true;
  }
  async function seek(value){
@@ -34,7 +34,7 @@ export function createPlayback(api){
     const {path,description}=inspect(message.path),stage=message.stage??description.stages[0].id,entry=description.stages.find(s=>s.id===stage);
     if(!entry||!entry.frames)throw Error('Replay stage is empty');
     state={kind:'replay',path,description,stage,frame:0,total:entry.frames,startFrame:0,paused:false,seeking:false,target:null,rate:1,ended:false,difficulty:description.difficulty,left:description.character,right:0};
-    api.gate(true);restart();api.draw();api.gate(false);publish();return {playback:{...state}};
+    api.gate(true);restart(true);api.draw();api.gate(false);publish();return {playback:{...state}};
    }
    if(!state)throw Error('Open a Replay first');
    if(message.action==='pause'){state.paused=true;api.clear();api.gate(true);}

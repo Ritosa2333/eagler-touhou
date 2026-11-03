@@ -99,9 +99,9 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
         <div className="replay-speed">{speed('replaySpeedSelect')}</div>
       </div>
       <ReplaySeekBar key={`${playback?.path ?? ''}:${playback?.startFrame ?? 0}`} frame={Math.max(0, (playback?.frame ?? 0) - (playback?.startFrame ?? 0))} total={Math.max(0, (playback?.total ?? 0) - (playback?.startFrame ?? 0))}
-        roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => {void control('seek', target + (playback?.startFrame ?? 0));}}/>
+        fps={game === 'th05' ? 56 : 60} roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => {void control('seek', target + (playback?.startFrame ?? 0));}}/>
       <button type="button" className="replay-fullscreen replay-button" aria-label="切换全屏" onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen={session.nativeTouch.isFullscreen()} dangerouslySetInnerHTML={{__html: playerUtilityIcons.fullscreenToggle}}/>
-      <span className="replay-seek-status" role="status">{playback?.seeking ? `定位至 ${clock(Math.max(0, (playback.target ?? 0) - (playback.startFrame ?? 0)))}` : playback?.ended ? '录像已结束' : ''}</span>
+      <span className="replay-seek-status" role="status">{playback?.seeking ? `定位至 ${clock(Math.max(0, (playback.target ?? 0) - (playback.startFrame ?? 0)), game === 'th05' ? 56 : 60)}` : playback?.ended ? '录像已结束' : ''}</span>
     </section>
     <section className="replay-current" aria-label="录像信息">
       <h2 title={playback?.path}>{playback?.path.split('/').pop() || (files.phase === 'loading' ? '正在读取录像' : '选择一份录像')}</h2>
@@ -154,8 +154,10 @@ const replayRank = (difficulty: number) => ['Easy','Normal','Hard','Lunatic','Ex
 const replayDate = (d: ReplayDescription) => d.date || (d.timestamp && d.timestamp <= 8.64e12 ? new Date(d.timestamp * 1000).toLocaleDateString() : '—');
 function replayLoadout(d: ReplayDescription, game: keyof typeof PRODUCT_GAMES, t: (key: UiMessageKey) => string) {
   const product = PRODUCT_GAMES[game], loadouts = 'multiplayer' in product ? product.multiplayer.loadouts : [];
-  const loadout = loadouts.find(item => item.character === d.character && item.shot === (d.shot ?? 0));
-  return loadout ? t(loadout.labelKey as UiMessageKey) : String(d.character);
+  return (game === 'th05' && d.characters ? d.characters : [d.character]).map(character => {
+    const loadout = loadouts.find(item => item.character === character && item.shot === (d.shot ?? 0));
+    return loadout ? t(loadout.labelKey as UiMessageKey) : String(character);
+  }).join(' / ');
 }
 function ReplayMetadata({description: d, game}: {description: ReplayDescription; game: keyof typeof PRODUCT_GAMES}) {
   return <div className="replay-metadata">

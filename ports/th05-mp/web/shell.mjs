@@ -1,3 +1,5 @@
+import {createCoopReplayDriver} from './coop-replay.mjs';
+import {applyDisplay} from './display.mjs';
 import {createSpectator} from './spectator.mjs';
 import {createMultiplayer} from './multiplayer.mjs';
 import {FrameClock,PresentationClock} from './clock.mjs';
@@ -47,7 +49,7 @@ async function languagePack(pack,expectedLanguage){
  sameOrigin(pack.url);const file=pack.files[0],declaration=pack.manifest.files?.find(f=>f.path==='/thcrap/th05/chs.dat');
  const bytes=new Uint8Array(file.bytes);if(file.path!=='/thcrap/th05/chs.dat'||!declaration||bytes.length!==declaration.bytes||!bytes.length||bytes.length>16*1024*1024)throw Error('Invalid TH05 language resource');module.FS.writeFile('/data/chs.dat',bytes);
 }
-async function sync(){if(launched)module._th05_save();await store.sync();}
+async function sync(){if(launched&&!options.replayViewer)module._th05_save();await store.sync();}
 function cstring(value,operation){const bytes=new TextEncoder().encode(value+String.fromCharCode(0)),ptr=module._malloc(bytes.length);try{module.HEAPU8.set(bytes,ptr);return operation(ptr);}finally{module._free(ptr);}}
 function openReplay(path,stage){const bytes=store.read(path);validateUserFile(path,bytes);const first=stage??Array.from(bytes.subarray(53,60)).findIndex(flag=>flag!==0);if(first<0||first>6||!cstring(SAVE_ROOT+'/'+userPath(path),ptr=>module._th05_replay_open(ptr,first)))throw Error('Replay could not be opened');}
 function roomView(){
@@ -57,12 +59,23 @@ function roomView(){
  emit('room-menu',{presented:true,launchSerial});
 }
 async function finish(code=0){if(closed)return;netplay?.close();closed=true;launched=false;cancelAnimationFrame(raf);clearInterval(saveTimer);clearAll();module?._th05_shutdown();audio?.close();await store?.sync();emit('exit',{code,status:code===0?'success':'error'});}
+function saveCoopReplay(bytes){
+ const occupied=new Set(store.list().map(file=>file.path.toLowerCase()));
+ for(let slot=0;slot<=0xffff;slot++){
+  const path='replay/th05mp_ud'+slot.toString(16).padStart(4,'0')+'.rpy';
+  if(occupied.has(path))continue;
+  store.write(path,bytes);
+  void store.sync().catch(reason=>emit('runtime-info',{replaySaveError:reason.message}));
+  return;
+ }
+ throw Error('TH05 multiplayer replay slots are full');
+}
 function frame(time){raf=0;if(closed||!launched)return;
  try{
   if(document.hidden){clock.reset();presentation.reset();raf=requestAnimationFrame(frame);return;}
   const gap=clock.add(time);maxGap=Math.max(maxGap,gap);
   let steps=0;
-  if(multiplayer){
+  if(multiplayer&&!options.replayViewer){
    while(clock.due(1/56)&&netplay?.advance()){clock.consume(1/56);audio.pump();steps++;}
    // Draw UI independently of confirmation waits so a short tap is captured
    // even while a peer is late. Its action travels in the next owned input.
@@ -75,7 +88,8 @@ function frame(time){raf=0;if(closed||!launched)return;
   }
   if(options.replayViewer&&!playback.advancing())clock.reset();
   else if(playback.active()&&playback.rate()===0){for(let n=0;n<32&&playback.advancing();n++){playback.tick();audio.pump();steps++;}}
-  else while(clock.consume(module._th05_frame_seconds()/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{touch.tick();if(!module._th05_tick(+!clock.due(module._th05_frame_seconds())))throw Error('TH05 game frame failed');}audio.pump();steps++;}
+  else while(clock.consume((multiplayer?1/56:module._th05_frame_seconds())/(playback.active()?playback.rate():1))){if(playback.active()){if(!playback.advancing())break;playback.tick();}else{touch.tick();if(!module._th05_tick(+!clock.due(module._th05_frame_seconds())))throw Error('TH05 game frame failed');}audio.pump();steps++;}
+  if(multiplayer&&steps)module._th05_coop_draw();
   playback.update(time);
   if(!module._th05_alive()){void finish();return;}
   if(presentation.fresh(time,options.limitPresentationTo60!==false,steps,module._th05_frame_seconds()/(playback.active()?playback.rate():1))){module._th05_present();healthFrames++;}
@@ -104,11 +118,15 @@ const api={multiplayer,saveRoot:multiplayer?"/savesth05mp":SAVE_ROOT,running:()=
  }
  module._th05_coop_draw();module._th05_present();return {presented:true};},
  async returnRoom(){if(netplay)await netplay.end();return {presented:true};},
- async launch(message){if(!configured||closed)throw Error('Runtime cannot launch');clearAll();cstring(language,game=>cstring(options.thpracLocale??(language==='ja'?'ja-JP':'zh-CN'),locale=>module._th05_language_configure(game,locale)));module._th05_viewer(+!!options.replayViewer);module._th05_practice_configure(+(options.thpracEnabled===true&&!options.replayViewer));if(!initialized){if(!module._th05_initialize())throw Error('TH05 initialization failed');initialized=true;}module._th05_options(+(options.alwaysHitbox===true),+(options.focusHitboxEnabled===true));if(options.replayPath)openReplay(options.replayPath);if(multiplayer){
+ async launch(message){if(!configured||closed)throw Error('Runtime cannot launch');clearAll();cstring(language,game=>cstring(options.thpracLocale??(language==='ja'?'ja-JP':'zh-CN'),locale=>module._th05_language_configure(game,locale)));module._th05_viewer(+!!options.replayViewer);module._th05_practice_configure(+(options.thpracEnabled===true&&!options.replayViewer));if(!initialized){if(!module._th05_initialize())throw Error('TH05 initialization failed');initialized=true;}module._th05_options(+(options.alwaysHitbox===true),+(options.focusHitboxEnabled===true));if(options.replayPath&&!multiplayer)openReplay(options.replayPath);if(multiplayer&&!options.replayViewer){
  if(!options.netplayMode)throw Error('TH05 multiplayer requires a room run');
- netplay=(options.netplaySpectator?createSpectator:createMultiplayer)(options,{module,emit:(event,payload)=>{if(event==='netplay-ended')roomView();else emit(event,payload);},fail:reason=>{error(reason);void finish(1);},sample(){touch.tick();const value=[module._th05_sample_buttons()|menuPulse,...motion];motion=[0,0,0];menuPulse=0;return value;}});
+ netplay=(options.netplaySpectator?createSpectator:createMultiplayer)(options,{module,saveReplay:saveCoopReplay,emit:(event,payload)=>{if(event==='netplay-ended')roomView();else emit(event,payload);},fail:reason=>{error(reason);void finish(1);},sample(){touch.tick();const value=[module._th05_sample_buttons()|menuPulse,...motion];motion=[0,0,0];menuPulse=0;return value;}});
  module.eaglerCoopAction=index=>{menuPulse=index===0?4096:index===1?32768:16384;};
  await netplay.start();
+ }
+ if(multiplayer&&options.replayViewer){
+  module.eaglerCoopAction=undefined;
+  if(options.replayPath)await playback.command({action:'open',path:options.replayPath});
  }
  launched=true;launchSerial=message.launchSerial;clock.reset();clock.credit=1/56;presentation.reset();lastHealth=performance.now();emit('runtime-info',{renderer:'C++ / WebGL GLES2',architecture:'uth05win-native-cpp',version:'1.0.0',protocol});raf=requestAnimationFrame(frame);saveTimer=setInterval(()=>{unloadSync=sync().catch(error);},3000);},
  spectatorPlayback(message){if(!launched||!options.netplaySpectator)throw Error('Spectator playback is not active');return netplay.command(message);},
@@ -128,7 +146,8 @@ try{
  const noteStream=new Blob([module.FS.readFile('/data/music-notes.bin.gz')]).stream().pipeThrough(new DecompressionStream('gzip'));module.eaglerMusicNotes=decodeMusicNotes(new Uint8Array(await new Response(noteStream).arrayBuffer()));
  audio=createAudio(module,emit);module.eaglerAudio=audio;
  pointers=createPointerRouter(module,touch);
- playback=createPlayback({emit,read:path=>store.read(path),validate:path=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_validate(ptr)),open:(path,stage)=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_open(ptr,stage)),clear:clearAll,resetClock:()=>clock.reset(),step:()=>module._th05_step(),draw:()=>{module._th05_draw();module._th05_present();},frame:()=>module._th05_replay_frame(),stage:()=>module._th05_replay_stage(),scene:()=>module._th05_scene(),gate:value=>audio.playback(value),yield:()=>new Promise(resolve=>setTimeout(resolve,0))});
+ const coopReplay=multiplayer?createCoopReplayDriver(module,path=>store.read(path),()=>applyDisplay(module,options.th05MultiplayerDisplay)):null;
+ playback=createPlayback({emit,read:path=>store.read(path),...(coopReplay??{validate:path=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_validate(ptr)),open:(path,stage)=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_open(ptr,stage)),step:()=>module._th05_step(),frame:()=>module._th05_replay_frame(),stage:()=>module._th05_replay_stage(),scene:()=>module._th05_scene()}),clear:clearAll,resetClock:()=>clock.reset(),draw:()=>{if(multiplayer)module._th05_coop_draw();else module._th05_draw();module._th05_present();},gate:value=>audio.playback(value),yield:()=>new Promise(resolve=>setTimeout(resolve,0))});
  globalThis.__eaglerDirectInputBridge=createDirectInputBridge({protocol,game:'th05',epoch:bridge.epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!closed,dispatch(message){switch(message.command){case 'keyboard':api.key(message);break;case 'keyboard-clear':clearKeyboard();break;case 'touch-controls':api.touch(message);break;case 'touch-cancel':cancelTouch();break;case 'direct-touch':api.pointer(message);break;default:return false;}return true;}});
  addEventListener('keydown',event=>{if(!options.replayViewer&&!options.netplaySpectator&&keyboard.event(event,true))event.preventDefault();audio.resume();});addEventListener('keyup',event=>{if(!options.replayViewer&&!options.netplaySpectator&&keyboard.event(event,false))event.preventDefault();});addEventListener('blur',clearAll);
  document.addEventListener('visibilitychange',()=>{clearAll();clock.reset();presentation.reset();module._th05_focus(+!document.hidden);audio.visibility(document.hidden);if(document.hidden)unloadSync=sync().catch(error);});

@@ -44,7 +44,11 @@ EMSCRIPTEN_KEEPALIVE int th05_spectator_load(const unsigned char* data,unsigned 
  if(!data||size>4096)return 0;std::vector<unsigned char> bytes(data,data+size);State s;Codec codec{bytes,true};Wire(codec,s);
  if(codec.offset!=size||s.stage<0||s.stage>6||(s.run.difficulty==4)!=(s.stage==6))return 0;
  for(int i=0;i<7;i++)if(s.seeds[i]<0)return 0;
- for(const auto& stock:s.run.carry)if(stock.lives<0||stock.lives>99||stock.bombs<0||stock.bombs>99||stock.power<0||stock.power>128||stock.fraction<0||stock.fraction>1024||stock.deaths<0)return 0;
+ for(const auto& stock:s.run.carry)if(stock.lives<0||stock.lives>99||stock.bombs<0||stock.bombs>99||stock.power<0||stock.power>128||stock.overflow<0||stock.overflow>42||stock.fraction<0||stock.fraction>1024||stock.deaths<0)return 0;
+ // These fields index native bonus tables and affect rank/continue arithmetic.
+ if(s.run.seed<0||s.run.seed>65535||s.game[0]<0||s.game[0]>99||s.game[1]<0||s.game[1]>99||
+    s.game[2]<0||s.game[2]>128||s.game[3]<0||s.game[3]>42||s.game[4]<0||s.game[4]>128||
+    s.game[10]<0||s.game[10]>99||s.game[11]<0||s.game[11]>9||s.game[14]<0||s.game[15]>64||s.game[14]>s.game[15])return 0;
  if(!th05_coop_start_stock(s.run.count,0,s.run.difficulty,s.run.seed,s.run.characters[0],s.run.characters[1],s.run.characters[2],s.run.challenge,0,s.run.initialSpares,s.run.initialBombs))return 0;
  using namespace th5w;auto* game=CGame::s_pCurGame;delete game->m_pCurScheme;game->m_pCurScheme=nullptr;coop::Run()=s.run;coop::Run().local=0;auto& g=CGame::GVar();g.m_playStage=s.stage;int at=0;
  #define LOAD(name) g.name=s.game[at++];

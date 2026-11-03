@@ -48,7 +48,7 @@ export function commandHandler(api){let configured=false;const savedPath=value=>
  case 'write':{
   if(api.running()&&!api.viewer())throw Error('Exit the game before importing files');const path=savedPath(message.path);
   if(!Array.isArray(message.bytes)||message.bytes.some(n=>!Number.isInteger(n)||n<0||n>255))throw Error('Invalid user bytes');
-  const bytes=new Uint8Array(message.bytes);validateUserFile(path,bytes);api.store.write(path,bytes);await api.store.sync();return {};
+  const bytes=new Uint8Array(message.bytes);validateUserFile(path,bytes,api.saveRoot??SAVE_ROOT);api.store.write(path,bytes);await api.store.sync();return {};
  }
  case 'remove':if(api.running()&&!api.viewer())throw Error('Exit the game before removing files');api.store.remove(savedPath(message.path));await api.store.sync();return {};
  case 'sync':await api.sync();return {};
