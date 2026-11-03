@@ -148,20 +148,20 @@ export function createCoopReplayDriver(module, read, applyDisplay) {
       return inspectCoopReplay(bytes).description;
     },
     open(file, stage, refresh) {
-      if (refresh || path !== file) {
-        recording = inspectCoopReplay(read(file));
-        path = file;
-      }
-      selected = recording?.stages.find(item => item.id === stage + 1);
-      if (!selected) return false;
+      const next = refresh || path !== file ? inspectCoopReplay(read(file)) : recording;
+      const section = next?.stages.find(item => item.id === stage + 1);
+      if (!section) return false;
       const pointer = module._malloc(STATE_BYTES);
       if (!pointer) return false;
       try {
-        module.HEAPU8.set(selected.state, pointer);
+        module.HEAPU8.set(section.state, pointer);
         if (!module._th05_spectator_load(pointer, STATE_BYTES)) return false;
       } finally { module._free(pointer); }
+      recording = next;
+      path = file;
+      selected = section;
+      input = viewOf(section.inputs);
       applyDisplay();
-      input = viewOf(selected.inputs);
       frame = 0;
       return true;
     },

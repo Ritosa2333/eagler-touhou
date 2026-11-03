@@ -39,6 +39,7 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   const files = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const open = navigation.infoDialogOpen('replayDialog') && files.open;
   const game = files.productId ? gameIdForProduct(files.productId) : 'th09', versus = game === 'th09';
+  const replayFps = files.productId === 'th05mp' ? 56 : 60;
   const [expanded, setExpanded] = useState<string | null>(null);
   const [folder, setFolder] = useState<string | null>(null), [moving, setMoving] = useState<string | null>(null);
   const [destination, setDestination] = useState('replay'), [newFolder, setNewFolder] = useState(''), [busy, setBusy] = useState(false);
@@ -99,9 +100,9 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
         <div className="replay-speed">{speed('replaySpeedSelect')}</div>
       </div>
       <ReplaySeekBar key={`${playback?.path ?? ''}:${playback?.startFrame ?? 0}`} frame={Math.max(0, (playback?.frame ?? 0) - (playback?.startFrame ?? 0))} total={Math.max(0, (playback?.total ?? 0) - (playback?.startFrame ?? 0))}
-        fps={game === 'th05' ? 56 : 60} roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => {void control('seek', target + (playback?.startFrame ?? 0));}}/>
+        fps={replayFps} roundStarts={playback?.roundStarts} disabled={busy || !playback} onSeek={target => {void control('seek', target + (playback?.startFrame ?? 0));}}/>
       <button type="button" className="replay-fullscreen replay-button" aria-label="切换全屏" onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen={session.nativeTouch.isFullscreen()} dangerouslySetInnerHTML={{__html: playerUtilityIcons.fullscreenToggle}}/>
-      <span className="replay-seek-status" role="status">{playback?.seeking ? `定位至 ${clock(Math.max(0, (playback.target ?? 0) - (playback.startFrame ?? 0)), game === 'th05' ? 56 : 60)}` : playback?.ended ? '录像已结束' : ''}</span>
+      <span className="replay-seek-status" role="status">{playback?.seeking ? `定位至 ${clock(Math.max(0, (playback.target ?? 0) - (playback.startFrame ?? 0)), replayFps)}` : playback?.ended ? '录像已结束' : ''}</span>
     </section>
     <section className="replay-current" aria-label="录像信息">
       <h2 title={playback?.path}>{playback?.path.split('/').pop() || (files.phase === 'loading' ? '正在读取录像' : '选择一份录像')}</h2>
