@@ -1096,7 +1096,41 @@
           ],
           "note": "完整符卡收率显示为普通版 THPrac 选项；多人版不启用 THPrac，本次显示层级与刷新修改不适用于 MP。"
         }
-      ]
+      ],
+      "watches": {
+        "sdl-text-and-frame-work": {
+          "paths": [
+            "portable/sdl/Application.cpp",
+            "portable/sdl/Platform.cpp",
+            "portable/sdl/Renderer.cpp",
+            "portable/sdl/Scene.cpp",
+            "portable/sdl/Scene.hpp",
+            "portable/sdl/TextRaster.cpp",
+            "portable/sdl/TextRaster.hpp",
+            "site/game-sdl.mjs"
+          ],
+          "base": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "eb7e343e73b9ac8a2931c983e0641bc6fee5ac90",
+              "source": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+              "targetHead": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Application.cpp",
+                "ports/th12-mp/portable/sdl/Platform.cpp",
+                "ports/th12-mp/portable/sdl/Renderer.cpp",
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp",
+                "ports/th12-mp/portable/sdl/TextRaster.cpp",
+                "ports/th12-mp/portable/sdl/TextRaster.hpp",
+                "ports/th12-mp/site/game-sdl.mjs"
+              ],
+              "note": "普通版与多人版同步字形描边、Web 输出缓冲、顶点缓冲、背景裁剪和增量存档。普通版浏览器回归检查自动保存，多人版保留显式联机录像导出流程。"
+            }
+          ]
+        }
+      }
     }
   }
 }

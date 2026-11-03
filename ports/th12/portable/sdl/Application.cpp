@@ -126,7 +126,13 @@ extern "C" SDL_AppResult SDL_AppInit(void** state,int argc,char** argv){
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,backend?3:0);
 #endif
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
+#ifdef __EMSCRIPTEN__
+        // The page scales the canvas. Keep the WebGL backbuffer at the
+        // game's render size instead of blitting into a larger HiDPI buffer.
+        active->window=SDL_CreateWindow("Touhou 12 - Undefined Fantastic Object",640,480,SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
+#else
         active->window=SDL_CreateWindow("Touhou 12 - Undefined Fantastic Object",960,720,SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE|SDL_WINDOW_HIGH_PIXEL_DENSITY);
+#endif
         if(active->window)active->context=SDL_GL_CreateContext(active->window);
         if(!active->context&&active->window){SDL_DestroyWindow(active->window);active->window=nullptr;}
     }
