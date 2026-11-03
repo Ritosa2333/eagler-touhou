@@ -1,4 +1,4 @@
-export type LauncherMusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
+export type LauncherMusicMode = "ogg-stream" | "ogg-full" | "ogg-akyu" | "midi" | "none";
 
 export interface MusicModeResolutionInput {
   requested?: string;
@@ -22,7 +22,7 @@ export function resolveMusicMode({
   if (!audio || requested === "none") return "none";
   const ogg = localOgg || remoteOgg;
   if (explicit && requested === "midi" && midi) return "midi";
-  if ((requested === "ogg-stream" || requested === "ogg-full") && ogg) return requested;
+  if ((requested === "ogg-stream" || requested === "ogg-full" || requested === "ogg-akyu") && ogg) return requested;
   if (!explicit && ogg && preferOgg) return "ogg-stream";
   if (midi) return "midi";
   return ogg ? "ogg-stream" : "none";

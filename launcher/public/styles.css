@@ -2022,3 +2022,6 @@ body:has(#touchLayoutEditor:not([hidden]))>.mizuki-select-menu .mizuki-select-it
 .input-visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 @keyframes input-binding-pulse{50%{box-shadow:0 0 0 2px rgba(189,68,56,.14)}}
 @media(max-width:480px){.input-settings-entry{gap:6px;padding:9px 7px}.input-settings-entry svg{width:18px;height:18px;flex-basis:18px}.input-settings-dialog{height:min(680px,88dvh)}.input-dialog-scroll{padding:0 12px 12px}.input-layout-toolbar{gap:6px}.input-binding-table th:first-child{width:31%}.input-binding-table tbody th{padding-left:3px;font-size:11px}.input-binding-table td{padding-left:3px;padding-right:3px}.input-config-button{padding:6px 8px;font-size:10px}}
+
+/* Standalone PC-98 entries keep the same rail and native anchor navigation. */
+.main.library-layout .classics-shelf .game{background:linear-gradient(155deg,#302523,#171615 70%)}

@@ -12,7 +12,7 @@ import type {Translate} from '../i18n';
 import {GameDataAcquisitionError} from './game-data-acquisition';
 import {checkPreparationAbort, preparationErrorText, type PackageAcquisition, type PreparationProgress} from './package-acquisition';
 
-export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full';
+export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full' || mode === 'ogg-akyu';
 export const musicTransport = (mode: MusicMode): 'ogg' | 'midi' | 'none' => oggMusic(mode) ? 'ogg' : mode === 'midi' ? 'midi' : 'none';
 
 /** Upgrade only a newly required shared dependency. Existing DATA and selected
@@ -124,7 +124,7 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   checkPreparationAbort(signal);
   const declared = componentFileIds(generation.descriptor, 'ogg');
   const initial = completeSet ? declared : declared.slice(0, 2);
-  if (initial.length < 2) return {generation, music: fallback};
+  if (initial.length < (completeSet ? 1 : 2)) return {generation, music: fallback};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
   let publication;

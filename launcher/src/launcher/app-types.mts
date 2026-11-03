@@ -39,6 +39,8 @@ export interface LauncherNetplayState {
   spectatorCount: number;
   challengeMode?: boolean;
   chapterThreshold?: number;
+  initialSpares?: number;
+  initialBombs?: number;
   prankMode?: boolean;
 }
 
@@ -65,6 +67,8 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
+  initialSpares?: number;
+  initialBombs?: number;
   runtimeGeneration?: string;
   visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;

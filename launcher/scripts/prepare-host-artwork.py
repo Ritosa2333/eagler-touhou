@@ -23,6 +23,7 @@ from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_
 
 
 ARTWORK_BY_GAME = {
+    "th05": ("th05-card.webp",),
     "th06": (
         "th06-card.webp",
         "favicon.ico",

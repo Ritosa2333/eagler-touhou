@@ -35,6 +35,7 @@
     },
     {
       "id": "normal-presentation",
+      "excludeGames": ["th05"],
       "level": "source-contract",
       "variants": ["normal"],
       "checks": ["DISPLAY-01", "DISPLAY-02", "DISPLAY-03"],
@@ -46,6 +47,14 @@
       "games": ["th06", "th07"],
       "checks": ["REPLAY-04", "REPLAY-05", "SAVE-01", "SAVE-02", "SAVE-03", "SAVE-06"],
       "files": ["launcher/tests/test-replay-extension-contract.mjs", "launcher/tests/test-runtime-storage-contract.mjs"]
+    },
+    {
+      "id": "th05-normal-presentation",
+      "level": "module",
+      "games": ["th05"],
+      "variants": ["normal"],
+      "checks": ["DISPLAY-01", "DISPLAY-02", "DISPLAY-03"],
+      "files": ["ports/th05/tests/presentation.mjs"]
     }
   ]
 }

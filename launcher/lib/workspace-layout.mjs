@@ -11,7 +11,7 @@ export function launcherRoot() {
   return projectRoot;
 }
 
-const requiredRepositories = ["launcher", ...Object.keys(PRODUCT_GAMES), "thprac", "dependencies", "toolchains"];
+const requiredRepositories = ["launcher", ...Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].buildOptIn !== true), "thprac", "dependencies", "toolchains"];
 for (const key of requiredRepositories) {
   if (!layout.repositories[key]) throw new Error(`missing workspace repository: ${key}`);
 }

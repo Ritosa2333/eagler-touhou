@@ -1,0 +1,463 @@
+{
+  "schema": "eagler-touhou/room-browser/1",
+  "startedAt": "2026-11-01T15:03:58.754Z",
+  "url": "http://127.0.0.1:18555/",
+  "route": "rtc",
+  "players": 2,
+  "scope": "Real Launcher room controls, actual production Runtime and private installed DATA; desktop browser session acceptance",
+  "targets": [
+    {
+      "game": "th05",
+      "players": 2,
+      "route": "rtc",
+      "steps": [
+        {
+          "name": "P1-directory",
+          "at": "2026-11-01T15:03:59.700Z"
+        },
+        {
+          "name": "P1-room",
+          "at": "2026-11-01T15:04:01.677Z"
+        },
+        {
+          "name": "P2-directory",
+          "at": "2026-11-01T15:04:05.108Z"
+        },
+        {
+          "name": "P2-room",
+          "at": "2026-11-01T15:04:07.174Z"
+        },
+        {
+          "name": "P1-ready",
+          "at": "2026-11-01T15:04:12.632Z"
+        },
+        {
+          "name": "P2-ready",
+          "at": "2026-11-01T15:04:15.460Z"
+        },
+        {
+          "name": "synchronized-start",
+          "at": "2026-11-01T15:04:18.862Z"
+        },
+        {
+          "name": "actual-native-frame-180",
+          "at": "2026-11-01T15:04:21.766Z"
+        }
+      ],
+      "errors": [],
+      "consoleErrors": [],
+      "httpErrors": [],
+      "stage": "site-assets",
+      "room": "8075",
+      "ready": [
+        {
+          "body": "东方Project 原作 STG ~ EAGLER TOUHOU\n已就绪\nLOADING\nUNREADY\nREADY\nP1\n?\nP1\n博丽灵梦\n本机\nLOADING\nUNREADY\nREADY\nP2\n?\nP2\n博丽灵梦\n直连\n4ms\nTURN\n—\n⋯\n東方怪綺談\n2 人合作\nNormal\n8075\n游戏设置\n快捷发言\n房间 / 难度设置\n快捷发言\n⌃\n观战席\n0\n取消准备\n开始游戏\nTH05 无 已就绪\n游戏包已导入（3 个文件）；之后将从本地启动。\n×",
+          "ready": "true",
+          "startDisabled": false,
+          "sessions": {
+            "eagler-touhou-th05mp-room-v1": "{\"product\":\"th05mp\",\"room\":{\"code\":\"8075\",\"visibility\":\"private\",\"disableCheatMovement\":false,\"challengeMode\":false,\"prankMode\":false,\"playerCount\":2,\"difficulty\":1,\"created\":true},\"seat\":0,\"ready\":true,\"spectatorRequested\":false,\"roomSettingsOpen\":false}"
+          },
+          "events": [
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "ready",
+              "saveRoot": "/savesth05mp",
+              "roomPreview": true,
+              "roomReturn": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/msgothic.ttc"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/unifont.otf"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-1",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-2",
+              "ok": true,
+              "presented": true
+            }
+          ]
+        },
+        {
+          "body": "东方Project 原作 STG ~ EAGLER TOUHOU\n已就绪\nLOADING\nUNREADY\nREADY\nP1\n?\nP1\n博丽灵梦\n直连\n9ms\nTURN\n—\nLOADING\nUNREADY\nREADY\nP2\n?\nP2\n博丽灵梦\n本机\n東方怪綺談\n2 人合作\nNormal\n8075\n游戏设置\n快捷发言\n房间 / 难度设置\n快捷发言\n⌃\n观战席\n0\n取消准备\n开始游戏\nTH05 无 已就绪\n游戏包已导入（3 个文件）；之后将从本地启动。\n×",
+          "ready": "true",
+          "startDisabled": true,
+          "sessions": {
+            "eagler-touhou-th05mp-room-v1": "{\"product\":\"th05mp\",\"room\":{\"code\":\"8075\",\"visibility\":\"private\",\"disableCheatMovement\":false,\"challengeMode\":false,\"prankMode\":false,\"playerCount\":2,\"difficulty\":1,\"created\":false},\"seat\":1,\"ready\":true,\"spectatorRequested\":false,\"roomSettingsOpen\":false}"
+          },
+          "events": [
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "ready",
+              "saveRoot": "/savesth05mp",
+              "roomPreview": true,
+              "roomReturn": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/msgothic.ttc"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/unifont.otf"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-1",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-2",
+              "ok": true,
+              "presented": true
+            }
+          ]
+        }
+      ],
+      "native": [
+        {
+          "active": true,
+          "frame": 190,
+          "confirmed": 189,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "native": null,
+          "transportState": {
+            "disconnected": false,
+            "recovering": false
+          },
+          "state": null,
+          "gameplayStage": null,
+          "options": {
+            "player": 0,
+            "players": 2,
+            "mode": "lan",
+            "prediction": 0
+          },
+          "events": [
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "ready",
+              "saveRoot": "/savesth05mp",
+              "roomPreview": true,
+              "roomReturn": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/msgothic.ttc"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/unifont.otf"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-1",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-2",
+              "ok": true,
+              "presented": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-3",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "netplay-status",
+              "state": "running",
+              "players": 2,
+              "inputDelay": 2
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "runtime-info",
+              "renderer": "C++ / WebGL GLES2",
+              "architecture": "uth05win-native-cpp",
+              "version": "1.0.0"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-4",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "first-frame",
+              "launchSerial": 1
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "frame-health",
+              "fps": 50.6807115174354,
+              "maxGapMs": 194,
+              "frameMs": 17.857142857142858,
+              "scene": 4,
+              "ticks": 418,
+              "confirmed": 51,
+              "inputDelay": 2
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "frame-health",
+              "fps": 55.977608956417455,
+              "maxGapMs": 13.899999999999636,
+              "frameMs": 17.857142857142858,
+              "scene": 4,
+              "ticks": 474,
+              "confirmed": 107,
+              "inputDelay": 2
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "frame-health",
+              "fps": 55.99440055994398,
+              "maxGapMs": 14.5,
+              "frameMs": 17.857142857142858,
+              "scene": 4,
+              "ticks": 530,
+              "confirmed": 163,
+              "inputDelay": 2
+            }
+          ]
+        },
+        {
+          "active": true,
+          "frame": 190,
+          "confirmed": 189,
+          "route": "rtc",
+          "failed": false,
+          "error": "",
+          "native": null,
+          "transportState": {
+            "disconnected": false,
+            "recovering": false
+          },
+          "state": null,
+          "gameplayStage": null,
+          "options": {
+            "player": 1,
+            "players": 2,
+            "mode": "lan",
+            "prediction": 0
+          },
+          "events": [
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "ready",
+              "saveRoot": "/savesth05mp",
+              "roomPreview": true,
+              "roomReturn": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/msgothic.ttc"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "transfer",
+              "mode": "runtime",
+              "loaded": 5105508,
+              "total": 5105508,
+              "path": "/unifont.otf"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-1",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-2",
+              "ok": true,
+              "presented": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-3",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "netplay-status",
+              "state": "running",
+              "players": 2,
+              "inputDelay": 2
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "runtime-info",
+              "renderer": "C++ / WebGL GLES2",
+              "architecture": "uth05win-native-cpp",
+              "version": "1.0.0"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "request": "runtime-1-4",
+              "ok": true
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "first-frame",
+              "launchSerial": 1
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "frame-health",
+              "fps": 49.80079681274206,
+              "maxGapMs": 208.39999999999964,
+              "frameMs": 17.857142857142858,
+              "scene": 4,
+              "ticks": 417,
+              "confirmed": 50,
+              "inputDelay": 2
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "frame-health",
+              "fps": 55.62729710936725,
+              "maxGapMs": 13.899999999999636,
+              "frameMs": 17.857142857142858,
+              "scene": 4,
+              "ticks": 473,
+              "confirmed": 106,
+              "inputDelay": 2
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th05",
+              "epoch": 1,
+              "event": "frame-health",
+              "fps": 55.99440055994403,
+              "maxGapMs": 14.5,
+              "frameMs": 17.857142857142858,
+              "scene": 4,
+              "ticks": 529,
+              "confirmed": 162,
+              "inputDelay": 2
+            }
+          ]
+        }
+      ],
+      "runtimePassed": true,
+      "passed": true
+    }
+  ],
+  "disconnectRequested": false,
+  "commit": "dac0b88cbefb27954d0a0cf8565d94aafa3203d6",
+  "harnessSha256": "9c08839d33cd98b9fc4927962bd57ee4baf746412f6951f3654c8f923cadc360",
+  "browser": "153.0.8010.12",
+  "finishedAt": "2026-11-01T15:04:26.258Z"
+}

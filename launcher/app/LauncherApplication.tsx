@@ -25,6 +25,7 @@ export interface LauncherHost {
   locale: UiLocale;
   lessMotion?: boolean;
   products: readonly LibraryProduct[];
+  classicsEnabled?: boolean;
   catalogProducts?: readonly LibraryProduct[];
   productAvailable?(productId: ProductId): boolean;
   onProductSelected?(productId: ProductId, changed: boolean): void;
@@ -154,7 +155,7 @@ function LauncherSurfaces({host}: {host: LauncherHost}) {
   return <OptionsOwnership value={presence.targets}>
     {navigation.context === 'lobby' ? host.renderLobby ? host.renderLobby(lobbyProps) : <LobbySurface {...lobbyProps}/> : <LibrarySurface products={host.products} selectedProduct={preview} openedProduct={presence.openedProduct}
       onSelect={setPreview} onActivate={activate} masthead={host.masthead} footer={host.footer} serverStatusNote={host.serverStatusNote}
-      lobbyHref={host.lobbyHref} roomUsersArtwork={host.assetUrl('assets/room-users.svg')} optionsOpen={presence.open} roomOpen={roomOpen} roomDrawer={host.roomDrawer} onBack={navigation.closeSurface}>
+      lobbyHref={host.lobbyHref} roomUsersArtwork={host.assetUrl('assets/room-users.svg')} classicsAssetUrl={host.classicsEnabled?host.assetUrl:undefined} optionsOpen={presence.open} roomOpen={roomOpen} roomDrawer={host.roomDrawer} onBack={navigation.closeSurface}>
       {host.replayWorkspace && !roomOpen ? null : settingsPanel}{host.roomSurface}
     </LibrarySurface>}
     <PlayerSurface roomWorkspace={roomWorkspace} replayWorkspace={host.replayWorkspace} preview={host.bootTouchPreview} previewImage={host.bootTouchPreviewImage} onElement={setPlayerElement} onFrame={host.runtimeFrame} open={roomWorkspace || roomOpen && host.roomPlayerExpanded === true || navigation.surface === 'touch' || host.runtimeOpen === true || host.replayWorkspace === true} editing={navigation.surface === 'touch'}>{host.runtimeControls}</PlayerSurface>

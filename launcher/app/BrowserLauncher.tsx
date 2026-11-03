@@ -59,6 +59,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const catalogProducts = useMemo(() => createLibraryProducts(PRODUCT_IDS, assetUrl, id => `?game=${id}`), [assetUrl]);
   const masthead = <Header session={session} firstUse={firstUse} notice={notice} donationAvailable={donationAvailable}/>;
   const host: LauncherHost = {
+    classicsEnabled: metadata.siteManifest?.shared.testBuild === true,
     locale: state.locale, lessMotion: preferences.lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions,
     bootTouchPreview: state.bootTouchPreview !== null, bootTouchPreviewImage: state.bootTouchPreviewImage,

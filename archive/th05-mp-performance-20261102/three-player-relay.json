@@ -1,0 +1,108 @@
+{
+  "count": 3,
+  "route": "relay",
+  "mode": 0,
+  "jitter": true,
+  "running": [
+    {
+      "frame": 252,
+      "route": "relay",
+      "inputDelay": 0,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 252,
+      "route": "relay",
+      "inputDelay": 0,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 252,
+      "route": "relay",
+      "inputDelay": 0,
+      "saveRoot": "/savesth05mp"
+    }
+  ],
+  "rollback": [
+    {
+      "corrections": 18,
+      "replayed": 80,
+      "delayed": 1000,
+      "confirmed": 745,
+      "frame": 752
+    },
+    {
+      "corrections": 15,
+      "replayed": 78,
+      "delayed": 1000,
+      "confirmed": 745,
+      "frame": 752
+    },
+    {
+      "corrections": 17,
+      "replayed": 85,
+      "delayed": 1000,
+      "confirmed": 745,
+      "frame": 752
+    }
+  ],
+  "waitReuse": [
+    {
+      "before": {
+        "frame": 760,
+        "draws": 8
+      },
+      "after": {
+        "frame": 760,
+        "draws": 8
+      }
+    },
+    {
+      "before": {
+        "frame": 760,
+        "draws": 8
+      },
+      "after": {
+        "frame": 760,
+        "draws": 8
+      }
+    },
+    {
+      "before": {
+        "frame": 760,
+        "draws": 8
+      },
+      "after": {
+        "frame": 760,
+        "draws": 8
+      }
+    }
+  ],
+  "positions": [
+    [
+      368,
+      4096
+    ],
+    [
+      368,
+      3904
+    ],
+    [
+      368,
+      4096
+    ]
+  ],
+  "touchPause": true,
+  "touchMovement": {
+    "touchBefore": 368,
+    "touchAfter": 1136
+  },
+  "returned": true,
+  "errors": [],
+  "runtimeErrors": [],
+  "secondStart": [
+    1,
+    1,
+    1
+  ]
+}

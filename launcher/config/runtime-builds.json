@@ -8,6 +8,40 @@
     }
   },
   "games": {
+    "th05": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th05",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "scripts/build-eagler.mjs"
+        ],
+        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
+      },
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {},
+          "sourceBuild": {
+            "kind": "node",
+            "build": [
+              "scripts/build-eagler.mjs"
+            ]
+          },
+          "workspaceRepository": "th05mp"
+        }
+      }
+    },
     "th06": {
       "builder": "cmake",
       "sourceBuild": { "kind": "cmake" },

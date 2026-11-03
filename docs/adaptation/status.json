@@ -3317,6 +3317,535 @@
           "status": "passed"
         }
       ]
+    },
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "directory": "ports/th05-mp",
+      "sourceDigest": "2f5652e67e2f5a164b8916cd9abca333c3e4fef87566fa20fb21256b15c1040c",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 90,
+      "features": {
+        "thcrap": true,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th05-mp"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "practice-toggle",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "PRACTICE-01"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "Game/Coop/Coop.cpp",
+            "Game/ED/Ending.cpp",
+            "Game/GlobalVariableAndStatistics.cpp",
+            "Game/HighScoreScreen/HighScoreScreen.cpp",
+            "Game/MusicRoom/MusicRoom.cpp",
+            "Game/OP/OpParticle.cpp",
+            "Game/OP/Opening.cpp",
+            "Game/Original/OriginalFeatures.cpp",
+            "Game/Original/OriginalScenes.cpp",
+            "Game/Practice/KeyMonitor.cpp",
+            "Game/Practice/Practice.cpp",
+            "Game/Practice/PracticeAdvanced.cpp",
+            "Game/Practice/PracticeSetup.cpp",
+            "Game/Replay.cpp",
+            "Game/Scheme.cpp",
+            "Game/SchemeSwitcher.cpp",
+            "Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "Game/SelectReplayScreen/SelectReplayScreen.cpp",
+            "Game/Stage/Background/Background.cpp",
+            "Game/Stage/Boss/Boss.cpp",
+            "Game/Stage/Boss/BossStage1.cpp",
+            "Game/Stage/Boss/BossStage2.cpp",
+            "Game/Stage/Boss/BossStage3.cpp",
+            "Game/Stage/Boss/BossStage4.cpp",
+            "Game/Stage/Boss/BossStage4Mai.cpp",
+            "Game/Stage/Boss/BossStage4Yuki.cpp",
+            "Game/Stage/Boss/BossStage5.cpp",
+            "Game/Stage/Boss/BossStage6.cpp",
+            "Game/Stage/Boss/BossStageEx.cpp",
+            "Game/Stage/Chara/Chara.cpp",
+            "Game/Stage/Chara/CharaMarisa.cpp",
+            "Game/Stage/Chara/CharaMima.cpp",
+            "Game/Stage/Chara/CharaReimu.cpp",
+            "Game/Stage/Chara/CharaYuka.cpp",
+            "Game/Stage/CharaBullet/CharaBullet.cpp",
+            "Game/Stage/Circle/Circle.cpp",
+            "Game/Stage/Dialogue/Dialogue.cpp",
+            "Game/Stage/Enemy/Enemy.cpp",
+            "Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "Game/Stage/FloatingText/FloatingText.cpp",
+            "Game/Stage/GatherEffect/GatherEffect.cpp",
+            "Game/Stage/Item/Item.cpp",
+            "Game/Stage/Laser/Laser.cpp",
+            "Game/Stage/MidBoss/MidBoss.cpp",
+            "Game/Stage/MidBoss/MidBossStage1.cpp",
+            "Game/Stage/MidBoss/MidBossStage2.cpp",
+            "Game/Stage/MidBoss/MidBossStage3.cpp",
+            "Game/Stage/MidBoss/MidBossStage4.cpp",
+            "Game/Stage/MidBoss/MidBossStage5.cpp",
+            "Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "Game/Stage/PopupNumber/PopupNumber.cpp",
+            "Game/Stage/SparkEffect/SparkEffect.cpp",
+            "Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "Game/Stage/SpecialBullet/LargeBullet.cpp",
+            "Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "Game/Stage/Stage.cpp",
+            "Game/Stage/Stage2BG/Stage2BG.cpp",
+            "Game/Stage/StageBossHud.cpp",
+            "Game/Stage/StagePracticeInfo.cpp",
+            "Game/Stage/StageResource.cpp",
+            "Game/Stage/Summary/Summary.cpp",
+            "Game/Stage/TextOverlay/TextOverlay.cpp",
+            "Game/TitleScreen/TitleRollingTama.cpp",
+            "Game/TitleScreen/TitleScreen.cpp",
+            "gameLib/CommonFunction/CommonFunctionGraphic.cpp",
+            "gameLib/CommonFunction/CommonFunctionInput.cpp",
+            "gameLib/CommonFunction/CommonFunctionMusicSE.cpp",
+            "gameLib/Graphic/2DImage.cpp",
+            "gameLib/Graphic/2DImageArray.cpp",
+            "gameLib/Graphic/Th5ExtFont.cpp",
+            "gameLib/Misc/md5.cpp",
+            "gameLib/Misc/sha1.cpp",
+            "gameLib/th5DatFile/BB/BBFile.cpp",
+            "gameLib/th5DatFile/BFT/BFTFile.cpp",
+            "gameLib/th5DatFile/CD2CDG/CD2CDGFile.cpp",
+            "gameLib/th5DatFile/MPN/MPNFile.cpp",
+            "gameLib/th5DatFile/PI/PIFile.cpp",
+            "gameLib/th5DatFile/STD/STDFile.cpp",
+            "gameLib/th5DatFile/th5DatFile.cpp",
+            "portable/Game.cpp",
+            "portable/Graphics.cpp",
+            "portable/Platform.cpp",
+            "portable/Pointer.cpp",
+            "portable/Text.cpp",
+            "portable/UI.cpp",
+            "third_party/imgui/imgui.cpp",
+            "third_party/imgui/imgui_draw.cpp",
+            "third_party/imgui/imgui_tables.cpp",
+            "third_party/imgui/imgui_widgets.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "game": "th05",
+      "variant": "normal",
+      "directory": "ports/th05",
+      "sourceDigest": "9d3b1711a104b0eaa864a1f301e251a1c46a3284be9811aa6e7ac0600c330a0a",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 89,
+      "features": {
+        "thcrap": true,
+        "thprac": true
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th05"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "practice-toggle",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "PRACTICE-01"
+          ],
+          "files": [
+            "web/managed.mjs",
+            "web/shell.mjs",
+            "web/input.mjs",
+            "tests/managed-adapter.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "Game/ED/Ending.cpp",
+            "Game/GlobalVariableAndStatistics.cpp",
+            "Game/HighScoreScreen/HighScoreScreen.cpp",
+            "Game/MusicRoom/MusicRoom.cpp",
+            "Game/OP/OpParticle.cpp",
+            "Game/OP/Opening.cpp",
+            "Game/Original/OriginalFeatures.cpp",
+            "Game/Original/OriginalScenes.cpp",
+            "Game/Practice/KeyMonitor.cpp",
+            "Game/Practice/Practice.cpp",
+            "Game/Practice/PracticeAdvanced.cpp",
+            "Game/Practice/PracticeSetup.cpp",
+            "Game/Replay.cpp",
+            "Game/Scheme.cpp",
+            "Game/SchemeSwitcher.cpp",
+            "Game/SelectCharaScreen/SelectCharaScreen.cpp",
+            "Game/SelectReplayScreen/SelectReplayScreen.cpp",
+            "Game/Stage/Background/Background.cpp",
+            "Game/Stage/Boss/Boss.cpp",
+            "Game/Stage/Boss/BossStage1.cpp",
+            "Game/Stage/Boss/BossStage2.cpp",
+            "Game/Stage/Boss/BossStage3.cpp",
+            "Game/Stage/Boss/BossStage4.cpp",
+            "Game/Stage/Boss/BossStage4Mai.cpp",
+            "Game/Stage/Boss/BossStage4Yuki.cpp",
+            "Game/Stage/Boss/BossStage5.cpp",
+            "Game/Stage/Boss/BossStage6.cpp",
+            "Game/Stage/Boss/BossStageEx.cpp",
+            "Game/Stage/Chara/Chara.cpp",
+            "Game/Stage/Chara/CharaMarisa.cpp",
+            "Game/Stage/Chara/CharaMima.cpp",
+            "Game/Stage/Chara/CharaReimu.cpp",
+            "Game/Stage/Chara/CharaYuka.cpp",
+            "Game/Stage/CharaBullet/CharaBullet.cpp",
+            "Game/Stage/Circle/Circle.cpp",
+            "Game/Stage/Dialogue/Dialogue.cpp",
+            "Game/Stage/Enemy/Enemy.cpp",
+            "Game/Stage/EnemyBullet/EnemyBullet.cpp",
+            "Game/Stage/FloatingText/FloatingText.cpp",
+            "Game/Stage/GatherEffect/GatherEffect.cpp",
+            "Game/Stage/Item/Item.cpp",
+            "Game/Stage/Laser/Laser.cpp",
+            "Game/Stage/MidBoss/MidBoss.cpp",
+            "Game/Stage/MidBoss/MidBossStage1.cpp",
+            "Game/Stage/MidBoss/MidBossStage2.cpp",
+            "Game/Stage/MidBoss/MidBossStage3.cpp",
+            "Game/Stage/MidBoss/MidBossStage4.cpp",
+            "Game/Stage/MidBoss/MidBossStage5.cpp",
+            "Game/Stage/MidBoss/MidBossStageEx.cpp",
+            "Game/Stage/PopupNumber/PopupNumber.cpp",
+            "Game/Stage/SparkEffect/SparkEffect.cpp",
+            "Game/Stage/SpecialBullet/CurvingBullet.cpp",
+            "Game/Stage/SpecialBullet/KnifeBullet.cpp",
+            "Game/Stage/SpecialBullet/LargeBullet.cpp",
+            "Game/Stage/SpecialBullet/ShinkiBullet.cpp",
+            "Game/Stage/Stage.cpp",
+            "Game/Stage/Stage2BG/Stage2BG.cpp",
+            "Game/Stage/StageBossHud.cpp",
+            "Game/Stage/StagePracticeInfo.cpp",
+            "Game/Stage/StageResource.cpp",
+            "Game/Stage/Summary/Summary.cpp",
+            "Game/Stage/TextOverlay/TextOverlay.cpp",
+            "Game/TitleScreen/TitleRollingTama.cpp",
+            "Game/TitleScreen/TitleScreen.cpp",
+            "gameLib/CommonFunction/CommonFunctionGraphic.cpp",
+            "gameLib/CommonFunction/CommonFunctionInput.cpp",
+            "gameLib/CommonFunction/CommonFunctionMusicSE.cpp",
+            "gameLib/Graphic/2DImage.cpp",
+            "gameLib/Graphic/2DImageArray.cpp",
+            "gameLib/Graphic/Th5ExtFont.cpp",
+            "gameLib/Misc/md5.cpp",
+            "gameLib/Misc/sha1.cpp",
+            "gameLib/th5DatFile/BB/BBFile.cpp",
+            "gameLib/th5DatFile/BFT/BFTFile.cpp",
+            "gameLib/th5DatFile/CD2CDG/CD2CDGFile.cpp",
+            "gameLib/th5DatFile/MPN/MPNFile.cpp",
+            "gameLib/th5DatFile/PI/PIFile.cpp",
+            "gameLib/th5DatFile/STD/STDFile.cpp",
+            "gameLib/th5DatFile/th5DatFile.cpp",
+            "portable/Game.cpp",
+            "portable/Graphics.cpp",
+            "portable/Platform.cpp",
+            "portable/Pointer.cpp",
+            "portable/Text.cpp",
+            "portable/UI.cpp",
+            "third_party/imgui/imgui.cpp",
+            "third_party/imgui/imgui_draw.cpp",
+            "third_party/imgui/imgui_tables.cpp",
+            "third_party/imgui/imgui_widgets.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "th05-normal-presentation",
+          "level": "module",
+          "games": [
+            "th05"
+          ],
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "ports/th05/tests/presentation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
     }
   ]
 }

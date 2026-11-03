@@ -116,7 +116,7 @@ function effectiveMusic(input: GamePreparationInput, generation: InstalledPackag
     importServer: host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg,
     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
     installed: generation ? {revision: generation.descriptor.revision, oggFileIds: componentFileIds(generation.descriptor, 'ogg'), files: generation.files} : null,
-    requested: settings.musicPreference, explicit: settings.musicPreferenceExplicit});
+    requested: settings.musicPreference === 'ogg-akyu' && !('sources' in PRODUCT_GAMES[settings.gameId].musicRuntime) ? 'ogg-stream' : settings.musicPreference, explicit: settings.musicPreferenceExplicit});
 }
 /** Original app 4163–4198. Room timing is supplied by the validated room owner,
  * never recomputed, filled with guesses, or inferred from a Replay. */
@@ -130,10 +130,12 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
     touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
+    ...('sources' in PRODUCT_GAMES[game].musicRuntime ? {musicSource: music === 'ogg-akyu' ? 'akyu' as const : 'original' as const} : {}),
     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
       ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
     ...(productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
+    ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
     ...(isMultiplayer ? {multiplayerLocalPlayerVisibility: options.multiplayerLocalPlayerVisibility,
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),
       ...(multiplayer?.kind === 'preflight' && 'multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight: true} : {}),
@@ -176,7 +178,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   const shared = sharedResources({game: settings.gameId, generation, host, language,
     thprac: settings.options.thpracEnabled, baseUrl: input.baseUrl, translate: t});
   const plan: RuntimePlan = {...initial, ...(generation && generation !== initial.generation ? {resourceGeneration: generation} : {}),
-    configure: {music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
+    configure: {language, music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
       runtimeResources: remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
     ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
@@ -184,7 +186,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};
   const resource = runtimePack ? `${entry?.title || entry?.id || t('language.fallbackName')} ${t('settings.language')}`
-    : `${music === 'ogg-stream' ? t('settings.music.oggStream') : music === 'ogg-full' ? t('settings.music.oggFull') : music === 'none' ? t('settings.music.none') : 'midi'} ${t('settings.music')}`;
+    : `${music === 'ogg-stream' ? t('settings.music.oggStream') : music === 'ogg-full' ? t('settings.music.oggFull') : music === 'ogg-akyu' ? t('settings.music.akyu') : music === 'none' ? t('settings.music.none') : 'midi'} ${t('settings.music')}`;
   input.onStatus?.(t('runtime.preparingResources', {resource}));
   return {plan, language, music};
 }

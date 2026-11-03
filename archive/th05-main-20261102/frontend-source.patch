@@ -1,0 +1,1115 @@
+--- a/common/contracts/product-catalog.d.mts
++++ b/common/contracts/product-catalog.d.mts
+@@ -29,6 +29,20 @@
+ export declare function isHostRuntimeFeatureId(value: string): value is HostRuntimeFeatureId;
+ export declare function languagePriority(id: string): number;
+ export declare const PRODUCT_GAMES: Readonly<{
++    th05: Readonly<{
++        testOnly: false; number: "05"; title: "東方怪綺談"; subtitle: "Mystic Square"; cardArtwork: "th05-card.webp";
++        storage: Readonly<{saveRoot: "/savesth05"; scoreFile: "score.dat"; configFiles: readonly string[]}>;
++        multiplayerRuntime: "./runtime/th05/multiplayer/th05.html";
++        multiplayer: Readonly<MultiplayerProductConfig>;
++        runtime: "./runtime/th05/th05.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
++        requiredShared: readonly string[]; runtimeAssets: readonly string[];
++        musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; sources: readonly ["original", "akyu"]}>;
++        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
++        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Goan114/uth05win-vibe"; adaptationNotice: "early-test"}>;
++        package: Readonly<{dataFileId: "game-data"; dataTarget: "/th05.data"; rawDataImport: Readonly<{fileNames: readonly string[]}>;
++            musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
++        replay: Readonly<{prefix: "th05"; slotPrefix: "replay"; slots: 100; extensions: readonly ["rpy"]}>; features: Readonly<{thprac: true; languages: true; focusHitbox: true}>;
++    }>;
+     th06: Readonly<{
+         cardArtwork: "th06-card.webp";
+         number: "06";
+@@ -414,7 +428,6 @@
+                 rollbackLimit: 8;
+                 measuredStartup: true;
+                 manualDelayLimit: 9;
+-                manualRollbackDelay: true;
+             }>;
+             playerCounts: readonly [2];
+             difficulties: readonly string[];
+@@ -695,6 +708,58 @@
+             focusHitbox: false;
+         }>;
+     }>;
++    th13: Readonly<{
++        testOnly: true;
++        buildOptIn: true;
++        number: "13";
++        title: "東方神霊廟";
++        subtitle: "Ten Desires";
++        cardArtwork: "th13-card.webp";
++        storage: Readonly<{
++            saveRoot: "/savesth13";
++            scoreFile: "scoreth13.dat";
++            configFiles: readonly string[];
++        }>;
++        runtime: "./runtime/th13/th13.html";
++        musicCapabilities: Readonly<{
++            midi: false;
++        }>;
++        musicRuntime: Readonly<{
++            localOggConfigureMode: "runtime-selection";
++            requiresCompleteOgg: true;
++        }>;
++        touchFire: Readonly<{
++            readonly mode: "toggle";
++            readonly labelKey: "touch.tapToggle";
++        }>;
++        support: Readonly<{
++            highRefreshRate: false;
++            sourceRepository: "https://github.com/AgentMystia/th13";
++            adaptationNotice: "early-test";
++        }>;
++        runtimeFileLayout: "directory";
++        requiredShared: readonly string[];
++        runtimeAssets: readonly string[];
++        dataProvider: "retail-memory";
++        package: Readonly<{
++            dataFileId: "game-data";
++            dataTarget: "/th13.data";
++            musicSourceDirectories: Readonly<{
++                ogg: "bgm-ogg";
++            }>;
++            musicMounts: Readonly<{
++                ogg: "/assets";
++            }>;
++        }>;
++        replay: Readonly<{
++            prefix: "th13";
++        }>;
++        features: Readonly<{
++            thprac: false;
++            languages: false;
++            focusHitbox: false;
++        }>;
++    }>;
+     th15: Readonly<{
+         number: "15";
+         title: "東方紺珠伝";
+@@ -768,6 +833,58 @@
+         features: Readonly<{
+             thprac: true;
+             languages: true;
++            focusHitbox: false;
++        }>;
++    }>;
++    th17: Readonly<{
++        number: "17";
++        title: "東方鬼形獣";
++        subtitle: "Wily Beast and Weakest Creature";
++        cardArtwork: "th17-card.webp";
++        storage: Readonly<{
++            saveRoot: "/savesth17";
++            scoreFile: "scoreth17.dat";
++            configFiles: readonly string[];
++        }>;
++        runtime: "./runtime/th17/th17.html";
++        musicCapabilities: Readonly<{
++            midi: false;
++        }>;
++        musicRuntime: Readonly<{
++            localOggConfigureMode: "runtime-selection";
++        }>;
++        touchFire: Readonly<{
++            mode: "toggle";
++            labelKey: "touch.tapToggle";
++        }>;
++        support: Readonly<{
++            highRefreshRate: false;
++            sourceRepository: "https://github.com/Goan114/eagler-touhou";
++            adaptationNotice: "early-test";
++        }>;
++        runtimeFileLayout: "directory";
++        requiredShared: readonly never[];
++        runtimeAssets: readonly string[];
++        dataProvider: "retail-memory";
++        package: Readonly<{
++            dataFileId: "game-data";
++            dataTarget: "/th17.dat";
++            rawDataImport: Readonly<{
++                fileNames: readonly string[];
++            }>;
++            musicSourceDirectories: Readonly<{
++                ogg: "music";
++            }>;
++            musicMounts: Readonly<{
++                ogg: "/music";
++            }>;
++        }>;
++        replay: Readonly<{
++            prefix: "th17";
++        }>;
++        features: Readonly<{
++            thprac: false;
++            languages: false;
+             focusHitbox: false;
+         }>;
+     }>;
+@@ -854,6 +971,7 @@
+     manualRollbackDelay?: boolean;
+ }
+ export interface MultiplayerProductConfig {
++    relaySourceEnvelope?: boolean;
+     spectator?: boolean;
+     titleRoomEntry?: boolean;
+     loadoutFields?: readonly Readonly<{labelKey: string; dependsOn?: readonly number[]}>[];
+@@ -1295,7 +1413,6 @@
+                     rollbackLimit: 8;
+                     measuredStartup: true;
+                     manualDelayLimit: 9;
+-                    manualRollbackDelay: true;
+                 }>;
+                 playerCounts: readonly [2];
+                 difficulties: readonly string[];
+@@ -1711,7 +1828,10 @@
+                 title: string;
+                 pack: null;
+             }[];
+-        } | (typeof PRODUCT_GAMES.th12 & {
++        } | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
++            music: {midi: {files: never[]; supported: boolean}};
++            languageOptions: {id: string; title: string; pack: null}[];
++        }) | (typeof PRODUCT_GAMES.th13 & {
+             music: {midi: {files: never[]; supported: boolean}};
+             languageOptions: {id: string; title: string; pack: null}[];
+         });
+--- a/common/contracts/product-catalog.mjs
++++ b/common/contracts/product-catalog.mjs
+@@ -81,6 +81,27 @@
+     key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
+ });
+ export const PRODUCT_GAMES = Object.freeze({
++    th05: Object.freeze({
++        testOnly: false, number: "05", title: "東方怪綺談", subtitle: "Mystic Square", cardArtwork: "th05-card.webp",
++        storage: Object.freeze({saveRoot: "/savesth05", scoreFile: "score.dat", configFiles: Object.freeze(["game.cfg", "thprac-uth05.ini"])}),
++        multiplayerRuntime: "./runtime/th05/multiplayer/th05.html",
++        multiplayer: Object.freeze({
++            titleKey: "game.title.th05mp", gameplay: "cooperative",
++            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
++            loadouts: Object.freeze(["reimu","marisa","mima","yuuka"].map((name,character)=>Object.freeze({labelKey:`multiplayer.loadout.th05_${name}`,glyph:["霊","魔","魅","幽"][character],character,shot:0}))),
++            peerTransportGlobal: "__th05PeerTransport", relaySourceEnvelope: true, spectator: false, titleRoomEntry: false,
++            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
++        }),
++        runtime: "./runtime/th05/th05.html", runtimeFileLayout: "directory", dataProvider: "retail-memory", runtimeResourceTransport: "resources",
++        requiredShared: Object.freeze(["/msgothic.ttc"]),
++        runtimeAssets: Object.freeze(["th05.html", "th05.mjs", "th05.wasm", "shell.mjs", "managed.mjs", "data.mjs", "storage.mjs", "input.mjs", "pointer.mjs", "audio.mjs", "audio-layout.mjs", "music-notes.mjs", "sfx.mjs", "playback.mjs", "replay.mjs", "clock.mjs", "directory-keyboard.mjs", "keyboard-owners.mjs", "keyboard-input-bridge.mjs", "direct-input-bridge.mjs", "manifest.json"]),
++        musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection", sources: Object.freeze(["original", "akyu"])}),
++        touchFire: TOGGLE_TOUCH_FIRE,
++        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/uth05win-vibe", adaptationNotice: "early-test"}),
++        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th05.data", rawDataImport: Object.freeze({fileNames: Object.freeze(["th05.data"])}),
++            musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
++        replay: Object.freeze({prefix: "th05", slotPrefix: "replay", slots: 100, extensions: Object.freeze(["rpy"])}), features: Object.freeze({thprac: true, languages: true, focusHitbox: true}),
++    }),
+     // support.highRefreshRate describes currently implemented presentation for
+     // Launcher UI. False keeps unfinished adapters honest; it does not waive
+     // the required presentation-cadence acceptance gate.
+--- a/common/contracts/th05-initial-stock.d.mts
++++ b/common/contracts/th05-initial-stock.d.mts
+@@ -0,0 +1,3 @@
++export const TH05_INITIAL_STOCK: Readonly<{spares:2;bombs:3}>;
++export function validTh05InitialSpares(value:unknown): value is number;
++export function validTh05InitialBombs(value:unknown): value is number;
+--- a/common/contracts/th05-initial-stock.mjs
++++ b/common/contracts/th05-initial-stock.mjs
+@@ -0,0 +1,8 @@
++// PR #143: spares exclude the current life; settings apply to the whole team.
++export const TH05_INITIAL_STOCK = Object.freeze({spares:2,bombs:3});
++export function validTh05InitialSpares(value) {
++ return typeof value==='number'&&Number.isInteger(value)&&value>=0&&value<=5;
++}
++export function validTh05InitialBombs(value) {
++ return typeof value==='number'&&Number.isInteger(value)&&value>=0&&value<=3;
++}
+--- a/launcher/app/components/launcher/ClassicsShelf.tsx
++++ b/launcher/app/components/launcher/ClassicsShelf.tsx
+@@ -0,0 +1,32 @@
++import {useLayoutEffect, useRef, useState} from 'react';
++import {useLocale} from '../../i18n';
++import {bindLibraryRail} from './library-rail';
++
++export const CLASSICS_ENTRIES = [
++  {id:'th01',number:'01',title:'東方靈異伝',subtitle:'Highly Responsive to Prayers'},
++  {id:'th02',number:'02',title:'東方封魔録',subtitle:'The Story of Eastern Wonderland'},
++  {id:'th03',number:'03',title:'東方夢時空',subtitle:'Phantasmagoria of Dim.Dream'},
++  {id:'th04',number:'04',title:'東方幻想郷',subtitle:'Lotus Land Story'},
++] as const;
++
++/** These existing standalone pages own their game state outside the managed Launcher. */
++export function ClassicsShelf({assetUrl}: {assetUrl:(path:string)=>string}) {
++  const {locale,t}=useLocale(),shelf=useRef<HTMLElement>(null),[preview,setPreview]=useState('th01');
++  useLayoutEffect(()=>{
++    if(!shelf.current)return;
++    const rail=bindLibraryRail(shelf.current,{initialProduct:'th01',openOnFirstClick:()=>true,onSelectionChange:setPreview});
++    return ()=>rail.dispose();
++  },[]);
++  return <section ref={shelf} className="game-shelf classics-shelf" data-shelf="classics" aria-labelledby="classicsHeading">
++    <header className="shelf-heading"><h2 id="classicsHeading">{locale==='en'?'PC-98 Classics':'旧作'}</h2><span className="shelf-caption">TH01–TH04 · PC-98</span></header>
++    <div className="game-rail" id="classicsRail" role="group" aria-labelledby="classicsHeading">
++      {CLASSICS_ENTRIES.map(game=><a key={game.id} className={`game game-${game.id} card-art-missing${preview===game.id?' nav-preview':''}`} data-game={game.id} href={assetUrl(game.id)} draggable={false}>
++        <div className="no"><span className="no-label">{game.number}</span></div>
++        <div className="game-copy"><h2><span className="game-title">{game.title}</span></h2><small>{game.subtitle}</small></div>
++      </a>)}
++    </div>
++    <div className="shelf-minimap"><div className="minimap-dock">
++      {CLASSICS_ENTRIES.map(game=><button key={game.id} type="button" className={`minimap-toggle${preview===game.id?' is-current':''}`} data-minimap-preview={game.id} aria-label={game.title} aria-current={preview===game.id} aria-controls="classicsRail" aria-describedby="classicsMinimapLabel"><span className="minimap-index" aria-hidden="true">{game.number}</span></button>)}
++    </div><span className="sr-only" id="classicsMinimapLabel">{t('library.holdNav')}</span></div>
++  </section>;
++}
+--- a/launcher/app/components/launcher/LibraryCards.tsx
++++ b/launcher/app/components/launcher/LibraryCards.tsx
+@@ -4,8 +4,12 @@
+ import {bindLibraryRail} from './library-rail';
+ import type {LibraryProduct} from './products';
+ 
++export type ExternalLibraryProduct = Omit<LibraryProduct, 'id'> & {id: string; external: true};
++type LibraryCard = LibraryProduct | ExternalLibraryProduct;
++
+ export interface LibraryCardsProps {
+   products: readonly LibraryProduct[];
++  externalProducts?: readonly ExternalLibraryProduct[];
+   selectedProduct?: string;
+   openedProduct?: string;
+   onSelect: (productId: string) => void;
+@@ -24,7 +28,7 @@
+     ? <><span>東方</span><wbr/><span>{title.slice(2)}</span></>
+     : <span>{title}</span>;
+ }
+-function presentationStyle(product: LibraryProduct): CSSProperties | undefined {
++function presentationStyle(product: Pick<LibraryProduct, 'presentation'>): CSSProperties | undefined {
+   const p = product.presentation;
+   return p ? {'--art-position': `${p.positionPercent}%`, '--card-art-brightness': p.artBrightness,
+     '--card-art-saturation': p.artSaturation, '--card-glow-brightness': p.glowBrightness,
+@@ -32,7 +36,8 @@
+ }
+ 
+ /** One original rail for the library and directory; no Router/history owner. */
+-export function LibraryCards({products, selectedProduct, openedProduct, onSelect, onActivate, selectBeforeActivate = false, variant, lobbyLink, inert = false, interactive = true}: LibraryCardsProps) {
++export function LibraryCards({products: managedProducts, externalProducts = [], selectedProduct, openedProduct, onSelect, onActivate, selectBeforeActivate = false, variant, lobbyLink, inert = false, interactive = true}: LibraryCardsProps) {
++  const products: readonly LibraryCard[] = [...managedProducts, ...externalProducts];
+   const {t} = useLocale();
+   const selectedCard = useOptionsTarget('selectedCard');
+   const shelf = useRef<HTMLElement>(null), controller = useRef<ReturnType<typeof bindLibraryRail> | null>(null);
+@@ -49,7 +54,7 @@
+     const current = bindLibraryRail(shelf.current, {
+       initialProduct: selectedProduct ?? preview,
+       openOnFirstClick: id => !callbacks.current.selectBeforeActivate && callbacks.current.products.some(p => p.id === id && p.multiplayer),
+-      onSelectionChange: id => {setPreview(id); if (ready) callbacks.current.onSelect(id);},
++      onSelectionChange: id => {setPreview(id); if (ready && !callbacks.current.products.some(p => p.id === id && 'external' in p && p.external)) callbacks.current.onSelect(id);},
+     });
+     ready = true; controller.current = current;
+     return () => {current.dispose(); if (controller.current === current) controller.current = null;};
+@@ -66,7 +71,7 @@
+       interactive && (!product.artwork || failedArt.has(product.id)) ? 'card-art-missing' : '', preview === product.id ? 'nav-preview' : '', openedProduct === product.id ? 'selected' : ''].filter(Boolean).join(' ');
+     return <a ref={openedProduct === product.id ? selectedCard : undefined} key={product.id} className={classes} data-game={product.gameId} data-product={product.multiplayer ? product.id : undefined}
+       href={product.href} aria-current={interactive ? openedProduct === product.id ? 'page' : 'false' : undefined} style={presentationStyle(product)} hidden={product.hidden} draggable={false}
+-      onClick={interactive ? event => {
++      onClick={interactive && !('external' in product && product.external) ? event => {
+         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+         event.preventDefault(); callbacks.current.onActivate(product.id);
+       } : undefined}>
+--- a/launcher/app/components/launcher/LibrarySurface.tsx
++++ b/launcher/app/components/launcher/LibrarySurface.tsx
+@@ -3,6 +3,8 @@
+ import {useLocale} from '../../i18n';
+ import {LibraryCards, type LibraryCardsProps} from './LibraryCards';
+ import {AppLink} from './AppLink';
++import {ClassicsShelf} from './ClassicsShelf';
++import {createLibraryProducts} from './products';
+ 
+ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
+   masthead: ReactNode;
+@@ -13,20 +15,24 @@
+   optionsOpen: boolean;
+   roomOpen?: boolean;
+   roomDrawer?: ReactNode;
++  classicsAssetUrl?: (path: string) => string;
+   onBack: () => void;
+   children?: ReactNode;
+ }
+ /** OptionsPanel must be a direct child of .main.library-layout for main's CSS. */
+-export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, roomUsersArtwork, optionsOpen, roomOpen = false, roomDrawer, onBack, children, ...rail}: LibrarySurfaceProps) {
++export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, roomUsersArtwork, optionsOpen, roomOpen = false, roomDrawer, classicsAssetUrl, onBack, children, ...rail}: LibrarySurfaceProps) {
+   const {t} = useLocale();
+   const Link = rail.interactive === false ? 'a' : AppLink;
++  const th05AssetUrl=classicsAssetUrl??((path:string)=>roomUsersArtwork.replace(/assets\/room-users\.svg(?:\?.*)?$/,path));
++  const standalone = rail.products.some(p=>p.id==='th05') ? [{...createLibraryProducts(['th05'], th05AssetUrl, () => th05AssetUrl('th05'))[0]!, id: 'th05-standalone', title: t('game.th05Legacy'), multiplayer: true, external: true as const}] : [];
+   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
+     {masthead}
+     <main className={`main library-layout${roomOpen ? ' mp-room-open' : ''}`} id="main">
+       <h1 className="visually-hidden">东方Project 原作 STG ~ EAGLER TOUHOU</h1>
+       <div className="game-library" inert={optionsOpen}>
+         <LibraryCards {...rail} products={rail.products.filter(p => !p.multiplayer)} variant="singleplayer"/>
+-        <LibraryCards {...rail} products={rail.products.filter(p => p.multiplayer)} variant="multiplayer" lobbyLink={<Link className="shelf-lobby-link" href={lobbyHref}><img src={roomUsersArtwork} alt="" width="18" height="18"/><span>{t('lobby.title')}</span></Link>}/>
++        {classicsAssetUrl && <ClassicsShelf assetUrl={classicsAssetUrl}/>}
++        <LibraryCards {...rail} products={rail.products.filter(p => p.multiplayer)} externalProducts={standalone} variant="multiplayer" lobbyLink={<Link className="shelf-lobby-link" href={lobbyHref}><img src={roomUsersArtwork} alt="" width="18" height="18"/><span>{t('lobby.title')}</span></Link>}/>
+       </div>
+       <OptionsBackdrop onBack={onBack}/>
+       {children}
+--- a/launcher/app/components/player/PlayerControls.tsx
++++ b/launcher/app/components/player/PlayerControls.tsx
+@@ -313,12 +313,12 @@
+           className="fullscreen-toggle"
+           id="fullscreenToggle"
+           type="button"
+-          data-fullscreen={session.nativeTouch.isFullscreen() || state.roomPlayerExpanded === true}
++          data-fullscreen={session.nativeTouch.isFullscreen()}
+           aria-label={t(
+-            session.nativeTouch.isFullscreen() || state.roomPlayerExpanded ? 'player.exitFullscreen' : 'player.enterFullscreen',
++            session.nativeTouch.isFullscreen() ? 'player.exitFullscreen' : 'player.enterFullscreen',
+           )}
+           title={t(
+-            session.nativeTouch.isFullscreen() || state.roomPlayerExpanded
++            session.nativeTouch.isFullscreen()
+               ? 'player.exitFullscreenTitle'
+               : 'player.enterFullscreenTitle',
+           )}
+--- a/launcher/app/components/room/RoomGameSettings.tsx
++++ b/launcher/app/components/room/RoomGameSettings.tsx
+@@ -24,6 +24,14 @@
+     </section>
+     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
+       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
++      {state.product==='th05mp'&&<><div className="room-basic-fields">
++        <label>{t('room.th05InitialSpares')}<MainSelect id="mpTh05InitialSpares" className="option-select" value={room.initialSpares??2} disabled={disabled} onChange={event=>service.setRoomSettings({initialSpares:Number(event.target.value)})}>
++          {Array.from({length:6},(_,value)=><option key={value} value={value}>{value}</option>)}
++        </MainSelect></label>
++        <label>{t('room.th05InitialBombs')}<MainSelect id="mpTh05InitialBombs" className="option-select" value={room.initialBombs??3} disabled={disabled} onChange={event=>service.setRoomSettings({initialBombs:Number(event.target.value)})}>
++          {Array.from({length:4},(_,value)=><option key={value} value={value}>{value}</option>)}
++        </MainSelect></label>
++      </div><p className="room-setting-description">{t('room.th05InitialStockHint')}</p></>}
+       {state.product === 'th15mp' && <><label className="room-reward-field" htmlFor="mpTh15ChapterThreshold">{t('room.th15ChapterThreshold')}<MainSelect className="option-select" id="mpTh15ChapterThreshold" aria-describedby="mpTh15ChapterGraze" value={String(room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))} disabled={disabled} onChange={event => service.setRoomSettings({chapterThreshold:Number(event.target.value)})}>
+         {Array.from({length:19},(_,index)=>500000+index*250000).map(value=><option key={value} value={value}>{value.toLocaleString()}</option>)}
+       </MainSelect></label><p className="room-setting-description" id="mpTh15ChapterGraze">{t('room.th15ChapterGraze',{count:(room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))/5000})}</p></>}
+--- a/launcher/app/components/settings/SettingsBody.tsx
++++ b/launcher/app/components/settings/SettingsBody.tsx
+@@ -5,6 +5,7 @@
+ import type {GameSettingsModel} from '../../models/game-settings';
+ import {useLocale} from '../../i18n';
+ import {MainSelect} from '../launcher/MainSelect';
++import {Th05MultiplayerDisplay} from './Th05MultiplayerDisplay';
+ import {OptionsGroup} from './OptionsGroup';
+ import {InputSettings} from './InputSettings';
+ import {OptionRow} from './OptionRow';
+@@ -65,6 +66,7 @@
+     <OptionsGroup id={id('displayOptions')} title={t('options.display')} open={state.disclosure.display} onOpenChange={open => model.setDisclosure('display', open)} bodyClassName="options-advanced-body">
+       <OptionRow className={item('option-frame-limit')} hidden={!product.support.highRefreshRate} label={t('settings.frameLimit')} hint={<><span id={id('frameLimitHintText')}>{t('settings.frameLimitHint')}</span> <button className="frame-limit-apple-note" id={id('frameLimitAppleNote')} type="button" onClick={actions.showAppleNotice}>{t('settings.appleNotice')}</button></>} hintId={id('frameLimitHint')} control={<OptionSwitch id={id('frameLimitToggle')} label={t('settings.frameLimit')} checked={product.support.highRefreshRate && !options.frameLimit60Enabled} disabled={!product.support.highRefreshRate} onChange={() => model.setOption('frameLimit60Enabled', !options.frameLimit60Enabled)}/>}/>
+       <section className={item('feature-section feature-language')} id={id('languageOption')} hidden={!multiplayer && context.languages.length <= 1}><div className="itemtop"><span>{t('settings.language')}</span>{!multiplayer && <small id="languagePackSize">{packSize}</small>}</div><MainSelect className="option-select" id={id('languageSelect')} aria-label={t('settings.gameLanguage')} value={state.language} onChange={event => model.setLanguage(event.target.value)}>{context.languages.map(entry => <option key={entry.id} value={entry.id}>{entry.title || entry.id}</option>)}</MainSelect></section>
++      {multiplayer && state.gameId === 'th05' && <Th05MultiplayerDisplay model={model} state={state}/>}
+       <OptionRow className={item('option-pixel-perfect')} label={t('settings.pixelPerfect')} control={<OptionSwitch id={id('pixelPerfectToggle')} label={t('settings.pixelPerfect')} checked={options.pixelPerfectEnabled} onChange={switchOption('pixelPerfectEnabled')}/>}/>
+       <OptionRow className={item('option-focus-hitbox')} id={id('focusHitboxOption')} hidden={!productFeatureAvailable(state.gameId, 'focusHitbox', context.hostFeatures)} label={t('settings.focusHitbox')} control={<OptionSwitch id={id('focusHitboxToggle')} label={t('settings.focusHitbox')} checked={options.focusHitboxEnabled} onChange={switchOption('focusHitboxEnabled')}/>}/>
+       <OptionRow className={item('option-focus-hitbox')} id={id('faithBarOption')} hidden={!hasFaith} label={t('settings.faithBar')} control={<OptionSwitch id={id('faithBarToggle')} label={t('settings.faithBar')} checked={options.faithBarEnabled} onChange={switchOption('faithBarEnabled')}/>}/>
+@@ -72,7 +74,7 @@
+     {(actions.keyboard || actions.gamepad) && <InputSettings keyboard={actions.keyboard} gamepad={actions.gamepad} th09Local={state.gameId==='th09'&&!multiplayer?actions.th09Local:undefined}/>}
+     <OptionsGroup id={id('advancedOptions')} title={t('options.advanced')} open={state.disclosure.advanced} onOpenChange={open => model.setDisclosure('advanced', open)} bodyClassName="options-advanced-body">
+       <section className={item('feature-section feature-language')} id={id('gameVersionOption')}><div className="itemtop"><span>{t('settings.gameVersion')}</span><small>{t('settings.version.hint')}</small></div><MainSelect className="option-select" id={id('gameVersionSelect')} aria-label={t('settings.gameVersion')} value={state.gameVersion} onChange={event => {if (event.target.value === 'original' || event.target.value === 'beauty') model.setGameVersion(event.target.value);}}><option value="original">{t('settings.version.original')}</option>{state.gameId !== 'th075' && <option value="beauty" disabled={context.beautyInstalled === false}>{t('settings.version.beauty')}</option>}</MainSelect></section>
+-      <section className={item('feature-section feature-language feature-music')} id={id('musicOption')} hidden={!multiplayer && !availability.ogg}><div className="itemtop"><span>{t('settings.music')}</span></div><MainSelect className="option-select" id={id('musicSelect')} aria-label={multiplayer ? undefined : '音乐模式'} title={availability.audio ? '' : t('settings.webAudioUnavailable')} value={state.music} onChange={event => {if (isMusicMode(event.target.value)) model.setMusic(event.target.value);}}><option value="ogg-stream" disabled={!availability.ogg}>{t('settings.music.oggStream')}</option><option value="ogg-full" disabled={!availability.ogg}>{t('settings.music.oggFull')}</option><option value="midi" disabled={!availability.midi}>midi</option><option value="none">{t('settings.music.none')}</option></MainSelect></section>
++      <section className={item('feature-section feature-language feature-music')} id={id('musicOption')} hidden={!multiplayer && !availability.ogg}><div className="itemtop"><span>{t('settings.music')}</span></div><MainSelect className="option-select" id={id('musicSelect')} aria-label={multiplayer ? undefined : '音乐模式'} title={availability.audio ? '' : t('settings.webAudioUnavailable')} value={state.music} onChange={event => {if (isMusicMode(event.target.value)) model.setMusic(event.target.value);}}><option value="ogg-stream" disabled={!availability.ogg}>{t('settings.music.oggStream')}</option><option value="ogg-full" disabled={!availability.ogg}>{t('settings.music.oggFull')}</option>{'sources' in product.musicRuntime && <option value="ogg-akyu" disabled={!availability.ogg}>{t('settings.music.akyu')}</option>}<option value="midi" disabled={!availability.midi}>midi</option><option value="none">{t('settings.music.none')}</option></MainSelect></section>
+       <OptionRow className="item feature-section" id={id('thpracOption')} hidden={!productFeatureAvailable(state.gameId, 'thprac', context.hostFeatures)} label={'thprac'} hint={t(multiplayer ? 'settings.thpracMultiplayerDisabled' : 'settings.thpracHint')} inlineLabel control={<OptionSwitch id={id('thpracToggle')} label="thprac" disabled={multiplayer} checked={!multiplayer && options.thpracEnabled} onChange={switchOption('thpracEnabled')}/>}/>
+       {multiplayer && <OptionRow className={item('option-frame-limit')} label={t('settings.localPlayerVisibility')} hint={t('settings.localPlayerVisibilityHint')} control={<OptionSwitch id="mpLocalPlayerVisibilityToggle" label={t('settings.localPlayerVisibility')} checked={options.multiplayerLocalPlayerVisibility} onChange={switchOption('multiplayerLocalPlayerVisibility')}/>}/>}
+       <OptionRow className={item('option-frame-limit option-external-midi')} id={id('externalMidiOption')} hidden={!midiVisible} label={t('settings.externalMidi')} hint={midi.hint} hintId={id('externalMidiHint')} control={<OptionSwitch id={id('externalMidiToggle')} label={t('settings.externalMidi')} describedBy={id('externalMidiHint')} checked={midiVisible && midi.enabled} disabled={!midiVisible || !midi.supported} title={midiVisible && !midi.supported ? t('settings.externalMidiUnsupported') : ''} onChange={() => {void actions.externalMidi.setEnabled(!midi.enabled).catch(actions.reportError);}}/>}/>
+--- a/launcher/app/components/settings/Th05MultiplayerDisplay.tsx
++++ b/launcher/app/components/settings/Th05MultiplayerDisplay.tsx
+@@ -0,0 +1,26 @@
++import type {GameSettingsModel, SettingsSnapshot} from '../../models/game-settings';
++import {normalizeTh05MultiplayerDisplay, type Th05MultiplayerDisplay as Display} from '../../../src/launcher/game-preferences.mts';
++import {useLocale} from '../../i18n';
++import {MainSelect} from '../launcher/MainSelect';
++import {OptionRow} from './OptionRow';
++import {OptionSwitch} from './TouchSettingsFields';
++
++export function Th05MultiplayerDisplay({model, state}: {model: GameSettingsModel; state: SettingsSnapshot}) {
++  const {t} = useLocale(), value = state.options.th05MultiplayerDisplay;
++  const set = <K extends keyof Display>(key: K, next: Display[K]) =>
++    model.setOption('th05MultiplayerDisplay', normalizeTh05MultiplayerDisplay({...value, [key]: next}));
++  const toggles = ['phaseMarkers', 'phaseStars', 'phaseTimeout', 'timeoutAsTime', 'numericDream', 'numericPower'] as const;
++  return <>
++    <section className="item feature-section" id="mpTh05BossBarOption"><div className="itemtop"><span>{t('settings.th05.bossBar')}</span></div>
++      <MainSelect className="option-select" id="mpTh05BossBarSelect" aria-label={t('settings.th05.bossBar')} value={value.bossBar}
++        onChange={event => {const next = event.target.value; if (next === 'native' || next === 'eosd' || next === 'ring') set('bossBar', next);}}>
++        {(['native', 'eosd', 'ring'] as const).map(style => <option key={style} value={style}>{t(`settings.th05.bar.${style}`)}</option>)}
++      </MainSelect>
++    </section>
++    {toggles.map(key => <OptionRow key={key} className="item" label={t(`settings.th05.${key}`)} control={
++      <OptionSwitch id={`mpTh05${key[0].toUpperCase()}${key.slice(1)}Toggle`} label={t(`settings.th05.${key}`)} checked={value[key]}
++        disabled={key === 'phaseMarkers' && value.bossBar !== 'native' || key === 'phaseStars' && value.bossBar !== 'eosd' || key === 'phaseTimeout' && value.bossBar !== 'native' || key === 'timeoutAsTime' && !value.phaseTimeout}
++        onChange={() => set(key, !value[key])}/>
++    }/>)}
++  </>;
++}
+--- a/launcher/app/models/game-settings.ts
++++ b/launcher/app/models/game-settings.ts
+@@ -6,6 +6,7 @@
+   persistStoredGamePreferences, touchMovementUsesJoystick,
+   type GameOptions, type GamePreferenceStorage, type MusicMode,
+ } from '../../src/launcher/game-preferences.mts';
++import {normalizeTh05MultiplayerDisplay} from '../../src/launcher/game-preferences.mts';
+ import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, productFeatureAvailable,
+   type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
+ import {createMultiplayerPreferenceStore} from '../../src/launcher/multiplayer-preferences.mts';
+@@ -144,7 +145,7 @@
+     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
+     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
+       ...(context.productId === 'th09mp' ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
+-      music: resolveEffectiveMusicMode({...context.musicAvailability, requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
++      music: resolveEffectiveMusicMode({...context.musicAvailability, requested: normalized.musicPreference === 'ogg-akyu' && !('sources' in product.musicRuntime) ? 'ogg-stream' : normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
+       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
+       gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
+       language: resolvePreferredGameLanguage(context.languages, savedLanguage, context.uiLocale)}, reason);
+@@ -185,7 +186,7 @@
+       // choices, including language and disconnected MIDI output, stay in memory.
+       if (state.multiplayer || !productFeatureAvailable(state.gameId, 'thprac', context.hostFeatures)) options.thpracEnabled = false;
+       publish({...state, context, options,
+-        music: resolveEffectiveMusicMode({...context.musicAvailability, requested: state.musicPreference, explicit: state.musicPreferenceExplicit})}, 'context');
++        music: resolveEffectiveMusicMode({...context.musicAvailability, requested: state.musicPreference === 'ogg-akyu' && !('sources' in PRODUCT_GAMES[state.gameId].musicRuntime) ? 'ogg-stream' : state.musicPreference, explicit: state.musicPreferenceExplicit})}, 'context');
+     },
+     setMovementRestriction(forbidden: boolean) {
+       const state = required();
+@@ -209,6 +210,7 @@
+       if (state.options[name] === value) return;
+       const options = {...state.options, [name]: value};
+       if (name === 'touchMovementMode' && touchMovementUsesJoystick(value) && options.touchFocusMode === 'two-finger') options.touchFocusMode = 'hold-button';
++      if (name === 'th05MultiplayerDisplay') options.th05MultiplayerDisplay = normalizeTh05MultiplayerDisplay(value);
+       if (name === 'touchSensitivity') options.touchSensitivity = Math.max(100, Math.min(300, Math.round(Number(value) || 100)));
+       if (name === 'touchControlOpacity') options.touchControlOpacity = Math.max(20, Math.min(100, Math.round(Number(value) / 5) * 5 || 20));
+       publish({...state, options}, 'option'); commitPreferences();
+@@ -234,6 +236,7 @@
+     },
+     setMusic(value: MusicMode) {
+       const state = required(), availability = resolveMusicAvailability(state.context.musicAvailability);
++      if (value === 'ogg-akyu' && !('sources' in PRODUCT_GAMES[state.gameId].musicRuntime)) return;
+       if (value === 'midi' && !availability.midi || value.startsWith('ogg-') && !availability.ogg) return;
+       publish({...state, music: value, musicPreference: value, musicPreferenceExplicit: true}, 'music'); commitPreferences();
+     },
+--- a/launcher/app/services/game-preparation.ts
++++ b/launcher/app/services/game-preparation.ts
+@@ -116,7 +116,7 @@
+     importServer: host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg,
+     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
+     installed: generation ? {revision: generation.descriptor.revision, oggFileIds: componentFileIds(generation.descriptor, 'ogg'), files: generation.files} : null,
+-    requested: settings.musicPreference, explicit: settings.musicPreferenceExplicit});
++    requested: settings.musicPreference === 'ogg-akyu' && !('sources' in PRODUCT_GAMES[settings.gameId].musicRuntime) ? 'ogg-stream' : settings.musicPreference, explicit: settings.musicPreferenceExplicit});
+ }
+ /** Original app 4163–4198. Room timing is supplied by the validated room owner,
+  * never recomputed, filled with guesses, or inferred from a Replay. */
+@@ -130,10 +130,12 @@
+     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
+     touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
+     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
++    ...('sources' in PRODUCT_GAMES[game].musicRuntime ? {musicSource: music === 'ogg-akyu' ? 'akyu' as const : 'original' as const} : {}),
+     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
+       ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
+     ...(productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
+     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
++    ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
+     ...(isMultiplayer ? {multiplayerLocalPlayerVisibility: options.multiplayerLocalPlayerVisibility,
+       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),
+       ...(multiplayer?.kind === 'preflight' && 'multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight: true} : {}),
+@@ -176,7 +178,7 @@
+   const shared = sharedResources({game: settings.gameId, generation, host, language,
+     thprac: settings.options.thpracEnabled, baseUrl: input.baseUrl, translate: t});
+   const plan: RuntimePlan = {...initial, ...(generation && generation !== initial.generation ? {resourceGeneration: generation} : {}),
+-    configure: {music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
++    configure: {language, music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
+       runtimeResources: remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
+     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
+     ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
+@@ -184,7 +186,7 @@
+       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
+       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};
+   const resource = runtimePack ? `${entry?.title || entry?.id || t('language.fallbackName')} ${t('settings.language')}`
+-    : `${music === 'ogg-stream' ? t('settings.music.oggStream') : music === 'ogg-full' ? t('settings.music.oggFull') : music === 'none' ? t('settings.music.none') : 'midi'} ${t('settings.music')}`;
++    : `${music === 'ogg-stream' ? t('settings.music.oggStream') : music === 'ogg-full' ? t('settings.music.oggFull') : music === 'ogg-akyu' ? t('settings.music.akyu') : music === 'none' ? t('settings.music.none') : 'midi'} ${t('settings.music')}`;
+   input.onStatus?.(t('runtime.preparingResources', {resource}));
+   return {plan, language, music};
+ }
+--- a/launcher/app/services/game-resources.ts
++++ b/launcher/app/services/game-resources.ts
+@@ -12,7 +12,7 @@
+ import {GameDataAcquisitionError} from './game-data-acquisition';
+ import {checkPreparationAbort, preparationErrorText, type PackageAcquisition, type PreparationProgress} from './package-acquisition';
+ 
+-export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full';
++export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full' || mode === 'ogg-akyu';
+ export const musicTransport = (mode: MusicMode): 'ogg' | 'midi' | 'none' => oggMusic(mode) ? 'ogg' : mode === 'midi' ? 'midi' : 'none';
+ 
+ /** Upgrade only a newly required shared dependency. Existing DATA and selected
+@@ -124,7 +124,7 @@
+   checkPreparationAbort(signal);
+   const declared = componentFileIds(generation.descriptor, 'ogg');
+   const initial = completeSet ? declared : declared.slice(0, 2);
+-  if (initial.length < 2) return {generation, music: fallback};
++  if (initial.length < (completeSet ? 1 : 2)) return {generation, music: fallback};
+   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
+   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
+   let publication;
+--- a/launcher/app/services/multiplayer-room.ts
++++ b/launcher/app/services/multiplayer-room.ts
+@@ -1,4 +1,5 @@
+ import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
++import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
+ import {
+   validTh15ChapterThreshold,
+   defaultTh15ChapterThreshold,
+@@ -231,6 +232,7 @@
+         playerCount: room.playerCount,
+         difficulty: room.difficulty,
+         created: room.created,
++        ...(product==='th05mp'?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
+         visibility: room.visibility,
+         disableCheatMovement: room.disableCheatMovement,
+         disableLocalChargePriority: room.disableLocalChargePriority,
+@@ -410,6 +412,7 @@
+       type: 'settings',
+       playerCount: room.playerCount,
+       difficulty: room.difficulty,
++      ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+       visibility: room.visibility || 'public',
+       disableCheatMovement: !!room.disableCheatMovement,
+       ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
+@@ -444,6 +447,7 @@
+       synced: true,
+       connection: 'connected',
+       challengeMode: normalized.challengeMode ?? false,
++      ...(product==='th05mp'?{initialSpares:normalized.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:normalized.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+       ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
+       prankMode: false,
+       inputDelayAuto: normalized.inputDelayAuto ?? false,
+@@ -748,6 +752,7 @@
+       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
+       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
+       chapterThreshold: saved?.room.chapterThreshold,
++      ...(product==='th05mp'?{initialSpares:saved?.room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:saved?.room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+       challengeMode: saved?.room.challengeMode ?? false,
+       prankMode: false,
+       seats: null,
+@@ -976,6 +981,7 @@
+         MultiplayerRoomState,
+         | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
+         | "chapterThreshold"
++        | 'initialSpares' | 'initialBombs'
+       >
+     >,
+   ) {
+@@ -991,6 +997,7 @@
+     )
+       return;
+     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
++    if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(product!=='th05mp'||room.phase!=='lobby'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))return;
+     if (
+       patch.chapterThreshold !== undefined &&
+       (product !== "th15mp" ||
+@@ -1030,6 +1037,7 @@
+       playerCount,
+       difficulty,
+       ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
++      ...(product==='th05mp'?{initialSpares:patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+       visibility: patch.visibility ?? room.visibility ?? 'public',
+       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
+       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
+@@ -1166,6 +1174,7 @@
+         playerCount: room.playerCount,
+         seed: Number.parseInt(room.code, 10) & 0xffff,
+         difficulty: Math.max(0, Math.min(config.difficulties.length - 1, room.difficulty)),
++        ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+         ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0 } : {}),
+         ...(config.inputTiming?.measuredStartup
+           ? {
+--- a/launcher/app/services/package-acquisition.ts
++++ b/launcher/app/services/package-acquisition.ts
+@@ -81,7 +81,7 @@
+   if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new DOMException('Aborted', 'AbortError');
+ }
+ export const preparationErrorText = (error: unknown) => error instanceof Error ? error.message : String(error);
+-const isOgg = (music: MusicMode) => music === 'ogg-stream' || music === 'ogg-full';
++const isOgg = (music: MusicMode) => music === 'ogg-stream' || music === 'ogg-full' || music === 'ogg-akyu';
+ function requiredShared(game: GameId) {const product = PRODUCT_GAMES[game]; return 'requiredShared' in product ? product.requiredShared : [];}
+ 
+ /** Main app 3887–3978, 3980–4110, 5678–5953. Canonical Package Store and
+--- a/launcher/app/session/browser-session.ts
++++ b/launcher/app/session/browser-session.ts
+@@ -224,7 +224,7 @@
+     if (change.reason === 'sharing') {const key = change.current.shareSingleplayerSettings ? 'status.shareSettings' : 'status.separateSettings'; feedback.translatedStatus(() => t(key));}
+     if (!change.current.multiplayer && change.reason === 'music') {
+       const mode = change.current.music;
+-      feedback.status(t('status.musicMode', {music: mode === 'midi' ? 'midi' : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.none')}));
++      feedback.status(t('status.musicMode', {music: mode === 'midi' ? 'midi' : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull' : mode === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.none')}));
+     }
+     if (!change.current.multiplayer && change.reason === 'language') {
+       const entry = change.current.context.languages.find(value => value.id === change.current.language);
+@@ -565,7 +565,7 @@
+   function reportGameLoaded() {
+     const selected = activeSettings ?? settings.getSnapshot();
+     feedback.playerStatus(t('runtime.readyStatus'));
+-    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}));
++    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : selected.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}));
+   }
+   function attachFrame(element: HTMLIFrameElement | null) {
+     if (!element || element === frame) return;
+@@ -789,7 +789,7 @@
+       operation.recoverDirectPreloadTimeout(error);
+       if (intent.throwErrors) throw error;
+       if (await gameData.handleLaunchFailure(error)) return;
+-      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId.toUpperCase()} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
++      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId.toUpperCase()} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : clickSettings.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
+     } finally {operation.finish();}
+   }
+   async function showRoomPlayer(context: RoomOperationContext, fullscreen: boolean, allowHelp = false) {
+@@ -838,7 +838,7 @@
+     requiredNavigation().closeRoomPanel(); requiredNavigation().closeRoomSettings();
+     publish({roomLaunchStage: cover ? 'runtime' : null});
+     publish({spectatorViewer: context.snapshot.spectatorRequested});
+-    await showRoomPlayer(context, mobile && !context.snapshot.spectatorRequested, context.snapshot.seat != null);
++    await showRoomPlayer(context, !context.snapshot.spectatorRequested, context.snapshot.seat != null);
+     const owner = requiredRuntime(), preloaded = roomPreload;
+     const current = owner.getSnapshot();
+     if (current.phase === 'prepared' && current.epoch !== null &&
+@@ -854,12 +854,6 @@
+     else throw new Error(t('room.resourcesUnavailable'));
+     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
+     if (cover) {publish({roomLaunchStage: 'path'}); await gameplayNetwork!.waitForGameplayPath({isCurrent: context.isCurrent});}
+-    // The room preview deliberately blocks trusted native keys and has no
+-    // gameplay input owner. Desktop players must leave it once Start is ready,
+-    // just as mobile players do when opening the fullscreen Player.
+-    if (context.snapshot.seat != null && !snapshot.roomPlayerExpanded) {
+-      navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true});
+-    }
+     publish({roomLaunchStage: null});
+   }
+   async function checkRoom(context: RoomOperationContext) {
+@@ -1245,7 +1239,7 @@
+       finally {playerOrientationPending = false; publish({});}
+     },
+     async togglePlayerFullscreen() {
+-      if (nativeTouch.isFullscreen() || snapshot.roomPlayerExpanded) {
++      if (nativeTouch.isFullscreen()) {
+         await exitRoomPlayerFullscreen();
+         navigation?.closeRoomFullscreen?.();
+         return;
+--- a/launcher/lib/shared-contract-sources.mjs
++++ b/launcher/lib/shared-contract-sources.mjs
+@@ -3,7 +3,7 @@
+ import {resolve,dirname} from 'node:path';
+ 
+ const contracts=['product-catalog','netplay-timing','multiplayer-quick-chat','public-nickname'];
+-const shared=[...contracts,'th15-chapter-reward'];
++const shared=[...contracts,'th15-chapter-reward','th05-initial-stock'];
+ const root=project=>resolve(project,'../common/contracts');
+ 
+ export function sharedContractInputs(project) {
+--- a/launcher/public/styles.css
++++ b/launcher/public/styles.css
+@@ -2022,3 +2022,6 @@
+ .input-visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ @keyframes input-binding-pulse{50%{box-shadow:0 0 0 2px rgba(189,68,56,.14)}}
+ @media(max-width:480px){.input-settings-entry{gap:6px;padding:9px 7px}.input-settings-entry svg{width:18px;height:18px;flex-basis:18px}.input-settings-dialog{height:min(680px,88dvh)}.input-dialog-scroll{padding:0 12px 12px}.input-layout-toolbar{gap:6px}.input-binding-table th:first-child{width:31%}.input-binding-table tbody th{padding-left:3px;font-size:11px}.input-binding-table td{padding-left:3px;padding-right:3px}.input-config-button{padding:6px 8px;font-size:10px}}
++
++/* Standalone PC-98 entries keep the same rail and native anchor navigation. */
++.main.library-layout .classics-shelf .game{background:linear-gradient(155deg,#302523,#171615 70%)}
+--- a/launcher/src/contracts/runtime-protocol.mts
++++ b/launcher/src/contracts/runtime-protocol.mts
+@@ -80,7 +80,17 @@
+ // Canonical Runtime-owned configuration. Launcher-only preferences such as the
+ // touch layout editor, magnifier and Restart-button visibility do not belong on
+ // this wire object. Compatibility aliases are listed separately below.
++export interface Th05MultiplayerDisplay {
++  bossBar: "native" | "eosd" | "ring";
++  phaseMarkers: boolean;
++  phaseStars: boolean;
++  phaseTimeout: boolean;
++  timeoutAsTime: boolean;
++  numericDream: boolean;
++  numericPower: boolean;
++}
+ export interface RuntimeConfigureOptions {
++  th05MultiplayerDisplay?: Readonly<Th05MultiplayerDisplay>;
+   thpracEnabled?: boolean;
+   limitPresentationTo60?: boolean;
+   touchEnabled?: boolean;
+@@ -98,6 +108,7 @@
+   multiplayerPreflight?: boolean;
+   thpracLocale?: string;
+   oggDecodeMode?: RuntimeOggDecodeMode;
++  musicSource?: "original" | "akyu";
+   debugHarness?: string | null;
+   netplayMode?: "lan";
+   netplayUrl?: string;
+@@ -108,6 +119,8 @@
+   netplayChallengeMode?: boolean;
+   netplayDisableLocalChargePriority?: boolean;
+   netplayChapterThreshold?: number;
++  netplayInitialSpares?: number;
++  netplayInitialBombs?: number;
+   netplayInputDelay?: number;
+   netplayInputDelayAuto?: boolean;
+   netplayPredictionReserve?: number;
+@@ -124,6 +137,7 @@
+   netplayReplayNames?: string[];
+   netplayIceServers?: unknown[];
+   netplayPreferTurn?: boolean;
++  netplayAllowWebsocketFallback?: boolean;
+   netplayLoadouts?: RuntimeNetplayLoadout[];
+ }
+ 
+@@ -136,6 +150,8 @@
+  * aliases live in RUNTIME_CONFIGURE_LEGACY_OPTION_KEYS instead.
+  */
+ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
++  th05MultiplayerDisplay: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH05 multiplayer local presentation"}),
++  netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
+   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
+   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),
+   touchEnabled: Object.freeze({ requirement: "required", capability: "touch-controls" }),
+@@ -152,6 +168,7 @@
+   multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),
+   thpracLocale: Object.freeze({ requirement: "profile-required", capability: "thprac", when: "thprac" }),
+   oggDecodeMode: Object.freeze({ requirement: "required", capability: "normal-music-ogg" }),
++  musicSource: Object.freeze({ requirement: "optional", capability: "normal-music-ogg", when: "product declares musicRuntime.sources" }),
+   debugHarness: Object.freeze({ requirement: "diagnostic", capability: "runtime-health-diagnostics", when: "explicit debug/test launch" }),
+   netplayMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
+   netplayUrl: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
+@@ -161,6 +178,8 @@
+   netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH06/TH07/TH08/TH10 multiplayer; fixed before start" }),
+   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
+   netplayChapterThreshold: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH15 multiplayer chapter reward; 500000–5000000 in steps of 250000; immutable after start"}),
++  netplayInitialSpares: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH05 multiplayer; team spare lives 0–5 excluding the current life; fixed before HELLO"}),
++  netplayInitialBombs: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH05 multiplayer; team starting Bombs 0–3; fixed before HELLO"}),
+   netplayDifficulty: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
+   netplayInputDelay: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH08 multiplayer player session" }),
+   netplayAdonisMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", productDeclaration: "multiplayer.inputTiming.measuredStartup", when: "measured multiplayer player session; 0 rollback, 1 exact-input delay, 2 hybrid; fixed before HELLO" }),
+--- a/launcher/src/launcher/app-types.mts
++++ b/launcher/src/launcher/app-types.mts
+@@ -39,6 +39,8 @@
+   spectatorCount: number;
+   challengeMode?: boolean;
+   chapterThreshold?: number;
++  initialSpares?: number;
++  initialBombs?: number;
+   prankMode?: boolean;
+ }
+ 
+@@ -65,6 +67,8 @@
+ }
+ 
+ export interface MultiplayerRoomState {
++  initialSpares?: number;
++  initialBombs?: number;
+   runtimeGeneration?: string;
+   visibility?: 'public' | 'private';
+   disableCheatMovement?: boolean;
+--- a/launcher/src/launcher/game-preferences.mts
++++ b/launcher/src/launcher/game-preferences.mts
+@@ -2,9 +2,25 @@
+ 
+ export type TouchMovementMode = "touch" | "touch-unlimited" | "joystick" | "joystick-free";
+ export type TouchFocusMode = "two-finger" | "hold-button" | "toggle-button";
+-export type MusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
++export type MusicMode = "ogg-stream" | "ogg-full" | "ogg-akyu" | "midi" | "none";
++
++export type {Th05MultiplayerDisplay} from "../contracts/runtime-protocol.mts";
++import type {Th05MultiplayerDisplay} from "../contracts/runtime-protocol.mts";
++export const DEFAULT_TH05_MULTIPLAYER_DISPLAY: Readonly<Th05MultiplayerDisplay> = Object.freeze({
++  bossBar: "native", phaseMarkers: false, phaseStars: false, phaseTimeout: false,
++  timeoutAsTime: false, numericDream: false, numericPower: false,
++});
++export function normalizeTh05MultiplayerDisplay(value: unknown): Readonly<Th05MultiplayerDisplay> {
++  const saved = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
++  const bossBar = saved.bossBar === "eosd" || saved.bossBar === "ring" ? saved.bossBar : "native";
++  const flag = (key: string) => saved[key] === true;
++  return Object.freeze({bossBar, phaseMarkers: bossBar === "native" && flag("phaseMarkers"),
++    phaseStars: bossBar === "eosd" && flag("phaseStars"), phaseTimeout: bossBar !== "native" || flag("phaseTimeout"),
++    timeoutAsTime: flag("timeoutAsTime"), numericDream: flag("numericDream"), numericPower: flag("numericPower")});
++}
+ 
+ export interface GameOptions {
++  th05MultiplayerDisplay: Readonly<Th05MultiplayerDisplay>;
+   thpracEnabled: boolean;
+   thpracTouchControlsEnabled: boolean;
+   magnifierEnabled: boolean;
+@@ -29,6 +45,7 @@
+ }
+ 
+ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
++  th05MultiplayerDisplay: DEFAULT_TH05_MULTIPLAYER_DISPLAY,
+   thpracEnabled: false,
+   thpracTouchControlsEnabled: false,
+   magnifierEnabled: false,
+@@ -54,10 +71,10 @@
+ export const TOUCH_FOCUS_MODES = new Set<TouchFocusMode>([
+   "two-finger", "hold-button", "toggle-button",
+ ]);
+-export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "midi", "none"]);
++export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "ogg-akyu", "midi", "none"]);
+ 
+ export function isMusicMode(value: string): value is MusicMode {
+-  return value === "ogg-stream" || value === "ogg-full" || value === "midi" || value === "none";
++  return value === "ogg-stream" || value === "ogg-full" || value === "ogg-akyu" || value === "midi" || value === "none";
+ }
+ 
+ export function isTouchMovementMode(value: string): value is TouchMovementMode {
+@@ -238,6 +255,7 @@
+     : DEFAULT_GAME_OPTIONS.touchSensitivity;
+ 
+   const options: GameOptions = {
++    th05MultiplayerDisplay: normalizeTh05MultiplayerDisplay(rawOptions?.th05MultiplayerDisplay),
+     thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", /^zh(?:-|$)/i.test(context.uiLocale || "") || DEFAULT_GAME_OPTIONS.thpracEnabled),
+     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
+     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
+--- a/launcher/src/launcher/i18n.mts
++++ b/launcher/src/launcher/i18n.mts
+@@ -265,8 +265,10 @@
+   ["room.inputDelayMeasured", "实测 · {frames}f", "Measured · {frames}f"],
+   ["room.enableRollback", "启用回滚(降低输入延迟，需要更高的性能)", "Enable rollback (lower input delay, requires higher performance)"],
+   ["room.rollbackHint", "开启后输入延迟固定为 0 帧；关闭后使用所选输入延迟。开局后设置固定。", "When enabled, input delay is fixed at 0 frames. When disabled, use the selected input delay. Settings are fixed once the game starts."],
+-  ["room.rollbackDelayHint", "开启回滚后仍可调整输入延迟。开局后设置固定。", "Input delay remains adjustable with rollback enabled. Settings are fixed once the game starts."],
+   ["room.manualDelayHint", "每帧约 16.7 毫秒。延迟小，操作响应更快。延迟大，可减少网络波动引起的回滚。开局后固定。", "Each frame is about 16.7 ms. Lower delay responds faster; higher delay can reduce rollbacks caused by network jitter. Fixed once the game starts."],
++  ["room.th05InitialSpares", "初始残机", "Starting spare lives"],
++  ["room.th05InitialBombs", "初始 Bomb", "Starting Bombs"],
++  ["room.th05InitialStockHint", "残机不含当前自机。全队使用相同设置，修改后全员需要重新准备。", "Spare lives exclude the current life. Settings apply to the whole team; everyone must ready again after a change."],
+   ["room.adonisTiming", "实验时序", "Experimental timing"],
+   ["room.adonisRollback", "Rollback（原模式）", "Rollback (baseline)"],
+   ["room.adonisDelay", "Adonis（无回滚）", "Adonis (no rollback)"],
+@@ -361,6 +363,12 @@
+   ["nav.about", "关于", "About"],
+   ["nav.more", "更多", "More"],
+   ["nav.oldSitePart1", "存档", "Save"], ["nav.migrationPart2", "恢复", "recovery"],
++  ["game.th05Legacy", "怪绮谈旧版联机入口", "Mystic Square legacy multiplayer"],
++  ["game.title.th05mp", "东方怪绮谈 联机版", "Touhou 5 Multiplayer"],
++  ["multiplayer.loadout.th05_reimu", "博丽灵梦", "Reimu Hakurei"],
++  ["multiplayer.loadout.th05_marisa", "雾雨魔理沙", "Marisa Kirisame"],
++  ["multiplayer.loadout.th05_mima", "魅魔", "Mima"],
++  ["multiplayer.loadout.th05_yuuka", "幽香", "Yuuka"],
+   ["game.title.th06mp", "东方红魔乡 联机版", "Touhou 6 Multiplayer"],
+   ["game.title.th07mp", "东方妖妖梦 联机版", "Touhou 7 Multiplayer"],
+   ["game.title.th08mp", "东方永夜抄 联机版", "Touhou 8 Multiplayer"],
+@@ -402,6 +410,7 @@
+   ["gameLanguage.zhHant", "中文（繁體）", "Traditional Chinese"], ["gameLanguage.en", "English", "English"], ["gameLanguage.ru", "Русский", "Русский"],
+   ["settings.musicMode", "音乐模式", "Music mode"],
+   ["settings.music.oggStream", "ogg(流式解码，避免切歌时卡顿)", "OGG (streaming decode; avoids track-change stutter)"],
++  ["settings.music.akyu", "幺乐团专辑版", "Akyu’s Untouched Score"],
+   ["settings.music.oggFull", "ogg(全量解码，避免音频卡顿)", "OGG (full decode; avoids audio stutter)"],
+   ["settings.music.none", "无", "None"], ["settings.frameLimit", "高刷新率", "High refresh rate"],
+   ["settings.pixelPerfect", "启用点对点显示", "Enable pixel-perfect display"],
+@@ -418,6 +427,16 @@
+   ["settings.externalMidiFailed", "无法启用外部 MIDI 设备：{reason}", "Could not enable the external MIDI device: {reason}"],
+   ["settings.frameLimitHint", "允许在逻辑保持 60 Hz 的情况下，显示被插帧到 > 60 Hz 的游戏画面。(会造成 16.67ms 左右的输入延迟)", "Allows interpolated game visuals above 60 Hz while game logic stays at 60 Hz. (Adds about 16.67 ms of input latency)"],
+   ["settings.appleNotice", "(苹果用户注意)", "(Apple users: please read)"],
++  ["settings.th05.bossBar", "Boss 血条样式", "Boss health bar"],
++  ["settings.th05.bar.native", "PR 原版侧栏", "Original PR sidebar"],
++  ["settings.th05.bar.eosd", "红魔乡式顶部血条", "EoSD top bar"],
++  ["settings.th05.bar.ring", "环形血条", "Ring health bar"],
++  ["settings.th05.phaseMarkers", "血条提示阶段", "Health phase markers"],
++  ["settings.th05.phaseStars", "按星星显示阶段数", "Remaining phases as stars"],
++  ["settings.th05.phaseTimeout", "阶段剩余时间／次数", "Phase time / turns remaining"],
++  ["settings.th05.timeoutAsTime", "攻击循环换算为时间", "Show attack cycles as time"],
++  ["settings.th05.numericDream", "梦槽以数字显示", "Numeric dream meter"],
++  ["settings.th05.numericPower", "火力以数字显示", "Numeric power meters"],
+   ["settings.localPlayerVisibility", "增强本机玩家可见性", "Enhance local player visibility"],
+   ["settings.localPlayerVisibilityHint", "在游戏区域中使用白色定位线标出本机玩家。", "Show the local player with a white guide line in the game area."],
+   ["options.touch", "触控设置", "Touch settings"],
+--- a/launcher/src/launcher/multiplayer-lobby-snapshot.mts
++++ b/launcher/src/launcher/multiplayer-lobby-snapshot.mts
+@@ -1,4 +1,5 @@
+ import { validTh15ChapterThreshold } from "./th15-chapter-reward.mjs";
++import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
+ import {
+   parseMeasuredNetplayTiming,
+   resolveAdonisPredictionReserve,
+@@ -42,6 +43,8 @@
+ }
+ 
+ export interface NormalizedMultiplayerLobbySnapshot {
++  initialSpares?: number;
++  initialBombs?: number;
+   timingChoice?: 'auto' | number;
+   startedAt?: number;
+   visibility: 'public' | 'private';
+@@ -96,6 +99,7 @@
+   },
+ ): NormalizedMultiplayerLobbySnapshot | null {
+   const source = record(value);
++  if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
+   if (!source ||
+     (source.chapterThreshold !== undefined &&
+       !validTh15ChapterThreshold(source.chapterThreshold))
+@@ -129,7 +133,7 @@
+   if (!policy.rollback && (adonisMode === 2 || (phase !== 'lobby' && adonisMode !== 1)))
+     return null;
+   const rawDelay = Number(source.inputDelay);
+-  const delayLimit = adonisMode || policy.manualRollbackDelay ? (inputTiming ? policy.manualDelayLimit : 9) : 8;
++  const delayLimit = adonisMode ? (inputTiming ? policy.manualDelayLimit : 9) : 8;
+   if (adonisMode && (!Number.isInteger(rawDelay) || rawDelay < 0 || rawDelay > delayLimit))
+     return null;
+   const inputDelay =
+@@ -208,6 +212,8 @@
+ 
+   return {
+     playerCount,
++    ...(source.initialSpares!==undefined?{initialSpares:source.initialSpares as number}:{}),
++    ...(source.initialBombs!==undefined?{initialBombs:source.initialBombs as number}:{}),
+     ...(source.chapterThreshold !== undefined
+       ? { chapterThreshold: source.chapterThreshold as number }
+       : {}),
+--- a/launcher/src/launcher/multiplayer-room-session.mts
++++ b/launcher/src/launcher/multiplayer-room-session.mts
+@@ -1,4 +1,5 @@
+ import {validTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
++import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
+ export const multiplayerRoomSessionStorageKey = (product: string): string =>
+   `eagler-touhou-${product}-room-v1`;
+ 
+@@ -15,6 +16,8 @@
+     disableLocalChargePriority?: boolean;
+     challengeMode?:boolean;
+   chapterThreshold?: number;
++    initialSpares?: number;
++    initialBombs?: number;
+     prankMode?:boolean;
+     code: string;
+     playerCount: 2 | 3;
+@@ -65,6 +68,7 @@
+           disableCheatMovement: snapshot.room.disableCheatMovement,
+           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
+           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,prankMode:snapshot.room.prankMode,
++          initialSpares:snapshot.room.initialSpares,initialBombs:snapshot.room.initialBombs,
+           playerCount: snapshot.room.playerCount,
+           difficulty: snapshot.room.difficulty,
+           created: !!snapshot.room.created,
+@@ -111,6 +115,8 @@
+         disableCheatMovement: room.disableCheatMovement === true,
+         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
+         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
++        ...(product==='th05mp'&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
++        ...(product==='th05mp'&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
+         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),
+         ...(room.prankMode!==undefined?{prankMode:room.prankMode===true}:{}),
+         playerCount,
+--- a/launcher/src/launcher/multiplayer-runtime-options.mts
++++ b/launcher/src/launcher/multiplayer-runtime-options.mts
+@@ -1,3 +1,4 @@
++import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
+ import {
+   validTh15ChapterThreshold,
+   defaultTh15ChapterThreshold,
+@@ -22,6 +23,8 @@
+ }
+ 
+ export interface MultiplayerRuntimeOptionInput {
++  initialSpares?: number;
++  initialBombs?: number;
+   url: string;
+   player: number | null;
+   playerCount: number;
+@@ -43,10 +46,13 @@
+   chapterThreshold?: number;
+   iceServers: unknown;
+   preferTurn?: boolean;
++  allowWebsocketFallback?: boolean;
+   loadouts: MultiplayerRuntimeLoadout[];
+ }
+ 
+ export interface MultiplayerRuntimeOptions {
++  netplayInitialSpares?: number;
++  netplayInitialBombs?: number;
+   netplayMode: 'lan';
+   netplayUrl: string;
+   netplayPlayer: number | null;
+@@ -70,6 +76,7 @@
+   netplayChapterThreshold?: number;
+   netplayIceServers: unknown[];
+   netplayPreferTurn?: boolean;
++  netplayAllowWebsocketFallback?: boolean;
+   netplayLoadouts: MultiplayerRuntimeLoadout[];
+ }
+ 
+@@ -88,6 +95,9 @@
+   }
+ 
+   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
++  if(input.initialSpares!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares))||input.initialBombs!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs)))throw new Error('TH05 initial stocks are invalid');
++  if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
++    throw new Error('WebSocket 回退开关必须为布尔值');
+   if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
+     throw new Error('TURN 偏好必须为布尔值');
+   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
+@@ -190,6 +200,7 @@
+     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
+   return {
+     netplayMode: 'lan',
++    ...(roomProduct==='th05mp'?{netplayInitialSpares:input.initialSpares??TH05_INITIAL_STOCK.spares,netplayInitialBombs:input.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+     ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
+     ...(roomProduct === "th15mp"
+       ? {
+@@ -247,6 +258,7 @@
+     } : {}),
+     netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
+     ...(input.preferTurn === true ? { netplayPreferTurn: true } : {}),
++    ...(input.allowWebsocketFallback === true ? {netplayAllowWebsocketFallback: true} : {}),
+     netplayLoadouts: loadouts,
+   };
+ }
+--- a/launcher/src/launcher/music-availability.mts
++++ b/launcher/src/launcher/music-availability.mts
+@@ -1,4 +1,4 @@
+-export type LauncherMusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
++export type LauncherMusicMode = "ogg-stream" | "ogg-full" | "ogg-akyu" | "midi" | "none";
+ 
+ export interface MusicModeResolutionInput {
+   requested?: string;
+@@ -22,7 +22,7 @@
+   if (!audio || requested === "none") return "none";
+   const ogg = localOgg || remoteOgg;
+   if (explicit && requested === "midi" && midi) return "midi";
+-  if ((requested === "ogg-stream" || requested === "ogg-full") && ogg) return requested;
++  if ((requested === "ogg-stream" || requested === "ogg-full" || requested === "ogg-akyu") && ogg) return requested;
+   if (!explicit && ogg && preferOgg) return "ogg-stream";
+   if (midi) return "midi";
+   return ogg ? "ogg-stream" : "none";
+@@ -68,20 +68,21 @@
+ 
+   if (installed) {
+     const ids = installed.oggFileIds;
+-    // Launcher startup deliberately gates OGG on the first two tracks only;
++    // Multi-track startup gates OGG on the first two tracks; a continuous
++    // single-file component is ready when that complete file is installed.
+     // the rest of the component is installed progressively after gameplay can
+     // already begin.  Availability must use the same startup barrier instead
+     // of requiring the whole optional component, otherwise closing a Runtime
+     // while later tracks are still downloading makes the settings UI silently
+     // fall back to MIDI/none even though the next OGG launch is already viable.
+     const startupIds = ids.slice(0, 2);
+-    localOgg = startupIds.length === 2 && startupIds.every(fileId => !!installed.files[fileId]?.objectId);
++    localOgg = startupIds.length > 0 && startupIds.every(fileId => !!installed.files[fileId]?.objectId);
+     // Once the installed generation already declares OGG files, matching the
+     // Release Catalog revision is enough to prove that the same remote OGG
+     // objects remain available for progressive completion. The Site Manifest
+     // must not have to duplicate that capability or it can disappear from the
+     // UI when the Runtime closes and only the Package snapshot remains.
+-    remoteOgg = !importServer && ids.length >= 2 && remoteRevision === installed.revision;
++    remoteOgg = !importServer && ids.length > 0 && remoteRevision === installed.revision;
+   } else if (!importServer) {
+     remoteOgg = remoteOggAdvertised;
+   }
+--- a/launcher/src/launcher/replay-files.mts
++++ b/launcher/src/launcher/replay-files.mts
+@@ -119,6 +119,7 @@
+ export function isValidReplayName(prefix: string, name: unknown): name is string {
+   if (typeof name !== "string" || !prefix) return false;
+   const product=Object.values(PRODUCT_GAMES).find(game=>game.replay.prefix===prefix);
++  if(product && 'slotPrefix' in product.replay)return new RegExp(`^${escapeRegExp(product.replay.slotPrefix)}[0-9]{2}\\.rpy$`, 'i').test(name);
+   if(product && 'naming' in product.replay && product.replay.naming==='filename')return /^[a-zA-Z0-9_(). -]+\.rep$/i.test(name)&&!name.includes('..')&&name.length<=200;
+   return new RegExp(`^${escapeRegExp(prefix)}_(?:\\d{2}|ud[0-9a-f]{4})\\.rpyx?$`, "i").test(name);
+ }
+@@ -152,6 +153,7 @@
+   }
+ 
+   const occupied = normalizedPathSet(existingPaths, sharedExtensionSlot);
++  if(product && 'slotPrefix' in product.replay){for(let index=0;index<product.replay.slots;index++){const name=`${product.replay.slotPrefix}${String(index).padStart(2,'0')}.rpy`;if(!occupied.has(replayStoragePathKey(`${directory}/${name}`,sharedExtensionSlot)))return name;}return null;}
+   for (let index = 0; index <= 0xffff; index++) {
+     const name = `${prefix}_ud${index.toString(16).padStart(4, "0")}${extension}`;
+     const target = `${directory}/${name}`;
+--- a/launcher/src/launcher/th05-initial-stock.mts
++++ b/launcher/src/launcher/th05-initial-stock.mts
+@@ -0,0 +1 @@
++export * from '../../../common/contracts/th05-initial-stock.mjs';

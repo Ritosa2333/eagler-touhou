@@ -24,6 +24,14 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
+      {state.product==='th05mp'&&<><div className="room-basic-fields">
+        <label>{t('room.th05InitialSpares')}<MainSelect id="mpTh05InitialSpares" className="option-select" value={room.initialSpares??2} disabled={disabled} onChange={event=>service.setRoomSettings({initialSpares:Number(event.target.value)})}>
+          {Array.from({length:6},(_,value)=><option key={value} value={value}>{value}</option>)}
+        </MainSelect></label>
+        <label>{t('room.th05InitialBombs')}<MainSelect id="mpTh05InitialBombs" className="option-select" value={room.initialBombs??3} disabled={disabled} onChange={event=>service.setRoomSettings({initialBombs:Number(event.target.value)})}>
+          {Array.from({length:4},(_,value)=><option key={value} value={value}>{value}</option>)}
+        </MainSelect></label>
+      </div><p className="room-setting-description">{t('room.th05InitialStockHint')}</p></>}
       {state.product === 'th15mp' && <><label className="room-reward-field" htmlFor="mpTh15ChapterThreshold">{t('room.th15ChapterThreshold')}<MainSelect className="option-select" id="mpTh15ChapterThreshold" aria-describedby="mpTh15ChapterGraze" value={String(room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))} disabled={disabled} onChange={event => service.setRoomSettings({chapterThreshold:Number(event.target.value)})}>
         {Array.from({length:19},(_,index)=>500000+index*250000).map(value=><option key={value} value={value}>{value.toLocaleString()}</option>)}
       </MainSelect></label><p className="room-setting-description" id="mpTh15ChapterGraze">{t('room.th15ChapterGraze',{count:(room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))/5000})}</p></>}

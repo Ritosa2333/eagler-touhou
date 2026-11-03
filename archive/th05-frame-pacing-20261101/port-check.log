@@ -1,0 +1,5 @@
+
+> ports:check
+> node tools/ports/check.mjs --game=th05 --variant=normal --write-status
+
+th05/normal: PASS (11/11 checks)

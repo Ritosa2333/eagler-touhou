@@ -4,8 +4,12 @@ import {useLocale} from '../../i18n';
 import {bindLibraryRail} from './library-rail';
 import type {LibraryProduct} from './products';
 
+export type ExternalLibraryProduct = Omit<LibraryProduct, 'id'> & {id: string; external: true};
+type LibraryCard = LibraryProduct | ExternalLibraryProduct;
+
 export interface LibraryCardsProps {
   products: readonly LibraryProduct[];
+  externalProducts?: readonly ExternalLibraryProduct[];
   selectedProduct?: string;
   openedProduct?: string;
   onSelect: (productId: string) => void;
@@ -24,7 +28,7 @@ function titleMarkup(title: string) {
     ? <><span>東方</span><wbr/><span>{title.slice(2)}</span></>
     : <span>{title}</span>;
 }
-function presentationStyle(product: LibraryProduct): CSSProperties | undefined {
+function presentationStyle(product: Pick<LibraryProduct, 'presentation'>): CSSProperties | undefined {
   const p = product.presentation;
   return p ? {'--art-position': `${p.positionPercent}%`, '--card-art-brightness': p.artBrightness,
     '--card-art-saturation': p.artSaturation, '--card-glow-brightness': p.glowBrightness,
@@ -32,7 +36,8 @@ function presentationStyle(product: LibraryProduct): CSSProperties | undefined {
 }
 
 /** One original rail for the library and directory; no Router/history owner. */
-export function LibraryCards({products, selectedProduct, openedProduct, onSelect, onActivate, selectBeforeActivate = false, variant, lobbyLink, inert = false, interactive = true}: LibraryCardsProps) {
+export function LibraryCards({products: managedProducts, externalProducts = [], selectedProduct, openedProduct, onSelect, onActivate, selectBeforeActivate = false, variant, lobbyLink, inert = false, interactive = true}: LibraryCardsProps) {
+  const products: readonly LibraryCard[] = [...managedProducts, ...externalProducts];
   const {t} = useLocale();
   const selectedCard = useOptionsTarget('selectedCard');
   const shelf = useRef<HTMLElement>(null), controller = useRef<ReturnType<typeof bindLibraryRail> | null>(null);
@@ -49,7 +54,7 @@ export function LibraryCards({products, selectedProduct, openedProduct, onSelect
     const current = bindLibraryRail(shelf.current, {
       initialProduct: selectedProduct ?? preview,
       openOnFirstClick: id => !callbacks.current.selectBeforeActivate && callbacks.current.products.some(p => p.id === id && p.multiplayer),
-      onSelectionChange: id => {setPreview(id); if (ready) callbacks.current.onSelect(id);},
+      onSelectionChange: id => {setPreview(id); if (ready && !callbacks.current.products.some(p => p.id === id && 'external' in p && p.external)) callbacks.current.onSelect(id);},
     });
     ready = true; controller.current = current;
     return () => {current.dispose(); if (controller.current === current) controller.current = null;};
@@ -66,7 +71,7 @@ export function LibraryCards({products, selectedProduct, openedProduct, onSelect
       interactive && (!product.artwork || failedArt.has(product.id)) ? 'card-art-missing' : '', preview === product.id ? 'nav-preview' : '', openedProduct === product.id ? 'selected' : ''].filter(Boolean).join(' ');
     return <a ref={openedProduct === product.id ? selectedCard : undefined} key={product.id} className={classes} data-game={product.gameId} data-product={product.multiplayer ? product.id : undefined}
       href={product.href} aria-current={interactive ? openedProduct === product.id ? 'page' : 'false' : undefined} style={presentationStyle(product)} hidden={product.hidden} draggable={false}
-      onClick={interactive ? event => {
+      onClick={interactive && !('external' in product && product.external) ? event => {
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault(); callbacks.current.onActivate(product.id);
       } : undefined}>

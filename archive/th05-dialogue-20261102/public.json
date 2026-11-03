@@ -1,0 +1,114 @@
+{
+  "siteUrl": "https://touhouonline.com/",
+  "passed": true,
+  "language": "lang_zh-hans",
+  "rollback": true,
+  "repeatRoom": true,
+  "firstNative": [
+    {
+      "frame": 243,
+      "confirmed": 241,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc"
+    },
+    {
+      "frame": 243,
+      "confirmed": 241,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc"
+    }
+  ],
+  "secondNative": [
+    {
+      "frame": 180,
+      "confirmed": 178,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc"
+    },
+    {
+      "frame": 180,
+      "confirmed": 179,
+      "language": {
+        "codepage": 936,
+        "config": "MOD_FILE = chs.dat\n",
+        "simplifiedGlyphs": 0,
+        "practiceLabel": "无敌"
+      },
+      "route": "rtc"
+    }
+  ],
+  "spectator": {
+    "errors": [],
+    "paused": {
+      "version": 1,
+      "run": "s1b4fdaa92f5d769e_0",
+      "revision": 4,
+      "min": 0,
+      "position": 2241,
+      "received": 2241,
+      "edge": 2241,
+      "target": 2241,
+      "paused": true,
+      "seeking": false,
+      "following": false,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "receivedWhilePaused": 2253,
+    "live": {
+      "version": 1,
+      "run": "s1b4fdaa92f5d769e_0",
+      "revision": 11,
+      "min": 0,
+      "position": 2293,
+      "received": 2294,
+      "edge": 2294,
+      "target": 2294,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "exitPreservesPlayers": true
+  },
+  "errors": [],
+  "httpErrors": [],
+  "mirrorPublication": {
+    "primary": "th05-dialogue-20261102",
+    "jp": "hk-th05-dialogue-20261102-9c05e47a906e",
+    "cn": "hk-th05-dialogue-20261102-9c05e47a906e-mirror-9253ef8f5efe"
+  },
+  "sourceCommit": "c38e13d774dfd43e7ac39f9bd150728e30cead6b"
+}
