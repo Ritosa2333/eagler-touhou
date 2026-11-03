@@ -80,9 +80,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/b5de114123e5e99f23e024c06a5f82d6d9e931a6)包含 WebGPU 初始化失败返回修复，已完成组件和静音无头 Chrome 失败路径对照。
+独立 C++/Wasm 实现与原版对照持续推进。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/bf3f217fe41d286b611a123ffee5ceb24607f820)包含 WebGPU 初始化失败返回修复，以及当前核心的[四项门槛复核](https://github.com/AdingApkgg/thp/blob/bf3f217fe41d286b611a123ffee5ceb24607f820/docs/porting/TH14_CURRENT_MODE_V4_NOV03.md)：16 份留存记录中 15 份通过，覆盖 13 个不同组合，其中 10 个组合的通过记录包含全部目标关卡入口。灵梦 B Normal 的 122,537 回调记录通过；灵梦 B Easy 的一份记录因原版异常被拒绝。
 
-还原、移植与 Web 适配均为进行中。完整模式、普通浏览器、原版整局图像／音频及剩余状态字差的验收范围见[当前清单](https://github.com/AdingApkgg/thp/blob/b5de114123e5e99f23e024c06a5f82d6d9e931a6/docs/porting/TH14_REMAINING_ACCEPTANCE.md)；整作 1:1 未完成。
+还原、移植与 Web 适配均为进行中。完整模式、普通浏览器、原版整局图像／音频及剩余状态字差的验收范围见[当前清单](https://github.com/AdingApkgg/thp/blob/bf3f217fe41d286b611a123ffee5ceb24607f820/docs/porting/TH14_REMAINING_ACCEPTANCE.md)；整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
