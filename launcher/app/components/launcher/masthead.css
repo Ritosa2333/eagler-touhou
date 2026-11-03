@@ -68,6 +68,7 @@
     min-width: 0;
   }
   .book-masthead .book-main-nav :is(a, button) {
+    position: relative;
     appearance: none;
     display: inline-flex;
     align-items: center;
@@ -97,8 +98,10 @@
   }
   .book-masthead .book-main-nav :is([aria-current="page"], [aria-pressed="true"]) {
     color: var(--kit-foreground);
-    border-bottom-color: var(--kit-foreground);
+    border-bottom-color: transparent;
   }
+  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--kit-foreground);transform:scaleX(0);transform-origin:center;transition:transform 420ms cubic-bezier(.22,.7,.2,1)}
+  .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"])::after {transform:scaleX(1)}
   .book-main-nav button:disabled {
     opacity: 0.45;
     cursor: default;
@@ -324,3 +327,15 @@
     }
   }
 }
+
+@media (hover:hover) and (pointer:fine) {
+  .book-masthead .book-main-nav :is(a,button),
+  .book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {
+    transition:background-color 320ms ease, color 320ms ease, border-color 320ms ease;
+  }
+  .book-masthead .book-main-nav :is(a,button):not(:disabled):hover::after {transform:scaleX(1)}
+}
+@media (prefers-reduced-motion:reduce) {
+  .book-masthead .book-main-nav :is(a,button),.book-masthead .book-main-nav :is(a,button)::after,.book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {transition:none}
+}
+.less-motion .book-masthead .book-main-nav :is(a,button),.less-motion .book-masthead .book-main-nav :is(a,button)::after,.less-motion .book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {transition:none}
