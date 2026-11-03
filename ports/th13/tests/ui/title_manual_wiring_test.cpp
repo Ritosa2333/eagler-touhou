@@ -168,10 +168,17 @@ TEST(manual_entry_routes_and_finishes_via_platform) {
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK_EQ(harness.scene->state.menu.cursor, 8);   // 不经光标栈，保持 entry 8
     CHECK_EQ(harness.scene->state.menu.count, kTitleMainEntries);
-    // 返回路径重建 89/94（旧树已停机；label2 不能恢复灵梦）。
+    // 0x44cddb 返回分支：89 已存在则复用（0x44cdef jne 0x44ce0c），仅缺失
+    // 才新建 + label2。0x44d954-0x44d97b（反汇编）：Manual（光标 8，跳转表
+    // 与 case 0-6 同目标 0x44d947）确认时 label1 已发给两个 LOGO 根槽
+    // （+0x440=94 / +0x444=95）并清 0；返回分支 0x44ce26 两槽皆空 → 建
+    // 复位根 95（0x44ce51 lea edi,[eax+0x5f]），94 冷启动根不重建。
+    // 旧断言「94 存活 / 95=0」来自端口旧实现（只发 94 且不清槽）与未镜像
+    // ins_5(1) 的合成夹具，无原生依据。
     CHECK(harness.scene->state.handles[89] != 0);
-    CHECK(harness.scene->state.handles[89] != background_before);
-    CHECK(harness.scene->state.handles[94] != 0);
+    CHECK_EQ(harness.scene->state.handles[89], background_before);
+    CHECK_EQ(harness.scene->state.handles[94], 0u);
+    CHECK(harness.scene->state.handles[95] != 0);
     // 再次进入：返回菜单就绪后同一入口重走 open/close。
     harness.advance(kTitleMenuReadyDelay + 1);
     CHECK_EQ(harness.scene->state.substate, 2);

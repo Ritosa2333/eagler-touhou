@@ -96,13 +96,22 @@ TEST(power_item_rebuilds_options_during_collection_without_extra_movement) {
 
 TEST(power_rebuild_snaps_options_on_the_next_player_movement) {
     Provider provider; Host host; SessionState progress; HudPlayerState player;
-    HudScoreState score; StageBattle battle; provider.names = &battle.sim.anim_list;
+    HudScoreState score; StagePlayerState state; StageBattle battle(nullptr, &state);
+    provider.names = &battle.sim.anim_list;
     const float diagonal_focus_speed = 2.f;
     std::memcpy(provider.sht.data() + 0x1c, &diagonal_focus_speed, sizeof diagonal_focus_speed);
     progress.character = 2; player.power = 299;
     CHECK(battle.load(provider, "stage.ecl", 2, host, progress, player, score,
                       nullptr, "player.sht"));
     battle.sim.enemies.clear(); battle.set_player_pos(0, 200);
+    // 0x442a19-0x442a57 focus 三重门：ctl+0xb8（存活敌机链计数）非 0 且
+    // player+0x67c>=4。补 inert 敌机（threads 为空，位置远离）补链计数，
+    // 并置 startup_clock（=0x67c 的暴露计数值）保留聚焦对角 2.0。
+    auto focus_anchor = std::make_unique<StageEnemy>();
+    focus_anchor->serial = 9999; focus_anchor->script_id = 9999;
+    focus_anchor->position[0] = 1000.f; focus_anchor->position[1] = 1000.f;
+    battle.sim.enemies.push_back(std::move(focus_anchor));
+    state.startup_clock.set(25);
     battle.item_manager.spawn_item(0, 200, 0, 1, 0, 0);
     CHECK(battle.step(GameInput{}));
     CHECK_EQ(player.power, 300);
@@ -125,6 +134,12 @@ TEST(sanae_shot_and_marisa_live_beam_follow_snapped_option_after_power_up) {
         CHECK(battle.load(provider, "stage.ecl", 2, host, progress, player, score,
                           nullptr, "player.sht"));
         battle.sim.enemies.clear(); battle.set_player_pos(0, 200);
+        // 0x442a19-0x442a57 focus 门（同上一测试）：聚焦 shot 表项
+        // sht_shots[7] 只在 focus=1 时使用，补 inert 敌机保留该路径。
+        auto focus_anchor = std::make_unique<StageEnemy>();
+        focus_anchor->serial = 9999; focus_anchor->script_id = 9999;
+        focus_anchor->position[0] = 1000.f; focus_anchor->position[1] = 1000.f;
+        battle.sim.enemies.push_back(std::move(focus_anchor));
         state.startup_clock.set(25);
         if (character == 1) {
             PlayerShot beam; beam.alive = true; beam.state = 1; beam.type = 2;

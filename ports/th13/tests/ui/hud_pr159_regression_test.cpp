@@ -130,14 +130,18 @@ TEST(hud_timer_text_is_left_top_aligned_with_digit_alpha) {
     // 与色 0x19160；从不写 1。旧断言的 1 是 10-29 无反汇编依据的猜测。
     CHECK_EQ(dot->position.x, 224.f);
     CHECK_EQ(dot->position.y, 32.f);
-    CHECK_EQ(dot->style.alignment, 0);
-    CHECK_EQ(dot->style.vertical_alignment, 0);
+    // 0x42814F/0x428155 写 AsciiInf+0x19184/+0x19188 = 1/1（左/顶）；
+    // 计时块 0x4281A3-0x428236 只写 +0x19178=4（字体）与 +0x19160（色），
+    // 不改对齐。旧断言 0（居中/垂直居中）会把 "." 左移 6px、百分秒左移
+    // 7.2px 并上移 8px，压进 208/220 的数字贴图（倒计时“太挤”根因）。
+    CHECK_EQ(dot->style.alignment, 1);
+    CHECK_EQ(dot->style.vertical_alignment, 1);
     CHECK_EQ(dot->style.font, 4);
     CHECK_EQ(dot->style.color, 0x80abcdefu);
     CHECK_EQ(fraction->position.x, 232.f);
     CHECK_EQ(fraction->position.y, 38.f);
-    CHECK_EQ(fraction->style.alignment, 0);
-    CHECK_EQ(fraction->style.vertical_alignment, 0);
+    CHECK_EQ(fraction->style.alignment, 1);
+    CHECK_EQ(fraction->style.vertical_alignment, 1);
     CHECK_NEAR(fraction->style.scale.x, 0.6, 1e-6);
     CHECK_NEAR(fraction->style.scale.y, 0.6, 1e-6);
 
@@ -156,19 +160,19 @@ TEST(hud_timer_text_is_left_top_aligned_with_digit_alpha) {
     CHECK(captions.draw(0, glyph_sink));
     CHECK_EQ(glyph_sink.glyphs.size(), size_t(3));
     if (glyph_sink.glyphs.size() != 3) return;
-    // 字形位置裁决（2026-11-02）：文本层 align/va=0（00427910.c:250-252）经
-    // AsciiText 消费＝x 减半宽、y 减半字高（AsciiText.cpp:14-15）。. 半宽 6
-    // → 224-6=218；5/0 各半宽 8 → 232-8=224、+7.2 间距=231.2→231.999985
-    //（f32 链）。旧断言 224/232/239.2 基于左对齐（=1）旧实现，已废。
+    // 字形位置裁决（2026-11-02 反汇编修正）：0x42814F/0x428155 写
+    // AsciiInf+0x19184/+0x19188 = 1/1（左/顶）；计时块只写字体/色。端口
+    // AsciiText 的 alignment=1 不扣半宽、vertical=1 不扣半高（AsciiText.cpp:
+    // 14-15），故 "." 落 224,32；"50" 首字 232,38、次字 +7.2=239.2（0.6
+    // 缩放 font4 advance 12*0.6）。旧断言 218/224.8/232 是 align=0 的
+    // 居中/垂直居中误读，会把 "." 压进 208/220 数字贴图。
     CHECK_EQ(glyph_sink.glyphs[0].sprite, 281);
-    CHECK_NEAR(glyph_sink.glyphs[0].position.x, 218.f, 1e-4);
+    CHECK_NEAR(glyph_sink.glyphs[0].position.x, 224.f, 1e-4);
     CHECK_NEAR(glyph_sink.glyphs[0].position.y, 32.f, 1e-4);
     CHECK_EQ(glyph_sink.glyphs[1].sprite, 275);
-    // "50" 两字形按串中心化：串宽 14.4 半宽 7.2 → 首字 232-7.2=224.8，
-    // 次字 +7.2 = 232.0（0.6 缩放 font4 advance 12*0.6）。
-    CHECK_NEAR(glyph_sink.glyphs[1].position.x, 224.8f, 1e-4);
+    CHECK_NEAR(glyph_sink.glyphs[1].position.x, 232.f, 1e-4);
     CHECK_NEAR(glyph_sink.glyphs[1].position.y, 38.f, 1e-4);
-    CHECK_NEAR(glyph_sink.glyphs[2].position.x, 232.f, 1e-4);
+    CHECK_NEAR(glyph_sink.glyphs[2].position.x, 239.2f, 1e-4);
     CHECK_NEAR(glyph_sink.glyphs[2].position.y, 38.f, 1e-4);
     for (const auto& glyph : glyph_sink.glyphs) CHECK_EQ(glyph.color, 0x80abcdefu);
 }

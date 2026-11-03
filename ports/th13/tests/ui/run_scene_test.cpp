@@ -197,6 +197,7 @@ struct RunHarness {
         CHECK(load_bank(manager, 4, synthetic_anm(8, trivial_scripts(4))));   // stage 合并位
         CHECK(load_bank(manager, 5, synthetic_anm(8, trivial_scripts(1))));   // bullet
         CHECK(load_bank(manager, 6, synthetic_anm(64, trivial_scripts(35))));  // plXX 0..34: options, Bomb roots/backgrounds and portraits.
+        CHECK(load_bank(manager, 25, synthetic_anm(8, trivial_scripts(16)))); // astral 神霊脚本 kind*6+1/4（0x438ec0）
         CHECK(load_bank(manager, 26, synthetic_anm(8, trivial_scripts(3)))); // stage title and boss music logo
         host.assets["stage_a.anm"] = synthetic_anm(8, trivial_scripts(1));
         host.assets["stage_b.anm"] = synthetic_anm(8, trivial_scripts(1));
@@ -614,13 +615,15 @@ TEST(sanae_shake_precedes_enemy_spirit_birth_in_original_rng_order) {
         b.index = sim.random.index(); b.seed = sim.random.seed();
         auto& items = b.harness->scene->battle.item_manager;
         items.spawn_value_item(1, 89.4f, 175.57f, 0.f, 0.5f, false);
-        ItemCollector collector; collector.x = -100.f; collector.y = 400.f;
-        collector.progress = &b.harness->progress; collector.player = &b.harness->player;
-        collector.score = &b.harness->score;
-        items.update_spirits(collector);
+        // 神霊更新不再内联：0x438e70 注册为 Update 25（0x438400
+        // `mov ebx,0x19; call 0x470990`），本帧由 RunScene 的 25 号 pass
+        // 在出生后统一 update_spirits（收集面取生产 make_item_collector）。
         return i32(FrameAction::Remove);
     };
     CHECK(h.scheduler.add(callback, FramePass::Update, 21) >= 0);
+    // 生产收集面读 battle 玩家坐标（DAT_004c22c4+0x5b8/0x5bc）：与旧夹具
+    // 手动 collector(-100,400) 同值，保持期望位移不变。
+    h.scene->battle.set_player_pos(-100.f, 400.f);
     CHECK(h.scheduler.update() >= 0);
     // f3716 45f983/45f9bc finish before 438ec0's first RNG call.
     CHECK_EQ(birth.index, 4u); CHECK_EQ(birth.seed, 35005u);

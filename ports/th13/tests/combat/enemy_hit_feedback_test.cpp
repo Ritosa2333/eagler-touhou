@@ -130,6 +130,22 @@ TEST(restart_failure_keeps_hit_timer_at_thirty) {
     CHECK_EQ(r.target->life, 790.f);
 }
 
+// 00419d2f（test esi,esi; je 00419fb3）在 00419d37 的 ÷30 之前判定：
+// ÷30 前的整数伤害非零即进入 00419d55 尾段，00419fa9 随后无条件置
+// 0x400000。符卡炸弹保护下 10 伤害 ÷30 得 0：本帧不扣血、不累加，
+// 但仍算一次有效命中，0041a227 反馈分支照常播 hit 音。原生 S4 hit
+// trace f11101/11102/11104..11111 的 serial 389 即此形态（÷30 前
+// esi=26/28/17/9，÷30 后 0，00419fa9 仍执行）。
+TEST(spell_bomb_protection_zero_after_div30_still_marks_hit) {
+    Rig r;
+    r.battle.sim.spell.begin(7, "Test", 600, 2, 3, true);
+    r.shot(0, 10);
+    CHECK(r.battle.sim.step_frame());
+    CHECK_EQ(r.target->life, 800.f);
+    CHECK_EQ(r.target->spirit_accum, 0.f);
+    CHECK((r.target->flags & 0x400000u) != 0);
+}
+
 // 00419a90 在 41aad0 击杀/retire 路径上提前返回，不执行 0041a39b 尾递减，
 // 死亡帧 +0x4004 保持刚置入的 30。retire_sink 在摘链前同步调用；本测试
 // 只在回调内存活读取，step 之后只用快照，避免悬垂指针。此测试覆盖自机弹

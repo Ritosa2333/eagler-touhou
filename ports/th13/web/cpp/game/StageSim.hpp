@@ -265,6 +265,13 @@ struct StageEnemy {
     // 302 anmSelect：敌机当前 ANM 文件槽（st01：2=enemy.anm、3=st01enm.anm）。
     i32 anm_file = 0;
     i32 anm_base_script = 0; // inner+26c, set by306 slot0, retained across303.
+    // 镜像重挂（0x419731）解析基准 = **当前 slot0 VM 的 resource**（+0x30，
+    // 即最近一次 slot0 创建所用文件）+ (+0x26c + step) 的该文件本地号。
+    // port 在每次 slot0 创建时记录 (bank, 本地→全局偏移)，重挂时以
+    // offset + anm_base_script + step 复刻；303/313/316 重建 slot0 会
+    // 刷新记录（换文件时偏移随之变化），与原版逐字段对应。
+    i32 anm_slot0_bank = -1;
+    i32 anm_slot0_script_offset = 0;
     // 303 anmScript / 306 anmRun：槽位脚本（vm+0x120 起槽数组；槽 0 = 本体，
     // 记录 -1 表示清槽）。脚本号是 stage ANM 合并表的全局序号。
     static constexpr i32 kAnimationSlots = 14; // 41a8a0 loops0xe slots at inner+120
@@ -280,12 +287,31 @@ struct StageEnemy {
     float anm_size_a[2] = {0, 0};
     float anm_size_b[2] = {0, 0};
     // 镜像翻转重挂状态（0x4196d3-0x419827 对齐反汇编实证）：
-    // 门 = flags&0x200000 且 x 速度符号（+0x78，±0.03 死区）≠上次朝向
-    // （+0x270）；行走 VM 脚本号 = 槽 0 脚本号 + 增量（查表：旧 0 时新 -1→1、
-    // 新 0/+1→2；旧 +1→恒 4；旧 -1→恒 3），VM layer 恒 8（+0x278+7），
-    // 位置继承旧槽 VM 位置，anmArg=0，尾入池（0x46f3f0）句柄存回槽 0。
-    i32 mirror_dir = 0;          // +0x270 上次朝向（构造 0）
-    float mirror_prev_x = 0;     // 差分近似 sign(+0x78) 的基线
+    // 门 = flags&0x200000 且 x 速度符号（inner+0x78，±0.03 死区）≠上次朝向
+    // （+0x270）。+0x78 由 0x419950 在本帧 0x419450 内先算好（= 速度子位置
+    // 累加后、round001/界限钳制前的 delta），而 0x41a8a0 的调用序是
+    // 0x419450（含镜像门）→ ECL 线程体，故此处用 tick_enemy 在 integrate()
+    // 之后、ECL 之前拍下的快照（mirror_velocity_x），不能用 ECL 指令内
+    // 立即移动写过的 motion_delta，也不能用位置差分近似。
+    // 重挂脚本号 = 槽 0 脚本号 + 步号；步号查表（0x4196d3-0x419711 逐分支）：
+    //   旧 0：新 -1→1，新 +1→2；
+    //   旧 -1：新 +1→2，新 0→3；
+    //   旧 +1：新 -1→1，新 0→4。
+    // VM layer 恒 [+0x278]+7（默认 8），位置继承旧槽 VM 的脚本位置
+    // （vm+0x3c/0x40/0x44，写新 VM +0x574/578/57c），anmArg=0，尾入池
+    // （0x46f3f0）句柄存回槽 0。
+    i32 mirror_dir = 0;          // +0x270 上次朝向（构造 0；306 复位）
+    float mirror_velocity_x = 0; // 0x419450 读的 inner+0x78 快照（ECL 前）
+    // 306 之后必须先有一次真正的 0x41a8a0 更新（integrate 完）才允许镜像
+    // 判定：0x41a8a0 的 0x80000 自门使构造/重挂当帧的 manager 遍历空转，
+    // 原版该帧不执行 0x419450 的朝向比较。tick_enemy 在 integrate 后置位，
+    // 306 在 ECL 体内清位（重挂发生在 0x419450 之后）。
+    bool mirror_ready = false;
+    // 旧位置差分基线：仅在 mirror_ready=false 的过渡帧（306/构造当帧）作为
+    // 兼容回退使用（原版该帧不比较朝向，回退只影响 306 后一帧的演出脚本
+    // 选择）。tests/ui 的 enemy_animation_reset_test / stage1_player_state_test
+    // 仍引用此字段；生产主路径已改为 mirror_velocity_x。
+    float mirror_prev_x = 0;
     // 敌机内嵌 VM+0x278（=敌机结构+0x1464）——敌机族 ANM 创建层基。
     // 构造默认 1（0x418f40 体内 0x419089 mov $1,%edx → 0x419195 写
     // 敌机+0x1464，Unicorn 写 watch 实证每敌机均写 1）；ECL 552
@@ -472,6 +498,12 @@ public:
         : random(shared_random ? *shared_random : owned_random_) {
         for (i32 slot = 0; slot < 2000; ++slot) bullet_free_slots_.push_back(slot);
     }
+    // ECL 表达式 rand 流：-9987 双视图（0x420380→0x4203cc、
+    // 0x420d00→0x420d5b）与 RandomPolar op93（0x478b22/0x478b32）都
+    // `mov ecx,0x4dc324`，即 **game 流**，与弹体/et 侧（0x40cc0c）同源。
+    // 0x40120b/0x401342/0x401835 的 0x4dc31c 属 ANM 轨迹/特效处理器，
+    // 不是 ECL 求值器（round-22 曾误判换流，round-23 以反汇编 + S1 f60
+    // 对拍回退）。
     float time_rate() const;
     void set_time_rate(float rate);
     std::function<void(float)> time_rate_changed;
@@ -720,7 +752,19 @@ private:
     void integrate(StageEnemy& enemy);   // 0x419450 + 0x419950 子集
     bool in_bounds(StageEnemy& enemy);   // 0x419450 出界自杀
     u32 spawned_ = 0;
-    // 00418d30 zeroes the manager, reserves serial 0, then sets +bc to 1.
+    // 敌机序号初值 1（round-23 反汇编+原生状态定案，推翻 round-22 的 0）：
+    // 0x418d30（0x42b990 关卡装载唯一 ctl 构造）memset 后 [0xc0]=0、
+    // 计数器 [0xbc]=1（反汇编 00418d30：uVar1=[0x2f]=0 → [0x30]=0 →
+    // [0x2f]=uVar1+1=1）。原版 root main **经同一计数器**：0x42c550 在
+    // 关卡首帧调用 0042c766/0042c905 `push 0x4aade0("main"); push 0x54
+    // 清零参数块; call 0x4183f0`，0x418f40:96 即 `+0x11E4 = [ctl+0xbc]`
+    // 并把计数器 +1（含 0 回绕跳过）。故 root main 序号=1、首个 ECL 敌机
+    // =2。原生实证：round-23 native-s5 battle-state-raw-v2 f0 敌链 =
+    // [serial 2 (trace_id 1, life 100), serial 1 (trace_id 0, life 0)]
+    // ——serial 1 即 root main，serial 2 为其子；port 旧值 root=0/child=1
+    // 使 +0x51A0 死亡音 (id&1)+3 奇偶翻转，S5 f164 原生播 4 而 port 播 3。
+    // round-22 的 0 来自 stage1_oracle 人为把 [ctl+0xbc] 清 0 的契约口径
+    //（oracle 已同步改为原生语义）；replay_core_compare 不含序号故未拦住。
     u32 next_serial_ = 1;
     u32 next_bullet_generation_ = 0;
     std::vector<i32> bullet_free_slots_;
