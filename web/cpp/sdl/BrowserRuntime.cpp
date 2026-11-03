@@ -922,6 +922,18 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_anm_random_take() {
     return result.c_str();
 }
 
+// 道具/神灵收集只读诊断（默认关闭）：帧内顺序与 max_point/score 快照。
+// 不写游戏状态；由 web_replay_continuous 的 TH13_ITEM_TRACE=1 显式开启。
+EMSCRIPTEN_KEEPALIVE void th13_debug_item_trace(int enable) {
+    th13::set_item_trace(enable != 0);
+}
+
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_item_trace_take() {
+    static std::string result;
+    result = th13::take_item_trace();
+    return result.c_str();
+}
+
 // 主链成员序只读诊断（默认关闭，仅浏览器探针臂显式开窗）：按
 // AnmRegistry groups[0]（= 原版 0x46f170 主链同构物）的遍历次序逐节点导出
 // 稳定身份字段，供与原生 0x46f170 链掘（节点序 + bank/script/timer）逐帧
@@ -1327,9 +1339,15 @@ EMSCRIPTEN_KEEPALIVE void th13_debug_audio_observe(unsigned enable) {
         std::memcpy(&x_bits, &event.x, sizeof x_bits);
         const int frame = app->replay_active ? int(app->replay_consumed) - 1
                                              : app->progress.stage_frame - 1;
+        // Voice 的 id 按 u32 位型输出：原生 0x460c50/0x460bc0 的 id 取
+        // EDI/EDX（Unicorn 无符号），et 发射声 -1 在 native trace 中记作
+        // 4294967295；stop 的 -1 是有符号语义（全停），保持 i32。
+        const bool voice = event.kind == AudioDevice::RequestObservation::Kind::Voice;
+        const std::string id_text = voice ? std::to_string(unsigned(event.id))
+                                          : std::to_string(event.id);
         audio_observations += "{\"frame\":" + std::to_string(frame) +
             ",\"sequence\":" + std::to_string(audio_sequence++) + ",\"kind\":\"" + kind +
-            "\",\"id\":" + std::to_string(event.id) + ",\"value\":" +
+            "\",\"id\":" + id_text + ",\"value\":" +
             std::to_string(event.value) + ",\"positional\":" + (event.positional ? "true" : "false") +
             ",\"x_bits\":" + std::to_string(x_bits) + "}\n";
     };

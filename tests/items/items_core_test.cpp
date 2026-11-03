@@ -712,6 +712,34 @@ TEST(spirit_frame_480_closes_bounce_gate) {
     CHECK(s.alive);
 }
 
+TEST(spirit_trance_reset_keeps_lifetime_clock_aligned) {
+    // 0x439280/0x4393a0（灵界开/关）重置 Timer：previous=-1、current=0、
+    // fractional=0。原生 S4 f7708 重置帧 raw state frame=1，0x1e0 反弹门在
+    // 重置后第 480 帧（f8188）关闭。port 旧实现把暴露位 frame 写 0，尾部
+    // 同步守卫 set(frame+1) 与当帧 tick 叠加 → Timer 提前 1 帧，反弹门
+    // 提前一帧关（S4 f8188 y 反弹 / S6 f2456 x 反弹分叉根因）。
+    GameRandom random(3);
+    ItemManager mgr(&random);
+    Fixture fix(0.0f, 200.0f, 5.0f);
+    fix.collector.x = -400.0f;  // 远离：永不追踪/收集
+    mgr.spawn_value_item(0, 0.0f, 200.0f, 0.0f, 0.5f);
+    Spirit& s = mgr.spirits()[0];
+    for (int i = 0; i < 10; ++i) mgr.update_spirits(fix.collector);
+    CHECK_EQ(s.frame, 9);
+    mgr.set_spirit_trance(false);  // 0x4393a0 等价重置
+    CHECK_EQ(s.frame, -1);         // 暴露位 = Timer.previous
+    CHECK_EQ(s.flags & 1u, 0u);
+    mgr.update_spirits(fix.collector);  // 重置帧：检查 0，tick → current=1
+    CHECK_EQ(s.frame, 0);
+    for (int i = 0; i < 479; ++i) mgr.update_spirits(fix.collector);
+    CHECK_EQ(s.frame, 479);
+    CHECK_EQ(s.flags & 2u, 2u);  // 479 帧仍开反弹门（不得提前关）
+    mgr.update_spirits(fix.collector);  // 第 480 帧
+    CHECK_EQ(s.frame, 480);
+    CHECK_EQ(s.flags & 2u, 0u);  // [0x18]==480 → 清 bit1
+    CHECK(s.alive);
+}
+
 // ---- 灵界（SessionState 单一真值 + 0x43d530/0x405a20/0x405b80）----
 
 TEST(trance_lifecycle_helpers) {

@@ -49,7 +49,8 @@ for (const output of outputs) {
 // freeze 门/ANM sync 诊断自证开关（只观察，不改评分字段）。
 const env = {};
 for (const key of ['TH13_DUMPCHECK', 'TH13_SHOT_PROBE', 'TH13_LIFE_PROBE', 'TH13_STATE_LOG',
-                   'TH13_FREEZE_AT', 'TH13_NO_ECL_SLOT_ANM'])
+                   'TH13_FREEZE_AT', 'TH13_NO_ECL_SLOT_ANM', 'TH13_RNG_TRACE',
+                   'TH13_SPIRIT_PROBE', 'TH13_DAMAGE_PROBE'])
   if (process.env[key]) env[key] = process.env[key];
 const wasi = new WASI({version: 'preview1', args, env, preopens: {'/': workspace}, returnOnExit: true});
 const module = await WebAssembly.compile(bytes);

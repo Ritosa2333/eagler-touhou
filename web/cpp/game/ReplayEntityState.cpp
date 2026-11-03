@@ -20,7 +20,13 @@ ReplayEntityState sample_replay_entities(const StageBattle& battle) {
         const auto& e = *enemy_ptr;
         s.enemies.push_back({e.serial, u32(e.trace_id), e.script_id, bits(e.position[0]), bits(e.position[1]),
                              bits(e.life), e.dead,
-                             e.hit_anim_timer, bits(e.spirit_accum), bits(e.spirit_threshold)});
+                             e.hit_anim_timer, bits(e.spirit_accum), bits(e.spirit_threshold),
+                             {bits(e.vel.pos[0]), bits(e.vel.pos[1]), bits(e.vel.pos[2])},
+                             {bits(e.pos.pos[0]), bits(e.pos.pos[1]), bits(e.pos.pos[2])},
+                             {bits(e.vel.aux[0]), bits(e.vel.aux[1]), bits(e.vel.aux[2])},
+                             {bits(e.pos.aux[0]), bits(e.pos.aux[1]), bits(e.pos.aux[2])},
+                             bits(e.vel.angle), bits(e.vel.speed), e.vel.mode,
+                             bits(e.pos.angle), bits(e.pos.speed), e.pos.mode});
     }
     for (u32 slot = 0; slot < battle.sim.bullets.size(); ++slot) {
         const auto& b = battle.sim.bullets[slot];
@@ -82,7 +88,16 @@ std::string ReplayEntityState::json() const {
         for (const auto& value : values) { comma(out, first); out += '{'; emit(value, out); out += '}'; }
         out += ']';
     };
-    arrays("enemies", enemies, [](const Enemy& e, std::string& o) { field(o,"serial",e.serial);o+=",\"trace_id\":";str(o,e.trace_id);o+=",\"script_id\":";o+=std::to_string(e.script_id);o+=",\"x_bits\":";str(o,e.x_bits);o+=",\"y_bits\":";str(o,e.y_bits);o+=",\"life_bits\":";str(o,e.life_bits);o+=",\"dead\":";o+=e.dead?"true":"false";o+=",\"hit_anim_timer\":";o+=std::to_string(e.hit_anim_timer);o+=",\"spirit_accum_bits\":";str(o,e.spirit_accum_bits);o+=",\"spirit_threshold_bits\":";str(o,e.spirit_threshold_bits); });
+    arrays("enemies", enemies, [](const Enemy& e, std::string& o) { field(o,"serial",e.serial);o+=",\"trace_id\":";str(o,e.trace_id);o+=",\"script_id\":";o+=std::to_string(e.script_id);o+=",\"x_bits\":";str(o,e.x_bits);o+=",\"y_bits\":";str(o,e.y_bits);o+=",\"life_bits\":";str(o,e.life_bits);o+=",\"dead\":";o+=e.dead?"true":"false";o+=",\"hit_anim_timer\":";o+=std::to_string(e.hit_anim_timer);o+=",\"spirit_accum_bits\":";str(o,e.spirit_accum_bits);o+=",\"spirit_threshold_bits\":";str(o,e.spirit_threshold_bits);
+        const auto tri = [&](const char* name, const u32 (&v)[3]) {
+            o += ",\""; o += name; o += "\":["; str(o,v[0]); o += ','; str(o,v[1]); o += ','; str(o,v[2]); o += ']';
+        };
+        tri("vel_pos_bits", e.vel_pos_bits); tri("pos_pos_bits", e.pos_pos_bits);
+        tri("vel_aux_bits", e.vel_aux_bits); tri("pos_aux_bits", e.pos_aux_bits);
+        const auto one = [&](const char* name, u32 v) { o += ','; field(o, name, v); };
+        one("vel_angle_bits", e.vel_angle_bits); one("vel_speed_bits", e.vel_speed_bits);
+        one("vel_mode", e.vel_mode); one("pos_angle_bits", e.pos_angle_bits);
+        one("pos_speed_bits", e.pos_speed_bits); one("pos_mode", e.pos_mode); });
     arrays("bullets", bullets, [](const Bullet& b, std::string& o) { field(o,"index",b.index);o+=",\"generation\":";str(o,b.generation);o+=",\"source_enemy\":";str(o,b.source_enemy);o+=",\"state\":";str(o,b.state);o+=",\"x_bits\":";str(o,b.x_bits);o+=",\"y_bits\":";str(o,b.y_bits);o+=",\"angle_bits\":";str(o,b.angle_bits);o+=",\"z_bits\":";str(o,b.z_bits);o+=",\"velocity_x_bits\":";str(o,b.velocity_x_bits);o+=",\"velocity_y_bits\":";str(o,b.velocity_y_bits);o+=",\"velocity_z_bits\":";str(o,b.velocity_z_bits);o+=",\"speed_bits\":";str(o,b.speed_bits);o+=",\"sprite\":";str(o,b.sprite);o+=",\"subtype\":";str(o,b.subtype);o+=",\"behavior_flags\":";str(o,b.behavior_flags);o+=",\"pool_slot\":";o+=std::to_string(b.pool_slot);o+=",\"alive\":";o+=b.alive?"true":"false"; });
     arrays("lasers", lasers, [](const Laser& l, std::string& o) { field(o,"index",l.index);o+=",\"generation\":";str(o,l.generation);o+=",\"id\":";o+=std::to_string(l.id);o+=",\"phase\":";o+=std::to_string(l.phase);o+=",\"time\":";o+=std::to_string(l.time);o+=",\"origin_x_bits\":";str(o,l.origin_x_bits);o+=",\"origin_y_bits\":";str(o,l.origin_y_bits);o+=",\"length_bits\":";str(o,l.length_bits);o+=",\"active\":";o+=l.active?"true":"false"; });
     arrays("shots", shots, [](const Shot& p, std::string& o) { field(o,"index",p.index);o+=",\"generation\":";str(o,p.generation);o+=",\"age\":";o+=std::to_string(p.age);o+=",\"state\":";o+=std::to_string(p.state);o+=",\"x_bits\":";str(o,p.x_bits);o+=",\"y_bits\":";str(o,p.y_bits);o+=",\"damage_bits\":";str(o,p.damage_bits);o+=",\"angle_bits\":";str(o,p.angle_bits);o+=",\"speed_bits\":";str(o,p.speed_bits);o+=",\"width_bits\":";str(o,p.width_bits);o+=",\"height_bits\":";str(o,p.height_bits);o+=",\"damage_x_bits\":";str(o,p.damage_x_bits);o+=",\"damage_y_bits\":";str(o,p.damage_y_bits);o+=",\"behavior\":";o+=std::to_string(p.behavior);o+=",\"type\":";o+=std::to_string(p.type);o+=",\"anchor\":";o+=std::to_string(p.anchor);o+=",\"alive\":";o+=p.alive?"true":"false"; });

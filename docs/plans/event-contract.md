@@ -41,8 +41,16 @@
 ### 3.1 敌机 id
 
 - `enemy` = 原版 mgr 序号（DAT_004c2188+0xBC 计数器，0x418f40:96-99 逐次 +1）。
-  stage root 敌机（承载 `main` 的隐形敌机）固定为 **0**，不由任何事件产生（它不是 enmCreate 造的）。
-- 之后每次 enmCreate 族成功创建，`enemy` 取下一个序号（1, 2, 3…）。
+  0x418d30 构造后计数器即为 **1**（memset 后 [0xc0]=0 → [0xbc]=[0x2f]+1）。
+  stage root 敌机（承载 `main` 的隐形敌机）**走同一计数器**：0x42c550 关卡首帧
+  0042c766/0042c905 `push 0x4aade0("main"); push 0x54 清零块; call 0x4183f0`，
+  故 root 的 +0x11E4 = **1**，且不由任何 `enemy_spawn` 事件产生（事件钩子在
+  0x4183f0 入口读 [ctl+0xbc]，但 root 无 parent，按 §2 不落事件）。
+  原生实证：native-s5 battle-state-raw-v2 f0 敌链 =
+  `[serial 2 (trace_id 1, life 100), serial 1 (trace_id 0, life 0)]`。
+- 之后每次 enmCreate 族成功创建，`enemy` 取下一个序号（2, 3, 4…）。
+  （round-22 曾按“root 固定 0”清计数器，导致全体序号比原版少 1；round-23 依
+  上述反汇编与原生 raw 状态回正。）
 - 脚本可寻址 id（gvar -9914 ID，字段 enemy+0x11E4）初值即该序号；`enemy_spawn` 事件不携带它，
   两侧如需可另行对拍。enemy+0x11E8（-9909）= 创建者的 +0x11E4（0x41fcc0:72 → 0x4183f0:61），
   moveEnm(432/433) 按 +0x11E4 寻址（0x417f40 链表线性查找，id 0 直接判空）。

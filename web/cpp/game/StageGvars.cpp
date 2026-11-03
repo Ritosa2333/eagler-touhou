@@ -38,6 +38,11 @@ bool StageGvars::integer(i32 id, i32& value) {
         value = i32(e ? e->age : 0);
         return true;
     case -9987:  // RANDF2 int 视图：0x472e10 → ftol
+        // 0x420380 跳转表 case 0xffffd8fd（index 13）→ 0x4203cc
+        // `mov ecx,0x4dc324; call 0x472e10`：**game 流**。round-22 曾把
+        // 0x40120b/0x401342/0x401835（ANM 轨迹/特效处理器，非 ECL 求值器）
+        // 当作 ECL rand 调用点改读 visual 流，导致 udN01 S1 f60 起
+        // game_index 0 vs native 2、visual_index +2（S1 捕获 f1626 死亡）。
         GameRandom::tag(2);
         value = i32(sim.random.signed_unit());
         return true;
@@ -206,6 +211,8 @@ bool StageGvars::floating(i32 id, float& value) {
         value = e ? e->age : 0.0f;
         return true;
     case -9987:
+        // 0x420d00 跳转表 case 0xffffd8fd（index 13）→ 0x420d5b
+        // `mov ecx,0x4dc324; call 0x472e10`：game 流（与 int 视图同源）。
         GameRandom::tag(6);
         value = sim.random.signed_unit();
         return true;

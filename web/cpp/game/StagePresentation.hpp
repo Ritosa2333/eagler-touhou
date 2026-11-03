@@ -38,8 +38,8 @@ public:
     // 004424d0 invokes 00444df0 during player construction, before the first
     // replay update. This primes the player/options VM trees once; later sync
     // reuses the handles and only updates their positions.
-    bool initialize_player_effects(const StageBattle& battle);
-    bool activate_player_effects(const StageBattle& battle);
+    bool initialize_player_effects(StageBattle& battle);
+    bool activate_player_effects(StageBattle& battle);
     // 0x445900 擦弹/得分特效（effect.anm script100，主链尾插 ordering=0）。
     bool graze_effect(const Vec3& position);
     // 0x42b6d0（0x42cd40 关终调用）：置 player+0x14698 bit3（自机隐藏位），
@@ -84,7 +84,16 @@ public:
         return create_player_effect(banks.effect,script,layer,0,position);
     }
     bool beam_hit_effect(const Vec3& position, const Vec3& displacement, float angle);
-    bool sync_player_options(const StageBattle& battle, bool power_rebuild = false);
+    // 非 const：死亡演出第 3 帧消费 StageBattle::death_option_rebuild（一次性
+    // 边沿，见 StageBattle.hpp 注释），与 0x444df0 的“重建后清状态”同构。
+    bool sync_player_options(StageBattle& battle, bool power_rebuild = false);
+    // 0x42e380/0x438730 的 VM 面同步：生产在 Update 24/25 由 RunScene 调用
+    // （与 StageBattle 的同名 phase 配对）；defer_item_side=false 时仍由
+    // sync 内联，harness/单测行为不变。
+    bool sync_items_phase(StageBattle& battle) { return sync_items(battle); }
+    bool sync_item_spirits_phase(StageBattle& battle) {
+        return sync_item_spirits(battle);
+    }
     bool sync_youmu_slash(StageBattle& battle);
     bool youmu_charge_effect(i32 action, const Vec3& position);
     bool spirit_animation_alive(u32 slot, u32 serial) const noexcept;
@@ -242,7 +251,9 @@ private:
     std::vector<u32> player_effect_handles_;
     i32 option_character_ = -1, option_count_ = -1;
     bool full_options_ = false;
-    bool sync_player_effects(const StageBattle&);
+    // 0x444a10 已对 option 根/子体排队 label1（每次死亡只排一次）。
+    bool death_options_queued_ = false;
+    bool sync_player_effects(StageBattle&);
     bool sync_bomb_effects(const StageBattle&);
     // 主链 update 之后（0x46f170 遍历完成）的收尾：四角几何快照（供下一
     // battle.step 的 0x446531 剔除用，须取 post-tick 的 VM 状态）、脚本自灭

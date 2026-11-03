@@ -41,7 +41,10 @@ void drag(TouchController& touch, const TouchState& state, float to_x = .6f, flo
 }
 
 struct MovementHarness {
-    StageBattle battle;
+    // 共享 StagePlayerState：0x442a19-0x442a57 的 focus 三重门读
+    // player+0x67c（startup 计数），需要从外部置位。
+    StagePlayerState state;
+    StageBattle battle{nullptr, &state};
     GameInput input;
 
     MovementHarness() {
@@ -206,6 +209,14 @@ TEST(stagebattle_rate_limited_touch_caps_speed) {
 TEST(stagebattle_focus_touch_caps_at_focus_speed) {
     MovementHarness h;
     h.input.held = 0x08;  // Shift / focus
+    // 0x442a19-0x442a57 focus 三重门：ctl+0xb8（存活敌机链计数）非 0 且
+    // player+0x67c>=4 同时成立才保留 Shift 位。补 inert 敌机（threads 为空，
+    // tick_enemy 跳过解释器；位置远离玩家）并置 startup 计数。
+    auto focus_anchor = std::make_unique<StageEnemy>();
+    focus_anchor->serial = 9999; focus_anchor->script_id = 9999;
+    focus_anchor->position[0] = 1000.f; focus_anchor->position[1] = 1000.f;
+    h.battle.sim.enemies.push_back(std::move(focus_anchor));
+    h.state.startup_clock.set(25);
     h.battle.touch = {1, 100.f, 300.f};
     h.step();
     CHECK_NEAR(h.battle.player_x, 181.f / 128.f, 1e-6);

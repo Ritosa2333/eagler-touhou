@@ -114,6 +114,8 @@ public:
 
     // 0x412890：符卡开始 → 两数字 VM 中断 2。
     void spell_started();
+    // 0x412900（0x413a60 结束开头）：符卡结束 → 两数字 VM 中断 3（拉回 y23）。
+    void spell_ended();
     // 0x4265a0 玩家贴顶态机的中断目标为数字 VM（原版经 0x42b510/0x42b530）。
     void interrupt_digits(i32 label);
 

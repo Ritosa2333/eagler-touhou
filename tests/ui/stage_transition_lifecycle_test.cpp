@@ -235,6 +235,10 @@ TEST(transition_destroys_old_stage_managers_at_original_boundary) {
     const bool synced = h.scene->presentation->sync(h.scene->battle, 0);
     if (!synced) std::printf("presentation sync error: %s\n", h.scene->presentation->error().c_str());
     CHECK(synced);
+    // 生产调度把神霊 VM 面移出 sync：0x438e70 注册为 Update 25
+    //（0x438400 `mov ebx,0x19; call 0x470990`），RunScene 在 25 号 pass
+    // 调 sync_item_spirits_phase（defer_item_side=true 时 sync 不再内联）。
+    CHECK(h.scene->presentation->sync_item_spirits_phase(h.scene->battle));
     CHECK(h.scene->presentation->debug_report().find("spirits=1") != std::string::npos);
     items.spawn_item(0.f, 0.f, 0.f, 1, 0.f, 1.f);
     bool any_item = false;

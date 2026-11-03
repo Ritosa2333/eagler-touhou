@@ -2,6 +2,7 @@
 #include "Probe.hpp"
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 namespace th13::probe {
 bool enabled = false;
 unsigned budget = 0;
@@ -42,6 +43,44 @@ bool ScreenViews::loading_camera(){
  view.camera.projection=scene_perspective(fov,float(float(width)/float(height)),1.f,10000.f);
  renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);renderer.offset={};
  return true;
+}
+namespace {
+bool same_viewport(const GraphicsViewport& a,const GraphicsViewport& b)noexcept{
+    return a.x==b.x&&a.y==b.y&&a.width==b.width&&a.height==b.height
+        &&a.near_depth==b.near_depth&&a.far_depth==b.far_depth;
+}
+// AnmCamera 全字段比较：跳过 set_camera 必须等价于「按原路径设置同一相机」，
+// 否则 renderer.camera 的 eye/reference/fog 字段会与原生分叉（projected_quad
+// 用 camera.fog_near/fog_far、world_quad 用 camera.fog_color）。
+bool same_camera(const AnmCamera& a,const AnmCamera& b)noexcept{
+    return a.eye.x==b.eye.x&&a.eye.y==b.eye.y&&a.eye.z==b.eye.z
+        &&a.reference.x==b.reference.x&&a.reference.y==b.reference.y
+        &&a.reference.z==b.reference.z
+        &&std::memcmp(a.view.m,b.view.m,sizeof a.view.m)==0
+        &&std::memcmp(a.projection.m,b.projection.m,sizeof a.projection.m)==0
+        &&a.fog_near==b.fog_near&&a.fog_far==b.fog_far
+        &&a.fog_rgb.x==b.fog_rgb.x&&a.fog_rgb.y==b.fog_rgb.y
+        &&a.fog_rgb.z==b.fog_rgb.z&&a.fog_color==b.fog_color;
+}
+}  // namespace
+
+// 战斗直绘 pass 入口（RunScene::draw_stage）专用：与当前渲染器状态逐字段
+// 相同的相机不得重设。AnmRenderer::set_viewport/set_camera 无条件 flush，
+// 会把同一材质键的跨 pass 精灵批拆开——gate-my laser 窗 f5450 op183 原生
+// 0x4679a0 的 UP 批是 12 三角形单 draw，web 旧路径拆成 10+2（层 11 的 5 个
+// 弹 quad + 自机 pass 的机体 quad；19551dd1e 记录同一现象，efc1422f3 回退
+// 了其全局同值跳过）。这里只在 draw_stage 入口跳过同值重设；offset 仍更新
+// （shake 在顶点生成时烘焙），异值相机仍走 camera() 的完整路径（含 flush）；
+// 层回调/RT 切换/标题/loading 路径的 flush 纪律不变。
+bool ScreenViews::camera_if_changed(DrawCamera index,bool refresh){
+ auto& view=views[u32(index)];
+ if(refresh)view=screen_view(view.viewport,fov,view.offset);
+ if(same_viewport(view.viewport,renderer.viewport)&&same_camera(view.camera,renderer.camera)){
+  const Vec2 shake=environment?environment->screen_shake_offset:Vec2{};
+  renderer.offset={float(view.offset.x+shake.x),float(view.offset.y+shake.y)};
+  return true;
+ }
+ return camera(index,false);
 }
 bool ScreenViews::camera(DrawCamera index,bool refresh){auto& view=views[u32(index)];if(refresh)view=screen_view(view.viewport,fov,view.offset);renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);const Vec2 shake=environment?environment->screen_shake_offset:Vec2{};renderer.offset={float(view.offset.x+shake.x),float(view.offset.y+shake.y)};
 // 临时探针：相机切换取证（-96px 排查）

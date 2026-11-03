@@ -148,22 +148,24 @@ TEST(return_path_rebuilds_background_and_restores_portrait) {
     const u32 first_root = h.scene->state.handles[89];
     h.enter_music_room();
     h.leave_music_room();
+    // 0x44cddb 返回分支：89 已存在则复用（0x44cdef jne 0x44ce0c），不重建。
     CHECK(h.scene->state.handles[89] != 0);
-    CHECK(h.scene->state.handles[89] != first_root);
+    CHECK_EQ(h.scene->state.handles[89], first_root);
     // 原版 0x44bb80 不回收旧树：旧 90/91 保持 alpha255，65f 窗口内灵梦不消失。
     CHECK(h.manager.registry.find(first_root) != nullptr);
     CHECK_EQ(h.root_alpha(first_root, 90), 255u);
     CHECK_EQ(h.root_alpha(first_root, 91), 255u);
-    // 返回路径同时给新树发 label2：65f 后新树 90/91 也回到 alpha255。
+    // 返回分支对复用树再发 label2（0x44ce0c/0x44ce19）：65f 后 90/91
+    // 回到 alpha255。
     h.advance(65);
     CHECK_EQ(h.background_alpha(90), 255u);
     CHECK_EQ(h.background_alpha(91), 255u);
-    // 重复进入/返回：每次新建并恢复；上一轮树仍保留。
+    // 重复进入/返回：89 持续存在 → 每次复用并重发 label2；树保留。
     const u32 second_root = h.scene->state.handles[89];
     h.advance(kTitleMenuReadyDelay + 1);
     h.enter_music_room();
     h.leave_music_room();
-    CHECK(h.scene->state.handles[89] != second_root);
+    CHECK_EQ(h.scene->state.handles[89], second_root);
     CHECK(h.manager.registry.find(first_root) != nullptr);
     CHECK(h.manager.registry.find(second_root) != nullptr);
     CHECK_EQ(h.root_alpha(first_root, 90), 255u);

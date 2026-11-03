@@ -17,8 +17,16 @@
 
 #include <array>
 #include <functional>
+#include <string>
 
 namespace th13 {
+
+// 只读诊断（默认关闭）：收集事件的帧内顺序/数值快照，供浏览器探针
+// `th13_debug_item_trace*` 导出；不写任何游戏状态。
+void set_item_trace(bool enabled);
+void set_item_trace_frame(i32 frame);
+void item_trace_note(const char* tag, i32 max_point, i32 score);
+std::string take_item_trace();
 
 class GameRandom;
 

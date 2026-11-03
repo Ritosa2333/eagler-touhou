@@ -481,7 +481,18 @@ void StageBattle::sync_damage_registrations() {
 
 void StageBattle::move_player(u32 held, bool bomb_slow) {
     option_movement_tick_ = true;
-    focus = (held & 0x08) != 0;
+    // 0x442a19-0x442a45：focus 三重门。00442960 先取全局键位 (0x4e4c08>>3)&1，
+    // 仅当以下三条同时成立才保留该位，否则 focus=0 并写 +0x14680=0x1e：
+    //   ① [0x4c2188]（stage ctl，0x418d30 构造）非空；
+    //   ② ctl+0xb8（存活敌机链计数）非 0——0x41863a/0x418688 在敌机插入
+    //      0xb0 链时 inc，0x418778/0x419385 摘链时 dec；
+    //   ③ player+0x67c >= 4（0x4424d0 清零的帧计时器）。
+    // 实证：S4 f14117（boss 死亡、敌链空）原生按住 Shift 仍以非聚焦速度
+    // 移动 4.5 px/帧，port 曾用聚焦 2.0 px/帧，14117..14167 玩家位置全差。
+    // +0x67c 与开火门 +0x690 由 0x4424d0 同时清零、在 0x443aff/0x443b63
+    // 同块以同一速率指针（0x4c0a28）递增，故复用 startup_clock 的计数值。
+    focus = (held & 0x08) != 0 && !sim.enemies.empty() &&
+            player_state_.startup_clock.current >= 4;
     const int dir = dir_index(held);
     i32 speed = dir == 0 ? 0
                                   : focus ? (dir < 5 ? speed_orth_focus : speed_diag_focus)
@@ -1281,6 +1292,22 @@ void StageBattle::collide_shots(StageEnemy& state) {
         (sim.bomb_active || invulnerable > 0 || (progress_ && trance_active(*progress_))))
         applied = float(i32(applied) / 5);
     if (applied <= 0) return;
+    // 0x419a90:0x419d37-0x419d53（反汇编复核）：符卡激活
+    // （DAT_004c2178+0x7c & 1）且炸弹保护位（同 flags & 0x20）时，
+    // 整数伤害 idiv 30。原生 `test esi,esi` 在除法之前（0x419d2f），
+    // 除后即使为 0 仍继续命中尾段（spirit_accum 加 0、阈值检查、
+    // hit_anim_timer=30），因此本处不新增 return。
+    if (spell.active() && (spell.flags & kSpellBombProtection) != 0)
+        applied = float(i32(applied) / 30);
+    // 临时只读探针（TH13_DAMAGE_PROBE=1 复用门控）：对比原生 0x419d2f 的
+    // (serial, damage, accum) 序列；只打印，不改变数值。
+    if (damage_probe_enabled) {
+        std::fprintf(stderr,
+            "[enemy-damage] f=%u serial=%u dmg_in=%d applied=%d flags=%08x "
+            "life=%d accum=%d\n",
+            sim.frame, enemy->serial, i32(damage), i32(applied),
+            enemy->flags, i32(enemy->life), i32(enemy->spirit_accum));
+    }
     // 00419a90 / 004179e0：伤害同趟立即入命，消除次帧延迟
     frame_damage_total += applied;
     enemy->spirit_accum += applied;
@@ -1303,10 +1330,15 @@ void StageBattle::collide_shots(StageEnemy& state) {
     }
     enemy->hit_anim_timer = 30;
     sim.damage(*enemy, applied);
-    // 419a90 marks effective damage after phase/death processing. Its final
-    // feedback branch chooses the hit voice and ANM tint once per enemy,
-    // subject to the original four-update cooldown, including bomb damage.
-    if (applied > 0 && !enemy->dead) enemy->flags |= 0x400000u;
+    // 0x419d2f（test esi,esi; je 0x419fb3）在 0x419d37-0x419d53 的 ÷30
+    // 之前判定：÷30 前的整数伤害非零即进入 0x419d55 尾段，0x419fa9 随后
+    // 无条件置 0x400000；÷30 后为 0 只让本帧扣血/累加为 0，marker 照置。
+    // 0x419f96-0x419fa3 的 0x41aad0 击杀/retire 路径提前返回跳过 marker，
+    // 对应 !enemy->dead。原生 S4 hit trace 实证：f11101/11102/11104..11111
+    // 的 serial 389 在 0x419d2f 处 esi=26/28/17/9（÷30 后 0、accum 不变）
+    // 仍执行 0x419fa9；port 旧门 applied>0 漏置 marker，使 0x41a227 的
+    // 命中反馈（id34/闪红）相位落后于原生。
+    if (!enemy->dead) enemy->flags |= 0x400000u;
     if (enemy->dead) reward_kill(*enemy);
 }
 
@@ -1469,8 +1501,17 @@ void StageBattle::step_bomb() {
         // （scale=0）→ 无消弹无伤害，次帧起生效。
         if (bomb_age < YoumuBomb::kActiveFrames) {
             GameRandom::tag(15);
-            if (auto spawn = youmu_bomb_.step(bomb_age, sim.random))
+            if (auto spawn = youmu_bomb_.step(bomb_age, sim.random)) {
                 youmu_slash_spawns_.push_back(*spawn);
+                // 0x40cd2f/0x40cd39：生成支路尾部（0x4016c0 计时器装入后）
+                // 以 0x460bc0 依次播 0x2c=44、0x1b=27（非定位；每生成帧一次，
+                // cursor 越过 60 槽的越界生成同样播）。S5 实证：原生 f2639/
+                // 2662/2683/2702/2719 各 44+27，port 曾整段缺失。
+                if (host_ && (!host_->hud_sound(44) || !host_->hud_sound(27))) {
+                    error_ = "Youmu bomb slash sound failed";
+                    return;
+                }
+            }
         }
         // 40cb50 creates the new VM and resolves all active handles before
         // registering their rectangles and before the enemy manager runs.
@@ -1757,6 +1798,10 @@ bool StageBattle::update_player(const GameInput& input) {
             // 00445a20：发生在死亡演出第3帧，而不是碰撞的同帧。
             const i32 step = player_->power_step;
             player_->power = std::max(player_->power - step, step);
+            // 00443240:130 同帧调 0x444df0：0x146c4 已被 0x444a10 置 0，
+            // 按新 power 重建 option 树（根/子体的初始 tick 抽视觉 RNG）。
+            // 表现层在本次 step 之后的 sync 消费（option_count 已更新）。
+            death_option_rebuild = true;
             //44343e: seven small power items aimed toward(0,player_y-224).
             const float base=float(std::atan2(-224.0,double(-player_x)));
             for(i32 i=0;i<7;++i) {
@@ -1917,7 +1962,7 @@ void StageBattle::reward_kill(StageEnemy& enemy) {
 //   box_auto_focus = ±0x638       = ±bc8[c]×0.5（聚焦吸附盒）
 // 追踪初速 = *(player+0x660 表+8) = 0x4c0bd8[c]（0x441dd0:66-68 挂表，
 // .data 实读 5/7/5/6；旧定标 3.0 已废）。
-void StageBattle::update_item_side() {
+ItemCollector StageBattle::make_item_collector() {
     // .data 0x4c0bb8 / 0x4c0bc8 / 0x4c0bd8（EXE 实读，四角色序）。
     static constexpr float kCollectBase[4] = {60.0f, 70.0f, 60.0f, 60.0f};
     static constexpr float kAutoBase[4] = {100.0f, 118.0f, 100.0f, 100.0f};
@@ -1951,11 +1996,13 @@ void StageBattle::update_item_side() {
     collector.progress = progress_;
     collector.player = player_;
     collector.score = score_;
-    item_manager.update(collector);
-    item_manager.update_spirits(collector);
-    // 0x42e380/0x438730 的收集音和派生奖励音必须在同一事件顺序消费：
-    // 普通道具尾 voice 0x25；神霊收集 voice 0x3f；灵力跨档 voice 0x0d；
-    // 残机碎片满 voice 0x11；灵击 +1 voice 0x2e；灵界跨 200 段 voice 0x44。
+    return collector;
+}
+
+// 0x42e380/0x438730 的收集音和派生奖励音必须在同一事件顺序消费：
+// 普通道具尾 voice 0x25；神霊收集 voice 0x3f；灵力跨档 voice 0x0d；
+// 残机碎片满 voice 0x11；灵击 +1 voice 0x2e；灵界跨 200 段 voice 0x44。
+void StageBattle::emit_item_events() {
     for (const auto& event : item_manager.events()) {
         i32 sound = -1;
         switch (event.kind) {
@@ -1995,6 +2042,40 @@ void StageBattle::update_item_side() {
         }
     }
     item_manager.clear_events();
+}
+
+// 0x42efb0 @ Update 24（0x42e380 道具管理器）：生产调度入口。
+void StageBattle::update_items_phase() {
+    ItemCollector collector = make_item_collector();
+    if (progress_ && score_)
+        item_trace_note("side-begin", progress_->max_point, score_->score);
+    item_manager.update(collector);
+    if (progress_ && score_)
+        item_trace_note("side-items", progress_->max_point, score_->score);
+    emit_item_events();
+}
+
+// 0x438e70 @ Update 25（0x438660/0x438730 神霊管理器）：生产调度入口。
+void StageBattle::update_spirits_phase() {
+    ItemCollector collector = make_item_collector();
+    item_manager.update_spirits(collector);
+    if (progress_ && score_)
+        item_trace_note("side-spirits", progress_->max_point, score_->score);
+    emit_item_events();
+}
+
+// 合并路径（harness/单测）：与拆分前完全同序（道具→神霊→统一事件）。
+void StageBattle::update_item_side() {
+    ItemCollector collector = make_item_collector();
+    if (progress_ && score_)
+        item_trace_note("side-begin", progress_->max_point, score_->score);
+    item_manager.update(collector);
+    if (progress_ && score_)
+        item_trace_note("side-items", progress_->max_point, score_->score);
+    item_manager.update_spirits(collector);
+    if (progress_ && score_)
+        item_trace_note("side-spirits", progress_->max_point, score_->score);
+    emit_item_events();
 }
 
 // 灵界（0x4057f0/0x405a20/0x405b80）：
@@ -2086,8 +2167,15 @@ bool StageBattle::update_trance(const GameInput& input) {
 
 bool StageBattle::open_event_sink(const char* path) {
     // 幂等（r4/harness）：sink 已开时不重开/截断，仅对齐帧号并启用观察。
+    // §7.3 事件合同：kill/boss_op 由 StageSim::replay_events 门控（该标志
+    // 原先只在 StageSim::begin(event_path) 里置位）。RunScene 回放路径在
+    // load 之前单独 open_event_sink、begin 收到 nullptr，导致回放会话只
+    // 出 enemy_spawn/move/bullet/player 而缺 kill/boss_op（2026-10-25
+    // RunScene 切换后与 stage1_oracle 事件面天然不同）。sink 打开即回放
+    // 会话语义，两处都补置位（只门控事件发射，不涉任何玩法/数值）。
     if (sink_open_) {
         events_ = true;
+        sim.replay_events = true;
         sim.sink.set_frame(sim.frame);
         return true;
     }
@@ -2097,6 +2185,7 @@ bool StageBattle::open_event_sink(const char* path) {
     }
     sink_open_ = true;
     events_ = true;
+    sim.replay_events = true;
     sim.sink.set_frame(sim.frame);
     return true;
 }
@@ -2121,6 +2210,10 @@ void StageBattle::on_bomb_key() {
     sim.spell.bomb_started();
     bomb_age = -1;
     ++bomb_generation;
+    // 0x40a4xx 通用 Bomb 启动包装：先以 0x460c50 在玩家 x 处播 0x2c=44，
+    // 再 call 角色 vtable slot0（Youmu 0x40c910 在其 0x40c948 播 0x31=49）。
+    // S5 实证：原生每次 Bomb 启动帧序列为 44(定位)→49，port 曾只播 49。
+    if (host_ && !host_->hud_sound(44, player_x)) error_ = "Bomb start slash sound";
     if(!host_->hud_sound(0x31))error_="Bomb start sound"; // four native constructors
     if (bomb_screen_shake) {
         bool ok = true;
@@ -2187,7 +2280,10 @@ bool StageBattle::step(const GameInput& input) {
     // 0 帧是 start() 装载趟，此后每 step 一帧；这也是 Boss 非符锚点的
     // 生产时钟，不能只在事件落盘时推进。捕获只观察同一游戏帧。
     ++sim.frame;
+    set_item_trace_frame(sim.frame);
     if (progress_) ++progress_->chapter_frame; //42c550 precedes ECL524 in this update.
+    if (progress_ && score_)
+        item_trace_note("step-begin", progress_->max_point, score_->score);
     frame_damage_total = 0.0f;
     if (events_) sim.sink.set_frame(sim.frame);
     input_state = input.held;
@@ -2206,12 +2302,18 @@ bool StageBattle::step(const GameInput& input) {
     step_shots();
     step_bomb();
     sim.bomb_active = bomb_timer > 0;
+    if (progress_ && score_)
+        item_trace_note("after-shots", progress_->max_point, score_->score);
     if (!sim.step_frame()) {
         error_ = sim.error();
         return false;
     }
+    if (progress_ && score_)
+        item_trace_note("after-sim", progress_->max_point, score_->score);
     // 道具/神霊侧（0x42e380/0x438730）：装配玩家只读面后步进。
-    update_item_side();
+    // 生产（RunScene）按原版调度把它们放到 Update 24/25 两个独立任务，
+    // 晚于激光 Update 22；defer_item_side=true 时由宿主 pass 调用。
+    if (!defer_item_side) update_item_side();
     if (damage_probe_enabled && sim.frame >= 9800 && sim.frame <= 9860) {
         std::printf("RNGP f=%d idx=%u", sim.frame, sim.random.index());
         for (int i = 0; i < 20; ++i) {

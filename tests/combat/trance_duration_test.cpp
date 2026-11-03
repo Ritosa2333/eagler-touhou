@@ -50,10 +50,15 @@ TEST(marisa_trance_scales_movement_on_activation_frame_in_fixed_units) {
  CHECK_EQ(battle.player_y,236.5859375f);
  input.update(0x50);CHECK(battle.step(input));
  CHECK_EQ(battle.player_x,-66.3203125f);CHECK_EQ(battle.player_y,231.2890625f);
+ // 0x442a19-0x442a57 focus 三重门：stage ctl 非空、ctl+0xb8（存活敌机
+ // 链计数）非 0、player+0x67c>=4 同时成立才保留 Shift 位；否则 focus=0
+ // 并写 +0x14680=0x1e。本 fixture 在 enemies.clear() 后链计数为 0，
+ // 原生同门关闭——0x98（Shift+上+右）走非聚焦对角 452×3/2=678（1/128）
+ // =5.296875 px/帧，而不是聚焦 181×3/2=271=2.1171875。
  input.update(0x98);CHECK(battle.step(input));
- CHECK_EQ(battle.player_x,-64.203125f);CHECK_EQ(battle.player_y,229.171875f);
+ CHECK_EQ(battle.player_x,-61.0234375f);CHECK_EQ(battle.player_y,225.9921875f);
  CHECK(battle.end_trance());input.update(0x10);CHECK(battle.step(input));
- CHECK_EQ(battle.player_y,224.171875f);
+ CHECK_EQ(battle.player_y,220.9921875f);
 }
 TEST(protective_trance_expiry_commits_death_without_a_second_deathbomb_window) {
  Provider p;Host h;SessionState s;HudPlayerState player;HudScoreState score;StageBattle battle;
@@ -101,7 +106,9 @@ TEST(protective_trance_entry_keeps_position_and_executes_the_shared_death_spirit
  const auto& spirit=battle.item_manager.spirits()[0];
  CHECK(spirit.alive);CHECK_EQ(spirit.kind,3);CHECK_EQ(spirit.flags&1u,1u);
  CHECK_EQ(s.ending_points,550);
- input.update(0x88);CHECK(battle.step(input));CHECK_EQ(battle.player_x,-82.46875f);
+ // 0x442a19-0x442a57：enemies.clear() 后 focus 门关闭（ctl+0xb8==0），
+ // Shift+右走非聚焦正交 576（1/128）=4.5 px/帧；灵梦无 3/2 缩放。
+ input.update(0x88);CHECK(battle.step(input));CHECK_EQ(battle.player_x,-79.96875f);
  CHECK_EQ(battle.player_y,418.5859375f);CHECK_EQ(s.ending_points,549);
 }
 TEST(respawn_damage_pulse_matches_native_growth_lifetime_and_hits) {

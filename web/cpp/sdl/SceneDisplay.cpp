@@ -45,6 +45,9 @@ bool SceneDisplay::draw() {
         return fail("Scene draw callbacks failed");
     }
     renderer.flush();
+    // 0x45d7d0/0x45bf10：Present 前消费截取队列（暂停黑幕把上一趟战场
+    // 写进 text.anm entry1 纹理）。必须晚于场景绘制 flush、早于 present。
+    if (before_present && !before_present()) return fail("Scene present hook failed");
     graphics.presentation.finish();
     graphics.present();
     return graphics.error.empty() || fail(graphics.error);
