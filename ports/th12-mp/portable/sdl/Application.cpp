@@ -18,6 +18,9 @@
 
 namespace th12host {
 namespace {
+#ifdef __EMSCRIPTEN__
+constexpr int WebCanvasWidth=640,WebCanvasHeight=480;
+#endif
 u32 input_bit(int key){
     switch(key){case 90:return InShot;case 88:return InBomb;case 16:return InFocus;case 17:return InSkip;
     case 37:return InLeft;case 38:return InUp;case 39:return InRight;case 40:return InDown;
@@ -129,7 +132,10 @@ extern "C" SDL_AppResult SDL_AppInit(void** state,int argc,char** argv){
 #ifdef __EMSCRIPTEN__
         // The page scales the canvas. Keep the WebGL backbuffer at the
         // game's render size instead of blitting into a larger HiDPI buffer.
-        active->window=SDL_CreateWindow("Touhou 12 - Undefined Fantastic Object",640,480,SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
+        active->window=SDL_CreateWindow("Touhou 12 - Undefined Fantastic Object",WebCanvasWidth,WebCanvasHeight,SDL_WINDOW_OPENGL);
+        // SDL initially adopts the canvas's CSS size. Restore the backing
+        // size once, then let CSS handle iframe and browser-toolbar resizes.
+        if(active->window)SDL_SetWindowSize(active->window,WebCanvasWidth,WebCanvasHeight);
 #else
         active->window=SDL_CreateWindow("Touhou 12 - Undefined Fantastic Object",960,720,SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE|SDL_WINDOW_HIGH_PIXEL_DENSITY);
 #endif
@@ -185,7 +191,12 @@ extern "C" SDL_AppResult SDL_AppEvent(void* state,SDL_Event* event){
     case SDL_EVENT_QUIT:stop_source="sdl-quit";return SDL_APP_SUCCESS;
     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
     case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
-    case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:app.clock.reset();break;
+    case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+#ifdef __EMSCRIPTEN__
+        if(event->type==SDL_EVENT_WINDOW_LEAVE_FULLSCREEN)
+            SDL_SetWindowSize(app.window,WebCanvasWidth,WebCanvasHeight);
+#endif
+        app.clock.reset();break;
     case SDL_EVENT_GAMEPAD_ADDED:app.add(event->gdevice.which);break;
     case SDL_EVENT_GAMEPAD_REMOVED:app.remove(event->gdevice.which);break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
