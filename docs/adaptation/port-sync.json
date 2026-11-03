@@ -1149,6 +1149,24 @@
               "note": "单人与多人同步原版背景动画绘制顺序；录像落盘与槽位刷新属于多人版。"
             }
           ]
+        },
+        "sdl-window-buffer": {
+          "paths": [
+            "portable/sdl/Application.cpp"
+          ],
+          "base": "d0047e4db91bc1de27ea613fb755211a058a3894",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "a90652f89b7b0d13bad1b1f5118bc40e7055ee58",
+              "source": "d0047e4db91bc1de27ea613fb755211a058a3894",
+              "targetHead": "d0047e4db91bc1de27ea613fb755211a058a3894",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Application.cpp"
+              ],
+              "note": "单人和多人同步窗口缓冲尺寸固定与退出全屏恢复。单人浏览器回归覆盖窗口尺寸调整。"
+            }
+          ]
         }
       }
     }
