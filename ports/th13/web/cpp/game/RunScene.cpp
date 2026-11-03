@@ -112,13 +112,19 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         // 4bba80+6*18: effect bank0 -> effect.anm, script136, native401730.
         // 4bba80+1*18: kind1 script0 native401000；位置=敌机VM+0x44（op334 显式），
         // 经 translation 通道交 spawn_effect（415650 语义读后清零）。
-        if(kind!=0&&kind!=1&&kind!=2&&kind!=3&&kind!=5&&kind!=6)return fail("Scene effect kind "+std::to_string(kind)+" not implemented");
-        if(kind==0||kind==1||kind==2||kind==3||kind==5){
-            const u32 handle=animations.create(banks.effect,0,-1,0,position);
-            auto* vm=animations.registry.find(handle);
-            return vm&&animations.spawn_effect(*vm,kind);
+        // 分类见 RunScene::scene_effect_action：4（表行 script=-1）与表外
+        // kind 均为原版容忍的空操作，绝不让对局失败（0x4156a1 js 路径）。
+        const auto action = scene_effect_action(kind);
+        if (action == SceneEffectAction::None) {
+            // 越界 kind 多为 ECL 流错位的症状：stderr 留证（浏览器控制台
+            // 可见），不影响游戏继续。
+            std::fprintf(stderr, "[scene-effect] out-of-table kind %d at (%.1f,%.1f)\n",
+                         kind, position.x, position.y);
+            return true;
         }
-        const u32 handle=animations.create(banks.effect,136,-1,0);
+        const u32 handle = animations.create(
+            banks.effect, action == SceneEffectAction::Effect136 ? 136 : 0, -1, 0,
+            action == SceneEffectAction::Effect136 ? Vec3{} : position);
         auto* vm=animations.registry.find(handle);
         return vm&&animations.spawn_effect(*vm,kind);
     };
