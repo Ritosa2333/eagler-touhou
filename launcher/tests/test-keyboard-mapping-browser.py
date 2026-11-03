@@ -34,8 +34,15 @@ def runtime_source(workspace, target):
         return "const launched=true,protocol='eagler-touhou/1',game='" + game + "',epoch=1;window.Module={eaglerControls:{},eaglerOptions:{}};" + source[start:end] + "\nwindow.clearRuntime=clearBrowserKeyboard;window.getKeys=()=>({bits:Module.eaglerControls.keyboardBits||0,pulse:Module.eaglerControls.keyboardPulseBits||0});"
     if game == "th12":
         return managed_runtime_fixture(repo)
-    source = (repo / "web/sdl-runtime/directory-keyboard.mjs").read_text(encoding="utf-8")
-    return source.replace("export ", "") + """
+    if game == "th05":
+        receiver = workspace / "common/browser/directory-keyboard.mjs"
+        script = "import {build} from 'esbuild';const r=await build({entryPoints:[" + json.dumps(str(receiver)) + "],bundle:true,write:false,format:'iife',globalName:'NativeKeyboard',platform:'browser'});process.stdout.write(r.outputFiles[0].text);"
+        source = subprocess.run(["node", "--input-type=module", "-e", script], cwd=ROOT,
+                                capture_output=True, text=True, encoding="utf-8", check=True).stdout
+        source += "\nconst {createBrowserKeyboard}=NativeKeyboard;\n"
+    else:
+        source = (repo / "web/sdl-runtime/directory-keyboard.mjs").read_text(encoding="utf-8")
+    return (source if game == "th05" else source.replace("export ", "")) + """
       const held=new Set();window.fixtureProfile='standard';
       const keyboard=createBrowserKeyboard({hostContext:{protocol:'eagler-touhou/1',game:'GAME',epoch:1,origin:location.origin,
         ready:()=>true,reset:()=>keyboard.clear(),profile:()=>window.fixtureProfile},
