@@ -14,7 +14,7 @@
     max-width: none;
     min-height: 60px;
     margin: 0;
-    padding: 0 max(28px, calc((100% - 1280px) / 2 + 28px));
+    padding: 0 max(var(--launcher-layout-gutter), calc((100% - var(--launcher-layout-width)) / 2 + var(--launcher-layout-gutter)));
     border: 0;
     border-bottom: 1px solid var(--kit-border);
     border-radius: 0;
@@ -74,14 +74,14 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    min-width: 76px;
+    min-width: 90px;
     min-height: 60px;
     padding: 0 16px;
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
     color: var(--kit-muted-foreground);
-    font: 500 14px / 1.2 var(--kit-font);
+    font: 600 16px / 1.2 var(--kit-font);
     letter-spacing: normal;
     text-decoration: none;
     cursor: pointer;
@@ -93,8 +93,8 @@
     gap: 7px;
   }
   .book-masthead .book-main-nav .book-navigation-icon {
-    width: 17px;
-    height: 17px;
+    width: 19px;
+    height: 19px;
   }
   .book-masthead .book-main-nav :is([aria-current="page"], [aria-pressed="true"]) {
     color: var(--kit-foreground);
@@ -280,7 +280,7 @@
       flex: 1;
       min-height: 44px;
       padding: 0 12px;
-      font-size: 13px;
+      font-size: 14px;
     }
     .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger) {
       width: 44px;

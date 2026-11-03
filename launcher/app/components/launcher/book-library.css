@@ -35,9 +35,10 @@
     grid-template-columns: 188px minmax(0, 1fr);
     gap: 32px;
     width: 100%;
-    max-width: 1280px;
+    max-width: var(--launcher-layout-width);
+    box-sizing: border-box;
     margin: 0 auto;
-    padding: 28px 28px 0;
+    padding: 28px var(--launcher-layout-gutter) 0;
     font: 400 14px / 1.5 var(--kit-font);
     color: var(--kit-foreground);
   }
