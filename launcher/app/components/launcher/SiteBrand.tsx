@@ -14,5 +14,5 @@ export function SiteBrand({assetUrl=relative,className=''}:{assetUrl?:(path:stri
     const selected=sessionSiteBrandFace(window);
     if(face!==selected){face=selected;for(const listener of listeners)listener();}
   },[]);
-  return <span className={`site-brand ${className}`} style={{'--site-brand-ratio':SITE_BRAND_RATIO} as CSSProperties} aria-hidden="true"><img src={assetUrl(siteBrandPath(selected))} width="1000" height={Math.round(1000/SITE_BRAND_RATIO)} alt="" decoding="async" data-brand-face={selected} onError={fallback}/></span>;
+  return <span className={`site-brand ${className}`} style={{'--site-brand-ratio':SITE_BRAND_RATIO} as CSSProperties} aria-hidden="true"><img suppressHydrationWarning src={assetUrl(siteBrandPath(selected))} width="1000" height={Math.round(1000/SITE_BRAND_RATIO)} alt="" decoding="async" data-brand-face={selected} onError={fallback}/></span>;
 }

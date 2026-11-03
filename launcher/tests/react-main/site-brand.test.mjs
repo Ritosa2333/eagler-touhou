@@ -2,20 +2,17 @@ import {test,beforeAll,afterAll,afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
-import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT,SITE_BRAND_SESSION_KEY,chooseSiteBrandFace,initializeStaticSiteBrand,sessionSiteBrandFace,siteBrandPath} from '../../lib/site-brand.mjs';
+import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT,SITE_BRAND_SESSION_KEY,SITE_BRAND_PREPAINT_SCRIPT,chooseSiteBrandFace,initializeStaticSiteBrand,sessionSiteBrandFace,siteBrandPath} from '../../lib/site-brand.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES,STATIC_APP_SHELL_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 
-let env,React,createRoot,SiteBrand,root;
+let env,React,createRoot,renderToStaticMarkup,SiteBrand,root;
 
 beforeAll(async()=>{
-  env=installMountedDom();React=await import('react');({createRoot}=await import('react-dom/client'));
+  env=installMountedDom();React=await import('react');({createRoot}=await import('react-dom/client'));({renderToStaticMarkup}=await import('react-dom/server'));
   ({SiteBrand}=await import('../../app/components/launcher/SiteBrand.tsx'));
 });
-afterEach(async()=>{
-  if(root)await React.act(async()=>root.unmount());root=null;
-  env.document.body.replaceChildren();assert.deepEqual(env.errors.splice(0),[]);
-});
+afterEach(async()=>{if(root)await React.act(async()=>root.unmount());root=null;env.document.body.replaceChildren();assert.deepEqual(env.errors.splice(0),[]);});
 afterAll(()=>env?.close());
 
 class MemoryStorage {
@@ -52,14 +49,27 @@ test('a new document in the same session reads the previously selected face',()=
   firstDocument.window.close(); nextDocument.window.close();
 });
 
-test('multiple React brand instances in one document render the stored session face',async()=>{
-  env.window.sessionStorage.setItem(SITE_BRAND_SESSION_KEY, 'face-F055');
+test('parser initializer restores the session face before any client hydration',()=>{
+  const markup=renderToStaticMarkup(React.createElement(React.Fragment,null,React.createElement(SiteBrand),React.createElement(SiteBrand)));
+  const dom=new JSDOM(`<!doctype html><script>sessionStorage.setItem('${SITE_BRAND_SESSION_KEY}','face-F055')</script><main>${markup}</main><script>${SITE_BRAND_PREPAINT_SCRIPT}</script><script>window.__brandBeforeHydration=[...document.querySelectorAll('.site-brand img')].map(image=>image.dataset.brandFace)</script>`,{url:'https://launcher.example/',runScripts:'dangerously'});
+  const images=[...dom.window.document.querySelectorAll('.site-brand img')];
+  assert.deepEqual(Array.from(dom.window.__brandBeforeHydration),['face-F055','face-F055']);
+  assert.deepEqual(images.map(image=>image.dataset.brandFace),['face-F055','face-F055']);
+  assert.ok(images.every(image=>/face-F055\.svg$/.test(image.getAttribute('src'))));
+  dom.window.close();
+});
+
+test('document layout runs the brand initializer after rendered marks and before client scripts',async()=>{
+  const source=await readFile(new URL('../../app/root.tsx',import.meta.url),'utf8');
+  const children=source.indexOf('{children}'),initializer=source.indexOf('<script>{SITE_BRAND_PREPAINT_SCRIPT}</script>'),clientScripts=source.indexOf('<Scripts ');
+  assert.ok(children>=0&&initializer>children&&clientScripts>initializer);
+});
+
+test('multiple React brand instances share the session face without inserting scripts',async()=>{
+  env.window.sessionStorage.setItem(SITE_BRAND_SESSION_KEY,'face-F055');
   const host=env.document.createElement('div');env.document.body.append(host);root=createRoot(host);
-  await React.act(async()=>root.render(React.createElement(React.Fragment,null,
-    React.createElement(SiteBrand),React.createElement(SiteBrand))));
-  const faces=[...env.document.querySelectorAll('.site-brand img')].map(mark=>mark.dataset.brandFace);
-  assert.deepEqual(faces,['face-F055','face-F055']);
-  assert.equal(env.window.sessionStorage.getItem(SITE_BRAND_SESSION_KEY),'face-F055');
+  await React.act(async()=>root.render(React.createElement(React.Fragment,null,React.createElement(SiteBrand),React.createElement(SiteBrand))));
+  assert.deepEqual([...env.document.querySelectorAll('.site-brand img')].map(image=>image.dataset.brandFace),['face-F055','face-F055']);
 });
 
 test('all brand marks in one document share a face and a failed image resets the session',()=>{
