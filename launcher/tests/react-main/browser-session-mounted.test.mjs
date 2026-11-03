@@ -2499,13 +2499,16 @@ test('Browser Back cancels Replay preload, returns to Options, then a second Bac
 
 test('Replay Options close cancels an in-flight native configure before the next Back', async () => {
   const {f, session, parentKey} = await openReplayFromOptions({autoReady: false});
-  const postMessage = f.native.postMessage;
+  await until(() => f.frame.contentWindow.location.href === session.getRuntime().getSnapshot().source,
+    'Replay Runtime navigation reaches the native endpoint before it reports ready');
+  const native = f.frame.contentWindow;
+  const postMessage = native.postMessage;
   let pendingConfigure = null;
-  f.native.postMessage = (message, target) => {
+  native.postMessage = (message, target) => {
     if (message.command === 'configure' && message.options?.replayViewer) {pendingConfigure = message; return;}
     postMessage(message, target);
   };
-  await React.act(async () => {f.native.emit('ready');});
+  await React.act(async () => {native.emit('ready');});
   await until(() => session.getRuntime().getSnapshot().phase === 'configuring' && pendingConfigure,
     'Replay preload is held in native configure');
   assert.equal(session.getRuntime().getSnapshot().ready, true);
