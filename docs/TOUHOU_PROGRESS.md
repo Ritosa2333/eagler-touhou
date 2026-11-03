@@ -80,9 +80,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[源码与复核工具](https://github.com/AdingApkgg/thp/commit/bf3f217fe41d286b611a123ffee5ceb24607f820)包含 WebGPU 初始化失败返回修复，以及当前核心的[四项门槛复核](https://github.com/AdingApkgg/thp/blob/bf3f217fe41d286b611a123ffee5ceb24607f820/docs/porting/TH14_CURRENT_MODE_V4_NOV03.md)：16 份留存记录中 15 份通过，覆盖 13 个不同组合，其中 10 个组合的通过记录包含全部目标关卡入口。灵梦 B Normal 的 122,537 回调记录通过；灵梦 B Easy 的一份记录因原版异常被拒绝。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码与复核工具](https://github.com/AdingApkgg/thp/commit/ed913249ab6f3604d3fd1fc9996fd33f225b4d4b)已补齐[录像 Ctrl／射击键加速更新调度](https://github.com/AdingApkgg/thp/blob/ed913249ab6f3604d3fd1fc9996fd33f225b4d4b/docs/porting/TH14_REPLAY_CADENCE_NOV04.md)：4,416 组原版判断、9 组更新链、25 项计数及实际静音 Application 805 帧通过，141 核心对象与 146 浏览器单元全量重编。当前核心的灵梦 B Normal 122,537 回调及灵梦 A Extra 38,403 回调重新通过异常、Initialize、Scene 和原始载荷四项门槛。
 
-还原、移植与 Web 适配均为进行中。完整模式、普通浏览器、原版整局图像／音频及剩余状态字差的验收范围见[当前清单](https://github.com/AdingApkgg/thp/blob/bf3f217fe41d286b611a123ffee5ceb24607f820/docs/porting/TH14_REMAINING_ACCEPTANCE.md)；整作 1:1 未完成。
+新的[魔理沙 A Hard 独立重测](https://github.com/AdingApkgg/thp/blob/ed913249ab6f3604d3fd1fc9996fd33f225b4d4b/docs/porting/TH14_HARD_ISOLATED_NOV04.md)在同一零调试异常记录中实际进入六面，114,842 回调对照仍有六面相机分歧，严格失败保留。还原、移植与 Web 适配均为进行中；完整模式、普通浏览器、原版整局图像／音频及剩余状态字差见[当前清单](https://github.com/AdingApkgg/thp/blob/ed913249ab6f3604d3fd1fc9996fd33f225b4d4b/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
