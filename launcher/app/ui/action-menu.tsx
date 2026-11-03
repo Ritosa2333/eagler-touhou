@@ -5,6 +5,7 @@ import {uiPortalHost} from './portal';
 import {cn} from './utils';
 import {usePopupPadding} from './use-popup-padding';
 import {listPopupPanelClass,listPopupItemClass,listPopupIndicatorClass} from './list-popup';
+import './menu-motion.css';
 const MenuAction = createContext<((action: () => void) => void) | null>(null);
 const MenuVariant=createContext<'action'|'selection'>('action');
 
@@ -28,7 +29,7 @@ export function ActionMenu({label, trigger, children, className, minimumWidth = 
     if (next) {setHost(uiPortalHost(anchor.current));setSurface(anchor.current?.closest('[data-ui-surface]')?.getAttribute('data-ui-surface') ?? undefined);}
     setOpen(next);
   }}><DropdownMenu.Trigger asChild ref={anchor}>{trigger}</DropdownMenu.Trigger>
-    <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn(variant==='selection'?`${listPopupPanelClass} overflow-y-auto`:'ui-menu', className)} aria-label={label} data-ui-surface={surface}
+    <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn(variant==='selection'?`${listPopupPanelClass} overflow-y-auto`:'ui-menu', 'ui-dropdown-motion', className)} aria-label={label} data-ui-surface={surface}
       side={side} align={align} sideOffset={6} collisionPadding={padding} style={{minWidth:`min(${minimumWidth}px, var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px)))`,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
         const action=afterClose.current;afterClose.current=null;
         if(action){event.preventDefault();anchor.current?.focus({preventScroll:true});action();}

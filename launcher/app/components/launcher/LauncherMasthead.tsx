@@ -11,6 +11,7 @@ import {
   Activity as ActivityLogIcon,
   BookOpen as ReaderIcon,
   Check as CheckIcon,
+  PlaySquare,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { uiPortalHost } from '../../ui/portal';
@@ -24,6 +25,7 @@ import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
 import { previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
+import '../../ui/menu-motion.css';
 
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
@@ -66,6 +68,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     [host, setHost] = useState<HTMLElement>();
   const content = useRef<HTMLDivElement>(null),
     returnToLanguage = useRef(false),
+    replayAfterClose = useRef(false),
     [languagesOpen, setLanguagesOpen] = useState(false);
   const masthead = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -191,11 +194,18 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           <DropdownMenu.Portal container={host}>
             <DropdownMenu.Content
               ref={content}
-              className="ui-menu masthead-menu-panel"
+              className="ui-menu masthead-menu-panel ui-dropdown-motion"
               id="mastheadMenuPanel"
               align="end"
               sideOffset={8}
               collisionPadding={padding}
+              onCloseAutoFocus={(event) => {
+                if (!replayAfterClose.current) return;
+                replayAfterClose.current = false;
+                event.preventDefault();
+                trigger.current?.focus({preventScroll:true});
+                props.onReplay?.();
+              }}
               onEscapeKeyDown={(event) => {
                 if (languagesOpen) {
                   event.preventDefault();
@@ -247,6 +257,10 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                 </>
               ) : (
                 <>
+                  {variant === 'lobby' && props.onReplay && <>
+                    <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
+                    <DropdownMenu.Separator className="ui-menu-separator" />
+                  </>}
                   {previewFeaturesEnabled && (
                     <>
                       <DropdownMenu.Group aria-label={t('nav.account')}>

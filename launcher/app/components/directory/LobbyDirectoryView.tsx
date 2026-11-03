@@ -16,11 +16,10 @@ export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived
   assetUrl(path: string): string;
   /** The owner prepares the model then opens the original same-URL form entry. */
   onOpenForm(mode: DirectoryFormMode): void;
-  onReplay?(): void;
   initialRows?: boolean;
 }
 /** Original lobby.mts349–385 render conditions, composed once in LobbySurface. */
-export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
+export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
   const {t} = useLocale(), snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const [roomFilter, setRoomFilter] = useState<DirectoryRoomFilter>('all');
   const seenRooms = useRef<Set<string> | null>(null);
@@ -61,7 +60,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
     <BookButton variant="action" className="lobby-button" id="connectionRefresh" type="button" onClick={service.retry}>{t('lobby.refresh')}</BookButton>
   </aside>;
   const membership = <aside className="lobby-membership" id="membership" hidden={!state.mine}><strong id="membershipTitle">{state.mine ? t('lobby.mine', {code: state.mine.code}) : ''}</strong><p id="membershipHint">{t(state.supportsRecovery ? 'lobby.mineHint' : 'lobby.releaseUnsupported')}</p><BookButton variant="action" className="lobby-button" id="releaseMembership" type="button" hidden={!state.mine || !state.supportsRecovery} disabled={!!state.recovering || state.connection !== 'live' || state.leaving || !state.mine?.recoveryToken} onClick={service.releaseMembership}>{t(state.recovering ? 'lobby.releasing' : 'lobby.release')}</BookButton></aside>;
-  const roomTools = <LobbyRoomTools disabled={disabled} onCreate={() => onOpenForm('create')} onReplay={onReplay} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
+  const roomTools = <LobbyRoomTools disabled={disabled} onCreate={() => onOpenForm('create')} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
   const roomFilters=<DirectoryRoomFilters rooms={filteredRooms} value={roomFilter} onChange={setRoomFilter}/>;
   const filtering = roomFilter !== 'all' || !!surface.productFilters?.length || !!surface.viewingProduct;
   const empty = state.loading || state.visibleRooms.length || state.connectionInterrupted ? null : {
