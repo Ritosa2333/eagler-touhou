@@ -80,13 +80,13 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/a3ef0132e50444378e9a1804c153e53df0826060)已在正常动画 VM 调用前、返回后接入带实际对象身份的加载交付；调用前只轮询初始化，返回后继续完整加载，失败沿 Battle 返回 Session，不包装 VM 方法指针。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/8c946994f36827bfe1bba6c8eb9b6c7706425f30)已将带 VM 身份的加载交付接入覆盖层 ANM8 和正常 ANM29；调用前通知置于预更新回调之前，符合原版 47e65b／47e73b → 46fe50 → 46ff1f 的顺序。实际原版指令组件在声明的合成回调／VM／栈条件下通过三组检查；实际 C++ Manager 六组通过，旧实现六组顺序控制被拒绝。
 
-[当前复核](https://github.com/AdingApkgg/thp/blob/a3ef0132e50444378e9a1804c153e53df0826060/docs/porting/TH14_NORMAL_VM_BOUNDARY_NOV04.md)：一份包含原版 VM 身份及同一暂停事件初始化时间的灵梦 B Normal 35,000 回调记录，全部所选状态／相机／HUD、1,057 行 VM 的 303 字段及 393 个战斗池检查点一致。没有向引擎传入 RNG 或子弹状态，也没有提前移动时钟或改变 60 ms 等待。该结论对应这份观察输入记录，未验收普通浏览器独立调度。
+[当前复核](https://github.com/AdingApkgg/thp/blob/8c946994f36827bfe1bba6c8eb9b6c7706425f30/docs/porting/TH14_OVERLAY_VM_BOUNDARY_NOV04.md)：新核心重新严格通过 16 份有效留存录像，共 1,379,760 回调；带实测 VM 身份的一份灵梦 B Normal 35,000 回调记录，其全部所选状态／相机／HUD、1,057 行 VM 的 303 字段和 393 个战斗池检查点相同。另一份新原版 35,000 回调记录也在普通观察模块上严格通过，未据它补写旧记录的身份。
 
-新核心重新执行 16 份有效留存录像，共 1,379,760 回调，均通过严格组合门槛和原始载荷复算；灵梦 B Easy 的旧异常记录继续拒绝。141 个核心对象全重编，7 个无效输入、2 个真实 VM 边界失败、12 项共享代码编译检查通过。实际静音 Application 两关 2,289 帧／27 断言通过，图像与离线 PCM 匹配封存参考，物理音频设备打开数零；146 个浏览器单元完成重编。
+141 核心对象及 146 浏览器单元全部重编，四项实际边界失败、12 项共享编译和七项无效输入检查通过。实际静音 Application 两关 2,289 帧／27 断言通过，两幅图像及离线 PCM 匹配封存参考，物理音频设备打开数零；这些结果不等于原版整局像素／音频或浏览器 UI 验收。
 
-另一份 35,000 回调原版记录在本核心仍有 script seed／calls／活动自机弹数 4,137／283／1 处差异，保留严格失败。旧 40,000 和 36,826 回调记录的缺失线程顺序未关闭。默认 readiness、首次录像同步、全局整体恢复、剩余弹／相机／指针 Z、完整模式与 EOF、普通 GUI、原版整局图像／音频、存档及浏览器继续见[当前清单](https://github.com/AdingApkgg/thp/blob/a3ef0132e50444378e9a1804c153e53df0826060/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+另一份 35,000 回调原版记录在本核心仍有 script seed／calls／活动自机弹数 4,137／283／1 处差异，保留严格失败。旧记录的线程顺序、默认 readiness、首次录像同步、全局整体恢复、剩余弹／相机／指针 Z、全部自机／难度与 EOF、普通 GUI、整局原版图像／PCM、存档及浏览器继续见[当前清单](https://github.com/AdingApkgg/thp/blob/8c946994f36827bfe1bba6c8eb9b6c7706425f30/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
