@@ -164,7 +164,6 @@ function RoomRow({
             // biome-ignore lint/suspicious/noArrayIndexKey: A numbered seat is the slot identity even when its occupant changes.
             return <Fragment key={index}>
               {duel && index === 1 && <strong className="book-room-score" role="img" aria-label={`${t('th09.score')} ${score}`}>
-                {score!=='VS'&&<span className="book-room-score-caption" aria-hidden="true">{t('th09.score')}</span>}
                 <span className="book-room-score-value">{score === 'VS' ? score : <><span>{room.seats[0]?.stats?.wins ?? 0}</span><span className="book-room-score-separator"> : </span><span>{room.seats[1]?.stats?.wins ?? 0}</span></>}</span>
               </strong>}
               <span className="lobby-public-player" data-empty={String(!seat)}>
