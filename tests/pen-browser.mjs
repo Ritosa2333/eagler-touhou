@@ -34,6 +34,26 @@ try{
  await press(90);await frame.evaluate(()=>{for(let i=0;i<90;i++)Module._th05_step();});await press(90);await frame.evaluate(()=>{for(let i=0;i<110;i++)Module._th05_step();});
  report.gameplay=await frame.evaluate(()=>({scene:Module._th05_scene(),x:Module._th05_player_x(),y:Module._th05_player_y(),ticks:Module._th05_ticks()}));assert.equal(report.gameplay.scene,4,JSON.stringify(report.gameplay));
  await frame.evaluate(()=>{for(let n=0;n<240;n++)Module._th05_step();});
+ // A key focused inside the Runtime must pass through the Launcher's mapper.
+ const mappedMovement=await frame.evaluate(()=>{
+  const bridge=window.__eaglerKeyboardInputBridge;
+  window.__eaglerKeyboardMapping={
+   schema:bridge.schema,protocol:bridge.protocol,game:bridge.game,epoch:bridge.epoch,origin:bridge.origin,
+   supports:code=>code==='KeyJ',clear:()=>[],
+   map:(event,down)=>event.code==='KeyJ'?[{code:'ArrowRight',key:'ArrowRight',keyCode:39,location:0,down}]:null,
+  };
+  try {
+   const canvas=document.querySelector('canvas'),before=Module._th05_player_x();
+   canvas.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyJ',key:'j',bubbles:true}));
+   for(let i=0;i<4;i++)Module._th05_step();
+   const held=Module._th05_player_x();
+   canvas.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyJ',key:'j',bubbles:true}));
+   for(let i=0;i<4;i++)Module._th05_step();
+   return {before,held,released:Module._th05_player_x()};
+  } finally {delete window.__eaglerKeyboardMapping;}
+ });
+ assert.ok(mappedMovement.held>mappedMovement.before,JSON.stringify(mappedMovement));
+ assert.equal(mappedMovement.released,mappedMovement.held,'Remapped movement releases on keyup');
  const pen=await page.context().newCDPSession(page),surface=await frame.locator('canvas').boundingBox();
  const start=await frame.evaluate(()=>Module._th05_player_x());
  const stylus=(type,x,down=false)=>pen.send('Input.dispatchMouseEvent',{type,pointerType:'pen',x:surface.x+x,y:surface.y+300,button:type==='mouseMoved'?'none':'left',buttons:down?1:0});
