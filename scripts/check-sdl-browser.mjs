@@ -137,6 +137,33 @@ try{
  await press('ArrowDown');await press('ArrowDown');await press('Enter');await wait(s=>s.scene==='pause-confirm'&&s.menuReady);
  await press('ArrowUp');await press('Enter');await wait(s=>s.scene==='replay-save'&&s.menuReady);
  await press('Enter');await wait(s=>s.scene==='name'&&s.menuReady);await press('Enter');
+ // Verify autosave before invoking the explicit full synchronization in list.
+ await frame.evaluate(()=>{
+   const {FS}=window.__th12Runtime.core;
+   const archive='/savesth12/replay/th12_archive.rpy';
+   FS.writeFile(archive,new Uint8Array(1024*1024));
+   const readFile=FS.readFile;
+   window.autosaveReads=[];
+   window.autosaveFlushSeen=false;
+   FS.readFile=function(path,...args){
+     if(path===archive)autosaveReads.push(path);
+     if(path==='/savesth12/scoreth12.dat')window.autosaveFlushSeen=true;
+     return readFile.call(this,path,...args);
+   };
+   window.finishAutosaveCheck=()=>{FS.readFile=readFile;FS.unlink(archive);return autosaveReads;};
+   window.autosavedReplay=()=>new Promise((resolve,reject)=>{
+     const open=indexedDB.open('/savesth12');
+     open.onerror=()=>reject(open.error);
+     open.onsuccess=()=>{
+       const db=open.result;
+       const request=db.transaction('FILE_DATA').objectStore('FILE_DATA').get('/savesth12/replay/th12_01.rpy');
+       request.onsuccess=()=>{db.close();resolve((request.result?.contents?.byteLength??0)>176);};
+       request.onerror=()=>{db.close();reject(request.error);};
+     };
+   });
+ });
+ await frame.waitForFunction(()=>window.autosaveFlushSeen&&window.autosavedReplay(),null,{polling:250,timeout:12000});
+ assert.deepEqual(await frame.evaluate(()=>window.finishAutosaveCheck()),[],'autosave skips unchanged replay files');
  const listing=await page.evaluate(()=>rpc(0,'list'));const replay=listing.files.find(f=>f.path.endsWith('th12_01.rpy'));assert(replay?.size>176);
  const info=await page.evaluate(path=>rpc(0,'playback',{action:'inspect',path}),replay.path);assert.equal(info.description.mode,'story');
  await page.evaluate(path=>rpc(0,'playback',{action:'open',path}),replay.path);await wait(s=>s.scene==='replay-playing');

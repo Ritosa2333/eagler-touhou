@@ -188,8 +188,11 @@ void Scene::capture_background(){
             // Clip the near plane before projection; never discard a whole tile
             // just because one corner is behind the camera.
             for(int plane=0;plane<2;++plane){
-                const double limit=plane?exe.far_plane:exe.near_plane;clipped.clear();
+                const double limit=plane?exe.far_plane:exe.near_plane;
                 const auto keep=[&](double d){return plane?d<=0:d>=0;};
+                const auto inside=[&](const P& vertex){return keep(vertex.depth-limit);};
+                if(std::all_of(polygon.begin(),polygon.end(),inside))continue;
+                clipped.clear();
                 for(size_t i=0;i<polygon.size();++i){const P& p=polygon[i];const P& n=polygon[(i+1)%polygon.size()];const bool in=keep(p.depth-limit);
                     if(in)clipped.push_back(p);
                     if(in!=keep(n.depth-limit)){const double t=(limit-p.depth)/(n.depth-p.depth);
@@ -521,7 +524,6 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     Canvas canvas;canvas.reset(d.source_width,d.source_height);
     const auto draw=[&](const std::u32string& text,float x,float scale_x=1){
         const float y=d.raster?d.source_y:2;
-        for(const auto& off:d.outline)raster.fill(canvas,text,x+off[0]*scale_x,y+off[1]-2,serif,weight,size,0x000000,0,scale_x);
         raster.fill(canvas,text,x,y,serif,weight,size,rgb,0,scale_x);
     };
     if(d.localized_spell){
@@ -540,6 +542,7 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     }
     else if(d.spacing){for(size_t i=0;i<d.bytes.size();i+=2)draw(decode_cp932(d.bytes.substr(i,2)),float(2*d.offset+i64(i)*d.spacing));}
     else draw(d.text,d.raster?d.source_x:float(2*d.offset+2));
+    canvas.outline_text();
     Texture t;t.name=gpu.create_texture(canvas.width,canvas.height,canvas.rgba.data(),true);t.w=float(canvas.width);t.h=float(canvas.height);t.repeat=false;
     cache.push_front({key,t});
     if(cache.size()>(d.menu?96u:16u)){gpu.delete_texture(cache.back().texture.name);cache.pop_back();}
@@ -670,7 +673,7 @@ void Scene::render_menu(const std::vector<Appearance>& list,float x,float y,bool
         if(!a.visible||a.alpha<=0)continue;
         // A menu line: 32px MS Gothic at half size with a black outline.
         Dialogue d;d.text=a.text->text;d.menu=d.raster=true;d.width=a.text->width;d.height=a.text->height;d.source_width=u32(d.width*2);d.source_height=u32(d.height*2);
-        d.source_x=0;d.source_y=0;d.foreground=a.text->color;const i32 outline[4][2]{{2,2},{-2,2},{2,-2},{-2,-2}};std::memcpy(d.outline,outline,sizeof outline);
+        d.source_x=0;d.source_y=0;d.foreground=a.text->color;
         draw_text_quad(d,a,x+a.x,y+a.y,1,nullptr);
     }
     if(texts)for(const auto& t:*texts)render_text(t);
