@@ -40,6 +40,10 @@ try{
   const audioDeadline=Date.now()+60000;
   while(Date.now()<audioDeadline&&!events.some(e=>e.event==='audio-health'&&e.musicStatus?.startsWith('原版 FM：')))await new Promise(resolve=>setTimeout(resolve,250));
   assert(events.some(e=>e.event==='audio-health'&&e.musicStatus?.startsWith('原版 FM：')),'original PMD music must play');
+  for(let i=0;i<8&&!events.some(e=>e.event==='audio-health'&&e.effectsPeak>0.001);i++){
+    await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,200));await page.keyboard.up('KeyZ');await new Promise(resolve=>setTimeout(resolve,1500));
+  }
+  assert(events.some(e=>e.event==='audio-health'&&e.effectsPeak>0.001),'original sound effects must produce audio');
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH02 solo presentation');

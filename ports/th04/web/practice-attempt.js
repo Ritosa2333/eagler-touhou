@@ -10,13 +10,14 @@ import {sha256} from './netplay/sha256.js';
 import {Fat12} from './solo-fat12.js';
 import {extractOriginalPmd} from './pmd-archives.mjs';
 import {PmdPlayer} from './pmd-player.mjs';
+import {OriginalSfx} from './original-sfx.mjs';
 
 // An attempt owns its canvas, DOS instance, clocks, recording and music.
 // A parked attempt retains the original JSPI continuation, never a RAM snapshot.
 export function createSoloAttempt({canvas,practice,settings,replay=null,standby=false,sources,applyReplayInput,callbacks={}}){
   const emit=(name,...args)=>{if(attempt.foreground&&!attempt.cancelled)callbacks[name]?.(...args);};
   const attempt={canvas,practice,settings,standby,core:null,recorder:null,music:null,patch:null,blob:null,ready:false,foreground:false,cancelled:false,
-    stop(){if(this.cancelled)return;this.cancelled=true;this.foreground=false;clearTimeout(this.timeout);this.recorder?.dispose();this.music?.dispose();this.core?.dispose();}};
+    stop(){if(this.cancelled)return;this.cancelled=true;this.foreground=false;clearTimeout(this.timeout);this.recorder?.dispose();this.sfx?.dispose();this.music?.dispose();this.core?.dispose();}};
   const fail=error=>{attempt.error=error;if(attempt.foreground)emit('onError',error);else attempt.stop();};
   attempt.task=(async()=>{
     try{
@@ -38,6 +39,8 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       if(audioMode==='independent'){
         const music=attempt.music=new SoloMusic(text=>emit('onStatus',text));
         music.player.pmd={tracks:extractOriginalPmd('th04',new Fat12(data)),engine:await PmdPlayer.prepare(music.context,import.meta.url)};
+        const fat=new Fat12(data),bridge=replay?fat.find('GENSO/WEBMUSIC.COM',{optional:true}):undefined;
+        if(!replay||bridge!==undefined&&fat.read(bridge).length===883){attempt.sfx=await OriginalSfx.create('th04',fat);music.sfx=attempt.sfx;}
         // No background audio, including boot/title commands.
         music.suspend();
         if(replay)await music.attachReplay();else await music.install(data,'GENSO');
@@ -61,14 +64,14 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
         }catch(error){if(attempt.cancelled)throw error;attempt.recordingError=error.message;}
       }
       if(attempt.cancelled)throw Error('练习已取消');
-      const config={canvas,externalReplay,practice,practiceStandby:standby,practicePatch:attempt.patch,wasmBinary:resources.wasmBinary,applyReplayInput,
+      const config={canvas,externalReplay,practice,practiceStandby:standby,practicePatch:attempt.patch,wasmBinary:resources.wasmBinary,applyReplayInput,externalEffects:!!attempt.sfx,
         onError:fail,onExit:()=>{if(attempt.cancelled)return;if(attempt.foreground){attempt.recorder?.finish();emit('onExit');}else{attempt.error=Error('预备练习意外退出');attempt.stop();}}};
       Object.assign(config,{ExMemory:7,Latencys:100,SampleHz:44100,SNDboard:4,nativeSoloAudio:!externalReplay&&audioMode!=='original',no_mouse:true,use_menu:false,fontfile:'font.bmp'});
       attempt.core=runtime==='worker'?await WorkerNP21.create(config,{game:'04',patch:attempt.patch,music:attempt.music?.reader.patch,onError:fail}):await NP21.create(config);
       if(attempt.cancelled){attempt.core.dispose();throw Error('练习已取消');}
       if(attempt.error)throw attempt.error;
       attempt.recorder?.attach(attempt.core);
-      if(attempt.core.isWorker)attempt.core.onMusic=(ax,hash)=>attempt.music?.player.command(ax,hash);
+      if(attempt.core.isWorker)attempt.core.onMusic=(ax,hash)=>{if((ax>>>8)===12)attempt.sfx?.command(ax);else attempt.music?.player.command(ax,hash);};
       else attempt.core.module.observeReplayBoundary=()=>attempt.music?.poll(attempt.core.module.HEAPU8,performance.now(),true);
       await attempt.core.addDiskImage('th04-solo.hdi',data);
       await attempt.core.setHdd(0,'th04-solo.hdi');
