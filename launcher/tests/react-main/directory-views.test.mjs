@@ -188,6 +188,25 @@ test('List rows retain keyed identity and creation-time motion across reorder', 
   await f.receive([room({code:'5678'})]);await m.update({snapshot:f.service.getSnapshot()});assert.equal(original.isConnected,false);
 });
 
+test('Closed rooms briefly exit, cannot be entered, and recover if they return', async () => {
+  const f = await fixture().live([room()]);
+  await mountLobby(f);
+  n('.lobby-room-row');
+  await f.receive([]);
+  const departing = n('.lobby-room-exiting');
+  assert.equal(departing.getAttribute('aria-hidden'), 'true');
+  assert.ok(departing.hasAttribute('inert'));
+  assert.equal(n('#roomList').hidden, false);
+  await f.receive([room()]);
+  assert.equal(n('.lobby-room-row'), departing);
+  assert.equal(departing.classList.contains('lobby-room-exiting'), false);
+  assert.equal(departing.hasAttribute('inert'), false);
+  await f.receive([]);
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 550));});
+  assert.equal(env.document.querySelector('.lobby-room-row'), null);
+  assert.equal(n('#roomList').hidden, true);
+});
+
 test('Restored list keeps Replay available offline and preserves the directory state', async () => {
   const f=fixture();let replays=0;
   await mountLobby(f,{onReplay:()=>replays++});

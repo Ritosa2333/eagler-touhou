@@ -89,5 +89,9 @@
 }
 @keyframes lobby-room-arrival {from {opacity:0;translate:0 10px} to {opacity:1;translate:0 0}}
 .book-directory .lobby-room-row.lobby-room-arriving {animation:lobby-room-arrival 650ms cubic-bezier(.2,.65,.25,1) both}
+@keyframes lobby-room-departure {from {opacity:1;translate:0 0} to {opacity:0;translate:0 -8px}}
+.book-directory .lobby-room-row.lobby-room-exiting {animation:lobby-room-departure 450ms ease-in both;pointer-events:none}
 @media(prefers-reduced-motion:reduce) {.book-directory .lobby-room-row.lobby-room-arriving {animation:none}}
 .less-motion .book-directory .lobby-room-row.lobby-room-arriving {animation:none}
+@media(prefers-reduced-motion:reduce) {.book-directory .lobby-room-row.lobby-room-exiting {animation:none;display:none}}
+.less-motion .book-directory .lobby-room-row.lobby-room-exiting {animation:none;display:none}

@@ -27,6 +27,7 @@ export interface DirectoryRoomRowsProps {
   /** Rows created during main's first visual gate permanently skip arrival motion. */
   initialRows?: boolean;
   arrivals?: ReadonlySet<string>;
+  exiting?: ReadonlySet<string>;
 }
 /** Original public/lobby.html165–177 row template + lobby.mts260–347 renderer. */
 export function DirectoryRoomRows({
@@ -35,6 +36,7 @@ export function DirectoryRoomRows({
   assetUrl,
   initialRows = false,
   arrivals,
+  exiting,
 }: DirectoryRoomRowsProps) {
   return (
     <>
@@ -47,6 +49,7 @@ export function DirectoryRoomRows({
           assetUrl={assetUrl}
           initial={initialRows}
           arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
+          exiting={exiting?.has(`${room.product}-${room.code}`) ?? false}
         />
       ))}
     </>
@@ -59,6 +62,7 @@ function RoomRow({
   assetUrl,
   initial,
   arriving,
+  exiting,
 }: {
   room: DirectoryRoom;
   snapshot: DirectorySnapshot;
@@ -66,6 +70,7 @@ function RoomRow({
   assetUrl(path: string): string;
   initial: boolean;
   arriving: boolean;
+  exiting: boolean;
 }) {
   const { t } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
@@ -89,7 +94,9 @@ function RoomRow({
     !directoryRoomCanEnter(room);
   return (
     <li
-      className={`lobby-room-row directory-room-grid${initiallyHiddenMotion ? ' lobby-room-initial' : ''}${arriving ? ' lobby-room-arriving' : ''}`}
+      className={`lobby-room-row directory-room-grid${initiallyHiddenMotion ? ' lobby-room-initial' : ''}${arriving && !exiting ? ' lobby-room-arriving' : ''}${exiting ? ' lobby-room-exiting' : ''}`}
+      inert={exiting || undefined}
+      aria-hidden={exiting || undefined}
       data-key={`${room.product}-${room.code}`}
       data-state={state}
     >
