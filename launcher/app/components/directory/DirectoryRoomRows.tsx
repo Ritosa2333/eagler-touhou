@@ -86,6 +86,7 @@ function RoomRow({
     <li
       className={`lobby-room-row directory-room-grid${initiallyHiddenMotion ? ' lobby-room-initial' : ''}`}
       data-key={`${room.product}-${room.code}`}
+      data-state={state}
     >
       <div className="lobby-room-identity">
         <span className="lobby-cover" aria-hidden="true">
@@ -173,7 +174,7 @@ function RoomRow({
           })}
         </div>
       </fieldset>
-      <BookButton variant="primary"
+      <BookButton variant={spectating ? 'action' : 'primary'}
         className="lobby-button lobby-join"
         type="button"
         disabled={disabled}

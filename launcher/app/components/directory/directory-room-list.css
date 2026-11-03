@@ -16,6 +16,7 @@
     animation:none;
   }
   .book-directory .lobby-room-row::before {inset:0 16px auto;background:var(--book-border)}
+  .book-directory .lobby-room-row[data-state='recruiting'] {background:color-mix(in srgb,var(--kit-success) 7%,var(--book-surface))}
   .book-directory .lobby-room-identity {display:flex;align-items:center;gap:10px;min-width:0;grid-column:1;grid-row:1/span 2}
   .book-directory .lobby-room-title {display:grid;gap:3px;min-width:0}
   .book-directory .lobby-room-title h2 {display:flex;align-items:center;gap:8px;margin:0;min-width:0;color:var(--book-ink);font:600 13px/1.5 var(--ui-font)}
@@ -58,9 +59,9 @@
   .book-directory .book-room-score {position:relative;grid-column:2;grid-row:1;justify-self:center;display:flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:64px;min-height:40px;margin:0;padding:0 4px;border-block:1px solid var(--kit-border);color:var(--kit-foreground);white-space:nowrap}
   .book-directory .book-room-score-value {display:flex;align-items:center;justify-content:center;gap:6px;font:750 32px/1.1 var(--kit-font);font-variant-numeric:tabular-nums}
   .book-directory .book-room-score-separator {color:var(--kit-muted-foreground);font-size:18px;white-space:normal}
-  .book-directory .lobby-room-state {display:flex;align-items:center;gap:5px;min-width:0;padding:0;color:var(--book-muted);font-size:11px;line-height:1.5;white-space:normal}
-  .book-directory .lobby-room-state::before {width:6px;height:6px;background:var(--kit-success)}
-  .book-directory .lobby-room-state:is([data-state='full'],[data-state='playing'])::before {background:var(--book-accent)}
+  .book-directory .lobby-room-state {display:flex;align-items:center;gap:5px;min-width:0;padding:3px 7px;border-radius:4px;background:var(--kit-muted);color:var(--kit-muted-foreground);font-size:11px;line-height:1.5;white-space:normal}
+  .book-directory .lobby-room-state::before {width:6px;height:6px;background:currentColor}
+  .book-directory .lobby-room-state[data-state='recruiting'] {background:color-mix(in srgb,var(--kit-success) 15%,var(--book-surface));color:var(--kit-success)}
   .book-directory .lobby-room-row>.lobby-join {grid-column:4;grid-row:2;justify-self:end;align-self:center;width:78px;min-height:44px;margin:0;padding:7px 9px;font-size:12px;white-space:normal}
   @media(max-width:1000px),(hover:none),(pointer:coarse) {
     .book-directory .lobby-room-list>.directory-room-grid {--room-copy-column:2;--room-action-column:3;grid-template-columns:48px minmax(0,1fr) 78px;grid-template-rows:repeat(5,auto);gap:4px 10px;min-width:0;width:100%;box-sizing:border-box;padding:14px}
