@@ -240,11 +240,17 @@ TEST(music_room_entry_platform_and_return_roundtrip) {
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK_EQ(harness.scene->state.menu.cursor, 6);
     CHECK_EQ(harness.scene->state.menu.count, kTitleMainEntries);
-    // 0x44cdb9：返回路径重建背景 89 与 LOGO 94（旧树已停机，label2 不可恢复）。
+    // 0x44cddb（bit1 清＝返回分支）：89 已存在则复用，仅缺失才 0x44bb80
+    // 新建（0x44cdef jne 0x44ce0c）。0x44d954-0x44d97b（反汇编）：音楽室
+    // （光标 6，跳转表与 case 0-6/8 同目标 0x44d947）确认时 label1 已发给
+    // 两个 LOGO 根槽（+0x440=94 / +0x444=95）并清 0；返回分支 0x44ce26
+    // 取 94/95，两者均缺失才建 0x5f=95（0x44ce51），94 冷启动首入场根不重建。
+    // 旧断言「94 存活 / 95=0」来自端口旧实现（只发 94 且不清槽）与未镜像
+    // ins_5(1) 的合成夹具，无原生依据。
     CHECK(harness.scene->state.handles[89] != 0);
-    CHECK(harness.scene->state.handles[89] != background_before);
-    CHECK(harness.scene->state.handles[94] != 0);
-    CHECK_EQ(harness.scene->state.handles[95], 0u);
+    CHECK_EQ(harness.scene->state.handles[89], background_before);
+    CHECK_EQ(harness.scene->state.handles[94], 0u);
+    CHECK(harness.scene->state.handles[95] != 0);
     auto* background = harness.manager.registry.find(harness.scene->state.handles[89]);
     CHECK(background != nullptr);
     CHECK(harness.manager.registry.find_child_script(*background, 90, 0) != nullptr);

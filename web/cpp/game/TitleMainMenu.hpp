@@ -64,7 +64,12 @@ struct TitleSceneResources {
                                   // 原版无独立光标 VM，行标签 7/17+cursor 驱动全部行。
     i32 difficulty_particle = 18; // 神霊粒子模板（ascii bank2 script18）
     i32 background_root = 89;     // 背景根（spawn 92,93,91,90；内建 110f/170f 时序）
-    i32 logo_root = 94;           // LOGO 根（boot 与返回路径同用 94，0x44cdb9 实证）
+    i32 logo_root = 94;           // LOGO 首入场根（冷启动；内建 110f 翻转时序）
+    // LOGO 复位根：0x44ce51 `lea edi,[eax+0x5f]`（eax=0）= script 95。返回
+    // 路径 94/95 句柄均缺失时建 95（script95 立即 spawn 99/96/100，无 110f
+    // 隐藏延迟），不是 94——0x44cdb9 的 89/94 新建是 +0x5c40 bit1 置位的
+    // 冷启动分支，返回分支在 0x44cddb（bit1 清）。
+    i32 logo_restore_root = 95;
     i32 version_bar = 0;          // title_v script0 @(256,224) 层 26（30f 延迟淡入）
     i32 portrait_base = 125;      // 立绘 125+角色号（label 7/12/17/22+角色号）
     i32 weapon_base = 135;        // 通常武器图标 135+角色号（同上标签族）

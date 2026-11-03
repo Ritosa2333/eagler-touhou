@@ -59,14 +59,11 @@ bool GameHud::update(const HudFrameContext& context, HudFrameServices& services)
             return false;
         }
     }
-    // 开场签名幕退休（原生 0x439ce0 任务寿命）：terra-udsr 回放窗 draws 里
-    // sig 两半 op 最后一帧 = battle frame 3——frame 4 起原生不再画。port 的
-    // VM 脚本 t=10 后已死（pc=-1）但不被链回收，必须在此显式退休，否则
-    // alpha=0xff 全屏幕永久覆盖战场（Replay 画面冻结根因，2026-11-02）。
-    if (opening_signature) {
-        ++opening_signature_frames;
-        if (opening_signature_frames > 3) release_opening_signature();
-    }
+    // 开场签名幕不按战斗帧退休：原生 0x44c0d0 的卸载点在标题线程尾段
+    // （TitleInf+0x5e4>=0xB4 或 DAT_004dcc5c&0x180），加速直入不跑标题线程，
+    // sig 两半在原生 gate-01 全窗 battle-draws 每帧都在（0..3329，6660 条）。
+    // 旧实现按 terra-udsr 5 帧短窗误读成「只画到 battle frame 3」并在
+    // frame 4 退休，导致 boot-draw 窗口首差（frame 3 draw 118 sig 缺失）。
     frame_age.tick(&progress.rate);
     return true;
 }

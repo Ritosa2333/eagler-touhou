@@ -12,6 +12,10 @@ namespace th13 {
 
 namespace {
 
+std::string item_trace_rows;
+bool item_trace_enabled = false;
+i32 item_trace_frame = -1;
+
 constexpr float kPi = 3.1415927410125732f;
 
 // 0x472f30：x87 循环角度 wrap（[-π,π]；步长 2π，0x20 次上限同原版）。
@@ -31,6 +35,29 @@ float wrap_angle(float angle) {
 }
 
 }  // namespace
+
+void set_item_trace(bool enabled) {
+    item_trace_enabled = enabled;
+    if (!enabled) item_trace_rows.clear();
+}
+
+void set_item_trace_frame(i32 frame) {
+    item_trace_frame = frame;
+}
+
+void item_trace_note(const char* tag, i32 max_point, i32 score) {
+    if (!item_trace_enabled) return;
+    char row[192];
+    std::snprintf(row, sizeof row, "f=%d note=%s max_point=%d score=%d\n",
+                  item_trace_frame, tag, max_point, score);
+    item_trace_rows += row;
+}
+
+std::string take_item_trace() {
+    std::string result;
+    result.swap(item_trace_rows);
+    return result;
+}
 
 // ---- StageItemHost：生成 ----
 
@@ -399,9 +426,19 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
     }
     case 9: {  // 消弹灵（0x42eb46）：0x42f510(0.1) raw max_point+10；
                // 0x413bf0(&be7b8,10) score += 10/10 = 1 原值（显示 +10）。
+        const i32 trace_mp = progress.max_point;
+        const i32 trace_sc = score_state.score;
         add_max_point(0.1f);
         score_state.score += 1;
         if (score_state.score > 999999999) score_state.score = 999999999;
+        if (item_trace_enabled) {
+            char row[192];
+            std::snprintf(row, sizeof row,
+                          "f=%d item9 max_point=%d->%d score=%d->%d\n",
+                          item_trace_frame, trace_mp, progress.max_point,
+                          trace_sc, score_state.score);
+            item_trace_rows += row;
+        }
         break;
     }
     default:
@@ -601,10 +638,18 @@ i32 ItemManager::point_value(float player_y, bool homing) const {
 void ItemManager::set_spirit_trance(bool active) {
     // The original keeps position, velocity, kind and identity; resets the
     // lifetime clock and replaces the ANM with kind*6+(active?4:1).
+    // 0x439280/0x4393a0（灵界开/关）无条件写 Timer：previous=-1
+    //（0xffffffff）、current=0、fractional=0（004392f5/0043930b 与
+    // 004393xx 的 mov [ebx+0x5c],0xffffffff / [ebx+0x60],0 /
+    // [ebx+0x64],0）。frame 是「本帧尾检查值」的暴露位；重置后必须等于
+    // Timer.previous（-1），否则 update_spirits 尾部的 set(frame+1) 同步
+    // 守卫会把 current 提前推到 1，随后 tick 再进到 2——比原生快 1 帧，
+    // 使 0x1e0（480）反弹门提前一帧关闭（S4 f8188 y 反弹 / S6 f2456
+    // x 反弹方向分叉根因；原生 f7708 重置帧 raw state frame=1）。
     for (auto& spirit : spirits_) {
         if (!spirit.alive) continue;
         spirit.flags = (spirit.flags & ~1u) | u32(active);
-        spirit.frame = 0;
+        spirit.frame = -1;
         spirit.lifetime_clock.set(0);
         spirit.fade_requested = false;
     }
@@ -728,9 +773,13 @@ void ItemManager::update_spirits(const ItemCollector& player) {
 }
 
 float ItemManager::angle_to_player(const Spirit& s, const ItemCollector& player) {
+    // 0x443f60：dx/dy 各自 fsub 后 fstp dword 落 f32（0x443f6e-0x443f76 /
+    // 0x443f7a-0x443f83），再 fld 回 x87 调双精度 CRT atan2（0x443fbb
+    // call 0x4977aa），结果一次 fstp dword（0x443fc0）。f32 重载 atan2f
+    // 在 S3 f8187（serial 1052）差 1 ULP，越 0.01 量化边界翻向。
     const float dx = player.x - s.x, dy = player.y - s.y;
     if (dx == 0.0f && dy == 0.0f) return 1.5707964f;
-    return std::atan2(dy, dx);  // 0x443f60
+    return static_cast<float>(std::atan2(static_cast<double>(dy), static_cast<double>(dx)));
 }
 
 // 0x438730 收集段：按出生 flags bit0（trance 激活位）分两套（0x438730:140-245）。
@@ -747,6 +796,9 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     const bool easy_difficulty = progress.difficulty < 5;  // DAT_004be7c4 < 5
     events_.push_back({ItemEvent::Kind::Collected,
                        10 + s.kind, s.x, s.y});
+    const bool spirit_trace = item_trace_enabled;
+    const i32 trace_max_point = progress.max_point;
+    const i32 trace_score_before = player.score->score;
     if ((s.flags & 1u) == 0) collect_trance(2);
     switch (s.kind) {
     case 0:
@@ -778,6 +830,14 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     }
     default:
         break;
+    }
+    if (spirit_trace) {
+        char row[224];
+        std::snprintf(row, sizeof row,
+                      "f=%d spirit kind=%d flags=%u max_point=%d score=%d->%d\n",
+                      item_trace_frame, s.kind, s.flags, trace_max_point,
+                      trace_score_before, player.score->score);
+        item_trace_rows += row;
     }
     // 0x438730 收集瞬间的 front.anm 拾取动画：普通/灵界两套脚本表
     // （0x438e3c / 0x438e4c 两张 jump table 的 0x46f820 调用点实证）：

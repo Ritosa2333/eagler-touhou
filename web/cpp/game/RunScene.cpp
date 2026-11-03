@@ -50,6 +50,10 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
       scenery_bank(scenery_bank),
       scenery_std(std_name),
       post_flow(p, player, score, *this) {
+    // ECL 表达式 rand 走 game 流（0x4dc324）：-9987 双视图
+    // 0x4203cc/0x420d5b 与 RandomPolar 0x478b22 均为 `mov ecx,0x4dc324`；
+    // 0x4012xx 的 0x4dc31c 调用属 ANM 轨迹处理器。round-22 的 ecl_random
+    // 换流已按反汇编 + S1 f60 对拍回退（见 StageGvars -9987 注释）。
     spell_presentation = std::make_unique<SpellPresentation>(
         animations, SpellPresentation::Banks{banks.stage, p.stage});
     age.set(0);
@@ -84,6 +88,9 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     laser_presentation = std::make_unique<LaserPresentation>(manager, scene_view,
                                                             battle.sim, banks.bullet);
     battle.sim.defer_laser_update = true;
+    // 0x42e380/0x438730 是 Update 24/25 的独立任务（objdump 0x42e0e0/
+    // 0x438400 优先级 0x18/0x19），晚于激光 0x16=22 与子弹 0x17=23。
+    battle.defer_item_side = true;
     battle.sim.laser_sound = [this](i32 id) { return host.hud_sound(id); };
     battle.sim.enemy_sound = [this](i32 id) { return host.hud_sound(id); };
     battle.sim.enemy_position_sound = [this](i32 id, float x) { return host.hud_sound(id, x); };
@@ -195,6 +202,23 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     };
     if (scheduler.add(laser_update, FramePass::Update, 22) < 0)
         fail("Laser update registration failed");
+    // 0x42efb0 @ Update 0x18=24 / 0x438e70 @ Update 0x19=25：道具与神霊
+    // 管理器各自独立任务。拆出 battle.step 内联路径后，激光擦弹（22）的
+    // max_point+100 先于 kind3 收集（25），与原生同帧内序一致。
+    item_update.owner = this;
+    item_update.enabled = true;
+    item_update.run = [](void* owner) -> i32 {
+        return static_cast<RunScene*>(owner)->update_items() ? 1 : 5;
+    };
+    if (scheduler.add(item_update, FramePass::Update, 24) < 0)
+        fail("Item update registration failed");
+    spirit_update.owner = this;
+    spirit_update.enabled = true;
+    spirit_update.run = [](void* owner) -> i32 {
+        return static_cast<RunScene*>(owner)->update_spirits() ? 1 : 5;
+    };
+    if (scheduler.add(spirit_update, FramePass::Update, 25) < 0)
+        fail("Spirit update registration failed");
     for (auto& callback : spell_callbacks) {
         callback.owner = this;
         callback.enabled = true;
@@ -257,6 +281,14 @@ RunScene::~RunScene() {
     battle.sim.flush_anm_slots = {};
     scheduler.remove(laser_update);
     scheduler.remove(scenery_update);
+    // 0x42efb0 @ Update 24 / 0x438e70 @ Update 25 的 port 回调随场景析构
+    // 一并摘链（与 laser_update/scenery_update 同契约）。漏摘会让共享
+    // FrameScheduler 在换关/拆场后保留指向已析构 RunScene 的僵尸节点：
+    // ui portrait_identity 生命周期用例（stage2→stage3 drop+rebuild）在
+    // Scene 析构的 scheduler.clear 里命中 run=null 的陈旧节点并空转；
+    // 更严重的是新场景执行 update 时会调用已释放对象。
+    scheduler.remove(item_update);
+    scheduler.remove(spirit_update);
     laser_presentation.reset(); // detach callbacks while battle.sim is alive
     battle.sim.laser_sound = {};
     for (auto& callback : callbacks) scheduler.remove(callback);
@@ -318,9 +350,14 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     battle.sim.spell_event = [this](const SpellEvent& event, const StageEnemy& enemy) {
         // Consume each ECL event immediately; begin/end in one tick cannot be lost.
         if (event.kind == SpellEventKind::Begin) hud.boss_hud.spell_started();
+        // 0x413a60 → 0x412900：符卡结束（捕获/失败/超时同路径，先于
+        // 0x42a430 的 59/60 横幅创建）把倒计时数字组从 y=51 拉回 y=23
+        //（ascii.anm script2/3 label3）。缺失时首卡后数字组恒停 51。
+        if (event.kind == SpellEventKind::End) hud.boss_hud.spell_ended();
         if (!host.record_spell_event(event)) return fail("Spell record persistence failed");
+        // 0x41381e 直读章节 DAT_004be824：与名牌 0x429a94 同一 ECL 524 变量。
         if (!spell_presentation->consume(event, enemy.position,
-                [this](i32 id) { return host.hud_sound(id); }))
+                [this](i32 id) { return host.hud_sound(id); }, progress.chapter))
             return fail(spell_presentation->error);
         if (event.kind == SpellEventKind::Begin &&
             !host.rasterize_spell_name(*spell_presentation))
@@ -485,6 +522,30 @@ bool RunScene::update_lasers() {
     // flush，恢复原版创建时序。
     if (!battle.sim.anm_effects.empty() &&
         !presentation->flush_ecl_animations(battle))
+        return fail(presentation->error());
+    return true;
+}
+
+// 0x42efb0 @ Update 24：0x42e380 道具管理器 + 物品内嵌 VM 面。
+bool RunScene::update_items() {
+    if (transition_wait) return true;
+    if (!error.empty()) return false;
+    if (environment.paused || (progress.scene_flags & 0x70u)) return true;
+    battle.update_items_phase();
+    if (!battle.error().empty()) return fail(battle.error());
+    if (!presentation->sync_items_phase(battle))
+        return fail(presentation->error());
+    return true;
+}
+
+// 0x438e70 @ Update 25：0x438660/0x438730 神霊管理器 + 神霊 VM 面。
+bool RunScene::update_spirits() {
+    if (transition_wait) return true;
+    if (!error.empty()) return false;
+    if (environment.paused || (progress.scene_flags & 0x70u)) return true;
+    battle.update_spirits_phase();
+    if (!battle.error().empty()) return fail(battle.error());
+    if (!presentation->sync_item_spirits_phase(battle))
         return fail(presentation->error());
     return true;
 }
@@ -875,7 +936,11 @@ bool RunScene::draw_stage(u32 pass) {
     // Original game sprites are centered in the offscreen @R surface. The
     // supervisor's text84 pass later samples128..512 to screen32..416.
     // Do not translate either these vertices or their full-screen camera.
-    if (!host.camera(DrawCamera::Fullscreen, false)) return fail("Stage camera unavailable");
+    // 原生 0x4679a0 的 UP 批只按材质键冲批；pass 入口重选同值 Fullscreen
+    // 相机不得 flush（否则层 11 的 5 个弹 quad 与自机 pass 的机体 quad
+    // 拆成 10+2，原生是 12 三角形单 DrawPrimitiveUP）。
+    if (!host.camera_if_changed(DrawCamera::Fullscreen, false))
+        return fail("Stage camera unavailable");
     // 原生 0x467350 的 2D 裁剪块是战场矩形（0x43be9b {116,2,408,476}），
     // 与 0x43b900 设置的 D3D 全屏 viewport 分离；直接绘制面同块裁剪。
     const GraphicsViewport clip{

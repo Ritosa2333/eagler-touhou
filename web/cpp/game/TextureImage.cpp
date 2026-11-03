@@ -14,6 +14,14 @@ constexpr Format formats[]={
     {PixelFormat::Alpha8,1,{0,0,0,255},{0,0,0,0}}
 };
 }
+// Blank "@" 纹理原版创建路径 0x46dc10：D3DXCreateTexture(device, entry.w,
+// entry.h, 1 mip, 0, DAT_004acbc4[entry.format], D3DPOOL_MANAGED, &tex)，
+// 不写像素；0x46cf10 只服务文件纹理（0x46d600/0x46d8f0），不参与 Blank。
+// 故全零缓冲即等价（text.anm entry1 format3=R5G6B5 → 不透明黑；entry0
+// format5=ARGB4444 → 透明，由对话写入）。全库 6 个 Blank 纹理（text.anm
+// 0/1/2/3——entry2/3 为 640×480，即 0x4418b0 另两个调用方 0x43e5a0/
+// 0x41930 的目标；help.anm 1、title.anm 21）均为运行时写入目标，无白色
+// 实心 quad 用途；不要改成白色。
 bool TextureImage::load(const AnmTexture& source,bool low_color){
     if(source.format>=8||source.kind==AnmTexture::Kind::External)return false;
     u32 target=source.format;const bool embedded=source.kind==AnmTexture::Kind::Embedded;

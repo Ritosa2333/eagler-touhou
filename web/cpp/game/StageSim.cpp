@@ -165,6 +165,12 @@ void step_polar_itp(StagePolarItp& itp, float& out_a, float& out_b, float rate) 
         return;
     }
     const float t = ease_interp(itp.mode, float(itp.elapsed), itp.duration);
+    // 0x4234b0 共享权重路径（0x4236af 起）逐级落 f32，与逐轴路径不同：
+    //   0x4236c7-0x4236d6 (to-from) fstp dword [ebp-0x28]/[ebp-0x24]；
+    //   0x4236d9-0x4236eb (delta*w)  fstp dword [ebp-0x20]/[ebp-0x1c]；
+    //   0x4236ee-0x423702 (+from)   fstp dword [ebp-0x28]/[ebp-0x24]。
+    // 即 delta/prod/out 各舍一次 f32；写成 double 单次落点会差 1 ULP。
+    // （逐轴路径 0x4237d7-0x4237f9 才是扩展精度单次落点，见 step_pos_itp。）
     out_a = itp.from_a + t * (itp.to_a - itp.from_a);
     out_b = itp.from_b + t * (itp.to_b - itp.from_b);
 }
@@ -186,8 +192,9 @@ void step_pos_itp(StagePosItp& itp, float* out, float rate) {
         return;
     }
     if (itp.per_axis) {
-        // 422f80 separate-axis branch: final multiply/add stays extended,
-        // unlike the shared weight vector path below.
+        // 0x422f80 逐轴路径（0x423345-0x423367）：(target-start)*w+start 在
+        // x87 扩展精度一次完成，仅 fstp dword [esi-0x30] 一次落 f32；
+        // 与共享权重路径（0x423200 起，三处 f32 落点）精度语义相反。
         for (int i = 0; i < 3; ++i) {
             const i32 mode = itp.axis_mode[i];
             if (mode == 7) out[i] = itp.start[i] += itp.target[i];
@@ -224,6 +231,13 @@ void step_pos_itp(StagePosItp& itp, float* out, float rate) {
         return;
     }
     const float t = ease_interp(itp.mode, float(itp.elapsed), itp.duration);
+    // 0x422f80 共享权重路径（0x423200 起）逐级落 f32（S4 f8784 Boss 残差
+    // 实证，mode 4 / op401 [60,4,80,112]）：
+    //   0x423218-0x423230 (target-start) fstp dword [ebp-0x4c/-0x48/-0x44]；
+    //   0x423233-0x42324d (delta*w)      fstp dword [ebp-0x40/-0x3c/-0x38]；
+    //   0x423250-0x423273 (+start)       fstp dword [ebp-0x4c/-0x48/-0x44]。
+    // 三处均 f32 舍入；x87 模拟对原生 f8784 y=0xc0947ae1 逐位命中，而
+    // double 单次落点得 0xc094cccd（-4.65）——即此前 15 处 0.01 翻转根因。
     out[0] = itp.start[0] + t * (itp.target[0] - itp.start[0]);
     out[1] = itp.start[1] + t * (itp.target[1] - itp.start[1]);
     out[2] = itp.start[2] + t * (itp.target[2] - itp.start[2]);
@@ -471,6 +485,11 @@ StageEnemy* StageSim::spawn_enemy(const char* routine, float x, float y, float l
     enemy->flags = (enemy->flags & ~0x100000u) | (u32(mirror) << 20);
     // 4183f0: param2[5] > 999 sets this marker before constructor ECL.
     if (life > 999) enemy->flags |= 0x80000000u;
+    // ECL 表达式 rand（-9987 双视图 0x4203cc/0x420d5b；RandomPolar op93
+    // 0x478b22/0x478b32）都显式 `mov ecx,0x4dc324`：**game 流**。
+    // 0x40120b/0x401342/0x401835 的 `mov ecx,0x4dc31c` 属 ANM 轨迹/特效
+    // 处理器（0x401190/0x4012c0/0x401310），不是 ECL 求值器；round-22 的
+    // visual 换流由此误判，已在 S1 f60 对拍与反汇编双重否定。
     enemy->threads = std::make_unique<EclThreads>(program, &gvars, &random);
     enemy->threads->main.commands = &commands;
     const u8 difficulty = parent ? parent->threads->main.difficulty
@@ -514,6 +533,12 @@ void StageSim::tick_enemy(StageEnemy& e) {
     StageEnemy* saved = current;
     current = &e;
     integrate(e);
+    // 0x41a8a0 调用序：0x419450（内部 0x419950 先算 +0x78，再读它做镜像
+    // 朝向判定）→ ECL 线程体。StagePresentation 的镜像重挂因此必须读这里
+    // 拍下的、ECL 指令尚未改写 mover 的 +0x78 快照（见 mirror_velocity_x）。
+    // mirror_ready：本帧确实执行了 0x419450（不是 0x80000 自门的空转帧）。
+    e.mirror_velocity_x = e.motion_delta[0];
+    e.mirror_ready = true;
     if (in_bounds(e)) {
         // 原版敌机恒有 ECL 线程块（0x4183f0:28 分配）；threads 为空的裸
         // 敌机只存在于几何/碰撞合成夹具，无 ECL 可步进——跳过解释器，
@@ -580,9 +605,20 @@ void StageSim::update_enemy_feedback(StageEnemy& enemy) {
     AnmVm* vm = enemy_animation(enemy, 0);
     if (!vm || !error_.empty()) return;
     auto& visual = vm->visual;
+    // 临时只读探针（TH13_DAMAGE_PROBE=1 复用门控）：对比原生 0x41a1d6/
+    // 0x41a227 的 serial/cooldown/marker 序列；只打印，不改变数值。
+    const auto feedback_probe = [&](const char* path, i32 voice) {
+        if (!damage_probe_enabled) return;
+        std::fprintf(stderr,
+            "[enemy-feedback] f=%u serial=%u path=%s cool=%d flags=%08x "
+            "voice=%d life=%d\n",
+            frame, enemy.serial, path, enemy.hit_feedback_cooldown,
+            enemy.flags, voice, enemy.phase_life_remaining);
+    };
     if (enemy.hit_feedback_cooldown != 0) {
         visual.flags &= ~0x60000u;
         --enemy.hit_feedback_cooldown;
+        feedback_probe("cooldown", -1);
         return;
     }
     const auto flash = [&](u32 color) {
@@ -602,12 +638,17 @@ void StageSim::update_enemy_feedback(StageEnemy& enemy) {
         enemy.hit_feedback_cooldown = 4;
         const i32 voice = enemy.hit_sound >= 0 ? enemy.hit_sound :
             boss_feedback && enemy.phase_life_remaining < (card.active() ? 200 : 900) ? 35 : 34;
+        feedback_probe("hit", voice);
         // 41a2e8 passes the enemy VM's x to 460c50.
         if (enemy_hit_sound && !enemy_hit_sound(voice, enemy.position[0])) error_ = "Enemy hit sound failed";
     } else if (!fourth_frame) {
         visual.flags &= ~0x60000u;
+        feedback_probe("idle", -1);
     } else if (boss_feedback && enemy.phase_life_remaining < (card.active() ? 100 : 500)) {
         flash(0xff0000ffu);
+        feedback_probe("low", -1);
+    } else {
+        feedback_probe("none", -1);
     }
 }
 
@@ -683,7 +724,8 @@ bool StageSim::run(u32 frames) {
 
 bool StageSim::start() {
     if (!error_.empty()) return false;
-    // 第 0 帧 = stage 装载趟：root（serial 0，承载 main）创建并跑构造内首趟。
+    // 第 0 帧 = stage 装载趟：root（承载 main，0x42c550→0x4183f0 同一路径，
+    // serial 取计数器首值 1）创建并跑构造内首趟。
     frame = 0;
     sink.set_frame(0);
     spawn_enemy("main", 0.0f, 0.0f, 0.0f, nullptr, false);
@@ -753,6 +795,16 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
     // id≠-1（0x40f1b5 test+jne / cmp+jle）。原生调用无失败返回；回调为空
     // （场景拆除期）与死亡声同例静默跳过。
     const auto appearance_sound = [&]() {
+        // 临时只读探针（TH13_DAMAGE_PROBE=1 复用门控）：定位 web 多播
+        // id38 的调用来源；只打印，不改变任何数值/帧推进。
+        if (damage_probe_enabled) {
+            std::fprintf(stderr,
+                "[bullet-sfx] f=%u gen=%u sprite=%u sub=%u cursor=%d ts=%d "
+                "state=%u bb4=%x\n",
+                frame, bullet.generation, bullet.sprite, bullet.subtype,
+                bullet.ex_cursor, bullet.transform_sound,
+                unsigned(bullet.state), bullet.behavior_flags);
+        }
         if (bullet.ex_cursor != 0 && bullet.transform_sound >= 0 && enemy_sound &&
             !enemy_sound(bullet.transform_sound)) {
             error_ = "Bullet appearance sound failed";
@@ -964,6 +1016,14 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             temp.ways = i16(u32(descriptor.integer_arguments[0]) & 0xffffu);
             temp.aim = i16((u32(i4) >> 24) & 0x7fu);
             for (u32 n = 0; n < 18; ++n) temp.ex[n] = bullet.ex[n];  // 队列整块继承
+            // 0x40f79a 先 memset(temp,0,0x380)，0x40f865 再显式写
+            // temp+0x374 = -1（transform_sound）。子发射弹的 +0xbcc 因此为
+            // -1，0x40f1b5 外观音门（[0xbd0]!=0 && [0xbcc]>=0）不通过。
+            // 原生 S5 f11265-11269 实证：每帧 10 颗 sprite=0x6000a 的
+            // 子发射弹 bd0=8/bcc=-1 不播，只有同帧 1 颗 sprite=0x30012
+            // （etOn 正常发射，etNew 默认 38）播 id38。StageEt 默认 38 会
+            // 让这 10 颗各多播一次（每帧 10 次、0-11270 短窗共 60 次）。
+            temp.transform_sound = -1;
             const float spawn[3] = {bullet.x, bullet.y, bullet.z};
             bullet.ex_cursor += 1;  // 0040f030:291 FUN_0040ffe0 发射前 +1
             // 子发射闩锁非常开：栈临时块 +0x36c = 下一表项 integer_arguments[1]
@@ -1130,6 +1190,15 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
             bullet.vel[1] = std::sin(static_cast<double>(bullet.angle)) * decayed;
             tick(bullet.ex10_timer,bullet.ex10_time);
         } else {
+            // 0x4105eb-0x4105f5：计时到点先按 +0xbcc（transform_sound）播
+            // 非定位音（0x460bc0，门仅 id>=0，无 ex_cursor 门），再
+            // 0x1004 计数 +1 / 按 0x1008 模式转向（S4 f3427 起 204 次、
+            // S5 422 次、S6 478 次原生 004105fa 事件实证）。
+            if (bullet.transform_sound >= 0 && enemy_sound &&
+                !enemy_sound(bullet.transform_sound)) {
+                error_ = "Bullet turn sound failed";
+                return;
+            }
             bullet.ex10_count += 1;
             float target = bullet.ex10_angle;
             switch (bullet.ex10_mode) {
@@ -1233,6 +1302,15 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
             bullet.vel[1] = std::sin(static_cast<double>(bullet.angle)) * bullet.speed;
             if (bounced) {
                 bullet.ex40_bounces += 1;
+                // 0x410ba1-0x410bb1：先 incl 0x1044（反弹计数），再按
+                // +0xbcc 播非定位音（0x460bc0，门仅 id>=0），之后才比对
+                // 0x1048 清位（S5 11265-12028 原生 00410bb6 69 次、S6
+                // 12 次实证）。
+                if (bullet.transform_sound >= 0 && enemy_sound &&
+                    !enemy_sound(bullet.transform_sound)) {
+                    error_ = "Bullet bounce sound failed";
+                    return;
+                }
                 if (bullet.ex40_limit <= bullet.ex40_bounces)
                     bullet.behavior_flags &= ~0x40u;
             }
@@ -1858,7 +1936,9 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
     // 故每次 etOn 必播一次（同帧多次 etOn 多次播，原生 f1431 双 id21 实证）。
     // 子发射（op 0x2000）的栈临时块 +0x36c 实为下一表项 integer_arguments[1]
     // （0x40f030 local_24），非常开语义，故该路径 latch_sound=false。
-    if (latch_sound && et.sound >= 0) {
+    // 0x41004c-0x410067 只有 +0x36c bit0x20 一道门：+0x370 的 id 无 >=0
+    // 检查，-1 也照常进入 0x460c50（S5 f10098-10372 825 次 id=-1 实证）。
+    if (latch_sound) {
         if (enemy_position_sound && !enemy_position_sound(et.sound, spawn[0])) {
             error_ = "Enemy fire sound failed";
             return;

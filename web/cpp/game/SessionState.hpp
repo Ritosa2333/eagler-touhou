@@ -35,7 +35,13 @@ struct SessionState {
     // DAT_004be808：灵界（trance）计，0..600（每 200 一魂；0x42b030 段划分，
     // 0x4aeca8=3.0 / 0x4aece8=200.0）。asm 0x43fa90:546 与 0x4406b6 是同一
     // 条续关决策写（results-flow.md §3：光标0 续关 → be7c8++/be844--，同时
-    // be808=200），不是新局；新局写点未找到，保留 .data 原初值 0。
+    // be808=200），不是新局。新局/Retry 写点：0x42b990 的 dcc30!=0 分支
+    // （0x42ba6f cmp / 0x42ba75 je 跳过 dcc30==0 的关间延续）在 0x42bb5a
+    // `mov esi,0x4be7b8`、0x42bb6b 调 0x42d3c0；后者 0x42d404
+    // `mov dword [esi+0x50],0xc8` 即 DAT_004be808=200（0x4be7b8+0x50），
+    // 0x42d40f 随即调 0x42b030 刷新灵界槽。EXE .data 0x4be808 原初值确为 0，
+    // 但进入对局即被此写覆盖；仅符卡练习（mode=(be830>>4)&3==2）随后由
+    // 0x42b990:121 / 0x42bbfd 清零。关间 0xc 延续不经过该复位，跨关保留。
     // 收集小灵 0x438730 公共 +2（0x438b3d lea -0x3d(edi)=2），类型 1 条件 +1、
     // 类型 3 +1；0x43d530 累加封顶 600；0x405b80:78 正常结束 -200；
     // 0x42b990:121 仅练习模式清零。
@@ -143,6 +149,17 @@ inline void trance_end(SessionState& state, bool death_protection) noexcept {
     if (death_protection) return;
     state.ending_points -= kTranceCost;
     if (state.ending_points < 0) state.ending_points = 0;
+}
+// 0x42d3c0（唯一调用点 0x42b990:0x42bb6b，调用前 0x42bb5a
+// `mov esi,0x4be7b8`）：0x42d404 `mov dword [esi+0x50],0xc8` =
+// DAT_004be808=200（0x4be7b8+0x50），随后 0x42d40f 调 0x42b030 重画灵界槽。
+// 该调用只在 0x42b990 的 dcc30!=0 分支（新局与 Retry）；关间 0xc 延续
+// （dcc30==0，0x42ba75 je）不经过，灵界计跨关保留。符卡练习
+// （mode=(be830>>4)&3==2，本结构 bit4-5=0x20）随后在 0x42bbfd 再清 0
+//（0x42b990:121）；普通/关卡练习/Extra 保持 200（一个 200 段）。
+inline void trance_reset_fresh_entry(SessionState& state) noexcept {
+    state.ending_points =
+        (state.run_mode_flags & 0x30u) == 0x20u ? 0 : kTranceSegment;
 }
 
 // HUD 侧玩家资源视图（battle 未接入前的持有者；完整 PlayerLifeSession

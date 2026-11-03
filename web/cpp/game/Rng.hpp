@@ -52,6 +52,11 @@ public:
     // 定位与原版相位不一致的消费者。不改变任何取值。
     using DrawObserver = void (*)(uint32_t before, uint32_t after);
     inline static DrawObserver draw_observer = nullptr;
+    // 诊断（默认 nullptr，仅无头 harness 探针臂接线）：实例感知抽取观测，
+    // 回调 (this, before_index, after_index)——用于在双流（game 0x4dc324 /
+    // visual 0x4dc31c 同构）并存时只记录战斗流。只读观察，不改变取值。
+    using InstanceDrawObserver = void (*)(const GameRandom*, uint32_t, uint32_t);
+    inline static InstanceDrawObserver instance_draw_observer = nullptr;
     explicit GameRandom(uint16_t seed = 0) : seed_(seed) {}
 
     void reseed(uint16_t seed) { seed_ = seed; }
@@ -66,6 +71,7 @@ public:
 
     uint32_t next() {
         if (draw_observer) draw_observer(index_, index_ + 2);
+        if (instance_draw_observer) instance_draw_observer(this, index_, index_ + 2);
         const uint16_t a = static_cast<uint16_t>((seed_ ^ 0x9630u) - 0x6553u);
         const uint16_t step = static_cast<uint16_t>((a >> 14) + a * 4);
         const uint16_t b = static_cast<uint16_t>((step ^ 0x9630u) - 0x6553u);
@@ -78,6 +84,7 @@ public:
     // 返回旋转后的新种子。moveRand（412）象限掷币用（% 3 判定）。
     uint16_t step16() {
         if (draw_observer) draw_observer(index_, index_ + 1);
+        if (instance_draw_observer) instance_draw_observer(this, index_, index_ + 1);
         const uint16_t a = static_cast<uint16_t>((seed_ ^ 0x9630u) - 0x6553u);
         seed_ = static_cast<uint16_t>((a >> 14) + a * 4);
         index_ += 1;

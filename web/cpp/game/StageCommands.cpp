@@ -113,22 +113,23 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (resolved && slot >= 0 && slot < StageEnemy::kAnimationSlots)
             e.anm_script[slot] = script;  // script < 0 = 清槽（0x41fe80）
         if (resolved && op == 306 && slot == 0) {
-            e.anm_base_script = script;
-            e.mirror_dir = 0;
+            e.anm_base_script = script;  // +0x26c（0x41b260 case3 param_1[0x9b]）
+            e.mirror_dir = 0;            // +0x270 = 0.0（case3 param_1[0x9c]）
+            // 306 在 0x419450 之后（ECL 体内）执行：当帧的朝向比较已经
+            // 过去，下一次真正的 0x41a8a0（integrate 后）才允许重挂。
+            e.mirror_ready = false;
+            e.mirror_prev_x = e.position[0];  // 过渡帧回退基线=306 当帧位置
         }
         // push 门须与解析成败绑定（0x41fe80:0x41ff00 门 = script ≥ 0；
         // resolve_int 失败时 out 参数保持初值（EclContext 失败路径不写值），
         // 此前残值 slot=0/script=0 会通过范围检查 push 伪创建请求，且 306
-        // 残值还会误置镜像门 flags/mirror_prev_x——对比同函数 307/308 分支
+        // 残值还会误置镜像门 flags——对比同函数 307/308 分支
         // resolve 失败即 return -2。失败时 c.error 亦不得被 return 0 吞掉。
         if (resolved && !sim.anm_effects_noop && sim.ecl_slot_anm && slot >= 0 && slot < StageEnemy::kAnimationSlots) {
-            // case3 slot0 附加：flags 0x200000（镜像翻转重挂门，0x419450:102；
-            // +0x270 构造 0、+0x78 首拍速度 0 ⟹ 差分基线=当前生成位，避免
-            // 首次 sync 误判朝向）
-            if (op == 306 && slot == 0) {
-                e.flags |= 0x200000u;
-                e.mirror_prev_x = e.position[0];
-            }
+            // case3 slot0 附加（0x41b260 case3 尾，param_1=enemy 基址）：
+            //   enemy+0x100c |= 0x200000（镜像门）。朝向判定读 inner+0x78
+            //   （速度），生成首拍 mover 速度 0 → dir 0（+0x270 已在上面复位）。
+            if (op == 306 && slot == 0) e.flags |= 0x200000u;
             sim.anm_effects.push_back({e.anm_file, script, 0, 0, 0,
                                         1, u16(op), slot, e.serial});
             if (!flush_anm_slots()) return -2;
@@ -698,17 +699,25 @@ int StageCommands::execute(EclContext& c, u16 op) {
         m.mode &= 0xfffffff0u;
         return 0;
     }
-    case 427: {  // moveReset（0x41ba18）：清 mover 与累积量，主位置保持
-        e.pos.pos[0] = e.pos.pos[1] = e.pos.pos[2] = 0;
-        e.vel.pos[0] = e.position[0];
-        e.vel.pos[1] = e.position[1];
-        e.vel.pos[2] = e.position[2];
+    case 427: {  // moveReset（0x41ba18）：折叠子位置、清速度/累积/插值挂接；角度与半径保持
+        // 0x41ba18 反汇编（op427 经 0x41f9d8[127]=34 → 0x41f760[34] 分派）：
+        //   vel.pos += pos.pos（41ba18-41ba48），pos.pos 清零（41ba56/41ba61/41ba79），
+        //   vel/pos 速度清零（41ba73/41ba6d），aux 清零（41ba7f-41bac4），
+        //   mode 仅清低 4 位（41baca/41bad0 and 0xfffffff0）。
+        // 角度（0xa4/0xe8）、半径/成长（0xa8/0xac、0xec/0xf0）、椭圆字段与
+        // 0x524/0x568（端口未建模）之外的 mover 状态不被触碰——f11261
+        // BossMiyakoCard2_move 的 moveVelTime 起始角即依赖保留的 vel.angle。
+        for (int i = 0; i < 3; ++i) {
+            e.vel.pos[i] = e.vel.pos[i] + e.pos.pos[i];  // 41ba18: fadds 0x88/0xcc
+            e.pos.pos[i] = 0;
+        }
         for (StageMover* m : {&e.vel, &e.pos}) {
-            m->speed = m->angle = m->radius = m->growth = 0;
-            m->aux[0] = m->aux[1] = m->aux[2] = 0;
-            m->mode = 0;
-            m->polar.duration = 0;
-            m->postime.duration = 0;
+            m->speed = 0;                                // 41ba73/41ba6d
+            m->aux[0] = m->aux[1] = m->aux[2] = 0;       // 41ba7f-41bac4
+            m->mode &= 0xFFFFFFF0u;                      // 41baca/41bad0
+            m->polar.duration = 0;                       // 41bae4/41baea（0x3fc/0x44c）
+            m->postime.duration = 0;                     // 41bad8/41bade（0x340/0x3a8）
+            m->radial.duration = 0;                      // 41baf0/41baf6（0x49c/0x4e0）
         }
         return 0;
     }

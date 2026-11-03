@@ -91,7 +91,10 @@ bool ApplicationState::start_game(i32 stage) {
     selection_score = HudScoreState{};
     progress.continues = 0;
     progress.life_piece_threshold_index = 0;
-    progress.ending_points = 0;
+    // 0x42b990 dcc30!=0（新局/Retry）→0x42d3c0：esi=0x4be7b8（0x42bb5a），
+    // 0x42d404 写 [esi+0x50]=0xc8 → DAT_004be808=200；符卡练习 mode==2
+    // 随后 0x42bbfd 清零。helper 按 run_mode_flags bit4-5 分流（0x20→0，其余→200）。
+    trance_reset_fresh_entry(progress);
     progress.run_mode_flags &= ~kTranceActiveFlag;
     progress.stage_clear_bonus = 0;
     progress.good_endings = 0;

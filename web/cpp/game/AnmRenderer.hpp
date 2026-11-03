@@ -22,6 +22,14 @@ extern AnmDrawProbe anm_draw_probe;
 void set_draw_layer_override(const AnmVm& vm, i32 layer);
 void clear_draw_layer_overrides();
 class AnmRenderer {
+    // 0x467960 初始化 UP 批池：基址 [0xb781f4]，指针字段 0xef81f4 之前容量
+    // 0x380000 字节；0x467a80 每 quad 追加 0xa8 字节（6 顶点 × 28B）→
+    // 21845 quads = 131070 顶点。0x4679a0 只在材质键/管线态变化时冲批
+    // （层不是触发，f61 实证），池满无检查。端口以此为安全上限：旧值 6144
+    // 会在原生池未满时提前 flush。r23i 实测该上限在 gate-my laser 窗从未
+    // 触发（web-draws 与 r23h 逐字节相同）；op183 的 10+2 拆分来自 pass
+    // 入口同值相机 flush，见 ScreenViews::camera_if_changed。
+    static constexpr u32 kSpriteBatchVertices = 131070;
     ZunGraphics& graphics;std::vector<AnmGeometryVertex> vertices;u32 bound_texture=~0u;
     struct ColorVertex {Vec3 position;float reciprocal_w;u32 color;};std::vector<ColorVertex> shapes;
     bool material(AnmVm&,bool textured=true);int quad(AnmVm&,bool pixel);int pack_quad(AnmVm&,Vec3 (&)[4],bool pixel,const u32* colors=nullptr);int projected_quad(AnmVm&,bool fog);int world_quad(AnmVm&);int mesh(AnmVm&);int shape(AnmVm&);int trail(AnmVm&);int circle(AnmVm&);
@@ -35,7 +43,7 @@ public:
     // 战场层 0..20 的绘制必须用该块裁剪，否则顶部/边缘的 quad 会多画。
     GraphicsViewport clip;bool clip_set=false;
     AnmCamera scenery_camera;GraphicsViewport scenery_viewport;bool scenery_camera_ready=false;
-    std::string error;explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(6144);shapes.reserve(192);}
+    std::string error;explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(kSpriteBatchVertices);shapes.reserve(192);}
     void flush();void invalidate();void set_viewport(const GraphicsViewport&);void set_camera(const AnmCamera&);
     int draw(AnmVm&);int draw_glyph(AnmVm&);bool draw_layer(const std::vector<AnmVm*>&);
     int draw_screen_strip(AnmVm&,const AnmGeometryVertex*,u32 count);

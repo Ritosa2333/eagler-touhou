@@ -158,5 +158,34 @@ TEST(ecl633_can_register_and_clear_ship_damage_callback) {
         CHECK_EQ(sim.commands.execute(c, 633), 0); CHECK_EQ(e.damage_function, i32(index));
     }
 }
+// 0x419a90:0x419d37-0x419d53: while a spell card is active and its bomb
+// protection bit (DAT_004c2178+0x7c & 0x20) is set, integer damage is divided
+// by 30 before the life/accumulator branch. Native udN01 stage-4 frame 3533
+// shows 80 -> 2 on enemy 121; stage-6 frame 5874 shows the same 2/frame rule.
+TEST(spell_bomb_protection_divides_damage_by_30) {
+    Rig r; CHECK(r.init());
+    r.boss->hurtbox[0] = r.boss->hurtbox[1] = 48;
+    r.boss->spirit_accum = 0; r.boss->spirit_threshold = 100000;
+    r.battle.sim.spell.begin(1, "bomb-protection", 600, 4, 2, true);
+    CHECK(r.battle.sim.spell.state().flags & kSpellBombProtection);
+    r.shot(0, 80, 60);
+    r.battle.sim.enemy_hit(*r.boss);
+    CHECK_EQ(r.boss->spirit_accum, 2.f); // 60 / 30, not 60
+    CHECK_EQ(r.boss->life, 998.f);
+}
+// Negative control: the same spell without the bomb-protection bit leaves the
+// damage untouched (60 -> 60), proving the gate is the flag and not spell
+// activity alone.
+TEST(spell_without_bomb_protection_keeps_full_damage) {
+    Rig r; CHECK(r.init());
+    r.boss->hurtbox[0] = r.boss->hurtbox[1] = 48;
+    r.boss->spirit_accum = 0; r.boss->spirit_threshold = 100000;
+    r.battle.sim.spell.begin(1, "plain-spell", 600, 4, 2, false);
+    CHECK(!(r.battle.sim.spell.state().flags & kSpellBombProtection));
+    r.shot(0, 80, 60);
+    r.battle.sim.enemy_hit(*r.boss);
+    CHECK_EQ(r.boss->spirit_accum, 60.f);
+    CHECK_EQ(r.boss->life, 940.f);
+}
 }
 int main() { return th13test::run_all("Stage5 ship damage"); }
