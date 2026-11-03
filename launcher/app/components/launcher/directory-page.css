@@ -81,3 +81,4 @@
     .book-directory .lobby-actions .lobby-refresh {align-self:center}
   }
 }
+.book-directory :is(.lobby-actions .lobby-button,.book-room-filter-trigger,.lobby-room-row>.lobby-join) {font-family:var(--kit-font);font-weight:600;letter-spacing:0}
