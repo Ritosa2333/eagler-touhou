@@ -34,3 +34,9 @@ npm run package -- /absolute/path/to/new-relay-package
 | `EAGLER_NETPLAY_TURN_CONFIG_FILE` | 空 | 动态 TURN JSON 路径；统一更新房间测速、游戏信令与网络诊断 |
 
 完整客户端入口见[协议参考](docs/protocol.md)，反向代理与运行配置见[部署说明](deploy/README.md)。测试源码位于 [`tests/`](tests/)，服务许可见 [`LICENSE`](LICENSE)。
+
+## 广播与性能验证
+
+状态广播组件负责合并快照与释放定时器，事件即时发送。房间目录在每次推送中共用公开房间摘要和按作品筛选的结果，成员恢复信息分别生成；拥塞连接恢复后接收当前视图。
+
+`npm run benchmark:directory` 使用本地模拟连接，测量 200 个房间、200 个目录订阅者的五轮推送，输出摘要计算次数、CPU 时间和进程内存。该基准包含模拟客户端，适合比较目录算法，线上容量需结合真实连接与旁观历史另测。
