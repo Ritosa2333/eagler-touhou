@@ -151,7 +151,14 @@ jobs:
     - run: bun run test
     - run: python -m pip install --requirement tests/requirements-browser.txt
     - run: python -m playwright install --with-deps chromium
+    - name: Build preview artifact for handbook browser checks
+      run: bun run build:ui-rewrite
+      env:
+        EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
+        VITE_PREVIEW_FEATURES: 'true'
     - run: bun run test:ui-handbook:browser
+      env:
+        EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
     - uses: actions/upload-artifact@v4
       if: always()
       with:

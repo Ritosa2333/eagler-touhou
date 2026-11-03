@@ -1,6 +1,7 @@
 """Check production room specimens and populated directory fields without Native or Relay."""
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 import re
 from pathlib import Path
 import subprocess
@@ -9,7 +10,7 @@ from threading import Thread
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-SITE = ROOT / ".cache/build/ui-rewrite/client"
+SITE = (ROOT / os.environ.get("EAGLER_REACT_BUILD_DIRECTORY", ".cache/build/ui-rewrite") / "client").resolve()
 OUTPUT = ROOT.parent / "artifacts/validation/ui-handbook"
 READ_ROSTER = """() => [...document.querySelectorAll('#mpSeatStage > .mp-seat')].map(card => {
   const style=getComputedStyle(card), box=card.getBoundingClientRect();
