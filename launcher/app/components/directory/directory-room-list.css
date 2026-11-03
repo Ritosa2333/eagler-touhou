@@ -16,7 +16,6 @@
     animation:none;
   }
   .book-directory .lobby-room-row::before {inset:0 16px auto;background:var(--book-border)}
-  .book-directory .lobby-room-row[data-state='recruiting'] {background:color-mix(in srgb,var(--kit-success) 7%,var(--book-surface))}
   .book-directory .lobby-room-identity {display:flex;align-items:center;gap:10px;min-width:0;grid-column:1;grid-row:1/span 2}
   .book-directory .lobby-room-title {display:grid;gap:3px;min-width:0}
   .book-directory .lobby-room-title h2 {display:flex;align-items:center;gap:8px;margin:0;min-width:0;color:var(--book-ink);font:600 13px/1.5 var(--ui-font)}
