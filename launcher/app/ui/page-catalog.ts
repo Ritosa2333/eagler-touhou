@@ -219,7 +219,7 @@ export const catalogPages: readonly CatalogPage[] = [
         'filters',
         '作品与房间筛选',
         ['games', '作品图标与完整列表', '全部、正文单作、复选框多选、汉字简称、两行条目、贴按钮展开'],
-        ['filters', '房间筛选', '菜单展开、选中、空结果'],
+        ['filters', '房间筛选', '桌面工具栏左侧，手机功能按钮下方；菜单展开、选中、空结果'],
       ),
       region(
         'rooms',

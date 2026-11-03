@@ -98,8 +98,8 @@ export function LobbySurface({
         </section>
         <div className="lobby-rooms-column">
         <header className="lobby-room-tools">
-          <div className="lobby-actions">{roomTools}</div>
           {roomFilters}
+          <div className="lobby-actions">{roomTools}</div>
         </header>
         <section
           className="lobby-list-surface"

@@ -10,7 +10,7 @@
   .book-directory .lobby-room-tools {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0;min-width:0}
   .book-directory .lobby-actions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;min-width:0;width:auto}
   .book-directory .lobby-actions .lobby-button {min-width:0;min-height:44px;white-space:nowrap}
-  .book-room-filter-trigger {margin-left:auto;min-height:44px;gap:6px;font-size:12px}
+  .book-room-filter-trigger {min-height:44px;gap:6px;font-size:12px}
   .book-room-filter-trigger svg {width:16px;height:16px}
   .book-room-filter-trigger[data-active='true'] {background:var(--book-accent-soft);color:var(--book-accent)}
   .book-directory .lobby-list-surface {position:relative;display:flex;flex-direction:column;min-width:0;min-height:280px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);overflow:hidden}
@@ -74,7 +74,7 @@
     .book-lobby-icon-strip {display:flex;align-items:center;gap:4px;min-width:0;padding:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none}
     .book-lobby-picker-trigger {flex:none;width:48px;height:48px}
     .book-directory .lobby-room-tools {align-items:center;gap:8px}
-    .book-directory .lobby-actions {display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 44px;align-items:stretch;gap:6px;width:100%}
+    .book-directory .lobby-actions {order:-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 44px;align-items:stretch;gap:6px;width:100%}
     .book-directory .lobby-actions .lobby-button {width:100%;padding-inline:4px;font-size:12px}
     .book-directory .lobby-actions .lobby-refresh {align-self:center}
   }
