@@ -55,6 +55,8 @@ void AnmRenderer::invalidate(){flush();bound_texture=~0u;}
 // 失去强制 flush 边界，Renderer 批合并把跨层 quad 折叠进错误状态批；
 // 具体失效面待定案，但用户画面恢复优先。原生 0x467350 的批边界语义
 // 需要用不破坏显示的方式重做（对照捕获帧逐层验证后再上）。
+// r23j 按最小面重做：仅 RunScene 战斗直绘 pass 入口走
+// ScreenViews::camera_if_changed（同值不重设）；本全局路径保持无条件 flush。
 void AnmRenderer::set_viewport(const GraphicsViewport& value){flush();viewport=value;graphics.set_viewport(value);}
 void AnmRenderer::set_camera(const AnmCamera& value){flush();graphics.presentation_camera(false);camera=value;graphics.set_matrix(MatrixKind::View,camera.view);graphics.set_matrix(MatrixKind::Projection,camera.projection);}
 u32 AnmRenderer::tint_color(u32 color)const noexcept{return tint_enabled?multiply_color(color,tint):color;}
@@ -140,7 +142,7 @@ int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied
     auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;u32 colors[4];if(supplied)std::copy(supplied,supplied+4,colors);else if(color_mode<2){u32 color=color_mode?v.secondary_color:v.color;if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);v.inherited_color=color;for(auto& c:colors)c=tint_color(color);}else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
     if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);Vec2 uv[4];uv[0]={float(v.uv_offset.x+v.uv[0].x),float(v.uv[0].y+v.uv_offset.y)};uv[1]={float(float(float(v.uv[1].x-v.uv[0].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[0].x,float(v.uv_offset.y+v.uv[1].y)};uv[2]={float(v.uv_offset.x+v.uv[2].x),float(float(float(v.uv[2].y-v.uv[0].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[0].y};uv[3]={float(float(float(v.uv[3].x-v.uv[2].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[2].x,float(float(float(v.uv[3].y-v.uv[1].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[1].y};
     graphics.presentation_offset(offset);graphics.presentation_range(vm,vertices.size(),6,presentation_instance);
-    for(u32 index:{0u,1u,2u,1u,2u,3u})vertices.push_back({p[index],1,colors[index],uv[index]});if(vertices.size()>=6144)flush();return 0;
+    for(u32 index:{0u,1u,2u,1u,2u,3u})vertices.push_back({p[index],1,colors[index],uv[index]});if(vertices.size()>=kSpriteBatchVertices)flush();return 0;
 }
 int AnmRenderer::projected_quad(AnmVm& vm,bool fog){
     Vec3 p[4];const int result=anm_projected_quad(vm,camera,viewport,p);if(result){if(result==-2)error="Projected animation anchor outside range";return result;}if(!fog)return pack_quad(vm,p,false);
@@ -253,7 +255,7 @@ bool AnmRenderer::draw_layer(const std::vector<AnmVm*>& layer){for(auto* vm:laye
 int AnmRenderer::draw_screen_strip(AnmVm& vm,const AnmGeometryVertex* data,u32 count){
     if(anm_draw_probe.enabled)++anm_draw_probe.strips;
     if((vm.visual.flags&3)!=3||!vm.sprite)return -1;if(count<3)return 0;if(!data||count>0x200000){error="Screen strip vertex range invalid";return -2;}if(!material(vm))return -2;
-    if(count<18){if(vertices.size()+(count-2)*3>6144)flush();TH13_DRAW_SPRITE(vm);graphics.presentation_offset({});graphics.presentation_range(vm,vertices.size(),(count-2)*3,presentation_instance);for(u32 i=0;i+2<count;i++){const u32 order[3]={i+(i&1),i+((i&1)^1u),i+2};for(u32 j:order)vertices.push_back(data[j]);if(vertices.size()>=6144)flush();}return 0;}
+    if(count<18){if(vertices.size()+(count-2)*3>kSpriteBatchVertices)flush();TH13_DRAW_SPRITE(vm);graphics.presentation_offset({});graphics.presentation_range(vm,vertices.size(),(count-2)*3,presentation_instance);for(u32 i=0;i+2<count;i++){const u32 order[3]={i+(i&1),i+((i&1)^1u),i+2};for(u32 j:order)vertices.push_back(data[j]);if(vertices.size()>=kSpriteBatchVertices)flush();}return 0;}
     // Curved lasers already own their complete strip. Submit it to the shared
     // renderer, which copies/joins it safely, instead of expanding it into
     // three vertices per triangle in the sprite arena first.

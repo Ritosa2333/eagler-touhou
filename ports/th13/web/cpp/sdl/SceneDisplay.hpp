@@ -7,6 +7,7 @@
 #include "../game/AsciiFrame.hpp"
 #include "../game/ScreenViews.hpp"
 
+#include <functional>
 #include <memory>
 
 namespace th13::sdl {
@@ -32,6 +33,9 @@ public:
     bool initialize();
     void detach() noexcept;
     bool draw();
+    // Present 前的宿主钩子：0x45bf10 的截取队列消费点（暂停黑幕）。
+    // 在 renderer.flush() 之后、present() 之前调用；返回 false = 帧错误。
+    std::function<bool()> before_present;
 };
 
 }  // namespace th13::sdl

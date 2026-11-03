@@ -35,6 +35,9 @@ bool integer_math(i32 a,i32 b,u32 operation,i32& out){
 }
 float float_math(float a,float b,u32 operation){switch(operation){case 0:return b;case 1:return float(a+b);case 2:return float(a-b);case 3:return float(a*b);case 4:return float(a/b);default:return float(std::fmod(double(a),double(b)));}}
 }
+// 绑定/重置视觉态时 render_flags 回到 AnmVisualState 默认 0x4000
+// （00405010.c:65 的 VM 初始化语义：清 0x8000、置 0x4000）。副链 VM 的
+// 0xc000 清位由 AnmRegistry::submit 负责（0046f820.c:65,71）。
 bool AnmVm::bind(AnmScript& data){presentation_generation=++presentation_counter;presentation_motion=false;const i32 layer=visual.layer;const Vec3 translation=visual.translation;script=&data.bytes;resource=nullptr;source_script=-1;sprite=nullptr;sprite_resource=nullptr;sprite_source=nullptr;rotation_parent=nullptr;creation_parent=nullptr;slowdown=0;variables=AnmVariables{};visual=AnmVisualState{};visual.layer=layer;visual.translation=translation;visual.sprite_matrix.identity();interpolators=AnmInterpolators{};timer=Timer{};timer.set(0);age=Timer{};age.set(0);saved_timer=Timer{0,0,0,0,0};saved_offset=0;geometry.clear();instruction_offset=0;visible=false;pending_interrupt=0;error.clear();return script->size()>=8;}
 bool AnmVm::bind(AnmResource& data,u32 index){if(index>=data.scripts.size()||!bind(data.scripts[index]))return false;resource=&data;source_script=i32(index);if(anm_random_observer)anm_random_observer(*this,-4,0,0,0,0,0,0,false);return true;}
 bool AnmVm::select_sprite(i32 index)noexcept{
@@ -61,6 +64,12 @@ int AnmVm::tick(GameRandom& rng,float rate){
 int AnmVm::tick_inner(GameRandom& rng,float rate){
     // 前置回调（vm+0x590）：非零返回即整帧跳过，不推进时间（00462450.c:293-300）。
     if(pre_tick&&pre_tick(*this))return 0;
+    // 暂停门（00462450.c:301-309）：前置回调 → 脚本/停机检查 → bit8 倍率 →
+    // 待处理中断 → (render_flags & 0xc000) == 0x4000 且暂停位置位时直接
+    // return（0x4624db..0x4624f7 → 0x465935）。原版该分支跳过本帧全部推进，
+    // 故门必须位于几何/轨迹/age/指令之前，否则暂停时 trail 与 scene effect
+    // 仍会前进（BUG 8 的另一半）。
+    if(!pending_interrupt&&environment&&environment->paused&&(visual.render_flags&0xc000)==0x4000)return 0;
     if(geometry.wind&&environment&&!geometry.wind->update(*environment,visual.color>>24,rate))return 1;
     const float original_rate=rate,amount=effective_slowdown();
     if(visual.render_flags&0x100)rate=1;  // bit8（00462450.c:303），th15 为 bit9
@@ -71,7 +80,6 @@ int AnmVm::tick_inner(GameRandom& rng,float rate){
     if(!script||instruction_offset<0||(visual.flags&0x100000))return 0;
     if(geometry.ribbon)geometry.ribbon->update(rng,rate);
     age.tick(&rate);
-    if(!pending_interrupt&&environment&&environment->paused&&(visual.render_flags&0xc000)==0x4000)return 0;
     auto fail=[&](const char* reason){error=reason;return -1;};
     auto jump=[&](u32 offset,i32 time){if(!span(offset,8,script->size()))return false;instruction_offset=i32(offset);timer.set(time);return true;};
     // 中断标签扫描：从脚本头线性扫 ins_5 标签，id==请求值命中，id==-1 为回落，

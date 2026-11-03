@@ -291,6 +291,11 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool replay_active = false;
     i32 replay_catalog_index = 0; // 4525b0 preserves DAT_004dc674 for the return
     bool replay_finished = false;
+    // 0x44c0d0 标题线程尾段已跑：TitleInf+0x5e4>=0xB4 或 DAT_004dcc5c&0x180
+    // 时经 0x46e620 卸载 ANM 槽 1（sig.anm）。标题场景跑过即置位；加速直入
+    // （th13_debug_replay / oracle）不经过标题，保持 false——此时 sig 开场
+    // 签名幕存续到整场（原生 gate-01 全窗逐帧 2 op 实证）。
+    bool title_flow_ran = false;
     u32 replay_consumed = 0;
     GameInput replay_input; // recorded input history, frozen with the stage
     // 回放恢复挂点：begin_replay_run 备好 stage 指针，begin_run 在关首表
@@ -322,6 +327,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 原版 FPSInf：场内整数帧率（font0）+ 调试 "%2.1ffps"（font1），在
     // Draw 优先级 77（HUD 76 之后、ASCII drain 78 之前）入队。
     bool draw_fps_text();
+    // 0x45bf10/0x45d7d0 Present 前截取队列消费（暂停黑幕）：取
+    // AnmManager::take_captures()，逐个把本帧 screen 战场矩形点采样进目标
+    // ANM Blank 纹理。SceneDisplay::before_present 钩子调用。
+    bool flush_animation_captures();
     bool fail(const std::string&);
     bool prepare_platform();
     bool prepare_loading();
@@ -517,6 +526,9 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
         return read(name, bytes, required);
     }
     bool camera(DrawCamera index, bool refresh) override { return views.camera(index, refresh); }
+    bool camera_if_changed(DrawCamera index, bool refresh) override {
+        return views.camera_if_changed(index, refresh);
+    }
     ZunGraphics& stage_graphics() override { return graphics; }
     bool preload_scenery_animation(i32 bank, const std::string& name) override;
     bool queue_music(i32 code, i32 value, const std::string& name) override {

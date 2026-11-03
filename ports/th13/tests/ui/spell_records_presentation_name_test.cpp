@@ -64,7 +64,7 @@ struct Fixture {
         CHECK(manager.adopt(4, std::move(stage)));
         sink.expected = manager.resource(0);
         const float position[3] = {0, 128, 0};
-        CHECK(presentation.consume(state.begin(0, "synthetic CP932", 3000, 1, 0), position, {}));
+        CHECK(presentation.consume(state.begin(0, "synthetic CP932", 3000, 1, 0), position, {}, 6));
     }
 };
 void mask(TextureImage& image, i32 left, i32 right) {

@@ -284,6 +284,11 @@ public:
     // before later enemies/ANM instructions consume visual RNG.
     std::function<bool(const Vec3&, const Vec3&, float)> beam_hit_effect;
     std::function<bool(StageBattle&)> option_power_changed;
+    // 0x443240 case2：0x668==3（死亡演出第 3 帧）先 0x445a20 扣 power，
+    // 再调 0x444df0 重建 option 树；0x444a10 已把 0x146c4 置 0。表现层
+    // 在 battle.step 之后的 sync 消费此标志（此时 option_count 已按新
+    // power 更新），重建语义见 sync_player_options 的 Dying 分支。
+    bool death_option_rebuild = false;
     // 445c40 initializes the shot VM before its first4464d0 update; the
     // later ANM manager pass is a separate tick, including on the birth frame.
     std::function<bool(PlayerShot&, u32)> player_shot_birth;
@@ -366,6 +371,16 @@ public:
     // 首条（§7.3）。
     bool step(const GameInput& input);
     bool step_transition(const GameInput& input);
+    // 原版把道具/神霊管理器注册为独立调度任务：0x42efb0 @ Update 0x18=24、
+    // 0x438e70 @ Update 0x19=25（objdump 0x42e0e0/0x438400：mov ebx,0x18/
+    // 0x19 后 call 0x470990；激光 0x42fa30 为 0x16=22、子弹 0x40e780 为
+    // 0x17=23）。生产 RunScene 置 defer_item_side=true 并在 24/25 两个 pass
+    // 分别调用两个 phase；无宿主调度的 harness/单测保持 step 内合并路径。
+    // 0x42e380/0x438730 的帧内相位因此与原生一致：激光擦弹（0x431a1f →
+    // 0x445900）的 max_point+100 先于 kind3 收集（S5 f2725 首差根因）。
+    bool defer_item_side = false;
+    void update_items_phase();    // 0x42e380 道具更新 + 道具事件
+    void update_spirits_phase();  // 0x438730 神霊更新 + 神霊事件
     bool continue_player();
     void on_bomb_key();  // X 边沿（经 step 内部处理，这里供测试直调）
     bool end_trance(); // 405b80: depletion or428820 dialogue entry.
@@ -413,6 +428,8 @@ private:
     i32 collide_laser(const StageLaser&);
     void reward_kill(StageEnemy& enemy);
     void update_item_side();    // 0x42e380/0x438730 玩家只读面装配 + 步进
+    ItemCollector make_item_collector();  // 0x42e380/0x438730 共用只读面
+    void emit_item_events();              // 道具/神霊事件 → HUD/音/弹字
     bool update_trance(const GameInput& input);  // 0x4057f0/0x405a20/0x405b80
     bool kill_player();
     bool commit_death();

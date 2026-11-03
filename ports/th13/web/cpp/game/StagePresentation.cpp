@@ -148,10 +148,21 @@ bool StagePresentation::initialize_bullet(StageBullet& bullet, i32 interrupt) {
     vm.object_host = &animations;
     if (!vm.bind(*resource, u32(appearance->script))) return fail(vm.error);
     vm.sprite_source = &slot->source;
+    // 0x461cb0: render_flags = (flags & ~0x4000) | 0x8000 before the first
+    // tick, then if (flags & 0xc000) == 0x8000 convert to
+    // (flags & ~0x8000) | 0x4000. 0x40e840:194/0x40f030:502 both use this
+    // sequence (0x405010 initialises 0x4000, 0x461cb0 re-runs it per rebind).
+    // Bit14 is the 0x462450:301-308 pause gate for manually ticked VMs.
+    vm.visual.render_flags = (vm.visual.render_flags & ~0x4000u) | 0x8000u;
     if (vm.tick(random, animations.rate) < 0) return fail(vm.error);
-    vm.visual.render_flags |= 0x40000;
+    if ((vm.visual.render_flags & 0xc000u) == 0x8000u)
+        vm.visual.render_flags = (vm.visual.render_flags & ~0x8000u) | 0x4000u;
+    vm.visual.render_flags |= 0x40000;  // 0x40e840:189 bullet+0x44 layer bit
     vm.pending_interrupt = interrupt;
-    vm.visual.translation = {bullet.x, bullet.y, bullet.z};
+    // 0x405010/0x40e840 leave the embedded VM translation (+0x574) at zero;
+    // the live position is written to vm+0x3c/0x40/0x44 by 0x40e4d0 at draw
+    // time (see tick_bullet). A reused slot must not keep an old translation.
+    vm.visual.translation = {};
     slot->script = appearance->script;
     slot->color = i32(bullet.subtype);
     bullet_animation_geometry(bullet, vm);
@@ -174,11 +185,40 @@ bool StagePresentation::tick_bullet(StageBullet& bullet, bool birth) {
         vm.visual.flags = (vm.visual.flags & ~0x1e0u) | (u32(bullet.animation_blend) << 5);
         bullet.animation_blend = -1;
     }
-    vm.visual.translation = {bullet.x, bullet.y, bullet.z};
-    // 原版 0x40e840 出生只 bind+tick，从不写 VM rotation；旋转只由脚本
-    // op401 控制（bullet.anm #40 label1 死亡段才 op302(1)+op401）。
+    // 原版 0x40e840/0x40db10 出生与逐帧更新都不写 VM 位置/旋转：位置与
+    // op424 朝向由绘制函数 0x40e4d0 在 tick 之后写入。此处紧随 tick 写，
+    // 对渲染与下一帧脚本读取（10013-10015）等价（同帧内无第二次 tick）。
     const int result = vm.tick(random, animations.rate);
     if (result < 0) return fail("Bullet animation: " + vm.error);
+    // 0x40e4d0:8-17：把子弹游戏位置写到 VM+0x3c/0x40/0x44（变量 10013-
+    // 10015，覆盖脚本 op400/407 的位置），+0x574 平移保持 0。此前 port 写
+    // translation 而让脚本位置叠加，渲染位置 = 弹位 + 脚本偏移（命中框
+    // 与贴图错位）。
+    vm.variables.position = {bullet.x, bullet.y, bullet.z};
+    // 0x40e4d0:18-23 / 0x40e630:16-21：render_flags bit6（0x40，op424 写）
+    // 置位时，绘制把 rotation.z 覆盖为 0x472e90(弹体+0xb8c, π/2) =
+    // wrap(angle + π/2)，并置 render_flags bit2（0x4，旋转序位）。
+    // bullet.anm 主体脚本 38/43..50 用 op424(1)；缺此写入时 30x30/32x32
+    // 弹体贴图恒为轴对齐（原生 draw 实测 edge_deg = move_deg + 90°：
+    // artifacts/round-19/gate-death-final2/native/battle-draws.jsonl
+    // f1762-1766，bullet2.png）。
+    if (vm.visual.render_flags & 0x40u) {
+        vm.variables.rotation.z = wrap_angle(float(bullet.angle + 1.5707964f));
+        // 0x40e544 `orl $0x4,0x5e4(%esi)`：0x5e4 = 内嵌 VM+0x18 =
+        // visual.flags（旋转脏位，0x462450 case0x192/0x1ad 同义），
+        // 不是 render_flags（+0x1c=0x5e8，bit6 是 op424 的旋转使能）。
+        vm.visual.flags |= 0x4u;
+    }
+    // 0x40e4d0:24-29：bullet+0x20 bit6（etEx op 0x400000 置位）时绘制把
+    // VM 次级缩放（+0x90/+0x94）钉到成长尺寸 +0x1324 并置 render_flags
+    // bit3。StageSim 尚未实现 op 0x400000（见交付报告“未解决”），此处
+    // 保留绘制契约，位一旦置位即生效。
+    if (bullet.flags & 0x40u) {
+        vm.visual.secondary_scale = {bullet.hit_scale, bullet.hit_scale};
+        // 0x40e565 `orl $0x8,0x5e4(%esi)`：visual.flags bit3（缩放脏位），
+        // 与 render_flags 无关。
+        vm.visual.flags |= 0x8u;
+    }
     bullet_animation_geometry(bullet, vm);
     if (result > 0) { bullet.alive = false; slot->active = false; }
     (void)birth;
@@ -437,7 +477,7 @@ bool StagePresentation::sync_bomb_effects(const StageBattle& battle) {
     return true;
 }
 
-bool StagePresentation::sync_player_effects(const StageBattle& battle) {
+bool StagePresentation::sync_player_effects(StageBattle& battle) {
     player_effect_handles_.erase(
         std::remove_if(player_effect_handles_.begin(), player_effect_handles_.end(),
                        [&](u32 handle) { return !animations.registry.find(handle); }),
@@ -556,7 +596,7 @@ bool StagePresentation::interrupt_player_options() {
     return true;
 }
 
-bool StagePresentation::sync_player_options(const StageBattle& battle, bool power_rebuild) {
+bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebuild) {
     // 门内隐藏旗标期：0x442960 已把 option 槽置为不活跃（原版清
     // player+0xa2b8；移植侧等价清句柄并置 pending label1），旧树退场中；
     // 0x444df0 只在 S2 起始（0x441b00 label2 激活后）重建，门内不得按
@@ -599,10 +639,55 @@ bool StagePresentation::sync_player_options(const StageBattle& battle, bool powe
     constexpr i32 option_scripts[4] = {16, 18, 19, 15};
     constexpr i32 full_scripts[4] = {17, 20, 21, 17};
     const i32 character = battle.player_character();
-    const i32 count = visible ? battle.option_count : 0;
+    // 原版 0x146c4 的语义源 = power/power_step，与 Dying 无关：死亡演出
+    // 第 3 帧的 0x444df0 重建必须看到新 power 的 count。
+    const i32 count = battle.option_count;
     const bool full = visible && battle.full_power();
     if (character < 0 || character > 3 || count < 0 || count > 8)
         return fail("Player option state outside original bounds");
+    // 0x444a10（死亡演出）对 8 组普通/满P option 根及子体只排队 label1
+    // （vm+0x4a0=1，0x46fc30 的 deferred 语义），**不 retire**；树在死亡
+    // 等待/重生期继续 tick，label1 脚本的视觉 RNG 抽取必须保留。
+    // round-23 S4 f6363 实证：原生 visual_index 每 3-4 帧多 12，首差帧
+    // 正是死亡后第 3 帧。
+    if (!visible) {
+        if (!death_options_queued_) {
+            for (u32 handle : option_handles_)
+                if (handle && !animations.interrupt(handle, 1, false))
+                    return fail("Player option death interrupt failed: " +
+                                animations.error);
+            for (u32 handle : full_option_handles_)
+                if (handle && !animations.interrupt(handle, 1, false))
+                    return fail("Full power option death interrupt failed: " +
+                                animations.error);
+            death_options_queued_ = true;
+        }
+        // 0x443240:130（0x668==3，死亡演出第 3 帧）调 0x444df0：0x146c4
+        // 已被 0x444a10 置 0，按扣 power 后的 count 重建普通树；满P树只
+        // 0x46fc30 排队 label1（不 retire）。新建根的初始 tick 在同帧抽
+        // 视觉 RNG（S4 f6363 原生 +12 即 3 根 × 2 抽）。
+        if (battle.death_option_rebuild) {
+            battle.death_option_rebuild = false;
+            for (u32& handle : option_handles_)
+                if (!end_player_effect(handle, true)) return false;
+            for (u32& handle : full_option_handles_)
+                if (!end_player_effect(handle, false)) return false;
+            option_character_ = character;
+            option_count_ = count;
+            full_options_ = false;
+            for (size_t i = 0; i < option_handles_.size(); ++i) {
+                if (i >= size_t(count)) continue;
+                const auto& option = battle.options[i];
+                const Vec3 anchor{option.x, option.y, 0};
+                option_handles_[i] = create_player_effect(
+                    banks.player, option_scripts[character], 12, 0, anchor);
+                if (!option_handles_[i]) return false;
+            }
+        }
+        option_anchor_deferred_ = power_rebuild;
+        return true;
+    }
+    death_options_queued_ = false;
     // power<max：满P树 0x46fc30(handle,1)（visible&&!full 时 end_player_effect
     // 的 retire=false 分支），普通根 retire 后由下方公共循环重建。
     if (character != option_character_ || count != option_count_) {
@@ -779,13 +864,13 @@ bool StagePresentation::post_chain_update() {
     return true;
 }
 
-bool StagePresentation::initialize_player_effects(const StageBattle& battle) {
+bool StagePresentation::initialize_player_effects(StageBattle& battle) {
     // Keep this narrowly scoped to the player VM family. Projectile and enemy
     // presentation is still created by sync() after the first simulation step.
     return sync_player_effects(battle);
 }
 
-bool StagePresentation::activate_player_effects(const StageBattle& battle) {
+bool StagePresentation::activate_player_effects(StageBattle& battle) {
     // 00441b00 broadcasts label2 to every option root and child. In particular
     // pl03 script15's script16 child consumes the four RNG reads at this
     // deferred manager tick; do not call tick_instance directly (that bypasses
@@ -1153,6 +1238,12 @@ bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* co
                                    enemy->mirror_script_base + 7, 2, {}, 0, false);
         if (!handle)
             return fail("Slot animation creation failed: " + animations.error);
+        // 0x419731 镜像重挂基准：记录本次 slot0 创建的 bank 与本地→全局
+        // 偏移（stage 合并表内脚本号按文件偏移；bullet/effect 恒 0）。
+        if (request.slot == 0) {
+            enemy->anm_slot0_bank = target.bank;
+            enemy->anm_slot0_script_offset = target.script - request.script;
+        }
         create_color_step(animations.registry.find(handle));
         if (request.slot == 0 && request.opcode != 318) {
             if (AnmVm* vm = animations.registry.find(handle)) {
@@ -1240,8 +1331,12 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     // It is deliberately refreshed only after the previous frame's VM tick.
     battle.begin_player_shot_geometry_snapshot();
     if (!sync_player_effects(battle)) return false;
-    if (!sync_items(battle)) return false;
-    if (!sync_item_spirits(battle)) return false;
+    // 生产调度（defer_item_side）：道具/神霊的 VM 面与更新一起移到
+    // Update 24/25（原版 0x42efb0/0x438e70），sync 不再内联同步。
+    if (!battle.defer_item_side) {
+        if (!sync_items(battle)) return false;
+        if (!sync_item_spirits(battle)) return false;
+    }
     // 无外部 youmu_bomb_update（RunScene.cpp 生产接线）时，表现层 sync
     // 自持斩击池更新：消费 youmu_slash_spawns_ 并逐帧回填槽。生产路径已在
     // StageBattle::step_bomb 注册矩形前经回调执行；不能重复调用
@@ -1255,26 +1350,49 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     if (enemies_from_ecl) {
         for (auto& enemy : battle.sim.enemies) {
             // 镜像翻转重挂（0x4196d3-0x419827 对齐反汇编全解）：
-            // 门 = flags&0x200000 且 x 速度符号（+0x78 语义，位置差分近似）
-            // 变化；行走 VM 脚本号 = 槽 0 脚本号 + 朝向增量查表（旧 0：
-            // 新 -1→1 / 新 0,+1→2；旧 +1：恒 4；旧 -1：恒 3）；layer 恒 8；
-            // 位置 = 旧槽 VM 位置（继承，非零）；anmArg=0；尾入池句柄存回槽 0。
-            if (enemy->flags & 0x200000u) {
-                const float dx = enemy->position[0] - enemy->mirror_prev_x;
-                const i32 dir = dx > 0.03f ? 1 : (dx < -0.03f ? -1 : 0);
+            // 门 = flags&0x200000 且 x 速度符号（inner+0x78，±0.03f 死区）
+            // 变化。0x419694 flds 0x78(%edi) / fcompl 0x4aee20(-0.03f 的
+            // double 视图 -0.029999999329447746) / fcompl 0x4aee18(+0.03f
+            // 视图)：v < -0.03f → -1；-0.03f ≤ v ≤ 0.03f → 0；v > 0.03f →
+            // +1（故此处 float 0.03f 比较与原版逐位同域）。+0x78 由 0x419950
+            // 在 0x419450 内先算
+            // （速度子位置累加后、round001/界限钳制前），StageSim::tick_enemy
+            // 在 integrate() 后、ECL 线程体前把该值快照进 mirror_velocity_x
+            // （0x41a8a0 调用序 = 0x419450 → ECL）。
+            // 行走 VM 脚本号 = 槽 0 脚本号 + 步号；步号表见 0x4196d3-0x419711
+            // 的逐分支（旧 0/±1 × 新 -1/0/+1，相等即不重挂）：dir<0→1、
+            // dir>0→2；dir==0 时旧 -1→3、旧 +1→4。layer = [+0x278]+7；
+            // 位置 = 旧槽 VM 脚本位置；anmArg=0；尾入池句柄存回槽 0。
+            // 生产敌机恒有 ECL 线程块（0x4183f0:28），mirror_ready 随
+            // tick_enemy 的 integrate 相位推进；threads 为空的裸敌机只存在
+            // 于合成夹具（见 StageSim::tick_enemy 注），它们不走 0x41a8a0，
+            // 沿用旧位置差分回退以保持既有单测语义。
+            const bool mirror_input_ready = enemy->mirror_ready || !enemy->threads;
+            if ((enemy->flags & 0x200000u) && mirror_input_ready) {
+                // 主路径：0x419694 读 inner+0x78（mirror_velocity_x）。
+                // 过渡帧（306/构造当帧、原版 0x80000 自门空转、不比较朝向）
+                // 保留旧位置差分回退，供既有单测夹具使用。
+                const float vx = enemy->mirror_ready
+                    ? enemy->mirror_velocity_x
+                    : float(enemy->position[0] - enemy->mirror_prev_x);
+                const i32 dir = vx > 0.03f ? 1 : (vx < -0.03f ? -1 : 0);
                 if (dir != enemy->mirror_dir) {
-                    i32 step;
-                    if (enemy->mirror_dir == 0)
-                        step = dir == -1 ? 1 : 2;
-                    else if (enemy->mirror_dir == 1)
-                        step = 4;
-                    else
-                        step = 3;
+                    // 0x4196e1-0x41970e：
+                    //   old -1: new +1 → 0x419708 neg/sbb/add 3 → 2；new 0 → 3
+                    //   old +1: new -1 → 0x4196ef neg/sbb/and ~2/add 4 → 1；
+                    //           new 0 → 4
+                    //   old  0: 0x4196fd setne/inc → new -1 → 1，new +1 → 2
+                    // 相等分支已在 0x4196db je 0x41982f 跳过，故 old==dir 不可达。
+                    const i32 step = dir == 0
+                        ? (enemy->mirror_dir < 0 ? 3 : 4)
+                        : (dir < 0 ? 1 : 2);
                     u32& handle = enemy->anm_slot_handle[0];
-                    // 位置继承 = 翻转帧的敌机 ECL 位（原版读旧槽 VM+0x574，
-                    // 其值即当帧跟随位——本 sync 尚未写跟随，故直接取敌机位）
-                    const Vec3 old_pos{enemy->position[0], enemy->position[1],
-                                       enemy->position[2]};
+                    // 0x41974a-0x41975b：继承旧槽 VM 的脚本位置
+                    // （vm+0x3c/0x40/0x44 = variables.position，不是 ECL 位），
+                    // 0x4197db-0x4197e9 写入新 VM 的 +0x574/578/57c。
+                    Vec3 old_pos{};
+                    const AnmVm* old_vm = handle ? animations.registry.find(handle) : nullptr;
+                    if (old_vm) old_pos = old_vm->variables.position;
                     if (handle) {
                         if (!animations.retire(handle))
                             return fail("Mirror retire failed: " + animations.error);
@@ -1288,19 +1406,34 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                     // 之后。此前沿用 create 默认 ordering=2（0x46f4a0 头插
                     // 语义；303/306 建池 0x4243e0 才是头插）→ f92 op[12] 的
                     // 层内序 Blue 先于 Red，与 oracle 相反（draws 首分歧）。
-                    const auto target = resolve_script_target(enemy->anm_file,
-                                                              enemy->anm_base_script + step);
-                    if (target.script < 0) return false;
-                    handle = animations.create(target.bank, target.script,
-                                               enemy->mirror_script_base + 7,
-                                               0, old_pos, 0, false);
+                    // 0x419731 `mov eax,[eax+0x30]`：重挂脚本解析自**当前
+                    // slot0 VM 的 resource**，脚本号 = (+0x26c + step) 的该
+                    // 文件本地号。port 用 slot0 创建记录 (bank, 本地→全局
+                    // 偏移) 复刻：offset + anm_base_script + step——303/313/
+                    // 316 重建 slot0 后 26c 仍是 306 值（敌机 +0x264..0x270
+                    // 仅 306 写 / 318 清），而文件随最近创建变化。无记录
+                    // （合成夹具直接造敌机不建槽）回退 anm_file 解析。
+                    if (enemy->anm_slot0_bank >= 0) {
+                        handle = animations.create(
+                            enemy->anm_slot0_bank,
+                            enemy->anm_slot0_script_offset +
+                                enemy->anm_base_script + step,
+                            enemy->mirror_script_base + 7, 0, old_pos, 0, false);
+                    } else {
+                        const auto target = resolve_script_target(
+                            enemy->anm_file, enemy->anm_base_script + step);
+                        if (target.script < 0) return false;
+                        handle = animations.create(target.bank, target.script,
+                                                   enemy->mirror_script_base + 7,
+                                                   0, old_pos, 0, false);
+                    }
                     if (!handle)
                         return fail("Mirror animation creation failed: " +
                                     animations.error);
                     create_color_step(animations.registry.find(handle));
-                    enemy->mirror_dir = dir;
+                    enemy->mirror_dir = dir;  // 0x419827 mov +0x270 = new dir
                 }
-                enemy->mirror_prev_x = enemy->position[0];
+                enemy->mirror_prev_x = enemy->position[0];  // 过渡帧回退基线
             }
             for (u32 slot = 0; slot < StageEnemy::kAnimationSlots; ++slot)
                 if (AnmVm* vm = animations.registry.find(enemy->anm_slot_handle[slot])) {

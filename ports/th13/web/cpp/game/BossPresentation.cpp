@@ -117,6 +117,17 @@ void BossPresentation::spell_started() {
         if (!animations_.interrupt(handle, 2, true)) fail("Boss timer spell interrupt failed");
 }
 
+void BossPresentation::spell_ended() {
+    // 00412900（0x413a60 符卡结束开头调用，先于 0x42a430 横幅创建，捕获/
+    // 失败/超时同路径）：对 ctx+0x98/+0x9c 两条数字 VM 写 pending=3 并立即
+    // 0x462450——与 0x412890（label2）对称的 immediate 消费。ascii.anm
+    // script2/3 label3 = ins_407(60帧, mode9, →(208/220,23))：把符卡期
+    // 下移到 51 的数字组拉回 23。缺失此接线时首卡后数字组恒停 y=51
+    //（数字锚 51-7=44，quad 顶 43，即"整组低约 16px"残余，round-21 BUG2）。
+    for (u32 handle : {digit_tens_, digit_ones_})
+        if (!animations_.interrupt(handle, 3, true)) fail("Boss timer spell-end interrupt failed");
+}
+
 float BossPresentation::timer_text_x() const noexcept {
     const auto* vm = animations_.registry.find(digit_tens_);
     return (vm ? vm->variables.position.x : 208.f) + 16.f;
@@ -347,10 +358,13 @@ void BossPresentation::write_star(u32 handle, const BossFrameInput& input, i32 i
     auto* vm = animations_.registry.find(handle);
     if (!vm) return;
     const float angle = input.markers[u32(index)].ratio;
-    // Native4270eb..427100 component probe: displayed<=threshold hides,
-    // displayed>threshold shows. A remaining phase marker disappears as HP
-    // falls through it; it is not a marker for already depleted phases.
-    if (angle == 0.f || displayed_ratio_ <= angle) {
+    // 0x4270eb-0x427100（004265a0.c:459-461）：原版隐藏条件 =
+    // `ratio == displayed || displayed < ratio`（即 displayed <= ratio）。
+    // 端口此前多加了 `angle == 0` 一支，把 ratio=0 且 displayed>0 的标记也
+    // 隐藏了；原版在该情形显示（相位标记=front script243 sprite152，
+    // 3x6 蓝 85,0,255，共 4 份）。位置公式 boss+56·(cos t,sin t)、
+    // t=normalize(-π-ratio*2π) 已复核正确，不改。
+    if (angle == displayed_ratio_ || displayed_ratio_ < angle) {
         vm->visual.flags &= ~kFlagVisible;
         return;
     }
@@ -359,8 +373,11 @@ void BossPresentation::write_star(u32 handle, const BossFrameInput& input, i32 i
     //（0x4ae880=−π、0x4ae850=2π、0x472f30 归一）。
     const float t = normalize_angle(float(-double(kPi) - double(angle) * double(kTwoPi)));
     vm->variables.rotation.z = t;
-    // 0x42713c-0x427193：offset = boss + 56·(cos t, sin t, 0)
-    //（0x4aef18=56、0x472fc0 极坐标旋转基向量 (56,0)）。
+    // 0x42713c-0x427193：位置 = boss + 56·(cos t, sin t, 0)。
+    // 复核（2026-11-02 反汇编 0x42707e-0x427195）：0x4aef18(56.0) 存到
+    // esp+0xa0，0x472fc0 的 ESI=esp+0xa0 读取 {56,0}（不是 {0,56}），输出
+    // (56·cos a, 56·sin a)；随后 +0x44/0x48 的 boss 世界位。故现行公式与
+    // 原版一致，勿按 decomp 的 local_78 索引误判为 (0,56)。
     const StageEnemy* boss = input.boss;
     vm->visual.translation = {
         float(boss->position[0] + kStarOrbitRadius * std::cos(t)),
