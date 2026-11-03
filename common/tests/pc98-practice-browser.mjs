@@ -32,7 +32,7 @@ try {
       if (event.data?.protocol === 'eagler-touhou/1') window.recordPracticeEvent(event.data);
     }));
     let frame;
-    const read = () => frame.evaluate(async () => (await import('./solo.js')).managedAPI.practiceState());
+    const read = () => frame.evaluate(async () => (await import('./managed-solo.mjs')).managedAPI.practiceState());
     const press = async code => { await frame.$eval('canvas', node => node.focus()); await page.keyboard.press(code,{delay:100}); };
     const click = async selector => {
       // Scroll the original panel like a user, keeping controls below its sticky header.

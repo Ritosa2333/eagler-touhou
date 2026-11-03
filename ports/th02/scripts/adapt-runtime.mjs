@@ -56,10 +56,7 @@ await writeFile(resolve(output,'managed-room.html'),roomHtml);runtime.push('mana
 for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
 for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-practice.mjs']) {await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
 for(const name of ['assets/option-0.png','assets/option-1.png','assets/option-2.png']) {await mkdir(resolve(output,'assets'),{recursive:true});await writeFile(resolve(output,name),await readInput(name));runtime.push(name);}
-let html=await readFile(resolve(web,'solo.html'),'utf8');
-html=html.replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
-html=replaceOnce(html,'src="solo.js"','src="managed-shell.mjs"','managed entry');
-html=html.replace('</head>',`<style>body>header,body>nav,main>.intro,main>details,.player-toolbar,.player-actions,.player-movement,.player-note,.touch-surface,[class^="touch-"],[data-layout-control]{display:none!important}html,body{margin:0;background:#000}#game.immersive{position:fixed;inset:0}.player-stage{width:100%;height:100%}</style></head>`);
+const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#game,.player-stage{width:100%;height:100%;margin:0;background:#000;overflow:hidden}.player-stage{display:flex;align-items:center;justify-content:center}.solo-screen{position:relative;width:min(100%,160vh);aspect-ratio:8/5}.player-toolbar{display:none}#canvas{width:100%;height:100%;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head><body><div id="game" class="th02-player"><div class="player-toolbar"></div><div class="player-stage"><div class="solo-screen"><canvas id="canvas" width="640" height="400" tabindex="0"></canvas></div></div></div></body></html>`;
 await writeFile(resolve(output,'th02.html'),html);runtime.push('th02.html');
 
 await patch('replay/audio.js',text=>text
