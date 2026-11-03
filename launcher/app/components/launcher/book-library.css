@@ -142,14 +142,20 @@
   .book-recent-link .book-art > :is(img,.book-cover-fallback) {
     transition: transform 480ms cubic-bezier(.22,.7,.2,1), filter 300ms ease;
   }
-  .book-recent-link .book-identity {
+  .book-recent-link :is(.book-art,.book-identity) {
     transition: translate 480ms cubic-bezier(.22,.7,.2,1);
   }
-  .book-recent-link:focus-visible .book-art > :is(img,.book-cover-fallback) {transform:scale(1.07)}
-  .book-recent-link:focus-visible .book-identity {translate:3px 0}
-  @media (hover:hover) and (pointer:fine) {
+  @media (min-width:781px) {
+    .book-recent-link:focus-visible :is(.book-art,.book-identity) {translate:3px 0}
+  }
+  @media (min-width:781px) and (hover:hover) and (pointer:fine) {
+    .book-recent-link:hover :is(.book-art,.book-identity) {translate:3px 0}
+  }
+  @media (max-width:780px) {
+    .book-recent-link:focus-visible .book-art > :is(img,.book-cover-fallback) {transform:scale(1.07)}
+  }
+  @media (max-width:780px) and (hover:hover) and (pointer:fine) {
     .book-recent-link:hover .book-art > :is(img,.book-cover-fallback) {transform:scale(1.07)}
-    .book-recent-link:hover .book-identity {translate:3px 0}
   }
   .book-view-header {
     display: flex;
@@ -521,8 +527,8 @@
     }
   }
 }
-@media (prefers-reduced-motion:reduce) {.book-recent-link,.book-recent-link .book-identity,.book-recent-link .book-art > :is(img,.book-cover-fallback) {transition:none;translate:none!important;transform:none!important}}
-.less-motion .book-recent-link,.less-motion .book-recent-link .book-identity,.less-motion .book-recent-link .book-art > :is(img,.book-cover-fallback) {transition:none;translate:none!important;transform:none!important}
+@media (prefers-reduced-motion:reduce) {.book-recent-link,.book-recent-link :is(.book-art,.book-identity),.book-recent-link .book-art > :is(img,.book-cover-fallback) {transition:none;translate:none!important;transform:none!important}}
+.less-motion .book-recent-link,.less-motion .book-recent-link :is(.book-art,.book-identity),.less-motion .book-recent-link .book-art > :is(img,.book-cover-fallback) {transition:none;translate:none!important;transform:none!important}
 .book-favorite.ui-kit-button:is(:hover,[aria-pressed="true"]) {background:transparent;border-color:transparent}
 .book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
 .book-view-switch .ui-kit-choice:is([data-state="on"],:hover) {background:transparent;box-shadow:none}
