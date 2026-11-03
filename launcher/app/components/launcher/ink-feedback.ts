@@ -6,11 +6,11 @@ export function impressFavorite(button: HTMLElement) {
   icon.getAnimations().forEach(animation => {animation.cancel();});
   icon.animate([
     {transform: 'scale(1) rotate(0deg)', offset: 0},
-    {transform: 'scale(.75) rotate(-12deg)', offset: .22},
-    {transform: 'scale(1.35) rotate(12deg)', offset: .58},
-    {transform: 'scale(.95) rotate(-3deg)', offset: .82},
+    {transform: 'scale(.92) rotate(-5deg)', offset: .2},
+    {transform: 'scale(1.17) rotate(5deg)', offset: .55},
+    {transform: 'scale(.99) rotate(-1deg)', offset: .82},
     {transform: 'scale(1) rotate(0deg)', offset: 1},
-  ], {duration: 480, easing: 'cubic-bezier(.22, 1, .36, 1)'});
+  ], {duration: 680, easing: 'ease-in-out'});
 }
 
 /** Animate the new theme icon after React updates it. */
@@ -21,9 +21,9 @@ export function impressTheme(button: HTMLElement) {
     if (!icon) return;
     icon.getAnimations().forEach(animation => animation.cancel());
     icon.animate([
-      {opacity: .35, transform: 'rotate(-75deg) scale(.6)', offset: 0},
-      {opacity: 1, transform: 'rotate(12deg) scale(1.18)', offset: .7},
+      {opacity: .35, transform: 'rotate(-40deg) scale(.8)', offset: 0},
+      {opacity: 1, transform: 'rotate(5deg) scale(1.08)', offset: .72},
       {opacity: 1, transform: 'rotate(0deg) scale(1)', offset: 1},
-    ], {duration: 420, easing: 'cubic-bezier(.22, 1, .36, 1)'});
+    ], {duration: 600, easing: 'ease-in-out'});
   });
 }
