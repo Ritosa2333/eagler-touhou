@@ -59,10 +59,10 @@ for(const playerCount of [2,3]){
 for (const product of ['th12mp', 'th15mp']) {
   const input = {...base, difficulty: 1, inputDelay: 0, url: base.url.replace('th06mp', product)};
   const config = PRODUCT_GAMES[product.slice(0, -2)].multiplayer;
-  const enabled = buildMultiplayerRuntimeOptions(input, config);
+  const enabled = buildMultiplayerRuntimeOptions({...input, loadouts: config.loadouts.slice(0, 2)}, config);
   assert.equal(enabled.netplayAdonisMode, 0, `${product}: default rollback`);
   assert.equal(enabled.netplayPredictionLimit, 12);
-  const disabled = buildMultiplayerRuntimeOptions({...input, adonisMode: 1}, config);
+  const disabled = buildMultiplayerRuntimeOptions({...input, loadouts: config.loadouts.slice(0, 2), adonisMode: 1}, config);
   assert.equal(disabled.netplayAdonisMode, 1, `${product}: explicit pure delay`);
   assert.equal(disabled.netplayPredictionLimit, 0);
 }
