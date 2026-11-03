@@ -27,9 +27,13 @@ onmessage=async({data})=>{
         {dosboxConf:conf,jsdosConf:{version:'8'}},
       ],emulator.transport,{});
       emulator.ci.events().onSoundPush(samples=>output.push(samples.slice()));
+      const messages=[];emulator.ci.events().onMessage((type,...parts)=>messages.push([type,...parts]));
       emulator.run();
-      for(let tick=0;tick<1800&&mailbox<0;tick++){emulator.step();if(tick%15===0)mailbox=findMailbox();}
-      if(mailbox<0)throw Error('原始音效驱动未启动');
+      for(let tick=0;tick<10800&&mailbox<0;tick++){emulator.step();if(tick%15===0)mailbox=findMailbox();}
+      if(mailbox<0){
+        const m=emulator.module,h=m.HEAPU8,at=h.indexOf(signature[0]);
+        throw Error('原始音效驱动未启动：'+JSON.stringify({messages:messages.slice(-8),program:m.UTF8ToString(m._emGetRunningProgram()),candidate:at,wakeAt:m.wakeAt,virtualNow:m.virtualNow,pendingWake:m.pendingWake,files:m.FS.readdir('/home/web_user/game')}));
+      }
       output=[];postMessage({type:'ready'});timer=setInterval(step,1000/60);
     }catch(error){postMessage({type:'error',message:String(error.stack||error)});}
   }else if(data.type==='effect'){
