@@ -31,6 +31,7 @@ import {
   type BookCategory,
 } from './book-preferences';
 import { bookArtwork } from './book-artwork';
+import {impressFavorite} from './ink-feedback';
 import { BookWorkNumber } from './BookWorkNumber';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & { footer?: ReactNode };
@@ -316,7 +317,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   disabled={!interactive}
                   aria-label={t('library.favorite', { title: product.title })}
                   aria-pressed={favorites.includes(product.id)}
-                  onClick={() => toggleFavorite(product.id)}
+                  onClick={(event) => {impressFavorite(event.currentTarget); toggleFavorite(product.id);}}
                 >
                   <Star aria-hidden="true" />
                 </Button>
