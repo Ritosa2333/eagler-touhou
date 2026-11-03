@@ -18,7 +18,6 @@ SOURCES = {
     "th02": ("东方封魔录", "5/55", (1525, 2136), 5539381),
     "th03": ("东方梦时空", "5/5d", (1522, 2137), 5936208),
     "th04": ("东方幻想乡", "f/fd", (2156, 1485), 5100288),
-    "th05": ("东方怪绮谈", "7/79", (2124, 1490), 5073065),
 }
 
 
@@ -30,7 +29,7 @@ def main():
     args = parser.parse_args()
     games = args.games.split(",")
     if not games or len(set(games)) != len(games) or any(g not in SOURCES for g in games):
-        parser.error("Choose th01,th02,th03,th04,th05")
+        parser.error("Choose th01,th02,th03,th04")
     originals = args.output / "originals"
     originals.mkdir(parents=True, exist_ok=True)
     for game in games:

@@ -28,7 +28,6 @@ ARTWORK_BY_GAME = {
     "th03": ("th03-card.webp",),
 
     "th04": ("th04-card.webp",),
-    "th05": ("th05-card.webp",),
     "th06": (
         "th06-card.webp",
         "favicon.ico",
@@ -195,7 +194,7 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         raise FileNotFoundError(
             f"{game}: original directory is required unless every host artwork file is overridden"
         )
-    if game in ("th01", "th02", "th03", "th04", "th05"):
+    if game in ("th01", "th02", "th03", "th04"):
         for candidate in (root / "artwork" / name, root / "content/artwork" / name):
             if candidate.is_file():
                 return candidate.read_bytes()

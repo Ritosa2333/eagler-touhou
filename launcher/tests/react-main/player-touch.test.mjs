@@ -93,6 +93,15 @@ test('TH09 held fire never also enables automatic pulse stream and releases on l
   assert.deepEqual(f.sent.filter(x => x.command === 'keyboard').map(x => [x.code, x.down]), [['KeyZ', true], ['KeyZ', false]]);
   assert.equal(f.sent.find(x => x.command === 'touch-controls').fireEnabled, false);
 });
+test('TH03 does not auto-fire on launch and fires only while the touch button is held', () => {
+  const f = fixture({game: 'th03'});
+  f.touch.syncControls();
+  assert.equal(f.sent.at(-1).fireEnabled, false);
+  assert.equal(f.sent.filter(message => message.command === 'keyboard').length, 0);
+  f.pointer('fire', 'pointerdown');
+  f.pointer('fire', 'pointerup');
+  assert.deepEqual(f.sent.filter(message => message.command === 'keyboard').map(message => [message.code, message.down]), [['KeyZ', true], ['KeyZ', false]]);
+});
 test('single mobile practice entry changes native panel visibility without a Backspace pulse', () => {
   const f = fixture({game: 'th11'});
   f.pointer('thpracBackspace', 'pointerdown');

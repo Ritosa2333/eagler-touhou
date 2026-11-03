@@ -17,10 +17,7 @@ const {
   selectReplayExportPaths,
 } = await import('data:text/javascript;base64,'+Buffer.from(compiled.outputFiles[0].contents).toString('base64'));
 
-assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.th05r,.rep");
-assert.equal(isReplayImportFileName('recorded.th05r'),true);
-assert.equal(isValidReplayName('th05','recorded.th05r'),true);
-assert.equal(isValidReplayName('th05','recorded.th04r'),false);
+assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.rep");
 assert.equal(isReplayImportFileName('recorded.th04r'),true);
 assert.equal(isValidReplayName('th04','recorded.th04r'),true);
 assert.equal(isValidReplayName('th04','th6_01.rpy'),false);

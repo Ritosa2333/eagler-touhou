@@ -87,6 +87,17 @@ export class LocalBgm {
     const item={id,generation,source:null,gain:null,volume:1,fade:null};
     this.requested=item;this.status=`本地音乐：正在加载 ${id}（不影响游戏）`;
     const track=this.track(id);
+    if(this.pmd&&!['new','midi'].includes(bgmVersion())){
+      const selected=Object.keys(this.manifest.tracks).find(key=>this.manifest.tracks[key]===track);
+      const originalHash=Number(Object.keys(this.manifest.headers).find(key=>this.manifest.headers[key]===selected));
+      this.pmd.engine.createSource(this.pmd.tracks.get(originalHash).bytes).then(source=>{
+        if(this.closed||generation!==this.generation){source.stop(this.context.currentTime);return;}
+        const gain=this.context.createGain();gain.gain.value=item.volume;source.connect(gain);gain.connect(this.volume);
+        item.source=source;item.gain=gain;this.active=item;source.onended=()=>{source.disconnect();gain.disconnect();if(this.active===item)this.active=null;};
+        source.start();if(item.fade)this.fade(item.fade);this.status=`原版 FM：${selected}`;
+      }).catch(error=>{if(generation===this.generation)this.status=`原版 FM 错误：${error.message}`;});
+      return;
+    }
     this.decode(id,track).then(buffer=>{
       if(this.closed||generation!==this.generation)return;
       const source=this.context.createBufferSource(),gain=this.context.createGain();

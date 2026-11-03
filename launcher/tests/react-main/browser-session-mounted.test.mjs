@@ -677,7 +677,7 @@ test('actual BrowserLauncher: cold save export owns file-only preparation and re
 const storageImportCases = [
   {kind: 'save', game: 'th06', name: 'import.dat', path: 'score.dat', accept: '.dat'},
   {kind: 'hint', game: 'th10', name: 'import.txt', path: 'hint/hint_user.txt', accept: '.txt'},
-  {kind: 'replay', game: 'th06', name: 'th6_01.rpy', path: 'replay/th6_01.rpy', accept: '.zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.th05r,.rep'},
+  {kind: 'replay', game: 'th06', name: 'th6_01.rpy', path: 'replay/th6_01.rpy', accept: '.zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.rep'},
 ];
 async function runningStorageImport({kind, game}) {
   const f = await mountBrowser({initial: `/?game=${game}&keep=a%20b`, host: subsetHost([game], {multiplayer: false}), seedPackages: game === 'th10' ? [game] : [], seedStorage(storage) {

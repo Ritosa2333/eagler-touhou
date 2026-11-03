@@ -7,6 +7,9 @@ import {NP21} from './dosbox-adapter.js';
 import {WorkerNP21} from './solo-worker-client.js';
 import {gameVersion} from './game-version.js';
 import {sha256} from './netplay/sha256.js';
+import {Fat12} from './solo-fat12.js';
+import {extractOriginalPmd} from './pmd-archives.mjs';
+import {PmdPlayer} from './pmd-player.mjs';
 
 // An attempt owns its canvas, DOS instance, clocks, recording and music.
 // A parked attempt retains the original JSPI continuation, never a RAM snapshot.
@@ -34,6 +37,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       if(!replay)await installPractice(data,resources,practice);
       if(audioMode==='independent'){
         const music=attempt.music=new SoloMusic(text=>emit('onStatus',text));
+        music.player.pmd={tracks:extractOriginalPmd('th04',new Fat12(data)),engine:await PmdPlayer.prepare(music.context,import.meta.url)};
         // No background audio, including boot/title commands.
         music.suspend();
         if(replay)await music.attachReplay();else await music.install(data,'GENSO');

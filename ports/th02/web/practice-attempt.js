@@ -5,6 +5,9 @@ import {fingerprint} from './replay/tape.js';
 import {SoloMusic} from './solo-music.js';
 import {DOSBoxPC98} from './dosbox-adapter.js';
 import {sha256} from './solo-fat12.js';
+import {Fat12} from './solo-fat12.js';
+import {extractOriginalPmd} from './pmd-archives.mjs';
+import {PmdPlayer} from './pmd-player.mjs';
 
 // An attempt owns its canvas, DOS instance, clocks, recording and music.
 // A parked attempt retains the original JSPI continuation, never a RAM snapshot.
@@ -32,6 +35,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       if(!replay)await installPractice(data,resources,practice);
       if(audioMode==='independent'){
         const music=attempt.music=new SoloMusic(text=>emit('onStatus',text));
+        music.player.pmd={tracks:extractOriginalPmd('th02',new Fat12(data)),engine:await PmdPlayer.prepare(music.context,import.meta.url)};
         // No background audio, including boot/title commands.
         music.suspend();
         if(replay)await music.attachReplay(data);else await music.install(data,'HUMAROKU');

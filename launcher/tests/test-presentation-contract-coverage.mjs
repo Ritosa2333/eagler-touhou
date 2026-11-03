@@ -20,7 +20,6 @@ const verification = Object.freeze({
   th02: {kind:'pc98-managed',test:'tests/managed-adapter.test.mjs'},
   th03: {kind:'pc98-managed',test:'tests/managed-adapter.test.mjs'},
   th04: {kind:'pc98-managed',test:'tests/managed-adapter.test.mjs'},
-  th05: {kind:'pc98-managed',test:'tests/managed-adapter.test.mjs'},
   th06: Object.freeze({ kind: "shared-preload", tests: Object.freeze([
     "tests/test-mobile-frame-pacing.mjs",
     "tests/test-native-frame-pacing.mjs",

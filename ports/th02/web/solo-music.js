@@ -20,7 +20,7 @@ export class SoloMusic {
     await this.player.load({warmOpening:false});
     // Decode the opening before muting native music, surfacing codec/download errors.
     const opening='op-m86';
-    await this.player.decode(opening);
+    if(!this.player.pmd)await this.player.decode(opening);
     this.reader=new NativeMusic(meta);
     this.batchPath=folder+'/GAME.BAT';this.driverPath=folder+'/WEBMUSIC.COM';
     const fat=new Fat12(data),entry=fat.find(this.batchPath);

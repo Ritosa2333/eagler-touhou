@@ -26,7 +26,6 @@
     "telemetry": "services/telemetry",
     "resources": "services/resource-router",
     "th12": "ports/th12",
-    "th05": "ports/th05",
     "th01": "ports/th01",
     "th02": "ports/th02",
     "th03": "ports/th03"

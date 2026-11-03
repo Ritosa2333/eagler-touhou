@@ -1,8 +1,0 @@
-{
-  "signature": "TH05LOCALBGMv01!",
-  "mailbox_com_offset": 561,
-  "sha256": "0a54aa9f5ca4804713390efe40fb69048eaddf4d34a337b17045620733a74079",
-  "ring_size": 64,
-  "header_bytes": 25,
-  "policy": "mask PMD music parts 0..14; keep FM effects part 15 and driver timing"
-}

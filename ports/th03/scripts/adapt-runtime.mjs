@@ -1,6 +1,8 @@
 import {readFile,writeFile,copyFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {installPc98Pmd} from '../../../tools/build/pc98-pmd.mjs';
 export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files}){
+  await installPc98Pmd(repo,output,runtime);
   await patch('solo.js',text=>{
     const a=text.indexOf('async function storage('),b=text.indexOf('\nfunction validate(',a);
     if(a<0||b<0)throw Error('TH03 solo storage changed');
@@ -8,6 +10,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=replaceOnce(text,'const disk=playback?source:prepareSoloDisk(source);',`const disk=playback?source:prepareSoloDisk(source);
       if(!playback){const fat=new Fat12(disk);for(const [name,bytes]of globalThis.__eaglerPC98Files.memory)if(['YUME.NEM','YUME.CFG'].includes(name))fat.put('YUMEZIKU/'+name,bytes);}`,'main save import');
     text=replaceOnce(text,"bits=player.sample();for(const code of [...physical,...tapped])bits|=physicalActions[code]||0;tapped.clear();","bits=globalThis.__eaglerPC98Input.sample();tapped.clear();",'hosted solo input');
+    text=replaceOnce(text,'synthetic.add(event);canvas.dispatchEvent(event);',"synthetic.add(event);Object.defineProperty(event,'__eaglerPC98Synthetic',{value:true});canvas.dispatchEvent(event);",'allow game keyboard events through managed input');
     text=replaceOnce(text,'const packed=player.pack(0),touch=unpackTouch(packed);',"const packed=packTouch(0,globalThis.__eaglerPC98Input.motion()),touch=unpackTouch(packed);",'hosted solo touch');
     text=replaceOnce(text,"import {unpackTouch} from './touch-input.js';","import {unpackTouch,packTouch} from './touch-input.js';",'touch codec');
     text=replaceOnce(text,'replayUI.offerSave(blob,value);','void managedSaveReplay(blob);','managed replay export');
@@ -77,7 +80,6 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
   const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
   await writeFile(resolve(output,'managed-room.html'),strip(await readFile(resolve(web,'local.html'),'utf8')));runtime.push('managed-room.html');
-  let html=strip(await readFile(resolve(web,'solo.html'),'utf8'));
-  html=html.replace('</head>',`<style>html,body{margin:0;background:#000}#site-header,main>*:not(#screen),.player-toolbar,.player-actions,.player-movement,.player-note,.touch-surface,[class^="touch-"],[data-layout-control]{display:none!important}main{margin:0;padding:0}#screen{position:fixed;inset:0;margin:0;padding:0}.player-stage{width:100%;height:100%}</style><script type="module" src="managed-shell.mjs"></script></head>`);
+  const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#screen{width:100%;height:100%;margin:0;background:#000;overflow:hidden}#canvas{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head><body><div id="screen"><canvas id="canvas" width="640" height="400" tabindex="0"></canvas></div></body></html>`;
   await writeFile(resolve(output,'th03.html'),html);runtime.push('th03.html');
 }

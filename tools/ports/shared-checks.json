@@ -23,7 +23,7 @@
       "id": "normal-presentation",
       "level": "source-contract",
       "variants": ["normal"],
-      "excludedGames": ["th01", "th02", "th03", "th04", "th05"],
+      "excludedGames": ["th01", "th02", "th03", "th04"],
       "checks": ["DISPLAY-01", "DISPLAY-02", "DISPLAY-03"],
       "files": ["launcher/tests/test-native-frame-pacing.mjs", "launcher/tests/test-mobile-frame-pacing.mjs", "launcher/tests/test-presentation-contract-coverage.mjs"]
     },

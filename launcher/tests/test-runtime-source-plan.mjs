@@ -74,7 +74,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 28);
+  assert.equal(plans.length, 26);
   assert.equal(plans.find(plan=>plan.game==='th12').source,layout.path('th12'));
   assert.equal(plans.find(plan => plan.game === "th10" && plan.variant === "multiplayer").source, layout.path("th10mp"));
   assert(plans.find(plan => plan.game === "th11" && plan.variant === "multiplayer").steps[0].args.includes("--multiplayer"));
@@ -113,4 +113,4 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (28 variants, managed assembly, shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (26 variants, managed assembly, shared dependencies, explicit tools, invalid inputs)");

@@ -35,33 +35,6 @@
         "commonMarker": "browser/directory-keyboard.mjs"
       }
     },
-    "th05": {
-      "builder": "prebuilt",
-      "workspaceRepository": "th05",
-      "variants": {
-        "normal": {
-          "features": {
-            "thcrap": false,
-            "thprac": false
-          },
-          "cache": {}
-        },
-        "multiplayer": {
-          "features": {
-            "thcrap": false,
-            "thprac": false
-          },
-          "cache": {}
-        }
-      },
-      "sourceBuild": {
-        "kind": "managed-import",
-        "build": [
-          "scripts/build-eagler.mjs"
-        ],
-        "commonMarker": "browser/directory-keyboard.mjs"
-      }
-    },
     "th06": {
       "builder": "cmake",
       "sourceBuild": {

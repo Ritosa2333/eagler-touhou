@@ -1,9 +1,0 @@
-{
-  "signature": "TH05LOCALSE_v01!",
-  "mailbox_com_offset": 572,
-  "sha256": "5ab9696abe91fe1711532f265b2198956e8f65cd9dabf54a414680bc0b7b8f03",
-  "ring_size": 64,
-  "header_bytes": 25,
-  "separate_effects": true,
-  "policy": "record PMD AH=0C effects in the shared event ring; retain original game priority and PMD timing; browser owns effect playback"
-}

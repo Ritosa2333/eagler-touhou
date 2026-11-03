@@ -1,5 +1,6 @@
 import {printPC98Inputs} from '../../../tools/build/pc98-inputs.mjs';
 import {adaptPC98Practice} from '../../../common/browser/adapt-pc98-practice.mjs';
+import {installPc98Pmd} from '../../../tools/build/pc98-pmd.mjs';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,readdir,copyFile,stat,mkdtemp,rename,rm} from 'node:fs/promises';
 import {resolve,relative,dirname} from 'node:path';
@@ -37,6 +38,7 @@ const staging=await mkdtemp(resolve(cache,'build-')),output=resolve(staging,'bui
 try {
 await mkdir(output,{recursive:true});await mkdir(content,{recursive:true});
 const runtime=[], payload=[], entries=[];let offset=0;
+await installPc98Pmd(repo,output,runtime);
 for(const item of input) {
   const bytes=await readInput(item.path);
   if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
@@ -118,7 +120,7 @@ await writeFile(resolve(output,'th04.html'),html);runtime.push('th04.html');
 const escape=text=>text.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 let notices='<!doctype html><html lang="en"><meta charset="utf-8"><title>TH04 runtime notices</title><body><h1>TH04 runtime sources and licenses</h1><p>Adapted from <a href="https://github.com/IxinorTyan/th04-coop-lab">th04-coop-lab</a>, revision '+escape(revision??'local working tree')+'.</p>';
 for(const name of ['vendor/dosbox-x/NOTICE.md','vendor/dosbox-x/LICENSE','vendor/np2/LICENSE','room-ui-assets/LICENSE.txt'])notices+='<h2>'+escape(name)+'</h2><pre style="white-space:pre-wrap">'+escape(await readFile(resolve(web,name),'utf8'))+'</pre>';
-await writeFile(resolve(output,'NOTICE.html'),notices+'</body></html>');runtime.push('NOTICE.html');
+await writeFile(resolve(output,'NOTICE.html'),notices+'<h2>PMD player</h2><p><a href="pmd-player.UPSTREAM.txt">Source</a> · <a href="pmd-player.NOTICE.txt">Notice</a> · <a href="pmd-player.LICENSE.txt">License</a></p></body></html>');runtime.push('NOTICE.html');
 const manifestBytes=Buffer.from(JSON.stringify({schema:DATA_SCHEMA,game:'th04',files:entries})),header=Buffer.alloc(12);header.write(DATA_MAGIC);header.writeUInt32LE(manifestBytes.length,8);
 await writeFile(resolve(content,'th04.data'),Buffer.concat([header,manifestBytes,...payload]));
 const identities={};for(const name of [...new Set(runtime)].sort()){const bytes=await readFile(resolve(output,name));identities[name]={bytes:bytes.length,sha256:sha(bytes)};}

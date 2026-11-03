@@ -37,12 +37,6 @@ export const PRODUCT_CONTENT = Object.freeze({
     music:Object.freeze({}),
     hostPreparation:Object.freeze({artwork:Object.freeze({kind:'prepared-artwork'}),preparedContent:Object.freeze({directory:'content',markerFiles:Object.freeze(['th04.data']),script:'scripts/prepare-th04-content.mjs'}),dataAssets:Object.freeze({kind:'prepared-content'})}),
   }),
-  th05: Object.freeze({
-    original:Object.freeze({files:Object.freeze(['th05.data']),preparedAlternative:Object.freeze({directory:'content',markerFiles:Object.freeze(['th05.data'])})}),
-    dataLayout:'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579',
-    music:Object.freeze({}),
-    hostPreparation:Object.freeze({artwork:Object.freeze({kind:'prepared-artwork'}),preparedContent:Object.freeze({directory:'content',markerFiles:Object.freeze(['th05.data']),script:'scripts/prepare-th05-content.mjs'}),dataAssets:Object.freeze({kind:'prepared-content'})}),
-  }),
   th06: Object.freeze({
     original: Object.freeze({
       files: TH06_ARCHIVES,

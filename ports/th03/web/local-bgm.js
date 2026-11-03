@@ -93,6 +93,17 @@ export class LocalBgm {
     // Commands arriving while decoding belong to this generation only.
     const item={id,generation,source:null,gain:null,volume:1,fade:null};
     this.requested=item;this.status=`本地音乐：正在加载 ${id}（不影响游戏）`;
+    if(this.pmd&&bgmVersion()!=='new'){
+      const original=this.pmd.tracks.get(hash);
+      this.pmd.engine.createSource(original.bytes).then(source=>{
+        if(this.closed||generation!==this.generation){source.stop(this.context.currentTime);return;}
+        const gain=this.context.createGain();gain.gain.value=item.volume;source.connect(gain);gain.connect(this.volume);
+        item.source=source;item.gain=gain;this.active=item;
+        source.onended=()=>{source.disconnect();gain.disconnect();if(this.active===item)this.active=null;};
+        source.start();if(item.fade)this.fade(item.fade);this.status=`原版 FM：${id}`;
+      }).catch(error=>{if(generation===this.generation)this.status=`原版 FM 错误：${error.message}`;});
+      return;
+    }
     const track=this.track(id);
     this.decode(id,track).then(buffer=>{
       if(this.closed||generation!==this.generation)return;

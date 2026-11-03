@@ -1,4 +1,4 @@
-// Requires the main Launcher with th02,th04,th05 development packages enabled.
+// Requires the main Launcher with th02,th04 development packages enabled.
 // Exercise the actual browser controllers and native practice engines together.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -8,7 +8,7 @@ import {findChromiumExecutable} from '../../launcher/lib/chromium-executable.mjs
 const require = createRequire(new URL('../../launcher/package.json', import.meta.url));
 const puppeteer = require('puppeteer-core');
 const base = process.env.PC98_LAUNCHER_URL || 'http://127.0.0.1:18330/';
-const games = process.env.PC98_PRACTICE_GAMES?.split(',') || ['th02','th04','th05'];
+const games = process.env.PC98_PRACTICE_GAMES?.split(',') || ['th02','th04'];
 const mobile = process.env.PC98_PRACTICE_MOBILE === '1';
 const browser = await puppeteer.launch({executablePath:await findChromiumExecutable(), headless:true,
   args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});

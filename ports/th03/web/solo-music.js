@@ -4,17 +4,17 @@ import {LocalBgm} from './local-bgm.js';
 
 // Only the PMD driver is wrapped. Original OP, MAIN and menu flow still run.
 export class SoloMusic {
-  constructor(report=()=>{}) {
+  constructor(report=()=>{}, {independentSfx=false}={}) {
     this.context=new AudioContext();
     this.context.resume().catch(()=>{});
     this.player=new LocalBgm(this.context,report);this.report=report;
-    this.lastPoll=-Infinity;this.closed=false;
+    this.lastPoll=-Infinity;this.closed=false;this.independentSfx=independentSfx;
   }
   prepare(folder) {
     return this.prepared ||= this.prepareAssets(folder);
   }
   async prepareAssets(folder) {
-    const response=await fetch('solo-music.json');
+    const response=await fetch(this.independentSfx?'network-audio.json':'solo-music.json');
     if(!response.ok)throw Error('独立音乐配置加载失败');
     const meta=await response.json(),asset=await fetch(meta.url);
     if(!asset.ok)throw Error('独立音乐驱动加载失败');
@@ -23,7 +23,7 @@ export class SoloMusic {
     await this.player.load({warmOpening:false});
     // Decode the opening before muting native music, surfacing codec/download errors.
     const opening=folder==='YUMEZIKU'?'op-m26':'op-m86';
-    await this.player.decode(opening);
+    if(!this.player.pmd)await this.player.decode(opening);
     return {meta,bytes};
   }
   async install(data,folder) {
@@ -43,6 +43,10 @@ export class SoloMusic {
     if(!installs||installs!==removes)throw Error('无法识别单机音乐启动流程');
     fat.put(this.driverPath,bytes);
     fat.replace(entry,Uint8Array.from(batch,c=>c.charCodeAt(0)));
+  }
+  async attachReplay(folder) {
+    const {meta}=await this.prepare(folder);
+    this.reader=new NativeMusic(meta);
   }
   exportDisk(data) {
     const copy=new Uint8Array(data),fat=new Fat12(copy);

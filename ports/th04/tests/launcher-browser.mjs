@@ -20,6 +20,7 @@ try{
   await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
   console.log('Launcher TH04 card ready');
   await page.click('.game[data-game="th04"]:not([data-product])');
+  await page.click('.game[data-game="th04"]:not([data-product])');
   await page.waitForSelector('.tools.is-open',{visible:true});
   await page.$eval('.tools.is-open',async panel=>{await Promise.all(panel.getAnimations().map(animation=>animation.finished.catch(()=>{})));});
   await page.waitForSelector('#musicSelect');
@@ -36,6 +37,9 @@ try{
     await new Promise(r=>setTimeout(r,200));
   }
   assert(events.some(e=>e.event==='first-frame'),'full Launcher must present a real frame');
+  const audioDeadline=Date.now()+60000;
+  while(Date.now()<audioDeadline&&!events.some(e=>e.event==='audio-health'&&e.musicStatus?.startsWith('原版 FM：')))await new Promise(resolve=>setTimeout(resolve,250));
+  assert(events.some(e=>e.event==='audio-health'&&e.musicStatus?.startsWith('原版 FM：')),'original PMD music must play');
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH04 solo presentation');

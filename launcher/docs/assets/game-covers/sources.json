@@ -44,17 +44,6 @@
     "sha256": "ce45aa8c6e2c3648b8bb950eb11972c0cebe0eb418f62691d7f1a29c8912dd60"
   },
   {
-    "game": "th05",
-    "name": "东方怪绮谈",
-    "file": "th05.jpg",
-    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E6%80%AA%E7%BB%AE%E8%B0%88%E5%B0%81%E9%9D%A2.jpg",
-    "source_image": "https://upload.thbwiki.cc/b/b5/%E4%B8%9C%E6%96%B9%E6%80%AA%E7%BB%AE%E8%B0%88%E5%B0%81%E9%9D%A2.jpg",
-    "width": 453,
-    "height": 329,
-    "bytes": 63697,
-    "sha256": "43c79faa06efeb2a7e43646951b458e923a85c653105a30ec4f5ec7f599838d1"
-  },
-  {
     "game": "th06",
     "name": "东方红魔乡",
     "file": "th06.png",

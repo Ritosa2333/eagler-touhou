@@ -64,7 +64,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th03.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
-        touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
+        touchFire:Readonly<{mode:'held-key';labelKey:'touch.actionHold';key:Readonly<{code:'KeyZ';key:'z';keyCode:90}>}>;
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th03';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th03/multiplayer/th03.html';
@@ -83,20 +83,6 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay:Readonly<{prefix:'th04';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th04/multiplayer/th04.html';
         multiplayer:Readonly<{titleKey:'game.title.th04mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th04PeerTransport';relaySourceEnvelope:true;spectator:false;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
-        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
-    }>;
-    th05: Readonly<{
-        testOnly:true; number:'05';title:'東方怪綺談';subtitle:'Mystic Square';cardArtwork:'th05-card.webp';
-        storage:Readonly<{saveRoot:'/savesth05';scoreFile:'GENSOU.SCR';configFiles:readonly string[]}>;
-        runtime:'./runtime/th05/th05.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
-        dataProvider:'retail-memory';runtimeResourceTransport:'resources';
-        package:Readonly<{dataFileId:'game-data';dataTarget:'/th05.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
-        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
-        touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
-        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
-        replay:Readonly<{prefix:'th05';extensions:readonly string[];naming:'filename'}>;
-        multiplayerRuntime:'./runtime/th05/multiplayer/th05.html';
-        multiplayer:Readonly<{titleKey:'game.title.th05mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th05PeerTransport';relaySourceEnvelope:true;spectator:false;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:false;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th06: Readonly<{

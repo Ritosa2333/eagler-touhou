@@ -80,12 +80,6 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       data:Object.freeze({source:ws('th04','content','th04.data'),layout:PRODUCT_CONTENT.th04.dataLayout}),
       music:Object.freeze({}),
     }),
-    th05: Object.freeze({
-      runtime: `${ws('th05','build-eagler','th05.html')}?hosted=1`,
-      multiplayerRuntime: `${ws('th05','build-eagler','th05.html')}?hosted=1&runtimeVariant=multiplayer`,
-      data:Object.freeze({source:ws('th05','content','th05.data'),layout:PRODUCT_CONTENT.th05.dataLayout}),
-      music:Object.freeze({}),
-    }),
     th06: Object.freeze({
       runtime: `${ws("th06", "build", "web", "normal", "th06.html")}?hosted=1&v=audio-music-modes-1`,
       multiplayerRuntime: `${ws("th06", "build", "web", "multiplayer", "th06.html")}?hosted=1&v=th06-netplay-local-2`,

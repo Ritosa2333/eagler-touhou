@@ -115,7 +115,7 @@ export class DOSBoxPC98 {
     const init=[...this.extracted.files,launcher,{dosboxConf:dosboxConfig({network,fastBoot:true}),jsdosConf:{version:'8'}}];
     this.installingDisk=true;
     try{this.ci=await globalThis.emulators.backend(init,this.transport,{});}finally{this.installingDisk=false;}
-    this.ci.events().onSoundPush(samples=>{this.module.audioPackets=(this.module.audioPackets||0)+1;if(this.externalHost?.status.fastForward||this.module.warmingBoot||(this.config.lockstep&&this.config.independentSfx))return;if(this.config.workerRuntime){this.audioChunks.push(samples.slice());return;}if(this.frame!==null){if(this.frame>=this.confirmedAudio)this.outputs.get(this.frame)?.push(samples.slice());}else this.audio.push([samples]);});
+    this.ci.events().onSoundPush(samples=>{this.module.audioPackets=(this.module.audioPackets||0)+1;if(this.externalHost?.status.fastForward||this.module.warmingBoot||this.config.independentSfx)return;if(this.config.workerRuntime){this.audioChunks.push(samples.slice());return;}if(this.frame!==null){if(this.frame>=this.confirmedAudio)this.outputs.get(this.frame)?.push(samples.slice());}else this.audio.push([samples]);});
     this.logs=[];this.ci.events().onMessage((type,...messages)=>{this.logs.push([type,...messages]);this.logs=this.logs.slice(-40);if(type==='error'&&messages.some(s=>/\[panic\]|Backend crashed|Aborted\(/i.test(String(s)))){this.failure=Error(messages.join(' '));this.state='failed';this.config.onError?.(this.failure);}});
     this.ci.events().onExit(()=>{if(this.disposed||this.resetting||this.failure||this.state==='failed')return;this.state='exited';this.config.onExit?.();});
     for(const code of this.keys)this.key(code,true);
@@ -145,7 +145,17 @@ export class DOSBoxPC98 {
     if(m.stepMetrics){const cost=performance.now()-began;m.stepMetrics.count++;m.stepMetrics.totalMs+=cost;m.stepMetrics.maxMs=Math.max(m.stepMetrics.maxMs,cost);
       if(cost>30){m.stepMetrics.slowSteps.push({at:began,tick:this.tick,virtualNow:m.virtualNow,costMs:cost});if(m.stepMetrics.slowSteps.length>120)m.stepMetrics.slowSteps.shift();}}
   }
-  readAudio(){if(!this.audioChunks.length)return null;const length=this.audioChunks.reduce((n,s)=>n+s.length,0),samples=new Float32Array(length);let at=0;for(const block of this.audioChunks.splice(0)){samples.set(block,at);at+=block.length;}return [samples];}
+  readAudio(){
+    if(!this.audioChunks.length)return null;
+    const chunks=this.audioChunks.splice(0),total=chunks.reduce((n,s)=>n+s.length,0);
+    const length=Math.min(total,4410),samples=new Float32Array(length);
+    let skip=total-length,at=0;
+    for(const block of chunks){
+      if(skip>=block.length){skip-=block.length;continue;}
+      const part=block.subarray(skip);skip=0;samples.set(part,at);at+=part.length;
+    }
+    return [samples];
+  }
   dispose(){if(this.disposed)return;this.disposed=true;this.externalHost?.disable();this.pause();this.externalHost?.dispose();this.ci?.exit();this.module?.framePresenter?.dispose();this.audio.disconnect();this.audio.context.close().catch(()=>{});for(const type of ['keydown','keyup'])this.config.canvas.removeEventListener?.(type,this.onKey);if(typeof window!=='undefined')window.removeEventListener('message',this.onSleep);}
 }
 // Source imports keep their legacy class name, while every new instance uses DOSBox-X.

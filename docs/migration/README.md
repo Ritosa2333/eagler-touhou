@@ -15,7 +15,6 @@
 | [th02-eagler-20261025.md](th02-eagler-20261025.md) | th02 DOSBox-X 主项目适配预览 |
 | [th03-eagler-20261025.md](th03-eagler-20261025.md) | th03 DOSBox-X 主项目适配预览 |
 | [th04-eagler-20261025.md](th04-eagler-20261025.md) | th04 主启动器与房间适配预览 |
-| [th05-eagler-20261025.md](th05-eagler-20261025.md) | th05 主启动器与房间适配预览 |
 
 搬迁当时的验收原文见[旧文档去向表](../history/INDEX.md)。继续开发使用[工作区说明](../../WORKSPACE.md)与各组件开发指南。
 

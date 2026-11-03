@@ -77,6 +77,11 @@ const CHARGE_TOUCH_FIRE = Object.freeze({
     labelKey: "touch.holdFireCharge",
     key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
 });
+const TH03_TOUCH_FIRE = Object.freeze({
+    mode: "held-key",
+    labelKey: "touch.actionHold",
+    key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
+});
 export const PRODUCT_GAMES = Object.freeze({
     th01: Object.freeze({
         testOnly: true, number: '01', title: '東方靈異伝', subtitle: 'Highly Responsive to Prayers', cardArtwork: 'th01-card.webp',
@@ -118,7 +123,7 @@ export const PRODUCT_GAMES = Object.freeze({
         runtimeAssets:Object.freeze(['th03.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
         dataProvider:'retail-memory', runtimeResourceTransport:'resources',
         package:Object.freeze({dataFileId:'game-data',dataTarget:'/th03.data',musicSourceDirectories:Object.freeze({ogg:'bgm'}),musicMounts:Object.freeze({ogg:'/bgm'})}),
-        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true}),touchFire:TOGGLE_TOUCH_FIRE,
+        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true}),touchFire:TH03_TOUCH_FIRE,
         support:Object.freeze({highRefreshRate:false,sourceRepository:'https://github.com/IxinorTyan/th03-netplay-lab',adaptationNotice:'early-test'}),
         replay:Object.freeze({prefix:'th03',extensions:Object.freeze(['th03r']),naming:'filename'}),
         multiplayerRuntime:'./runtime/th03/multiplayer/th03.html',
@@ -147,23 +152,6 @@ export const PRODUCT_GAMES = Object.freeze({
     // support.highRefreshRate describes currently implemented presentation for
     // Launcher UI. False keeps unfinished adapters honest; it does not waive
     // the required presentation-cadence acceptance gate.
-    th05: Object.freeze({
-        practiceUI: 'browser',
-        testOnly: true, number: '05', title: '東方怪綺談', subtitle: 'Mystic Square', cardArtwork: 'th05-card.webp',
-        storage: Object.freeze({saveRoot:'/savesth05',scoreFile:'GENSOU.SCR',configFiles:Object.freeze(['MIKO.CFG'])}),
-        runtime:'./runtime/th05/th05.html', runtimeFileLayout:'directory', runtimeFileTree:true,
-        runtimeAssets:Object.freeze(['th05.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
-        dataProvider:'retail-memory', runtimeResourceTransport:'resources',
-        package:Object.freeze({dataFileId:'game-data',dataTarget:'/th05.data',musicSourceDirectories:Object.freeze({ogg:'bgm'}),musicMounts:Object.freeze({ogg:'/bgm'})}),
-        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true}),touchFire:TOGGLE_TOUCH_FIRE,
-        support:Object.freeze({highRefreshRate:false,sourceRepository:'https://github.com/IxinorTyan/th05-coop-lab',adaptationNotice:'early-test'}),
-        replay:Object.freeze({prefix:'th05',extensions:Object.freeze(['th05r']),naming:'filename'}),
-        multiplayerRuntime:'./runtime/th05/multiplayer/th05.html',
-        multiplayer:Object.freeze({titleKey:'game.title.th05mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:STANDARD_MULTIPLAYER_DIFFICULTIES,
-            loadouts:Object.freeze(['reimu','marisa','mima','yuuka'].map((name,character)=>Object.freeze({labelKey:'multiplayer.loadout.th05_'+name,glyph:['霊','魔','魅','幽'][character],character,shot:0}))),peerTransportGlobal:'__th05PeerTransport',relaySourceEnvelope:true,spectator:false,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
-            inputTiming:Object.freeze({rollbackLimit:12,sendPredictionLimit:6,rollbackDefault:false,runtimeTiming:true})}),
-        features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
-    }),
     th06: Object.freeze({
         cardArtwork: "th06-card.webp",
         number: "06",

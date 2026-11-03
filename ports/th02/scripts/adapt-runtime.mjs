@@ -1,7 +1,9 @@
 import {adaptPC98Practice} from '../../../common/browser/adapt-pc98-practice.mjs';
 import {readFile,writeFile,copyFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {installPc98Pmd} from '../../../tools/build/pc98-pmd.mjs';
 export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput}){
+await installPc98Pmd(repo,output,runtime);
 await patch('solo.js',text=>{
   text=replaceOnce(text,'function release(){','function release(){globalThis.__eaglerPC98Input.releaseGameplay();','release managed keys');
   text=replaceOnce(text,"let bits=enabled?keyboardBits(keys,'solo')|padBits(navigator.getGamepads?.()[Number($('gamepad').value)],'solo'):0;",'let bits=enabled?globalThis.__eaglerPC98Input.sample({play:readSoloState()?.mode===1&&!readSoloState()?.hit}):0;','solo input');

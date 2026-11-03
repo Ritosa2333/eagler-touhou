@@ -288,7 +288,7 @@
       "game": "th02",
       "variant": "multiplayer",
       "directory": "ports/th02",
-      "sourceDigest": "70555744df4057eb5f35ce31263e2a65d53232d58ee8e092b8a20aa6f663e12e",
+      "sourceDigest": "1b6416645de34b279e9ff370a2aef3657032d60835e0adb27e938fa7755ddc73",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 0,
@@ -429,7 +429,7 @@
       "game": "th02",
       "variant": "normal",
       "directory": "ports/th02",
-      "sourceDigest": "c30f1a9a75048bd236ade677ae210e196f372a493588a9e3f8bca099507f0b17",
+      "sourceDigest": "20700c435d2490191be1007837845b969a8ad2f83b55eb25f76957a821895364",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 0,
@@ -570,7 +570,7 @@
       "game": "th03",
       "variant": "multiplayer",
       "directory": "ports/th03",
-      "sourceDigest": "001a0935ce710e46fc1482b71cfd6ddf5d0e5dae1012ff85160efd11deb29c53",
+      "sourceDigest": "5b15d385301567f78ea43c5981887787d9adf68ed4f5254f25e80dd479a927cd",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 0,
@@ -711,7 +711,7 @@
       "game": "th03",
       "variant": "normal",
       "directory": "ports/th03",
-      "sourceDigest": "f682c55d7eba6870d9460d65d523592395c3fba231bfb14bffeae722574b2d00",
+      "sourceDigest": "2ca5e84718fac8157c5fa1b2cb4f1d3df30df69267101f5f0d175a6f902e877f",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 0,
@@ -852,7 +852,7 @@
       "game": "th04",
       "variant": "multiplayer",
       "directory": "ports/th04",
-      "sourceDigest": "c5d17b45ea051c0527aa13515055c28ad5ab8b21ac5c2edb36d18b155538a0c4",
+      "sourceDigest": "b34d22dbe46cb8e405f2df29fd9940d89fd40ffb247f8dcc8f6eade31ad7a18a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 0,
@@ -993,7 +993,7 @@
       "game": "th04",
       "variant": "normal",
       "directory": "ports/th04",
-      "sourceDigest": "009afa4dd03dbdcee7bc8c157f4940ef334f74f648e761526a2e26e301735847",
+      "sourceDigest": "0b0a2949702550afe88e33d1323a1f7e68263266860f3c9b9677753f31cd6fd1",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 0,
@@ -1017,288 +1017,6 @@
           ],
           "files": [
             "ports/th04"
-          ]
-        },
-        {
-          "id": "runtime-protocol",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-01",
-            "RUNTIME-02",
-            "RUNTIME-03"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": true
-        },
-        {
-          "id": "touch-sensitivity",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "TOUCH-14"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": true
-        },
-        {
-          "id": "native-gamepad",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "INPUT-04"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": true
-        },
-        {
-          "id": "managed-presentation",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "DISPLAY-01"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": false
-        },
-        {
-          "id": "package-store",
-          "level": "module",
-          "checks": [
-            "PACKAGE-01",
-            "PACKAGE-02",
-            "PACKAGE-03",
-            "PACKAGE-04",
-            "PACKAGE-06"
-          ],
-          "files": [
-            "launcher/tests/test-package-store-contract.mjs",
-            "launcher/tests/test-package-generation-conditions.mjs",
-            "launcher/tests/test-runtime-preparation.mjs"
-          ],
-          "complete": true,
-          "status": "passed"
-        },
-        {
-          "id": "launcher-input-owners",
-          "level": "module",
-          "checks": [
-            "INPUT-02",
-            "INPUT-03",
-            "INPUT-05"
-          ],
-          "files": [
-            "launcher/tests/react-main/player-keyboard.test.mjs",
-            "launcher/tests/react-main/keyboard-mapping.test.mjs",
-            "launcher/tests/react-main/gamepad-mapping.test.mjs",
-            "launcher/tests/react-main/gamepad-matrix.test.mjs"
-          ],
-          "complete": true,
-          "status": "passed"
-        },
-        {
-          "id": "shared-touch-controls",
-          "level": "module",
-          "checks": [
-            "TOUCH-17",
-            "TOUCH-18",
-            "TOUCH-19"
-          ],
-          "files": [
-            "launcher/tests/react-main/player-touch.test.mjs",
-            "launcher/tests/react-main/touch-native.test.mjs",
-            "launcher/tests/react-main/touch-editor-selects.test.mjs"
-          ],
-          "complete": true,
-          "status": "passed"
-        }
-      ]
-    },
-    {
-      "game": "th05",
-      "variant": "multiplayer",
-      "directory": "ports/th05",
-      "sourceDigest": "96bf0cf899966684ac41fa4bce1232d838a16fd2b25e5c5a09ec2bd86b0493e7",
-      "sourceSelection": "build-entrypoint",
-      "dependencies": [],
-      "translationUnits": 0,
-      "features": {
-        "thcrap": false,
-        "thprac": false
-      },
-      "command": [
-        "node",
-        "scripts/build-eagler.mjs",
-        "--print-inputs"
-      ],
-      "gates": [
-        {
-          "id": "source-inputs",
-          "status": "passed",
-          "level": "source-inputs",
-          "complete": true,
-          "checks": [
-            "BUILD-01"
-          ],
-          "files": [
-            "ports/th05"
-          ]
-        },
-        {
-          "id": "runtime-protocol",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "RUNTIME-01",
-            "RUNTIME-02",
-            "RUNTIME-03"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": true
-        },
-        {
-          "id": "touch-sensitivity",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "TOUCH-14"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": true
-        },
-        {
-          "id": "native-gamepad",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "INPUT-04"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": true
-        },
-        {
-          "id": "managed-presentation",
-          "status": "passed",
-          "level": "source-contract",
-          "checks": [
-            "DISPLAY-01"
-          ],
-          "files": [
-            "web/managed-shell.mjs",
-            "web/managed-input.mjs",
-            "tests/managed-adapter.test.mjs"
-          ],
-          "complete": false
-        },
-        {
-          "id": "package-store",
-          "level": "module",
-          "checks": [
-            "PACKAGE-01",
-            "PACKAGE-02",
-            "PACKAGE-03",
-            "PACKAGE-04",
-            "PACKAGE-06"
-          ],
-          "files": [
-            "launcher/tests/test-package-store-contract.mjs",
-            "launcher/tests/test-package-generation-conditions.mjs",
-            "launcher/tests/test-runtime-preparation.mjs"
-          ],
-          "complete": true,
-          "status": "passed"
-        },
-        {
-          "id": "launcher-input-owners",
-          "level": "module",
-          "checks": [
-            "INPUT-02",
-            "INPUT-03",
-            "INPUT-05"
-          ],
-          "files": [
-            "launcher/tests/react-main/player-keyboard.test.mjs",
-            "launcher/tests/react-main/keyboard-mapping.test.mjs",
-            "launcher/tests/react-main/gamepad-mapping.test.mjs",
-            "launcher/tests/react-main/gamepad-matrix.test.mjs"
-          ],
-          "complete": true,
-          "status": "passed"
-        },
-        {
-          "id": "shared-touch-controls",
-          "level": "module",
-          "checks": [
-            "TOUCH-17",
-            "TOUCH-18",
-            "TOUCH-19"
-          ],
-          "files": [
-            "launcher/tests/react-main/player-touch.test.mjs",
-            "launcher/tests/react-main/touch-native.test.mjs",
-            "launcher/tests/react-main/touch-editor-selects.test.mjs"
-          ],
-          "complete": true,
-          "status": "passed"
-        }
-      ]
-    },
-    {
-      "game": "th05",
-      "variant": "normal",
-      "directory": "ports/th05",
-      "sourceDigest": "261376d9e423014321c607909cae9ceb9f0d6d947e356bfc103d0ff3de3e8dda",
-      "sourceSelection": "build-entrypoint",
-      "dependencies": [],
-      "translationUnits": 0,
-      "features": {
-        "thcrap": false,
-        "thprac": false
-      },
-      "command": [
-        "node",
-        "scripts/build-eagler.mjs",
-        "--print-inputs"
-      ],
-      "gates": [
-        {
-          "id": "source-inputs",
-          "status": "passed",
-          "level": "source-inputs",
-          "complete": true,
-          "checks": [
-            "BUILD-01"
-          ],
-          "files": [
-            "ports/th05"
           ]
         },
         {

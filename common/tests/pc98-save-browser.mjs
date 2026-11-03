@@ -12,7 +12,7 @@ const root=resolve(import.meta.dirname,'../..');
 const require=createRequire(new URL('../../launcher/package.json',import.meta.url));
 const puppeteer=require('puppeteer-core');
 const base=process.env.PC98_LAUNCHER_URL||'http://127.0.0.1:18330/';
-const games=(process.env.PC98_SAVE_GAMES||'th01,th02,th03,th04,th05').split(',');
+const games=(process.env.PC98_SAVE_GAMES||'th01,th02,th03,th04').split(',');
 const output=resolve(root,'launcher/.cache/pc98-save-browser',process.env.PC98_SAVE_RUN||new Date().toISOString().replace(/[:.]/g,'-'));
 await mkdir(output,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -70,11 +70,6 @@ try {
         await page.evaluate(()=>{document.querySelector('#decisionDialog[open] #decisionConfirm')?.click();document.querySelector('#touchHelpClose')?.click();});
         return events.slice(mark).some(event=>event.event==='first-frame');
       },'native first frame',180000);
-      // DOS boot can present a frame before the game reaches its title.
-      if(game==='th05'){
-        const frame=page.frames().find(frame=>frame.url().includes('runtimeEpoch='));
-        await frame.waitForFunction(()=>/OP|MAIN/.test(document.querySelector('#diagnostics')?.textContent||''),{timeout:60000});
-      }
     }
     async function command(command,fields={}){
       return page.evaluate(({game,command,fields})=>{
