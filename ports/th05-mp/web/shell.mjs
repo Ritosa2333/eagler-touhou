@@ -24,7 +24,8 @@ const owners=new Map();
 const emit=(event,payload={})=>bridge?.emit(event,payload);
 function error(value){const message=value?.message??String(value);emit('error',{message,error:message});}
 function nativeKey(code,down,owner){const key=virtualKey(code);if(!key)return;let keys=owners.get(owner);if(!keys){keys=new Set();owners.set(owner,keys);}const was=[...owners.values()].some(set=>set.has(key));if(down)keys.add(key);else keys.delete(key);const now=[...owners.values()].some(set=>set.has(key));if(was!==now)module?._th05_key(key,+now);}
-const keyboard=createBrowserKeyboard({send:(code,down)=>nativeKey(code,down,'keyboard'),hostContext:{protocol,game:'th05',epoch:Number(query.get('runtimeEpoch')),origin:location.origin,ready:()=>launched&&!document.hidden&&!closed,reset:clearKeyboard}});
+function keyboardReady(){return launched&&!closed&&!document.hidden&&!(options.replayViewer||options.netplaySpectator);}
+const keyboard=createBrowserKeyboard({send:(code,down)=>nativeKey(code,down,'keyboard'),hostContext:{protocol,game:'th05',epoch:Number(query.get('runtimeEpoch')),origin:location.origin,ready:keyboardReady,reset:clearKeyboard}});
 const touch=createTouchInput({send:(code,down)=>nativeKey(code,down,'touch'),position:()=>({x:module?._th05_player_x()??224,y:module?._th05_player_y()??376}),options:()=>options,scene:()=>module?._th05_input_scene()??0,move:(x,y,unlimited)=>{if(multiplayer){
  if(options.touchMovementMode?.startsWith('touch'))motion=[(module._th05_player_x()+x-32)*16,(module._th05_player_y()+y-56)*16,2+Number(unlimited)];
  else motion=[x*16,y*16,+unlimited];
@@ -149,7 +150,14 @@ try{
  const coopReplay=multiplayer?createCoopReplayDriver(module,path=>store.read(path),()=>applyDisplay(module,options.th05MultiplayerDisplay)):null;
  playback=createPlayback({emit,read:path=>store.read(path),...(coopReplay??{validate:path=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_validate(ptr)),open:(path,stage)=>cstring(SAVE_ROOT+'/'+path,ptr=>module._th05_replay_open(ptr,stage)),step:()=>module._th05_step(),frame:()=>module._th05_replay_frame(),stage:()=>module._th05_replay_stage(),scene:()=>module._th05_scene()}),clear:clearAll,resetClock:()=>clock.reset(),draw:()=>{if(multiplayer)module._th05_coop_draw();else module._th05_draw();module._th05_present();},gate:value=>audio.playback(value),yield:()=>new Promise(resolve=>setTimeout(resolve,0))});
  globalThis.__eaglerDirectInputBridge=createDirectInputBridge({protocol,game:'th05',epoch:bridge.epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!closed,dispatch(message){switch(message.command){case 'keyboard':api.key(message);break;case 'keyboard-clear':clearKeyboard();break;case 'touch-controls':api.touch(message);break;case 'touch-cancel':cancelTouch();break;case 'direct-touch':api.pointer(message);break;default:return false;}return true;}});
- addEventListener('keydown',event=>{if(!options.replayViewer&&!options.netplaySpectator&&keyboard.event(event,true))event.preventDefault();audio.resume();});addEventListener('keyup',event=>{if(!options.replayViewer&&!options.netplaySpectator&&keyboard.event(event,false))event.preventDefault();});addEventListener('blur',clearAll);
+ for(const name of ['keydown','keyup'])addEventListener(name,event=>{
+  const down=name==='keydown';
+  if(down)audio.resume();
+  if(!keyboardReady())return;
+  if(keyboard.mapNative(event,down)){event.preventDefault();event.stopImmediatePropagation();return;}
+  if(keyboard.event(event,down))event.preventDefault();
+ },{capture:true});
+ addEventListener('blur',clearAll);
  document.addEventListener('visibilitychange',()=>{clearAll();clock.reset();presentation.reset();module._th05_focus(+!document.hidden);audio.visibility(document.hidden);if(document.hidden)unloadSync=sync().catch(error);});
  const pointer=event=>{const rect=canvas.getBoundingClientRect(),scale=Math.min(rect.width/640,rect.height/480),left=rect.left+(rect.width-640*scale)/2,top=rect.top+(rect.height-480*scale)/2;return {id:event.pointerId,x:(event.clientX-left)/scale,y:(event.clientY-top)/scale,type:event.type==='pointerdown'?'down':event.type==='pointermove'?'move':'up'};};
  for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(options.replayViewer||options.netplaySpectator)return;pointers.pointer(message,event.pointerType!=='touch'&&event.pointerType!=='pen');audio.resume();event.preventDefault();});
