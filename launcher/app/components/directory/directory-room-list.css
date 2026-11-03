@@ -20,7 +20,9 @@
   .book-directory .lobby-room-title {display:grid;gap:3px;min-width:0}
   .book-directory .lobby-room-title h2 {display:flex;align-items:center;gap:8px;margin:0;min-width:0;color:var(--book-ink);font:600 13px/1.5 var(--ui-font)}
   .book-directory .lobby-work-name {min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-  .book-directory .lobby-room-code {color:var(--book-muted);font-size:12px;font-variant-numeric:tabular-nums}
+  .book-directory .lobby-room-code {color:var(--book-muted);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+  .book-directory .lobby-room-row[data-state='recruiting'] .lobby-room-code {color:var(--kit-success)}
+  .book-directory .lobby-room-row:is([data-state='playing'],[data-state='full']) .lobby-room-code {color:var(--kit-destructive)}
   .book-directory .lobby-room-meta {display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;min-width:0}
   .book-directory .lobby-cover {position:relative;display:block;flex:0 0 48px;width:48px;height:48px;overflow:hidden;border-radius:4px;background:var(--book-raised)}
   .book-directory .lobby-cover img {position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover}
