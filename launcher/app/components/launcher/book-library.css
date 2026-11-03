@@ -169,6 +169,8 @@
     min-width: 0;
   }
   .book-view-switch {
+    position: relative;
+    isolation: isolate;
     display: flex;
     align-items: center;
     gap: 3px;
@@ -179,9 +181,9 @@
     border-radius: 7px;
     background: var(--kit-muted);
   }
-  .book-view-switch .ui-kit-choice[data-state="on"] {
-    box-shadow: 0 1px 3px #00000012;
-  }
+  .book-view-switch::before {content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 9px)/2);border-radius:6px;background:var(--kit-card);box-shadow:0 1px 3px #00000012;transition:translate 420ms cubic-bezier(.22,.7,.2,1);pointer-events:none}
+  .book-view-switch[data-view="list"]::before {translate:calc(100% + 3px) 0}
+  .book-view-switch .ui-kit-choice {position:relative;flex:1;z-index:1}
   .book-sort {
     min-width: 140px;
   }
@@ -481,6 +483,7 @@
       padding: 2px;
       border: 0;
     }
+    .book-view-switch::before {top:2px;bottom:2px;left:2px;width:calc((100% - 7px)/2)}
     .book-sort {
       min-height: 44px;
       min-width: 140px;
@@ -505,6 +508,9 @@
 }
 .book-favorite.ui-kit-button:is(:hover,[aria-pressed="true"]) {background:transparent;border-color:transparent}
 .book-favorite.ui-kit-button[aria-pressed="true"] {color:var(--kit-warning)}
+.book-view-switch .ui-kit-choice:is([data-state="on"],:hover) {background:transparent;box-shadow:none}
+@media (prefers-reduced-motion:reduce) {.book-view-switch::before {transition:none}}
+.less-motion .book-view-switch::before {transition:none}
 @media (hover:hover) and (pointer:fine) {
   .book-card:has(.book-game-link:hover) {z-index:1;transform:translateY(-4px) scale(1.025);box-shadow:0 8px 22px #00000024}
 }

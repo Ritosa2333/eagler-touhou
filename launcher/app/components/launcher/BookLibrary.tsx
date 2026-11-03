@@ -250,6 +250,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
               <ChoiceGroup
                 type="single"
                 className="book-view-switch"
+                data-view={view}
                 value={view}
                 onValueChange={(value) => {
                   if (value === 'covers' || value === 'list') {
