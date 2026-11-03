@@ -223,6 +223,7 @@ void Scene::capture_background(){
 void Scene::capture(const Options& o){
     using namespace th12;
     poses.clear();texts.clear();dialogues.clear();live_fps_text=-1;
+    stage_backdrops.fill(-1);
     const float* raw=th12_hud();std::copy_n(raw,hud.size(),hud.begin());
     const i32 stored=th12_score_stored();hud[3]=float(double(stored)*10);hud[40]=hud[3];
     if(o.score_low_digit){hud[3]+=float(o.score_low_digit);hud[40]+=float(o.score_low_digit);}
@@ -258,7 +259,15 @@ void Scene::capture(const Options& o){
     const auto owned=[&](u32 id){return std::binary_search(owners.begin(),owners.end(),id);};
     const auto find_logical=[&](i32 bank,i32 sprite_id)->const Pose*{for(const auto& p:logical_poses)if(p.a.bank==bank&&p.a.sprite==sprite_id)return &p;return nullptr;};
     // Logical poses, without the text VMs replaced by dialogue lines.
-    for(const auto& p:logical_poses){if(p.a.bank==BankText&&((p.a.sprite>=0&&p.a.sprite<4)||p.a.sprite==7))continue;poses.push_back(p);}
+    for(size_t i=0;i<logical_poses.size();++i){
+        const auto& p=logical_poses[i];
+        if(p.a.bank==BankStage&&p.owner>=0xc0000000u&&p.owner<0xc0000008u){
+            if(!(stageState.flags&8))stage_backdrops[p.owner-0xc0000000u]=i32(i);
+            continue;
+        }
+        if(p.a.bank==BankText&&((p.a.sprite>=0&&p.a.sprite<4)||p.a.sprite==7))continue;
+        poses.push_back(p);
+    }
     // Native MSG remains authoritative. Multiplayer language views select
     // local text surfaces by its retail entry/PC, without modifying any VM.
     const auto* local_message=translated_message(messageVM.entry,messageVM.pc);
@@ -587,6 +596,13 @@ void Scene::stage_surface(i32 priority,i32 clip,bool& copied,bool& composited){
 void Scene::render(float alpha,float live_fps){
     if(live_fps>=0&&live_fps_text>=0){auto& t=texts[size_t(live_fps_text)];t.text=fixed1(live_fps?double(live_fps)+.05:0)+"fps";t.x=f32(588.0-std::max<double>(0,double(t.text.size())-7)*7);t.color=live_fps<=30?0xff5050ff:live_fps<40?0xffa0a0ff:0xffffffff;}
     gpu.begin();gpu.clip(1);gpu.fog_color(fog.r,fog.g,fog.b);gpu.clear(fog);
+    // 4039d9 draws Stage+1cc's eight embedded VMs in slot order, with
+    // depth writes disabled, before 403a8f submits the 3D STD scenery.
+    for(const i32 index:stage_backdrops){
+        if(index<0)continue;
+        const auto& p=logical_poses[size_t(index)];
+        draw_state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,nullptr);
+    }
     gpu.primitive(Renderer::Triangles);
     for(const auto& t:triangles){const Texture tex=texture(BankStage,t.entry);if(!tex.name)continue;gpu.material(t.blend);gpu.bind(tex,t.point);for(const auto& v:t.v)gpu.push(v);}
     gpu.flush();
