@@ -77,6 +77,7 @@ BOOL WritePrivateProfileStringA(const char*,const char*,const char*,const char*)
 namespace th5w { class C2DImage; namespace web {
 void TouchMotion(float& x,float& y,float speed);
 void SetKey(int key,bool down); void ClearKeys(); void SampleKeys(BYTE* scans);
+bool ReplayViewer();
 void BeginUI(); void EndUI(); void InitializeUI(); void ShutdownUI();
 C2DImage* WideText(const wchar_t* text);
 void MusicTrack(const char* name); void MusicAction(int action,double value=0);

@@ -32,6 +32,7 @@ bool CPMDPlayer::LoadPMDData(unsigned char* data,int size){
 void CCommonFunctionSystem::CreateConsoleWindow(){}
 bool CCommonFunctionSystem::GetFileMD5(unsigned char* result,const char* path){FILE* file=fopen(path,"rb");if(!file)return false;MD5_CTX state;MD5Init(&state);unsigned char bytes[8192];size_t n;while((n=fread(bytes,1,sizeof(bytes),file)))MD5Update(&state,bytes,n);fclose(file);MD5Final(result,&state);return true;}
 namespace web {
+bool ReplayViewer(){return replayViewer;}
 void SetKey(int key,bool down){if(key<0||key>=256)return;bool repeated=down&&physical[key];physical[key]=down;
  if(ImGui::GetCurrentContext()){auto& io=ImGui::GetIO();io.KeysDown[key]=down;io.KeyShift=physical[VK_LSHIFT]||physical[VK_RSHIFT]||physical[VK_SHIFT];io.KeyCtrl=physical[VK_LCONTROL]||physical[VK_RCONTROL]||physical[VK_CONTROL];}
  practice::WindowMessage(nullptr,down?WM_KEYDOWN:WM_KEYUP,key,repeated?(1L<<30):0);

@@ -127,6 +127,9 @@ void CGlobalVariableAndStatistics::LoadConfig()
 
 void CGlobalVariableAndStatistics::SaveConfig()
 {
+#ifdef __EMSCRIPTEN__
+ if(web::ReplayViewer())return;
+#endif
 	FILE *fp=fopen(TH05_SAVE("game.cfg"),"wb");
 	if (fp==NULL)
 		return;
@@ -245,6 +248,9 @@ void CGlobalVariableAndStatistics::LoadHighScore()
 
 void CGlobalVariableAndStatistics::SaveHighScore()
 {
+#ifdef __EMSCRIPTEN__
+ if(web::ReplayViewer())return;
+#endif
 	FILE *fp=fopen(TH05_SAVE("score.dat"),"wb");
 	if (fp==NULL)
 		return;
