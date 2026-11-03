@@ -22,7 +22,7 @@ function run(cwd, code, environment = {}) {
 }
 before(async () => {
   work = await mkdtemp(resolve(project, '.cache/contracts-only-test-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
+  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/build-lock-host.mjs', 'lib/node-runtime.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
     await mkdir(resolve(cold, path, '..'), {recursive: true});
     await cp(resolve(project, path), resolve(cold, path), {recursive: true});
   }
@@ -45,7 +45,7 @@ test('concurrent cold Node facade imports publish one verified contracts-only ge
   for (const [path, hash] of Object.entries(manifest.outputs)) assert.equal(createHash('sha256').update(await readFile(resolve(built.root, path))).digest('hex'), hash);
   assert.equal(await run(cold, `const {acquireBuildLock}=await import('./lib/build-lock.mjs');
     const release=await acquireBuildLock('.cache/build/contracts/.build.lock',{timeout:250});
-    release();console.log('released');`), 'released', 'Another process can acquire ownership after publication');
+    await release();console.log('released');`), 'released', 'Another process can acquire ownership after publication');
 });
 
 test('visual component fixtures declare production CSS layers before module scripts', async () => {
@@ -127,6 +127,8 @@ test('published-only Node distribution reads contracts and worker without source
   await cp(resolve(cold, 'lib/contracts'), resolve(distribution, 'lib/contracts'), {recursive: true});
   await cp(resolve(cold, 'lib/contracts-build.mjs'), resolve(distribution, 'lib/contracts-build.mjs'));
   await cp(resolve(cold, 'lib/build-lock.mjs'), resolve(distribution, 'lib/build-lock.mjs'));
+  await cp(resolve(cold, 'lib/build-lock-host.mjs'), resolve(distribution, 'lib/build-lock-host.mjs'));
+  await cp(resolve(cold, 'lib/node-runtime.mjs'), resolve(distribution, 'lib/node-runtime.mjs'));
   await cp(resolve(cold, 'lib/shared-contract-sources.mjs'), resolve(distribution, 'lib/shared-contract-sources.mjs'));
   await cp(built.contractsDirectory, resolve(distribution, 'assets/contracts'), {recursive: true});
   const result = JSON.parse(await run(distribution, `import{readFile}from'node:fs/promises';import{DEFAULT_PRODUCT_ID}from'./lib/contracts/product-catalog.mjs';import{resolveRuntimeGenerationWorkerSource,ensureContractsBuild}from'./lib/contracts-build.mjs';console.log(JSON.stringify({product:DEFAULT_PRODUCT_ID,worker:(await readFile(await resolveRuntimeGenerationWorkerSource(),'utf8')).includes('EaglerRuntimeGenerations'),mode:(await ensureContractsBuild()).mode}));`, {EAGLER_FRONTEND: 'react'}));

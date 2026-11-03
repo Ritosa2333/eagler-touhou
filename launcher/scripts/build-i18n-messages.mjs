@@ -19,6 +19,7 @@ export async function i18nBuildInputs(project = defaultProject) {
     resolve(project, 'node_modules/@inlang/paraglide-js/package.json'),
     resolve(project, 'node_modules/@inlang/plugin-message-format/package.json'),
     fileURLToPath(import.meta.url), fileURLToPath(new URL('../lib/i18n-build.mjs', import.meta.url)), fileURLToPath(new URL('../lib/build-lock.mjs', import.meta.url)),
+    fileURLToPath(new URL('../lib/build-lock-host.mjs', import.meta.url)), fileURLToPath(new URL('../lib/node-runtime.mjs', import.meta.url)),
     fileURLToPath(new URL('../lib/atomic-file.mjs', import.meta.url))];
 }
 async function identity(project) {
@@ -103,7 +104,7 @@ async function prepare(project, force, compiler) {
       } finally {await discard(cache, staging);}
     }
     throw new Error('Translation inputs changed repeatedly during compilation');
-  } finally {release();}
+  } finally {await release();}
 }
 /** CLI, type checks, services and Vite share the same generation and lock. */
 export function ensureI18nBuild({project = defaultProject, force = false, compiler} = {}) {

@@ -18,7 +18,7 @@ const python = source => JSON.parse(execFileSync('python', ['-c', source], {cwd:
 let work, cold, fixture, coldInitially;
 before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/package-module-setup-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
+  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/build-lock-host.mjs', 'lib/node-runtime.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
     'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json', 'scripts/serve-static.mjs', 'server/static-content-policy.mjs', 'tests/support/package-module-fixture.mjs',
     'public/compatibility.html']) {
     await mkdir(dirname(resolve(cold, path)), {recursive: true}); await cp(resolve(project, path), resolve(cold, path), {recursive: true});

@@ -100,7 +100,7 @@ export function useLibraryOptionsPresence({
   });
   useSurfaceMotion(backdrop, phase, { kind: 'backdrop', reduced: lessMotion });
   useLayoutEffect(() => {
-    if (!presence.open || concealed || !focusActive) return;
+    if (!presence.open || !presence.product?.id || concealed || !focusActive) return;
     targets.current.panel?.querySelector<HTMLElement>('#libraryBack')?.focus({ preventScroll: true });
   }, [presence.open, presence.product?.id, concealed, focusActive]);
   return {

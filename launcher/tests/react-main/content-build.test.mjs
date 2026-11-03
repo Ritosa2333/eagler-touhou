@@ -13,7 +13,7 @@ let work, source;
 const build = (...args) => execute(process.execPath, ['scripts/build-content-pages.mjs', '--quiet', ...args], {cwd: source});
 beforeAll(async () => {
   work = await mkdtemp(resolve(project, '.cache/content-build-')); source = resolve(work, 'source');
-  for (const path of ['scripts/build-content-pages.mjs', 'lib/atomic-file.mjs', 'lib/build-lock.mjs', 'lib/localized-compatibility.mjs', 'lib/site-brand.mjs',
+  for (const path of ['scripts/build-content-pages.mjs', 'lib/atomic-file.mjs', 'lib/build-lock.mjs', 'lib/build-lock-host.mjs', 'lib/node-runtime.mjs', 'lib/localized-compatibility.mjs', 'lib/site-brand.mjs',
     'messages/compatibility.json', 'messages/keys.json', 'messages/zh-CN.json', 'messages/en.json', 'messages/ja.json', 'content/FIRST_USE_NOTICE.md', 'content/MULTIPLAYER.md', 'docs/FAQ.md',
     'public/compatibility.html', 'content/ABOUT.html', 'public/migrate.html', 'public/assets/brand/face-F02B.svg', 'app/ui/tokens.css', 'app/ui/document-controls.css']) {
     await mkdir(dirname(resolve(source, path)), {recursive: true}); await cp(resolve(project, path), resolve(source, path));
@@ -43,13 +43,13 @@ test('cold content generation coordinates concurrent callers and leaves unchange
     const target = resolve(source, 'public', paths[index]);
     assert.equal(await readFile(target, 'utf8'), before[index][0]); assert.equal((await stat(target)).mtimeMs, before[index][1]);
   }
-  const release=await acquireBuildLock(resolve(source,'.cache/content-pages.lock'),{timeout:100});release();
+  const release=await acquireBuildLock(resolve(source,'.cache/content-pages.lock'),{timeout:100});await release();
 });
 test('failed content checks preserve the actual file and release ownership for a retry', async () => {
   const path = resolve(source, 'public/content/FIRST_USE_NOTICE.html'), stale = await readFile(path, 'utf8') + '\n<!-- stale fixture -->';
   await writeFile(path, stale); await assert.rejects(build('--check'), /FIRST_USE_NOTICE\.html is stale/);
   assert.equal(await readFile(path, 'utf8'), stale);
-  const release=await acquireBuildLock(resolve(source,'.cache/content-pages.lock'),{timeout:100});release();
+  const release=await acquireBuildLock(resolve(source,'.cache/content-pages.lock'),{timeout:100});await release();
   await build(); await build('--check');
 });
 

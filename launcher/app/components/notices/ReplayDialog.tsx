@@ -36,9 +36,9 @@ export function ReplayDialog({model, onImportRequest, onDropFile, onImportError,
   const moveTarget = destination === 'new' ? `replay/${newFolder.trim()}` : destination;
   // biome-ignore lint/correctness/useExhaustiveDependencies: Switching the manager's product retires its old folder and move draft.
   useLayoutEffect(() => {setFolderKey(null);}, [state.productId]);
-  useLayoutEffect(() => {if (!props.open) setMoving(null);}, [props.open]);
+  useLayoutEffect(() => {if (!props.open) setMoving(null);}, [props.open, setMoving]);
   const missingFolder = !!folderKey && !folders.some(item => item.key === folderKey);
-  useLayoutEffect(() => {if (state.phase === 'ready' && missingFolder) setFolderKey(null);}, [state.phase, missingFolder]);
+  useLayoutEffect(() => {if (state.phase === 'ready' && missingFolder) setFolderKey(null);}, [state.phase, missingFolder, setFolderKey]);
   const summary = state.phase === 'loading' ? t('status.readingReplay') : state.phase === 'error' ? t('status.replayReadFailed') : t('replay.fileCount', {count: folder ? folder.rows.length : state.rows.length});
   const resetDrag = () => {dragDepth.current = 0; setDragging(false);};
   return <dialog ref={dialog.ref} data-launcher-document="" className="replay-dialog" id="replayDialog" onCancel={dialog.onCancel}>

@@ -14,6 +14,8 @@
       "scripts/check-javascript-syntax.mjs",
       "scripts/prepare-tests.mjs",
       "lib/build-lock.mjs",
+      "lib/build-lock-host.mjs",
+      "lib/node-runtime.mjs",
       "lib/i18n-build.mjs",
       "lib/localized-compatibility.mjs",
       "vitest.config.ts",

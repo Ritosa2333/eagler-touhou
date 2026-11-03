@@ -57,6 +57,26 @@ test('authored player links resolve at the published site root and still reject 
   }
 });
 
+test('authored player links resolve declared React Router pages while missing routes still fail', () => {
+  const root = mkdtempSync(resolve(tmpdir(), 'eagler-react-router-docs-'));
+  try {
+    mkdirSync(resolve(root, 'launcher/app'), { recursive: true });
+    writeFileSync(resolve(root, 'launcher/app/routes.ts'), [
+      "import { route } from '@react-router/dev/routes';",
+      "export default [route('faq.html', 'routes/help.tsx')];",
+    ].join('\n'));
+
+    assert.deepEqual(checkDocumentLinks({ docPath: 'launcher/NOTICE.txt',
+      content: '[常见问题](faq.html)', root }), []);
+    assert.equal(checkDocumentLinks({ docPath: 'launcher/NOTICE.txt',
+      content: '[不存在的路由](missing.html)', root }).length, 1);
+    assert.equal(checkDocumentLinks({ docPath: 'docs/example.md',
+      content: '[FAQ](faq.html)', root }).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 function rowWithStatus(markdown, id, variantColumn, status, note) {
   const lines = markdown.split('\n');
   const index = lines.findIndex(line => line.startsWith(`| ${id} |`));

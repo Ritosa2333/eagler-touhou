@@ -24,6 +24,7 @@ async function identity(project) {
     resolve(project, 'tsconfig.launcher.json'), resolve(project, 'tsconfig.contracts.json'),
     resolve(project, 'lib/contracts-build.mjs'), resolve(project, 'lib/frontend-assets.mjs'),
     resolve(project, 'lib/shared-contract-sources.mjs'), resolve(project, 'lib/build-lock.mjs'),
+    resolve(project, 'lib/build-lock-host.mjs'), resolve(project, 'lib/node-runtime.mjs'),
     resolve(project, 'node_modules/typescript/package.json'), resolve(project, 'node_modules/esbuild/package.json')];
   const entries = await Promise.all(inputs.map(async path => [relative(project, path).replaceAll('\\', '/'), digest(await readFile(path))]));
   return {hash: digest(JSON.stringify(entries)), entries,
@@ -104,7 +105,7 @@ async function prepare(project) {
       } finally {await rm(staging, {recursive: true, force: true});}
     }
     throw new Error('Contract sources changed repeatedly during compilation; no mixed generation was published');
-  } finally {release();}
+  } finally {await release();}
 }
 /** Maintainer-only source fallback; prebuilt Node 22+ installs need no compiler. */
 export function ensureContractsBuild({project = defaultProject} = {}) {

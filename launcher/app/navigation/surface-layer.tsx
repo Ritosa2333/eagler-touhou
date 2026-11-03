@@ -1,4 +1,4 @@
-import {createContext, useContext, useId, useState, type Dispatch, type SetStateAction} from 'react';
+import {createContext, useCallback, useContext, useId, useLayoutEffect, useRef, useState, type Dispatch, type SetStateAction} from 'react';
 
 export type LayerValue = string | boolean | null;
 export interface LayerEntry {value: Exclude<LayerValue, null>; parentPosition: number}
@@ -13,10 +13,15 @@ export function useSurfaceLayerState<T extends LayerValue>(name: string, initial
   const layers = useContext(SurfaceLayersContext), instance = useId(), id = `${name}:${instance}`;
   const [local, setLocal] = useState(initial);
   const value = layers ? (layers.values[id]?.value ?? initial) as T : local;
-  return [value, next => {
+  // Keep setter identity stable while reading the latest committed route.
+  const current = useRef({layers, id, value, initial});
+  useLayoutEffect(() => {current.current = {layers, id, value, initial};});
+  const setValue = useCallback<Dispatch<SetStateAction<T>>>(next => {
+    const {layers, id, value, initial} = current.current;
+    if (!layers) {setLocal(next); return;}
     const resolved = typeof next === 'function' ? next(value) : next;
-    if (layers) layers.set(id, resolved === initial ? null : resolved);
-    else setLocal(resolved);
-  }];
+    layers.set(id, resolved === initial ? null : resolved);
+  }, []);
+  return [value, setValue];
 }
 

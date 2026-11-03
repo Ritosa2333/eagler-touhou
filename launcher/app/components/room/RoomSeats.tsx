@@ -141,10 +141,10 @@ function RoomSeat({
   const degrees = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) * 3.6 : 0;
   const appearance = !occupied ? 'empty' : resourceStopped ? resource.status : seat?.offline || !resourceReady ? 'loading' : seat?.ready ? 'ready' : 'unready';
   useLayoutEffect(() => {
-    if (!watermark.current || !occupied || !active) return;
+    if (!watermark.current || appearance === 'empty' || !active) return;
     const animation = animateUiFrames(watermark.current, {opacity: ['0', '.36'], translate: ['12px 0', '0 0']}, {kind: 'content'});
     return () => animation?.cancel();
-  }, [appearance, occupied, active]);
+  }, [appearance, active]);
   const status = resourceStopped ? resourceLabel : seat?.offline ? t('multiplayer.playerReconnecting') :
     !resourceReady ? resourceLabel || t('room.resourceLoading') : t(seat?.ready ? 'room.ready' : 'room.notReady');
   const ringClass = `room-seat-ring${resource?.status === 'preparing' && (resource.stage === 'runtime' ? loading == null : base == null) ? ' indeterminate' : ''}`;

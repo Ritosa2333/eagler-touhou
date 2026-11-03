@@ -66,6 +66,8 @@ const hostRuntimeRoots = [
   "lib/frontend-manifest.mjs",
   "lib/host-config.mjs",
   "lib/client-services-build.mjs",
+  "lib/build-lock-host.mjs",
+  "lib/node-runtime.mjs",
   "lib/preload-data-assembler.mjs",
   "lib/product-selection.mjs",
   "lib/publication-host-seed.mjs",

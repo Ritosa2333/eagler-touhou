@@ -173,7 +173,7 @@ export async function buildContentPages({project = defaultProject, check = false
     .replace(/<img[^>]*data-site-brand[^>]*>/,image=>image.replace(/src="[^"]*"/,'src="data:image/svg+xml;base64,'+brandFallback+'"'));
   await emit(migrationPath,migration,"Migration theme is stale; run npm run build:content");
   if (!quiet) console.log(`Content pages: ${check ? "PASS" : "built"} (FAQ + First-use Notice + Multiplayer Guide + Compatibility)`);
-  } finally {release();}
+  } finally {await release();}
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

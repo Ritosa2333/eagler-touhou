@@ -33,7 +33,9 @@ before(async()=>{
  // original visible messages without rejecting unrelated additive catalog keys.
  const messages=runInNewContext('('+pinned('src/launcher/i18n.mts').match(/const entries = (\[[\s\S]*?\]) as const/)[1]+')');
  baselineHTML=pinned('public/index.html');
- buildDirectory=await mkdtemp(resolve(here,'replay-carrier-build-'));
+ // Keep the bundled import.meta.url under the project root so compiled
+ // contract resolution sees the real Launcher project, not tests/assets.
+ buildDirectory=await mkdtemp(resolve(project,'.cache/replay-carrier-build-'));
  await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
  export * from './app/components/notices/ReplayDialog.tsx';
  export * from './app/components/launcher/LobbyOptionsHost.tsx';
@@ -42,6 +44,7 @@ before(async()=>{
  export * from './app/i18n.tsx';
  export {encodeRoomInvite,ROOM_INVITE_KEY} from './src/launcher/room-invite.mts';
  export {SurfaceNavigationProvider,useSurfaceNavigation} from './app/navigation/surface-navigation.tsx';
+ export {SurfaceLayersContext,useSurfaceLayerState} from './app/navigation/surface-layer.tsx';
  `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'actual-bundle.mjs'),logLevel:'silent',plugins:[{name:'existing-deps',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
  owners=await import(pathToFileURL(resolve(buildDirectory,'actual-bundle.mjs')));
  for(const [key,zh,en]of messages)if(/^replay\.|^status\.(?:readingReplay|replayReadFailed|noReplay)$|^action\.(?:close|download|rename|delete)$/.test(key)){
@@ -155,6 +158,53 @@ for (const context of ['library','room']) test(`Replay real Router ${context}: F
   f.answer('th6_03.rpy');await click('.replay-row button:nth-child(2)');await flush();assert.ok(f.files.has('replay/th6_03.rpy'));
   f.confirm(true);await click('.replay-row .replay-delete');await flush();assert.equal(n('#replayList').querySelectorAll('.replay-row').length,1);
   await React.act(async()=>router.navigate(-1));await flush();assert.equal(n('#replayDialog').open,false);assert.equal(router.state.location.key,parentKey);
+ }finally{router.dispose();}
+});
+
+test('Surface layer setter stays stable and resolves functional updates from the latest value',async()=>{
+ const seen=[];
+ function Probe({revision=0}){
+  const [value,setValue]=owners.useSurfaceLayerState('probe','base');seen.push(setValue);
+  return React.createElement('button',{type:'button','data-layer-value':value,'data-revision':revision,onClick:()=>setValue(current=>`${current}!`)},value);
+ }
+ const local=await mount(Probe);const localSetter=seen.at(-1);await local.update({revision:1});
+ assert.equal(seen.at(-1),localSetter,'local fallback setter identity survives rerender');
+ await React.act(async()=>local.container.querySelector('[data-layer-value="base"]').click());
+ assert.equal(local.container.querySelector('[data-revision]').getAttribute('data-layer-value'),'base!');
+
+ function ContextHarness({revision=0}){
+  const [values,setValues]=React.useState({});
+  const layers=React.useMemo(()=>({values,set(id,value){setValues(current=>{const next={...current};if(value===null)delete next[id];else next[id]={value,parentPosition:0};return next;});}}),[values]);
+  return React.createElement(owners.SurfaceLayersContext.Provider,{value:layers},React.createElement(Probe,{revision}));
+ }
+ seen.length=0;const routed=await mount(ContextHarness);const routedSetter=seen.at(-1);await routed.update({revision:1});
+ assert.equal(seen.at(-1),routedSetter,'route-backed setter identity survives provider updates');
+ await React.act(async()=>routed.container.querySelector('[data-layer-value="base"]').click());
+ assert.equal(routed.container.querySelector('[data-revision]').getAttribute('data-layer-value'),'base!');
+ await React.act(async()=>routed.container.querySelector('[data-layer-value="base!"]').click());
+ assert.equal(routed.container.querySelector('[data-revision]').getAttribute('data-layer-value'),'base!!','functional update reads the latest committed route value');
+});
+
+test('Replay folder and move child routes survive rerenders and restore through Back/Forward',async()=>{
+ const {createMemoryRouter,RouterProvider}=await import('react-router');
+ const f=fixture({empty:true});f.files.set('replay/set/a.rpy',[1]);f.files.set('replay/set/b.rpy',[2]);
+ let navigation,rerender;
+ function Surface(){const [,setRevision]=React.useState(0);rerender=()=>setRevision(value=>value+1);navigation=owners.useSurfaceNavigation();return React.createElement(owners.ReplayDialog,{...replayProps(f),open:navigation.infoDialogOpen('replayDialog'),onCloseRequest:()=>navigation.closeInfoDialog('replayDialog')});}
+ function Root(){return React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.SurfaceNavigationProvider,{dirty:false,isEditing:false,onDiscard(){}},React.createElement(Surface)));}
+ const router=createMemoryRouter([{path:'*',element:React.createElement(Root)}],{initialEntries:['/?game=th09']});
+ const host=env.document.createElement('div');env.document.body.append(host);const root=createRoot(host),tracked={root};alive.add(tracked);
+ try{
+  await React.act(async()=>root.render(React.createElement(RouterProvider,{router})));
+  await React.act(async()=>{navigation.openInfoDialog('replayDialog');await f.model.open('th09');});await flush();
+  assert.ok(n('[data-replay-folder="replay/set"]'));
+  await click('[data-replay-folder="replay/set"]');await flush();assert.equal(n('.replay-path strong').textContent,'set');
+  await React.act(async()=>rerender());await flush();assert.equal(n('.replay-path strong').textContent,'set','an unrelated parent rerender preserves the folder layer');
+  await click('[data-replay-move="replay/set/a.rpy"]');await flush();assert.ok(n('.replay-move'));
+  await React.act(async()=>rerender());await flush();assert.ok(n('.replay-move'),'an unrelated parent rerender preserves the move layer');
+  await React.act(async()=>router.navigate(-1));await flush();assert.equal(env.document.querySelector('.replay-move'),null);assert.equal(n('.replay-path strong').textContent,'set');
+  await React.act(async()=>router.navigate(-1));await flush();assert.equal(env.document.querySelector('.replay-path'),null);assert.ok(n('[data-replay-folder="replay/set"]'));
+  await React.act(async()=>router.navigate(1));await flush();assert.equal(n('.replay-path strong').textContent,'set');
+  await React.act(async()=>router.navigate(1));await flush();assert.ok(n('.replay-move'),'Forward restores the nested move layer');
  }finally{router.dispose();}
 });
 

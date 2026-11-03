@@ -56,7 +56,7 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: File navigation state resets when switching the manager's product.
   useEffect(() => {setExpanded(null); if (folder) setFolder(null); else setMoving(null); setError('');}, [files.productId]);
   const folderExists = !folder || folders.some(item => item.key === folder);
-  useEffect(() => {if (!folderExists) setFolder(null);}, [folderExists]);
+  useEffect(() => {if (!folderExists) setFolder(null);}, [folderExists, setFolder]);
   if (!open) return null;
   const report = (error: unknown) => {setError(error instanceof Error ? error.message : String(error));};
   async function control(action: 'pause'|'play'|'seek'|'rate', value?: number) {

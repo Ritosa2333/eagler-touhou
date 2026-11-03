@@ -96,7 +96,7 @@ export async function ensureClientServicesBuild({force=false}={}) {
     }
     await writeFile(state,JSON.stringify({identity,dependencies})+'\n');
     return {built:true,sourceCount:files.length};
-  } finally {release();}
+  } finally {await release();}
 }
 export function isLauncherBuildOutputPath(path) {return /^assets\/(?:contracts|launcher)\//.test(path) && !/(?:^|\/)(?:app|lobby)\.mjs$/.test(path);}
 export function isMappedBrowserPublicationPath(path) {return isLauncherBuildOutputPath(path);}

@@ -35,12 +35,135 @@ async function message(project) {return import(pathToFileURL(resolve(project, 's
 
 test('a retired lock release cannot remove a later owner; contention is bounded', async () => {
   const path = resolve(work, 'owner.lock'), before = process.listenerCount('exit');
-  const first = await acquireBuildLock(path); first();
-  const second = await acquireBuildLock(path); first(); assert.equal(existsSync(path), true);
+  const first = await acquireBuildLock(path); await first();
+  const second = await acquireBuildLock(path); await first(); assert.equal(existsSync(path), true);
   await assert.rejects(acquireBuildLock(path, {timeout: 5, interval: 1}), /Timed out waiting/);
-  second(); second(); const third = await acquireBuildLock(path); third();
+  await second(); await second(); const third = await acquireBuildLock(path); await third();
   assert.equal(process.listenerCount('exit'), before);
 });
+
+test('Bun lock host uses the validated Node override and caches it', async () => {
+  if (!process.versions.bun) return;
+  const path = resolve(work, 'explicit-node.lock');
+  const script = `
+    import {acquireBuildLock} from ${JSON.stringify(new URL('../../lib/build-lock.mjs', import.meta.url).href)};
+    const first=await acquireBuildLock(${JSON.stringify(path)}); await first();
+    process.env.EAGLER_BUILD_LOCK_NODE=process.execPath;
+    const second=await acquireBuildLock(${JSON.stringify(path)}); await second();
+    console.log('cached-node-ok');
+  `;
+  const child = spawn(resolveBunExecutable(), ['--eval', script], {
+    cwd: root,
+    env: {...process.env, EAGLER_BUILD_LOCK_NODE: nativeNodeExecutable()},
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '', error = '';
+  child.stdout.setEncoding('utf8'); child.stdout.on('data', chunk => {output += chunk;});
+  child.stderr.setEncoding('utf8'); child.stderr.on('data', chunk => {error += chunk;});
+  const code = await new Promise((yes, no) => {
+    child.once('error', no);
+    child.once('exit', (status, signal) => status === 0 ? yes(status) : no(new Error(`Bun Node-host probe failed (${signal ?? status}): ${error}\n${output}`)));
+  });
+  assert.equal(code, 0);
+  assert.match(output, /cached-node-ok/);
+});
+
+test('Bun process exit without release closes the helper pipe and releases its lock', async () => {
+  if (!process.versions.bun) return;
+  const path = resolve(work, 'forgotten-release.lock');
+  const script = `
+    import {acquireBuildLock} from ${JSON.stringify(new URL('../../lib/build-lock.mjs', import.meta.url).href)};
+    import {readFileSync} from 'node:fs';
+    await acquireBuildLock(${JSON.stringify(path)});
+    const child=process.platform==='linux'?readFileSync('/proc/self/task/'+process.pid+'/children','utf8').trim():'';
+    console.log('owner-exiting:'+child);
+  `;
+  const child = spawn(resolveBunExecutable(), ['--eval', script], {
+    cwd: root,
+    env: {...process.env, EAGLER_BUILD_LOCK_NODE: nativeNodeExecutable()},
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '', error = '';
+  child.stdout.setEncoding('utf8'); child.stdout.on('data', chunk => {output += chunk;});
+  child.stderr.setEncoding('utf8'); child.stderr.on('data', chunk => {error += chunk;});
+  const code = await new Promise((yes, no) => {
+    child.once('error', no);
+    child.once('exit', (status, signal) => status === 0 ? yes(status) : no(new Error(`Bun forgot-release probe failed (${signal ?? status}): ${error}\n${output}`)));
+  });
+  assert.equal(code, 0);
+  assert.match(output, /owner-exiting/);
+  if (process.platform === 'linux') {
+    const helperPid = Number(output.match(/owner-exiting:(\d+)/)?.[1]);
+    assert.ok(Number.isInteger(helperPid) && helperPid > 0, `Expected the Node lock helper pid: ${output}`);
+    const started = Date.now();
+    let helperAlive = true;
+    while (Date.now() - started < 1500) {
+      try { process.kill(helperPid, 0); await delay(25); }
+      catch (error) { if (error?.code === 'ESRCH') {helperAlive = false; break;} throw error; }
+    }
+    assert.equal(helperAlive, false, 'Node lock helper must exit after its Bun owner closes stdin');
+  }
+  const release = await acquireBuildLock(path, {timeout: 1000});
+  await release();
+});
+
+test('unexpected Bun lock host exit terminates the protected build', async () => {
+  if (!process.versions.bun || process.platform !== 'linux') return;
+  const path = resolve(work, 'lost-helper.lock');
+  const script = `
+    import {readFileSync} from 'node:fs';
+    import {acquireBuildLock} from ${JSON.stringify(new URL('../../lib/build-lock.mjs', import.meta.url).href)};
+    await acquireBuildLock(${JSON.stringify(path)});
+    const children = readFileSync('/proc/self/task/' + process.pid + '/children', 'utf8').trim().split(/\\s+/).filter(Boolean);
+    if (children.length !== 1) throw new Error('Expected exactly one Node lock helper child, got ' + children.join(','));
+    process.kill(Number(children[0]), 'SIGKILL');
+    await new Promise(resolve => setTimeout(resolve, 250));
+    console.log('UNEXPECTED_CONTINUE');
+  `;
+  const child = spawn(resolveBunExecutable(), ['--eval', script], {
+    cwd: root,
+    env: {...process.env, EAGLER_BUILD_LOCK_NODE: nativeNodeExecutable()},
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '', error = '';
+  child.stdout.setEncoding('utf8'); child.stdout.on('data', chunk => {output += chunk;});
+  child.stderr.setEncoding('utf8'); child.stderr.on('data', chunk => {error += chunk;});
+  const result = await new Promise((yes, no) => {
+    child.once('error', no);
+    child.once('exit', (status, signal) => yes({status, signal}));
+  });
+  assert.notEqual(result.status, 0, `Bun should fail after losing its lock helper: ${error}\n${output}`);
+  assert.doesNotMatch(output, /UNEXPECTED_CONTINUE/);
+});
+
+test('Bun lock host rejects an explicit Bun node shim', async () => {
+  if (!process.versions.bun) return;
+  const path = resolve(work, 'reject-bun.lock');
+  const script = `
+    import {acquireBuildLock} from ${JSON.stringify(new URL('../../lib/build-lock.mjs', import.meta.url).href)};
+    try { await acquireBuildLock(${JSON.stringify(path)}); throw new Error('Bun shim was accepted'); }
+    catch (error) { if (!/real Node.js >=22/.test(error.message)) throw error; console.log('bun-shim-rejected'); }
+  `;
+  const child = spawn(resolveBunExecutable(), ['--eval', script], {
+    cwd: root,
+    env: {...process.env, EAGLER_BUILD_LOCK_NODE: resolveBunExecutable()},
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '', error = '';
+  child.stdout.setEncoding('utf8'); child.stdout.on('data', chunk => {output += chunk;});
+  child.stderr.setEncoding('utf8'); child.stderr.on('data', chunk => {error += chunk;});
+  const code = await new Promise((yes, no) => {
+    child.once('error', no);
+    child.once('exit', (status, signal) => status === 0 ? yes(status) : no(new Error(`Bun shim validation probe failed (${signal ?? status}): ${error}\n${output}`)));
+  });
+  assert.equal(code, 0);
+  assert.match(output, /bun-shim-rejected/);
+});
+
 test('ordinary error exit releases only its own acquired build lock', async () => {
   const path = resolve(work, 'exit.lock');
   const script = `import {acquireBuildLock} from ${JSON.stringify(new URL('../../lib/build-lock.mjs', import.meta.url).href)};await acquireBuildLock(${JSON.stringify(path)});process.exit(17);`;
@@ -49,7 +172,7 @@ test('ordinary error exit releases only its own acquired build lock', async () =
     let error = ''; child.stderr.on('data', bytes => {error += bytes;}); child.once('error', no);
     child.once('exit', code => error ? no(new Error(error)) : yes(code));
   });
-  assert.equal(code, 17); const release = await acquireBuildLock(path, {timeout: 100}); release();
+  assert.equal(code, 17); const release = await acquireBuildLock(path, {timeout: 100}); await release();
 });
 
 for (const ownerKind of ['Node', 'Bun']) for (const waiterKind of ['Node', 'Bun']) {
@@ -63,7 +186,7 @@ for (const ownerKind of ['Node', 'Bun']) for (const waiterKind of ['Node', 'Bun'
       const release=await acquireBuildLock(${JSON.stringify(path)},{timeout:5000});
       console.log('acquired');
       if(process.argv[2]==='hold')await new Promise(()=>{setInterval(()=>{},1000);});
-      else {const fd=openSync(${JSON.stringify(path + '.active')},'wx');closeSync(fd);await delay(75);unlinkSync(${JSON.stringify(path + '.active')});release();}
+      else {const fd=openSync(${JSON.stringify(path + '.active')},'wx');closeSync(fd);await delay(75);unlinkSync(${JSON.stringify(path + '.active')});await release();}
     `);
     const executables = {Node:nativeNodeExecutable(), Bun:resolveBunExecutable()}, children = [];
     function run(kind, mode) {
@@ -83,7 +206,7 @@ for (const ownerKind of ['Node', 'Bun']) for (const waiterKind of ['Node', 'Bun'
       await Promise.all(waiters.map(waiter=>waitFor(waiter,'waiting')));await delay(100);
       assert.ok(waiters.every(waiter=>!waiter.output().includes('acquired')),'a live owner excludes every waiter');
       owner.child.kill('SIGKILL');await Promise.all(waiters.map(waiter=>waiter.done));
-      const release=await acquireBuildLock(path,{timeout:100});release();
+      const release=await acquireBuildLock(path,{timeout:100});await release();
     } finally {
       for(const child of children)if(child.exitCode===null&&child.signalCode===null)child.kill('SIGKILL');
       await Promise.allSettled(children.map(child=>child.exitCode!==null||child.signalCode!==null?Promise.resolve():new Promise(yes=>child.once('exit',yes))));
@@ -175,7 +298,7 @@ test('a partial failed compile preserves the current entry and can be retried', 
   }}), /compiler failed/);
   assert.equal(await readFile(resolve(project, 'src/paraglide/messages.js'), 'utf8'), previous);
   assert.deepEqual(await current(project), generation);
-  const release = await acquireBuildLock(resolve(cache(project), 'build.lock'), {timeout:100}); release();
+  const release = await acquireBuildLock(resolve(cache(project), 'build.lock'), {timeout:100}); await release();
   assert.equal((await readdir(cache(project))).some(name => name.startsWith('staging-')), false);
   await ensureI18nBuild({project, compiler: compile}); assert.equal((await message(project)).text, 'next');
 });
