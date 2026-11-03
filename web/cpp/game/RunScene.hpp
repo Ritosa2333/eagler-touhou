@@ -128,6 +128,11 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     std::array<FrameCallback, 3> callbacks;
     std::array<FrameCallback, 2> spell_callbacks{};
     FrameCallback laser_update{};
+    // 原版独立调度任务：0x42efb0 @ Update 24（道具）、0x438e70 @ Update 25
+    // （神霊）。二者晚于激光 Update 22、子弹 Update 23（0x40e780），是
+    // max_point 加成帧内相位的决定序（S5 f2725 根因）。
+    FrameCallback item_update{};
+    FrameCallback spirit_update{};
     struct ShakeCallback {
         RunScene& scene;
         ScreenShake effect;
@@ -142,6 +147,8 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     bool start_shake(ScreenShake effect);
     std::unique_ptr<LaserPresentation> laser_presentation;
     bool update_lasers();
+    bool update_items();
+    bool update_spirits();
     std::unique_ptr<SpellPresentation> spell_presentation;
     bool update_spell();
     bool draw_spell();

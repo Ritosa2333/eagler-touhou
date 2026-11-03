@@ -380,15 +380,36 @@ bool ApplicationState::draw_fps_text() {
         if (!captions.enqueue({{383.0f, 450.0f, 0}, integer_style, integer_text}))
             return fail(captions.error);
     }
-    // 原版 FPSInf 0x424a90：格式参数恒为常量 0.05（0x4aec18）→ 永远输出
-    // "0.1fps"；实测 fps 只决定颜色（<30 红、<40 淡红、否则白）。
+    // 原版 FPSInf 0x424a90：打印值 = fldz + [0x4aec18]=0.05 → 恒输出
+    // "0.1fps"（原版自身的怪癖）；实测 fps（参数+0x34）只决定颜色
+    //（<30 红 0xff5050ff、<40 淡红 0xffa0a0ff、否则白）。用户 2026-11-03
+    // 裁定网页版显示真 FPS：生产路径打印实测值（方法论偏离，明示）；
+    // 捕获 harness 的 th13_debug_fps 覆盖（≈0.1）仍复刻原版文本像素。
     HudTextStyle style;
     style.font = 1;
     style.color = color_fps < 30 ? 0xff5050ffu
                 : color_fps < 40 ? 0xffa0a0ffu : 0xffffffffu;
     char text[32];
-    std::snprintf(text, sizeof text, "%2.1ffps", 0.05);
+    std::snprintf(text, sizeof text, "%2.1ffps", color_fps);
     if (!captions.enqueue({{588, 470, 0}, style, text})) return fail(captions.error);
+    return true;
+}
+
+bool ApplicationState::flush_animation_captures() {
+    // 0x45bf10/0x45d7d0：Present 前消费 ANM 截取队列。暂停激活时
+    // 0x4418b0 登记 {src=(32,16,384,448) 战场, dst=text.anm entry1
+    // sprite76 (0,0,128,128)}；此处把本帧 screen 后备点采样进目标 Blank
+    // 纹理（Rgb565），下一帧 script76-79 以加色混合淡入（0x43e3f0 黑幕）。
+    auto captures = animations.take_captures();
+    for (const auto& capture : captures) {
+        if (!capture.resource) continue;
+        // 0x45bf10 逐槽 best-effort：GetBackBuffer/GetSurfaceLevel/
+        // D3DXLoadSurfaceFromSurface 任一失败只跳过该槽、从不向上抛错
+        //（0x4418b0 空槽也是 no-op）。端口同样静默跳过——黑幕缺一帧
+        // 不应整帧 draw 失败（与 RunPause::open 端的容忍度对称）。
+        (void)graphics.capture_region_to_texture(*capture.resource, capture.texture,
+                                                 capture.source, capture.destination);
+    }
     return true;
 }
 
@@ -464,6 +485,9 @@ bool ApplicationState::initialize(bool device) {
     display = std::make_unique<SceneDisplay>(scheduler, animations, environment, graphics, renderer,
                                              views, captions, 2);
     if (!display->initialize()) return fail(display->error);
+    // 0x45d7d0 在 Present 前调用 0x45bf10 消费截取队列；port 在场景绘制
+    // flush 之后、present 之前执行（SceneDisplay::before_present）。
+    display->before_present = [this] { return flush_animation_captures(); };
     for (u32 index = 0; index < animation_updates.size(); index++) {
         auto& callback = animation_updates[index];
         callback.owner = this;
@@ -771,7 +795,7 @@ bool ApplicationState::begin_run() {
             return fail("Replay recording initialization failed");
         if (!begin_record_stage()) return false;
     }
-    if (!run->initialize(HudEntryContext{0, new_run})) return fail(run->error);
+    if (!run->initialize(HudEntryContext{0, new_run, title_flow_ran})) return fail(run->error);
     // 0042c550's activation branch (0x42c881 / 0x42c9fb) -> 004172e0 ->
     // 0046fc30 retires the loading caption tree (root plus spawned
     // script14/15/16 children). The script's label1 is a 10-frame fade, not
@@ -1189,6 +1213,9 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
     if (transition_gate_active && stage_transition_active && gate_player_update)
         ++transition_gate_frames;
     if (title) {
+        // 标题场景已跑：0x44c0d0 的 DAT_004dcc5c&0x180 分支在此等价成立，
+        // 标题线程随即经 0x46e620 卸载 sig.anm 槽 1（开场签名幕）。
+        title_flow_ran = true;
         title->controls({input.held, input.pressed, input.repeated, 0});
         if (scheduler.update() < 0)
             return fail(title->error.empty() ? title->frame.error.empty() ? animations.error

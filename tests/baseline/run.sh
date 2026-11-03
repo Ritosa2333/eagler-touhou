@@ -21,12 +21,19 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 port_dir="$(cd "$script_dir/../.." && pwd)"
 workspace="$(cd "$port_dir/../../.." && pwd)"
 
-# 冻结基线（2026-10-23：c3cce8cf + 死亡掉功率对拍口径修复后冻结；
-# udSr01 st01 前 2700 帧 / 3082 事件，双侧同哈希。窗长选 2700：覆盖
+# 冻结基线（2026-11-03 round-23 双侧同步更新：c361a5e5；
+# udSr01 st01 前 2700 帧 / 3195 事件，双侧同哈希。窗长选 2700：覆盖
 # f~2288 玩家死亡→功率块 9↔8 边界与 f2292 卫星弹相位——600 帧窗抓不到
-# 该型漂移（块边界在 kill≥13 处），负测试实证）
-FROZEN_PORT=bf7ef00660347f39494457dc7d803efc0f12e10208767fdc1cb8ebe6993d1e7f
-FROZEN_ORACLE=bf7ef00660347f39494457dc7d803efc0f12e10208767fdc1cb8ebe6993d1e7f
+# 该型漂移（块边界在 kill≥13 处），负测试实证。
+# round-23 两侧对应改动：
+#   port  ：round-22 生产修复（敌机序号 1→0、ECL rand 回到 game 流）后
+#           harness 重建；
+#   oracle：stage1_oracle NOOP_OPS 移除 1000-1003（移植侧已实装；原生
+#           0x41f6c1 神霊生成与 0x41f6d1/0x41f6e2 死亡神霊上限/个数写
+#           +0x3ff4/+0x3ff8，旧补丁使孪生跳过 0x438ec0 的两次 game RNG
+#           抽取，udSr01 f1982 首差）。两侧独立重跑后逐字节一致。）
+FROZEN_PORT=c361a5e5d9da3ff015f8a34b4c1452c1dd2c173fe6a9f7d0faf239fc8975147f
+FROZEN_ORACLE=c361a5e5d9da3ff015f8a34b4c1452c1dd2c173fe6a9f7d0faf239fc8975147f
 
 if [[ ! -f "$workspace/games/th13/th13.exe" || ! -d "$workspace/oracle" ]]; then
   echo "skip: 需要 /work 工作区（th13.exe + oracle/），宿主环境退出 77"
@@ -63,7 +70,10 @@ if (( fail )); then
   exit 1
 fi
 
-# 双侧一致性裁决（哈希相同则必然 none，此步为形式自证）
-result="$(cd "$workspace" && python3 -m oracle.stage1_compare "$tmp_host/port.jsonl" "$tmp_host/oracle.jsonl" | tail -1)"
+# 双侧一致性裁决（哈希相同则必然 none，此步为形式自证）。
+# 注意：不传 --expected-frames 时 stage1_compare 以 exit 3 表示「窗口未知」
+# （qualified=false，非分歧）；set -o pipefail 会把它当失败。这里只取
+# RESULT 行做断言，真实错误（exit 2/首差）仍会因结果行不含 none 而失败。
+result="$(cd "$workspace" && python3 -m oracle.stage1_compare "$tmp_host/port.jsonl" "$tmp_host/oracle.jsonl" | tail -1 || true)"
 [[ "$result" == *"first_divergence_frame=none"* ]] || { echo "比对意外：$result"; exit 1; }
-echo "baseline 2700f/3082e 双侧一致（port=oracle=$got_port）"
+echo "baseline 2700f/3195e 双侧一致（port=oracle=$got_port）"

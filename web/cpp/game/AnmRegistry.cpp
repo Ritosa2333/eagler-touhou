@@ -23,6 +23,10 @@ u32 AnmRegistry::submit(AnmVm& vm,u32 ordering){
     generation=(generation+1)&0x7ffff;if(!generation)generation=1;entry->handle=(generation<<13)|(entry->slot&0x1fff);entry->alternate=ordering&4;
     auto& list=groups[entry->alternate];if(ordering&2)entry->position=list.insert(list.begin(),entry);else entry->position=list.insert(list.end(),entry);entry->registered=true;
     // 副链插入清 0xc000（0046f820.c:65,71：bit2/bit1|bit2 两路插入后均清）。
+    // port 在 submit 统一执行，同时覆盖 0x46f990 spawn_child（ins_501→ordering4，
+    // 暂停菜单子体 117/118 等）：port 模板稳态是 0x4000，若不清 0，这些子体会
+    // 被 00462450.c:308 的暂停门冻结；原版 0x46f990 未清位（其模板预热值
+    // 0x8000，子体天然不受门影响），故此处清位是 port 侧必要的等价手段。
     if(entry->alternate)vm.visual.render_flags&=~0xc000u;return entry->handle;
 }
 AnmVm* AnmRegistry::find(u32 handle)const noexcept{

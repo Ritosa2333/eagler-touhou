@@ -34,16 +34,35 @@ public:
         i32 stage = 4;  // Application kStageBank
         i32 stage_number = 1;
         i32 ascii = 2, text = 0, effects = 8;
+        // front.anm（Application kFrontBank=3）：结算横幅 script59/60 的来源。
+        // 0x42a440/0x42a879 用 stage+0x2a8（front bank）经 0x403800 取模板。
+        i32 front = 3;
     };
+    // 0x4bb4f0 + stage*0x7c 舞台表行 1..7（EXE 实读；下标 = 舞台号-1）。
+    // 0x41381e-0x4139b6（capstone 直读，非 Ghidra 摘要）：符卡开始时
+    // 章节 DAT_004be824 < 6 且 A 行非 -1 → cardbg 用 +0x34/+0x38、装饰用
+    // +0x44/+0x48（槽 -1 不建装饰）；否则 B 行 +0x3c/+0x40 与 +0x4c/+0x50。
+    // bank 列 = ECL ANIM 名单文件槽（0x4c2188+0x80：2=enemy.anm、
+    // 3=stNXenm.anm、4=stNXmenm.anm/st06enm2）。stage3 A 行 = 小傘
+    // st03menm（cdbg02）、B 行 = 芳香 st03enm（cdbg03）；stage5 A 行装饰 =
+    // st05menm script9（中Boss）；stage7 A 行 = EX 中Boss st07menm。
+    struct CardBgRow {
+        i32 a_bank, a_script;               // +0x34/+0x38（章节<6 分支）
+        i32 b_bank, b_script;               // +0x3c/+0x40
+        i32 decor_a_bank, decor_a_script;   // +0x44/+0x48
+        i32 decor_b_bank, decor_b_script;   // +0x4c/+0x50
+    };
+    static const CardBgRow kCardBgRows[7];
     explicit SpellPresentation(AnmManager& animations) : SpellPresentation(animations, Banks{}) {}
     explicit SpellPresentation(AnmManager& animations, Banks banks)
         : animations_(animations), banks_(banks) {}
 
     // Production path: shared SpellState is the sole authority for capture,
     // timer and bonus. This consumes every actual begin/end instruction event;
-    // it never adds score or writes a record.
+    // it never adds score or writes a record. chapter = ECL 524 章节号
+    //（原版 0x41381e 直读 DAT_004be824 同一变量；RunScene 传活值）。
     bool consume(const SpellEvent&, const float boss_position[3],
-                 const std::function<bool(i32)>& sound);
+                 const std::function<bool(i32)>& sound, i32 chapter);
     void sync(const SpellSnapshot&, const float* boss_position = nullptr);
     // 00413080 draw callback: read selected character/mode counters from the
     // host's live FileStore; queue text before the Trance capture mutation.
@@ -53,6 +72,17 @@ public:
     u32 display_handle(i32 index) const noexcept {
         return index >= 0 && index < 3 ? displays_[index] : 0;
     }
+    // 0x413a60 -> 0x42a430 case0/case1：front script59（Get Spell Card
+    // Bonus!!）/ script60（Bonus Failed...）句柄（原版 stage+0xcc）。
+    u32 banner_handle() const noexcept { return banner_; }
+    // 0x42a4e2-0x42a876（case0）：结算数字（stage+0xa4 数组）、分隔符
+    //（+0xc4/+0xc8）与捕获特效（+0x118）句柄。
+    u32 bonus_digit_handle(i32 index) const noexcept {
+        return index >= 0 && index < 8 ? bonus_digits_[index] : 0;
+    }
+    u32 bonus_separator_million_handle() const noexcept { return bonus_million_; }
+    u32 bonus_separator_thousand_handle() const noexcept { return bonus_thousand_; }
+    u32 bonus_capture_effect_handle() const noexcept { return bonus_capture_effect_; }
     u32 stage_background_handle() const noexcept { return stage_background_; }
     u32 decoration_handle() const noexcept { return decoration_; }
 
@@ -95,6 +125,14 @@ private:
     SpellSnapshot snapshot_;
     u32 displays_[3] = {};
     u32 stage_background_ = 0, decoration_ = 0;
+    u32 banner_ = 0;  // 0x42a430 写在 stage ctx+0xcc 的结算横幅
+    // 0x42a4e2-0x42a876（case0 捕获分支）：结算数字 8 位（ascii script
+    // 4..11，句柄组 stage+0xa4）+ 分隔符（≥10^6 script12 → +0xc4、
+    // ≥10^3 script13 → +0xc8，sprite 0x11c=284）+ 捕获特效 front
+    // script95（+0x118）。
+    u32 bonus_digits_[8] = {};
+    u32 bonus_million_ = 0, bonus_thousand_ = 0;
+    u32 bonus_capture_effect_ = 0;
     bool production_ = false;
     std::vector<u32> retiring_displays_;
     bool retire_production();

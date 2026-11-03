@@ -127,6 +127,66 @@ bool GraphicsDevice::preload(AnmResource& file, bool low_color) {
     return true;
 }
 
+bool GraphicsDevice::capture_region_to_texture(const AnmResource& file, u32 texture_index,
+                                               const i32 source[4], const i32 destination[4]) {
+    // 0x45bf10/0x45d7d0 的 D3DXLoadSurfaceFromSurface 等价：Present 前把
+    // 本帧 screen 后备点采样进 ANM Blank 纹理。暂停激活时 0x4418b0 入队
+    // {src=战场(32,16,384,448), dst=text.anm entry1 sprite76 (0,0,128,128)}；
+    // script76-79 之后以加色混合淡入该纹理（0x43e3f0 黑幕通路）。
+    flush();
+    backend.read(screen);  // GL 后备 → screen TextureImage（BGRA8，逻辑像素）
+    const auto screen_it = textures.find(screen);
+    const u32 target_handle = texture(file, texture_index);
+    if (screen_it == textures.end() || !target_handle) {
+        if (error.empty()) error = "Animation capture source unavailable";
+        return false;
+    }
+    TextureImage* target = pixels(target_handle);
+    if (!target) {
+        error = "Animation capture target unavailable";
+        return false;
+    }
+    const auto& origin = screen_it->second.image;
+    if (origin.format != touhou::graphics::PixelFormat::Bgra8 || !origin.width ||
+        !origin.height || origin.pitch < origin.width * 4) {
+        error = "Animation capture source format unavailable";
+        return false;
+    }
+    if (target->format != touhou::graphics::PixelFormat::Rgb565 ||
+        target->pitch != target->width * 2) {
+        error = "Animation capture target is not an RGB565 blank texture";
+        return false;
+    }
+    const i32 source_width = source[2], source_height = source[3];
+    const i32 x0 = destination[0], y0 = destination[1];
+    const i32 x1 = destination[2], y1 = destination[3];
+    if (source_width <= 0 || source_height <= 0 || x1 <= x0 || y1 <= y0 || x0 < 0 ||
+        y0 < 0 || u32(x1) > target->width || u32(y1) > target->height) {
+        error = "Animation capture rectangle outside texture";
+        return false;
+    }
+    const i32 target_width = x1 - x0, target_height = y1 - y0;
+    for (i32 y = y0; y < y1; ++y) {
+        // 目标像素中心反投影（最近邻）：sx = src.x + (dx+0.5)*src.w/dst.w。
+        const i32 sy = source[1] + i32((i64(2) * (y - y0) + 1) * source_height /
+                                       (2 * target_height));
+        const i32 cy = sy < 0 ? 0 : sy >= i32(origin.height) ? i32(origin.height) - 1 : sy;
+        const u8* row = origin.pixels.data() + size_t(cy) * origin.pitch;
+        auto* out_row = target->pixels.data() + size_t(y) * target->pitch;
+        for (i32 x = x0; x < x1; ++x) {
+            const i32 sx = source[0] + i32((i64(2) * (x - x0) + 1) * source_width /
+                                           (2 * target_width));
+            const i32 cx = sx < 0 ? 0 : sx >= i32(origin.width) ? i32(origin.width) - 1 : sx;
+            const u8* pixel = row + size_t(cx) * 4;  // BGRA8
+            const u16 value = u16(((u32(pixel[2]) >> 3) << 11) |
+                                  ((u32(pixel[1]) >> 2) << 5) | (u32(pixel[0]) >> 3));
+            std::memcpy(out_row + size_t(x) * 2, &value, 2);
+        }
+    }
+    changed(target_handle, {u32(x0), u32(y0), u32(x1), u32(y1)});
+    return error.empty();
+}
+
 void GraphicsDevice::unload(const AnmResource& file) {
     presentation.reset();
     auto it = resources.find(&file);

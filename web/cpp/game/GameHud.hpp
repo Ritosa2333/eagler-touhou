@@ -17,6 +17,10 @@ struct HudEntryContext {
     // Supervisor+590 (DAT_004dcc30):0 for destination0xc continuation,
     // 1 for fresh entries and retries (0043c1c0).
     bool new_run = true;
+    // 0x44c0d0 标题线程尾段已跑（TitleInf+0x5e4>=0xB4 或 DAT_004dcc5c&0x180
+    // 时经 0x46e620 卸载 ANM 槽 1 = sig.anm）。菜单流程必经标题，故 sig 开场
+    // 幕已被卸载；只有加速直入（th13_debug_replay / oracle 回放）保留。
+    bool title_flow_ran = false;
 };
 
 class GameHud {
@@ -74,16 +78,15 @@ public:
     bool life(i32 lives, i32 pieces);
     bool bombs(i32 bombs, i32 pieces);
     // 开场签名条（sig.anm 槽 1 script0 左半层 23 + ins_500 子 script1 右半
-    // 层 26）：原版在加速战斗入口（回放 harness）保留全局帧 0 建的两条 VM，
-    // 正常标题流程已在开场 f180 卸载槽 1，故只在回放/调试直入路径重建。
-    // 生命周期（原生 terra-udsr 回放窗 draws 实证）：sig 两半 op 只画到
-    // battle frame 3，frame 4 起捕获里不再出现——0x439ce0 开场任务对回放
-    // 入口只有 4 帧寿命。port 的 VM 脚本在 t=10 op1 自灭（pc=-1）但链
-    // 遍历不回收已死 VM，alpha=0xff 的全屏幕会永远盖住战场（2026-11-02
-    // Replay 画面冻结根因）。在 HUD 逻辑帧计数处按原生窗口退休。
+    // 层 26）：原版 boot 期由 0x439730/0x4398e0/0x439ce0 建 VM；标题线程
+    // 0x44c0d0 在 TitleInf+0x5e4>=0xB4 或 DAT_004dcc5c&0x180 时经 0x46e620
+    // 卸载槽 1，故正常「开场→标题→进关」没有这两条。加速直入（oracle /
+    // th13_debug_replay）不跑标题线程，VM 全程存续——原生 gate-01 全窗
+    // battle-draws 逐帧 2 个 sig op（0..3329，6660 条），脚本 t=10 后
+    // pc=-1、颜色冻结在 0xffffffff，但链遍历不回收已死 VM，绘制继续。
+    // 端口只在 title_flow_ran==false（加速直入）重建并保持整场。
     u32 opening_signature = 0, opening_signature_right = 0;
-    i32 opening_signature_frames = 0;
-    bool begin_opening_signature();
+    bool begin_opening_signature(bool title_flow_ran);
     void release_opening_signature();
     // Independent per-stage logo ANM bank, injected by the run scene.
     i32 stage_logo_bank = -1;

@@ -53,10 +53,9 @@ void GameHud::release_opening_signature() {
     if (opening_signature) animations.retire(opening_signature);
     opening_signature = 0;
     opening_signature_right = 0;
-    opening_signature_frames = 0;
 }
 
-bool GameHud::begin_opening_signature() {
+bool GameHud::begin_opening_signature(bool title_flow_ran) {
     // 原版只有加速战斗入口保留开场签名条：0x439730/0x4398e0/0x439ce0 的开场
     // 任务在全局帧 0 建 VM，而标题线程尾段 0x44c0d0 在开场计数 >= 0xB4(180)
     // 时经 0x46e620 卸载槽 1——正常「开场→标题→进关」没有这两条。端口里等价
@@ -64,6 +63,11 @@ bool GameHud::begin_opening_signature() {
     // practice_mode=1；关卡练习在 run_mode_flags 置 bit4=0x10、符卡练习置
     // bit5=0x20，二者都经过标题，不得创建）。
     if (progress.practice_mode == 0 || (progress.run_mode_flags & 0x30u) != 0) return true;
+    // 0x44c0d0 标题线程尾段（反汇编 0x44c0fc-0x44c152）：mov edi,0xb4;
+    // cmp [TitleInf+0x5e4],edi; test [0x4dcc5c],0x180; 任一成立即
+    // call 0x46e620 卸载 [ANM mgr+0xb77b38]（槽 1 = sig.anm）并 free。
+    // 标题场景已跑 = 槽 1 已卸载，加速直入没有标题线程，VM 存续。
+    if (title_flow_ran) return true;
     // UI 夹具只装 front/ascii 合成 bank；生产路径 sig.anm 是常驻槽 1。
     if (!animations.resource(kOpeningSignatureBank)) return true;
     release_opening_signature();
@@ -199,7 +203,7 @@ bool GameHud::initialize(const HudEntryContext& context) {
     if (!error.empty()) return false;
     // 开场签名条先于 0x425170 的 HUD VM 创建（原版全局帧 0 建，早于进关），
     // 保证同层（26）链表序与原版一致。
-    if (!begin_opening_signature()) return false;
+    if (!begin_opening_signature(context.title_flow_ran)) return false;
     if (!root && (root = widget(0)) == 0) return false;
     if (!life_icons[0]) {
         for (u32 i = 0; i < 8; i++) {
@@ -262,8 +266,10 @@ bool GameHud::initialize(const HudEntryContext& context) {
         trance_skull_label = 0;
         if (!update_trance()) return false;
     }
-    // 0x425170:527（新建 HUD）与 0x42b990→0x42d3c0（换关沿用 HUD）都以
-    // 0x42b030 无条件重写 script172 标签；new_run=false 时上面不会走到。
+    // 0x425170:527（新建 HUD）以 0x42b030 无条件重写 script172 标签；
+    // 0x42b990→0x42d3c0 只在 dcc30!=0（新局/Retry）分支（0x42ba6f cmp /
+    // 0x42ba75 je dcc30==0），关间 0xc 延续不经过。new_run=false 时上面
+    // 不会走到。
     if (!trance_label_refresh()) return false;
     return true;
 }

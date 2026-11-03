@@ -429,10 +429,6 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
                                   resources.difficulty_particle);
     }
     ++state.particle_clock;
-    // 0x451450 case0：根动画 = (be7c4==4)+0x81 → 普通 129 / Extra 130
-    //（EX 武器 139-142；TitleSceneResources.char_menu_root_ex）。
-    const i32 root = progress.difficulty == 4 ? resources.char_menu_root_ex
-                                              : resources.character_root;
     switch (state.substate) {
     case 0: {
         state.menu.count = kTitleCharacterRows;
@@ -462,20 +458,27 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
         // 旧 create(2)+interrupt(2,7+k) 是错建：名行条入场后以 title01
         // 行位图（家内安全..早苗行区）绘在自机页左下——stable 截图像素匹配
         // 与 port draws L25×28/L26×12 双证。光标按原版四个角色建模。
-        if (state.handles[root]) visuals.retire(root);
-        // 0x451450 case0：自机菜单根 = (be7c4==4)+0x81 → 129（普通）/130
-        //（EX 武器 139-142）；root（character_root=2 名行树）只做上方清理。
+        // 0x4514f4-0x4514fa：先建 Player Select 标题条 102（edi=0x66；
+        // select01 sprite80，(-256,8)→(32,8) 20f 滑入；自机屏独占，难度屏
+        // 期间不建）。原版顺序在自机根之前，port 曾放到根之后。
+        if (!visual(visuals.create(resources.difficulty_badge + 1))) return false;
+        // 0x451450 case0：自机菜单根 = (be7c4==4)+0x81 → 129（普通）/130（EX）。
         const i32 menu_root = progress.difficulty == 4 ? resources.char_menu_root_ex
                                                        : resources.char_menu_root;
-        if (!visual(visuals.retire(menu_root)) || !visual(visuals.create(menu_root)))
-            return false;
-        // 45154a broadcasts label3 immediately to the newly created tree,
-        // before 45155d queues the selected character's label7+cursor.
-        if (!visual(visuals.interrupt(menu_root, 3, true))) return false;
-        // Player Select 标题条（select01 sprite80，dump L24293 与 101 同体：
-        // (-256,8)→(32,8) 20f 滑入）：自机屏独占（oracle 窗B f622 起实证，
-        // 难度屏期间不建）。
-        if (!visual(visuals.create(resources.difficulty_badge + 1))) return false;
+        // 0x45151a-0x451521：`FUN_0046fb90(handles[129/130])` 非 0 时整段
+        // 跳过（jne 0x451564）——不重建、不重发 label3/7+cursor。自机屏
+        // →Stage Select→退回时原版保留立绘/详情树（0x4518xx 练习分支只
+        // 0x46fc30(label1, handles[0x460=102]) 并清 102，未碰 129/130）。
+        // 旧实现每次进屏 retire+create，退回时整棵树重播入场（贴图重载感）。
+        if (!animations.registry.find(state.handles[menu_root])) {
+            // 0x451523-0x451530：旧句柄 pending label1（0x46fc30）后清槽；
+            // 0x45153a 新建；0x45154a label3 immediate；0x45155d label7+cursor
+            // pending（入场只写 pending，下一 manager tick 消费）。
+            if (!visual(visuals.retire(menu_root))) return false;
+            if (!visual(visuals.create(menu_root))) return false;
+            if (!visual(visuals.interrupt(menu_root, 3, true))) return false;
+            if (!enter_portrait(title_character_at(state.menu.cursor), 7)) return false;
+        }
         // [r4-M] clear-tag 可见门（0x45145f-0x451734 四路展开判定：score_data
         // +0x56dc*c+0x7e4+DAT_004be7c4(当前难度)*4 == 0 → 00470030 递归清
         // script 0x83+c 子树可见位）。缺关（子不存在）原版为空指针 no-op。
@@ -492,7 +495,6 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
                     hide_tree(*tag);
             }
         }
-        if (!enter_portrait(title_character_at(state.menu.cursor), 7)) return false;
         state.change_substate(1);
         [[fallthrough]];
     }
@@ -521,9 +523,18 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
             return check(host.sound(9), "Character cancel sound failed");
         }
         if (pressed & 0x80001) {  // Z/Enter
-            // 确认：立绘/武器/选择框中央淡出（label 3）。名行树不建（构成定案，
-            // 旧 interrupt(2,6) 名行闪灭随之废除）。
-            if (!enter_portrait(title_character_at(state.menu.cursor), 3)) return false;
+            // 0x451a92-0x451ab2：0x470530 取 root 子 125+cursor 的句柄后
+            // 0x46fc30(label 6) pending（script125 label6 = ins_304(23)/ins_3
+            // 层复位，不淡出）。不是 root 广播 label3 的中央淡出——原版立绘/
+            // 详情在转场与练习 Stage Select 期间仍在场（0x4518xx 只清 102）；
+            // 旧实现提前 10f 淡出，退回自机屏时贴图像“重新加载”。
+            const i32 menu_root = progress.difficulty == 4 ? resources.char_menu_root_ex
+                                                           : resources.char_menu_root;
+            if (!visual(visuals.child_interrupt(
+                    menu_root, resources.portrait_base + title_character_at(state.menu.cursor),
+                    6, false))) return false;
+            // 0x451ab7-0x451b34 还对 root 子 0x55/0x56 发 label6；129/130
+            // 的 spawn 表无这两号（dump），原版查找失败即 no-op，port 同样跳过。
             if (!check(host.sound(7), "Character confirm sound failed")) return false;
             state.change_substate(3);
         }
@@ -540,8 +551,12 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
                 state.menu.count = 6;
                 state.menu.wrapping = true;
                 state.menu.select(settings.practice_stage);
-                if (!visual(visuals.retire(resources.difficulty_badge + 1)) ||
-                    !visual(visuals.retire(resources.char_menu_root))) return false;
+                // 0x45185e-0x451875（LAB_00451811）：练习分支只
+                // 0x46fc30(label1, handles[0x460=102]) 并清 102，随后
+                // 0x44bac0(8) 转 Stage Select；**不 retire 129/130**——
+                // 原版自机根/立绘/详情树跨 Stage Select 存活，退回时
+                // case0 的句柄存在检查（0x45151f）直接复用。
+                if (!visual(visuals.retire(resources.difficulty_badge + 1))) return false;
                 state.change_screen(TitleScreen::Stage);
                 return true;
             }

@@ -109,8 +109,12 @@ std::vector<u8> title_anm_fixture() {
     scripts[91] = {layer(21), wait(), stop()};
     scripts[92] = {layer(21), wait(), stop()};
     scripts[93] = {layer(21), wait(), stop()};
-    scripts[94] = {spawn(97), spawn(96), spawn(100), wait(), stop()};            // LOGO 首入场
-    scripts[95] = {spawn(99), spawn(96), spawn(100), wait(), stop()};            // LOGO 复位
+    // LOGO 首入场/复位根。真实 dump（anm-list.txt title.anm L24142/L24155）：
+    //   script94/95 = ... ins_3(); ins_5(1); +15: ins_1();
+    // label1 体销毁根（ins_1），子体由 collect 递归回收。合成镜像必须带该
+    // 标签，否则 0x44d954 的双槽退场在夹具里不可观测（测试盲区）。
+    scripts[94] = {spawn(97), spawn(96), spawn(100), wait(), label(1), stop()};  // LOGO 首入场
+    scripts[95] = {spawn(99), spawn(96), spawn(100), wait(), label(1), stop()};  // LOGO 复位
     // 129：立绘 125-128 + 选择框 131-134 + 武器 135-138（非连续！含 129/130 会自递归）。
     scripts[129].clear();
     for (i32 child : {125, 126, 127, 128, 135, 136, 137, 138, 131, 132, 133, 134})
@@ -281,6 +285,37 @@ TEST(title_full_chain_start_game) {
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::StartGame));
     CHECK(harness.scene->error.empty());
     CHECK_EQ(harness.host.exit_destination, -1);  // 开局排队后 Quit 分支不触发
+}
+
+// 0x44d954-0x44d97b（反汇编）：开始族确认时 label1 同时发给两个 LOGO 根槽
+// ——+0x440 = handles[94]（script94 首入场根）、+0x444 = handles[95]（script95
+// 复位根），随后两槽清 0。返回主菜单路径（0x44ce26：两槽皆空才建 95）之后
+// 只有 95 存活；旧实现只中断 94，95 的 LOGO 树（99/96/100）跨难度/角色屏
+// 残留（2026-11-03 用户截图：PLAYER SELECT 上仍有東方神霊廟 LOGO）。
+TEST(title_start_retires_restore_logo_root_after_menu_return) {
+    TitleHarness harness;
+    harness.reach_menu();
+    harness.frame(0x01);   // 開始 → 难度
+    harness.advance(25);
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Difficulty));
+    harness.advance(10);   // 难度屏可交互（age>6）
+    harness.frame(0x100);  // Esc → 回主菜单（难度 case4 age>5）
+    harness.advance(30);
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
+    CHECK_EQ(harness.scene->state.substate, 2);  // 返回路径直接展开可交互
+    // 返回路径只建复位根 95；首入场根 94 已在第一次确认时退场并清槽。
+    CHECK(harness.scene->state.handles[95] != 0);
+    CHECK_EQ(harness.scene->state.handles[94], 0u);
+    const u32 restore = harness.scene->state.handles[95];
+    auto* restore_vm = harness.manager.registry.find(restore);
+    CHECK(restore_vm != nullptr);
+    CHECK(harness.manager.registry.find_child_script(*restore_vm, 99, 0) != nullptr);
+    // 再確認開始：两槽清零，95 树同帧（ANM update 优先级 9/34）整树回收。
+    harness.frame(0x01);
+    CHECK_EQ(harness.scene->state.handles[94], 0u);
+    CHECK_EQ(harness.scene->state.handles[95], 0u);
+    CHECK(harness.manager.registry.find(restore) == nullptr);
+    CHECK(harness.scene->error.empty());
 }
 
 TEST(title_quit_requests_exit_destination) {

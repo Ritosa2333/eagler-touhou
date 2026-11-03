@@ -56,7 +56,9 @@ float interpolation_weight(i32 mode, float elapsed, float duration) noexcept {
         constexpr float scale[] = {.888888895511627197265625f, .81632649898529052734375f, .71005916595458984375f, .624349653720855712890625f, .5555555820465087890625f};
         const u32 i = u32((mode - 22) % 5);
         // 同 0x473a40 单次落位链：二次曲线族中间量 double。
-        double v = mode >= 27 ? 1 - double(t) : double(t);
+        // 0x473fb6/0x473ff4/0x474030/0x47406e/0x4740ae：mode 0x1b..0x1f 的
+        // (1-t) 先 fstp dword 落 f32，再与常量相减；不落位会在末位差 1 ULP。
+        double v = mode >= 27 ? double(static_cast<float>(1 - t)) : double(t);
         v = v - shift[i];
         v = v * v;
         v = v / divisor[i];

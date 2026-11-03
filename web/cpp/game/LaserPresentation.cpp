@@ -43,7 +43,14 @@ bool LaserPresentation::birth(StageLaser& laser) {
     const i32 body_script=visual->source.curve?113+i32(laser.sprite):appearance->script;
     if (!body.bind(*resource, u32(body_script))) return fail(body.error);
     body.sprite_source = &visual->source;
+    // 0x461cb0: (flags & ~0x4000) | 0x8000 before the first tick, then
+    // (flags & 0xc000) == 0x8000 → (flags & ~0x8000) | 0x4000. 0x433260 runs
+    // this sequence for the laser body (the orb/tip are 0x403800 template
+    // copies and keep whatever bit the template carries).
+    body.visual.render_flags = (body.visual.render_flags & ~0x4000u) | 0x8000u;
     if (!tick(body)) return false;
+    if ((body.visual.render_flags & 0xc000u) == 0x8000u)
+        body.visual.render_flags = (body.visual.render_flags & ~0x8000u) | 0x4000u;
     body.pending_interrupt = 2;
     if (!tick(body)) return false;
     body.visual.flags = (body.visual.flags & 0xfffffe3fu) | 0x20u;

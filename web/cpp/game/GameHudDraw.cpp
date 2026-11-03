@@ -175,7 +175,12 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
     // Boss 计时文本（0x427910:253-274）：'.' 与百分秒锚定数字 VM 位置
     //（ascii script2/3 dump：208/220,39）+16/-7；'.' 字体 4、百分秒 0.6 缩放。
     if (boss_hud.timer_visible()) {
-        style.alignment = style.vertical_alignment = 0;
+        // 0x42814F/0x428155 mov eax(=1) -> AsciiInf+0x19184/+0x19188；计时块
+        // 0x4281A3-0x428236 只写 +0x19178=4（字体）与 +0x19160（色），不再改
+        // 对齐字段。原版 +0x19184=1 = 左对齐、+0x19188=1 = 顶对齐；此前用 0
+        // （居中/垂直居中）会把 "." 左移 6px、百分秒左移 7.2px 并上移 8px，
+        // 压进 208/220 的数字贴图，即用户看到的“倒计时太挤”。
+        style.alignment = style.vertical_alignment = 1;
         // 0x4281C8 mov eax,[eax+0x528] -> 0x4281D4 mov [esi+0x19160],eax：
         // 原版把数字 VM 的完整 ARGB（含其自身 alpha）直接写入 AsciiInf 当前色
         //（decomp 00427910.c:258）。不要再叠加任何其它 VM 的 alpha。

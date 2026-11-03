@@ -225,6 +225,10 @@ bool ApplicationState::restart_run() {
         pending_destination = i32(Destination::Run);
         return true;
     }
+    // Retry（0x43c1c0 case0xa/0xb）置 dcc30=1，与普通新局同走 0x42b990 的
+    // dcc30!=0 复位分支（0x42bb5a→0x42d3c0→0x42d404 写 200）——
+    // start_game 内部的 trance_reset_fresh_entry 已覆盖，不再重复调用。
+    // 关间 0xc 延续（dcc30=0）不经过 start_game，灵界计跨关保留。
     return start_game(progress.starting_stage);
 }
 

@@ -64,6 +64,9 @@ TEST(stage1_sim_contract_smoke) {
     CHECK_EQ(first.anim_list[0], std::string("enemy.anm"));
     CHECK_EQ(first.anim_list[1], std::string("st01enm.anm"));
     // 首行契约：root 创建趟（frame 0）的第一个 enmCreate 事件。
+    // 0x418d30 构造后计数器=1，root main 经同一 0x4183f0/0x418f40 计数器
+    // 取得 serial 1（0x42c550 首帧 0042c766/0042c905），故首个 ECL 敌机
+    // 从计数器取 2；native-s5 raw f0 敌链 [2,1] 实证。
     const char* kHead =
         "{\"frame\":0,\"seq\":0,\"type\":\"enemy_spawn\",\"enemy\":2,\"routine\":\"MapleEnemy\"";
     CHECK(a.size() > std::strlen(kHead));

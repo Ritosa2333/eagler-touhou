@@ -183,20 +183,35 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
         // 真机 boot：无提示幕。标题任务使能帧（=g181）建背景+LOGO 根（oracle：
         // g181 起 select00 两半、g291 LOGO 翻转 = script94 内建 110f 延迟、
         // g350 森林 = script90/91 内建 170f）。
-        // 0x44cdb9-0x44cdd6：返回路径重新创建 89（背景）与 94（LOGO）根。
+        // [0x44cddb-0x44ce59 返回分支逐指令] +0x5c40 bit1 清（返回）时：
+        //   0x44cddb 取 handles[89]，仅缺失才 0x44bb80 新建 + 立即 label2
+        //   （0x44cdf2 edi=0x59；0x44ce01 ebx=2 → 0x46fca0）；
+        //   0x44ce0c 上一屏 != 3（オプション）时再发 label2（0x44ce19 ebx=2）；
+        //   0x44ce26 取 handles[94]/[95]，两者均缺失才建 **0x5f=95**
+        //   （0x44ce51 lea edi,[eax+0x5f]，eax=0）——95 是 LOGO 复位根，
+        //   script95 立即 spawn 99/96/100；94 是冷启动首入场根（110f 隐藏）。
+        // 旧读把 0x44cdb9（bit1 置位的冷启动分支，建 89+94）当成返回路径，
+        // 导致回主菜单后 LOGO 消失 ~110f（用户 BUG 5）。
         // 原版 0x44bb80 只创建新 VM 并覆盖句柄，不回收旧树——旧树保持最后
         // 可见状态（灵梦/背景立即在场），新树按脚本重新入场。旧树随 title
         // bank 生命周期回收（TitleScene 析构 retire_resource）。
         const bool returning = (state.flags & 2u) != 0;
         if (returning) {
-            if (!create(resources.background_root)) return false;
-            // 新建 89 的 90/91 仍带脚本内建 ins_6(170) 初延迟（g350 森林）。
-            // 返回路径立即发 label2：90/91 label2 = ins_409(60,0,255)，新树
-            // 也在 60f 内回到 alpha255（真实 title.anm 窄测：65f 后 90/91
-            // alpha=255；无 label2 时仍为 0）。旧树同时保留，65f 窗口内
-            // 灵梦不会因重建而消失。
-            if (!interrupt(resources.background_root, 2, true)) return false;
-            if (!create(resources.logo_root)) return false;
+            if (!present(state.handles[resources.background_root])) {
+                if (!create(resources.background_root)) return false;
+                // 新建 89 的 90/91 仍带脚本内建 ins_6(170) 初延迟（g350 森林）。
+                // 返回路径立即发 label2：90/91 label2 = ins_409(60,0,255)，新树
+                // 也在 60f 内回到 alpha255（真实 title.anm 窄测：65f 后 90/91
+                // alpha=255；无 label2 时仍为 0）。
+                if (!interrupt(resources.background_root, 2, true)) return false;
+            }
+            if (i32(state.previous_screen) != i32(TitleScreen::Option) &&
+                !interrupt(resources.background_root, 2, true))
+                return false;
+            if (!present(state.handles[resources.logo_root]) &&
+                !present(state.handles[resources.logo_restore_root])) {
+                if (!create(resources.logo_restore_root)) return false;
+            }
         } else {
             if (!present(state.handles[resources.background_root]) &&
                 !create(resources.background_root)) return false;
@@ -285,9 +300,23 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
             // pending 由本帧 AnmManager.update 的 tick 消费恰 1 步）。
             if (state.version_bar && selected != kTitleMainEntries - 1)
                 animations.interrupt(state.version_bar, 1, false);
-            // 44d954 also queues label1 to both logo-root slots; their scripts
-            // own their exit timing and lifetime.
+            // 0x44d954-0x44d97b（th13.exe 反汇编）：跳转表 case 0-6/8 共用
+            // 0x44d947——label1 同时发给两个 LOGO 根槽（+0x440 = handles[94]
+            // 首入场根 script94、+0x444 = handles[95] 复位根 script95），随后
+            // 两槽清 0。返回主菜单路径（0x44ce26：两槽皆空才建 95）之后只有
+            // 95 存活；旧实现只发 94，95 的 LOGO 树（99/96/100）跨难度/角色屏
+            // 残留（2026-11-03 用户截图：PLAYER SELECT 上仍有東方神霊廟 LOGO）。
+            // 脚本各自拥有退场时序与生命周期（script94/95 的 ins_5(1)→ins_1
+            // 销毁整棵树）。
+            // case 7（オプション）走 0x44d9a6：原版只 sound7 + substate4，不
+            // 触碰 LOGO/版本条；端口此处沿既有行为只发 94（已知偏差，Option
+            // 屏无 oracle 窗，待后续对拍后按原版收口）。
             if (!interrupt(resources.logo_root, 1, false)) return false;
+            if (selected != i32(TitleMainEntry::Option)) {
+                if (!interrupt(resources.logo_restore_root, 1, false)) return false;
+                state.handles[resources.logo_root] = 0;
+                state.handles[resources.logo_restore_root] = 0;
+            }
             // 其余入口（真机有画面，本轮不实现）：确认序同上，enter() 不切屏
             // ——解剖实证字条隐藏与转屏解耦，难度侧时间线照走。
         }

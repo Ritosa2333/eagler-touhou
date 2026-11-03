@@ -339,6 +339,15 @@ struct ReplayRunSession {
         char player_anm[16];
         std::snprintf(player_anm, sizeof player_anm, "pl%02d.anm", replay_file.character & 3);
         if (!read_bank(player_anm, 6, 9)) return false;  // kPlayerBank；原版槽 9
+        // Application.cpp:754-757 同序：42b990 从 stage 表 +0x10 单独装载
+        // stXXlogo.anm（内部 bank 27 = kStageLogoBank），ECL554 触发时
+        // GameHud::stage_logo(0)（42adc0 拷 script0）消费。缺此装载时 fresh
+        // harness 在 logo 触发帧（udSr01 st01 f731）硬错 "Stage logo
+        // animation bank unavailable"。原版槽号未证（字符串表间接索引），
+        // 纹理身份按未列族留空 → DrawCapture 引用时 port:unregistered 标记。
+        char stage_logo[20];
+        std::snprintf(stage_logo, sizeof stage_logo, "st%02dlogo.anm", int(progress.stage));
+        if (!read_bank(stage_logo, 27)) return false;
         return true;
     }
     bool register_animation_pools() {
@@ -392,6 +401,9 @@ struct ReplayRunSession {
         run = std::make_unique<th13::RunScene>(
             progress, player, score, animations, renderer, environment, host, scheduler,
             th13::StagePresentation::Banks{4, 5, 6, 8}, 3, 2, 7, std_name, &game_random);
+        // Application.cpp:757 同款：owned HUD 的 logo bank 指到 27（42adc0 /
+        // 429a24 消费；见 GameHud::stage_logo）。须在 initialize() 前接好。
+        run->hud.stage_logo_bank = 27;
         run->battle_sht = sht_file;
         if (event_path && !run->battle.open_event_sink(event_path))
             return fail("event sink open failed: " + run->battle.error());
@@ -402,6 +414,21 @@ struct ReplayRunSession {
         return true;
     }
 };
+
+// ---- 只读诊断探针（默认关闭；TH13_RNG_TRACE / TH13_SPIRIT_PROBE）----
+// RNG：记录战斗流（session->game_random）每次抽取的 (frame, before, after)；
+// 神灵：逐帧记录存活神霊槽数与战斗流 index/seed。两者都不改变任何取值，
+// 仅用于 oracle 孪生对拍（stage1_oracle 侧 TH13_VISUAL_RNG_TRACE 同构）。
+static std::FILE* g_rng_trace = nullptr;
+static std::FILE* g_spirit_probe = nullptr;
+static unsigned g_probe_frame = 0;
+static const th13::GameRandom* g_probe_game_random = nullptr;
+
+static void probe_game_draw(const th13::GameRandom* rng, uint32_t before, uint32_t after) {
+    if (g_rng_trace && rng == g_probe_game_random)
+        std::fprintf(g_rng_trace, "{\"frame\":%u,\"before\":%u,\"after\":%u}\n",
+                     g_probe_frame, unsigned(before), unsigned(after));
+}
 
 int replay_runscene(const char* replay_path, const char* resource_dir,
                     const char* event_path, unsigned frames, unsigned stage_index) {
@@ -426,6 +453,24 @@ int replay_runscene(const char* replay_path, const char* resource_dir,
                 replay_file.shot_type, unsigned(replay_file.stages.size()));
     const auto session = new ReplayRunSession();  // 堆置（RunScene+管理器超栈）
     session->host.dir = resource_dir;
+    // 只读诊断探针接线（在 assemble 之前：装载趟的抽取也入轨迹）。
+    if (const char* rng_path = std::getenv("TH13_RNG_TRACE")) {
+        g_rng_trace = std::fopen(rng_path, "wb");
+        if (!g_rng_trace) {
+            std::printf("rng trace open failed: %s\n", rng_path);
+            return 1;
+        }
+        g_probe_game_random = &session->game_random;
+        th13::GameRandom::instance_draw_observer = probe_game_draw;
+    }
+    if (const char* spirit_path = std::getenv("TH13_SPIRIT_PROBE")) {
+        g_spirit_probe = std::fopen(spirit_path, "wb");
+        if (!g_spirit_probe) {
+            std::printf("spirit probe open failed: %s\n", spirit_path);
+            return 1;
+        }
+    }
+    if (std::getenv("TH13_DAMAGE_PROBE")) th13::damage_probe_enabled = true;
     if (!session->assemble(replay_file, stage_index, stage, event_path)) {
         std::printf("replay-runscene setup failed: %s\n",
                     session->error.empty() ? session->run->error.c_str() : session->error.c_str());
@@ -462,6 +507,7 @@ int replay_runscene(const char* replay_path, const char* resource_dir,
     u32 stop_after = 0xFFFFFFFFu;
     while (consumed < total && cursor.valid() && !terminal) {
         const th13::ReplayFrame frame = cursor.next();
+        g_probe_frame = consumed;  // 事件/状态行同口径（本趟处理的帧号）
         input.update(frame.state);
         session->run->controls(input);
         if (freeze_at && consumed + 1 >= freeze_at) session->progress.scene_flags |= 0x10u;
@@ -483,6 +529,15 @@ int replay_runscene(const char* replay_path, const char* resource_dir,
             write_state_row(state_log, i32(consumed) - 1, session->run->battle,
                             session->progress, session->player, session->score,
                             frame.state);
+        if (g_spirit_probe) {
+            unsigned alive = 0;
+            for (const auto& spirit : session->run->battle.item_manager.spirits())
+                if (spirit.alive) ++alive;
+            std::fprintf(g_spirit_probe,
+                         "{\"frame\":%u,\"spirits\":%u,\"index\":%u,\"seed\":%u}\n",
+                         g_probe_frame, alive, unsigned(session->game_random.index()),
+                         unsigned(session->game_random.seed()));
+        }
         if (session->progress.stage_frame == frame_before) {
             ++frozen;  // 冻结帧：输入已消费，战斗未步进（0x42c550:263 门）
         } else {
@@ -518,6 +573,15 @@ int replay_runscene(const char* replay_path, const char* resource_dir,
                         cursor.current_slow_rate());
     }
     if (state_log) std::fclose(state_log);
+    if (g_spirit_probe) {
+        std::fclose(g_spirit_probe);
+        g_spirit_probe = nullptr;
+    }
+    if (g_rng_trace) {
+        std::fclose(g_rng_trace);
+        g_rng_trace = nullptr;
+        th13::GameRandom::instance_draw_observer = nullptr;
+    }
     // 事件落盘完整性：显式 close（堆置会话不依赖析构）+ 写失败即败。
     session->run->battle.sim.sink.close();
     const bool sink_ok = session->run->battle.sim.sink.ok();

@@ -392,11 +392,23 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     CHECK(focus_child->pre_tick != nullptr);
 
     // 负控：同 manager 直建 script22，不经过 create_player_effect → 无 pre_tick。
+    // 0x462450:301-308 的暂停门只冻结 (render_flags & 0xc000)==0x4000 的主链
+    // VM；0x405010:65 的普通 VM 稳态正是 0x4000。这里把 bare 根显式置为
+    // 0x8000（门位清除）作为“无门 VM 继续推进”的负控；另建 gated 保留默认
+    // 0x4000，验证暂停门本身（BUG 8 修复）。
     const u32 bare = manager.create(8, 22, 12, 0, {40, 300, 0});
     CHECK(bare != 0);
     auto* bare_root = manager.registry.find(bare);
     CHECK(bare_root != nullptr);
     if (!bare_root) return;
+    bare_root->visual.render_flags =
+        (bare_root->visual.render_flags & ~0xc000u) | 0x8000u;
+    const u32 gated = manager.create(8, 22, 12, 0, {80, 300, 0});
+    CHECK(gated != 0);
+    auto* gated_root = manager.registry.find(gated);
+    CHECK(gated_root != nullptr);
+    if (!gated_root) return;
+    CHECK_EQ(gated_root->visual.render_flags & 0xc000u, 0x4000u);
     CHECK(bare_root->pre_tick == nullptr);
     auto* bare_child = manager.registry.find_child_script(*bare_root, 21, 0);
     CHECK(bare_child != nullptr);
@@ -408,6 +420,7 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     const i32 child_time = focus_child->timer.current;
     const i32 root_age = focus_root->age.current;
     const i32 bare_time = bare_root->timer.current;
+    const i32 gated_time = gated_root->timer.current;
     const float root_rotation = focus_root->variables.rotation.z;
 
     SessionState progress;
@@ -433,8 +446,10 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     CHECK_EQ(focus_child->timer.current, child_time);
     CHECK_EQ(focus_root->age.current, root_age);
     CHECK_EQ(focus_root->variables.rotation.z, root_rotation);
-    // 反证：无 pre_tick 的同脚本 VM 不被暂停位冻结。
+    // 负控：显式清掉暂停门位（0x8000）的同脚本 VM 不被冻结。
     CHECK(bare_root->timer.current > bare_time);
+    // 正控：默认 0x4000 的主链 VM 被 0x462450:308 暂停门冻结（不依赖 pre_tick）。
+    CHECK_EQ(gated_root->timer.current, gated_time);
     // 覆盖层副链本身继续走（0xc000 已清），暂停不是全局停表。
     if (menu) CHECK(menu->age.current > menu_age);
     CHECK(manager.registry.find(focus) != nullptr);  // 冻结 ≠ 回收

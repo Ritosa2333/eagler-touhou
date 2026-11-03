@@ -146,8 +146,10 @@ TEST(audio_failure_paths_are_explicit_and_not_silent_devices) {
     CHECK(effects.initialize_effects_for_test(kAssetRoot));
     CHECK(effects.statistics().ready);
     CHECK(!effects.statistics().device);
-    CHECK(!effects.enqueue(-1));
-    CHECK(effects.error.find("Invalid") != std::string::npos);
+    // 00460bc0:0x460c19-0x460c42 / 00460c50:0x460cc0-0x460ce3：负数 id 没有
+    // 门，原版写入第一个负数（空）通道后正常返回，无失败路径。
+    CHECK(effects.enqueue(-1));
+    CHECK(effects.error.empty());
 
     AudioDevice invalid_high;
     CHECK(invalid_high.initialize_effects_for_test(kAssetRoot));

@@ -60,6 +60,16 @@ struct Fixture {
         battle.sim.enemies.clear();
         return true;
     }
+    // 0x442a19-0x442a57 focus 三重门：stage ctl 非空、ctl+0xb8（存活敌机
+    // 链计数）非 0、player+0x67c>=4 同时成立才保留 Shift 位。init() 清空
+    // 敌机后链计数为 0，依赖聚焦的用例需补一个 inert 敌机（threads 为空，
+    // tick_enemy 跳过解释器；位置远离玩家与弹道，默认 hurtbox 不接触）。
+    void retain_focus() {
+        auto anchor = std::make_unique<StageEnemy>();
+        anchor->serial = 9999; anchor->script_id = 9999;
+        anchor->position[0] = 1000.f; anchor->position[1] = 1000.f;
+        battle.sim.enemies.push_back(std::move(anchor));
+    }
 
     void reach_first_launch() {
         for (int frame = 1; frame < 20; ++frame) CHECK(battle.step(idle));
@@ -383,6 +393,7 @@ TEST(youmu_history_advances_while_holding_direction_at_boundary) {
 
 TEST(youmu_focus_charge_releases_forty_frames_from_saved_origin) {
     Fixture fixture; fixture.progress.character = 3; CHECK(fixture.init());
+    fixture.retain_focus();  // 0x442a19-0x442a57：聚焦门需要存活敌机链
     fixture.battle.sht_shots_loaded = true;
     ShtShotRecord record; record.interval = 1; record.speed = 0;
     record.angle = 0; record.damage = 10; record.width = record.height = 4;
@@ -436,6 +447,7 @@ TEST(youmu_focus_charge_releases_forty_frames_from_saved_origin) {
 
 TEST(youmu_early_charge_release_produces_no_charge_shots) {
     Fixture fixture; fixture.progress.character = 3; CHECK(fixture.init());
+    fixture.retain_focus();  // 0x442a19-0x442a57：聚焦门需要存活敌机链
     fixture.battle.sht_shots_loaded = true;
     ShtShotRecord record; record.interval = 1; record.speed = 0;
     fixture.battle.sht_shots[5].push_back(record);
