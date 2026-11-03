@@ -5,6 +5,7 @@ import {ActionMenu,ActionMenuItem,ActionMenuCheckboxItem,ActionMenuGroup,ActionM
 import {useLocale} from '../../i18n';
 import {BookButton} from './BookButton';
 import {impressFavorite} from './ink-feedback';
+import {beginFavoriteReorder,useFavoriteReorder} from './favorite-reorder';
 import {multiplayerGroup,type LibraryProduct,type MultiplayerGroup} from './products';
 import {bookArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT,readBookPreference,writeBookPreference,stringArray} from './book-preferences';
@@ -17,6 +18,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   const {t}=useLocale();
   const [savedFavorites,setFavorites]=useState<string[]>([]),[localFilters,setLocalFilters]=useState<string[]>([]);
   const favorites=favoriteProducts??savedFavorites;
+  useFavoriteReorder('.book-lobby-item[data-lobby-product], .book-lobby-picker .book-lobby-menu-row[data-lobby-product], .book-lobby-tile', favorites);
   const [failedArt,setFailedArt]=useState<ReadonlySet<string>>(()=>new Set());
   useEffect(()=>{
     if(favoriteProducts!==undefined)return;
@@ -34,6 +36,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   const selectOnly=(id:string)=>change([id]);
   const reset=()=>change([]);
   const favorite=(id:string)=>{
+    beginFavoriteReorder();
     if(favoriteProducts!==undefined){onFavoriteProductsChange?.(favorites.includes(id)?favorites.filter(value=>value!==id):[...favorites,id]);return;}
     const latest=readBookPreference('multiplayer-favorites',[],stringArray);
     writeBookPreference('multiplayer-favorites',latest.includes(id)?latest.filter(value=>value!==id):[...latest,id]);

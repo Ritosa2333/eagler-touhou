@@ -1,6 +1,7 @@
 import {BookButton} from '../launcher/BookButton';
 import {useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, stringArray} from '../launcher/book-preferences';
+import {useFavoriteReorder} from '../launcher/favorite-reorder';
 import {useLocale} from '../../i18n';
 import {LobbySurface, type LobbySurfaceProps} from '../launcher/LobbySurface';
 import {DirectoryRoomRows} from './DirectoryRoomRows';
@@ -41,6 +42,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     arrivalTimers.current.add(timer);
   }, [snapshot.rooms, snapshot.connection, snapshot.loading]);
   const [favorites, setFavorites] = useState<string[]>([]);
+  useFavoriteReorder('.lobby-room-list > .lobby-room-row', favorites);
   useEffect(() => {
     const refresh = () => setFavorites(readBookPreference('multiplayer-favorites', [], stringArray));
     refresh(); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh); window.addEventListener('storage', refresh);
