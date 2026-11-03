@@ -61,10 +61,23 @@ inline float round001(float value) {
 }
 
 // 0x473a40 缓动表（mode = 脚本插值模式；t = elapsed/duration，f32 除法）。
-// 逐 case 对照反编译；7/17/8 由插值器特判，不经此函数。
+// 逐分支对照 0x473a40 反汇编（跳转表 0x4740ec，索引 = mode-1；入口 0x473a4c dec eax）：
+//   · 0x473a49-0x473a50 先把 t 落 f32；
+//   · 每个分支末尾 fstp dword [esp+4] 再 fld —— 权重按 f32 返回；
+//   · mode 9/0xa..0xe 先算 2t 并落 f32（0x473b18/0x473bc6/0x473c84/0x473c1b/
+//     0x473cdd），mode 0x1b..0x1f 先算 (1-t) 并落 f32（0x473fb6/0x473ff4/
+//     0x474030/0x47406e/0x4740ae）；其余分支中间量在 x87 扩展精度；
+//   · 二次曲线族常量在 0x4ae920..0x4ae9b8，qword 存储但值恰为 f32；
+//     0x17 用 0.48999998f（0x4ae990，≠0.49f）、0x18 用 0.42249995f
+//     （0x4ae970，≠0.4225f），逐位与二进制常量一致。
+// wasm 无 x87，用 double 复刻扩展精度，分支末尾只落一次 f32。
 inline float ease_interp(i32 mode, float elapsed, float duration) {
-    const float t = elapsed / duration;  // f32 除法（原版 fVar1 = param_2 / param_3）
+    const float t = elapsed / duration;  // f32 除法（0x473a4c-0x473a50）
     const double x = t;
+    // 二次曲线族（0x473ece..0x4740dd）：((v-c1)²/c2-c3)/c4，常量见 0x4ae920..0x4ae9b8。
+    const auto quad = [](double v, double shift, double divisor, double subtract, double scale) {
+        return static_cast<float>(((v - shift) * (v - shift) / divisor - subtract) / scale);
+    };
     switch (mode) {
     case 1: return static_cast<float>(x * x);
     case 2: return static_cast<float>(x * x * x);
@@ -73,30 +86,30 @@ inline float ease_interp(i32 mode, float elapsed, float duration) {
     case 5: { const double y = 1.0 - x; return static_cast<float>(1.0 - y * y * y); }
     case 6: { const double y = 1.0 - x; return static_cast<float>(1.0 - y * y * y * y); }
     case 0xa: {
-        const double y = x * 2.0;
+        const double y = double(t * 2.0f);  // 0x473bb8-0x473bc6：2t 落 f32
         if (y < 1.0) return static_cast<float>(y * y * y * 0.5);
         const double z = 2.0 - y;
         return static_cast<float>((2.0 - z * z * z) * 0.5);
     }
     case 0xb: {
-        const double y = x * 2.0;
+        const double y = double(t * 2.0f);
         if (y < 1.0) return static_cast<float>(y * y * y * y * 0.5);
         const double z = 2.0 - y;
         return static_cast<float>((2.0 - z * z * z * z) * 0.5);
     }
     case 0xc: {
-        const double y = x + x;
+        const double y = double(t + t);  // 0x473b5f-0x473b65：2t 落 f32
         if (y < 1.0) return static_cast<float>(0.5 - (1.0 - y) * (1.0 - y) * 0.5);
         return static_cast<float>((y - 1.0) * (y - 1.0) * 0.5 + 0.5);
     }
     case 0xd: {
-        const double y = x + x;
+        const double y = double(t + t);
         if (y < 1.0) { const double z = 1.0 - y; return static_cast<float>(0.5 - z * z * z * 0.5); }
         const double z = y - 1.0;
         return static_cast<float>(z * z * z * 0.5 + 0.5);
     }
     case 0xe: {  // 反编译首分支与 0xd 同式（三次），第二分支四次，照录
-        const double y = x + x;
+        const double y = double(t + t);
         if (y < 1.0) { const double z = 1.0 - y; return static_cast<float>(0.5 - z * z * z * 0.5); }
         const double z = y - 1.0;
         return static_cast<float>(z * z * z * z * 0.5 + 0.5);
@@ -121,21 +134,21 @@ inline float ease_interp(i32 mode, float elapsed, float duration) {
         const float s=float(std::sin(double(a)));
         return twice<1?float((1.0-double(s))*.5):float(double(s)*.5+.5);
     }
-    case 0x16: return static_cast<float>((((x - 0.25) * (x - 0.25)) / 0.5625 - 0.11111111) / 0.8888889);
-    case 0x17: return static_cast<float>((((x - 0.3) * (x - 0.3)) / 0.48999998 - 0.18367349) / 0.8163265);
-    case 0x18: return static_cast<float>((((x - 0.35) * (x - 0.35)) / 0.42249995 - 0.28994083) / 0.71005917);
-    case 0x19: return static_cast<float>((((x - 0.38) * (x - 0.38)) / 0.3844 - 0.37565035) / 0.62434965);
-    case 0x1a: return static_cast<float>((((x - 0.4) * (x - 0.4)) / 0.36 - 0.44444445) / 0.5555556);
-    case 0x1b: { const double y = (1.0 - x) - 0.25; return static_cast<float>(1.0 - ((y * y) / 0.5625 - 0.11111111) / 0.8888889); }
-    case 0x1c: { const double y = (1.0 - x) - 0.3; return static_cast<float>(1.0 - ((y * y) / 0.48999998 - 0.18367349) / 0.8163265); }
-    case 0x1d: { const double y = (1.0 - x) - 0.35; return static_cast<float>(1.0 - ((y * y) / 0.42249995 - 0.28994083) / 0.71005917); }
-    case 0x1e: { const double y = (1.0 - x) - 0.38; return static_cast<float>(1.0 - ((y * y) / 0.3844 - 0.37565035) / 0.62434965); }
-    case 0x1f: { const double y = (1.0 - x) - 0.4; return static_cast<float>(1.0 - ((y * y) / 0.36 - 0.44444445) / 0.5555556); }
+    case 0x16: return quad(x, 0.25, 0.5625, 0.11111111f, 0.8888889f);
+    case 0x17: return quad(x, 0.3f, 0.48999998f, 0.18367349f, 0.8163265f);
+    case 0x18: return quad(x, 0.35f, 0.42249995f, 0.28994083f, 0.71005917f);
+    case 0x19: return quad(x, 0.38f, 0.3844f, 0.37565035f, 0.62434965f);
+    case 0x1a: return quad(x, 0.4f, 0.36f, 0.44444445f, 0.5555556f);
+    case 0x1b: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.25) * (u - 0.25)) / 0.5625 - 0.11111111f) / 0.8888889f); }
+    case 0x1c: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.3f) * (u - 0.3f)) / 0.48999998f - 0.18367349f) / 0.8163265f); }
+    case 0x1d: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.35f) * (u - 0.35f)) / 0.42249995f - 0.28994083f) / 0.71005917f); }
+    case 0x1e: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.38f) * (u - 0.38f)) / 0.3844f - 0.37565035f) / 0.62434965f); }
+    case 0x1f: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.4f) * (u - 0.4f)) / 0.36f - 0.44444445f) / 0.5555556f); }
     default: break;
     }
     // case 9 及 default（含 mode 0）：mode 9 = in-out quad，default = 线性。
     if (mode != 9) return t;
-    const double y = x * 2.0;
+    const double y = double(t * 2.0f);  // 0x473b18：2t 落 f32
     if (y < 1.0) return static_cast<float>(y * y * 0.5);
     return static_cast<float>((2.0 - (2.0 - y) * (2.0 - y)) * 0.5);
 }

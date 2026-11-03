@@ -537,8 +537,13 @@ TEST(bomb_preserves_stage_controller) {
     Fixture f;
     CHECK(f.loaded);
     if (!f.loaded) return;
-    // 418d30 reserves serial 0 and 418f40 assigns serial 1 to the first
-    // controller. Keep this test's preservation check on that actual entity.
+    // 敌机序号从计数器首值 1 起（0x418d30/0x4191a7-0x4191d1）：
+    // 0x418d30 把 ctl+0xbc 计数器（memset 0）复制到 ctl+0xc0（保留 0 号）
+    // 后 inc 回写为 1；0x418f40 的 0x4191a7-0x4191c0 再把 ctl+0xbc 复制到
+    // enemy+0x11e4（oracle raw state 的 serial 字段）并 inc。故 root main
+    // 取首值 1、首个 ECL 敌机（Maple）=2。原生 S4 raw state frame 0 实证：
+    // slot1 serial=1 trace_id=0（root）、slot0 serial=2 trace_id=1。
+    // round-22 的「root serial 0」裁决与原生不符，已按上列地址更正。
     auto* root = f.enemy(1);
     CHECK(root != nullptr);
     if (!root) return;

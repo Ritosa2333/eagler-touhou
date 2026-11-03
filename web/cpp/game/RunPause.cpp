@@ -58,6 +58,7 @@ bool RunPause::finish_selection(i32 entry) {
     if (entry == 3) return platform.open_pause_options() || fail("Pause options request failed");
     if (!animations.retire(state.menu_animation) ||
         !animations.retire(state.snapshot_animation)) return fail(animations.error);
+    animations.clear_captures();
     state.menu_animation = 0;
     switch (entry) {
     case 0:
@@ -96,6 +97,7 @@ bool RunPause::open(PauseEntrance entrance) {
         // A host resource/service failure must not leave a ghost pause behind.
         animations.retire(state.menu_animation);
         animations.retire(state.snapshot_animation);
+        animations.clear_captures();
         state = previous_state;
         progress.rate = previous_rate;
         progress.scene_flags = previous_scene_flags;
@@ -135,6 +137,17 @@ bool RunPause::open(PauseEntrance entrance) {
         rollback();
         return fail(animations.error);
     }
+    // 0x43e3f0:0x43e492-0x43e4d0：backdrop VM 建好后立即调 0x4418b0，把
+    // 战场 (32,16,384,448) 点采样进该 VM 当前精灵的纹理矩形（text.anm
+    // entry1 Blank，sprite76=(0,0,128,128)）。0x45bf10 在 Present 前消费；
+    // port 由 SceneDisplay::before_present → ApplicationState::flush_captures
+    // 执行（见 AnmManager::queue_capture）。缺此截取时 script76-79 的加色
+    // 淡入采样到全零纹理，暂停入场黑幕整段不可见（BUG 7）。
+    // 截取请求是表现增强，不是暂停激活的必要条件：合成夹具/无精灵 backdrop
+    // 下 0x4418b0 也只是空槽 no-op，不得因此让 open 失败（旧测试与无资源
+    // 宿主必须仍能进入暂停）。
+    if (auto* backdrop = animations.registry.find(state.snapshot_animation))
+        animations.queue_capture(*backdrop);
     const i32 script = entrance == PauseEntrance::GameOver ? kGameOverMenuScript
                        : entrance == PauseEntrance::ExtraEnd ? kResultsMenuScript
                        : entrance == PauseEntrance::BGameOver ? kResultsMenuScript

@@ -288,8 +288,18 @@ bool AudioDevice::set_voice_pan(i32 id, float pan) {
 }
 bool AudioDevice::queue_voice(i32 id, i32 entry) {
     auto& a = *impl;
-    if (!a.stats.ready || !error.empty() || id < 0 ||
-        id >= i32(a.definitions.size()) || !a.definitions[u32(id)]) {
+    if (!a.stats.ready || !error.empty()) {
+        if (error.empty())
+            error = "Invalid or uninitialized TH13 sound request: " + std::to_string(id);
+        return false;
+    }
+    // 00460bc0:0x460c19-0x460c42 / 00460c50:0x460cc0-0x460ce3：负数 id 没有
+    // 门（et 发射声 +0x370 可为 -1，S5 f10098-10372 825 次实证）。原版把
+    // 它写入第一个负数（空）通道：通道 id 仍为负（仍是空槽）、该槽计数
+    // 重置为 1、按 id 的 pan 校准表越界写（无音效语义）。空槽在下一次
+    // 请求时仍被视作空，故除本次请求本身外无可观测的持久副作用。
+    if (id < 0) { ++a.stats.requests; return true; }
+    if (id >= i32(a.definitions.size()) || !a.definitions[u32(id)]) {
         if (error.empty())
             error = "Invalid or uninitialized TH13 sound request: " + std::to_string(id);
         return false;

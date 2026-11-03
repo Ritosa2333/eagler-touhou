@@ -507,4 +507,50 @@ TEST(real_resources_match_ring_and_digit_script_map) {
     CHECK((arc->visual.color >> 24) > near_alpha);
 }
 
+TEST(real_resources_spell_end_restores_digit_row) {
+    // round-21 BUG2 残余回归：0x413a60 → 0x412900 在符卡结束（捕获/失败/
+    // 超时同路径）对 ascii script2/3 发 label3 = ins_407(60帧, mode9,
+    // →(x,23))，把符卡期 label2 下移到 y=51 的数字组拉回 y=23。缺失该
+    // 接线时首卡后数字组恒停 51（数字锚 51-7=44、16×16 quad 顶 43，
+    // 即"整组低约 16px"）。开始侧 label2 = 0x413270 → 0x412890（下移 51）。
+    auto ascii = read_raw("artifacts/reference/raw/ascii.anm");
+    CHECK(!ascii.empty());
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager{random, environment};
+    CHECK(manager.load(2, ascii.data(), u32(ascii.size())));
+    CHECK(manager.sprite_fallback(2));
+    auto front = read_raw("artifacts/reference/raw/front.anm");
+    CHECK(!front.empty());
+    CHECK(manager.load(3, front.data(), u32(front.size())));
+    BossPresentation boss{manager, {3, 2, 8}};
+    CHECK(boss.initialize());
+    StageEnemy enemy;
+    enemy.position[1] = 128;
+    enemy.life = 100000.f;
+    BossFrameInput input;
+    input.boss = &enemy;
+    input.timer_seconds = 42;
+    input.timer_frames = 0;
+    input.life_initial = 0;
+    CHECK(boss.update(input, [](i32) { return true; }));
+    auto* tens = manager.registry.find(boss.digit_tens_handle());
+    auto* ones = manager.registry.find(boss.digit_ones_handle());
+    CHECK(tens != nullptr && ones != nullptr);
+    CHECK(tens->variables.position.y == 39.f);  // script2/3 出生位
+
+    boss.spell_started();  // label2：39 → 51（60 帧 mode9 ease）
+    for (int frame = 0; frame < 70; ++frame) CHECK(manager.update());
+    CHECK_NEAR(double(tens->variables.position.y), 51.0, 1e-3);
+    CHECK_NEAR(double(ones->variables.position.y), 51.0, 1e-3);
+    CHECK_NEAR(double(boss.timer_text_y()), 44.0, 1e-3);  // 51 - 7
+
+    boss.spell_ended();  // label3：51 → 23（0x412900）
+    for (int frame = 0; frame < 70; ++frame) CHECK(manager.update());
+    CHECK_NEAR(double(tens->variables.position.y), 23.0, 1e-3);
+    CHECK_NEAR(double(ones->variables.position.y), 23.0, 1e-3);
+    // 符卡后静止段文本锚 = 23 - 7 = 16（原版非符卡静止 y16..32 的下段）。
+    CHECK_NEAR(double(boss.timer_text_y()), 16.0, 1e-3);
+}
+
 int main() { return th13test::run_all("Boss HUD"); }

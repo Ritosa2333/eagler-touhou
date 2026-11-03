@@ -3,6 +3,13 @@
 //   - create 语义对齐 0x46f820：render_flags|=0x200（活动位）；layer∈[0,21)
 //     时 |=0x40000；flags bit0 置位时位置偏移 (+320,+16,0)（游戏坐标→ANM 坐标，
 //     th13 游戏区 384×448）；anmArg 原样落 vm+0x50（=变量 10025/旋转 z 槽）；
+//   - render_flags 稳态：port 模板/主链 0x4000（AnmManager.cpp adopt_bank
+//     的 BUG 8 机制替换——原版 0x46e0b0 预热链与 0x46f820 create 后均无
+//     0xc000 转换，模板/主链稳态 0x8000、不受 0x462450:308 暂停门约束；
+//     0x4000 默认值本身来自 00405010.c:65，但该转换在原版只发生于
+//     0x461cb0 类内嵌 VM）。副链插入清 0（0046f820.c:65,71 原版实清，
+//     port 统一在 AnmRegistry::submit 执行）。模板预热与出生首拍临时置
+//     0x8000（00461bf0.c:22），保证暂停中创建也能执行首拍；
 //   - spawn 子 VM 继承父 layer（0046f990.c:20-22 / 0046fab0.c:20-22）；
 //   - update 单次调用内先主链后副链（AnmRegistry::update）。
 #pragma once
@@ -28,6 +35,19 @@ class AnmManager final:public AnmObjectHost {
     bool initial_tick(AnmVm&);
     bool adopt_bank(i32,std::unique_ptr<Bank>);
 public:
+    // 0x4418b0 / 0x45bf10 屏幕截取队列（ANM 管理器 +0x20，4 槽 × 0x28）：
+    // 暂停激活时 0x43e3f0 把战场 (32,16,384,448) 点采样写进 text.anm
+    // entry1 Blank 纹理的精灵矩形（128×128）；0x45bf10 在 Present 前消费。
+    // port 由宿主在 Draw 末尾（SceneDisplay::before_present）执行。
+    // ⚠ 不变量：resource 裸指针只在**同帧**入队→消费窗口有效（RunPause
+    // 的 finish/rollback 均 clear_captures；bank 常驻不卸载）。跨帧持有
+    // 或延迟消费前必须改存 bank id。
+    struct CaptureRequest {
+        const AnmResource* resource = nullptr;
+        u32 texture = 0;
+        i32 source[4] = {32, 16, 384, 448};  // 战场：x,y,w,h（逻辑像素）
+        i32 destination[4] = {};             // 目标纹理精灵矩形 x,y,w,h
+    };
     AnmRegistry registry;std::string error;float rate=1;
     // [f371 标题重挂] 入场重挂需公开实例化/提交面（oracle 批序尾插语义）。
     using AnmObjectHost::spawn_child;
@@ -91,5 +111,12 @@ public:
     bool update();                 // th13 单帧：主链+副链两遍（0x46f170+0x46f240）
     bool update(bool alternate);   // 单链一遍（th15 调用面兼容：false=主链 true=副链）
     int tick_instance(AnmVm&);
+    // 0x4418b0：把 VM 当前精灵的纹理矩形登记为截取目标（4 槽，满时丢最旧）。
+    bool queue_capture(const AnmVm& vm);
+    std::vector<CaptureRequest> take_captures();
+    void clear_captures() noexcept { captures_.clear(); }
+    bool captures_pending() const noexcept { return !captures_.empty(); }
+private:
+    std::vector<CaptureRequest> captures_;
 };
 }
