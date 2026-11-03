@@ -13,8 +13,11 @@ html:not(:has(.launcher-page-surface))::view-transition-old(root){visibility:vis
 html:not(:has(.launcher-page-surface))::view-transition-new(root){animation:launcher-route-in var(--launcher-route-duration) var(--launcher-route-easing) both}
 @keyframes launcher-route-out{to{opacity:0}}
 @keyframes launcher-route-in{from{opacity:0}}
+html.ui-theme-changing::view-transition-old(root){visibility:visible;z-index:1;animation:launcher-route-out 900ms cubic-bezier(.25,.1,.25,1) both!important}
+html.ui-theme-changing::view-transition-new(root){z-index:0;animation:none!important;opacity:1;mix-blend-mode:normal}
 html:has(body.less-motion)::view-transition-old(launcher-page),html:has(body.less-motion)::view-transition-new(launcher-page),html:has(body.less-motion)::view-transition-old(root),html:has(body.less-motion)::view-transition-new(root){animation:none!important}
 @media(prefers-reduced-motion:reduce){::view-transition-group(launcher-page),::view-transition-old(launcher-page),::view-transition-new(launcher-page),::view-transition-old(root),::view-transition-new(root){animation:none!important}}
+@media(prefers-reduced-motion:reduce){html.ui-theme-changing::view-transition-old(root),html.ui-theme-changing::view-transition-new(root){animation:none!important}}
 @font-face{font-family:"touhou98";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/touhou98.woff2") format("woff2")}
 @font-face{font-family:"ET Yatra";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/yatra-one-latin.woff2") format("woff2")}
 @font-face{font-family:"ET Chill Round";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/chill-round-gothic-site-medium.woff2") format("woff2")}
