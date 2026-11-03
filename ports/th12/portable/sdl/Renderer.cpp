@@ -132,7 +132,9 @@ void Renderer::begin(Color c){
     glClearColor(c.r,c.g,c.b,c.a);glClear(GL_COLOR_BUFFER_BIT);glUseProgram(program);glBindVertexArray(vao);glBindBuffer(GL_ARRAY_BUFFER,vbo);
     draws=vertices=0;current=0;batch.clear();primitive_=Triangles;blend_=-2;material(0);fog_color(0,0,0);
     // A fresh store for this frame's vertices (the GPU may still read the last one).
-    if(!stream_capacity)stream_capacity=size_t(1)<<20;glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream_capacity),nullptr,GL_STREAM_DRAW);stream_used=0;
+    if(!stream_capacity)stream_capacity=64*1024;
+    glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream_capacity),nullptr,GL_STREAM_DRAW);
+    stream_used=0;
 }
 void Renderer::flush(){
     if(batch.empty())return;glBindTexture(GL_TEXTURE_2D,current);
@@ -140,7 +142,10 @@ void Renderer::flush(){
     // and a range nothing has drawn from yet needs no wait.
     const size_t bytes=batch.size()*sizeof(Vertex);
     if(!stream_capacity||stream_used+bytes>stream_capacity){
-        while(stream_capacity<bytes)stream_capacity=std::max<size_t>(stream_capacity*2,size_t(1)<<20);
+        // Grow for the combined demand, so subsequent dense frames can fit
+        // their draws without reallocating in the middle of presentation.
+        const size_t needed=stream_used+bytes;
+        stream_capacity=std::max(stream_capacity*2,needed);
         glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream_capacity),nullptr,GL_STREAM_DRAW);stream_used=0;
     }
     glBufferSubData(GL_ARRAY_BUFFER,GLintptr(stream_used),GLsizeiptr(bytes),batch.data());
@@ -208,8 +213,8 @@ void Renderer::present(i32 ww,i32 wh){
     // Aspect-correct fit with pure black bars (OLED friendly), like the other ports.
     const i32 tw=i32(640*scale_),th=i32(480*scale_);i32 w=ww,h=ww*3/4;if(h>wh){h=wh;w=wh*4/3;}const i32 x=(ww-w)/2,y=(wh-h)/2;
     glBindFramebuffer(GL_READ_FRAMEBUFFER,target);glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
-    glViewport(0,0,ww,wh);glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);
-    glBlitFramebuffer(0,0,tw,th,x,y,x+w,y+h,GL_COLOR_BUFFER_BIT,GL_LINEAR);
+    if(w!=ww||h!=wh){glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);}
+    glBlitFramebuffer(0,0,tw,th,x,y,x+w,y+h,GL_COLOR_BUFFER_BIT,w==tw&&h==th?GL_NEAREST:GL_LINEAR);
     glBindFramebuffer(GL_FRAMEBUFFER,target);
 }
 const u8* Renderer::read_pixels(){
