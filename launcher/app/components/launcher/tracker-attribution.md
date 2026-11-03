@@ -1,0 +1,7 @@
+# Touhou 1CC chart
+
+The chart layout, game definitions, Canvas drawing routines and pixel fonts are adapted from [Doopu / 1ccTracker](https://github.com/doopu/1ccTracker), fetched on 2026-10-28 (index.js Git blob `70b56e980e8893cc5f5d7258e64f2dbf3cae45fd`). The original site credits an earlier community chart whose author is unknown and credits Doopu for recreating its fonts.
+
+`tracker-renderer.ts` retains all 32 upstream game definitions and the cell symbols, with a Th20 table added for Reimu and Marisa in four color variants. Tables are arranged chronologically in three sections: integer works, versus works (PODD, POFV and UDOALG), and decimal works. Compatible game tables join along shared difficulty rows; special routes and scene counts keep their own labels, with a shared layout calculation for rendering, hit targets and export dimensions. The browser-global initialization, DOM controls and storage have been replaced by isolated renderers and the React career viewer. Each instance receives records and display options; it does not read or write browser storage.
+
+The redesigned renderer uses system sans-serif text, softened grid lines and fills, and a bitmap at twice the logical chart resolution. The original font assets remain in `app/assets/1cc-tracker/` for source provenance and are not loaded by the viewer. `tracker-records.ts` owns chart cells and validation. The frontend demo saves under `player-career-chart-v2`. Views, editors, backup import/export and gestures are implemented in `CareerShowcase.tsx`.

@@ -1,0 +1,92 @@
+[
+  {
+    "game": "th06",
+    "file": "th06.webp",
+    "source_file": "docs/assets/game-covers/th06.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E7%BA%A2%E9%AD%94%E4%B9%A1%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "6f8636ee4a7d17d10cce731dc09471d95ed4deed708a02c57db64efdbd697b90",
+    "generated_sha256": "7372871affb74e305c9a3ad1b2de4868e6db814017d593d41c32d108b483e793",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th07",
+    "file": "th07.webp",
+    "source_file": "docs/assets/game-covers/th07.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E5%A6%96%E5%A6%96%E6%A2%A6%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "b180cac769df704a088fb67fd642970197c1655a9fc1880162fcbdd8ff5a7140",
+    "generated_sha256": "1f986582d2abd7d5e92a569d8e4cde4e789f067c9f75108ef727407988b48994",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th075",
+    "file": "th075.webp",
+    "source_file": "docs/assets/game-covers/th075.jpg",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E8%90%83%E6%A2%A6%E6%83%B3%E5%B0%81%E9%9D%A2.jpg",
+    "source_sha256": "b6b8f8e995367ee2793c031d8a962923fff85b76f01d809d7f10feb1fde1e294",
+    "generated_sha256": "5b139f75c1b8538d52c725f7fc4a4262a080d150ba986080c4c712f76e8fdf18",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th08",
+    "file": "th08.webp",
+    "source_file": "docs/assets/game-covers/th08.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E6%B0%B8%E5%A4%9C%E6%8A%84%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "202d65a9af19293bf6a970d30164207aa82071bc2b4dba45c10ee60042a986bc",
+    "generated_sha256": "6bb559f10ff986dc58debd6bcf2d012da448e5a43fab6b0010f93d33f33cdc2a",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th09",
+    "file": "th09.webp",
+    "source_file": "docs/assets/game-covers/th09.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E8%8A%B1%E6%98%A0%E5%A1%9A%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "2df83220056ed3e2ce188521083b7377ac76dca6e3b41e68957c31e63108648f",
+    "generated_sha256": "4cdb23f0945c911630238549649608b1b23ee5df3385aefcf40bcc156b3469ec",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th10",
+    "file": "th10.webp",
+    "source_file": "docs/assets/game-covers/th10.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E9%A3%8E%E7%A5%9E%E5%BD%95%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "1bca0cab2cd2b9446a6e71eef5057103a2e1d9356e9f24d1e537827732c3cd13",
+    "generated_sha256": "34054a4fa265a78958d7277f2d25ece1e9cf7a9f9325fe61838201816be49831",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th11",
+    "file": "th11.webp",
+    "source_file": "docs/assets/game-covers/th11.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E5%9C%B0%E7%81%B5%E6%AE%BF%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "050691293e8ec71ef7caefc9ee73857647557670486b91bbf02a5e4a90e69e61",
+    "generated_sha256": "3e6f48be1fd83ce8af1b1b221afd163295da3a1e470ef043e64a3c71fc30a571",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th12",
+    "file": "th12.webp",
+    "source_file": "docs/assets/game-covers/th12.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E6%98%9F%E8%8E%B2%E8%88%B9%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "1981510ddf78dbeaf13f24a70e968e3f072a3952980c97758bcaeb41359c5f70",
+    "generated_sha256": "c025dc3d1ae5f09e08088cafd09d724de7d48f9e1f6b91cb13ef298498b827d4",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th15",
+    "file": "th15.webp",
+    "source_file": "docs/assets/game-covers/th15.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E7%BB%80%E7%8F%A0%E4%BC%A0%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "b1551513dd8bcd2158dd3eefeb6a334e35f68921cfb522416f30ac6c33273b30",
+    "generated_sha256": "147242c3dd7a79334feee75facb6dc22e8288ad2aa131c3ae5077c25878f9d9d",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
+    "game": "th20",
+    "file": "th20.webp",
+    "source_file": "docs/assets/game-covers/th20.jpg",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E9%94%A6%E4%B8%8A%E4%BA%AC%E5%B0%81%E9%9D%A2.jpg",
+    "source_sha256": "db96503c7fee9971781a26d4993d1097a1740d77e68348249d6823d19abb3fb4",
+    "generated_sha256": "abc0f6c96e44d6981cd9517c2a237a059be3afd9c1d5c6171b8ee7f50bfe0d3b",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  }
+]

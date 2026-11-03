@@ -48,6 +48,10 @@ export function createNativeLocalReplay({core: getCore,module: getModule,physica
     try{heap().set(bytes,p);return fn(p,bytes.length);}finally{free(p);}
   }
   const bridge=createLocalReplay({
+    canRelocate:()=>typeof api('eagler_replay_relocate')==='function',
+    relocate(from,to){return bytesCall(cbytes(physical(from)),source=>bytesCall(cbytes(physical(to)),target=>{
+      if(api('eagler_replay_relocate')(source,target)!==1)throw Error('Native replay path relocation failed');
+    }));},
     async prepare(){const ready=api('eagler_replay_ready');if(!ready)return;const deadline=performance.now()+30000;
       while(!ready()){if(performance.now()>deadline)throw Error('录像播放器初始化超时');await new Promise(requestAnimationFrame);}},
     inspect(path){const p=physical(path),fn=api('eagler_replay_inspect');if(!fn)throw Error('此 Runtime 需要更新后才能解析录像');

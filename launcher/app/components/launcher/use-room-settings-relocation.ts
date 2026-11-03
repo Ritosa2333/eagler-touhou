@@ -2,6 +2,7 @@ import {useLayoutEffect, type RefObject} from 'react';
 /** Main app2184–2210: one header and one settings fold, moved not cloned.
  * Restore React's expected parent before dependency change/unmount deletion. */
 export function useRoomSettingsRelocation(panel: RefObject<HTMLElement | null>, active: boolean, productId: string) {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Product changes replace the owned settings subtree, so restore its old parents before React removes it.
   useLayoutEffect(() => {
     if (!active) return;
     const source = panel.current, header = source?.querySelector<HTMLElement>(':scope > .tools-head'), fold = source?.querySelector<HTMLElement>('#mpSettingsFold');

@@ -1,8 +1,7 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Run from repository root: node tests/react-main/site-notice.run.mjs */
-import {execFileSync} from 'node:child_process';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
-import {builtinModules, createRequire} from 'node:module';
+import {createRequire} from 'node:module';
 import {dirname, isAbsolute, join, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {mkdtemp, writeFile, rm} from 'node:fs/promises';
@@ -11,7 +10,6 @@ const directory = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(directory, '../..');
 const requireFromRepo = createRequire(join(repo, 'package.json'));
 const {build} = requireFromRepo('esbuild');
-const builtins = new Set(builtinModules.flatMap(name => [name, `node:${name}`]));
 // Build only from repository inputs; isolate and remove each run's generated bundle.
 const buildDirectory = await mkdtemp(join(directory, 'site-notice-build-'));
 const output = join(buildDirectory, 'checks.mjs');
@@ -34,7 +32,7 @@ try {
       build.onResolve({filter: /^[^./]/}, args => {
         if (args.kind === 'entry-point' || isAbsolute(args.path)) return;
         if (args.path.startsWith('@source/') || args.path.startsWith('@pinned/')) return;
-        return {path: builtins.has(args.path) ? args.path : pathToFileURL(requireFromRepo.resolve(args.path)).href, external: true};
+        return {path: args.path, external: true};
       });
     }}, authoredSourcesPlugin(repo)],
   });

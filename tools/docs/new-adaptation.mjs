@@ -13,7 +13,11 @@ export const MANUAL_EVIDENCE = '<!-- manual-verification -->';
 
 export function preserveManualEvidence(generated, existing = '') {
   const start=existing.indexOf(MANUAL_EVIDENCE);
-  return start<0 ? generated : generated.slice(0,generated.indexOf(MANUAL_EVIDENCE))+existing.slice(start);
+  const generatedMarker=generated.indexOf(MANUAL_EVIDENCE);
+  if (start<0 || generatedMarker<0) return generated;
+  const existingPrefix=existing.slice(0,start), newline=existingPrefix.match(/\r\n|\n/)?.[0] ?? '\n';
+  const generatedPrefix=generated.slice(0,generatedMarker).replace(/\r\n|\n/g,newline);
+  return generatedPrefix+existing.slice(start);
 }
 
 export function portDefinitions() {

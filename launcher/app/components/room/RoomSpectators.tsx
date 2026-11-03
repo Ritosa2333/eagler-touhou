@@ -1,14 +1,17 @@
+import {Button as UiButton} from '../../ui/controls';
+import {OverflowText} from '../../ui/overflow-text';
 import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-identity.mts';
 import type { RoomOwnerSnapshot, MultiplayerRoomService } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
 import { roomPresentation } from './presentation';
+type SpectatorActions = Pick<MultiplayerRoomService, 'removeSpectator' | 'spectate' | 'leaveSpectator'>;
 export function RoomSpectators({
   state,
   service,
   hidden,
 }: {
   state: RoomOwnerSnapshot;
-  service: MultiplayerRoomService;
+  service: SpectatorActions;
   hidden: boolean;
 }) {
   const { t } = useLocale(),
@@ -43,7 +46,7 @@ export function RoomSpectators({
                   {multiplayerDisplayInitial(entry.name, '?')}
                 </span>
                 <div className="mp-spectator-copy">
-                  <strong>{title}</strong>
+                  <strong><OverflowText>{title}</OverflowText></strong>
                   <small>
                     {t(
                       state.product === 'th09mp' && room.phase !== 'lobby'
@@ -54,7 +57,7 @@ export function RoomSpectators({
                 </div>
                 <span className="mp-spectator-marker">{mine ? t('multiplayer.you') : ''}</span>
                 {owner && ready && room.phase === 'lobby' && !mine && (
-                  <button
+                  <UiButton variant="danger"
                     type="button"
                     className="mp-spectator-remove"
                     aria-label={t('room.removeSpectator')}
@@ -64,7 +67,7 @@ export function RoomSpectators({
                     }}
                   >
                     ×
-                  </button>
+                  </UiButton>
                 )}
               </div>
             );
@@ -80,12 +83,12 @@ export function RoomSpectators({
 
 export function RoomSpectatorJoin({state, service, id = 'mpSpectatorJoin', className = 'mp-spectator-join'}: {
   state: RoomOwnerSnapshot;
-  service: MultiplayerRoomService;
+  service: SpectatorActions;
   id?: string;
   className?: string;
 }) {
   const {t} = useLocale(), {room, ready, config} = roomPresentation(state,t)!;
-  return <button
+  return <UiButton
         className={className}
         id={id}
         type="button"
@@ -97,5 +100,5 @@ export function RoomSpectatorJoin({state, service, id = 'mpSpectatorJoin', class
         onClick={state.spectatorRequested ? service.leaveSpectator : service.spectate}
       >
         {t(state.spectatorRequested ? 'multiplayer.leaveSpectator' : 'multiplayer.joinSpectator')}
-      </button>;
+      </UiButton>;
 }

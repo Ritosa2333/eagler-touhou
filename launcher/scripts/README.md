@@ -7,15 +7,15 @@
 以下命令从 `launcher/` 运行：
 
 ```sh
-npm run dev
-npm run build
-npm run typecheck
-npm test
+bun run dev
+bun run build
+bun run typecheck
+bun run test
 ```
 
 `dev` 启动 React Router 前端。`build` 更新 vendored 浏览器资源和生成内容、编译客户端服务并构建前端产物。`typecheck` 检查应用和构建工具 TypeScript。`test` 运行 React 应用测试集。
 
-`npm start` 和 `npm run dev:workspace` 运行 `serve.mjs`，提供已构建前端和 workspace 开发元数据。稀疏检出时，将 `EAGLER_DEVELOPMENT_GAMES` 设为一个作品编号。
+`npm start` 和 `bun run dev:workspace` 运行 `serve.mjs`，提供已构建前端和 workspace 开发元数据。稀疏检出时，将 `EAGLER_DEVELOPMENT_GAMES` 设为一个作品编号。
 
 ## 构建与发布入口
 

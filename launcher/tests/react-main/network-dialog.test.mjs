@@ -1,7 +1,8 @@
+import {uiContractAttributes} from './mounted-dom-environment.mjs';
 import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Pinned-main network dialog parity: synthetic DOM/MemoryRouter and fake IO.
  * No browser, server, live WebSocket/ICE/TURN, native top-layer or pixel claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -222,7 +223,7 @@ async function mount(initial = {}, {locale = 'en', strict = false} = {}) {
   mounts.add(m); await render(); return m;
 }
 function normalized(node) {
-  const attrs = [...node.attributes].filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
+  const attrs = uiContractAttributes(node).filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
     .map(attr => [attr.name, attr.value]).sort(([a], [b]) => a.localeCompare(b));
   const children = []; let text = '';
   const flush = () => {const value = text.replace(/\s+/g, ' ').trim(); if (value) children.push(value); text = '';};

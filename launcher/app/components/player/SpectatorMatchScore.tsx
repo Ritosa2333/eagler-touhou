@@ -54,7 +54,7 @@ export function SpectatorMatchScore({ wins, minutes, names = ['', ''] }: {
     panel.dataset.elapsedLabel = t('th09.elapsed', {minutes});
     const duration = panel.querySelector('#spectatorMatchDuration');
     if (duration) duration.textContent = panel.dataset.elapsedLabel;
-  }, [target, minutes, locale, t]);
+  }, [target, minutes, t]);
   return <><div ref={host} className="th09-playback-host" />{target ? createPortal(<>
     <span className="spectator-score-player" title={names[0]}>{`P1${names[0] ? `(${names[0]})` : ''}`}</span>
     <span className="spectator-score-value">{`<${wins[0]} : ${wins[1]}>`}</span>

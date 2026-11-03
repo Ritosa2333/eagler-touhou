@@ -6,10 +6,10 @@
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 node ports/th09/web/scripts/prepare-retail-assets.mjs --help
 node ports/th09/web/scripts/prepare-retail-assets.mjs 'C:\Games\TH09' --font-root 'C:\local-content\th09-fonts'
 node launcher/scripts/prepare-th09-content.mjs --original='C:\Games\TH09' --output='ports/th09/assets-ogg'
@@ -22,7 +22,7 @@ $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th09 --variant=normal --emsdk='C:\tools\emsdk'
 node ports/th09/web/scripts/build-eagler.mjs
 node ports/th09/web/scripts/build-eagler.mjs --multiplayer
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 

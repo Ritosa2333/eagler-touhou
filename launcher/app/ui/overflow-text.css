@@ -1,0 +1,7 @@
+@layer components {
+  .ui-overflow-text {display:block;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;white-space:nowrap;text-overflow:clip;scrollbar-width:none;overscroll-behavior-x:contain}
+  .ui-overflow-text:focus-visible {outline:2px solid var(--kit-ring);outline-offset:2px;border-radius:2px}
+  .ui-overflow-text-label {display:block;width:max-content;min-width:100%}
+  .ui-overflow-text[data-align='end']>.ui-overflow-text-label {text-align:end}
+  .ui-overflow-text[data-align='center']>.ui-overflow-text-label {text-align:center}
+}

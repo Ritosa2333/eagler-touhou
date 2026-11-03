@@ -1,7 +1,7 @@
 /** Synthetic DOM + real Router/provider policy tests only. Main i18n891–918,
  * dialog-navigation and app5338–5383 are the contract. This is not a rendered
  * Launcher/browser/game/visual acceptance suite; that entry has separate tests. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -22,7 +22,7 @@ before(async () => {
   const file = resolve(work, 'policy.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {readPageHistory} from './app/navigation/page-history.ts';
-    export {launcherBaseUrl, routerDestination} from './app/navigation/addresses.ts';
+    export {launcherBaseUrl, routerDestination, isLauncherHomePath} from './app/navigation/addresses.ts';
     export {SurfaceNavigationProvider, useSurfaceNavigation, preserveSameRoomDirectoryOrigin} from './app/navigation/surface-navigation.tsx';
     export {roomRouteHistoryOperation, returnToRoomHistoryOperation, resolveRoomInvite} from './src/launcher/route-state.mts';
     export {encodeRoomInvite} from './src/launcher/room-invite.mts';
@@ -75,6 +75,23 @@ async function mount(initial = {pathname: '/', search: '?keep=a%20b', hash: '#or
 const state = () => mounted.router.state.location.state;
 const decisionOpen = () => env.document.getElementById('decisionDialog').open;
 
+test('all localized home documents share notice and gesture ownership', () => {
+  for (const path of ['/', '/index.html', '/en.html', '/ja.html', '/index.html/', '/en.html/', '/ja.html/']) assert.equal(owner.isLauncherHomePath(path), true, path);
+  for (const path of ['/profile.html', '/login.html', '/lobby.html', '/ui-review.html', '/unknown']) assert.equal(owner.isLauncherHomePath(path), false, path);
+});
+
+test('directory product normalization preserves locale, opaque query bytes, hash and history state', async () => {
+  const controls = await mount({pathname: '/lobby.html', search: '?lang=ja&keep=a%20b&keep=%2f%2F&games=th07mp%2Cth09mp&game=th06mp', hash: '#section', state: {unrelated: 7}});
+  await settle(() => controls.navigation.selectLobbyProduct('th10mp'));
+  assert.equal(href(), '/lobby.html?lang=ja&keep=a%20b&keep=%2f%2F&game=th10mp#section');
+  assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  assert.equal(state().unrelated, 7);
+  await settle(() => controls.navigation.setLocaleAddress('en'));
+  assert.equal(href(), '/lobby.html?keep=a%20b&keep=%2f%2F&game=th10mp&lang=en#section');
+  await settle(() => controls.navigation.selectLobbyProduct(''));
+  assert.equal(href(), '/lobby.html?keep=a%20b&keep=%2f%2F&lang=en#section');
+});
+
 for (const context of ['library', 'lobby']) test(`policy: locale replacement preserves dirty touch and informational parent in ${context}`, async () => {
   const initial = {pathname: context === 'lobby' ? '/lobby.html' : '/', search: '?game=th06mp&keep=a%20b', hash: '#original', state: {unrelated: 7}};
   const controls = await mount(initial);
@@ -90,7 +107,7 @@ for (const context of ['library', 'lobby']) test(`policy: locale replacement pre
   assert.equal(decisionOpen(), false, 'informational descendants never discard underlying draft');
   const infoParent = state().launcherInformationDialogs.parentKey;
   await settle(() => controls.navigation.setLocaleAddress('en'));
-  assert.equal(href(), `${context === 'lobby' ? '/lobby.html' : '/en.html'}?game=th06mp&keep=a%20b#original`);
+  assert.equal(href(), `${context === 'lobby' ? '/lobby.html' : '/en.html'}?game=th06mp&keep=a%20b${context === 'lobby' ? '&lang=en' : ''}#original`);
   assert.equal(mounted.router.state.historyAction, 'REPLACE');
   assert.equal(controls.navigation.surface, 'touch');
   assert.equal(controls.discardCount, 0); assert.equal(decisionOpen(), false);
@@ -119,7 +136,7 @@ test('policy: locale replaces directory form URL without adding a history layer 
   await settle(() => controls.navigation.openDirectoryForm('join'));
   const parent = state().launcherDirectoryForm.parentKey;
   await settle(() => controls.navigation.setLocaleAddress('en'));
-  assert.equal(href(), directory); assert.equal(controls.navigation.directoryFormMode, 'join');
+  assert.equal(href(), directory.replace('#original', '&lang=en#original')); assert.equal(controls.navigation.directoryFormMode, 'join');
   assert.equal(state().launcherDirectoryForm.parentKey, parent);
   assert.equal(state().unrelated, 7);
   await settle(() => controls.navigation.closeSurface());
@@ -246,7 +263,7 @@ test('policy: directory create token settles one-shot intent, preserves return o
   assert.deepEqual(JSON.parse(Buffer.from(token, 'base64url').toString()), {g: 'th06mp', r: '4079', f: true});
   assert.equal(controls.navigation.playerOpen, false); assert.equal(state().unrelated, 7);
   await settle(() => controls.navigation.closeSurface());
-  assert.equal(controls.leaveCount, 1); assert.equal(href(), '/lobby.html?keep=a+b&game=th06mp#original');
+  assert.equal(controls.leaveCount, 1); assert.equal(href(), '/lobby.html?keep=a+b&game=th06mp&lang=en#original');
   assert.equal(controls.navigation.surface, 'library'); assert.equal(controls.navigation.context, 'lobby');
 });
 
@@ -571,6 +588,34 @@ for (const fromDirectory of [false, true]) test(`source-derived room leave alway
 });
 
 
+for (const filter of ['', '?game=th07mp', '?games=th07mp%2Cth09mp']) {
+  for (const entry of ['directory', 'options']) test(`room exit restores directory filter ${filter || 'all'} via ${entry}`, async () => {
+    const controls = await mount({pathname:'/lobby.html', search:filter, hash:'', state:{}});
+    if (entry === 'options') await settle(() => controls.navigation.openOptions('th06mp'));
+    const token = owner.encodeRoomInvite({g:'th06mp', r:'4079', f:true});
+    await settle(() => controls.navigation.navigateAddress(`/?j=${token}`));
+    await settle(() => controls.navigation.restoreRoomRoute({product:'th06mp',code:'4079',fromDirectory:true}));
+    await settle(() => controls.navigation.openRoomSettings());
+    await settle(() => controls.navigation.leaveRoomRoute({product:'th06mp',fromDirectory:true}));
+    assert.equal(href(), `/lobby.html?lang=en${filter ? '&' + filter.slice(1) : ''}`);
+    assert.equal(controls.navigation.context, 'lobby');
+    assert.equal(controls.navigation.roomCode, null);
+    assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  });
+}
+
+test('room reload retains its directory filters through canonicalization and exit', async () => {
+  let controls = await mount({pathname:'/lobby.html',search:'?games=th07mp%2Cth09mp',hash:'',state:{}});
+  await settle(() => controls.navigation.navigateAddress(`/?j=${owner.encodeRoomInvite({g:'th06mp',r:'4079',f:true})}`));
+  const saved = {...mounted.router.state.location};
+  await React.act(async () => mounted.root.unmount());
+  mounted.router.dispose(); mounted = null; env.document.body.replaceChildren();
+  controls = await mount(saved);
+  await settle(() => controls.navigation.restoreRoomRoute({product:'th06mp',code:'4079',fromDirectory:true}));
+  await settle(() => controls.navigation.leaveRoomRoute({product:'th06mp',fromDirectory:true}));
+  assert.equal(href(), '/lobby.html?lang=en&games=th07mp%2Cth09mp');
+});
+
 for (const exit of ['button', 'browser']) test(`original hidden home-editor action retains product and consumes one child by ${exit}`, async () => {
   const controls = await mount();
   await settle(() => controls.navigation.openOptions('th07'));
@@ -870,5 +915,5 @@ test('persistent Replay workspace replaces its options layer and closes without 
   assert.equal(state().unrelated, 7);
   await settle(() => controls.navigation.closeSurface());
   assert.equal(controls.navigation.surface, 'library', 'the options Back button closes with one click after Replay return');
-  assert.equal(mounted.router.state.historyAction, 'REPLACE', 'numeric parent offsets cannot traverse a retired iframe');
+  assert.equal(mounted.router.state.historyAction, 'POP', 'options returns to its real page parent after the Replay carrier is retired');
 });

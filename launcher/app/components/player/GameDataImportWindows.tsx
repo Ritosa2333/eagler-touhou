@@ -1,4 +1,5 @@
-import {useLayoutEffect, useSyncExternalStore} from 'react';
+import {Button as UiButton} from '../../ui/controls';
+import {useEffectEvent, useLayoutEffect, useSyncExternalStore} from 'react';
 import {useLocale} from '../../i18n';
 import type {GameDataImportModel} from '../../models/game-data-import';
 import {closeMainSelectMenus} from '../launcher/MainSelect';
@@ -15,19 +16,20 @@ export interface GameDataImportWindowsProps {
  */
 export function GameDataImportWindows({model, getRuntimeReady}: GameDataImportWindowsProps) {
   const {t} = useLocale(), state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
-  useLayoutEffect(() => {
+  const present = useEffectEvent(() => {
     // Main app.mts3361/9656 closes menus on presentation, including repeated
     // opens. A hidden remount must not replay an earlier presentation, and
     // busy/progress/metadata changes are not presentation events.
-    if (state.presentationRevision && (state.importOpen || state.linkOpen)) closeMainSelectMenus();
-  }, [state.presentationRevision]);
+    if (state.importOpen || state.linkOpen) closeMainSelectMenus();
+  });
+  useLayoutEffect(() => {if (state.presentationRevision) present();}, [state.presentationRevision]);
   const fallback = state.fallback;
   return <>
     <TransientWindow id="gameDataImportWindow" titleId="gameDataImportTitle" title={t('package.importTitle')}
       closeId="gameDataImportClose" closeLabel={t('package.closeImport')} open={state.importOpen} busy={state.busy} onClose={model.dismissImport}>
       <p id="gameDataImportReason">{state.reason || t('package.unavailable')}</p>
       <div className="game-data-import-busy" id="gameDataImportBusy" role="status" aria-live="polite" hidden={!state.busy}><i className="eagler-preload-spinner" aria-hidden="true"/><span id="gameDataImportBusyText">{state.busyText || t('package.installing')}</span></div>
-      <div className="game-data-import-actions"><button className="transfer-import" id="transferImport" type="button" disabled={state.busy} onClick={() => {void model.chooseFile();}}>{t('action.import')}</button><button className="transfer-download" id="transferDownload" type="button" disabled={state.busy || !fallback} title={t(fallback ? 'package.fallbackLinkTitle' : 'package.fallbackLinkUnavailableTitle')} onClick={model.openLink}>{t('action.openLink')}</button></div>
+      <div className="game-data-import-actions"><UiButton variant="primary" className="transfer-import" id="transferImport" type="button" disabled={state.busy} onClick={() => {void model.chooseFile();}}>{t('action.import')}</UiButton><UiButton className="transfer-download" id="transferDownload" type="button" disabled={state.busy || !fallback} title={t(fallback ? 'package.fallbackLinkTitle' : 'package.fallbackLinkUnavailableTitle')} onClick={model.openLink}>{t('action.openLink')}</UiButton></div>
       <input id="gameDataImportInput" type="file" accept=".zip,.dat,application/zip" hidden onChange={event => {const file = event.currentTarget.files?.[0] ?? null; event.currentTarget.value = ''; void model.importFile(file);}}/>
     </TransientWindow>
     <TransientWindow variant="reference" id="gameDataLinkWindow" titleId="gameDataLinkTitle" title={t('package.downloadTitle')}

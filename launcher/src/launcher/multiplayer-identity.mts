@@ -29,7 +29,7 @@ export function multiplayerMemberId(): string {
   const key = "eagler-touhou-mp-member-v1";
   try {
     const saved = localStorage.getItem(key);
-    if (validMultiplayerClientId(saved)) return rememberedMemberId = saved;
+    if (validMultiplayerClientId(saved)) {rememberedMemberId = saved; return saved;}
   } catch {}
   const words = new Uint32Array(4);
   // Membership also authorizes room transports. Fail closed if cryptographic

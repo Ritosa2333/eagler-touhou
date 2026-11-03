@@ -37,7 +37,7 @@ export function readOriginalBootstrap() {
     const compatibility = name === 'index.html' ? inner(find(element => element.tagName === 'script' && !!element.sourceCodeLocation?.endTag && inner(element).includes('var supportedChromium ='))) : '';
     return {script: inner(script), compatibility, css: inner(css), preload: source.slice(loc.startOffset, loc.endOffset)};
   }
-  return {library: fromFile('index.html'), lobby: fromFile('lobby.html')};
+  return {library: fromFile('index.html'), lobby: fromFile('lobby.html'), theme: readFileSync(fileURLToPath(new URL('../../app/ui/tokens.css', import.meta.url)), 'utf8')};
 }
 export function originalBootstrap(): Plugin {
   return {name: 'current-main-bootstrap',
@@ -46,6 +46,7 @@ export function originalBootstrap(): Plugin {
       if (id !== resolvedId) return;
       this.addWatchFile(fileURLToPath(new URL('../../public/bootstrap/index.html', import.meta.url)));
       this.addWatchFile(fileURLToPath(new URL('../../public/bootstrap/lobby.html', import.meta.url)));
+      this.addWatchFile(fileURLToPath(new URL('../../app/ui/tokens.css', import.meta.url)));
       return `export const originalBootstrap = ${JSON.stringify(readOriginalBootstrap())};`;
     },
   };

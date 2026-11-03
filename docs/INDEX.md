@@ -1,6 +1,6 @@
 # 文档总表
 
-共 404 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 409 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -147,6 +147,7 @@
 | Launcher | [launcher/README.en.md](../launcher/README.en.md) | launcher README |
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
 | Launcher | [launcher/THIRD_PARTY.md](../launcher/THIRD_PARTY.md) | 第三方软件与资源致谢 |
+| Launcher | [launcher/app/components/launcher/tracker-attribution.md](../launcher/app/components/launcher/tracker-attribution.md) | Touhou 1CC chart |
 | Launcher | [launcher/compat/README.md](../launcher/compat/README.md) | 旧数据迁移 |
 | Launcher | [launcher/content/MULTIPLAYER.md](../launcher/content/MULTIPLAYER.md) | 联机玩法介绍 |
 | Launcher | [launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md](../launcher/docs/ADAPTER_BEHAVIOR_INVARIANTS.md) | Adapter 行为不变量 |
@@ -165,6 +166,9 @@
 | Launcher | [launcher/docs/TOUCH_FUNCTION_KEY.md](../launcher/docs/TOUCH_FUNCTION_KEY.md) | 移动端 C 功能键 |
 | Launcher | [launcher/docs/TOUHOU_PROGRESS.md](../launcher/docs/TOUHOU_PROGRESS.md) | 东方作品进度 |
 | Launcher | [launcher/docs/assets/game-covers/README.md](../launcher/docs/assets/game-covers/README.md) | 游戏封面 |
+| Launcher | [launcher/docs/frontend-tooling.md](../launcher/docs/frontend-tooling.md) | 前端检查与测试 |
+| Launcher | [launcher/docs/paraglide-i18n.md](../launcher/docs/paraglide-i18n.md) | 界面语言与消息编译 |
+| Launcher | [launcher/docs/ui-controls.md](../launcher/docs/ui-controls.md) | 启动器 UI ｜ 源码研究与扩展设计 |
 | Launcher | [launcher/examples/deployment/README.md](../launcher/examples/deployment/README.md) | HTTP 配置示例 |
 | Launcher | [launcher/integrations/LOCALIZATION.md](../launcher/integrations/LOCALIZATION.md) | 语言包与字体 |
 | Launcher | [launcher/integrations/RUNTIME_CONTRACT.md](../launcher/integrations/RUNTIME_CONTRACT.md) | Runtime 语言包与 thprac 接口 |
@@ -303,6 +307,7 @@
 | 许可证与声明 | [launcher/NOTICE.txt](../launcher/NOTICE.txt) | 本项目是[车万云](https://cloud.touhou.best/)的一个子项目。 |
 | 许可证与声明 | [launcher/content/FIRST_USE_NOTICE.md](../launcher/content/FIRST_USE_NOTICE.md) | 首次使用须知 |
 | 许可证与声明 | [launcher/public/assets/LICENSE-Phosphor.txt](../launcher/public/assets/LICENSE-Phosphor.txt) | MIT License |
+| 许可证与声明 | [launcher/public/assets/brand/LICENSE.txt](../launcher/public/assets/brand/LICENSE.txt) | Creative Commons Legal Code |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-ChillRoundGothic.txt](../launcher/public/assets/fonts/OFL-ChillRoundGothic.txt) | OFL ChillRoundGothic |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-Unifont.txt](../launcher/public/assets/fonts/OFL-Unifont.txt) | OFL Unifont |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-YatraOne.txt](../launcher/public/assets/fonts/OFL-YatraOne.txt) | OFL YatraOne |

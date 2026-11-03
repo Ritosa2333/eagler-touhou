@@ -2,13 +2,13 @@
  * No browser, CSS geometry, mobile, native Runtime, durable storage or game pass.
  * Original tests/test-route-state.mjs and test-touch-settings-browser.py remain intact.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
-import {existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
-import {dirname, resolve} from 'node:path';
+import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
+import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
@@ -37,17 +37,9 @@ before(async () => {
       export {touchLayoutStorageKey, touchLayoutVersion, touchLayoutControlNames,
         touchLayoutControlMeta, normalizeTouchLayoutPriorityOrder} from './src/launcher/touch-layout-model.mts';
     `},
-    bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: output,
+    bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile: output,
     packages: 'external', logLevel: 'silent',
-    plugins: [{name: 'authored-main-mts-siblings', setup(context) {
-      // Main NodeNext authored modules name emitted .mjs siblings. Resolve the
-      // same authored owner for this TSX test build; no behavior is substituted.
-      context.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {
-        const source = resolve(dirname(args.importer), args.path);
-        const authored = source.slice(0, -4) + '.mts';
-        return source.replaceAll('\\', '/').startsWith(resolve(project, 'src').replaceAll('\\', '/') + '/') && existsSync(authored) ? {path: authored} : undefined;
-      });
-    }}],
+    plugins: [authoredSourcesPlugin(project)],
   });
   owners = await import(pathToFileURL(output).href);
 });
@@ -57,7 +49,7 @@ afterEach(async () => {
     const current = mounted; mounted = null;
     await React.act(async () => {current.root.unmount();});
     current.router.dispose(); current.host.decisions?.dispose();
-    assert.equal(env.document.querySelectorAll('.mizuki-select-menu').length, 0, 'generated select menus are removed after full entry unmount');
+    assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0, 'generated select menus are removed after full entry unmount');
     assert.equal(env.document.querySelectorAll('.mizuki-select').length, 0, 'generated select wrappers are removed after full entry unmount');
     assert.deepEqual(current.errors, [], 'actual entry must not report unexpected errors');
     assert.deepEqual(env.errors, [], 'uncaught DOM and React errors fail the synthetic test, even if route assertions pass');
@@ -125,7 +117,7 @@ async function mountEntry(initialEntries = ['/?keep=1#retained'], {seedLayout = 
     // Explicit host-only fixture slots. Settings/editor/navigation are real.
     masthead: React.createElement('header', {'data-fixture-host': true}), footer: null,
     lobby: {masthead: null, onGuide: null, onNetwork: null,
-      roomTools: roomOptionsProduct ? React.createElement(FixtureRoomSettingsAction, {product: roomOptionsProduct}) : null, roomList: null,
+      roomTools: React.createElement(FixtureRoomSettingsAction, {product: roomOptionsProduct || new URLSearchParams(initialEntries.at(-1)?.search || '').get('game') || 'th06mp'}), roomList: null,
       hasRooms: false, loading: false, emptyState: null, roomCount: ''},
   };
   const application = React.createElement(owners.LauncherApplication, {host});
@@ -167,13 +159,14 @@ async function tick() {await React.act(async () => {await new Promise(resolve =>
 async function until(predicate, message) {
   const deadline = Date.now() + 2500;
   while (!predicate() && Date.now() < deadline) await tick();
-  assert.ok(predicate(), message);
+  assert.ok(predicate(), `${message} | ${JSON.stringify({url:url(),editor:hasEditor(),visibleOptions:visibleOptions(),decision:env.document.querySelector('#decisionDialog')?.open,dirty:mounted.host.touchLayout.getSnapshot().dirty})}`);
 }
 async function click(selector) {await React.act(async () => {node(selector).click();}); await tick();}
 // Main lobby retains the embedded options document while its native carrier
 // closes; only an open carrier makes those controls a visible options surface.
 function visibleOptions() {
-  const panel = env.document.querySelector('.tools[aria-hidden="false"]');
+  // Radix may restore an absent aria-hidden attribute. It is visible too.
+  const panel = env.document.querySelector('.tools[data-state="open"]:not([inert])');
   const carrier = panel?.closest('dialog.lobby-options-host');
   return !!panel && (!carrier || carrier.open);
 }
@@ -186,7 +179,7 @@ function hasParent(context) {
     !!env.document.querySelector(context === 'lobby' ? '.lobby-main' : '#main');
 }
 async function openOptions(productId) {
-  const selector = productId.endsWith('mp') ? `.game[data-product="${productId}"]` : `.game[data-game="${productId}"]:not([data-product])`;
+  const selector = productId.endsWith('mp') ? '#fixtureRoomSettings' : `.book-game-link[data-game="${productId}"]`;
   for (let attempt = 0; attempt < 2 && !hasOptions(productId); attempt++) await click(selector);
   await until(() => hasOptions(productId), `actual options open for ${productId}`);
 }
@@ -246,7 +239,7 @@ for (const {context, entry, product} of [
 
   test(`synthetic mounted ${context}: same-act double options activation creates one parent layer`, async () => {
     await mountEntry([entry]);
-    const selector = product.endsWith('mp') ? `.game[data-product="${product}"]` : `.game[data-game="${product}"]:not([data-product])`;
+    const selector = product.endsWith('mp') ? '#fixtureRoomSettings' : `.book-game-link[data-game="${product}"]`;
     await React.act(async () => {const card = node(selector); card.click(); card.click();});
     await until(() => hasOptions(product), 'actual card activation opens options');
     await click('#libraryBack');
@@ -364,7 +357,7 @@ test('synthetic mounted lobby: another room product opens settings without repla
   await mountEntry([entry], {roomOptionsProduct: 'th07mp'});
   await click('#fixtureRoomSettings'); await until(() => hasOptions('th07mp'), 'real shared settings use the room product');
   assert.equal(url(), entry, 'settings product is independent of directory filter');
-  assert.equal(node('#lobbyGameRail .game.nav-preview').dataset.product, 'th06mp', 'directory rail retains its own filter selection');
+    assert.equal(node('.book-lobby-desktop [data-lobby-product][data-selected="true"]').dataset.lobbyProduct, 'th06mp', 'directory rail retains its viewed game');
   await openEditor(); await click('#touchLayoutExit'); await until(() => !hasEditor(), 'room-origin editor closes');
   await traverse(1); await until(() => hasOptions('th07mp') && !hasEditor(), 'retired Forward retains room product options');
   assert.equal(url(), entry, 'retired marker cleanup preserves raw query encoding');
@@ -466,20 +459,21 @@ test('synthetic mounted StrictMode: touch movement applies without warnings acro
     const trigger = wrapper.querySelector('.mizuki-select-trigger'), before = select.value;
     const next = ['touch', 'joystick-free', 'touch-unlimited'][cycle];
     await React.act(async () => {trigger.click();});
-    const menu = node('.mizuki-select-menu:not([hidden])');
+    const menu = node('.ui-select-content');
     await React.act(async () => {menu.querySelector(`[data-value="${next}"]`).click();}); await tick();
     assert.equal(node('#decisionDialog').open, false);
     assert.notEqual(select.value, before); assert.equal(select.value, next);
     assert.equal(mounted.host.settings.getSnapshot().options.touchMovementMode, next);
     assert.equal(JSON.parse(mounted.storage.getItem('eagler-touhou-touch-options-v1')).touchMovementMode, next);
-    assert.equal(env.document.querySelectorAll('.mizuki-select-menu:not([hidden])').length, 0);
+    assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0);
+    assert.equal(mounted.host.touchLayout.getSnapshot().dirty, false, `Movement setting preserves layout geometry in cycle ${cycle}`);
     await click('#touchLayoutExit'); await until(() => !hasEditor() && hasOptions('th06'), 'StrictMode editor Exit retains parent');
     assert.equal(env.document.querySelector('#touchMovementMode'), null);
     await click('#libraryBack'); await until(() => hasParent('library'), 'StrictMode repeated Back has no duplicate owner');
     // Main retains the selected settings panel during its closing transition.
     // Only editor owners unmount here; full entry teardown is checked afterEach.
     assert.equal(env.document.querySelectorAll('.mizuki-select').length, retainedSelects, 'no editor wrapper leaks into the retained options panel');
-    assert.equal(env.document.querySelectorAll('.mizuki-select-menu:not([hidden])').length, 0);
+    assert.equal(env.document.querySelectorAll('.ui-select-content').length, 0);
     for (const live of env.document.querySelectorAll('select.custom-select-native')) assert.equal(live.closest('.mizuki-select').querySelectorAll('.mizuki-select-trigger').length, 1);
   }
 });
@@ -498,7 +492,7 @@ for (const context of ['library', 'lobby']) test(`synthetic mounted reload: old 
   assert.ok(!hasEditor()); assert.deepEqual(mounted.nativeCalls, []);
   if (context === 'lobby') {
     assert.ok(hasParent('lobby')); assert.equal(mounted.router.state.location.state.launcherSurfaceEntry, undefined);
-    assert.equal(node('#lobbyGameRail .game.nav-preview').dataset.product, product);
+    assert.equal(node('.book-lobby-desktop [data-lobby-product][data-selected="true"]').dataset.lobbyProduct, product);
   } else assert.ok(hasOptions(product));
 });
 

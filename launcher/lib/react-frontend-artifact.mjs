@@ -5,6 +5,11 @@ import { STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES } from "./fronten
 import { REACT_APP_SHELL_META, normalizeReactMountPath, validateReactAppShellDeployment } from "./react-app-shell-deployment.mjs";
 
 export const REACT_ARTIFACT_METADATA_FILES = Object.freeze([".vite/manifest.json", ".vite/react-app-shell-graph.json"]);
+// React Router marks CSS shared by static and dynamic imports with an empty
+// fragment. Preserve the published URL; graph ownership checks the real file.
+export function reactDocumentAssetUrl(url, tag) {
+  return tag === 'link' && url.endsWith('.css#') ? url.slice(0, -1) : url;
+}
 const compatibilityEntries = STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith("legacy/"));
 const retiredEntryStyles = new Set(["lobby.css", "touch-guide.css"]);
 
@@ -101,7 +106,9 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     for (const path of [...entry.css ?? [], ...entry.assets ?? []]) generated.add(generatedPath(path));
   }
   if (!entrypoints.size) throw new Error("React artifact has no Vite browser entrypoints");
-  for (const path of ["index.html", "en.html", "lobby.html"]) {
+  // Earlier complete artifacts have two languages. Every declared Japanese
+  // document receives the same graph and metadata validation as other entries.
+  for (const path of ["index.html", "en.html", "lobby.html", "profile.html", ...graph.shellFiles.includes('ja.html') ? ['ja.html'] : []]) {
     const tags = documentTags(await readFile(resolveFile(path), "utf8"), parse);
     const declarations = tags.filter(node => node.tag === "meta" && node.attributes.name === REACT_APP_SHELL_META);
     if (declarations.length !== (appShell ? 1 : 0)) throw new Error(`React App Shell metadata mismatch: ${path}`);
@@ -111,7 +118,7 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
       const url = tag === "script" ? attributes.src : tag === "link" ? attributes.href : null;
       if (!url || !url.includes("/assets/")) continue;
       if (!url.startsWith(mountPath + "assets/")) throw new Error(`React document asset escapes its graph/mount: ${url}`);
-      const relative = url.slice(mountPath.length);
+      const relative = reactDocumentAssetUrl(url, tag).slice(mountPath.length);
       if (/^assets\/manifest-[a-f0-9]+\.js$/.test(relative)) {generated.add(relative); entrypoints.add(relative);}
       if (!generated.has(relative)) throw new Error(`React document asset is absent from Vite graph: ${url}`);
       if (entrypoints.has(relative)) referencedEntry = true;

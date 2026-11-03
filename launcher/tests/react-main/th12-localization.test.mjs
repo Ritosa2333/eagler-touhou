@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {th12MessagePatch,th12TextRecord} from '../../server/th12-thcrap-compiler.mjs';
 import {prepareLocalization} from '../../../ports/th12/src/localization/loader.mjs';

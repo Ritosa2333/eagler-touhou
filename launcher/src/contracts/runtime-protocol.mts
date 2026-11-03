@@ -317,7 +317,7 @@ export interface RuntimeCommandPayloads {
   write: { path: string; bytes: number[]; replayMatch?: unknown };
   remove: { path: string };
   sync: Record<string, never>;
-  playback: {action: "inspect" | "open" | "pause" | "play" | "seek" | "rate"; path?: string; stage?: number; value?: number};
+  playback: {action: "inspect" | "open" | "pause" | "play" | "seek" | "rate" | "relocate"; path?: string; target?: string; stage?: number; value?: number};
   "retry-music": Record<string, never>;
   "thprac-mouse": { type: "move" | "down" | "up"; x: number; y: number };
   "network-cancel": Record<string, never>;

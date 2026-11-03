@@ -26,7 +26,26 @@ def main() -> int:
             page.locator("#firstUseNoticeCloseHint").click()
             page.wait_for_function("document.querySelector('#firstUseNoticeDialog')?.open === false")
 
-        page.locator('.game[data-game="th06"]:not([data-product])').click()
+        def click_real_pointer(selector: str) -> None:
+            target = page.locator(selector)
+            target.scroll_into_view_if_needed()
+            box = target.bounding_box()
+            assert box is not None, f"{selector} has no visible box"
+            x = box["x"] + box["width"] / 2
+            y = box["y"] + box["height"] / 2
+            hit = page.evaluate(
+                """({selector, x, y}) => {
+                  const target = document.querySelector(selector);
+                  const hit = document.elementFromPoint(x, y);
+                  return {inside: !!target && !!hit && (target === hit || target.contains(hit)),
+                    hit: hit?.id || hit?.className || hit?.tagName};
+                }""",
+                {"selector": selector, "x": x, "y": y},
+            )
+            assert hit["inside"], f"pointer at {selector} was intercepted by {hit['hit']}"
+            page.mouse.click(x, y)
+
+        page.locator('.book-game-link[data-book-product="th06"]').click()
         page.locator("#mobileOptionsToggle").click()
         page.wait_for_function("document.querySelector('#mobileOptions').classList.contains('open')")
         assert page.locator("#touchHelpOpen").get_attribute("aria-label") in ("打开帮助", "Open help")
@@ -36,18 +55,21 @@ def main() -> int:
         # This context has a desktop/fine pointer, so enabling Touch is the
         # regression case that previously kept showing keyboard/gamepad help.
         page.locator("#touchToggle").click()
-        page.wait_for_function("document.querySelector('#decisionDialog')?.open === true")
-        page.evaluate(
-            "document.querySelector('.decision-window').requestSubmit(document.querySelector('#decisionConfirm'))"
-        )
         page.wait_for_function("document.querySelector('#touchToggle').getAttribute('aria-checked') === 'true'")
-        assert page.locator("#touchHelp").evaluate("el => el.classList.contains('touch-help-touch-input')")
-        assert page.locator(".help-mobile-only").first.evaluate("el => getComputedStyle(el).display !== 'none'")
-        assert page.locator(".help-desktop-only").first.evaluate("el => getComputedStyle(el).display === 'none'")
+        page.evaluate("document.querySelector('#touchHelpOpen').click()")
+        page.wait_for_function("document.querySelector('#touchHelp')?.open === true")
+        page.wait_for_function("document.querySelector('#help-touch')?.getAttribute('data-state') === 'open'")
+        assert page.locator("#help-controls").get_attribute("data-state") == "closed"
+        page.evaluate("document.querySelector('#touchHelpClose').click()")
+        page.wait_for_function("document.querySelector('#touchHelp')?.open === false")
         page.locator("#touchToggle").click()
-        assert not page.locator("#touchHelp").evaluate("el => el.classList.contains('touch-help-touch-input')")
-        assert page.locator(".help-mobile-only").first.evaluate("el => getComputedStyle(el).display === 'none'")
-        assert page.locator(".help-desktop-only").first.evaluate("el => getComputedStyle(el).display !== 'none'")
+        page.wait_for_function("document.querySelector('#touchToggle').getAttribute('aria-checked') === 'false'")
+        page.evaluate("document.querySelector('#touchHelpOpen').click()")
+        page.wait_for_function("document.querySelector('#touchHelp')?.open === true")
+        assert page.locator("#help-touch").count() == 0
+        assert page.locator("#help-controls").get_attribute("data-state") == "open"
+        page.evaluate("document.querySelector('#touchHelpClose').click()")
+        page.wait_for_function("document.querySelector('#touchHelp')?.open === false")
 
         page.evaluate("document.querySelector('#touchLayoutEdit').click()")
         page.wait_for_timeout(1500)
@@ -57,14 +79,46 @@ def main() -> int:
         }
         # Keep the preview usable: compact by default and out of the way during drag.
         page.evaluate("async () => { if (document.fullscreenElement) await document.exitFullscreen(); }")
-        for width, height in ((390, 844), (1280, 800)):
+        for width, height in ((390, 844), (1280, 800), (844, 390)):
             page.set_viewport_size({"width": width, "height": height})
+            page.wait_for_timeout(120)
             panel = page.locator("#touchLayoutEditor").bounding_box()
-            assert panel["width"] <= 290 and panel["height"] <= 470, panel
+            assert panel["width"] <= 320 and panel["height"] <= min(520, height - 32), panel
+            assert panel["x"] >= 0 and panel["y"] >= 0, panel
+            assert panel["x"] + panel["width"] <= width + 1, panel
+            assert panel["y"] + panel["height"] <= height + 1, panel
             assert page.locator("#touchLayoutSave").is_visible()
-        page.locator("#touchLayoutCollapse").click()
+            assert page.locator("#player").evaluate(
+                "el => Number(getComputedStyle(el).zIndex) > Number(getComputedStyle(document.querySelector('.tools.is-open')).zIndex)"
+            )
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.wait_for_timeout(120)
+        click_real_pointer("#touchLayoutCollapse")
         assert not page.locator("#touchWorkbenchBody").is_visible()
-        page.locator("#touchLayoutCollapse").click()
+        click_real_pointer("#touchLayoutCollapse")
+
+        def select_movement(value: str) -> None:
+            click_real_pointer("#touchMovementMode-trigger")
+            option = f".ui-select-content [role=option][data-value='{value}']"
+            page.wait_for_selector(option)
+            assert page.locator(".ui-select-content").evaluate(
+                "el => Number(getComputedStyle(el).zIndex) > Number(getComputedStyle(document.querySelector('#player')).zIndex)"
+            )
+            click_real_pointer(option)
+            page.wait_for_function(
+                "value => document.querySelector('#decisionDialog')?.open === true || document.querySelector('#touchMovementMode').value === value",
+                arg=value,
+            )
+            if page.locator("#decisionDialog").evaluate("el => el.open"):
+                click_real_pointer("#decisionConfirm")
+                page.wait_for_function("document.querySelector('#decisionDialog')?.open === false")
+            page.wait_for_function("value => document.querySelector('#touchMovementMode').value === value", arg=value)
+
+        select_movement("joystick")
+        select_movement("touch")
+        click_real_pointer("[data-touch-sensitivity-preset='150']")
+        page.wait_for_function("document.querySelector('#touchSensitivityValue').textContent.includes('150')")
+        click_real_pointer("#touchLayoutSave")
         control = page.locator("#touchBomb").bounding_box()
         x, y = control["x"] + control["width"] / 2, control["y"] + control["height"] / 2
         page.mouse.move(x, y)
@@ -73,6 +127,32 @@ def main() -> int:
         assert page.locator("#player").evaluate("el => el.classList.contains('touch-layout-manipulating')")
         page.mouse.up()
         assert not page.locator("#player").evaluate("el => el.classList.contains('touch-layout-manipulating')")
+        click_real_pointer("#touchLayoutExit")
+        if page.locator("#decisionDialog").evaluate("el => el.open"):
+            click_real_pointer("#decisionCancel")
+            page.wait_for_function("document.querySelector('#decisionDialog')?.open === false")
+            assert page.locator("#touchLayoutEditor").evaluate("el => !el.hidden")
+            click_real_pointer("#touchLayoutSave")
+        if page.locator("#touchLayoutEditor").evaluate("el => !el.hidden"):
+            click_real_pointer("#touchLayoutExit")
+        page.wait_for_selector("#touchLayoutEditor", state="hidden")
+        return_focus = page.evaluate("""() => ({
+          id: document.activeElement?.id,
+          isBody: document.activeElement === document.body,
+          inOptions: !!document.querySelector('.tools.is-open')?.contains(document.activeElement),
+          optionsOpen: !!document.querySelector('.tools.is-open'),
+        })""")
+        assert return_focus["optionsOpen"] and return_focus["inOptions"] and not return_focus["isBody"], return_focus
+        page.keyboard.press("Escape")
+        page.wait_for_selector("body:not(.library-tools-open)")
+        assert not page.locator(".tools.is-open").count(), "Escape from the restored options focus must close options"
+
+        page.locator('.book-game-link[data-book-product="th06"]').click()
+        page.wait_for_selector(".tools.is-open")
+        if not page.locator("#mobileOptions").evaluate("el => el.classList.contains('open')"):
+            click_real_pointer("#mobileOptionsToggle")
+        page.evaluate("document.querySelector('#touchLayoutEdit').click()")
+        page.wait_for_selector("#touchLayoutEditor:not([hidden])")
         editor_url = page.url
         page.go_back(wait_until="commit")
         page.wait_for_timeout(100)
@@ -102,10 +182,10 @@ def main() -> int:
             "document.querySelector('#thpracTouchControlsToggle').closest('.touch-layout-setting-row')) "
             "& Node.DOCUMENT_POSITION_FOLLOWING)"
         )
-        page.locator("#touchSensitivity").evaluate(
-            "input => { input.value = '200'; input.dispatchEvent(new Event('input', {bubbles:true})); "
-            "input.dispatchEvent(new Event('change', {bubbles:true})); }"
-        )
+        click_real_pointer("#touchSensitivityCustomToggle")
+        slider = page.locator("#touchSensitivity").bounding_box()
+        page.mouse.click(slider["x"] + slider["width"] / 2, slider["y"] + slider["height"] / 2)
+        page.wait_for_function("document.querySelector('#touchSensitivityValue').textContent.includes('200')")
         page.locator("#touchFocusMode").select_option("toggle-button", force=True)
         page.locator("#doubleTapBombToggle").click()
         page.locator("#restartButtonToggle").click()
@@ -128,11 +208,15 @@ def main() -> int:
         assert restart_geometry["leftDelta"] <= 1, restart_geometry
         page.locator("#restartButtonToggle").click()
         page.locator("#touchMovementMode").select_option("joystick-free", force=True)
-        page.wait_for_function("document.querySelector('#decisionDialog')?.open === true")
-        page.evaluate(
-            "document.querySelector('.decision-window').requestSubmit(document.querySelector('#decisionConfirm'))"
+        page.wait_for_function(
+            "document.querySelector('#touchMovementMode').value === 'joystick-free' || document.querySelector('#decisionDialog')?.open === true"
         )
-        page.wait_for_function("document.querySelector('#decisionDialog')?.open === false")
+        if page.locator("#decisionDialog").evaluate("el => el.open"):
+            page.evaluate(
+                "document.querySelector('.decision-window').requestSubmit(document.querySelector('#decisionConfirm'))"
+            )
+            page.wait_for_function("document.querySelector('#decisionDialog')?.open === false")
+        page.wait_for_function("document.querySelector('#touchMovementMode').value === 'joystick-free'")
 
         page.locator("#touchLayoutExit").click()
         page.wait_for_timeout(100)
@@ -142,7 +226,7 @@ def main() -> int:
             )
         page.wait_for_selector("#touchLayoutEditor", state="hidden")
         page.locator("#libraryBack").click()
-        page.locator('.game[data-game="th07"]:not([data-product])').click()
+        page.locator('.book-game-link[data-book-product="th07"]').click()
         if not page.locator("#mobileOptions").evaluate("el => el.classList.contains('open')"):
             page.locator("#mobileOptionsToggle").click()
         page.wait_for_function("document.querySelector('#mobileOptions').classList.contains('open')")
@@ -155,7 +239,7 @@ def main() -> int:
 
         shared = page.evaluate("""() => ({
           movement: document.querySelector('#touchMovementMode').value,
-          sensitivity: document.querySelector('#touchSensitivity').value,
+          sensitivity: JSON.parse(localStorage.getItem('eagler-touhou-touch-options-v1')).touchSensitivity,
           focus: document.querySelector('#touchFocusMode').value,
           doubleTapBomb: document.querySelector('#doubleTapBombToggle').getAttribute('aria-checked'),
           restart: document.querySelector('#restartButtonToggle').getAttribute('aria-checked'),
@@ -164,7 +248,7 @@ def main() -> int:
           stored: JSON.parse(localStorage.getItem('eagler-touhou-touch-options-v1')),
         })""")
         assert shared["movement"] == "joystick-free", shared
-        assert shared["sensitivity"] == "200", shared
+        assert shared["sensitivity"] == 200, shared
         assert shared["focus"] == "toggle-button", shared
         assert shared["doubleTapBomb"] == "true", shared
         assert shared["restart"] == "false", shared

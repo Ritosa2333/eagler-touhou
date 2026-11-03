@@ -49,7 +49,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
     const predecessor = ownerSlots.get(game);
     if (predecessor) {try {await predecessor;} catch {} if (!currentOgg()) return;}
     const gameVersion = descriptorGameVersion(loaded.descriptor);
-    let publication;
+    let publication: Awaited<ReturnType<typeof acquisition.getPublication>>;
     try {publication = await acquisition.getPublication(gameVersion);} catch {return;}
     const {catalog, catalogUrl} = publication;
     if (catalog?.games[game]?.revision !== loaded.descriptor.revision || !currentOgg()) return;

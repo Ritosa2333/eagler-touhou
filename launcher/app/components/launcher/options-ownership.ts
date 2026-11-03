@@ -3,6 +3,7 @@ import {createContext, useCallback, useContext, type RefObject} from 'react';
 export interface OptionsTargets {
   selectedCard: HTMLElement | null;
   panel: HTMLElement | null;
+  backdrop?: HTMLElement | null;
 }
 /** DOM-free ports: library and directory register only their own live nodes. */
 export const OptionsOwnership = createContext<OptionsTargets | null>(null);

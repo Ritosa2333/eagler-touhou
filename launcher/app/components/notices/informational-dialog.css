@@ -1,22 +1,42 @@
-/* React's shared informational shell. Legacy Apple/guide shell selectors in
-   public/styles.css remain canonical main consumers only. Body styles are shared; motion belongs to informational-dialog-motion.ts; no React shell matches those aliases. */
-.informational-dialog{width:min(560px,calc(100vw - 40px));padding:0;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:#191a17;color:#eee9e1;box-shadow:0 25px 50px -12px rgba(0,0,0,.72);overflow:hidden}
-.informational-dialog::backdrop{background:rgba(0,0,0,.72)}
-.informational-window{font-family:var(--ui-font)}
-.informational-window>header{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.informational-window h1{margin:0}
-.informational-window header button{width:36px;height:36px;padding:0;border:0;border-radius:10px;background:transparent;color:rgba(255,255,255,.56);cursor:pointer;font:18px/1 var(--ui-font)}
-.informational-window header button:hover,.informational-window header button:focus-visible{background:#292c27;color:#fff;outline:none}
-.informational-window--standard>header{padding:10px 12px 10px 16px;border-bottom:1px solid rgba(255,255,255,.1);background:#191a17}
-.informational-window--standard h1{color:rgba(255,255,255,.86);font:700 15px/1.2 var(--ui-font);letter-spacing:.02em}
-.informational-window--standard header button{transition:background-color .15s ease,color .15s ease,transform .1s ease}
-.informational-window--standard header button:active{transform:scale(.94)}
+@layer components {
+.informational-dialog{width:min(560px,calc(100vw - 32px));padding:0;overflow:hidden}
+.informational-window{font-family:var(--kit-font)}
+.informational-window>header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.informational-window>header h1{margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
+.apple-refresh-faq{padding:0 20px 4px;background:var(--kit-card);color:var(--kit-muted-foreground)}
+.apple-refresh-faq-item{padding:16px 0;border-bottom:1px solid var(--kit-border)}
+.apple-refresh-faq-item:last-child{border:0}
+.apple-refresh-path{padding:8px 10px;border-radius:6px;background:var(--kit-muted);color:var(--kit-foreground);overflow-wrap:anywhere}
+.donation-image-wrap{display:grid;place-items:center;gap:12px;padding:20px;background:var(--kit-card)}
+.donation-scan-hint{margin:0;color:var(--kit-muted-foreground);font:400 13px/1.5 var(--kit-font)}
+.donation-image-wrap img{display:block;width:min(100%,440px);height:auto;border-radius:8px}
 .informational-dialog--artwork{width:min(540px,calc(100vw - 28px))}
-.informational-dialog--scrollable{width:min(650px,calc(100vw - 32px));max-height:min(88dvh,820px);border:0;box-shadow:0 24px 64px rgba(0,0,0,.66)}
-.informational-window--scrollable{display:grid;grid-template-rows:auto minmax(0,1fr);max-height:min(88dvh,820px)}
-.informational-window--scrollable>header{padding:10px 12px 10px 20px;border:0}
-.informational-window--scrollable h1{color:#eee;font:800 17px/1.2 var(--ui-font)}
+.informational-dialog--scrollable{box-sizing:border-box;width:min(650px,calc(100vw - 32px));height:min(88dvh,720px);max-height:min(88dvh,720px)}
+.informational-window--scrollable{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;max-height:100%}
+.informational-window--scrollable>.ui-document{min-height:0;overflow:auto}
+.multiplayer-guide-content{min-height:0;padding:0 20px 20px;overflow:auto;scrollbar-gutter:stable;overflow-wrap:anywhere}
+.multiplayer-guide-loading{color:var(--kit-muted-foreground)}
+.multiplayer-guide-error{color:var(--kit-destructive)}
+.multiplayer-rule-tabs-shell{position:sticky;z-index:3;top:0;margin:0 -20px;padding:8px 20px 12px;background:var(--kit-card);border-bottom:1px solid var(--kit-border)}
+.multiplayer-rule-game-tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:3px;border-radius:8px;background:var(--kit-muted)}
+.multiplayer-rule-game-tab{min-width:0;min-height:36px;padding:7px 4px;border:0;border-radius:6px;background:transparent;color:var(--kit-muted-foreground);font:500 12px/1.5 var(--kit-font);cursor:pointer}
+.multiplayer-rule-game-tab:hover{background:var(--kit-accent);color:var(--kit-foreground)}
+.multiplayer-rule-game-tab.selected{background:var(--kit-secondary);color:var(--kit-foreground)}
+.multiplayer-rule-game-tab:focus-visible,.multiplayer-rule-disclosure-summary:focus-visible{outline:2px solid var(--kit-ring);outline-offset:-2px}
+.multiplayer-rule-panels{padding-top:8px}
+.multiplayer-rule-panel[hidden]{display:none!important}
+.multiplayer-rule-disclosure{margin:0;border-bottom:1px solid var(--kit-border)}
+.multiplayer-rule-disclosure-summary{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 0;color:var(--kit-foreground);list-style:none;cursor:pointer;user-select:none}
+.multiplayer-rule-disclosure-summary::-webkit-details-marker{display:none}
+.multiplayer-rule-disclosure-summary::before{content:'';width:6px;height:6px;margin:0 5px 0 3px;border:solid var(--kit-muted-foreground);border-width:0 1.5px 1.5px 0;transform:rotate(-45deg);transition:transform var(--ui-feedback-duration) var(--ui-feedback-easing)}
+.multiplayer-rule-disclosure[open]>.multiplayer-rule-disclosure-summary::before{transform:rotate(45deg)}
+.multiplayer-rule-disclosure-title{font-size:13px;font-weight:500}
+.multiplayer-rule-disclosure-body{padding-bottom:12px}
+.multiplayer-rule-section+.multiplayer-rule-section{padding-top:4px}
+.multiplayer-rule-subheading{margin:14px 0 6px;color:var(--kit-foreground);font-size:13px;font-weight:600}
 @media(max-width:600px){
-  .informational-dialog--scrollable{width:calc(100vw - 20px);max-height:92dvh}
-  .informational-window--scrollable{max-height:92dvh}
+ .informational-dialog--scrollable{width:calc(100vw - 24px);height:min(92dvh,720px);max-height:min(92dvh,720px)}
+ .multiplayer-rule-game-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .multiplayer-rule-game-tab{min-height:44px}
+}
 }

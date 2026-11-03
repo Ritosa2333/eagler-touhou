@@ -3,9 +3,39 @@ import {test} from 'node:test';
 import {selectedPortGames} from '../../launcher/tests/support/port-selection.mjs';
 import {STATUS_SCHEMA,checkStates,retainedVerification,validateStatusReport} from './status.mjs';
 import {targets,dependencyRevision,sourceIdentity,inspectInputs} from './inputs.mjs';
-import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
+import {mkdtempSync,writeFileSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {sharedCheckInvocation} from './check.mjs';
+
+const repoRoot=fileURLToPath(new URL('../../',import.meta.url));
+
+test('shared port checks use their declared Vitest project or native Node runner',()=>{
+  const gates=JSON.parse(readFileSync(resolve(repoRoot,'tools/ports/shared-checks.json'),'utf8')).gates;
+  for(const gate of gates){
+    const imports=gate.files.map(file=>readFileSync(resolve(repoRoot,file),'utf8'));
+    const vitest=imports.map(source=>/from\s+['"]vitest['"]/.test(source));
+    if(vitest.some(Boolean)){
+      assert.ok(vitest.every(Boolean),`${gate.id} mixes test runners`);
+      assert.equal(gate.runner,'vitest',`${gate.id} must declare its Vitest runner`);
+      assert.ok(['repository','unit','workspace'].includes(gate.project),`${gate.id} must declare a test project`);
+      const command=sharedCheckInvocation(gate,{bunExecutable:'bun-test'});
+      assert.equal(command.executable,'bun-test');
+      const prefix=gate.project==='workspace'
+        ? ['--bun','run','vitest','run','--config','vitest.workspace.config.ts','--project','workspace']
+        : ['--bun','run','vitest','run','--project',gate.project];
+      assert.deepEqual(command.args.slice(0,prefix.length),prefix);
+      assert.deepEqual(command.args.slice(prefix.length),gate.files.map(file=>file.slice('launcher/'.length)));
+    }else{
+      assert.ok(imports.every(source=>/from\s+['"]node:test['"]/.test(source)),`${gate.id} is not a native node:test gate`);
+      assert.equal(gate.runner,undefined,`${gate.id} should continue using Node`);
+      const command=sharedCheckInvocation(gate);
+      assert.equal(command.executable,process.execPath);
+      assert.deepEqual(command.args,gate.files.map(file=>resolve(repoRoot,file)));
+    }
+  }
+});
 
 test('th20 compiler include precedence uses the same module order on every platform',()=>{
   const input=inspectInputs(targets({game:'th20',variant:'normal'})[0]);

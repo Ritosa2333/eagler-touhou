@@ -1,60 +1,73 @@
-import {useEffect, useRef, useState, useSyncExternalStore} from 'react';
-import {createRoot} from 'react-dom/client';
+import {useEffect, useRef, useState, useSyncExternalStore, type ReactNode} from 'react';
+import {useHref, useLocation, useNavigate} from 'react-router';
 import {LauncherMasthead} from './components/launcher/LauncherMasthead';
 import {MainSelect} from './components/launcher/MainSelect';
 import {DonationDialog} from './components/notices/DonationDialog';
 import {FirstUseNotice, type FirstUseNoticeHandle} from './components/notices/FirstUseNotice';
-import {LocaleProvider, useLocale} from './i18n';
-import {UI_LOCALE_STORAGE_KEY, type UiLocale} from '../src/launcher/i18n.mts';
+import {LocaleProvider, useLocale, type UiMessageKey} from './i18n';
+import {useDocumentUiLocale} from './navigation/document-locale';
+import {UI_LOCALES, UI_LOCALE_LABELS, UI_LOCALE_STORAGE_KEY, isUiLocale, localeHome, withUiLanguage} from '../src/launcher/i18n.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from './models/site-preferences';
-import {RUNTIME_DIAGNOSTICS_STORAGE_KEY as diagnosticsKey} from './models/runtime-diagnostics';
+import {RUNTIME_DIAGNOSTICS_STORAGE_KEY} from './models/runtime-diagnostics';
 import {validateSiteManifest, siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
-import {UptimePage} from './components/uptime/UptimePage';
-import './site-navigation.css';
-import './components/uptime/uptime.css';
 
-const base = new URL('.', document.baseURI), url = (path:string) => new URL(path, base).href;
-let storage:Storage|null = null; try {storage = window.localStorage;} catch {}
-const preferences = createSitePreferencesModel({storage});
-bindSitePreferencesToDocument(preferences);
-const read = (key:string) => {try {return storage?.getItem(key);} catch {return null;}};
-const write = (key:string, value:string) => {try {storage?.setItem(key,value);} catch {}};
-function StandaloneHeader() {
-  const {locale, t} = useLocale(), prefs = useSyncExternalStore(preferences.subscribe, preferences.getSnapshot);
-  const [open,setOpen] = useState(false), [donation,setDonation] = useState(false), [notice,setNotice] = useState(false);
-  const [donationAvailable,setDonationAvailable] = useState(true), [diagnostics,setDiagnostics] = useState(read(diagnosticsKey)==='1');
-  const [migration,setMigration] = useState({known:false,available:false});
+function localStorageOrNull() {try {return window.localStorage;} catch {return null;}}
+
+/** Read-only site pages share controls and preferences, without creating a game session. */
+export function StandalonePageShell({children, titleKey = 'nav.serviceStatus', mainClassName = 'uptime-page'}: {children: ReactNode; titleKey?: UiMessageKey; mainClassName?: string}) {
+  return <LocaleProvider locale={useDocumentUiLocale()}><StandaloneShell titleKey={titleKey} mainClassName={mainClassName}>{children}</StandaloneShell></LocaleProvider>;
+}
+
+function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNode; titleKey: UiMessageKey; mainClassName: string}) {
+  const {locale, t} = useLocale(), location = useLocation(), navigate = useNavigate(), base = useHref('/');
+  const assetUrl = (path: string) => base + path;
+  const [preferences, setPreferences] = useState(() => createSitePreferencesModel({storage: null}));
+  const prefs = useSyncExternalStore(preferences.subscribe, preferences.getSnapshot, preferences.getSnapshot);
+  const [menu, setMenu] = useState(false), [donation, setDonation] = useState(false), [notice, setNotice] = useState(false);
+  const [donationAvailable, setDonationAvailable] = useState(true), [diagnostics, setDiagnostics] = useState(false);
+  const [migration, setMigration] = useState({known: false, available: false});
   const firstUse = useRef<FirstUseNoticeHandle>(null);
   useEffect(() => {
+    setPreferences(createSitePreferencesModel({storage: localStorageOrNull()}));
+    try {setDiagnostics(localStorageOrNull()?.getItem(RUNTIME_DIAGNOSTICS_STORAGE_KEY) === '1');} catch {}
+  }, []);
+  useEffect(() => bindSitePreferencesToDocument(preferences), [preferences]);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).has('lang')) return;
+    let saved: unknown; try {saved = localStorageOrNull()?.getItem(UI_LOCALE_STORAGE_KEY);} catch {}
+    if (isUiLocale(saved) && saved !== locale) navigate(withUiLanguage(location.pathname + location.search + location.hash, saved), {replace: true});
+  }, [location.pathname, location.search, location.hash, locale, navigate]);
+  useEffect(() => {
     document.documentElement.lang = locale;
-  }, [locale]);
+    document.documentElement.dataset.uiLocale = locale;
+    document.title = `${t(titleKey)} | EAGLER TOUHOU`;
+  }, [locale, t, titleKey]);
   useEffect(() => {
     const controller = new AbortController();
-    void fetch(url('site-manifest.json'), {signal:controller.signal}).then(async r => {
-      if (!r.ok) return; const site = validateSiteManifest(await r.json());
-      setMigration({known:true,available:siteOriginMigrationAvailable(site,window.location.protocol)});
+    void fetch(base + 'site-manifest.json', {signal: controller.signal}).then(async response => {
+      if (!response.ok) return;
+      const site = validateSiteManifest(await response.json());
+      if (!controller.signal.aborted) setMigration({known: true, available: siteOriginMigrationAvailable(site, window.location.protocol)});
     }).catch(() => {});
     return () => controller.abort();
-  }, []);
-  return <>
-    <LauncherMasthead variant="help" nativeLinks assetUrl={url} launcherHref={url(locale==='en'?'en.html':'./')} faqHref={url('faq.html')} aboutHref={url('about.html')}
-      migrationPolicyKnown={migration.known} migrationHref={migration.available?url('migrate.html'):undefined}
-      menuOpen={open} onMenuOpenChange={setOpen} lessMotion={prefs.lessMotion} onToggleMotion={preferences.toggleMotion} noticeEnabled={prefs.noticeEnabled} onToggleNotice={preferences.toggleNotice}
-      diagnosticsEnabled={diagnostics} onToggleDiagnostics={() => {write(diagnosticsKey,diagnostics?'0':'1');setDiagnostics(!diagnostics);}}
+  }, [base]);
+  const Main=mainClassName==='documentation-shell'?'div':'main';
+  return <div className="standalone-page-shell">
+    <LauncherMasthead variant="help" nativeLinks compactDocumentation={mainClassName==='documentation-shell'} assetUrl={assetUrl} launcherHref={assetUrl(localeHome(locale))}
+      faqHref={withUiLanguage(assetUrl('faq.html'), locale)} aboutHref={withUiLanguage(assetUrl('about.html'), locale)}
+      migrationPolicyKnown={migration.known} migrationHref={migration.available ? assetUrl('migrate.html') : undefined}
+      menuOpen={menu} onMenuOpenChange={setMenu} lessMotion={prefs.lessMotion} onToggleMotion={preferences.toggleMotion}
+      noticeEnabled={prefs.noticeEnabled} onToggleNotice={preferences.toggleNotice} diagnosticsEnabled={diagnostics}
+      onToggleDiagnostics={() => {const next = !diagnostics; try {localStorageOrNull()?.setItem(RUNTIME_DIAGNOSTICS_STORAGE_KEY, next ? '1' : '0');} catch {} setDiagnostics(next);}}
       onDonation={() => setDonation(true)} donationAvailable={donationAvailable} onFirstUse={() => {void firstUse.current?.showManual();}}
-      languageControl={<MainSelect id="uiLanguageSelect" className="option-select ui-language-select" aria-label={t('ui.language')} value={locale} onChange={event => {write(UI_LOCALE_STORAGE_KEY,event.target.value);window.dispatchEvent(new Event('site-pages-locale'));}}><option value="zh-CN">简体中文</option><option value="en">English</option></MainSelect>}/>
-    <DonationDialog open={donation} onCloseRequest={() => setDonation(false)} assetUrl={url} onArtworkUnavailable={() => setDonationAvailable(false)}/>
-    <FirstUseNotice ref={firstUse} open={notice} onOpenRequest={() => setNotice(true)} onCloseRequest={() => setNotice(false)} contentUrl={url('content/FIRST_USE_NOTICE.html')} edgeGestures={false}/>
-  </>;
+      languageControl={<MainSelect id="uiLanguageSelect" aria-label={t('ui.language')} value={locale} onChange={event => {
+        const value = event.target.value;
+        if (!isUiLocale(value)) return;
+        try {localStorageOrNull()?.setItem(UI_LOCALE_STORAGE_KEY, value);} catch {}
+        navigate(withUiLanguage(location.pathname + location.search + location.hash, value));
+      }}>{UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}</MainSelect>}/>
+    <Main className={mainClassName}>{children}</Main>
+    <DonationDialog open={donation} onCloseRequest={() => setDonation(false)} assetUrl={assetUrl} onArtworkUnavailable={() => setDonationAvailable(false)}/>
+    <FirstUseNotice ref={firstUse} open={notice} onOpenRequest={() => setNotice(true)} onCloseRequest={() => setNotice(false)} contentUrl={assetUrl('content/FIRST_USE_NOTICE.html')} edgeGestures={false}/>
+  </div>;
 }
-function Page({kind}:{kind:'header'|'uptime'}) {
-  const [locale,setLocale] = useState<UiLocale>(() => read(UI_LOCALE_STORAGE_KEY)==='en'?'en':'zh-CN');
-  useEffect(() => {
-    const changed = () => setLocale(read(UI_LOCALE_STORAGE_KEY)==='en'?'en':'zh-CN');
-    window.addEventListener('site-pages-locale',changed); window.addEventListener('storage',changed);
-    return () => {window.removeEventListener('site-pages-locale',changed);window.removeEventListener('storage',changed);};
-  }, []);
-  return <LocaleProvider locale={locale}>{kind==='header'?<StandaloneHeader/>:<UptimePage endpoint={url('uptime/summary')}/>}</LocaleProvider>;
-}
-const header = document.getElementById('site-page-header'); if (header) createRoot(header).render(<Page kind="header"/>);
-const content = document.getElementById('site-page-content'); if (content && document.body.dataset.sitePage==='uptime') createRoot(content).render(<Page kind="uptime"/>);

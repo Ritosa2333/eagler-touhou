@@ -1,16 +1,36 @@
 
 // Shared local viewer contract, implemented over TH10's original Application.
 #include <eagler/replay/Workspace.hpp>
+#include <cstdio>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/ReplayFiles.hpp"
 #endif
 namespace {
-std::string local_description;u32 local_start=1,local_lengths[8]{},local_offset=0,local_total=0;bool local_started=false,local_ready=false;
+std::string local_description;u32 local_start=1,local_lengths[8]{},local_offset=0,local_total=0;bool local_started=false;
+i32 local_result=0;
 const char* local_filename(const char* path){const char* p=std::strstr(path,"/replay/");return p?p+8:nullptr;}
 }
 extern "C" {
+i32 world_error(th10::browser::World*);
+EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_error"))) const char* eagler_replay_error(){
+    if(!session||!session->app)return "Native replay session unavailable";
+    const auto& a=*session->app;static char message[192];
+    std::snprintf(message,sizeof(message),"Native replay failed (result %d | application %d | world %d | screen %d | pending %d | flags %u)",local_result,a.error,a.world?world_error(a.world):0,a.value.screen,a.state.pending_screen,a.state.game.flags);
+    return message;
+}
 EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_preparing"))) int eagler_replay_preparing(){return !local_started;}
-EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_ready"))) int eagler_replay_ready(){return local_ready||(session&&session->app&&session->app->value.screen==4&&session->app->title);}
+EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_ready"))) int eagler_replay_ready(){
+    if(!session||!session->app)return 0;const auto& a=*session->app;
+    // Attract playback has the same initialized resources as the title menu.
+    // Errors are terminal too: let open report them instead of waiting forever.
+    return a.error||a.stopped||(a.startup&&!a.startup->loading&&a.startup->shared&&a.startup->scores&&((a.value.screen==4&&a.title)||(a.value.screen==7&&a.world)));
+}
+EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_relocate"))) int eagler_replay_relocate(const char* source,const char* target){
+    if(!session||!session->app||!source||!target)return 0;
+    const auto* from=local_filename(source);const auto* to=local_filename(target);auto& s=session->app->state;
+    if(!from||!to||std::strcmp(s.replay_filename,from)||std::strlen(to)>=sizeof(s.replay_filename))return 0;
+    std::strcpy(s.replay_filename,to);return 1;
+}
 EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_inspect"))) const char* eagler_replay_inspect(const u8*,u32,const char* path){
     if(!session||!session->files||!path)return nullptr;const auto* name=local_filename(path);if(!name)return nullptr;
     ReplayDocument doc(*session->files,0);if(doc.load(name)||!doc.value.info)return nullptr;
@@ -30,7 +50,8 @@ EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_inspect"))) const
     local_description=d.finish();return local_description.c_str();
 }
 EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_open"))) int eagler_replay_open(const char* path,u32 stage){
-    if(!session||!session->app||!path||stage<1||stage>7)return 0;auto& a=*session->app;auto& s=a.state;const auto* name=local_filename(path);if(!name)return 0;
+    local_result=0;
+    if(!eagler_replay_ready()||!path||stage<1||stage>7)return 0;auto& a=*session->app;if(a.error||a.stopped)return 0;auto& s=a.state;const auto* name=local_filename(path);if(!name)return 0;
     ReplayDocument doc(a.files,0);if(doc.load(name)||!doc.value.readers[stage].stage||std::strlen(name)>=sizeof(s.replay_filename))return 0;
     for(u32 n=0;n<8;n++)local_lengths[n]=doc.value.readers[n].stage?doc.value.readers[n].stage->frames:0;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -40,10 +61,18 @@ EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_open"))) int eagl
     if(a.multiplayer_replay_scope)a.multiplayer_finish_replay();
     s.multiplayer_replay.Clear();
 #endif
-    if(a.value.screen!=4){s.pending_screen=4;if(a.step(true)!=0)return 0;}
+    if(a.value.screen!=4){
+        // A regular tick may defer transitions behind a frame/loading gate.
+        // Retire the current session at this explicit workspace boundary first.
+        s.pending_screen=4;local_result=a.frames.transition(a.value);
+        if(local_result!=1||a.value.screen!=4||!a.title)return 0;local_result=0;
+    }
+    // Workspace playback bypasses the title-menu frame that retires demo mode.
+    // User files must resolve from the save store, not the built-in archive.
+    s.game.flags&=~0x20u;s.inactive_frames=0;
     s.game.stage=stage;s.game.reserved_040=stage;s.game.character=doc.value.info->character;s.game.shot_type=doc.value.info->shot_type;s.game.difficulty=doc.value.info->difficulty;
     s.current_stage=menu_data(s.chinese).stages+stage;std::strcpy(s.replay_filename,name);s.return_screen=2;s.pending_screen=12;
-    local_start=stage;local_started=false;local_ready=true;return 1;
+    local_start=stage;local_started=false;return 1;
 }
 EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_state"))) const u32* eagler_replay_state(){
     static u32 v[6];std::fill(v,v+6,0);if(!session||!session->app)return v;const auto& a=*session->app;const auto& s=a.state;
@@ -58,6 +87,6 @@ EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_state"))) const u
     return v;
 }
 EMSCRIPTEN_KEEPALIVE __attribute__((export_name("eagler_replay_step"))) int eagler_replay_step(u32){
-    if(!session||!session->app)return 0;auto& a=*session->app;a.audio.advance(17);const auto result=a.step(true);if(a.value.screen==7)local_started=true;a.audio.pump();return result==0;
+    if(!session||!session->app)return 0;auto& a=*session->app;a.audio.advance(17);local_result=a.step(true);if(a.value.screen==7)local_started=true;a.audio.pump();return local_result==0;
 }
 }

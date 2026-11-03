@@ -1,4 +1,4 @@
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {createRequire} from 'node:module';
@@ -26,7 +26,7 @@ before(async () => {
     export * from './app/i18n.tsx';
   `}, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', outfile,
   logLevel: 'silent', plugins: [{name: 'shared-react', setup(ctx) {
-    ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+    ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
   }}]});
   views = await import(pathToFileURL(outfile).href);
 });
@@ -51,18 +51,19 @@ for (const locale of ['zh-CN', 'en']) {
       localClientId:'host12345',room:{code:'12345678',synced:true,phase:'lobby',playerCount:2,
         seats:[{clientId:'host12345',loadout:0},{clientId:'guest12345',loadout:1}],spectators:[]}};
     const moves=[],removals=[];
-    const props={state,service:{movePlayerToSpectator:(...args)=>moves.push(args),removePlayer:i=>removals.push(i)},
+    const props={state,service:{getSnapshot:()=>state,movePlayerToSpectator:(...args)=>moves.push(args),removePlayer:i=>removals.push(i)},
       network:{metric:()=>null},context:{touchEnabled:false,touchMovementMode:'joystick'},openPanel(){}};
     const node=await mount(views.RoomSeats,props,locale);
     const moderation=node.querySelector('[data-mp-seat="1"] .mp-seat-moderation');
     assert.equal(moderation.hidden,false);
     const trigger=moderation.querySelector('.room-member-menu-trigger');
-    await React.act(async()=>trigger.click());
+    await React.act(async()=>trigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
     const menu=env.document.querySelector('.room-member-menu');
     assert.equal(menu.getAttribute('role'),'menu');
-    const buttons=[...menu.querySelectorAll('button')];
+    const buttons=[...menu.querySelectorAll('[role=menuitem]')];
     assert.equal(buttons[0].textContent,locale==='en'?'Move to spectators':'移到观众席');
     await React.act(async()=>buttons[0].click());
+    await React.act(async()=>{await new Promise(resolve=>setTimeout(resolve,20));});
     assert.deepEqual(moves,[[1,'guest12345']]);
     assert.deepEqual(removals,[]);
     assert.equal(trigger.getAttribute('aria-expanded'),'false');

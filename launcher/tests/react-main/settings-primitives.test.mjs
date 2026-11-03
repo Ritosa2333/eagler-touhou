@@ -1,6 +1,6 @@
 /** Third-consumer mounted contracts for shared presentation owners.
  * Synthetic DOM only; no browser layout, animation pixels or native runtime. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -42,11 +42,12 @@ test('third launch consumer shares shell/icon order and retains current intent, 
   await update('Preview');
   const play = n('#thirdPlay'), secondary = n('#thirdImport');
   assert.equal(play.parentElement.className, 'launch-wrap launch-actions launch-actions-compact');
-  assert.equal(play.className, 'launch'); assert.equal(secondary.className, 'launch launch-secondary');
-  assert.equal(play.firstElementChild.id, 'thirdText'); assert.equal(play.lastElementChild.className, 'launch-icon');
-  assert.equal(secondary.firstElementChild.className, 'launch-icon'); assert.equal(secondary.lastElementChild.textContent, 'Import');
-  assert.equal(play.querySelector('path').getAttribute('d'), 'm9 6 9 6-9 6Z');
-  for (const button of [play, secondary]) {assert.equal(button.type, 'button'); assert.equal(button.querySelector('.launch-icon').getAttribute('aria-hidden'), 'true');}
+  assert.ok(play.classList.contains('launch')); assert.ok(secondary.classList.contains('launch-secondary'));
+  assert.equal(play.lastElementChild.id, 'thirdText');
+  assert.equal(secondary.lastElementChild.textContent, 'Import');
+  assert.ok(play.firstElementChild.matches('svg.lucide-play'));
+  assert.ok(secondary.firstElementChild.matches('svg.lucide-folder-input'));
+  for (const button of [play, secondary]) {assert.equal(button.type, 'button'); assert.equal(button.firstElementChild.getAttribute('aria-hidden'), 'true');}
   play.click(); secondary.click(); assert.deepEqual(calls, ['Preview', 'import']); assert.equal(submits, 0);
   await update('Busy', true); assert.equal(n('#thirdPlay'), play); play.click(); assert.deepEqual(calls, ['Preview', 'import']);
   await update('Retry'); play.click(); assert.deepEqual(calls, ['Preview', 'import', 'Retry']); assert.equal(submits, 0);
@@ -58,9 +59,9 @@ test('third native group keeps model-owned disclosure and same child/focus throu
   async function update(open, prefix = 'first') {await render(React.createElement(owners.OptionsGroup, {id: 'thirdGroup', title: 'Third group', open,
     onOpenChange: value => changes.push([prefix, value]), bodyClassName: 'file-tools-grid'}, input));}
   await update(true);
-  const group = n('#thirdGroup'), draft = n('#draft'), summary = n('summary');
-  assert.equal(group.className, 'options-group'); assert.equal(summary.className, 'options-group-head');
-  assert.equal(summary.querySelector('i').textContent, '⌄'); assert.equal(summary.querySelector('i').getAttribute('aria-hidden'), 'true');
+  const group = n('#thirdGroup'), draft = n('#draft'), summary = n('.options-group-head');
+  assert.equal(group.className, 'options-group'); assert.ok(summary.classList.contains('options-group-head'));
+  assert.equal(summary.querySelector('.options-group-chevron').getAttribute('aria-hidden'), 'true');
   assert.equal(draft.parentElement.className, 'file-tools-grid'); draft.value = 'edited'; draft.focus();
   await act(() => summary.click()); assert.equal(changes.at(-1)[1], false, 'native toggle reports actual details state');
   await update(false, 'latest'); await update(true, 'latest');
@@ -69,22 +70,22 @@ test('third native group keeps model-owned disclosure and same child/focus throu
   await act(() => summary.click()); assert.deepEqual(changes.at(-1), ['latest', false]);
 });
 
-test('third option row preserves label/hint structure, linked switch and hidden/disabled gates', async () => {
+test('field labels activate the linked switch and describe it while hidden/disabled gates stay controlled', async () => {
   const changes = [];
-  async function update({hidden = false, disabled = false, checked = false, inlineLabel = false, hint = 'Reason'} = {}) {
+  async function update({hidden = false, disabled = false, checked = false, hint = 'Reason'} = {}) {
     await render(React.createElement(owners.OptionRow, {id: 'thirdRow', className: 'item option-frame-limit', label: 'Third switch', hint,
-      hintId: 'thirdHint', inlineLabel, hidden, control: React.createElement(owners.OptionSwitch, {id: 'thirdSwitch', label: 'Third switch', describedBy: 'thirdHint', title: 'Capability reason',
+      hintId: 'thirdHint', hidden, control: React.createElement(owners.OptionSwitch, {id: 'thirdSwitch', label: 'Third switch', title: 'Capability reason',
         disabled, checked, onChange: () => changes.push(!checked)})}));
   }
   await update(); const row = n('#thirdRow'), button = n('#thirdSwitch');
-  assert.equal(row.firstElementChild.className, 'itemtop'); assert.equal(n('#thirdHint').parentElement.firstElementChild.textContent, 'Third switch');
+  assert.equal(row.dataset.slot, 'field'); assert.equal(n('#thirdHint').parentElement.firstElementChild.textContent, 'Third switch');
+  assert.equal(row.querySelector('label').htmlFor, 'thirdSwitch');
   assert.equal(button.getAttribute('aria-describedby'), 'thirdHint'); assert.equal(button.title, 'Capability reason');
-  button.click(); assert.deepEqual(changes, [true]);
+  await act(()=>row.querySelector('label').click()); assert.deepEqual(changes, [true]);
   await update({disabled: true, checked: true, hidden: true}); assert.equal(n('#thirdSwitch'), button); assert.equal(row.hidden, true);
-  assert.equal(button.getAttribute('aria-checked'), 'true'); assert.equal(button.className, 'option-switch on'); button.click(); assert.deepEqual(changes, [true]);
-  await update({inlineLabel: true}); assert.equal(n('#thirdHint').parentElement.firstChild.nodeType, env.window.Node.TEXT_NODE);
+  assert.equal(button.getAttribute('aria-checked'), 'true'); assert.ok(button.classList.contains('ui-switch')); assert.equal(button.dataset.state,'checked'); await act(()=>button.click()); assert.deepEqual(changes, [true]);
   await render(React.createElement(owners.OptionRow, {className: 'item', label: 'Plain', control: React.createElement('button', {type: 'button'}, 'Control')}));
-  assert.equal(env.document.querySelector('small'), null); assert.equal(n('.itemtop>span').textContent, 'Plain');
+  assert.equal(env.document.querySelector('[data-slot="field-description"]'), null); assert.equal(n('[data-slot="field-label"]').textContent, 'Plain');
 });
 
 for (const productId of ['th06', 'th06mp']) test(`${productId}: grouped settings retain one touch section across mobile reorder`, async () => {
@@ -111,15 +112,15 @@ for (const productId of ['th06', 'th06mp']) test(`${productId}: grouped settings
   assert.equal(model.getSnapshot().options.pixelPerfectEnabled, true);
   const prefix = productId.endsWith('mp') ? 'mpMobile' : 'mobile';
   const section = n(`#${prefix}Options`), toggle = n(`#${prefix}OptionsToggle`), body = n(`#${prefix}OptionsBody`);
-  const groups = [...env.document.querySelectorAll('details.options-group')];
+  const groups = [...env.document.querySelectorAll('.options-group')].filter(node => node !== section);
   toggle.focus();
   for (const mobile of [true, false, true, false]) {
     await act(() => model.refreshContext({...context, mobile}));
-    assert.equal(n(`#${prefix}Options`), section); assert.equal(n(`#${prefix}OptionsToggle`), toggle); assert.equal(n(`#${prefix}OptionsBody`), body);
+    assert.equal(n(`#${prefix}Options`) === section, true); assert.equal(n(`#${prefix}OptionsToggle`) === toggle, true); assert.equal(n(`#${prefix}OptionsBody`) === body, true);
     assert.equal(env.document.querySelectorAll(`#${prefix}Options`).length, 1);
-    assert.deepEqual([...env.document.querySelectorAll('details.options-group')], groups);
+    assert.equal(groups.every(node => env.document.getElementById(node.id) === node),true,'Group nodes survive mobile reorder');
     assert.equal(model.getSnapshot().disclosure.touch, true); assert.equal(body.hasAttribute('inert'), false);
-    assert.equal(env.document.activeElement, toggle);
+    assert.equal(env.document.activeElement.id, toggle.id);
     const siblings = [...section.parentElement.children];
     assert.equal(mobile ? siblings.indexOf(section) < siblings.indexOf(groups[0]) : siblings.indexOf(section) > siblings.indexOf(groups.at(-1)), true);
   }

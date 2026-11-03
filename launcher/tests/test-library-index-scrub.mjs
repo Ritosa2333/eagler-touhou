@@ -1,6 +1,6 @@
 // Source-level gesture checks, without a browser or real-device claims.
 import assert from 'node:assert/strict';
-import {test} from 'node:test';
+import {test} from 'vitest';
 import {build} from 'esbuild';
 
 const compiled = await build({entryPoints: [new URL('../src/launcher/game-library.mts', import.meta.url).pathname.replace(/^\/(\w:)/, '$1')], bundle: true, format: 'esm', write: false});

@@ -66,7 +66,8 @@ export function createMidiBridge(options: MidiBridgeOptions) {
       if (!loading) loading = options.loadSynth().then(Constructor => {
         if (disposed) return null;
         if (!Constructor) throw new Error(options.translate('music.synthMissing'));
-        return synth ??= new Constructor({quality: 1, useReverb: 1, voices: 64});
+        synth ??= new Constructor({quality: 1, useReverb: 1, voices: 64});
+        return synth;
       }).finally(() => {loading = null;});
       await loading;
     }
