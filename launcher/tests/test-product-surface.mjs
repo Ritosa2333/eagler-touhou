@@ -1,103 +1,64 @@
-/** L0 generated-HTML registration contract. Mutation: none. Proves every
- * declared product has exactly one Launcher card with the correct
- * ordinary/Multiplayer identity and catalog-owned artwork. Rendering remains a
- * browser concern. */
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { parse } from "parse5";
-import { resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
-import {
-  PRODUCT_GAMES,
-  PRODUCT_IDS,
-  gameIdForProduct,
-  isMultiplayerProductId,
-} from "../lib/contracts/product-catalog.mjs";
+import {test} from 'vitest';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {parse} from 'parse5';
+import {PRODUCT_IDS, PRODUCT_GAMES, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId} from '../lib/contracts/product-catalog.mjs';
+import {APP_SHELL_FILES, FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource} from '../lib/frontend-manifest.mjs';
+import {createLibraryProducts} from '../app/components/launcher/products.ts';
+import {bookArtwork} from '../app/components/launcher/book-artwork.ts';
+import {hostArtworkFiles} from '../lib/host-artwork.mjs';
 
-const html = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
-const css = await readFile(resolveFrontendPackageSource("styles.css"), "utf8");
-const launcherSource = await readFile(new URL("../app/components/launcher/OptionsPanel.tsx", import.meta.url), "utf8");
-const document = parse(html);
-const cards = [];
-const navigationChoices = [];
-const legacyCards = [];
-const legacyChoices = [];
+const project = fileURLToPath(new URL('..', import.meta.url));
+const attr = (node, name) => node.attrs?.find(value => value.name === name)?.value ?? null;
+const nodes = root => [root, ...(root.childNodes ?? []).flatMap(nodes)];
+const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
-function attribute(node, name) {
-  return node.attrs?.find(item => item.name === name)?.value ?? null;
-}
-function walk(node) {
-  if (attribute(node, "data-minimap-preview")) {
-    const id = attribute(node, "data-minimap-preview");
-    if (id === "th05-standalone") {legacyChoices.push(id); return;}
-    navigationChoices.push(id);
-    const number = node.childNodes?.find(child => attribute(child, "class") === "minimap-index");
-    assert.equal(number?.childNodes?.[0]?.value, PRODUCT_GAMES[gameIdForProduct(id)].number);
+test('published home registers visible single-player products, routes and complete offline covers', async () => {
+  const document = parse(await readFile(resolveFrontendPackageSource('index.html'), 'utf8'));
+  const grid = nodes(document).find(node => attr(node, 'id') === 'bookGameGrid');
+  assert.ok(grid, 'published home includes the production game library');
+  const links = nodes(grid).filter(node => node.tagName === 'a' && attr(node, 'data-book-product'));
+  const expected = PRODUCT_IDS.filter(id => !isMultiplayerProductId(id) && productEnabledForBuild(id));
+  assert.deepEqual(links.map(node => attr(node, 'data-book-product')).sort(), [...expected].sort());
+  assert.equal(new Set(links.map(node => attr(node, 'data-book-product'))).size, links.length);
+  const products = createLibraryProducts(expected, path => path, id => '?game=' + id);
+  for (const link of links) {
+    const id = attr(link, 'data-book-product'), product = products.find(item => item.id === id);
+    assert.ok(product);
+    assert.equal(attr(link, 'data-game'), gameIdForProduct(id));
+    assert.equal(new URL(attr(link, 'href'), 'https://launcher.invalid/').searchParams.get('game'), id);
+    const images = nodes(link).filter(node => node.tagName === 'img');
+    const artwork = bookArtwork(product);
+    if (artwork) {
+      assert.equal(images.length, 1, id + ': one cover per card');
+      const published = attr(images[0], 'src').replace(/^\//, '');
+      if (FRONTEND_PACKAGE_FILES.includes(published)) {
+        assert.ok(APP_SHELL_FILES.includes(published), id + ': offline bundled cover');
+        assert.equal(sha(await readFile(resolveFrontendPackageSource(published))),
+          sha(await readFile(resolve(project, artwork.replace(/^\//, '')))), id + ': correct artwork bytes');
+      } else {
+        assert.equal(published, product.artwork, id + ': host cover follows the catalog');
+        assert.ok(hostArtworkFiles([gameIdForProduct(id)]).includes(published.replace(/^assets\//, '')), id + ': declared host artwork');
+      }
+    } else assert.equal(images.length, 0, id + ': no missing-artwork request');
   }
-  if (node.tagName === "a" && String(attribute(node, "class") || "").split(/\s+/).includes("game")) {
-    const game = attribute(node, "data-game");
-    const product = attribute(node, "data-product") || game;
-    const images = [];
-    const collectImages = child => {
-      if (child.tagName === "img") images.push(attribute(child, "src"));
-      for (const nested of child.childNodes || []) collectImages(nested);
-    };
-    collectImages(node);
-    const card = { game, product, images, style: attribute(node, "style") || "", rail: attribute(node.parentNode, "id") };
-    if (product === "th05-standalone") legacyCards.push(card); else cards.push(card);
-  }
-  for (const child of node.childNodes || []) walk(child);
-}
-walk(document);
-assert.deepEqual(legacyCards, []);
-assert.deepEqual(legacyChoices, []);
-assert.doesNotMatch(html, /id="cardFilterBar"/, "the removed category filter must not return");
-assert.deepEqual(navigationChoices.sort(), [...PRODUCT_IDS].sort(), "every catalog product needs a numbered navigation choice");
-assert.doesNotMatch(html, /minimap-swatch|--swatch-|minimap-panel/, "retired color-sample navigation must not return");
+});
 
-assert.equal(new Set(cards.map(card => card.product)).size, cards.length,
-  "Launcher product cards must have unique product identities");
-assert.deepEqual(cards.map(card => card.product).sort(), [...PRODUCT_IDS].sort(),
-  "every catalog product needs exactly one static Launcher card; do not add products only to JS routing");
-
-for (const card of cards) {
-  const game = gameIdForProduct(card.product);
-  assert.equal(card.rail, isMultiplayerProductId(card.product) ? "multiplayerRail" : "singleplayerRail",
-    `${card.product}: card must belong to its single-player or multiplayer shelf`);
-  assert.ok(PRODUCT_GAMES[game], `${card.product}: card points at an unregistered game`);
-  assert.equal(card.game, game, `${card.product}: card data-game must resolve to the catalog owner`);
-  if (PRODUCT_GAMES[game].cardArtwork) {
-    assert.ok(card.images.includes(`assets/${PRODUCT_GAMES[game].cardArtwork}`),
-      `${card.product}: card must use catalog-owned artwork`);
-  } else {
-    assert.equal(card.images.length, 0,
-      `${card.product}: a product with no readable artwork adapter must not reference a missing image`);
+test('every normal and multiplayer product preserves catalog identity and routing metadata', () => {
+  const products = createLibraryProducts(PRODUCT_IDS, path => path, id => '?game=' + id);
+  assert.deepEqual(products.map(item => item.id), [...PRODUCT_IDS]);
+  for (const product of products) {
+    const game = PRODUCT_GAMES[gameIdForProduct(product.id)];
+    assert.equal(product.gameId, gameIdForProduct(product.id));
+    assert.equal(product.multiplayer, isMultiplayerProductId(product.id));
+    assert.equal(product.href, '?game=' + product.id);
+    assert.equal(product.title, game.title);
+    assert.equal(product.number, game.number);
+    assert.equal(product.sourceRepository, game.support.sourceRepository);
+    assert.equal(product.artwork, game.cardArtwork ? 'assets/' + game.cardArtwork : null);
+    assert.deepEqual(product.presentation, game.cardPresentation);
   }
-  const presentation = PRODUCT_GAMES[game].cardPresentation;
-  if (presentation) {
-    for (const expected of [
-      `--art-position:${presentation.positionPercent}%`,
-      `--card-art-brightness:${presentation.artBrightness}`,
-      `--card-art-saturation:${presentation.artSaturation}`,
-      `--card-glow-brightness:${presentation.glowBrightness}`,
-      `--card-glow-saturation:${presentation.glowSaturation}`,
-    ]) assert.ok(card.style.includes(expected), `${card.product}: generated card lost presentation declaration ${expected}`);
-  }
-  if (isMultiplayerProductId(card.product)) {
-    assert.notEqual(card.product, card.game, `${card.product}: Multiplayer card needs explicit data-product`);
-  } else {
-    assert.equal(card.product, card.game, `${card.product}: ordinary card must not masquerade as another product`);
-  }
-}
-
-assert.doesNotMatch(css, /\.game-th\d+/i,
-  "shared Launcher CSS must not encode per-title card presentation branches; declare them in Product Catalog instead");
-assert.doesNotMatch(css, /assets\/th\d+-card\.webp/i,
-  "shared Launcher CSS must not carry a title-specific card-image fallback; touch/card previews must use Product Catalog artwork");
-assert.doesNotMatch(launcherSource, /\$\{state\.game\}-card\.webp/,
-  "Launcher must not reconstruct card filenames from a title-number convention");
-assert.doesNotMatch(html, /id="gameNoticeRepo"[^>]+href="[^"]*th\d+/i,
-  "static Launcher HTML must not seed the dynamic game-repository link with one title's repository");
-assert.match(launcherSource, /href=\{product\.sourceRepository\}/,
-  "visible adaptation notices must resolve their repository from Product Catalog support metadata");
-
-console.log(JSON.stringify({ productSurface: "PASS", products: PRODUCT_IDS }));
+});

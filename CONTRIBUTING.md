@@ -1,6 +1,6 @@
 # 参与开发
 
-先选择一项工作，运行对应组件，再开始修改。需要 Git 和 Node.js 24（最低 22.18）；游戏编译所需的工具链在各作开发指南中列出。
+先选择一项工作，运行对应组件，再开始修改。前端需要 Git 和 Bun 1.4.4；工作区工具使用 Node.js 24，游戏编译所需的工具链在各作开发指南中列出。
 
 ## 1. 取需要的目录
 
@@ -16,7 +16,7 @@ git switch -c your-change
 
 | 工作 | 接下来的命令或文档 |
 | --- | --- |
-| 前端 | `npm --prefix launcher ci --ignore-scripts`，然后 `npm run dev` |
+| 前端 | `bun install --cwd launcher --frozen-lockfile --ignore-scripts`，然后 `bun run dev` |
 | 前端与 th10 | `node tools/workspace.mjs select th10`，然后读[本地联调](launcher/docs/DEVELOPMENT.md) |
 | th10 普通版与 MP | `node tools/workspace.mjs select th10 --variant=both` |
 | Relay | `git sparse-checkout add services/relay`，然后读[服务开发](services/relay/README.md) |
@@ -69,9 +69,11 @@ monorepo 的 `main` 集成普通版与 MP。向独立作品源仓库回推时，
 
 ```sh
 npm run docs:check
-npm run typecheck
-npm run build
-npm test
+bun run lint
+bun run i18n:check
+bun run typecheck
+bun run build
+bun run test
 ```
 
 以上包含文档和前端检查。游戏改动再运行该作开发指南中的编译与行为检查；Relay 等服务运行自身测试。

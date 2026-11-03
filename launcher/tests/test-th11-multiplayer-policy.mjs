@@ -1,4 +1,4 @@
-/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import net from 'node:net';
@@ -8,6 +8,17 @@ import {PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerInputTimingPolicy
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {normalizeMultiplayerLobbySnapshot} from '../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs';
 import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.mjs';
+
+test("th11 multiplayer policy", async () => {
+/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+
+
+
+
+
+
+
+
 
 const game=PRODUCT_GAMES.th11, policy=multiplayerConfigForProduct('th11mp');
 assert.equal(isMultiplayerProductId('th11mp'),true);
@@ -47,13 +58,13 @@ for(const requestedMode of [0,2])for(const challengeMode of [false,true])for(con
   assert.equal(options.netplayPredictionLimit,12);assert.equal(options.netplayInputDelay,0);
   assert.equal(options.netplayInputDelayAuto,false);assert.equal(options.netplayChallengeMode,challengeMode);
 }
-for(const limit of [0,1,8,11,13,1.5,NaN])assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:limit},policy),/TH11/);
+for(const limit of [0,1,8,11,13,1.5,NaN])assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:limit},policy),/th11mp/);
 for(const patch of [{adonisMode:3},{adonisMode:-1},{predictionReserve:0},
   {inputDelay:10,inputDelayAuto:false},{challengeMode:'true'},{difficulty:5},
   {loadouts:[{character:0,shot:0},{character:2,shot:0}]}])
   assert.throws(()=>buildMultiplayerRuntimeOptions({...base,...patch},policy),JSON.stringify(patch));
 assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,inputDelayAuto:true},policy),/时序/);
-assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:8},PRODUCT_GAMES.th10.multiplayer),/TH11/,'room URL chooses actual title policy');
+assert.throws(()=>buildMultiplayerRuntimeOptions({...direct,predictionLimit:8},PRODUCT_GAMES.th10.multiplayer),/th11mp/,'room URL chooses actual title policy');
 for(const options of [base,direct]){
   const watcher=buildMultiplayerRuntimeOptions({...options,challengeMode:true,player:null,spectator:true,spectatorId:'watcher_test_123'},policy);
   assert.equal(watcher.netplayPlayer,null);assert.equal(watcher.netplayPredictionLimit,options.adonisMode===1?0:12);assert.equal(watcher.netplayChallengeMode,true);
@@ -187,3 +198,4 @@ async function verifyRelayCase(count,requestedMode,automatic,code){
 for(const fixture of [[2,0,false,'9101'],[3,0,false,'9102'],[2,1,true,'9111'],[3,1,false,'9112'],[2,2,false,'9121']])
   await verifyRelayCase(...fixture);
 console.log('TH11 MP D0/P12 Direct, legacy pure delay, typed Runtime options, EBTM/EBNP and real local 2P/3P relay policy PASS');
+});

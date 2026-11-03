@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import {ChevronUp} from 'lucide-react';
 import {RoomActionMenu} from './RoomActionMenu';
 import { QUICK_CHAT_ROWS } from '../../../src/contracts/multiplayer-quick-chat.mts';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
@@ -9,7 +10,7 @@ export function RoomQuickChat({ model, part = 'all' }: { model: MultiplayerQuick
   const { locale, t } = useLocale();
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const log = useRef<HTMLDivElement>(null);
-  const actions = useRef<HTMLDetailsElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Scroll after React commits new message rows.
   useLayoutEffect(() => {
     if (log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [state.entries]);
@@ -18,36 +19,18 @@ export function RoomQuickChat({ model, part = 'all' }: { model: MultiplayerQuick
   const messages = <div ref={log} className="mp-room-chat-log" role="log" aria-live="polite" aria-label={t('chat.players')}>
         {state.entries.filter(entry => !state.muted.includes(entry.clientId)).map(entry => (
           <p key={entry.id}>
-            <strong>{`${entry.spectator ? (locale === 'en' ? 'Spectator' : '观众') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`}</strong>
+            <strong>{`${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`}</strong>
             {`: ${locale === 'en' ? entry.phrase.en : entry.phrase.zh}`}
           </p>
         ))}
       </div>;
   if (part === 'log') return messages;
-  if (part === 'actions') return <FloatingRoomChat enabled={!!enabled} label={t('room.quickChat')} locale={locale} send={id => model.sendPhrase(id)}/>;
   return (
     <section id="mpRoomChat" className="mp-room-quick-chat" aria-label={t('chat.players')}>
       {part === 'all' && messages}
-      <details ref={actions} className="mp-room-chat-actions">
-        <summary>{t('room.quickChat')}</summary>
-        <div className="mp-room-chat-phrases">
-          {QUICK_CHAT_ROWS.flat().map(phrase => (
-            <button key={phrase.id} type="button" data-phrase={phrase.id}
-              disabled={!enabled} onClick={() => {model.sendPhrase(phrase.id); if (actions.current) actions.current.open = false;}}>
-              {locale === 'en' ? phrase.en : phrase.zh}
-            </button>
-          ))}
-        </div>
-      </details>
+      <RoomActionMenu enabled={!!enabled} label={t('room.quickChat')} triggerContent={<>{t('room.quickChat')}<ChevronUp className="room-quick-chat-chevron" aria-hidden="true"/></>}
+        triggerKind="quick-chat" menuClassName="room-quick-chat-picker"
+        items={QUICK_CHAT_ROWS.flat().map(phrase=>({id:phrase.id,label:locale==='en'?phrase.en:phrase.zh,select:()=>model.sendPhrase(phrase.id)}))}/>
     </section>
   );
-}
-
-/** Room menus share focus, clipping boundaries and motion. */
-function FloatingRoomChat({enabled, label, locale, send}: {enabled:boolean;label:string;locale:string;send(id:string):void}) {
-  return <section id="mpRoomChat" className="mp-room-quick-chat" aria-label={label}>
-    <RoomActionMenu enabled={enabled} label={label} triggerContent={<>{label}<span aria-hidden="true">⌃</span></>}
-      triggerClassName="room-quick-chat-trigger" menuClassName="room-quick-chat-picker"
-      items={QUICK_CHAT_ROWS.flat().map(phrase=>({id:phrase.id,label:locale==='en'?phrase.en:phrase.zh,select:()=>send(phrase.id)}))}/>
-  </section>;
 }

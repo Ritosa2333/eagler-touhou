@@ -17,9 +17,10 @@ export interface NetworkDiagnosticsDialogProps extends MainDialogProps, NetworkD
  * only the original Network button action invokes the imperative run port.
  */
 export function NetworkDiagnosticsDialog({model, getRelayUrl, getFallbackIceServers, onRunningChange, ref, ...props}: NetworkDiagnosticsDialogProps) {
-  const {t} = useLocale(), dialog = useMainDialog(props, 0);
+  const {t} = useLocale(), dialog = useMainDialog(props, {motion: false});
   const {snapshot, actions} = useNetworkDiagnostics({model, getRelayUrl, getFallbackIceServers, onRunningChange});
   useImperativeHandle(ref, () => actions, [actions]);
+  // biome-ignore lint/a11y/useKeyWithClickEvents: Native cancel and close controls own keyboard dismissal; the click handler only recognizes the backdrop.
   return <dialog ref={dialog.ref} className="lobby-dialog" id="lobbyNetworkDialog" aria-labelledby="lobbyNetworkTitle" onCancel={dialog.onCancel} onClick={dialog.onClick}>
     <LobbyDialogHeader titleId="lobbyNetworkTitle" title={t('networkCheck.title')} closeId="lobbyNetworkClose" closeLabel={t('action.close')} closeContent="×" onCloseRequest={dialog.requestClose}/>
     <NetworkDiagnosticResults snapshot={snapshot}/>

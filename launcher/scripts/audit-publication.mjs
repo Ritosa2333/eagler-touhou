@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { readdir, stat, readFile } from "node:fs/promises";
 import { extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {SITE_BRAND_FACES} from '../lib/site-brand.mjs';
 
 const args = process.argv.slice(2);
 const directoryArgument = args.find(value => value.startsWith("--directory="));
@@ -23,6 +24,9 @@ const quickChatVoiceClipAssets = new Set([
   "stop-fire", "bomb-me", "bomb-you", "leaving", "last-game", "last", "thanks", "xxzj",
 ].map(id => `assets/quick-chat/${id}.wav`));
 const publicAssets = new Set([
+  'assets/site-brand.mjs', 'assets/brand/LICENSE.txt', 'assets/brand/portrait.png',
+  'assets/favicon.png',
+  ...SITE_BRAND_FACES.map(face=>`assets/brand/${face}.svg`),
   "assets/launcher-background.webp",
   ...quickChatVoiceClipAssets,
   "assets/donation.webp",

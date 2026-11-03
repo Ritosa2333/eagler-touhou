@@ -3,10 +3,10 @@ import {loadGameVersion} from "../../package/game-version.mjs";
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
-import {linkAbortSignals, waitWithAbort} from '../services/abort-signals';
+import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
-import {detectUiLocale, isUiMessageKey, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
+import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAccept} from '../../src/launcher/replay-files.mts';
 import {discouragedBrowserId} from '../../src/launcher/browser-support.mts';
 import {createMultiplayerIdentityStore, multiplayerMemberId} from '../../src/launcher/multiplayer-identity.mts';
@@ -37,6 +37,7 @@ import {createTitleNetwork} from '../models/title-network';
 import {describeBrowserEnvironment} from '../../src/launcher/runtime-diagnostics-model.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from '../models/site-preferences';
 import {createReplayModel, type ReplayModel} from '../models/replays';
+import {relocateReplayPlayback} from '../services/replay-relocation';
 import {createMetadataService} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
@@ -45,7 +46,7 @@ import {createRoomPreparation} from '../services/room-preparation';
 import {createRoomSession, type RoomSession} from './room-session';
 import type {RoomLaunchContext, RoomOperationContext} from '../services/multiplayer-room';
 import {isGameDataAcquisitionFailure} from '../services/game-data-acquisition';
-import {createRuntimeService, RuntimeSessionSupersededError, type RuntimeService, type RuntimeSnapshot} from '../services/runtime';
+import {createRuntimeService, RuntimeSessionSupersededError, RuntimeWaitTimeoutError, type RuntimeService, type RuntimeSnapshot} from '../services/runtime';
 import {bindPixelPerfectDisplay} from '../services/pixel-perfect-display';
 import {createExternalMidiPort} from '../services/external-midi';
 import {createMidiBridge} from '../services/midi-bridge';
@@ -124,7 +125,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   try {externalInputConfirmed = storage?.getItem('eagler-external-input-confirmed-v1') === '1';} catch {}
   let touchFireEnabled = true;
   const touchFireState = {getEnabled: () => touchFireEnabled, setEnabled(value: boolean) {touchFireEnabled = value;}};
-  let roomReturnTimer: number | null = null, pendingRoomReturnProduct: ProductId | null = null;
+  let pendingRoomReturnProduct: ProductId | null = null;
   let playerOrientationPending = false;
   let playerRelayout: (() => Promise<boolean>) | null = null;
   let disposed = false, navigation: BrowserNavigationPorts | null = null;
@@ -224,7 +225,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (change.reason === 'sharing') {const key = change.current.shareSingleplayerSettings ? 'status.shareSettings' : 'status.separateSettings'; feedback.translatedStatus(() => t(key));}
     if (!change.current.multiplayer && change.reason === 'music') {
       const mode = change.current.music;
-      feedback.status(t('status.musicMode', {music: mode === 'midi' ? 'midi' : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull' : mode === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.none')}));
+      feedback.status(t('status.musicMode', {music: mode === 'midi' ? 'midi' : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.none')}));
     }
     if (!change.current.multiplayer && change.reason === 'language') {
       const entry = change.current.context.languages.find(value => value.id === change.current.language);
@@ -255,7 +256,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const fetchResource = window.fetch.bind(window);
   const network = createNetworkActivityTracker({fetchImpl: fetchResource, onChange: transfer.networkSnapshot});
   const metadata = createMetadataService({baseUrl, storage, getGameVersion: selectedVersion, indexedDBFactory: window.indexedDB,
-    translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(locale === 'en' ? 'en' : 'zh-CN', key, params);},
+    translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(isUiLocale(locale) ? locale : 'zh-CN', key, params);},
     webAudioAvailable: audio, webMidiAvailable: 'requestMIDIAccess' in window.navigator, mobile: preferTouchSettings(), locale: () => snapshot.locale,
     testBuild: new URL(window.location.href).searchParams.has('test')});
   function settingsContext(product: ProductId, locale: string) {const room = roomSession?.service.getSnapshot(); return {...metadata.settingsContext(product, locale), mobile: preferTouchSettings(), forbidUnlimitedMovement: !!room?.room?.disableCheatMovement && room.seat != null};}
@@ -325,9 +326,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     loadSiteManifest: signal => loadCompatibleSiteManifest(async file => {const response = await window.fetch(new URL(file, baseUrl), {cache: 'no-store', signal}); if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status}); return response.json();}),
     createSocket: url => relayRouting.createSocket(url), memberId: multiplayerMemberId,
     identity, sessions, sessionStorage, translate: t,
-    launcherUrl: () => new URL(snapshot.locale === 'en' ? 'en.html' : './', baseUrl).href,
+    launcherUrl: () => new URL(localeHome(snapshot.locale), baseUrl).href,
     navigateToRoom: url => requiredNavigation().navigateToRoom(url),
-    selectedProduct: new URL(window.location.href).searchParams.get('game') ?? undefined,
+    selectedProduct: new URL(window.location.href).searchParams.has('games') ? undefined : new URL(window.location.href).searchParams.get('game') ?? undefined,
     onSelectedProductNormalized: product => requiredNavigation().selectLobbyProduct(product),
   });
   const networkDiagnostics = createNetworkDiagnosticsModel({ translate: stringTranslate,
@@ -415,14 +416,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (await owner.close({decide: closeDecision})) temporaryFiles.delete(product);
   }
   async function closeDecision(error: unknown): Promise<'retry' | 'leave' | 'stay'> {
-    const choice = await decisions.askDecision({message: t('dialog.saveSyncFailed', {reason: errorText(error)}),
+    const choice = await decisions.askDecision({message: t('dialog.saveSyncFailed', {reason: errorText(error, t)}),
       confirmText: t('action.retrySave'), secondaryText: t('action.leaveAnyway'), cancelText: t('action.stayInGame'), tone: 'danger'});
     return choice === 'confirm' ? 'retry' : choice === 'secondary' ? 'leave' : 'stay';
   }
   async function requestRuntimeClose({nativeExit = false, leaveRoom = false}: {nativeExit?: boolean; leaveRoom?: boolean} = {}): Promise<boolean> {
     const owner = requiredRuntime();
     const currentRoom = roomSession?.service.getSnapshot();
-    if (!nativeExit && !leaveRoom && (owner.getSnapshot().launched || owner.getSnapshot().roomPreview) && !snapshot.replayViewer && currentRoom?.room &&
+    // A failed native engine can reject room-return while its filesystem still
+    // answers sync. Retire it through the ordinary save/close decision below.
+    if (!nativeExit && !leaveRoom && !owner.getSnapshot().error && (owner.getSnapshot().launched || owner.getSnapshot().roomPreview) && !snapshot.replayViewer && currentRoom?.room &&
         (!snapshot.th09NetworkOverlayOpen || owner.getSnapshot().runtimeVariant === 'multiplayer' && owner.getSnapshot().roomReturnSupported)) {
       try {if (owner.getSnapshot().launched) await owner.returnToRoom();}
       catch (error) {reportError(error); return false;}
@@ -452,6 +455,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
           roomSession?.service.resourcesChanged();
       });
     return true;
+  }
+  async function requestReplayManagerClose(): Promise<boolean> {
+    // A Replay manager can sit over a normal running game. Only the standalone
+    // viewer owns a Runtime that should be closed when its root manager exits.
+    return !snapshot.replayViewer || requestRuntimeClose();
   }
   function leaveRoom(): Promise<void> {
     if (roomLeaveTask) return roomLeaveTask;
@@ -565,7 +573,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   function reportGameLoaded() {
     const selected = activeSettings ?? settings.getSnapshot();
     feedback.playerStatus(t('runtime.readyStatus'));
-    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : selected.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}));
+    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId, music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : selected.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}));
   }
   function attachFrame(element: HTMLIFrameElement | null) {
     if (!element || element === frame) return;
@@ -661,7 +669,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         }
         return replayStorage.read(product, {...selection, language: activeSettings?.context.productId === product ? activeSettings.language : capturedSettings(product).language});
       }},
-      prompt: (message, initial) => window.prompt(message, initial), confirm: decisions.askConfirmation,
+      prompt: (message, initial, validation) => decisions.askText({title: t('action.rename'), confirmText: t('action.rename'), confirmOnEnter: true,
+        input: {label: message, defaultValue: initial, ...validation}}), confirm: decisions.askConfirmation,
       download: ports.download, toast: feedback.toast, afterPaint: ports.afterPaint,
       closeViewer: () => {if (snapshot.replayViewer) void requestRuntimeClose().catch(reportError);},
       afterClose: () => {
@@ -672,6 +681,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         if (snapshot.playerOpen && !snapshot.replayViewer) frame?.focus({preventScroll: true});
       },
       inspect: async (_product, path) => (await requiredRuntime().send('playback', {action: 'inspect', path})).description,
+      relocatePlayback: async (product, access, source, target) => {
+        await relocateReplayPlayback(requiredRuntime(), product, access.epoch, source, target, access.playback);
+        if (selectedReplayPath === source) selectedReplayPath = target;
+      },
       watch: async (_product, path, stage) => {await requiredRuntime().send('playback', {action: 'open', path, ...(stage !== undefined ? {stage} : {})});}});
     files = createFileActions({runtime, prepareFiles, releasePrepared, translate: stringTranslate, confirm: decisions.askConfirmation,
       pickFile: ports.pickFile, download: ports.download, feedback, replayMutations: replays.mutations,
@@ -764,9 +777,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         // its startup failure. Runtime may already have reset its failed epoch;
         // the existing launch/attempt identities fence this presentation instead.
         if (launchAbort === controller && !signal.aborted && directAttemptId !== null &&
-            gameData.getSnapshot().attempt?.id === directAttemptId && /超时/.test(errorText(error))) gameData.unlock(t('runtime.loadTimedOutImport'));
+            gameData.getSnapshot().attempt?.id === directAttemptId && error instanceof RuntimeWaitTimeoutError &&
+            error.waitKind === 'ready') gameData.unlock(t('runtime.loadTimedOutImport'));
       },
-      finish() {linked.dispose(); if (launchAbort === controller) {launchAbort = null; updateAbort = null; musicAbort = null; updating = false; downloadingMusic = false; downloadingPackage = false; downloadingLanguage = false; transfer.setCancellation(null); publish({});}}};
+      finish({hideTransfer = false}: {hideTransfer?: boolean} = {}) {linked.dispose(); if (launchAbort === controller) {if (hideTransfer) transfer.hide(); launchAbort = null; updateAbort = null; musicAbort = null; updating = false; downloadingMusic = false; downloadingPackage = false; downloadingLanguage = false; transfer.setCancellation(null); publish({});}}};
   }
   async function configuredLaunch(product: ProductId, intent: {multiplayer?: MultiplayerPreparation; replayPath?: string; replayWorkspace?: boolean; signal?: AbortSignal; awaitFirstFrame?: boolean; throwErrors?: boolean} = {}) {
     const operation = preparationIntent(product, intent.multiplayer, intent.signal, intent.replayPath), {owner, clickSettings, controller} = operation;
@@ -789,7 +803,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       operation.recoverDirectPreloadTimeout(error);
       if (intent.throwErrors) throw error;
       if (await gameData.handleLaunchFailure(error)) return;
-      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId.toUpperCase()} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : clickSettings.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
+      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : clickSettings.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
     } finally {operation.finish();}
   }
   async function showRoomPlayer(context: RoomOperationContext, fullscreen: boolean, allowHelp = false) {
@@ -800,7 +814,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const player = document.querySelector<HTMLElement>('#player');
     if (!player) throw new Error('Launcher Player is not mounted');
     player.classList.add('open'); player.setAttribute('aria-hidden', 'false'); document.body.classList.add('player-active');
-    if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error)}));}}
+      if (fullscreen) {navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true}); try {await nativeTouch.enterFullscreen(player);} catch (error) {feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}}
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
   }
   async function launchRoom(context: RoomLaunchContext) {
@@ -900,7 +914,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       else startupError.show(error, t('multiplayer.checkGame'), true);
       feedback.status(t('multiplayer.checkGameFailed', {reason})); return; // Room owner emits the original 4000 ms check toast once.
     }
-    const cancelled = !!error && typeof error === 'object' && 'name' in error && error.name === 'AbortError' || /已取消下载/.test(reason);
+    const cancelled = isAbortError(error) || /已取消下载/.test(reason);
     if (!owner.getSnapshot().launched && cancelled) {await closeRoomPlayerWithoutSync(); feedback.status(t('runtime.downloadCancelled')); return;}
     if (!owner.getSnapshot().launched && isGameDataAcquisitionFailure(error)) {
       publish({roomLaunchStage: null}); feedback.playerStatus(t('runtime.missingResourcesPlayer'));
@@ -909,7 +923,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (snapshot.roomLaunchStage && snapshot.playerOpen) await finishFailedRoomOperation(); else publish({roomLaunchStage: null});
     feedback.status(reason); feedback.playerStatus(reason); feedback.toast(reason);
     const seat = roomSession?.service.getSnapshot().seat;
-    startupError.show(error, seat == null ? t('runtime.multiplayerContext', {game: gameIdForProduct(context.product).toUpperCase()}) : t('runtime.multiplayerPlayerContext', {game: gameIdForProduct(context.product).toUpperCase(), player: seat + 1}), true);
+    startupError.show(error, seat == null ? t('runtime.multiplayerContext', {game: gameIdForProduct(context.product)}) : t('runtime.multiplayerPlayerContext', {game: gameIdForProduct(context.product), player: seat + 1}), true);
   }
   let replayPreparation: Promise<void> | null = null;
   function prepareReplayWorkspace(product: ProductId): Promise<void> {
@@ -1031,30 +1045,42 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     setMovementMode: mode => settings.setOption('touchMovementMode', mode), decisions, translate: t, notify: feedback.toast,
     prepareResources(context, report) {
       const task = roomPreloadTask.catch(() => {}).then(async () => {
+        async function presentPreview(epoch: number) {
+          const owner = requiredRuntime();
+          if (owner.getSnapshot().roomPreviewSupported && roomSession?.service.getSnapshot().seat != null && roomMusicConsentEpoch !== epoch) {
+            if (!await waitWithAbort(confirmMusicWarnings(), context.signal)) throw new DOMException(t('room.resourcesCancelled'), 'AbortError');
+            if (!context.isCurrent()) return;
+            roomMusicConsentEpoch = epoch;
+          }
+          if (!context.isCurrent() || owner.getSnapshot().roomPreview) return;
+          await waitWithAbort(owner.prepareRoomPreview(epoch), context.signal);
+          if (!context.isCurrent()) return;
+          const updateReady = await waitWithAbort(owner.checkPreparedCodeUpdate(epoch), context.signal);
+          if (!context.isCurrent()) return;
+          if (updateReady) feedback.toast(t('update.readyMessage'), 6000);
+          reportGameLoaded();
+        }
         if (!context.isCurrent()) return;
         const mode = classifyPlayerMode({multiplayer: true, spectator: roomSession?.service.getSnapshot().spectatorRequested});
         if (!await confirmTouchInput(mode, context.signal)) {
           if (!context.isCurrent()) return;
-          throw new Error(t('room.resourcesCancelled'));
+          throw new DOMException(t('room.resourcesCancelled'), 'AbortError');
         }
         if (!context.isCurrent()) return;
         // In-game TH09 entry already owns a running title engine. Do not close
         // it or take its FS ownership away just to warm a second engine.
         if (runtime?.getSnapshot().launched && !titleNetwork.getSnapshot().open) return roomPreparation.prepare(context, report);
         const priorRuntime = runtime?.getSnapshot();
-        const canReuse = priorRuntime?.game === gameIdForProduct(context.product) && priorRuntime.runtimeVariant === 'multiplayer' && priorRuntime.phase === 'prepared' && priorRuntime.roomPreview === true;
+        const canReuse = priorRuntime?.game === gameIdForProduct(context.product) && priorRuntime.runtimeVariant === 'multiplayer' && priorRuntime.phase === 'prepared' && (priorRuntime.roomPreview === true || roomPreload?.product === context.product && roomPreload.epoch === priorRuntime.epoch);
         // A current-program check must not announce a download/reload to the
         // relay. If the identity changed, the real reload below reports it.
         const agreement = await waitWithAbort(roomPreparation.prepare(context, canReuse ? () => {} : report), context.signal);
         if (!context.isCurrent()) return;
         const cached = roomPreload, current = runtime?.getSnapshot();
         const generation = current?.codeGeneration ?? (cached?.epoch === current?.epoch ? cached?.prepared.plan.multiplayerProgram?.generation : undefined);
-        if (current?.game === gameIdForProduct(context.product) && current.runtimeVariant === 'multiplayer' && current.phase === 'prepared' && current.roomPreview &&
+        if (current?.game === gameIdForProduct(context.product) && current.runtimeVariant === 'multiplayer' && current.phase === 'prepared' && (current.roomPreview || cached?.product === context.product && cached.epoch === current.epoch) &&
             generation === agreement?.runtimeGeneration) {
-          if (current.roomPreviewSupported && roomSession?.service.getSnapshot().seat != null && roomMusicConsentEpoch !== current.epoch) {
-            if (!await waitWithAbort(confirmMusicWarnings(),context.signal)) throw new Error(t('room.resourcesCancelled'));
-            roomMusicConsentEpoch = current.epoch;
-          }
+          await presentPreview(current.epoch!);
           // Ready verifies the current program without reloading unchanged DATA,
           // localization or music that the room already prepared on entry.
           return agreement;
@@ -1089,21 +1115,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
             onRuntimePlan(plan) {operation.input.onRuntimePlan?.(plan); report({status: 'preparing', stage: 'runtime', percent: null, error: '', title: t('room.preparingRuntime')});},
           }), context.signal);
           if (!context.isCurrent()) return;
-          if (owner.getSnapshot().roomPreviewSupported && roomSession?.service.getSnapshot().seat != null) {
-            if (!await waitWithAbort(confirmMusicWarnings(), context.signal)) throw new Error(t('room.resourcesCancelled'));
-            roomMusicConsentEpoch = owner.getSnapshot().epoch;
-          }
-          if (!context.isCurrent()) return;
-          await waitWithAbort(owner.prepareRoomPreview(prepared.runtimeSnapshot.epoch!), context.signal);
-          if (!context.isCurrent()) return;
-          const updateReady = await waitWithAbort(owner.checkPreparedCodeUpdate(prepared.runtimeSnapshot.epoch!), context.signal);
-          if (!context.isCurrent()) return;
-          if (updateReady) feedback.toast(t('update.readyMessage'), 6000);
           roomPreload = {product: context.product, epoch: prepared.runtimeSnapshot.epoch!, prepared};
-          reportGameLoaded();
-          transfer.hide();
+          await presentPreview(prepared.runtimeSnapshot.epoch!);
           return agreement;
-        } finally {context.signal.removeEventListener('abort', cancelDecision); operation.finish();}
+        } finally {context.signal.removeEventListener('abort', cancelDecision); operation.finish({hideTransfer: true});}
       });
       roomPreloadTask = task;
       return task;
@@ -1128,11 +1143,6 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         const destination = requiredNavigation().leaveRoomRoute(input);
         if (!input.message && destination === 'options') {
           pendingRoomReturnProduct = settings.getSnapshot()!.context.productId;
-          if (roomReturnTimer !== null) window.clearTimeout(roomReturnTimer);
-          roomReturnTimer = null;
-          const reduced = preferences.getSnapshot().lessMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          document.body.classList.toggle('mp-room-returning', !reduced);
-          if (!reduced) roomReturnTimer = window.setTimeout(() => {document.body.classList.remove('mp-room-returning'); roomReturnTimer = null;}, 180);
           publish({});
         }
         if (input.message && destination === 'options') feedback.toast(input.message);
@@ -1189,7 +1199,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     },
     room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
-    initialize, attachFrame, requestRuntimeClose, launch, openReplayViewer, exitRoomPlayerFullscreen,
+    initialize, attachFrame, requestRuntimeClose, requestReplayManagerClose, launch, openReplayViewer, exitRoomPlayerFullscreen,
     restoreRoomFromUrl,
     reloadRoomResources,
     restoreRoomSettings() {
@@ -1268,7 +1278,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     reportError,
     async dispose() {
       unbindPixelPerfectDisplay?.();
-      if (disposed) return; disposed = true; if (telemetryTimer !== null) window.clearInterval(telemetryTimer); launchAbort?.abort(); if (roomReturnTimer !== null) window.clearTimeout(roomReturnTimer); document.body.classList.remove('mp-room-returning'); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchLayoutGame(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
+      if (disposed) return; disposed = true; if (telemetryTimer !== null) window.clearInterval(telemetryTimer); launchAbort?.abort(); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchLayoutGame(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
       document.removeEventListener('fullscreenchange', fullscreenChanged); document.removeEventListener('webkitfullscreenchange', fullscreenChanged); unsubscribeTitle(); titleNetwork.dispose(); calibration.dispose(); gameData.dispose(); transfer.dispose(); startupError.dispose(); gameUpdates?.dispose(); decisions.dispose(); feedback.dispose(); replays?.dispose(); unsubscribeRuntime?.(); diagnostics?.dispose(); gameplayNetwork?.dispose(); midi?.dispose(); externalMidi.dispose();
       await nativeTouch.dispose();
       if (runtime && frame?.isConnected === false) runtime.disposeDetachedFrame();

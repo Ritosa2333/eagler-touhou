@@ -82,7 +82,6 @@ if (!gameIds.length || gameIds.some(game => !Object.hasOwn(PRODUCT_GAMES, game))
   throw new Error("Site Manifest contains no products or an unregistered product");
 }
 const preloadGames = gameIds.filter(game => PRODUCT_GAMES[game].dataProvider === "emscripten-preload");
-if (!deployment.files.some(item => item.path === "touch-guide.css")) throw new Error("touch guide stylesheet missing from deployment");
 if (!deployment.files.some(item => item.path === "site.webmanifest")) throw new Error("Home Screen Web App manifest missing from deployment");
 if (reactFrontend && !reactFrontend.appShell) {
   if (!deployment.files.some(item => item.path === "app-shell-sw.js") ||
@@ -93,7 +92,6 @@ if (reactFrontend && !reactFrontend.appShell) {
 if (!deployment.files.some(item => item.path === "migrate.html")) throw new Error("origin migration page missing from deployment");
 if (!deployment.files.some(item => item.path === "about.html")) throw new Error("about page missing from deployment");
 if (!deployment.files.some(item => item.path === "faq.html")) throw new Error("FAQ page missing from deployment");
-if (!deployment.files.some(item => item.path === "about.css")) throw new Error("about stylesheet missing from deployment");
 if (!deployment.files.some(item => item.path === "content/FIRST_USE_NOTICE.html")) throw new Error("content/FIRST_USE_NOTICE.html missing from deployment");
 if (!deployment.files.some(item => item.path === "content/MULTIPLAYER.html")) throw new Error("content/MULTIPLAYER.html missing from deployment");
 for (const font of ["yatra-one-latin.woff2", "chill-round-gothic-site-medium.woff2", "chill-round-gothic-site-bold.woff2", "chill-round-gothic-site-heavy.woff2"]) {

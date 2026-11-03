@@ -1,7 +1,7 @@
 import {gameIdForProduct, isMultiplayerProductId, type ProductId} from '../../src/contracts/product-catalog.mts';
 import {createReplayMutationQueue, isReplayFilePath, isReplayTargetAvailable, replayStoragePathKey, allocateReplayName,
   type ReplayMutationQueue} from '../../src/launcher/replay-files.mts';
-import type {RuntimeService, RuntimeFileSession} from '../services/runtime';
+import {RuntimeSessionSupersededError, type RuntimeService, type RuntimeFileSession} from '../services/runtime';
 import type {RuntimeResponseMessage} from '../../src/contracts/runtime-protocol.mts';
 import type {SettingsDecision} from '../components/settings/types';
 import {parseTh09ReplayMatch, isTh09ReplayDirectory, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
@@ -9,6 +9,8 @@ import type {ReplayStorageReader} from '../services/replay-storage';
 import {zipSync} from 'fflate';
 import {parseReplayDescription, type ReplayDescription} from '../../src/launcher/replay-description.mts';
 import {replayFilePolicy} from '../../src/launcher/replay-storage-policy.mts';
+import {errorText} from '../services/error-text';
+import type {DecisionInput} from './decisions';
 
 export interface ReplayRow {readonly path: string; readonly name: string; readonly size: number; readonly modifiedAt?: number; readonly replayMatch?: Th09ReplayMatch}
 export interface ReplayFolder {readonly key: string; readonly name: string; readonly rows: ReplayRow[]}
@@ -44,7 +46,7 @@ export interface ReplayModelOptions {
   /** Host must recheck product/epoch before retiring an owned idle preload. */
   releasePrepared(product: ProductId, epoch: number): Promise<void>;
   translate(key: string, params?: Record<string, string | number>): string;
-  prompt(message: string, initial: string): string | null | Promise<string | null>;
+  prompt(message: string, initial: string, validation?: Pick<DecisionInput, 'description' | 'validate'>): string | null | Promise<string | null>;
   confirm(decision: SettingsDecision): Promise<boolean>;
   download(name: string, bytes: ArrayBuffer, mime: string): void;
   toast(message: string): void;
@@ -53,11 +55,7 @@ export interface ReplayModelOptions {
   mutations?: ReplayMutationQueue;
   watch?(product: ProductId, path: string, stage?: number): Promise<void>;
   inspect?(product: ProductId, path: string): Promise<unknown>;
-}
-function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (error && typeof error === 'object' && !Array.isArray(error) && 'message' in error && typeof error.message === 'string') return error.message;
-  return String(error ?? '');
+  relocatePlayback?(product: ProductId, access: RuntimeFileSession, source: string, target: string): Promise<void>;
 }
 export const formatReplayBytes = (bytes: number) => bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
 
@@ -65,6 +63,7 @@ export const formatReplayBytes = (bytes: number) => bytes < 1024 * 1024 ? `${(by
  * calls close after its original exit animation/native-dialog close completes. */
 export function createReplayModel(options: ReplayModelOptions) {
   const {runtime, translate: t} = options;
+  const errorMessage = (error: unknown) => errorText(error, t);
   const mutations = options.mutations ?? createReplayMutationQueue();
   const listeners = new Set<() => void>();
   let snapshot: ReplaySnapshot = Object.freeze({open: false, phase: 'idle', productId: null, rows: [], animateRows: false, descriptions: {}, inspecting: null});
@@ -104,7 +103,8 @@ export function createReplayModel(options: ReplayModelOptions) {
         await options.afterPaint();
       }
     }).catch(error => {
-      if (valid(token, product) && !watching) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));
+      if (valid(token, product) && !watching && !(error instanceof RuntimeSessionSupersededError))
+        options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));
     });
   }
   function responseBytes(response: RuntimeResponseMessage): number[] {
@@ -271,17 +271,34 @@ export function createReplayModel(options: ReplayModelOptions) {
       options.download(path.split('/').pop() || 'replay.rpy', bytes.buffer, 'application/octet-stream');
     } catch (error) {if (valid(token, product)) options.toast(t('replay.downloadFailed', {reason: errorMessage(error)}));}
   }
+  async function relocateFile(access: RuntimeFileSession, product: ProductId, source: string, target: string, content: number[], replayMatch?: Th09ReplayMatch): Promise<void> {
+    await access.send('write', {path: target, bytes: content, ...(replayMatch ? {replayMatch} : {})});
+    await access.sync();
+    const saved = responseBytes(await access.send('read', {path: target}));
+    if (saved.length !== content.length || saved.some((byte, index) => byte !== content[index])) throw new Error(t('file.saveVerifyFailed'));
+    await options.relocatePlayback?.(product, access, source, target);
+    await access.send('remove', {path: source});
+  }
   async function rename(path: string, suppliedName?: string): Promise<void> {
     const product = snapshot.productId, token = generation;
     if (!product || !valid(token, product)) return;
+    let mutationStarted = false;
     try {
       const name = path.split('/').pop() || path;
-      const renamed = suppliedName ?? await options.prompt(t('replay.renamePrompt'), name);
-      if (renamed === null || !valid(token, product)) return;
-      if (!renamed.trim()) throw new Error(t('replay.nameEmpty'));
       const {prefix, validName, sharedExtensionSlot} = replayFilePolicy(product);
-      if (!prefix) throw new Error(t('replay.unsupported'));
-      if (!validName(renamed.trim())) throw new Error(t('replay.nameInvalid', {prefix}));
+      const validate = (value: string): string | null => {
+        if (!value.trim()) return t('replay.nameEmpty');
+        if (!prefix) return t('replay.unsupported');
+        if (!validName(value.trim())) return t('replay.nameInvalid', {prefix});
+        const target = `${path.slice(0, path.lastIndexOf('/'))}/${value.trim()}`;
+        if (replayStoragePathKey(target, sharedExtensionSlot) !== replayStoragePathKey(path, sharedExtensionSlot)
+          && !isReplayTargetAvailable(snapshot.rows.map(row => row.path), target, sharedExtensionSlot)) return t('replay.nameExists');
+        return null;
+      };
+      const renamed = suppliedName ?? await options.prompt(t('replay.renamePrompt'), name, {description: t('replay.nameInvalid', {prefix}), validate});
+      if (renamed === null || !valid(token, product)) return;
+      const validationError = validate(renamed);
+      if (validationError) throw new Error(validationError);
       const target = `${path.slice(0, path.lastIndexOf('/'))}/${renamed.trim()}`;
       if (replayStoragePathKey(target, sharedExtensionSlot) === replayStoragePathKey(path, sharedExtensionSlot)) return;
       await mutations.run(async () => {
@@ -295,16 +312,17 @@ export function createReplayModel(options: ReplayModelOptions) {
           if (!isReplayTargetAvailable(currentPaths, target, sharedExtensionSlot)) throw new Error(t('replay.nameExists'));
           const content = responseBytes(await access.send('read', {path}));
           const replayMatch = currentFiles.find(file => file.path === path)?.replayMatch;
-          await access.send('write', {path: target, bytes: content, ...(replayMatch ? {replayMatch} : {})});
-          await access.send('remove', {path});
+          mutationStarted = true;
+          await relocateFile(access, product, path, target, content, replayMatch);
         }, true);
       });
       if (valid(token, product)) await refresh();
-    } catch (error) {if (valid(token, product)) options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));}
+    } catch (error) {if (valid(token, product)) {if (mutationStarted) await refresh().catch(() => {}); options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));}}
   }
   async function move(path: string, directory: string): Promise<boolean> {
     const product = snapshot.productId, token = generation;
     if (!product || !valid(token, product)) return false;
+    let mutationStarted = false;
     try {
       if (!isTh09ReplayDirectory(directory) || !isReplayFilePath(path)) throw new Error(t('replay.folderInvalid'));
       if (path.slice(0, path.lastIndexOf('/')).toLowerCase() === directory.toLowerCase()) return true;
@@ -318,17 +336,13 @@ export function createReplayModel(options: ReplayModelOptions) {
           const name = allocateReplayName(prefix, files.map(file => file.path), source.name, sharedExtensionSlot, directory);
           if (!name) throw new Error(t('file.replaySlotsExhausted'));
           const target = `${directory}/${name}`, content = responseBytes(await access.send('read', {path}));
-          await access.send('write', {path: target, bytes: content, ...(source.replayMatch ? {replayMatch: source.replayMatch} : {})});
-          // The destination must survive a flush before removing the source.
-          await access.sync();
-          const saved = responseBytes(await access.send('read', {path: target}));
-          if (saved.length !== content.length || saved.some((byte, index) => byte !== content[index])) throw new Error(t('file.saveVerifyFailed'));
-          await access.send('remove', {path});
+          mutationStarted = true;
+          await relocateFile(access, product, path, target, content, source.replayMatch);
         }, true);
       });
       if (valid(token, product)) await refresh();
       return true;
-    } catch (error) {if (valid(token, product)) options.toast(t('replay.operationFailed', {reason: errorMessage(error)})); return false;}
+    } catch (error) {if (valid(token, product)) {if (mutationStarted) await refresh().catch(() => {}); options.toast(t('replay.operationFailed', {reason: errorMessage(error)}));} return false;}
   }
   async function downloadFolder(directory: string): Promise<void> {
     const product = snapshot.productId, token = generation;

@@ -8,7 +8,11 @@ export function useOptionsViewport(ref: RefObject<HTMLElement | null>) {
     if (!node) return;
     const viewport = window.visualViewport;
     if (viewport && viewport.scale !== 1) return;
-    const width = viewport?.width || document.documentElement.clientWidth;
+    // A modal removes the root scrollbar while the reserved body gutter stays.
+    // Keep the options aligned with that same content width across rotation and
+    // modal close, instead of following the temporarily wider visual viewport.
+    const contentWidth = document.body.getBoundingClientRect().width || document.documentElement.clientWidth;
+    const width = Math.min(viewport?.width || contentWidth, contentWidth);
     const height = viewport?.height || window.innerHeight;
     const values = {'--options-view-width': `${width}px`, '--options-view-height': `${height}px`,
       '--options-view-top': `${viewport?.offsetTop || 0}px`, '--options-view-left': `${viewport?.offsetLeft || 0}px`};

@@ -10,14 +10,16 @@ export interface LobbyOptionsHostProps {
   /** Editor/player stays in its fixed root DOM location. Pause only the modal. */
   foregroundActive?: boolean;
 }
-/** Native focus/input carrier only. The shared options owner and CSS drive
+/** Native focus/input carrier only. The shared options owner and animator drive
  * entrance, exit and retirement on both the library and directory surfaces. */
 export function LobbyOptionsHost({open, onCloseRequest, children, foregroundActive = false}: LobbyOptionsHostProps) {
   const {t} = useLocale();
-  const dialog = useMainDialog({open, onCloseRequest, suspended: foregroundActive}, 0);
+  const dialog = useMainDialog({open, onCloseRequest, suspended: foregroundActive}, {motion: false});
+  // biome-ignore lint/a11y/useKeyWithClickEvents: Native cancel and the shared Back control provide keyboard dismissal of this backdrop.
   return <dialog ref={dialog.ref} className="lobby-options-host" id="lobbyOptionsDialog" aria-label={t('lobby.gameOptions')}
     onCancel={event => {event.preventDefault(); onCloseRequest();}}
     onClick={event => {if (event.target === event.currentTarget) onCloseRequest();}}>
+    {/* biome-ignore lint/a11y/noAutofocus: Explicitly opening the modal moves focus into its retained settings document. */}
     <div data-launcher-document="" className="lobby-options-document" tabIndex={-1} autoFocus><div className="main library-layout">
       <OptionsBackdrop onBack={onCloseRequest}/>
       {children}

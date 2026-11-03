@@ -67,9 +67,6 @@ export async function buildLauncherStyleOutputs({ project, outputDirectory }) {
     });
     outputs.push(...result.outputFiles);
   }
-  const touch = await build({ entryPoints: [resolve(project, "public/touch-guide.css")], outfile: resolve(outputDirectory, "touch-guide.css"),
-    bundle: true, minify: true, write: false, external: ["*.woff2", "*.webp", "*.png", "*.svg", "*.jpg"], logLevel: "warning" });
-  outputs.push(...touch.outputFiles);
   return outputs;
 }
 

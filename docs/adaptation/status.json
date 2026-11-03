@@ -6,7 +6,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "056b36e550efab83ab7dbbb7ae23e595b1e6b0104fea82d19069f7b6f8c2d922",
+      "sourceDigest": "6c8ccc4b5b8a6b7776fc1ace287da6e5017788c78980a27d5ce2e64fe86214c5",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -111,6 +111,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -129,6 +131,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -146,6 +150,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -162,6 +168,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -187,7 +195,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "e9e79b49c41156e33ed7a4985d189d2c3103b0e1211ea221a38fea61ce1c5799",
+      "sourceDigest": "5f39c9c51db9a2cf40041e43c8d10520dd06f6a5e45272438ce118a9c87a79ad",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -292,6 +300,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -310,6 +320,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -327,6 +339,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -343,6 +357,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -362,6 +378,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -387,7 +405,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "403471f4207181638b9785cf3b1dcfba748a30af116bbe96c8b06939e5084db5",
+      "sourceDigest": "e2c8d5d25a4a02afb86603ca8467ff6bf90e6b836ccb186b1a95df007091edc8",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -492,6 +510,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -510,6 +530,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -527,6 +549,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -543,6 +567,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -568,7 +594,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "43813e2f43e441823bede54cc36b6f3934abae30c4c987923dbe7bbb3f97fa1b",
+      "sourceDigest": "4028dc47581b0c5b05474ea4b526e1272cf969ef128e2686de268ba249029cb0",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -673,6 +699,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -691,6 +719,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -708,6 +738,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -724,6 +756,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -743,6 +777,8 @@
         {
           "id": "preload-replay-storage",
           "level": "module",
+          "runner": "vitest",
+          "project": "workspace",
           "games": [
             "th06",
             "th07"
@@ -768,7 +804,7 @@
       "game": "th075",
       "variant": "multiplayer",
       "directory": "ports/th075-mp",
-      "sourceDigest": "d90147f0b1ab18c3ec1c0cd2ab7b8858a6422a5f6f64a0375a2eae16324b2f7e",
+      "sourceDigest": "b1b338914d8705f8d2c980f089367061d3bd7c8ca58ca50c2d852bfa4fc906d4",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 207,
@@ -862,6 +898,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -880,6 +918,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -897,6 +937,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -916,7 +958,7 @@
       "game": "th075",
       "variant": "normal",
       "directory": "ports/th075",
-      "sourceDigest": "edde46469da307d7c93de796d3c92d1c174a74beb82b8a8c3cc0dcdedab8cb05",
+      "sourceDigest": "d8d63931d01313427476333c7c553de8d7475b3759607bb97c7883f78e07d156",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 200,
@@ -1009,6 +1051,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1027,6 +1071,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1044,6 +1090,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1060,6 +1108,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -1082,7 +1132,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "420947a1abdae03fd4b615ece3f6bc773203da47a318e60cc27f3a760b98b99a",
+      "sourceDigest": "60518efa73a8321bf0a3d7e83a3c66863c46ba583e233779d43f561ba58c8858",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -1177,6 +1227,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1195,6 +1247,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1212,6 +1266,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1231,7 +1287,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "cd14d0c7ce4f6bb8828b7ac9494417b462edf3cde19be16e59491140b4911021",
+      "sourceDigest": "3b499974396fd6450c199f40dda2a26391568c787ab46199dd7f0f2dbe8c0d9c",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1325,6 +1381,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1343,6 +1401,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1360,6 +1420,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1376,6 +1438,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -1398,7 +1462,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "e7b99043d061eb63e60dd6746e788665c638ebc5afdf67d5d44beda71cad5800",
+      "sourceDigest": "e180287d17f9a0f6d0cd0203e32a7fd591f7ea381ff9d94995be23ee88b70ccf",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1490,6 +1554,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1508,6 +1574,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1525,6 +1593,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1544,7 +1614,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "72f382eebd81027434fb7e642171e09d4c283ce3fd3a1da3599cb5662cdaa320",
+      "sourceDigest": "d31ed880237cf6360c81c84d9f304d4a3b2466f80253ccdf4e2fe75026ecf174",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1636,6 +1706,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1654,6 +1726,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1671,6 +1745,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1687,6 +1763,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -1709,7 +1787,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "20861c21c49ff74ce487f66e4da855a8c63572e4470b567edd3f9fb32935d278",
+      "sourceDigest": "364212277f4d86dba85ca56b901ee40b55b4e83116fad6932d33a6ac06996996",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 277,
@@ -1803,6 +1881,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1821,6 +1901,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1838,6 +1920,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -1857,7 +1941,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "df42f73bd94e6b9c23822b710c3d5cd1e686abd515e35d4717d55b6bf221b10f",
+      "sourceDigest": "1c499afb697007be2fc80fb9a926129c0e0123cb3854b149be1e314359f2dafb",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -1951,6 +2035,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -1969,6 +2055,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -1986,6 +2074,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2002,6 +2092,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -2024,7 +2116,7 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "abe721bde0b9fb93140bd8e8a078b7469f0ffe28741f70b1dc52c4948b54818d",
+      "sourceDigest": "66e2fb76d48e6a22ac035dd5a6f170e2f9c76358428074dd340166c20ac18e71",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 139,
@@ -2118,6 +2210,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2136,6 +2230,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2153,6 +2249,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2172,7 +2270,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "4f9e6d3e0a1b11f37b8382b47ae3e129430befd7e31602c208a79fcefe31287a",
+      "sourceDigest": "a1f7610e118bba7f4201b35ed026b2933f7556237bb0d08a9bc9b8b1b281c452",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 115,
@@ -2266,6 +2364,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2284,6 +2384,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2301,6 +2403,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2317,6 +2421,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -2339,7 +2445,7 @@
       "game": "th12",
       "variant": "multiplayer",
       "directory": "ports/th12-mp",
-      "sourceDigest": "d48d9136b9a2bb99138d5d96b1dbb7c702979ddcf74e0eb5cc007af92d2d02a2",
+      "sourceDigest": "1a9990f6f716f8a863812fa85fbcd3d299c4600a2dbeb9b21dc476c0cea60623",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 95,
@@ -2439,6 +2545,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2457,6 +2565,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2474,6 +2584,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2493,7 +2605,7 @@
       "game": "th12",
       "variant": "normal",
       "directory": "ports/th12",
-      "sourceDigest": "2960e1b6a8c9b24a966c3919d774aaf56d4a502996f1bc2520294be833a2d953",
+      "sourceDigest": "3cf3ab58be1ec05ca456cc2c3ee484f5da26156234ec0801ac0f88bb1700f9e6",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 81,
@@ -2593,6 +2705,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2611,6 +2725,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2628,6 +2744,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2644,6 +2762,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -2666,7 +2786,7 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "c37dab4fe2a394a909e077a16f2440dac7f02fc375f9024b5ef3b7144d611263",
+      "sourceDigest": "80a6fe1fda8f34ec09a5d2a72902165aabf6ccb59f07df63950a72026bd34436",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 271,
@@ -2759,6 +2879,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2777,6 +2899,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2794,6 +2918,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2813,7 +2939,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "aacc1cf920a4800b7ee533484075a5642ec0de8ac39cf8c48190f627e9183791",
+      "sourceDigest": "6705e4577e3d5afc00ef2d23dce1590575820463a2eca27748b0d4eb4afcbf61",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -2906,6 +3032,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -2924,6 +3052,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -2941,6 +3071,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -2957,6 +3089,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -2979,7 +3113,7 @@
       "game": "th17",
       "variant": "normal",
       "directory": "ports/th17",
-      "sourceDigest": "44398a67d0cae1c398316f3538e8cc0de82369c67ee65981f9c29c2493d34e1c",
+      "sourceDigest": "90e055e02912d20fd8c106da4c0f8d02ee0a43c30edff1fbbfd3fed243a29bd0",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 211,
@@ -3083,6 +3217,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -3101,6 +3237,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -3118,6 +3256,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -3134,6 +3274,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -3156,7 +3298,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "22bf3c39b8c752be51332d8f3ed987784213b1dd68d2a025e13945b143d1b2d2",
+      "sourceDigest": "a1c1ea9f80cf8f9ca36ffd6523332e1c532c016e20cfa132cf3e7a60f65ba04c",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,
@@ -3249,6 +3391,8 @@
         {
           "id": "package-store",
           "level": "module",
+          "runner": "vitest",
+          "project": "repository",
           "checks": [
             "PACKAGE-01",
             "PACKAGE-02",
@@ -3267,6 +3411,8 @@
         {
           "id": "launcher-input-owners",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "INPUT-02",
             "INPUT-03",
@@ -3284,6 +3430,8 @@
         {
           "id": "shared-touch-controls",
           "level": "module",
+          "runner": "vitest",
+          "project": "unit",
           "checks": [
             "TOUCH-17",
             "TOUCH-18",
@@ -3300,6 +3448,8 @@
         {
           "id": "normal-presentation",
           "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
           "variants": [
             "normal"
           ],
@@ -3322,7 +3472,7 @@
       "game": "th05",
       "variant": "multiplayer",
       "directory": "ports/th05-mp",
-      "sourceDigest": "3cb395552264be7f445ef4a36976b6dc4df4a850ebc574be5254edb405195869",
+      "sourceDigest": "14693e896316d984be14b1d110471f7192e70a4d11987e381c11373eed63c7d7",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 90,
@@ -3577,7 +3727,7 @@
       "game": "th05",
       "variant": "normal",
       "directory": "ports/th05",
-      "sourceDigest": "29b7142b3b2449efee30d0920a7daaef73ec5235e26bf84c316a87c82d31c7b2",
+      "sourceDigest": "25e6b5b73597459b3a25e469a3bf25d5397d50b5e506627bed8bb18be7dd4f7a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 89,

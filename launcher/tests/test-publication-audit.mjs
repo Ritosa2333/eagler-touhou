@@ -1,14 +1,24 @@
-/** L3/tool behavior. Synthetic temporary Git repo only. Proves ignored local
- * bytes don't become source candidates, force-added bytes and concrete exports
- * are rejected. Does not authorize publishing or inspect real game data. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, copyFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+test("publication audit", async () => {
+/** L3/tool behavior. Synthetic temporary Git repo only. Proves ignored local
+ * bytes don't become source candidates, force-added bytes and concrete exports
+ * are rejected. Does not authorize publishing or inspect real game data. */
+
+
+
+
+
+
 const root=await mkdtemp(join(tmpdir(),"eagler-publication-audit-"));
 await mkdir(join(root,"scripts"));
+await mkdir(join(root,'lib'));
+await copyFile(new URL('../lib/site-brand.mjs',import.meta.url),join(root,'lib/site-brand.mjs'));
 await copyFile(new URL("../scripts/audit-publication.mjs",import.meta.url),join(root,"scripts/audit-publication.mjs"));
 await writeFile(join(root,".gitignore"),"*.dat\n");
 await writeFile(join(root,"private.dat"),"synthetic data, not game content");
@@ -36,3 +46,4 @@ const tracked=run([]);
 assert.notEqual(tracked.status,0,"force-added ignored private file must fail");
 assert.match(tracked.stderr,/private\.dat/);
 console.log("Publication audit scope: PASS (ignored / exported / public-host-artwork / force-added)");
+});

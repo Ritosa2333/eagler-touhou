@@ -1,5 +1,10 @@
 interface LinkedAbortSignal {signal: AbortSignal | undefined; dispose(): void;}
 
+/** Abort errors may originate in another window or worker realm. */
+export function isAbortError(error: unknown): boolean {
+  return !!error && typeof error === 'object' && 'name' in error && error.name === 'AbortError';
+}
+
 /** Stop waiting on read-only/background work that cannot itself be aborted.
  * Its continuation must still check ownership before touching a live Runtime. */
 export function waitWithAbort<T>(task: Promise<T>, signal: AbortSignal): Promise<T> {

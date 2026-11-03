@@ -187,7 +187,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       try {
         request.onAcquisitionActivity?.(true);
         const publication = await getPublication(gameVersion, request.signal);
-        if (!publication.catalog?.games[game]) throw new Error(`${game.toUpperCase()} 尚未提供美化版资源`);
+        if (!publication.catalog?.games[game]) throw new Error(`${game} 尚未提供美化版资源`);
         progress(request, 'package.installingResources');
         const result = await deps.installPublished(game, {...publication, gameVersion, addComponents: [],
           fetchImpl: getPackageFetch(game), signal: request.signal,
@@ -226,8 +226,8 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       } finally {request.onAcquisitionActivity?.(false);}
     }
     if (!host) throw new GameDataAcquisitionError(metadataSnapshot.releaseCatalogError
-      ? t('package.remoteUnavailableNoLocal', {game: game.toUpperCase(), reason: preparationErrorText(metadataSnapshot.releaseCatalogError)})
-      : t('package.releaseNotReadyNoLocal', {game: game.toUpperCase()}));
+      ? t('package.remoteUnavailableNoLocal', {game: game, reason: preparationErrorText(metadataSnapshot.releaseCatalogError)})
+      : t('package.releaseNotReadyNoLocal', {game: game}));
     if (host.shared.resourceMode === 'import') throw new GameDataAcquisitionError(t('package.importServerNoFiles'));
     if (host.shared.resourceMode === 'external') throw new GameDataAcquisitionError('外部游戏资源当前不可用，请检查网络 / CDN，或导入本地游戏包');
     if (PRODUCT_GAMES[game].dataProvider === 'retail-memory') {
@@ -240,7 +240,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const hosted = host.games[game];
     if (!hosted) throw new Error(t('runtime.hostManifestMissingGame', {game}));
     const entry = isMultiplayerProductId(request.productId) ? hosted.multiplayerRuntime : hosted.runtime;
-    if (!entry) throw new Error(t('runtime.multiplayerRuntimeMissing', {game: game.toUpperCase()}));
+    if (!entry) throw new Error(t('runtime.multiplayerRuntimeMissing', {game: game}));
     return {kind: 'direct-preload', host, entry, gameData: hosted.gameData};
   }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {
@@ -261,7 +261,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       return result.generation;
     }
     if (typeof file.name === 'string' && rawDataImportMatchesFileName(game, file.name)) {
-      const data = expectedData(), label = game.toUpperCase();
+      const data = expectedData(), label = game;
       if (!rawDataImportSizeMatches(data, file.size)) throw new Error(t('package.rawDataSizeMismatch', {game: label, actual: file.size, expected: data.bytes}));
       progress(request, 'package.validatingRawData', {game: label});
       const bytes = await file.arrayBuffer(), hash = await deps.hash(new Uint8Array(bytes)); checkPreparationAbort(signal);
@@ -274,7 +274,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     }
     try {
       const parsed = await deps.parseZip(file); checkPreparationAbort(signal);
-      if (parsed.descriptor.game !== game) throw new Error(t('package.wrongGame', {actual: parsed.descriptor.game.toUpperCase(), expected: game.toUpperCase()}));
+      if (parsed.descriptor.game !== game) throw new Error(t('package.wrongGame', {actual: parsed.descriptor.game, expected: game}));
       const importedVersion = parsed.descriptor.gameVersion ?? (/美化|beaut(?:y|ified)/i.test(file.name ?? '') ? 'beauty' : version);
       if (normalizeGameVersion(importedVersion) === "beauty") parsed.descriptor = {...parsed.descriptor, gameVersion: "beauty"};
       const targets = new Set(parsed.descriptor.base.files.map(id => parsed.descriptor.files[id]?.target));
@@ -286,7 +286,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       return done(await deps.installZip(parsed, {onProgress: value => progress(request, 'package.importingProgress', {...value})}));
     } catch (error) {if (!/Package ZIP is missing package\.json/.test(preparationErrorText(error))) throw error;}
     const data = expectedData(), legacy = await deps.parseLegacy(file); checkPreparationAbort(signal);
-    if (legacy.manifest.game !== game) throw new Error(t('package.legacyWrongGame', {actual: legacy.manifest.game.toUpperCase(), expected: game.toUpperCase()}));
+    if (legacy.manifest.game !== game) throw new Error(t('package.legacyWrongGame', {actual: legacy.manifest.game, expected: game}));
     if (legacy.manifest.data.path !== data.path) throw new Error(t('package.dataPathMismatch'));
     if (host?.shared.resourceMode === 'import' && !legacy.offline) throw new Error(t('package.serverNoContent'));
     if (legacy.offline) {
@@ -320,7 +320,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const game = gameIdForProduct(request.productId);
     if (!metadata.getSnapshot().releaseCatalog) {try {await metadata.initialize();} catch {}}
     checkPreparationAbort(request.signal);
-    let publication;
+    let publication: Awaited<ReturnType<typeof getPublication>>;
     try {publication = await getPublication(request.gameVersion ?? 'original', request.signal);}
     catch {checkPreparationAbort(request.signal); return {kind: 'managed', generation: installed.generation, deferredUpdate: null};}
     const published = publication.catalog?.games[game];

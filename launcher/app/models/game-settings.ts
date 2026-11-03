@@ -107,6 +107,7 @@ export function createGameSettingsModel({storage, onChange}: {
   let snapshot: SettingsSnapshot | null = null;
   let revision = 0;
   const disclosures: Partial<Record<'singleplayer' | 'multiplayer', SettingsDisclosureState>> = {};
+  const practicePreferences = new Map<string, boolean>();
   function publish(next: Omit<SettingsSnapshot, 'revision'>, reason: SettingsChange['reason']) {
     const previous = snapshot;
     snapshot = Object.freeze({...next, options: Object.freeze({...next.options}), revision: ++revision});
@@ -121,14 +122,16 @@ export function createGameSettingsModel({storage, onChange}: {
     const state = required();
     persistSharedTouchPreferences(storage, {...state.options});
     persistStoredGamePreferences({storage, preferenceId: state.preferenceId,
-      preferences: {...state, options: {...state.options}}, language: state.language});
+      preferences: {...state, options: {...state.options, thpracEnabled: state.multiplayer ? practicePreferences.get(state.gameId) ?? false : state.options.thpracEnabled}}, language: state.language});
+    if (!state.multiplayer) practicePreferences.set(state.gameId, state.options.thpracEnabled);
   }
-  function read(context: SettingsContext, reason: SettingsChange['reason'], sharing?: boolean) {
+  function read(context: SettingsContext, reason: SettingsChange['reason']) {
     const gameId = gameIdForProduct(context.productId), multiplayer = isMultiplayerProductId(context.productId);
-    const shareSingleplayerSettings = sharing ?? multiplayerPreferences.load({product: context.productId, multiplayer, maxLoadout: 0}).shareSingleplayerSettings;
-    const preferenceId = multiplayer && !shareSingleplayerSettings ? context.productId : gameId;
+    const shareSingleplayerSettings = true;
+    const preferenceId = gameId;
     const disclosureKey = multiplayer ? 'multiplayer' : 'singleplayer';
-    const disclosure = disclosures[disclosureKey] ??= {touch: context.mobile, files: true, display: true, advanced: false};
+    const disclosure = disclosures[disclosureKey] ?? {touch: context.mobile, files: true, display: true, advanced: false};
+    disclosures[disclosureKey] = disclosure;
     const normalized = loadStoredGamePreferences({storage, preferenceId,
       fallbackPreferenceId: multiplayer ? gameId : null,
       context: {uiLocale: context.uiLocale, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),
@@ -141,6 +144,7 @@ export function createGameSettingsModel({storage, onChange}: {
       options.touchFocusMode='hold-button';
       try{if(!storage?.getItem(gamePreferenceStorageKey(preferenceId)))options.touchEnabled=context.mobile;}catch{}
     }
+    practicePreferences.set(gameId, options.thpracEnabled);
     if (multiplayer) options.thpracEnabled = false;
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
@@ -223,12 +227,11 @@ export function createGameSettingsModel({storage, onChange}: {
     restoreRoomSettings(saved: SettingsSnapshot) {
       const state = required();
       if (saved.context.productId !== state.context.productId) return;
-      multiplayerPreferences.persistShareSingleplayerSettings(state.context.productId, saved.shareSingleplayerSettings);
       persistGameVersion(storage, state.gameId, saved.gameVersion);
       // Keep current metadata and drawer presentation; restore the configuration
       // as one transaction rather than emitting one reload per option.
-      publish({...state, preferenceId: saved.preferenceId,
-        shareSingleplayerSettings: saved.shareSingleplayerSettings,
+      publish({...state, preferenceId: state.gameId,
+        shareSingleplayerSettings: true,
         options: {...saved.options}, music: saved.music,
         musicPreference: saved.musicPreference, musicPreferenceExplicit: saved.musicPreferenceExplicit,
         language: saved.language, gameVersion: saved.gameVersion}, 'host-restore');
@@ -260,11 +263,9 @@ export function createGameSettingsModel({storage, onChange}: {
       disclosures[state.multiplayer ? 'multiplayer' : 'singleplayer'] = disclosure;
       publish({...state, disclosure}, 'presentation');
     },
-    setShareSingleplayerSettings(enabled: boolean) {
-      const state = required();
-      if (!state.multiplayer || state.shareSingleplayerSettings === enabled) return;
-      multiplayerPreferences.persistShareSingleplayerSettings(state.context.productId, enabled);
-      read(state.context, 'sharing', enabled);
+    setShareSingleplayerSettings(_enabled: boolean) {
+      // Common game settings always use the original game's preference record.
+      // Retain this port for older callers without allowing them to split it.
     },
     setReplayAutoSave(enabled: boolean) {
       const state = required();

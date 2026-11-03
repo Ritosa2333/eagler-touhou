@@ -1,0 +1,615 @@
+@layer foundation;
+@import "@radix-ui/colors/gray.css";
+@import "@radix-ui/colors/gray-dark.css";
+@import "@radix-ui/colors/crimson.css";
+@import "@radix-ui/colors/crimson-dark.css";
+@import "@radix-ui/colors/red.css";
+@import "@radix-ui/colors/red-dark.css";
+
+:root {
+  --ui-bg: var(--book-bg);
+  --ui-panel: var(--book-surface);
+  --ui-raised: var(--book-raised);
+  --ui-hover: color-mix(in srgb, var(--book-raised) 90%, var(--book-ink));
+  --ui-border: var(--book-border);
+  --ui-border-hover: color-mix(in srgb, var(--book-ink) 30%, var(--book-border));
+  --ui-text: var(--book-ink);
+  --ui-muted: var(--book-muted);
+  --ui-accent: var(--book-accent);
+  --ui-accent-text: var(--book-accent);
+  --ui-accent-soft: var(--book-accent-soft);
+  --ui-on-accent: var(--book-on-accent);
+  --ui-danger: var(--red-11);
+  --ui-radius: 7px;
+  --ui-feedback-duration: 140ms;
+  --ui-feedback-easing: cubic-bezier(0.2, 0, 0, 1);
+  --ui-surface-duration: 180ms;
+  --ui-surface-easing: cubic-bezier(0.2, 0, 0, 1);
+  --ui-font: var(--kit-font);
+  --paper: var(--ui-text);
+  --muted: var(--ui-muted);
+  --line: var(--ui-border);
+  --panel: var(--ui-panel);
+  --accent: var(--ui-accent);
+  --ui-control-radius: var(--ui-radius);
+  --ui-control-height: 34px;
+  --ui-touch-height: 44px;
+  --launcher-layout-width: 1360px;
+  --launcher-layout-gutter: 24px;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+@layer foundation.controls {
+  :focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 3px;
+  }
+}
+
+/* Defaults fill gaps; authored component geometry and states own presentation. */
+@layer foundation.controls {
+  .ui-button,
+  .ui-select-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: var(--ui-control-height);
+    padding: 6px 12px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-panel);
+    color: var(--ui-text);
+    box-shadow: none;
+    text-transform: none;
+    text-decoration: none;
+    font: 500 var(--ui-control-font-size, 13px) / 1.4 var(--ui-font);
+    letter-spacing: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+      background-color var(--ui-feedback-duration) var(--ui-feedback-easing),
+      border-color var(--ui-feedback-duration) var(--ui-feedback-easing),
+      color var(--ui-feedback-duration) var(--ui-feedback-easing);
+  }
+  .ui-button:hover,
+  .ui-select-trigger:hover {
+    background: var(--ui-hover);
+    border-color: var(--ui-border-hover);
+  }
+  .ui-button:active {
+    background: var(--ui-raised);
+    transform: none;
+    translate: none;
+  }
+  .ui-button:disabled,
+  .ui-select-trigger:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .ui-button.launch:not(.launch-secondary),
+  .ui-button.primary,
+  .ui-button.decision-confirm {
+    background: var(--ui-accent);
+    border-color: transparent;
+    color: var(--ui-on-accent);
+  }
+  .ui-button.launch:not(.launch-secondary):hover,
+  .ui-button.primary:hover {
+    background: color-mix(in srgb, var(--ui-accent) 90%, var(--ui-text));
+  }
+  .ui-button[data-ui-variant="danger"],
+  .ui-button[data-danger],
+  .decision-dialog[data-tone="danger"] .decision-confirm {
+    background: var(--red-3);
+    border-color: var(--red-6);
+    color: var(--ui-danger);
+  }
+  .ui-button[data-ui-variant="quiet"],
+  .ui-button[data-ui-variant="tab"],
+  .ui-button[data-ui-variant="icon"] {
+    border-color: transparent;
+    background: transparent;
+    color: var(--ui-muted);
+  }
+  .ui-button[data-ui-variant="choice"] {
+    background: transparent;
+    border-color: transparent;
+  }
+  .ui-button[data-ui-variant="tab"] {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+  }
+  .ui-button[data-ui-variant="icon"] {
+    width: 34px;
+    padding: 6px;
+  }
+  .ui-button[data-ui-variant="icon"][aria-pressed="true"] {
+    background: var(--ui-raised);
+    border-color: var(--ui-border);
+    color: var(--ui-text);
+  }
+  .ui-button svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),
+  textarea,
+  select:not(.custom-select-native) {
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    font: 14px / 1.5 var(--ui-font);
+    box-shadow: 0 1px 2px #00000005;
+    transition:
+      border-color var(--ui-feedback-duration) var(--ui-feedback-easing),
+      box-shadow var(--ui-feedback-duration) var(--ui-feedback-easing);
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--ui-accent);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--ui-accent-soft);
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 3px;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--book-muted);
+  }
+  input[type="range"] {
+    accent-color: var(--ui-accent);
+    cursor: pointer;
+  }
+}
+/* Semantic state is shared even when a component owns its geometry. */
+.ui-button[data-ui-variant="primary"] {
+  background: var(--ui-accent);
+  border-color: transparent;
+  color: var(--ui-on-accent);
+}
+.ui-button[data-ui-variant="primary"]:hover {
+  background: color-mix(in srgb, var(--ui-accent) 90%, var(--ui-text));
+}
+.ui-button:is([aria-pressed="true"], [aria-current="page"], [aria-selected="true"], .selected, .active):not(
+  [role="switch"]
+) {
+  background: var(--ui-accent-soft);
+  border-color: var(--ui-accent);
+  color: var(--ui-accent-text);
+}
+.ui-button[data-ui-variant="tab"]:is([aria-current="page"], [data-state="active"]) {
+  border-color: transparent;
+  border-bottom-color: var(--ui-accent);
+  background: transparent;
+  color: var(--ui-accent);
+}
+.ui-checkbox {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--ui-border-hover);
+  border-radius: 4px;
+  background: var(--ui-bg);
+  color: var(--kit-primary-foreground);
+  cursor: pointer;
+  vertical-align: middle;
+  touch-action: manipulation;
+}
+.ui-checkbox::before {
+  content: "";
+  position: absolute;
+  inset: -13px;
+}
+.ui-checkbox[data-state="checked"] {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+.ui-checkbox svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+.ui-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.ui-switch::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 13px;
+  width: 32px;
+  height: 18px;
+  border: 1px solid var(--kit-input);
+  border-radius: 99px;
+  background: var(--kit-input);
+  transition: background-color var(--ui-feedback-duration) var(--ui-feedback-easing);
+}
+.ui-switch[data-state="checked"]::before {
+  background: var(--kit-primary);
+  border-color: var(--kit-primary);
+}
+.ui-switch-thumb {
+  position: absolute;
+  left: 8px;
+  top: 15px;
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 2px #0002;
+  transform: translateX(0);
+  transition: transform var(--ui-feedback-duration) var(--ui-feedback-easing);
+}
+.ui-switch[data-state="checked"] .ui-switch-thumb {
+  background: var(--kit-primary-foreground);
+  transform: translateX(14px);
+}
+.ui-switch:disabled,
+.ui-checkbox:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.custom-select-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+.ui-select {
+  position: relative;
+  min-width: 0;
+}
+.ui-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--kit-input);
+  border-radius: 6px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  justify-content: space-between;
+  text-align: left;
+  font: 400 13px / 1.5 var(--kit-font);
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.ui-select-trigger > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ui-select-trigger svg,
+.ui-select-content svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--ui-muted);
+}
+.ui-select-content,
+.ui-menu {
+  z-index: var(--ui-layer-popup);
+  max-width: calc(100vw - 24px);
+  max-height: min(360px, var(--radix-select-content-available-height, 70vh));
+  min-width: var(--radix-select-trigger-width, 160px);
+  padding: 4px;
+  overflow: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  box-shadow: 0 6px 20px #0002;
+  font: 13px / 1.5 var(--kit-font);
+  animation: ui-enter var(--ui-surface-duration) var(--ui-surface-easing);
+}
+.ui-select-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: none;
+}
+.ui-select-viewport {
+  min-height: 0;
+  flex: 1;
+}
+.ui-select-item,
+.ui-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  outline: none;
+  cursor: default;
+  user-select: none;
+}
+.ui-select-item[data-highlighted],
+.ui-menu-item[data-highlighted] {
+  background: var(--ui-hover);
+}
+.ui-select-item[data-state="checked"] {
+  color: var(--ui-text);
+}
+.ui-select-item[data-disabled],
+.ui-menu-item[data-disabled] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.ui-menu-item[data-danger] {
+  color: var(--kit-destructive);
+}
+.ui-select-scroll {
+  display: flex;
+  justify-content: center;
+  padding: 4px;
+}
+.room-action-menu {
+  position: relative;
+  inset: auto;
+  width: auto;
+  transform: none;
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+}
+@layer components {
+  .ui-tabs-list {
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--ui-border);
+    border-radius: 0;
+    background: transparent;
+  }
+  .ui-tabs-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    color: var(--ui-muted);
+    font: 500 13px / 1.5 var(--kit-font);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .ui-tabs-trigger[data-state="active"] {
+    border-bottom-color: var(--ui-accent);
+    color: var(--ui-text);
+  }
+  .ui-tabs-trigger:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+.ui-tabs-trigger:focus-visible,
+.ui-checkbox:focus-visible,
+.ui-switch:focus-visible,
+.ui-select-trigger:focus-visible {
+  outline: 2px solid var(--kit-ring);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+.ui-callout {
+  padding: 14px 16px;
+  border: 1px solid var(--book-accent);
+  border-radius: 8px;
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent-text);
+}
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background: var(--ui-raised);
+  font-size: 11px;
+  color: var(--ui-muted);
+}
+
+@keyframes ui-enter {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A game tool may stay dark. Its detached menus carry the same explicit scope. */
+[data-ui-surface="game"] {
+  color-scheme: dark;
+  --kit-background: #0c0c0e;
+  --kit-card: #141417;
+  --kit-popover: #1b1b1f;
+  --kit-foreground: #ededf0;
+  --kit-primary: #eeeef0;
+  --kit-primary-foreground: #18181b;
+  --kit-muted: #1a1a1e;
+  --kit-muted-foreground: #a0a0aa;
+  --kit-secondary: #252529;
+  --kit-accent: #27272d;
+  --kit-border: #2c2c32;
+  --kit-input: #38383f;
+  --kit-ring: #a1a1aa;
+  --ui-panel: var(--kit-card);
+  --ui-bg: var(--kit-background);
+  --ui-raised: var(--kit-secondary);
+  --ui-text: var(--kit-foreground);
+  --ui-muted: var(--kit-muted-foreground);
+  --ui-border: var(--kit-border);
+  --ui-border-hover: var(--kit-ring);
+  --ui-hover: var(--kit-accent);
+  --ui-accent: var(--kit-primary);
+  --ui-accent-text: var(--kit-foreground);
+  --ui-accent-soft: var(--kit-accent);
+  --ui-on-accent: var(--kit-primary-foreground);
+  --paper: var(--ui-text);
+  --muted: var(--ui-muted);
+}
+.touch-layout-editor {
+  --ui-control-height: 30px;
+  --ui-control-font-size: 10px;
+}
+.touch-layout-editor .ui-select-trigger {
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.touch-layout-editor .ui-switch {
+  justify-self: end;
+  align-self: center;
+  margin: 0;
+}
+
+.ui-menu {
+  display: block;
+  position: relative;
+  inset: auto;
+  width: max-content;
+  min-width: 220px;
+  max-height: min(520px, var(--radix-dropdown-menu-content-available-height, 80dvh));
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+}
+.ui-menu-item {
+  justify-content: flex-start;
+  text-decoration: none;
+  color: var(--ui-text);
+}
+.ui-menu-item svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: currentColor;
+  stroke: none;
+}
+.ui-menu-item > span:last-child {
+  margin-left: auto;
+}
+.ui-menu-separator {
+  height: 1px;
+  margin: 5px;
+  background: var(--ui-border);
+}
+.ui-menu-language {
+  padding: 5px;
+}
+.masthead-links .masthead-menu-toggle {
+  display: inline-flex;
+  opacity: 1;
+  visibility: visible;
+}
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+/* Radix keeps focus and touch scrolling inside its layers. The root gutter
+   already reserves the scrollbar, so body compensation would shrink the page. */
+@supports (scrollbar-gutter: stable) {
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
+  }
+}
+html body[data-scroll-locked] {
+  position: static !important;
+}
+@layer components {
+  .book-navigation-icon {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+  }
+}
+.ui-menu-item svg.lucide {
+  fill: none;
+  stroke: currentColor;
+}
+.profile-display-options {
+  gap: 0;
+  border: 1px solid var(--book-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.profile-display-options label {
+  min-height: 60px;
+  padding: 14px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--book-border);
+  border-radius: 0;
+  background: var(--book-surface);
+}
+.profile-display-options label:last-child {
+  border-bottom: 0;
+}
+.profile-display-options label:has([data-state="checked"]) {
+  background: var(--book-surface);
+}
+@media (max-width: 780px), (pointer: coarse) {
+  :root {
+    --launcher-layout-gutter: 16px;
+    --ui-control-height: 44px;
+  }
+  .ui-menu-item,
+  .ui-select-item,
+  .ui-select-trigger {
+    min-height: 44px;
+  }
+}

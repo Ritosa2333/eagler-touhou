@@ -2,7 +2,9 @@ import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync,rmSync} from
 import {resolve,dirname,relative,sep} from 'node:path';
 import {createHash} from 'node:crypto';
 import {TH10_PRESENTATION_LAB_EXPORTS} from './presentation-lab/native-abi.mjs';
+import {pathToFileURL} from 'node:url';
 const root=resolve(import.meta.dirname,'..');
+const {renderLocalReplayShell}=await import(pathToFileURL(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'tools/sync-local-replay.mjs')).href);
 const game='th10';
 const presentationLab=process.argv.includes('--presentation-lab');
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):presentationLab?resolve(root,'artifacts/presentation-lab/runtime'):resolve(root,'build-eagler');
@@ -34,7 +36,11 @@ const copy=(from,name)=>write(name,readFileSync(from));
 const shellRoot=resolve(root,'web/sdl-runtime');
 const html=readFileSync(resolve(shellRoot,game+'.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
 write(entry,html);
-for(const name of runtimeNames)copy(resolve(shellRoot,name),name);
+for(const name of runtimeNames){
+ const source=resolve(shellRoot,name);
+ if(name==='shell.mjs')write(name,renderLocalReplayShell(readFileSync(source,'utf8'),source));
+ else copy(source,name);
+}
 copy(resolve(root,'portable/browser/motion-replay.mjs'),'motion-replay.mjs');
 for(const ext of ['mjs','wasm']){
  const bytes=readFileSync(resolve(buildRoot,game+'-sdl.'+ext));

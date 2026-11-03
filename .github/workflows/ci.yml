@@ -62,7 +62,7 @@ jobs:
 
           tools/testing
 
-          common/contracts
+          common
 
           services
 
@@ -72,17 +72,18 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
         cache-dependency-path: launcher/requirements-ci.txt
-    - run: npm ci --ignore-scripts
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
+    - run: bun run install:locked
     - run: python -m pip install --requirement requirements-ci.txt
     - run: npm --prefix ../services/relay ci --ignore-scripts
-    - run: npm run check
+    - run: bun run check
     defaults:
       run:
         working-directory: launcher
@@ -94,14 +95,15 @@ jobs:
       with:
         sparse-checkout: 'launcher
 
-          common/contracts'
+          common'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
-    - run: npm ci --ignore-scripts
-    - run: npm run typecheck
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
+    - run: bun run install:locked
+    - run: bun run typecheck
     defaults:
       run:
         working-directory: launcher
@@ -119,7 +121,7 @@ jobs:
 
           tools/testing
 
-          common/contracts
+          common
 
           ports/th12/scripts
 
@@ -127,23 +129,41 @@ jobs:
 
           ports/th12-mp/src
 
-          services/relay'
+          services/relay
+
+          services/telemetry'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
         cache-dependency-path: launcher/requirements-ci.txt
-    - run: npm ci --ignore-scripts
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
+    - run: bun run install:locked
     - run: python -m pip install --requirement requirements-ci.txt
     - run: npm --prefix ../services/relay ci --ignore-scripts
-    - run: npm run build:launcher
-    - run: npm run test:ui-rewrite
-    - run: npm run test:support
+    - run: bun run lint
+    - run: bun run i18n:check
+    - run: bun run test
+    - run: python -m pip install --requirement tests/requirements-browser.txt
+    - run: python -m playwright install --with-deps chromium
+    - name: Build preview artifact for handbook browser checks
+      run: bun run build:ui-rewrite
+      env:
+        EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
+        VITE_PREVIEW_FEATURES: 'true'
+    - run: bun run test:ui-handbook:browser
+      env:
+        EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ui-handbook
+        path: artifacts/validation/ui-handbook/
     defaults:
       run:
         working-directory: launcher
@@ -226,6 +246,9 @@ jobs:
         node-version: 24
         cache: npm
         cache-dependency-path: launcher/package-lock.json
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
     - uses: msys2/setup-msys2@v2
       if: runner.os == 'Windows'
       id: msys
@@ -237,7 +260,7 @@ jobs:
       run: Add-Content -LiteralPath $env:GITHUB_PATH -Value '${{ steps.msys.outputs.msys2-location }}/ucrt64/bin'
     - run: npm --prefix launcher ci --ignore-scripts
     - run: node --test tools/ports/*.test.mjs tools/testing/*.test.mjs
-    - run: node launcher/tests/test-gamepad-contract.mjs
+    - run: node --test tools/browser/gamepad-input.test.mjs
     - run: npm run ports:check -- --all --check-status
     - uses: actions/upload-artifact@v4
       if: always()

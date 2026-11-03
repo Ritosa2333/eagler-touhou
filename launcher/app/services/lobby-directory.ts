@@ -85,7 +85,7 @@ export interface DirectorySocket {
   send(data: string): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
-  addEventListener(type: 'close', listener: (event: { code: number }) => void): void;
+  addEventListener(type: 'close', listener: (event: { code: number; reason?: string }) => void): void;
   addEventListener(type: 'error', listener: () => void): void;
 }
 export interface LobbyDirectoryOptions {
@@ -277,6 +277,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const initial =
         [
           ...String(seat?.initial ?? value)
+            // biome-ignore lint/suspicious/noControlCharactersInRegex: Strip C0 and DEL controls from remote player initials.
             .replace(/[\u0000-\u001f\u007f]/g, '')
             .trim(),
         ][0] || '?';
@@ -291,6 +292,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
                   ? [
                       ...seat.machineSign
                         .replace(
+                          // biome-ignore lint/suspicious/noControlCharactersInRegex: Remote machine labels must exclude C0, DEL and invisible direction controls.
                           /[\u0000-\u001f\u007f\u061c\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g,
                           '',
                         )
@@ -420,6 +422,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const unsupported = !received && event.code === 1008;
       publish({
         recovering: null,
+        connectionInterrupted: true,
         ...(hadRecovery ? { notice: options.translate('lobby.releaseFailed') } : {}),
         connection: unsupported ? 'unsupported' : received ? 'loading' : 'offline',
       });
@@ -477,7 +480,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
           !!manifest.games[gameIdForProduct(product)],
       );
-      const selectedProduct = products.includes(snapshot.selectedProduct as MultiplayerProductId)
+      const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
         ? snapshot.selectedProduct
         : products[0] || '';
       relay = manifest.shared.netplayRelay || '';
@@ -507,16 +510,16 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function selectProduct(product: string) {
     if (
-      !isMultiplayerProductId(product) ||
+      (product !== '' && !isMultiplayerProductId(product)) ||
       snapshot.selectedProduct === product ||
-      ((snapshot.initialized || snapshot.products.length > 0) &&
-        !snapshot.products.includes(product))
+      (product !== '' && (snapshot.initialized || snapshot.products.length > 0) &&
+        !snapshot.products.includes(product as MultiplayerProductId))
     )
       return;
     // A room return can supply its filter before this view's first manifest.
     // Keep that request for initialize() to validate against the loaded catalog.
     loadedProduct = null;
-    publish({ selectedProduct: product });
+    publish({ selectedProduct: product as MultiplayerProductId | '' });
     clear(filterTimer);
     filterTimer = later(() => {
       filterTimer = null;

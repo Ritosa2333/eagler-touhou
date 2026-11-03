@@ -1,6 +1,8 @@
+import {Button as UiButton} from '../../ui/controls';
+import '../../ui/document-body.css';
 import {legacyFirstUseNoticeSeen} from '../../../src/contracts/compat/first-use-notice.mts';
-import {useEffect, useImperativeHandle, useLayoutEffect, useRef, type Ref} from 'react';
-import {renderContentFragment} from '../../../src/launcher/content-fragment.mts';
+import {useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, type Ref} from 'react';
+import {renderLocalizedContent} from '../../../src/launcher/localized-content.mts';
 import {createEdgeDrawerGesture} from '../../../src/launcher/edge-drawer-gesture.mts';
 import {useLocale} from '../../i18n';
 import {useMainDialog, type MainDialogProps} from './use-main-dialog';
@@ -31,13 +33,15 @@ function defaultStorage() {try {return globalThis.localStorage ?? null;} catch {
  * Sanitized content is the only imperative subtree; React owns its container.
  */
 export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl = FIRST_USE_NOTICE_FILE, storage, fetchImpl = fetch, edgeGestures = true, ref}: FirstUseNoticeProps) {
-  const {t} = useLocale(), dialog = useMainDialog({open, onCloseRequest}, 220);
+  const {t, locale} = useLocale(), dialog = useMainDialog({open, onCloseRequest}, {motion: 'panel'});
+  const drawerRef = dialog.ref;
   const content = useRef<HTMLDivElement>(null);
+  const sourceHtml = useRef('');
   const cached = useRef<NoticeLoadResult | null>(null), pending = useRef<Promise<NoticeLoadResult> | null>(null);
   const active = useRef(false), generation = useRef(0);
   const failedManualOpen = useRef(false);
-  const latest = useRef({t, onOpenRequest, storage, fetchImpl, contentUrl}); latest.current = {t, onOpenRequest, storage, fetchImpl, contentUrl};
-  const getStorage = () => latest.current.storage === undefined ? defaultStorage() : latest.current.storage;
+  const latest = useRef({t, locale, onOpenRequest, storage, fetchImpl, contentUrl}); latest.current = {t, locale, onOpenRequest, storage, fetchImpl, contentUrl};
+  const getStorage = useCallback(() => latest.current.storage === undefined ? defaultStorage() : latest.current.storage, []);
   function hasSeenNotice() {
     try {
       const store = getStorage();
@@ -46,14 +50,14 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
     } catch {}
     return false;
   }
-  function markSeen() {try {getStorage()?.setItem(FIRST_USE_NOTICE_SEEN_STORAGE_KEY, '1');} catch {}}
-  function status(text: string, className: string) {
+  const markSeen = useCallback(() => {try {getStorage()?.setItem(FIRST_USE_NOTICE_SEEN_STORAGE_KEY, '1');} catch {}}, [getStorage]);
+  const status = useCallback((text: string, className: string) => {
     const target = content.current;
     if (!active.current || !target) return;
     const paragraph = target.ownerDocument.createElement('p'); paragraph.className = className; paragraph.textContent = text;
     target.replaceChildren(paragraph);
-  }
-  async function load(): Promise<NoticeLoadResult> {
+  }, []);
+  const load = useCallback(async (): Promise<NoticeLoadResult> => {
     if (cached.current?.kind === 'available' || cached.current?.kind === 'empty') return cached.current;
     if (pending.current) return pending.current;
     const token = generation.current;
@@ -66,7 +70,8 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
         if (!active.current || token !== generation.current) return {kind: 'error', error: new Error('Notice unmounted')};
         if (!html) {cached.current = {kind: 'empty'}; status(latest.current.t('firstUseNotice.empty'), 'first-use-notice-empty');}
         else {
-          if (content.current) renderContentFragment(content.current, html, content.current.ownerDocument);
+          sourceHtml.current = html;
+          if (content.current) renderLocalizedContent(content.current, 'firstUse', latest.current.locale, html);
           cached.current = {kind: 'available'};
         }
         return cached.current;
@@ -77,7 +82,7 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
     })();
     pending.current = request;
     try {return await request;} finally {if (pending.current === request) pending.current = null;}
-  }
+  }, [status]);
   async function showManual() {
     const token = generation.current;
     const result = await load();
@@ -102,26 +107,29 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
     active.current = true;
     if (!content.current?.childNodes.length) status(latest.current.t('firstUseNotice.loading'), 'first-use-notice-loading');
     return () => {active.current = false; generation.current++; pending.current = null; failedManualOpen.current = false;};
-  }, []);
+  }, [status]);
   useLayoutEffect(() => {
     if (content.current?.firstElementChild?.className === 'first-use-notice-loading') status(t('firstUseNotice.loading'), 'first-use-notice-loading');
-  }, [t]);
+    else if (content.current && cached.current?.kind === 'available') renderLocalizedContent(content.current, 'firstUse', locale, sourceHtml.current);
+    else if (cached.current?.kind === 'empty') status(t('firstUseNotice.empty'), 'first-use-notice-empty');
+  }, [t, locale, status]);
   useEffect(() => {
     const alreadyFailed = failedManualOpen.current; failedManualOpen.current = false;
     if (open && !alreadyFailed) void load().then(result => {if (active.current && result.kind === 'available') markSeen();});
-  }, [open]);
+  }, [open, load, markSeen]);
   const operations = useRef({showManual, close: dialog.requestClose}); operations.current = {showManual, close: dialog.requestClose};
   useEffect(() => {
-    const node = dialog.ref.current;
+    const node = drawerRef.current;
     if (!edgeGestures || !node) return;
     const gesture = createEdgeDrawerGesture({side: 'right', drawer: node, isOpen: () => node.open,
       open: () => operations.current.showManual(), close: () => operations.current.close()});
     return () => gesture.destroy();
-  }, [edgeGestures]);
+  }, [edgeGestures, drawerRef]);
+  // biome-ignore lint/a11y/useKeyWithClickEvents: Native cancel and labelled close buttons provide keyboard dismissal of this backdrop.
   return <dialog ref={dialog.ref} className="first-use-notice-dialog" id="firstUseNoticeDialog" aria-labelledby="firstUseNoticeTitle" onCancel={dialog.onCancel} onClick={dialog.onClick}>
-    <article className="first-use-notice-window"><header><h1 id="firstUseNoticeTitle">{t('firstUseNotice.title')}</h1><button id="firstUseNoticeClose" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}>×</button></header>
-      <div ref={content} className="first-use-notice-text" id="firstUseNoticeText"/>
-      <footer><button className="edge-drawer-swipe-hint" id="firstUseNoticeCloseHint" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}><span>{t('firstUseNotice.swipeToClose')}</span><span className="edge-drawer-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span></button></footer>
+    <article className="first-use-notice-window"><header><h1 id="firstUseNoticeTitle">{t('firstUseNotice.title')}</h1><UiButton variant="icon" id="firstUseNoticeClose" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}>×</UiButton></header>
+      <div ref={content} className="first-use-notice-text ui-document prose" id="firstUseNoticeText"/>
+      <footer><UiButton size="lg" id="firstUseNoticeCloseHint" type="button" aria-label={t('firstUseNotice.close')} onClick={dialog.requestClose}>{t('action.close')}</UiButton></footer>
     </article>
   </dialog>;
 }

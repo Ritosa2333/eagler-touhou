@@ -60,8 +60,8 @@ try{
       const geometry=await page.evaluate(()=>{const h=document.getElementById('touchHud').getBoundingClientRect();return Object.fromEntries(['touchFire','touchFocus','touchBomb','touchFunction'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,{x:Math.round(r.x-h.x),y:Math.round(r.y-h.y),width:Math.round(r.width),height:Math.round(r.height)}];}));});
       assert.deepEqual(geometry,{touchFire:{x:0,y:70,width:60,height:60},touchFocus:{x:65,y:5,width:60,height:60},touchBomb:{x:130,y:70,width:60,height:60},touchFunction:{x:65,y:110,width:60,height:60}},'TH075 development-package button geometry');
       assert.equal(await page.$eval('#touchJoystick',e=>e.hidden),false);
-      await page.click('#touchHelpOpen');await page.click('#guideTabGameControls');await page.waitForFunction(()=>!document.querySelector('#guideGameControls')?.hidden);
-      const guide=await page.$eval('#guideGameControls',e=>e.textContent);for(const text of ['A 轻攻击 / 确认','B 重攻击 / 取消','弹幕攻击 / 冲刺','左侧轮盘'])assert.ok(guide.includes(text),text);
+      await page.click('#touchHelpOpen');await page.waitForFunction(()=>document.querySelector('#touchHelp')?.open);
+      const guide=await page.$eval('#help-controls',e=>e.textContent);for(const text of ['A 轻攻击 / 确认','B 重攻击 / 取消','弹幕攻击 / 冲刺','左侧轮盘'])assert.ok(guide.includes(text),text);
       assert.equal(await page.$('.focus-stage'),null);await page.screenshot({path:resolve(output,'touch-help.png')});await page.click('#touchHelpClose');
       await page.screenshot({path:resolve(output,'touch.png')});
       for(const [id,label] of [['touchFire','轻攻击'],['touchFocus','重攻击'],['touchFunction','冲刺']])assert.equal(await page.$eval('#'+id+' small',e=>getComputedStyle(e).display==='none'?'':e.textContent),label);

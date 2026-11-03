@@ -63,8 +63,6 @@ export interface RuntimeMidiEventContext {
 }
 export interface RuntimeFrame {
   readonly contentWindow: RuntimeWindow | null;
-  setAttribute(name: 'src', value: string): void;
-  removeAttribute(name: 'src'): void;
   /** Emergency cleanup is allowed only with positive evidence of DOM removal. */
   readonly isConnected?: boolean;
   addEventListener(type: 'load', listener: EventListener): void;
@@ -130,6 +128,8 @@ export type RuntimeFileCommand = 'list' | 'read' | 'write' | 'remove';
 export interface RuntimeFileSession {
   readonly epoch: number;
   send<C extends RuntimeFileCommand>(command: C, payload: RuntimeCommandPayloads[C]): Promise<RuntimeResponseMessage>;
+  /** Replay path handoff belongs to this same filesystem owner. */
+  playback(payload: RuntimeCommandPayloads['playback']): Promise<RuntimeResponseMessage>;
   sync(): Promise<void>;
   /** Retire this native owner, restore the captured plan and keep the same lock. */
   restart(options?: {sync?: boolean}): Promise<RuntimeFileSession>;
@@ -226,6 +226,11 @@ export interface RuntimeServiceOptions {
   onUpdateReady?: (game: GameId, epoch: number) => void;
   /** Discard the retired child browsing context while retaining its host node. */
   onFrameRetired?: () => void;
+}
+/** Recovery uses the deadline kind, independently of translated presentation. */
+export class RuntimeWaitTimeoutError extends Error {
+  override name = 'RuntimeWaitTimeoutError';
+  constructor(readonly waitKind: 'ready' | 'first-frame', message: string) {super(message);}
 }
 export class RuntimeSessionSupersededError extends Error {
   override name = 'AbortError';
@@ -464,11 +469,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     }
     const runtime = frame.contentWindow;
     if (!runtime) throw new Error('Runtime iframe browsing context is unavailable');
-    // Match main's iframe navigation owner: launch sets src and retirement
-    // removes it. Direct Window.location replacement leaves retired documents
-    // in joint history snapshots when the same iframe launches a second game.
-    if (target === 'about:blank') frame.removeAttribute('src');
-    else frame.setAttribute('src', target);
+    // Replace the active child history slot for both launch and retirement.
+    // Setting/removing iframe.src appends joint-history entries in Chrome, so
+    // Back can otherwise navigate the child while leaving the Launcher route
+    // and a retired Runtime epoch active.
+    runtime.location.replace(target);
   }
   function runtimeIdentity(token: RuntimeSessionToken) {
     assertCurrent(token);
@@ -492,7 +497,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (kind === 'ready' ? snapshot.ready : snapshot.firstFrame) return Promise.resolve();
     return new Promise((resolve, reject) => {
       const waiter: Waiter = { token, kind, resolve, reject, timer: timers.setTimeout(() => {
-        waiters.delete(waiter); reject(new Error(options.translate(kind === 'first-frame' ? 'runtime.firstFrameLate' : snapshot.generationId ? 'runtime.localLoadTimeout' : 'runtime.gameLoadTimeout')));
+        waiters.delete(waiter); reject(new RuntimeWaitTimeoutError(kind, options.translate(kind === 'first-frame' ? 'runtime.firstFrameLate' : snapshot.generationId ? 'runtime.localLoadTimeout' : 'runtime.gameLoadTimeout')));
       }, timeout) };
       waiters.add(waiter);
     });
@@ -752,7 +757,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const installOne = async (id: string) => {
       try {
         check(); const declaration = generation.descriptor.files[id];
-        let resource;
+        let resource: Awaited<ReturnType<typeof deps.readResource>>;
         try {resource = await deps.readResource(generation, id);}
         catch (error) {
           check();
@@ -1075,7 +1080,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   async function restoreRoomMenu(token: RuntimeSessionToken): Promise<void> {
     assertCurrent(token);
     const plan = preparedPlan;
-    if (!plan || plan.runtimeVariant !== 'multiplayer') throw new RuntimeSessionSupersededError();
+    if (plan?.runtimeVariant !== 'multiplayer') throw new RuntimeSessionSupersededError();
     clearFirstFrameWatchdog(); launchRequested = false;
     for (const waiter of [...waiters]) if (waiter.kind === 'first-frame' && waiter.token.id === token.id) {
       waiters.delete(waiter);timers.clearTimeout(waiter.timer);waiter.reject(new RuntimeSessionSupersededError());
@@ -1175,6 +1180,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const abort = () => rejectAbort(new RuntimeSessionSupersededError());
     owner.interrupt = abort;
     signal.addEventListener('abort', abort, {once: true});
+    const failures: unknown[] = [];
     try {
       const prepared = await Promise.race([prepareOwned(plan, undefined, owner, onReady ? async epoch => {
         const final = structuredClone(await onReady(epoch));
@@ -1190,18 +1196,25 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       onPrepared?.(prepared);
       const launched = await Promise.race([launch({awaitFirstFrame: true}), aborted]);
       if (signal.aborted || launched.epoch !== owner.epoch || snapshot.epoch !== owner.epoch || launched.phase !== 'running' || !launched.firstFrame) {
-        throw new Error(options.translate('runtime.firstFrameLate'));
+        throw new RuntimeWaitTimeoutError('first-frame', options.translate('runtime.firstFrameLate'));
       }
-    } finally {
-      signal.removeEventListener('abort', abort);
-      try {
-        // Never close a successor or an unrelated retained native title. The
-        // private marker also survives a terminal native loss for cleanup.
-        if (owner.epoch !== null && (snapshot.epoch === owner.epoch || terminalLossEpoch === owner.epoch)) {
-          if (!await close()) throw new Error(snapshot.closeError ?? 'Could not close the multiplayer game check');
-        }
-      } finally {if (preflight === owner) preflight = null;}
+    } catch (error) {
+      failures.push(error);
     }
+    signal.removeEventListener('abort', abort);
+    try {
+      // Never close a successor or an unrelated retained native title. The
+      // private marker also survives a terminal native loss for cleanup.
+      if (owner.epoch !== null && (snapshot.epoch === owner.epoch || terminalLossEpoch === owner.epoch)) {
+        if (!await close()) failures.push(new Error(snapshot.closeError ?? 'Could not close the multiplayer game check'));
+      }
+    } catch (error) {
+      failures.push(error);
+    } finally {
+      if (preflight === owner) preflight = null;
+    }
+    if (failures.length === 1) throw failures[0];
+    if (failures.length > 1) throw new AggregateError(failures, failures.map(error => errorText(error)).join(' | '), {cause: failures[0]});
     if (signal.aborted) throw new RuntimeSessionSupersededError();
   }
   async function sync() {
@@ -1267,6 +1280,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         },
         async sync() {
           assertAccess(); await send('sync', {}, 10_000); assertAccess(); update({saveError: null});
+        },
+        async playback(payload: RuntimeCommandPayloads['playback']) {
+          assertAccess();
+          if (!replayMutation || readOnly || !snapshot.launched) throw new Error('Playback handoff requires an active Replay mutation');
+          const response = await send('playback', payload); assertAccess(); return response;
         },
         async retire() {
           assertAccess();if (readOnly) throw new Error('Read-only Runtime file sessions cannot retire the game');

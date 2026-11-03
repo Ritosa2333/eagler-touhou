@@ -3,7 +3,6 @@ import type {SitePreferencesModel} from '../../models/site-preferences';
 
 export interface SiteNoticeEnvironment {
   fetchImpl?: typeof fetch;
-  matchMediaImpl?: (query: string) => Pick<MediaQueryList, 'matches'>;
   setTimeoutImpl?: (callback: () => void, delay: number) => number;
   clearTimeoutImpl?: (timer: number) => void;
   baseUrl?: string;
@@ -15,7 +14,6 @@ export interface SiteNoticeSnapshot {
   readonly closing: boolean;
   readonly scrollHidden: boolean;
   readonly optOutVisible: boolean;
-  readonly durationMs: number | null;
 }
 
 /** Main site-notice.mts lifecycle expressed as a React-observable owner.
@@ -28,9 +26,9 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
   const clearTimer = environment.clearTimeoutImpl ?? (timer => window.clearTimeout(timer));
   const listeners = new Set<() => void>();
   let snapshot: SiteNoticeSnapshot = Object.freeze({lines: [], hidden: true, closing: false,
-    scrollHidden: false, optOutVisible: false, durationMs: null});
+    scrollHidden: false, optOutVisible: false});
   let active = false, visible = true, requestSerial = 0;
-  let timer: number | null = null, closeTimer: number | null = null;
+  let timer: number | null = null;
   let unsubscribePreferences: (() => void) | null = null;
   const scrollPositions = new WeakMap<object, number>();
   const clear = (value: number | null) => {if (value !== null) clearTimer(value);};
@@ -42,17 +40,11 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
     ++requestSerial;
     clear(timer); timer = null;
     if (snapshot.hidden || snapshot.closing) return;
-    const reducedMotion = environment.matchMediaImpl?.('(prefers-reduced-motion: reduce)').matches
-      ?? globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    if (reducedMotion || snapshot.scrollHidden) {
+    if (snapshot.scrollHidden) {
       publish({hidden: true, scrollHidden: false, closing: false});
       return;
     }
     publish({closing: true});
-    closeTimer = setTimer(() => {
-      closeTimer = null;
-      if (active) publish({hidden: true, scrollHidden: false, closing: false});
-    }, 220);
   }
   async function load(): Promise<boolean> {
     if (!active || !visible || !preferences.getSnapshot().noticeEnabled) return false;
@@ -64,9 +56,9 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
       if (!text || !active || !visible || !preferences.getSnapshot().noticeEnabled || request !== requestSerial) return false;
       const baseUrl = environment.baseUrl ?? globalThis.location?.href ?? 'https://notice.invalid/';
       const lines = parseSiteNoticeText(text, baseUrl);
-      clear(timer); clear(closeTimer); closeTimer = null;
+      clear(timer);
       publish({lines, optOutVisible: preferences.getSnapshot().noticeDismissed,
-        hidden: false, closing: false, scrollHidden: false, durationMs});
+        hidden: false, closing: false, scrollHidden: false});
       timer = setTimer(close, durationMs);
       return true;
     } catch {return false;}
@@ -84,7 +76,7 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
   }
   function destroy() {
     active = false; ++requestSerial;
-    clear(timer); clear(closeTimer); timer = null; closeTimer = null;
+    clear(timer); timer = null;
     unsubscribePreferences?.(); unsubscribePreferences = null;
   }
   return Object.freeze({
@@ -103,11 +95,12 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
       return destroy;
     },
     load, close, scroll, rememberScroll, destroy,
+    finishClose() {if (active && snapshot.closing) publish({hidden: true, closing: false, scrollHidden: false});},
     setVisible(value: boolean) {
       visible = value;
       if (value) return;
       ++requestSerial;
-      clear(timer); clear(closeTimer); timer = null; closeTimer = null;
+      clear(timer); timer = null;
       publish({hidden: true, closing: false, scrollHidden: false});
     },
     dismiss() {preferences.dismissNotice(); close();},

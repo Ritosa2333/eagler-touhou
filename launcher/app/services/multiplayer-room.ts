@@ -5,7 +5,6 @@ import {
   defaultTh15ChapterThreshold,
 } from "../../src/launcher/th15-chapter-reward.mts";
 import {
-  gameIdForProduct,
   isMultiplayerProductId,
   multiplayerConfigForProduct,
   multiplayerInputTimingPolicy,
@@ -40,6 +39,7 @@ import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts'
 import type { DecisionStore } from '../models/decisions';
 import type { DirectorySocket } from './lobby-directory';
 import { errorText } from './error-text';
+import {isAbortError} from './abort-signals';
 
 export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
@@ -200,7 +200,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let reportedSocket: RoomSocket | null = null,
     reportedResourceKey = '',
     lastActivity = 0;
-  let state = {
+  const state = {
     fromDirectory: false,
     connected: false,
     directorySupported: false,
@@ -359,13 +359,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       })
       .catch((error) => {
         if (!owned.isCurrent()) return;
+        const cancelled = isAbortError(error);
         reportProgress({
-          status: 'failed',
+          status: cancelled ? 'cancelled' : 'failed',
           stage: state.preparation?.stage || 'package',
           percent: null,
-          error: errorText(error),
+          error: cancelled ? '' : errorText(error),
         });
-        ports.preparationFailed(error, owned);
+        if (!cancelled) ports.preparationFailed(error, owned);
       });
     return taskOwner.task;
   }
@@ -485,7 +486,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const ownedRoom = room,
       ownedEpoch = epoch;
     clientId = ports.identity.lobbyClientId(product);
-    let relay;
+    let relay: ReturnType<typeof buildMultiplayerLobbyRelayUrl>;
     try {
       relay = buildMultiplayerLobbyRelayUrl(ports.relayUrl(product), {
         product,
@@ -635,6 +636,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
             if (ok && current(ownedEpoch) && state.seat == null && Number.isInteger(seat))
               void takeSeat(seat);
           });
+        } else if (message.code === 'rate-limited' &&
+            message.error === '已达到同时保留的房间数量限制，请关闭原房间后重试。') {
+          // The terminal close owns this rejection and its destination notice.
         } else ports.notify(String(message.error));
       }
     });
@@ -649,7 +653,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           event.code === 4004
             ? 'lobby.expired'
             : event.code === 4008
-              ? 'lobby.replaced'
+              ? event.reason === 'room creation limit'
+                ? 'lobby.roomLimit'
+                : event.reason === 'connection limit'
+                  ? 'lobby.connectionLimit'
+                  : 'lobby.replaced'
               : event.code === 4009
                 ? 'lobby.conflict'
                 : event.code === 4010
@@ -863,7 +871,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     return changeRole(() => {
-      if (!room || room.phase !== 'lobby' || room.seats?.[index]) return;
+      if (room?.phase !== 'lobby' || room.seats?.[index]) return;
       send({
         type: 'take-seat',
         seat: index,

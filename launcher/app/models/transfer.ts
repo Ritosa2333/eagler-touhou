@@ -191,7 +191,7 @@ export function createTransferModel({translate: t, context, ports, frames,
       local = null;
       ports.playerStatus(t(plan.generation ? 'runtime.preparingLocal' : 'runtime.loadingGameData'));
       show({kind: 'game', mode: 'runtime', title: t(plan.generation ? 'runtime.preparingLocal' : 'runtime.requestingComponent'),
-        label: t(plan.generation ? 'runtime.localGameLabel' : 'runtime.requestingComponentLabel', {game: plan.game.toUpperCase()}),
+        label: t(plan.generation ? 'runtime.localGameLabel' : 'runtime.requestingComponentLabel', {game: plan.game}),
         phase: plan.generation ? 'preparing' : 'requesting', indeterminate: true});
     },
     networkSnapshot(next: NetworkActivitySnapshot) {

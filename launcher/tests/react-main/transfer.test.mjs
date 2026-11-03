@@ -2,7 +2,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Actual transfer presentation owner, deterministic synthetic time/frames/ports.
  * Main app1206–1270,3288–3316,3445–3547,3577–3668,6068–6129,9632–9641.
  * No native network, rendering, browser animation or engine claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
@@ -186,7 +186,7 @@ test('main 3390: DATA timeout reveals transfer without replacing its byte metric
 
 test('main code/DATA preparing labels remain distinct for local-managed and direct-preload identity', () => {
   const f = fixture(); f.model.beginRuntime({game: 'th06', generation: {id: 'installed'}});
-  assert.equal(f.model.getSnapshot().title, t('runtime.preparingLocal')); assert.equal(f.model.getSnapshot().label, t('runtime.localGameLabel', {game: 'TH06'}));
+  assert.equal(f.model.getSnapshot().title, t('runtime.preparingLocal')); assert.equal(f.model.getSnapshot().label, t('runtime.localGameLabel', {game: 'th06'}));
   f.model.beginRuntime({game: 'th06', generation: null}); assert.equal(f.model.getSnapshot().title, t('runtime.requestingComponent'));
   assert.deepEqual(f.statuses, [t('runtime.preparingLocal'), t('runtime.loadingGameData')]);
 });
@@ -212,11 +212,11 @@ test('actual language service emits explicit original label/bytes/completion and
 
 test('main 1372: Package network copy retains every original file-kind label in both locales', () => {
   for (const locale of ['zh-CN', 'en']) {
-    const tr = (key, params) => api.translate(locale, key, params), game = 'TH06';
+    const tr = (key, params) => api.translate(locale, key, params), game = 'th06';
     for (const [file, title, label, kind] of [
       ['th06.package.json', tr('transfer.fetchingGameInfo'), tr('transfer.versionDescriptor', {game}), 'descriptor'],
-      ['th06.data', tr('transfer.gameDownloading'), 'TH06 th06.data', 'game'],
-      ['game.wasm', tr('transfer.runtimeDownloading'), 'TH06 WebAssembly', 'runtime'],
+      ['th06.data', tr('transfer.gameDownloading'), 'th06 th06.data', 'game'],
+      ['game.wasm', tr('transfer.runtimeDownloading'), 'th06 WebAssembly', 'runtime'],
       ['game.js', tr('transfer.runtimeDownloading'), tr('transfer.runtimeScript', {game}), 'runtime'],
       ['game.html', tr('transfer.runtimeDownloading'), tr('transfer.runtimePage', {game}), 'runtime'],
       ['track%20one.ogg', tr('transfer.musicDownloading'), 'track one.ogg', 'music'],
@@ -224,7 +224,7 @@ test('main 1372: Package network copy retains every original file-kind label in 
       ['font.otf', tr('transfer.resourceDownloading'), tr('transfer.font', {file: 'font.otf'}), 'font'],
       ['font.woff2', tr('transfer.resourceDownloading'), tr('transfer.font', {file: 'font.woff2'}), 'font'],
       ['pack.zip', tr('transfer.packageDownloading'), 'pack.zip', 'package'],
-      ['resources.json', tr('transfer.serverRequesting'), 'TH06 resources.json', 'network'],
+      ['resources.json', tr('transfer.serverRequesting'), 'th06 resources.json', 'network'],
     ]) assert.deepEqual(api.packageNetworkMetadata('th06', file, 'https://launcher.invalid/', tr), {title, label, kind});
     assert.deepEqual(api.packageNetworkMetadata('th06', new Request('https://launcher.invalid/game.wasm'), 'https://launcher.invalid/', tr),
       api.packageNetworkMetadata('th06', new URL('https://launcher.invalid/game.wasm'), 'https://launcher.invalid/', tr));
@@ -240,7 +240,7 @@ test('main Package foreground uses XHR metadata while background updates stay ou
   const signal = new AbortController().signal;
   assert.equal(await (await adapter.packageFetch('th06')('https://launcher.invalid/game.data', {signal})).text(), 'foreground');
   assert.equal(foregroundCalls[0][1].signal, signal);
-  assert.deepEqual(foregroundCalls[0][2], {title: t('transfer.gameDownloading'), label: 'TH06 game.data', kind: 'game'});
+  assert.deepEqual(foregroundCalls[0][2], {title: t('transfer.gameDownloading'), label: 'th06 game.data', kind: 'game'});
   assert.equal(await (await adapter.backgroundFetch('https://launcher.invalid/update.package.json')).text(), 'background');
   assert.equal(foregroundCalls.length, 1); assert.equal(rawCalls.length, 1);
 });
