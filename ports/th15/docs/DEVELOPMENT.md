@@ -2,6 +2,8 @@
 
 构建先串行准备 SDK 中的 SDL 与字体依赖，再并行编译游戏源码；本地对象缓存与 SDK 缓存独立维护。
 
+触屏与桌面默认使用相同的 2 倍渲染倍率，不再按触屏类型自动降低画质。显式指定 `renderScale=1` 时使用 1 倍，`node --test tools/ports/mobile-render-scale.test.mjs` 验证默认值、参数优先级和原生启动接线。
+
 当前适配记录见[TH15 适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。
 
 Launcher 的改键与标准化手柄动作经共用浏览器桥进入原生键盘路径。常显判定点复用本作原生低速动画，在独立绘制状态中按原有层级呈现，开关由 `alwaysHitbox` 控制。
