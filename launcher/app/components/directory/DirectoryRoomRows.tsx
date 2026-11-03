@@ -62,7 +62,7 @@ function RoomRow({
   assetUrl(path: string): string;
   initial: boolean;
 }) {
-  const { t, locale } = useLocale(),
+  const { t } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
   const [coverFailed, setCoverFailed] = useState(false);
   const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
@@ -101,11 +101,7 @@ function RoomRow({
         </span>
         <div className="lobby-room-title">
           <h2><span className="lobby-work-name" title={title}>{title}</span>{difficulty && <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()}>{difficulty}</span>}</h2>
-          <div className="lobby-room-meta"><span className="lobby-room-code">#{room.code}</span>
-          <div className="lobby-room-rules" hidden={!room.disableCheatMovement && !room.challengeMode}>
-            {[room.disableCheatMovement ? t('lobby.noCheat') : '',room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map((rule,index)=><span key={rule}>{index>0&&(locale==='en'?', ':'、')}{rule}</span>)}
-          </div>
-          </div>
+          <div className="lobby-room-meta"><span className="lobby-room-code">#{room.code}</span></div>
           <div className="lobby-room-facts">
             <span className="lobby-room-watchers" role="img" aria-label={t('th09.spectatorCount', {count: room.spectators})}
               title={t('th09.spectatorCount', {count: room.spectators})}>
@@ -117,6 +113,9 @@ function RoomRow({
             </>}
           </div>
         </div>
+      </div>
+      <div className="lobby-room-rules" hidden={!room.disableCheatMovement && !room.challengeMode}>
+        {[room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <div className="lobby-room-status">
         <span className="lobby-room-state" data-state={state}>{t(`lobby.${state}`)}</span>
