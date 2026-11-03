@@ -251,10 +251,12 @@ function RoomSeat({
         {t('multiplayer.you')}
       </span>
       {!occupied && controlCaption}
-      <UiButton variant="icon"
+      <UiButton variant="unstyled"
         className="mp-seat-edit"
         type="button"
         hidden={state.seat !== index || !occupied}
+        aria-haspopup="dialog"
+        aria-controls="mpRoomPanel"
         aria-label={t('room.playerOptions')}
         onClick={(event) => openPanel('personal', event.currentTarget)}
       />

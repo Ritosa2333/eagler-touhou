@@ -133,7 +133,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-seat-network-value{font-variant-numeric:tabular-nums}
 #player.room-workspace .room-workspace-roster .mp-seat-latency:disabled{opacity:1!important;text-decoration:none}
 #player.room-workspace .room-workspace-roster .mp-seat-state,#player.room-workspace .room-workspace-roster .mp-seat-me{display:none!important}
-#player.room-workspace .room-workspace-roster .mp-seat-edit{position:absolute!important;inset:0!important;z-index:1!important;background:transparent!important;border:0!important;border-radius:10px!important}
+#player.room-workspace .room-workspace-roster .mp-seat-edit{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;z-index:1!important;background:transparent!important;border:0!important;border-radius:10px!important;cursor:pointer}
 #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{position:absolute;bottom:-2px;right:-2px;width:15px;height:15px;z-index:2}
 #player.room-workspace .room-workspace-roster .mp-seat-owner-mark>svg{display:block;width:100%;height:100%}
 #player.room-workspace .room-workspace-roster .mp-seat-loadout{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
