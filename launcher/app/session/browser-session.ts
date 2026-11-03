@@ -323,6 +323,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     createSocket: url => new WebSocket(url),
   });
   const directory = createLobbyDirectory({
+    clientSideFiltering: true,
     testBuild: entryUrl.searchParams.has('test'),
     loadSiteManifest: signal => loadCompatibleSiteManifest(async file => {const response = await window.fetch(new URL(file, baseUrl), {cache: 'no-store', signal}); if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status}); return response.json();}),
     createSocket: url => relayRouting.createSocket(url), memberId: multiplayerMemberId,

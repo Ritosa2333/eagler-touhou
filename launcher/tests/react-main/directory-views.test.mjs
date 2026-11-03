@@ -75,9 +75,9 @@ class Socket {
   close(...args) {this.closes.push(args); this.readyState = 3;}
   emit(type, data) {if (type === 'close') this.readyState = 3; for (const fn of this.listeners.get(type) || []) fn(type === 'message' ? {data: JSON.stringify(data)} : data);}
 }
-function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadError = false} = {}) {
+function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadError = false, clientSideFiltering = false} = {}) {
   const sockets = [], timers = new Map(), events = [], sessionWrites = [], navigations = []; let timerId = 0, closeCalls = 0;
-  const real = owners.createLobbyDirectory({selectedProduct,
+  const real = owners.createLobbyDirectory({selectedProduct, clientSideFiltering,
     loadSiteManifest: async () => {if (loadError) throw Error('synthetic manifest failure'); return manifest(host);},
     createSocket: url => {const socket = new Socket(); socket.url = url; sockets.push(socket); return socket;},
     memberId: () => 'fixture-member', identity: {lobbyClientId: product => {events.push(`identity:${product}`); return 'fixture-client';}},
@@ -634,6 +634,28 @@ test('Unmount discards only its submitted receipt before a later dialog can clos
   const f = await fixture().live(), {m} = await mountDialog(f, 'join'); await change('#roomCodeInput', '1234'); await submit();
   await m.unmount(); assert.equal(f.navigations.length, 0); assert.equal(f.sessionWrites.length, 0);
   f.service.formDidClose(); assert.equal(f.navigations.length, 0);
+});
+
+test('Local game filtering returns to all rooms without a loading request', async () => {
+  const f = await fixture({selectedProduct: '', clientSideFiltering: true}).live([
+    room({product: 'th06mp', code: '1234'}), room({product: 'th07mp', code: '2345'}),
+  ]);
+  const {m} = await mountLobby(f, {productFilters: []});
+  const sent = f.socket.sent.length;
+  await m.update({productFilters: ['th06mp']});
+  await React.act(async () => f.service.selectProduct('th06mp'));
+  assert.deepEqual(all('.lobby-room-row').map(row => row.dataset.key), ['th06mp-1234']);
+  assert.equal(n('#listLoading').hidden, true);
+  await m.update({productFilters: []});
+  assert.deepEqual(all('.lobby-room-row').map(row => row.dataset.key), ['th06mp-1234', 'th07mp-2345']);
+  await React.act(async () => f.service.selectProduct(''));
+  assert.equal(n('#listLoading').hidden, true);
+  assert.equal(f.socket.sent.length, sent);
+  await React.act(async () => f.service.selectProduct('th06mp'));
+  await React.act(async () => assert.equal(f.service.prepareForm('create'), true));
+  assert.equal(f.service.getSnapshot().form.product, 'th06mp');
+  await React.act(async () => f.service.refreshRooms());
+  assert.equal(f.socket.sent.at(-1).product, '');
 });
 
 test('All multiplayer requests the unfiltered directory; multi-selection shows only checked games', async () => {

@@ -100,6 +100,8 @@ export interface LobbyDirectoryOptions {
   launcherUrl(): string;
   navigateToRoom(url: string): void;
   selectedProduct?: string;
+  /** Keep the full directory available for instant local filtering. */
+  clientSideFiltering?: boolean;
   testBuild?: boolean;
   /** Router normalizes the directory filter; this service never writes history. */
   onSelectedProductNormalized?(product: MultiplayerProductId): void;
@@ -147,6 +149,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   let bootController: AbortController | null = null;
   let bootGeneration = 0;
   let pendingEntry: { owner: object | undefined; run(): void } | null = null;
+  const requestedFilter = () => options.clientSideFiltering ? '' : snapshot.selectedProduct;
   const initialProduct = isMultiplayerProductId(options.selectedProduct || '')
     ? (options.selectedProduct as MultiplayerProductId)
     : '';
@@ -184,7 +187,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     else if (next.connection !== 'loading') next.connectionInterrupted = true;
     next.loading =
       next.connection === 'loading' ||
-      (next.connection === 'live' && loadedProduct !== next.selectedProduct);
+      (next.connection === 'live' && loadedProduct !== (options.clientSideFiltering ? '' : next.selectedProduct));
     next.visibleRooms = next.loading
       ? []
       : next.rooms.filter((room) => !next.selectedProduct || room.product === next.selectedProduct);
@@ -232,8 +235,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function refresh() {
     if (disposed || socket?.readyState !== 1) return;
-    requestedProduct = snapshot.selectedProduct;
-    socket.send(JSON.stringify({ type: 'refresh', product: snapshot.selectedProduct }));
+    requestedProduct = requestedFilter();
+    socket.send(JSON.stringify({ type: 'refresh', product: requestedProduct }));
     if (directoryReplyTimer === null) {
       const requestedSocket = socket;
       directoryReplyTimer = later(() => {
@@ -245,10 +248,10 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     }
     clear(listTimer);
     listTimer = null;
-    if (loadedProduct !== snapshot.selectedProduct)
+    if (loadedProduct !== requestedFilter())
       listTimer = later(() => {
         listTimer = null;
-        if (socket?.readyState === 1 && loadedProduct !== snapshot.selectedProduct) refresh();
+        if (socket?.readyState === 1 && loadedProduct !== requestedFilter()) refresh();
       }, 3000);
   }
   function parseRoom(value: unknown): DirectoryRoom | null {
@@ -396,7 +399,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       const rooms = candidates.filter(room => room.players > 0 || room.spectators > 0);
       loadedProduct =
         typeof message.product === 'string' ? message.product : first ? '' : requestedProduct;
-      if (loadedProduct === snapshot.selectedProduct) {
+      if (loadedProduct === requestedFilter()) {
         clear(listTimer);
         listTimer = null;
       }
@@ -409,7 +412,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         total: Math.max(rooms.length, bounded(message.total, 100000) - (candidates.length - rooms.length)),
         connection: 'live',
       });
-      if (first && snapshot.selectedProduct) refresh();
+      if (first && requestedFilter()) refresh();
     });
     next.addEventListener('close', (event) => {
       if (disposed || socket !== next) return;
@@ -518,9 +521,10 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       return;
     // A room return can supply its filter before this view's first manifest.
     // Keep that request for initialize() to validate against the loaded catalog.
-    loadedProduct = null;
+    if (!options.clientSideFiltering) loadedProduct = null;
     publish({ selectedProduct: product as MultiplayerProductId | '' });
     clear(filterTimer);
+    if (options.clientSideFiltering) return;
     filterTimer = later(() => {
       filterTimer = null;
       refresh();

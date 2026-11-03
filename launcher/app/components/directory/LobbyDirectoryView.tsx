@@ -51,7 +51,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
   // Keep matching last-known rows while refreshing; the loading layer does not move them.
   const visibleRooms = snapshot.loading
     ? snapshot.rooms.filter(room => !snapshot.selectedProduct || room.product === snapshot.selectedProduct)
-    : snapshot.visibleRooms;
+    : surface.productFilters !== undefined ? snapshot.rooms : snapshot.visibleRooms;
   const filteredRooms = surface.productFilters?.length ? visibleRooms.filter(room => surface.productFilters!.includes(room.product))
     : surface.viewingProduct ? visibleRooms.filter(room => room.product === surface.viewingProduct) : visibleRooms;
   const state = {...snapshot, loading: snapshot.loading && !snapshot.connectionInterrupted,
