@@ -1,6 +1,6 @@
 import {WorkerNP21} from './solo-worker-client.js';
 import {SoloMusic} from './solo-music.js';
-import {LocalSfx} from './local-sfx.js';
+import {OriginalSfx} from './original-sfx.mjs';
 import {FireControl} from './fire-control.js';
 import {prepareSoloDisk} from './solo-save.js';
 import {Fat12} from './disk.js';
@@ -83,15 +83,14 @@ async function start({language,music,options}){
     await assist.install(disk);
     soloMusic=new SoloMusic(report,{independentSfx:true});
     soloMusic.player.pmd={tracks:originalTracks,engine:await PmdPlayer.prepare(soloMusic.context,import.meta.url)};
-    localSfx=new LocalSfx(soloMusic.context);
-    await Promise.all([soloMusic.prepare('YUMEZIKU'),localSfx.load()]);
+    [localSfx]=await Promise.all([OriginalSfx.create('th03',new Fat12(base)),soloMusic.prepare('YUMEZIKU')]);
     await soloMusic.install(disk,'YUMEZIKU');
   }else if(new Fat12(disk).find('YUMEZIKU/WEBMUSIC.COM',{optional:true})!==undefined){
     const fat=new Fat12(disk),independentSfx=fat.read(fat.find('YUMEZIKU/WEBMUSIC.COM')).length===883;
     soloMusic=new SoloMusic(report,{independentSfx});
     soloMusic.player.pmd={tracks:originalTracks,engine:await PmdPlayer.prepare(soloMusic.context,import.meta.url)};
-    if(independentSfx)localSfx=new LocalSfx(soloMusic.context);
-    await Promise.all([soloMusic.attachReplay('YUMEZIKU'),localSfx?.load()]);
+    if(independentSfx)localSfx=await OriginalSfx.create('th03',new Fat12(base));
+    await soloMusic.attachReplay('YUMEZIKU');
   }
   if(music==='none')soloMusic?.player.setVolume(0);
   let externalReplay;
@@ -116,7 +115,7 @@ async function start({language,music,options}){
 export const managedAPI={
   start,
   health(){return {frames:emulator?.module.frameUploads??0,audio:{state:emulator?.context?.state,music:soloMusic?.player.active?.id??null,musicStatus:soloMusic?.player.status??null,
-    effectsPlayed:localSfx?.played??0,queuedMs:Math.max(0,((emulator?.audioEnd??0)-(emulator?.context?.currentTime??0))*1000)}};},
+    effectsPlayed:localSfx?.played??0,effectsPeak:localSfx?.peak??0,queuedMs:Math.max(0,((emulator?.audioEnd??0)-(emulator?.context?.currentTime??0))*1000)}};},
   async files(message){
     const store=globalThis.__eaglerPC98Files;
     if(message.command==='sync'){await syncFiles();return {};}

@@ -59,11 +59,11 @@ try{
   assert(events.some(event=>event.event==='audio-health'&&event.musicStatus?.startsWith('原版 FM：')),'original PMD must play while recording');
   assert(events.filter(event=>event.event==='audio-health'&&event.state==='running').every(event=>event.queuedMs<250),'native sound queue must remain short');
   assert.equal((await frame.evaluate(()=>window.__keyProbe)).filter(event=>event.code==='KeyZ'&&event.type==='keydown').length,0,'title must not auto-confirm');
-  for(let i=0;i<8&&!events.some(event=>event.event==='audio-health'&&event.effectsPlayed>0);i++){
+  for(let i=0;i<8&&!events.some(event=>event.event==='audio-health'&&event.effectsPeak>0.001);i++){
     await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,200));await page.keyboard.up('KeyZ');
     await new Promise(resolve=>setTimeout(resolve,1500));
   }
-  assert(events.some(event=>event.event==='audio-health'&&event.effectsPlayed>0),'game effects must play through the independent audio path');
+  assert(events.some(event=>event.event==='audio-health'&&event.effectsPeak>0.001),'original game effects must produce audio');
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH03 solo presentation');

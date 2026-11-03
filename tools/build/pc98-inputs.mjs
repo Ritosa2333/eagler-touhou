@@ -16,7 +16,7 @@ export async function printPC98Inputs({port, game}) {
       if (entry.isDirectory()) {
         if (!/^(?:node_modules|\.cache|build|reports|__pycache__)$/.test(entry.name))
           await visit(resolve(directory,entry.name),name);
-      } else if (/\.(?:m?js|cjs|html|css|json|cpp|c|h|hpp|inc|asm|wat|py|sh|rs|toml|lock)$/.test(entry.name)) inputs.push(name);
+      } else if (/\.(?:m?js|cjs|html|css|json|cpp|c|h|hpp|inc|asm|nasm|wat|py|sh|rs|toml|lock)$/.test(entry.name)) inputs.push(name);
     }
   }
   for (const directory of ['web','scripts','patches','tools']) await visit(resolve(port,directory),directory);
