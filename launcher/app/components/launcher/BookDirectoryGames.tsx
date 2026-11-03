@@ -46,11 +46,11 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
     return <span className="book-lobby-cover" aria-hidden="true">{art&&!failedArt.has(product.id)?<img src={art} alt="" loading="lazy" decoding="async" onError={()=>setFailedArt(previous=>new Set(previous).add(product.id))}/>:<span>th{product.number}</span>}</span>;
   };
   const copy=(product:LibraryProduct)=><span className="book-lobby-copy"><span className="book-lobby-name"><strong title={product.title}>{product.title}</strong><small>th{product.number}</small></span><span className="book-lobby-subtitle" title={product.subtitle}>{product.subtitle}</span></span>;
-  const checkmark=(checked:boolean)=><span className="book-lobby-check" aria-hidden="true">{checked&&<Check/>}</span>;
+  const checkmark=(checked:boolean)=><span className="book-lobby-check" data-checked={checked} aria-hidden="true"><Check/></span>;
   const allCopy=<><span className="book-lobby-cover" aria-hidden="true"><LayoutGrid/></span><span className="book-lobby-copy"><span className="book-lobby-name"><strong>{t('directory.allGames')}</strong></span></span></>;
   const choices=<>
     <div className="book-lobby-menu-row" role="presentation" data-selected={!selected.length}>
-      <ActionMenuCheckboxItem className="book-lobby-menu-check w-11 min-h-11 justify-center p-0" showIndicator={false} aria-label={t('directory.allGames')} checked={!selected.length} disabled={!interactive} onCheckedChange={reset} onSelect={event=>event.preventDefault()}>{checkmark(!selected.length)}</ActionMenuCheckboxItem>
+      <span aria-hidden="true"/>
       <ActionMenuItem className="pr-1 pl-0 book-lobby-menu-choice book-lobby-menu-all" disabled={!interactive} onSelect={reset}>{allCopy}</ActionMenuItem>
       <span aria-hidden="true"/>
     </div>
@@ -62,7 +62,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   </>;
   return <nav className="book-lobby-games" aria-label={t('directory.gameFilter')}>
     <div className="book-lobby-desktop"><div className="book-lobby-full-list">
-      <div className="book-lobby-item" data-selected={!selected.length}><Checkbox.Root asChild checked={!selected.length} disabled={!interactive} onCheckedChange={reset}><BookButton variant="choice" className="book-lobby-check-control" aria-label={t('directory.allGames')}>{checkmark(!selected.length)}</BookButton></Checkbox.Root><BookButton variant="choice" className="book-lobby-game book-lobby-all" disabled={!interactive} onClick={reset}>{allCopy}</BookButton><span aria-hidden="true"/></div>
+      <div className="book-lobby-item" data-selected={!selected.length}><span aria-hidden="true"/><BookButton variant="choice" className="book-lobby-game book-lobby-all" disabled={!interactive} onClick={reset}>{allCopy}</BookButton><span aria-hidden="true"/></div>
       {groups.map(group=><section key={group.id} className="book-lobby-group" aria-label={groupLabel(group.id)} data-lobby-category={group.id}><h2 className="book-lobby-group-label">{groupLabel(group.id)}</h2>{group.products.map(product=><div key={product.id} className="book-lobby-item" data-lobby-product={product.id} data-selected={selected.includes(product.id)}>
       <Checkbox.Root asChild checked={selected.includes(product.id)} disabled={!interactive} onCheckedChange={checked=>toggle(product.id,checked===true)}><BookButton variant="choice" className="book-lobby-check-control" aria-label={t('directory.filterGame',{game:product.title})}>{checkmark(selected.includes(product.id))}</BookButton></Checkbox.Root>
       <BookButton variant="choice" type="button" className="book-lobby-game" aria-label={t('directory.viewGame',{game:product.title})} disabled={!interactive} onClick={()=>selectOnly(product.id)}>{cover(product)}{copy(product)}</BookButton>
