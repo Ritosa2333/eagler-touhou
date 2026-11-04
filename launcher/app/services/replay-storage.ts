@@ -3,6 +3,7 @@ import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import {isTh09ReplayDirectory, parseTh09ReplayMatch, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
 import {motionReplayName} from '../../src/launcher/replay-motion.mts';
 import {replayStorageLocation} from '../../src/launcher/replay-storage-policy.mts';
+import {BETA_STORAGE_PREFIX} from '../../src/launcher/release-channel.mts';
 
 export interface StoredReplay {path: string; size: number; bytes: Uint8Array; modifiedAt?: number; replayMatch?: Th09ReplayMatch}
 export interface ReplayStorageSelection {path?: string; directory?: string; language?: string}
@@ -18,7 +19,7 @@ function idbfsBytes(contents: unknown): Uint8Array | null {
 
 /** Compatibility reader for Emscripten IDBFS v21. Runtime remains the sole writer.
  * A missing database is never created; an unknown schema fails without fallback. */
-export function createReplayStorageReader(environment: () => {indexedDB: IDBFactory; keyRange: typeof IDBKeyRange}): ReplayStorageReader {
+export function createReplayStorageReader(environment: () => {indexedDB: IDBFactory; keyRange: typeof IDBKeyRange}, betaMode=false): ReplayStorageReader {
   async function open(factory: IDBFactory, root: string): Promise<IDBDatabase | null> {
     return new Promise((resolve, reject) => {
       let missing = false, settled = false;
@@ -43,7 +44,7 @@ export function createReplayStorageReader(environment: () => {indexedDB: IDBFact
     if (selection.directory && !isTh09ReplayDirectory(selection.directory)) throw new Error('录像文件夹无效');
     const {indexedDB, keyRange} = environment();
     if (!indexedDB || !keyRange) throw new Error('浏览器无法读取本地录像存储');
-    const database = await open(indexedDB, databaseName);
+    const database = await open(indexedDB, (betaMode?BETA_STORAGE_PREFIX:'')+databaseName);
     if (!database) return [];
     try {
       return await new Promise<StoredReplay[]>((resolve, reject) => {

@@ -12,6 +12,8 @@ import {
   BookOpen as ReaderIcon,
   Check as CheckIcon,
   PlaySquare,
+  Code,
+  FlaskConical,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { uiPortalHost } from '../../ui/portal';
@@ -26,6 +28,8 @@ import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
 import { previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
+import {BetaModeDialog} from './BetaModeDialog';
+import {betaModeForBase,releaseChannelUrl} from '../../../src/launcher/release-channel.mts';
 
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
@@ -70,6 +74,9 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     returnToLanguage = useRef(false),
     replayAfterClose = useRef(false),
     [languagesOpen, setLanguagesOpen] = useState(false);
+  const [developerOpen,setDeveloperOpen]=useState(false),[betaWarning,setBetaWarning]=useState(false);
+  const betaAfterClose=useRef(false),returnToDeveloper=useRef(false);
+  const channelBase=props.assetUrl('./'),betaMode=betaModeForBase(channelBase);
   const masthead = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     if (!interactive) return;
@@ -98,20 +105,27 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     };
   }, [interactive]);
   const backToMenu = () => {
-    returnToLanguage.current = true;
+    if(developerOpen)returnToDeveloper.current=true;
+    else returnToLanguage.current = true;
     setLanguagesOpen(false);
+    setDeveloperOpen(false);
   };
   useLayoutEffect(() => {
     if (!menuOpen) return;
-    if (languagesOpen)
+    if(developerOpen)
+      content.current?.querySelector<HTMLElement>('#runtimeDiagnosticsToggle')?.focus();
+    else if (languagesOpen)
       content.current?.querySelector<HTMLElement>('[role="menuitemradio"][data-state="checked"]')?.focus();
-    else if (returnToLanguage.current) {
+    else if(returnToDeveloper.current){
+      returnToDeveloper.current=false;
+      content.current?.querySelector<HTMLElement>('.masthead-developer-trigger')?.focus();
+    } else if (returnToLanguage.current) {
       returnToLanguage.current = false;
       content.current?.querySelector<HTMLElement>('.masthead-language-trigger')?.focus();
     }
-  }, [languagesOpen, menuOpen]);
+  }, [languagesOpen, developerOpen, menuOpen]);
   return (
-    <header
+    <><header
       ref={masthead}
       className={`masthead book-masthead${variant === 'lobby' ? ' lobby-masthead' : ''}${props.compactDocumentation ? ' documentation-masthead' : ''}`}
     >
@@ -174,6 +188,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             if (open) {
               setHost(uiPortalHost(trigger.current));
               setLanguagesOpen(false);
+              setDeveloperOpen(false);
             }
             onMenuOpenChange(open);
           }}
@@ -200,6 +215,12 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
               sideOffset={8}
               collisionPadding={padding}
               onCloseAutoFocus={(event) => {
+                if(betaAfterClose.current){
+                  betaAfterClose.current=false;
+                  event.preventDefault();
+                  setBetaWarning(true);
+                  return;
+                }
                 if (!replayAfterClose.current) return;
                 replayAfterClose.current = false;
                 event.preventDefault();
@@ -207,19 +228,35 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                 props.onReplay?.();
               }}
               onEscapeKeyDown={(event) => {
-                if (languagesOpen) {
+                if (languagesOpen||developerOpen) {
                   event.preventDefault();
                   backToMenu();
                 }
               }}
               onKeyDown={(event) => {
-                if (languagesOpen && event.key === 'ArrowLeft') {
+                if ((languagesOpen||developerOpen) && event.key === 'ArrowLeft') {
                   event.preventDefault();
                   backToMenu();
                 }
               }}
             >
-              {languagesOpen ? (
+              {developerOpen ? <>
+                <DropdownMenu.Item className="ui-menu-item" onSelect={event=>{event.preventDefault();backToMenu();}}>
+                  <ChevronLeft aria-hidden="true"/>{t('developer.options')}
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator className="ui-menu-separator"/>
+                <DropdownMenu.CheckboxItem className="ui-menu-item" id="runtimeDiagnosticsToggle"
+                  checked={props.diagnosticsEnabled} onCheckedChange={props.onToggleDiagnostics}>
+                  <ActivityLogIcon/>{t('diagnostics.toggle')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
+                </DropdownMenu.CheckboxItem>
+                <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={betaMode}
+                  onSelect={()=>{
+                    if(betaMode)window.location.assign(releaseChannelUrl(window.location.href,channelBase,false));
+                    else betaAfterClose.current=true;
+                  }}>
+                  <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
+                </DropdownMenu.CheckboxItem>
+              </> : languagesOpen ? (
                 <>
                   <DropdownMenu.Item
                     className="ui-menu-item"
@@ -307,18 +344,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                         </DropdownMenu.ItemIndicator>
                       </DropdownMenu.CheckboxItem>
                     )}
-                    <DropdownMenu.CheckboxItem
-                      className="ui-menu-item"
-                      id="runtimeDiagnosticsToggle"
-                      checked={props.diagnosticsEnabled}
-                      onCheckedChange={props.onToggleDiagnostics}
-                    >
-                      <ActivityLogIcon />
-                      {t('diagnostics.toggle')}
-                      <DropdownMenu.ItemIndicator>
-                        <CheckIcon />
-                      </DropdownMenu.ItemIndicator>
-                    </DropdownMenu.CheckboxItem>
                     <DropdownMenu.Item
                       className="ui-menu-item masthead-language-trigger"
                       onSelect={(event) => {
@@ -407,12 +432,18 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                       </DropdownMenu.Item>
                     )}
                   </DropdownMenu.Group>
+                  <DropdownMenu.Separator className="ui-menu-separator"/>
+                  <DropdownMenu.Item className="ui-menu-item masthead-developer-trigger"
+                    onSelect={event=>{event.preventDefault();setDeveloperOpen(true);}}
+                    onKeyDown={event=>{if(event.key==='ArrowRight'){event.preventDefault();setDeveloperOpen(true);}}}>
+                    <Code aria-hidden="true"/>{t('developer.options')}<ChevronRight aria-hidden="true"/>
+                  </DropdownMenu.Item>
                 </>
               )}
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </nav>
-    </header>
+    </header><BetaModeDialog open={betaWarning} onOpenChange={setBetaWarning} onClosed={()=>trigger.current?.focus({preventScroll:true})} baseUrl={channelBase}/></>
   );
 }

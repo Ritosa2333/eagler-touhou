@@ -124,6 +124,8 @@ function envValue(primary, legacyNames, fallback = '') {
 // read-only compatibility aliases for deployments created before Multiplayer
 // became a shared product profile.
 const host = envValue('EAGLER_NETPLAY_RELAY_HOST', ['TH07_RELAY_HOST'], '0.0.0.0');
+const releaseChannel = process.env.EAGLER_RELEASE_CHANNEL || 'stable';
+if (!['stable', 'beta'].includes(releaseChannel)) throw new Error('EAGLER_RELEASE_CHANNEL must be stable or beta');
 const port = Number.parseInt(
   envValue('EAGLER_NETPLAY_RELAY_PORT', ['TH07_RELAY_PORT'], '18142'),
   10,
@@ -1888,6 +1890,11 @@ server.on('close', () => {
 });
 
 server.on('connection', (socket, request) => {
+  const requestedChannel=new URL(request.url||'/', 'http://relay.invalid').searchParams.get('channel')||'stable';
+  if(requestedChannel!==releaseChannel){
+    socket.close(1008,'release channel mismatch');
+    return;
+  }
   socket.relayAddress = relayClientAddress(request, abuseConfig.trustedProxies);
   if (!abuseGuard.trackSocket(socket.relayAddress, socket)) {
     socket.close(4008, 'connection limit');

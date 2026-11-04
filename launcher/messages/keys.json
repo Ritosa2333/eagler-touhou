@@ -8698,5 +8698,29 @@
   "settings.th05.numericPower": {
     "id": "settings_th05_numericPower",
     "params": []
+  },
+  "developer.options": {
+    "id": "developer_options",
+    "params": []
+  },
+  "developer.betaFeatures": {
+    "id": "developer_betaFeatures",
+    "params": []
+  },
+  "developer.betaWarning": {
+    "id": "developer_betaWarning",
+    "params": []
+  },
+  "developer.betaConfirm": {
+    "id": "developer_betaConfirm",
+    "params": []
+  },
+  "developer.betaCancel": {
+    "id": "developer_betaCancel",
+    "params": []
+  },
+  "developer.betaUnavailable": {
+    "id": "developer_betaUnavailable",
+    "params": []
   }
 }

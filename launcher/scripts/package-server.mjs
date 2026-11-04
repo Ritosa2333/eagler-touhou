@@ -1,6 +1,7 @@
 import {normalizeSiteManifestArguments, readCompatibleSiteManifest, writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
 import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
+import {prepareBetaRuntimePublication} from '../lib/beta-runtime-publication.mjs';
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -90,6 +91,11 @@ const hostedResources = serverResourceMode === RESOURCE_MODE_HOSTED;
 const externalResources = serverResourceMode === RESOURCE_MODE_EXTERNAL;
 if (args["test-build"] !== undefined && !["0", "1"].includes(args["test-build"])) throw new Error("--test-build must be 0 or 1");
 const testBuild = args["test-build"] === "1";
+const betaMode=args['beta-mode']==='1';
+if(args['beta-mode']!==undefined&&!['0','1'].includes(args['beta-mode']))throw Error('--beta-mode must be 0 or 1');
+if(betaMode&&(!testBuild||!args['site-url']||!new URL(args['site-url']).pathname.replace(/\/$/,'').endsWith('/beta')))
+  throw Error('Beta publication requires --test-build=1 and an explicit /beta/ site URL');
+if(betaMode&&!configuredFeatures?.netplayRelay)throw Error('Beta publication requires its own Relay configured with EAGLER_RELEASE_CHANNEL=beta');
 const buildProfile = args.profile;
 const buildAuthority = classifyBuildProfile(buildProfile);
 if (!buildAuthority || buildProfile === "web-development") throw new Error("packaging requires an explicit web-validation-* or web-release-* --profile=NAME");
@@ -594,6 +600,7 @@ manifest.profile = buildProfile;
 manifest.shared = {
   resourceMode: serverResourceMode,
   testBuild,
+  ...(betaMode?{saveChannel:'beta'}:{}),
   ...(serverResourceMode === RESOURCE_MODE_HOSTED ? {
     vanillaFont: `shared/msgothic.ttc?v=${await versionFiles(dirname(vanillaFont), [basename(vanillaFont)])}`,
     unicodeFont: `shared/unifont.otf?v=${await versionFiles(dirname(font), [basename(font)])}`,
@@ -629,7 +636,8 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     await mkdir(dirname(resolve(appRuntimeRoot, name)), { recursive: true });
     await cp(source, resolve(appRuntimeRoot, name));
   }
-  await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: declared }, null, 2));
+  const publishedFiles = betaMode ? await prepareBetaRuntimePublication(appRuntimeRoot, `${stem}.html`, declared) : declared;
+  await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: publishedFiles }, null, 2));
   entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
   if (product.multiplayerRuntime) {
     const multiplayerBuild = builds[`${game}Multiplayer`];
@@ -644,7 +652,8 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
       await mkdir(dirname(resolve(multiplayerRoot, name)), { recursive: true });
       await cp(source, resolve(multiplayerRoot, name));
     }
-    await writeFile(resolve(multiplayerRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: multiplayerDeclared }, null, 2));
+    const publishedMultiplayerFiles = betaMode ? await prepareBetaRuntimePublication(multiplayerRoot, `${stem}.html`, multiplayerDeclared) : multiplayerDeclared;
+    await writeFile(resolve(multiplayerRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: publishedMultiplayerFiles }, null, 2));
     entry.multiplayerRuntime = `runtime/${game}/multiplayer/${stem}.html?hosted=1&v=${await versionFiles(multiplayerRoot, multiplayerNames)}`;
   }
   entry.features = publishedHostRuntimeFeatures(game, requestedFeatures, runtimeCapabilities);
@@ -752,6 +761,7 @@ for (const game of preloadGames) {
   for (const extension of ["html", "js", "wasm"]) {
     await cp(resolve(builds[game], `${game}.${extension}`), resolve(appRuntimeRoot, `${game}.${extension}`));
   }
+  if (betaMode) await prepareBetaRuntimePublication(appRuntimeRoot, `${game}.html`);
   const runtimeVersion = await versionFiles(appRuntimeRoot, appRuntimeFiles);
   entry.runtime = `runtime/${game}/${game}.html?hosted=1&v=${runtimeVersion}`;
   let multiplayerRuntimeVersion = null;
@@ -763,6 +773,7 @@ for (const game of preloadGames) {
     for (const extension of ["html", "js", "wasm"]) {
       await cp(resolve(multiplayerBuild, `${game}.${extension}`), resolve(multiplayerRoot, `${game}.${extension}`));
     }
+    if (betaMode) await prepareBetaRuntimePublication(multiplayerRoot, `${game}.html`);
     multiplayerRuntimeVersion = await versionFiles(multiplayerRoot, appRuntimeFiles);
     entry.multiplayerRuntime = `runtime/${game}/multiplayer/${game}.html?hosted=1&v=${multiplayerRuntimeVersion}`;
   }

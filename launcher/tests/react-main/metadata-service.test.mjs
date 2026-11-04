@@ -158,7 +158,7 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   const normal = fixture(network(published));
   for (const product of testProducts) assert.equal(normal.getSnapshot().products.includes(product), false);
   await normal.initialize(); assert.deepEqual(normal.getSnapshot().products, ['th06', 'th07', 'th07mp']); normal.dispose();
-  for (const extra of [{testBuild: true}, {baseUrl: 'https://launcher.invalid/deploy/?test'}]) {
+  for (const extra of [{testBuild: true}, {baseUrl: 'https://launcher.invalid/deploy/?test'}, {baseUrl: 'https://launcher.invalid/beta/'}]) {
     const service = fixture(network(published), extra); await service.initialize();
     for (const product of testProducts) assert.ok(service.getSnapshot().products.includes(product));
     service.dispose();
@@ -166,6 +166,19 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   const hostTest = fixture(network({...published, shared: {...published.shared, testBuild: true}})); await hostTest.initialize();
   for (const product of testProducts) assert.ok(hostTest.getSnapshot().products.includes(product));
   hostTest.dispose();
+});
+
+test('beta metadata keeps beta programs while equal packages resolve against the parent publication', async () => {
+  const net = network(host({th06: hostGame('th06')}));
+  const service = fixture(net, {baseUrl: 'https://launcher.invalid/deploy/beta/'});
+  await service.initialize();
+  assert.deepEqual(net.calls.map(call => new URL(call.url).pathname).sort(), [
+    '/deploy/beta/release-catalog.json', '/deploy/beta/site-manifest.json',
+    '/deploy/release-catalog.json', '/deploy/site-manifest.json',
+  ]);
+  assert.equal(service.getSnapshot().releaseCatalog.games.th06.descriptor, '/deploy/th06.package.json');
+  assert.equal(service.getSnapshot().siteManifest.games.th06.runtime, 'runtime/th06/th06.html');
+  service.dispose();
 });
 
 test('metadata: original language overlays and music context use current package hints', async () => {

@@ -2059,5 +2059,11 @@
   "settings_th05_phaseTimeout": "阶段剩余时间 / 次数",
   "settings_th05_timeoutAsTime": "攻击循环换算为时间",
   "settings_th05_numericDream": "梦槽以数字显示",
-  "settings_th05_numericPower": "火力以数字显示"
+  "settings_th05_numericPower": "火力以数字显示",
+  "developer_options": "开发人员选项",
+  "developer_betaFeatures": "测试版功能",
+  "developer_betaWarning": "您正在进入测试版模式。打开此模式后，您可以体验目前不稳定的测试版功能。但是有可能造成存档、replay数据错误、丢失等情况，且游戏可能十分不稳定，故存档、replay、联机大厅等与正式版独立。请谨慎操作。您随时可以通过该按钮退出测试版模式。",
+  "developer_betaConfirm": "确认进入测试版",
+  "developer_betaCancel": "不进入",
+  "developer_betaUnavailable": "测试版暂不可用，请稍后重试。"
 }

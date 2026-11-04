@@ -27,6 +27,7 @@ npm run package -- /absolute/path/to/new-relay-package
 | --- | --- | --- |
 | `EAGLER_NETPLAY_RELAY_HOST` | `0.0.0.0` | 监听地址 |
 | `EAGLER_NETPLAY_RELAY_PORT` | `18142` | 监听端口 |
+| `EAGLER_RELEASE_CHANNEL` | `stable` | 发布通道，接受 `stable` 或 `beta`；连接必须与进程通道一致 |
 | `EAGLER_NETPLAY_STATUS_PORT` | 未启用 | 可选房间统计 HTTP 端口，仅监听 `127.0.0.1` |
 | `EAGLER_NETPLAY_TRUSTED_PROXIES` | 空 | 可信反向代理 IP，逗号分隔 |
 | `EAGLER_NETPLAY_STUN_URLS` | `stun:stun.cloudflare.com:3478` | 客户端 ICE STUN 地址 |
@@ -35,6 +36,8 @@ npm run package -- /absolute/path/to/new-relay-package
 | `EAGLER_NETPLAY_TURN_CONFIG_FILE` | 空 | 动态 TURN JSON 路径；统一更新房间测速、游戏信令与网络诊断 |
 
 完整客户端入口见[协议参考](docs/protocol.md)，反向代理与运行配置见[部署说明](deploy/README.md)。测试源码位于 [`tests/`](tests/)，服务许可见 [`LICENSE`](LICENSE)。
+
+主站 `/beta/` 使用独立 Relay 进程、端口和反向代理入口，设置 `EAGLER_RELEASE_CHANNEL=beta`。测试版启动器为目录、等待室、测速、信令和游戏传输连接附加 `channel=beta`；进程在登记连接前检查通道，保证正式版和测试版大厅独立。备用入口应转发到同一个测试版进程。
 
 启用状态端口后，`GET /status` 返回 `checkedAt` 和按产品汇总的 `products`，每作包含 `rooms`、`waiting`、`playing`、`players`、`spectators`。产品范围随公共目录更新，源码与独立发布包共用实现，供状态页采集。响应只包含聚合计数，不含房号、昵称或客户端地址。统计在线入座者与旁观者，不统计未入座访客和独立传输连接，因此不能据此判断服务可安全重启。
 
