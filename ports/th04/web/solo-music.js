@@ -83,7 +83,7 @@ export class SoloMusic {
     return copy;
   }
   poll(heap,now,boundary=false) {
-    if(this.closed||!this.reader||!boundary&&now-this.lastPoll<50)return;
+    if(this.closed||!this.reader||!boundary&&now-this.lastPoll<16)return;
     this.lastPoll=now;
     try {
       for(const [ax,hash] of this.reader.read(heap)){if((ax>>>8)===12)this.sfx?.command(ax);else this.player.command(ax,hash);}

@@ -56,7 +56,7 @@ export class SoloMusic {
     return copy;
   }
   poll(heap,now) {
-    if(this.closed||!this.reader||now-this.lastPoll<50)return;
+    if(this.closed||!this.reader||now-this.lastPoll<16)return;
     this.lastPoll=now;
     try {
       for(const [ax,hash] of this.reader.read(heap))this.player.command(ax,hash);

@@ -51,7 +51,7 @@ export class SoloMusic {
     this.reader=new NativeMusic(meta);await this.player.load({warmOpening:false});
   }
   poll(heap,now) {
-    if(this.closed||!this.reader||now-this.lastPoll<50)return;
+    if(this.closed||!this.reader||now-this.lastPoll<16)return;
     this.lastPoll=now;
     try {
       for(const [ax,hash] of this.reader.read(heap)){if((ax>>>8)===12)this.sfx?.command(ax);else this.player.command(ax,hash);}
