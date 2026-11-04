@@ -8698,5 +8698,89 @@
   "settings.th05.numericPower": {
     "id": "settings_th05_numericPower",
     "params": []
+  },
+  "game.name.th19": {
+    "id": "game_name_th19",
+    "params": []
+  },
+  "game.title.th19mp": {
+    "id": "game_title_th19mp",
+    "params": []
+  },
+  "multiplayer.loadout.th19_0": {
+    "id": "multiplayer_loadout_th19_0",
+    "params": []
+  },
+  "multiplayer.loadout.th19_1": {
+    "id": "multiplayer_loadout_th19_1",
+    "params": []
+  },
+  "multiplayer.loadout.th19_2": {
+    "id": "multiplayer_loadout_th19_2",
+    "params": []
+  },
+  "multiplayer.loadout.th19_3": {
+    "id": "multiplayer_loadout_th19_3",
+    "params": []
+  },
+  "multiplayer.loadout.th19_4": {
+    "id": "multiplayer_loadout_th19_4",
+    "params": []
+  },
+  "multiplayer.loadout.th19_5": {
+    "id": "multiplayer_loadout_th19_5",
+    "params": []
+  },
+  "multiplayer.loadout.th19_6": {
+    "id": "multiplayer_loadout_th19_6",
+    "params": []
+  },
+  "multiplayer.loadout.th19_7": {
+    "id": "multiplayer_loadout_th19_7",
+    "params": []
+  },
+  "multiplayer.loadout.th19_8": {
+    "id": "multiplayer_loadout_th19_8",
+    "params": []
+  },
+  "multiplayer.loadout.th19_9": {
+    "id": "multiplayer_loadout_th19_9",
+    "params": []
+  },
+  "multiplayer.loadout.th19_10": {
+    "id": "multiplayer_loadout_th19_10",
+    "params": []
+  },
+  "multiplayer.loadout.th19_11": {
+    "id": "multiplayer_loadout_th19_11",
+    "params": []
+  },
+  "multiplayer.loadout.th19_12": {
+    "id": "multiplayer_loadout_th19_12",
+    "params": []
+  },
+  "multiplayer.loadout.th19_13": {
+    "id": "multiplayer_loadout_th19_13",
+    "params": []
+  },
+  "multiplayer.loadout.th19_14": {
+    "id": "multiplayer_loadout_th19_14",
+    "params": []
+  },
+  "multiplayer.loadout.th19_15": {
+    "id": "multiplayer_loadout_th19_15",
+    "params": []
+  },
+  "multiplayer.loadout.th19_16": {
+    "id": "multiplayer_loadout_th19_16",
+    "params": []
+  },
+  "multiplayer.loadout.th19_17": {
+    "id": "multiplayer_loadout_th19_17",
+    "params": []
+  },
+  "multiplayer.loadout.th19_18": {
+    "id": "multiplayer_loadout_th19_18",
+    "params": []
   }
 }

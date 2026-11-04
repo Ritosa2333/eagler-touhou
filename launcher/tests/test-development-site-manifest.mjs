@@ -73,6 +73,7 @@ const multiplayerRuntimeOwners = {
   th11: "../ports/th11-mp/build-eagler-multiplayer/th11.html",
   th12: "../ports/th12-mp/build-eagler-multiplayer/th12.html",
   th15: "../ports/th15-mp/build-eagler-multiplayer/th15.html",
+  th19: "../ports/th19/build-eagler-multiplayer/th19.html",
 };
 const multiplayerGames = Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].multiplayerRuntime);
 assert.deepEqual(multiplayerGames, Object.keys(multiplayerRuntimeOwners), "every catalogued multiplayer game has a development Runtime owner");

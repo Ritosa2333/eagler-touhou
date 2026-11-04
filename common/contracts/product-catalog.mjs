@@ -80,6 +80,7 @@ const CHARGE_TOUCH_FIRE = Object.freeze({
     labelKey: "touch.holdFireCharge",
     key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
 });
+const TH19_CHARACTERS=Object.freeze(["霊夢", "魔理沙", "早苗", "藍", "あうん", "ナズーリン", "清蘭", "燐", "典", "マミゾウ", "八千慧", "早鬼", "尤魔", "萃香", "美天", "慧ノ子", "ちやり", "日狭美", "残無"]);
 export const PRODUCT_GAMES = Object.freeze({
     // support.highRefreshRate describes currently implemented presentation for
     // Launcher UI. False keeps unfinished adapters honest; it does not waive
@@ -551,6 +552,23 @@ export const PRODUCT_GAMES = Object.freeze({
             musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th17"}),
         features: Object.freeze({thprac: false, languages: false, focusHitbox: false}),
+    }),
+    th19: Object.freeze({
+        number: "19", title: "東方獣王園", subtitle: "Unfinished Dream of All Living Ghost",
+        storage: Object.freeze({saveRoot: "/savesth19", scoreFile: "scoreth19.dat", configFiles: Object.freeze(["th19.cfg"])}),
+        runtime: "./runtime/th19/th19.html", runtimeFileLayout: "directory", dataProvider: "retail-memory",
+        requiredShared: Object.freeze(["/msgothic.ttc"]),
+        runtimeAssets: Object.freeze(["th19.html","manifest.json","shell.mjs","managed.css","keyboard.mjs","directory-keyboard.mjs","keyboard-owners.mjs","keyboard-input-bridge.mjs","netplay.mjs","peer-socket.mjs","rollback-session.mjs","native-adapter.mjs","th19.mjs","th19.wasm"]),
+        musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Ritosa2333/eagler-touhou"}),
+        package: Object.freeze({dataFileId: "game-data",dataTarget: "/th19.dat",rawDataImport: Object.freeze({fileNames: Object.freeze(["th19.dat"])}),musicSourceDirectories: Object.freeze({ogg: "music"}),musicMounts: Object.freeze({ogg: "/music"})}),
+        replay: Object.freeze({prefix: "th19"}),
+        multiplayerRuntime: "./runtime/th19/multiplayer/th19.html",
+        multiplayer: Object.freeze({titleKey: "game.title.th19mp",gameplay: "versus",playerCounts: Object.freeze([2]),difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
+            loadouts: Object.freeze(TH19_CHARACTERS.map((glyph,character)=>Object.freeze({labelKey:`multiplayer.loadout.th19_${character}`,glyph,character,shot:0}))),
+            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,manualDelayLimit:8}),peerTransportGlobal:"__th19PeerTransport",spectator:false,titleRoomEntry:false}),
+        features: Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th20: Object.freeze({
         testOnly: true,
