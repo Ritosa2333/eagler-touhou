@@ -35,22 +35,6 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     return text;
   });
   await writeFile(resolve(output,'app.js'),await readFile(resolve(output,'app.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-room-api.js'),'utf8'));
-  await patch('controls.js',text=>{
-    text=replaceOnce(text,"import {limitTouch,withoutPoint} from './touch-input.js';","import {limitTouch,withoutPoint,packTouch} from './touch-input.js';",'managed touch codec');
-    return replaceOnce(text,'  function sampleLocal() {',`  let managedPrevious=0;
-  function sampleLocal() {
-    if(globalThis.__eaglerPC98Input){
-      const network=getNetwork?.();if(!network)return;
-      const bits=globalThis.__eaglerPC98Input.sample(),edge=bits&~managedPrevious;managedPrevious=bits;
-      if(isPaused()){
-        if(edge&1)onMenu(0,'up');if(edge&2)onMenu(0,'down');if(edge&(32|256|512))onMenu(0,'confirm');if(edge&(16|128))onMenu(0,'resume');
-        network.clearLocal();return;
-      }
-      if(edge&128)onEscape();
-      const actions=new Set();for(const [mask,action]of [[1,'up'],[2,'down'],[4,'left'],[8,'right'],[16,'attack'],[32,'shot'],[512,'rapid'],[64,'focus'],[256,'shot']])if(bits&mask)actions.add(action);
-      network.setLocal(actions,packTouch(0,globalThis.__eaglerPC98Input.motion()),{focusEnabled:true,points:false});return;
-    }`,'managed network input');
-  });
   await patch('netplay.js',text=>{
     text="import {createManagedTransport} from './managed-transport.mjs';\n"+text;
     const a=text.indexOf('  async start(){'),b=text.indexOf('  async state(){',a);
