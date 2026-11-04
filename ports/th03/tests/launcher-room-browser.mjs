@@ -75,12 +75,18 @@ try{
     await wait(()=>frames[0].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard down',5000);
     await host.keyboard.up('ArrowRight');
     await wait(()=>frames[0].evaluate(()=>!__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard release',5000);
-    for(const page of pages){
-      await page.bringToFront();await page.$eval('#gameFrame',frame=>frame.focus());
-      await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,700));await page.keyboard.up('KeyZ');
+    for(const [seat,page] of pages.entries()){
+      await page.bringToFront();if(seat===1)await page.click('.room-workspace-fullscreen');await page.$eval('#gameFrame',frame=>frame.focus());
+      await page.keyboard.down('KeyZ');
+      await wait(()=>frames[seat].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('KeyZ')),'seat '+seat+' shot bridge',5000);
+      await new Promise(resolve=>setTimeout(resolve,700));await page.keyboard.up('KeyZ');
       await new Promise(resolve=>setTimeout(resolve,300));
     }
     await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>window.th03SyncState?.phase===1)))).every(Boolean),'both players select and enter battle',45000);
+    await host.bringToFront();await host.$eval('#gameFrame',frame=>frame.focus());await host.keyboard.press('Escape');
+    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>!document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized surrender menu',15000);
+    await host.keyboard.press('Escape');
+    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>document.querySelector('#pause-menu').hidden)))).every(Boolean),'resume battle',15000);
     for(const frame of frames){
       const positions=await frame.$eval('#pause-menu',node=>{const seat=node.dataset.seat,hidden=node.hidden,p=node.parentElement.getBoundingClientRect();node.hidden=false;const centers=['0','1'].map(value=>{node.dataset.seat=value;const r=node.getBoundingClientRect();return (r.x+r.width/2-p.x)/p.width;});node.dataset.seat=seat;node.hidden=hidden;return centers;});
       assert(Math.abs(positions[0]-.25)<.01&&Math.abs(positions[1]-.75)<.01,'surrender menu follows the player side');
