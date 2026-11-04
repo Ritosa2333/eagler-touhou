@@ -258,6 +258,14 @@ test('Real join, stand, spectator, loadout and become-host button ports retain r
   await click('#mpLoadoutPrev'); assert.equal(f.service.getSnapshot().preferredLoadout, 0);
 });
 
+test('TH01 offers only Reimu without character cycling', async () => {
+  const f=await fixture({product:'th01mp',locale:'zh-CN'}).live();
+  await f.receive({seats:[{clientId:f.id,name:'A',loadout:0,ready:false},{clientId:'peer12345',name:'B',loadout:0,ready:false}]});
+  await mountRoom(f,{panel:{kind:'personal'}});
+  assert.equal(n('#mpLocalRoleLabel').textContent,'灵梦');
+  assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,0);
+});
+
 test('Room settings remain synchronized while owner and phase change', async () => {
  const f=await fixture().live();await mountRoom(f);await click('#roomWorkspaceTab-game');
  const select=async(selector,value)=>act(()=>{const node=n(selector);node.value=value;node.dispatchEvent(new env.window.Event('change',{bubbles:true}));});
