@@ -82,7 +82,7 @@ export function installFramePresenter(mod,{deferred=false,isReplaying=()=>false}
     if(isReplaying())metrics.replaySubmitted++;
     if(dirty)metrics.coalesced++;
     latest={frame,frameWidth,frameHeight};dirty=true;
-    if(!deferred)flush();
+    if(!deferred&&!mod.practicePreparing?.())flush();
   };
   return {
     flush,

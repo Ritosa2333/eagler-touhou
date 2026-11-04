@@ -44,6 +44,7 @@ export class DOSBoxPC98 {
         this.practiceClock=createPracticeClock(this.config.practice.options.speed);
         this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config:this.config.practice,clock:this.practiceClock});
         this.module.practiceSignal=(port,packed)=>this.practice.signal(port,packed);
+        this.module.practicePreparing=()=>this.practice.status.preparing;
       }
       const lifecycle=replay.lifecycle?createSoloReplayLifecycle(replay.lifecycle,()=>this.module.HEAPU8):null;
       this.externalHost=createExternalReplayHost({...replay,
