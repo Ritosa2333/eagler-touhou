@@ -57,7 +57,7 @@ const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(
 const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.practice?.status})});
 function tick(now){
   if(!emulator)return;const state=readState(),ps=emulator.practice?.status;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});
-  prepareRetry(ps);
+
   if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recordBlob,failed:recorder?.state.failed});
   if(emulator.state==='running'&&!playback){
     const playing=state?.mode===1&&!state.hit;let bits=input.sample({play:playing});

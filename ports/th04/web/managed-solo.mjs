@@ -29,7 +29,7 @@ const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(
   onPause:()=>{if(emulator){key('Escape',27,true);setTimeout(()=>emulator&&key('Escape',27,false),120);}}});
 const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.snapshot.practice})});
 function tick(){
-  if(!emulator)return;const state=readState(),ps=emulator.snapshot.practice;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});prepareRetry(ps);
+  if(!emulator)return;const state=readState(),ps=emulator.snapshot.practice;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});
   if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recordBlob,failed:recorder?.state.failed});
   if(emulator.state==='running'&&!playback){
     const playing=state?.mode===1&&!state.flags;let bits=input.sample({play:playing});
