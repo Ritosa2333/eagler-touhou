@@ -197,7 +197,8 @@ struct RunHarness {
         CHECK(load_bank(manager, 4, synthetic_anm(8, trivial_scripts(4))));   // stage 合并位
         CHECK(load_bank(manager, 5, synthetic_anm(8, trivial_scripts(1))));   // bullet
         CHECK(load_bank(manager, 6, synthetic_anm(64, trivial_scripts(35))));  // plXX 0..34: options, Bomb roots/backgrounds and portraits.
-        CHECK(load_bank(manager, 25, synthetic_anm(8, trivial_scripts(16)))); // astral 神霊脚本 kind*6+1/4（0x438ec0）
+        CHECK(load_bank(manager, 8, synthetic_anm(8, trivial_scripts(57))));  // effect.anm（0x438ec0 出生同步建 script 0x38=56）
+        CHECK(load_bank(manager, 25, synthetic_anm(8, trivial_scripts(23)))); // astral 神霊脚本 kind*6+1/4（0x438ec0；kind3=19/22）
         CHECK(load_bank(manager, 26, synthetic_anm(8, trivial_scripts(3)))); // stage title and boss music logo
         host.assets["stage_a.anm"] = synthetic_anm(8, trivial_scripts(1));
         host.assets["stage_b.anm"] = synthetic_anm(8, trivial_scripts(1));
