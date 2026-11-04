@@ -10,6 +10,16 @@ import {extractOriginalPmd} from './pmd-archives.mjs';
 import {PmdPlayer} from './pmd-player.mjs';
 import {OriginalSfx} from './original-sfx.mjs';
 
+// Recreate the deterministic game and music bridge patches from installed resources.
+async function replayBase(data,resources,practice,audioMode){
+  await installPractice(data,resources,practice);
+  if(audioMode==='independent'){
+    const bridge=Object.create(SoloMusic.prototype);bridge.sfx=true;bridge.player={pmd:{},load:async()=>{}};
+    await bridge.install(data,'HUMAROKU');
+  }
+  return data;
+}
+
 // An attempt owns its canvas, DOS instance, clocks, recording and music.
 // A parked attempt retains the original JSPI continuation, never a RAM snapshot.
 export function createSoloAttempt({canvas,practice,settings,replay=null,standby=false,sources,applyReplayInput,callbacks={}}){
@@ -30,7 +40,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
         const disk=await fetch(original.file);if(!disk.ok)throw Error('单人磁盘加载失败');
         data=new Uint8Array(await new Response(disk.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
         if(data.length!==original.size||await sha256(data)!==original.sha256)throw Error('单人磁盘校验失败');
-        baseDisk=data.slice();if(replay)data=await restoreExternalReplayDisk(replay,data);
+        baseDisk=data.slice();if(replay){if(replay.header.diskBaseKind==='installed-practice/1')await replayBase(data,resources,replay.header.practice,replay.header.audioMode);data=await restoreExternalReplayDisk(replay,data);}
       }
       if(attempt.cancelled)throw Error('练习已取消');
       if(!replay)await installPractice(data,resources,practice);
@@ -45,6 +55,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
         music.player.setVolume(volume??.7);
       }
       if(attempt.cancelled)throw Error('练习已取消');
+      if(!replay&&recordEnabled)baseDisk=await replayBase(baseDisk,resources,practice,audioMode);
       let externalReplay=null;
       if(replay){
         const identity=await fingerprint(sources);
@@ -55,7 +66,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
         try{
           const identity=await fingerprint(sources);
           if(attempt.cancelled)throw Error('练习已取消');
-          attempt.recorder=createBrowserSoloRecorder({game:'02',language,runtime,identity,patch:attempt.patch,boundaryMode:'sleep',disk:data.slice(),baseDisk,practice,audioMode,
+          attempt.recorder=createBrowserSoloRecorder({game:'02',language,runtime,identity,patch:attempt.patch,boundaryMode:'sleep',disk:data.slice(),baseDisk,practice,audioMode,diskBaseKind:'installed-practice/1',
             onStatus:text=>{attempt.recordStatus=text;emit('onRecordingStatus',text);},onFailure:error=>emit('onFailure',error),
             onFile:(blob,result)=>{attempt.blob=blob;emit('onFile',blob,result,practice);},onResult:result=>emit('onResult',result,practice)});
           externalReplay=attempt.recorder.config;
