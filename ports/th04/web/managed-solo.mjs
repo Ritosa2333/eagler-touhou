@@ -38,9 +38,9 @@ const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(
   onPause:()=>{if(emulator){key('Escape',27,true);setTimeout(()=>emulator&&key('Escape',27,false),120);}}});
 const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.snapshot.practice})});
 function tick(){
-  if(!emulator)return;const sample=input.sample(),edge=sample&~pausePrevious;pausePrevious=sample;
+  if(!emulator)return;const frameState=readState(),sample=input.sample({play:!pauseMenu.visible&&frameState?.mode===1&&!frameState.flags}),edge=sample&~pausePrevious;pausePrevious=sample;
   if(pauseMenu.visible){if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);if(edge&(32|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();loop=requestAnimationFrame(tick);return;}
-  const state=readState(),ps=emulator.snapshot.practice;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});
+  const state=frameState,ps=emulator.snapshot.practice;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});
   if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recordBlob,failed:recorder?.state.failed});
   if((edge&128)&&state?.mode===1&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
   if(emulator.state==='running'&&!playback){
