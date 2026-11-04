@@ -56,8 +56,8 @@ try {
     await page.click(selector);
     await page.waitForFunction(count => window.routeTransitions.length > count && window.routeTransitionFinished, {}, count);
     const result = await page.evaluate(() => window.routeTransitions.at(-1));
-    assert.deepEqual(result.content, {name:'launcher-route-in', duration:'0.18s'});
-    assert.deepEqual(result.old, {name:'launcher-route-out', duration:'0.18s'});
+    assert.deepEqual(result.content, {name:'launcher-route-in', duration:'0.42s'});
+    assert.deepEqual(result.old, {name:'launcher-route-out', duration:'0.42s'});
     assert.equal(result.root.name, 'none');
     assert.equal(result.header.name, 'none');
     assert.deepEqual(result.participants, ['launcher-page-surface']);

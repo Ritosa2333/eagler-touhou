@@ -71,7 +71,13 @@ def check_directory(rows, rooms):
         assert [name["text"] for name in row["names"]] == names, row
         assert all(name["visible"] and (not name["clipped"] or name["scrollable"]) for name in row["names"]), row
         assert all(field["visible"] for key in ["controls", "watchers", "state"] for field in row[key]), row
-        assert row["rules"][0]["visible"] == bool(room["disableCheatMovement"] or room["challengeMode"]), row
+        expected_rules = []
+        if room["disableCheatMovement"]:
+            expected_rules.append("禁用不限速触控")
+        if room["challengeMode"]:
+            expected_rules.append("挑战模式")
+        expected_rules = "".join(expected_rules) or "常规"
+        assert row["rules"] == [{"text": expected_rules, "visible": True}], row
         assert len(row["controls"]) == sum(bool(seat) for seat in room["seats"]), row
         assert row["watchers"][0]["text"] == f'{room["spectators"]} 人旁观', row
         assert row["count"] == f'{room["players"]}/{room["capacity"]} 人', row
@@ -89,7 +95,7 @@ def check_directory(rows, rooms):
             left, right = row["duel"]["players"]
             score = row["duel"]["score"]
             assert abs(left["box"]["width"] - right["box"]["width"]) < 1, row
-            assert left["name"]["right"] <= left["avatar"]["x"] < score["x"] < right["avatar"]["x"] < right["name"]["x"], row
+            assert left["avatar"]["right"] <= left["name"]["x"] < left["name"]["right"] <= score["x"] < right["avatar"]["x"] < right["name"]["x"], row
         if row["elapsed"]:
             assert row["divider"] == "|", row
         assert not row["overflow"], row
@@ -130,6 +136,7 @@ def check_populated_directory(page, base, cases):
             page.locator(".lobby-room-row").first.wait_for()
             if page.locator("html").get_attribute("data-book-theme") != theme:
                 page.locator(".book-theme-toggle").click()
+                page.locator(f'html[data-book-theme="{theme}"]').wait_for()
             assert page.locator('.book-room-view-toggle').count() == 0
             assert page.locator('#listHead').count() == 0
             assert page.locator("#connectionNote").count() == 0
