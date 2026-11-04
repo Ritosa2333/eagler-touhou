@@ -31,7 +31,36 @@ await patch('room-title-worker.js',text=>{
   return replaceOnce(text,"send('ready', {frames, pixels, program: m.UTF8ToString(m._emGetRunningProgram())});","send('ready', {frames, pixels, program: m.UTF8ToString(m._emGetRunningProgram())});\n  if(managedTitle)return;",'managed title hold');
 });
 await patch('replay/external-loader.js',text=>text.replace("new URL('dosbox-jspi.mjs',vendor)","new URL('../vendor/dosbox-x/dosbox-jspi.mjs',import.meta.url)").replace("new URL('wdosbox-x-fast.wasm',vendor)","new URL('../vendor/dosbox-x/wdosbox-x-fast.wasm',import.meta.url)"));
+// Give the managed room its own canvas and worker client without a nested page.
+{
+  let client=await readFile(resolve(port,'web/netplay/runtime-worker-client.js'),'utf8');
+  const imports=client.lastIndexOf("import {LocalBgm} from './local-bgm.js';")+"import {LocalBgm} from './local-bgm.js';".length;
+  client=client.slice(0,imports)+"\nexport function createManagedRuntime(canvas,notify){\n"+client.slice(imports);
+  client=client.replace("const PROTOCOL='th02-rollback/6',canvas=document.getElementById('canvas');","const PROTOCOL='th02-rollback/6';");
+  client=client.replace("window.parent.postMessage({protocol:PROTOCOL,event:'boot-error',message},location.origin)","notify({protocol:PROTOCOL,event:'boot-error',message})");
+  client=client.replace("window.parent.postMessage(data.message,location.origin)","notify(data.message)");
+  client=client.replace("document.getElementById('controls-summary').textContent=controlsSummary('online');",'');
+  const listeners=client.indexOf("window.addEventListener('keydown'");
+  if(listeners<0)throw Error('TH02 worker client listeners changed');
+  client=client.slice(0,listeners)+"canvas.addEventListener('contextlost',()=>fatal('游戏画面上下文已丢失'));\nreturn sync;\n}\n";
+  await writeFile(resolve(output,'netplay/managed-runtime.js'),client);runtime.push('netplay/managed-runtime.js');
+}
 await patch('netplay/room.js',text=>{
+  const begin=text.indexOf("  iframe=document.createElement('iframe');iframe.title='本机游戏模拟器'");
+  const end=text.indexOf("  runtime.setMusicVolume(",begin);
+  if(begin<0||end<0)throw Error('TH02 managed runtime entry changed');
+  text=text.slice(0,begin)+`  iframe=document.createElement('div');iframe.className='managed-runtime-screen';
+  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=400;canvas.tabIndex=0;
+  canvas.style.cssText='width:100%;height:100%;object-fit:contain;image-rendering:pixelated;touch-action:none';
+  iframe.style.cssText='width:100%;height:100%';iframe.append(canvas);player.stage.append(iframe);
+  const {createManagedRuntime}=await import('./managed-runtime.js');
+  runtime=createManagedRuntime(canvas,message=>{
+    if(stopped)return;
+    if(message.event==='boot-error')fail(Error(message.message));
+    else if(message.event==='boot-progress'){bootStage=String(message.message).slice(0,300);bootStep=message.step;showStartup();}
+  });
+`+text.slice(end);
+  text=replaceOnce(text,"  iframe.contentWindow.addEventListener('blur',()=>player.reset());",'', 'direct runtime input');
   text=replaceOnce(text,"import {createRelay} from './relay.js';","import {createManagedTransport} from '../managed-transport.mjs';\nconst createRelay=(_session,_generation,roles,fail)=>createManagedTransport(globalThis.__eaglerPC98Options(),roles,fail);",'main transport');
   text=replaceOnce(text,"const attempt=++connectionAttempt,relayMode=useRelay;","const attempt=++connectionAttempt,relayMode=true;",'managed channel interface');
   text=replaceOnce(text,"async function request(action,data={}){","async function request(action,data={}){\n  throw Error('房间成员与状态由主项目管理：'+action);",'legacy API guard');
