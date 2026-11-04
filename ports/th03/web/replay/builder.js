@@ -19,7 +19,7 @@ export function createBuilder(header,getRows,onPoint,onError){
       const rows=getRows();if(rows.length-replica.frame>3600)throw Error('检查点副本积压，保留完整输入');
       const started=performance.now();let count=0;
       while(!stopped&&replica.frame<rows.length&&count++<32&&performance.now()-started<16){
-        await replica.advance(rows[replica.frame]);
+        await replica.advance(rows.row(replica.frame));
         if(replica.frame%interval===0||replica.scene&&sceneKey(replica.scene)!==lastScene)await save();
       }
       if(!stopped&&ending&&replica.frame===getRows().length){await save();stop();}

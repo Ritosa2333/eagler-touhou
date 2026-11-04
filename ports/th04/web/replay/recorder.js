@@ -14,7 +14,7 @@ export function createRecorder(toolbar){
   const open=document.createElement('a');open.textContent='单人 Replay 播放';open.href=new URL('../replay.html',import.meta.url).href;open.target='_blank';open.rel='noopener';open.hidden=true;toolbar?.append(open);
   const remote=document.createElement('a');remote.textContent='跨设备观战链接';remote.target='_blank';remote.rel='noopener';remote.hidden=true;toolbar?.append(remote);
   const upload=document.createElement('span');toolbar?.append(upload);
-  function update(){info.textContent=error?'观战历史停止：'+error:tape?` · 已确认 ${tape.rows.length} 步${tape.end?'（本段结束）':''}${points.length?' · '+points.length+' 个定位点':''}${pointError?' · '+pointError:''}`:'';}
+  function update(){info.textContent=error?'观战历史停止：'+error:tape?` · 已确认 ${tape.length} 步${tape.end?'（本段结束）':''}${points.length?' · '+points.length+' 个定位点':''}${pointError?' · '+pointError:''}`:'';}
   function fail(e){error=String(e.message||e);tape?.finish('录像辅助链路失败：'+error);builder?.finish();network?.kick();update();}
   function guard(fn){try{const r=fn();update();return r;}catch(e){fail(e);}}
   function snapshot(){if(!tape)return;const value=tape.snapshot();if(points.length)value.points=points.filter(p=>p.frame<=value.rows.length);return value;}
@@ -30,7 +30,7 @@ export function createRecorder(toolbar){
         localSolo=adapter==='native-local/1'&&players===1;
         open.hidden=!localSolo;
         watch.hidden=localSolo;
-        if(PORTABLE&&!localSolo)builder=createBuilder(tape.header,()=>tape.rows,p=>{points.push(p);update();},e=>{pointError='定位点生成停止：'+e.message;update();});
+        if(PORTABLE&&!localSolo)builder=createBuilder(tape.header,()=>tape,p=>{points.push(p);update();},e=>{pointError='定位点生成停止：'+e.message;update();});
         if(!localSolo)channel=new BroadcastChannel('pc98-replay-'+id);
         let lastReply=0;
         if(channel)channel.onmessage=({data})=>guard(()=>{
@@ -39,18 +39,18 @@ export function createRecorder(toolbar){
             const p=points.find(p=>p.frame===data.frame);if(!p||data.offset>=pointSize(p))return;
             const start=data.offset/3*4;channel.postMessage({type:'point',viewer:data.viewer,frame:p.frame,sha:p.sha,size:pointSize(p),offset:data.offset,payload:p.data.slice(start,start+LOCAL_CHUNK/3*4)});return;
           }
-          if(data?.type!=='pull'||typeof data.viewer!=='string'||data.viewer.length>100||!Number.isInteger(data.first)||data.first<0||data.first>tape.rows.length)return;
+          if(data?.type!=='pull'||typeof data.viewer!=='string'||data.viewer.length>100||!Number.isInteger(data.first)||data.first<0||data.first>tape.length)return;
           // Bounded replies; a slow viewer never holds the player at a barrier.
           const now=performance.now();if(now-lastReply<10)return;lastReply=now;
-          channel.postMessage({type:'slice',viewer:data.viewer,header:tape.header,first:data.first,rows:tape.rows.slice(data.first,data.first+60),available:tape.rows.length,end:tape.end,points:pointIndex(points),pointsDone:!!tape.end&&(!builder||builder.done)});
+          channel.postMessage({type:'slice',viewer:data.viewer,header:tape.header,first:data.first,rows:tape.slice(data.first,data.first+60),available:tape.length,end:tape.end,points:pointIndex(points),pointsDone:!!tape.end&&(!builder||builder.done)});
         });update();
       }catch(e){fail(e);}
     },
-    stage:(frame,row)=>guard(()=>{if(!tape)return;if(frame<tape.rows.length){if(stable(row)!==stable(tape.rows[frame]))throw Error('已确认录像在分组回滚时改变');return;}tape.stage(frame,row);}),
-    rewind:frame=>guard(()=>tape?.rewind(Math.max(frame,tape.rows.length))),
+    stage:(frame,row)=>guard(()=>{if(!tape)return;if(frame<tape.length){if(stable(row)!==stable(tape.row(frame)))throw Error('已确认录像在分组回滚时改变');return;}tape.stage(frame,row);}),
+    rewind:frame=>guard(()=>tape?.rewind(Math.max(frame,tape.length))),
     confirm:(prefix,dirty)=>guard(()=>{tape?.confirm(prefix,dirty);builder?.kick();network?.kick();}),
     finish:reason=>guard(()=>{tape?.finish(reason);builder?.finish();network?.kick();}),
-    connectNetwork(identity){guard(()=>{if(!tape||tape.header.adapter!=='confirmed-worker/1'||network||closed)return;network=publishNetwork(tape.header,()=>tape.rows,()=>tape.end,identity,{getPoints:()=>({points,done:!builder||builder.done}),onLink:url=>{remote.href=url;remote.hidden=false;},onStatus:text=>{remote.title=text;upload.textContent=' · '+text;}});});},
+    connectNetwork(identity){guard(()=>{if(!tape||tape.header.adapter!=='confirmed-worker/1'||network||closed)return;network=publishNetwork(tape.header,()=>tape,()=>tape.end,identity,{getPoints:()=>({points,done:!builder||builder.done}),onLink:url=>{remote.href=url;remote.hidden=false;},onStatus:text=>{remote.title=text;upload.textContent=' · '+text;}});});},
     async seal(timeout=30000){
       if(!tape)return true;
       tape.finish('联机会话结束');builder?.finish();network?.kick();
