@@ -29,10 +29,17 @@ try{
       const response=await fetch('./disk.gz');
       const disk=new Uint8Array(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
       const sfx=await OriginalSfx.create(game,new Fat12(disk));
-      for(let id=1;id<=8&&sfx.peak<0.001;id++){sfx.play(id);await new Promise(resolve=>setTimeout(resolve,500));}
-      const peak=sfx.peak;sfx.dispose();return peak;
+      const analyser=sfx.context.createAnalyser();sfx.node.connect(analyser);
+      const samples=new Float32Array(analyser.fftSize);let peak=0,latency=0;
+      await new Promise(resolve=>setTimeout(resolve,120));
+      const started=performance.now();sfx.play(1);
+      while(performance.now()-started<1000&&peak<0.001){
+        await new Promise(resolve=>setTimeout(resolve,10));analyser.getFloatTimeDomainData(samples);
+        for(const value of samples)peak=Math.max(peak,Math.abs(value));latency=performance.now()-started;
+      }
+      sfx.dispose();return {peak,latency};
     },game);
-    assert(result>0.001,`${game}: original sound effects must produce audible output`);
-    console.log(`${game}: original sound effects PASS (peak ${result.toFixed(4)})`);await page.close();
+    assert(result.peak>0.001&&result.latency<500,`${game}: original sound effects ${JSON.stringify(result)}`);
+    console.log(`${game}: original sound effects PASS (peak ${result.peak.toFixed(4)}, ${Math.round(result.latency)} ms)`);await page.close();
   }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
