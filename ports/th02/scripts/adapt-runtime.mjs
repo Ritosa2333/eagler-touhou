@@ -27,9 +27,7 @@ await patch('room-title-worker.js',text=>{
   text=replaceOnce(text,"const settle = ['02','04'].includes(game) ? 240 : 720;","const settle = 720;",'settled TH02 title');
   text=replaceOnce(text,"emulator = await (await import('./room-title-th05.js')).createTitleCore({canvas, disk, wasmBinary});","throw Error('TH02 title only');",'other-title preview');
   text=replaceOnce(text,'async function boot({game, canvas, disk, wasmBinary, module})','async function boot({game, canvas, disk, wasmBinary, module, managedTitle=false})','managed title mode');
-  // Keep the actual settled title visible throughout an idle main room.
-  // No demo/input/save state advances in this disposable preview instance.
-  return replaceOnce(text,"send('ready', {frames, pixels, program: m.UTF8ToString(m._emGetRunningProgram())});","send('ready', {frames, pixels, program: m.UTF8ToString(m._emGetRunningProgram())});\n  if(managedTitle)return;",'managed title hold');
+  return text;
 });
 await patch('replay/external-loader.js',text=>text.replace("new URL('dosbox-jspi.mjs',vendor)","new URL('../vendor/dosbox-x/dosbox-jspi.mjs',import.meta.url)").replace("new URL('wdosbox-x-fast.wasm',vendor)","new URL('../vendor/dosbox-x/wdosbox-x-fast.wasm',import.meta.url)"));
 // Give the managed room its own canvas and worker client without a nested page.

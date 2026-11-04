@@ -46,6 +46,7 @@ try{
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean);},'main room preparation');
   assert(await host.$eval('#mpRoomChallengeToggle',e=>!!e.closest('[hidden]')),'unsupported challenge rules must not be offered');
   if(round==='check'){
+    await host.screenshot({path:resolve(out,'waiting.png')});
     await host.click('[data-mp-seat="0"] .mp-seat-edit');await host.waitForSelector('#mpCheckGame',{visible:true});await host.click('#mpCheckGame');
     await wait(async()=>{const failure=events[0].find(e=>e.event==='error');if(failure)throw Error(JSON.stringify(failure));return events[0].some(e=>e.event==='first-frame');},'main room real native preflight');
     const frame=host.frames().find(f=>/th02.html.*runtimeEpoch=/.test(f.url()));
