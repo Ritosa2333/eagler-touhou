@@ -80,15 +80,15 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/8c6d4678ca5abed189a7f7c6347128e311cd31c3)已合入四个 C++ 文件的透视交付支持：计算前、view、projection、right XY、right Z、归一化完成六个边界，只推进已经进入的 Scene，保留借用背景 owner，并传播失败。
+独立 C++/Wasm 实现与原版对照持续推进。[本次源码与证据](https://github.com/AdingApkgg/thp/commit/961e865da8eac97254636713f1562e1c400f9234)只更新观察器和验收宿主；[生产游戏核心](https://github.com/AdingApkgg/thp/commit/8c6d4678ca5abed189a7f7c6347128e311cd31c3)保持六个透视相机交付边界，不因验收差异修改数学结果或注入原版状态。
 
-[原版组件与回归证据](https://github.com/AdingApkgg/thp/blob/8c6d4678ca5abed189a7f7c6347128e311cd31c3/docs/porting/TH14_PERSPECTIVE_PUBLICATION_NOV04.md)：原版主函数／worker REP 和本机实际 Windows x86 D3DX 服务，四组合成相机、24 次复制／1,752 字一致，24 个失败边界、六项作用域和三个实际 Session 控制通过。初版 Unicorn DLL 浮点 oracle 的 66 字差异已拒绝，改用实际 DLL 服务后同一 C++ 构建为零差异。
+[统一时钟与扩大检查](https://github.com/AdingApkgg/thp/blob/961e865da8eac97254636713f1562e1c400f9234/docs/porting/TH14_UNIFIED_CAMERA_WINDOW_NOV04.md)：新原版记录 35,000 回调／56,734 个硬件调试事件统一取时，八个 RNG 写入完成点、982 对 Stage VM 调用／返回和相机源读取绑定同一暂停现场。原有检查通过，包含 1,011 行采样 VM／303 字段和 364 个战斗检查点。
 
-141 核心对象全新编译。16 份有效录像新跑严格通过，共 1,379,760 回调；带实测正常 VM 身份的 35,000 回调记录（1,057 行 VM／303 字段、393 个战斗检查点）及相机源读取现场的 18,000 回调通过。八项共享 camera／Session 编译、静音 Application 两关 2,289 帧／27 断言、两幅图像及 1,526,784 帧离线 PCM 对封存参考一致，物理音频设备打开数零；浏览器 146 单元重编完成，未据此声称原版整局渲染或浏览器 UI 通过。
+只读相机观察扩大到 71 字段，揭示旧粗粒度宿主漏检的 41,010 个矩阵错误字。按原版实测透视间窗口重放后，2,484,929 字一致，原有七份载荷不变；该宿主明确增加时钟交付边界，没有恢复旧精确指令调度，也未验收普通独立调度，严格 Scene 白名单未放宽。
 
-[受控时钟诊断](https://github.com/AdingApkgg/thp/blob/8c6d4678ca5abed189a7f7c6347128e311cd31c3/docs/porting/TH14_CONTROLLED_CLOCK_DIAGNOSTICS_NOV04.md)只改变测试宿主的交付时点，能令旧 35,000 回调记录的既有原始载荷一致（1,072 行采样 VM、480 个战斗检查点），扩展到 71 个相机字段／2,484,929 字也一致。没有给引擎提供原版 RNG 或相机值。实验动画索引和交付点不是旧原版已观测身份；严格 Scene 合约仍拒绝实验 driver，没有放宽验收。
+16 份有效模式记录另新跑 1,379,760 回调／97,961,824 个相机检查字：扩大检查 **4 份通过、12 份失败**。原有状态、25 相机字段、HUD、战斗池、VM 和初始发布载荷与同核心旧验收逐字节一致。旧 16 份通过不能扩展到完整相机状态；12 份新失败逐份保留，未据新记录推断全部修复。灵梦 B Easy 原版 12 次首次机会异常继续拒绝。
 
-默认旧记录仍有 script seed／calls／活动自机弹数 4,137／283／1 处差异及相机 16,701 处差异，没有关闭旧失败。原版字 22／23 未映射，旧记录字 73／74 未捕获；矩阵内部写入、精确交错、默认独立调度、全模式／原始 EOF、普通原版 GUI、整局原版像素／PCM、存档与浏览器见[当前清单](https://github.com/AdingApkgg/thp/blob/8c6d4678ca5abed189a7f7c6347128e311cd31c3/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+此前 141 核心对象和 146 浏览器单元重编、静音 Application 两关 2,289 帧／27 断言及封存参考对照仍限于各自证据范围。新模型检查不打开物理音频设备；原版音乐／音效 master 为零，原版 PCM 未测。浏览器 UI、原版整局像素／PCM、存档、完整模式／原始 EOF、未映射相机字和独立调度继续。默认旧 RNG 4,137／283／1 与相机 16,701 处差异未关闭，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
