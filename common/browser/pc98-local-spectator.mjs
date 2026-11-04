@@ -18,7 +18,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       while(!closed&&!paused&&replica.frame<rows.length&&count<limit){await replica.advance(rows[replica.frame]);count++;}
       if(!catching)budget=Math.max(0,budget-count);
       if(count){await replica.present();frames++;}
-    }catch(error){fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,8);}
+    }catch(error){if(!closed)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,8);}
   }
   async function boot(){
     if(booting||replica||closed)return;booting=true;
