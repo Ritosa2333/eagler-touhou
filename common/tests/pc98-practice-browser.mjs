@@ -201,6 +201,7 @@ try {
         await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
         await touch.detach();
       }
+      if(process.env.PC98_REPLAY_LONG_MS)await new Promise(resolve=>setTimeout(resolve,Number(process.env.PC98_REPLAY_LONG_MS)));
       await frame.evaluate(async () => (await import('./managed-solo.mjs')).managedAPI.finishRecording());
       const saved = () => frame.evaluate(game => [...__eaglerPC98Files.memory].filter(([name]) => name.endsWith('.'+game+'r')).map(([name,bytes]) => ({name,size:bytes.length})),game);
       await wait(async () => {
