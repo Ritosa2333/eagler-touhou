@@ -1,12 +1,14 @@
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:32,ShiftLeft:64,ShiftRight:64,Escape:128,Enter:256};
+const netButtons={ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:4096,ArrowUp:16,ArrowDown:32,Enter:64,Escape:128};
+const localButtons={ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:16};
 export function managedInput({game, epoch, active, options}) {
-  const held = new Set(); let touch = {}, pulse = 0, localPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
-  const keyboard = createBrowserKeyboard({send:(code, down) => down ? held.add(code) : held.delete(code),
+  const held = new Set(); let touch = {}, pulse = 0, localPulse = 0, netKeyPulse = 0, localKeyPulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
+  const keyboard = createBrowserKeyboard({send:(code, down) => {if(down){held.add(code);netKeyPulse|=netButtons[code]??0;localKeyPulse|=localButtons[code]??0;keyPulse|=buttons[code]??0;}else held.delete(code);},
     hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
   const input = {
     key(message) { keyboard.event(message, message.down, 'hosted'); },
-    clear() { keyboard.clear(); touch = {}; pulse = localPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
+    clear() { keyboard.clear(); touch = {}; pulse = localPulse = netKeyPulse = localKeyPulse = keyPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
       if (message.bombSerial !== bomb) {pulse |= 16; localPulse |= 16;}
@@ -23,9 +25,8 @@ export function managedInput({game, epoch, active, options}) {
     },
     nativeSample() {
       if (!active()) return 0;
-      let bits=0;
-      const net={ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:4096,ArrowUp:16,ArrowDown:32,Enter:64,Escape:128};
-      for(const code of held)bits|=net[code]??0;
+      let bits=netKeyPulse;netKeyPulse=0;
+      for(const code of held)bits|=netButtons[code]??0;
       const directions=touch.joystickX<0?1:touch.joystickX>0?2:0;
       if(directions&1)bits|=1;if(directions&2)bits|=2;
       if(touch.joystickY<0)bits|=16;if(touch.joystickY>0)bits|=32;
@@ -36,7 +37,7 @@ export function managedInput({game, epoch, active, options}) {
     },
     localSample() {
       if (!active()) return 0;
-      let bits=0;for(const code of held)bits|=({ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:16}[code]??0);
+      let bits=localKeyPulse;localKeyPulse=0;for(const code of held)bits|=localButtons[code]??0;
       if(touch.joystickX<0)bits|=1;if(touch.joystickX>0)bits|=2;
       if(touch.fireEnabled)bits|=4;if(localPulse&16)bits|=16; localPulse = 0;
       const pad=globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer??0);
@@ -45,7 +46,7 @@ export function managedInput({game, epoch, active, options}) {
     },
     sample() {
       if (!active()) return 0;
-      let bits = pulse; pulse = 0;
+      let bits = pulse | keyPulse; pulse = keyPulse = 0;
       for (const code of held) bits |= buttons[code] ?? 0;
       if (touch.fireEnabled) bits |= 32;
       if (touch.focusEnabled) bits |= 64;

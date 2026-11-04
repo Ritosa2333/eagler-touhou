@@ -3,17 +3,17 @@ import {packTouch,unpackTouch} from './touch-input.js';
 const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:32,ShiftLeft:64,ShiftRight:64,Escape:128,Enter:256};
 export function managedInput({game, epoch, active, options}) {
   let practice;
-  const held = new Set(); let touch = {}, pulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
+  const held = new Set(); let touch = {}, pulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
   const keyboard = createBrowserKeyboard({send:(code, down) => {
     const consumed = practice?.key(code, down);
-    if (down && !consumed) held.add(code); else held.delete(code);
+    if (down && !consumed) {held.add(code);keyPulse |= buttons[code] ?? 0;} else held.delete(code);
   },
     hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
   const input = {
     setPractice(value) { practice = value; },
-    releaseGameplay() { held.clear(); pulse = 0; point = null; motion = {x:0,y:0,active:false}; },
+    releaseGameplay() { held.clear(); pulse = keyPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
     key(message) { keyboard.event(message, message.down, 'hosted'); },
-    clear() { keyboard.clear(); practice?.clear(); touch = {}; pulse = 0; point = null; motion = {x:0,y:0,active:false}; },
+    clear() { keyboard.clear(); practice?.clear(); touch = {}; pulse = keyPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
       if (options().touchEnabled && message.bombSerial !== bomb) pulse |= 16;
@@ -30,7 +30,7 @@ export function managedInput({game, epoch, active, options}) {
     },
     sample({play = true} = {}) {
       if (!active() || practice?.blocked()) return 0;
-      let bits = pulse; pulse = 0;
+      let bits = pulse | keyPulse; pulse = keyPulse = 0;
       for (const code of held) bits |= buttons[code] ?? 0;
       if (options().touchEnabled && play && touch.fireEnabled) bits |= 32;
       if (options().touchEnabled && play && touch.focusEnabled) bits |= 64;
