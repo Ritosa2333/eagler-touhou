@@ -166,7 +166,7 @@ export async function buildContentPages({project = defaultProject, check = false
   const brandModule=await readFile(resolve(project,'lib/site-brand.mjs'),'utf8');
   await emit(resolve(project,'public/assets/site-brand.mjs'),brandModule+'\ninitializeStaticSiteBrand(document,import.meta.url);\n',"Site brand initializer is stale; run npm run build:content");
   const migrationPath=resolve(project,'public/migrate.html');
-  const brandFallback=(await readFile(resolve(project,'public/assets/brand/face-F02B.svg'))).toString('base64');
+  const brandFallback=Buffer.from((await readFile(resolve(project,'public/assets/brand/face-F02B.svg'),'utf8')).replace(/\r\n?/g,'\n')).toString('base64');
   const migration=(await readFile(migrationPath,'utf8'))
     .replace(/<style id="siteTheme">[\s\S]*?<\/style>/,()=>'<style id="siteTheme">'+migrationTokens+'</style>')
     .replace(/<script id="siteBrand">[\s\S]*?<\/script>/,()=>'<script id="siteBrand">(function(){'+brandModule.replace(/^export /gm,'')+'\ninitializeStaticSiteBrand(document,new URL("assets/site-brand.mjs",document.baseURI).href);})();</script>')

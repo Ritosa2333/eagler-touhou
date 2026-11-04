@@ -1,18 +1,23 @@
 .replay-loading{min-height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#aaa;font:11px/1.2 var(--ui-font);letter-spacing:.08em}.replay-loading i{display:block;width:24px;height:24px;box-sizing:border-box;border:2px solid #555;border-top-color:#eee;border-radius:50%;animation:replay-loading-spin .72s linear infinite}.replay-load-error{color:#ef777d}@keyframes replay-loading-spin{to{transform:rotate(360deg)}}
 /* Route transitions belong to one shared surface for library, lobby and profile. */
-:root{--launcher-route-duration:var(--ui-surface-duration,180ms)}
+:root{--launcher-route-duration:420ms;--launcher-route-easing:cubic-bezier(.22,.7,.2,1)}
 @view-transition{navigation:auto}
 html:has(.book-masthead)::view-transition-group(root),html:has(.book-masthead)::view-transition-old(root),html:has(.book-masthead)::view-transition-new(root){animation:none}
 html:has(.book-masthead)::view-transition-old(root){visibility:hidden}
 html:has(.book-masthead)::view-transition-new(root){mix-blend-mode:normal}
 ::view-transition-group(launcher-page){animation:none}
 ::view-transition-old(launcher-page),::view-transition-new(launcher-page){width:100%;height:100%;object-fit:none;object-position:center top}
-::view-transition-old(launcher-page){animation:launcher-route-out var(--launcher-route-duration) var(--ui-surface-easing,cubic-bezier(.2,0,0,1)) both}
-::view-transition-new(launcher-page){animation:launcher-route-in var(--launcher-route-duration) var(--ui-surface-easing,cubic-bezier(.2,0,0,1)) both}
+::view-transition-old(launcher-page){animation:launcher-route-out var(--launcher-route-duration) var(--launcher-route-easing) both}
+::view-transition-new(launcher-page){animation:launcher-route-in var(--launcher-route-duration) var(--launcher-route-easing) both}
+html:not(:has(.launcher-page-surface))::view-transition-old(root){visibility:visible;animation:launcher-route-out var(--launcher-route-duration) var(--launcher-route-easing) both}
+html:not(:has(.launcher-page-surface))::view-transition-new(root){animation:launcher-route-in var(--launcher-route-duration) var(--launcher-route-easing) both}
 @keyframes launcher-route-out{to{opacity:0}}
 @keyframes launcher-route-in{from{opacity:0}}
-html:has(body.less-motion)::view-transition-old(launcher-page),html:has(body.less-motion)::view-transition-new(launcher-page){animation:none!important}
-@media(prefers-reduced-motion:reduce){::view-transition-group(launcher-page),::view-transition-old(launcher-page),::view-transition-new(launcher-page){animation:none!important}}
+html.ui-theme-changing::view-transition-old(root){visibility:visible;z-index:1;animation:launcher-route-out 900ms cubic-bezier(.25,.1,.25,1) both!important}
+html.ui-theme-changing::view-transition-new(root){z-index:0;animation:none!important;opacity:1;mix-blend-mode:normal}
+html:has(body.less-motion)::view-transition-old(launcher-page),html:has(body.less-motion)::view-transition-new(launcher-page),html:has(body.less-motion)::view-transition-old(root),html:has(body.less-motion)::view-transition-new(root){animation:none!important}
+@media(prefers-reduced-motion:reduce){::view-transition-group(launcher-page),::view-transition-old(launcher-page),::view-transition-new(launcher-page),::view-transition-old(root),::view-transition-new(root){animation:none!important}}
+@media(prefers-reduced-motion:reduce){html.ui-theme-changing::view-transition-old(root),html.ui-theme-changing::view-transition-new(root){animation:none!important}}
 @font-face{font-family:"touhou98";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/touhou98.woff2") format("woff2")}
 @font-face{font-family:"ET Yatra";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/yatra-one-latin.woff2") format("woff2")}
 @font-face{font-family:"ET Chill Round";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/chill-round-gothic-site-medium.woff2") format("woff2")}

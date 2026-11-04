@@ -1,5 +1,14 @@
 [
   {
+    "game": "th05",
+    "file": "th05.webp",
+    "source_file": "docs/assets/game-covers/th05.jpg",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E6%80%AA%E7%BB%AE%E8%B0%88%E5%B0%81%E9%9D%A2.jpg",
+    "source_sha256": "43c79faa06efeb2a7e43646951b458e923a85c653105a30ec4f5ec7f599838d1",
+    "generated_sha256": "27f733dafcef27a0c37dde8818f7b0f35d83ff01b53097abd3208cd8ec62c24b",
+    "conversion": "Pillow; RGB; crop (0, 0, 329, 329); WebP quality 82, method 6"
+  },
+  {
     "game": "th06",
     "file": "th06.webp",
     "source_file": "docs/assets/game-covers/th06.png",

@@ -1961,7 +1961,7 @@ async function liveActualDirectory({strictMode = false} = {}) {
   await React.act(async () => {session.setLocale('en');});
   await until(() => f.sockets.some(socket => new URL(socket.url).searchParams.has('directory')), 'actual directory transport exists');
   const directorySocket = f.sockets.findLast(socket => new URL(socket.url).searchParams.has('directory'));
-  await React.act(async () => {directorySocket.open(); directorySocket.message({type: 'directory', version: 1, product: 'th06mp', rooms: [], total: 0});});
+  await React.act(async () => {directorySocket.open(); directorySocket.message({type: 'directory', version: 1, product: '', rooms: [], total: 0});});
   return {f, session, directorySocket};
 }
 for (const strictMode of [false, true]) for (const action of ['create', 'join by code', 'join row']) {
@@ -1973,7 +1973,7 @@ for (const strictMode of [false, true]) for (const action of ['create', 'join by
     if (action === 'join row') {
       await click('.book-lobby-desktop .book-lobby-all');
       await click('.book-lobby-desktop [data-lobby-product="th07mp"] .book-lobby-game');
-      await React.act(async () => {directorySocket.message({type: 'directory', version: 1, product: 'th07mp', total: 1,
+      await React.act(async () => {directorySocket.message({type: 'directory', version: 1, product: '', total: 1,
         rooms: [{product: 'th07mp', code: '4321', capacity: 2, phase: 'lobby', joinable: true, seats: [{initial: 'R'}, null], difficulty: 2}]});});
       await click('.lobby-join');
     } else {
@@ -2326,17 +2326,40 @@ test('touch coordinate changes do not rebuild unchanged launcher settings', asyn
   assert.equal(api.getSettingsRenderCount(), before, 'control movement updates the editor without rebuilding its background forms');
 });
 
-test('directory Replay entry opens the existing multiplayer workspace without creating membership', async () => {
-  const {session, f} = await liveActualDirectory();
-  assert.equal(node('#watchReplayButton').disabled, false);
+test('lobby masthead Replay opens the selected multiplayer workspace without creating membership', async () => {
+  const {session, f} = await liveActualDirectory(), directoryBefore = session.directory.getSnapshot();
+  await click('#mastheadMenuToggle');
+  const replayItem = node('#watchReplayButton');
+  assert.equal(replayItem.getAttribute('role'),'menuitem');
+  assert.notEqual(replayItem.getAttribute('aria-disabled'),'true');
   await click('#watchReplayButton');
   await until(() => !!env.document.querySelector('.replay-file-browser'), 'independent Replay workspace opens');
   assert.equal(session.getReplays().getSnapshot().productId, 'th06mp');
+  assert.equal(session.directory.getSnapshot(), directoryBefore, 'opening Replay preserves the live directory snapshot');
   assert.equal(session.room.service.getSnapshot().room, null);
   assert.equal(f.sockets.some(socket => new URL(socket.url).searchParams.has('lobby')), false);
   await until(() => session.getRuntime().getSnapshot().launched, 'standalone viewer prepares its Replay engine');
   assert.equal(f.outbound.findLast(message => message.command === 'configure').options.replayViewer, true);
   assert.equal(f.outbound.findLast(message => message.command === 'configure').options.netplayMode, undefined);
+});
+
+test('offline lobby masthead Replay opens the selected multiplayer workspace and preserves the lobby', async () => {
+  const {session, f, directorySocket} = await liveActualDirectory();
+  await React.act(async () => {
+    env.window.dispatchEvent(new env.window.Event('offline'));
+    directorySocket.dispatchEvent(new env.window.Event('error'));
+  });
+  await until(() => session.directory.getSnapshot().connection === 'offline', 'directory follows the offline event');
+  const directoryBefore = session.directory.getSnapshot();
+  await click('#mastheadMenuToggle');
+  assert.equal(node('#watchReplayButton').getAttribute('role'),'menuitem');
+  await click('#watchReplayButton');
+  await until(() => !!env.document.querySelector('.replay-file-browser'), 'Replay workspace opens while the directory is offline');
+  assert.equal(session.getReplays().getSnapshot().productId, 'th06mp');
+  assert.equal(session.directory.getSnapshot(), directoryBefore, 'opening Replay preserves the offline directory snapshot');
+  assert.equal(session.directory.getSnapshot().selectedProduct, 'th06mp');
+  assert.equal(session.room.service.getSnapshot().room, null);
+  assert.equal(f.sockets.some(socket => new URL(socket.url).searchParams.has('lobby')), false);
 });
 
 test('Replay root Back uses real BrowserHistory and folder, move, then manager layers unwind one at a time', async () => {

@@ -45,7 +45,7 @@ export function SiteNotice({preferences, assetUrl = identityAsset, autoLoad = fa
   // if React's preceding snapshot also had hidden=false.
   useLayoutEffect(() => {if (bar.current) bar.current.hidden = snapshot.hidden || !visible;}, [snapshot, visible]);
   useSurfaceMotion(bar, snapshot.hidden || !visible ? null : snapshot.closing || snapshot.scrollHidden ? 'exit' : 'enter', {
-    kind: 'dialog', onComplete() {if (snapshot.closing) state.finishClose();},
+    kind: 'notice', onComplete() {if (snapshot.closing) state.finishClose();},
   });
   useEffect(() => {
     const node = bar.current;
