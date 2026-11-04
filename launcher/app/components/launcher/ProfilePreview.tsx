@@ -25,7 +25,7 @@ function transitionProfile(update: () => void, scope: 'page' | 'content' | 'sett
 }
 
 type SocialLink = {label: string; url: string};
-type Profile = {name: string; bio: string; region: string; avatar: string; cover: string; links: SocialLink[]};
+type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]};
 type ProfileDraft = Omit<Profile, 'links'> & {links: (SocialLink & {editId: number})[]};
 let nextLinkEditId = 0;
 const editableLink = (link: SocialLink) => ({...link, editId: ++nextLinkEditId});
@@ -43,10 +43,10 @@ const validDisplay = (value: unknown): value is ProfileDisplay => {
   return !!settings.visible && Object.keys(displayLabels).every(key => typeof settings.visible[key as DisplayKey] === 'boolean') &&
     Array.isArray(settings.order) && settings.order.length === 5 && new Set(settings.order).size === 5 && settings.order.every(key => defaultDisplay.order.includes(key));
 };
-const blankProfile: Profile = {name: '', bio: '', region:'', avatar: '', cover: '', links: []};
+const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
-type RemoteProfile = {username: string; nickname: string; joinedAt: string; details: (Profile & {display:ProfileDisplay}) | null};
+type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; details: (Profile & {display:ProfileDisplay}) | null};
 export function ProfilePage() {
   const {pathname} = useLocation();
   return <AccountProfile key={pathname} pathname={pathname}/>;
@@ -142,7 +142,7 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
   };
   const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
   const details = <><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p><dl className="profile-about-meta">
-    {profile.region && <div><dt><MapPin/>{t('profile.region')}</dt><dd>{profile.region}</dd></div>}
+    {remote.countryCode && <div><dt><MapPin/>{t('profile.region')}</dt><dd>{typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames([locale],{type:'region'}).of(remote.countryCode) : remote.countryCode}</dd></div>}
     <div><dt><CalendarDays/>{t('profile.registeredAt')}</dt><dd><time dateTime={remote.joinedAt}>{new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',timeZone:'UTC'}).format(new Date(remote.joinedAt))}</time></dd></div>
     </dl>{links.length > 0 && <div className="profile-links">{links.map(link => {
       const host = safeUrl(link.url)?.hostname ?? '';
@@ -169,7 +169,7 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
         <div className="profile-details-columns"><div className="profile-media-editor"><div className="profile-draft-preview"><div className={`profile-draft-cover${imageData(draft.cover) ? ' has-image' : ''}`} style={imageData(draft.cover) ? {backgroundImage: `url("${draft.cover}")`} : undefined}/><div className="profile-draft-identity"><span className="profile-draft-avatar"><AccountAvatar src={draft.avatar} alt={t('profile.avatar.preview')}/></span><strong>{draft.name || t('profile.name.missing')}</strong><p>{draft.bio.split('\n')[0] || t('profile.bio.missing')}</p></div></div>
         <div className="profile-image-fields">{(['avatar', 'cover'] as const).map(field => <fieldset key={field}><legend>{field === 'avatar' ? t('profile.avatar') : t('profile.cover')}</legend><label className="profile-image-upload"><ProfileSectionIcon name="upload"/><span>{t('profile.image.choose')}</span><input type="file" aria-label={field === 'avatar' ? t('profile.avatar.choose') : t('profile.cover.choose')} accept="image/png,image/jpeg,image/webp" onChange={event => uploadImage(event.target.files?.[0], field)}/></label>{draft[field] && <BookButton variant="quiet" type="button" className="profile-image-remove" onClick={() => setDraft({...draft, [field]: ''})}>{t('profile.remove')}</BookButton>}</fieldset>)}</div><small className="profile-upload-hint">{t('profile.image.formats')}</small></div><div className="profile-detail-fields">
         <label>{t('profile.name')}<Input maxLength={32} value={draft.name} onChange={event => setDraft({...draft, name: event.target.value})} placeholder={t('profile.name.placeholder')}/></label>
-        <label>{t('profile.region')}<Input maxLength={48} value={draft.region} onChange={event => setDraft({...draft,region:event.target.value})}/></label><label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
+        <label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
         <fieldset><legend>{t('profile.links')}</legend>{draft.links.map((link, index) => <div className="profile-link-editor" key={link.editId}><label>{t('profile.links.name')}<Input maxLength={40} value={link.label} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, label: event.target.value} : item)})}/></label><label>{t('profile.links.address')}<Input type="url" placeholder="https://" value={link.url} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, url: event.target.value} : item)})}/></label><BookButton variant="action" type="button" aria-label={t('profile.links.delete',{number:index + 1})} onClick={() => setDraft({...draft, links: draft.links.filter((_, i) => i !== index)})}>{t('action.delete')}</BookButton></div>)}<BookButton variant="action" type="button" onClick={() => setDraft({...draft, links: [...draft.links, editableLink({label: '', url: ''})]})}>{t('profile.links.add')}</BookButton></fieldset></div></div>
         {error && <p role="alert">{t(error)}</p>}<div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" className="profile-primary" type="submit">{t('profile.save')}</BookButton></div>
       </form></section> : <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div><nav className="profile-section-nav profile-nav-desktop" aria-label={t('profile.navigationSections')}>{navigation}</nav></aside>
