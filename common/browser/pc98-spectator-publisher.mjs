@@ -6,7 +6,7 @@ function packet(kind,players,first,count,body){
   view.setUint32(9,first,true);view.setUint32(13,count,true);bytes.set(body,17);return bytes;
 }
 export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},getPoints=()=>[]){
-  let cursor=0,started=false,ended=false,closed=false,busy=false,timer,pointIndex=0,pointOffset=0,pointBytes;
+  let cursor=0,started=false,ended=false,closed=false,busy=false,timer,pointIndex=0,pointOffset=0,pointBytes,nextPointAt=0;
   function stop(){closed=true;clearTimeout(timer);}
   async function pump(){
     if(closed||ended||busy)return;busy=true;
@@ -21,16 +21,16 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
         if(closed)return;ws.send(packet(2,header.players,cursor,count,body));cursor+=count;
       }
       const points=getPoints(),point=points[pointIndex];
-      if(!closed&&cursor===tape.length&&point&&point.frame<=cursor&&ws.bufferedAmount<=262144){
+      if(!closed&&cursor===tape.length&&point&&point.frame<=cursor&&ws.bufferedAmount<=262144&&performance.now()>=nextPointAt){
         pointBytes??=Uint8Array.from(atob(point.data),c=>c.charCodeAt(0));
         const chunk=pointBytes.subarray(pointOffset,pointOffset+12000),body=new Uint8Array(72+chunk.length),view=new DataView(body.buffer);
         view.setUint32(0,pointBytes.length,true);view.setUint32(4,pointOffset,true);body.set(encoder.encode(point.sha),8);body.set(chunk,72);
-        ws.send(packet(4,header.players,point.frame,0,body));pointOffset+=chunk.length;
+        ws.send(packet(4,header.players,point.frame,0,body));pointOffset+=chunk.length;nextPointAt=performance.now()+50;
         if(pointOffset===pointBytes.length){pointIndex++;pointOffset=0;pointBytes=null;}
       }
       if(!closed&&tape.end&&cursor===tape.length&&!pointBytes){ws.send(packet(3,header.players,cursor,0,new Uint8Array()));ended=true;}
     }catch(error){stop();onError(error);}
-    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,cursor<tape.length||pointBytes?30:250);}
+    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,cursor<tape.length?20:pointBytes?50:250);}
   }
   void pump();return {kick(){clearTimeout(timer);void pump();},stop,get ended(){return ended;},
     async seal(timeout=2000){const deadline=performance.now()+timeout;this.kick();while(!ended&&!closed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));return ended;}};

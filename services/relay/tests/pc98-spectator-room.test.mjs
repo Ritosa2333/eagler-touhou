@@ -34,6 +34,8 @@ test('PC98 room admits a late viewer and retains confirmed relay packets',async(
       const viewer=await open(base+`&spectator=viewer_client_${game}&member=member_viewer${game}`);await wait(()=>viewer.binary.length>=2,'confirmed history');
       assert.deepEqual(viewer.binary.slice(0,2).map(p=>p[5]),[1,2]);
       p0.ws.send(packet(3,1,0,[]));await wait(()=>viewer.binary.some(p=>p[5]===3),'end');
+      p0.ws.send(packet(2,0,1,[9]));await wait(()=>viewer.closed,'invalid spectator stream closes only the viewer');
+      assert.equal(p0.closed,false);assert.equal(p1.closed,false);
       p0.ws.send(new Uint8Array([0xe7,1,9,8,7]));await wait(()=>p1.binary.some(p=>p.at(-1)===7),'players continue');
       for(const socket of sockets.splice(0))socket.close();
     }

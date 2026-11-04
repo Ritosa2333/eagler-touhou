@@ -2028,6 +2028,7 @@ server.on('connection', (socket, request) => {
     bytesPerSecond: 256 * 1024,
   });
   const acceptReplayFile=createRelayMessageGate({maxBytes:32788,messagesPerSecond:120,bytesPerSecond:4*1024*1024});
+  const acceptPc98Spectator=createRelayMessageGate({maxBytes:RELAY_LIMITS.gameplayBytes,messagesPerSecond:120,bytesPerSecond:512*1024});
   socket.on('message', (data, isBinary) => {
     if(isBinary&&data[0]===0xe9){
       if(player!==0||run.clients.get(player)!==socket||!run.spectatorNativeReplay)return;
@@ -2042,7 +2043,9 @@ server.on('connection', (socket, request) => {
     const stageInitializer = isBinary && player === 0 && marker !== undefined &&
       data.length >= 9 && data[0] === 0xe8 && data[1] === 69 && data[2] === marker &&
       data[3] === 83 && data[4] === 86 && data[5] === 1 && data[6] === 1;
-    if (!acceptRelayMessage(socket, data, stageInitializer ? acceptStageInitializer : acceptGameplay)) return;
+    const pc98Lane=isBinary&&player===0&&isPc98SpectatorRoom(roomId)&&data.length>=5&&data[0]===0xe8&&data[1]===0x50&&data[2]===0x39&&data[3]===0x38&&data[4]===0x53;
+    if(pc98Lane){if(acceptPc98Spectator(data.byteLength)){stopSpectatorStream(run);return;}}
+    else if (!acceptRelayMessage(socket, data, stageInitializer ? acceptStageInitializer : acceptGameplay)) return;
     if (!isBinary) {
       let message; try { message = JSON.parse(String(data)); } catch {}
       if (player === 0 && run.clients.get(player) === socket && message?.type === 'spectator-session' &&
