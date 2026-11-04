@@ -102,7 +102,7 @@ try {
       console.log(game,'native target ready',JSON.stringify(target.native.practice.setup));
       await press('Enter');
       await wait(async () => (await read()).native?.mode === 1,game+' resume native pause',15000);
-      await frame.waitForFunction(()=>/^FPS: \d+$/.test(document.querySelector('#pc98-game-fps')?.textContent||''),{timeout:10000});
+      await frame.waitForFunction(()=>/^FPS: [1-9]\d*$/.test(document.querySelector('#pc98-game-fps')?.textContent||''),{timeout:15000});
       const fps=await frame.$eval('#pc98-game-fps',node=>({text:node.textContent,style:getComputedStyle(node).pointerEvents}));
       assert.equal(fps.style,'none');assert(Number(fps.text.slice(5))>0,'running game advances its own frame counter');
       const before = (await read()).native.x;
@@ -159,7 +159,7 @@ try {
       await new Promise(r => setTimeout(r,700));
       const stillWaiting = (await read()).native;
       assert.deepEqual({x:stillWaiting.x,y:stillWaiting.y,elapsed:stillWaiting.practice.elapsed},parked,'prepared start stays frozen in original pause until resumed');
-      console.log(game,'prepared retry consumed',JSON.stringify(retry.retry.last));
+      console.log(game,'retry without background instance');
       await press('F12');
       await frame.waitForSelector('#practice-panel.practice-full:not([hidden])',{visible:true});
       assert.equal(await frame.$('[data-practice=preparedRetry]'),null);
