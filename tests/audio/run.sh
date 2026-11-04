@@ -43,6 +43,7 @@ for suite in "$script_dir"/*_test.cpp; do
   echo "tests/audio/run.sh: g++ -DTH13_AUDIO_MIXER_ONLY ${sources[*]} $suite"
   g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
     -DTH13_AUDIO_MIXER_ONLY -I eagler-touhou/ports/th13/web/cpp \
+    -I eagler-touhou/common/include \
     "${suite_sources[@]}" "$suite" -o "$out_dir/$name" -lm || status=1
 done
 (( status )) && exit 1
@@ -52,4 +53,5 @@ for suite in "$script_dir"/*_test.cpp; do
   echo "tests/audio/run.sh: $out_dir/$name"
   "$out_dir/$name" || status=1
 done
+bash "$script_dir/immediate/run.sh" || status=1
 exit $status

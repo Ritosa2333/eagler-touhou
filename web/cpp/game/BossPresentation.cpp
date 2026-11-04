@@ -162,10 +162,13 @@ bool BossPresentation::update(const BossFrameInput& input,
         fail("Boss name retirement failed");
         return false;
     }
-    // 004265a0:98-107 timer gate is separate from ring/name visibility. The
-    // boss condition is slot occupancy (mgr+0x5c != 0), not a live entity —
-    // final-spell capture keeps the slot until BossDead's 512(-1) clears it
-    // ~60 frames later, so the timer stays visible through that window.
+    // 0x4265a0:98-107 总门（boss HUD 是否激活）：mgr+0x5c 槽占用、
+    // (mgr+0x7c&1)==0 未离场、ctx+0x198==0 无对话、ctx+0x1a0>=0 有计时。
+    // 槽占用（而非实体存活）是判据：终符捕获（514→BossDead）后槽由
+    // 512(-1) 约 +60 帧才清，期间计时器保持显示（native-s3 trace：boss
+    // 实体保留 61 帧）——保留此语义，不回归「终符后计时消失」修复。
+    // 该门只管两数字 VM：环/覆盖条/阶段星由 0x4265a0:180/225-226 的
+    // 独立判据驱动（见下 ring_gate），不受计时/符卡门约束。
     const bool gate = input.boss_slot_present && !input.boss_leaving &&
                       !input.dialog_active && input.timer_seconds >= 0;
     if (gate != gate_) {
@@ -235,10 +238,18 @@ bool BossPresentation::update(const BossFrameInput& input,
 
     } // timer gate
     if(!update_marker(input))return false;
-    // 4265a0 ring gate is independent of a valid timer: non-invulnerable,
-    // normal visible boss, below100000HP, outside dialogue.
-    const bool ring_gate=boss&&!input.boss_leaving&&!input.dialog_active&&
-        boss->life<100000.f&&!(boss->flags&0x31u)&&boss->invulnerable<1;
+    // 0x4265a0:180 / :225-226：环组外层门只看 (mgr+0x7c&1)==0，逐槽条件
+    // +0x5138<100000 / (+0x521c&0x31)==0 / +0x51bc<1 / ctx+0x198==0；
+    // 两数字 VM 的槽占用/计时门（:98-107）与环无关——原版血环在 boss
+    // 非符卡阶段同样显示（boss_hud_test
+    // boss_ring_is_independent_of_timer_and_empty_boss_retires_it 锁定）。
+    // 「道中无符卡误显蓝槽 / 同屏 2 条」尚未定案：0x4265a0:192-213 的
+    // 空槽逐帧回收已由下方 if(!ring_gate) 实现，早先追加的换关 retire
+    // 因依据（0x42bfa0.c:104-139）被否证而撤回。此处不新增计时/槽占用
+    // 判据，避免 boss 非符卡阶段血环消失的回归；位置/样式待捕获裁决。
+    const bool ring_gate = boss && !input.boss_leaving && !input.dialog_active &&
+        boss->life < 100000.f && !(boss->flags & 0x31u) &&
+        boss->invulnerable < 1;
     if(!ring_gate) {
         retire_ring();
         for(auto& handle:star_handles_)if(handle){animations_.retire(handle);handle=0;}
@@ -361,13 +372,16 @@ void BossPresentation::write_star(u32 handle, const BossFrameInput& input, i32 i
     auto* vm = animations_.registry.find(handle);
     if (!vm) return;
     const float angle = input.markers[u32(index)].ratio;
-    // 0x4270eb-0x427100（004265a0.c:459-461）：原版隐藏条件 =
-    // `ratio == displayed || displayed < ratio`（即 displayed <= ratio）。
-    // 端口此前多加了 `angle == 0` 一支，把 ratio=0 且 displayed>0 的标记也
-    // 隐藏了；原版在该情形显示（相位标记=front script243 sprite152，
-    // 3x6 蓝 85,0,255，共 4 份）。位置公式 boss+56·(cos t,sin t)、
-    // t=normalize(-π-ratio*2π) 已复核正确，不改。
-    if (angle == displayed_ratio_ || displayed_ratio_ < angle) {
+    // 原版两段隐藏判据（0x4270da-0x42719d，objdump 原件见
+    // artifacts/pr159-fix-20261104/blue-marker/）：
+    //   1) 0x4270da flds ratio; 0x4270dc fld %st(1)（ST1 = 0x42706b fldz 的
+    //      0.0）; fucompp; test ah,0x44; jnp 0x42719d —— ratio == 0 即隐藏。
+    //   2) 0x4270eb flds ratio; flds displayed(+0x1ac); fcompp; test ah,0x41;
+    //      jnp 0x42719d —— displayed <= ratio 隐藏。
+    // ECL527 全 stage 只写 index 0（其余槽保持 0），缺 (1) 时 4 个零比例
+    // 标记会叠在同一位置（用户截图 145616 的左侧蓝团）。上轮以「ratio=0
+    // 合法」为由删掉 angle==0 与本条反汇编冲突，本节以直调/反汇编为准。
+    if (angle == 0.f || angle == displayed_ratio_ || displayed_ratio_ < angle) {
         vm->visual.flags &= ~kFlagVisible;
         return;
     }
@@ -376,15 +390,21 @@ void BossPresentation::write_star(u32 handle, const BossFrameInput& input, i32 i
     //（0x4ae880=−π、0x4ae850=2π、0x472f30 归一）。
     const float t = normalize_angle(float(-double(kPi) - double(angle) * double(kTwoPi)));
     vm->variables.rotation.z = t;
-    // 0x42713c-0x427193：位置 = boss + 56·(cos t, sin t, 0)。
-    // 复核（2026-11-02 反汇编 0x42707e-0x427195）：0x4aef18(56.0) 存到
-    // esp+0xa0，0x472fc0 的 ESI=esp+0xa0 读取 {56,0}（不是 {0,56}），输出
-    // (56·cos a, 56·sin a)；随后 +0x44/0x48 的 boss 世界位。故现行公式与
-    // 原版一致，勿按 decomp 的 local_78 索引误判为 (0,56)。
+    // 0x42713c-0x427193：位置 = boss_world + R(t)·(0, 56, 0)。
+    // 调用点 0x427135 `push %ecx` 使 ESP 相对循环基址 −4；0x42713c
+    // `lea 0xa0(%esp)` 因此指向循环基址 +0x9c，即 {0.0, 56.0}（0x9c 来自
+    // 0x42706b/0x427071 的 fldz/fst，56.0 由 0x4aef18 经 0x42708a 存入
+    // 0xa0）。0x472fc0 直调（Unicorn，输入/输出见同目录 probe-out.txt）是
+    // 标准旋转：R(t)·(x,y) = (x·cos−y·sin, x·sin+y·cos)，故 x 分量 =
+    // −56·sin t、y 分量 = +56·cos t（0x472fc0 输出 pair 由 edi=+0x38 写入，
+    // 0x42714f/0x427171 再 fadds boss 世界位 +0x44/+0x48）。旧式
+    // boss+56·(cos t, sin t) 少了一次 90° 旋转（截图左侧蓝标即该偏差）。
     const StageEnemy* boss = input.boss;
+    const float sine = std::sin(t);
+    const float cosine = std::cos(t);
     vm->visual.translation = {
-        float(boss->position[0] + kStarOrbitRadius * std::cos(t)),
-        float(boss->position[1] + kStarOrbitRadius * std::sin(t)),
+        float(boss->position[0] - kStarOrbitRadius * sine),
+        float(boss->position[1] + kStarOrbitRadius * cosine),
         boss->position[2]};
 }
 

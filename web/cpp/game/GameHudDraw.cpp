@@ -61,11 +61,17 @@ void GameHud::update_score() {
         displayed_score = wrapping_add(displayed_score, score_increment);
         if (score.score <= displayed_score) score_increment = 0;
     }
+    // 0042a370:35-38（反汇编 0x42a3f6/0x42a404）：HiScore 更新时
+    // be810 = max(be810, ctx+0x144)、be830 |= 4、be814 = be7c8。
+    // 0043d650:8-12 才是 be810 = max(be810, be7c0)，两式不可混用；
+    // displayed_score 即 ctx+0x144 投影，故本函数对应 0042a370 一式。
     if (progress.high_score < displayed_score) {
-        progress.run_mode_flags |= 4; // 0042a370 writes DAT_004be830, not a HUD-local word.
-        progress.high_score_extra = progress.continues;
-        player.mode_flags |= 4; // Retain the legacy HUD projection mirror.
-        progress.high_score = displayed_score;
+        progress.run_mode_flags |= 4; // 0042a370:36 DAT_004be830 |= 4（原版依据，保留）
+        progress.high_score_extra = progress.continues; // 0042a370:37 be814 = be7c8（原版依据，保留）
+        // 端口自认 legacy 投影镜像：0042a370 无 player.mode_flags 对应字段，
+        // 无独立原版依据；仅为兼容既有 HUD 投影保留，不参与 be810 写入。
+        player.mode_flags |= 4;
+        progress.high_score = displayed_score; // 0042a370:38 be810 = max(be810, ctx+0x144)
     }
 }
 
@@ -90,6 +96,7 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
     if (auto* banner = animations.registry.find(clear_banner)) {
         HudTextStyle clear_style;
         clear_style.font = 4;
+        clear_style.coordinate_space = 1;
         clear_style.alignment = clear_style.vertical_alignment = 0;
         clear_style.shadow = true;
         clear_style.color = alpha(0xffffffffu, banner->visual.color);

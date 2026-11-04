@@ -36,6 +36,15 @@
 // front.anm 240/241/242（条带）与 243（星）经 AnmRegistry 池真实绘制。
 // 仍待复核的残留（不阻塞呈现）：条带段几何的渲染端对拍（mode 602 条带
 // 已在 AnmRenderer 实装，像素一致性属后端门）。
+//
+// 【本批审计结论】BossPresentation 保持零行为改动。独立反编译复核确认：
+// 环门判据是 0x4265a0:180/225-226（独立于 :98-107 的两数字 VM 门），
+// 早先把两者统一会令 boss 非符卡阶段血环消失，已撤回；跨关 retire 依据
+// 0x42bfa0.c:104-139 亦被否证，已撤回。颜色/几何/坐标/layer/缩放不动。
+// 仍 BLOCKED（待 D3D9 逐像素捕获）：蓝条位置/样式、「同屏 2 条」是残留
+// 句柄还是原版固有双条。注：front 241/242 是 0x4265a0 池模板 ANM VM，
+// 0x427910:107-136 是 FUN_0045efc0 直绘矩形，两者不是同一机制，早先的
+// 对应关系属臆测，此处不再引用。
 #pragma once
 
 #include "AnmManager.hpp"
@@ -90,9 +99,11 @@ public:
     //   243 阶段星（sprite152 3×6、mode 1 四元）×4 克隆
     // 写入点（th13.exe 0x426f9e-0x42719x）：驱动 VM+0x18|=4、
     // +0x48(rotation.x) = -displayed*2π（0x4ae850=2π）；三条带 +0x574.. =
-    // boss 世界位；星 VM+0x18|=2（displayed<angle）、+0x50(rotation.z) =
-    // normalize(−π − angle*2π)（0x4ae880=−π）、+0x574.. = boss +
-    // (56·cos t, 56·sin t, 0)（半径 0x4aef18=56，0x472fc0 极坐标）。
+    // boss 世界位；星 VM+0x18|=2（displayed<angle）、ratio==0 隐藏
+    //（0x4270da-0x4270e5）、+0x50(rotation.z) = normalize(−π − angle*2π)
+    //（0x4ae880=−π）、+0x574.. = boss + R(t)·(0,56,0) =
+    // boss + (−56·sin t, 56·cos t, 0)（半径 0x4aef18=56，0x472fc0 标准旋转；
+    // 调用点 push 后 ESP 偏移见 BossPresentation.cpp）。
     static constexpr i32 kRingArcScript = 240;
     static constexpr i32 kRingOverlayScripts[2] = {241, 242};
     static constexpr i32 kRingStarScript = 243;
@@ -107,8 +118,14 @@ public:
 
     // 0x425170:181-287：数字 VM 常备、初始隐藏（flags bit1 清）。
     bool initialize();
-    // 00424fd0 resets HUD+1a0/+1a8 when loading the next stage, while
-    // retaining the timer VMs and the HUD's other persistent state.
+    // 00424fd0：换关只复位 ctx+0x1a0/+0x1a8 的计时显示，保留数字计时 VM
+    //（ctx+0x98/+0x9c，0x425170 常备）与 HUD 其它持久态。环/覆盖条/阶段星
+    // 的回收由 0x4265a0:192-213 的空槽逐帧分支承担（7 句柄 + 创建旗 +
+    // ctx+0xdc 环根），端口 update() 的 if(!ring_gate) 已实现同式，此处不再
+    // 重复 retire。独立复核否证了早先「0x42bfa0.c:104-139 是 0xc 换关回收
+    // 清单」的说法：那是 (be830&2)==0 的全量清理分支，全函数不含
+    // 0x1dc/0x1e0/0x1e4/0x1e8/0x1f4/0x2a8/0x46fc30 任一引用；0xc 分支置
+    // be830|=2 后走 :175-217 的「隐藏 + 清 bit1」，并不销毁环组 VM。
     void prepare_stage_assets() noexcept {
         timer_seconds_ = timer_displayed_ = -1;
     }

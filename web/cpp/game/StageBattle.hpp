@@ -48,6 +48,24 @@ struct StageBattleServices {
     // 0x42b030 → HUD script172 标签无条件重写（Update pass 内调用）。
     // 默认空实现：无头/无 HUD 测试路径不失败。
     virtual bool trance_gauge_refresh() { return true; }
+    // 0x42a439 = jmp dword ptr [eax*4+0x42abd4]（入口 0x42a430，jmp 在 +9）。
+    // case2（0x42ee28 小P满灵力 / 0x43d23e 大P满灵力，mov eax,2）→ front61；
+    // case4（0x43d3a6，FUN_0043d330 碎片达标内，mov eax,4）→ front63(EXTENDED)。
+    // 全 EXE 可达 case 仅 0/1/2/4；case3(front62) 在 0x42a41c 后的不可达块、
+    // case5 是共享 epilogue、case6(front64) 无调用方，故不在此列。
+    // case0/1 由符卡结算面处理；1UP（0x43d2f0）只 +1 命、无 0x11/横幅。
+    // 参数 = front.anm 脚本号。
+    // 默认返回 true：所有无头/单测夹具行为不变（纯改善前提）。
+    virtual bool hud_notice(i32 front_script) { (void)front_script; return true; }
+    // 0x43d530：灵界值 be808 每跨 200 一整槽，level = be808/200 ∈ 1..3 →
+    // FUN_0046f820(..., level+0x6b, ...) 建 front 108/109/110（×1/×2/×MAX）。
+    // x/y/z = 自机世界坐标（0043d530.c:24-30 取 DAT_004c22c4+0x5b8/+0x5bc/
+    // +0x5c0 并 y-32，作为 FUN_0046f820 的 param_3）；front108-110 无
+    // ins_400 绝对坐标，位置必须由宿主传入。
+    // 默认返回 true：无头/单测夹具行为不变（纯改善前提）。
+    virtual bool hud_spirit_notice(i32 level, float x, float y, float z) {
+        (void)level; (void)x; (void)y; (void)z; return true;
+    }
     // 0x44ad60：道具得分弹字入池（value/位置/颜色）。默认空实现。
     virtual bool score_popup(i32 value, float x, float y, u32 color) {
         (void)value; (void)x; (void)y; (void)color;
