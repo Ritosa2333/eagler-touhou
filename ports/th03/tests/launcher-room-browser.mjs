@@ -82,6 +82,14 @@ try{
       await new Promise(resolve=>setTimeout(resolve,300));
     }
     await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>window.th03SyncState?.phase===1)))).every(Boolean),'both players select and enter battle',45000);
+    for(const [seat,page] of pages.entries()){
+      await page.bringToFront();
+      const readX=()=>frames[seat].evaluate(async seat=>(await import('./managed-room.mjs')).managedAPI.health().players.find(p=>p.seat===seat)?.x,seat);
+      const x=await readX();assert.notEqual(x,undefined,'native player is visible');
+      await page.keyboard.down('ArrowLeft');
+      await wait(async()=>{const next=await readX();return next!==undefined&&next<x;},'P'+(seat+1)+' native player moves',15000);
+      await page.keyboard.up('ArrowLeft');
+    }
     await host.bringToFront();await host.keyboard.press('Escape');
     await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>!document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized surrender menu',15000);
     await host.keyboard.press('Escape');
