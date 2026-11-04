@@ -57,6 +57,7 @@ try{
   await host.click('#mpStartGame');
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return events.every(list=>list.some(e=>e.event==='first-frame'));},'main room native launch');
   const frames=pages.map(page=>page.frames().find(f=>/th02.html.*runtimeEpoch=/.test(f.url())));
+  assert(frames.every(frame=>!frame.childFrames().some(child=>/netplay\/runtime.html/.test(child.url()))),'managed game must not load a nested runtime page');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
   await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>{const e=document.querySelector('.room-workspace-preparation');return !e||e.hidden})))).every(Boolean),'main room loading cover must close',10000);
   for(const [seat,page] of pages.entries())await page.screenshot({path:resolve(out,'player-'+seat+'.png')});

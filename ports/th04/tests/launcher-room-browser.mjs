@@ -65,16 +65,17 @@ try{
     await host.bringToFront();
     await host.click('.room-workspace-fullscreen');
     await frames[0].waitForFunction(()=>__eaglerKeyboardInputBridge.active(),{timeout:5000});
-    const native=frames[0].childFrames().find(frame=>/netplay\/runtime.html/.test(frame.url()));
-    const before=await native.evaluate(()=>th04Sync.snapshot().p1[0]);
+    const native=frames[0];
+    assert(!native.childFrames().some(frame=>/netplay\/runtime.html/.test(frame.url())),'managed game must not load a nested runtime page');
+    const before=await native.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.snapshot().p1[0]);
     await host.$eval('#gameFrame',frame=>frame.focus());await host.keyboard.down('ArrowRight');
-    try{await wait(async()=>(await native.evaluate(()=>th04Sync.snapshot().p1[0]))>before+8,'main mapped physical keyboard moves the native player',5000);}
+    try{await wait(async()=>(await native.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.snapshot().p1[0]))>before+8,'main mapped physical keyboard moves the native player',5000);}
     catch(error){console.log('Keyboard diagnostic',await frames[0].evaluate(()=>({hidden:document.hidden,focused:document.hasFocus(),mapped:__eaglerKeyboardInputBridge.active(),held:__eaglerKeyboardInputBridge.keyDown('ArrowRight'),bits:__eaglerPC98Input.sample()})));throw error;}
     finally{await host.keyboard.up('ArrowRight');}
     await host.keyboard.press('Escape',{delay:100});
-    await wait(()=>native.evaluate(()=>JSON.parse(th04Sync.replayProof())[9]===true),'native pause menu',5000);
+    await wait(()=>native.evaluate(async()=>JSON.parse((await import('./netplay/room.js')).managedAPI.replayProof())[9]===true),'native pause menu',5000);
     await host.keyboard.press('ArrowDown',{delay:100});
-    await wait(()=>native.evaluate(()=>JSON.parse(th04Sync.replayProof())[10]===1),'native quit selection',5000);
+    await wait(()=>native.evaluate(async()=>JSON.parse((await import('./netplay/room.js')).managedAPI.replayProof())[10]===1),'native quit selection',5000);
     await host.keyboard.press('Enter',{delay:100});
     await wait(async()=>events.every(list=>list.some(e=>e.event==='exit'&&e.status==='success')),'synchronized native return',15000);
     await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean),'same room prepares the next match',120000);
