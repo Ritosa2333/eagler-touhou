@@ -8599,6 +8599,10 @@
     "id": "directory_standard",
     "params": []
   },
+  "directory.regularRules": {
+    "id": "directory_regularRules",
+    "params": []
+  },
   "calibration.closeReport": {
     "id": "calibration_closeReport",
     "params": []

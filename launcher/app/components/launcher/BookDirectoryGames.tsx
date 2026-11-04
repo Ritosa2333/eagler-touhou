@@ -5,6 +5,7 @@ import {ActionMenu,ActionMenuItem,ActionMenuCheckboxItem,ActionMenuGroup,ActionM
 import {useLocale} from '../../i18n';
 import {BookButton} from './BookButton';
 import {impressFavorite} from './ink-feedback';
+import {beginFavoriteReorder,beginFilterReorder,useFavoriteReorder} from './favorite-reorder';
 import {multiplayerGroup,type LibraryProduct,type MultiplayerGroup} from './products';
 import {bookArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT,readBookPreference,writeBookPreference,stringArray} from './book-preferences';
@@ -17,6 +18,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   const {t}=useLocale();
   const [savedFavorites,setFavorites]=useState<string[]>([]),[localFilters,setLocalFilters]=useState<string[]>([]);
   const favorites=favoriteProducts??savedFavorites;
+  useFavoriteReorder('.book-lobby-item[data-lobby-product], .book-lobby-picker .book-lobby-menu-row[data-lobby-product], .book-lobby-tile', favorites);
   const [failedArt,setFailedArt]=useState<ReadonlySet<string>>(()=>new Set());
   useEffect(()=>{
     if(favoriteProducts!==undefined)return;
@@ -27,6 +29,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   const filters=productFilters??localFilters,viewProduct=viewingProduct??selectedProduct??'';
   const selected=filters.length?filters:viewProduct?[viewProduct]:[];
   const change=(ids:string[])=>{
+    beginFilterReorder();
     if(onProductFiltersChange)onProductFiltersChange(ids);
     else {setLocalFilters(ids);if(viewProduct)onSelect('');}
   };
@@ -34,6 +37,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   const selectOnly=(id:string)=>change([id]);
   const reset=()=>change([]);
   const favorite=(id:string)=>{
+    beginFavoriteReorder();
     if(favoriteProducts!==undefined){onFavoriteProductsChange?.(favorites.includes(id)?favorites.filter(value=>value!==id):[...favorites,id]);return;}
     const latest=readBookPreference('multiplayer-favorites',[],stringArray);
     writeBookPreference('multiplayer-favorites',latest.includes(id)?latest.filter(value=>value!==id):[...latest,id]);
@@ -46,23 +50,23 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
     return <span className="book-lobby-cover" aria-hidden="true">{art&&!failedArt.has(product.id)?<img src={art} alt="" loading="lazy" decoding="async" onError={()=>setFailedArt(previous=>new Set(previous).add(product.id))}/>:<span>th{product.number}</span>}</span>;
   };
   const copy=(product:LibraryProduct)=><span className="book-lobby-copy"><span className="book-lobby-name"><strong title={product.title}>{product.title}</strong><small>th{product.number}</small></span><span className="book-lobby-subtitle" title={product.subtitle}>{product.subtitle}</span></span>;
-  const checkmark=(checked:boolean)=><span className="book-lobby-check" aria-hidden="true">{checked&&<Check/>}</span>;
+  const checkmark=(checked:boolean)=><span className="book-lobby-check" data-checked={checked} aria-hidden="true"><Check/></span>;
   const allCopy=<><span className="book-lobby-cover" aria-hidden="true"><LayoutGrid/></span><span className="book-lobby-copy"><span className="book-lobby-name"><strong>{t('directory.allGames')}</strong></span></span></>;
   const choices=<>
     <div className="book-lobby-menu-row" role="presentation" data-selected={!selected.length}>
-      <ActionMenuCheckboxItem className="book-lobby-menu-check w-11 min-h-11 justify-center p-0" showIndicator={false} aria-label={t('directory.allGames')} checked={!selected.length} disabled={!interactive} onCheckedChange={reset} onSelect={event=>event.preventDefault()}>{checkmark(!selected.length)}</ActionMenuCheckboxItem>
+      <span aria-hidden="true"/>
       <ActionMenuItem className="pr-1 pl-0 book-lobby-menu-choice book-lobby-menu-all" disabled={!interactive} onSelect={reset}>{allCopy}</ActionMenuItem>
       <span aria-hidden="true"/>
     </div>
     {groups.map(group=><ActionMenuGroup key={group.id} aria-label={groupLabel(group.id)} data-lobby-category={group.id}><ActionMenuLabel className="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground">{groupLabel(group.id)}</ActionMenuLabel>{group.products.map(product=><div key={product.id} className="book-lobby-menu-row" role="presentation" data-lobby-product={product.id} data-selected={selected.includes(product.id)}>
       <ActionMenuCheckboxItem className="book-lobby-menu-check w-11 min-h-11 justify-center p-0" showIndicator={false} aria-label={t('directory.filterGame',{game:product.title})} checked={selected.includes(product.id)} disabled={!interactive} onCheckedChange={checked=>toggle(product.id,checked===true)} onSelect={event=>event.preventDefault()}>{checkmark(selected.includes(product.id))}</ActionMenuCheckboxItem>
       <ActionMenuItem className="pr-1 pl-0 book-lobby-menu-choice" aria-label={t('directory.viewGame',{game:product.title})} disabled={!interactive} onSelect={()=>selectOnly(product.id)}>{cover(product)}{copy(product)}</ActionMenuItem>
-      <ActionMenuCheckboxItem className="book-lobby-favorite w-11 min-h-11 justify-center p-0" showIndicator={false} aria-label={t('directory.favoriteGame',{game:product.title})} checked={favorites.includes(product.id)} disabled={!interactive} onCheckedChange={()=>favorite(product.id)} onSelect={event=>event.preventDefault()}><Star aria-hidden="true"/></ActionMenuCheckboxItem>
+      <ActionMenuCheckboxItem className="book-lobby-favorite w-11 min-h-11 justify-center p-0" showIndicator={false} aria-label={t('directory.favoriteGame',{game:product.title})} checked={favorites.includes(product.id)} disabled={!interactive} onCheckedChange={()=>favorite(product.id)} onSelect={event=>{event.preventDefault();if(event.currentTarget instanceof HTMLElement) impressFavorite(event.currentTarget);}}><Star aria-hidden="true"/></ActionMenuCheckboxItem>
     </div>)}</ActionMenuGroup>)}
   </>;
   return <nav className="book-lobby-games" aria-label={t('directory.gameFilter')}>
     <div className="book-lobby-desktop"><div className="book-lobby-full-list">
-      <div className="book-lobby-item" data-selected={!selected.length}><Checkbox.Root asChild checked={!selected.length} disabled={!interactive} onCheckedChange={reset}><BookButton variant="choice" className="book-lobby-check-control" aria-label={t('directory.allGames')}>{checkmark(!selected.length)}</BookButton></Checkbox.Root><BookButton variant="choice" className="book-lobby-game book-lobby-all" disabled={!interactive} onClick={reset}>{allCopy}</BookButton><span aria-hidden="true"/></div>
+      <div className="book-lobby-item" data-selected={!selected.length}><span aria-hidden="true"/><BookButton variant="choice" className="book-lobby-game book-lobby-all" disabled={!interactive} onClick={reset}>{allCopy}</BookButton><span aria-hidden="true"/></div>
       {groups.map(group=><section key={group.id} className="book-lobby-group" aria-label={groupLabel(group.id)} data-lobby-category={group.id}><h2 className="book-lobby-group-label">{groupLabel(group.id)}</h2>{group.products.map(product=><div key={product.id} className="book-lobby-item" data-lobby-product={product.id} data-selected={selected.includes(product.id)}>
       <Checkbox.Root asChild checked={selected.includes(product.id)} disabled={!interactive} onCheckedChange={checked=>toggle(product.id,checked===true)}><BookButton variant="choice" className="book-lobby-check-control" aria-label={t('directory.filterGame',{game:product.title})}>{checkmark(selected.includes(product.id))}</BookButton></Checkbox.Root>
       <BookButton variant="choice" type="button" className="book-lobby-game" aria-label={t('directory.viewGame',{game:product.title})} disabled={!interactive} onClick={()=>selectOnly(product.id)}>{cover(product)}{copy(product)}</BookButton>

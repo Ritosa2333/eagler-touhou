@@ -45,6 +45,19 @@ test('cold content generation coordinates concurrent callers and leaves unchange
   }
   const release=await acquireBuildLock(resolve(source,'.cache/content-pages.lock'),{timeout:100});await release();
 });
+test('migration brand fallback normalizes SVG line endings before base64 encoding', async () => {
+  const svgPath = resolve(source, 'public/assets/brand/face-F02B.svg'), migrationPath = resolve(source, 'public/migrate.html');
+  const svg = (await readFile(svgPath, 'utf8')).replace(/\r\n?/g, '\n');
+  await writeFile(svgPath, svg.replace(/\n/g, '\r\n'));
+  await build();
+  const generated = await readFile(migrationPath, 'utf8');
+  const fallback = generated.match(/src="data:image\/svg\+xml;base64,([^"]+)"/)?.[1];
+  assert.ok(fallback, 'Migration page should embed the fallback brand SVG');
+  assert.equal(Buffer.from(fallback, 'base64').toString('utf8'), svg);
+  await writeFile(svgPath, svg);
+  await build('--check');
+  assert.equal(await readFile(migrationPath, 'utf8'), generated);
+});
 test('failed content checks preserve the actual file and release ownership for a retry', async () => {
   const path = resolve(source, 'public/content/FIRST_USE_NOTICE.html'), stale = await readFile(path, 'utf8') + '\n<!-- stale fixture -->';
   await writeFile(path, stale); await assert.rejects(build('--check'), /FIRST_USE_NOTICE\.html is stale/);

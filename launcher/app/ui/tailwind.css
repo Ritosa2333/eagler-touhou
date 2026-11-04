@@ -22,6 +22,9 @@
   --color-input:var(--kit-input);--color-ring:var(--kit-ring);--font-sans:var(--kit-font);
   --radius-sm:4px;--radius-md:6px;--radius-lg:8px;--radius-xl:12px;
 }
+.ui-kit-choice {transition:background-color 320ms cubic-bezier(.22,.7,.2,1),color 320ms cubic-bezier(.22,.7,.2,1),box-shadow 320ms cubic-bezier(.22,.7,.2,1)}
+@media(prefers-reduced-motion:reduce) {.ui-kit-choice {transition:none}}
+.less-motion .ui-kit-choice {transition:none}
 @layer components {
   .ui-kit-button,.ui-kit-choice,.ui-kit-select-trigger {cursor:pointer;line-height:1.4;touch-action:manipulation}
   .ui-kit-input-group:has(:disabled) {opacity:.5}

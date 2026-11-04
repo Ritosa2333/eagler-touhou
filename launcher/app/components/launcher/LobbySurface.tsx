@@ -98,8 +98,8 @@ export function LobbySurface({
         </section>
         <div className="lobby-rooms-column">
         <header className="lobby-room-tools">
-          <div className="lobby-actions">{roomTools}</div>
           {roomFilters}
+          <div className="lobby-actions">{roomTools}</div>
         </header>
         <section
           className="lobby-list-surface"
@@ -109,10 +109,7 @@ export function LobbySurface({
           <ul className="lobby-room-list" id="roomList" aria-busy={loading} hidden={!hasRooms}>
             {roomList}
           </ul>
-          <div className="lobby-list-loading" id="listLoading" role="status" hidden={!loading}>
-            <i className="lobby-preload-spinner" aria-hidden="true" />
-            <span className="lobby-sr-only">{t('lobby.loadingHint')}</span>
-          </div>
+          <div className="visually-hidden" id="listLoading" role="status" hidden={!loading}>{t('lobby.loadingHint')}</div>
           {emptyState && (
             <div className="lobby-empty" id="emptyState">
               <img src={roomUsersArtwork} alt="" width="36" height="36" />

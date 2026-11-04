@@ -80,7 +80,7 @@ export function ProfilePreview({interactive = true, active, href}: {interactive?
     refresh(); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh); window.addEventListener('storage', refresh);
     return () => {window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh); window.removeEventListener('storage', refresh);};
   }, []);
-  const content = <span aria-hidden="true">{imageData(avatar) ? <img src={avatar} alt=""/> : <NavigationIcon name="profile"/>}</span>;
+  const content = <><span aria-hidden="true">{imageData(avatar) ? <img src={avatar} alt=""/> : <NavigationIcon name="profile"/>}</span><svg className="book-profile-trace" viewBox="0 0 40 40" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="37" rx="7" pathLength="100"/></svg></>;
   return <NavigationButton asChild variant="ghost" size="icon" className="masthead-action book-profile-trigger [&_svg]:size-5">{interactive ? <AppLink href={href} aria-label={t('profile.navigation')} aria-current={active ? 'page' : undefined}>{content}</AppLink>
     : <a href={href} aria-label={t('profile.navigation')} aria-current={active ? 'page' : undefined}>{content}</a>}</NavigationButton>;
 }
