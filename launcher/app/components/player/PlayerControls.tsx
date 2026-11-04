@@ -132,7 +132,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>
