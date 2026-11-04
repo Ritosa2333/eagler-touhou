@@ -121,7 +121,8 @@ try {
       });
       for (const name of ['panel','overlay']) {
         const r=compact[name],s=compact.screen;
-        assert(r.x >= s.x+s.w*.65, name+' stays on the native information side');
+        if(name==='panel')assert(r.x<s.x+s.w*.1,'compact menu follows TH05 top-left placement');
+        else assert(r.x>=s.x+s.w*.65,'information stays on the native information side');
         assert(r.x+r.w <= s.x+s.w+2 && r.y >= s.y-2 && r.y+r.h <= s.y+s.h+2,name+' stays inside the picture');
       }
       assert(Math.abs(compact.screen.w/compact.screen.h-1.6)<.01,'original 640x400 picture ratio');
@@ -137,12 +138,7 @@ try {
         await touch.detach();
       }
       await page.screenshot({path:resolve(out,'compact.png')});
-      await wait(async () => {
-        const {retry} = await read();
-        if(retry.state==='unavailable')throw Error(game+' prepared retry failed');
-        return retry.state==='ready';
-      },game+' original background target prepared',180000);
-      console.log(game,'original background retry ready');
+      assert.equal((await read()).retry.state,'idle','no background emulator is created');
       // Draft setup edits must not replace the committed target on quick retry.
       await press('F12');
       await frame.select('[data-jump=stage]','1');
@@ -158,8 +154,7 @@ try {
       assert.equal(retry.native.practice.setup.phase,Number(phase));
       assert.equal(retry.native.practice.options.lockPower,true);
       assert.equal(retry.native.practice.options.invincible,true);
-      assert.equal(retry.retry.last.cached,true,'retry consumes the original prepared attempt');
-      assert.equal(retry.retry.last.cachedReady,true,'prepared target was parked before retry');
+      assert.equal(retry.retry.state,'idle','retry does not leave a standby emulator');
       const parked = {x:retry.native.x,y:retry.native.y,elapsed:retry.native.practice.elapsed};
       await new Promise(r => setTimeout(r,700));
       const stillWaiting = (await read()).native;
@@ -167,17 +162,15 @@ try {
       console.log(game,'prepared retry consumed',JSON.stringify(retry.retry.last));
       await press('F12');
       await frame.waitForSelector('#practice-panel.practice-full:not([hidden])',{visible:true});
-      await click('[data-practice=preparedRetry]');
-      await wait(async () => (await read()).retry.state==='idle',game+' disable background preparation',15000);
-      await click('[data-practice=preparedRetry]');
-      await wait(async () => (await read()).retry.state==='ready',game+' re-enable original background preparation',180000);
+      assert.equal(await frame.$('[data-practice=preparedRetry]'),null);
       await page.setViewport({width:480,height:800,isMobile:mobile,hasTouch:mobile});
       await frame.$eval('#practice-panel',node=>{node.scrollTop=0;});
       const bounds = await frame.$eval('#practice-panel', node => {
         const r = node.getBoundingClientRect(), s = node.parentElement.getBoundingClientRect();
         return {panel:[r.x,r.y,r.width,r.height],screen:[s.x,s.y,s.width,s.height],viewport:[innerWidth,innerHeight]};
       });
-      bounds.panel.forEach((n,i) => assert(Math.abs(n-bounds.screen[i]) < 2,'panel follows the rendered picture on narrow screens'));
+      assert(Math.abs(bounds.panel[0]-(bounds.screen[0]+bounds.screen[2]*.40625))<3,'setup follows TH05 placement');
+      assert(Math.abs(bounds.panel[2]-bounds.screen[2]*.5156)<3,'setup follows TH05 width');
       const [sx,sy,sw,sh]=bounds.screen;
       assert(sx>=-2&&sy>=-2&&sx+sw<=bounds.viewport[0]+2&&sy+sh<=bounds.viewport[1]+2,'picture stays visible inside the iframe viewport');
       assert(Math.abs(sw/sh-1.6)<.01,'narrow screen retains the original picture ratio');
