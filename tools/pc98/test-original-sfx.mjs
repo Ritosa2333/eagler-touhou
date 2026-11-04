@@ -13,8 +13,8 @@ const server=createServer(async(request,response)=>{
   const match=/^\/(th0[234])\/(.+)$/.exec(decodeURIComponent(request.url));
   if(!match){response.writeHead(404).end();return;}
   const [,game,name]=match,base=resolve(root,'ports',game,'build-eagler');
-  const file=name==='disk.gz'?resolve(workspace,disks[game]):resolve(base,name);
-  if(name!=='disk.gz'&&!file.startsWith(base+sep)){response.writeHead(400).end();return;}
+  const file=name==='disk.gz'?resolve(workspace,disks[game]):name==='original-sfx.mjs'?resolve(root,'common/pc98/original-sfx.mjs'):resolve(base,name);
+  if(name!=='disk.gz'&&name!=='original-sfx.mjs'&&!file.startsWith(base+sep)){response.writeHead(400).end();return;}
   try{const data=await readFile(file);response.writeHead(200,{'Content-Type':name.endsWith('.wasm')?'application/wasm':/\.(m?js)$/.test(name)?'text/javascript':'application/octet-stream'});response.end(data);}
   catch{response.writeHead(404).end();}
 });
@@ -36,6 +36,13 @@ try{
       while(performance.now()-started<1000&&peak<0.001){
         await new Promise(resolve=>setTimeout(resolve,10));analyser.getFloatTimeDomainData(samples);
         for(const value of samples)peak=Math.max(peak,Math.abs(value));latency=performance.now()-started;
+      }
+      if(game==='th02'){
+        sfx.lastShot=sfx.context.currentTime;
+        const before=sfx.played;sfx.play(1);sfx.play(1);sfx.play(2);
+        if(sfx.played!==before+1)throw Error('shot sound throttle did not preserve other effects');
+        await new Promise(resolve=>setTimeout(resolve,150));sfx.play(1);
+        if(sfx.played!==before+2)throw Error('shot sound did not resume');
       }
       sfx.dispose();return {peak,latency};
     },game);
