@@ -19,7 +19,6 @@ namespace {
 // STD 舞台背景两组均在动画层 0（优先级 5）之前：背景组 3 / 前景组 4
 // （th15 StageDrawFrame 3/6 的 th13 排位：层 0 前置约束下压缩到 3/4）。
 constexpr i32 kRunUpdatePriority = 20;
-constexpr i32 kRunTextPriority = 76;
 constexpr std::array<i32, 5> kStageDrawPriorities = {20, 24, 19, 32, 29};
 constexpr std::array<i32, 2> kSceneryDrawPriorities = {2, 5};
 }  // namespace
@@ -71,8 +70,10 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         fail("Run scene callback registration failed");
     if (scheduler.add(callbacks[1], FramePass::Draw, kRunTextPriority) < 0)
         fail("Run scene text callback registration failed");
-    // 405530 registers405d60 at draw priority0x33; enqueue before ASCII's
-    // screen-space draw78, independently from HUD visibility and text order.
+    // 0x424f4b-0x424fb1：HUD 数字生产者 0x4282a0 于 0x2e（kRunTextPriority
+    // 见 RunScene.hpp），先于 ASCII pass1 消费者 0x2f 同帧消费；灵界倒计时
+    // 0x405d60 为 0x33=51（0x405607），在 pass1 之后、pass0(0x4a) 之前，
+    // 其 space0 文本同帧由 pass0 消费。
     callbacks[2].owner = this;
     callbacks[2].enabled = true;
     callbacks[2].run = [](void* p) {

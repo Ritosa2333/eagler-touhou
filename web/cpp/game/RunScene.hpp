@@ -28,6 +28,14 @@ namespace th13 {
 using RunDialogObserver = void (*)(i32 entry);
 extern RunDialogObserver run_dialog_observer;
 
+// 原版 0x424f45-0x424fc8（GameHud 装配，objdump 实读）：HUD 数字绘制 thunk
+// 0x4282a0（call 0x427910：Clear Bonus/符卡数字/普通 HUD）经 0x471050 注册
+// 于 Draw 优先级 0x2e=46；ASCII 队列寿命初值 0（0x4db2e0 落 .data 虚拟尾段
+// 零填充，无写入者），故生产者必须先于消费者（pass1=0x2f、pass0=0x4a）同帧
+// 入队并消费。端口此前 76 晚于 pass1 消费者，space1 文本（Clear Bonus、符卡
+// 数字）次帧在 AsciiText::update 判死，永不绘制（2026-11-05 试玩实测回归）。
+inline constexpr i32 kRunTextPriority = 46;
+
 
 struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices,
                           AnmDrawServices {
