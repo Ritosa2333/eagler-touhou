@@ -56,7 +56,9 @@ export class ConfirmedTape{
   }
   confirm(prefix,dirty=false){
     if(this.end||dirty)return false;
-    if(!Number.isInteger(prefix)||prefix<this.length||prefix>MAX_FRAMES)throw Error('录像确认范围越界');
+    if(!Number.isInteger(prefix)||prefix<0||prefix>MAX_FRAMES)throw Error('录像确认范围越界');
+    // A rollback may temporarily report an older already-published prefix.
+    if(prefix<this.length)return false;
     const batch=[];let size=0;
     for(let f=this.length;f<prefix;f++){const row=this.pending.get(f);if(!row)throw Error('录像确认历史缺帧');const data=this.encoder.encode(JSON.stringify(row));batch.push(data);size+=data.length;}
     if(this.used+size>MAX_RAW)throw Error('录像输入历史达到容量上限');

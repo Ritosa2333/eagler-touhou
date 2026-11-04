@@ -1,6 +1,6 @@
 // Audio uses the same original PMD archives and effect driver as the players.
 export function createPc98SpectatorAudio(game,music,onError=()=>{}){
-  let context,bgm,sfx,native,closed=false,ready=false,muted=true,appliedMuted=null,loading,lastName='',sequence=0,nativeState={cue:2,end:0,ids:[]},commands=[];
+  let context,bgm,sfx,native,closed=false,ready=false,muted=true,appliedMuted=null,loading,lastName='',sequence=0,effectRequests=0,nativeState={cue:2,end:0,ids:[]},commands=[];
   const facade={th_get:n=>n===79?nativeState.cue:n===11?nativeState.end:0,th_sound_event:n=>nativeState.ids[n-nativeState.end+nativeState.ids.length]||0};
   async function disk(settings){
     if(game==='03'){
@@ -27,7 +27,8 @@ export function createPc98SpectatorAudio(game,music,onError=()=>{}){
     else if(data.type==='se-stop')sfx?.stop();
   }
   return {
-    event(data){if(closed)return;if(!ready){if(data.type==='music'||data.type==='native-audio'||data.type==='battle-audio'&&(data.event[0]>>>8)!==12||data.type==='replay-audio-reset'){commands.push(data);if(commands.length>64)commands.shift();}if(data.type==='se')sequence=data.event.sequence;return;}try{apply(data);}catch(error){onError(error);}},
+    event(data){if(closed)return;if(data.type==='sfx'||data.type==='se'||data.type==='battle-audio'&&(data.event[0]>>>8)===12)effectRequests++;
+      if(!ready){if(data.type==='music'||data.type==='native-audio'||data.type==='battle-audio'&&(data.event[0]>>>8)!==12||data.type==='replay-audio-reset'){commands.push(data);if(commands.length>64)commands.shift();}if(data.type==='se')sequence=data.event.sequence;return;}try{apply(data);}catch(error){onError(error);}},
     start(settings){
       loading??=(async()=>{
         if(game==='01'){const {LocalAudio}=await import('./netplay/audio.js');native=new LocalAudio();if(music==='none'){native.track=async()=>{};native.prewarm=()=>{};}await native.unlock();context=native.context;}
@@ -44,7 +45,7 @@ export function createPc98SpectatorAudio(game,music,onError=()=>{}){
     },
     mode(silent){muted=!!silent;if(!context||appliedMuted===muted)return;appliedMuted=muted;if(muted){sfx?.stop();native?.effect?.stop();void context.suspend();void sfx?.context.suspend();}
       else{void context.resume();void sfx?.resume();native?.update(facade);}},
-    info(){return {state:context?.state??'loading',effects:sfx?.played??0,effectsPeak:sfx?.peak??0};},
+    info(){return {state:context?.state??'loading',effects:sfx?.played??0,effectRequests,effectsPeak:sfx?.peak??0};},
     stop(){closed=true;native?.stop();bgm?.dispose();sfx?.dispose();if(!native)void context?.close();},
   };
 }

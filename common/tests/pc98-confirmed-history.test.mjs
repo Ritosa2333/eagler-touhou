@@ -13,6 +13,7 @@ for(const game of ['01','02','03','04'])test(`TH${game} publishes only corrected
   for(let frame=50;frame<120;frame++)tape.stage(frame,row(frame,'corrected'));
   assert.equal(tape.confirm(120),true);
   assert.equal(tape.length,120);assert.deepEqual(tape.row(49),row(49));assert.deepEqual(tape.row(50),row(50,'corrected'));
+  assert.equal(tape.confirm(100),false);assert.equal(tape.length,120);assert.deepEqual(tape.row(50),row(50,'corrected'));
   assert.deepEqual(tape.slice(118,120),[row(118,'corrected'),row(119,'corrected')]);
   assert.throws(()=>tape.rewind(119));
   tape.finish('end');assert.deepEqual(tape.snapshot().rows,tape.slice());
