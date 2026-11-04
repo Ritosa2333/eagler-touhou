@@ -1,13 +1,14 @@
 // A viewer owns its replica and only receives the host's confirmed prefix.
-export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,stable,channelFactory=name=>new BroadcastChannel(name),onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
+export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,channelFactory=name=>new BroadcastChannel(name),onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
   const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
   if(!room||!run)throw Error('观战房间身份无效');
   const viewer=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
   const channel=channelFactory(`pc98-room-${game}-${room}-${run}`),rows=[];
-  let header,identity,replica,available=0,end=null,closed=false,busy=false,booting=false,paused=false,timer=null,pullTimer=null,frames=0;
+  const abort=new AbortController();
+  let header,identity,replica,available=0,end=null,points=[],closed=false,busy=false,booting=false,paused=false,timer=null,pullTimer=null,frames=0;
   let last=performance.now(),budget=0;
   const fail=error=>{stop();onError(error);};
-  function stop(){if(closed)return;closed=true;clearTimeout(timer);clearInterval(pullTimer);channel.close();replica?.stop();}
+  function stop(){if(closed)return;closed=true;abort.abort();clearTimeout(timer);clearInterval(pullTimer);channel.close();replica?.stop();}
   function pull(){if(!closed)channel.postMessage({type:'pull',viewer,first:rows.length});}
   async function pump(){
     if(closed||busy||!replica)return;busy=true;
@@ -21,8 +22,12 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   }
   async function boot(){
     if(booting||replica||closed)return;booting=true;
-    try{const r=await createReplica(header,{onFrame,onEvent});if(closed){r.stop();return;}replica=r;last=performance.now();await replica.present();frames++;void pump();}
-    catch(error){fail(error);}
+    try{const r=await createReplica(header,{onFrame,onEvent,signal:abort.signal});if(closed){r.stop();return;}replica=r;
+      const point=points.filter(p=>p.frame>0&&p.frame<=rows.length).at(-1);
+      if(point&&readLocalPoint){const base=points[0],baseBytes=await readLocalPoint(channel,viewer,base,abort.signal),bytes=await readLocalPoint(channel,viewer,point,abort.signal);
+        const restored=await r.restore(bytes,baseBytes);if(restored.frame!==point.frame||restored.proof!==rows[point.frame-1].proof)throw Error('观战检查点与确认历史不一致');}
+      if(closed)return;last=performance.now();await replica.present();frames++;void pump();}
+    catch(error){if(!closed)fail(error);}
   }
   channel.onmessage=({data})=>{
     if(closed||data?.type!=='slice'||data.viewer!==viewer)return;
@@ -35,10 +40,12 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       data.rows.forEach((row,i)=>validateRow(row,data.header,rows.length+i));
       if(data.end&&(data.end.frame!==data.available||typeof data.end.reason!=='string'))throw Error('观战结束边界无效');
       if(end&&stable(end)!==stable(data.end))throw Error('观战结束边界改变');
-      header??=data.header;identity??=nextIdentity;rows.push(...data.rows);available=data.available;end=data.end||end;
-      if(!replica)void boot();if(rows.length<available)pull();
+      const index=validatePointIndex?validatePointIndex(data.points||[],data.available):[];
+      for(let i=0;i<points.length;i++)if(stable(points[i])!==stable(index[i]))throw Error('已发布观战检查点改变');
+      header??=data.header;identity??=nextIdentity;rows.push(...data.rows);available=data.available;end=data.end||end;points=index;
+      if(rows.length===available&&!replica)void boot();if(rows.length<available)pull();
     }catch(error){fail(error);}
   };
   pullTimer=setInterval(pull,250);pull();
-  return {stop,pause(value){paused=!!value;last=performance.now();},get frame(){return replica?.frame??0;},get received(){return rows.length;},get frames(){return frames;},get ended(){return !!end&&replica?.frame===end.frame;}};
+  return {stop,pause(value){paused=!!value;last=performance.now();},get frame(){return replica?.frame??0;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},get ended(){return !!end&&replica?.frame===end.frame;}};
 }

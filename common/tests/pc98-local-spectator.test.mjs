@@ -27,3 +27,16 @@ test('viewer rejects conflicting confirmed history',async()=>{
   channel.onmessage({data:{type:'slice',viewer:request.viewer,header,first:0,rows:[{...row,proof:'changed'}],available:1,end:null}});
   assert.match(error.message,/重传冲突/);viewer.stop();
 });
+
+test('a late viewer restores the latest confirmed checkpoint',async()=>{
+  let channel,request,restored=false,frame=0,error;
+  const header={version:VERSION,game:'02',adapter:'confirmed-worker/1',players:2,hostSlot:0,tickMs:10,settings:{},identity:'a'.repeat(64),opening:{}};
+  const row={inputs:[32,0],offlineMask:0,proof:'ok',hash:null},points=[{frame:0},{frame:2}];
+  const viewer=createLocalSpectator({game:'02',options:{netplayUrl:'ws://localhost/?room=r&run=1'},validateHeader,validateRow,stable,
+    validatePointIndex:index=>index,readLocalPoint:async(_channel,_viewer,point)=>new Uint8Array([point.frame]),
+    channelFactory:()=>channel={postMessage:m=>request=m,close(){}},
+    createReplica:async()=>({get frame(){return frame;},async restore(bytes,base){assert.deepEqual([...bytes],[2]);assert.deepEqual([...base],[0]);frame=2;restored=true;return {frame,proof:'ok'};},async advance(){frame++;},async present(){},stop(){}}),onError:e=>error=e});
+  channel.onmessage({data:{type:'slice',viewer:request.viewer,header,first:0,rows:[row,row,row],available:3,points,end:null}});
+  await new Promise(resolve=>setTimeout(resolve,50));
+  assert.equal(restored,true);assert.equal(viewer.frame,3);assert.equal(error,undefined);viewer.stop();
+});
