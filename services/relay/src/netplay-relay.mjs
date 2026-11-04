@@ -38,6 +38,7 @@ import {
 } from '../../../common/contracts/product-catalog.mjs';
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
 import { COOPERATIVE_SPECTATOR_MARKERS, SpectatorStageRelay } from './spectator-stages.mjs';
+import {isPc98SpectatorRoom,Pc98SpectatorRelay} from './pc98-spectator.mjs';
 import {SpectatorReplayTransfer} from './spectator-replay.mjs';
 import { th09PlayerStats, acceptTh09MatchStats } from './th09-room-stats.mjs';
 import {
@@ -492,7 +493,7 @@ function stopHostSpectatorStream(roomId, runId, run, source) {
   console.log(`SPECTATOR STOP room=${roomId} run=${runId} source=${source} ended=${run.spectatorComplete === true} viewers=${run.spectatorClients.size}`);
   // A validated cooperative End already closes admission. Existing viewers
   // still own the continuous replay prefix and may be paused far behind it.
-  if (run.spectatorStages?.ended) return;
+  if (run.spectatorStages?.ended || run.spectatorPc98?.ended) return;
   stopSpectatorStream(run);
 }
 
@@ -1798,7 +1799,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
       }
       const batch = [first];
       index++;
-      if (first.length === 46 || first.length === 126)
+      if (!run.spectatorPc98 && (first.length === 46 || first.length === 126))
         while (batch.length < 64 && history[index]?.length === first.length) batch.push(history[index++]);
       if (!sendSpectatorPayload(socket, Buffer.concat(batch), roomId, runId, spectatorId)) return;
       socket.spectatorReplayTimer = setTimeout(replay, 0);
@@ -2060,6 +2061,18 @@ server.on('connection', (socket, request) => {
       if (run.spectatorStopped) return;
       if (player !== 0) return;
       const payload = incoming.subarray(1);
+      if(isPc98SpectatorRoom(roomId)&&payload.length>=4&&payload[0]===0x50&&payload[1]===0x39&&payload[2]===0x38&&payload[3]===0x53){
+        try{
+          const first=!run.spectatorPc98,stream=run.spectatorPc98||new Pc98SpectatorRelay(run.playerCount),kind=stream.accept(payload);
+          if(run.spectatorGraceTimer){clearTimeout(run.spectatorGraceTimer);run.spectatorGraceTimer=null;}
+          run.spectatorPc98=stream;run.spectatorTimeline=true;run.spectatorAdmissionOpen=!stream.ended;run.spectatorComplete=stream.ended;
+          run.spectatorHistory=stream.history;run.spectatorHistoryBytes=stream.bytes;run.onSpectatorAvailabilityChange=()=>roomDirectory.changed();
+          for(const [id,target] of run.spectatorClients)if(!target.spectatorReplaying)sendSpectatorPayload(target,payload,roomId,runId,id);
+          if(first||kind===3){broadcastLobby(room);roomDirectory.changed();}
+          if(first)for(const id of room.lobby.spectators.keys()){const lobby=room.lobbyClients.get(id);if(lobby)sendLobby(lobby,{type:'spectator-start',serial:room.lobby.startSerial,room:lobbySnapshot(room)});}
+        }catch(error){console.log(`PC98 SPECTATOR STOP room=${roomId} run=${runId} ${error.message}`);stopSpectatorStream(run);}
+        return;
+      }
       if (acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload)) return;
       if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0 && !run.spectatorHistoryUnavailable) return;
       const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
