@@ -84,12 +84,12 @@ try{
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';
     assert(log.includes('mode='+route),'must exercise the requested '+route+' route: '+log);
     assert.equal((await page.evaluate(()=>events.filter(e=>e.event==='first-frame'))).length,count);results.push({players:count,states});console.log('MP confirmed gameplay',JSON.stringify(states));
-    const native=frames()[0].childFrames().find(frame=>/netplay\/runtime.html/.test(frame.url()));
+    const native=frames()[0];
     await page.evaluate(()=>rpc(0,'keyboard',{code:'Escape',down:true}));
-    await wait(()=>native.evaluate(()=>JSON.parse(th04Sync.replayProof())[9]===true),'native synchronized pause',5000);
+    await wait(()=>native.evaluate(async()=>JSON.parse((await import('./netplay/room.js')).managedAPI.replayProof())[9]===true),'native synchronized pause',5000);
     await page.evaluate(()=>rpc(0,'keyboard-clear'));
     await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowDown',down:true}));
-    await wait(()=>native.evaluate(()=>JSON.parse(th04Sync.replayProof())[10]===1),'native synchronized quit selection',5000);
+    await wait(()=>native.evaluate(async()=>JSON.parse((await import('./netplay/room.js')).managedAPI.replayProof())[10]===1),'native synchronized quit selection',5000);
     await page.evaluate(()=>rpc(0,'keyboard-clear'));
     await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:true}));
     await wait(()=>page.evaluate(count=>{
