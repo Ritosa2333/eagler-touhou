@@ -78,6 +78,24 @@ test('equal package identities reuse stable resource URLs and retain beta progra
  assert.equal(changed.releaseCatalog.games.th06.descriptor,'beta.package.json');
 });
 
+test('TH13 beta saves use a separate localStorage key', () => {
+ const entries = new Map([['th13.save', 'stable']]);
+ class Storage {
+  getItem(key) {return entries.get(key) ?? null;}
+  setItem(key, value) {entries.set(key, value);}
+  removeItem(key) {entries.delete(key);}
+ }
+ const beta = {location: {href: 'https://example.test/beta/runtime/th13/th13.html'},
+  indexedDB: new IDBFactory(), Storage, localStorage: new Storage()};
+ installRuntimeStorageChannel(beta);
+ assert.equal(beta.localStorage.getItem('th13.save'), null);
+ beta.localStorage.setItem('th13.save', 'beta');
+ assert.equal(beta.localStorage.getItem('th13.save'), 'beta');
+ assert.equal(entries.get('th13.save'), 'stable');
+ beta.localStorage.removeItem('th13.save');
+ assert.deepEqual([...entries], [['th13.save', 'stable']]);
+});
+
 test('prebuilt beta programs receive isolation before scripts and freeze with updated identities',async()=>{
  const root=await mkdtemp(join(tmpdir(),'beta-publication-'));
  try {

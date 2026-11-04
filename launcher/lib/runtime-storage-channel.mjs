@@ -22,5 +22,16 @@ export function installRuntimeStorageChannel(target) {
     factory.databases=async()=> (await list()).filter(db=>db.name?.startsWith(prefix))
       .map(db=>({...db,name:db.name.slice(prefix.length)}));
   }
+  // TH13 reads and writes this key from both its shell and its Wasm bridge.
+  const storage = target.Storage?.prototype;
+  if (storage) {
+    for (const method of ['getItem', 'setItem', 'removeItem']) {
+      const original = storage[method];
+      storage[method] = function (key, ...args) {
+        const scopedKey = this === target.localStorage && key === 'th13.save' ? prefix + key : key;
+        return original.call(this, scopedKey, ...args);
+      };
+    }
+  }
   target.__eaglerStorageChannel='beta';
 }
