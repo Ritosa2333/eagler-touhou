@@ -1,3 +1,4 @@
+import {mountPauseMenu} from './pc98-pause-menu.mjs';
 import {WorkerNP21} from './solo-worker-client.js';
 import {SoloMusic} from './solo-music.js';
 import {OriginalSfx} from './original-sfx.mjs';
@@ -21,7 +22,7 @@ const replaySources=['../direct-drag.js','../player-ui.js','../solo.js','../solo
   './external-host.js','./external-loader.js','./external-codec.js','./external-recorder.js','./external-ui.js','./external-lifecycle.js'];
 const keys={1:['ArrowUp','ArrowUp',38],2:['ArrowDown','ArrowDown',40],4:['ArrowLeft','ArrowLeft',37],8:['ArrowRight','ArrowRight',39],
   16:['KeyX','x',88],32:['KeyZ','z',90],128:['Escape','Escape',27],256:['Enter','Enter',13]};
-let emulator,assist,soloMusic,localSfx,recorder,lang,previous=0,loop=0,playback=false;
+let emulator,assist,soloMusic,localSfx,recorder,lang,previous=0,loop=0,playback=false,pausePrevious=0,launchSettings;
 const fire=new FireControl(),writes=new Set();
 const report=error=>globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});
 async function saveReplay(blob){
@@ -34,11 +35,26 @@ function send(bits){
   }
   previous=bits;
 }
+const pauseMenu=mountPauseMenu(document.getElementById('screen'),{
+  resume(){pauseMenu.close();globalThis.__eaglerPC98Input.clear();pausePrevious=0;emulator?.run();soloMusic?.resume();void localSfx?.resume();canvas.focus();},
+  exit(){pauseMenu.close();void naturalExit().catch(report);},
+  discard(){pauseMenu.close();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});},
+  restart(){pauseMenu.close();const settings=launchSettings;managedAPI.stop();void start(settings).catch(report);},
+});
 function tick(now){
   if(!emulator)return;
+  const sample=globalThis.__eaglerPC98Input.sample(),edge=sample&~pausePrevious;pausePrevious=sample;
+  if(pauseMenu.visible){
+    if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);
+    if(edge&(32|512|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();
+    loop=requestAnimationFrame(tick);return;
+  }
+  if((edge&128)&&emulator.snapshot.state?.phase===1){
+    send(0);emulator.pause();soloMusic?.suspend();void localSfx?.context.suspend();globalThis.__eaglerPC98Input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;
+  }
   if(emulator.state==='running'&&!playback){
     const state=emulator.snapshot.state,playing=state?.phase===1,input=globalThis.__eaglerPC98Input;
-    let bits=input.sample();
+    let bits=sample;
     const shot=fire.sample(!!(bits&512),!!(bits&32),now);
     bits=(bits&~544)|(shot?32:0);
     send(bits);
@@ -63,7 +79,7 @@ async function naturalExit(){
   try{await syncFiles();}finally{globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 }
 async function start({language,music,options}){
-  lang=language==='ja'?'jp':'cn';playback=!!options.replayPath;
+  launchSettings={language,music,options};lang=language==='ja'?'jp':'cn';playback=!!options.replayPath;
   let replay;
   if(playback){
     const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(options.replayPath));
@@ -128,6 +144,6 @@ export const managedAPI={
     throw Error('用户文件操作无效');
   },
   playback(message){if(emulator)throw Error('请先结束本局');return start({language:'ja',music:'ogg',options:{replayPath:message.path}});},
-  stop(){cancelAnimationFrame(loop);previous=0;fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
+  stop(){pauseMenu.close();cancelAnimationFrame(loop);previous=0;pausePrevious=0;fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
     recorder=localSfx=soloMusic=undefined;const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;},
 };
