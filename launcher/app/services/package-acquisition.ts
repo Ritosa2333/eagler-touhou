@@ -1,4 +1,5 @@
 import {normalizeGameVersion} from "../../package/game-version.mjs";
+import {betaModeForBase} from '../../src/launcher/release-channel.mts';
 import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
@@ -89,7 +90,7 @@ function requiredShared(game: GameId) {const product = PRODUCT_GAMES[game]; retu
  * installer remain sole mutation owners; this adapter does not invent a store,
  * a descriptor policy, or permission for an imported executable Runtime. */
 export function createPackageAcquisition({metadata, baseUrl, translate: t, fetchImpl = globalThis.fetch,
-  network, dependencies, getGameVersion = () => "original", indexedDBAvailable = () => !!globalThis.indexedDB?.open, requestPersistence, testBuild = new URL(baseUrl).searchParams.has('test')}: {
+  network, dependencies, getGameVersion = () => "original", indexedDBAvailable = () => !!globalThis.indexedDB?.open, requestPersistence, testBuild = betaModeForBase(baseUrl)||new URL(baseUrl).searchParams.has('test')}: {
   getGameVersion?: (game: GameId) => GameVersion;
   metadata: PreparationMetadata;
   baseUrl: string;

@@ -78,10 +78,12 @@ def main() -> int:
             "storage": {
                 "eagler-touch-help-seen-v8": "new-setting",
                 "eagler-new-only": "keep-me",
+                "th13.save": "new-th13-stable",
             },
             "databases": {
                 "/savesth07": "new-th07",
                 "/savesth08": "new-th08",
+                "beta:/savesth07": "new-beta-th07",
             },
         })
 
@@ -90,16 +92,22 @@ def main() -> int:
             "storage": {
                 "eagler-touch-help-seen-v8": "old-setting",
                 "eagler-old-only": "bring-me",
+                "th13.save": "old-th13-stable",
+                "beta:th13.save": "old-th13-beta",
             },
             "databases": {
                 "/savesth06": "old-th06",
                 "/savesth07": "old-th07",
                 "/savesth08": "old-th08",
+                "beta:/savesth06": "old-beta-th06",
+                "beta:/savesth07": "old-beta-th07",
+                "beta:/savesth13": "old-beta-th13",
             },
         })
 
         page.goto("http://migration.test/migrate.html?target=https://migration.test/migrate.html")
         page.wait_for_function("() => !document.getElementById('migrate').disabled")
+        assert page.locator("#saveCount").inner_text() == "6 条记录"
         with context.expect_page() as receiver_info:
             page.locator("#migrate").click()
         receiver = receiver_info.value
@@ -120,6 +128,11 @@ def main() -> int:
             "th06": receiver.evaluate(READ_DB, "/savesth06"),
             "th07": receiver.evaluate(READ_DB, "/savesth07"),
             "th08": receiver.evaluate(READ_DB, "/savesth08"),
+            "betaTh06": receiver.evaluate(READ_DB, "beta:/savesth06"),
+            "betaTh07": receiver.evaluate(READ_DB, "beta:/savesth07"),
+            "betaTh13": receiver.evaluate(READ_DB, "beta:/savesth13"),
+            "th13Stable": receiver.evaluate("localStorage.getItem('th13.save')"),
+            "th13Beta": receiver.evaluate("localStorage.getItem('beta:th13.save')"),
         }
         assert result["settingConflict"] == "new-setting", result
         assert result["newOnly"] == "keep-me", result
@@ -127,6 +140,11 @@ def main() -> int:
         assert result["th06"] == "old-th06", result
         assert result["th07"] == "new-th07", result
         assert result["th08"] == "old-th08", result
+        assert result["betaTh06"] == "old-beta-th06", result
+        assert result["betaTh07"] == "new-beta-th07", result
+        assert result["betaTh13"] == "old-beta-th13", result
+        assert result["th13Stable"] == "new-th13-stable", result
+        assert result["th13Beta"] == "old-th13-beta", result
 
         print(json.dumps({"originMigrationBrowser": "PASS", **result}, ensure_ascii=False))
         browser.close()

@@ -8,6 +8,7 @@ import { createDevelopmentSiteManifestFromContent } from "../lib/development-sit
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { DEFAULT_BUILD_GAMES } from "../lib/product-selection.mjs";
 
 test("development site manifest", async () => {
 const root = await mkdtemp(join(resolve(import.meta.dirname, "../.."), "eagler-development-manifest-"));
@@ -38,7 +39,7 @@ assert.equal(manifest.schema, SITE_MANIFEST_SCHEMA);
 assert.equal(manifest.profile, "web-development");
 assert.equal(manifest.shared.testBuild, true);
 assert.equal(manifest.shared.resourceMode, "hosted");
-assert.deepEqual(Object.keys(manifest.games), Object.keys(PRODUCT_GAMES));
+assert.deepEqual(Object.keys(manifest.games), DEFAULT_BUILD_GAMES);
 assert.doesNotThrow(() => validateSiteManifest(manifest));
 assert.equal(manifest.shared.netplayRelay, undefined);
 const th09Only = await createManifest({ games: ["th09"] });

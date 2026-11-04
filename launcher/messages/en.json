@@ -2059,5 +2059,11 @@
   "settings_th05_phaseTimeout": "Phase time / turns remaining",
   "settings_th05_timeoutAsTime": "Show attack cycles as time",
   "settings_th05_numericDream": "Numeric dream meter",
-  "settings_th05_numericPower": "Numeric power meters"
+  "settings_th05_numericPower": "Numeric power meters",
+  "developer_options": "Developer options",
+  "developer_betaFeatures": "Beta features",
+  "developer_betaWarning": "You are entering beta mode. This mode lets you try unstable beta features. Save and replay data may become incorrect or be lost, and games may be very unstable. Saves, replays and the multiplayer lobby are therefore separate from the stable version. Please proceed carefully. You can leave beta mode at any time using this button.",
+  "developer_betaConfirm": "Enter beta mode",
+  "developer_betaCancel": "Stay on stable",
+  "developer_betaUnavailable": "Beta mode is currently unavailable. Please try again later."
 }

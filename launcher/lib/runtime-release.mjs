@@ -71,7 +71,7 @@ export function validateRuntimeReleaseManifest(manifest) {
   if (!manifest || ![RUNTIME_RELEASE_SCHEMA, LEGACY_RUNTIME_RELEASE_SCHEMA].includes(manifest.schema) || manifest.protocol !== "eagler-touhou/1") {
     throw new Error("invalid Runtime Release manifest");
   }
-  const registered = Object.keys(PRODUCT_GAMES);
+  const registered = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(manifest.games ?? {}, game));
   if (!manifest.games || JSON.stringify(Object.keys(manifest.games)) !== JSON.stringify(registered)) {
     throw new Error("Runtime Release must contain every registered game in canonical order");
   }
