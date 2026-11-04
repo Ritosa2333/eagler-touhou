@@ -103,6 +103,16 @@ try {
       console.log(game,'native target ready',JSON.stringify(target.native.practice.setup),'loadMs',Math.round(performance.now()-targetStarted));
       await press('Enter');
       await wait(async () => (await read()).native?.mode === 1,game+' resume native pause',15000);
+      if(process.env.PC98_PRACTICE_FAILURE==='1'){
+        await press('Backspace');await press('F1');await press('Backspace');
+        await wait(async()=>!!(await read()).native?.practice?.outcome,game+' natural practice miss',180000);
+        await frame.waitForSelector('#practice-result-dialog[open]',{visible:true,timeout:10000});
+        assert.equal((await read()).native.practice.outcome,'failed');
+        await click('[data-practice-again]');
+        await wait(async()=>{const p=(await read()).native?.practice;return p?.ready&&p.waiting&&!p.outcome;},game+' restart after game over',120000);
+        assert.equal(await frame.$eval('#practice-result-dialog',node=>node.open),false,'result dialog closes on retry');
+        console.log('PASS',game,'natural miss, result and retry');continue;
+      }
       await frame.waitForFunction(()=>/^FPS: [1-9]\d*$/.test(document.querySelector('#pc98-game-fps')?.textContent||''),{timeout:15000});
       const fps=await frame.$eval('#pc98-game-fps',node=>({text:node.textContent,style:getComputedStyle(node).pointerEvents}));
       assert.equal(fps.style,'none');assert(Number(fps.text.slice(5))>0,'running game advances its own frame counter');
