@@ -54,6 +54,8 @@ void EmitMissFeedback(Player *player)
     if (Netplay::SideEffects::RecordCommittedMiss(player->initParam)) return;
 #endif
     g_SoundPlayer.PlaySoundByIdx(SOUND_PICHUN);
+    if (!g_GameManager.isInReplay && !g_GameManager.demoMode)
+        EaglerOptions::VibrateGamepadOnMiss();
 }
 }
 

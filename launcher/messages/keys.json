@@ -5882,6 +5882,18 @@
     "id": "input_text_saved_automatically_for_this_controller",
     "params": []
   },
+  "input.text.gamepad_vibration": {
+    "id": "input_text_gamepad_vibration",
+    "params": []
+  },
+  "input.text.test_vibration": {
+    "id": "input_text_test_vibration",
+    "params": []
+  },
+  "input.text.vibration_unavailable": {
+    "id": "input_text_vibration_unavailable",
+    "params": []
+  },
   "input.text.reset_defaults": {
     "id": "input_text_reset_defaults",
     "params": []

@@ -25,6 +25,7 @@
 #include "AsciiManager.hpp"
 #include "Chain.hpp"
 #include "Controller.hpp"
+#include "EaglerOptions.hpp"
 #include "EnemyManager.hpp"
 #include "EnemyEclInstr.hpp"
 #include "FileSystem.hpp"
@@ -2009,8 +2010,13 @@ bool SendTailKeepalive()
 
 void PresentConfirmedMisses(std::uint32_t confirmedFrame, bool audible = true)
 {
-    if (SideEffects::ConsumeConfirmedMisses(g_SessionGeneration, confirmedFrame) && audible)
+    const auto misses = SideEffects::ConsumeConfirmedMisses(g_SessionGeneration, confirmedFrame);
+    if (misses && audible)
+    {
         g_SoundPlayer.PlaySoundByIdx(SOUND_PICHUN);
+        if (!g_SpectatorMode && !g_GameManager.isInReplay && (misses & (1u << g_LocalPlayer)))
+            EaglerOptions::VibrateGamepadOnMiss();
+    }
 }
 
 int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resimulation)

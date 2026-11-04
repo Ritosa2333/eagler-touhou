@@ -27,6 +27,19 @@ test('unknown layout learns buttons and resting-negative trigger axes without as
   f.press(7,false);f.pad.axes[2]=-1;f.owner.learn(f.key,'bomb');f.owner.refresh();f.pad.axes[2]=.8;f.owner.refresh();
   assert.deepEqual(f.owner.getSnapshot().profiles[f.key].bindings.bomb,[{kind:'axis',index:2,rest:-1,value:1}]);
 });
+test('WebView-style digital presses are learned on the first poll even with another button held',()=>{
+  const f=fixture();
+  f.press(0);
+  f.owner.learn(f.key,'shoot');
+  f.pad.buttons[5]={pressed:true,value:0};
+  f.owner.refresh();
+  assert.deepEqual(f.owner.getSnapshot().profiles[f.key].bindings.shoot,[{kind:'button',index:5}]);
+  f.press(0,false);
+  f.press(5,false);
+  f.owner.sample(0,true);
+  f.pad.buttons[5]={pressed:true,value:0};
+  assert.ok(f.owner.sample(0,true)&1);
+});
 test('blur, spectator, disconnect and reconfiguration require neutral before rearming',()=>{
   const f=fixture();f.press(0);assert.equal(f.owner.sample(0,true),1);f.owner.suspend();assert.equal(f.owner.sample(0,true),0);
   f.press(0,false);f.owner.sample(0,true);f.press(0);assert.equal(f.owner.sample(0,true),1);
@@ -52,9 +65,22 @@ test('service validates Runtime identity and retires its old port on epoch repla
   const target={__eaglerGamepadInputBridge:{schema:'eagler-touhou/gamepad-input/1',...identity,origin:identity.targetOrigin}};
   let context={...identity,target};const listeners=new Set(),runtime={getInputContext:()=>context,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);}};
   const service=createPlayerGamepad({runtime,model:f.owner,window,document,playerOpen:()=>true});const old=target.__eaglerGamepadMapping;
+  const effects=[];
+  f.pad.vibrationActuator={playEffect:async(type,params)=>{effects.push([type,params]);return 'complete';}};
+  old.vibrate();
+  assert.equal(effects.length,0);
+  f.owner.setVibration(true);
+  old.vibrate();
+  assert.equal(effects.length,1);
+  assert.equal(effects[0][0],'dual-rumble');
+  context={...context,spectator:true};
+  old.vibrate();
+  assert.equal(effects.length,1);
+  context={...context,spectator:false};
   old.sample(0);f.press(0);assert.equal(old.sample(0),1);window.dispatchEvent(new Event('blur'));assert.equal(old.sample(0),0);
   const replacement={__eaglerGamepadInputBridge:target.__eaglerGamepadInputBridge};context={...context,target:replacement};for(const fn of listeners)fn();assert.equal(target.__eaglerGamepadMapping,undefined);assert.ok(replacement.__eaglerGamepadMapping,'same-epoch window replacement must bind its own port');
-  context={...context,epoch:2,target:{}};for(const fn of listeners)fn();assert.equal(replacement.__eaglerGamepadMapping,undefined);assert.equal(old.sample(0),0);service.dispose();
+  context={...context,epoch:2,target:{}};for(const fn of listeners)fn();assert.equal(replacement.__eaglerGamepadMapping,undefined);assert.equal(old.sample(0),0);
+  old.vibrate();assert.equal(effects.length,1);service.dispose();
 });
 test('custom keyboard source overrides original function and survives reload',()=>{
   const saved=new Map(),storage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)},preferences=createKeyboardPreferences(storage);

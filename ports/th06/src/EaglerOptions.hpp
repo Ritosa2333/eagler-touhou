@@ -8,6 +8,13 @@
 
 namespace EaglerOptions
 {
+inline void VibrateGamepadOnMiss()
+{
+#ifdef __EMSCRIPTEN__
+    EM_ASM({ globalThis.__eaglerGamepadMapping?.vibrate?.(); });
+#endif
+}
+
 inline bool LimitPresentationTo60()
 {
 #ifdef __EMSCRIPTEN__

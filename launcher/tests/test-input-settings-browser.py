@@ -21,6 +21,8 @@ import {createKeyboardPreferences} from './src/launcher/keyboard-preferences.mts
 import {createTh09LocalInput} from './src/launcher/th09-local-input.mts';
 const saved=new Map(),storage={getItem:k=>saved.get(k)??null,setItem:(k,v)=>saved.set(k,v)};
 window.pad={id:'Browser fixture controller',index:0,connected:true,mapping:'standard',buttons:Array.from({length:17},()=>({pressed:false,value:0})),axes:[0,0,0,0]};
+window.rumbles=[];
+window.pad.vibrationActuator={playEffect:async (type,params)=>{window.rumbles.push({type,params});return 'complete';}};
 window.gamepad=createGamepadMappingModel({storage,getGamepads:()=>[window.pad]});
 window.keyboardPreferences=createKeyboardPreferences(storage);
 window.th09Local=createTh09LocalInput(storage);
@@ -28,10 +30,10 @@ const model=createGameSettingsModel({storage});model.hydrate({productId:'th09',u
 const midi={enabled:false,granted:false,busy:false,supported:false,outputs:[],selectedId:'',hint:''};
 const actions={gamepad:window.gamepad,keyboard:window.keyboardPreferences,th09Local:window.th09Local,externalMidi:{subscribe:()=>()=>{},getSnapshot:()=>midi},file:async()=>{},confirm:async()=>true,showAppleNotice(){},reportError(e){throw e;}};
 createRoot(document.getElementById('root')).render(<LocaleProvider locale="zh-CN"><SettingsBody model={model} actions={actions} onOpenTouchLayout={()=>{}}/></LocaleProvider>);
-`},bundle:true,write:false,format:'iife',platform:'browser',jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'}});
-process.stdout.write(result.outputFiles[0].text);"""
-bundle = subprocess.run(["node", "--input-type=module", "-e", script], cwd=ROOT,
-                        capture_output=True, text=True, encoding="utf-8", check=True).stdout
+`},bundle:true,write:false,outfile:'input-settings-fixture.js',format:'iife',platform:'browser',jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'}});
+process.stdout.write(JSON.stringify(Object.fromEntries(result.outputFiles.map(file=>[file.path.split('.').at(-1),file.text]))));"""
+bundle = json.loads(subprocess.run(["node", "--input-type=module", "-e", script], cwd=ROOT,
+                                  capture_output=True, text=True, encoding="utf-8", check=True).stdout)
 shots = Path(tempfile.mkdtemp(prefix="eagler-input-settings-"))
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
@@ -42,7 +44,8 @@ with sync_playwright() as p:
         page.set_content('<div class="library-layout"><aside class="tools settings-ui" style="position:static;width:auto;max-width:none;height:auto;transform:none;opacity:1;padding:20px;background:#191a17;color:#eee9e1"><div id="root"></div></aside></div>')
         page.add_style_tag(path=str(ROOT / "public/styles.css"))
         page.add_style_tag(content=":root{--paper:#eee9e1;--muted:#a9a99c;--red-bright:#bd4438;--ui-font:Arial,sans-serif;--ease:cubic-bezier(.2,.8,.2,1)}body{margin:0;background:#121310}.tools{display:block!important;visibility:visible!important;pointer-events:auto!important}")
-        page.add_script_tag(content=bundle)
+        page.add_style_tag(content=bundle["css"])
+        page.add_script_tag(content=bundle["js"])
         section = page.locator('.input-settings')
         section.wait_for()
         assert section.get_attribute('data-open') == 'true'
@@ -89,14 +92,19 @@ with sync_playwright() as p:
         assert page.get_by_text('2P', exact=True).count() == 0
         page.wait_for_function("gamepad.getSnapshot().devices.length===1")
         page.locator('select[aria-label="手柄设备"]').select_option(index=1, force=True)
-        section.get_by_role('checkbox').check()
+        dialog.get_by_role('checkbox', name='启用手柄改键').check()
         shoot = page.locator('.gamepad-settings tr[data-action="shoot"]')
+        assert page.locator('.gamepad-settings tr[data-action="focus"] kbd').all_text_contents() == ['L1']
         shoot.locator('.input-binding-button').click()
-        page.wait_for_timeout(80)
-        page.evaluate("pad.buttons[3]={pressed:true,value:1}")
+        assert page.evaluate("document.activeElement.classList.contains('gamepad-settings')")
+        page.keyboard.press('Enter')
+        assert page.evaluate("gamepad.getSnapshot().learning==='shoot'")
+        page.evaluate("pad.buttons[3]={pressed:true,value:0}")
         page.wait_for_function("gamepad.getSnapshot().learning===null")
-        assert shoot.locator('kbd').all_text_contents() == ['按钮 4']
+        assert shoot.locator('kbd').all_text_contents() == ['Y']
         page.evaluate("pad.buttons[3]={pressed:false,value:0}")
+        dialog.get_by_role('button', name='测试震动').click()
+        assert page.evaluate("rumbles.map(x=>x.type)") == ['dual-rumble']
         page.wait_for_timeout(100)
         assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), width
         shot = shots / f'input-settings-{width}.png'

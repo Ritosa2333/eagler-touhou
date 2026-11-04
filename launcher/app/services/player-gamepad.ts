@@ -18,10 +18,17 @@ export function createPlayerGamepad({runtime,model,window,document,playerOpen,th
     try {const bridge=target.__eaglerGamepadInputBridge as {schema?:string;epoch?:number;protocol?:string;game?:string;origin?:string}|undefined;
       if(bridge?.schema!==gamepadMappingSchema||bridge.protocol!==context.protocol||bridge.game!==context.game||bridge.epoch!==context.epoch||bridge.origin!==context.targetOrigin)return;
       const localMode=()=>context.game==='th09'&&(target.__eaglerKeyboardInputBridge as {profile?():string}|undefined)?.profile?.()==='th09-local';
+      const allowed=()=>{const next=runtime.getInputContext();
+        return next.target===target&&next.epoch===context.epoch&&next.game===context.game&&next.launched&&!next.spectator&&playerOpen()&&document.visibilityState!=='hidden'&&document.hasFocus();};
       const port={schema:gamepadMappingSchema,protocol:context.protocol,game:context.game,epoch:context.epoch,origin:context.targetOrigin,
         enabled:()=>localMode()?th09Local?.getSnapshot().enabled===true:model.getSnapshot().enabled,
-        sample(seat:number){const next=runtime.getInputContext(),allowed=next.target===target&&next.epoch===context.epoch&&next.game===context.game&&next.launched&&!next.spectator&&playerOpen()&&document.visibilityState!=='hidden'&&document.hasFocus();
-          if(localMode()){const state=th09Local?.getSnapshot();if(!state?.enabled)return -1;const player=state.players[seat];return player?.device==='gamepad'?model.sampleDevice(seat,player.gamepad,allowed):0;}return model.sample(seat,allowed);},
+        sample(seat:number){
+          if(localMode()){const state=th09Local?.getSnapshot();if(!state?.enabled)return -1;const player=state.players[seat];return player?.device==='gamepad'?model.sampleDevice(seat,player.gamepad,allowed()):0;}return model.sample(seat,allowed());},
+        vibrate(){
+          const state=model.getSnapshot();
+          if(state.enabled&&state.vibration&&!state.learning&&state.seats[0]&&allowed()&&target.__eaglerGamepadMapping===port)
+            void model.vibrate(state.seats[0]);
+        },
         clear:()=>model.suspend()};
       target.__eaglerGamepadMapping=port;unbind=()=>{try{if(target.__eaglerGamepadMapping===port)delete target.__eaglerGamepadMapping;}catch{}};
     }catch { /* Cross-origin and legacy Runtime input remains native. */ }
