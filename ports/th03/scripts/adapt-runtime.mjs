@@ -64,7 +64,6 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     .replace("const {LocalSe}=await import('../netplay/local-se.js');sfx=new LocalSe(context);","throw Error('TH03 Replay only');")
     .replace("const {LocalSfx}=await import('../netplay/local-sfx.js');sfx=new LocalSfx(context);","throw Error('TH03 Replay only');"));
   await patch('replay/external-loader.js',text=>text.replace("new URL('dosbox-jspi.mjs',vendor)","new URL('../vendor/dosbox-x/dosbox-jspi.mjs',import.meta.url)").replace("new URL('wdosbox-x-fast.wasm',vendor)","new URL('../vendor/dosbox-x/wdosbox-x-fast.wasm',import.meta.url)"));
-  await patch('replay/battle-boot.js',()=>`export async function bootBattleResources(){throw Error('TH03 多人录像播放尚未接入');}\n`);
   await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
   await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
   for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}

@@ -24,6 +24,14 @@ onmessage=({data})=>{
     if(closed)return;let result;
     if(data.type==='load')result=await load(data.header);
     else if(data.type==='execute'){if(data.frame!==nextFrame)throw Error('对战历史缺帧');simulation.step(data.inputs,data.frame,false);nextFrame++;if(data.hash)result=simulation.hash();}
+    else if(data.type==='executeBatch'){
+      if(data.frame!==nextFrame||!Array.isArray(data.rows)||!data.rows.length||data.rows.length>32)throw Error('对战旁观批次无效');
+      for(const row of data.rows){
+        simulation.step(row.inputs,nextFrame,false);nextFrame++;
+        if(simulation.proof()!==row.proof||(row.hash!==null&&simulation.hash()!==row.hash))throw Error('录像模拟校验不一致：第 '+(nextFrame-1)+' 步');
+        simulation.confirm(nextFrame,nextFrame);confirmed=nextFrame;
+      }
+    }
     else if(data.type==='confirm'){if(data.args[0]!==nextFrame)throw Error('对战确认边界无效');simulation.confirm(data.args[0],data.args[0]);confirmed=nextFrame;}
     else if(data.type==='replaySave'){
       if(nextFrame!==confirmed||simulation.snapshots.size||emulator.snapshots||data.args[0]!==identity)throw Error('对战检查点不在独立确认边界');

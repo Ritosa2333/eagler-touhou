@@ -17,7 +17,9 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       const now=performance.now(),tick=header.tickMs;budget=Math.min(8,budget+(now-last)/tick);last=now;
       const catching=target!==null||following&&rows.length-owner.frame>12,limit=catching?32:Math.floor(budget);let count=0;
       while(!closed&&owner===replica&&(!paused||target!==null)&&owner.frame<rows.length&&count<limit){
-        if(target!==null&&owner.frame>=target)break;await owner.advance(rows[owner.frame]);count++;
+        if(target!==null&&owner.frame>=target)break;
+        if(owner.advanceBatch){const end=Math.min(rows.length,owner.frame+limit-count,target??rows.length),batch=rows.slice(owner.frame,end);await owner.advanceBatch(batch);count+=batch.length;}
+        else{await owner.advance(rows[owner.frame]);count++;}
       }
       if(!catching)budget=Math.max(0,budget-count);
       if(owner===replica&&target!==null&&owner.frame>=target){target=null;paused=!following;}
@@ -57,5 +59,5 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       if(!replica||frame<replica.frame){generation++;replica?.stop();replica=null;void boot();}},
     live(){following=true;paused=false;target=rows.length;},
     get frame(){return replica?.frame??0;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},
-    get paused(){return paused;},get following(){return following;},get seeking(){return target!==null||!replica;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
+    get paused(){return paused;},get following(){return following;},get seeking(){return target!==null||!replica||following&&rows.length-replica.frame>12;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
 }
