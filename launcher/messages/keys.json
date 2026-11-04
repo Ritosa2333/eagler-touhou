@@ -8343,6 +8343,10 @@
     "id": "profile_not_found",
     "params": []
   },
+  "profile.backToTop": {
+    "id": "profile_back_to_top",
+    "params": []
+  },
   "profile.region": {
     "id": "profile_region",
     "params": []

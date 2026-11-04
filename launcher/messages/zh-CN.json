@@ -2059,5 +2059,6 @@
   "account_codeExpired": "验证码已过期。请修改注册信息后重新获取。",
   "account_editDetails": "修改注册信息",
   "profile_not_found": "没有找到这位玩家。",
+  "profile_back_to_top": "返回顶部",
   "profile_region": "地区"
 }

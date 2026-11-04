@@ -2059,5 +2059,6 @@
   "account_codeExpired": "This registration code has expired. Edit the details to request a new one.",
   "account_editDetails": "Edit details",
   "profile_not_found": "Player not found.",
+  "profile_back_to_top": "Back to top",
   "profile_region": "Region"
 }

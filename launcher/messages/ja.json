@@ -2059,5 +2059,6 @@
   "account_codeExpired": "確認コードの有効期限が切れました。情報を編集して新しいコードを取得してください。",
   "account_editDetails": "登録情報を編集",
   "profile_not_found": "プレイヤーが見つかりません。",
+  "profile_back_to_top": "先頭に戻る",
   "profile_region": "地域"
 }
