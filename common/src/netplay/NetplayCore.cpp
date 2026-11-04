@@ -143,6 +143,11 @@ RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint
     if (FrameIsTooOld(frame))
         return RemoteInputResult::TooOld;
 
+    const auto &occupant = inputs_[player][frame % INPUT_HISTORY_SIZE];
+    if (occupant.present && occupant.frame > frame &&
+        confirmedThrough_[player] != INVALID_FRAME && frame <= confirmedThrough_[player])
+        return RemoteInputResult::TooOld;
+
     InputSlot *slot = GetInputSlot(player, frame);
     if (slot->present)
         return slot->input == input ? RemoteInputResult::Duplicate
@@ -501,6 +506,12 @@ bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult
         const auto frame = packet.firstInputFrame + i;
         if (FrameIsTooOld(frame)) continue; // benign expired retransmission
         const auto &occupant = inputs_[packet.senderPlayer][frame % INPUT_HISTORY_SIZE];
+        // An unordered retransmission may arrive after a newer frame reused
+        // its slot. The confirmed prefix already accounted for that sample.
+        if (occupant.present && occupant.frame > frame &&
+            confirmedThrough_[packet.senderPlayer] != INVALID_FRAME &&
+            frame <= confirmedThrough_[packet.senderPlayer])
+            continue;
         const auto oldestRecoverable = lastSimulatedFrame_ == INVALID_FRAME ||
             lastSimulatedFrame_ < config_.maxRollbackFrames ? 0 :
             lastSimulatedFrame_ - config_.maxRollbackFrames + 1;
