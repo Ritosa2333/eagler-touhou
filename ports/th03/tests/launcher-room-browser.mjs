@@ -10,6 +10,7 @@ const browser=await puppeteer.launch({executablePath:await findChromiumExecutabl
 const pages=[],errors=[],events=[[],[]];
 const sharedContext=process.env.PC98_SAME_BROWSER==='1'?await browser.createBrowserContext():null;
 async function navigate(page,url){
+  if(sharedContext)await page.bringToFront();
   await page.goto(url);await page.waitForFunction(()=>/lobby\.html/.test(location.pathname)?!document.documentElement.hasAttribute('data-lobby-boot'):window.__eaglerBoot?.done===true,{timeout:45000});
   await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
 }
@@ -47,6 +48,7 @@ try{
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean);},'main room preparation');
   assert(await host.$eval('#mpRoomChallengeToggle',e=>!!e.closest('[hidden]')),'unsupported challenge rules must not be offered');
   if(round==='check'){
+    await host.bringToFront();
     await host.click('[data-mp-seat="0"] .mp-seat-edit');await host.waitForSelector('#mpCheckGame',{visible:true});await host.click('#mpCheckGame');
     await wait(async()=>{const failure=events[0].find(e=>e.event==='error');if(failure)throw Error(JSON.stringify(failure));return events[0].some(e=>e.event==='first-frame');},'main room real native preflight');
     const frame=host.frames().find(f=>/th03.html.*runtimeEpoch=/.test(f.url()));
