@@ -147,7 +147,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
       if(observedFrames!==frames){observedFrames=frames;idleBoundaries=0;}else if(++idleBoundaries>100000)error='目标准备未能继续，请按 F12 改选目标或重新开始';
       if(error)preparing=false;
     },
-    configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0x4664):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?32:options.speed);},
+    configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0x4664):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
     signal(port,packed){
       locate(packed);if(error||heap()[resident+62])return;
       if(port===0x7fe0){
@@ -161,7 +161,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
         // A long Boss-only attempt can otherwise cross its original stage
         // deadline and spawn the unrelated midboss on top of the Boss.
         if(targeted&&setup.entry==='boss')w16(0x53c0,(u16(0x538a)-1)&65535);
-        if(preparing){if(!prepareFrames&&setup.entry!=='stage')clock?.setSpeed(32);prepare();}
+        if(preparing){if(!prepareFrames&&setup.entry!=='stage')clock?.setSpeed(8);prepare();}
         if(redrawFrames){heap().fill(1,d+0x4700,d+0x4d40);redrawFrames--;}
         if(ready&&!waiting&&!outcome)elapsed++;
         inputs();locks();

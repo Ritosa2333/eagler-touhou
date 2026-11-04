@@ -79,7 +79,7 @@ export function createPracticeEngine({mod,patch,config,clock}){
     return setup.entry==='boss'&&seenBoss&&u8(0x2bfa)!==0;
   }
   function status(){return {mode:initial.mode,ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x8f5),phase:phase(),active:active(),phaseFrame:u16(0x2be0),damage:u16(0x2bea),power:u8(0xaa6),rank:i16(0x2802),keys:u16(0x2538),lives:u8(0xb2c),bombs:u8(0xb2d),invincibility:u8(0x2b95),missTimer:u8(0x2b99),playerHit:u8(0x2b94),bombActive:!!u8(0x3e44)}:{})};}
-  return {configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0xaa6):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?32:options.speed);},
+  return {configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0xaa6):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
     signal(port,packed){
       lastPort=port;
       locate(packed);if(heap()[resident+39])return;
@@ -88,7 +88,7 @@ export function createPracticeEngine({mod,patch,config,clock}){
       if(port===0x7fd1){
         frames++;if(!targeted&&!ready){ready=true;lastBombs=u8(0xbde);}
         if(waiting)waiting=false;
-        if(preparing){if(!prepareFrames&&setup.entry!=='stage')clock?.setSpeed(32);prepare();}
+        if(preparing){if(!prepareFrames&&setup.entry!=='stage')clock?.setSpeed(8);prepare();}
         if(ready&&!waiting&&!outcome)elapsed++;
         let bits=u16(0x2538);if(preparing||outcome)bits=0;if(options.disableBomb)bits&=~32;if(options.disableShot)bits&=~16;w16(0x2538,bits);locks();
       }
