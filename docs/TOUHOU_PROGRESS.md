@@ -80,6 +80,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+[灵梦 B Easy 新完整原版记录与恢复读序](https://github.com/AdingApkgg/thp/blob/5f33a985fa4e27de6d39d067212bdeaafc378ff8/docs/porting/TH14_EASY_FULL_CONTEXT_NOV04.md)：六面 238,972 回调、零调试异常；声明时钟及推导的写入间首次脚本 RNG 读取交付下，32 项状态、17,922,825 个相机字、游标／HUD、1,301 行各 303 字动画及 1,240 个战斗检查点经原始载荷复核一致，核心未变。独立计数清零的精确交错尚未恢复，Initialize／Scene 严格门槛继续拒绝，白名单及严格模式通过数未改；旧 Easy 异常、启动超时与中止记录仍保留。普通浏览器、全模式、原版整局画面／PCM和独立线程调度未验收，整作 1:1 未完成。
+
 [当前 Application 完整回放、退出与保存](https://github.com/AdingApkgg/thp/blob/bff72362313f6765a215a07ab1d8e8be0bd1d892/docs/porting/TH14_CURRENT_APPLICATION_FULL_EXIT_NOV04.md)：含启动回退修复的版本新跑 122,780 帧／53 项断言，实际经过六面，自然结束后稳定 60 帧，再经列表／主菜单 Quit 和生产保存。与同核心封存 C++ Application 的 16 份完整载荷、10 幅完整图像／12,288,000 字节、959 行各 303 字 VM及登记顺序、90,086,400 帧静音 PCM 摘要全部一致；录像 110,022 字节未变。真实非默认成绩文件 21,656 字节与非默认音量配置在新进程读回后不变。参考为 C++ Application，未把它作为原版整局画面／音频或浏览器验收；原版普通 GUI、全模式、独立调度和整作 1:1 继续。
 
 [最新启动配置回退修复](https://github.com/AdingApkgg/thp/blob/bee144963075ead0528359dbcb4788d207c1c9e4/docs/porting/TH14_CONFIG_STARTUP_FALLBACK_NOV04.md)已发布：损坏的 `th14.cfg` 在冷启动时按原版分支恢复默认值，继续进入主菜单；有效配置的 92 字节及严格导入 ABI 保持。原版 1,568 组指令组件、13 个实际 Application 用例／5,772 帧与新进程读回通过；旧二进制的错误签名启动失败保留。仅改一个 Application 调用点，141 个玩法对象未改。四标题语法检查通过；浏览器重编 1 单元、复用 145 对象，139 条路由／27 HTTP 通过，生成资源复用、物理音频设备数零。[生产源码](https://github.com/AdingApkgg/thp/commit/ae284631c2ebaf4006eb8b17662bc5caeeb6da5c)和路径／哈希索引公开，原始文件、游戏资产及二进制留在本地。没有启动浏览器窗口，IndexedDB、原版普通 GUI和整局像素／PCM仍未验收，整作 1:1 未完成。
