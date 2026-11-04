@@ -13,8 +13,9 @@ import {PmdPlayer} from './pmd-player.mjs';
 import {OriginalSfx} from './original-sfx.mjs';
 
 // Recreate the deterministic game and music bridge patches from installed resources.
-async function replayBase(data,resources,practice,audioMode){
+async function replayBase(data,resources,practice,audioMode,saves={}){
   await installPractice(data,resources,practice);
+  const fat=new Fat12(data);for(const [name,bytes] of Object.entries(saves))fat.put('GENSO/'+name,bytes);
   if(audioMode==='independent'){
     const bridge=Object.create(SoloMusic.prototype);bridge.sfx=true;bridge.player={pmd:{},load:async()=>{}};
     await bridge.install(data,'GENSO');
@@ -42,7 +43,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
         const disk=await fetch(version.soloDisk,{cache:'no-cache'});if(!disk.ok)throw Error(`磁盘 HTTP ${disk.status}`);
         data=new Uint8Array(await new Response(disk.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
         if(data.length!==manifest.disk.size||await sha256(data)!==manifest.disk.sha256)throw Error('单机磁盘校验失败');
-        baseDisk=data.slice();if(replay){if(replay.header.diskBaseKind==='installed-practice/1')await replayBase(data,resources,replay.header.practice,replay.header.audioMode);data=await restoreExternalReplayDisk(replay,data);}
+        baseDisk=data.slice();if(replay){if(['installed-practice/1','installed-practice/2'].includes(replay.header.diskBaseKind))await replayBase(data,resources,replay.header.practice,replay.header.audioMode,replay.savedFiles);data=await restoreExternalReplayDisk(replay,data);}
       }
       if(attempt.cancelled)throw Error('练习已取消');
       if(!replay)await installPractice(data,resources,practice);
@@ -57,7 +58,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
         music.player.setVolume(volume??.7);
       }
       if(attempt.cancelled)throw Error('练习已取消');
-      if(!replay&&recordEnabled)baseDisk=await replayBase(baseDisk,resources,practice,audioMode);
+      const savedFiles={};if(!replay&&recordEnabled){for(const name of ['GENSOU.SCR', 'MIKO.CFG']){const bytes=globalThis.__eaglerPC98Files?.memory.get(name);if(bytes)savedFiles[name]=bytes;}baseDisk=await replayBase(baseDisk,resources,practice,audioMode,savedFiles);}
       let externalReplay=null;
       if(replay){
         const identity=await fingerprint(sources);
@@ -68,7 +69,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
         try{
           const identity=await fingerprint(sources);
           if(attempt.cancelled)throw Error('练习已取消');
-          attempt.recorder=createBrowserSoloRecorder({game:'04',language,runtime,identity,patch:attempt.patch,boundaryMode:'sleep',disk:data.slice(),baseDisk,practice,audioMode,diskBaseKind:'installed-practice/1',
+          attempt.recorder=createBrowserSoloRecorder({game:'04',language,runtime,identity,patch:attempt.patch,boundaryMode:'sleep',disk:data.slice(),baseDisk,practice,audioMode,savedFiles,diskBaseKind:'installed-practice/2',
             onStatus:text=>{attempt.recordStatus=text;emit('onRecordingStatus',text);},onFailure:error=>emit('onFailure',error),
             onFile:(blob,result)=>{attempt.blob=blob;emit('onFile',blob,result,practice);},onResult:result=>emit('onResult',result,practice)});
           externalReplay=attempt.recorder.config;

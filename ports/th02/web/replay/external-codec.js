@@ -122,16 +122,18 @@ export async function restoreExternalReplayDisk(replay,base){
   }
   if(await sha256(disk)!==h.diskSha256)throw Error('Replay 启动磁盘摘要不匹配');return disk;
 }
-export async function encodeExternalReplay(header,{clockChunks,events,disk,baseDisk=disk}){
+export async function encodeExternalReplay(header,{clockChunks,events,disk,baseDisk=disk,savedFiles={}}){
   const clocks=new Uint8Array(await new Blob(clockChunks).arrayBuffer()),eventRaw=new TextEncoder().encode(JSON.stringify(events));
   if(!(disk instanceof Uint8Array)||disk.length<1||disk.length>MAX_DISK_BYTES)throw Error('Replay 启动磁盘缺失或超过容量');
   const delta=diskDelta(disk,baseDisk),diskSha256=await sha256(disk),diskBaseSha256=await sha256(baseDisk);
   const packedClocks=packClocks(clocks),eventTape=await gzip(eventRaw),diskTape=await gzip(delta),clockTape=await gzip(packedClocks);
+  const saveRaw=new TextEncoder().encode(JSON.stringify(Object.fromEntries(Object.entries(savedFiles).map(([name,bytes])=>[name,Array.from(bytes)]))));
+  const saveTape=header.diskBaseKind==='installed-practice/2'?await gzip(saveRaw):new Uint8Array();
   validate({...header,version:HOST_VERSION,mode:'solo',clockCount:clocks.length/CLOCK_BYTES,diskBytes:disk.length,diskSha256},clocks.length,disk.length,eventRaw.length,events);
-  const payload=new Uint8Array(clockTape.length+diskTape.length+eventTape.length);payload.set(clockTape);payload.set(diskTape,clockTape.length);payload.set(eventTape,clockTape.length+diskTape.length);
+  const payload=new Uint8Array(clockTape.length+diskTape.length+eventTape.length+saveTape.length);payload.set(clockTape);payload.set(diskTape,clockTape.length);payload.set(eventTape,clockTape.length+diskTape.length);payload.set(saveTape,clockTape.length+diskTape.length+eventTape.length);
   const json=new TextEncoder().encode(JSON.stringify({...header,version:HOST_VERSION,mode:'solo',compression:'gzip',clockCount:clocks.length/CLOCK_BYTES,
     clockEncoding:'xor-varint/1',clockPackedBytes:packedClocks.length,clockRawBytes:clocks.length,diskBytes:disk.length,eventRawBytes:eventRaw.length,clockPayloadBytes:clockTape.length,diskPayloadBytes:diskTape.length,
-    eventPayloadBytes:eventTape.length,payloadSha256:await sha256(payload),diskSha256,diskEncoding:'xor-pages/1',diskBaseSha256,diskDeltaRawBytes:delta.length}));
+    eventPayloadBytes:eventTape.length,...(header.diskBaseKind==='installed-practice/2'?{saveRawBytes:saveRaw.length,savePayloadBytes:saveTape.length}:{}),payloadSha256:await sha256(payload),diskSha256,diskEncoding:'xor-pages/1',diskBaseSha256,diskDeltaRawBytes:delta.length}));
   if(json.length>HEADER_LIMIT||json.length+payload.length+12>FILE_LIMIT)throw Error('Replay 超过文件容量限制');
   const prefix=new Uint8Array(12);prefix.set(MAGIC);new DataView(prefix.buffer).setUint32(8,json.length,true);
   return new Blob([prefix,json,payload],{type:'application/octet-stream'});
@@ -145,17 +147,24 @@ export async function decodeExternalReplay(file,expectedGame){
   if(header.game!==expectedGame||header.compression!=='gzip'||!Number.isSafeInteger(header.clockRawBytes)||header.clockRawBytes<1||header.clockRawBytes>MAX_CLOCK_BYTES||
     !Number.isSafeInteger(header.eventRawBytes)||header.eventRawBytes<2||header.eventRawBytes>MAX_EVENT_BYTES||!Number.isSafeInteger(header.diskBytes)||header.diskBytes<1||header.diskBytes>MAX_DISK_BYTES||
     ![header.clockPayloadBytes,header.diskPayloadBytes,header.eventPayloadBytes].every(size=>Number.isSafeInteger(size)&&size>0&&size<=payload.length)||
-    header.clockPayloadBytes+header.diskPayloadBytes+header.eventPayloadBytes!==payload.length||await sha256(payload)!==header.payloadSha256)throw Error('Replay 数据损坏或作品不匹配');
+    header.clockPayloadBytes+header.diskPayloadBytes+header.eventPayloadBytes+(header.savePayloadBytes||0)!==payload.length||await sha256(payload)!==header.payloadSha256)throw Error('Replay 数据损坏或作品不匹配');
   if(compact&&(header.diskEncoding!=='xor-pages/1'||!/^[a-f0-9]{64}$/.test(header.diskBaseSha256)||
     !Number.isSafeInteger(header.diskDeltaRawBytes)||header.diskDeltaRawBytes<0||header.diskDeltaRawBytes>MAX_DISK_DELTA_BYTES))throw Error('Replay 磁盘差异无效');
   if(!compact&&header.diskEncoding!==undefined)throw Error('Replay 磁盘格式不匹配');
   if(header.clockEncoding!==undefined&&(header.clockEncoding!=='xor-varint/1'||!Number.isSafeInteger(header.clockPackedBytes)||header.clockPackedBytes<1||header.clockPackedBytes>header.clockRawBytes*2))throw Error('Replay 时钟格式无效');
+  if(header.diskBaseKind!==undefined&&!['installed-practice/1','installed-practice/2'].includes(header.diskBaseKind))throw Error('Replay 基础磁盘类型无效');
+  if(header.diskBaseKind==='installed-practice/2'&&(!Number.isSafeInteger(header.saveRawBytes)||header.saveRawBytes<2||header.saveRawBytes>65536||!Number.isSafeInteger(header.savePayloadBytes)||header.savePayloadBytes<1||header.savePayloadBytes>payload.length))throw Error('Replay 存档载荷无效');
   let offset=0;const clockData=await inflate(payload.subarray(offset,offset+=header.clockPayloadBytes),header.clockEncoding?header.clockPackedBytes:header.clockRawBytes);
   const clocks=header.clockEncoding?unpackClocks(clockData,header.clockRawBytes):clockData;
   const diskData=await inflate(payload.subarray(offset,offset+=header.diskPayloadBytes),compact?header.diskDeltaRawBytes:header.diskBytes);
-  const eventBytes=await inflate(payload.subarray(offset),header.eventRawBytes),events=JSON.parse(new TextDecoder().decode(eventBytes));
+  const eventBytes=await inflate(payload.subarray(offset,offset+=header.eventPayloadBytes),header.eventRawBytes),events=JSON.parse(new TextDecoder().decode(eventBytes));
+  let savedFiles={};if(header.diskBaseKind==='installed-practice/2'){
+    const raw=await inflate(payload.subarray(offset),header.saveRawBytes),files=JSON.parse(new TextDecoder().decode(raw));
+    const allowed=header.game==='02'?['HUUHI.DAT','HUUMA.CFG']:['GENSOU.SCR','MIKO.CFG'];
+    for(const [name,data] of Object.entries(files)){if(!allowed.includes(name)||!Array.isArray(data)||data.length>32768||data.some(x=>!Number.isInteger(x)||x<0||x>255))throw Error('Replay 存档数据无效');savedFiles[name]=new Uint8Array(data);}
+  }
   validate(header,clocks.length,header.diskBytes,eventBytes.length,events);
   if(compact)validateDelta(diskData,header.diskBytes);
   else if(await sha256(diskData)!==header.diskSha256)throw Error('Replay 启动磁盘摘要不匹配');
-  return {header,clocks,events,disk:compact?null:diskData,diskDelta:compact?diskData:null};
+  return {header,clocks,events,savedFiles,disk:compact?null:diskData,diskDelta:compact?diskData:null};
 }
