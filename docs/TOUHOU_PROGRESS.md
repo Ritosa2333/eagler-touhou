@@ -80,6 +80,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+当前[源码更新](https://github.com/AdingApkgg/thp/commit/51fcb47992be0af65777d2ea87e9e409be6cc641)增加归一化 X／Y／Z 写回之间的交付点，以及可暂停、续读的 75 字 Scene 相机复制。未完成的 incoming owner 保持私有，复制完成后才发布。下文既有对照条目保留其各自链接的发布版本范围；整作 1:1 继续推进。
+
 独立 C++/Wasm 实现与原版对照持续推进。[当前源码及证据](https://github.com/AdingApkgg/thp/commit/4ff66fd7b2e302c6878bb535d6d75554f09e8da8)已合入[四个 C++ 源文件](https://github.com/AdingApkgg/thp/commit/f3ec88e6eb6bbba19e7550ec17c266ad9f80b5b0)，补齐原版相机字 22／23 的渲染宽高，复位时填写并按原版顺序发布全部 75 个 32 位字；相机为 300 字节，StageState 尺寸断言同步更新。
 
 [完整映射与复核](https://github.com/AdingApkgg/thp/blob/4ff66fd7b2e302c6878bb535d6d75554f09e8da8/docs/porting/TH14_CAMERA_RENDER_DIMENSIONS_NOV04.md)：原版两种复位入口／四组尺寸的 64 字数据流，以及 76 个发布前缀／5,700 字、456 个引用和 9 个失败边界通过。尺寸组件跳过 screen 矩阵数学，未据此验收整个复位函数或画面。
