@@ -85,8 +85,6 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
   for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
   for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
-  const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
-  await writeFile(resolve(output,'managed-room.html'),strip(await readFile(resolve(web,'local.html'),'utf8')));runtime.push('managed-room.html');
   const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#screen{width:100%;height:100%;margin:0;background:#000;overflow:hidden}#canvas{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head><body><div id="screen"><canvas id="canvas" width="640" height="400" tabindex="0"></canvas></div></body></html>`;
   await writeFile(resolve(output,'th03.html'),html);runtime.push('th03.html');
 }
