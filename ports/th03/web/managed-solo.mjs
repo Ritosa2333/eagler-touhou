@@ -36,6 +36,7 @@ function send(bits){
   previous=bits;
 }
 const pauseMenu=mountPauseMenu(document.getElementById('screen'),{
+  centered:true,
   resume(){pauseMenu.close();globalThis.__eaglerPC98Input.clear();pausePrevious=0;emulator?.run();soloMusic?.resume();void localSfx?.resume();canvas.focus();},
   exit(){pauseMenu.close();void naturalExit().catch(report);},
   discard(){pauseMenu.close();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});},
