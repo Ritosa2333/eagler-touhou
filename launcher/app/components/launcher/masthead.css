@@ -349,3 +349,8 @@
   .book-masthead .book-main-nav :is(a,button),.book-masthead .book-main-nav :is(a,button)::after,.book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {transition:none}
 }
 .less-motion .book-masthead .book-main-nav :is(a,button),.less-motion .book-masthead .book-main-nav :is(a,button)::after,.less-motion .book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {transition:none}
+
+.masthead-account-entry{display:inline-flex;align-items:center;gap:6px;min-height:36px;max-width:12rem;padding:4px 8px;border:0;background:transparent;color:var(--book-ink);font:inherit;text-decoration:none;cursor:pointer}
+.masthead-account-entry span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.masthead-account-entry img,.masthead-account-entry svg,.account-loading svg{flex:none;width:22px;height:22px}.masthead-account-entry img{object-fit:cover;border-radius:50%}.account-menu-panel{min-width:190px;max-width:calc(100vw - 20px)}.account-menu-panel .ui-menu-label{display:block;padding:8px 10px;color:var(--book-muted);overflow-wrap:anywhere}
+@media(max-width:600px){.masthead-account-entry{max-width:clamp(66px,22vw,100px);padding-inline:3px;font-size:12px;white-space:nowrap}.masthead-account-entry img,.masthead-account-entry svg{width:19px;height:19px}}
+.account-guest{gap:3px}.account-guest>a{color:inherit;text-decoration:none}.account-guest>a:hover{text-decoration:underline}

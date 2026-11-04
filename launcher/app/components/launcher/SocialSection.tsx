@@ -71,7 +71,7 @@ export function SocialFollowControl({username}: {username: string}) {
   const [error, setError] = useState('');
   const following = state.data?.following;
   if (state.loading && !state.data) return <span aria-hidden="true"/>;
-  if (following === null) return <AppLink className="profile-account-login" href={withUiLanguage('login.html', locale)}>{t('profile.followSignIn')}</AppLink>;
+  if (following === null) return <AppLink className="profile-account-login" href={withUiLanguage('/login.html?next=' + encodeURIComponent('/u/' + username), locale)}>{t('profile.followSignIn')}</AppLink>;
   async function toggle() {
     if (pending || following === undefined) return;
     setPending(true); setError('');

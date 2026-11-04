@@ -1,3 +1,4 @@
+import {loginDestination, notifyAccountChange, useAccountSession} from '../../services/account-session';
 import {accountRequest, AccountRequestError} from '../../services/account-client';
 import {Input} from '../../ui/input';
 import {Tabs, TabsList, TabsTrigger, TabsContent} from '../../ui/tabs';
@@ -10,7 +11,13 @@ import {useLocale, type UiMessageKey} from '../../i18n';
 
 type RegistrationChallenge = {challengeId: string; expiresAt: number};
 
-export function AccountPage({artworkSrc = backgroundUrl}: {artworkSrc?: string}) {
+export function AccountPage(props: {artworkSrc?:string}) {
+  const {t} = useLocale(), {state,retry} = useAccountSession();
+  useEffect(() => {if (state.status === 'member') location.replace(loginDestination());}, [state.status]);
+  if (state.status === 'guest') return <AccountForm {...props}/>;
+  return <main className="account-page" aria-busy={state.status !== 'error'}>{state.status === 'error' && <BookButton variant="action" onClick={retry}>{t('account.requestFailed')}</BookButton>}</main>;
+}
+function AccountForm({artworkSrc = backgroundUrl}: {artworkSrc?: string}) {
   const {t} = useLocale();
   const [search, setSearch] = useSearchParams();
   const registering = search.get('mode') === 'register';
@@ -112,10 +119,8 @@ export function AccountPage({artworkSrc = backgroundUrl}: {artworkSrc?: string})
       });
       else if (identity.includes('@')) await accountRequest('auth/sign-in/email', {email: identity.trim(), password: loginPassword});
       else await accountRequest('auth/sign-in/username', {username: identity.trim(), password: loginPassword});
-      const destination = new URLSearchParams(window.location.search);
-      destination.delete('mode');
-      const query = destination.toString();
-      window.location.assign(`/profile.html${query ? `?${query}` : ''}`);
+      notifyAccountChange();
+      window.location.replace(loginDestination());
     } catch (cause) {
       const expired = cause instanceof AccountRequestError && cause.status === 410;
       setRegistrationExpired(registering && expired);

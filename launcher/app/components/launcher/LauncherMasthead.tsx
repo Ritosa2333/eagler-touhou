@@ -22,7 +22,7 @@ import { useLocale } from '../../i18n';
 import { AppLink } from './AppLink';
 import { BookThemeToggle } from './BookThemeToggle';
 import { useLocation } from 'react-router';
-import { ProfilePreview } from './ProfilePreview';
+import { AccountMenu } from './AccountMenu';
 import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
@@ -63,7 +63,7 @@ export interface LauncherMastheadProps {
 
 export function LauncherMasthead(props: LauncherMastheadProps) {
   const { t, locale } = useLocale();
-  const profileOpen = /\/(?:profile|login)\.html\/?$/.test(useLocation().pathname);
+  const profileOpen = /^(?:\/(?:profile|login)\.html|\/u\/[^/]+)\/?$/.test(useLocation().pathname);
   const { variant, menuOpen, onMenuOpenChange, interactive = true } = props;
   const padding = usePopupPadding(interactive && menuOpen);
   const Link = interactive && !props.nativeLinks ? AppLink : 'a';
@@ -162,11 +162,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
       <nav className="masthead-links" aria-label={t('nav.siteInfo')}>
         <BookThemeToggle interactive={interactive} />
         {accountsEnabled && (
-          <ProfilePreview
-            interactive={interactive}
-            active={profileOpen}
-            href={withUiLanguage(props.assetUrl('profile.html'), locale)}
-          />
+          <AccountMenu interactive={interactive}/>
         )}
         <a
           className="masthead-link"
@@ -300,24 +296,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                     <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
                     <DropdownMenu.Separator className="ui-menu-separator" />
                   </>}
-                  {accountsEnabled && (
-                    <>
-                      <DropdownMenu.Group aria-label={t('nav.account')}>
-                        <DropdownMenu.Item asChild>
-                          <Link className="ui-menu-item" href={withUiLanguage(props.assetUrl('profile.html'), locale)}>
-                            <NavigationIcon name="profile" />
-                            {t('nav.profile')}
-                          </Link>
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item asChild>
-                          <Link className="ui-menu-item" href={withUiLanguage(props.assetUrl('login.html'), locale)}>
-                            {t('nav.account')}
-                          </Link>
-                        </DropdownMenu.Item>
-                      </DropdownMenu.Group>
-                      <DropdownMenu.Separator className="ui-menu-separator" />
-                    </>
-                  )}
                   <DropdownMenu.Group aria-label={t('nav.settings')}>
                     <DropdownMenu.Label className="masthead-menu-heading">{t('nav.settings')}</DropdownMenu.Label>
                     <DropdownMenu.CheckboxItem

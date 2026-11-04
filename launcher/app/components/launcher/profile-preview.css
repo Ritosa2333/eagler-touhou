@@ -109,7 +109,9 @@ html:has(.book-masthead) .masthead-links>.book-profile-trigger{display:inline-fl
 }
 @media(prefers-reduced-motion:reduce){.profile-display-options label,.profile-display-order li,.profile-detail-fields :is(input,textarea){transition:none}}
 
-.profile-account-login{display:inline-block;margin-top:12px;font-size:12px;text-decoration:none}
+.profile-page .profile-actions>.profile-account-login{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-ink);font-size:12px;font-weight:600;line-height:1.4;text-decoration:none;white-space:nowrap;transition:background-color var(--ui-feedback-duration) var(--ui-feedback-easing),border-color var(--ui-feedback-duration) var(--ui-feedback-easing)}
+.profile-page .profile-actions>.profile-account-login:hover{border-color:var(--book-accent);background:var(--book-surface)}
+.profile-page .profile-actions>.profile-account-login:focus-visible{outline:2px solid var(--book-accent);outline-offset:2px}
 /* Settings occupy the same aligned surface as account sign-in pages. */
 .player-profile.profile-settings{width:calc(100% - 48px);max-width:1040px;margin:24px auto;background:var(--book-surface);min-height:0;border:1px solid var(--book-border);border-radius:12px}
 html:has(.book-masthead) .profile-settings .profile-wrap{max-width:none;padding:0 28px 28px}
@@ -208,6 +210,7 @@ body.less-motion :is(.profile-display-options label,.profile-display-order li,.p
  .profile-header-details{display:block;grid-column:1/-1;grid-row:2}
  .profile-about-meta{display:flex;flex-wrap:wrap;gap:7px 18px;margin-top:10px;font-size:12px}
  .profile-page .profile-actions{grid-column:1/-1;grid-row:3;justify-content:flex-start;padding-top:0}
+ .profile-page .profile-actions>.profile-account-login{flex:1;min-height:44px}
  .profile-page .profile-aside{display:none}.profile-page .profile-columns{display:block;padding-top:19px}
  .profile-nav-mobile{display:flex;overflow-x:auto;border-top:1px solid var(--book-border);padding:0 12px;gap:8px;scrollbar-width:none}
  .profile-nav-mobile a{flex:none;border-radius:0;font-size:12px}.profile-nav-mobile a[aria-current=location]{background:none;border-bottom:2px solid var(--book-ink)}
