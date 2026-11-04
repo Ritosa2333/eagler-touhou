@@ -1,3 +1,4 @@
+import {AccountRequestError, accountRequest} from '../../services/account-client';
 import {Input, Textarea} from '../../ui/input';
 import {Tabs} from 'radix-ui';
 import {UserRound} from 'lucide-react';
@@ -14,8 +15,7 @@ import {PRODUCT_GAMES, gameIdForProduct, isProductId} from '../../../src/contrac
 import {bookGameArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference, stringArray} from './book-preferences';
 import './profile-preview.css';
-import {CareerShowcase} from './CareerShowcase';
-import {CAREER_STORAGE_KEY, loadCareerRecords, type CareerRecords} from './tracker-records';
+import {SocialFollowControl, SocialSection} from './SocialSection';
 import {NavigationIcon} from './NavigationIcon';
 import {Button as NavigationButton} from '../../ui/button';
 import {animateSurface, type SurfaceAnimation} from '../../ui/surface-motion';
@@ -29,7 +29,7 @@ function transitionProfile(update: () => void, scope: 'page' | 'content' | 'sett
 }
 
 type SocialLink = {label: string; url: string};
-type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]};
+type Profile = {name: string; bio: string; region: string; avatar: string; cover: string; links: SocialLink[]};
 type ProfileDraft = Omit<Profile, 'links'> & {links: (SocialLink & {editId: number})[]};
 let nextLinkEditId = 0;
 const editableLink = (link: SocialLink) => ({...link, editId: ++nextLinkEditId});
@@ -37,38 +37,21 @@ type Guide = {id: string; title: string; body: string};
 type DisplayKey = 'friends' | 'career' | 'records' | 'content';
 type OverviewKey = DisplayKey | 'favorites';
 type ProfileDisplay = {visible: Record<DisplayKey, boolean>; order: OverviewKey[]};
+type AccountSession = {user?: {username?: string} | null};
 const displayLabels: Record<DisplayKey, UiMessageKey> = {friends:'profile.tab.friends',career:'profile.tab.career',records:'profile.tab.records',content:'profile.tab.content'};
 const overviewLabels: Record<OverviewKey, UiMessageKey> = {career:'profile.clearChart',records:'profile.tab.records',content:'profile.tab.content',friends:'profile.tab.friends',favorites:'profile.favorites'};
 const tabLabels = {overview:'profile.tab.overview',career:'profile.tab.career',records:'profile.tab.records',content:'profile.tab.content',friends:'profile.tab.friends'} as const;
 type ProfileTab = keyof typeof tabLabels;
-const socialLabels = {friends:'profile.tab.friends',following:'profile.following'} as const;
 const defaultDisplay: ProfileDisplay = {visible: {friends: true, career: true, records: true, content: true}, order: ['career', 'records', 'content', 'friends', 'favorites']};
-const displayStorageKey = 'player-profile-display-v2';
 const validDisplay = (value: unknown): value is ProfileDisplay => {
   if (!value || typeof value !== 'object') return false;
   const settings = value as ProfileDisplay;
   return !!settings.visible && Object.keys(displayLabels).every(key => typeof settings.visible[key as DisplayKey] === 'boolean') &&
     Array.isArray(settings.order) && settings.order.length === 5 && new Set(settings.order).size === 5 && settings.order.every(key => Object.hasOwn(overviewLabels, key));
 };
-function previousDisplay(): ProfileDisplay {
-  const old = readBookPreference('player-profile-display-v1', defaultDisplay, (value): value is ProfileDisplay => {
-    if (!value || typeof value !== 'object') return false;
-    const candidate = value as ProfileDisplay;
-    return !!candidate.visible && Object.keys(displayLabels).every(key => typeof candidate.visible[key as DisplayKey] === 'boolean') && Array.isArray(candidate.order);
-  });
-  const order = [...new Set([...old.order.map(key => String(key) === 'recent' ? 'records' as const : key).filter(key => Object.hasOwn(overviewLabels,key)), ...defaultDisplay.order])];
-  const visible = Object.fromEntries((Object.keys(displayLabels) as DisplayKey[]).map(key => [key,old.visible[key]])) as Record<DisplayKey,boolean>;
-  return {visible, order};
-}
-const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
+const blankProfile: Profile = {name: '', bio: '', region:'', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
-const validProfile = (value: unknown): value is Profile => {
-  if (!value || typeof value !== 'object') return false;
-  const profile = value as Profile;
-  return ['name', 'bio', 'avatar', 'cover'].every(key => typeof (profile as unknown as Record<string, unknown>)[key] === 'string') &&
-    Array.isArray(profile.links) && profile.links.every(link => link && typeof link.label === 'string' && typeof link.url === 'string' && !!safeUrl(link.url));
-};
 const validGuides = (value: unknown): value is Guide[] => Array.isArray(value) && value.every(item => item && typeof item.id === 'string' && typeof item.title === 'string' && typeof item.body === 'string');
 
 /** Browser-local presentation only. No account or room identity is created. */
@@ -76,41 +59,71 @@ export function ProfilePreview({interactive = true, active, href}: {interactive?
   const {t} = useLocale();
   const [avatar, setAvatar] = useState('');
   useEffect(() => {
-    const refresh = () => setAvatar(readBookPreference('player-profile-v2', blankProfile, validProfile).avatar);
-    refresh(); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh); window.addEventListener('storage', refresh);
-    return () => {window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh); window.removeEventListener('storage', refresh);};
-  }, []);
+    if (!interactive) return;
+    let active = true;
+    async function refresh() {
+      const session = await accountRequest<AccountSession>('auth/get-session');
+      if (!session?.user?.username) {if (active) setAvatar('');return;}
+      const profile = await accountRequest<RemoteProfile>(`v1/profiles/${encodeURIComponent(session.user.username)}`);
+      if (active) setAvatar(profile.details?.avatar || '');
+    }
+    const update = () => {void refresh().catch(() => {});};
+    update(); window.addEventListener('account-profile-change', update);
+    return () => {active=false;window.removeEventListener('account-profile-change',update);};
+  }, [interactive]);
   const content = <><span aria-hidden="true">{imageData(avatar) ? <img src={avatar} alt=""/> : <NavigationIcon name="profile"/>}</span><svg className="book-profile-trace" viewBox="0 0 40 40" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="37" rx="7" pathLength="100"/></svg></>;
   return <NavigationButton asChild variant="ghost" size="icon" className="masthead-action book-profile-trigger [&_svg]:size-5">{interactive ? <AppLink href={href} aria-label={t('profile.navigation')} aria-current={active ? 'page' : undefined}>{content}</AppLink>
     : <a href={href} aria-label={t('profile.navigation')} aria-current={active ? 'page' : undefined}>{content}</a>}</NavigationButton>;
 }
 
+type RemoteProfile = {username: string; nickname: string; joinedAt: string; details: (Profile & {display:ProfileDisplay}) | null};
 export function ProfilePage() {
+  const {pathname} = useLocation();
+  return <AccountProfile key={pathname} pathname={pathname}/>;
+}
+function AccountProfile({pathname}: {pathname:string}) {
+  const {locale,t} = useLocale();
+  const [state,setState] = useState<{profile?:RemoteProfile; owner?:boolean; error?:UiMessageKey; guest?:boolean}>({});
+  useEffect(() => {
+    let current = true;
+    async function load() {
+      const session = await accountRequest<AccountSession>('auth/get-session');
+      const name = pathname.startsWith('/u/') ? decodeURIComponent(pathname.slice(3).replace(/\/$/, '')) : session?.user?.username;
+      if (!name) {if (current) setState({guest:true}); return;}
+      const profile = await accountRequest<RemoteProfile>(`v1/profiles/${encodeURIComponent(name)}`);
+      if (current) setState({profile,owner:session?.user?.username === profile.username});
+    }
+    load().catch(error => {if (current) setState({error:error instanceof AccountRequestError && error.status === 404 ? 'profile.notFound' : 'account.requestFailed'});});
+    return () => {current = false;};
+  }, [pathname]);
+  if (state.profile) return <ProfileBody remote={state.profile} owner={!!state.owner}/>;
+  return <main className="player-profile"><div className="profile-wrap" aria-busy={!state.error && !state.guest}>
+    {state.error && <p role="alert">{t(state.error)}</p>}
+    {state.guest && <AppLink href={withUiLanguage('login.html',locale)}>{t('profile.signIn')}</AppLink>}
+  </div></main>;
+}
+function ProfileBody({remote,owner}: {remote:RemoteProfile; owner:boolean}) {
   const {locale,t}=useLocale();
   const location=useLocation(),navigate=useNavigate();
   const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
   const sectionAddress=(key:ProfileTab)=>({pathname:location.pathname,search:location.search,hash:`#profile-${key}`});
   const jumpTo=(key:ProfileTab,replace=false)=>navigate(sectionAddress(key),{replace});
-  const [profile, setProfile] = useState(blankProfile), [draft, setDraft] = useState<ProfileDraft>({...blankProfile, links: []});
+  const [profile, setProfile] = useState<Profile>({...blankProfile,...remote.details,name:remote.nickname}), [draft, setDraft] = useState<ProfileDraft>({...blankProfile, links: []});
   const [editing, setEditing] = useState(false);
-  const [display, setDisplay] = useState(defaultDisplay), [displayDraft, setDisplayDraft] = useState(defaultDisplay);
+  const [display, setDisplay] = useState(validDisplay(remote.details?.display) ? remote.details.display : defaultDisplay), [displayDraft, setDisplayDraft] = useState(defaultDisplay);
   const [displayEditing, setDisplayEditing] = useState(false);
   const [settings, setSettings] = useState(false), [security, setSecurity] = useState(false);
-  const [visitor, setVisitor] = useState(false);
+  const [visitor, setVisitor] = useState(!owner);
+  const [saveError,setSaveError] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]), [guideDraft, setGuideDraft] = useState<Guide | null>(null);
-  const [career, setCareer] = useState<CareerRecords>({});
-  const [article, setArticle] = useState<Guide | null>(null), [socialTab, setSocialTab] = useState<keyof typeof socialLabels>("friends");
-  const [demoOnline, setDemoOnline] = useState(false), [onlineNotice, setOnlineNotice] = useState(false);
-  const [notifications, setNotifications] = useState(false), [notice, setNotice] = useState<UiMessageKey|null>(null), [error, setError] = useState<UiMessageKey|null>(null);
+  const [article, setArticle] = useState<Guide | null>(null);
+  const [notice, setNotice] = useState<UiMessageKey|null>(null), [error, setError] = useState<UiMessageKey|null>(null);
   useEffect(() => {if (settings) window.scrollTo(0, 0);}, [settings]);
   useEffect(() => () => {profileAnimation?.cancel(); profileAnimation = null;}, []);
   useEffect(() => {
-    setProfile(readBookPreference('player-profile-v2', blankProfile, validProfile));
-    setDisplay(readBookPreference(displayStorageKey, previousDisplay(), validDisplay));
-    setGuides(readBookPreference('player-guide-drafts-v1', [], validGuides));
-    setCareer(loadCareerRecords());
-    setNotifications(readBookPreference('friend-online-reminder', false, (value): value is boolean => typeof value === 'boolean'));
+    if (!owner) return;
+    setGuides(readBookPreference('player-guide-drafts-' + remote.username, [], validGuides));
     const refresh = () => { setFavorites(readBookPreference('favorites', [], stringArray));};
     refresh(); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh); window.addEventListener('storage', refresh);
     return () => { window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh); window.removeEventListener('storage', refresh);};
@@ -125,21 +138,31 @@ export function ProfilePage() {
     reader.onload = () => {if (typeof reader.result === 'string') {const value = reader.result; setDraft(current => ({...current, [field]: value})); setError(null);}};
     reader.onerror = () => setError("profile.image.readFailed"); reader.readAsDataURL(file);
   };
-  const saveProfile = () => {
+  const saveProfile = async () => {
     if (draft.links.some(link => !link.label.trim() || !safeUrl(link.url))) {setError("profile.links.invalid"); return;}
     const next = {...draft, name: draft.name.trim(), links: draft.links.map(link => ({label: link.label.trim(), url: safeUrl(link.url)!.href}))};
-    setProfile(next); writeBookPreference('player-profile-v2', next); setError(null); setNotice("profile.saved");
+    setSaveError('');
+    try {
+      if (next.name !== profile.name) {
+        await accountRequest('auth/update-user', {name:next.name});
+        setProfile(previous => ({...previous,name:next.name}));
+      }
+      await accountRequest('v1/me/profile', {...next,display});
+    } catch (cause) {setSaveError(t('account.requestFailed')); return;}
+    setProfile(next); window.dispatchEvent(new Event('account-profile-change')); setError(null); setNotice("profile.saved");
   };
   const saveGuide = () => {
     if (!guideDraft?.title.trim() || !guideDraft.body.trim()) {setError("profile.draft.required"); return;}
     const next = guides.some(guide => guide.id === guideDraft.id) ? guides.map(guide => guide.id === guideDraft.id ? guideDraft : guide) : [...guides, guideDraft];
-    setGuides(next); writeBookPreference('player-guide-drafts-v1', next); setGuideDraft(null); setArticle(null); setError(null); setNotice("profile.draft.saved");
+    setGuides(next); writeBookPreference('player-guide-drafts-' + remote.username, next); setGuideDraft(null); setArticle(null); setError(null); setNotice("profile.draft.saved");
   };
   const startGuide = () => {setGuideDraft({id: crypto.randomUUID(), title: '', body: ''}); setError(null);};
-  const saveCareer = (next: CareerRecords) => {setCareer(next); writeBookPreference(CAREER_STORAGE_KEY, next); setNotice("profile.career.saved");};
   const editDisplay = () => transitionProfile(() => {setSettings(true); setSecurity(false); setDisplayDraft({visible: {...display.visible}, order: [...display.order]}); setDisplayEditing(true); setEditing(false); setArticle(null); setGuideDraft(null); setError(null);}, settings ? 'settings' : 'page');
-  const saveDisplay = () => {
-    setDisplay(displayDraft); writeBookPreference(displayStorageKey, displayDraft); setNotice("profile.display.saved");
+  const saveDisplay = async () => {
+    setSaveError('');
+    try {await accountRequest('v1/me/profile', {...profile,display:displayDraft});}
+    catch (cause) {setSaveError(t('account.requestFailed')); return;}
+    setDisplay(displayDraft); setNotice("profile.display.saved");
     const tabKey = tab==="overview" ? null : tab;
     if (visitor && tabKey && !displayDraft.visible[tabKey]) jumpTo('overview',true);
   };
@@ -150,7 +173,7 @@ export function ProfilePage() {
     return {...current, order};
   });
   const visible = visitor ? display.visible : defaultDisplay.visible;
-  const visibleTabs: ProfileTab[] = ['overview',...display.order.filter((key): key is Exclude<ProfileTab,'overview'> => key!=='favorites' && visible[key])];
+  const visibleTabs: ProfileTab[] = ['overview',...display.order.filter((key): key is Exclude<ProfileTab,'overview'> => key!=='favorites' && key!=='career' && visible[key])];
   const activeTab = settings ? editing ? 'settings-profile' : displayEditing ? 'settings-display' : 'settings-security' : tab;
   const selectTab = (value: string) => {
     if (value === activeTab) return;
@@ -160,19 +183,19 @@ export function ProfilePage() {
   };
   const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
   const sections: Record<OverviewKey,ReactNode> = {
-    career: visible.career && <div id="profile-career" className="profile-public-section"><CareerShowcase records={career} onSave={saveCareer} readOnly={visitor}/></div>,
+    career: null,
     records: visible.records && <section id="profile-records" className="profile-panel profile-public-section"><div className="profile-section-title"><h2>{t('profile.tab.records')}</h2></div><EmptyState title={t('profile.stats.empty')} detail={t('profile.stats.hint')}/></section>,
     content: visible.content && <div id="profile-content" className="profile-public-section">{guideDraft ? <section className="profile-panel profile-editor"><h2>{guides.some(guide => guide.id === guideDraft.id) ? t('profile.draft.edit') : t('profile.draft.newHeading')}</h2><form onSubmit={event => {event.preventDefault(); saveGuide();}}><label>{t('profile.draft.title')}<Input value={guideDraft.title} maxLength={100} required onChange={event => setGuideDraft({...guideDraft, title: event.target.value})}/></label><label>{t('profile.draft.body')}<Textarea rows={14} value={guideDraft.body} maxLength={30000} required onChange={event => setGuideDraft({...guideDraft, body: event.target.value})}/></label>{error && <p role="alert">{t(error)}</p>}<div className="profile-actions"><BookButton variant="action" type="button" onClick={() => setGuideDraft(null)}>{t('action.cancel')}</BookButton><BookButton variant="primary" type="submit" className="profile-primary">{t('profile.draft.save')}</BookButton></div></form></section> : article ? <article className="profile-panel profile-article"><div className="profile-section-title"><BookButton variant="quiet" type="button" onClick={() => setArticle(null)}>{t('profile.draft.back')}</BookButton>{!visitor && <BookButton variant="quiet" type="button" onClick={() => setGuideDraft({...article})}>{t('profile.editAction')}</BookButton>}</div><h2>{article.title}</h2><div className="ui-document prose"><p className="profile-guide-body">{article.body}</p></div></article> : <section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.draft.heading')}</h2>{!visitor && <BookButton variant="quiet" type="button" onClick={startGuide}>{t('profile.draft.new')}</BookButton>}</div>{guides.length ? <div className="profile-draft-list">{guides.map(guide => <BookButton variant="action" key={guide.id} type="button" onClick={() => setArticle(guide)}><span><strong>{guide.title}</strong><small>{guide.body.slice(0, 100)}</small></span><span>{t('profile.draft.local')}</span></BookButton>)}</div> : <EmptyState title={t('profile.draft.empty')} detail={t('profile.draft.emptyHint')}/>}</section>}</div>,
-    friends: visible.friends && <section id="profile-friends" className="profile-panel profile-public-section"><div className="profile-section-title"><h2>{t('profile.social.heading')}</h2></div><div className="profile-social-tools"><div>{(["friends", "following"] as const).map(item => <BookButton variant="choice" type="button" key={item} aria-pressed={socialTab === item} onClick={() => {if (socialTab !== item) transitionProfile(() => setSocialTab(item), 'content');}}>{t(socialLabels[item])}</BookButton>)}</div>{!visitor && <label><Toggle checked={notifications} onCheckedChange={event => {setNotifications(event); if (!event) setOnlineNotice(false); writeBookPreference('friend-online-reminder', event);}}/>{t('profile.online.notifications')}</label>}</div>{demoOnline && socialTab === "friends" ? <div className="profile-demo-friend"><span className="profile-demo-avatar"><AvatarPlaceholder/><i/></span><div><strong>{t('profile.online.demoFriend')}</strong><p>{t('profile.online')}<small>{t('profile.online.simulated')}</small></p></div><BookButton variant="action" type="button" onClick={() => {setDemoOnline(false); setOnlineNotice(false);}}>{t('profile.online.stopDemo')}</BookButton></div> : <EmptyState title={socialTab === "friends" ? t('profile.friends.empty') : t('profile.following.empty')} detail={t('profile.social.emptyHint')}/>}{!visitor && <div className="profile-reminder-demo"><span>{t('profile.online.preview')}</span><BookButton variant="action" type="button" onClick={() => {setDemoOnline(true); setOnlineNotice(notifications); if (!notifications) setNotice("profile.online.disabledPreview");}}>{t('profile.online.simulate')}</BookButton></div>}</section>,
+    friends: visible.friends && <SocialSection username={remote.username}/>,
     favorites: <section className="profile-panel profile-public-section"><div className="profile-section-title"><h2>{t('profile.favorites')}</h2><span>{t('profile.gameCount',{count:favorites.filter(isProductId).length})}</span></div><LocalGames ids={favorites} empty={t('profile.favorites.empty')}/></section>,
   };
   return <Tabs.Root value={activeTab} onValueChange={selectTab} asChild><main className={`player-profile${settings ? ' profile-editing profile-settings' : visitor ? ' profile-visitor' : ''}`} aria-label={settings ? t('profile.settings') : undefined} aria-labelledby={settings ? undefined : 'profile-name'}>
     {(settings || article || guideDraft) && <div className="profile-topbar"><BookButton variant="quiet" type="button" onClick={back}>{t('profile.back')}</BookButton></div>}
-    <div className="profile-wrap">
+    <div className="profile-wrap">{saveError && <p role="alert">{saveError}</p>}
       {settings && <div className="profile-settings-heading"><h1>{t('profile.settings')}</h1><Tabs.List asChild><nav aria-label={t('profile.settingsNavigation')}>{[['settings-profile',t('profile.edit')],['settings-display',t('profile.displayTab')],['settings-security',t('profile.security')]].map(([value,label]) => <Tabs.Trigger asChild key={value} value={value}><BookButton variant="tab" aria-current={activeTab===value ? 'page' : undefined}>{label}</BookButton></Tabs.Trigger>)}</nav></Tabs.List></div>}
       <section id="profile-overview" className="profile-hero profile-public-section" style={imageData(profile.cover) ? {'--profile-cover': `url("${profile.cover}")`} as CSSProperties : undefined}>
         <div className={`profile-cover${imageData(profile.cover) ? ' has-image' : ''}`}/>
-        <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}>{imageData(profile.avatar) ? <img src={profile.avatar} alt={t('profile.avatar.alt')}/> : <AvatarPlaceholder/>}</UiButton><div className="profile-name"><h1 id="profile-name"><OverflowText>{profile.name || t('profile.name.missing')}</OverflowText></h1><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p></div><div className="profile-actions"><BookButton variant="action" type="button" className="profile-perspective" aria-label={t('profile.perspective.toggle')} aria-pressed={visitor} onClick={() => transitionProfile(() => {setVisitor(value => !value); jumpTo('overview',true); setArticle(null); setGuideDraft(null);}, 'content')}>{t('profile.perspective.prefix')}{visitor ? t('profile.visitor') : t('profile.self')}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4"/></svg></BookButton>{!visitor && <BookButton variant="action" type="button" onClick={editProfile}>{t('profile.settings')}</BookButton>}</div></div>
+        <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}>{imageData(profile.avatar) ? <img src={profile.avatar} alt={t('profile.avatar.alt')}/> : <AvatarPlaceholder/>}</UiButton><div className="profile-name"><h1 id="profile-name"><OverflowText>{profile.name || t('profile.name.missing')}</OverflowText></h1><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p><div className="profile-identity-meta">{profile.region && <span>{t('profile.region')} {profile.region}</span>}<span>{t('profile.registeredAt')} <time dateTime={remote.joinedAt}>{new Date(remote.joinedAt).toLocaleDateString(locale)}</time></span></div></div><div className="profile-actions">{owner && <BookButton variant="action" type="button" className="profile-perspective" aria-label={t('profile.perspective.toggle')} aria-pressed={visitor} onClick={() => transitionProfile(() => {setVisitor(value => !value); jumpTo('overview',true); setArticle(null); setGuideDraft(null);}, 'content')}>{t('profile.perspective.prefix')}{visitor ? t('profile.visitor') : t('profile.self')}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4"/></svg></BookButton>}{!owner && <SocialFollowControl username={remote.username}/>}{!visitor && <BookButton variant="action" type="button" onClick={editProfile}>{t('profile.settings')}</BookButton>}</div></div>
       </section>
       {!settings && <nav style={{'--profile-tab-count': visibleTabs.length} as CSSProperties} className="profile-tabs" aria-label={t('profile.navigationSections')}>{visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>)}</nav>}
       <ProfileContent settings={settings} value={activeTab}>{settings && security ? <AccountSecurity/> : displayEditing ? <section className="profile-panel profile-editor-shell profile-display-editor"><div className="profile-section-title"><h2><ProfileSectionIcon name="layout"/>{t('profile.display')}</h2></div><form onSubmit={event => {event.preventDefault(); saveDisplay();}}>
@@ -183,18 +206,16 @@ export function ProfilePage() {
         <div className="profile-details-columns"><div className="profile-media-editor"><div className="profile-draft-preview"><div className={`profile-draft-cover${imageData(draft.cover) ? ' has-image' : ''}`} style={imageData(draft.cover) ? {backgroundImage: `url("${draft.cover}")`} : undefined}/><div className="profile-draft-identity"><span className="profile-draft-avatar">{imageData(draft.avatar) ? <img src={draft.avatar} alt={t('profile.avatar.preview')}/> : <AvatarPlaceholder/>}</span><strong>{draft.name || t('profile.name.missing')}</strong><p>{draft.bio.split('\n')[0] || t('profile.bio.missing')}</p></div></div>
         <div className="profile-image-fields">{(['avatar', 'cover'] as const).map(field => <fieldset key={field}><legend>{field === 'avatar' ? t('profile.avatar') : t('profile.cover')}</legend><label className="profile-image-upload"><ProfileSectionIcon name="upload"/><span>{t('profile.image.choose')}</span><input type="file" aria-label={field === 'avatar' ? t('profile.avatar.choose') : t('profile.cover.choose')} accept="image/png,image/jpeg,image/webp" onChange={event => uploadImage(event.target.files?.[0], field)}/></label>{draft[field] && <BookButton variant="quiet" type="button" className="profile-image-remove" onClick={() => setDraft({...draft, [field]: ''})}>{t('profile.remove')}</BookButton>}</fieldset>)}</div><small className="profile-upload-hint">{t('profile.image.formats')}</small></div><div className="profile-detail-fields">
         <label>{t('profile.name')}<Input maxLength={32} value={draft.name} onChange={event => setDraft({...draft, name: event.target.value})} placeholder={t('profile.name.placeholder')}/></label>
-        <label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
+        <label>{t('profile.region')}<Input maxLength={48} value={draft.region} onChange={event => setDraft({...draft,region:event.target.value})}/></label><label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
         <fieldset><legend>{t('profile.links')}</legend>{draft.links.map((link, index) => <div className="profile-link-editor" key={link.editId}><label>{t('profile.links.name')}<Input maxLength={40} value={link.label} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, label: event.target.value} : item)})}/></label><label>{t('profile.links.address')}<Input type="url" placeholder="https://" value={link.url} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, url: event.target.value} : item)})}/></label><BookButton variant="action" type="button" aria-label={t('profile.links.delete',{number:index + 1})} onClick={() => setDraft({...draft, links: draft.links.filter((_, i) => i !== index)})}>{t('action.delete')}</BookButton></div>)}<BookButton variant="action" type="button" onClick={() => setDraft({...draft, links: [...draft.links, editableLink({label: '', url: ''})]})}>{t('profile.links.add')}</BookButton></fieldset></div></div>
         {error && <p role="alert">{t(error)}</p>}<div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" className="profile-primary" type="submit">{t('profile.save')}</BookButton></div>
-      </form></section> : <div className="profile-columns"><aside className="profile-aside">{links.length > 0 && <section className="profile-panel"><div className="profile-social-links">{links.map(link => <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div></section>}<section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.accountInfo')}</h2></div><dl className="profile-account-meta"><div><dt>{t('profile.registeredAt')}</dt><dd>—</dd></div></dl><p className="profile-muted">{t('profile.accountMissing')}</p><AppLink className="profile-account-login" href={withUiLanguage('login.html',locale)}>{t('profile.signIn')}</AppLink></section></aside>
+      </form></section> : <div className="profile-columns"><aside className="profile-aside">{links.length > 0 && <section className="profile-panel"><div className="profile-social-links">{links.map(link => <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div></section>}<section className="profile-panel"><div className="profile-section-title"><h2>{t('profile.accountInfo')}</h2></div><Link to={'/u/' + remote.username}>@{remote.username}</Link>{owner && <BookButton type="button" variant="quiet" onClick={async () => {
+          try {await accountRequest('auth/sign-out', {}); window.location.assign('/login.html');} catch (cause) {setSaveError(t('account.requestFailed'));}
+        }}>{t('account.signOut')}</BookButton>}</section></aside>
         <div className="profile-content">{display.order.map(key => <Fragment key={key}>{sections[key]}</Fragment>)}
         </div></div>}
       </ProfileContent>
-    </div>{notice && <div className="profile-toast" role="status">{t(notice)}</div>}
-  {!visitor && onlineNotice && visible.friends && <aside className="profile-online-notice" role="status" aria-label={t('profile.online.notifications')}><span className="profile-demo-avatar"><AvatarPlaceholder/><i/></span><div className="profile-online-copy"><div><span>{t('profile.online.title')}</span><small>{t('profile.online.justNow')}</small></div><strong>{t('profile.online.demoFriend')}</strong><p>{t('profile.online.now')}</p><BookButton variant="quiet" type="button" onClick={() => {
-    flushSync(() => {setSocialTab('friends');setSettings(false);setSecurity(false);setDisplayEditing(false);setEditing(false);setArticle(null);setGuideDraft(null);setOnlineNotice(false);});
-    jumpTo('friends');
-  }}>{t('profile.online.view')}</BookButton></div><BookButton variant="icon" type="button" className="profile-notice-close" aria-label={t('profile.online.close')} onClick={() => setOnlineNotice(false)}>×</BookButton></aside>}</main></Tabs.Root>;
+    </div>{notice && <div className="profile-toast" role="status">{t(notice)}</div>}</main></Tabs.Root>;
 }
 
 function ProfileContent({settings,value,children}: {settings:boolean;value:string;children:ReactNode}) {
@@ -207,21 +228,29 @@ function AccountSecurity() {
   const [email, setEmail] = useState(''), [code, setCode] = useState(''), [sentTo, setSentTo] = useState('');
   const [current, setCurrent] = useState(''), [password, setPassword] = useState(''), [confirmation, setConfirmation] = useState('');
   const [feedback, setFeedback] = useState<UiMessageKey|null>(null);
+  const [failure,setFailure] = useState(''), [pending,setPending] = useState(false);
+  async function send(path:string, body:Record<string,unknown>, done:UiMessageKey) {
+    if (pending) return false;
+    setFailure(''); setFeedback(null); setPending(true);
+    try {await accountRequest('auth/' + path, body); setFeedback(done); return true;}
+    catch (cause) {setFailure(t('account.requestFailed')); return false;}
+    finally {setPending(false);}
+  }
   return <section className="profile-panel profile-editor-shell profile-security-editor">
-    <div className="profile-section-title"><h2>{t('profile.security')}</h2><span>{t('profile.security.preview')}</span></div>
+    <div className="profile-section-title"><h2>{t('profile.security')}</h2></div>
     <div className="profile-security-body">
-      <section className="profile-security-section"><h3>{t('profile.security.link')}</h3><div className="profile-binding-row"><div><strong>Discord</strong><p className="profile-muted">{t('profile.security.notLinked')}</p></div><BookButton variant="action" type="button" onClick={() => setFeedback("profile.security.discordUnavailable")}>{t('profile.security.discord')}</BookButton></div></section>
-      <section className="profile-security-section"><h3>{t('profile.security.changeEmail')}</h3><form method="post" onSubmit={event => {event.preventDefault(); setFeedback(sentTo === email.trim() && code === '123456' ? "profile.security.emailDone" : "profile.security.emailCodeRequired");}}>
+      <section className="profile-security-section"><h3>{t('profile.security.changeEmail')}</h3><form method="post" onSubmit={async event => {event.preventDefault(); if (sentTo !== email.trim()) {setFeedback("profile.security.emailCodeRequired");return;} if (await send("email-otp/change-email",{newEmail:email.trim(),otp:code},"profile.security.emailDone")) {setCode('');setSentTo('');}}}>
         <label>{t('profile.security.newEmail')}<Input type="email" name="new-email" autoComplete="email" required value={email} onChange={event => {setEmail(event.target.value); setCode(''); setSentTo('');}} placeholder="name@example.com"/></label>
-        <label>{t('profile.security.emailCode')}<div className="profile-security-code"><Input name="email-code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('profile.security.codePlaceholder')}/><BookButton variant="action" type="button" onClick={() => {if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {setFeedback("profile.security.emailInvalid"); return;} setSentTo(email.trim()); setFeedback("profile.security.demoCode");}}>{t('profile.security.getCode')}</BookButton></div></label>
+        <label>{t('profile.security.emailCode')}<div className="profile-security-code"><Input name="email-code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('profile.security.codePlaceholder')}/><BookButton variant="action" type="button" disabled={pending} onClick={async () => {if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {setFeedback("profile.security.emailInvalid"); return;} if (await send("email-otp/request-email-change",{newEmail:email.trim()},"account.codeSent")) setSentTo(email.trim());}}>{t('profile.security.getCode')}</BookButton></div></label>
         <BookButton variant="primary" className="profile-primary" type="submit">{t('profile.security.changeEmail')}</BookButton>
       </form></section>
-      <section className="profile-security-section"><h3>{t('profile.security.changePassword')}</h3><form method="post" onSubmit={event => {event.preventDefault(); if (password !== confirmation) {setFeedback("profile.security.passwordMismatch"); return;} setCurrent(''); setPassword(''); setConfirmation(''); setFeedback("profile.security.passwordDone");}}>
+      <section className="profile-security-section"><h3>{t('profile.security.changePassword')}</h3><form method="post" onSubmit={async event => {event.preventDefault(); if (password !== confirmation) {setFeedback("profile.security.passwordMismatch"); return;} if (await send('change-password',{currentPassword:current,newPassword:password,revokeOtherSessions:true},'profile.security.passwordDone')) {setCurrent(''); setPassword(''); setConfirmation('');}}}>
         <label>{t('profile.security.currentPassword')}<Input name="current-password" type="password" autoComplete="current-password" required value={current} onChange={event => setCurrent(event.target.value)}/></label>
         <label>{t('profile.security.newPassword')}<Input name="new-password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} placeholder={t('profile.security.passwordPlaceholder')}/></label>
         <label>{t('profile.security.confirmPassword')}<Input name="confirm-new-password" type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={event => setConfirmation(event.target.value)} aria-invalid={confirmation.length > 0 && password !== confirmation ? true : undefined}/></label>
         <BookButton variant="primary" className="profile-primary" type="submit">{t('profile.security.changePassword')}</BookButton>
       </form></section>
+      {failure && <p role="alert">{failure}</p>}
       {feedback && <p className="profile-security-feedback" role="status">{t(feedback)}</p>}
     </div>
   </section>;

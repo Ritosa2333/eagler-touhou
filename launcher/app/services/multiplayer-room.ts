@@ -1,3 +1,4 @@
+import {accountRequest} from './account-client';
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
 import {
@@ -164,6 +165,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let socket: RoomSocket | null = null,
     socketRoom = '',
     clientId = '';
+  let registeredName = false;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null,
     reconnectAttempt = 0;
   let stopped = false,
@@ -523,6 +525,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.controlModesSupported = false;
     runtimeVersionsSupported = false;
     ports.network.reset(reconnecting);
+    registeredName = false;
     socket = next;
     socketRoom = relay.roomId;
     room.connection = reconnecting ? 'reconnecting' : 'connecting';
@@ -552,6 +555,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       } else if (state.spectatorRequested) send({ type: 'spectate', name: state.displayName });
       publish();
     });
+    let accountIdentityRequested = false;
     next.addEventListener('message', (event) => {
       if (socket !== next || !current(ownedEpoch)) return;
       let message: Record<string, unknown> | null;
@@ -564,11 +568,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       if (message.type === 'nickname-status') {
         const profile = parsePublicNicknameState(message);
         if (!profile) return;
+        registeredName = message.registered === true;
         const migrateDraft = !state.nickname && profile.status === 'idle' && !!state.displayName;
         state.nickname = Object.freeze(profile);
         if (profile.name) {
           state.displayName = profile.name;
-          ports.identity.updateDisplayName(profile.name, profile.name);
+          if (!registeredName) ports.identity.updateDisplayName(profile.name, profile.name);
         }
         publish();
         if (migrateDraft) setDisplayName(state.displayName);
@@ -583,6 +588,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         return;
       }
       if (message.type === 'state') {
+        if (!accountIdentityRequested && typeof message.accountChallenge === 'string') {
+          accountIdentityRequested = true;
+          void accountRequest<{ticket?: string}>('v1/me/room-nickname', {challenge:message.accountChallenge}).then(result => {
+            if (result?.ticket && socket === next && next.readyState === 1)
+              next.send(JSON.stringify({type:'account-nickname',ticket:result.ticket}));
+          }).catch(() => { /* Guest nicknames are provided by the relay. */ });
+        }
         if (record(message.roomDirectory)?.version === 1) state.directorySupported = true;
         if (record(message.roomDirectory)?.controlModes === true)
           state.controlModesSupported = true;
@@ -925,6 +937,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
   }
   function setDisplayName(value: string) {
+    if (registeredName) return state.displayName;
     if (state.nickname) {
       const name = normalizePublicNickname(value);
       if (!name || !state.connected || ['reviewing','queued'].includes(state.nickname.status)) return state.nickname.pendingName || state.displayName;

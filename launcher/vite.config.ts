@@ -15,6 +15,7 @@ const sourceRoot = fileURLToPath(new URL('.', import.meta.url));
 // Local UI acceptance can use an existing Host without replacing Vite's UI.
 const uiEnvironment = loadEnv('development', sourceRoot, 'EAGLER_UI_');
 const uiServer = process.env.EAGLER_UI_SERVER_ORIGIN || uiEnvironment.EAGLER_UI_SERVER_ORIGIN;
+const accountServer = process.env.EAGLER_UI_API_ORIGIN || uiEnvironment.EAGLER_UI_API_ORIGIN;
 const uiSiteManifest = process.env.EAGLER_UI_SITE_MANIFEST || uiEnvironment.EAGLER_UI_SITE_MANIFEST;
 const serverProxy = uiServer ? Object.fromEntries([
   '^/(?:site-manifest|host-manifest|runtime-manifest|release-catalog)\\.json(?:\\?|$)',
@@ -49,7 +50,7 @@ export default defineConfig({base: deployment.mountPath,
   optimizeDeps:{exclude:['fumadocs-core','fumadocs-ui']},
   // Generated fixtures are not authored UI inputs. Watching them also holds
   // directory handles that block publication/refresh renames on Windows.
-  server: {proxy: serverProxy, watch: {ignored: path => /^(?:\.cache|artifacts|src\/paraglide)(?:\/|$)/.test(relative(sourceRoot, path).replaceAll('\\', '/'))}},
+  server: {proxy: {...serverProxy, ...(accountServer ? {'/api/': {target: accountServer}} : {})}, watch: {ignored: path => /^(?:\.cache|artifacts|src\/paraglide)(?:\/|$)/.test(relative(sourceRoot, path).replaceAll('\\', '/'))}},
   // The build's preview fetch and listener share one explicit loopback family.
   preview: {host: '127.0.0.1'},
   // Keep generated JavaScript within the browser floor admitted by bootstrap.

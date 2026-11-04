@@ -26,7 +26,7 @@ import { ProfilePreview } from './ProfilePreview';
 import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
-import { previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
+import { accountsEnabled, previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
 import {BetaModeDialog} from './BetaModeDialog';
 import {betaModeEnabled,reloadReleaseMode} from '../../../src/launcher/release-channel.mts';
@@ -161,7 +161,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
       </nav>
       <nav className="masthead-links" aria-label={t('nav.siteInfo')}>
         <BookThemeToggle interactive={interactive} />
-        {previewFeaturesEnabled && (
+        {accountsEnabled && (
           <ProfilePreview
             interactive={interactive}
             active={profileOpen}
@@ -300,7 +300,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                     <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
                     <DropdownMenu.Separator className="ui-menu-separator" />
                   </>}
-                  {previewFeaturesEnabled && (
+                  {accountsEnabled && (
                     <>
                       <DropdownMenu.Group aria-label={t('nav.account')}>
                         <DropdownMenu.Item asChild>

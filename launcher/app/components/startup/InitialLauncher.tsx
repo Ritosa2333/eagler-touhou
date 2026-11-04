@@ -19,7 +19,7 @@ import {
   withUiLanguage,
   type UiLocale,
 } from '../../../src/launcher/i18n.mts';
-import { previewFeaturesEnabled } from '../../release-features';
+import { accountsEnabled } from '../../release-features';
 
 const assetUrl = (path: string) => path;
 const inactive = () => {};
@@ -38,9 +38,9 @@ export function InitialLauncher() {
   return (
     <LocaleProvider locale={locale}>
       <InitialSurface
-        account={previewFeaturesEnabled && /\/login\.html\/?$/.test(pathname)}
+        account={accountsEnabled && /\/login\.html\/?$/.test(pathname)}
         lobby={lobby}
-        profile={previewFeaturesEnabled && /\/profile\.html\/?$/.test(pathname)}
+        profile={accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname)}
       />
     </LocaleProvider>
   );

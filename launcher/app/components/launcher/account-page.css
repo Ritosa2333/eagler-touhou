@@ -2,7 +2,7 @@
 .account-page{position:relative;z-index:1;width:calc(100% - 48px);max-width:1040px;margin:28px auto;padding:0;color:var(--book-ink);font:14px/1.6 var(--ui-font)}
 .account-page *{box-sizing:border-box}
 .account-page :is(button,input){font:inherit}
-.account-shell{position:relative;display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1fr);height:auto;min-height:min(700px,calc(100dvh - 116px));border:1px solid var(--book-border);border-radius:12px;overflow:hidden;background:var(--book-surface)}
+.account-shell{position:relative;display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1fr);height:min(700px,calc(100dvh - 116px));min-height:min(700px,calc(100dvh - 116px));border:1px solid var(--book-border);border-radius:12px;overflow:hidden;background:var(--book-surface)}
 .account-art{position:relative;min-width:0;margin-top:calc(-1 * var(--account-header-overlap,0px));isolation:isolate;background:#292c2c;overflow:hidden;border-right:1px solid var(--book-border)}
 .account-art-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:40% center;filter:grayscale(.25);opacity:.85}
 .account-content{width:100%;max-width:520px;padding:42px 48px;align-self:stretch;justify-self:center;min-width:0;max-height:100%;overflow-y:auto;display:flex;flex-direction:column;justify-content:safe center;scrollbar-width:thin}
@@ -24,17 +24,9 @@ html:has(body.less-motion) .account-mode-content{animation:none}
 .account-code{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
 .account-submit{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin-top:5px;padding:10px 16px;border:1px solid var(--book-accent);border-radius:7px;background:var(--book-accent);color:var(--book-on-accent);font-size:13px;font-weight:700}
 .account-submit>span{font-size:18px;font-weight:400}
-.account-divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--book-muted);font-size:11px}
-.account-divider:before,.account-divider:after{content:'';flex:1;height:1px;background:var(--book-border)}
-.account-discord{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;width:100%;padding:10px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-surface);color:var(--book-ink);font-size:12px}
-.account-discord svg{width:20px;height:20px;color:var(--book-muted)}
-.account-demo-note{margin:20px 0 0;text-align:center;font-size:10px;color:var(--book-muted)}
 .account-feedback{margin:0;padding:10px 12px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-muted);font-size:12px;overflow-wrap:anywhere}
 .account-feedback.is-error,.account-field-error{color:var(--kit-destructive)}
 .account-field-error{font-size:11px}
-.account-captcha-field{display:grid;gap:7px;font-size:12px}
-.account-captcha-slot{min-height:66px;min-width:0;border:1px dashed var(--book-border);border-radius:7px;background:var(--book-raised)}
-.account-captcha-slot:not(:empty){border:0;background:transparent}
 .is-registering .account-content{padding-block:28px}.is-registering .account-tabs{margin-bottom:20px}.is-registering h1{margin-bottom:20px}.is-registering form{gap:13px}
 @media(max-width:900px){.account-content{padding-inline:28px}.account-shell{grid-template-columns:minmax(0,.8fr) minmax(0,1fr)}}
 /* Compact screens put the form on a plain reading surface. */
@@ -45,12 +37,10 @@ html:has(body.less-motion) .account-mode-content{animation:none}
  .account-content input{min-height:50px}
  .account-content form,.is-registering form{gap:20px}
  .account-content label{gap:9px;font-size:13px}
- .account-captcha-slot{background:var(--book-surface);border-radius:9px}
  .account-password-toggle{height:44px;width:42px}
- .account-submit,.account-discord{min-height:48px}
+ .account-submit{min-height:48px}
  .account-tabs,.is-registering .account-tabs{margin-bottom:28px}
  .account-content h1,.is-registering h1{font-size:24px;margin-bottom:28px}
- .account-demo-note{margin-top:18px}
  html:not([data-book-theme='light']) .account-shell{background:var(--book-surface)}
  html:not([data-book-theme='light']) .account-content input{background:var(--book-raised)}
 }

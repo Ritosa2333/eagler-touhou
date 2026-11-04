@@ -14,6 +14,7 @@ export default [
   route('en.html', 'routes/surface.tsx', {id: 'library-en'}),
   route('ja.html', 'routes/surface.tsx', {id: 'library-ja'}),
   route('login.html', 'routes/surface.tsx', {id: 'account'}),
+  route('u/:username', 'routes/surface.tsx', {id:'public-profile'}),
   route('profile.html', 'routes/surface.tsx', {id: 'profile'}),
   route('lobby.html', 'routes/surface.tsx', {id: 'directory-html'}),
   route('lobby', 'routes/surface.tsx', {id: 'directory'}),

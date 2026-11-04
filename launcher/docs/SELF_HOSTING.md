@@ -4,6 +4,8 @@
 
 ## 准备输入
 
+公开发布版默认使用游客模式。自行接入兼容的账号服务时，在构建前设置 `VITE_ACCOUNTS_ENABLED=true`，将本站 `/api/` 反向代理到自己的账号服务，并将 `/u/<用户名>` 路由到应用入口。本地开发可以用 `EAGLER_UI_API_ORIGIN` 指定 API 监听地址。匿名联机可以独立使用。
+
 需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。源码前端构建另需 Bun 1.4.4。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
 
 在 `launcher/` 或自托管包根目录使用以下目录结构：

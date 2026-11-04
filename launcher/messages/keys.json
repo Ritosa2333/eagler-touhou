@@ -7324,6 +7324,30 @@
     "id": "profile_following",
     "params": []
   },
+  "profile.followAction": {
+    "id": "profile_follow_action",
+    "params": []
+  },
+  "profile.unfollowAction": {
+    "id": "profile_unfollow_action",
+    "params": []
+  },
+  "profile.followSignIn": {
+    "id": "profile_follow_sign_in",
+    "params": []
+  },
+  "profile.socialPrivate": {
+    "id": "profile_social_private",
+    "params": []
+  },
+  "profile.social.loadFailed": {
+    "id": "profile_social_load_failed",
+    "params": []
+  },
+  "profile.social.updateFailed": {
+    "id": "profile_social_update_failed",
+    "params": []
+  },
   "profile.clearChart": {
     "id": "profile_clear_chart",
     "params": []
@@ -7612,26 +7636,6 @@
     "id": "profile_social_heading",
     "params": []
   },
-  "profile.online.notifications": {
-    "id": "profile_online_notifications",
-    "params": []
-  },
-  "profile.online.demoFriend": {
-    "id": "profile_online_demo_friend",
-    "params": []
-  },
-  "profile.online": {
-    "id": "profile_online",
-    "params": []
-  },
-  "profile.online.simulated": {
-    "id": "profile_online_simulated",
-    "params": []
-  },
-  "profile.online.stopDemo": {
-    "id": "profile_online_stop_demo",
-    "params": []
-  },
   "profile.friends.empty": {
     "id": "profile_friends_empty",
     "params": []
@@ -7642,38 +7646,6 @@
   },
   "profile.social.emptyHint": {
     "id": "profile_social_empty_hint",
-    "params": []
-  },
-  "profile.online.preview": {
-    "id": "profile_online_preview",
-    "params": []
-  },
-  "profile.online.disabledPreview": {
-    "id": "profile_online_disabled_preview",
-    "params": []
-  },
-  "profile.online.simulate": {
-    "id": "profile_online_simulate",
-    "params": []
-  },
-  "profile.online.title": {
-    "id": "profile_online_title",
-    "params": []
-  },
-  "profile.online.justNow": {
-    "id": "profile_online_just_now",
-    "params": []
-  },
-  "profile.online.now": {
-    "id": "profile_online_now",
-    "params": []
-  },
-  "profile.online.view": {
-    "id": "profile_online_view",
-    "params": []
-  },
-  "profile.online.close": {
-    "id": "profile_online_close",
     "params": []
   },
   "profile.security.preview": {
@@ -8335,20 +8307,24 @@
     "id": "account_emailInvalid",
     "params": []
   },
-  "account.demoCode": {
-    "id": "account_demoCode",
+  "account.codeExpired": {
+    "id": "account_codeExpired",
     "params": []
   },
-  "account.identityRequired": {
-    "id": "account_identityRequired",
+  "account.codeInvalid": {
+    "id": "account_codeInvalid",
     "params": []
   },
-  "account.passwordRequired": {
-    "id": "account_passwordRequired",
+  "account.credentialsInvalid": {
+    "id": "account_credentialsInvalid",
     "params": []
   },
-  "account.loginDemo": {
-    "id": "account_loginDemo",
+  "account.editDetails": {
+    "id": "account_editDetails",
+    "params": []
+  },
+  "account.emailInUse": {
+    "id": "account_emailInUse",
     "params": []
   },
   "account.usernameRequired": {
@@ -8363,16 +8339,36 @@
     "id": "account_passwordMismatch",
     "params": []
   },
+  "profile.notFound": {
+    "id": "profile_not_found",
+    "params": []
+  },
+  "profile.region": {
+    "id": "profile_region",
+    "params": []
+  },
+  "account.signOut": {
+    "id": "account_signOut",
+    "params": []
+  },
+  "account.codeSent": {
+    "id": "account_codeSent",
+    "params": []
+  },
   "account.codeRequired": {
     "id": "account_codeRequired",
     "params": []
   },
-  "account.captchaRequired": {
-    "id": "account_captchaRequired",
+  "account.requestFailed": {
+    "id": "account_requestFailed",
     "params": []
   },
-  "account.registerDemo": {
-    "id": "account_registerDemo",
+  "account.tooManyRequests": {
+    "id": "account_tooManyRequests",
+    "params": []
+  },
+  "account.usernameInUse": {
+    "id": "account_usernameInUse",
     "params": []
   },
   "account.actions": {
@@ -8449,26 +8445,6 @@
   },
   "account.confirmationPlaceholder": {
     "id": "account_confirmationPlaceholder",
-    "params": []
-  },
-  "account.verification": {
-    "id": "account_verification",
-    "params": []
-  },
-  "account.or": {
-    "id": "account_or",
-    "params": []
-  },
-  "account.discordPending": {
-    "id": "account_discordPending",
-    "params": []
-  },
-  "account.discord": {
-    "id": "account_discord",
-    "params": []
-  },
-  "account.preview": {
-    "id": "account_preview",
     "params": []
   },
   "account.documentTitle": {

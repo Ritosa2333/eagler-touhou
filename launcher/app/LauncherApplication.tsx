@@ -31,6 +31,7 @@ import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
+import { accountsEnabled } from './release-features';
 
 export type LobbyPresentation = Omit<
   LobbySurfaceProps,
@@ -119,8 +120,9 @@ export function LauncherApplication({ host }: { host: LauncherHost }) {
 
 function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const navigation = useSurfaceNavigation();
-  const accountPage = /\/login\.html\/?$/.test(useLocation().pathname);
-  const profilePage = /\/profile\.html\/?$/.test(useLocation().pathname);
+  const pathname = useLocation().pathname;
+  const accountPage = accountsEnabled && /\/login\.html\/?$/.test(pathname);
+  const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const settings = useSyncExternalStore(host.settings.subscribe, host.settings.getSnapshot, host.settings.getSnapshot);
   const isEditing = useStoreSelector(host.touchLayout, (value) => value.isEditing);
   const [preview, setPreview] = useState<string | undefined>(navigation.productId ?? host.products[0]?.id);
