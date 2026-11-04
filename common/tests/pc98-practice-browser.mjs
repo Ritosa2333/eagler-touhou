@@ -209,6 +209,7 @@ try {
         return (await saved()).length>0;
       },game+' practice REP in main storage',45000);
       const files = await saved();
+      if(process.env.PC98_EXPORT_REPLAY==='1'){const bytes=await frame.evaluate(name=>Array.from(__eaglerPC98Files.memory.get(name)),files[0].name);await writeFile(resolve(out,game+'-sample.rep'),new Uint8Array(bytes));}
       await frame.evaluate(async () => (await import('./managed-solo.mjs')).managedAPI.saveRecording());
       assert.deepEqual(await saved(),files,'saving again keeps the same practice file');
       console.log(game,'practice REP stored',JSON.stringify(files));
