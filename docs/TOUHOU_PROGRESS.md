@@ -80,6 +80,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+[当前浏览器双后端交付](https://github.com/AdingApkgg/thp/blob/041ac32fe09dde580a209a253bb7e5bdbcc0d116/docs/porting/TH14_RENDERER_DELIVERY_NOV05.md)：复现并修复 GLES 包被旧工具标成 WebGPU 的问题；按编译宏、实际导出和 worker／回调模式校验后端，两项错声明控制拒绝。当前 GLES／WebGPU 的 134／139 路由及各 27 项真实 HTTP 检查通过，28 个生成资源复用，未复制两套大型资源；默认静音 8208 入口已回读新版 GLES Wasm。实际运行打包器与仅规范行尾的公开版本分别绑定，Python AST 相同。未发现可验收的 Chrome 窗口，没有浏览器导航／UI／持久化验收；玩法与渲染数学未改，Normal 独立调度、完整模式及整作 1:1 继续。
+
 [灵梦 B Hard 六面与 REP 分段读取](https://github.com/AdingApkgg/thp/blob/fba91f3a9e4f332d34a2ef12603da28318cd59ff/docs/porting/TH14_HARD_FULL_CONTEXT_NOV05.md)：新原版 107,243 回调、零调试异常；声明时钟及按原版读取代次推导的两处交错下，32 项状态、8,043,150 个相机字、游标／HUD、1,240 行各 303 字 VM 与 1,081 个战斗检查点经载荷复算一致。141 玩法对象未改；同一 Wasm 仅关闭两处等待重现 473,540 个相机字差，负例和准备失败均保留。异常与 Initialize 门槛通过，Scene 继续拒绝诊断 driver，白名单及严格模式通过数未改。未向引擎输入原版相机或 RNG 值，但读取代次分类使用原版观察，不能接受为独立调度或精确指令交错；零回调启动超时原因未明，原版整局画面／PCM、浏览器、全模式及整作 1:1 继续。
 
 [近裁剪修正后的跨后端与实际运行复核](https://github.com/AdingApkgg/thp/blob/71907bcf61dc171e97152b562fd05d3579389b9b/docs/porting/TH14_NEAR_CLIP_RUNTIME_NOV05.md)：相同 85 组输入在 GLES 扩展关闭路径及独立 WebGPU 下另行逐字节通过；192 个批次／416 次混合绘制的 199 个检查点摘要、最终完整缓冲与独立 D3D9 HAL 重放一致。新实际 Application 六面 122,780 帧／53 项断言、自然结束／Quit／保存通过，与同核心旧 C++ 参考的 15 份所选载荷、10 幅完整图像、959 行各 303 字 VM及 90,086,400 帧静音 PCM 摘要一致。GLES／WebGPU 浏览器目标各全量重编 146 单元；保留设备初始化及首轮混用旧渲染头文件的构建失败。兼容路径仍为同一宿主，未接受其他 GPU；参考并非原版整局图像／PCM，当前浏览器运行／持久化、普通原版 GUI、全部模式、独立调度及整作 1:1 继续。
