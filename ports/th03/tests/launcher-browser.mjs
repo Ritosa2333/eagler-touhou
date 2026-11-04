@@ -69,6 +69,14 @@ try{
     await page.keyboard.press('KeyZ',{delay:100});await new Promise(resolve=>setTimeout(resolve,800));
   }
   assert(await frame.evaluate(()=>/^FPS: [1-9]\d*$/.test(document.querySelector('#pc98-game-fps')?.textContent||'')),'running game must report its native frame rate');
+  await frame.$eval('canvas',node=>node.focus());await page.keyboard.press('Escape',{delay:100});
+  await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:10000});
+  const before=await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().gameFrame);
+  await new Promise(resolve=>setTimeout(resolve,500));
+  assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().gameFrame),before,'paused game does not advance');
+  await page.screenshot({path:resolve(out,'pause.png')});
+  await page.keyboard.press('Escape',{delay:100});await frame.waitForSelector('.pc98-pause-menu[hidden]',{timeout:5000});
+  await frame.waitForFunction(async previous=>(await import('./managed-solo.mjs')).managedAPI.health().gameFrame>previous,{timeout:10000},before);
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH03 solo presentation');
