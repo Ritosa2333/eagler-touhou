@@ -10,6 +10,45 @@ async function inflate(bytes,expected){
   for(;;){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>expected){await reader.cancel();throw Error('Replay 解压长度越界');}parts.push(value);}
   if(total!==expected)throw Error('Replay 解压长度不符');return new Uint8Array(await new Blob(parts).arrayBuffer());
 }
+// Preserve every IEEE-754 timestamp exactly; nearby bit patterns use small signed deltas.
+function packClocks(bytes){
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),count=bytes.length/CLOCK_BYTES,maskBytes=Math.ceil(count/8);
+  let packed=new Uint8Array(maskBytes+count*2);let at=maskBytes;
+  function append(value){if(at===packed.length){const next=new Uint8Array(Math.min(maskBytes+count*10,packed.length*2));next.set(packed);packed=next;}packed[at++]=value;}
+  for(let i=0;i<count;i++)if(bytes[i*CLOCK_BYTES]===2)packed[i>>3]|=1<<(i&7);
+  for(const kind of [1,2]){
+    let previous=0n;
+    for(let i=0;i<count;i++){
+      const offset=i*CLOCK_BYTES;if(bytes[offset]!==kind)continue;
+      const value=view.getBigUint64(offset+1,true),difference=value-previous;previous=value;
+      let delta=difference>=0n?difference*2n:-difference*2n-1n;
+      while(delta>=128n){append(Number(delta&127n)|128);delta>>=7n;}append(Number(delta));
+    }
+  }
+  return packed.subarray(0,at);
+}
+function unpackClocks(bytes,length,encoding){
+  const output=new Uint8Array(length),view=new DataView(output.buffer),previous=[0n,0n,0n],count=length/CLOCK_BYTES;
+  if(encoding==='xor-varint/2'||encoding==='delta-varint/3'){
+    const maskBytes=Math.ceil(count/8);if(maskBytes>bytes.length)throw Error('Replay 时钟数据损坏');
+    let at=maskBytes;
+    for(const kind of [1,2])for(let index=0;index<count;index++){
+      if((bytes[index>>3]&(1<<(index&7))?2:1)!==kind)continue;
+      let delta=0n,shift=0n,part;do{if(at>=bytes.length||shift>(encoding==='delta-varint/3'?64n:63n))throw Error('Replay 时钟数据损坏');part=bytes[at++];delta|=BigInt(part&127)<<shift;shift+=7n;}while(part&128);
+      if(encoding==='delta-varint/3'){if(delta>0x1fffffffffffffffEn)throw Error('Replay 时钟数据越界');previous[kind]+=(delta&1n)?-((delta+1n)>>1n):delta>>1n;}
+      else {if(delta>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');previous[kind]^=delta;}
+      if(previous[kind]<0n||previous[kind]>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');output[index*CLOCK_BYTES]=kind;view.setBigUint64(index*CLOCK_BYTES+1,previous[kind],true);
+    }
+    if(at!==bytes.length)throw Error('Replay 时钟数据长度不符');return output;
+  }
+  let at=0;
+  for(let offset=0;offset<length;offset+=CLOCK_BYTES){
+    const kind=bytes[at++];if(kind!==1&&kind!==2)throw Error('Replay 时钟类型无效');let delta=0n,shift=0n,part;
+    do{if(at>=bytes.length||shift>63n)throw Error('Replay 时钟数据损坏');part=bytes[at++];delta|=BigInt(part&127)<<shift;shift+=7n;}while(part&128);
+    if(delta>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');previous[kind]^=delta;output[offset]=kind;view.setBigUint64(offset+1,previous[kind],true);
+  }
+  if(at!==bytes.length)throw Error('Replay 时钟数据长度不符');return output;
+}
 function validAssist(game,input){
   if(!input||typeof input!=='object'||Array.isArray(input))return false;
   const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
@@ -102,11 +141,11 @@ export async function encodeExternalReplay(header,{clockChunks,events,disk,baseD
   const clocks=new Uint8Array(await new Blob(clockChunks).arrayBuffer()),eventRaw=new TextEncoder().encode(JSON.stringify(events));
   if(!(disk instanceof Uint8Array)||disk.length<1||disk.length>MAX_DISK_BYTES)throw Error('Replay 启动磁盘缺失或超过容量');
   const delta=diskDelta(disk,baseDisk),diskSha256=await sha256(disk),diskBaseSha256=await sha256(baseDisk);
-  const eventTape=await gzip(eventRaw),diskTape=await gzip(delta),clockTape=await gzip(clocks);
+  const packedClocks=packClocks(clocks),eventTape=await gzip(eventRaw),diskTape=await gzip(delta),clockTape=await gzip(packedClocks);
   validate({...header,version:HOST_VERSION,mode:'solo',clockCount:clocks.length/CLOCK_BYTES,diskBytes:disk.length,diskSha256},clocks.length,disk.length,eventRaw.length,events);
   const payload=new Uint8Array(clockTape.length+diskTape.length+eventTape.length);payload.set(clockTape);payload.set(diskTape,clockTape.length);payload.set(eventTape,clockTape.length+diskTape.length);
   const json=new TextEncoder().encode(JSON.stringify({...header,version:HOST_VERSION,mode:'solo',compression:'gzip',clockCount:clocks.length/CLOCK_BYTES,
-    clockRawBytes:clocks.length,diskBytes:disk.length,eventRawBytes:eventRaw.length,clockPayloadBytes:clockTape.length,diskPayloadBytes:diskTape.length,
+    clockEncoding:'delta-varint/3',clockPackedBytes:packedClocks.length,clockRawBytes:clocks.length,diskBytes:disk.length,eventRawBytes:eventRaw.length,clockPayloadBytes:clockTape.length,diskPayloadBytes:diskTape.length,
     eventPayloadBytes:eventTape.length,payloadSha256:await sha256(payload),diskSha256,diskEncoding:'xor-pages/1',diskBaseSha256,diskDeltaRawBytes:delta.length}));
   if(json.length>HEADER_LIMIT||json.length+payload.length+12>FILE_LIMIT)throw Error('Replay 超过文件容量限制');
   const prefix=new Uint8Array(12);prefix.set(MAGIC);new DataView(prefix.buffer).setUint32(8,json.length,true);
@@ -125,7 +164,9 @@ export async function decodeExternalReplay(file,expectedGame){
   if(compact&&(header.diskEncoding!=='xor-pages/1'||!/^[a-f0-9]{64}$/.test(header.diskBaseSha256)||
     !Number.isSafeInteger(header.diskDeltaRawBytes)||header.diskDeltaRawBytes<0||header.diskDeltaRawBytes>MAX_DISK_DELTA_BYTES))throw Error('Replay 磁盘差异无效');
   if(!compact&&header.diskEncoding!==undefined)throw Error('Replay 磁盘格式不匹配');
-  let offset=0;const clocks=await inflate(payload.subarray(offset,offset+=header.clockPayloadBytes),header.clockRawBytes);
+  if(header.clockEncoding!==undefined&&(!['xor-varint/1','xor-varint/2','delta-varint/3'].includes(header.clockEncoding)||!Number.isSafeInteger(header.clockPackedBytes)||header.clockPackedBytes<1||header.clockPackedBytes>header.clockRawBytes*2))throw Error('Replay 时钟格式无效');
+  let offset=0;const clockData=await inflate(payload.subarray(offset,offset+=header.clockPayloadBytes),header.clockEncoding?header.clockPackedBytes:header.clockRawBytes);
+  const clocks=header.clockEncoding?unpackClocks(clockData,header.clockRawBytes,header.clockEncoding):clockData;
   const diskData=await inflate(payload.subarray(offset,offset+=header.diskPayloadBytes),compact?header.diskDeltaRawBytes:header.diskBytes);
   const eventBytes=await inflate(payload.subarray(offset),header.eventRawBytes),events=JSON.parse(new TextDecoder().decode(eventBytes));
   validate(header,clocks.length,header.diskBytes,eventBytes.length,events);
