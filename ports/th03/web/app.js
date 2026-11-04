@@ -147,7 +147,7 @@ const controls = mountControls({canvas: $('canvas'), getEmulator: () => emulator
   dialog: $('settings'), onGesture: () => { clearEscape(); resumeAudio(); }, onOtherInput: clearEscape,
   onPause: openPause, onMenu: navigatePause, onEscape: handleEscape,
   onFocus: (mask, points) => nativePause?.setFocus(mask, points),
-  getTouch: () => player, getRoomFocus: () => roomFocusEnabled, getRoomUnlimited: () => !online||roomTouchUnlimitedAllowed, onTouch: inputs => nativePause?.setTouch(inputs),
+  getTouch: () => player, getManagedInput:()=>roomHost?globalThis.__eaglerPC98Input:null, getRoomFocus: () => roomFocusEnabled, getRoomUnlimited: () => !online||roomTouchUnlimitedAllowed, onTouch: inputs => nativePause?.setTouch(inputs),
   isPaused: () => pauseSeat !== null, inGameplay});
 const markerLayer=document.createElement('div');markerLayer.className='hit-points';
 const markerNodes=[0,1].map(()=>{const node=document.createElement('i');node.hidden=true;markerLayer.append(node);return node;});

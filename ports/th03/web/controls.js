@@ -1,5 +1,5 @@
 import {FireControl} from './fire-control.js';
-import {limitTouch,withoutPoint} from './touch-input.js';
+import {limitTouch,withoutPoint,packTouch} from './touch-input.js';
 export const actions = ['up', 'down', 'left', 'right', 'shot', 'charge', 'attack', 'focus'];
 const labels = {up: '上', down: '下', left: '左', right: '右', shot: '连发（最高速）', charge: '蓄力', attack: 'Bomb', focus: '低速'};
 const defaults = [
@@ -17,7 +17,7 @@ export function keyName(code) {
     || code.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Num ');
 }
 
-export function mountControls({canvas, getEmulator, getNetwork, getTouch, getRoomFocus, getRoomUnlimited=()=>true, networkMode=false, dialog, onGesture, onOtherInput, onPause, onMenu, onEscape, onFocus, onTouch, isPaused, inGameplay}) {
+export function mountControls({canvas, getEmulator, getNetwork, getTouch, getManagedInput=()=>null, getRoomFocus, getRoomUnlimited=()=>true, networkMode=false, dialog, onGesture, onOtherInput, onPause, onMenu, onEscape, onFocus, onTouch, isPaused, inGameplay}) {
   const activeSlots=networkMode?[0]:[0,1];
   const settingsKey=networkMode?'th03-network-controls-v1':storageKey;
   const padDefaults={up:12,down:13,left:14,right:15,shot:0,attack:1,charge:2,focus:5,pause:9};
@@ -289,12 +289,23 @@ export function mountControls({canvas, getEmulator, getNetwork, getTouch, getRoo
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, finish);
     }
   }
+  let managedPrevious=0;
   function sampleLocal() {
     const network = getNetwork?.();
     const target = new Set();
     const cancelled = [];
     const touch = getTouch?.();
     let packed = 0;
+    const managed=getManagedInput();
+    const managedBits=managed?.sample()||0,managedEdge=managedBits&~managedPrevious;
+    managedPrevious=managedBits;
+    if(isPaused()){
+      if(managedEdge&128)onMenu(0,'resume');
+      else if(managedEdge&1)onMenu(0,'up');
+      else if(managedEdge&2)onMenu(0,'down');
+      else if(managedEdge&(512|256))onMenu(0,'confirm');
+      else if(managedEdge&16)onMenu(0,'resume');
+    }else if(managedEdge&128)onEscape();
     if (focused && !document.hidden && !dialog.open && !touch?.isEditing() && getEmulator()) {
       const list = pads();
       for (let slot = 0; slot < 2; slot++) {
@@ -318,13 +329,13 @@ export function mountControls({canvas, getEmulator, getNetwork, getTouch, getRoo
       }
       if (!isPaused() && getEmulator()?.state === 'running') {
         if (keys.has('Enter')) target.add('confirm');
-        const bits = touch?.sample() || 0;
+        const bits = (touch?.sample() || 0)|managedBits;
         for (const [action, bit] of [['up',1],['down',2],['left',4],['right',8],['attack',16],['charge',32],['shot',512],['focus',64]]) {
           if (bits & bit) target.add(`0:${action}`);
         }
         if (bits & 256) target.add(network ? '0:charge' : 'confirm');
-        if (bits & 128) onEscape();
-        packed = touch?.pack(0) || 0;
+        if ((bits & 128)&&!managed) onEscape();
+        const motion=managed?.motion();packed=motion?.active?packTouch(0,motion):touch?.pack(0)||0;
         touch?.consume();
       }
     }
