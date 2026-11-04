@@ -64,6 +64,7 @@ try{
     await new Promise(resolve=>setTimeout(resolve,1500));
   }
   assert(events.some(event=>event.event==='audio-health'&&event.effectsPeak>0.001),'original game effects must produce audio');
+  assert(await frame.$('#pc98-game-fps'),'frame counter is visible in the game');
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH03 solo presentation');

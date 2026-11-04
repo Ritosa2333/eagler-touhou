@@ -102,6 +102,9 @@ try {
       console.log(game,'native target ready',JSON.stringify(target.native.practice.setup));
       await press('Enter');
       await wait(async () => (await read()).native?.mode === 1,game+' resume native pause',15000);
+      await frame.waitForFunction(()=>/^FPS: \d+$/.test(document.querySelector('#pc98-game-fps')?.textContent||''),{timeout:10000});
+      const fps=await frame.$eval('#pc98-game-fps',node=>({text:node.textContent,style:getComputedStyle(node).pointerEvents}));
+      assert.equal(fps.style,'none');assert(Number(fps.text.slice(5))>0,'running game advances its own frame counter');
       const before = (await read()).native.x;
       await frame.$eval('canvas', node => node.focus());
       await page.keyboard.down('ArrowRight'); await new Promise(r => setTimeout(r,300)); await page.keyboard.up('ArrowRight');

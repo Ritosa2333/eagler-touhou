@@ -62,6 +62,7 @@ try{
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
   await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>{const e=document.querySelector('.room-workspace-preparation');return !e||e.hidden})))).every(Boolean),'main room loading cover must close',10000);
   for(const [seat,page] of pages.entries())await page.screenshot({path:resolve(out,'player-'+seat+'.png')});
+  for(const frame of frames)assert(await frame.$('#pc98-game-fps'),'game FPS counter appears during multiplayer');
   assert.deepEqual(errors,[]);console.log('PASS main Launcher create/join/seat/preload/ready/start and native multiplayer');
   if(round==='match-1'){
     await host.bringToFront();
