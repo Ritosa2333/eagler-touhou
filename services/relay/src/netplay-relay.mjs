@@ -12,6 +12,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
 import { createRoomBroadcaster } from './room-broadcast.mjs';
+import { startRoomStatus } from './public-status.mjs';
 import {
   createRelayAbuseGuard,
   relayAbuseConfig,
@@ -274,6 +275,12 @@ if ((turnUsername && !turnCredential) || (!turnUsername && turnCredential)) {
   );
 }
 const rooms = new Map();
+const roomStatusServer = process.env.EAGLER_NETPLAY_STATUS_PORT
+  ? startRoomStatus(rooms, Number(process.env.EAGLER_NETPLAY_STATUS_PORT)) : null;
+roomStatusServer?.on('error', error => {
+  console.error('Room status failed:', error.code);
+  process.exit(1);
+});
 const abuseConfig = relayAbuseConfig();
 const abuseGuard = createRelayAbuseGuard(abuseConfig);
 const targetedEnvelopeMarker = 0xe7;
