@@ -54,6 +54,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
     const {catalog, catalogUrl} = publication;
     if (catalog?.games[game]?.revision !== loaded.descriptor.revision || !currentOgg()) return;
     let generation = resources;
+    let installedFiles = false;
     const task = (async () => {
       // A previous worker may have completed an object after its Runtime closed.
       const latest = await acquisition.readCurrent(game, {gameVersion});
@@ -69,7 +70,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
               fetchImpl: acquisition.getPackageFetch(game)});
             generation = result.generation;
             // The transaction intentionally finishes when close happens mid-fetch.
-            await acquisition.refreshInstalled(game);
+            installedFiles = true;
           }
           if (!generation.files[id]?.objectId) throw new Error(t('package.objectNotPersisted'));
           if (!currentOgg()) return;
@@ -83,7 +84,13 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
           return;
         }
       }
-    })().finally(() => {if (ownerSlots.get(game) === task) ownerSlots.delete(game);});
+    })().finally(async () => {
+      try {
+        // Publish the completed installation once, including partial work on
+        // exit/failure, instead of rerendering the Launcher after every track.
+        if (installedFiles) await acquisition.refreshInstalled(game);
+      } finally {if (ownerSlots.get(game) === task) ownerSlots.delete(game);}
+    });
     ownerSlots.set(game, task); await task;
   })();
   // These are observable completion handles, never part of the launch barrier.

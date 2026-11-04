@@ -37,6 +37,17 @@ test('shared port checks use their declared Vitest project or native Node runner
   }
 });
 
+test('prebuilt-only TH05 stays out of source checks and explains explicit source requests',()=>{
+  const all=targets();
+  assert.equal(all.some(target=>target.game==='th05'),false,
+    'prebuilt Runtime Release products must not receive source-input evidence');
+  assert.equal(all.length,20,'all existing native source targets remain in --all');
+  assert.ok(all.some(target=>target.game==='th06'&&target.variant==='normal'));
+  assert.ok(all.some(target=>target.game==='th20'&&target.variant==='normal'));
+  assert.throws(()=>targets({game:'th05',variant:'normal'}),/th05\/normal: source build is not declared; use a prebuilt Runtime Release/);
+  assert.throws(()=>targets({game:'th05',variant:'multiplayer'}),/th05\/multiplayer: source build is not declared; use a prebuilt Runtime Release/);
+});
+
 test('th20 compiler include precedence uses the same module order on every platform',()=>{
   const input=inspectInputs(targets({game:'th20',variant:'normal'})[0]);
   const modules=input.compilerFlags.map(flag=>flag.replaceAll('\\','/'))

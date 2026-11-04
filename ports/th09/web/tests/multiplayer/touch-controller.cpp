@@ -148,6 +148,20 @@ void joystickAndButtons(){
     CHECK(!s.motion&&!s.keys[37]&&!s.keys[38]&&!s.keys[39]&&!s.keys[40]);
     // These are TouchController's held Z bits. Application owns auto-fire 3/3.
 }
+void blockedDrag(){
+    begin("blocked movement drops displacement and resumes held touch");
+    for(bool downWhileBlocked:{false,true})for(bool unlimited:{false,true}){
+        Fixture f;f.touch.unlimited=unlimited;if(downWhileBlocked)f.state.ready=false;
+        f.pointer(0,1,.5f,.5f);f.state.ready=false;CHECK(!f.sample().motion);
+        f.pointer(1,1,.9f,.8f);CHECK(!f.sample().motion);CHECK(f.touch.active());
+        f.state.x=120;f.state.y=300;f.state.ready=true;
+        auto s=f.sample();CHECK(s.motion==(unlimited?2:1)&&s.x==120&&s.y==300);
+        f.pointer(1,1,.925f,.8f);s=f.sample();CHECK(std::abs(s.x-136)<.001f&&s.y==300);
+        f.pointer(2,1,.925f,.8f);CHECK(!f.sample().motion&&!f.touch.active());
+    }
+    Fixture f;f.pointer(0,1,.5f,.5f);f.pointer(1,1,.8f,.5f);++f.state.instance;f.state.x=100;
+    auto s=f.sample();CHECK(s.motion==1&&s.x==100);
+}
 void dragAndNewDown(){
     begin("drag target, turn, slow scaling, unlimited, cancel and fresh DOWN");
     Fixture f;auto& t=f.touch;f.state.y=240;t.sensitivity=1.5f;
@@ -175,7 +189,7 @@ int main(){
     if(legacy)std::fprintf(stderr,"legacy touch-bomb verify returned %d\n",legacy);
     CHECK(legacy==0);
     serialPulses();cancelKeepsControls();neutralKeepsPulse();resetKeepsSerial();
-    pointerPulsesKeepSerial();confirmCancelAndReset();joystickAndButtons();dragAndNewDown();
+    pointerPulsesKeepSerial();confirmCancelAndReset();joystickAndButtons();dragAndNewDown();blockedDrag();
     std::printf("{\"passed\":true,\"groups\":%u,\"assertions\":%u,\"legacyVerify\":%d,"
         "\"scope\":\"Production C++ TouchController component; not managed bridge, world, phone or performance acceptance\"}\n",
         groups,assertions,legacy);

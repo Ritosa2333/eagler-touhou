@@ -52,6 +52,10 @@ for (const marker of th15Alternative.markerFiles) await put(join(layout.games.th
 await assert.rejects(() => inspectHostWorkspace(root), /TH17 OGG source thbgm\.dat not found/);
 const th17Alternative = PRODUCT_CONTENT.th17.original.preparedAlternative;
 for (const marker of th17Alternative.markerFiles) await put(join(layout.games.th17, th17Alternative.directory, marker));
+// TH05 is prepared-only: the Host workspace consumes complete DATA, OGG, and
+// artwork inputs because its native source producer is not part of this repo.
+const th05Prepared = PRODUCT_CONTENT.th05.original.preparedAlternative;
+for (const marker of th05Prepared.markerFiles) await put(join(layout.games.th05, th05Prepared.directory, marker));
 // TH20 streams retail thbgm.dat directly; the self-host workspace still requires
 // the declared BGM source input.
 for (const name of PRODUCT_CONTENT.th20.original.oggSourceFiles) await put(join(layout.games.th20, name));

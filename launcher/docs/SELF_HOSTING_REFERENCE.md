@@ -6,6 +6,8 @@
 
 Host 读取 `runtime-release/`、Product Catalog 中每个注册游戏的 `games/<game-id>/`、可选 `shared/` 字体和可选 `eagler-touhou.config.json`。Runtime Release 必须匹配当前 Launcher Catalog。Host 构建包含所有注册游戏；单作开发使用 workspace 开发服务器。
 
+th05 使用已有的普通版与多人 Runtime Release，以及 `games/th05/assets-eagler/` 中的完整预制内容。该目录须包含 `th05.data`、全部声明的 `music/` 文件和 `artwork/th05-card.webp`。当前前端接入不包含 th05 的原生编译器与原始音源制作链；更新界面时沿用已发布的 Runtime 和内容。
+
 配置 schema 为 `eagler-touhou/host-config/1`：
 
 ```json

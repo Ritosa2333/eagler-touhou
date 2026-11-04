@@ -23,6 +23,12 @@ const capabilitySource = readFileSync(new URL('../../launcher/src/contracts/adap
 const requiredContracts = extractRequiredBehaviorContracts(capabilitySource);
 const port = portDefinitions().find(item => item.game === 'th06');
 
+test('prebuilt-only TH05 does not receive a source adaptation record', () => {
+  const ports = portDefinitions();
+  assert.equal(ports.some(item => item.game === 'th05'), false);
+  assert.ok(ports.some(item => item.game === 'th06'));
+});
+
 test('license inventory includes license directories and excludes notice code and generated HTML', () => {
   for (const path of ['ports/th09/web/licenses/FreeType.txt', 'ports/th09/web/cpp/licenses/th08-reference-MIT.txt',
     'ports/th09/web/reference/MIT-TH08-codec.txt', 'ports/th06/src/thirdparty/STB_LICENSE']) {

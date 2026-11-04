@@ -141,13 +141,18 @@ export function PageInventory({ announce = () => {} }: { announce?(message: stri
               </nav>
               {openPage === page.id &&
                 (page.id === 'room' ? (
-                  <RoomExample
-                    announce={announce}
-                    renderRegion={(id, children) => {
-                      const region = page.regions.find((region) => region.id === id);
-                      return region ? renderRegion(page, region, children) : null;
-                    }}
-                  />
+                  <>
+                    <RoomExample
+                      announce={announce}
+                      renderRegion={(id, children) => {
+                        const region = page.regions.find((region) => region.id === id);
+                        return region && !region.live ? renderRegion(page, region, children) : null;
+                      }}
+                    />
+                    {page.regions.filter(region => region.live).map(region =>
+                      renderRegion(page, region, <PageExample page={page} region={region} announce={announce} />),
+                    )}
+                  </>
                 ) : (
                   page.regions.map((region) =>
                     renderRegion(page, region, <PageExample page={page} region={region} announce={announce} />),

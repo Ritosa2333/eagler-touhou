@@ -99,6 +99,7 @@ export const PRODUCT_GAMES = Object.freeze({
         requiredShared: Object.freeze(["/msgothic.ttc"]),
         runtimeAssets: Object.freeze(["th05.html", "th05.mjs", "th05.wasm", "shell.mjs", "managed.mjs", "data.mjs", "storage.mjs", "input.mjs", "pointer.mjs", "audio.mjs", "audio-layout.mjs", "music-notes.mjs", "sfx.mjs", "playback.mjs", "replay.mjs", "clock.mjs", "directory-keyboard.mjs", "keyboard-owners.mjs", "keyboard-input-bridge.mjs", "direct-input-bridge.mjs", "manifest.json"]),
         musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection", sources: Object.freeze(["original", "akyu"])}),
+        thpracRuntime: Object.freeze({session: "native"}),
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/uth05win-vibe", adaptationNotice: "early-test"}),
         package: Object.freeze({dataFileId: "game-data", dataTarget: "/th05.data", rawDataImport: Object.freeze({fileNames: Object.freeze(["th05.data"])}),
@@ -522,7 +523,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayer: Object.freeze({
             titleKey: "game.title.th15mp",
             gameplay: "cooperative",
-            inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, rollbackDefault: false, measuredStartup: true, manualDelayLimit: 9 }),
+            inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
             difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH15_MULTIPLAYER_LOADOUTS,
@@ -533,6 +534,7 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th17: Object.freeze({
+        testOnly: true,
         number: "17", title: "東方鬼形獣", subtitle: "Wily Beast and Weakest Creature", cardArtwork: "th17-card.webp",
         storage: Object.freeze({saveRoot: "/savesth17", scoreFile: "scoreth17.dat", configFiles: Object.freeze(["th17.cfg"])}),
         runtime: "./runtime/th17/th17.html",

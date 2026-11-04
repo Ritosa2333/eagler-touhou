@@ -85,7 +85,8 @@ html[data-book-theme=light] .spectator-timeline .spectator-control-icon{filter:b
 
 const styleReferences = new WeakMap();
 
-function retainStyles(ownerDocument) {
+/** @param {Document} ownerDocument */
+export function retainSpectatorTimelineStyles(ownerDocument) {
   let entry = styleReferences.get(ownerDocument);
   if (!entry) {
     const style = ownerDocument.createElement('style');
@@ -166,7 +167,7 @@ export function createSpectatorTimelineView(options = {}) {
   let latestMarks = new Map();
   const markElements = new Map();
 
-  const releaseStyles = retainStyles(ownerDocument);
+  const releaseStyles = retainSpectatorTimelineStyles(ownerDocument);
   const panel = el('section', 'spectator-timeline', 'Timeline');
   panel.setAttribute('role', 'region');
   panel.dataset.collapsed = 'true';
@@ -388,7 +389,7 @@ export function createSpectatorTimelineView(options = {}) {
     if (suppressChange) { render(); return; }
     const bounds = dragBounds || rangeBounds();
     range.value = String(Math.max(bounds.min, Math.min(bounds.max, finiteFrame(Number(range.value), bounds.min))));
-    const value = clock(Number(range.value) - dragTimeOrigin);
+    const value = clock(Number(range.value) - (editing ? dragTimeOrigin : timeOrigin()));
     cursorTime.textContent = value; range.setAttribute('aria-valuetext', value);
   });
   range.addEventListener('change', () => {

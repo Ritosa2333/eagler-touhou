@@ -131,13 +131,6 @@
     .transfer {
       width: min(260px, calc(100% - 16px));
     }
-    .transfer-heading .transfer-cancel {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
-      min-height: 44px;
-      margin: 0 -8px 0 0;
-    }
   }
   .transfer-line,
   .transfer-meta {

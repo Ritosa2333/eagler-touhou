@@ -8,15 +8,16 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import { WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
 import { runNativeCpp } from "./support/native-cpp.mjs";
+import { targets as sourceTargets } from "../../tools/ports/inputs.mjs";
 
 test("presentation contract coverage", async () => {
 /**
  * Required presentation-cadence coverage gate.
  *
  * The implementation is intentionally allowed to differ by Runtime family,
- * but every formal game must be registered in one verification lane. Adding a
- * Product Catalog entry without presentation verification makes this test fail
- * immediately instead of silently leaving the new adapter untested.
+ * but every checked-in source Runtime owner must be registered in one lane.
+ * Prebuilt-only products are verified against their published Runtime in the
+ * final browser matrix; they do not claim native source coverage here.
  */
 
 
@@ -53,8 +54,9 @@ const verification = Object.freeze({
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
 
-assert.deepEqual(Object.keys(verification).sort(), Object.keys(PRODUCT_GAMES).sort(),
-  "required presentation verification must be registered for every formal game adapter");
+const sourceGames = [...new Set(sourceTargets().map(target => target.game))].sort();
+assert.deepEqual(Object.keys(verification).sort(), sourceGames,
+  "required presentation verification must cover every checked-in source Runtime owner");
 
 const scheduledWorkspaceTests = new Set(WORKSPACE_NODE_TESTS);
 const selectedGames = selectedPortGames(Object.keys(verification));
@@ -132,7 +134,7 @@ int main(){for(unsigned hz:{60u,75u,90u,120u,144u,165u,240u}){
 
 console.log(JSON.stringify({
   presentationContractCoverage: "PASS",
-  scope: "source wiring and actual native clock components; no rendered-browser or physical-display claim",
+  scope: "checked-in source Runtime wiring and actual native clock components; prebuilt Runtime presentation requires browser acceptance",
   games: selectedGames,
   lanes: Object.fromEntries(Object.entries(verification).map(([game, lane]) => [game, lane.kind])),
 }));

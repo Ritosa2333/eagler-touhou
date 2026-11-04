@@ -15,7 +15,7 @@ import type {SettingsSnapshot} from '../models/game-settings';
 import {prepareLanguagePack, type PreparedLanguagePack} from './language-pack';
 import {checkPreparationAbort, preparationErrorText, type AcquisitionRequest, type PackageAcquisition,
   type PackageAcquisitionResult, type PreparationProgress} from './package-acquisition';
-import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, oggMusic, packageResourceIds, remoteMusicResources,
+import {ensureOggStartup, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
@@ -111,12 +111,14 @@ async function initialGamePlan(input: GamePreparationInput, acquired: PackageAcq
 }
 function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: SiteManifest | null) {
   const {settings, acquisition} = input, hosted = host?.games[settings.gameId];
+  const policy = PRODUCT_GAMES[settings.gameId].musicRuntime;
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
+    musicSources: 'sources' in policy ? policy.sources : [],
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
     importServer: host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg,
     remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
     installed: generation ? {revision: generation.descriptor.revision, oggFileIds: componentFileIds(generation.descriptor, 'ogg'), files: generation.files} : null,
-    requested: settings.musicPreference === 'ogg-akyu' && !('sources' in PRODUCT_GAMES[settings.gameId].musicRuntime) ? 'ogg-stream' : settings.musicPreference, explicit: settings.musicPreferenceExplicit});
+    requested: settings.musicPreference, explicit: settings.musicPreferenceExplicit});
 }
 /** Original app 4163–4198. Room timing is supplied by the validated room owner,
  * never recomputed, filled with guesses, or inferred from a Replay. */
@@ -130,7 +132,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
     touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
-    ...('sources' in PRODUCT_GAMES[game].musicRuntime ? {musicSource: music === 'ogg-akyu' ? 'akyu' as const : 'original' as const} : {}),
+    ...('sources' in product.musicRuntime ? {musicSource: music === 'ogg-akyu' ? 'akyu' as const : 'original' as const} : {}),
     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
       ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
     ...(productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
@@ -186,7 +188,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};
   const resource = runtimePack ? `${entry?.title || entry?.id || t('language.fallbackName')} ${t('settings.language')}`
-    : `${music === 'ogg-stream' ? t('settings.music.oggStream') : music === 'ogg-full' ? t('settings.music.oggFull') : music === 'ogg-akyu' ? t('settings.music.akyu') : music === 'none' ? t('settings.music.none') : 'midi'} ${t('settings.music')}`;
+    : `${musicModeLabel(music, t)} ${t('settings.music')}`;
   input.onStatus?.(t('runtime.preparingResources', {resource}));
   return {plan, language, music};
 }

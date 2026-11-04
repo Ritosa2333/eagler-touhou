@@ -30,6 +30,7 @@ import { isLauncherHomePath } from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
 import { helpDocumentAtPath, isStandalonePage } from './components/documents/catalog';
 import { isPreviewOnlyPage, previewFeaturesEnabled } from './release-features';
+import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
 const HelpRoute = lazy(() => import('./routes/help'));
 
 // Overlay history shares page scroll. Profile anchors have separate history entries.
@@ -75,6 +76,8 @@ export function Layout({ children }: { children: ReactNode }) {
         <UiScrollbars />
         {!review && <OriginalPreloads />}
         {children}
+        {/* The parser owns this bootstrap; server/client minifiers may rename its local functions. */}
+        <script suppressHydrationWarning>{SITE_BRAND_PREPAINT_SCRIPT}</script>
         {!review && <OriginalNoscript lobby={lobby} locale={locale} />}
         <ScrollRestoration getKey={pageScrollKey} />
         {!review && <OriginalModuleRequestMark />}

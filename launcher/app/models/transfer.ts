@@ -132,7 +132,12 @@ export function createTransferModel({translate: t, context, ports, frames,
       speedText: message.phase === 'requesting' ? t('transfer.waiting') : message.phase === 'preparing' ? t('transfer.preparingShort') : speedText(speed),
       etaText: total && speed > 1024 ? transferClock((total - loaded) / speed) : '--:--'});
   }
-  function runtimeTransfer(message: unknown) {show(transferPresentation(message));}
+  function runtimeTransfer(message: unknown) {
+    const progress = transferPresentation(message); show(progress);
+    // Resource adapters report per-file completion after the network request
+    // has ended. Their final mount must not leave an ownerless music panel.
+    if (progress.mode === 'ogg' && !progress.failed && !snapshot.warningVisible && (progress.completed || Number(progress.total) > 0 && Number(progress.loaded) >= Number(progress.total))) hideLater();
+  }
   function musicFailure(failed = 1) {
     if (disposed || context().launched) return;
     publish({hidden: false, kind: 'music', warningVisible: true, warningText: t('transfer.oggFailed', {count: failed || 1}), retryVisible: true});

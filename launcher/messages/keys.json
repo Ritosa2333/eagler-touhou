@@ -8623,6 +8623,10 @@
     "id": "game_title_th05mp",
     "params": []
   },
+  "multiplayer.loadout.th05_reimu": {
+    "id": "multiplayer_loadout_th05_reimu",
+    "params": []
+  },
   "multiplayer.loadout.th05_marisa": {
     "id": "multiplayer_loadout_th05_marisa",
     "params": []
@@ -8631,52 +8635,40 @@
     "id": "multiplayer_loadout_th05_mima",
     "params": []
   },
-  "multiplayer.loadout.th05_reimu": {
-    "id": "multiplayer_loadout_th05_reimu",
-    "params": []
-  },
   "multiplayer.loadout.th05_yuuka": {
     "id": "multiplayer_loadout_th05_yuuka",
-    "params": []
-  },
-  "room.th05InitialBombs": {
-    "id": "room_th05InitialBombs",
-    "params": []
-  },
-  "room.th05InitialSpares": {
-    "id": "room_th05InitialSpares",
-    "params": []
-  },
-  "room.th05InitialStockHint": {
-    "id": "room_th05InitialStockHint",
     "params": []
   },
   "settings.music.akyu": {
     "id": "settings_music_akyu",
     "params": []
   },
-  "settings.th05.bar.eosd": {
-    "id": "settings_th05_bar_eosd",
+  "room.th05InitialSpares": {
+    "id": "room_th05InitialSpares",
     "params": []
   },
-  "settings.th05.bar.native": {
-    "id": "settings_th05_bar_native",
+  "room.th05InitialBombs": {
+    "id": "room_th05InitialBombs",
     "params": []
   },
-  "settings.th05.bar.ring": {
-    "id": "settings_th05_bar_ring",
+  "room.th05InitialStockHint": {
+    "id": "room_th05InitialStockHint",
     "params": []
   },
   "settings.th05.bossBar": {
     "id": "settings_th05_bossBar",
     "params": []
   },
-  "settings.th05.numericDream": {
-    "id": "settings_th05_numericDream",
+  "settings.th05.bar.native": {
+    "id": "settings_th05_bar_native",
     "params": []
   },
-  "settings.th05.numericPower": {
-    "id": "settings_th05_numericPower",
+  "settings.th05.bar.eosd": {
+    "id": "settings_th05_bar_eosd",
+    "params": []
+  },
+  "settings.th05.bar.ring": {
+    "id": "settings_th05_bar_ring",
     "params": []
   },
   "settings.th05.phaseMarkers": {
@@ -8693,6 +8685,14 @@
   },
   "settings.th05.timeoutAsTime": {
     "id": "settings_th05_timeoutAsTime",
+    "params": []
+  },
+  "settings.th05.numericDream": {
+    "id": "settings_th05_numericDream",
+    "params": []
+  },
+  "settings.th05.numericPower": {
+    "id": "settings_th05_numericPower",
     "params": []
   }
 }

@@ -81,17 +81,17 @@ function isGitWorkingTree(root) {
   } catch { return false; }
 }
 if (workspaceAudit) {
-  const {loadSourceLayout,projectConfigurationPath}=await import('../lib/source-layout.mjs');
+  const {loadSourceLayout}=await import('../lib/source-layout.mjs');
+  const {builds:config,targets:sourceTargets}=await import('../../tools/ports/inputs.mjs');
   const {loadReviewedPublicationAssets}=await import('../lib/reviewed-publication-assets.mjs');
   const layout=loadSourceLayout(project),root=layout.root;
   const WORKSPACE_REPOSITORIES=layout.repositories,workspacePath=(...args)=>layout.path(...args);
   const reviewed=await loadReviewedPublicationAssets(root,resolve(root,'launcher/config/reviewed-source-assets.json'));
   // Source publication must also run in a clean checkout before contracts or
   // frontend dependencies have been generated.
-  const config=JSON.parse(await readFile(projectConfigurationPath('runtime-builds.json',project),'utf8'));
   if(config.schema!=='eagler-touhou/runtime-builds/1'||!config.games)throw Error('Invalid Runtime build ownership');
-  const gameOwners = [...new Set(Object.values(config.games).flatMap(entry =>
-    Object.values(entry.variants).map(variant => variant.workspaceRepository ?? entry.workspaceRepository)))];
+  const gameOwners = [...new Set(sourceTargets().map(target =>
+    target.definition.workspaceRepository ?? config.games[target.game].workspaceRepository))];
   gameOwners.push('common');
   gameOwners.push(...['relay','turn','telemetry'].filter(owner=>WORKSPACE_REPOSITORIES[owner]));
   workspaceChecked = [

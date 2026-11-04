@@ -14,6 +14,9 @@ import {checkPreparationAbort, preparationErrorText, type PackageAcquisition, ty
 
 export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full' || mode === 'ogg-akyu';
 export const musicTransport = (mode: MusicMode): 'ogg' | 'midi' | 'none' => oggMusic(mode) ? 'ogg' : mode === 'midi' ? 'midi' : 'none';
+export const musicModeLabel = (mode: MusicMode, t: Translate) => mode === 'midi' ? 'midi'
+  : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull'
+    : mode === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.none');
 
 /** Upgrade only a newly required shared dependency. Existing DATA and selected
  * optional files must have identical content in the publication. */

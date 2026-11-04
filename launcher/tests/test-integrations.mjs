@@ -89,9 +89,16 @@ assert.equal(th12.params.life_fragment,3);assert.equal(th12.params.bomb_fragment
 assert.equal(th12.params.score,120);assert.equal(th12.params.value,99990);
 assert.equal(th12.params.ventra_2,0);assert.equal(th12.params.ventra_3,0);
 const declaredThpracGames = Object.entries(PRODUCT_GAMES)
-  .filter(([, product]) => product.features.thprac)
+  .filter(([, product]) => product.features.thprac && product.thpracRuntime?.session !== "native")
   .map(([game]) => game);
 assert.deepEqual(THPRAC_SUPPORTED_GAMES, declaredThpracGames,
-  "thprac integration support must exactly match Product Catalog declarations");
+  "Windows thprac session support must match non-native Product Catalog declarations");
+const nativeThpracGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.features.thprac && product.thpracRuntime?.session === "native")
+  .map(([game]) => game);
+assert.deepEqual(nativeThpracGames, ["th05"], "native thprac products must declare their non-session adapter");
+assert.equal(THPRAC_SUPPORTED_GAMES.includes("th05"), false,
+  "TH05 native practice must not be reported as a Windows thprac session schema");
+assert.throws(() => createThpracSession("th05"), /unsupported thprac game: th05/);
 console.log(JSON.stringify({ thcrap: { assets: pack.assets.length, stringdefs: stringdefsAssets.length, crc32: "ok" }, thprac: { games: THPRAC_SUPPORTED_GAMES } }));
 });

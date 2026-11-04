@@ -98,7 +98,7 @@ export function PageExample({ page, region, announce }: Props) {
     case 'help/notices':
       return <WindowExample notice />;
     case 'status/history':
-      return <ServiceExample />;
+      return <WorkspaceEntry page={page} region={region} />;
     case 'migration/source':
       return <WorkspaceEntry page={page} region={region} />;
     default:
@@ -593,27 +593,5 @@ function HelpExample() {
         关于 EAGLER TOUHOU
       </a></p>
     </article>
-  );
-}
-function ServiceExample() {
-  const [range, setRange] = useState('24 小时'),
-    [state, setState] = useState('正常');
-  return (
-    <div className="catalog-recipe">
-      <Choices label="服务历史范围样例" value={range} onChange={setRange} items={['24 小时', '7 天', '90 天']} />
-      <Choices label="服务状态样例" value={state} onChange={setState} items={['正常', '异常', '未知', '读取失败']} />
-      <div className="catalog-service-example" role="status">
-        <strong>联机服务</strong>
-        <span data-service-state={state}>{state}</span>
-      </div>
-      {state === '读取失败' && (
-        <Button variant="outline" onClick={() => setState('正常')}>
-          重试样例
-        </Button>
-      )}
-      <a href="./uptime/" target="_blank" rel="noreferrer">
-        查看实际服务与历史
-      </a>
-    </div>
   );
 }

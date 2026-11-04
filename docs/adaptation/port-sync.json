@@ -1,6 +1,59 @@
 {
   "schema": "eagler-touhou/port-sync/1",
   "pairs": {
+    "th05": {
+      "normal": "ports/th05",
+      "multiplayer": "ports/th05-mp",
+      "base": "194f57e4a93025b3a215fb10407297acb9738ae7",
+      "history": [
+        {
+          "kind": "manual",
+          "source": "0ef3a2c187a7b88c51facc155a453111e76c9499",
+          "targetHead": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "integration": "committed",
+          "note": "独立 MP 在 uth05win 子树上接收当前普通版的移动触控、字体、音频与性能修复；合作规则、同步输入、多人侧栏和启动器显示配置由 th05-mp 独立维护。"
+        },
+        {
+          "kind": "git-merge",
+          "source": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "targetHead": "ad4898df32d757de232d30d86afa19b42b025c9a",
+          "normalHistory": "315e7a92dc06dc6bed6bfd59b21258578429d043",
+          "multiplayerHistory": "809747ec0e53c76942343fc21ac074b45ab99b0d",
+          "integration": "committed",
+          "note": "普通版完整目录历史已合入独立 MP，人工迁入的普通版修复得到真实合并祖先。合并树与已验证多人源码完全相同。"
+        },
+        {
+          "kind": "manual",
+          "base": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "source": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "targetHead": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "paths": [
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "单人和独立多人均将数位笔接触交给原生触控；保留多人会话，CDP 数位笔和手机路径验证通过"
+        },
+        {
+          "kind": "manual",
+          "base": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+          "source": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+          "targetHead": "0d01535ee8965b8f9c070b2c751061c4870cd481",
+          "paths": [
+            "ports/th05-mp/tests/pen-browser.mjs"
+          ],
+          "note": "普通版数位笔测试使用单人初始化；多人保留自己的双端数位笔与触控验收，不迁入单人测试夹具"
+        },
+        {
+          "kind": "manual",
+          "base": "625c8de0b57c6b71becb7c6297721c74e0284d71",
+          "source": "194f57e4a93025b3a215fb10407297acb9738ae7",
+          "targetHead": "fcf0ae6c6700989d8c92dc885351c4f0e00a7f19",
+          "paths": [
+            "ports/th05-mp/Game/Stage/Chara/Chara.cpp"
+          ],
+          "note": "Merged the normal port's centered 2x2 display indicator through projected history; MP keeps its local-seat rendering and rollback ownership."
+        }
+      ]
+    },
     "th075": {
       "normal": "ports/th075",
       "multiplayer": "ports/th075-mp",
@@ -1096,60 +1149,79 @@
           ],
           "note": "完整符卡收率显示为普通版 THPrac 选项；多人版不启用 THPrac，本次显示层级与刷新修改不适用于 MP。"
         }
-      ]
-    },
-    "th05": {
-      "normal": "ports/th05",
-      "multiplayer": "ports/th05-mp",
-      "base": "194f57e4a93025b3a215fb10407297acb9738ae7",
-      "history": [
-        {
-          "kind": "manual",
-          "source": "0ef3a2c187a7b88c51facc155a453111e76c9499",
-          "targetHead": "69aac738aa2e61d191adfcaa4d35093d70096234",
-          "integration": "committed",
-          "note": "独立 MP 在 uth05win 子树上接收当前普通版的移动触控、字体、音频与性能修复；合作规则、同步输入、多人侧栏和启动器显示配置由 th05-mp 独立维护。"
-        },
-        {
-          "kind": "git-merge",
-          "source": "69aac738aa2e61d191adfcaa4d35093d70096234",
-          "targetHead": "ad4898df32d757de232d30d86afa19b42b025c9a",
-          "normalHistory": "315e7a92dc06dc6bed6bfd59b21258578429d043",
-          "multiplayerHistory": "809747ec0e53c76942343fc21ac074b45ab99b0d",
-          "integration": "committed",
-          "note": "普通版完整目录历史已合入独立 MP，人工迁入的普通版修复得到真实合并祖先。合并树与已验证多人源码完全相同。"
-        },
-        {
-          "kind": "manual",
-          "base": "69aac738aa2e61d191adfcaa4d35093d70096234",
-          "source": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
-          "targetHead": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
+      ],
+      "watches": {
+        "sdl-text-and-frame-work": {
           "paths": [
-            "ports/th05-mp/web/shell.mjs"
+            "portable/sdl/Application.cpp",
+            "portable/sdl/Platform.cpp",
+            "portable/sdl/Renderer.cpp",
+            "portable/sdl/Scene.cpp",
+            "portable/sdl/Scene.hpp",
+            "portable/sdl/TextRaster.cpp",
+            "portable/sdl/TextRaster.hpp",
+            "site/game-sdl.mjs"
           ],
-          "note": "单人和独立多人均将数位笔接触交给原生触控；保留多人会话，CDP 数位笔和手机路径验证通过"
+          "base": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "eb7e343e73b9ac8a2931c983e0641bc6fee5ac90",
+              "source": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+              "targetHead": "53df5dfb8f60ebf5b61c5b0f09771b605d7bb987",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Application.cpp",
+                "ports/th12-mp/portable/sdl/Platform.cpp",
+                "ports/th12-mp/portable/sdl/Renderer.cpp",
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp",
+                "ports/th12-mp/portable/sdl/TextRaster.cpp",
+                "ports/th12-mp/portable/sdl/TextRaster.hpp",
+                "ports/th12-mp/site/game-sdl.mjs"
+              ],
+              "note": "普通版与多人版同步字形描边、Web 输出缓冲、顶点缓冲、背景裁剪和增量存档。普通版浏览器回归检查自动保存，多人版保留显式联机录像导出流程。"
+            }
+          ]
         },
-        {
-          "kind": "manual",
-          "base": "6c649942fda74f7a2f04a51741bcae4de8f4dbb1",
-          "source": "625c8de0b57c6b71becb7c6297721c74e0284d71",
-          "targetHead": "0d01535ee8965b8f9c070b2c751061c4870cd481",
+        "sdl-stage-backdrops": {
           "paths": [
-            "ports/th05-mp/tests/pen-browser.mjs"
+            "portable/sdl/Scene.cpp",
+            "portable/sdl/Scene.hpp"
           ],
-          "note": "普通版数位笔测试使用单人初始化；多人保留自己的双端数位笔与触控验收，不迁入单人测试夹具"
+          "base": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "7d18ec5c6e9322517dc217a76736e4de55e00e7e",
+              "source": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "targetHead": "eace4a7fcea19f712edb4705266fc5db2ea5568b",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Scene.cpp",
+                "ports/th12-mp/portable/sdl/Scene.hpp"
+              ],
+              "note": "单人与多人同步原版背景动画绘制顺序；录像落盘与槽位刷新属于多人版。"
+            }
+          ]
         },
-        {
-          "kind": "manual",
-          "base": "625c8de0b57c6b71becb7c6297721c74e0284d71",
-          "source": "194f57e4a93025b3a215fb10407297acb9738ae7",
-          "targetHead": "fcf0ae6c6700989d8c92dc885351c4f0e00a7f19",
+        "sdl-window-buffer": {
           "paths": [
-            "ports/th05-mp/Game/Stage/Chara/Chara.cpp"
+            "portable/sdl/Application.cpp"
           ],
-          "note": "Merged the normal port's centered 2x2 display indicator through projected history; MP keeps its local-seat rendering and rollback ownership."
+          "base": "d0047e4db91bc1de27ea613fb755211a058a3894",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "a90652f89b7b0d13bad1b1f5118bc40e7055ee58",
+              "source": "d0047e4db91bc1de27ea613fb755211a058a3894",
+              "targetHead": "d0047e4db91bc1de27ea613fb755211a058a3894",
+              "paths": [
+                "ports/th12-mp/portable/sdl/Application.cpp"
+              ],
+              "note": "单人和多人同步窗口缓冲尺寸固定与退出全屏恢复。单人浏览器回归覆盖窗口尺寸调整。"
+            }
+          ]
         }
-      ]
+      }
     }
   }
 }

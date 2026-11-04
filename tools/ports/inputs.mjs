@@ -31,6 +31,10 @@ export function targets({game, variant = 'both'} = {}) {
     for (const name of variant === 'both' ? ['normal', 'multiplayer'] : [variant]) {
       const definition = entry.variants[name];
       if (!definition) {if (game && variant !== 'both') throw new Error(`${game} has no ${variant} build`); continue;}
+      if (entry.builder === 'prebuilt' && entry.sourceBuild == null && definition.sourceBuild == null) {
+        if (game) throw new Error(`${id}/${name}: source build is not declared; use a prebuilt Runtime Release`);
+        continue;
+      }
       result.push({game:id, variant:name, directory:layout.repositories[definition.workspaceRepository ?? entry.workspaceRepository],
         recipe:{...entry.sourceBuild, ...definition.sourceBuild}, definition});
     }

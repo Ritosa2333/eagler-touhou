@@ -119,7 +119,7 @@ export function selectReplayExportPaths(paths: Iterable<string>): string[] {
 export function isValidReplayName(prefix: string, name: unknown): name is string {
   if (typeof name !== "string" || !prefix) return false;
   const product=Object.values(PRODUCT_GAMES).find(game=>game.replay.prefix===prefix);
-  if(product && 'slotPrefix' in product.replay)return new RegExp(`^${escapeRegExp(product.replay.slotPrefix)}[0-9]{2}\\.rpy$`, 'i').test(name);
+  if (product && 'slotPrefix' in product.replay) return new RegExp(`^${escapeRegExp(product.replay.slotPrefix)}[0-9]{2}\\.rpy$`, 'i').test(name);
   if(product && 'naming' in product.replay && product.replay.naming==='filename')return /^[a-zA-Z0-9_(). -]+\.rep$/i.test(name)&&!name.includes('..')&&name.length<=200;
   return new RegExp(`^${escapeRegExp(prefix)}_(?:\\d{2}|ud[0-9a-f]{4})\\.rpyx?$`, "i").test(name);
 }
@@ -153,7 +153,13 @@ export function allocateReplayName(
   }
 
   const occupied = normalizedPathSet(existingPaths, sharedExtensionSlot);
-  if(product && 'slotPrefix' in product.replay){for(let index=0;index<product.replay.slots;index++){const name=`${product.replay.slotPrefix}${String(index).padStart(2,'0')}.rpy`;if(!occupied.has(replayStoragePathKey(`${directory}/${name}`,sharedExtensionSlot)))return name;}return null;}
+  if (product && 'slotPrefix' in product.replay) {
+    for (let index = 0; index < product.replay.slots; index++) {
+      const name = `${product.replay.slotPrefix}${String(index).padStart(2, '0')}.rpy`;
+      if (!occupied.has(replayStoragePathKey(`${directory}/${name}`, sharedExtensionSlot))) return name;
+    }
+    return null;
+  }
   for (let index = 0; index <= 0xffff; index++) {
     const name = `${prefix}_ud${index.toString(16).padStart(4, "0")}${extension}`;
     const target = `${directory}/${name}`;

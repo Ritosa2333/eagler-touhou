@@ -30,3 +30,9 @@ test('charge and touch extensions coexist and malformed charge envelopes are rej
     const broken=first.slice();broken[at]^=1;assert.throws(()=>validateChargeReplay(broken,9),/录像数据损坏/);
   }
 });
+
+test('compact charge version is accepted and unknown versions rejected',()=>{
+ const bytes=charge(),view=new DataView(bytes.buffer);view.setUint32(bytes.length-12,2,true);
+ assert.equal(validateChargeReplay(bytes,9),true);
+ view.setUint32(bytes.length-12,3,true);assert.throws(()=>validateChargeReplay(bytes,9),/录像数据损坏/);
+});

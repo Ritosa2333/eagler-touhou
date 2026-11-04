@@ -345,3 +345,24 @@ test('language browser cache persists across launches and refreshes changed or c
     else delete globalThis.caches;
   }
 });
+
+for (const order of ['network-first', 'mount-first']) test(`completed OGG mount closes after final network activity (${order})`, () => {
+  const f = fixture(); f.state.launched = true;
+  f.model.networkSnapshot(net([task()])); f.frame();
+  const mounted = () => f.model.runtimeTransfer({mode:'ogg',loaded:MiB,total:MiB,path:'/music/th12_01.ogg'});
+  const idle = () => {f.model.networkSnapshot(net([]));f.frame();};
+  if (order === 'network-first') {idle();mounted();} else {mounted();idle();}
+  assert.equal(f.model.getSnapshot().hidden,false);
+  f.advance(2199);assert.equal(f.model.getSnapshot().hidden,false);
+  f.advance(1);assert.equal(f.model.getSnapshot().hidden,true);
+});
+test('completed OGG mount yields to later downloads and preserves failures', () => {
+  const f=fixture();f.state.launched=true;
+  f.model.runtimeTransfer({mode:'ogg',loaded:1,total:1});
+  f.model.networkSnapshot(net([task()]));f.frame();f.advance(2200);
+  assert.equal(f.model.getSnapshot().hidden,false);
+  f.model.networkSnapshot(net([]));f.frame();assert.equal(f.model.getSnapshot().hidden,true);
+  const failed=fixture();failed.model.musicFailure(1);
+  failed.model.runtimeTransfer({mode:'ogg',loaded:1,total:1,failed:true});failed.advance(5000);
+  assert.equal(failed.model.getSnapshot().hidden,false);assert.equal(failed.model.getSnapshot().retryVisible,true);
+});

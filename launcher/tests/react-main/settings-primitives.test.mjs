@@ -23,6 +23,7 @@ before(async () => {
     export {OptionsGroup} from './app/components/settings/OptionsGroup.tsx';
     export {OptionRow} from './app/components/settings/OptionRow.tsx';
     export {OptionSwitch} from './app/components/settings/TouchSettingsFields.tsx';
+    export {DEFAULT_TH05_MULTIPLAYER_DISPLAY, normalizeTh05MultiplayerDisplay} from './src/launcher/game-preferences.mts';
   `}, outfile: output, bundle: true, platform: 'node', format: 'esm', packages: 'external', jsx: 'automatic', plugins: [authoredSourcesPlugin(project)], logLevel: 'silent'});
   owners = await import(pathToFileURL(output).href);
 });
@@ -30,6 +31,20 @@ afterEach(async () => {if (root) await act(() => root.unmount()); root = null; a
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 async function render(tree) {if (!root) {const container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);} await act(() => root.render(tree));}
 const n = selector => {const node = env.document.querySelector(selector); assert.ok(node, selector); return node;};
+function createSettings(productId, values = new Map()) {
+  const storage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value)), removeItem: key => values.delete(key)};
+  const model = owners.createGameSettingsModel({storage});
+  const context = {productId, uiLocale: 'en', languages: [{id: 'ja', title: 'Japanese', pack: null}],
+    musicAvailability: {audio: true, midiAvailable: false, importServer: false, remoteOggAdvertised: false}, webMidiAvailable: false, mobile: false};
+  model.hydrate(context);
+  return {model, context, storage, values};
+}
+function settingsActions() {
+  const unavailable = () => {throw new Error('Unexpected settings action');};
+  const midi = Object.freeze({enabled: false, granted: false, busy: false, supported: false, outputs: [], selectedId: '', hint: 'Unavailable'});
+  return {confirm: unavailable, file: unavailable, showAppleNotice: unavailable, feedback() {}, reportError: unavailable,
+    externalMidi: {subscribe: () => () => {}, getSnapshot: () => midi, setEnabled: unavailable, selectOutput: unavailable}};
+}
 
 test('TH05 settings expose the PR album, language and one thprac switch', async () => {
   const saved=new Map(),storage={getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)};
@@ -46,31 +61,6 @@ test('TH05 settings expose the PR album, language and one thprac switch', async 
   assert.equal(n('#musicSelect').value,'ogg-akyu');
   const restored=owners.createGameSettingsModel({storage});restored.hydrate(context);
   assert.equal(restored.getSnapshot().music,'ogg-akyu');assert.equal(restored.getSnapshot().language,'lang_zh-hans');assert.equal(restored.getSnapshot().options.thpracEnabled,true);
-});
-
-test('TH05 multiplayer owns display controls, persists styles and leaves single-player controls separate', async () => {
-  const saved=new Map(),storage={getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)};
-  const model=owners.createGameSettingsModel({storage});
-  const context={productId:'th05mp',uiLocale:'zh-CN',languages:[{id:'ja',title:'日本語'}],musicAvailability:{audio:true,midiAvailable:false,importServer:false,remoteOggAdvertised:true},webMidiAvailable:false,mobile:false};
-  model.hydrate(context);model.setShareSingleplayerSettings(false);
-  const midi={enabled:false,granted:false,busy:false,supported:false,outputs:[],selectedId:'',hint:''};
-  const unexpected=()=>{throw Error('Unexpected action');};
-  const actions={confirm:unexpected,file:unexpected,showAppleNotice:unexpected,feedback(){},reportError:unexpected,externalMidi:{subscribe:()=>()=>{},getSnapshot:()=>midi,setEnabled:unexpected,selectOutput:unexpected}};
-  await render(React.createElement(owners.LocaleProvider,{locale:'zh-CN'},React.createElement(owners.SettingsBody,{model,actions,onOpenTouchLayout:unexpected})));
-  assert.equal(n('#mpTh05BossBarSelect').value,'native');
-  assert.equal(n('#mpTh05PhaseStarsToggle').disabled,true);
-  await act(()=>{const select=n('#mpTh05BossBarSelect');select.value='eosd';select.dispatchEvent(new env.window.Event('change',{bubbles:true}));});
-  assert.equal(n('#mpTh05PhaseTimeoutToggle').getAttribute('aria-checked'),'true');
-  assert.equal(n('#mpTh05PhaseTimeoutToggle').disabled,true);
-  await act(()=>n('#mpTh05PhaseStarsToggle').click());
-  const restored=owners.createGameSettingsModel({storage});restored.hydrate(context);
-  assert.equal(restored.getSnapshot().options.th05MultiplayerDisplay.bossBar,'eosd');
-  assert.equal(restored.getSnapshot().options.th05MultiplayerDisplay.phaseStars,true);
-  await act(()=>{const select=n('#mpTh05BossBarSelect');select.value='ring';select.dispatchEvent(new env.window.Event('change',{bubbles:true}));});
-  assert.equal(model.getSnapshot().options.th05MultiplayerDisplay.phaseStars,false);
-  await act(()=>model.hydrate({...context,productId:'th05'}));
-  assert.equal(env.document.querySelector('#mpTh05BossBarSelect'),null);
-  assert.equal(model.getSnapshot().options.th05MultiplayerDisplay.bossBar,'native');
 });
 
 test('third launch consumer shares shell/icon order and retains current intent, disabled and label ownership', async () => {
@@ -171,4 +161,67 @@ for (const productId of ['th06', 'th06mp']) test(`${productId}: grouped settings
   assert.equal(pixelSwitch.getAttribute('aria-checked'), 'true');
   await act(() => pixelSwitch.click());
   assert.equal(model.getSnapshot().options.pixelPerfectEnabled, false);
+});
+
+test('TH05 MP display normalization and persistence keep only options valid for the selected bar', () => {
+  assert.deepEqual(owners.DEFAULT_TH05_MULTIPLAYER_DISPLAY,
+    {bossBar: 'native', phaseMarkers: false, phaseStars: false, phaseTimeout: false, timeoutAsTime: false, numericDream: false, numericPower: false});
+  const {model, context, values} = createSettings('th05mp');
+  assert.deepEqual(model.getSnapshot().options.th05MultiplayerDisplay, owners.DEFAULT_TH05_MULTIPLAYER_DISPLAY);
+  model.setOption('th05MultiplayerDisplay', {bossBar: 'eosd', phaseMarkers: true, phaseStars: true, phaseTimeout: false,
+    timeoutAsTime: true, numericDream: true, numericPower: true});
+  assert.deepEqual(model.getSnapshot().options.th05MultiplayerDisplay,
+    {bossBar: 'eosd', phaseMarkers: false, phaseStars: true, phaseTimeout: true, timeoutAsTime: true, numericDream: true, numericPower: true});
+  model.setOption('th05MultiplayerDisplay', {bossBar: 'ring', phaseMarkers: true, phaseStars: true, phaseTimeout: false,
+    timeoutAsTime: true, numericDream: true, numericPower: false});
+  const expected = {bossBar: 'ring', phaseMarkers: false, phaseStars: false, phaseTimeout: true,
+    timeoutAsTime: true, numericDream: true, numericPower: false};
+  assert.deepEqual(model.getSnapshot().options.th05MultiplayerDisplay, expected);
+  const restored = createSettings('th05mp', values);
+  assert.deepEqual(restored.model.getSnapshot().options.th05MultiplayerDisplay, expected);
+  assert.equal(context.productId, 'th05mp');
+});
+
+test('TH05 MP display controls track EoSD/ring dependencies and stay hidden for single-player', async () => {
+  const {model} = createSettings('th05mp');
+  const actions = settingsActions();
+  await render(React.createElement(owners.LocaleProvider, {locale: 'en'},
+    React.createElement(owners.SettingsBody, {model, actions, onOpenTouchLayout: () => {}})));
+  const bossBar = n('#mpTh05BossBarSelect');
+  assert.deepEqual([...bossBar.options].map(option => option.value), ['native', 'eosd', 'ring']);
+  assert.equal(n('#mpTh05PhaseMarkersToggle').disabled, false);
+  assert.equal(n('#mpTh05PhaseStarsToggle').disabled, true);
+  assert.equal(n('#mpTh05PhaseTimeoutToggle').disabled, false);
+  assert.equal(n('#mpTh05TimeoutAsTimeToggle').disabled, true);
+
+  async function chooseBar(value) {
+    await act(() => n('#mpTh05BossBarSelect-trigger').click());
+    const option = env.document.querySelector(`[role="option"][data-value="${value}"]`);
+    assert.ok(option, `visible boss-bar option ${value}`);
+    await act(() => option.click());
+  }
+  await chooseBar('eosd');
+  assert.equal(model.getSnapshot().options.th05MultiplayerDisplay.bossBar, 'eosd');
+  assert.equal(model.getSnapshot().options.th05MultiplayerDisplay.phaseTimeout, true);
+  assert.equal(n('#mpTh05PhaseMarkersToggle').disabled, true);
+  assert.equal(n('#mpTh05PhaseStarsToggle').disabled, false);
+  assert.equal(n('#mpTh05PhaseTimeoutToggle').disabled, true);
+  assert.equal(n('#mpTh05TimeoutAsTimeToggle').disabled, false);
+  await act(() => n('#mpTh05PhaseStarsToggle').click());
+  assert.equal(model.getSnapshot().options.th05MultiplayerDisplay.phaseStars, true);
+
+  await chooseBar('ring');
+  const display = model.getSnapshot().options.th05MultiplayerDisplay;
+  assert.deepEqual(display, {bossBar: 'ring', phaseMarkers: false, phaseStars: false, phaseTimeout: true,
+    timeoutAsTime: false, numericDream: false, numericPower: false});
+  assert.equal(n('#mpTh05PhaseMarkersToggle').disabled, true);
+  assert.equal(n('#mpTh05PhaseStarsToggle').disabled, true);
+  assert.equal(n('#mpTh05PhaseTimeoutToggle').disabled, true);
+  assert.equal(n('#mpTh05TimeoutAsTimeToggle').disabled, false);
+
+  const single = createSettings('th05');
+  await render(React.createElement(owners.LocaleProvider, {locale: 'en'},
+    React.createElement(owners.SettingsBody, {model: single.model, actions, onOpenTouchLayout: () => {}})));
+  assert.equal(env.document.querySelector('#mpTh05BossBarSelect'), null);
+  assert.equal(env.document.querySelector('[id^="mpTh05"][id$="Toggle"]'), null);
 });

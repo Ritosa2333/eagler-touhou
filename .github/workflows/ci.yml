@@ -222,7 +222,9 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        sparse-checkout: ${{ needs.scope.outputs.checkout }}
+        sparse-checkout: |
+          ${{ needs.scope.outputs.checkout }}
+          ports/th06
     - uses: actions/setup-node@v7
       with:
         node-version: 24

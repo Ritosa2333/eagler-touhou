@@ -112,6 +112,15 @@ test('only supplied published products become cards; hidden/MP/demo titles never
   assert.equal(env.document.querySelector('[data-book-product="dj01"]'), null);
   await click('[data-book-category="spin-off"]'); assert.deepEqual(ids(), ['th075']);
 });
+test('TH05 is discoverable through the PC98 category in the current library', async () => {
+  const products = api.createLibraryProducts(['th05', 'th06'], p => p, id => '?game=' + id);
+  await mount(products);
+  assert.deepEqual(ids(), ['th05', 'th06']);
+  await click('[data-book-category="pc98"]');
+  assert.deepEqual(ids(), ['th05']);
+  await click('[data-book-category="windows"]');
+  assert.deepEqual(ids(), ['th06']);
+});
 test('favorites and view persist through remount, retain empty state, and recent list records actual launches only', async () => {
   const products = api.createLibraryProducts(['th06', 'th07'], p => p, id => '?game=' + id);
   await mount(products, 'zh-CN');

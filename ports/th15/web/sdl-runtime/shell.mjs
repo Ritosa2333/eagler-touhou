@@ -175,7 +175,7 @@ function path(value){const name=String(value).replaceAll('\\','/').toLowerCase()
 function renderScale(options, requested) {
  if (options.renderScale === 1 || options.renderScale === 2) return options.renderScale;
  if (requested === 1 || requested === 2) return requested;
- return globalThis.matchMedia?.('(any-pointer: coarse)').matches ? 1 : 2;
+ return 2;
 }
 function apply(){core.eaglerOptions=options;core._th15_always_hitbox(+(options.alwaysHitbox===true));core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
 async function resource(r){

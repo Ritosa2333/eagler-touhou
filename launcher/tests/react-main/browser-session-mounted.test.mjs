@@ -1438,6 +1438,7 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
     assert.equal(api.getTestSession().getRuntime().getSnapshot().ready, false, 'the file list is usable before game readiness');
     const document = f.native.document;
     await click('[aria-label='+JSON.stringify(api.translate(api.getTestSession().getSnapshot().locale,'replay.ui.manage',{name:'th9_01.rpy'}))+']');await click('.replay-file-menu [role="menuitem"]');
+    await until(() => f.downloads.length === 1, 'TH09 file download completes before inspecting its name');
     assert.equal(f.downloads[0].name, 'th9_01.rpy', 'direct download succeeds while the native ready message is withheld');
     let imported;
     await React.act(async () => {imported = api.getTestSession().importFile('replay', new NativeFile([new Uint8Array([8,9])], 'th9_02.rpy'), product);});
@@ -2499,13 +2500,16 @@ test('Browser Back cancels Replay preload, returns to Options, then a second Bac
 
 test('Replay Options close cancels an in-flight native configure before the next Back', async () => {
   const {f, session, parentKey} = await openReplayFromOptions({autoReady: false});
-  const postMessage = f.native.postMessage;
+  await until(() => f.frame.contentWindow.location.href === session.getRuntime().getSnapshot().source,
+    'Replay Runtime navigation reaches the native endpoint before it reports ready');
+  const native = f.frame.contentWindow;
+  const postMessage = native.postMessage;
   let pendingConfigure = null;
-  f.native.postMessage = (message, target) => {
+  native.postMessage = (message, target) => {
     if (message.command === 'configure' && message.options?.replayViewer) {pendingConfigure = message; return;}
     postMessage(message, target);
   };
-  await React.act(async () => {f.native.emit('ready');});
+  await React.act(async () => {native.emit('ready');});
   await until(() => session.getRuntime().getSnapshot().phase === 'configuring' && pendingConfigure,
     'Replay preload is held in native configure');
   assert.equal(session.getRuntime().getSnapshot().ready, true);

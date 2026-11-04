@@ -10,14 +10,8 @@
   "games": {
     "th05": {
       "builder": "prebuilt",
+      "sourceBuild": {"kind": "node", "build": ["scripts/build-eagler.mjs"], "commonMarker": "include/eagler/input/BrowserGamepad.hpp"},
       "workspaceRepository": "th05",
-      "sourceBuild": {
-        "kind": "node",
-        "build": [
-          "scripts/build-eagler.mjs"
-        ],
-        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
-      },
       "variants": {
         "normal": {
           "features": {
@@ -27,18 +21,13 @@
           "cache": {}
         },
         "multiplayer": {
+          "sourceBuild": {"kind": "node", "build": ["scripts/build-eagler.mjs"]},
+          "workspaceRepository": "th05mp",
           "features": {
             "thcrap": true,
             "thprac": false
           },
-          "cache": {},
-          "sourceBuild": {
-            "kind": "node",
-            "build": [
-              "scripts/build-eagler.mjs"
-            ]
-          },
-          "workspaceRepository": "th05mp"
+          "cache": {}
         }
       }
     },

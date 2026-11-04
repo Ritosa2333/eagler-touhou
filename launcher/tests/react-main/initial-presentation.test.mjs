@@ -70,6 +70,7 @@ for (const path of ['/', '/index.html', '/en.html', '/ja.html', '/nested/', '/ne
   test(`actual BrowserLauncher server render publishes only supported default book cards: ${path}`, () => {
     const document = parse(initialMarkup(path)), locale = path.includes('ja.html') ? 'ja' : path.includes('en.html') ? 'en' : 'zh-CN';
     assert.deepEqual(bookContract(document), expectedBookContract());
+    assert.equal(document.querySelector('.book-game-link[data-game=th17]'), null, 'test-only products stay out of the production SSR catalog');
     for (const game of ['th08', 'th10', 'th15', 'th11']) assert.ok(document.querySelector(`.book-game-link[data-game=${game}]`));
     assert.equal(document.querySelector('.book-game-link[data-game=th20]'), null);
     assert.equal(document.querySelector('[data-book-category=doujin] small').textContent, '0');

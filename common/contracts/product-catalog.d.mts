@@ -37,6 +37,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         runtime: "./runtime/th05/th05.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
         requiredShared: readonly string[]; runtimeAssets: readonly string[];
         musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; sources: readonly ["original", "akyu"]}>;
+        thpracRuntime: Readonly<{session: "native"}>;
         touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
         support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Goan114/uth05win-vibe"; adaptationNotice: "early-test"}>;
         package: Readonly<{dataFileId: "game-data"; dataTarget: "/th05.data"; rawDataImport: Readonly<{fileNames: readonly string[]}>;
@@ -785,6 +786,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         }>;
     }>;
     th17: Readonly<{
+        testOnly: true;
         number: "17";
         title: "東方鬼形獣";
         subtitle: "Wily Beast and Weakest Creature";
@@ -1669,7 +1671,6 @@ export declare function createLocalProductManifest(): {
                 inputTiming: Readonly<{
                     rollbackLimit: 12;
                     sendPredictionLimit: 12;
-                    rollbackDefault: false;
                     measuredStartup: true;
                     manualDelayLimit: 9;
                 }>;

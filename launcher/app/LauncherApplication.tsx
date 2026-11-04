@@ -245,6 +245,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       actions={host.settingsActions}
       native={host.nativeTouch}
       onCloseIntent={navigation.closeSurface}
+      onClosed={() => presence.restoreFocus(true)}
       fireEnabled={host.touchFireEnabled}
       previewImage={
         host.previewImage ?? (selectedProduct?.artwork ? `url(${JSON.stringify(selectedProduct.artwork)})` : 'none')

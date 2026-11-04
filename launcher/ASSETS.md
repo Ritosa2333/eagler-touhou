@@ -14,7 +14,7 @@ PWA 图标 `pwa/icon-192.png`、`icon-512.png`、`icon-maskable-512.png` 和 `ap
 
 ## 字体与站点标识
 
-站点采用角色头像与 EAGLER / TOUHOU 双行矢量字标。头像由 plasticparakeet 绘制，来自 [RebeccaRGB/emojifont-touhou](https://github.com/RebeccaRGB/emojifont-touhou)，按 CC BY-NC-SA 3.0 使用。页面共用 87 个角色，莉莉白与天子各占 10%，其余角色均分 80%。同页标识同步角色；脸部底线、字色与排版在资源中预先计算，页面不执行采色或尺寸测量。
+站点采用角色头像与 EAGLER / TOUHOU 双行矢量字标。头像由 plasticparakeet 绘制，来自 [RebeccaRGB/emojifont-touhou](https://github.com/RebeccaRGB/emojifont-touhou)，按 CC BY-NC-SA 3.0 使用。页面共用 87 个角色，莉莉白与天子各占 10%，其余角色均分 80%。同一标签页会话沿用同一角色，切换文档也不重新抽选；存储不可用时使用默认角色；脸部底线、字色与排版在资源中预先计算，页面不执行采色或尺寸测量。
 
 站点界面使用自行托管的 Yatra One 拉丁子集和 ChillRoundGothic 界面子集：Medium 用于正文，Bold 用于标题，Heavy 用于两张主卡片标题。子集构建脚本为 `scripts/build-site-ui-fonts.mjs`；上游版本与 OFL 声明记在该脚本及生成字体旁。GNU Unifont 作为缺字时的最后回退字体。完整日文字体与 Runtime 游戏字体由本地 Host 输入或 Runtime 包提供。
 

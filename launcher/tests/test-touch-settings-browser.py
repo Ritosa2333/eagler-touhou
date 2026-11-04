@@ -45,6 +45,101 @@ def main() -> int:
             assert hit["inside"], f"pointer at {selector} was intercepted by {hit['hit']}"
             page.mouse.click(x, y)
 
+        def verify_touch_exit_focus():
+            nonlocal page
+            focus_context = browser.new_context(viewport={"width": 844, "height": 390})
+            focus_context.add_init_script(
+                "localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1')"
+            )
+            page.close()
+            page = focus_context.new_page()
+            page.emulate_media(reduced_motion="reduce")
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            focus_url = url.split("?", 1)[0].rstrip("/") + "/?game=th10"
+            try:
+                page.goto(focus_url, wait_until="load", timeout=30000)
+                page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
+                if page.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
+                    page.locator("#firstUseNoticeCloseHint").click()
+                    page.wait_for_function("document.querySelector('#firstUseNoticeDialog')?.open === false")
+                page.wait_for_selector(".tools.is-open", timeout=15000)
+                touch_heading = page.locator("#mobileOptionsToggle")
+                if touch_heading.is_visible() and touch_heading.get_attribute("aria-expanded") != "true":
+                    click_real_pointer("#mobileOptionsToggle")
+                click_real_pointer("#touchLayoutEdit")
+                page.wait_for_selector("#touchLayoutEditor:not([hidden])")
+                # The editor requests browser fullscreen. Release it so
+                # Playwright can emulate the physical device rotation below.
+                page.evaluate("async () => { if (document.fullscreenElement) await document.exitFullscreen(); }")
+
+                click_real_pointer("#touchSensitivityCustomToggle")
+                slider_geometry = page.locator("#touchSensitivity").evaluate("""root => {
+                  const rootRect = root.getBoundingClientRect();
+                  const trackRect = root.querySelector('.ui-kit-slider-track').getBoundingClientRect();
+                  const thumb = root.querySelector('.ui-kit-slider-thumb');
+                  const thumbRect = thumb.getBoundingClientRect();
+                  const hit = getComputedStyle(thumb, '::before');
+                  return {
+                    rootWidth: rootRect.width,
+                    rootHeight: rootRect.height,
+                    trackWidth: trackRect.width,
+                    thumbWidth: thumbRect.width,
+                    thumbHeight: thumbRect.height,
+                    hitInsets: {top: hit.top, right: hit.right, bottom: hit.bottom, left: hit.left},
+                    value: thumb.getAttribute('aria-valuenow'),
+                  };
+                }""")
+                assert abs(slider_geometry["rootWidth"] - slider_geometry["trackWidth"]) <= 1, slider_geometry
+                assert abs(slider_geometry["rootHeight"] - 44) <= 1, slider_geometry
+                assert slider_geometry["hitInsets"] == {"top": "-15px", "right": "0px", "bottom": "-15px", "left": "0px"}, slider_geometry
+                assert abs(slider_geometry["thumbHeight"] + 30 - 44) <= 1, slider_geometry
+                slider_thumb = page.locator("#touchSensitivity .ui-kit-slider-thumb")
+                slider_thumb.focus()
+                assert slider_thumb.evaluate("el => document.activeElement === el"), "slider thumb must accept keyboard focus"
+                thumb = slider_thumb.bounding_box()
+                page.mouse.click(thumb["x"] + thumb["width"] / 2, thumb["y"] - 14)
+                assert slider_thumb.evaluate("el => document.activeElement === el"), "expanded vertical slider target must preserve focus"
+                assert slider_thumb.get_attribute("aria-valuenow") == slider_geometry["value"], "vertical slider hit area must not change its value"
+
+                click_real_pointer("#touchMovementMode-trigger")
+                page.wait_for_selector(".ui-select-content", state="visible")
+                page.keyboard.press("Escape")
+                page.wait_for_selector(".ui-select-content", state="hidden")
+
+                page.set_viewport_size({"width": 390, "height": 844})
+                page.wait_for_timeout(100)
+                click_real_pointer("#touchLayoutExit")
+                if page.locator("#decisionDialog").evaluate("el => el.open"):
+                    click_real_pointer("#decisionConfirm")
+                page.wait_for_selector("#touchLayoutEditor", state="hidden")
+                page.wait_for_timeout(100)
+                return_focus = page.evaluate("""() => {
+                  const active = document.activeElement;
+                  const options = document.querySelector('.tools.is-open');
+                  return {
+                    id: active?.id || '',
+                    tag: active?.tagName || '',
+                    isBody: active === document.body,
+                    inOptions: !!options?.contains(active),
+                    url: location.href,
+                  };
+                }""")
+                assert return_focus["inOptions"] and not return_focus["isBody"], return_focus
+                page.keyboard.press("Escape")
+                page.wait_for_function("!document.body.classList.contains('library-tools-open')")
+                assert "game=th10" not in page.url, page.url
+                assert not page.locator(".tools.is-open").count(), "Escape after editor exit must close the options panel"
+                return {"focus": return_focus, "slider": slider_geometry}
+            finally:
+                focus_context.close()
+
+        if "--focus-only" in sys.argv:
+            focus_evidence = verify_touch_exit_focus()
+            assert not errors, errors
+            print(json.dumps({"browser": browser.version, "rotated_touch_exit_focus": "PASS", **focus_evidence}))
+            browser.close()
+            return 0
+
         page.locator('.book-game-link[data-book-product="th06"]').click()
         page.locator("#mobileOptionsToggle").click()
         page.wait_for_function("document.querySelector('#mobileOptions').classList.contains('open')")
@@ -255,8 +350,10 @@ def main() -> int:
         assert shared["restartHidden"] is True, shared
         assert shared["thpracButtons"] == "false", shared
         assert shared["stored"]["restartButtonEnabled"] is False, shared
+
+        focus_evidence = verify_touch_exit_focus()
         assert not errors, errors
-        print(json.dumps({"browser": browser.version, "cross_game_touch_settings": "PASS", "restart_above_thprac": "PASS"}))
+        print(json.dumps({"browser": browser.version, "cross_game_touch_settings": "PASS", "restart_above_thprac": "PASS", "rotated_touch_exit_focus": "PASS", **focus_evidence}))
         browser.close()
     return 0
 

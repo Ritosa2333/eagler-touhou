@@ -1,7 +1,6 @@
 {
   "schema": "eagler-touhou/workspace-layout/1",
   "repositories": {
-    "th05": "ports/th05",
     "launcher": "launcher",
     "th06": "ports/th06",
     "th07": "ports/th07",
@@ -28,6 +27,7 @@
     "th12": "ports/th12",
     "th12mp": "ports/th12-mp",
     "th17": "ports/th17",
+    "th05": "ports/th05",
     "th05mp": "ports/th05-mp"
   }
 }

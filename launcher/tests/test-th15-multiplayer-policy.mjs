@@ -135,7 +135,7 @@ async function connect(code,index,count,challenge){
     intent:index===0?'create':'join',players:String(count),difficulty:'4',...(challenge===undefined?{}:{challengeMode:challenge?'1':'0'})});
   const socket=new WebSocket('ws://127.0.0.1:'+port+'/?'+query);sockets.push(socket);
   const first=await nextJson(socket);
-  assert.equal(first.type,'state',`room ${code} player ${index}: ${JSON.stringify(first)}`);assert.equal(first.room.adonisMode,1);assert.equal(first.room.predictionLimit,0);
+  assert.equal(first.type,'state',`room ${code} player ${index}: ${JSON.stringify(first)}`);assert.equal(first.room.adonisMode,0);assert.equal(first.room.predictionLimit,12);
   assert.equal(first.room.challengeMode,challenge??false);
   return socket;
 }

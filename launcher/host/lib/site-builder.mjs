@@ -311,6 +311,7 @@ async function prepareDeclaredContent(projectRoot, layout, python, thtk) {
       prepared[game] = output;
       continue;
     }
+    if (!declaration.script) throw new Error(`${game}: provide complete prepared content at ${supplied} (DATA, music and artwork)`);
     const preparationScript = resolve(projectRoot, declaration.script);
     if (!await fileExists(preparationScript)) {
       throw new Error(`${game.toUpperCase()} content is missing: provide ${supplied} or ${declaration.script}`);
