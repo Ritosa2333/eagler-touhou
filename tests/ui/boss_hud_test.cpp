@@ -290,7 +290,7 @@ TEST(boss_stars_created_and_hidden_when_passed) {
     CHECK(h.boss.displayed_ratio() >= 0.5f);
     CHECK(shown(h.vm(h.boss.star_handles()[0])));
     CHECK(!shown(h.vm(h.boss.star_handles()[1])));
-    // 星可见态复核 + 轨道半径 56（0x42713c-0x427193：boss + 56·(cos t, sin t)）。
+    // 星可见态复核 + 轨道半径 56（0x42713c-0x427193：boss + R(t)·(0,56)）。
     input.boss_life = 900;  // 目标 0.9 > 0.5 → displayed 0.525 起，星 0 仍越过。
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     auto* star = h.vm(h.boss.star_handles()[0]);
@@ -315,9 +315,10 @@ TEST(boss_stars_created_and_hidden_when_passed) {
     CHECK(shown(star0));
     const float t = star0->variables.rotation.z;  // normalize(-π-0.25*2π) = +π/2
     CHECK_NEAR(double(t), 1.5707963, 1e-4);
-    // 位置 = boss + 56·(cos t, sin t)：y = 128 + 56·sin(t)。
-    CHECK_NEAR(double(star0->visual.translation.y), double(128.f + 56.f * std::sin(t)), 1e-3);
-    CHECK_NEAR(double(star0->visual.translation.x), double(56.f * std::cos(t)), 1e-3);
+    // Adjudicated against 00427135 push / 0042713c lea: input is (0,56),
+    // not (56,0). Original 00472fc0 direct-call at pi/2 returns (-56,0).
+    CHECK_NEAR(double(star0->visual.translation.y), double(128.f + 56.f * std::cos(t)), 1e-3);
+    CHECK_NEAR(double(star0->visual.translation.x), double(-56.f * std::sin(t)), 1e-3);
 }
 
 TEST(boss_proximity_hides_ring_with_hysteresis) {

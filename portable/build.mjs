@@ -63,6 +63,7 @@ const allHeaders = [
                   resolve(workspace, 'portable/input'),
                   resolve(workspace, '../../common/include/eagler/input')),
   resolve(workspace, '../../common/include/eagler/text/RuntimeFontRaster.hpp'),
+  resolve(workspace, '../../common/include/eagler/audio/WebSfx.hpp'),
 ];
 await printRuntimeInputs({workspace, root, sources: sources.map(p => resolve(root, p)), headers: allHeaders, flags});
 const version = spawnSync(python, [emcc, '--version'], {cwd: root, env, encoding: 'utf8'});

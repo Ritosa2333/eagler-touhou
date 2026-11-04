@@ -11,6 +11,7 @@ public:
     bool start(const std::vector<u8>& top);
     bool begin_stage(const std::vector<u8>& header);
     bool record(const GameInput& input, u8 slow_rate);
+    bool record_spell_time(u32 index, i32 packed);
     bool encode(std::vector<u8>& out, const std::string& name, i32 score) const;
     static std::vector<u8> top_snapshot(const SessionState& progress);
     static std::vector<u8> stage_snapshot(const SessionState& progress,

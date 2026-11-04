@@ -15,6 +15,9 @@ function fixture(t) {
   for (const file of ['source-object.mjs', 'runtime-inputs.mjs', 'compiler-arguments.mjs']) put('tools/build/' + file, readFileSync(new URL('../../../tools/build/' + file, import.meta.url)));
   for (const name of ['game', 'platform', 'sdl']) put('ports/th13/web/cpp/' + name + '/a.cpp', '// synthetic');
   put('ports/th13/web/cpp/game/a.hpp', '// header');
+  for (const file of ['ports/th13/portable/input/TouchController.hpp', 'common/include/eagler/input/BrowserGamepad.hpp',
+    'common/include/eagler/text/RuntimeFontRaster.hpp', 'common/include/eagler/audio/WebSfx.hpp'])
+    put(file, '// synthetic dependency');
   put('ports/th13/portable/sdl/Renderer.cpp', '// renderer');
   put('ports/th13/portable/sdl/backend.hpp', '// backend 1');
   put('ports/th13/tests/harness/harness.cpp', '// harness');
@@ -39,7 +42,7 @@ test('harness removes stale proof; successful fresh output has hashed manifest',
   assert.equal(manifest.binary.sha256.length, 64);
   assert.equal(manifest.toolchain.sha256.length, 64);
   assert.ok(Object.keys(manifest.sources).some(p => p.endsWith('a.hpp')));
-  assert.ok(manifest.flags.includes('-ffp-contract=off'));
+  assert.ok(manifest.compileFlags.includes('-ffp-contract=off'));
   run = f.run('build-harness.mjs', {WASI_SDK_PATH: ''});
   assert.notEqual(run.status, 0);
   assert.equal(existsSync(resolve(output, 'build.json')), false);

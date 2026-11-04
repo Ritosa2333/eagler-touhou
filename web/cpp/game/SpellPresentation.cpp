@@ -43,6 +43,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     if (!event.emitted()) return true;
     if (!error.empty()) return false;
     if (event.kind == SpellEventKind::End) {
+        capture_frames_ = event.state.active_frames;
         sync(event.state);
         // 00413a60 uses 0046fc30 with EBX=1, which schedules label1 rather
         // than deleting these roots. Their real scripts animate the exit.
@@ -240,6 +241,57 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     return true;
 }
 
+// 0x42a439 = jmp dword ptr [eax*4 + 0x42abd4]（入口 0x42a430，jmp 在 +9）。
+// case2(0x42a9d4)/case4(0x42aa9f) 开头 lea esi,[edi+0xd0]，case0(0x42a440)/
+// case6(0x42ab25) 用 +0xcc（banner_）；两个独立槽，互不 retire。
+// 全 EXE 可达 case 只有 0/1/2/4：case3(front62) 位于 0x42a41c/0x42a41e 后的
+// 不可达块、case5(0x42abc9) 是共享 epilogue、case6(front64) 无调用方。
+// front61/63（anm-list 7651/7681：sprite50/52）自带 ins_400(320,144,0)、
+// 层19；时序为 90 帧保持 + 10 帧 ins_409 淡出 + 20 帧 ins_1，故不设 translation。
+// 创建失败只降级：SpellPresentation::error 是粘性的（consume/draw 见非空即
+// 整帧失败），原版 0x403800/0x46f820 建 VM 失败也不写全局错误，故此处不调
+// fail()、不传播到 StageBattle::error_。
+bool SpellPresentation::show_notice(i32 front_script) {
+    // 合法值 = 可达 case2/case4 对应的 front 61/63（62 属不可达 case3）。
+    if (front_script != 61 && front_script != 63) return true;
+    if (animations_.resource(banks_.front)) {
+        if (notice_) animations_.retire(notice_);
+        notice_ = animations_.create(banks_.front, front_script, -1, 0);
+    } else {
+        notice_ = 0;
+    }
+    return true;
+}
+
+// 0x43d530：吸灵满槽提示，脚本号 = be808/200 + 0x6b（0x6b=107），
+// level1/2/3 → front108/109/110（anm-list 8917/8935/8953：sprite78/79/80，
+// 层11、ins_407(100,1,0,-16,0)、ins_6(96) 后结束）。三脚本**无 ins_400**，
+// 位置由 FUN_0046f820 的 param_3 传入：自机 (x, y-32, z)
+//（0043d530.c:24-30 的 local_14/local_10/local_c，y 减 0x4aec68=32.0）；
+// param_4=0.0→anm_arg、param_5=-1(layer 保留脚本层)、param_6=0(flags，
+// 走 FUN_0046f3f0 主链、不加 +320/+16)。AnmManager::create 即 0x46f820 等价实现。
+// 0043d530 的返回值只在 EAX 里流转，**没有存进任何对象字段**；它既不清上一级
+// 句柄也不回收，三个提示动画各自按脚本 ins_6(96) 自然结束。此前实现每次先
+// retire(spirit_notice_) 会掐断上一级提示（快速满槽时可见）。这里改为：
+// 不清旧句柄、全部压入 spirit_notices_，getter 仍返回最近一次；创建失败只
+// 降级（不写粘性 error），资源未就绪同样不破坏已 live 的提示。
+bool SpellPresentation::show_spirit_notice(i32 level, float x, float y, float z) {
+    if (level < 1 || level > 3) return true;  // 合法 level = 1..3
+    const i32 script = level + 0x6b;          // 108/109/110
+    // 自然结束的句柄先摘除，避免 list 无限增长；find()==null 即已收尾。
+    spirit_notices_.erase(
+        std::remove_if(spirit_notices_.begin(), spirit_notices_.end(),
+                       [this](u32 handle) { return !animations_.registry.find(handle); }),
+        spirit_notices_.end());
+    if (!animations_.resource(banks_.front)) return true;
+    const u32 handle = animations_.create(banks_.front, script, -1, 0,
+                                          Vec3{x, y - 32.f, z});
+    if (!handle) return true;
+    spirit_notices_.push_back(handle);
+    spirit_notice_ = handle;
+    return true;
+}
+
 void SpellPresentation::sync(const SpellSnapshot& state) {
     const u32 old_flags = flags_;
     snapshot_ = state;
@@ -273,18 +325,18 @@ bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attemp
     if (!snapshot_.active()) return true;
     const auto* vm = animations_.registry.find(displays_[2]);
     if (!vm) return true; // 00413080 missing +0x1c VM skips this numeric pass
+    // 0x413080 直读（objdump，非摘要）：0x4130bc `movl $1,0x1917c(AsciiInf)`
+    //（coordinate space = 1）、0x4130c2 font=2、0x4130c8 alpha=VM+0x52b；
+    // 0x413231 恢复 0。坐标常量来自 .rdata 实读并原样 push 给 0x403e70：
+    // 0x4aeda0=357.0（捕获 "%8d"）、0x4aed98=371.0（"$"）、
+    // 0x4aed94=452.0（"%.2d/%.2d" 计数）、0x4aed9c=35.0（y）。
+    // 此前用 space 0 是按截图反推的旁路，偏离原版数据流；这里恢复原版
+    // space=1 + 原始常量，屏幕偏移交给文本系统的 space-1 变换（与 0x404140/
+    // 0x404b50 只在 space 1 pass 绘制一致），不在本面手调数值。
     HudTextStyle style;
     style.font = 2;
-    // 413080 sets the font (AsciiInf+0x19178=2) and leaves the alignment
-    // fields at their default 1 (left/top, 0x42814F/0x428155), restored by
-    // 427910 after HUD text. It also writes +0x1917c=1 (coordinate space 1),
-    // but the native draw capture terra-reimu-s1 f6486 puts the bonus digits
-    // at x=363.5/y=34.5, i.e. the screen-space pen (357,35) + glyph bearing:
-    // space 1 must NOT add the port's (32,16) playfield offset here. Keep the
-    // queued position in screen space (coordinate_space 0); adding (32,16)
-    // shifted the bonus and counter 32px right / 16px down (bug: panel lost).
+    style.coordinate_space = 1;
     style.alignment = 1;
-    style.coordinate_space = 0;
     style.color = (vm->visual.color & 0xff000000u) | 0x00ffffffu;
     char text[32];
     float x = 371.0f;
@@ -305,6 +357,66 @@ bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attemp
     }
     if (!services.hud_text({{452.0f, 35.0f, 0}, style, text}))
         return fail("Spell capture counter text service failed");
+    return true;
+}
+
+bool SpellPresentation::draw_capture_times(HudDrawServices& services, i32 packed_time) {
+    if (!error.empty()) return false;
+    // 0x4279ea 门：stage+0x120 != 0（0x42a4e2 case0 建 front95 后置位）。
+    if (!bonus_capture_effect_) return true;
+    const auto* effect = animations_.registry.find(bonus_capture_effect_);
+    if (!effect) {
+        // 0x427a2c/0x427a56：VM 无效 → +0x118/+0x120 归零。
+        bonus_capture_effect_ = 0;
+        return true;
+    }
+    const u32 vm_alpha = effect->visual.color & 0xff000000u;
+    HudTextStyle style;
+    style.font = 4;              // 0x427a77/0x4279a3
+    style.coordinate_space = 1;  // 0x4279a3/0x427a6d
+    style.alignment = style.vertical_alignment = 1;  // 0x4279dc/0x4279e2
+    char text[32];
+    // 第一对：manager+0x94 = 结束时 +0x90 active_frames（00412ee0:24-27）。
+    // 0x427a87-0x427b2a：sec=frames/60（魔数 0x88888889/>>5），显示 sec>999 截 999；
+    // hh=(frames-sec*60)*100/60（后半段重算，用未截断 sec）。
+    {
+        const i32 frames = capture_frames_;
+        i32 seconds = frames / 60;
+        const i32 hundredths = (frames - seconds * 60) * 100 / 60;
+        if (seconds > 999) seconds = 999;
+        style.color = vm_alpha | 0x00ffffffu;  // 0x19160=0xffffffff + VM alpha
+        // 0x427a87 前 scale 仍为 1.0（前段 0x427b?? 恢复值）；0x427ab7 才载 0.6。
+        style.scale = {1.0f, 1.0f};
+        std::snprintf(text, sizeof text, "%3d.", seconds);
+        if (!services.hud_text({{318.0f, 192.0f, 0}, style, text}))
+            return fail("Spell capture time service failed");
+        style.scale = {0.6f, 0.6f};  // 0x4aed84 = 0.6
+        std::snprintf(text, sizeof text, "%.2ds", hundredths);
+        if (!services.hud_text({{362.0f, 198.0f, 0}, style, text}))
+            return fail("Spell capture time service failed");
+    }
+    // 第二对：FUN_00424e20 解码 DAT_004c2178+0xa8（0x412ee0 wall-clock 打包）。
+    // 校验失败（含 replay 异常哨兵 0x6ad1584）→ (999, 99)。
+    {
+        i32 seconds = 999, hundredths = 99;
+        const i32 v = packed_time;
+        if (v / 100000 - 0x16 == ((v / 100) % 1000 + 0x3a6) % 1000 +
+                                     (v % 100 + 0x43) % 100) {
+            seconds = ((v / 100) % 1000 + 0x3a6) % 1000;
+            hundredths = (v % 100 + 0x43) % 100;
+        }
+        style.color = vm_alpha | 0x00808080u;  // 0x427b4c 0xff808080 + VM alpha
+        // 0x427b60 fld1 restores full-size seconds; 0x427b92 loads
+        // 0.6 only after that first output, for the centiseconds.
+        style.scale = {1.f, 1.f};
+        std::snprintf(text, sizeof text, "%3d.", seconds);
+        if (!services.hud_text({{318.0f, 208.0f, 0}, style, text}))
+            return fail("Spell record time service failed");
+        style.scale = {.6f, .6f};
+        std::snprintf(text, sizeof text, "%.2ds", hundredths);
+        if (!services.hud_text({{362.0f, 214.0f, 0}, style, text}))
+            return fail("Spell record time service failed");
+    }
     return true;
 }
 
@@ -399,6 +511,18 @@ void SpellPresentation::release() {
     if (banner_ && !animations_.retire(banner_))
         error = "Spell banner retire failed";
     banner_ = 0;
+    // 0x42a430 case2/3/4（stage ctx+0xd0）与 0x43d530 吸灵满槽提示句柄
+    // 随场景卸载一并回收并清零，否则跨关残留（用户已报告换面残留意象）。
+    if (notice_ && !animations_.retire(notice_))
+        error = "Spell notice retire failed";
+    notice_ = 0;
+    // 0x43d530 不保存句柄，原版 VM 由脚本自然结束；端口必须在此统一回收
+    // 全部仍在播的满槽提示（不能只回收最近一个），否则卸载/换关残留。
+    for (u32 handle : spirit_notices_)
+        if (handle && !animations_.retire(handle))
+            error = "Spirit notice retire failed";
+    spirit_notices_.clear();
+    spirit_notice_ = 0;
     // 0x42a430 case0 的数字/分隔符/特效 VM 随场景卸载回收
     //（RunScene.cpp:264 场景析构路径）。
     for (u32& handle : bonus_digits_) {
@@ -413,6 +537,7 @@ void SpellPresentation::release() {
     if (bonus_capture_effect_ && !animations_.retire(bonus_capture_effect_))
         error = "Spell capture effect retire failed";
     bonus_million_ = bonus_thousand_ = bonus_capture_effect_ = 0;
+    capture_frames_ = 0;
     if (background_ && !animations_.retire(background_))
         error = "Spell card background retire failed";
     background_ = 0;

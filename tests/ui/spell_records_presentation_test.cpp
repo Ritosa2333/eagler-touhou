@@ -1,6 +1,7 @@
 #include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/SpellPresentation.hpp"
+#include "game/SpellElapsedTime.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -135,11 +136,10 @@ TEST(spell_presentation_numeric_text_uses_live_bonus_mode_counters_and_vm_alpha)
     CHECK_EQ(sink.texts[0].style.font, 2);
     CHECK_EQ(sink.texts[0].style.alignment, 1);
     CHECK_EQ(sink.texts[0].style.vertical_alignment, 1);
-    // 0x413080 的 AsciiInf 坐标空间 1 在原版=屏幕空间；port 的
-    // coordinate_space==1 会再加 playfield (32,16)。原生 draw 捕获
-    // terra-reimu-s1 f6486 的 bonus 数字在 x=363.5/y=34.5（=笔位 357/35
-    // + 字形 bearing），无 (32,16)，故 port 必须用 0。
-    CHECK_EQ(sink.texts[0].style.coordinate_space, 0);
+    // 004130bc selects pass1; 00403da0 copies coordinates unchanged and
+    // 00404140 selects the full-screen camera separately. AsciiText must
+    // preserve (357,35), matching native f6486 ink (363.5,34.5), in pass1.
+    CHECK_EQ(sink.texts[0].style.coordinate_space, 1);
     CHECK_EQ(sink.texts[0].style.color, 0x7fffffffu);
     CHECK(sink.texts[1].text == "03/07");
     CHECK(sink.texts[1].position.x == 452.0f);
@@ -259,6 +259,7 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
     SpellState state;
     const float position[3] = {0, 128, 0};
     CHECK(presentation.consume(state.begin(0, "synthetic", 3000, 1, 0), position, {}, 6));
+    for (i32 i = 0; i < 125; ++i) CHECK(state.step(false));
     CHECK(presentation.consume(state.end(), position, {}, 6));
     // 句柄断言（layers 桶仅 update() 时重填，这里按创建即查）。
     const int expected_digit[8] = {0, 1, 0, 0, 0, 0, 0, 0};
@@ -279,7 +280,34 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
         CHECK_EQ(vm->visual.sprite, 284);
     else
         CHECK(false);
-    CHECK(manager.registry.find(presentation.bonus_capture_effect_handle()) != nullptr);
+    auto* effect = manager.registry.find(presentation.bonus_capture_effect_handle());
+    CHECK(effect != nullptr);
+    if (effect) effect->visual.color = 0x7f123456;
+    TextSink times;
+    CHECK(presentation.draw_capture_times(times, encode_spell_elapsed_time(3.006)));
+    CHECK_EQ(times.texts.size(), size_t(4));
+    if (times.texts.size() == 4) {
+        CHECK_EQ(times.texts[0].text, std::string("  2."));
+        CHECK_EQ(times.texts[1].text, std::string("10s"));
+        CHECK_EQ(times.texts[2].text, std::string("  3."));
+        CHECK_EQ(times.texts[0].style.scale.x, 1.f);
+        CHECK_EQ(times.texts[1].style.scale.x, .6f);
+        CHECK_EQ(times.texts[2].style.scale.x, 1.f);
+        CHECK_EQ(times.texts[3].style.scale.x, .6f);
+        CHECK_EQ(times.texts[0].style.color, 0x7fffffffu);
+        CHECK_EQ(times.texts[2].style.color, 0x7f808080u);
+        CHECK_EQ(times.texts[0].style.coordinate_space, 1);
+    }
+    // A later spell resets +0x90, not the completed capture's +0x94.
+    presentation.sync(state.begin(1, "next", 3000, 1, 0).state);
+    times.texts.clear();
+    CHECK(presentation.draw_capture_times(times, 0));
+    CHECK_EQ(times.texts.size(), size_t(4));
+    if (times.texts.size() == 4) {
+        CHECK_EQ(times.texts[0].text, std::string("  2."));
+        CHECK_EQ(times.texts[2].text, std::string("999."));
+        CHECK_EQ(times.texts[3].text, std::string("99s"));
+    }
 }
 
 int main() { return th13test::run_all("spell_records_presentation_test"); }

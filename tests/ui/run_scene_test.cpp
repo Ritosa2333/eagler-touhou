@@ -6,9 +6,11 @@
 
 #include "game/RunScene.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/SpellElapsedTime.hpp"
 
 #include <cstring>
 #include <map>
+#include <vector>
 
 using namespace th13;
 using namespace th13::test;
@@ -136,6 +138,19 @@ struct RunHost final : RunSceneServices {
     bool request_practice_end() override {
         return true;
     }
+    // Production 00412ee0 edge state machine (SpellTimeClock), driven through
+    // RunScene's real spell_event callback in the test below.
+    SpellTimeClock spell_time_clock;
+    std::vector<i32> spell_time_indexes;
+    void update_spell_time(bool active) override {
+        const auto now = std::chrono::steady_clock::now();
+        if (active) {
+            spell_time_clock.begin(now);
+            return;
+        }
+        SpellTimeClock::End end;
+        if (spell_time_clock.end(now, end)) spell_time_indexes.push_back(end.index);
+    }
     bool hud_sound(i32) override { return true; }
     bool life_hud(i32, i32) override { return true; }
     bool bomb_hud(i32, i32) override { return true; }
@@ -234,6 +249,32 @@ TEST(run_scene_loads_stage_battle) {
     CHECK_EQ(harness.scene->battle.sim.anim_list.size(), 2u);
     CHECK_EQ(harness.scene->battle.sim.anim_list[0], std::string("stage_a.anm"));
     CHECK(harness.scene->error.empty());
+}
+
+// 00413270/00413a60 可在同一 ECL thread step 内成对执行。SpellState 的
+// Begin/End 事件必须各自锁存 0x412ee0 边沿：第一张卡同 tick 收尾占用
+// header 槽 0，第二张卡从槽 1 开始，不能因为 Update 26 采样 +0x18 而漏掉。
+TEST(run_scene_same_tick_spell_begin_end_advances_time_slot) {
+    RunHarness harness;
+    SpellState spells;
+    StageEnemy enemy{};
+    // 真实 StageBattle → RunScene::spell_event 回调（consume 需要完整
+    // stage 资产；此处只验证时间边沿在 consume 之前已送达宿主）。
+    const SpellEvent begin1 = spells.begin(0, "card1", 600, 1, 3);
+    CHECK(begin1.emitted());
+    harness.scene->battle.sim.spell_event(begin1, enemy);
+    const SpellEvent end1 = spells.end();
+    CHECK(end1.emitted());
+    harness.scene->battle.sim.spell_event(end1, enemy);
+    const SpellEvent begin2 = spells.begin(1, "card2", 600, 1, 3);
+    harness.scene->battle.sim.spell_event(begin2, enemy);
+    const SpellEvent end2 = spells.end();
+    harness.scene->battle.sim.spell_event(end2, enemy);
+    CHECK_EQ(harness.host.spell_time_indexes.size(), size_t(2));
+    if (harness.host.spell_time_indexes.size() == 2) {
+        CHECK_EQ(harness.host.spell_time_indexes[0], 0);
+        CHECK_EQ(harness.host.spell_time_indexes[1], 1);
+    }
 }
 
 TEST(run_scene_frame_and_score_convergence) {

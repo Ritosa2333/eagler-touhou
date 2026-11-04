@@ -2,6 +2,9 @@
 // 保留，battle/敌机/符卡回调随分期接入）。
 #include "ApplicationState.hpp"
 #include "../game/AnmText.hpp"
+#include "../game/RunScene.hpp"
+#include "../game/SpellPresentation.hpp"
+#include "../game/SpellElapsedTime.hpp"
 
 #include <array>
 #include <algorithm>
@@ -36,6 +39,45 @@ bool ApplicationState::record_spell_event(const SpellEvent& event) {
         return true;
     return (changed && files.save()) || fail(files.error.empty() ?
                                                 "Invalid spell record event" : files.error);
+}
+
+void ApplicationState::update_spell_time(bool active) {
+    const auto now = std::chrono::steady_clock::now();
+    if (spell_time_stage != progress.stage) {
+        spell_time_stage = progress.stage;
+        spell_time_clock.reset();
+        spell_time_packed = 0;
+    }
+    // 00412ee0 edges are latched at the 00413270/00413a60 instruction, not by
+    // sampling manager+0x7c bit0 at Update 26: a same-tick Begin+End still
+    // ends once and advances manager+0x8c, keeping replay slots aligned.
+    if (active) {
+        spell_time_clock.begin(now);
+        return;
+    }
+    SpellTimeClock::End end;
+    if (!spell_time_clock.end(now, end)) return;
+    spell_time_packed = encode_spell_elapsed_time(end.seconds);
+    if (replay_active || pending_replay_stage) {
+        const ReplayStage* stage = pending_replay_stage;
+        if (!stage) {
+            const i32 index = ReplaySession::stage_index(replay_file, progress.stage);
+            if (index >= 0) stage = &replay_file.stages[u32(index)];
+        }
+        const size_t offset = 0x70 + size_t(end.index) * 4;
+        // 0x41302c-0x413041: read the stage slot, validate with 0x412760 and
+        // store the 0x6ad1584 sentinel when invalid. 0x427910 decodes that
+        // sentinel to 999.99, the same failed-decode display as native.
+        spell_time_packed = i32(0x6ad1584);
+        if (stage && offset + 4 <= stage->header.size()) {
+            i32 stored = 0;
+            std::memcpy(&stored, stage->header.data() + offset, 4);
+            if (spell_time_packed_valid(stored)) spell_time_packed = stored;
+        }
+    } else if (recorder.ready() &&
+               !recorder.record_spell_time(u32(end.index), spell_time_packed)) {
+        fail("Replay spell time array unavailable");
+    }
 }
 
 bool ApplicationState::record_spell_practice_score(i32 score) {
@@ -186,6 +228,21 @@ bool ApplicationState::hud_sound(i32 id, float x) { return audio_device.enqueue(
 bool ApplicationState::stop_sound(i32 id) { return audio_device.stop(id) || fail(audio_device.error); }
 bool ApplicationState::set_voice_pan(i32 id, float x) { return audio_device.set_voice_pan(id, x) || fail(audio_device.error); }
 
+// 0x42a430 = jmp [eax*4+0x42abd4] 分发器：case2（0x42ee28 小P /
+// 0x43d23e 大P 满灵力）→ front61；case4（0x43d3a6，FUN_0043d330 碎片
+// 达标）→ front63（EXTENDED）。宿主路径 ApplicationState::run →
+// RunScene::show_notice 窄接口 → 私有 spell_presentation；空 run 或
+// 资源未就绪返回 true（不制造新失败）。1UP（0x43d2f0）不发横幅，不在此列。
+bool ApplicationState::hud_notice(i32 front_script) {
+    if (!run) return true;
+    return run->show_notice(front_script);
+}
+// 0x43d530：吸灵满 1 整槽 level ∈ 1..3 → front 108/109/110（×1/×2/×MAX）。
+bool ApplicationState::hud_spirit_notice(i32 level, float x, float y, float z) {
+    if (!run) return true;
+    return run->show_spirit_notice(level, x, y, z);
+}
+
 bool ApplicationState::suspend_music() {
     audio_device.pause_music(true);
     return true;
@@ -271,6 +328,38 @@ bool ApplicationState::result_replay_save_available() const {
     // 0x454050 state3：DAT_004be7c8（续关数）==0 才进 0x4549d0（回放保存）；
     // 网页侧叠加 recorder.ready()（无录像数据时保存无意义）。
     return !replay_active && recorder.ready() && progress.continues == 0;
+}
+
+bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
+    if (progress.character < 0 || progress.character >= kSaveCharacters ||
+        progress.difficulty < 0 || progress.difficulty >= kSaveDifficulties)
+        return false;
+    out = {};
+    out.character = progress.character;
+    out.difficulty = progress.difficulty;
+    out.rank = -1;
+    out.current.score = selection_score.score;
+    out.current.stage = progress.stage;
+    out.current.continues = progress.continues;
+    out.current.timestamp = i64(std::time(nullptr));
+    out.current.available = true;
+    const auto& ranking = files.ordinary_records[size_t(progress.character)]
+                              .ranking[size_t(progress.difficulty)];
+    for (size_t i = 0; i < out.records.size(); ++i) out.records[i] = ranking[i];
+    // Preview the same ties-before-old insertion as FileStore::record_high_score,
+    // without persisting a nameless score before the editor is confirmed.
+    if (!replay_active && progress.practice_mode == 0 &&
+        (progress.run_mode_flags & 0x30u) == 0 && selection_score.score >= 0) {
+        for (size_t i = 0; i < out.records.size(); ++i) {
+            if (out.records[i].score > selection_score.score) continue;
+            out.rank = i32(i);
+            for (size_t next = out.records.size() - 1; next > i; --next)
+                out.records[next] = out.records[next - 1];
+            out.records[i] = out.current;
+            break;
+        }
+    }
+    return true;
 }
 
 bool ApplicationState::dialogue_visible(bool visible) {

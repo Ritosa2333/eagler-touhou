@@ -36,6 +36,8 @@ mkdirSync(out, {recursive: true});
 
 const output = resolve(out, 'th13-harness.wasm');
 const manifest = resolve(out, 'build.json');
+// Invalidate proof even when SDK validation fails before compilation.
+for (const path of [output, manifest]) if (existsSync(path)) unlinkSync(path);
 const wasi = process.env.WASI_SDK_PATH;
 if (!wasi) throw Error('Set WASI_SDK_PATH to a wasi-sdk installation.');
 const clang = resolve(wasi, 'bin', 'clang++');
@@ -43,9 +45,6 @@ const clang = resolve(wasi, 'bin', 'clang++');
 const gameSources = readdirSync(resolve(root, 'cpp/game')).filter(n => n.endsWith('.cpp')).map(n => resolve(root, 'cpp/game/' + n));
 const main = resolve(workspace, 'tests/harness/harness.cpp');
 const sources = [...gameSources, main];
-
-// 现行语义：构建开始即失效旧产物（含 SDK 缺失前置失败）。
-for (const path of [output, manifest]) if (existsSync(path)) unlinkSync(path);
 
 const compileFlags = [
   '--target=wasm32-wasip1', '-O2', '-std=c++17',

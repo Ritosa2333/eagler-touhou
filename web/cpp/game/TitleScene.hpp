@@ -8,6 +8,7 @@
 #include "TitlePlayerDataView.hpp"
 #include "TitleReplayMenu.hpp"
 #include "TitleResultEntry.hpp"
+#include "TitleResultView.hpp"
 #include "TitleSelectionMenu.hpp"
 #include "TitleOptionsMenu.hpp"
 #include "TitleKeyConfigMenu.hpp"
@@ -47,6 +48,10 @@ struct TitleScenePlatform : TitleFramePlatform, TitleReplayPlatform, TitleOption
     // 0x454050 state3 的 DAT_004be7c8（续关数）==0 门：true → 流程 0xf =
     // 0x4549d0（回放槽保存）；false → 回主菜单。默认 false = 宿主未接查询。
     virtual bool result_replay_save_available() const { return false; }
+    // 0x454050 case0 的 score 块读取（10 行 + 当前插入预览，见
+    // TitleResultView.hpp）：默认未接 = 不返回伪造记录；结算屏仍按空表显示/
+    // 编辑（测试与无存档宿主）。
+    virtual bool result_screen_data(TitleResultScreenData&) const { return false; }
 };
 
 class TitleScene final : private TitleFrameServices, private TitleMenuServices {

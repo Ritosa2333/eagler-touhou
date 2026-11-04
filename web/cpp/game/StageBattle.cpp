@@ -2064,9 +2064,37 @@ void StageBattle::emit_item_events() {
         }
         const bool positional = event.kind == ItemEvent::Kind::Collected ||
                                 event.kind == ItemEvent::Kind::PowerLevelUp;
-        if (sound >= 0 && !(positional ? host_->hud_sound(sound, event.x)
-                                      : host_->hud_sound(sound))) {
-            error_ = "Item event sound " + std::to_string(sound) + " failed";
+        // Consume the whole batch even if one host request fails: 0043d330/
+        // 0043d530 still create their notices after requesting the sound.
+        // Keep the failure observable; dropping the return value would make
+        // an unavailable audio device look like successful playback.
+        if (sound >= 0) {
+            const bool played = positional ? host_->hud_sound(sound, event.x)
+                                           : host_->hud_sound(sound);
+            if (!played && error_.empty()) error_ = "Item sound service failed";
+        }
+        // 0x42a430 分发器（jmp [eax*4+0x42abd4]）：满灵力 case2
+        // （0x42ee28 小P / 0x43d23e 大P，mov eax,2）→ front61；碎片达标
+        // case4（0x43d3a6，FUN_0043d330 内，mov eax,4）→ front63（EXTENDED）。
+        // 0x43d530：吸灵跨 200 一整槽 → FUN_0046f820(..., level+0x6b, ...)
+        // 建 front 108/109/110（×1/×2/×MAX），level = event.value ∈ 1..3。
+        // 在收集音之后触发，保持原版 0x43d330 音 0x11 → 0x42a430 横幅、
+        // 0x43d530:23 音 0x44 → :30 横幅的顺序。新回调默认返回 true
+        // （无头/单测夹具不失败）；失败只写 error_，不中断同帧其他事件。
+        switch (event.kind) {
+        case ItemEvent::Kind::FullPower:
+            if (!host_->hud_notice(61)) error_ = "Full power notice failed";
+            break;
+        case ItemEvent::Kind::Extend:
+            if (!host_->hud_notice(63)) error_ = "Extend notice failed";
+            break;
+        case ItemEvent::Kind::SpiritGained:
+            // 0x43d530：event.x/y = 自机世界坐标（ItemCollector +0x5B8/+0x5BC，
+            // collect_trance() 写入）；y-32 在表现层按 FUN_0046f820 param_3 处理。
+            if (!host_->hud_spirit_notice(event.value, event.x, event.y, 0.f))
+                error_ = "Spirit notice failed";
+            break;
+        default:
             break;
         }
     }

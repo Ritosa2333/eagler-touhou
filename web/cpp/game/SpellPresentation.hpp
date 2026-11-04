@@ -67,6 +67,14 @@ public:
     // 00413080 draw callback: read selected character/mode counters from the
     // host's live FileStore; queue text before the Trance capture mutation.
     bool draw(HudDrawServices&, i32 captures, i32 attempts);
+    // 0x427910:56-106（实读反汇编 0x4279ea-0x427c03）捕获时间 HUD：
+    // 门 = stage+0x120（0x42a4e2 case0 建 front95 后置 1）+ 该 VM(+0x118) 有效；
+    // 第一对 = manager+0x94（00412ee0 在符卡结束把 +0x90 active_frames 抄入）
+    // 的 sec/hh；第二对 = FUN_00424e20 解码 packed_time（DAT_004c2178+0xa8，
+    // 0x412ee0 用 wall clock 打包；校验失败 → 999.99）。文本均 font4/space1/
+    // 0.6 缩放，alpha 取特效 VM+0x52b，位置 (318,192)(362,198) 与
+    // (318,208)(362,214)，格式 "%3d." / "%.2ds"。
+    bool draw_capture_times(HudDrawServices&, i32 packed_time);
     bool rasterize_name(DialogueTextureSink&, const NameRasterizer&);
     const SpellSnapshot& snapshot() const noexcept { return snapshot_; }
     u32 display_handle(i32 index) const noexcept {
@@ -75,6 +83,31 @@ public:
     // 0x413a60 -> 0x42a430 case0/case1：front script59（Get Spell Card
     // Bonus!!）/ script60（Bonus Failed...）句柄（原版 stage+0xcc）。
     u32 banner_handle() const noexcept { return banner_; }
+    // 0x42a439 = jmp [eax*4+0x42abd4]（函数入口 0x42a430，jmp 在 +9）。
+    // 全 EXE 可达 case 只有 0/1/2/4（0x413b05 / 0x413ba4 / 0x42ee28+0x43d23e /
+    // 0x43d3a6+0x43d428）；case3(front62) 在不可达块、case5 空、case6(front64)
+    // 无调用方，故本面只认 61/63。case2(0x42a9d4)/case4(0x42aa9f) 用
+    // stage ctx+0xd0，case0/1/6 用 +0xcc（banner_）——两个独立槽，互不 retire。
+    // front61/63（anm-list 7651/7681：sprite50/52）自带 ins_400(320,144,0)、
+    // 层19；时序是 90 帧保持 + 10 帧 ins_409 淡出 + 20 帧 ins_1，故不手动设坐标。
+    // 0x43d530：吸灵满槽，脚本号 = be808/200 + 0x6b → level1/2/3 =
+    // front108/109/110（anm-list 8917/8935/8953：sprite78/79/80，**无 ins_400**）。
+    // 原版由 FUN_0046f820 的 param_3 传自机世界坐标 (x, y-32, z)（0x43d583/
+    // 0x43d589/0x43d5a4 取 DAT_004c22c4+0x5b8/+0x5bc/+0x5c0，y 减 32.0），
+    // param_4=0.0→anm_arg、param_5=-1(layer 不覆盖)、param_6=0(flags，
+    // 走 FUN_0046f3f0 主链、不加 +320/+16)。端口用 AnmManager::create 同式传入。
+    // 0043d530 不保存返回句柄、也不回收上一级：快速跨 200/400/600 槽时三个
+    // 提示动画各自按脚本 ins_6(96) 自然收尾。故本面保留全部 live 句柄
+    //（spirit_notices_），getter 只给最近一次，release() 统一回收且对已自然
+    // 结束句柄幂等（AnmRegistry generation 保证不误伤复用的新 VM）。
+    // 非法 script / 非法 level 一律返回 true 且不改状态（纯改善前提）。
+    bool show_notice(i32 front_script);
+    bool show_spirit_notice(i32 level, float x, float y, float z);
+    u32 notice_handle() const noexcept { return notice_; }
+    u32 spirit_notice_handle() const noexcept { return spirit_notice_; }
+    const std::vector<u32>& spirit_notice_handles() const noexcept {
+        return spirit_notices_;
+    }
     // 0x42a4e2-0x42a876（case0）：结算数字（stage+0xa4 数组）、分隔符
     //（+0xc4/+0xc8）与捕获特效（+0x118）句柄。
     u32 bonus_digit_handle(i32 index) const noexcept {
@@ -126,6 +159,13 @@ private:
     u32 displays_[3] = {};
     u32 stage_background_ = 0, decoration_ = 0;
     u32 banner_ = 0;  // 0x42a430 写在 stage ctx+0xcc 的结算横幅
+    // 0x42a430 case2/3/4：非符卡横幅句柄（原版 stage ctx+0xd0 槽，与
+    // banner_ 的 +0xcc 独立，互不 retire）。
+    u32 notice_ = 0;
+    // 0x43d530：吸灵满槽提示句柄（front108/109/110），独立槽。原版不存句柄，
+    // 这里保存全部 live 句柄以保证 release 不泄露；spirit_notice_ = 最近一次。
+    u32 spirit_notice_ = 0;
+    std::vector<u32> spirit_notices_;
     // 0x42a4e2-0x42a876（case0 捕获分支）：结算数字 8 位（ascii script
     // 4..11，句柄组 stage+0xa4）+ 分隔符（≥10^6 script12 → +0xc4、
     // ≥10^3 script13 → +0xc8，sprite 0x11c=284）+ 捕获特效 front
@@ -133,6 +173,7 @@ private:
     u32 bonus_digits_[8] = {};
     u32 bonus_million_ = 0, bonus_thousand_ = 0;
     u32 bonus_capture_effect_ = 0;
+    i32 capture_frames_ = 0; // manager+0x94 survives the next spell's +0x90 reset
     bool production_ = false;
     std::vector<u32> retiring_displays_;
     bool retire_production();

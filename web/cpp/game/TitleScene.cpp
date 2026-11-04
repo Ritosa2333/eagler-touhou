@@ -11,7 +11,7 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
       stage(state, p, choice, a, *this, bank), replay(state, a, h, bank),
       option(state, a, h, option_volumes, bank),
       key_config(state, a, key_config_host, bank), music_room(state, h), manual(state, h),
-      result(state, h), frame(state, p, *this, schedule, a) {
+      result(state, h, a, bank.title), frame(state, p, *this, schedule, a) {
     state.screen = TitleScreen::Initialize;
     state.flags = 0;
     main.play_sound = [this](i32 id) { return host.sound(id); };
