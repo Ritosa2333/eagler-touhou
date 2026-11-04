@@ -90,7 +90,7 @@ export const PRODUCT_GAMES = Object.freeze({
         runtimeAssets:Object.freeze(['th01.html','manifest.json','managed-shell.mjs','managed-data.mjs','managed-worker.mjs']), requiredShared:Object.freeze([]),
         dataProvider:'retail-memory', runtimeResourceTransport:'resources',
         package:Object.freeze({dataFileId:'game-data',dataTarget:'/th01.data',musicSourceDirectories:Object.freeze({ogg:'bgm'}),musicMounts:Object.freeze({ogg:'/bgm'})}),
-        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true}),touchFire:TOGGLE_TOUCH_FIRE,
+        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true}),touchFire:TH03_TOUCH_FIRE,
         support:Object.freeze({highRefreshRate:false,sourceRepository:'https://github.com/IxinorTyan/th01-multiorb-lab',adaptationNotice:'early-test'}),
         replay:Object.freeze({prefix:'th01',extensions:Object.freeze(['th01r']),naming:'filename'}),
         multiplayerRuntime:'./runtime/th01/multiplayer/th01.html',
