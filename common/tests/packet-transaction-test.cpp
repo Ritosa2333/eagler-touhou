@@ -51,5 +51,22 @@ int main()
     assert(result==RemoteInputResult::TooOld);
     assert(core.InputPresent(1,INPUT_HISTORY_SIZE));
     assert(core.ConfirmedThrough(1)==INPUT_HISTORY_SIZE+3);
+
+    assert(core.Reset(config));
+    for (std::uint32_t f = 0; f < INPUT_HISTORY_SIZE; ++f) {
+        assert(core.ScheduleLocalInput(f, FrameInput(1)));
+        assert(core.SubmitRemoteInput(1, f, FrameInput(2)) == RemoteInputResult::Accepted);
+        assert(core.MarkSimulated(f, core.PrepareFrame(f)));
+    }
+    packet.firstInputFrame = packet.latestFrame = INPUT_HISTORY_SIZE;
+    assert(core.ApplyInputPacket(packet));
+    packet.firstInputFrame = packet.latestFrame = 0;
+    assert(core.ApplyInputPacket(packet, &result));
+    assert(result == RemoteInputResult::TooOld);
+    assert(core.InputPresent(1, INPUT_HISTORY_SIZE));
+    assert(core.ConfirmedThrough(1) == INPUT_HISTORY_SIZE);
+    packet.firstInputFrame = packet.latestFrame = INPUT_HISTORY_SIZE;
+    packet.inputs[0] = FrameInput(3);
+    unchangedAfterRejection(core, packet);
     std::puts("eagler-common packet transaction: PASS");
 }

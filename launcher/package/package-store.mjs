@@ -1,6 +1,7 @@
 import { validatePackageDescriptor } from "./package-descriptor.mjs";
 import { packageInstallationKey, descriptorGameVersion } from "./game-version.mjs";
 import { isGameId } from "../product-catalog.mjs";
+import { sha256Hex } from "./package-integrity.mjs";
 
 export const PACKAGE_STORE_DB = "eagler-touhou-package-store-v1";
 export const PACKAGE_STORE_DB_VERSION = 3;
@@ -235,18 +236,30 @@ export async function readVerifiedPackageObjectBySha256(sha256, bytes, { indexed
   const normalizedHash = normalizeSha256(sha256);
   const expectedBytes = Number(bytes);
   if (!Number.isSafeInteger(expectedBytes) || expectedBytes < 0) return null;
-  return withPackageDb(async db => {
+  const objectIds = await withPackageDb(async db => {
     const transaction = db.transaction([PACKAGE_OBJECTS], "readonly");
     const done = transactionDone(transaction);
     const objects = transaction.objectStore(PACKAGE_OBJECTS);
-    const objectId = await requestResult(objects.index(PACKAGE_OBJECT_SHA256_INDEX).getKey(normalizedHash));
-    const value = objectId === undefined ? null : await requestResult(objects.get(objectId));
+    const keys = await requestResult(objects.index(PACKAGE_OBJECT_SHA256_INDEX).getAllKeys(normalizedHash));
     await done;
-    const normalized = normalizeStoredPackageObject(value);
-    return normalized && Number(normalized.bytes) === expectedBytes
-      ? { objectId, ...normalized }
-      : null;
+    return keys;
   }, indexedDBFactory);
+  for (const objectId of objectIds) {
+    const object = await readPackageObject(objectId, { indexedDBFactory });
+    if (await packageObjectMatches(object, expectedBytes, normalizedHash)) return { objectId, ...object };
+  }
+  return null;
+}
+
+export async function packageObjectMatches(object, bytes, sha256) {
+  if (!object || (bytes != null && object.blob.size !== Number(bytes))) return false;
+  if (!sha256) return true;
+  try {
+    return await sha256Hex(object.data || object.blob) === sha256.toLowerCase();
+  } catch (error) {
+    if (error?.name === "NotReadableError" || error?.name === "NotFoundError") return false;
+    throw error;
+  }
 }
 
 export async function attestPackageObjectSha256(objectId, sha256, bytes, { indexedDBFactory } = {}) {

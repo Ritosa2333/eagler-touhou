@@ -1,4 +1,5 @@
 import type {
+  CurrentPackageGeneration,
   InstalledPackageGeneration,
   InstalledPackageResult,
   PackageDescriptor,
@@ -60,3 +61,10 @@ export function publishedPackageStatus(game: string, catalog: unknown): Promise<
   published: unknown;
   updateAvailable: boolean;
 }>;
+
+export function repairInstalledPackage(installed: CurrentPackageGeneration, options: {
+  getPublication: () => Promise<{catalog: unknown; catalogUrl: string}>;
+  fetchImpl?: typeof fetch;
+  signal?: AbortSignal;
+  onProgress?: (progress: PackageInstallProgress) => void;
+}): Promise<InstalledPackageGeneration>;
