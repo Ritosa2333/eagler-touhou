@@ -19,6 +19,7 @@ const report=error=>globalThis.__eaglerPC98Emit({event:'error',message:String(er
 const readState=()=>emulator?.snapshot.state??null;
 function key(code,number,down){emulator.send('key',[{type:down?'keydown':'keyup',code,key:code==='KeyZ'?'z':code==='KeyX'?'x':code,keyCode:number,which:number}]);}
 function release(){input.releaseGameplay();if(emulator)for(const [code,bit,number] of nativeKeys)if(lastKeys&bit)key(code,number,false);lastKeys=0;emulator?.clearInput();}
+let replayResult=null;
 const savedReplays=new WeakMap();
 async function saveReplay(blob){recordBlob=blob;if(savedReplays.has(blob))return savedReplays.get(blob);const task=(async()=>{const name=`replay/th04_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th04r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());return name;})();savedReplays.set(blob,task);return task;}
 async function syncFiles(){if(!emulator||playback)return;const fat=new Fat12(await emulator.getDiskImage('th04-solo.hdi'));
@@ -42,7 +43,7 @@ function tick(){
   loop=requestAnimationFrame(tick);
 }
 function discardRetry(){retrySlot?.stop();retrySlot=undefined;}
-function makeAttempt(target,practice,settings,replay=null,standby=false){return createSoloAttempt({canvas:target,practice,settings,replay,standby,sources,callbacks:{onError:report,onFile:blob=>void saveReplay(blob).catch(report),onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
+function makeAttempt(target,practice,settings,replay=null,standby=false){return createSoloAttempt({canvas:target,practice,settings,replay,standby,sources,callbacks:{onError:report,onFile:blob=>void saveReplay(blob).catch(report),onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{replayResult=matches;if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
 function prepareRetry(ps){
   if(playback||lastPractice?.mode!=='target'||!practiceUI.options.preparedRetry){discardRetry();return;}
   if(retrySlot?.cancelled||retrySlot?.error){discardRetry();retryBlocked=true;}
@@ -51,7 +52,7 @@ function prepareRetry(ps){
   slot.task.catch(()=>{if(retrySlot===slot){retrySlot=undefined;retryBlocked=true;}});
 }
 async function launch(config,replay=null,cached=null){
-  playback=!!replay;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
+  playback=!!replay;replayResult=null;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
   const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'worker',recordEnabled:!playback,volume:musicMode==='none'?0:.7};
   currentSettings=settings;attempt=cached||makeAttempt(canvas,lastPractice,settings,replay);
   const started=performance.now(),cachedReady=!!cached?.ready;await attempt.task;if(cached)await attempt.core.activatePractice(practiceUI.options);
@@ -64,7 +65,7 @@ export const managedAPI={
   async start(value){options=value.options;language=value.language==='ja'?'jp':'cn';musicMode=value.music;let replay;
     if(options.replayPath){const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(options.replayPath));if(!bytes)throw Error('录像不存在');replay=await decodeExternalReplay(new Blob([bytes]),'04');}
     await launch(practiceUI.configuration(),replay);},
-  health(){return {gameFrame:readState()?.ticks,frames:emulator?.module.frameUploads??emulator?.module.renderMetrics?.drawn??0,audio:{state:emulator?.context?.state,musicStatus:music?.player.status??null,effectsPeak:attempt?.sfx?.peak??0}};},
+  health(){return {replayResult,gameFrame:readState()?.ticks,frames:emulator?.module.frameUploads??emulator?.module.renderMetrics?.drawn??0,audio:{state:emulator?.context?.state,musicStatus:music?.player.status??null,effectsPeak:attempt?.sfx?.peak??0}};},
   practiceState(){return {...managedPractice.state(),retry:{state:retrySlot?(retrySlot.ready?'ready':'preparing'):retryBlocked?'unavailable':'idle',last:lastRetry}};},
   finishRecording(){recorder?.finish();},
   saveRecording(){return recordBlob?saveReplay(recordBlob):null;},

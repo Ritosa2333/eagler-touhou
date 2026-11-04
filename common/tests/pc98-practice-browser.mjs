@@ -213,6 +213,12 @@ try {
       await frame.evaluate(async () => (await import('./managed-solo.mjs')).managedAPI.saveRecording());
       assert.deepEqual(await saved(),files,'saving again keeps the same practice file');
       console.log(game,'practice REP stored',JSON.stringify(files));
+      if(process.env.PC98_REPLAY_VERIFY==='1'){
+        await frame.evaluate(async path=>{const api=(await import('./managed-solo.mjs')).managedAPI;api.stop();await api.playback({action:'open',path});},files[0].name);
+        await wait(async()=>{const value=await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().replayResult);if(value===false)throw Error('Replay memory mismatch');return value===true;},game+' replay reaches matching final state',180000);
+        console.log(game,'replay exact final memory verified');
+      }
+
       assert.deepEqual(errors,[]);
       assert.deepEqual(events.filter(e => e.event === 'error'),[]);
       await writeFile(resolve(out,mobile?'result-mobile.json':'result.json'),JSON.stringify({passed:true,target,retry,compact,bounds,files,errors},null,2));
