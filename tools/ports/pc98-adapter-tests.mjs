@@ -19,10 +19,13 @@ async function compileShell(game) {
       ctx.onResolve({filter:/./},args=>{
         if(args.kind==='dynamic-import' && args.importer===resolve(owner,'managed-shell.mjs'))
           return {path:args.path==='./managed-room-layout.mjs'?'room-layout':'engine',namespace:'boundary'};
+        if(args.path==='./pc98-game-fps.mjs')return {path:'fps',namespace:'boundary'};
         if(['./directory-keyboard.mjs','./direct-input-bridge.mjs'].includes(args.path))
           return {path:resolve(root,'common/browser',args.path.slice(2))};
       });
-      ctx.onLoad({filter:/./,namespace:'boundary'},args=>({contents:args.path==='room-layout'
+      ctx.onLoad({filter:/./,namespace:'boundary'},args=>({contents:args.path==='fps'
+        ? 'export function mountGameFps(){return {update(){}};}'
+        : args.path==='room-layout'
         ? 'export function mountManagedRoom(){}'
         : args.path==='engine'
         ? 'export const managedAPI=globalThis.boundary.api;'
