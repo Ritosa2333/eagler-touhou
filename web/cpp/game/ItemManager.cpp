@@ -188,6 +188,13 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
         s.lifetime_clock.set(0);
         s.flags = 2u | ((session_ && trance_active(*session_)) ? 1u : 0u);
         s.alive = true;
+        // 0x438ec0 出生体内同步建 VM（0x438ff9 effect.anm 0x38 →
+        // 0x43909d/0x4390be astral kind*6+1/4，均 0x46f3f0 尾插）。
+        // 必须在出生当帧、本帧 0x46f170 主链 walk 之前完成：链尾序决定
+        // 本帧尾插子 VM 是否被 walk 二次 tick（Pn16 s05 f11697）。
+        if (spirit_spawn_animation)
+            (void)spirit_spawn_animation(u32(&s - spirits_.data()), s.serial,
+                                         kind_resolved, s.flags, s.x, s.y, s.z);
         break;
     }
     // 0x438ec0:124-139：溢出窗/计数块在 256 槽扫描循环结束之后无条件执行

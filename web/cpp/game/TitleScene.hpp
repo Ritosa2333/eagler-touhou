@@ -7,6 +7,7 @@
 #include "TitlePlayerDataMenu.hpp"
 #include "TitlePlayerDataView.hpp"
 #include "TitleReplayMenu.hpp"
+#include "TitleResultEntry.hpp"
 #include "TitleSelectionMenu.hpp"
 #include "TitleOptionsMenu.hpp"
 #include "TitleKeyConfigMenu.hpp"
@@ -37,6 +38,15 @@ struct TitleScenePlatform : TitleFramePlatform, TitleReplayPlatform, TitleOption
     virtual bool record_menu_views() const { return false; }
     virtual bool rasterize_title_text(AnmVm&, u32, const std::string&,
                                      AnmTextAlignment = AnmTextAlignment::Left) { return false; }
+    // [通关结算] 0x454050/0x4549d0 宿主面（默认未接 = 不假成功）。前三个签名
+    // 与 RunPausePlatform 现有 override 完全一致，ApplicationState 的同一组
+    // override 同时满足两个虚槽。
+    virtual bool save_replay_slot(i32, const std::string&) { return false; }
+    virtual bool can_save_replay() const { return false; }
+    virtual bool record_result_name(const std::string&) { return false; }
+    // 0x454050 state3 的 DAT_004be7c8（续关数）==0 门：true → 流程 0xf =
+    // 0x4549d0（回放槽保存）；false → 回主菜单。默认 false = 宿主未接查询。
+    virtual bool result_replay_save_available() const { return false; }
 };
 
 class TitleScene final : private TitleFrameServices, private TitleMenuServices {
@@ -67,6 +77,8 @@ private:
     TitleMusicRoomMenu music_room;
     std::unique_ptr<TitleMusicRoomView> music_room_view;
     TitleManualMenu manual;
+    // 通关结算屏（0x44c570 case 0xe/0xf → 0x454050/0x4549d0）。
+    TitleResultEntry result;
     // PlayerData/SpellPractice 路由骨架：宿主数据平台由 TitleScenePlatform 聚合
     // 注入；菜单在每次进屏时新建（TitlePlayerDataMenu 收面把 substate 停在 3，
     // TitleSpellPracticeMenu 构造即固化三级目录，复用会带入上次浏览态）。

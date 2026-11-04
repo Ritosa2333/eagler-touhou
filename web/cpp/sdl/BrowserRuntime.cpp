@@ -554,6 +554,44 @@ EMSCRIPTEN_KEEPALIVE unsigned th13_debug_replay(const char* name, unsigned stage
                               : 0;
 }
 
+// Debug 纹理最小复现（仅诊断面）：运行期把 staff.anm 装进全新槽 21（同一
+// read/load/preload 路径）并 cue script5（spawn 装饰 15 + 名单条带 19）。
+// 用于隔离「运行期装载的 Argb4444 纹理是否上屏」与 ending 流程差异。
+EMSCRIPTEN_KEEPALIVE int th13_debug_staff_texture() {
+    using namespace th13::sdl;
+    if (!app || !app->initialized) return 0;
+    std::vector<th13::u8> bytes;
+    if (!app->read("staff.anm", bytes)) { last_error = "staff.anm read failed"; return 0; }
+    if (app->animations.resource(21)) app->animations.unload(21);
+    if (!app->animations.load(21, bytes.data(), th13::u32(bytes.size()))) {
+        last_error = "staff.anm load failed"; return 0;
+    }
+    if (!app->graphics.preload(*app->animations.resource(21))) {
+        last_error = "staff.anm preload failed"; return 0;
+    }
+    const th13::u32 handle = app->animations.create(21, 5, -1, 0);
+    if (!handle) { last_error = "script5 cue failed"; return 0; }
+    return 1;
+}
+
+// Debug 直入 Ending（仅诊断面）：以无续关通关态走 Destination::Ending
+//（0x42c550 → 0x43c1c0 case0xf 同链）。回放会话按原版 0x42cd40 语义走
+// 结算A 覆盖层，浏览器无法到达 Ending——ED/staff roll 的产品级验证入口。
+EMSCRIPTEN_KEEPALIVE int th13_debug_ending(int character, int difficulty) {
+    using namespace th13::sdl;
+    if (running || !app || !app->initialized) return 0;
+    app->progress.character = character;
+    app->progress.difficulty = difficulty;
+    app->progress.continues = 0;
+    app->progress.practice_mode = 0;
+    app->progress.stage = 6;
+    app->pending_destination = th13::i32(Destination::Ending);
+    if (!app->apply_destination()) { last_error = app->failure; return 0; }
+    clear_inputs();
+    cadence.reset();
+    return 1;
+}
+
 // 确定性单帧泵：固定 1/60 步长、恰一逻辑帧 + 绘制提交，不经过 rAF 帧钟与
 // FrameCadence。装载挡板（正常启动序）按同一步长推进。1 = ok，0 = 失败。
 EMSCRIPTEN_KEEPALIVE int th13_debug_frame() {

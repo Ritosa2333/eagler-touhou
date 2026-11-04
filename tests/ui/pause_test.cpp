@@ -17,6 +17,11 @@ struct PauseHost final : RunPausePlatform {
     bool sound(i32) override { return true; }
     bool suspend_music() override { return true; }
     int restarts = 0, titles = 0, continues = 0;
+    std::vector<int> dialogue_visibility;  // 0x429d00/0x429f10 记录（1=显示）
+    bool dialogue_visible(bool visible) override {
+        dialogue_visibility.push_back(visible ? 1 : 0);
+        return true;
+    }
     bool restart_run() override {
         ++restarts;
         return true;
@@ -217,6 +222,26 @@ TEST(practice_end_disables_continue_and_requests_destination) {
     CHECK_EQ(harness.host.titles, 1);
     CHECK_EQ(harness.host.restarts, 0);
     CHECK(harness.pause->error.empty());
+}
+
+TEST(pause_hides_and_restores_dialogue_visibility) {
+    // 0x43e3f0:0x43e588-0x43e592：Esc 暂停激活末尾对活动对话对象调
+    // 0x429d00（VM+0x18 清 bit1，隐藏不销毁）；0x43e700:0x43e749 恢复
+    // 0x429f10 置回。0x429d00 唯一调用者是 0x43e3f0——GameOver 等其它
+    // 激活路径不隐藏。回归：暂停时对话立绘没有隐藏（用户实测 BUG）。
+    PauseHarness harness;
+    CHECK(harness.pause->open(PauseEntrance::Pause));
+    CHECK(!harness.host.dialogue_visibility.empty());
+    CHECK_EQ(harness.host.dialogue_visibility.back(), 0);  // 激活即隐藏
+    harness.advance(12);
+    harness.frame(0x100);  // Esc 恢复
+    harness.advance(15);
+    CHECK(!harness.pause->active());
+    CHECK_EQ(harness.host.dialogue_visibility.back(), 1);  // 恢复置回
+    // GameOver 激活（0x43f570 族）不调用 0x429d00。
+    const size_t calls = harness.host.dialogue_visibility.size();
+    CHECK(harness.pause->open(PauseEntrance::GameOver));
+    CHECK_EQ(harness.host.dialogue_visibility.size(), calls);
 }
 
 int main() { return th13test::run_all("暂停覆盖层"); }

@@ -259,6 +259,10 @@ public:
     Vec3 respawn_origin{}; // player+644: unrounded saved death position for entry laser clear
     i32 bomb_timer = 0;     // 炸弹作用剩余帧
     i32 bomb_age = -1;      // 0040a270 ctx+0x1c；未施放=-1
+    // 0040a270:292 `add esi,0x18` → 00401400 的 +0x20 浮点累加器。Bomb 年龄
+    // 不是每帧 +1：rate∈(0.99,1.01) 时 age+=1 且累加器+=1.0；否则累加器
+    // +=rate、age=(int)累加器（004971f0 真机 SSE2 走 cvttsd2si 截断）。
+    float bomb_age_accumulator_ = 0;
     u32 bomb_generation = 0;
     struct BombRay {
         Vec3 origin{}, center{};

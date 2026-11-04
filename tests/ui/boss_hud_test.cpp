@@ -80,9 +80,31 @@ TEST(boss_name_uses_stage_table_script_and_retires_with_boss) {
     }
     CHECK(name);
     input.boss = nullptr;
+    input.boss_slot_present = false;
     CHECK(h.boss.update(input, {}));
     CHECK(h.manager.update());
     CHECK(!h.manager.registry.find(name));
+}
+
+TEST(boss_timer_stays_visible_while_slot_occupied_after_capture) {
+    // 0x4265a0:98-107 门条件 = boss 槽占用（mgr+0x5c != 0），不是实体存活：
+    // 终符捕获（514→BossDead 抑制立即销毁）后槽由 512(-1) 约 60 帧才清，
+    // 期间计时器保持显示。回归：3 面终符收了计时器直接消失（用户实测）。
+    BossHarness h;
+    CHECK(h.boss.initialize());
+    StageEnemy enemy;
+    BossFrameInput input;
+    input.boss = &enemy; input.boss_slot_present = true;
+    input.timer_seconds = 20;
+    input.life_initial = 0;
+    CHECK(h.boss.update(input, {}));
+    CHECK(h.boss.timer_visible());
+    input.boss = nullptr;  // 捕获帧：实体让出/标 dead，槽未清
+    CHECK(h.boss.update(input, {}));
+    CHECK(h.boss.timer_visible());
+    input.boss_slot_present = false;  // 512(-1) 清槽后（对话门前）
+    CHECK(h.boss.update(input, {}));
+    CHECK(!h.boss.timer_visible());
 }
 
 TEST(boss_timer_digits_hidden_until_gate_opens) {
@@ -102,7 +124,7 @@ TEST(boss_gate_opens_digits_and_swaps_digit_sprites) {
     enemy.position[0] = 0;
     enemy.position[1] = 128;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 35;
     input.timer_frames = 30;
     input.boss_life = 700;
@@ -125,7 +147,7 @@ TEST(boss_timer_warnings_fire_each_decremented_second) {
     CHECK(h.boss.initialize());
     StageEnemy enemy;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.life_initial = 0;  // 环待命（分母缺口语义），只测计时。
     SoundLog sound;
     input.timer_seconds = 12;
@@ -188,7 +210,7 @@ TEST(boss_ring_ratio_smooths_up_drops_instantly) {
     StageEnemy enemy;
     enemy.position[1] = 128;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 60;
     input.life_initial = 1000;
     input.boss_life = 1000;
@@ -226,7 +248,7 @@ TEST(boss_ratio_crosses_phase_markers) {
     StageEnemy enemy;
     enemy.position[1] = 128;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 60;
     input.life_initial = 1000;
     input.boss_life = 1000;
@@ -252,7 +274,7 @@ TEST(boss_stars_created_and_hidden_when_passed) {
     enemy.position[0] = 10;
     enemy.position[1] = 128;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 60;
     input.life_initial = 1000;
     input.boss_life = 1000;
@@ -305,7 +327,7 @@ TEST(boss_proximity_hides_ring_with_hysteresis) {
     enemy.position[0] = 0;
     enemy.position[1] = 0;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 60;
     input.life_initial = 1000;
     input.boss_life = 1000;
@@ -341,7 +363,7 @@ TEST(boss_marker_glyph_tracks_horizontal_distance) {
     StageEnemy enemy;
     enemy.position[0] = 30;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 30;
     input.player_x = 0;
     SoundLog sound;
@@ -457,7 +479,7 @@ TEST(real_resources_match_ring_and_digit_script_map) {
     StageEnemy enemy;
     enemy.position[1] = 128;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 42;
     input.timer_frames = 0;
     input.life_initial = 0;
@@ -529,7 +551,7 @@ TEST(real_resources_spell_end_restores_digit_row) {
     enemy.position[1] = 128;
     enemy.life = 100000.f;
     BossFrameInput input;
-    input.boss = &enemy;
+    input.boss = &enemy; input.boss_slot_present = true;
     input.timer_seconds = 42;
     input.timer_frames = 0;
     input.life_initial = 0;

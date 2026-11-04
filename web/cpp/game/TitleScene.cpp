@@ -11,7 +11,7 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
       stage(state, p, choice, a, *this, bank), replay(state, a, h, bank),
       option(state, a, h, option_volumes, bank),
       key_config(state, a, key_config_host, bank), music_room(state, h), manual(state, h),
-      frame(state, p, *this, schedule, a) {
+      result(state, h), frame(state, p, *this, schedule, a) {
     state.screen = TitleScreen::Initialize;
     state.flags = 0;
     main.play_sound = [this](i32 id) { return host.sound(id); };
@@ -35,6 +35,11 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
             scene.state.screen == TitleScreen::SpellPractice && scene.spell_launch_age_ < 0 &&
             !scene.spell_practice_view->draw(*scene.spell_practice, scene.host, scene.host))
             return scene.check(false, scene.spell_practice_view->error) ? 1 : 5;
+        // 通关结算屏文本（0x454050/0x4549d0）走同一 Draw 优先级 2 队列。
+        if ((scene.state.screen == TitleScreen::ResultName ||
+             scene.state.screen == TitleScreen::ResultReplaySlot) &&
+            !scene.result.draw_texts(scene.host))
+            return scene.check(false, scene.result.error) ? 1 : 5;
         return scene.check(scene.stage.draw_texts(scene.host), scene.stage.error) ? 1 : 5;
     };
     check(scheduler.add(stage_text_draw, FramePass::Draw, 2) >= 0,
@@ -322,6 +327,9 @@ bool TitleScene::update_title_menu(TitleScreen screen, const TitleFrameInput& va
         return check(stage.update(value.pressed, value.repeated), stage.error);
     case TitleScreen::Replay:
         return check(replay.update(value.pressed, value.repeated), replay.error);
+    case TitleScreen::ResultName:        // 0x44c570 case 0xe → 0x454050
+    case TitleScreen::ResultReplaySlot:  // 0x44c570 case 0xf → 0x4549d0
+        return check(result.update(value.pressed, value.repeated), result.error);
     case TitleScreen::MusicRoom:
         if (host.record_menu_views() && !music_room_view)
             music_room_view = std::make_unique<TitleMusicRoomView>(animations,

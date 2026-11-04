@@ -958,6 +958,15 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
         case 0x80:
             bullet.cancel_protection = i4;
             break;
+        case 0x1000: {  // 0x40f030:467-471：屏幕环绕反弹（00410be0 每帧消费）
+            // +0xbb4 |= 0x1000；+0x10d8 = integer_arguments[0]（pfVar1[4]）、
+            // +0x10d4 = 0、+0x10dc = integer_arguments[1]（pfVar1[5]）。
+            bullet.behavior_flags |= 0x1000u;
+            bullet.ex1000_limit = entry.integer_arguments[0];
+            bullet.ex1000_count = 0;
+            bullet.ex1000_mask = u32(entry.integer_arguments[1]);
+            break;
+        }
         case 0x100: {
             // 40f67x -> 410f80: retain offscreen bullets for i4 frames;
             // i5 enables the direction-to-screen check.
@@ -1316,6 +1325,10 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
             }
         }
     }
+    // op 0x1000（00410be0）不在此处：原版 0x40db10 在 switch(+0xbbe) 的
+    // 位移分支之后、出界回收 0x40da30 之前才调用它（见 update_bullets 内
+    // 位移后的环绕块）。放在行为派发里会在位移前判定，导致同一帧先判界内
+    // 不环绕、位移后越界被回收（Wi11 f5007 slot 1848）。
     // op 0x80000000 等待（0x40de74 内联）：float 计时 >0 时倒数，归零清位。
     if (bullet.behavior_flags & 0x100u) {
         // 410f80 decrements first and clears at <=0; it is nonblocking
@@ -1449,6 +1462,56 @@ void StageSim::advance_bullets() {
         if (collide_now && bullet.collision_ready && bullet_player_collision) {
             bullet_player_collision(bullet);
             if (!error_.empty()) return;
+        }
+        // 0x40db10:330-334：switch(+0xbbe) 的位移分支结束后，先调用
+        // 0x410be0（op 0x1000 环绕），再调用 0x40da30 出界回收——顺序在
+        // 同一帧内可决定去留。op 0x1000（00410be0）：出界时按 +0x10dc 掩码
+        // 把位置整幅平移（环绕，不反射速度），计满 +0x10d8 清位；每次反弹
+        // 播 +0xbcc。出界判定 = 0040daa0：精灵盒 [x±w/2]×[y±h/2] 与
+        // [-192,192]×[0,448] 相交才算界内（严格 x+w/2>-192、x-w/2<192、
+        // y+h/2>0、y-h/2<448；0040daa0 反汇编 fcomp 后 jnp 走「大于」分支，
+        // 等号落在出界侧）。原版 0x40db10:330 要求 bullet+0x54（ANM
+        // 对象）非空才调用；无几何时端口同样跳过（不报错、不清位）。
+        if (bullet.behavior_flags & 0x1000u) {
+            if (bullet.animation_geometry) {
+                // 0040daa0 的 x87 链：fld w; fmul 0.5(double); fadd x;
+                // fcomp -192.0(double)——float 输入在 double 下精确可表示，
+                // 与 80-bit 扩展结果一致；float 加法会在 x+w/2 处先行舍入，
+                // 故与回收块同用 double。
+                const double hw = double(bullet.sprite_width) * 0.5;
+                const double hh = double(bullet.sprite_height) * 0.5;
+                const bool inside = double(bullet.x) + hw > -192.0 &&
+                                    double(bullet.x) - hw < 192.0 &&
+                                    double(bullet.y) + hh > 0.0 &&
+                                    double(bullet.y) - hh < 448.0;
+                if (!inside) {
+                    const u32 mask = bullet.ex1000_mask;
+                    bool bounced = false;
+                    if ((mask & 1u) && bullet.y < 0.0f) {
+                        bullet.y = bullet.sprite_height + 448.0f + bullet.y;
+                        bounced = true;
+                    } else if ((mask & 2u) && bullet.y > 448.0f) {
+                        bullet.y = bullet.y - (bullet.sprite_height + 448.0f);
+                        bounced = true;
+                    } else if ((mask & 4u) && bullet.x < -192.0f) {
+                        bullet.x = bullet.sprite_width + 384.0f + bullet.x;
+                        bounced = true;
+                    } else if ((mask & 8u) && bullet.x > 192.0f) {
+                        bullet.x = bullet.x - (bullet.sprite_width + 384.0f);
+                        bounced = true;
+                    }
+                    if (bounced) {
+                        bullet.ex1000_count += 1;
+                        if (bullet.transform_sound >= 0 && enemy_sound &&
+                            !enemy_sound(bullet.transform_sound)) {
+                            error_ = "Bullet wrap sound failed";
+                            return;
+                        }
+                        if (bullet.ex1000_limit <= bullet.ex1000_count)
+                            bullet.behavior_flags ^= 0x1000u;
+                    }
+                }
+            }
         }
         if (!(bullet.behavior_flags & 0x100u)) {
             if (bullet.animation_geometry && bullet.cull_grace <= 0) {

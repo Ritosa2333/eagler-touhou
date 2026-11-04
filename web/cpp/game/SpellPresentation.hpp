@@ -63,7 +63,7 @@ public:
     //（原版 0x41381e 直读 DAT_004be824 同一变量；RunScene 传活值）。
     bool consume(const SpellEvent&, const float boss_position[3],
                  const std::function<bool(i32)>& sound, i32 chapter);
-    void sync(const SpellSnapshot&, const float* boss_position = nullptr);
+    void sync(const SpellSnapshot&);
     // 00413080 draw callback: read selected character/mode counters from the
     // host's live FileStore; queue text before the Trance capture mutation.
     bool draw(HudDrawServices&, i32 captures, i32 attempts);

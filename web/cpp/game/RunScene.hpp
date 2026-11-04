@@ -225,6 +225,11 @@ public:
     std::function<bool()> restore_after_player_prepare;
     bool initialize(const HudEntryContext& = {});
     bool update();
+    // 0x43e3f0/0x43e700（Esc 暂停激活/恢复）：对话立绘/名牌槽 VM+0x18 bit1
+    // 清/置（0x429d00/0x429f10 面；正文/气泡由宿主 DialogueText 侧覆盖）。
+    bool set_dialogue_visible(bool visible) {
+        return !msg_presentation || msg_presentation->set_visible(visible);
+    }
     // 0x44ad60：道具得分弹字入池（ScorePopup 事件宿主钩子）。
     bool spawn_score_popup(i32 value, float x, float y, u32 color) {
         return score_popups.spawn(value, x, y, color);
