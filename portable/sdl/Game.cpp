@@ -399,7 +399,7 @@ void Game::save_replay(i32 slot,const std::string& name,const MenuContext& r){
         char file[32];std::snprintf(file,sizeof file,"th12_mp_%02d.rpy",slot);
         const auto folder=menus->replay_folder();host::make_directory(folder);
         if(!host::write_file(folder+"/"+file,bytes)){error="Multiplayer replay could not be saved";return;}
-        profile.set_last_name(name);profile.save();return;
+        profile.set_last_name(name);profile.save();menus->rescan_replays();return;
     }
 #endif
     if(!session||!session->recorder||slot<1||slot>25)return;
