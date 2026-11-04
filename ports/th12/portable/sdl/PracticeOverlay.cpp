@@ -37,6 +37,7 @@ void PracticeOverlay::initialize(Renderer& gpu){
 }
 void PracticeOverlay::shutdown(Renderer& gpu){
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
+    practice_menu_open=false;
     if(initialized){gpu.delete_texture(texture);th12_practice_ui_shutdown();initialized=false;font.clear();}
 #else
     (void)gpu;
@@ -80,10 +81,14 @@ void PracticeOverlay::wheel(float x,float y,float horizontal,float vertical){
 int PracticeOverlay::tick(int scene,bool ready,bool replay,int difficulty,unsigned held,std::array<int32_t,20>& params){
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
     if(!initialized)return 0;
+    const bool in_practice_menu=scene==1;
     th12_practice_ui_context(scene,ready,replay,difficulty,runtime_options.language);
-    if(scene==1)th12_practice_ui_params(params.data(),int(params.size()));
+    // The saved section identifies a destination, but does not encode the
+    // active filter (Mid Boss, End Boss, Non Spell, or Spell Card).
+    if(in_practice_menu&&!practice_menu_open)th12_practice_ui_params(params.data(),int(params.size()));
+    practice_menu_open=in_practice_menu;
     th12_practice_ui_tick(int(held));
-    if(scene==1)std::copy_n(th12_practice_ui_parameters(),params.size(),params.begin());
+    if(in_practice_menu)std::copy_n(th12_practice_ui_parameters(),params.size(),params.begin());
     return th12_practice_ui_action();
 #else
     (void)scene;(void)ready;(void)replay;(void)difficulty;(void)held;(void)params;return 0;

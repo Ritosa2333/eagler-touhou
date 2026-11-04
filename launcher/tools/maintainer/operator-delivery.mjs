@@ -51,7 +51,8 @@ export function validateOperatorProfile(profile) {
       ![null, "http-to-https"].includes(profile.originMigration)) {
     throw new Error("invalid internal Operator profile");
   }
-  const games = Object.keys(PRODUCT_GAMES);
+  const games = Object.keys(PRODUCT_GAMES).filter(game =>
+    !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(profile.games ?? {}, game));
   if (!profile.games || !sameList(Object.keys(profile.games), games)) {
     throw new Error("internal Operator profile must contain every registered game in canonical order");
   }

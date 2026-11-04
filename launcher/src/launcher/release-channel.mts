@@ -1,5 +1,5 @@
-import {clearRoomUrlParams} from './route-state.mts';
-import {ROOM_INVITE_KEY} from './room-invite.mts';
+import {clearRoomUrlParams} from './route-state.mjs';
+import {ROOM_INVITE_KEY} from './room-invite.mjs';
 
 /** /beta/ publishes program files for the shared Launcher document. */
 export const BETA_STORAGE_PREFIX = 'beta:';

@@ -1890,14 +1890,14 @@ server.on('close', () => {
 });
 
 server.on('connection', (socket, request) => {
-  const requestedChannel=new URL(request.url||'/', 'http://relay.invalid').searchParams.get('channel')||'stable';
-  if(requestedChannel!==releaseChannel){
-    socket.close(1008,'release channel mismatch');
-    return;
-  }
   socket.relayAddress = relayClientAddress(request, abuseConfig.trustedProxies);
   if (!abuseGuard.trackSocket(socket.relayAddress, socket)) {
     socket.close(4008, 'connection limit');
+    return;
+  }
+  const requestedChannel = new URL(request.url || '/', 'http://relay.invalid').searchParams.get('channel') || 'stable';
+  if (requestedChannel !== releaseChannel) {
+    socket.close(1008, 'release channel mismatch');
     return;
   }
   roomDirectory.track(socket);

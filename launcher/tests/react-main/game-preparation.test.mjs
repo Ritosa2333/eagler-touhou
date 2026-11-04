@@ -92,6 +92,7 @@ function acquisitionFixture({current = generation(), hostValue = null, catalogVa
     metadata: {getSnapshot: () => metadata, initialize: async () => {calls.push('metadata'); await initialize();},
       refreshInstalled: async game => {calls.push(`refresh:${game}`);}},
     dependencies: {readCurrent: async game => {calls.push(`current:${game}`); return installation();},
+      repairInstalled: async installed => installed.generation,
       installPublished: async () => {throw new Error('Unexpected published installation');}, ...dependencies},
   });
   return {acquisition, calls, metadata, get current() {return current;}, setCurrent(value) {current = value;}};
@@ -211,6 +212,7 @@ test('TH05 album acquisition includes its declared soundtrack files', async () =
     metadata: {getSnapshot: () => ({siteManifest: development, releaseCatalog: null}), initialize: async () => {}},
     fetchImpl: async url => {downloaded.push(new URL(url).pathname); return new Response(bytes);},
     dependencies: {readCurrent: async () => ({generation: current, installation: null}),
+      repairInstalled: async installed => installed.generation,
       installAcquired: async options => {
         assert.deepEqual(options.desiredFileIds, ['game-data', 'ogg:op.ogg', 'ogg:akyu-01.ogg']);
         for (const id of options.desiredFileIds) await options.acquire(id, options.descriptor.files[id]);
@@ -457,7 +459,8 @@ test('main 3953: development resource acquisition has the same actual-operation 
       initialize: async () => {throw new Error('Development current must already be installed');}},
       fetchImpl: async (url, options) => {
         assert.equal(String(url), `${baseUrl}development/th08.dat`); assert.equal(options.signal, controller.signal); return new Response(bytes);
-      }, dependencies: {readCurrent: async () => ({generation: current, installation: null}), installAcquired: async options => {
+      }, dependencies: {readCurrent: async () => ({generation: current, installation: null}),
+        repairInstalled: async installed => installed.generation, installAcquired: async options => {
         activity.push('install');
         if (mode === 'failure') throw new Error('fixture development failed');
         if (mode === 'cancel') {controller.abort(); throw new DOMException('Cancelled', 'AbortError');}

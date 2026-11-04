@@ -4,7 +4,7 @@ import {validateReleaseCatalog} from "../../release-catalog.mjs";
 import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
 import {componentFileIds} from '../../package/package-generation.mjs';
-import {installPublishedPackage} from '../../package/package-launcher.mjs';
+import {installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
 import {parsePackageZip} from '../../package/package-zip.mjs';
 import {readCurrentPackageGeneration} from '../../package/package-store.mjs';
@@ -72,6 +72,7 @@ export type PackageAcquisitionResult =
 export interface PackageAcquisitionDependencies {
   readCurrent: typeof readCurrentPackageGeneration;
   installPublished: typeof installPublishedPackage;
+  repairInstalled: typeof repairInstalledPackage;
   installAcquired: typeof installPackageFromAcquisition;
   installZip: typeof installParsedPackageZip;
   parseZip: typeof parsePackageZip;
@@ -103,6 +104,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   testBuild?: boolean;
 }) {
   const deps: PackageAcquisitionDependencies = {readCurrent: readCurrentPackageGeneration, installPublished: installPublishedPackage,
+    repairInstalled: repairInstalledPackage,
     installAcquired: installPackageFromAcquisition, installZip: installParsedPackageZip, parseZip: parsePackageZip,
     parseLegacy: parseStoredGameDataPack, hash: sha256Hex, ...dependencies};
   const catalogUrl = new URL(RELEASE_CATALOG_FILE, baseUrl).href;
@@ -184,7 +186,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       // Keep both committed installations. Cached beauty launches are offline
       // and never consult or install an original publication.
       const local = await deps.readCurrent(game, {gameVersion}); checkPreparationAbort(request.signal);
-      if (local.generation) return installedResult(local, request);
+      if (local.generation) return installedResult(await repair(local, request), request);
       try {
         request.onAcquisitionActivity?.(true);
         const publication = await getPublication(gameVersion, request.signal);
@@ -203,12 +205,13 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     // Development materializes the currently selected OGG before reusing current,
     // exactly as main does. Ordinary installed launches never await metadata.
     if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
-    const installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
+    let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
+      installed = await repair(installed, request);
       if (request.updateBeforePrepare) return installedResult(installed, request);
       const published = metadataSnapshot.releaseCatalog?.games[game];
-      return {kind:'managed', generation:installed.generation,
-        deferredUpdate: published?.revision === installed.generation.descriptor.revision ? null : installed};
+      return {kind:'managed', generation:installed.generation!,
+        deferredUpdate: published?.revision === installed.generation!.descriptor.revision ? null : installed};
     }
     if (!metadataSnapshot.releaseCatalog) {try {await metadata.initialize();} catch {} checkPreparationAbort(request.signal); metadataSnapshot = metadata.getSnapshot();}
     const {siteManifest: host, releaseCatalog: catalog} = metadataSnapshot;
@@ -243,6 +246,39 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     const entry = isMultiplayerProductId(request.productId) ? hosted.multiplayerRuntime : hosted.runtime;
     if (!entry) throw new Error(t('runtime.multiplayerRuntimeMissing', {game: game}));
     return {kind: 'direct-preload', host, entry, gameData: hosted.gameData};
+  }
+  async function repair(installed: CurrentPackageGeneration, request: AcquisitionRequest) {
+    if (!indexedDBAvailable() && !dependencies?.repairInstalled) return installed;
+    const game = gameIdForProduct(request.productId);
+    let active = false;
+    try {
+      const generation = await deps.repairInstalled(installed, {
+        getPublication: async () => {
+          active = true;
+          request.onAcquisitionActivity?.(true);
+          progress(request, 'package.installingResources');
+          if (!metadata.getSnapshot().releaseCatalog) await metadata.initialize();
+          return getPublication(request.gameVersion, request.signal);
+        },
+        fetchImpl: getPackageFetch(game), signal: request.signal,
+        onProgress: value => progress(request, 'package.installingResourcesProgress', {...value}),
+      });
+      checkPreparationAbort(request.signal);
+      if (generation !== installed.generation) await installedChanged(game);
+      return {...installed, generation};
+    } catch (error) {
+      checkPreparationAbort(request.signal);
+      let failure = error;
+      if (request.decideUpdate) {
+        try {
+          const updated = await installedResult(installed, {...request, updateBeforePrepare: true});
+          if (updated.kind === 'managed' && updated.generation.id !== installed.generation?.id)
+            return {...installed, generation: updated.generation};
+        } catch (updateError) {failure = updateError;}
+      }
+      checkPreparationAbort(request.signal);
+      throw new GameDataAcquisitionError(preparationErrorText(failure), {cause: failure});
+    } finally {if (active) request.onAcquisitionActivity?.(false);}
   }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {
     gameVersion?: GameVersion; game: GameId; file: Blob & {name?: string}; signal?: AbortSignal; onProgress?: AcquisitionRequest['onProgress'];

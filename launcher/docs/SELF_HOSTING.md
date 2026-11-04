@@ -65,7 +65,7 @@ npm run verify:deployed -- https://example.com/
 
 ## 测试版功能
 
-右上角菜单最下方的“开发人员选项”包含“显示调试信息”和“测试版功能”。确认开启或关闭后，启动器在当前页面刷新并加载对应的作品清单。切换时会清理另一版本的房间邀请。测试版使用独立的存档、录像、房间恢复信息和联机大厅。
+右上角菜单最下方的“开发人员选项”包含“显示调试信息”和“测试版功能”。确认开启或关闭后，启动器在当前页面刷新并加载对应的作品清单。切换时会清理另一版本的房间邀请。测试版使用独立的存档、录像、房间恢复信息和联机大厅。跨源迁移包含两个通道的存档和录像。
 
 使用正常挂载路径的启动器构建。组装脚本 `scripts/package-server.mjs` 接受 `--beta-mode=1 --test-build=1 --site-url=https://example.com/beta/`，将测试版清单、作品封面和 Runtime 产物发布到启动器旁的 `beta/` 资源目录。该构建使用 `resourceMode: "external"`，其余参数沿用[发布流程](RELEASE.md)。`--feature-config` 中的 `netplayRelay` 指向设置了 `EAGLER_RELEASE_CHANNEL=beta` 的[独立测试版 Relay](../../services/relay/README.md)。打包器为 Runtime 加入启动前的存储隔离脚本，再生成文件哈希和不可变版本。
 

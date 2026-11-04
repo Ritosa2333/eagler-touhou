@@ -6,7 +6,7 @@ import {WebSocket} from 'ws';
 for (const channel of ['stable', 'beta']) {
   const relay = spawn(process.execPath, ['src/netplay-relay.mjs'], {
     windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
-    env: {...process.env, EAGLER_RELEASE_CHANNEL: channel, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: '0'},
+    env: {...process.env, EAGLER_RELEASE_CHANNEL: channel, EAGLER_NETPLAY_RELAY_HOST: '127.0.0.1', EAGLER_NETPLAY_RELAY_PORT: '0', EAGLER_NETPLAY_MAX_CONNECTIONS: '4'},
   });
   const sockets = [];
   let log = '';
@@ -39,6 +39,23 @@ for (const channel of ['stable', 'beta']) {
     const socket = connect('directory=1&member=channel_member_123' + (channel === 'beta' ? '&channel=beta' : ''));
     const [bytes] = await once(socket, 'message');
     assert.equal(JSON.parse(String(bytes)).type, 'directory');
+    const ownChannel = channel === 'beta' ? '&channel=beta' : '';
+    for (let index = 0; index < 2; index++) {
+      await once(connect(`directory=1&member=channel_limit_${index}${ownChannel}`), 'message');
+    }
+    // A client can leave the server waiting for its close handshake.
+    const closing = connect('directory=1' + (channel === 'beta' ? '' : '&channel=beta'));
+    closing.once('open', () => closing.pause());
+    await once(closing, 'open');
+    const probe = connect('directory=1&member=channel_limit_probe' + ownChannel);
+    const [, response] = await Promise.race([
+      once(probe, 'unexpected-response', {signal: AbortSignal.timeout(5000)}),
+      once(probe, 'open', {signal: AbortSignal.timeout(5000)}).then(() => {
+        throw Error('A closing cross-channel socket bypassed the connection limit');
+      }),
+    ]);
+    response.resume();
+    assert.equal(response.statusCode, 429);
   } finally {
     for (const socket of sockets) if (socket.readyState < 2) socket.terminate();
     if (relay.exitCode === null) {const ended = once(relay, 'exit'); relay.kill(); await ended;}

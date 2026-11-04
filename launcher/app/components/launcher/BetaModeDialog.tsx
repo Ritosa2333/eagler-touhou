@@ -18,6 +18,7 @@ export function BetaModeDialog({
   const { t } = useLocale(),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  if (!open) return null;
   async function enter() {
     setBusy(true);
     setError('');
