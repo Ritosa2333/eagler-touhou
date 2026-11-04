@@ -62,6 +62,7 @@ try{
   assert(frames.every(frame=>!frame.childFrames().some(child=>/netplay\/runtime.html/.test(child.url()))),'managed game must not load a nested runtime page');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
   await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>{const e=document.querySelector('.room-workspace-preparation');return !e||e.hidden})))).every(Boolean),'main room loading cover must close',10000);
+  await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/room.js');const music=m.managedAPI.health().music;if(music?.error)throw Error(music.error);return music?.status?.startsWith('原版 FM：');})))).every(Boolean),'both players hear original music',30000);
   for(const frame of frames)assert(await frame.$eval('canvas',e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0;}),'game canvas is visible');
   for(const [seat,page] of pages.entries())await page.screenshot({path:resolve(out,'player-'+seat+'.png')});
   for(const frame of frames)assert(await frame.$('#pc98-game-fps'),'game FPS counter appears during multiplayer');
