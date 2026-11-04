@@ -81,7 +81,7 @@ export class Netplay {
     this.sendPacket({type:'sync-ready',identity});
     const deadline=performance.now()+30000;
     while(!this.closed){
-      if(this.peerIdentity){if(JSON.stringify(this.peerIdentity)!==JSON.stringify(identity))throw Error('双方游戏、补丁或同步引擎版本不同，请刷新后重新建房');
+      if(this.peerIdentity){const fields=Object.keys(identity).filter(key=>JSON.stringify(this.peerIdentity[key])!==JSON.stringify(identity[key]));if(fields.length)throw Error(`双方联机状态不一致：${fields.join('、')}`);
         this.synchronized=true;return;}
       if(performance.now()>deadline)throw Error('另一端未进入帧同步，请双方刷新后重新建房');
       await new Promise(resolve=>setTimeout(resolve,20));
