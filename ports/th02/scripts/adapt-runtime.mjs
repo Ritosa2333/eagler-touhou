@@ -23,6 +23,7 @@ await patch('practice-attempt.js',text=>replaceOnce(text,'if(!replay)await insta
       if(!replay&&globalThis.__eaglerPC98Options().th02RapidFire!==false){const {Fat12}=await import('./solo-fat12.js');const {installRapidFire}=await import('./managed-rapid-fire.mjs');const fat=new Fat12(data),entry=fat.find('HUMAROKU/MAIN.EXE'),exe=fat.read(entry);installRapidFire(exe,original,false);fat.replace(entry,exe);}
       if(!replay&&globalThis.__eaglerPC98Files){const {Fat12}=await import('./solo-fat12.js');const fat=new Fat12(data);for(const [name,bytes]of globalThis.__eaglerPC98Files.memory)if(['HUUHI.DAT','HUUMA.CFG'].includes(name))fat.put('HUMAROKU/'+name,bytes);}`,'saved files'));
 await patch('netplay/runtime.js',text=>replaceOnce(text,'const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;',`const {installRapidFire}=await import('../managed-rapid-fire.mjs');installRapidFire(exe,patch,true);
+ const {installBombBackgroundRepair}=await import('../managed-bomb-background.mjs');installBombBackgroundRepair(exe,patch);
  const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;`,'rapid fire native hook'));
 await patch('netplay/th02-state.js',text=>replaceOnce(text,'((value&256)>>1);','((value&256)>>1)|((value&1024)>>1);','rapid fire input flag'));
 await patch('netplay/rollback-queue.js',text=>replaceOnce(text,'const HELD=32|64|2048,DIRECTIONS=15;','const HELD=32|64|1024|2048,DIRECTIONS=15;','rapid fire prediction'));
@@ -87,7 +88,7 @@ await patch('netplay/runtime.html',text=>replaceOnce(text,'<script>','<script ty
 for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
 {
   const path=resolve(output,'netplay/runtime.json'), manifest=JSON.parse(await readFile(path,'utf8'));
-  manifest.assets['managed-rapid-fire.mjs']=createHash('sha256').update(await readFile(resolve(output,'managed-rapid-fire.mjs'))).digest('hex');
+  for(const name of ['managed-rapid-fire.mjs','managed-bomb-background.mjs'])manifest.assets[name]=createHash('sha256').update(await readFile(resolve(output,name))).digest('hex');
   await writeFile(path,JSON.stringify(manifest,null,2)+'\n');
 }
 for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-game-fps.mjs','pc98-practice.mjs','pc98-practice-theme.css','pc98-pause-menu.mjs']) {await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
