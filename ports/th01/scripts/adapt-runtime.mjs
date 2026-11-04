@@ -43,7 +43,10 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=text+'\n'+managedRoomApi;
     return text;
   });
-  await patch('netplay/runtime.js',text=>replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...data)));","void globalThis.__eaglerPC98Files.write('scores.dat',data);",'managed network score file'));
+  await patch('netplay/runtime.js',text=>{
+    text=replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...data)));","void globalThis.__eaglerPC98Files.write('scores.dat',data);",'managed network score file');
+    return replaceOnce(text,'await this.startRenderer(module,rendererSource);','// Render against the live core framebuffer.','managed native renderer');
+  });
   await patch('netplay/runtime-worker-client.js',text=>replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...result.scores)));","void globalThis.__eaglerPC98Files.write('scores.dat',new Uint8Array(result.scores));",'managed worker score file'));
   await writeFile(resolve(output,'room-title-worker.js'),`onmessage=async({data})=>{try{const core=(await WebAssembly.instantiate(data.module,{})).exports;core.th_init(1,1,0x12345678,0);core.th_menu_open(1,0);core.th_render();data.canvas.getContext('2d',{alpha:false}).putImageData(new ImageData(new Uint8ClampedArray(core.memory.buffer,core.th_pixels(),640*400*4),640,400),0,0);postMessage({type:'ready'});}catch(error){postMessage({type:'error',message:error.message});}};`);
   await patch('replay/audio.js',text=>{

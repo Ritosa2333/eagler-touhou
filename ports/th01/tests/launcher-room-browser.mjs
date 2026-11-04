@@ -71,6 +71,10 @@ try{
     await wait(()=>frames[0].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard down',5000);
     await host.keyboard.up('ArrowRight');
     await wait(()=>frames[0].evaluate(()=>!__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard release',5000);
+    const before=await frames[0].evaluate(()=>window.th01Net.session.game.state().players[0].left);
+    await host.keyboard.down('ArrowRight');
+    await wait(async()=>await frames[0].evaluate(()=>window.th01Net.session.game.state().players[0].left)>before,'native player movement',10000);
+    await host.keyboard.up('ArrowRight');
     await Promise.all(pages.map(page=>page.$eval('#gameFrame',frame=>frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th01',epoch:Number(new URL(frame.src).searchParams.get('runtimeEpoch')),command:'network-cancel'},location.origin))));
     await wait(async()=>events.every(list=>list.some(e=>e.event==='exit'&&e.status==='success')),'runtime cancellation',15000);
     await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean),'same room prepares the next match',120000);
