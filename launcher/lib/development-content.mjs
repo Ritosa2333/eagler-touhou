@@ -11,6 +11,7 @@ const projectRelativePath = path => {
   if (isAbsolute(value)) return resolve(path);
   return value.startsWith(".") ? value : `./${value}`;
 };
+const th05ContentRoot = process.env.EAGLER_TH05_CONTENT_DIR?.trim() ? resolve(process.env.EAGLER_TH05_CONTENT_DIR.trim()) : resolve(project, "../ports/th05/artifacts/content");
 const th08ContentRoot = process.env.EAGLER_TH08_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH08_CONTENT_DIR.trim())
   : null;
@@ -35,6 +36,7 @@ const th09ContentRoot = process.env.EAGLER_TH09_CONTENT_DIR?.trim()
 const th15ContentRoot = process.env.EAGLER_TH15_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH15_CONTENT_DIR.trim())
   : null;
+const th17ContentRoot = process.env.EAGLER_TH17_CONTENT_DIR?.trim() || null;
 const th20ContentRoot = process.env.EAGLER_TH20_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH20_CONTENT_DIR.trim())
   : null;
@@ -59,6 +61,13 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       : ws("dependencies", "unifont-15.1.05", "unifont-15.1.05.otf"),
   }),
   games: Object.freeze({
+    th05: Object.freeze({
+      runtime: `${ws("th05", "artifacts", "runtime", "th05.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th05mp", "artifacts", "runtime", "th05.html")}?hosted=1`,
+      ...(process.env.EAGLER_TH05_LANGUAGE_PACK_DIR?.trim() ? {languagePackDirectory: projectRelativePath(process.env.EAGLER_TH05_LANGUAGE_PACK_DIR.trim())} : {}),
+      data: Object.freeze({source: th05ContentRoot ? projectRelativePath(resolve(th05ContentRoot,"th05.data")) : ws("th05","artifacts","content","th05.data"), layout: PRODUCT_CONTENT.th05.dataLayout}),
+      music: availableMusic(th05ContentRoot ? {ogg: Object.freeze({base: `${projectRelativePath(resolve(th05ContentRoot,"music"))}/`, ...PRODUCT_CONTENT.th05.music.ogg})} : {}),
+    }),
     th06: Object.freeze({
       runtime: `${ws("th06", "build", "web", "normal", "th06.html")}?hosted=1&v=audio-music-modes-1`,
       multiplayerRuntime: `${ws("th06", "build", "web", "multiplayer", "th06.html")}?hosted=1&v=th06-netplay-local-2`,
@@ -229,6 +238,16 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
           ...PRODUCT_CONTENT.th15.music.ogg,
         }),
       } : {}),
+    }),
+    th17: Object.freeze({
+      runtime: `${ws("th17", "build-eagler", "th17.html")}?hosted=1`,
+      data: Object.freeze(th17ContentRoot ? {
+        source: projectRelativePath(resolve(th17ContentRoot, "th17.data")),
+        layout: PRODUCT_CONTENT.th17.dataLayout,
+      } : {identity: Object.freeze({bytes: 79861613, sha256: "109c193c492f0ba322752b70b217f765fc9b2bc9a10615bd0cf3c28d9401381b", layout: PRODUCT_CONTENT.th17.dataLayout})}),
+      music: availableMusic(th17ContentRoot ? {ogg: Object.freeze({
+        base: `${projectRelativePath(resolve(th17ContentRoot, "music"))}/`, ...PRODUCT_CONTENT.th17.music.ogg,
+      })} : {}),
     }),
     th20: Object.freeze({
       runtime: `${ws("th20", "build-eagler", "th20.html")}?hosted=1`,

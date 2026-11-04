@@ -12,8 +12,11 @@ import type {Translate} from '../i18n';
 import {GameDataAcquisitionError} from './game-data-acquisition';
 import {checkPreparationAbort, preparationErrorText, type PackageAcquisition, type PreparationProgress} from './package-acquisition';
 
-export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full';
+export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full' || mode === 'ogg-akyu';
 export const musicTransport = (mode: MusicMode): 'ogg' | 'midi' | 'none' => oggMusic(mode) ? 'ogg' : mode === 'midi' ? 'midi' : 'none';
+export const musicModeLabel = (mode: MusicMode, t: Translate) => mode === 'midi' ? 'midi'
+  : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull'
+    : mode === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.none');
 
 /** Upgrade only a newly required shared dependency. Existing DATA and selected
  * optional files must have identical content in the publication. */
@@ -124,10 +127,10 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   checkPreparationAbort(signal);
   const declared = componentFileIds(generation.descriptor, 'ogg');
   const initial = completeSet ? declared : declared.slice(0, 2);
-  if (initial.length < 2) return {generation, music: fallback};
+  if (initial.length < (completeSet ? 1 : 2)) return {generation, music: fallback};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
-  let publication;
+  let publication: Awaited<ReturnType<typeof acquisition.getPublication>>;
   try {publication = await acquisition.getPublication(gameVersion, signal);} catch {onWarning?.(t("music.initialOggIncomplete")); return {generation, music: fallback};}
   const {catalog, catalogUrl} = publication;
   if (metadata.siteManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {

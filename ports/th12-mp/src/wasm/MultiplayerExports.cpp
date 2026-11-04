@@ -40,4 +40,5 @@ int th12_mp_replay_rewind(){return th12::multiplayer::session.seekReplay(0);}
 double th12_mp_paced_elapsed(double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed);}
 const char* th12_mp_spectator_state(){return th12::multiplayer::session.network.SpectatorPlaybackState();}
 int th12_mp_spectator_control(const char* run,const char* action,uint32_t frame){return th12::multiplayer::session.network.SpectatorPlaybackControl(run,action,frame);}
+int th12_mp_spectator_complete(const uint8_t* bytes,int size){return size>0&&th12::multiplayer::session.completeSpectator(bytes,size);}
 }

@@ -20,6 +20,7 @@
 #include "../multiplayer/ReplayArchive.hpp"
 #include "../multiplayer/ReplayStorage.hpp"
 #include "../multiplayer/SpectatorStageState.hpp"
+#include "../multiplayer/ReplayStageSeek.hpp"
 #include "../game/WorldRollback.hpp"
 #include "../game/RollbackCapture.hpp"
 #include "../multiplayer/FrameSchedule.hpp"
@@ -100,7 +101,7 @@ struct Application:StageResourceEffects {
     std::vector<u8> multiplayer_export;
     bool multiplayer_world=false,multiplayer_advanced=false,multiplayer_finish_pending=false;
     bool multiplayer_restart_pending=false,multiplayer_saved=false,multiplayer_pause_requested=false,multiplayer_local_results=false;
-    u32 multiplayer_seek_target=0,multiplayer_last_stage=0;
+    u32 multiplayer_seek_target=0,multiplayer_seek_stage=0,multiplayer_last_stage=0;
     std::string multiplayer_auto_path;
     std::array<u32,4> multiplayer_build{};
     bool multiplayer_viewer=false;
@@ -140,7 +141,7 @@ struct Application:StageResourceEffects {
         if(!initialize())return false;
         netplay.Clear();multiplayer_viewer=true;multiplayer_world=false;multiplayer_advanced=false;
         multiplayer_finish_pending=multiplayer_restart_pending=multiplayer_pause_requested=multiplayer_local_results=false;
-        multiplayer_seek_target=0;multiplayer_viewer_input={};
+        multiplayer_seek_target=multiplayer_seek_stage=0;multiplayer_viewer_input={};
         renderer.invalidate();renderer.multiplayer_animations=nullptr;renderer.multiplayer_hud_background=nullptr;renderer.multiplayer_opacity.fill(255);
         session.multiplayer_active=false;session.animations.rate=1;
         if(!session.open_title(resources,false,TitleScreen::Replays)){error=session.error;return false;}
@@ -148,6 +149,11 @@ struct Application:StageResourceEffects {
         session.title->replay_files.resize(std::max<size_t>(100,(multiplayer_replay_index/25+1)*25));
         session.title->last_replay=int(multiplayer_replay_index);
         clear_inputs();audio.effects.reset();return tick(0);
+    }
+    bool multiplayer_replay_seeking()const{
+        return netplay.Playback()&&multiplayer::ReplayStageSeeking(netplay.NextFrame(),
+            multiplayer_seek_target,multiplayer_replay.FrameCount(),multiplayer_seek_stage,
+            session.state.stage,session.battle&&session.battle->stage_active);
     }
     bool multiplayer_load_replay(const u8* bytes,u32 size,u32 stage=0){
         multiplayer::ReplayArchive replay;
@@ -163,7 +169,7 @@ struct Application:StageResourceEffects {
         if(!multiplayer_begin())return false;
         // Chapters are input positions, not world snapshots. Restore frame zero
         // and replay every prior confirmed input through the native owner.
-        multiplayer_seek_target=target;return true;
+        multiplayer_seek_target=target;multiplayer_seek_stage=stage;return true;
     }
     bool multiplayer_menu_metadata(){
         if(session.title&&session.title->replay_scan_requested)scan_replays();
@@ -224,7 +230,7 @@ struct Application:StageResourceEffects {
             if(!graphics.preload(*file)){error=graphics.error;return false;}
         multiplayer_world=true;multiplayer_advanced=false;multiplayer_finish_pending=multiplayer_restart_pending=multiplayer_saved=multiplayer_pause_requested=multiplayer_local_results=false;clear_inputs();
         multiplayer_last_stage=opts.stage;multiplayer_spectator_stage=opts.stage;
-        multiplayer_seek_target=0;multiplayer_auto_path.clear();frame_statistics.reset_run();
+        multiplayer_seek_target=multiplayer_seek_stage=0;multiplayer_auto_path.clear();frame_statistics.reset_run();
         if(netplay.Playback())session.recording_timestamp=multiplayer_replay.Timestamp();
         if(!play_stage_music(session.state.stage)||!audio_events()||!text_events()||!rollback_initialize())return false;
         refresh_multiplayer_touch_frontier();return true;
@@ -1078,7 +1084,7 @@ EMSCRIPTEN_KEEPALIVE int th11_mp_replay_seek(unsigned frame){
     if(frame<app.netplay.NextFrame()){
         if(!app.netplay.BeginPlayback(app.multiplayer_replay.Setup())||!app.multiplayer_begin())return 0;clear_inputs();
     }
-    app.multiplayer_seek_target=frame;return 1;
+    app.multiplayer_seek_stage=0;app.multiplayer_seek_target=frame;return 1;
 }
 EMSCRIPTEN_KEEPALIVE void th11_mp_local_visibility(unsigned on){th11::sdl::app.session.multiplayer_local_visibility=on!=0;}
 EMSCRIPTEN_KEEPALIVE void th11_mp_always_hitbox(unsigned on){th11::sdl::app.session.multiplayer_always_hitbox=on!=0;}
@@ -1434,7 +1440,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
                 // the loop, silently losing two/three-tick catch-up offers.
                 const auto ticks=exact_cadence.advance(app.netplay.PacedElapsed(delta));
                 const bool stage_seeking=app.netplay.StagePlaybackReady()&&app.netplay.StagePlayback().FastForwarding();
-                const bool seeking=stage_seeking||(app.netplay.Playback()&&app.netplay.NextFrame()<app.multiplayer_seek_target);
+                const bool seeking=stage_seeking||app.multiplayer_replay_seeking();
                 const auto seek_target=stage_seeking?app.netplay.StagePlayback().Target():app.multiplayer_seek_target;
                 const unsigned budget=seeking?120:ticks;
                 for(unsigned n=0;n<budget&&ok;++n){
@@ -1444,7 +1450,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
                     if(app.netplay.Generation()!=beforeGeneration||app.netplay.NextFrame()<beforeFrame||!app.multiplayer_world){exact_cadence.reset();break;}
                     if(!app.multiplayer_advanced){if(!seeking)exact_cadence.network_wait();break;}
                     if(!seeking&&ok&&!exact_cadence.complete()){app.error="TH11 exact frame clock consumed twice";ok=false;break;}
-                    if(seeking&&app.netplay.NextFrame()>=seek_target)break;
+                    if(seeking&&(stage_seeking?app.netplay.NextFrame()>=seek_target:!app.multiplayer_replay_seeking()))break;
                 }
                 if(seeking)exact_cadence.reset();else exact_cadence.cpu_yield();
             }
@@ -1454,7 +1460,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
             const bool display_eligible=ok&&presentation.high_refresh&&interpolation_ready()&&
                 app.multiplayer_world&&!app.multiplayer_finish_pending&&!app.netplay.Correcting()&&
                 app.netplay.RollbackFrame()==Netplay::INVALID_FRAME&&!seeking&&
-                !(app.netplay.Playback()&&app.netplay.NextFrame()<app.multiplayer_seek_target)&&
+                !app.multiplayer_replay_seeking()&&
                 !th11_limit_presentation_to_60();
             const auto phase=app.netplay.AllowsRollback()&&!app.netplay.ReadOnly()?rollback_cadence.phase():exact_cadence.phase();
             const bool draw=multiplayer_presentation.observe(delta,display_eligible,app.netplay.Generation(),

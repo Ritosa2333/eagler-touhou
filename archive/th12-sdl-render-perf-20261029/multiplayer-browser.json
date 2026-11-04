@@ -1,0 +1,38 @@
+{
+  "scope": "Original local TH12 assets, production WASM, browser Launcher RPC and ordered WebSocket relay with 25ms delay",
+  "reports": [
+    {
+      "count": 2,
+      "mode": 0,
+      "delay": 0,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        20,
+        19
+      ],
+      "slowPresentation": false,
+      "frames": 413,
+      "exactMatches": 0,
+      "hash": -1197140797,
+      "spectatorVerified": true
+    },
+    {
+      "count": 3,
+      "mode": 1,
+      "delay": 3,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        0,
+        0,
+        0
+      ],
+      "slowPresentation": false,
+      "frames": 379,
+      "exactMatches": 178,
+      "hash": -2145437275,
+      "spectatorVerified": false
+    }
+  ]
+}

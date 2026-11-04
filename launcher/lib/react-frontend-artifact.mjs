@@ -5,6 +5,11 @@ import { STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES } from "./fronten
 import { REACT_APP_SHELL_META, normalizeReactMountPath, validateReactAppShellDeployment } from "./react-app-shell-deployment.mjs";
 
 export const REACT_ARTIFACT_METADATA_FILES = Object.freeze([".vite/manifest.json", ".vite/react-app-shell-graph.json"]);
+// React Router marks CSS shared by static and dynamic imports with an empty
+// fragment. Preserve the published URL; graph ownership checks the real file.
+export function reactDocumentAssetUrl(url, tag) {
+  return tag === 'link' && url.endsWith('.css#') ? url.slice(0, -1) : url;
+}
 const compatibilityEntries = STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith("legacy/"));
 const retiredEntryStyles = new Set(["lobby.css", "touch-guide.css"]);
 
@@ -53,9 +58,12 @@ function documentTags(html, parse) {
 /** Consume a maintainer-built artifact without importing TypeScript, invoking
  * a compiler, or initializing main's legacy UI. Deployment inventories may
  * embed the same private build metadata instead of publishing .vite files.
- * @param {{directory: string, metadata?: {manifest: Record<string, any>, graph: any} | null, expectedMountPath?: string}} options
+ * publicationFiles is only for reading a previous, independently hash-verified
+ * release during replacement. Its graph owns that release's document set;
+ * selected/new artifacts always use the current canonical static inventory.
+ * @param {{directory: string, metadata?: {manifest: Record<string, any>, graph: any} | null, expectedMountPath?: string, publicationFiles?: string[]}} options
  */
-export async function readReactFrontendArtifact({directory, metadata = null, expectedMountPath = undefined}) {
+export async function readReactFrontendArtifact({directory, metadata = null, expectedMountPath = undefined, publicationFiles = undefined}) {
   // Operator entrypoints may inspect selection before npm ci. Keep parser
   // dependencies behind the actual prebuilt-artifact read, after setup.
   const [{parse}, {browserModuleClosure}] = await Promise.all([import("parse5"), import("./browser-module-graph.mjs")]);
@@ -82,6 +90,16 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
   }
   const {manifest, graph} = supplied;
   if (!manifest || typeof manifest !== "object" || Array.isArray(manifest) || !graph || graph.schema !== "eagler-touhou/react-app-shell-graph/1" || !Array.isArray(graph.shellFiles) || !Object.hasOwn(graph, "appShell")) throw new Error("Invalid React frontend artifact metadata");
+  const publication = publicationFiles === undefined ? null : new Set(publicationFiles.map(artifactPath));
+  if (publication && (!metadata || publication.size !== publicationFiles.length)) throw new Error("Invalid previous React publication inventory");
+  if (publication) {
+    if (new Set(graph.shellFiles).size !== graph.shellFiles.length) throw new Error("Duplicate previous React shell path");
+    for (const path of graph.shellFiles) {
+      artifactPath(path);
+      if (!publication.has(path) || path.includes('/') && !/^(?:assets|vendor|uptime)\//.test(path) && !/^content\/[A-Za-z0-9_-]+\.html$/.test(path)) throw new Error(`Previous React shell file is outside its frontend publication: ${path}`);
+    }
+    for (const path of ['index.html', 'en.html', 'lobby.html']) if (!graph.shellFiles.includes(path)) throw new Error(`Previous React shell is missing its entry: ${path}`);
+  }
   const mountPath = normalizeReactMountPath(graph.mountPath);
   if (expectedMountPath !== undefined && normalizeReactMountPath(expectedMountPath) !== mountPath) throw new Error("React frontend artifact does not match the selected mount");
   const appShell = graph.appShell === null ? null : validateReactAppShellDeployment(graph.appShell);
@@ -101,9 +119,18 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     for (const path of [...entry.css ?? [], ...entry.assets ?? []]) generated.add(generatedPath(path));
   }
   if (!entrypoints.size) throw new Error("React artifact has no Vite browser entrypoints");
-  for (const path of ["index.html", "en.html", "lobby.html"]) {
+  // Earlier complete artifacts have two languages. Every declared Japanese
+  // document receives the same graph and metadata validation as other entries.
+  const documents = publication ? graph.shellFiles.filter(path => path.endsWith('.html'))
+    : ["index.html", "en.html", "lobby.html", "profile.html", ...graph.shellFiles.includes('ja.html') ? ['ja.html'] : []];
+  const staticFiles = publication ?? new Set(STATIC_FRONTEND_PACKAGE_FILES);
+  for (const path of documents) {
     const tags = documentTags(await readFile(resolveFile(path), "utf8"), parse);
     const declarations = tags.filter(node => node.tag === "meta" && node.attributes.name === REACT_APP_SHELL_META);
+    // Earlier releases also own standalone help pages and authored fragments.
+    // Only React entries carry this metadata or a Vite browser script.
+    if (publication && !['index.html', 'en.html', 'lobby.html'].includes(path) && !declarations.length &&
+        !tags.some(node => node.tag === 'script' && node.attributes.src?.includes('/assets/'))) continue;
     if (declarations.length !== (appShell ? 1 : 0)) throw new Error(`React App Shell metadata mismatch: ${path}`);
     if (appShell && JSON.stringify(validateReactAppShellDeployment(JSON.parse(declarations[0].attributes.content))) !== JSON.stringify(appShell)) throw new Error(`React App Shell metadata mismatch: ${path}`);
     let referencedEntry = false;
@@ -111,29 +138,31 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
       const url = tag === "script" ? attributes.src : tag === "link" ? attributes.href : null;
       if (!url || !url.includes("/assets/")) continue;
       if (!url.startsWith(mountPath + "assets/")) throw new Error(`React document asset escapes its graph/mount: ${url}`);
-      const relative = url.slice(mountPath.length);
+      const relative = reactDocumentAssetUrl(url, tag).slice(mountPath.length);
       if (/^assets\/manifest-[a-f0-9]+\.js$/.test(relative)) {generated.add(relative); entrypoints.add(relative);}
-      if (!generated.has(relative)) throw new Error(`React document asset is absent from Vite graph: ${url}`);
+      if (!generated.has(relative) && !(tag === 'link' && staticFiles.has(relative))) throw new Error(`React document asset is absent from Vite graph: ${url}`);
       if (entrypoints.has(relative)) referencedEntry = true;
     }
     if (!referencedEntry) throw new Error(`React document has no browser entrypoint: ${path}`);
   }
-  const shellFiles = [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), ...generated])].sort();
+  const shellFiles = publication ? [...graph.shellFiles].sort()
+    : [...new Set([...STATIC_APP_SHELL_FILES.filter(path => !retiredEntryStyles.has(path)), ...generated])].sort();
   if (graph.shellFiles.length !== shellFiles.length || [...graph.shellFiles].sort().some((path, index) => path !== shellFiles[index])) throw new Error("React App Shell graph differs from its canonical static/Vite publication ownership");
+  if (publication) for (const path of generated) if (!publication.has(path) || !shellFiles.includes(path)) throw new Error(`Previous Vite output is absent from its publication graph: ${path}`);
   // Vite owns dynamic-expression imports used by React Router; every concrete
   // emitted module import must still stay inside that declared output graph.
   const generatedModules = await browserModuleClosure({root, entries: [...generated].filter(path => /\.m?js$/.test(path)), resolveFile, allowDynamicImports: true});
   if (generatedModules.some(path => !generated.has(path))) throw new Error("React browser module import is absent from the Vite publication graph");
-  const compatibility = await browserModuleClosure({root, entries: compatibilityEntries, resolveFile});
+  const compatibility = publication ? [] : await browserModuleClosure({root, entries: compatibilityEntries, resolveFile});
   if (compatibility.some(path => !path.startsWith("legacy/"))) throw new Error("React compatibility module escapes its bounded legacy publication");
-  const packageFiles = [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, ...generated, ...compatibility])].sort();
+  const packageFiles = publication ? shellFiles : [...new Set([...STATIC_FRONTEND_PACKAGE_FILES, ...generated, ...compatibility])].sort();
   for (const path of packageFiles) resolveFile(artifactPath(path));
   const browserModules = [...new Set([...generatedModules, ...compatibility])].sort();
   const owned = new Set(packageFiles);
   return Object.freeze({kind: "react", root, mountPath, appShell,
     metadata: freeze(structuredClone({manifest, graph})), artifactMetadataFiles: REACT_ARTIFACT_METADATA_FILES,
     packageFiles: Object.freeze(packageFiles), shellFiles: Object.freeze(shellFiles),
-    browserEntrypoints: Object.freeze([...entrypoints, ...compatibilityEntries].sort()), browserModules: Object.freeze(browserModules),
+    browserEntrypoints: Object.freeze([...entrypoints, ...publication ? [] : compatibilityEntries].sort()), browserModules: Object.freeze(browserModules),
     resolveSource(path) {
       if (!owned.has(path)) throw new Error(`unknown React frontend package file: ${path}`);
       return resolveFile(path);

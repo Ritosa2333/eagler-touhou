@@ -13,8 +13,9 @@ namespace th12::multiplayer {
 std::array<Pilot, MaxPlayers> pilots{};
 Options options{};
 bool active = false, paused = false, finished = false;
-bool restartRequested=false,returnRequested=false,saveRequested=false,menuConfirm=false,menuInputReady=false;
-unsigned menuSelection=0,menuAction=0,menuPreviousHeld=0,menuAge=0,menuHoldAge=0,storyPreviousHeld=0;
+bool restartRequested=false,returnRequested=false,saveRequested=false,menuConfirm=false;
+unsigned menuSelection=0,menuAction=0,menuReadySeats=0,menuAge=0,menuHoldAge=0;
+Netplay::CooperativeMenuInput<uint32_t> menuInput,storyInput;
 unsigned currentSeat = 0, tickNumber = 0, wipeFrames = 0, lifeFragments = 0, bombFragments = 0;
 int teamRank = 0;
 std::unordered_map<uint32_t, unsigned> damageRemainders;
@@ -31,10 +32,10 @@ bool Options::valid() const {
 const std::string& snapshot() {
   static std::string buffer;
   std::ostringstream out;
-  out << "{\"version\":1,\"frame\":" << tickNumber << ",\"stage\":" << stageNumber
+  out << "{\"version\":1,\"challenge\":" << options.challenge << ",\"frame\":" << tickNumber << ",\"stage\":" << stageNumber
       << ",\"paused\":" << paused << ",\"menuSelection\":" << menuSelection << ",\"menuConfirm\":" << menuConfirm
       << ",\"menuAction\":" << menuAction << ",\"returnRequested\":" << returnRequested << ",\"saveRequested\":" << saveRequested
-      << ",\"menuInputReady\":" << menuInputReady
+      << ",\"menuInputReady\":" << (menuReadySeats!=0)
       << ",\"restart\":" << restartRequested << ",\"finished\":" << finished << ",\"score\":" << score * int64_t(10)
       << ",\"ufoColors\":[" << ufoManager.inventory.colors[0] << ',' << ufoManager.inventory.colors[1]
       << ',' << ufoManager.inventory.colors[2] << "],\"players\":[";
@@ -63,7 +64,8 @@ uint32_t canonicalHash() {
   }
   // Menu age is presentation time; idle paused peers may be one input frame
   // apart while displaying the same authoritative world and menu selection.
-  word(menuPreviousHeld); word(menuHoldAge); word(storyPreviousHeld);word(menuInputReady);
+  for(auto held:menuInput.previous)word(held);for(auto held:storyInput.previous)word(held);
+  word(menuHoldAge);word(menuReadySeats);
   word(temporaryEnemyOwner);
   for (const auto& item : itemManager.entities) if (item.active()) { word(item.id); word(item.recipient); word(item.collector); word(item.gift); }
   std::vector<uint32_t> ids;
@@ -104,11 +106,11 @@ void resetPilot(unsigned s, bool carry) {
   p.px = carry?x:int((float(s) - float(options.count - 1) * .5f) * (options.count == 2 ? 48 : 56) * 128);
   if(carry){p.py=y;p.playerFocused=focused;}
   if (carry && ghost) { p.resources.lives = std::max(0, p.resources.lives); p.resources.power = p.resources.maxPower / 2; p.resources.bombs = std::max(2, p.resources.bombs); }
-  if (options.challenge) { p.resources.bombs = 0; p.resources.lives = 2; }
   if (pendingStageEntry) {
     p.resources=pendingStageEntry->resources[s]; p.graze=pendingStageEntry->graze[s]; p.misses=pendingStageEntry->misses[s];
     if(pendingStageEntry->version>=2){p.px=pendingStageEntry->x[s];p.py=pendingStageEntry->y[s];p.playerFocused=pendingStageEntry->focused[s]!=0;}
   }
+  if (options.challenge) p.resources.bombs = p.resources.bombFragments = 0;
   p.playerMotion.updateOptions(loadouts[options.selections[s]], p.resources.power, p.px, p.py, p.playerFocused, true);
   Scope owner(s); initializePlayerAnimation();
 }
@@ -147,14 +149,14 @@ void syncScore(int before) {
 }
 void initializePilots(bool nextStage) {
   for (unsigned s = 0; s < options.count; ++s) resetPilot(s, nextStage);
-  paused=menuConfirm=menuInputReady=false;menuSelection=menuAction=menuPreviousHeld=menuAge=menuHoldAge=storyPreviousHeld=0;
+  paused=menuConfirm=false;menuSelection=menuAction=menuReadySeats=menuAge=menuHoldAge=0;menuInput={};storyInput={};
   wipeFrames = 0; damageRemainders.clear(); bulletGrazeMasks.clear();
 }
 bool begin(const Options& setup) {
   if (!setup.valid() || stageNumber != int(setup.stage)) return false;
   options = setup; currentSeat = 0; active = true; paused = finished = false;
-  restartRequested=returnRequested=saveRequested=menuConfirm=menuInputReady=false;
-  menuSelection=menuAction=menuPreviousHeld=menuAge=menuHoldAge=storyPreviousHeld=0;
+  restartRequested=returnRequested=saveRequested=menuConfirm=false;
+  menuSelection=menuAction=menuReadySeats=menuAge=menuHoldAge=0;menuInput={};storyInput={};
   tickNumber = wipeFrames = lifeFragments = bombFragments = 0; teamRank = score = 0;
   for (unsigned s = 0; s < MaxPlayers; ++s) {
     std::destroy_at(&pilots[s]); std::construct_at(&pilots[s]); pilots[s].seat = s;
@@ -260,36 +262,44 @@ int bossDamage(const Enemy& e,int amount) {
 }
 bool update(const std::array<Input,MaxPlayers>& inputs) {
   if(!active||finished)return false;
-  bool pauseEdge=false;
+  bool pauseEdge=false,cancelEdge=false;
   for(unsigned s=0;s<options.count;++s) {
     const auto& i=inputs[s];if(i.motion<0||i.motion>3||(i.held&~0x32ffu)||
       (i.motion==3&&(i.x<-32767||i.x>32767||i.y<-32767||i.y>32767))||
       (i.motion>0&&i.motion<3&&(i.x<-23552||i.x>23552||i.y<4096||i.y>55296)))return false;
     pauseEdge|=i.pause&&!pilots[s].pauseHeld;
+    cancelEdge|=(i.held&2u)&&!(pilots[s].input.held&2u);
   }
   for(unsigned s=0;s<options.count;++s){pilots[s].pauseHeld=inputs[s].pause;pilots[s].input=inputs[s];}
-  unsigned menuHeld=0;for(unsigned s=0;s<options.count;++s)menuHeld|=inputs[s].held;
-  const auto menuPressed=menuHeld&~menuPreviousHeld;
-  const auto previousMenuHeld=menuPreviousHeld;menuPreviousHeld=menuHeld;
+  std::array<uint32_t,MaxPlayers> storyButtons{};
+  for(unsigned s=0;s<options.count;++s)storyButtons[s]=inputs[s].held&0x201u;
+  const auto storyFrame=storyInput.Update(storyButtons,options.count);
   if(pauseEdge){
     if(paused&&menuConfirm){menuConfirm=false;menuSelection=menuAction;menuAge=0;}
     else {paused=!paused;menuSelection=menuAction=menuAge=0;menuConfirm=false;}
-    menuInputReady=false;menuHoldAge=0;
+    menuReadySeats=0;menuInput={};menuHoldAge=0;
   }
   if(paused){
     sound_system::queue.reset();
     ++menuAge;
-    // A new pause menu/confirmation accepts controls only after every seat
-    // releases gameplay keys. R/Retry has no multiplayer shortcut.
-    if(menuPressed&2){
+    // Each seat releases its own gameplay controls before owning the menu.
+    // A teammate holding Shoot cannot hide a fresh confirmation edge.
+    std::array<uint32_t,MaxPlayers> buttons{};
+    uint32_t previousMenuHeld=0;for(auto held:menuInput.previous)previousMenuHeld|=held;
+    for(unsigned s=0;s<options.count;++s){
+      if(!(inputs[s].held&0x30f3u)&&!pauseEdge)menuReadySeats|=1u<<s;
+      if(menuReadySeats&(1u<<s))buttons[s]=inputs[s].held;
+    }
+    const auto menuFrame=menuInput.Update(buttons,options.count);
+    const auto menuHeld=menuFrame.held,menuPressed=menuFrame.pressed;
+    if(!menuConfirm&&(menuPressed&0x2000u)){
+      menuAction=3;menuSelection=0;menuConfirm=restartRequested=finished=true;return true;
+    }
+    if(cancelEdge&&!pauseEdge){
       if(menuConfirm){menuConfirm=false;menuSelection=menuAction;menuAge=0;}else paused=false;
-      menuInputReady=false;return true;
+      menuReadySeats=0;menuInput={};return true;
     }
-    if(!menuInputReady){
-      menuHoldAge=0;
-      if(!(menuHeld&0x10f3u)&&!pauseEdge)menuInputReady=true;
-      return true;
-    }
+    if(!menuReadySeats){menuHoldAge=0;return true;}
     const auto directions=menuHeld&0xf0u;
     menuHoldAge=directions&&directions==(previousMenuHeld&0xf0u)?menuHoldAge+1:0;
     const auto move=menuPressed|(!menuConfirm&&menuHoldAge>=20&&menuHoldAge%4==0?directions:0u);
@@ -298,18 +308,16 @@ bool update(const std::array<Input,MaxPlayers>& inputs) {
     if(move&32)menuSelection=(menuSelection+1)%count;
     if(menuPressed&0x1001u){
       if(menuConfirm){
-        if(menuSelection){menuConfirm=false;menuSelection=menuAction;menuAge=0;menuInputReady=false;}
+        if(menuSelection){menuConfirm=false;menuSelection=menuAction;menuAge=0;menuReadySeats=0;menuInput={};}
         else {restartRequested=menuAction==3;returnRequested=menuAction==1;saveRequested=menuAction==2;finished=true;}
       }else if(!menuSelection)paused=false;
-      else {menuAction=menuSelection;menuSelection=1;menuConfirm=true;menuAge=0;menuHoldAge=0;menuInputReady=false;}
+      else {menuAction=menuSelection;menuSelection=1;menuConfirm=true;menuAge=0;menuHoldAge=0;menuReadySeats=0;menuInput={};}
     }
     return true;
   }
   Scope owner(0);
   // Dialogues use the same combined non-movement controls on every peer.
-  uint32_t story=0;for(unsigned s=0;s<options.count;++s)story|=inputs[s].held&0x201u;
-  const auto storyPressed=story&~storyPreviousHeld;storyPreviousHeld=story;
-  if(!tickFullGame(int(story),int(storyPressed)))tick(int(story),int(storyPressed));
+  if(!tickFullGame(int(storyFrame.held),int(storyFrame.pressed)))tick(int(storyFrame.held),int(storyFrame.pressed));
   if(fullGameFlow.status==FullGameStatus::GameOver||fullGameFlow.status==FullGameStatus::Result||fullGameFlow.status==FullGameStatus::Ending)finished=true;
   return true;
 }
@@ -343,6 +351,7 @@ int allPlayerDamage(const Enemy& e,float x,float y,float w,float h) {
 }
 void enemyCollision(Enemy& e) {for(unsigned s=0;s<options.count;++s)if(operable(s)){Scope owner(s);customEnemyCollision(e);}}
 void collectSharedPiece(int type) {
+  if(options.challenge&&type==5){const int before=pilot().resources.rank;pilot().resources.addRank(256);syncRank(before);return;}
   auto& count=type==4?lifeFragments:bombFragments;
   count+=type==4?(count?1:2):2;
   if(count>=5){count=0;for(unsigned s=0;s<options.count;++s){auto& r=pilots[s].resources;if(type==4)r.lives=std::min(8,r.lives+1);else if(!options.challenge)r.bombs=std::min(9,r.bombs+1);}sound_system::queue.play(type==4?18:48,0,false);}

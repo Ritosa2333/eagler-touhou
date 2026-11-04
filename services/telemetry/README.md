@@ -38,6 +38,10 @@ npm start
 
 `showDownloads: false` 隐藏下载服务整组，其余分组直接接续。目标还可用 `group` 指定 `site`、`download`、`netplay` 或 `turn`。探测地址由运营配置管理；公开接口只提供名称、状态与聚合指标。
 
+目标和 `loadNodes` 可配置 `publicId`、`publicLabel`，例如 `turn-n04`、`TURN N04`。公开页面与 JSON 使用这些编号，历史仍按内部 `id` 归档。内部名称、探测地址和编号对照由运营者保存到网站目录之外。
+
+公开节点负载只提供编号、名称、状态和采样时间。运营配置中的 `adminToken` 至少包含 32 个字符；管理员向 `/netplay-stats/summary` 发送对应的 `Authorization: Bearer` 请求头，可读取内部名称、硬件与负载详情。凭据通过私有配置管理，响应禁止缓存。
+
 服务每 30 秒进行 HTTP、资源 Range 请求、WebSocket 握手或 STUN Binding 检查。TURN 的 STUN 检查反映 UDP 端口可达性。`/uptime/summary?range=24h` 支持 `24h`、`7d`、`90d`，可用率按已完成探测计算，未采样区间以无数据呈现。探测超过 90 秒未更新时，当前状态转为未知。
 
 历史使用一天的五分钟明细与九十天的小时聚合，随原有遥测状态文件原子保存。服务重启后继续累积历史。线上状态服务的诊断聚合、事件和节点上报也保留在 `/netplay-stats/summary` 与 `/netplay-stats/nodes/<id>`；`loadNodes`、`infrastructureUrl` 配置沿用原契约。

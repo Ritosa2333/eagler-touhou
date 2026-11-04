@@ -6,17 +6,19 @@ import {resolve,relative,extname} from 'node:path';
 import {spawn,execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {createHash,randomUUID,randomInt} from 'node:crypto';
-import {launchBrowser} from '../browser/launch.mjs';
+import {assertCliArguments} from '../testing/cli-options.mjs';
+import {runWithReport} from '../testing/cli-report.mjs';
+import {runtimeTestTargets,selectRuntimeInputs,resultCoverage,runtimeTargetKey} from './runtime-targets.mjs';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 
 const arg=(name,fallback)=>process.argv.find(v=>v.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
-assert.ok(arg('manifest')&&arg('output'),'Required: --manifest=private-runtime-inputs.json --output=results');
+assert.ok(arg('output'),'Required: --manifest=private-runtime-inputs.json --output=results');
 const root=resolve(import.meta.dirname,'../..'),output=resolve(arg('output'));
+const result=await runWithReport({output,schema:'eagler-touhou/mp-browser/1'},async(report,save)=>{
+assertCliArguments(process.argv.slice(2),{values:['manifest','output','game','players','route','challenge','frames','restart'],flags:['wait-end','stop-stream','recover','lifecycle']});
+assert.ok(arg('manifest'),'Required: --manifest=private-runtime-inputs.json');
 const config=JSON.parse(await readFile(resolve(arg('manifest')),'utf8'));
-const {build}=createRequire(resolve(root,'launcher/package.json'))('esbuild');
-const optionBundle=await build({entryPoints:[resolve(root,'launcher/src/launcher/multiplayer-runtime-options.mts')],bundle:true,platform:'node',format:'esm',write:false});
-const {buildMultiplayerRuntimeOptions}=await import('data:text/javascript;base64,'+Buffer.from(optionBundle.outputFiles[0].text).toString('base64'));
-const games=arg('game')?.split(','),players=Number(arg('players','2')),route=arg('route','rtc'),mode=arg('challenge','both');
+const players=Number(arg('players','2')),route=arg('route','rtc'),mode=arg('challenge','both');
 const duration=Number(arg('frames','1200'));
 const waitEnd=process.argv.includes('--wait-end');
 const stopStream=process.argv.includes('--stop-stream');
@@ -26,24 +28,30 @@ const restart=arg('restart','none');
 assert.ok(['none','quick','menu','both'].includes(restart));
 assert.ok([2,3].includes(players)&&['rtc','relay'].includes(route)&&['normal','challenge','both'].includes(mode));
 assert.ok(Number.isSafeInteger(duration)&&duration>=300,'--frames must be at least 300');
-const targets=config.targets.filter(t=>t.variant==='multiplayer'&&PRODUCT_GAMES[t.game]?.multiplayer?.gameplay==='cooperative'&&(!games||games.includes(t.game)));
-assert.ok(targets.length,'No cooperative multiplayer Runtime selected');
+const required=await runtimeTestTargets({game:arg('game'),variant:'multiplayer',gameplay:'cooperative'});
+report.requiredTargets=required.map(runtimeTargetKey);
+const targets=selectRuntimeInputs(config,required);
+const {build}=createRequire(resolve(root,'launcher/package.json'))('esbuild');
+const optionBundle=await build({entryPoints:[resolve(root,'launcher/src/launcher/multiplayer-runtime-options.mts')],bundle:true,platform:'node',format:'esm',write:false});
+const {buildMultiplayerRuntimeOptions}=await import('data:text/javascript;base64,'+Buffer.from(optionBundle.outputFiles[0].text).toString('base64'));
+const {launchBrowser}=await import('../browser/launch.mjs');
+const challenges=mode==='both'?[false,true]:[mode==='challenge'];
+const caseId=(target,challenge)=>`${target.game}-${players}p-${challenge?'challenge':'normal'}-${route}`;
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 await mkdir(output,{recursive:true});
-const report={schema:'eagler-touhou/mp-browser/1',startedAt:new Date().toISOString(),players,route,frames:duration,
+Object.assign(report,{players,route,frames:duration,
  waitEnd,stopStream,recover,restart,lifecycle,
  scope:'Actual native MP games and independent spectators through a real local relay and the production Runtime protocol',
- commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),harnessSha256:sha(await readFile(new URL(import.meta.url))),cases:[]};
-report.relayConfig={freshPerCase:true,rtcTimeoutMs:30000,stunUrls:[]};
+ commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),harnessSha256:sha(await readFile(new URL(import.meta.url))),cases:[]});
+report.relayConfig={freshPerCase:true,rtcTimeoutMs:30000,stunUrls:[],gameplayRelayFallback:route==='relay'};
 await writeFile(resolve(output,'harness.mjs'),await readFile(new URL(import.meta.url)));
 const patch=execFileSync('git',['diff','--binary','HEAD'],{cwd:root,maxBuffer:16*1024*1024});
 report.patchSha256=sha(patch);await writeFile(resolve(output,'source.patch'),patch);
 report.untrackedSources={};
-for(const name of execFileSync('git',['ls-files','--others','--exclude-standard','--','common','tools/ports'],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean)){
+for(const name of execFileSync('git',['ls-files','--others','--exclude-standard','--','common','tools/ports','tools/testing'],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean)){
  const bytes=await readFile(resolve(root,name));report.untrackedSources[name]={bytes:bytes.length,sha256:sha(bytes)};
  await writeFile(resolve(output,'source-'+name.replaceAll('/','_')),bytes);
 }
-const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');
 const WebSocket=createRequire(resolve(root,'services/relay/package.json'))('ws');
 let relayLog='',relay,relayPort;
 async function startRelay(){
@@ -57,7 +65,7 @@ process.on('message',message=>{if(message.operation==='drop-opening'){dropOpenin
 await import(pathToFileURL(${JSON.stringify(resolve(root,'services/relay/src/netplay-relay.mjs'))}).href);
 `);
 const child=spawn(process.execPath,[wrapper],{cwd:root,windowsHide:true,
- env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'30000',EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe','ipc']});
+ env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'30000',EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:route==='relay'?'1':'0'},stdio:['ignore','pipe','pipe','ipc']});
 child.stderr.on('data',b=>relayLog+=b);let startup='';
 const port=await new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error('Relay startup timeout '+startup)),15000);
  child.once('error',no);child.stdout.on('data',b=>{relayLog+=b;startup+=b;const m=startup.match(/listening ws:\/\/127\.0\.0\.1:(\d+)/);if(m){clearTimeout(timer);yes(Number(m[1]));}});});
@@ -100,10 +108,10 @@ async function lobby(room,client,member,create=false){
 async function send(socket,value,predicate){const start=socket.messages.length;socket.send(JSON.stringify(value));return until(()=>{
  const messages=socket.messages.slice(start),error=messages.find(m=>m.type==='error');if(error)throw Error(JSON.stringify(error));return messages.find(predicate);},value.type);}
 try{
- for(const t of targets)for(const challenge of mode==='both'?[false,true]:[mode==='challenge']){
+ for(const t of targets)for(const challenge of challenges){
   assert.ok(PRODUCT_GAMES[t.game].multiplayer.playerCounts.includes(players));
-  const row={game:t.game,challenge,players,route,steps:[],errors:[],httpErrors:[]};report.cases.push(row);
-  const id=`${t.game}-${players}p-${challenge?'challenge':'normal'}-${route}`;
+  const id=caseId(t,challenge);
+  const row={id,game:t.game,variant:t.variant,challenge,players,route,steps:[],errors:[],consoleErrors:[],httpErrors:[]};report.cases.push(row);
   const sockets=[],contexts=[],endpoints=[];let browser;
   const step=async(name,fn)=>{row.stage=name;row.steps.push({name,at:new Date().toISOString()});await save();return fn();};
   const inspect=async endpoint=>endpoint.page.evaluate(()=>{
@@ -112,12 +120,12 @@ try{
    const runtime=r?.[Object.keys(r).find(k=>/^__th\d+Runtime$/.test(k))],module=runtime?.Module??r?.Module,core=runtime?.core??r?.core??module;
    const peer=r?.__eaglerPeerTransport??r?.[Object.keys(r).find(k=>/^__th\d+PeerTransport$/.test(k))];
    let native=null;
-   for(const name of ['th11_mp_status','_th15_mp_status'])if(typeof core?.[name]==='function')native=Array.from(new Uint32Array(core.memory?.buffer??module.HEAPU8.buffer,core[name](),24));
+   for(const name of ['th11_mp_status','_th12_mp_status','_th15_mp_status'])if(typeof core?.[name]==='function')native=Array.from(new Uint32Array(core.memory?.buffer??module.HEAPU8.buffer,core[name](),24));
    return {menu:r?.__eaglerSpectatorMenu===true,playback:[...events].reverse().find(e=>e.event==='runtime-info'&&Object.hasOwn(e,'spectatorPlayback'))?.spectatorPlayback??null,
     frame:r?.__eaglerNetplayLanFrame??native?.[3]??null,
     failed:!!r?.__eaglerNetplayFailed||native?.[23]===1||peer?.failed===true,
     error:r?.__eaglerNetplayError||(native?.[23]===1||peer?.failed===true?String(peer?.error||'native multiplayer failure'):''),native,
-    state:runtime?.status?.()??null,transport:peer?{route:peer.route,failed:peer.failed,error:peer.error,closed:peer.closed,peers:peer.peers?.size}:null,
+    state:runtime?.status?.()??null,world:runtime?.state?.()??null,menuState:runtime?.menu?.()??null,transport:peer?{route:peer.route,failed:peer.failed,error:peer.error,closed:peer.closed,peers:peer.peers?.size}:null,
     replayFile:peer?{uploaded:peer.sharedReplaySession,receiving:peer.replayReceiving?.offset,bytes:peer.spectatorReplay?.bytes?.length}:null,
     spectatorSession:peer?.spectatorSession??null,receiveEpoch:peer?.receiveEpoch??0,reconnectAttempt:peer?.reconnectAttempt??0,
     body:r?.document.body.innerText??'',options:module?.eaglerOptions??null,terminal:events.filter(e=>e.event==='error'||e.event==='exit')};
@@ -130,7 +138,7 @@ try{
     const free=core.deallocate??core.graphics_free??core.free??core._free??core._eagler_replay_free;
     const pointer=alloc(file.bytes.length);try{
      const heap=module?.HEAPU8??globalThis.HEAPU8??core.HEAPU8??new Uint8Array(core.memory.buffer);heap.set(file.bytes,pointer);
-     const validate=core.multiplayer_replay_validate??core.th11_mp_replay_validate??core._th15_mp_replay_validate??core._eagler_replay_inspect;
+     const validate=core.multiplayer_replay_validate??core.th11_mp_replay_validate??core._th12_mp_replay_validate??core._th15_mp_replay_validate??core._eagler_replay_inspect;
      return {valid:!!validate(pointer,file.bytes.length),bytes:file.bytes.length,name:file.name};
     }finally{free(pointer);}
    },bytes);
@@ -161,12 +169,12 @@ try{
     if(route==='relay')await context.addInitScript(()=>Object.defineProperty(window,'RTCPeerConnection',{configurable:true,value:undefined}));
     const page=await context.newPage(),endpoint={page,member,spectator,seat:spectator?null:member.seat};endpoints.push(endpoint);
     page.on('pageerror',error=>row.errors.push(String(error)));page.on('response',r=>{if(r.status()>=400)row.httpErrors.push({url:r.url(),status:r.status()});});
-    page.on('console',message=>{(row.console??=[]).push({seat:endpoint.seat,spectator,type:message.type(),text:message.text()});if(row.console.length>128)row.console.shift();});
+    page.on('console',message=>{if(message.type()==='error')row.consoleErrors.push(message.text());(row.console??=[]).push({seat:endpoint.seat,spectator,type:message.type(),text:message.text()});if(row.console.length>128)row.console.shift();});
     await page.goto(`${base}/host/${t.id}`);await page.waitForFunction(()=>events.some(e=>e.event==='ready'),null,{timeout:120000});
     endpoint.frame=page.frames().find(f=>f.url().includes(`/runtime/${t.id}/`));assert.ok(endpoint.frame);
     if(lifecycle&&!spectator){
      await page.evaluate(sharedResources=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],thpracCatalog:[],
-      options:{runtimeVariant:'multiplayer',thpracEnabled:false,touchEnabled:false,renderScale:1},sharedResources}),shared);
+      options:{thpracEnabled:false,touchEnabled:false},sharedResources}),shared);
      await page.evaluate(()=>rpc('prepare-room'));await page.waitForTimeout(1000);
      const press=async(code,keyCode,key=code)=>{await page.evaluate(fields=>rpc('keyboard',fields),{code,key,keyCode,location:0,inputSource:'physical',down:true});
       await page.waitForTimeout(140);await page.evaluate(fields=>rpc('keyboard',fields),{code,key,keyCode,location:0,inputSource:'physical',down:false});await page.waitForTimeout(200);};
@@ -186,8 +194,8 @@ try{
      (row.nativeOptions??=[]).push({seat:member.seat,...preview});
      await press('Escape',27);await page.waitForTimeout(600);
     }
-    const nativeOptions={runtimeVariant:'multiplayer',thpracEnabled:false,touchEnabled:false,renderScale:1,...buildMultiplayerRuntimeOptions({...options,
-      player:endpoint.seat??0,spectator,spectatorId:spectator?member.client:'',url:`ws://127.0.0.1:${relayPort}/?`+new URLSearchParams({room,run:String(started.serial),member:member.member})},PRODUCT_GAMES[t.game].multiplayer),limitPresentationTo60:players===3};
+    const nativeOptions={thpracEnabled:false,touchEnabled:false,...buildMultiplayerRuntimeOptions({...options,
+      player:endpoint.seat??0,spectator,spectatorId:spectator?member.client:'',allowWebsocketFallback:route==='relay',url:`ws://127.0.0.1:${relayPort}/?`+new URLSearchParams({room,run:String(started.serial),member:member.member})},PRODUCT_GAMES[t.game].multiplayer),limitPresentationTo60:players===3};
     await page.evaluate(({options,sharedResources})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],thpracCatalog:[],options,sharedResources}),{options:nativeOptions,sharedResources:shared});
     if(launchNow)await page.evaluate(()=>rpc('launch'));return endpoint;
    };
@@ -370,10 +378,13 @@ try{
      row.streamStopped={before,stopped,after};
     });
    }
-   assert.deepEqual(row.errors,[]);assert.deepEqual(row.httpErrors,[]);row.passed=true;
+   assert.deepEqual(row.errors,[]);assert.deepEqual(row.consoleErrors,[]);assert.deepEqual(row.httpErrors,[]);row.passed=true;
   }catch(error){row.passed=false;row.error=String(error.stack||error);row.failure=[];for(const [i,e]of endpoints.entries())try{row.failure.push(await inspect(e));await e.page.screenshot({path:resolve(output,`${id}-failure-${i}.png`)});}catch{}
   }finally{for(const c of contexts)await c.close().catch(()=>{});await browser?.close();for(const s of sockets)s.close();
-   await until(()=>sockets.every(s=>s.readyState===WebSocket.CLOSED),'lobby cleanup',10000);relay?.kill();await save();console.log(`${id} ${row.passed?'PASS':'FAIL'} ${row.stage} ${row.error?.split('\n')[0]??''}`);}
+   await until(()=>sockets.every(s=>s.readyState===WebSocket.CLOSED),'lobby cleanup',10000);relay?.kill();if(row.errors.length||row.consoleErrors.length||row.httpErrors.length)row.passed=false;await save();console.log(`${id} ${row.passed?'PASS':'FAIL'} ${row.stage} ${row.error?.split('\n')[0]??''}`);}
  }
 }finally{server.close();relay?.kill();report.finishedAt=new Date().toISOString();await writeFile(resolve(output,'relay.log'),relayLog);await save();}
-if(report.cases.some(c=>!c.passed))process.exitCode=1;
+report.coverage=resultCoverage(targets.flatMap(target=>challenges.map(challenge=>caseId(target,challenge))),report.cases);
+report.passed=report.coverage.complete;
+});
+if(!result.passed){console.error(result.failure??'MP cases failed');process.exitCode=1;}

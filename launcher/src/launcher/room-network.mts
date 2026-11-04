@@ -78,7 +78,7 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
     peer.links[lane]?.loss.dispose(); peer.links[lane]?.pc.close();
     const pc = new RTCPeerConnection({ iceServers, iceTransportPolicy: lane === "turn" ? "relay" : "all" });
     const sendChannel = (channel: RTCDataChannel | undefined, value: string) => {
-      if (!channel || channel.readyState !== 'open' || channel.bufferedAmount > 8192) return false;
+      if (channel?.readyState !== 'open' || channel.bufferedAmount > 8192) return false;
       try {channel.send(value); return true;} catch {return false;}
     };
     const loss = createPacketLossTest({

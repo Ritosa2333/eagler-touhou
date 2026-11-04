@@ -1,0 +1,41 @@
+{
+  "schema": "th12-sdl-input-validation/1",
+  "web": {
+    "normalBuild": true,
+    "multiplayerBuild": true
+  },
+  "desktop": {
+    "normalBuild": true,
+    "multiplayerBuild": true,
+    "executed": false
+  },
+  "tests": {
+    "lifecycleCoordinatesMenus": 13,
+    "adapterTouchRespawn": 39,
+    "failed": 0
+  },
+  "renderSampling": {
+    "scope": "First stage, local retail resources, Chromium SwiftShader, music disabled; sampled visible FPS is not a whole-game or device-independent benchmark",
+    "samples": 120,
+    "minimumFps": 58,
+    "medianFps": 60.0,
+    "meanFps": 59.836288333333336,
+    "maximumFps": 60.0394,
+    "glCalls": {
+      "getError": 0,
+      "copyTexSubImage2D": 786
+    },
+    "webTargetPixelsBefore": 1228800,
+    "webTargetPixelsAfter": 307200
+  },
+  "interactions": [
+    "room title Up/Down navigation; only Options can be confirmed; title Esc cannot quit",
+    "portrait iframe normalized touch movement uses canvas bounds",
+    "touch Esc reaches native pause",
+    "hosted CSS-pixel mouse expands THPrac speed settings",
+    "hosted player and spectator hide toolbar and footer with external game.css blocked",
+    "standard replay saved, paused and reconstructed",
+    "two-player RTC rollback and spectator reconstruction; three-player delayed input authoritative hashes agree"
+  ],
+  "sourceBase": "918ee331791401021658125acfb3da5b2ec01016"
+}

@@ -1,13 +1,22 @@
-// L3/module + entry safety. Preconditions: temporary local paths only.
-// Mutation: invoke the release owner with invalid input and an existing
-// destination. Proves formal-release planning and output ownership. It does
-// NOT build a host, validate Runtime semantics, or publish anything.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { FORMAL_RELEASE_GAMES, formalReleaseSourceOwners, normalizeFormalReleaseInput } from "../lib/release-plan.mjs";
+
+test("release entry", async () => {
+// L3/module + entry safety. Preconditions: temporary local paths only.
+// Mutation: invoke the release owner with invalid input and an existing
+// destination. Proves formal-release planning and output ownership. It does
+// NOT build a host, validate Runtime semantics, or publish anything.
+
+
+
+
+
+
 
 const workspace = resolve("workspace-fixture");
 const inputDirectory = resolve("release-input-fixture");
@@ -18,6 +27,7 @@ const validInput = {
     RuntimeRelease: "runtime-release",
     FeatureConfig: "features.json",
     GameDirectories: {
+      th05: "original/th05",
       th06: "original/th06",
       th07: "original/th07",
       th075: "original/th075",
@@ -27,6 +37,7 @@ const validInput = {
       th11: "original/th11",
       th12: "original/th12",
       th15: "original/th15",
+      th17: "original/th17",
       th20: "original/th20",
     },
     LanguagePackDirectories: {
@@ -67,7 +78,7 @@ const legacyInput = {
     Th10Directory: "original/th10",
     Th11Directory: "original/th11",
     Th20Directory: "original/th20",
-    GameDirectories: { th075: "original/th075", th12: "original/th12", th15: "original/th15" },
+    GameDirectories: { th05: "original/th05", th075: "original/th075", th12: "original/th12", th15: "original/th15", th17: "original/th17" },
     Th06LanguagePacks: "languages/th06",
     Th07LanguagePacks: "languages/th07",
     Music: ["midi"],
@@ -117,3 +128,4 @@ assert.equal(await readFile(marker, "utf8"), "existing owner");
   await rm(root, { recursive: true, force: true });
 }
 console.log("Release entry output ownership: PASS");
+});

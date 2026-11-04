@@ -91,3 +91,41 @@ test('deployed diagnostic metrics and events remain aggregate-only',()=>{
   assert.equal(day.total.metrics.rttMs.sum,43);assert.equal(day.total.events['connect-ready'],1);
   assert(!JSON.stringify(summary).includes('not-retained'));assert(!JSON.stringify(summary).includes('independent-client'));
 });
+
+test('public aliases preserve private-keyed history and require authentication for node details',async()=>{
+  const token='administrator-token-12345678901234567890',nodeToken='node-report-token-12345678901234567890';
+  const target={id:'private-region',label:'Private Region',publicId:'turn-n04',publicLabel:'TURN N04',kind:'site',url:'https://198.51.100.9/private'};
+  const now=Date.now(),history=createUptimeStore({},()=>now);
+  history.record([{id:target.id,status:'operational',latencyMs:4,checkedAt:new Date(now).toISOString()}]);
+  const restored=createUptimeStore(JSON.parse(JSON.stringify(history.export())),()=>now);
+  assert.equal(restored.snapshot([target],[]).services[0].id,'turn-n04');
+  assert.equal(restored.snapshot([target],[]).services[0].availability,1);
+  const config={targets:[target],fetchImpl:async()=>new Response('ok'),adminToken:token,
+    loadNodes:[{id:'private-node',label:'Private Provider',publicId:'load-n04',publicLabel:'N04',token:nodeToken}]};
+  const service=await startTelemetryServer({port:0,origin:'https://site.example',monitorConfig:config});
+  const base='http://127.0.0.1:'+service.server.address().port;
+  try {
+    const node={boot:'12345678-1234-1234',uptime:100,cpuTotal:100,cpuIdle:80,cores:2,load:[0,0,0],
+      memoryTotal:1024,memoryAvailable:512,rxBytes:1,txBytes:2,diskTotal:4096,diskAvailable:2048,tcpEstablished:3};
+    assert.equal((await fetch(base+'/netplay-stats/nodes/private-node',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+nodeToken},body:JSON.stringify(node)})).status,204);
+    for(const path of ['/uptime/summary','/netplay-stats/summary']){
+      const response=await fetch(base+path),text=await response.text();assert.equal(response.status,200);
+      for(const hidden of ['private-region','Private Region','private-node','Private Provider','198.51.100.9','memoryTotal','diskTotal','cores',token,nodeToken])assert(!text.includes(hidden),hidden);
+      assert(text.includes('turn-n04'));assert(text.includes('TURN N04'));
+    }
+    const publicData=await(await fetch(base+'/netplay-stats/summary')).json();
+    assert.deepEqual(Object.keys(publicData.nodes[0]).sort(),['checkedAt','id','label','status']);
+    assert.equal(publicData.nodes[0].id,'load-n04');assert.equal(publicData.nodes[0].status,'operational');
+    const privateResponse=await fetch(base+'/netplay-stats/summary',{headers:{Authorization:'Bearer '+token}}),privateData=await privateResponse.json();
+    assert.equal(privateResponse.status,200);assert.equal(privateResponse.headers.get('cache-control'),'no-store');
+    assert.equal(privateData.nodes[0].id,'private-node');assert.equal(privateData.nodes[0].publicId,'load-n04');assert.equal(privateData.nodes[0].memoryTotal,1024);
+    assert.equal(privateData.monitor.services[0].id,'private-region');
+    assert.equal((await fetch(base+'/netplay-stats/summary',{headers:{Authorization:'Bearer '+nodeToken}})).status,403);
+    assert.equal((await fetch(base+'/netplay-stats/summary',{headers:{Authorization:'Bearer invalid'}})).status,403);
+  } finally {await service.close();}
+});
+
+test('invalid and duplicate public identities are rejected before monitoring starts',()=>{
+  assert.throws(()=>createStatusMonitor({targets:[{...targets[0],publicId:'unsafe/url'}]}));
+  assert.throws(()=>createStatusMonitor({targets:targets.map(t=>({...t,publicId:'duplicate'}))}));
+});

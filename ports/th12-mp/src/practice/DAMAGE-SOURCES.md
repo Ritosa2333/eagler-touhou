@@ -102,4 +102,4 @@ at the C++ pre-main boundary.
 This connection still needs human observation of ReimuA stage transitions,
 independent stage playback, retry/exit/re-entry and assisted Replay behavior.
 Compilation does not establish those results. See the short user-review list in
-[WEB_ADAPTATION.md](../../docs/WEB_ADAPTATION.md).
+[Launcher 接入](../../docs/LAUNCHER_INTEGRATION.md).

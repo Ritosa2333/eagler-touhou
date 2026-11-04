@@ -1,6 +1,6 @@
 /** Main7088–7095/9523–9526, actual Player layout-update binding. Synthetic
  * event targets/ResizeObserver/RAF only; not device geometry or browser proof. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

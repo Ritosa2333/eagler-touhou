@@ -142,7 +142,7 @@ struct Application final:CallbackReceiver {
     void publish_remote_player_presentation();
     void invalidate_remote_player_presentation();
     i32 multiplayer_update();
-    void multiplayer_fail(const char* reason);
+    void multiplayer_fail(const char* reason,i32 code=-4);
     bool multiplayer_active()const;
     bool multiplayer_pump_network(bool capture_follows=false);
     u32 multiplayer_spectator_catchup_budget()const;

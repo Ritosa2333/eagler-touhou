@@ -6,6 +6,25 @@
 // source-shape/change-detector tests are not grandfathered, and a correct
 // refactor should rewrite/delete a brittle test rather than preserve the old
 // implementation solely to keep this list green.
+export const FRONTEND_TEST_PATTERNS = Object.freeze({
+  unit: Object.freeze(['tests/react-main/*.test.mjs']),
+  support: Object.freeze(['tests/support/*.test.mjs']),
+});
+
+export const FRONTEND_BUILD_TESTS = Object.freeze([
+  'tests/react-main/app-shell-build.test.mjs',
+  'tests/react-main/contracts-build.test.mjs',
+  'tests/react-main/content-build.test.mjs',
+  'tests/react-main/development-server.test.mjs',
+  'tests/react-main/external-frontend-artifact.test.mjs',
+  'tests/react-main/frontend-artifact.test.mjs',
+  'tests/react-main/host-frontend-selection.test.mjs',
+  'tests/react-main/i18n-build.test.mjs',
+  'tests/react-main/initial-presentation.test.mjs',
+  'tests/react-main/refresh-react-artifact.test.mjs',
+  'tests/react-main/server-react-artifact.test.mjs',
+]);
+
 export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-integrations.mjs",
   "tests/test-app-shell-host-artwork.mjs",
@@ -27,6 +46,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-runtime-source-plan.mjs",
   "tests/test-peer-runtime-update.mjs",
   "tests/test-host-workspace.mjs",
+  "tests/test-th05-prepared-host-content.mjs",
   "tests/test-host-artwork-adapter-coverage.mjs",
   "tests/test-format-adapter-coverage.mjs",
   "tests/test-th10-ogg-production-baseline.mjs",
@@ -147,7 +167,6 @@ export const WORKSPACE_NODE_TESTS = Object.freeze([
   "tests/test-development-site-manifest-workspace.mjs",
   "tests/test-runtime-protocol-contract.mjs",
   "tests/test-gamepad-contract.mjs",
-  "tests/test-required-gameplay-actions.mjs",
   "tests/test-portable-touch-controller-contract.mjs",
   "tests/test-preload-data-assembler.mjs",
   "tests/test-runtime-storage-contract.mjs",

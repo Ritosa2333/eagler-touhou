@@ -1,6 +1,6 @@
 // The Launcher owns remapping. Runtime adapters synchronously consume the
 // resulting canonical key transitions before their next simulation sample.
-export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch,origin,ready,dispatch,reset,profile=()=> 'standard'}) {
+export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch,origin,ready,dispatch,reset,onMappingChange=()=>{},profile=()=> 'standard'}) {
   const schema='eagler-touhou/keyboard-input/1',held=new Set();
   function gamepadMapper(){
     const value=target.__eaglerGamepadMapping;
@@ -13,10 +13,19 @@ export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch
       if(!ready()){owner.clear();return 0;}
       const bits=owner.sample(seat);return Number.isInteger(bits)&&bits>=-1&&bits<=4095?bits:0;
     }});
+  let keyboardOwner=null;
   function mapper() {
     const value=target.__eaglerKeyboardMapping;
-    return value&&value.schema===schema&&value.protocol===protocol&&value.game===game&&
+    const next=value&&value.schema===schema&&value.protocol===protocol&&value.game===game&&
       value.epoch===epoch&&value.origin===origin&&typeof value.map==='function'&&typeof value.clear==='function'&&typeof value.supports==='function'?value:null;
+    if(next!==keyboardOwner){
+      const previous=keyboardOwner;keyboardOwner=next;
+      // An UP can arrive after the owner that accepted its DOWN was replaced.
+      // Retire that owner before interpreting the event with the new mapping.
+      try{if(previous)apply(previous.clear());}
+      finally{held.clear();onMappingChange();}
+    }
+    return next;
   }
   function apply(events) {
     if(!Array.isArray(events)||events.some(e=>!e||typeof e.code!=='string'||!e.code||typeof e.down!=='boolean'||typeof e.key!=='string'||!Number.isInteger(e.keyCode)||!Number.isInteger(e.location)))
@@ -39,7 +48,7 @@ export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch
     profile:currentProfile,
     sampleLocal(seat){const mode=currentProfile(),owner=mapper();if(mode!=='th09-local'||typeof owner?.sampleLocal!=='function')return -1;
       if(!ready()){apply(owner.clear());return 0;}const bits=owner.sampleLocal(seat);return Number.isInteger(bits)&&bits>=-1&&bits<=4095?bits:0;},
-    active:()=>!!mapper(),keyDown:code=>held.has(code),
+    active:()=>!!mapper(),keyDown:code=>{mapper();return held.has(code);},
     // SDL uses USB HID scancodes. Keep physical-only THPrac helpers on the
     // same canonical keyboard without sampling or consuming gameplay pulses.
     scancodeState(scan){

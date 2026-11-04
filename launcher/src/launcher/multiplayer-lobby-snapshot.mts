@@ -1,4 +1,5 @@
 import { validTh15ChapterThreshold } from "./th15-chapter-reward.mjs";
+import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
   parseMeasuredNetplayTiming,
   resolveAdonisPredictionReserve,
@@ -42,6 +43,8 @@ export interface MultiplayerLobbySpectator {
 }
 
 export interface NormalizedMultiplayerLobbySnapshot {
+  initialSpares?: number;
+  initialBombs?: number;
   timingChoice?: 'auto' | number;
   startedAt?: number;
   visibility: 'public' | 'private';
@@ -96,6 +99,7 @@ export function normalizeMultiplayerLobbySnapshot(
   },
 ): NormalizedMultiplayerLobbySnapshot | null {
   const source = record(value);
+  if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
   if (!source ||
     (source.chapterThreshold !== undefined &&
       !validTh15ChapterThreshold(source.chapterThreshold))
@@ -129,7 +133,7 @@ export function normalizeMultiplayerLobbySnapshot(
   if (!policy.rollback && (adonisMode === 2 || (phase !== 'lobby' && adonisMode !== 1)))
     return null;
   const rawDelay = Number(source.inputDelay);
-  const delayLimit = adonisMode || policy.manualRollbackDelay ? (inputTiming ? policy.manualDelayLimit : 9) : 8;
+  const delayLimit = adonisMode ? (inputTiming ? policy.manualDelayLimit : 9) : 8;
   if (adonisMode && (!Number.isInteger(rawDelay) || rawDelay < 0 || rawDelay > delayLimit))
     return null;
   const inputDelay =
@@ -208,6 +212,8 @@ export function normalizeMultiplayerLobbySnapshot(
 
   return {
     playerCount,
+    ...(source.initialSpares!==undefined?{initialSpares:source.initialSpares as number}:{}),
+    ...(source.initialBombs!==undefined?{initialBombs:source.initialBombs as number}:{}),
     ...(source.chapterThreshold !== undefined
       ? { chapterThreshold: source.chapterThreshold as number }
       : {}),

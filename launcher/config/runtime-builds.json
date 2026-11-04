@@ -8,6 +8,27 @@
     }
   },
   "games": {
+    "th05": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th05",
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": true,
+            "thprac": true
+          },
+          "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th05mp",
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {}
+        }
+      }
+    },
     "th06": {
       "builder": "cmake",
       "sourceBuild": { "kind": "cmake" },
@@ -166,6 +187,27 @@
       "workspaceRepository": "th13",
       "variants": {
         "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+      }
+    },
+    "th17": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th17",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "web/scripts/build-sdl-application.mjs",
+          "--release"
+        ],
+        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
+      },
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
       }
     }
   }

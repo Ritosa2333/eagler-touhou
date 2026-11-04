@@ -1,6 +1,6 @@
 import {readUiHistoryText} from './ui-history.mjs';
 /** Synthetic carrier/parsing/timing checks only. Real-browser XSS remains unrun. */
-import test, {before} from 'node:test';
+import {test, beforeAll as before} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -166,7 +166,7 @@ test('content carrier retains the actual shared component stylesheet without cha
     assert.ok(style); assert.ok(style.sheet.cssRules.length > 0);
     assert.match(style.textContent, /\.informational-dialog/);
     assert.doesNotMatch(style.textContent, /animation(?:-[\w-]+)?\s*:/);
-    assert.ok(fixture.inputs.includes('app/components/notices/informational-dialog-motion.ts'));
+    assert.ok(fixture.inputs.includes('app/ui/surface-motion.ts'));
     assert.doesNotMatch(style.textContent, /\.apple-refresh-dialog|\.multiplayer-guide-dialog/);
     assert.deepEqual(env.errors, []);
   } finally {env.close();}

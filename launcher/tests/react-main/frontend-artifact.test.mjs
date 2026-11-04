@@ -1,6 +1,6 @@
 import {assertReactFrontendEnvironment} from '../../compat/frontend-environment.mjs';
 /** Publication source/artifact contracts only. No server, browser or deployment. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
@@ -9,6 +9,7 @@ import {dirname, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {readReactFrontendArtifact, reactFrontendArtifactDirectory} from '../../lib/react-frontend-artifact.mjs';
+import {SITE_BRAND_DEFAULT, SITE_BRAND_FACES} from '../../lib/site-brand.mjs';
 
 async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
   const work = await mkdtemp(resolve(tmpdir(), 'react-publication-'));
@@ -28,11 +29,38 @@ async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
     await put('legacy/chunks/shared.mjs', 'export const value = 1;\n');
     const declaration = appShell ? `<meta name="eagler-react-app-shell" content="${JSON.stringify(appShell).replaceAll('"', '&quot;')}">` : '';
     const html = `<!doctype html><html><head>${declaration}<link rel="modulepreload" href="${mountPath}assets/manifest-abcd.js"><script type="module" src="${mountPath}assets/entry-abcd.js"></script><link rel="stylesheet" href="${mountPath}assets/entry-abcd.css"></head><body></body></html>`;
-    for (const path of ['index.html', 'en.html', 'lobby.html']) await put(path, html);
+    for (const path of ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html']) await put(path, html);
     await put('.vite/manifest.json', JSON.stringify(manifest));
     await put('.vite/react-app-shell-graph.json', JSON.stringify(graph));
     await run({work, directory, metadata, put, html});
   } finally {await rm(work, {recursive: true, force: true});}
+}
+
+async function previousFixture(run, {mountPath = '/review/'} = {}) {
+  await fixture(async ({work, directory, metadata, put, html}) => {
+    const generated = ['assets/entry-abcd.js', 'assets/entry-abcd.css', 'assets/lazy-abcd.js', 'assets/manifest-abcd.js'];
+    const shellFiles = [
+      'index.html', 'en.html', 'lobby.html', 'about.html', 'faq.html', 'compatibility.html',
+      'content/FIRST_USE_NOTICE.html', 'content/MULTIPLAYER.html', 'uptime/index.html',
+      'site-pages.mjs', 'styles.css', ...generated,
+    ].sort();
+    const previousMetadata = structuredClone(metadata);
+    previousMetadata.graph.shellFiles = shellFiles;
+    await rm(resolve(directory, 'ja.html'), {force: true});
+    await rm(resolve(directory, 'profile.html'), {force: true});
+    await rm(resolve(directory, '.vite'), {recursive: true, force: true});
+    await put('index.html', html.replace('</head>', `<link rel="preload" href="${mountPath}assets/donation.webp"></head>`));
+    const staticPage = `<!doctype html><html><head><script type="module" src="${mountPath}site-pages.mjs"></script></head><body>Help</body></html>`;
+    for (const path of ['about.html', 'faq.html']) await put(path, staticPage);
+    await put('compatibility.html', '<!doctype html><html><head><title>Compatibility</title></head><body>Help</body></html>');
+    await put('content/FIRST_USE_NOTICE.html', '<div class="first-use-notice-list"><p>Notice</p></div>');
+    await put('content/MULTIPLAYER.html', '<p>Multiplayer rules</p>');
+    await put('site-pages.mjs', 'export const page = true;');
+    await put('styles.css', 'body { color: black; }');
+    await put('uptime/index.html', '<!doctype html><html><head><base href="../"><script type="module" src="../site-pages.mjs"></script><link rel="stylesheet" href="../styles.css"></head><body>Status</body></html>');
+    const publicationFiles = [...shellFiles, 'assets/donation.webp'];
+    await run({work, directory, metadata: previousMetadata, publicationFiles, put, html, shellFiles});
+  }, {mountPath});
 }
 
 test('frontend selection is explicit and never coerces invalid values to main', () => {
@@ -71,6 +99,104 @@ test('publication derives complete static, Vite and compatibility closures separ
     const packaged = await readReactFrontendArtifact({directory, metadata: artifact.metadata});
     assert.deepEqual(packaged.packageFiles, artifact.packageFiles);
     await assert.rejects(readReactFrontendArtifact({directory}), /run npm run build:ui-rewrite/);
+  });
+});
+
+test('React documents may reference packaged static assets outside the Vite output graph', async () => {
+  const face = SITE_BRAND_FACES.find(value => value !== SITE_BRAND_DEFAULT);
+  const staticAsset = `assets/brand/${face}.svg`;
+  assert.ok(STATIC_FRONTEND_PACKAGE_FILES.includes(staticAsset));
+  await fixture(async ({directory, put, html}) => {
+    await put('index.html', html.replace('</head>', `<link rel="icon" href="/review/${staticAsset}"></head>`));
+    const artifact = await readReactFrontendArtifact({directory});
+    assert.ok(artifact.packageFiles.includes(staticAsset));
+
+    for (const reference of [
+      `<link rel="icon" href="/review/assets/not-packaged.svg">`,
+      `<script type="module" src="/review/assets/site-brand.mjs"></script>`,
+    ]) {
+      await put('index.html', html.replace('</head>', `${reference}</head>`));
+      await assert.rejects(readReactFrontendArtifact({directory}), /absent from Vite graph/);
+    }
+  });
+});
+
+test('previous publication follows its embedded graph and accepts the real legacy document set', async () => {
+  await previousFixture(async ({directory, metadata, publicationFiles, shellFiles}) => {
+    const artifact = await readReactFrontendArtifact({
+      directory,
+      metadata,
+      expectedMountPath: '/review/',
+      publicationFiles,
+    });
+    assert.deepEqual(artifact.packageFiles, shellFiles);
+    assert.ok(artifact.packageFiles.includes('content/FIRST_USE_NOTICE.html'));
+    assert.ok(artifact.packageFiles.includes('uptime/index.html'));
+    assert.equal(artifact.packageFiles.includes('assets/donation.webp'), false,
+      'a catalogued static link outside the old shell graph is validated but is not retired as a shell-owned file');
+    assert.equal(artifact.packageFiles.includes('profile.html'), false);
+    assert.throws(() => artifact.resolveSource('profile.html'), /unknown React frontend package file/);
+
+    await assert.rejects(readReactFrontendArtifact({
+      directory,
+      metadata,
+      expectedMountPath: '/review/',
+    }), /profile\.html|ENOENT/);
+    await assert.rejects(readReactFrontendArtifact({
+      directory,
+      expectedMountPath: '/review/',
+      publicationFiles,
+    }), /metadata is missing or invalid|Invalid previous React publication inventory/);
+  });
+});
+
+test('previous publication rejects files outside its catalog and incomplete Vite graphs', async () => {
+  await previousFixture(async ({directory, metadata, publicationFiles}) => {
+    const readPrevious = (copy = metadata, files = publicationFiles) => readReactFrontendArtifact({
+      directory,
+      metadata: copy,
+      expectedMountPath: '/review/',
+      publicationFiles: files,
+    });
+    const unlisted = structuredClone(metadata);
+    unlisted.graph.shellFiles.push('assets/unlisted.css');
+    await assert.rejects(readPrevious(unlisted), /outside its frontend publication/);
+
+    const native = structuredClone(metadata);
+    native.graph.shellFiles.push('runtime/th06/unowned.wasm');
+    await assert.rejects(readPrevious(native, [...publicationFiles, 'runtime/th06/unowned.wasm']), /outside its frontend publication/);
+
+    const escaped = structuredClone(metadata);
+    escaped.graph.shellFiles.push('../outside.html');
+    await assert.rejects(readPrevious(escaped, [...publicationFiles, '../outside.html']), /Invalid React publication path/);
+
+    const brokenClosure = structuredClone(metadata);
+    brokenClosure.manifest.entry.imports = ['missing-entry'];
+    await assert.rejects(readPrevious(brokenClosure), /Missing Vite module dependency/);
+
+    const unownedOutput = structuredClone(metadata);
+    unownedOutput.manifest.unlisted = {file: 'assets/unlisted-output.js'};
+    await assert.rejects(readPrevious(unownedOutput), /Previous Vite output is absent from its publication graph/);
+
+    await rm(resolve(directory, 'assets/lazy-abcd.js'));
+    await assert.rejects(readPrevious(), /ENOENT/);
+  });
+});
+
+test('previous publication rejects graph paths that resolve outside the artifact directory', async () => {
+  await previousFixture(async ({work, directory, metadata, publicationFiles}) => {
+    const outside = resolve(work, 'outside-assets');
+    await mkdir(outside, {recursive: true});
+    await writeFile(resolve(outside, 'unowned.css'), 'outside');
+    await symlink(outside, resolve(directory, 'assets/escape'), process.platform === 'win32' ? 'junction' : 'dir');
+    const copy = structuredClone(metadata);
+    copy.graph.shellFiles.push('assets/escape/unowned.css');
+    await assert.rejects(readReactFrontendArtifact({
+      directory,
+      metadata: copy,
+      expectedMountPath: '/review/',
+      publicationFiles: [...publicationFiles, 'assets/escape/unowned.css'],
+    }), /escapes artifact root/);
   });
 });
 
@@ -147,7 +273,7 @@ test('artifact and document share the unchanged isolated origin/mount policy', a
 test('packaged artifact reader uses operator parsers without compiler or React dependencies', async () => {
   await fixture(async ({work, directory}) => {
     const operator = resolve(work, 'operator');
-    for (const file of ['react-frontend-artifact.mjs', 'browser-module-graph.mjs', 'frontend-static-manifest.mjs', 'react-app-shell-deployment.mjs']) {
+    for (const file of ['react-frontend-artifact.mjs', 'browser-module-graph.mjs', 'frontend-static-manifest.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) {
       await mkdir(resolve(operator, 'lib'), {recursive: true}); await cp(resolve('lib', file), resolve(operator, 'lib', file));
     }
     await mkdir(resolve(operator, 'node_modules'), {recursive: true});
@@ -160,9 +286,27 @@ test('packaged artifact reader uses operator parsers without compiler or React d
 test('operator selector loads before any npm dependencies are installed', async () => {
   await fixture(async ({work}) => {
     const operator = resolve(work, 'before-install'); await mkdir(resolve(operator, 'lib'), {recursive: true});
-    for (const file of ['react-frontend-artifact.mjs', 'frontend-static-manifest.mjs', 'react-app-shell-deployment.mjs']) await cp(resolve('lib', file), resolve(operator, 'lib', file));
+    for (const file of ['react-frontend-artifact.mjs', 'frontend-static-manifest.mjs', 'site-brand.mjs', 'react-app-shell-deployment.mjs']) await cp(resolve('lib', file), resolve(operator, 'lib', file));
     const script = `import {reactFrontendArtifactDirectory} from './lib/react-frontend-artifact.mjs'; console.log(JSON.stringify({selection:"react", root:reactFrontendArtifactDirectory({project:process.cwd(),environment:{}})}));`;
     const result = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], {cwd: operator, encoding: 'utf8'}));
     assert.deepEqual(result, {selection: 'react', root: operator});
+  });
+});
+
+
+test('shared static/dynamic CSS accepts the Router empty fragment while other suffixes stay rejected', async () => {
+  await fixture(async ({directory,put,html}) => {
+    const css='/review/assets/entry-abcd.css';
+    await put('en.html',html.replace(css,css+'#'));
+    const result=await readReactFrontendArtifact({directory});
+    assert.ok(result.shellFiles.includes('assets/entry-abcd.css'));
+    assert.equal(result.shellFiles.some(path=>path.includes('#')),false);
+    assert.ok((await readFile(resolve(directory,'en.html'),'utf8')).includes(css+'#'));
+    for(const suffix of ['#other','##','?preview=1','?preview=1#']) {
+      await put('en.html',html.replace(css,css+suffix));
+      await assert.rejects(readReactFrontendArtifact({directory}),/absent from Vite graph/);
+    }
+    await put('en.html',html.replace('/review/assets/entry-abcd.js','/review/assets/entry-abcd.js#'));
+    await assert.rejects(readReactFrontendArtifact({directory}),/absent from Vite graph/);
   });
 });

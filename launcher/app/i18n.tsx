@@ -1,12 +1,13 @@
 import {createContext, useContext, useMemo, type ReactNode} from 'react';
-import {UI_MESSAGES, type UiLocale, type UiMessageKey, type UiMessageParams} from '../src/launcher/i18n.mts';
+import {translateUi, type UiLocale, type UiMessageKey, type UiMessageParams} from '../src/launcher/i18n.mts';
 
 export type Translate = (key: UiMessageKey, params?: UiMessageParams) => string;
+export type {UiMessageKey, UiMessageParams};
+export interface UiMessage {key: UiMessageKey; params?: UiMessageParams;}
 
-/** The existing catalog is the copy owner; React never runs its DOM/history mutator. */
+/** React supplies locale explicitly; its provider owns reactivity and navigation. */
 export function translate(locale: UiLocale, key: UiMessageKey, params: UiMessageParams = {}): string {
-  return UI_MESSAGES[locale][key].replace(/\{([A-Za-z0-9_]+)\}/g,
-    (_, name: string) => String(params[name] ?? `{${name}}`));
+  return translateUi(locale, key, params);
 }
 
 const LocaleContext = createContext<{locale: UiLocale; t: Translate}>({

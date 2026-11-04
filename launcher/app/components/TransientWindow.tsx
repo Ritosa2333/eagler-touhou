@@ -1,4 +1,6 @@
-import type {ReactNode} from 'react';
+import {Button as UiButton} from '../ui/controls';
+import {useLayoutEffect, useRef, useState, type ReactNode} from 'react';
+import {useSurfaceMotion} from '../ui/use-surface-motion';
 
 export interface TransientWindowProps {
   id: string;
@@ -14,8 +16,7 @@ export interface TransientWindowProps {
   children: ReactNode;
 }
 
-// These compatibility classes already share the same authored shell/header CSS.
-// Retaining them also keeps main's static markup and production CSS unchanged.
+// Standard and reference panels share their shell in ui/windows.css.
 const presentationClass = {
   standard: 'game-data-import-window',
   reference: 'game-data-link-window',
@@ -27,8 +28,12 @@ const presentationClass = {
  */
 export function TransientWindow({id, titleId, title, closeId, closeLabel, open, busy,
   variant = 'standard', onClose, children}: TransientWindowProps) {
-  return <section className={presentationClass[variant]} id={id} role="dialog" aria-modal="false" aria-labelledby={titleId} aria-busy={busy} hidden={!open}>
-    <header><div><strong id={titleId}>{title}</strong></div><button id={closeId} type="button" aria-label={closeLabel} disabled={busy} onClick={onClose}>×</button></header>
+  const ref = useRef<HTMLElement>(null), [retained, setRetained] = useState(open);
+  const present = open || retained;
+  useLayoutEffect(() => {if (open) setRetained(true);}, [open]);
+  useSurfaceMotion(ref, present ? open ? 'enter' : 'exit' : null, {onComplete() {if (!open) setRetained(false);}});
+  return <section ref={ref} className={presentationClass[variant]} id={id} data-state={open ? 'open' : 'closed'} role="dialog" aria-modal="false" aria-labelledby={titleId} aria-busy={busy} hidden={!present} inert={!open} aria-hidden={!open}>
+    <header><div><strong id={titleId}>{title}</strong></div><UiButton variant="icon" id={closeId} type="button" aria-label={closeLabel} disabled={busy} onClick={onClose}>×</UiButton></header>
     {children}
   </section>;
 }

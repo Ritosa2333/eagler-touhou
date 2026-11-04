@@ -11,6 +11,8 @@ import { createTurnConfigReader } from './turn-config.mjs';
 import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
+import { createRoomBroadcaster } from './room-broadcast.mjs';
+import { startRoomStatus } from './public-status.mjs';
 import {
   createRelayAbuseGuard,
   relayAbuseConfig,
@@ -273,10 +275,22 @@ if ((turnUsername && !turnCredential) || (!turnUsername && turnCredential)) {
   );
 }
 const rooms = new Map();
+const roomStatusServer = process.env.EAGLER_NETPLAY_STATUS_PORT
+  ? startRoomStatus(rooms, Number(process.env.EAGLER_NETPLAY_STATUS_PORT)) : null;
+roomStatusServer?.on('error', error => {
+  console.error('Room status failed:', error.code);
+  process.exit(1);
+});
 const abuseConfig = relayAbuseConfig();
 const abuseGuard = createRelayAbuseGuard(abuseConfig);
 const targetedEnvelopeMarker = 0xe7;
 const sendBounded = createBoundedRelaySender();
+const lobbyBroadcaster = createRoomBroadcaster({
+  snapshot: room => ({ type: 'state', room: lobbySnapshot(room) }),
+  send: sendRoomMessage,
+  changed: () => roomDirectory.changed(),
+  coalesceMs: lobbyStateCoalesceMs,
+});
 
 function iceServersFor(roomId, runId, player) {
   const servers = [];
@@ -383,11 +397,11 @@ function getRoom(id, socket) {
         inputDelay: 0,
         timingChoice: 'auto',
         startedAt: 0,
-        adonisMode: id.startsWith('th15mp-') ? 1 : multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
+        adonisMode: multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
         inputDelayAuto: false,
         predictionReserve: 2,
         timing: null,
-        predictionLimit: id.startsWith('th15mp-') ? 0 : multiplayerInputTimingPolicy(multiplayer).predictionLimit,
+        predictionLimit: multiplayerInputTimingPolicy(multiplayer).predictionLimit,
         settingsVersion: 1,
         phase: 'lobby',
         seats: [null, null, null],
@@ -597,10 +611,7 @@ function maybeDeleteRoom(roomId, room) {
     room.runs.size === 0 &&
     rooms.get(roomId) === room
   ) {
-    if (room.lobbyStateTimer) {
-      clearTimeout(room.lobbyStateTimer);
-      room.lobbyStateTimer = null;
-    }
+    lobbyBroadcaster.clear(room);
     rooms.delete(roomId);
     abuseGuard.releaseRoom(roomId);
   }
@@ -921,27 +932,7 @@ function sendRoomMessage(room, message) {
 }
 
 function broadcastLobby(room, payload = null) {
-  roomDirectory.changed();
-  // Event-like payloads (start, quick-chat) are delivered immediately. State
-  // snapshots keep the original sync speed for isolated changes (the leading
-  // edge is immediate) while additional mutations inside the window coalesce
-  // into one trailing send, so bursts of legal mutations collapse to at most
-  // one broadcast per window instead of multiplying fan-out by the members.
-  if (payload) {
-    sendRoomMessage(room, JSON.stringify(payload));
-    return;
-  }
-  if (room.lobbyStateTimer) {
-    room.lobbyStateDirty = true;
-    return;
-  }
-  sendRoomMessage(room, JSON.stringify({ type: 'state', room: lobbySnapshot(room) }));
-  room.lobbyStateTimer = setTimeout(() => {
-    room.lobbyStateTimer = null;
-    const dirty = room.lobbyStateDirty;
-    room.lobbyStateDirty = false;
-    if (dirty) broadcastLobby(room);
-  }, lobbyStateCoalesceMs);
+  lobbyBroadcaster.publish(room, payload);
 }
 
 function clearLobbySeat(room, clientId) {
@@ -1317,7 +1308,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         invalidateLobbyReady(room);
         room.lobby.adonisMode = mode;
         room.lobby.timingChoice = choice;
-        room.lobby.inputDelay = choice === 'auto' || (message.rollbackEnabled && !timing.manualRollbackDelay) ? 0 : choice;
+        room.lobby.inputDelay = choice === 'auto' || message.rollbackEnabled ? 0 : choice;
         room.lobby.inputDelayAuto = !message.rollbackEnabled && timing.measuredStartup && choice === 'auto';
         room.lobby.timing = null;
         broadcastLobby(room);
@@ -1671,7 +1662,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
         !Number.isInteger(inputDelay) ||
         inputDelay < 0 ||
-        inputDelay > (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8) ||
+        inputDelay > timingPolicy.manualDelayLimit ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
             predictionLimit < 1 ||
@@ -1681,7 +1672,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         return;
       }
       const rollback = !!room.multiplayer && timingPolicy.rollback && adonisMode !== 1;
-      room.lobby.inputDelay = rollback && !timingPolicy.manualRollbackDelay ? 0 : inputDelay;
+      room.lobby.inputDelay = rollback ? 0 : inputDelay;
       room.lobby.adonisMode = rollback ? 0 : adonisMode;
       room.lobby.inputDelayAuto = rollback ? false : inputDelayAuto;
       room.lobby.predictionReserve = predictionReserve;
@@ -1893,11 +1884,7 @@ server.on('close', () => {
   void nicknameService?.close();
   roomDirectory.close();
   clearInterval(abuseMaintenance);
-  for (const room of rooms.values())
-    if (room.lobbyStateTimer) {
-      clearTimeout(room.lobbyStateTimer);
-      room.lobbyStateTimer = null;
-    }
+  for (const room of rooms.values()) lobbyBroadcaster.clear(room);
 });
 
 server.on('connection', (socket, request) => {

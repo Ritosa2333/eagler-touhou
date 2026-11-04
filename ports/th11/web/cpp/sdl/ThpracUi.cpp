@@ -1,5 +1,7 @@
 #include "ThpracUi.hpp"
 #include <eagler/thprac/PracticeSdlKeyboard.hpp>
+#include <eagler/thprac/PracticeNavigation.hpp>
+namespace PracticeNav = eagler::thprac::navigation;
 #include "../game/GameSession.hpp"
 #include "../game/GameEconomy.hpp"
 #include "../game/PracticeSectionCatalog.hpp"
@@ -131,35 +133,36 @@ void select_current_section(GameSession& runtime){
 }
 void draw_practice(GameSession& runtime){
  auto& s=runtime.practice;auto& p=s.configured;if(!s.menu||!runtime.title)return;
+ const bool entering=!practice_was_open;
  if(!practice_was_open){practice_was_open=true;practice_keys_armed=false;select_current_section(runtime);}
  const ImVec2 size=locale==0?ImVec2(320,335):locale==1?ImVec2(440,325):ImVec2(340,335),pos=locale==0?ImVec2(150,80):locale==1?ImVec2(100,90):ImVec2(130,80);
  ImGui::SetNextWindowSize(size,ImGuiCond_Always);ImGui::SetNextWindowPos(pos,ImGuiCond_Always);ImGui::SetNextWindowBgAlpha(.8f);ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0);ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
  const auto flags=ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoMove;
  if(ImGui::Begin("Option###th11-thprac-practice",nullptr,flags)){
   ImGui::PushItemWidth(locale==0?-56.f:locale==1?-58.f:-66.f);ImGui::TextUnformatted(tr("练习选项","Option","オプション"));ImGui::Separator();
-  const char* modes[]{tr("原版练习","Original","オリジナル"),tr("自定义练习","Custom","カスタム")};ImGui::Combo(tr("模式","Mode","モード"),&p.mode,modes,2);
-  const char* stages[]{"1","2","3","4","5","6","Extra"};if(ImGui::Combo(tr("关卡","Stage","ステージ"),&p.stage,stages,7)){p.section=p.phase=0;if(p.mode&&p.stage==3)s.spell_category=runtime.title->selection.character*3+runtime.title->selection.partner+1;}
+  const char* modes[]{tr("原版练习","Original","オリジナル"),tr("自定义练习","Custom","カスタム")};PracticeNav::Combo(tr("模式","Mode","モード"),&p.mode,modes,2);
+  const char* stages[]{"1","2","3","4","5","6","Extra"};if(PracticeNav::Combo(tr("关卡","Stage","ステージ"),&p.stage,stages,7)){p.section=p.phase=0;if(p.mode&&p.stage==3)s.spell_category=runtime.title->selection.character*3+runtime.title->selection.partner+1;}
   if(p.mode){
    const char* warps[]{tr("无","None","なし"),tr("道中","Stage Portion","道中"),tr("道中Boss","Mid Boss","道中ボス"),tr("关底Boss","End Boss","ボス"),tr("非符","Non Spell","通常"),tr("符卡","Spell Card","スペカ")};
-   if(ImGui::Combo(tr("传送","Warp","ワープ"),&s.warp,warps,6))p.section=p.phase=0;
-   if(s.warp&&p.stage==3){const char* shots[7]{};for(int i=0;i<7;++i)shots[i]=label(practice_shot_categories[i]);if(ImGui::Combo(label(practice_TH11_SPELL_CATEGORY),&s.spell_category,shots,7))p.section=p.phase=0;}
+   if(PracticeNav::Combo(tr("传送","Warp","ワープ"),&s.warp,warps,6))p.section=p.phase=0;
+   if(s.warp&&p.stage==3){const char* shots[7]{};for(int i=0;i<7;++i)shots[i]=label(practice_shot_categories[i]);if(PracticeNav::Combo(label(practice_TH11_SPELL_CATEGORY),&s.spell_category,shots,7))p.section=p.phase=0;}
    select_current_section(runtime);
-   if(s.warp==1){constexpr int setup[7][2]{{2,2},{2,2},{2,1},{3,4},{3,3},{3,3},{4,3}};const auto& c=setup[p.stage];int chapter=p.section%100;char label[64];std::snprintf(label,sizeof(label),chapter<=c[0]?tr("前半 #%d","First Half #%d","前半 #%d"):tr("后半 #%d","Second Half #%d","後半 #%d"),chapter<=c[0]?chapter:chapter-c[0]);if(ImGui::SliderInt(tr("章节","Chapter","チャプター"),&chapter,1,c[0]+c[1],label))p.section=10000+(p.stage+1)*100+chapter;}
-   else if(s.warp>=2){auto labels=matching_sections(runtime);std::vector<const char*> names;for(auto* l:labels)names.push_back(l->names[p.stage==6?4:runtime.title->selection.difficulty][locale]);if(!names.empty()&&ImGui::Combo(warps[s.warp],&practice_section_index,names.data(),int(names.size()))){p.section=labels[practice_section_index]->id;p.phase=0;}if(section_has_dialogue(p.section))ImGui::Checkbox(tr("对话","Dialog","会話"),&p.dlg);}
+   if(s.warp==1){constexpr int setup[7][2]{{2,2},{2,2},{2,1},{3,4},{3,3},{3,3},{4,3}};const auto& c=setup[p.stage];int chapter=p.section%100;char label[64];std::snprintf(label,sizeof(label),chapter<=c[0]?tr("前半 #%d","First Half #%d","前半 #%d"):tr("后半 #%d","Second Half #%d","後半 #%d"),chapter<=c[0]?chapter:chapter-c[0]);if(PracticeNav::SliderInt(tr("章节","Chapter","チャプター"),&chapter,1,c[0]+c[1],label))p.section=10000+(p.stage+1)*100+chapter;}
+   else if(s.warp>=2){auto labels=matching_sections(runtime);std::vector<const char*> names;for(auto* l:labels)names.push_back(l->names[p.stage==6?4:runtime.title->selection.difficulty][locale]);if(!names.empty()&&PracticeNav::Combo(warps[s.warp],&practice_section_index,names.data(),int(names.size()))){p.section=labels[practice_section_index]->id;p.phase=0;}if(section_has_dialogue(p.section))PracticeNav::Checkbox(tr("对话","Dialog","会話"),&p.dlg);}
    const int phase_count=practice_phase_count(p.section);
-   if(phase_count>1){const auto* labels=p.section==TH11_ST6_BOSS9?practice_phase_five:p.section==TH11_ST7_END_S10?practice_phase_four:p.section==10504?practice_phase_infinite:p.section==TH11_ST5_MID3?practice_phase_wave:practice_phase_startset;const char* names[8]{};for(int i=0;i<phase_count;++i)names[i]=labels[i][locale];p.phase=std::clamp(p.phase,0,phase_count-1);ImGui::Combo(tr("阶段","Phase","段階"),&p.phase,names,phase_count);}else p.phase=0;
-   if((p.section==TH11_ST4_RA2||p.section==TH11_ST4_RA_BOSS5)&&p.phase){ImGui::DragFloat(practice_TH_BOSSX[locale],&p.boss_x,1,-140,140);ImGui::DragFloat(practice_TH_BOSSY[locale],&p.boss_y,1,80,176);}
-   if(p.section==10504)ImGui::SliderInt(practice_TH_11_WAVE_PASSED[locale],&p.wave_passed,0,40);
-   ImGui::SliderInt(tr("残机","Life","残機"),&p.life,0,9);ImGui::SliderInt(tr("残机碎片","Life Pieces","残機の欠片"),&p.life_fragment,0,4);
-   const bool ma=runtime.title->selection.character==1&&runtime.title->selection.partner==0;char power[32];const int fixed=ma?p.power*100/12:p.power*5;std::snprintf(power,sizeof(power),"%d.%02d",fixed/100,fixed%100);p.power=std::clamp(p.power,0,ma?96:80);ImGui::SliderInt(tr("火力","Power","霊力"),&p.power,0,ma?96:80,power);
-   ImGui::DragInt("Graze",&p.graze,1,0,999999);ImGui::DragInt(tr("最大得点","Point Value","最大得点"),&p.value,10,0,999990);p.value=p.value/10*10;
-   const i64 lo=0,hi=9999999990LL;ImGui::DragScalar(tr("分数","Score","スコア"),ImGuiDataType_S64,&p.score,10,&lo,&hi,"%lld");p.score=p.score/10*10;
-   if(runtime.title->selection.character==1&&runtime.title->selection.partner==1){const char* f[5]{};for(int i=0;i<5;++i)f[i]=label(practice_formations[i]);ImGui::Combo(label(practice_TH11_MARISAB_FORMATION_LABEL),&p.marisa_b_formation,f,5);}
+   if(phase_count>1){const auto* labels=p.section==TH11_ST6_BOSS9?practice_phase_five:p.section==TH11_ST7_END_S10?practice_phase_four:p.section==10504?practice_phase_infinite:p.section==TH11_ST5_MID3?practice_phase_wave:practice_phase_startset;const char* names[8]{};for(int i=0;i<phase_count;++i)names[i]=labels[i][locale];p.phase=std::clamp(p.phase,0,phase_count-1);PracticeNav::Combo(tr("阶段","Phase","段階"),&p.phase,names,phase_count);}else p.phase=0;
+   if((p.section==TH11_ST4_RA2||p.section==TH11_ST4_RA_BOSS5)&&p.phase){PracticeNav::DragFloat(practice_TH_BOSSX[locale],&p.boss_x,1,-140,140);PracticeNav::DragFloat(practice_TH_BOSSY[locale],&p.boss_y,1,80,176);}
+   if(p.section==10504)PracticeNav::SliderInt(practice_TH_11_WAVE_PASSED[locale],&p.wave_passed,0,40);
+   PracticeNav::SliderInt(tr("残机","Life","残機"),&p.life,0,9);PracticeNav::SliderInt(tr("残机碎片","Life Pieces","残機の欠片"),&p.life_fragment,0,4);
+   const bool ma=runtime.title->selection.character==1&&runtime.title->selection.partner==0;char power[32];const int fixed=ma?p.power*100/12:p.power*5;std::snprintf(power,sizeof(power),"%d.%02d",fixed/100,fixed%100);p.power=std::clamp(p.power,0,ma?96:80);PracticeNav::SliderInt(tr("火力","Power","霊力"),&p.power,0,ma?96:80,power);
+   PracticeNav::DragInt("Graze",&p.graze,1,0,999999);PracticeNav::DragInt(tr("最大得点","Point Value","最大得点"),&p.value,10,0,999990);p.value=p.value/10*10;
+   const i64 lo=0,hi=9999999990LL;PracticeNav::DragScalar(tr("分数","Score","スコア"),ImGuiDataType_S64,&p.score,10,&lo,&hi,"%lld");p.score=p.score/10*10;
+   if(runtime.title->selection.character==1&&runtime.title->selection.partner==1){const char* f[5]{};for(int i=0;i<5;++i)f[i]=label(practice_formations[i]);PracticeNav::Combo(label(practice_TH11_MARISAB_FORMATION_LABEL),&p.marisa_b_formation,f,5);}
   }
-  ImGui::PopItemWidth();if(!ImGui::IsAnyItemActive()&&!ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel))ImGui::SetWindowFocus();
+  ImGui::PopItemWidth();PracticeNav::focus(tr("关卡","Stage","ステージ"),entering);
  }ImGui::End();ImGui::PopStyleVar(2);
  if(!practice_keys_armed&&!(key_down[VK_Z]||key_down[VK_RETURN]||key_down[VK_X]||key_down[VK_ESCAPE]))practice_keys_armed=true;
- const bool busy=text_editing;text_editing=ImGui::IsAnyItemActive();
+ const bool busy=text_editing||PracticeNav::busy();text_editing=PracticeNav::busy();
  if(practice_keys_armed&&!busy&&(pressed(VK_Z)||pressed(VK_RETURN))&&p.valid())s.accepted=true;
  if(practice_keys_armed&&!busy&&(pressed(VK_X)||pressed(VK_ESCAPE))){s.menu=false;practice_was_open=false;runtime.title->change(TitleScreen::Partner);runtime.title->cursor.pop();}
 }
@@ -229,7 +232,7 @@ void render(GameSession& runtime,touhou::sdl::Renderer& renderer){if(!initialize
  rendered_generation=input_generation;auto& io=ImGui::GetIO();io.DeltaTime=1.f/60.f;io.DisplaySize={640,480};io.MousePos={mouse_x,mouse_y};if(!pointer_edges.empty()){const auto edge=pointer_edges.front();pointer_edges.pop_front();pointer_sample_down=edge.down;io.MousePos={edge.x,edge.y};}io.MouseDown[0]=pointer_sample_down;io.KeyCtrl=key_down[VK_CONTROL];io.KeyShift=key_down[VK_SHIFT];io.KeyAlt=key_down[VK_MENU];io.ConfigDragClickToInputText=desktop_pointer;for(int i=0;i<256;i++)io.KeysDown[i]=key_down[i];
  // Numeric editing also applies to advanced tools outside the practice menu.
  eagler::thprac::sdl_keyboard_frame(io);
- io.NavInputs[ImGuiNavInput_DpadUp]=key_down[VK_UP];io.NavInputs[ImGuiNavInput_DpadDown]=key_down[VK_DOWN];io.NavInputs[ImGuiNavInput_DpadLeft]=key_down[VK_LEFT];io.NavInputs[ImGuiNavInput_DpadRight]=key_down[VK_RIGHT];io.NavInputs[ImGuiNavInput_Activate]=key_down[VK_Z]||key_down[VK_RETURN];io.NavInputs[ImGuiNavInput_Cancel]=key_down[VK_X]||key_down[VK_ESCAPE];ImGui::NewFrame();frame_open=true;
+ io.NavInputs[ImGuiNavInput_DpadUp]=key_down[VK_UP];io.NavInputs[ImGuiNavInput_DpadDown]=key_down[VK_DOWN];io.NavInputs[ImGuiNavInput_DpadLeft]=key_down[VK_LEFT];io.NavInputs[ImGuiNavInput_DpadRight]=key_down[VK_RIGHT];io.NavInputs[ImGuiNavInput_Activate]=key_down[VK_Z]||key_down[VK_RETURN];io.NavInputs[ImGuiNavInput_Cancel]=key_down[VK_X]||key_down[VK_ESCAPE];PracticeNav::prepare(runtime.practice.menu&&!MobileThprac::captures_advanced(advanced_open));ImGui::NewFrame();frame_open=true;
  // Persistent touch fire must not keep the closed Practice menu capturing
  // gameplay inputs (including the launcher's Escape serial pulse).
  if(runtime.practice.menu)draw_practice(runtime);else practice_was_open=false;draw_overlay(runtime);

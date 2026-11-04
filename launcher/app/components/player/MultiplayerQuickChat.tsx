@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../ui/controls';
 import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -9,8 +10,9 @@ import type {
   QuickChatEntry,
 } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 import { useLocale } from '../../i18n';
+import {animateUiFrames, type SurfaceAnimation} from '../../ui/surface-motion';
 
-/** React owns every node. Native effects retain the original iframe input,
+/** React owns every node. Shared effects retain the original iframe input,
  * scrolling and independent move/expiry animations; they never own chat state. */
 export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatModel }) {
   const { t } = useLocale();
@@ -18,8 +20,8 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
     log = useRef<HTMLDivElement>(null);
   const rows = useRef(new Map<number, HTMLParagraphElement>());
   const [rowCarrier] = useState(() => document.createElement('div'));
-  const fades = useRef(new Map<number, Animation>()),
-    moves = useRef(new Map<HTMLParagraphElement, Animation>());
+  const fades = useRef(new Map<number, SurfaceAnimation>()),
+    moves = useRef(new Map<HTMLParagraphElement, SurfaceAnimation>());
   const before = useRef<{
     top: number;
     following: boolean;
@@ -57,12 +59,10 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
   const context = state.context;
   const th09 = context?.room.startsWith('th09mp-') === true;
 
-  function duration(milliseconds: number) {
-    return model.getSnapshot().context?.lessMotion ||
-      matchMedia('(prefers-reduced-motion: reduce)').matches
-      ? 0
-      : milliseconds;
-  }
+  const isReduced = useCallback(() => {
+    return !!(model.getSnapshot().context?.lessMotion ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }, [model]);
   useLayoutEffect(() => {
     const element = root.current;
     if (!element || context?.inRoom) return;
@@ -88,19 +88,15 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       element.addEventListener(name, prevent, { capture: true });
     for (const name of blocked) element.addEventListener(name, stop);
     const detach = model.setExpiryPresenter((entry: QuickChatEntry) => {
-      const row = rows.current.get(entry.id),
-        milliseconds = duration(280);
+      const row = rows.current.get(entry.id);
       if (
-        !milliseconds ||
+        isReduced() ||
         !model.getSnapshot().context?.visible ||
         row?.parentElement !== log.current
       )
         return;
-      const animation = row.animate([{ opacity: 1 }, { opacity: 0 }], {
-        duration: milliseconds,
-        easing: 'ease-in',
-        fill: 'forwards',
-      });
+      const animation = animateUiFrames(row, {opacity: ['1', '0']});
+      if (!animation) return;
       fades.current.set(entry.id, animation);
       return animation.finished.then(() => {});
     });
@@ -116,7 +112,7 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       detach();
       before.current = null;
     };
-  }, [model, context?.inRoom]);
+  }, [model, context?.inRoom, isReduced]);
   useLayoutEffect(() => {
     const element = log.current;
     if (!element) return;
@@ -140,8 +136,7 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       if (row && current !== row) element.insertBefore(row, current ?? null);
     });
     element.scrollTop = !previous || previous.following ? element.scrollHeight : previous.top;
-    const milliseconds = duration(240);
-    if (!milliseconds) return;
+    if (isReduced()) {for (const animation of fades.current.values()) animation.complete(); return;}
     for (const entry of state.entries) {
       const row = rows.current.get(entry.id);
       if (!row || row.parentElement !== element) continue;
@@ -150,28 +145,20 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       const fading = fades.current.has(entry.id),
         opacity = position?.opacity ?? 0;
       if (Math.abs(delta) < 0.5 && (fading || opacity >= 0.999)) continue;
-      const from: Keyframe = { transform: `translateY(${delta}px)` },
-        to: Keyframe = { transform: 'translateY(0)' };
-      if (!fading) {
-        from.opacity = opacity;
-        to.opacity = 1;
-      }
-      moves.current.set(
-        row,
-        row.animate([from, to], { duration: milliseconds, easing: 'cubic-bezier(.2,.7,.2,1)' }),
-      );
+      const animation = animateUiFrames(row, {translate: [`0 ${delta}px`, '0 0'], ...(!fading ? {opacity: [String(opacity), '1']} : {})});
+      if (animation) moves.current.set(row, animation);
     }
-  }, [state]);
+  }, [state, isReduced]);
   const label = (phrase: QuickChatPhrase) => (context?.language === 'en' ? phrase.en : phrase.zh);
   const muteButton = (
-    <button
+    <UiButton variant="quiet"
       type="button"
       className="mp-quick-chat-mute"
       aria-expanded={state.muteOpen}
       onClick={model.toggleMute}
     >
       {t(state.muteOpen ? 'chat.back' : 'chat.mute')}
-    </button>
+    </UiButton>
   );
   const section = (
     <section
@@ -180,7 +167,7 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
       hidden={!context?.visible || context.inRoom}
       aria-label={t('chat.players')}
     >
-      <button
+      <UiButton variant="quiet"
         type="button"
         className="mp-quick-chat-prompt"
         aria-expanded={state.pickerOpen || state.muteOpen}
@@ -193,12 +180,12 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
           alt=""
         />
         {t('room.quickChat')}
-      </button>
+      </UiButton>
       <div className="mp-quick-chat-picker" hidden={!state.pickerOpen}>
-        {QUICK_CHAT_ROWS.map((phrases, index) => (
-          <div key={index} className={`mp-quick-chat-row${phrases.length === 2 ? ' paired' : ''}`}>
+        {QUICK_CHAT_ROWS.map(phrases => (
+          <div key={phrases.map(phrase => phrase.id).join('|')} className={`mp-quick-chat-row${phrases.length === 2 ? ' paired' : ''}`}>
             {phrases.map((phrase) => (
-              <button
+              <UiButton
                 key={phrase.id}
                 type="button"
                 className="mp-quick-chat-phrase"
@@ -210,7 +197,7 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
                 onClick={() => model.sendPhrase(phrase.id)}
               >
                 {label(phrase)}
-              </button>
+              </UiButton>
             ))}
           </div>
         ))}
@@ -222,27 +209,27 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
           !seat || index === context.localSeat
             ? []
             : [
-                <button
+                <UiButton variant="quiet"
                   key={seat.clientId}
                   type="button"
                   className="mp-quick-chat-mute-member"
                   aria-pressed={state.muted.includes(seat.clientId)}
                   onClick={() => model.toggleMember(seat.clientId)}
-                >{`P${index + 1} ${seat.name} · ${t(state.muted.includes(seat.clientId) ? 'chat.unmute' : 'chat.mute')}`}</button>,
+                >{`P${index + 1} ${seat.name} | ${t(state.muted.includes(seat.clientId) ? 'chat.unmute' : 'chat.mute')}`}</UiButton>,
               ],
         )}
         {context?.spectators
           ?.filter((member) => member.clientId !== context.localClientId)
           .map((member) => (
-            <button
+            <UiButton variant="quiet"
               key={member.clientId}
               type="button"
               className="mp-quick-chat-mute-member"
               aria-pressed={state.muted.includes(member.clientId)}
               onClick={() => model.toggleMember(member.clientId)}
             >
-              {`${t('multiplayer.spectators')} ${member.name} · ${t(state.muted.includes(member.clientId) ? 'chat.unmute' : 'chat.mute')}`}
-            </button>
+              {`${t('multiplayer.spectators')} ${member.name} | ${t(state.muted.includes(member.clientId) ? 'chat.unmute' : 'chat.mute')}`}
+            </UiButton>
           ))}
         {state.muteOpen && muteButton}
       </div>
@@ -297,7 +284,8 @@ function RetainedRow({
     },
     [entry.id, carrier, rows, log, visible],
   );
-  const sender = `${entry.spectator ? '观众' : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
+  const {t} = useLocale();
+  const sender = `${entry.spectator ? t('chat.spectator') : `P${entry.seat + 1}`}${entry.name ? `(${entry.name})` : ''}`;
   return (
     <p ref={ref} title={`${sender}: ${label}`}>
       <strong>{sender}</strong>

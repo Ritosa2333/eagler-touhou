@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
@@ -9,6 +10,7 @@ import { SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/sit
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { DEFAULT_BUILD_GAMES } from "../lib/product-selection.mjs";
 
+test("development site manifest", async () => {
 const root = await mkdtemp(join(resolve(import.meta.dirname, "../.."), "eagler-development-manifest-"));
 const project = fileURLToPath(new URL("..", import.meta.url));
 const fixtureData = Buffer.from([1, 2, 3, 4]);
@@ -66,6 +68,7 @@ for (const [game, entry] of Object.entries(manifest.games)) {
   assert.match(entry.gameData.layout, /^sha256-[a-f0-9]{64}$/i);
 }
 const multiplayerRuntimeOwners = {
+  th05: "../ports/th05-mp/artifacts/runtime/th05.html",
   th06: "../ports/th06/build/web/multiplayer/th06.html",
   th07: "../ports/th07/build/web/multiplayer/th07.html",
   th075: "../ports/th075-mp/build-eagler-multiplayer/th075.html",
@@ -143,3 +146,4 @@ for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {
 }
 await rm(root, { recursive: true, force: true });
 console.log(JSON.stringify({ developmentHostManifest: "PASS", games: Object.keys(manifest.games) }));
+});

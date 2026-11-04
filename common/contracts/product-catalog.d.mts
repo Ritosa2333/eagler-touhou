@@ -29,6 +29,21 @@ export type HostRuntimeFeatures = Readonly<Partial<Record<HostRuntimeFeatureId, 
 export declare function isHostRuntimeFeatureId(value: string): value is HostRuntimeFeatureId;
 export declare function languagePriority(id: string): number;
 export declare const PRODUCT_GAMES: Readonly<{
+    th05: Readonly<{
+        testOnly: false; number: "05"; title: "東方怪綺談"; subtitle: "Mystic Square"; cardArtwork: "th05-card.webp";
+        storage: Readonly<{saveRoot: "/savesth05"; scoreFile: "score.dat"; configFiles: readonly string[]}>;
+        multiplayerRuntime: "./runtime/th05/multiplayer/th05.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
+        runtime: "./runtime/th05/th05.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
+        requiredShared: readonly string[]; runtimeAssets: readonly string[];
+        musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; sources: readonly ["original", "akyu"]}>;
+        thpracRuntime: Readonly<{session: "native"}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Goan114/uth05win-vibe"; adaptationNotice: "early-test"}>;
+        package: Readonly<{dataFileId: "game-data"; dataTarget: "/th05.data"; rawDataImport: Readonly<{fileNames: readonly string[]}>;
+            musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
+        replay: Readonly<{prefix: "th05"; slotPrefix: "replay"; slots: 100; extensions: readonly ["rpy"]}>; features: Readonly<{thprac: true; languages: true; focusHitbox: true}>;
+    }>;
     th06: Readonly<{
         cardArtwork: "th06-card.webp";
         number: "06";
@@ -414,7 +429,6 @@ export declare const PRODUCT_GAMES: Readonly<{
                 rollbackLimit: 8;
                 measuredStartup: true;
                 manualDelayLimit: 9;
-                manualRollbackDelay: true;
             }>;
             playerCounts: readonly [2];
             difficulties: readonly string[];
@@ -822,6 +836,59 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th17: Readonly<{
+        testOnly: true;
+        number: "17";
+        title: "東方鬼形獣";
+        subtitle: "Wily Beast and Weakest Creature";
+        cardArtwork: "th17-card.webp";
+        storage: Readonly<{
+            saveRoot: "/savesth17";
+            scoreFile: "scoreth17.dat";
+            configFiles: readonly string[];
+        }>;
+        runtime: "./runtime/th17/th17.html";
+        musicCapabilities: Readonly<{
+            midi: false;
+        }>;
+        musicRuntime: Readonly<{
+            localOggConfigureMode: "runtime-selection";
+        }>;
+        touchFire: Readonly<{
+            mode: "toggle";
+            labelKey: "touch.tapToggle";
+        }>;
+        support: Readonly<{
+            highRefreshRate: false;
+            sourceRepository: "https://github.com/Goan114/eagler-touhou";
+            adaptationNotice: "early-test";
+        }>;
+        runtimeFileLayout: "directory";
+        requiredShared: readonly never[];
+        runtimeAssets: readonly string[];
+        dataProvider: "retail-memory";
+        package: Readonly<{
+            dataFileId: "game-data";
+            dataTarget: "/th17.dat";
+            rawDataImport: Readonly<{
+                fileNames: readonly string[];
+            }>;
+            musicSourceDirectories: Readonly<{
+                ogg: "music";
+            }>;
+            musicMounts: Readonly<{
+                ogg: "/music";
+            }>;
+        }>;
+        replay: Readonly<{
+            prefix: "th17";
+        }>;
+        features: Readonly<{
+            thprac: false;
+            languages: false;
+            focusHitbox: false;
+        }>;
+    }>;
     th20: Readonly<{
         testOnly: true;
         number: "20";
@@ -902,9 +969,9 @@ export interface MultiplayerInputTimingConfig {
     sendPredictionLimit?: number;
     measuredStartup?: boolean;
     manualDelayLimit?: number;
-    manualRollbackDelay?: boolean;
 }
 export interface MultiplayerProductConfig {
+    relaySourceEnvelope?: boolean;
     spectator?: boolean;
     titleRoomEntry?: boolean;
     loadoutFields?: readonly Readonly<{labelKey: string; dependsOn?: readonly number[]}>[];
@@ -921,7 +988,6 @@ export interface MultiplayerProductConfig {
 export declare function multiplayerInputTimingPolicy(product: Pick<MultiplayerProductConfig, "inputTiming"> | null | undefined): {
     measuredStartup: boolean;
     rollback: boolean;
-    manualRollbackDelay: boolean;
     manualDelayLimit: number;
     predictionLimit: number;
 };
@@ -1346,7 +1412,6 @@ export declare function createLocalProductManifest(): {
                     rollbackLimit: 8;
                     measuredStartup: true;
                     manualDelayLimit: 9;
-                    manualRollbackDelay: true;
                 }>;
                 playerCounts: readonly [2];
                 difficulties: readonly string[];
@@ -1657,7 +1722,6 @@ export declare function createLocalProductManifest(): {
                 inputTiming: Readonly<{
                     rollbackLimit: 12;
                     sendPredictionLimit: 12;
-                    rollbackDefault: false;
                     measuredStartup: true;
                     manualDelayLimit: 9;
                 }>;
@@ -1762,7 +1826,7 @@ export declare function createLocalProductManifest(): {
                 title: string;
                 pack: null;
             }[];
-        } | (typeof PRODUCT_GAMES.th12 & {
+        } | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
             music: {midi: {files: never[]; supported: boolean}};
             languageOptions: {id: string; title: string; pack: null}[];
         }) | (typeof PRODUCT_GAMES.th13 & {

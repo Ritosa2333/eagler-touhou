@@ -37,7 +37,7 @@ def wait_http(url: str, timeout: float = 10.0) -> None:
 
 def main() -> int:
     http_port = free_port()
-    url = f"http://127.0.0.1:{http_port}/faq.html"
+    url = f"http://127.0.0.1:{http_port}/compatibility.html"
     http = subprocess.Popen(
         package_module_server_command(PROJECT, http_port, ["node", str(PROJECT / "scripts" / "serve.mjs"), str(http_port), str(WORKSPACE)]),
         cwd=PROJECT,

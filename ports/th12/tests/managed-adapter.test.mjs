@@ -60,7 +60,7 @@ test('managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and
   assert.ok(interpolation,'actual browser interpolation selector');
   for(const hz of [60,120,144])for(const limited of [false,true]){
     let ticks=0,draws=0;
-    const context={terminated:false,backgrounded:false,fatalError:false,last:0,lastPresentation:0,accumulator:0,presentationInterval:1000/60,presentationCadence:new PresentationCadence(),
+    const context={terminated:false,backgrounded:false,fatalError:false,viewportClockReset:false,last:0,lastPresentation:0,accumulator:0,presentationInterval:1000/60,presentationCadence:new PresentationCadence(),
       presentationLimiter:new PresentationLimiter(),needsPresentationInterpolation,needsPresentationCapture,
       runtimeOptions:{limitPresentationTo60:limited},TICK:1000/60,meter:{frame(){}},loadingScreen:{advance(){},renderOverlay(){}},
       ready:true,busy:false,session:null,model:{actions:[],state:{scene:'playing'}},profile:{settings:{keyMap:{}}},
@@ -82,7 +82,7 @@ test('a saturated catch-up budget still publishes a fresh game picture on every 
   const interpolation=source.match(/^function interpolateGamePresentation\(\)\{.*\}$/m)?.[0];assert.ok(interpolation);
   for(const interval of [150,200,250]){
     let ticks=0,captured=0;const pictures=[];
-    const context={terminated:false,backgrounded:false,fatalError:false,last:0,accumulator:0,presentationInterval:0,presentationCadence:new PresentationCadence(),
+    const context={terminated:false,backgrounded:false,fatalError:false,viewportClockReset:false,last:0,accumulator:0,presentationInterval:0,presentationCadence:new PresentationCadence(),
       runtimeOptions:{limitPresentationTo60:false},presentationLimiter:new PresentationLimiter(),TICK:1000/60,meter:{frame(){}},loadingScreen:{advance(){},renderOverlay(){}},
       ready:true,busy:false,session:null,model:{actions:[],state:{scene:'playing'}},profile:{settings:{keyMap:{}}},
       keyDown:()=>false,previousPadUI:0,logicalStep:1000/60,captureThisTick:false,launched:false,
@@ -94,4 +94,17 @@ test('a saturated catch-up budget still publishes a fresh game picture on every 
     assert.equal(ticks,60*8,'catch-up work remains bounded without skipping logical frames');
     for(let n=0;n<pictures.length;n++)assert.equal(pictures[n],(n+1)*8,`${interval} ms frame ${n} must render the latest completed tick`);
   }
+});
+
+test('managed input advertises existing mapping identities while keyboard delivery stays queued',()=>{
+  const environment={location:{href:'https://example.test/th12?runtimeEpoch=7',origin:'https://example.test'}};
+  const input=new ManagedInput(environment),keyboard=environment.__eaglerKeyboardInputBridge,pad=environment.__eaglerGamepadInputBridge;
+  assert.equal(keyboard.schema,'eagler-touhou/keyboard-input/1');assert.equal(keyboard.epoch,7);
+  assert.equal(keyboard.origin,environment.location.origin);assert.equal(keyboard.submit({command:'keyboard'}),false);
+  assert.equal(Object.isFrozen(keyboard),true);assert.equal(pad.owned(),false);assert.equal(pad.sample(0),-1);
+  environment.__eaglerGamepadMapping={schema:pad.schema,protocol:pad.protocol,game:pad.game,epoch:7,origin:pad.origin,enabled:()=>true,sample:()=>128};
+  assert.equal(pad.owned(),true);assert.equal(pad.sample(0),128);assert.equal(input.pad(),128);
+  environment.__eaglerGamepadMapping.epoch=8;assert.equal(pad.owned(),false);assert.equal(pad.sample(0),-1);
+  const preview={location:{href:'https://example.test/preview',origin:'https://example.test'}};
+  new ManagedInput(preview);assert.equal(preview.__eaglerKeyboardInputBridge,undefined);
 });

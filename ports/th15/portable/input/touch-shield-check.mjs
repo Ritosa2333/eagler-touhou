@@ -14,6 +14,6 @@ for(const variant of ['th15','th15-mp']){
   const wasi=new WASI({version:'preview1',args:[],env:{}}),{instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});wasi.initialize(instance);assert.equal(instance.exports.verify(),0,variant+'/'+fixture);console.log('PASS',variant,fixture);
  }
  const source=readFileSync(resolve(title,'web/cpp/sdl/BrowserRuntime.cpp'),'utf8');
- assert(source.includes('value.retain_motion=static_cast<BombReisen*>'));assert(source.includes('charges>0'));
- writeFileSync(resolve(out,'report.json'),JSON.stringify({passed:true,variant,checks:['three shield layers','death cancels gesture','release and pause cancel gesture','dialogue','deathbomb','motion representation'],physicalDevice:'not run'},null,2)+'\n');
+ assert(!source.includes('retain_motion'));
+ writeFileSync(resolve(out,'report.json'),JSON.stringify({passed:true,variant,checks:['three shield layers','death preserves held gesture','release and pause cancel gesture','dialogue','deathbomb','motion representation'],physicalDevice:'not run'},null,2)+'\n');
 }

@@ -6,10 +6,10 @@
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 node ports/th09/web/scripts/prepare-retail-assets.mjs --help
 node ports/th09/web/scripts/prepare-retail-assets.mjs 'C:\Games\TH09' --font-root 'C:\local-content\th09-fonts'
 node launcher/scripts/prepare-th09-content.mjs --original='C:\Games\TH09' --output='ports/th09/assets-ogg'
@@ -22,7 +22,7 @@ $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th09 --variant=normal --emsdk='C:\tools\emsdk'
 node ports/th09/web/scripts/build-eagler.mjs
 node ports/th09/web/scripts/build-eagler.mjs --multiplayer
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 
@@ -56,6 +56,10 @@ npm --prefix launcher run dev:workspace
 正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。
 
 ## 回滚蓄力与 Replay
+
+蓄力录像扩展使用版本 2 的无损差分和按列压缩，读取兼容版本 1。`charge-history` 组件测试比较两种格式的逐帧数据，并测量 20 分钟合成记录的大小。
+
+触控在宣言、场地时停和死亡期间丢弃拖动位移，恢复时以人物当前位置重新建立目标。手指可持续按住，也可在死亡期间按下；`touch-controller` 组件测试覆盖恢复后的连续拖动。`web/tests/multiplayer/touch-stop-browser.mjs` 使用真实游戏和原生输入采样，检查连续三次宣言恢复时没有积压位移。
 
 ### 房间开关与启动参数
 

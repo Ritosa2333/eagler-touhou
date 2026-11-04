@@ -7,8 +7,13 @@ UfoEffects ufoEffects;
 UfoEffects::UfoEffects(const UfoEffects& other) { *this = other; }
 UfoEffects& UfoEffects::operator=(const UfoEffects& other) {
   if (this == &other) return *this;
-  serial_ = other.serial_; states_.clear();
-  for (const auto& [id, state] : other.states_) states_[id] = std::make_shared<UfoEffectState>(*state);
+  serial_ = other.serial_;
+  for (const auto& [id, state] : other.states_) {
+    const auto found = states_.find(id);
+    if (found == states_.end()) states_.emplace(id, std::make_shared<UfoEffectState>(*state));
+    else *found->second = *state;
+  }
+  std::erase_if(states_, [&](const auto& entry) { return !other.states_.contains(entry.first); });
   return *this;
 }
 namespace {

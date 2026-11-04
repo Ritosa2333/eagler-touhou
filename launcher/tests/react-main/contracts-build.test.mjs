@@ -1,6 +1,6 @@
 /** Cold maintainer contracts and compiler-free distribution boundary. No UI,
  * browser, published endpoint or native game is initialized by these checks. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -22,7 +22,7 @@ function run(cwd, code, environment = {}) {
 }
 before(async () => {
   work = await mkdtemp(resolve(project, '.cache/contracts-only-test-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
+  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/build-lock.mjs', 'lib/build-lock-host.mjs', 'lib/node-runtime.mjs', 'lib/shared-contract-sources.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
     await mkdir(resolve(cold, path, '..'), {recursive: true});
     await cp(resolve(project, path), resolve(cold, path), {recursive: true});
   }
@@ -43,7 +43,26 @@ test('concurrent cold Node facade imports publish one verified contracts-only ge
   for (const path of ['src/launcher', '.cache/build/browser', '.cache/build/optimized', 'assets/contracts']) assert.equal(existsSync(resolve(cold, path)), false, path);
   const manifest = JSON.parse(await readFile(resolve(built.root, 'manifest.json'), 'utf8'));
   for (const [path, hash] of Object.entries(manifest.outputs)) assert.equal(createHash('sha256').update(await readFile(resolve(built.root, path))).digest('hex'), hash);
-  assert.equal(existsSync(resolve(cold, '.cache/build/contracts/.build.lock')), false);
+  assert.equal(await run(cold, `const {acquireBuildLock}=await import('./lib/build-lock.mjs');
+    const release=await acquireBuildLock('.cache/build/contracts/.build.lock',{timeout:250});
+    await release();console.log('released');`), 'released', 'Another process can acquire ownership after publication');
+});
+
+test('visual component fixtures declare production CSS layers before module scripts', async () => {
+  const directory = resolve(project, 'tests/visual');
+  const files = (await readdir(directory)).filter(path => path.endsWith('.html') && path !== 'layout-watch.html');
+  const layerPrelude = '@layer properties,foundation,theme,base,components,utilities;';
+  let checked = 0;
+  for (const path of files) {
+    const html = await readFile(resolve(directory, path), 'utf8');
+    const moduleScript = /<script\b[^>]*type=["']module["']/i.exec(html);
+    if (!moduleScript) continue;
+    const layerIndex = html.indexOf(layerPrelude), scriptIndex = moduleScript.index;
+    assert.ok(layerIndex >= 0, `${path} must predeclare the production CSS layers`);
+    assert.ok(layerIndex < scriptIndex, `${path} must declare CSS layer order before importing component styles`);
+    checked++;
+  }
+  assert.ok(checked > 0, 'at least one visual component fixture should be checked');
 });
 
 test('classic worker resolver uses the exact shared canonical compiler and exports its contract', async () => {
@@ -107,6 +126,9 @@ test('published-only Node distribution reads contracts and worker without source
   await mkdir(resolve(distribution, 'lib'), {recursive: true}); await mkdir(resolve(distribution, 'assets'), {recursive: true});
   await cp(resolve(cold, 'lib/contracts'), resolve(distribution, 'lib/contracts'), {recursive: true});
   await cp(resolve(cold, 'lib/contracts-build.mjs'), resolve(distribution, 'lib/contracts-build.mjs'));
+  await cp(resolve(cold, 'lib/build-lock.mjs'), resolve(distribution, 'lib/build-lock.mjs'));
+  await cp(resolve(cold, 'lib/build-lock-host.mjs'), resolve(distribution, 'lib/build-lock-host.mjs'));
+  await cp(resolve(cold, 'lib/node-runtime.mjs'), resolve(distribution, 'lib/node-runtime.mjs'));
   await cp(resolve(cold, 'lib/shared-contract-sources.mjs'), resolve(distribution, 'lib/shared-contract-sources.mjs'));
   await cp(built.contractsDirectory, resolve(distribution, 'assets/contracts'), {recursive: true});
   const result = JSON.parse(await run(distribution, `import{readFile}from'node:fs/promises';import{DEFAULT_PRODUCT_ID}from'./lib/contracts/product-catalog.mjs';import{resolveRuntimeGenerationWorkerSource,ensureContractsBuild}from'./lib/contracts-build.mjs';console.log(JSON.stringify({product:DEFAULT_PRODUCT_ID,worker:(await readFile(await resolveRuntimeGenerationWorkerSource(),'utf8')).includes('EaglerRuntimeGenerations'),mode:(await ensureContractsBuild()).mode}));`, {EAGLER_FRONTEND: 'react'}));

@@ -1,3 +1,5 @@
+import {publicIdentity} from './status-model.mjs';
+
 const MINUTE = 60000, HOUR = 60 * MINUTE, DAY = 24 * HOUR;
 const idPattern = /^[a-z0-9-]{1,40}$/;
 export const UPTIME_RANGES = Object.freeze({'24h': {duration: DAY, count: 48}, '7d': {duration: 7 * DAY, count: 56}, '90d': {duration: 90 * DAY, count: 90}});
@@ -56,7 +58,7 @@ export function createUptimeStore(initial = {}, clock = Date.now) {
         }
         const current = latest.get(t.id);
         const total = points.reduce((sum, p) => sum + p.total, 0), up = points.reduce((sum, p) => sum + p.up, 0);
-        return {id:t.id, label:t.label, group:uptimeGroup(t), status:current?.status ?? 'unknown',
+        return {...publicIdentity(t), group:uptimeGroup(t), status:current?.status ?? 'unknown',
           checkedAt:current?.checkedAt ?? null, latencyMs:current?.status === 'operational' ? current.latencyMs : null,
           availability:total ? up / total : null,
           points:points.map(p => ({at:new Date(p.at).toISOString(), samples:p.total, availability:p.total ? p.up / p.total : null,

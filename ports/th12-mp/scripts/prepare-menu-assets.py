@@ -201,11 +201,14 @@ def main():
     atlases = {}
     for bank in ['sig', 'staff', *[f'e{i:02d}' for i in range(12)]]:
         atlases[bank] = decoder(RETAIL / (bank + '.anm'))
+        shutil.copyfile(RETAIL / (bank + '.anm'), DEST / (bank + '.anm'))
         print(f'{bank}: {len(atlases[bank]["entries"])} textures, {len(atlases[bank]["scripts"])} scripts', flush=True)
     endings = [dict(ending_message(RETAIL / f'e{i:02d}.msg'), id=i,
                     character=(i % 6) // 2, shot=i % 2, continued=i < 6,
                     endingNumber=i + 7 if i < 6 else i - 5) for i in range(12)]
     credits = ending_message(RETAIL / 'staff.msg')
+    for name in ['staff.msg', *[f'e{i:02d}.msg' for i in range(12)]]:
+        shutil.copyfile(RETAIL / name, DEST / name)
     # Use the checked replay decoder rather than duplicating its compression.
     import subprocess
     parsed = subprocess.run([os.environ.get('TH12_NODE', 'node'), '--input-type=module', '-e',

@@ -24,6 +24,9 @@ EM_JS(double, eagler_web_sfx_command,
             if (v.node) p += Math.max(0, ctx.currentTime - v.started) * v.speed;
             return v.loop ? p % v.buffer.duration : Math.min(p, v.buffer.duration);
         };
+        const releaseOutput = v => {
+            if (v.outputConnected) { v.merge.disconnect();v.outputConnected = false; }
+        };
         const stop = v => {
             v.offset = cursor(v);
             if (v.node) {
@@ -32,11 +35,14 @@ EM_JS(double, eagler_web_sfx_command,
                 v.node.disconnect();
                 v.node = null;
             }
+            releaseOutput(v);
             v.playing = false;
         };
         const gains = v => {
-            v.left.gain.setValueAtTime(v.volume * (v.pan > 0 ? 1 - v.pan : 1), ctx.currentTime);
-            v.right.gain.setValueAtTime(v.volume * (v.pan < 0 ? 1 + v.pan : 1), ctx.currentTime);
+            const left = v.volume * (v.pan > 0 ? 1 - v.pan : 1);
+            const right = v.volume * (v.pan < 0 ? 1 + v.pan : 1);
+            if (left !== v.leftGain) {v.left.gain.setValueAtTime(left, ctx.currentTime);v.leftGain = left;}
+            if (right !== v.rightGain) {v.right.gain.setValueAtTime(right, ctx.currentTime);v.rightGain = right;}
         };
         const start = v => {
             v.playing = true;
@@ -47,11 +53,12 @@ EM_JS(double, eagler_web_sfx_command,
             node.loop = v.loop;
             node.playbackRate.value = v.speed;
             node.connect(v.split);
+            if (!v.outputConnected) {v.merge.connect(ctx.destination);v.outputConnected = true;}
             v.node = node;
             v.started = ctx.currentTime;
             node.onended = () => {
                 if (v.node !== node) return;
-                node.disconnect();v.node = null;v.playing = false;v.offset = v.buffer.duration;
+                node.disconnect();v.node = null;v.playing = false;v.offset = v.buffer.duration;releaseOutput(v);
             };
             node.start(0, v.offset);
         };
@@ -80,9 +87,10 @@ EM_JS(double, eagler_web_sfx_command,
             }
             const v = {buffer, split:ctx.createChannelSplitter(2), left:ctx.createGain(),
                 right:ctx.createGain(), merge:ctx.createChannelMerger(2), volume:1, pan:0,
-                offset:0, started:0, speed:1, loop:false, playing:false, node:null};
+                offset:0, started:0, speed:1, loop:false, playing:false, node:null,
+                outputConnected:false, leftGain:null, rightGain:null};
             v.split.connect(v.left,0);v.split.connect(v.right,1);
-            v.left.connect(v.merge,0,0);v.right.connect(v.merge,0,1);v.merge.connect(ctx.destination);
+            v.left.connect(v.merge,0,0);v.right.connect(v.merge,0,1);
             pool.voices.set(id,v);pool.gains(v);return 1;
         } catch (_) { return 0; }
     }

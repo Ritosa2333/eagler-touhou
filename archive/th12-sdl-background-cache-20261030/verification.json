@@ -1,0 +1,170 @@
+{
+  "schema": "th12-sdl-background-cache-verification/1",
+  "baseline": "50084901cd28ab2342d295874afcef8abb6cd82e",
+  "implementation": "03c950a67",
+  "sdlUnitTests": {
+    "passed": 63,
+    "failed": 0
+  },
+  "adaptationChecks": {
+    "normal": {
+      "passed": 10,
+      "failed": 0
+    },
+    "multiplayer": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "standardSubtrees": {
+    "normal": {
+      "split": "6e31e0469a151b4ffcefbcc30aa462e981908e74",
+      "tree": "f1e8b50c596112337c98dd1e283827243a612fb9",
+      "upstreamAncestor": true,
+      "currentSplitAncestor": true,
+      "treeMatches": true
+    },
+    "multiplayer": {
+      "split": "4ad188faa23f4413122f2cd0d14c453e16401675",
+      "tree": "0f00334b803ad538821e2187ffdfa34dc6d716ed",
+      "upstreamAncestor": true,
+      "currentSplitAncestor": true,
+      "treeMatches": true
+    }
+  },
+  "builds": {
+    "normal": {
+      "web": {
+        "touhou12.mjs": {
+          "bytes": 228686,
+          "sha256": "79147ef53458ee440142535038ec16e5c47ec6a387057dc1472bb4d8f1f28c2f"
+        },
+        "touhou12.wasm": {
+          "bytes": 3244035,
+          "sha256": "85c14e66fcce0123d624d3054f124a6bd00646c27c5aaafa3d6e01c6cf62ce4a"
+        }
+      },
+      "desktop": {
+        "bytes": 5346304,
+        "sha256": "b412253b361b75dc7af06554866b1efcb19bc38e70a4d957afe4c05d6e9e184b"
+      }
+    },
+    "multiplayer": {
+      "web": {
+        "touhou12.mjs": {
+          "bytes": 287661,
+          "sha256": "d86471429c57a17eb8106378eca981db2781471a326bb8d3272710f1a62c374d"
+        },
+        "touhou12.wasm": {
+          "bytes": 3263985,
+          "sha256": "a2eff77da5436323088933f4a6fb2e4ffa5a7e1a8fa73d99ee51a3bf038fc9d3"
+        }
+      },
+      "desktop": {
+        "bytes": 5149184,
+        "sha256": "2eaa862c58b7a436841e1fc611a33d9ba239230b58190d8c9a2d27abed8da069"
+      }
+    }
+  },
+  "singleBrowser": {
+    "passed": true,
+    "checks": [
+      "original-resources",
+      "touch",
+      "THPrac",
+      "fullscreen",
+      "pause",
+      "replay"
+    ],
+    "errors": [],
+    "audioChecks": [
+      {
+        "action": "native-immediate-effects",
+        "starts": [
+          {
+            "when": 0,
+            "peak": 0.8790941834449768,
+            "channels": 2
+          },
+          {
+            "when": 0,
+            "peak": 0.8790941834449768,
+            "channels": 2
+          }
+        ]
+      }
+    ]
+  },
+  "multiplayerBrowser": {
+    "passed": true,
+    "inputLatencyMs": 25,
+    "reports": [
+      {
+        "count": 2,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          17,
+          20
+        ],
+        "frames": 446,
+        "hash": 1933398612,
+        "spectatorVerified": true,
+        "replayReconstructionVerified": true,
+        "pausedCaptureReuseVerified": true,
+        "inputReleaseVerified": true,
+        "roomReturnCount": 3
+      },
+      {
+        "count": 3,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          19,
+          28,
+          40
+        ],
+        "frames": 477,
+        "hash": 719563402,
+        "spectatorVerified": false,
+        "replayReconstructionVerified": true,
+        "pausedCaptureReuseVerified": true,
+        "inputReleaseVerified": true,
+        "roomReturnCount": 0
+      }
+    ]
+  },
+  "browserPrecondition": {
+    "baseline": "50084901cd28ab2342d295874afcef8abb6cd82e",
+    "originalAssertion": "held movement before pagehide",
+    "baselineResult": "timeout",
+    "optimizedResult": "timeout",
+    "observation": "All clients moved the same pilot while their current predicted-frame held fields differed.",
+    "replacement": "Require movement on every client and a held sender before pagehide; retain release, paused authoritative hash and replay reconstruction assertions."
+  },
+  "projections": {
+    "th12": {
+      "head": "6e31e0469a151b4ffcefbcc30aa462e981908e74",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true
+    },
+    "th12mp": {
+      "head": "533b9d69c093e8e29cb3cf217fddec048d55b530",
+      "initialAncestor": true,
+      "latestAncestor": true,
+      "treeMatches": true
+    }
+  },
+  "branchBaseline": "c7a2be6b1",
+  "inputCheck": "f07bf527b",
+  "sourceTreeEquivalence": {
+    "verified": true,
+    "normal": "f1e8b50c596112337c98dd1e283827243a612fb9",
+    "multiplayer": "0f00334b803ad538821e2187ffdfa34dc6d716ed"
+  }
+}

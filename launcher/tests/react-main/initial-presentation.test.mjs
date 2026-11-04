@@ -1,6 +1,6 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Pinned-main published HTML before JS/hydration; no browser/rendering claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdtemp, readFile, rm} from 'node:fs/promises';
@@ -19,20 +19,20 @@ let originalLibrary, originalLobby, expectedCards;
 const el = (type, props, ...children) => React.createElement(type, props, ...children);
 const parse = html => new env.window.DOMParser().parseFromString(html, 'text/html');
 const normal = text => text.replace(/\s+/g, ' ').trim();
-function cardContract(document) {
-  return [...document.querySelectorAll('.game')].map(card => ({
-    id: card.dataset.product || card.dataset.game, className: card.className,
-    href: card.getAttribute('href'), hidden: card.hidden,
-    style: [...card.style].map(key => [key, card.style.getPropertyValue(key)]).sort(),
-    title: normal(card.querySelector('h2').textContent), subtitle: card.querySelector('small').textContent,
-    number: card.querySelector('.no-label').textContent,
-    art: [...card.querySelectorAll('.card-art-image')].map(image => ['src', 'width', 'height', 'fetchpriority'].map(key => image.getAttribute(key))),
-    current: card.getAttribute('aria-current'),
+function bookContract(document) {
+  return [...document.querySelectorAll('.book-grid .book-game-link')].map(card => ({
+    id: card.dataset.bookProduct, href: card.getAttribute('href'),
+    title: normal(card.querySelector('strong').textContent),
+    subtitle: card.querySelector('.book-identity>span:last-child').textContent,
+    number: card.querySelector('.book-work-number').textContent,
   }));
 }
-function minimapContract(document) {
-  return [...document.querySelectorAll('[data-minimap-preview]')].map(button => Object.fromEntries(
-    ['data-minimap-preview', 'aria-label', 'aria-controls', 'aria-describedby', 'aria-current', 'hidden'].map(key => [key, button.getAttribute(key)])));
+function expectedBookContract() {
+  return [...expectedCards.querySelectorAll('.game:not([hidden]):not([data-product])')].map(card => ({
+    id: card.dataset.game, href: card.getAttribute('href'),
+    title: normal(card.querySelector('h2').textContent), subtitle:card.querySelector('small').textContent,
+    number: 'th' + card.querySelector('.no-label').textContent,
+  })).sort((a,b) => Number(a.number.slice(2)) - Number(b.number.slice(2)));
 }
 function assertUniqueIds(document) {
   const ids = [...document.querySelectorAll('[id]')].map(node => node.id);
@@ -66,18 +66,24 @@ afterEach(async () => {
 });
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 function initialMarkup(path) {return renderToStaticMarkup(el(MemoryRouter, {initialEntries: [path]}, el(api.BrowserLauncher)));}
-for (const path of ['/', '/index.html', '/en.html', '/nested/', '/nested/en.html', '/?game=th20&test=1']) {
-  test(`actual BrowserLauncher server render preserves original default static card gate: ${path}`, () => {
-    const document = parse(initialMarkup(path)), locale = path.includes('en.html') ? 'en' : 'zh-CN';
-    assert.deepEqual(cardContract(document), cardContract(expectedCards));
-    assert.deepEqual(minimapContract(document), minimapContract(expectedCards));
-    for (const game of ['th08', 'th10', 'th15', 'th11']) assert.equal(document.querySelector(`.game[data-game=${game}]`).hidden, false);
-    assert.equal(document.querySelector('.game[data-game=th20]').hidden, true);
-    assert.equal(document.querySelector('#singleplayerHeading').textContent, api.translate(locale, 'library.singleplayer'));
-    assert.equal(document.querySelector('#multiplayerHeading').textContent, api.translate(locale, 'library.multiplayer'));
+for (const path of ['/', '/index.html', '/en.html', '/ja.html', '/nested/', '/nested/en.html', '/nested/ja.html', '/?game=th20&test=1']) {
+  test(`actual BrowserLauncher server render publishes only supported default book cards: ${path}`, () => {
+    const document = parse(initialMarkup(path)), locale = path.includes('ja.html') ? 'ja' : path.includes('en.html') ? 'en' : 'zh-CN';
+    assert.deepEqual(bookContract(document), expectedBookContract());
+    assert.equal(document.querySelector('.book-game-link[data-game=th17]'), null, 'test-only products stay out of the production SSR catalog');
+    for (const game of ['th08', 'th10', 'th15', 'th11']) assert.ok(document.querySelector(`.book-game-link[data-game=${game}]`));
+    assert.equal(document.querySelector('.book-game-link[data-game=th20]'), null);
+    assert.equal(document.querySelector('[data-book-category=doujin] small').textContent, '0');
+    assert.equal(document.querySelectorAll('.book-recent-link').length, 0);
     assert.equal(document.querySelector('#uiLanguageSelect').value, locale);
-    assert.deepEqual([...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent)), [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
-    assert.equal(document.querySelector('.shelf-lobby-link').getAttribute('href'), 'lobby.html');
+    const footer = [...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent));
+    if (locale === 'zh-CN') assert.deepEqual(footer, [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
+    else {
+      assert.notEqual(footer[0], normal(originalLibrary.querySelectorAll('.site-footer p')[1].textContent));
+      assert.equal(footer[1], '赣ICP备2025074288号-1');
+      assert.equal(document.querySelector('#donationOpen').textContent, locale === 'en' ? 'Support the server' : 'サーバーを支援する');
+    }
+    assert.equal(document.querySelector('.book-lobby-link').getAttribute('href'), `lobby.html?lang=${locale}`);
     assert.equal(document.querySelector('#originMigrationOpen').hidden, true);
     assert.equal(document.querySelector('iframe'), null);
     assert.equal(document.querySelector('dialog[open]'), null);
@@ -87,18 +93,19 @@ for (const path of ['/', '/index.html', '/en.html', '/nested/', '/nested/en.html
 for (const path of ['/lobby.html', '/lobby', '/nested/lobby.html?game=th09mp']) test(`original empty lobby boot presentation: ${path}`, () => {
   const document = parse(initialMarkup(path));
   assert.equal(document.querySelector('.lobby-main').hasAttribute('inert'), true);
-  assert.equal(document.querySelector('#lobbyGameRail').children.length, 0);
-  assert.equal(document.querySelector('#filters').children.length, 0);
+  assert.equal(document.querySelectorAll('#lobbyGameRail [data-lobby-product]').length, 0);
+  assert.equal(document.querySelector('#lobbyGameRail .book-lobby-all').getAttribute('aria-pressed'), 'true');
+  assert.equal(document.querySelector('#lobbyGameRail .book-lobby-all').disabled, true);
+  assert.equal(document.querySelector('#filters'), null);
   assert.equal(document.querySelector('#roomList').children.length, 0);
   for (const id of ['createButton', 'codeButton', 'refreshRooms', 'lobbyGuideOpen', 'lobbyNetworkCheck']) {
     const actual = document.getElementById(id), original = originalLobby.getElementById(id);
     assert.equal(actual.disabled, original.disabled, id); assert.equal(normal(actual.textContent), normal(original.textContent), id);
   }
-  assert.equal(document.querySelector('#listHead').hidden, true);
+  assert.equal(document.querySelector('#listHead'),null);
   assert.equal(document.querySelector('#listLoading').hidden, false);
   assert.equal(document.querySelector('#roomList').getAttribute('aria-busy'), 'true');
-  assert.equal(document.querySelector('.site-footer'), null);
-  assert.equal(document.querySelector('.brand').getAttribute('aria-label'), 'EAGLER TOUHOU');
+  assert.equal(document.querySelector('.site-footer'), null); assert.ok(document.querySelector('.book-brand'));
   assert.equal(document.querySelector('iframe'), null); assertUniqueIds(document);
 });
 for (const lobby of [false, true]) test(`exact original ${lobby ? 'lobby' : 'library'} noscript copy`, () => {
@@ -118,7 +125,7 @@ test('initial presentation starts no rail observers/RAF and removes its document
     const container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);
     await React.act(async () => root.render(el(MemoryRouter, null, el(api.InitialLauncher))));
     const initial = [...container.querySelectorAll('[id]')];
-    assert.ok(initial.some(node => node.id === 'singleplayerRail')); assert.equal(observers, 0); assert.equal(frames, 0); assert.equal(activeClicks.size, 0);
+    assert.ok(initial.some(node => node.id === 'bookGameGrid')); assert.equal(observers, 0); assert.equal(frames, 0); assert.equal(activeClicks.size, 0);
     await React.act(async () => root.render(el('main', {id: 'real-session-boundary'})));
     assert.equal(activeClicks.size, 0); assert.ok(initial.every(node => !node.isConnected)); assertUniqueIds(env.document);
   } finally {
@@ -156,14 +163,16 @@ test('actual root/nested builds publish shared initial cards and route-specific 
     execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: project,
       env: {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath, EAGLER_REACT_APP_SHELL: 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: ''},
       stdio: 'pipe', timeout: 120000});
-    for (const entry of ['index.html', 'en.html', 'lobby.html']) {
+    for (const entry of ['index.html', 'en.html', 'lobby.html', 'profile.html']) {
       const document = parse(await readFile(resolve(output, 'client', entry), 'utf8')), lobby = entry === 'lobby.html';
+      assert.equal(document.documentElement.dataset.bookTheme, 'dark');
       assert.equal(document.documentElement.lang, entry === 'en.html' ? 'en' : 'zh-CN');
       assert.equal(document.body.classList.contains('lobby-page'), lobby);
       assert.equal(document.documentElement.dataset.originalEntry, lobby ? 'lobby' : 'library');
       assert.equal(document.documentElement.getAttribute('data-lobby-boot'), lobby ? 'loading' : null);
       if (lobby) {assert.equal(document.querySelectorAll('.game').length, 0); assert.ok(document.querySelector('noscript').textContent.includes('联机大厅需要启用 JavaScript'));}
-      else assert.deepEqual(cardContract(document), cardContract(expectedCards));
+      else if (entry === 'profile.html') {assert.ok(document.querySelector('main.player-profile')); assert.equal(document.querySelector('.book-library'), null);}
+      else assert.deepEqual(bookContract(document), expectedBookContract());
       assert.equal(document.querySelector('iframe'), null); assertUniqueIds(document);
     }
   }

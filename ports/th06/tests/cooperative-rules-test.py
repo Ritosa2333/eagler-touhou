@@ -72,6 +72,8 @@ struct Player {u8 initParam=0; int playerState=0,orbState=0,optionState=0,
  struct {int isInUse=0;}bombInfo; Shooter*shooterData=&shooter; bool shoot=false,pressed=false,focus_pressed=false;
  void BreakBorder(){hasBorder=0;} };
 Player g_Players[3]; bool g_PlayerActive[3]; bool absent[3],departed[3];
+// Rendering/audio are outside this rule fixture; the full browser fixture covers them.
+void EmitMissFeedback(Player*) {}
 int lives[3],bombs[3],power[3],g_powerGiveTaps[3],g_powerGiveWindow[3],g_teamWipeRetryFrames;
 bool multiplayer=true,challenge=false;
 struct Contribution {u32 challengeDeaths=0;}g_MultiplayerContributionStats[3];

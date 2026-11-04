@@ -3,32 +3,31 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRODUCT_GAMES } from '../../common/contracts/product-catalog.mjs';
+import {targets as sourceTargets} from '../ports/inputs.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const spec = JSON.parse(readFileSync(resolve(root, 'docs/adaptation/checklist.json'), 'utf8'));
-const layout = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json'), 'utf8'));
 const builds = JSON.parse(readFileSync(resolve(root, 'launcher/config/runtime-builds.json'), 'utf8'));
 const slash = path => path.replaceAll('\\', '/');
 export const MANUAL_EVIDENCE = '<!-- manual-verification -->';
 
 export function preserveManualEvidence(generated, existing = '') {
   const start=existing.indexOf(MANUAL_EVIDENCE);
-  return start<0 ? generated : generated.slice(0,generated.indexOf(MANUAL_EVIDENCE))+existing.slice(start);
+  const generatedMarker=generated.indexOf(MANUAL_EVIDENCE);
+  if (start<0 || generatedMarker<0) return generated;
+  const existingPrefix=existing.slice(0,start), newline=existingPrefix.match(/\r\n|\n/)?.[0] ?? '\n';
+  const generatedPrefix=generated.slice(0,generatedMarker).replace(/\r\n|\n/g,newline);
+  return generatedPrefix+existing.slice(start);
 }
 
 export function portDefinitions() {
   const ports = new Map();
-  for (const [game, entry] of Object.entries(builds.games)) {
-    for (const variant of ['normal', 'multiplayer']) {
-      const definition = entry.variants[variant];
-      if (!definition) continue;
-      const directory = layout.repositories[definition.workspaceRepository ?? entry.workspaceRepository];
-      if (!directory?.startsWith('ports/')) throw new Error(`${game}/${variant} 缺少 ports/ 源码目录。`);
-      const port = ports.get(directory) ?? { directory, game, variants: [] };
-      if (port.game !== game) throw new Error(`${directory} 同时归属两个作品。`);
-      port.variants.push(variant);
-      ports.set(directory, port);
-    }
+  for (const {game, variant, directory} of sourceTargets()) {
+    if (!directory?.startsWith('ports/')) throw new Error(`${game}/${variant} 缺少 ports/ 源码目录。`);
+    const port = ports.get(directory) ?? { directory, game, variants: [] };
+    if (port.game !== game) throw new Error(`${directory} 同时归属两个作品。`);
+    port.variants.push(variant);
+    ports.set(directory, port);
   }
   return [...ports.values()].sort((a, b) => a.directory.localeCompare(b.directory, 'en'));
 }
@@ -44,7 +43,6 @@ export function notApplicable(check, game, variant) {
   if (check.profile === 'midi' && !product.musicCapabilities?.midi) return '本作使用 OGG 音乐';
   if (check.profile === 'thprac' && build.features.thprac === false) return '该构建未提供 thprac';
   if (check.profile === 'language' && !product.features.languages) return '本作使用内置原文';
-  if (check.id === 'RUNTIME-06' && product.features.focusHitbox === false) return '本作未声明判定点显示';
   return null;
 }
 

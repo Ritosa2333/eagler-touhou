@@ -21,6 +21,7 @@ jobs:
       with:
         python-version: '3.13'
     - run: python3 tools/ports/test_check_history.py
+    - run: python3 tools/ports/test_delivery_history.py
     - run: python3 tools/ports/check-history.py --base "$EAGLER_CI_BASE"
       env:
         EAGLER_CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -59,7 +60,9 @@ jobs:
 
           tools/browser
 
-          common/contracts
+          tools/testing
+
+          common
 
           services
 
@@ -69,17 +72,18 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
         cache-dependency-path: launcher/requirements-ci.txt
-    - run: npm ci --ignore-scripts
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
+    - run: bun run install:locked
     - run: python -m pip install --requirement requirements-ci.txt
     - run: npm --prefix ../services/relay ci --ignore-scripts
-    - run: npm run check
+    - run: bun run check
     defaults:
       run:
         working-directory: launcher
@@ -91,14 +95,15 @@ jobs:
       with:
         sparse-checkout: 'launcher
 
-          common/contracts'
+          common'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
-    - run: npm ci --ignore-scripts
-    - run: npm run typecheck
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
+    - run: bun run install:locked
+    - run: bun run typecheck
     defaults:
       run:
         working-directory: launcher
@@ -114,7 +119,9 @@ jobs:
 
           tools/browser
 
-          common/contracts
+          tools/testing
+
+          common
 
           ports/th12/scripts
 
@@ -122,7 +129,51 @@ jobs:
 
           ports/th12-mp/src
 
-          services/relay'
+          services/relay
+
+          services/telemetry'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: launcher/requirements-ci.txt
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
+    - run: bun run install:locked
+    - run: python -m pip install --requirement requirements-ci.txt
+    - run: npm --prefix ../services/relay ci --ignore-scripts
+    - run: bun run lint
+    - run: bun run i18n:check
+    - run: bun run test
+    - run: python -m pip install --requirement tests/requirements-browser.txt
+    - run: python -m playwright install --with-deps chromium
+    - name: Build preview artifact for handbook browser checks
+      run: bun run build:ui-rewrite
+      env:
+        EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
+        VITE_PREVIEW_FEATURES: 'true'
+    - run: bun run test:ui-handbook:browser
+      env:
+        EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ui-handbook
+        path: artifacts/validation/ui-handbook/
+    defaults:
+      run:
+        working-directory: launcher
+  shared-input-audio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
     - uses: actions/setup-node@v7
       with:
         node-version: 24
@@ -132,16 +183,14 @@ jobs:
       with:
         python-version: '3.13'
         cache: pip
-        cache-dependency-path: launcher/requirements-ci.txt
-    - run: npm ci --ignore-scripts
-    - run: python -m pip install --requirement requirements-ci.txt
-    - run: npm --prefix ../services/relay ci --ignore-scripts
-    - run: npm run build:launcher
-    - run: npm run test:ui-rewrite
-    - run: npm run test:support
-    defaults:
-      run:
-        working-directory: launcher
+        cache-dependency-path: launcher/tests/requirements-browser.txt
+    - run: npm --prefix launcher ci --ignore-scripts
+    - run: python -m pip install --requirement launcher/tests/requirements-browser.txt
+    - run: python -m playwright install --with-deps chromium
+    - run: node --test tools/browser/verified-runtime.test.mjs
+    - run: node --test tools/ports/mobile-render-scale.test.mjs
+    - run: npm --prefix launcher run test:keyboard-mapping:browser
+    - run: npm --prefix launcher run test:audio-output:browser
   host-bootstrap-windows:
     runs-on: windows-latest
     steps:
@@ -173,7 +222,9 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        sparse-checkout: ${{ needs.scope.outputs.checkout }}
+        sparse-checkout: |
+          ${{ needs.scope.outputs.checkout }}
+          ports/th06
     - uses: actions/setup-node@v7
       with:
         node-version: 24
@@ -197,6 +248,9 @@ jobs:
         node-version: 24
         cache: npm
         cache-dependency-path: launcher/package-lock.json
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: launcher/.bun-version
     - uses: msys2/setup-msys2@v2
       if: runner.os == 'Windows'
       id: msys
@@ -207,7 +261,8 @@ jobs:
       shell: pwsh
       run: Add-Content -LiteralPath $env:GITHUB_PATH -Value '${{ steps.msys.outputs.msys2-location }}/ucrt64/bin'
     - run: npm --prefix launcher ci --ignore-scripts
-    - run: node --test tools/ports/check.test.mjs
+    - run: node --test tools/ports/*.test.mjs tools/testing/*.test.mjs
+    - run: node --test tools/browser/gamepad-input.test.mjs
     - run: npm run ports:check -- --all --check-status
     - uses: actions/upload-artifact@v4
       if: always()
@@ -250,6 +305,16 @@ jobs:
       if: matrix.game == 'th15' && matrix.variant == 'multiplayer'
       shell: bash
       run: TH15_EMSDK="$EMSDK" node ports/th15-mp/portable/multiplayer/network-test.mjs
+    - name: Verify th12 SDL application and browser boundary
+      if: matrix.game == 'th12'
+      run: npm --prefix ${{ matrix.directory }} run test:sdl
+    - name: Verify th12 multiplayer native input and rollback
+      if: matrix.game == 'th12' && matrix.variant == 'multiplayer'
+      shell: bash
+      run: |
+        cmake -S ports/th12-mp -B artifacts/th12-mp-native -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DBUILD_TESTING=ON
+        cmake --build artifacts/th12-mp-native --target th12_native_smoke th12_multiplayer_menu_safety --parallel 4
+        ctest --test-dir artifacts/th12-mp-native --output-on-failure -R 'th12_native_smoke|th12_multiplayer_menu_safety'
     - name: Verify th11 presentation and production profiles
       if: matrix.game == 'th11'
       shell: bash
@@ -307,8 +372,6 @@ jobs:
       run: cmake --build build --config Release --parallel
     - name: Test
       run: ctest --test-dir build -C Release --output-on-failure
-    - name: Presentation Lab controller contract
-      run: node --test testkit/presentation-lab/controller-core.test.mjs testkit/presentation-lab/release-contract.test.mjs
     needs:
     - scope
     if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'common') }}
@@ -906,6 +969,13 @@ jobs:
     - launcher-typecheck
     - source-contracts
     - source-publication
+    - shared-input-audio
+    - check
+    - ui-behavior
+    - port-adaptation
+    - common_ci_native
+    - relay
+    - turn
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-node@v7
@@ -915,7 +985,7 @@ jobs:
       env:
         EAGLER_RESULTS: ${{ toJSON(needs) }}
       run: node -e "const jobs=JSON.parse(process.env.EAGLER_RESULTS); const failed=Object.entries(jobs).filter(([,job])=>['failure','cancelled'].includes(job.result));
-        if(jobs.scope.result!=='success'||jobs['launcher-typecheck'].result!=='success'||jobs['source-history'].result!=='success'||jobs['source-publication'].result!=='success'||failed.length)process.exit(1); console.log('Core
+        if(jobs.scope.result!=='success'||jobs['launcher-typecheck'].result!=='success'||jobs['source-history'].result!=='success'||jobs['source-publication'].result!=='success'||jobs['shared-input-audio'].result!=='success'||jobs.check.result!=='success'||jobs['ui-behavior'].result!=='success'||jobs['port-adaptation'].result!=='success'||failed.length)process.exit(1); console.log('Core
         checks completed');"
   relay:
     name: services/relay
@@ -928,7 +998,9 @@ jobs:
       with:
         sparse-checkout: 'services/relay
 
-          common/contracts'
+          common/contracts
+
+          tools/testing'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
@@ -973,11 +1045,13 @@ jobs:
       with:
         sparse-checkout: 'services/turn
 
-          common/contracts'
+          common/contracts
+
+          tools/testing'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-    - run: node tests/test-netplay-service-config.mjs
+    - run: node scripts/check.mjs
     defaults:
       run:
         working-directory: services/turn

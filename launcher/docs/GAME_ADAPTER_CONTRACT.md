@@ -21,6 +21,10 @@
 
 共享代码读取产品声明中的 provider、布局与功能字段；游戏编号用于选择对应的产品记录。产品 capability 由 `PRODUCT_GAMES` 声明；`content-definition.mjs` 中的 `hostPreparation` 描述内容构建配方。
 
+多音源作品通过 `musicRuntime.sources` 声明可选来源。启动器同时在偏好恢复、资源准备与 `configure.options.musicSource` 中使用该声明；当前 th05 的原版与幺乐团专辑都通过 OGG 资源路径加载。其他作品不接受未声明的专辑选项。
+
+th05 的练习菜单由原生程序维护，声明 `thpracRuntime.session: "native"`，通过 `configure.options.thpracEnabled` 启用。它不使用 `integrations/thprac.mjs` 的 Windows 作品参数会话；两者的支持范围分别核对。
+
 ## Runtime 消息
 
 每条消息都带 `protocol: "eagler-touhou/1"`、`game`、正整数 `epoch`。Launcher 把同一 epoch 放入 Runtime URL 的 `runtimeEpoch` 查询参数。命令增加 `command`，可用 `request` 关联响应；响应带 `request` 与布尔值 `ok`，失败时可带 `error`、`errno`；事件增加 `event`。
@@ -43,6 +47,8 @@
 
 必须上报的事件：`ready`、`first-frame`、`runtime-info`、`frame-health`、`audio-health`、`exit`、`error`。`ready` 可带 `saveRoot`、`roomPreview`、`roomReturn`；`first-frame` 表示游戏确实呈现首帧。支持 `roomReturn` 的 Runtime 以 `launchSerial` 关联每次开局的 `first-frame` 与原生返回菜单的 `room-menu`，房间菜单、玩家开局和旁观重进共用已加载的实例。旁观启动完成本作原生初始化后接收回放历史，每次重进重新选择玩家或旁观身份。按 capability 使用的命令包括 `prepare-room`、`return-room`、`playback`、`retry-music`、`thprac-mouse`、`network-cancel`、`spectator-room-state`、`spectator-playback`；条件事件包括 `room-menu`、`midi-fallback`、`music-complete`、`music-error`、`music-incomplete`、`network-request`。`notice` 与 `player-debug` 为可选事件。事件和命令的完整类型见 [`runtime-protocol.mts`](../src/contracts/runtime-protocol.mts)。
 
+本地录像状态声明 `fileRelocation: 1` 时，`playback` 接受 `action: "relocate"`，以 `path` 和 `target` 交接活动文件路径。改名或移动先持久化并验证目标，通过同一 `RuntimeFileSession` 更新播放器与原生路径，再删除源文件。该操作保留帧、暂停、速度和实例；旧 Runtime 使用既有选片与定位命令恢复状态。th10 普通版和 MP 已接入原生路径交接。
+
 | 阶段 | 命令 / 事件 | 约定 |
 | --- | --- | --- |
 | 初始化 | `ready`、`configure`、`resources`、`launch` | `ready` 表示文件与 DATA 命令桥可用；`first-frame` 表示游戏已实际呈现首帧，启动器据此显示加载完成；房间使用 `prepare-room` 的 `presented: true` 确认原生菜单呈现后再发布就绪 |
@@ -51,6 +57,8 @@
 | 健康与结束 | `runtime-info`、`frame-health`、`audio-health`、`exit`、`error` | 按协议要求上报身份、健康状态与终止状态 |
 
 命令必需性、可用阶段和 ACK 要求见 `RUNTIME_PROTOCOL_COMMAND_BEHAVIOR`。命令标记为必需时，其行为始终必需；可选 ACK 表示回执可以省略。
+
+Host 等待就绪或首帧超过期限时，使用 `RuntimeWaitTimeoutError` 的 `waitKind` 区分阶段。手动导入恢复依据就绪超时类型与当前安装尝试判断，显示文案由当前界面语言生成。普通 Runtime 错误文字不参与恢复判定。
 
 ## 同步输入桥
 

@@ -1,4 +1,4 @@
-export type LauncherMusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
+export type LauncherMusicMode = "ogg-stream" | "ogg-full" | "ogg-akyu" | "midi" | "none";
 
 export interface MusicModeResolutionInput {
   requested?: string;
@@ -8,6 +8,7 @@ export interface MusicModeResolutionInput {
   localOgg?: boolean;
   remoteOgg?: boolean;
   preferOgg?: boolean;
+  musicSources?: readonly string[];
 }
 
 export function resolveMusicMode({
@@ -18,11 +19,13 @@ export function resolveMusicMode({
   localOgg = false,
   remoteOgg = false,
   preferOgg = true,
+  musicSources = [],
 }: MusicModeResolutionInput = {}): LauncherMusicMode {
+  if (requested === "ogg-akyu" && !musicSources.includes("akyu")) requested = "ogg-stream";
   if (!audio || requested === "none") return "none";
   const ogg = localOgg || remoteOgg;
   if (explicit && requested === "midi" && midi) return "midi";
-  if ((requested === "ogg-stream" || requested === "ogg-full") && ogg) return requested;
+  if ((requested === "ogg-stream" || requested === "ogg-full" || requested === "ogg-akyu") && ogg) return requested;
   if (!explicit && ogg && preferOgg) return "ogg-stream";
   if (midi) return "midi";
   return ogg ? "ogg-stream" : "none";
@@ -35,6 +38,7 @@ export interface InstalledMusicAvailability {
 }
 
 export interface MusicAvailabilityInput {
+  musicSources?: readonly string[];
   audio: boolean;
   midiAvailable: boolean;
   importServer: boolean;
@@ -101,6 +105,7 @@ export interface EffectiveMusicModeInput extends MusicAvailabilityInput {
 }
 
 export function resolveEffectiveMusicMode({
+  musicSources,
   requested,
   explicit,
   audio,
@@ -120,6 +125,7 @@ export function resolveEffectiveMusicMode({
   });
 
   return resolveMusicMode({
+    musicSources,
     requested,
     explicit,
     audio: availability.audio,

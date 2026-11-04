@@ -4,6 +4,13 @@
 #include "AnimationState.hpp"
 namespace th15::multiplayer {
 struct BulletFrameState::Data {
+    // The 18 transform programs (including payload vectors) change on emission
+    // and checkpoint replacement. Motion, timers and cursors change every tick.
+    template<class T>static auto runtime_fields(T& s){return std::tie(s.motion,s.transform_flags,s.boost,s.acceleration,s.approach,s.angular,s.reflection,s.wrapping,s.drift,s.position_curve,s.transform_sound,s.turn,s.saved,s.transform_index,s.wait,s.invulnerability,s.freeze,s.wait_outside,s.boost_stage,s.step_limit,s.collision_delay,s.cancel_item,s.phase,s.flags,s.visual_flags,s.scale_curve,s.scale,s.lifetime,s.spawn,s.offscreen_grace,s.cancellation_script,s.spawn_animation_finished,s.overlay_active,s.hitbox,s.graze_flash,s.graze_duration,s.graze_interval,s.hit_interrupt,s.visual_jitter,s.graze_color,s.sprite_type,s.color,s.initial_transform_flags);}
+    static void copy_runtime(BulletManager::Slot& to,const BulletManager::Slot& from){
+        runtime_fields(to.state)=runtime_fields(from.state);
+        to.free_next=from.free_next;to.active_next=from.active_next;to.active_previous=from.active_previous;to.active=from.active;
+    }
     struct Visual {AnmVm body,overlay;};
     struct Binding {
         i32 layer=0;Vec3 translation{};u32 ordering=0,part=0;
@@ -22,6 +29,7 @@ struct BulletFrameState::Data {
     };
     BulletScene* owner=nullptr;
     std::vector<BulletManager::Slot> logic;
+    std::vector<u64> versions;
     std::vector<Entry> entries;
     u32 free_head=0,active_head=0,visible_count=0;
     BulletFrameContext context;
@@ -44,10 +52,17 @@ void BulletFrameState::append_roots(BulletScene& scene,const AnmRegistry& regist
 bool BulletFrameState::capture(BulletScene& scene,bool own_visuals){
     frame_values::IdentityGuard guard;error.clear();
     if(scene.manager.slots.size()!=BulletManager::capacity||scene.slots.size()!=BulletManager::capacity){error="Bullet rollback pool changed capacity";return false;}
-    if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;s.ready=false;s.owner=&scene;s.own_visuals=own_visuals;auto& manager=scene.manager;
+    if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;const bool same_owner=s.owner==&scene;s.ready=false;s.owner=&scene;s.own_visuals=own_visuals;auto& manager=scene.manager;
     // Native initialize() preserves cold transform fields and flags. Save the
     // entire logical pool, including free slots, rather than normalizing it.
-    s.logic=manager.slots;if(s.entries.size()<scene.slots.size())s.entries.resize(scene.slots.size());
+    const bool initialized=same_owner&&s.logic.size()==manager.slots.size();
+    if(!initialized)s.logic=manager.slots;
+    else for(size_t i=0;i<manager.slots.size();++i){
+        if(manager.snapshot_exposed[i]||s.versions[i]!=manager.snapshot_versions[i])s.logic[i]=manager.slots[i];
+        else if(manager.slots[i].active||s.logic[i].active)Data::copy_runtime(s.logic[i],manager.slots[i]);
+    }
+    s.versions=manager.snapshot_versions;
+    if(s.entries.size()<scene.slots.size())s.entries.resize(scene.slots.size());
     for(size_t i=0;i<scene.slots.size();++i){const auto& slot=*scene.slots[i];auto& entry=s.entries[i];const auto& visual=slot.visual;
         entry.cancelling=slot.cancelling;entry.graze_flash=slot.graze_flash;entry.graze_duration=slot.graze_duration;entry.graze_interval=slot.graze_interval;entry.graze_initialized=slot.graze_initialized;entry.graze_views=slot.graze_views;
         entry.active=manager.slots[i].active;
@@ -66,7 +81,12 @@ bool BulletFrameState::restore(BulletScene& scene)const{
     const auto& s=*saved_;auto& manager=scene.manager;
     if(manager.slots.size()!=s.logic.size()||scene.slots.size()!=s.entries.size()){error="Bullet rollback pool changed capacity";return false;}
     // Slot hosts hold references into this vector. Never replace its storage.
-    std::copy(s.logic.begin(),s.logic.end(),manager.slots.begin());
+    for(size_t i=0;i<s.logic.size();++i){
+        if(manager.snapshot_exposed[i]||s.versions[i]!=manager.snapshot_versions[i])manager.slots[i]=s.logic[i];
+        else Data::copy_runtime(manager.slots[i],s.logic[i]);
+    }
+    // Retain the monotonic allocator, restore identities of the captured content.
+    manager.snapshot_versions=s.versions;
     for(size_t i=0;i<scene.slots.size();++i){auto& slot=*scene.slots[i];const auto& entry=s.entries[i];auto& visual=slot.visual;
         slot.cancelling=entry.cancelling;slot.graze_flash=entry.graze_flash;slot.graze_duration=entry.graze_duration;slot.graze_interval=entry.graze_interval;slot.graze_initialized=entry.graze_initialized;slot.graze_views=entry.graze_views;
         if(entry.active&&s.own_visuals){visual.body=entry.visual->body;visual.overlay=entry.visual->overlay;}

@@ -1,0 +1,2312 @@
+{
+  "sourceSha256": "109c193c492f0ba322752b70b217f765fc9b2bc9a10615bd0cf3c28d9401381b",
+  "method": "Independent JS decoder of pinned thtk THA1 format; native and C++ comparisons pending",
+  "entries": [
+    {
+      "name": "ascii.anm",
+      "offset": 16,
+      "size": 278368,
+      "reserved": 0,
+      "compressed": 51349,
+      "sha256": "3898bb66c06444491711d2686c2b21aa34e7a28651795fe2cfabc63c1ad74c30",
+      "header": "0800000022010e0000000001000105003805000000000000"
+    },
+    {
+      "name": "ascii_960.anm",
+      "offset": 51365,
+      "size": 442224,
+      "reserved": 0,
+      "compressed": 81504,
+      "sha256": "ba4396075e498ab1f618c4e5f6513ee40862a902fe83a88cc3b31c732d4433bd",
+      "header": "0800000022010e0000000002000205003805000000000000"
+    },
+    {
+      "name": "ascii_1280.anm",
+      "offset": 132869,
+      "size": 671600,
+      "reserved": 0,
+      "compressed": 113101,
+      "sha256": "dc426d2f7960b62464819901761fcd12054f15b1260b214b1b6b62d687475030",
+      "header": "0800000022010e0000000002000205003805000000000000"
+    },
+    {
+      "name": "trophy.anm",
+      "offset": 245970,
+      "size": 171276,
+      "reserved": 0,
+      "compressed": 22612,
+      "sha256": "9f23be6b14feb4c03d4d9cd1bd75f8d943092234135a57f8e96ab164bd0f6c11",
+      "header": "080000000300040000000002000105006c00000000000000"
+    },
+    {
+      "name": "bullet.anm",
+      "offset": 268582,
+      "size": 1949092,
+      "reserved": 0,
+      "compressed": 640563,
+      "sha256": "515a3183e8a6e006ff32432fed737b8769525b1adf18d7aaa0589b01aa8a3e77",
+      "header": "080000007001480000000001000101004008000000000000"
+    },
+    {
+      "name": "effect.anm",
+      "offset": 909145,
+      "size": 1554100,
+      "reserved": 0,
+      "compressed": 404045,
+      "sha256": "0fecf220a4f4fbf8352ed97425b26e7753bd5959710aa1e3c63ce69934c3cfe7",
+      "header": "0800000001000b0000004000400005009c00000000000000"
+    },
+    {
+      "name": "enemy.anm",
+      "offset": 1313190,
+      "size": 2043604,
+      "reserved": 0,
+      "compressed": 767180,
+      "sha256": "4f55de94712ba5f5d57b796874d99533f706888822dcb2525fcb6f963b4b3d77",
+      "header": "0800000078004d0000000002000205008804000000000000"
+    },
+    {
+      "name": "enemyb.anm",
+      "offset": 2080370,
+      "size": 2567908,
+      "reserved": 0,
+      "compressed": 1014133,
+      "sha256": "1cadfc13b331ba1404c441a4518152b179d5e2a4c5969169582f6c23b4e0bab0",
+      "header": "0800000078004d0000000002000201008804000000000000"
+    },
+    {
+      "name": "front.anm",
+      "offset": 3094503,
+      "size": 7294688,
+      "reserved": 0,
+      "compressed": 1982252,
+      "sha256": "5f91c46a4a02136bb245fcd07dc3985b1f4d0935d7bd74fc285cba287d9d566e",
+      "header": "080000005b007a0000000004000401007c05000000000000"
+    },
+    {
+      "name": "beast.anm",
+      "offset": 5076755,
+      "size": 1485260,
+      "reserved": 0,
+      "compressed": 270509,
+      "sha256": "3fa8aa99bf518379a4fc92f026d8b02adfcc13011d8be7c1d7da7375f04d532e",
+      "header": "080000000d0007000000000180000100ac00000000000000"
+    },
+    {
+      "name": "help.anm",
+      "offset": 5347264,
+      "size": 529024,
+      "reserved": 0,
+      "compressed": 79520,
+      "sha256": "8af4015406e5e56032397673dbb7b650c7ec6dd47335d6bd2b308ab648440582",
+      "header": "08000000090009000000000200020500ac00000000000000"
+    },
+    {
+      "name": "pl00.anm",
+      "offset": 5426784,
+      "size": 8651720,
+      "reserved": 0,
+      "compressed": 2166830,
+      "sha256": "1520fa99cfd075ac0e1546ae031b565b0b1da9b885696039d7105822514870c0",
+      "header": "080000002e00120000000001000105008801000000000000"
+    },
+    {
+      "name": "pl01.anm",
+      "offset": 7593614,
+      "size": 8142600,
+      "reserved": 0,
+      "compressed": 2716890,
+      "sha256": "db6f04acec9b88751811ba6e51ede36af5552098fe67147d62090791cdd76b34",
+      "header": "08000000350016000000000100020100c401000000000000"
+    },
+    {
+      "name": "pl02.anm",
+      "offset": 10310504,
+      "size": 7995216,
+      "reserved": 0,
+      "compressed": 2283703,
+      "sha256": "b075b79a9e53bd65f43f85f203c5383fe524eddc5805a3e94334de2aa81568f6",
+      "header": "0800000035001a000000000100020500e401000000000000"
+    },
+    {
+      "name": "sig.anm",
+      "offset": 12594207,
+      "size": 4915812,
+      "reserved": 0,
+      "compressed": 1090333,
+      "sha256": "476d968ed745b5d588ff3c7dc3f120c048aea299217454c22aa6502215cb58c1",
+      "header": "080000000100010000000004000401004c00000000000000"
+    },
+    {
+      "name": "text.anm",
+      "offset": 13684540,
+      "size": 22844,
+      "reserved": 0,
+      "compressed": 5238,
+      "sha256": "70ffef8a6fff72d6d77b8a3d0db5ea35ec1e4c9bf187ba9261c40990979856ce",
+      "header": "080000004c00340000000004000405001003000000000000"
+    },
+    {
+      "name": "title.anm",
+      "offset": 13689778,
+      "size": 41110736,
+      "reserved": 0,
+      "compressed": 9643027,
+      "sha256": "b723e4748401f4cd01c04a9489556d3671f8cb24ecd029568f21b674d92da13b",
+      "header": "08000000400056000000000400040500f003000000000000"
+    },
+    {
+      "name": "title_v.anm",
+      "offset": 23332805,
+      "size": 16812,
+      "reserved": 0,
+      "compressed": 2666,
+      "sha256": "7b76794816dcb9fdd212763ac814d80b54822790b145eb8ab16413ac9ed2e909",
+      "header": "080000000100010000000001200005004c00000000000000"
+    },
+    {
+      "name": "default.ecl",
+      "offset": 23335471,
+      "size": 6660,
+      "reserved": 0,
+      "compressed": 1604,
+      "sha256": "7185afb3065c8d994bff229f75cbbb03d7cf81ea6df918f45d520649b750b961",
+      "header": "534350540100100024000000000000001600000000000000"
+    },
+    {
+      "name": "musiccmt.txt",
+      "offset": 23337075,
+      "size": 5210,
+      "reserved": 0,
+      "compressed": 3106,
+      "sha256": "049cb1fe6f279f7026e1f5b81b9acd1963268d3cf52272247ef856633121ec32",
+      "header": "230d0a23208bc882cc83528381839383670d0a230d0a0d0a"
+    },
+    {
+      "name": "trophy.txt",
+      "offset": 23340181,
+      "size": 11995,
+      "reserved": 0,
+      "compressed": 3001,
+      "sha256": "d7d6324930c00df5bc3f78a755888038fe6d2851e10783498b22a7b641e81fbc",
+      "header": "23208367838d83748342815b0d0a230d0a2340300d0a2393"
+    },
+    {
+      "name": "pl00a.sht",
+      "offset": 23343182,
+      "size": 9008,
+      "reserved": 0,
+      "compressed": 1467,
+      "sha256": "10c2b223512027c3ddbbfd3f1ca036d603f4218e83b657c689d268a9d3bc934d",
+      "header": "05001400000000400000c0400000e0410000904000000040"
+    },
+    {
+      "name": "pl00b.sht",
+      "offset": 23344649,
+      "size": 9008,
+      "reserved": 0,
+      "compressed": 1473,
+      "sha256": "e2879588530810eee28d9f7bfb8945ed2798ee73bb118a741305c95c5a9496ec",
+      "header": "05001400000000400000c0400000e0410000904000000040"
+    },
+    {
+      "name": "pl00c.sht",
+      "offset": 23346122,
+      "size": 10064,
+      "reserved": 0,
+      "compressed": 1628,
+      "sha256": "5eeba551c610261dc0e3e66f43100a31ac3bbea86a1909889617fe99b4ddff96",
+      "header": "05001400000000400000c0400000e0410000904000000040"
+    },
+    {
+      "name": "pl01a.sht",
+      "offset": 23347750,
+      "size": 7424,
+      "reserved": 0,
+      "compressed": 1300,
+      "sha256": "c6d7671834b99ef79dccf4baf37f41309565ffeca0904e61b52215d3cfe4174c",
+      "header": "05001400cdcc2c4000004041000000420000a04000000040"
+    },
+    {
+      "name": "pl01b.sht",
+      "offset": 23349050,
+      "size": 7424,
+      "reserved": 0,
+      "compressed": 1298,
+      "sha256": "4eb7d0c63fbba469a2b1f85d5765b43f584b8a97fb0a2e6f607684596ce8fb19",
+      "header": "05001400cdcc2c4000004041000000420000a04000000040"
+    },
+    {
+      "name": "pl01c.sht",
+      "offset": 23350348,
+      "size": 7424,
+      "reserved": 0,
+      "compressed": 1293,
+      "sha256": "e7e78a865a75e4da96e92ad53f99014bedc22197cad6afb87ded12ed16349a22",
+      "header": "05001400cdcc2c4000004041000000420000a04000000040"
+    },
+    {
+      "name": "pl02a.sht",
+      "offset": 23351641,
+      "size": 12440,
+      "reserved": 0,
+      "compressed": 2017,
+      "sha256": "4428286ddd1c91702f11d5a41814689027890e4d65472340eb7534bacf565dc3",
+      "header": "050014009a9919400000c0400000e0410000904000000040"
+    },
+    {
+      "name": "pl02b.sht",
+      "offset": 23353658,
+      "size": 12000,
+      "reserved": 0,
+      "compressed": 1955,
+      "sha256": "d58ccb25d8332148349c6c3cc52291f0f827a98d4dcfaddca1913b990f22b3c1",
+      "header": "050014009a9919400000c0400000e0410000904000000040"
+    },
+    {
+      "name": "pl02c.sht",
+      "offset": 23355613,
+      "size": 13760,
+      "reserved": 0,
+      "compressed": 2185,
+      "sha256": "a9845f6f0da972f4f75f1a392c48cb68e90df92bca1db191838d7a02c0539c28",
+      "header": "050014009a9919400000c0400000e0410000904000000040"
+    },
+    {
+      "name": "st01logo.anm",
+      "offset": 23357798,
+      "size": 362532,
+      "reserved": 0,
+      "compressed": 57701,
+      "sha256": "0949cca64db68aa355e557a53276a4c537d7f155983c095519df649f10c3db63",
+      "header": "080000000400070000000002000105008800000000000000"
+    },
+    {
+      "name": "st01enm.anm",
+      "offset": 23415499,
+      "size": 6334700,
+      "reserved": 0,
+      "compressed": 1525189,
+      "sha256": "5afc84f9ad2d35f4f02052734e86749d3938a7f591611bc53793394ad15c84f3",
+      "header": "08000000200007000000000200020100f800000000000000"
+    },
+    {
+      "name": "st01wl.anm",
+      "offset": 24940688,
+      "size": 1356468,
+      "reserved": 0,
+      "compressed": 322066,
+      "sha256": "b9453eff709a7e018888c24dfd40a096670174e6bf173551b5894e6f45cfd8c2",
+      "header": "080000000100010000000002000205004c00000000000000"
+    },
+    {
+      "name": "st01.std",
+      "offset": 25262754,
+      "size": 3700,
+      "reserved": 0,
+      "compressed": 1142,
+      "sha256": "0987fc18a48905c374b6f25611091377466a1bca0cc570e42cfe48810be82ec3",
+      "header": "07002b0040060000900a00000000000073743031776c2e61"
+    },
+    {
+      "name": "st01.ecl",
+      "offset": 25263896,
+      "size": 32728,
+      "reserved": 0,
+      "compressed": 6707,
+      "sha256": "5d2fafed8b345ef3bfef2b2e6d7d3a984370f4d9ea1d612b0d40c4fa66f2c64e",
+      "header": "5343505401004c0024000000000000004100000000000000"
+    },
+    {
+      "name": "st01bs.ecl",
+      "offset": 25270603,
+      "size": 15292,
+      "reserved": 0,
+      "compressed": 3608,
+      "sha256": "ba4fdea347ca48e9e322cd9e67617c012697dfa1c93fd00179d2f983d4f11aa5",
+      "header": "534350540100100024000000000000000d00000000000000"
+    },
+    {
+      "name": "st01mbs.ecl",
+      "offset": 25274211,
+      "size": 7732,
+      "reserved": 0,
+      "compressed": 1907,
+      "sha256": "c5bcf27696d097bef581cc1c7304a6cb6f50d53627d65a500e45b4b0b55890cc",
+      "header": "534350540100100024000000000000000900000000000000"
+    },
+    {
+      "name": "st01a.msg",
+      "offset": 25276118,
+      "size": 1300,
+      "reserved": 0,
+      "compressed": 922,
+      "sha256": "825f385b2440d426a9b691c668dbde6a7b9233dd9dc7d88904254ab8cb612038",
+      "header": "020000001400000000010000e40200000001000000000a04"
+    },
+    {
+      "name": "st01b.msg",
+      "offset": 25277040,
+      "size": 1180,
+      "reserved": 0,
+      "compressed": 816,
+      "sha256": "c82cd0d7b4987b75e54d30268df592e21e4050b55823ed48a845fa327d34161b",
+      "header": "020000001400000000010000bc0200000001000000000a04"
+    },
+    {
+      "name": "st01c.msg",
+      "offset": 25277856,
+      "size": 1300,
+      "reserved": 0,
+      "compressed": 899,
+      "sha256": "c16b3e6702f5907d2e68c77cd39728a106a48454f8e6acfea00e79c1aab0966d",
+      "header": "020000001400000000010000080300000001000000000a04"
+    },
+    {
+      "name": "st01d.msg",
+      "offset": 25278755,
+      "size": 1272,
+      "reserved": 0,
+      "compressed": 906,
+      "sha256": "1620e6d3a1e34dc3e74d011bb2108526149551ef45795178eb2ee12712a2f92f",
+      "header": "020000001400000000010000200300000001000000000a04"
+    },
+    {
+      "name": "st01e.msg",
+      "offset": 25279661,
+      "size": 1372,
+      "reserved": 0,
+      "compressed": 970,
+      "sha256": "984661640d7777119e321f18dc93723c4f3bafce7d0d726af500c362c70d1b28",
+      "header": "0200000014000000000100005c0300000001000000000a04"
+    },
+    {
+      "name": "st01f.msg",
+      "offset": 25280631,
+      "size": 1348,
+      "reserved": 0,
+      "compressed": 964,
+      "sha256": "aaa87e37470a65779b73b43e33339f031adfd79a64a492b157d59b6da68b3109",
+      "header": "020000001400000000010000340300000001000000000a04"
+    },
+    {
+      "name": "st01g.msg",
+      "offset": 25281595,
+      "size": 1204,
+      "reserved": 0,
+      "compressed": 848,
+      "sha256": "ec77840e53fa181d4c500ca8d2583b2c0be20d2b58287dcc72134843d54a2121",
+      "header": "020000001400000000010000d40200000001000000000a04"
+    },
+    {
+      "name": "st01h.msg",
+      "offset": 25282443,
+      "size": 1412,
+      "reserved": 0,
+      "compressed": 997,
+      "sha256": "a27be6268119224f8fbfc8b38f8665a0c812fcd5982520423a94db3aac21a069",
+      "header": "020000001400000000010000400300000001000000000a04"
+    },
+    {
+      "name": "st01i.msg",
+      "offset": 25283440,
+      "size": 1448,
+      "reserved": 0,
+      "compressed": 1024,
+      "sha256": "c541fa76d277d7e5a3774b98d45334283c1a848ca178c8775be8c7c317731bf0",
+      "header": "020000001400000000010000a80300000001000000000a04"
+    },
+    {
+      "name": "st02logo.anm",
+      "offset": 25284464,
+      "size": 362532,
+      "reserved": 0,
+      "compressed": 56705,
+      "sha256": "cf5ecd2916ee19c456b619daeb3be0fcc3d4cf02176dad8069cc18ebfcf7d439",
+      "header": "080000000400070000000002000105008800000000000000"
+    },
+    {
+      "name": "st02enm.anm",
+      "offset": 25341169,
+      "size": 8077100,
+      "reserved": 0,
+      "compressed": 2205081,
+      "sha256": "c666a62d0b38fd9cbfca2e720c535912bc7a9e64b662fcb7c0b0a591c8b9b7ed",
+      "header": "080000002a00070000000002000201002001000000000000"
+    },
+    {
+      "name": "st02wl.anm",
+      "offset": 27546250,
+      "size": 1444464,
+      "reserved": 0,
+      "compressed": 396124,
+      "sha256": "b100dc10ada65da9c7eb65c231140e968906a156dc4f3ab761e66b80ce5b9fa9",
+      "header": "080000000100010000000001000101004c00000000000000"
+    },
+    {
+      "name": "st02.std",
+      "offset": 27942374,
+      "size": 2980,
+      "reserved": 0,
+      "compressed": 919,
+      "sha256": "7d723af883631aed5faa97fa5a36467a5af599bbd169d96497b52240ba7bf165",
+      "header": "0a000a0010030000800600000000000073743032776c2e61"
+    },
+    {
+      "name": "st02.ecl",
+      "offset": 27943293,
+      "size": 41288,
+      "reserved": 0,
+      "compressed": 8056,
+      "sha256": "821acec8c0c605d25779ae2dab7ace136740ac5c3b144b0f56f470b3e0f0a044",
+      "header": "5343505401004c0024000000000000005100000000000000"
+    },
+    {
+      "name": "st02bs.ecl",
+      "offset": 27951349,
+      "size": 19796,
+      "reserved": 0,
+      "compressed": 4155,
+      "sha256": "5813070f1849cc1ef69ff21096773f8da6a77f18ea7879cda7f37b5820d17ddb",
+      "header": "534350540100100024000000000000001500000000000000"
+    },
+    {
+      "name": "st02mbs.ecl",
+      "offset": 27955504,
+      "size": 5456,
+      "reserved": 0,
+      "compressed": 1441,
+      "sha256": "99379e30283f8c5940ffc53f9dbe242fb0feb739ebcb904d53dc6b850953f5b9",
+      "header": "534350540100100024000000000000000700000000000000"
+    },
+    {
+      "name": "st02a.msg",
+      "offset": 27956945,
+      "size": 1460,
+      "reserved": 0,
+      "compressed": 1078,
+      "sha256": "6ba0ff8eb548bca4e9f56e1bcb3b0635e589ceb5764d73156609bc77ca9ca8e2",
+      "header": "020000001400000000010000a00300000001000000000a04"
+    },
+    {
+      "name": "st02b.msg",
+      "offset": 27958023,
+      "size": 1608,
+      "reserved": 0,
+      "compressed": 1215,
+      "sha256": "40a9b248e28dc76c8a9ff5607bdf490cf6160dfd9097063c8bfb1b34008b2fa9",
+      "header": "020000001400000000010000e40300000001000000000a04"
+    },
+    {
+      "name": "st02c.msg",
+      "offset": 27959238,
+      "size": 1492,
+      "reserved": 0,
+      "compressed": 1114,
+      "sha256": "c84250c38271951906fb5b570d0e1ed97cd37f197994d92968233d6be99aa76c",
+      "header": "020000001400000000010000ac0300000001000000000a04"
+    },
+    {
+      "name": "st02d.msg",
+      "offset": 27960352,
+      "size": 1608,
+      "reserved": 0,
+      "compressed": 1204,
+      "sha256": "e89adc6f91c2063e3b5470c29fbd5e15b97002c657c1779c08583b298d3119fe",
+      "header": "020000001400000000010000d40300000001000000000a04"
+    },
+    {
+      "name": "st02e.msg",
+      "offset": 27961556,
+      "size": 1576,
+      "reserved": 0,
+      "compressed": 1152,
+      "sha256": "28ac01ab9e370780ad91622c37eeb4fe4b682bc941958efc52b3f552c284595e",
+      "header": "020000001400000000010000b00300000001000000000a04"
+    },
+    {
+      "name": "st02f.msg",
+      "offset": 27962708,
+      "size": 1572,
+      "reserved": 0,
+      "compressed": 1162,
+      "sha256": "7c579affb89b938f0abb32d81f539c5950fd5b8b7f8eb9e5fde2d32c0a684412",
+      "header": "020000001400000000010000800300000001000000000a04"
+    },
+    {
+      "name": "st02g.msg",
+      "offset": 27963870,
+      "size": 1404,
+      "reserved": 0,
+      "compressed": 1034,
+      "sha256": "ec6c2e9173240ad481fcb4207893d999bf9b9f95f1a4dc75724b328c91ad83a4",
+      "header": "020000001400000000010000200300000001000000000a04"
+    },
+    {
+      "name": "st02h.msg",
+      "offset": 27964904,
+      "size": 1572,
+      "reserved": 0,
+      "compressed": 1181,
+      "sha256": "cade4a759b7c1326d0ad23be4f4cc11affd1763a31259f12889952be09c9f87f",
+      "header": "020000001400000000010000840300000001000000000a04"
+    },
+    {
+      "name": "st02i.msg",
+      "offset": 27966085,
+      "size": 1828,
+      "reserved": 0,
+      "compressed": 1338,
+      "sha256": "d00ef7819ebd99e3910626bd8afa6b77d6be72da74f18335e1d100b11b97085e",
+      "header": "020000001400000000010000c80300000001000000000a04"
+    },
+    {
+      "name": "st03logo.anm",
+      "offset": 27967423,
+      "size": 362532,
+      "reserved": 0,
+      "compressed": 57294,
+      "sha256": "7fb6c835685d380a5862a795a34c65ebf2bf4d882d3ded1d63f2ed2099680534",
+      "header": "080000000400070000000002000105008800000000000000"
+    },
+    {
+      "name": "st03enm.anm",
+      "offset": 28024717,
+      "size": 8747496,
+      "reserved": 0,
+      "compressed": 2465624,
+      "sha256": "a46a2395ae104312da57194640ba2518bbedbc2fc465296725974881b8bc6a2e",
+      "header": "080000002a00070000000002000201002001000000000000"
+    },
+    {
+      "name": "st03wl.anm",
+      "offset": 30490341,
+      "size": 2360684,
+      "reserved": 0,
+      "compressed": 1076499,
+      "sha256": "0d6cd24222d94054f022752f92ef59c0e624f7eff1245ced1d30fd1c4780f1ab",
+      "header": "080000000100030000000002000201005c00000000000000"
+    },
+    {
+      "name": "st03.std",
+      "offset": 31566840,
+      "size": 3584,
+      "reserved": 0,
+      "compressed": 1040,
+      "sha256": "5a6fde297067ada186c6c10652e7b9b718cbeb27df842a42cda559b435fa29af",
+      "header": "06003000a8060000580900000000000073743033776c2e61"
+    },
+    {
+      "name": "st03.ecl",
+      "offset": 31567880,
+      "size": 37780,
+      "reserved": 0,
+      "compressed": 7495,
+      "sha256": "6fa44108b2ec0b37f1071317df8027d92a820b7e4ef3363750a8f87e19ae6e50",
+      "header": "5343505401004c0024000000000000004f00000000000000"
+    },
+    {
+      "name": "st03bs.ecl",
+      "offset": 31575375,
+      "size": 26212,
+      "reserved": 0,
+      "compressed": 5540,
+      "sha256": "bfb287c915aa1314121c735612a80e20b1da909cc8a73cd5df4faa5ac79c4982",
+      "header": "534350540100100024000000000000001a00000000000000"
+    },
+    {
+      "name": "st03mbs.ecl",
+      "offset": 31580915,
+      "size": 5204,
+      "reserved": 0,
+      "compressed": 1459,
+      "sha256": "180a128a9e9345fc8f4c14ee87e4f4d9c0d2263f6b6f2838d7682f6469f4aeab",
+      "header": "534350540100100024000000000000000600000000000000"
+    },
+    {
+      "name": "st03a.msg",
+      "offset": 31582374,
+      "size": 2156,
+      "reserved": 0,
+      "compressed": 1589,
+      "sha256": "213aa02de15e5d4d3b22dd130b0af36f0ae5b77680724783ca39ad3c1bf3bd44",
+      "header": "030000001c00000000010000c403000000010000bc070000"
+    },
+    {
+      "name": "st03b.msg",
+      "offset": 31583963,
+      "size": 2212,
+      "reserved": 0,
+      "compressed": 1665,
+      "sha256": "63ce7d17c1c7ed666fd32d9852b6dbad9effabc2cee66012ce97d5b97bc13f1f",
+      "header": "030000001c000000000100008404000000010000f4070000"
+    },
+    {
+      "name": "st03c.msg",
+      "offset": 31585628,
+      "size": 2292,
+      "reserved": 0,
+      "compressed": 1735,
+      "sha256": "c43842f745a3b84ae6cc6b87357d5a7a02616edeceee27a66834ba7ce26c125e",
+      "header": "030000001c00000000010000240400000001000044080000"
+    },
+    {
+      "name": "st03d.msg",
+      "offset": 31587363,
+      "size": 2176,
+      "reserved": 0,
+      "compressed": 1673,
+      "sha256": "354ea9a3a41350acbe0cadc6267f4e4a680cb0305e908462435994055b10560c",
+      "header": "030000001c000000000100005004000000010000d0070000"
+    },
+    {
+      "name": "st03e.msg",
+      "offset": 31589036,
+      "size": 2376,
+      "reserved": 0,
+      "compressed": 1800,
+      "sha256": "659232a2ada444f4306ee14efdf95848317994c47ef65735a313c8a14e2c8c28",
+      "header": "030000001c00000000010000f80400000001000098080000"
+    },
+    {
+      "name": "st03f.msg",
+      "offset": 31590836,
+      "size": 2188,
+      "reserved": 0,
+      "compressed": 1662,
+      "sha256": "4da4628f707c18522cc93c13975264eb37b5399176df92acd8643cb0f4ca8139",
+      "header": "030000001c000000000100006404000000010000dc070000"
+    },
+    {
+      "name": "st03g.msg",
+      "offset": 31592498,
+      "size": 1856,
+      "reserved": 0,
+      "compressed": 1377,
+      "sha256": "5e141d8d396ea87626a104bc89755ce3bde3d0d95b30cdb73bf1b6d9d430602b",
+      "header": "030000001c00000000010000480300000001000090060000"
+    },
+    {
+      "name": "st03h.msg",
+      "offset": 31593875,
+      "size": 1960,
+      "reserved": 0,
+      "compressed": 1446,
+      "sha256": "d10369e3cff1a146a9b032b86abf9e6cc06df3b04eb047d5093c99156c8b953a",
+      "header": "030000001c00000000010000a003000000010000f8060000"
+    },
+    {
+      "name": "st03i.msg",
+      "offset": 31595321,
+      "size": 1944,
+      "reserved": 0,
+      "compressed": 1462,
+      "sha256": "e54d67e6314f8bc97b50df9e0955baf1a9a8601b43df6237acd116f5341a8ce2",
+      "header": "030000001c000000000100008c03000000010000e8060000"
+    },
+    {
+      "name": "st04logo.anm",
+      "offset": 31596783,
+      "size": 362532,
+      "reserved": 0,
+      "compressed": 59701,
+      "sha256": "db21cd29473005e3b37dedf30301720027f4240c0792cc7cbe55baf7e25560d1",
+      "header": "080000000400070000000002000105008800000000000000"
+    },
+    {
+      "name": "st04enm.anm",
+      "offset": 31656484,
+      "size": 8271008,
+      "reserved": 0,
+      "compressed": 2148999,
+      "sha256": "b2b8c509ef12648ddc628a945425ace9923515390c4920b4e8757a2750c4f10e",
+      "header": "080000001c0006000000000200040100e000000000000000"
+    },
+    {
+      "name": "st04wl.anm",
+      "offset": 33805483,
+      "size": 1077256,
+      "reserved": 0,
+      "compressed": 377735,
+      "sha256": "1ab25a97e9b399e2aab400aabd6cb607e934dd5cf1408a0a9eb89def39586bc9",
+      "header": "080000000100010000000002000205004c00000000000000"
+    },
+    {
+      "name": "st04.std",
+      "offset": 34183218,
+      "size": 4636,
+      "reserved": 0,
+      "compressed": 1342,
+      "sha256": "eb5b282f6102df4752656a5633cec60ef4ff8d0d7846bdb7ce56d16c8c51b51a",
+      "header": "0700190048040000d80800000000000073743034776c2e61"
+    },
+    {
+      "name": "st04.ecl",
+      "offset": 34184560,
+      "size": 51740,
+      "reserved": 0,
+      "compressed": 9428,
+      "sha256": "94b29c9d64b2a9314ed1d93baf7c8a7437d8c5f8a33e2c130e8e885887d46271",
+      "header": "5343505401004c0024000000000000005200000000000000"
+    },
+    {
+      "name": "st04bs.ecl",
+      "offset": 34193988,
+      "size": 25128,
+      "reserved": 0,
+      "compressed": 5064,
+      "sha256": "10ceb908cf638d42ca33535e31cb968b590d1e4ea7007e3bd96eee89ae345ff4",
+      "header": "534350540100100024000000000000001300000000000000"
+    },
+    {
+      "name": "st04mbs.ecl",
+      "offset": 34199052,
+      "size": 4548,
+      "reserved": 0,
+      "compressed": 1321,
+      "sha256": "ec3794425daa7aacd6f10d1c6092a8df706ea23475eed80e025ee52025515dbd",
+      "header": "534350540100100024000000000000000500000000000000"
+    },
+    {
+      "name": "st04a.msg",
+      "offset": 34200373,
+      "size": 3296,
+      "reserved": 0,
+      "compressed": 2450,
+      "sha256": "5298bf6a4d5b70a7bc6f032a817a55bec45bab6d05bc3a334fbcd4fb711455b2",
+      "header": "030000001c000000000100008005000000010000400c0000"
+    },
+    {
+      "name": "st04b.msg",
+      "offset": 34202823,
+      "size": 3348,
+      "reserved": 0,
+      "compressed": 2444,
+      "sha256": "d658b3368e9512bb03517d732546f25c7de1bd4785ec14872fe8fdcc94b111fd",
+      "header": "030000001c000000000100004005000000010000740c0000"
+    },
+    {
+      "name": "st04c.msg",
+      "offset": 34205267,
+      "size": 3396,
+      "reserved": 0,
+      "compressed": 2525,
+      "sha256": "7f4d38998f844b186fc5530116e8564f3c105643734fcd6ff8a75fe61582a298",
+      "header": "030000001c000000000100008805000000010000a40c0000"
+    },
+    {
+      "name": "st04d.msg",
+      "offset": 34207792,
+      "size": 3188,
+      "reserved": 0,
+      "compressed": 2377,
+      "sha256": "5588678abbb8dd55adba01af358017ef987251d35c870d33f16a91272cb6dacb",
+      "header": "030000001c000000000100002c05000000010000d40b0000"
+    },
+    {
+      "name": "st04e.msg",
+      "offset": 34210169,
+      "size": 3388,
+      "reserved": 0,
+      "compressed": 2509,
+      "sha256": "9f71acb4ee9e7255e487ed8cb5aa84b78cfa3ccfa73bc8ea4d2581704523fb29",
+      "header": "030000001c0000000001000060050000000100009c0c0000"
+    },
+    {
+      "name": "st04f.msg",
+      "offset": 34212678,
+      "size": 3392,
+      "reserved": 0,
+      "compressed": 2525,
+      "sha256": "f0b5c357cae855ff570e80dcb79cb79728df81b9515c3759ac5818e009541c95",
+      "header": "030000001c000000000100007005000000010000a00c0000"
+    },
+    {
+      "name": "st04g.msg",
+      "offset": 34215203,
+      "size": 3356,
+      "reserved": 0,
+      "compressed": 2553,
+      "sha256": "1d602f92c9442d9d81575472ff8f6d146cd1d48c0d7ceba406ada7161a50a861",
+      "header": "030000001c00000000010000d8050000000100007c0c0000"
+    },
+    {
+      "name": "st04h.msg",
+      "offset": 34217756,
+      "size": 3120,
+      "reserved": 0,
+      "compressed": 2393,
+      "sha256": "0584d0f31f4abdb53d3510b6306146576be06bf3d67ef10acf8a6ad80c7b967b",
+      "header": "030000001c000000000100000406000000010000900b0000"
+    },
+    {
+      "name": "st04i.msg",
+      "offset": 34220149,
+      "size": 3160,
+      "reserved": 0,
+      "compressed": 2443,
+      "sha256": "71c705f9fb48e332444198c63ab540490c8cddadbba1775adcb9f6e49e8e2052",
+      "header": "030000001c000000000100009405000000010000b80b0000"
+    },
+    {
+      "name": "st05logo.anm",
+      "offset": 34222592,
+      "size": 362532,
+      "reserved": 0,
+      "compressed": 56878,
+      "sha256": "be8fe64038cf539e2e7859da2c8e3d0a514585adf3f0c7605ca72ae8563b75ca",
+      "header": "080000000400070000000002000105008800000000000000"
+    },
+    {
+      "name": "st05enm.anm",
+      "offset": 34279470,
+      "size": 7274504,
+      "reserved": 0,
+      "compressed": 2084694,
+      "sha256": "5ce34fdef4a3b0a55dd683d2e2bf142d3c1e6204e6185e3c6b9aed5123a81c79",
+      "header": "080000001c0006000000000200020100e000000000000000"
+    },
+    {
+      "name": "st05wl.anm",
+      "offset": 36364164,
+      "size": 2542188,
+      "reserved": 0,
+      "compressed": 960055,
+      "sha256": "31f68b09161c8087d161dd6ae2ea6f4a893d288fdc48ed11a6c54acd2b5769c6",
+      "header": "080000000500050000000002000205007c00000000000000"
+    },
+    {
+      "name": "st05.std",
+      "offset": 37324219,
+      "size": 6104,
+      "reserved": 0,
+      "compressed": 1635,
+      "sha256": "dace33ff2bec5b22a5a8fe5c2daf98d617725900c903f3990d94c3bf40f4cffc",
+      "header": "08006b00640d0000b41100000000000073743035776c2e61"
+    },
+    {
+      "name": "st05.ecl",
+      "offset": 37325854,
+      "size": 46276,
+      "reserved": 0,
+      "compressed": 8700,
+      "sha256": "c302e521655ab498aa408904e0e0164566373158bc8cc7406e3af494289917d1",
+      "header": "5343505401004c0024000000000000004c00000000000000"
+    },
+    {
+      "name": "st05bs.ecl",
+      "offset": 37334554,
+      "size": 38620,
+      "reserved": 0,
+      "compressed": 7169,
+      "sha256": "2934faa676594666a7a152c1ee0cde4a22a5abff212d181062f2bf54ca3edd3f",
+      "header": "534350540100100024000000000000001c00000000000000"
+    },
+    {
+      "name": "st05mbs.ecl",
+      "offset": 37341723,
+      "size": 5284,
+      "reserved": 0,
+      "compressed": 1429,
+      "sha256": "70e45fe1274e199f57606412b82678f7d19c42a7d6f3945619ed95603c322c4b",
+      "header": "534350540100100024000000000000000500000000000000"
+    },
+    {
+      "name": "st05a.msg",
+      "offset": 37343152,
+      "size": 3492,
+      "reserved": 0,
+      "compressed": 2503,
+      "sha256": "eb34a5036f1eef56cbed5f7e6b3fb5dc3821cc2eef942ad161ba7e930ea2a23a",
+      "header": "020000001400000000010000080800000001000000000a04"
+    },
+    {
+      "name": "st05b.msg",
+      "offset": 37345655,
+      "size": 3568,
+      "reserved": 0,
+      "compressed": 2557,
+      "sha256": "0eb48d26b6c50508e54195a20a8030ddc3ad7859f7a83fce0dae74e592abd9d9",
+      "header": "020000001400000000010000f80700000001000000000a04"
+    },
+    {
+      "name": "st05c.msg",
+      "offset": 37348212,
+      "size": 3396,
+      "reserved": 0,
+      "compressed": 2457,
+      "sha256": "bad908793d78168eec807e532a3a4c073f37300e4ac398034becbde64da9f256",
+      "header": "020000001400000000010000140800000001000000000a04"
+    },
+    {
+      "name": "st05d.msg",
+      "offset": 37350669,
+      "size": 3620,
+      "reserved": 0,
+      "compressed": 2603,
+      "sha256": "328264685ecfcca68e3953c1ffc8815eb7f230a9e23c0b8eaeb70f969281b6f4",
+      "header": "0200000014000000000100004c0800000001000000000a04"
+    },
+    {
+      "name": "st05e.msg",
+      "offset": 37353272,
+      "size": 3584,
+      "reserved": 0,
+      "compressed": 2570,
+      "sha256": "b0f62a58b5ed024815b1ddfcce54e44f62478c1dd1de2fcc0485ad1c8073340e",
+      "header": "0200000014000000000100003c0800000001000000000a04"
+    },
+    {
+      "name": "st05f.msg",
+      "offset": 37355842,
+      "size": 3428,
+      "reserved": 0,
+      "compressed": 2468,
+      "sha256": "54dcab40271626587600f0e15b4eabeb71b3838a07890fe4f9600763d4ee0c82",
+      "header": "020000001400000000010000580800000001000000000a04"
+    },
+    {
+      "name": "st05g.msg",
+      "offset": 37358310,
+      "size": 3344,
+      "reserved": 0,
+      "compressed": 2405,
+      "sha256": "524afc3db43942f065e229315c5696be2aceeed4926561c8d38d6ddf11470811",
+      "header": "0200000014000000000100005c0700000001000000000a04"
+    },
+    {
+      "name": "st05h.msg",
+      "offset": 37360715,
+      "size": 3376,
+      "reserved": 0,
+      "compressed": 2454,
+      "sha256": "64419568a6985768b38f17302f0ff10ea389375ba77beb31129f79da745323c7",
+      "header": "0200000014000000000100004c0700000001000000000a04"
+    },
+    {
+      "name": "st05i.msg",
+      "offset": 37363169,
+      "size": 3176,
+      "reserved": 0,
+      "compressed": 2294,
+      "sha256": "512509ee9422d1919370c43ea73ff4290a9c17e71b858a68f5f2ac36a5f2e80f",
+      "header": "020000001400000000010000680700000001000000000a04"
+    },
+    {
+      "name": "st06logo.anm",
+      "offset": 37365463,
+      "size": 362532,
+      "reserved": 0,
+      "compressed": 59047,
+      "sha256": "d183a58234479611a18bbb375f47c3908a1ee663384b5aaf9f1d43aafca46eaf",
+      "header": "080000000400070000000002000105008800000000000000"
+    },
+    {
+      "name": "st06enm.anm",
+      "offset": 37424510,
+      "size": 11613708,
+      "reserved": 0,
+      "compressed": 2860288,
+      "sha256": "b3109e222ff2cc510d4a031d7b879b1f89d27ece0f39f05ca8ea75d8cc72c753",
+      "header": "08000000190006000000000400040100d400000000000000"
+    },
+    {
+      "name": "st06wl.anm",
+      "offset": 40284798,
+      "size": 5328944,
+      "reserved": 0,
+      "compressed": 1802455,
+      "sha256": "0c7b5ae9ed6170ff4f66229006ab8918409812095cebd8af317d0c76e70a3adc",
+      "header": "080000000100010000000001000205004c00000000000000"
+    },
+    {
+      "name": "st06.std",
+      "offset": 42087253,
+      "size": 5836,
+      "reserved": 0,
+      "compressed": 1739,
+      "sha256": "b5ae1f453903478f02062086c3d5913d59c95f744e76ed7b0b83117e71e4d8d0",
+      "header": "08003e0078080000680a00000000000073743036776c2e61"
+    },
+    {
+      "name": "st06.ecl",
+      "offset": 42088992,
+      "size": 30856,
+      "reserved": 0,
+      "compressed": 6026,
+      "sha256": "f7c5bfd86dda09b541db359634010fd70509883a64df8593b7f0e8de6f08449b",
+      "header": "534350540100580024000000000000002e00000000000000"
+    },
+    {
+      "name": "st06bs.ecl",
+      "offset": 42095018,
+      "size": 66988,
+      "reserved": 0,
+      "compressed": 12646,
+      "sha256": "c931b6c239d344aa1da25ecba7f2c78b2210e6b038f5accd738005be80079a65",
+      "header": "534350540100100024000000000000002800000000000000"
+    },
+    {
+      "name": "st06mbs.ecl",
+      "offset": 42107664,
+      "size": 4832,
+      "reserved": 0,
+      "compressed": 1391,
+      "sha256": "6347a6168b0663b7c50f249d0c07af0af7d77a2260b99fbddd4b24d4e66fc454",
+      "header": "534350540100100024000000000000000500000000000000"
+    },
+    {
+      "name": "st06a.msg",
+      "offset": 42109055,
+      "size": 4344,
+      "reserved": 0,
+      "compressed": 3113,
+      "sha256": "797ff69a4b5c4e7079ed6efe5f1716761e9422e5692f127f0d9e2e5bc015549e",
+      "header": "040000002400000000010000400f000000010000600f0000"
+    },
+    {
+      "name": "st06b.msg",
+      "offset": 42112168,
+      "size": 4516,
+      "reserved": 0,
+      "compressed": 3247,
+      "sha256": "3e4a16b3f693827abbacd7df0273eca948b1c069943f6ab9088c6dd32685e101",
+      "header": "040000002400000000010000ec0f0000000100000c100000"
+    },
+    {
+      "name": "st06c.msg",
+      "offset": 42115415,
+      "size": 5100,
+      "reserved": 0,
+      "compressed": 3679,
+      "sha256": "8cffa289cfadba815c41996a6d2ec0dea50d524009f6a2360483cd1f6b82a279",
+      "header": "040000002400000000010000341200000001000054120000"
+    },
+    {
+      "name": "st06d.msg",
+      "offset": 42119094,
+      "size": 4476,
+      "reserved": 0,
+      "compressed": 3176,
+      "sha256": "9cfd41ef4c2ad22b33d9d6f8ec3aeaea3030e412e28d19ac69b9c61afce867d7",
+      "header": "040000002400000000010000c40f000000010000e40f0000"
+    },
+    {
+      "name": "st06e.msg",
+      "offset": 42122270,
+      "size": 4596,
+      "reserved": 0,
+      "compressed": 3294,
+      "sha256": "4f6033033be57fdbc326bd91d7fc3ee0088a8d3b07d44bd63a1c8e0ba64cec1e",
+      "header": "0400000024000000000100003c100000000100005c100000"
+    },
+    {
+      "name": "st06f.msg",
+      "offset": 42125564,
+      "size": 5120,
+      "reserved": 0,
+      "compressed": 3618,
+      "sha256": "2a09b312b8a5286626fae16f2f7f023a835513c49aee526288fc528465dca73d",
+      "header": "040000002400000000010000481200000001000068120000"
+    },
+    {
+      "name": "st06g.msg",
+      "offset": 42129182,
+      "size": 4308,
+      "reserved": 0,
+      "compressed": 3062,
+      "sha256": "80e070473d8a2625ca9d7e4ea9e2c70922002b93f54eb12fd743630963061700",
+      "header": "0400000024000000000100001c0f0000000100003c0f0000"
+    },
+    {
+      "name": "st06h.msg",
+      "offset": 42132244,
+      "size": 4468,
+      "reserved": 0,
+      "compressed": 3262,
+      "sha256": "5cb4e8d9abff132d57dea39fab7fba7b00010ddd5d30fb5b01ce7a0ded2dd18b",
+      "header": "040000002400000000010000bc0f000000010000dc0f0000"
+    },
+    {
+      "name": "st06i.msg",
+      "offset": 42135506,
+      "size": 5316,
+      "reserved": 0,
+      "compressed": 3807,
+      "sha256": "dcf7423544cf9e27e52ac5f401520fdd5f6cbb37db938fef46705d4556fc5fc2",
+      "header": "0400000024000000000100000c130000000100002c130000"
+    },
+    {
+      "name": "st07logo.anm",
+      "offset": 42139313,
+      "size": 362532,
+      "reserved": 0,
+      "compressed": 63698,
+      "sha256": "1dc0703d37408e843e2ec0f8f4662d38d2250c4f93d78825c8dddfc9f2036fef",
+      "header": "080000000400070000000002000105008800000000000000"
+    },
+    {
+      "name": "st07enm.anm",
+      "offset": 42203011,
+      "size": 12287076,
+      "reserved": 0,
+      "compressed": 2796962,
+      "sha256": "0724cb6d31e8859ab5769e86090bf2eca522a17a063064dba0e7b57e59bcd1b5",
+      "header": "080000000f0007000000000200040100b400000000000000"
+    },
+    {
+      "name": "st07enm2.anm",
+      "offset": 44999973,
+      "size": 5410660,
+      "reserved": 0,
+      "compressed": 1503799,
+      "sha256": "2d4e16b245734557d76a597798192d28feb47882a07a131b27b89902d8fbd6da",
+      "header": "080000002a00070000000002000201002001000000000000"
+    },
+    {
+      "name": "st07wl.anm",
+      "offset": 46503772,
+      "size": 1077392,
+      "reserved": 0,
+      "compressed": 375518,
+      "sha256": "8f299dd4237d6ddde68db80897a8fde560807f48340ce838a38178632ebdcb4d",
+      "header": "080000000100010000000002000205004c00000000000000"
+    },
+    {
+      "name": "st07.std",
+      "offset": 46879290,
+      "size": 5868,
+      "reserved": 0,
+      "compressed": 1613,
+      "sha256": "f4f5217a7558a41a2e6cf9810dc5c65626d40cdda8b3df8dbb818a77f80e8337",
+      "header": "08001a0088040000d80a00000000000073743037776c2e61"
+    },
+    {
+      "name": "st07.ecl",
+      "offset": 46880903,
+      "size": 43564,
+      "reserved": 0,
+      "compressed": 8239,
+      "sha256": "6f38c7b45fc83c2d4defbc4caac25387a3d28f3ebd705c3a3ff5fdd9ce918564",
+      "header": "534350540100580024000000000000005200000000000000"
+    },
+    {
+      "name": "st07bs.ecl",
+      "offset": 46889142,
+      "size": 71184,
+      "reserved": 0,
+      "compressed": 13289,
+      "sha256": "a32077cc3b756cf7d1c1798422ea8fbd53f60b1c74580f271e31919ca1484510",
+      "header": "534350540100100024000000000000004a00000000000000"
+    },
+    {
+      "name": "st07mbs.ecl",
+      "offset": 46902431,
+      "size": 19208,
+      "reserved": 0,
+      "compressed": 4148,
+      "sha256": "3d57e41d3e62fc52e951d5f2b48b1bd9813e1c82a23fbd960d8320b504b52a21",
+      "header": "534350540100100024000000000000001500000000000000"
+    },
+    {
+      "name": "st07a.msg",
+      "offset": 46906579,
+      "size": 5220,
+      "reserved": 0,
+      "compressed": 3754,
+      "sha256": "88ae2c086551d6ec92edc7c987f6b9d5d8dc5e6a297f4337bc78707052389899",
+      "header": "030000001c00000000010000dc0b000000010000d0120000"
+    },
+    {
+      "name": "st07b.msg",
+      "offset": 46910333,
+      "size": 5432,
+      "reserved": 0,
+      "compressed": 3937,
+      "sha256": "103dc4733a0241a7d88f5096b9024c29def616746dd19f4893092f188c62f56b",
+      "header": "030000001c00000000010000180d000000010000a4130000"
+    },
+    {
+      "name": "st07c.msg",
+      "offset": 46914270,
+      "size": 5464,
+      "reserved": 0,
+      "compressed": 3986,
+      "sha256": "72eb26959e9fbf2498953fdb057e74b00bd3e7125cc0467a2eaae30bfacd18b3",
+      "header": "030000001c00000000010000240d000000010000c4130000"
+    },
+    {
+      "name": "st07d.msg",
+      "offset": 46918256,
+      "size": 5752,
+      "reserved": 0,
+      "compressed": 4177,
+      "sha256": "dbb12af477c7652b4749f4276757eea6f9e6f70fded1396cc0628e6ec68871f7",
+      "header": "030000001c00000000010000dc0b000000010000e4140000"
+    },
+    {
+      "name": "st07e.msg",
+      "offset": 46922433,
+      "size": 5344,
+      "reserved": 0,
+      "compressed": 3930,
+      "sha256": "f444ca5f2044abde94a2ff7cb34a5cbbdd804a6062a9298e757a140f166dab97",
+      "header": "030000001c00000000010000d80c0000000100004c130000"
+    },
+    {
+      "name": "st07f.msg",
+      "offset": 46926363,
+      "size": 5168,
+      "reserved": 0,
+      "compressed": 3799,
+      "sha256": "ce347931df2d9c2ea2916584eacc1261ee3b8af3677089c6c2c42fba9fbeda04",
+      "header": "030000001c00000000010000c80c0000000100009c120000"
+    },
+    {
+      "name": "st07g.msg",
+      "offset": 46930162,
+      "size": 5016,
+      "reserved": 0,
+      "compressed": 3580,
+      "sha256": "1843625828a5c3e7ddcfb5201d0971a4ba9b7194e00e2b479d9b0d10a002e807",
+      "header": "030000001c00000000010000c00b00000001000004120000"
+    },
+    {
+      "name": "st07h.msg",
+      "offset": 46933742,
+      "size": 5360,
+      "reserved": 0,
+      "compressed": 3877,
+      "sha256": "fd4ecbd0daad20c70ef1f128daba1a81a4dcfdc21d70e906a8c0e2d2597e1108",
+      "header": "030000001c00000000010000100d0000000100005c130000"
+    },
+    {
+      "name": "st07i.msg",
+      "offset": 46937619,
+      "size": 5668,
+      "reserved": 0,
+      "compressed": 4155,
+      "sha256": "0b5f99edd60636efde56bd3b783031d7b0738855eab4b927984260b09938583e",
+      "header": "030000001c00000000010000000d00000001000090140000"
+    },
+    {
+      "name": "e01.anm",
+      "offset": 46941774,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1469324,
+      "sha256": "ce1201ca71916ed069a2f4f9b6ec2034c09a59bd10c0271ed780c0779178c6c9",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e02.anm",
+      "offset": 48411098,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1484394,
+      "sha256": "f72e0f9791db6df3befa93a03b022bbc53ff983050ac0ecada3fb768ef330def",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e03.anm",
+      "offset": 49895492,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1551217,
+      "sha256": "bfe9c3f3be1d76fbfc6ed176583667838a310452e578c33f4e178289ebcdec70",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e04.anm",
+      "offset": 51446709,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1544105,
+      "sha256": "81b96b885f2096077de051875a1e2c3ea5688abb35707fb6a6ddd66ce8f7958e",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e05.anm",
+      "offset": 52990814,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1594225,
+      "sha256": "b3eb0241534d92ce5be8fe0fc9cac6e0f6b68b14fd41054532b6460eef087d8b",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e06.anm",
+      "offset": 54585039,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1595450,
+      "sha256": "745848e63d214771af61efb6ee99995d89b0b425b6222eb32afc0c5c507fc525",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e07.anm",
+      "offset": 56180489,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1556862,
+      "sha256": "f877760df98200a3d8c867b475a59fa182547f3b886ba5b6c59fc7b1ea59faef",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e08.anm",
+      "offset": 57737351,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1580659,
+      "sha256": "1bd2dd2824b8e7d056d66487acb930004f7218e94a79adcca2a3807c242f470d",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e09.anm",
+      "offset": 59318010,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1452185,
+      "sha256": "c9a0f769e3d48b58c9f8db90ded9048b67a3db4c1e0f4ca6325c51c96cdb4014",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "e10.anm",
+      "offset": 60770195,
+      "size": 2458260,
+      "reserved": 0,
+      "compressed": 474036,
+      "sha256": "4dcae902aa2488806cbd16a88264892fa5c08c8bee3fa78886119b6277a9e273",
+      "header": "080000000100020000000004000403005400000000000000"
+    },
+    {
+      "name": "e11.anm",
+      "offset": 61244231,
+      "size": 2458292,
+      "reserved": 0,
+      "compressed": 485539,
+      "sha256": "d1ec1af9968701f8a264d690477878f4e95e1fee64d343dd03bb4cd0c85be309",
+      "header": "080000000100020000000004000403005400000000000000"
+    },
+    {
+      "name": "e12.anm",
+      "offset": 61729770,
+      "size": 2458292,
+      "reserved": 0,
+      "compressed": 485536,
+      "sha256": "caeb0d4e7f79f26722bce221b934d5184edada16cf2418b29c433389540a4a95",
+      "header": "080000000100020000000004000403005400000000000000"
+    },
+    {
+      "name": "e01.anm",
+      "offset": 62215306,
+      "size": 7374812,
+      "reserved": 0,
+      "compressed": 1469324,
+      "sha256": "ce1201ca71916ed069a2f4f9b6ec2034c09a59bd10c0271ed780c0779178c6c9",
+      "header": "080000000100040000000004000403006400000000000000"
+    },
+    {
+      "name": "staff.anm",
+      "offset": 63684630,
+      "size": 14186108,
+      "reserved": 0,
+      "compressed": 7987010,
+      "sha256": "4e67efecd50b21e151f11718a1b6aea1ca4f1f7b95e39a01ed145bfc3a88ad98",
+      "header": "080000000100020000000010000401005400000000000000"
+    },
+    {
+      "name": "e01.msg",
+      "offset": 71671640,
+      "size": 2112,
+      "reserved": 0,
+      "compressed": 1825,
+      "sha256": "752a1b340d4ae6b029dbbf877d432cd48e2d46790ff925d95bb8e645dfb4d5c4",
+      "header": "010000000c000000000100000000070c000000006530312e"
+    },
+    {
+      "name": "e02.msg",
+      "offset": 71673465,
+      "size": 2260,
+      "reserved": 0,
+      "compressed": 1959,
+      "sha256": "42f97daa76a560df19d8ad9a04061de830a7268ab5e3d209b8fb3e6f76c0a46d",
+      "header": "010000000c000000000100000000070c000000006530322e"
+    },
+    {
+      "name": "e03.msg",
+      "offset": 71675424,
+      "size": 1728,
+      "reserved": 0,
+      "compressed": 1485,
+      "sha256": "3bd316a63952b766433f5a0d8edf41f91b14d34a2bd5a120c6222f3f4ab19f53",
+      "header": "010000000c000000000100000000070c000000006530332e"
+    },
+    {
+      "name": "e04.msg",
+      "offset": 71676909,
+      "size": 1576,
+      "reserved": 0,
+      "compressed": 1399,
+      "sha256": "114458016bc2da5c6207464063d30f275371e05fe1e8d08868a98a645adf8e56",
+      "header": "010000000c000000000100000000070c000000006530342e"
+    },
+    {
+      "name": "e05.msg",
+      "offset": 71678308,
+      "size": 1660,
+      "reserved": 0,
+      "compressed": 1445,
+      "sha256": "caed225ed1552f0b4522cd5d09a4a4df3187eb06c55ef6e1ba466ce92077c113",
+      "header": "010000000c000000000100000000070c000000006530352e"
+    },
+    {
+      "name": "e06.msg",
+      "offset": 71679753,
+      "size": 1604,
+      "reserved": 0,
+      "compressed": 1397,
+      "sha256": "8e52a7c940ac5c7ef9c82f917b2f5cbde1edaf24caf14111200003708116b9ca",
+      "header": "010000000c000000000100000000070c000000006530362e"
+    },
+    {
+      "name": "e07.msg",
+      "offset": 71681150,
+      "size": 1912,
+      "reserved": 0,
+      "compressed": 1629,
+      "sha256": "7c539839a9c6985941eda918bbcb6179d6b294ef4734986af74b57f286606c14",
+      "header": "010000000c000000000100000000070c000000006530372e"
+    },
+    {
+      "name": "e08.msg",
+      "offset": 71682779,
+      "size": 2176,
+      "reserved": 0,
+      "compressed": 1842,
+      "sha256": "83fb108a608ede26d0a37183c50e43fecc2dd516a6bb530d32a6d3fff8b8d2ce",
+      "header": "010000000c000000000100000000070c000000006530382e"
+    },
+    {
+      "name": "e09.msg",
+      "offset": 71684621,
+      "size": 1768,
+      "reserved": 0,
+      "compressed": 1493,
+      "sha256": "a9287a157e0541fa21798385df90021eb1984e447d0833c8a9c817e431a49f07",
+      "header": "010000000c000000000100000000070c000000006530392e"
+    },
+    {
+      "name": "e10.msg",
+      "offset": 71686114,
+      "size": 872,
+      "reserved": 0,
+      "compressed": 774,
+      "sha256": "02b5839418e54f402280ff9665e9336a7e1831edd34ee8bc1ac05231a39c211c",
+      "header": "010000000c000000000100000000070c000000006531302e"
+    },
+    {
+      "name": "e11.msg",
+      "offset": 71686888,
+      "size": 900,
+      "reserved": 0,
+      "compressed": 817,
+      "sha256": "bf0724de1fe43028511d7b488f12d967a15862450d3595c289be864fb843d89f",
+      "header": "010000000c000000000100000000070c000000006531302e"
+    },
+    {
+      "name": "e12.msg",
+      "offset": 71687705,
+      "size": 884,
+      "reserved": 0,
+      "compressed": 776,
+      "sha256": "42b1538381d9a18da9ad5bb91706c06d554ea6c0b4930297cb0243ab4d2c3779",
+      "header": "010000000c000000000100000000070c000000006531302e"
+    },
+    {
+      "name": "staff1.msg",
+      "offset": 71688481,
+      "size": 252,
+      "reserved": 0,
+      "compressed": 175,
+      "sha256": "08da5c44e5c77daa60d329167a381be7dca12e43688c960dbe01f11f59f7ec35",
+      "header": "010000000c00000000010000000007100000000073746166"
+    },
+    {
+      "name": "staff2.msg",
+      "offset": 71688656,
+      "size": 252,
+      "reserved": 0,
+      "compressed": 175,
+      "sha256": "97677cc3126a05bcac5cfe06acd83b954d9a594c0710c19253aa6cf06a3121a3",
+      "header": "010000000c00000000010000000007100000000073746166"
+    },
+    {
+      "name": "staff3.msg",
+      "offset": 71688831,
+      "size": 252,
+      "reserved": 0,
+      "compressed": 175,
+      "sha256": "a0d50cdb513e68659ad4ab09bee85a04b9dcb9c7c8b466786870fb9bff9ae6b9",
+      "header": "010000000c00000000010000000007100000000073746166"
+    },
+    {
+      "name": "staff4.msg",
+      "offset": 71689006,
+      "size": 252,
+      "reserved": 0,
+      "compressed": 173,
+      "sha256": "9fe1a73aa2801b73c55f28396e86bb614a3ab45feb2eb7fef6a4a155096c901f",
+      "header": "010000000c00000000010000000007100000000073746166"
+    },
+    {
+      "name": "help_01.png",
+      "offset": 71689179,
+      "size": 137873,
+      "reserved": 0,
+      "compressed": 127719,
+      "sha256": "8757e6e712043f434a2098721198bcd55a4bc5ca701f8c9efffe5be2e54af639",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_02.png",
+      "offset": 71816898,
+      "size": 365921,
+      "reserved": 0,
+      "compressed": 365921,
+      "sha256": "fd0567bf2dfc0cee9d84171f4b3a290236d4938e13966d55ca90b13d82f74fb3",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_03.png",
+      "offset": 72182819,
+      "size": 193767,
+      "reserved": 0,
+      "compressed": 193767,
+      "sha256": "15e60b27a395db0384ecb1ab364e8d09af346aff822c08c173c35093c8c1e45a",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_04.png",
+      "offset": 72376586,
+      "size": 169214,
+      "reserved": 0,
+      "compressed": 169214,
+      "sha256": "11de02039ca7686cbd354bddbaa0b6df0d170cd100591ee25f372ccc9aa27712",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_05.png",
+      "offset": 72545800,
+      "size": 245704,
+      "reserved": 0,
+      "compressed": 245704,
+      "sha256": "e9e0f9029ca437c2c62b029cc9ffb5aecf22434c57ebc7b87fc8ea8f04db4908",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_06.png",
+      "offset": 72791504,
+      "size": 321407,
+      "reserved": 0,
+      "compressed": 321407,
+      "sha256": "8b6cb055d1efdb0c8478a7be4092a59654392e38c2029e436a3ed5b4409f4356",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_07.png",
+      "offset": 73112911,
+      "size": 268627,
+      "reserved": 0,
+      "compressed": 268627,
+      "sha256": "e725aa39967a458358f37483aef2b1e7f7c97a5edddabbc0d0c79213ef4a439f",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_08.png",
+      "offset": 73381538,
+      "size": 333649,
+      "reserved": 0,
+      "compressed": 333649,
+      "sha256": "8847fc3a650b06918b82127da1e174146ca1c783b93beac692ede87c31d0b6ec",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "help_09.png",
+      "offset": 73715187,
+      "size": 332579,
+      "reserved": 0,
+      "compressed": 332579,
+      "sha256": "3b9131dbd64335158ec5bac30fe88edc6d92a47dfa230b8d6b62213068219178",
+      "header": "89504e470d0a1a0a0000000d494844520000040000000400"
+    },
+    {
+      "name": "se_plst00.wav",
+      "offset": 74047766,
+      "size": 3596,
+      "reserved": 0,
+      "compressed": 3596,
+      "sha256": "3af00e5bc936626bb52cc14b472ca726269a30ab5a6d44d482437fc0611c233f",
+      "header": "52494646040e000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_enep00.wav",
+      "offset": 74051362,
+      "size": 228474,
+      "reserved": 0,
+      "compressed": 228474,
+      "sha256": "4aab7ce3774ee93026515d1859671bad91d6ea3b1cacfc9cd45d9c0cb2dca6d7",
+      "header": "52494646727c030057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_pldead00.wav",
+      "offset": 74279836,
+      "size": 60852,
+      "reserved": 0,
+      "compressed": 60852,
+      "sha256": "571c1272aa9ea1d82779f897021226959888f6a915a7b20fdab59de3af6df2b8",
+      "header": "52494646aced000057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_power0.wav",
+      "offset": 74340688,
+      "size": 88052,
+      "reserved": 0,
+      "compressed": 88052,
+      "sha256": "6aa7237c5fe2f69e420a7397d0e95e3e5f662091640822d8957df6236f6cf3bf",
+      "header": "52494646ec57010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_power1.wav",
+      "offset": 74428740,
+      "size": 30412,
+      "reserved": 0,
+      "compressed": 28399,
+      "sha256": "0817535be3608754e065b289753fcd7a7cb7f5b0591e2888dd95afb4d259556e",
+      "header": "52494646c476000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_tan00.wav",
+      "offset": 74457139,
+      "size": 15100,
+      "reserved": 0,
+      "compressed": 13509,
+      "sha256": "f29bffaef4186fb2ba2bf8d1ecbe1c689f036bb9d742606465268229686da87e",
+      "header": "52494646f43a000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_tan01.wav",
+      "offset": 74470648,
+      "size": 15100,
+      "reserved": 0,
+      "compressed": 11326,
+      "sha256": "50579bd19596b5dd0258e63a3c27b395d0c75ad9a5a1eb5f9ca612e89a26ead6",
+      "header": "52494646f43a000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_tan02.wav",
+      "offset": 74481974,
+      "size": 11708,
+      "reserved": 0,
+      "compressed": 9314,
+      "sha256": "790d9c5759912489aa2ad94c9df25a08f999ea2fb40dde2e7a370f866c8645f0",
+      "header": "52494646b42d000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_ok00.wav",
+      "offset": 74491288,
+      "size": 10876,
+      "reserved": 0,
+      "compressed": 9301,
+      "sha256": "78ca9f9fdfe69ff24581c8c2a3c226e5b62eff175330f9bef25a49b490e46815",
+      "header": "52494646742a000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_cancel00.wav",
+      "offset": 74500589,
+      "size": 13652,
+      "reserved": 0,
+      "compressed": 11535,
+      "sha256": "ca2ea7b33553c10458a943303ee90a8fb8bd24f483f92903e6612fe753d45294",
+      "header": "524946464c35000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_select00.wav",
+      "offset": 74512124,
+      "size": 1146,
+      "reserved": 0,
+      "compressed": 1146,
+      "sha256": "3e4face4547ffde93b387e5d64183179d718a1c4ebff1c34fc98f94c945592a3",
+      "header": "524946467204000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_gun00.wav",
+      "offset": 74513270,
+      "size": 134694,
+      "reserved": 0,
+      "compressed": 96840,
+      "sha256": "08b2ef872dcf04ce23f12559399640d3064283cf33f69b4b02b6490a557a9a0e",
+      "header": "524946461e0e020057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_cat00.wav",
+      "offset": 74610110,
+      "size": 84260,
+      "reserved": 0,
+      "compressed": 84260,
+      "sha256": "2ce7c84a41a87b94980b3076b6060e325a8a4f4e97f7024836e0689197a99123",
+      "header": "524946461c49010057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_lazer00.wav",
+      "offset": 74694370,
+      "size": 22182,
+      "reserved": 0,
+      "compressed": 22182,
+      "sha256": "d9a3c2a404a1ca06c344c8efe5f8a912dc5c1265ce6ddd653d14a92d6d0aa9f7",
+      "header": "524946469e56000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_lazer01.wav",
+      "offset": 74716552,
+      "size": 24182,
+      "reserved": 0,
+      "compressed": 21578,
+      "sha256": "21c5c1d0eb8635564a4cc620a3c0437b8042c3b2f4723322d3ba7b7afa8ccaab",
+      "header": "524946466e5e000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_enep01.wav",
+      "offset": 74738130,
+      "size": 230300,
+      "reserved": 0,
+      "compressed": 204088,
+      "sha256": "4f24499e56320d672061076a3e63b0a0466c82baf83974ea3f8f84420096521a",
+      "header": "524946469483030057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_damage00.wav",
+      "offset": 74942218,
+      "size": 6772,
+      "reserved": 0,
+      "compressed": 6772,
+      "sha256": "65005a55fc76953ae5953a158a9cf3ef8970bf69552328ebbc9f2d073db1a8f6",
+      "header": "524946466c1a000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_item00.wav",
+      "offset": 74948990,
+      "size": 7378,
+      "reserved": 0,
+      "compressed": 4693,
+      "sha256": "4368fac39524f00236c476feab41084c95bba5cb8c5496af538cee8cd9551e50",
+      "header": "52494646ca1c000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_kira00.wav",
+      "offset": 74953683,
+      "size": 35222,
+      "reserved": 0,
+      "compressed": 23949,
+      "sha256": "3e00ab7cef811a3ee71252a4968183750a558e04a873f81f451477edd8a61666",
+      "header": "524946468e89000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_kira01.wav",
+      "offset": 74977632,
+      "size": 21940,
+      "reserved": 0,
+      "compressed": 20552,
+      "sha256": "efc36ce49509bdadf4e8587f71b54f6162c8516091ca84c100fee2f8816ef632",
+      "header": "52494646ac55000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_kira02.wav",
+      "offset": 74998184,
+      "size": 25782,
+      "reserved": 0,
+      "compressed": 25782,
+      "sha256": "e4399c45fa320195b97279378a10223801559294d1b2c91bf0ad0d7f6981516d",
+      "header": "52494646ae64000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_timeout.wav",
+      "offset": 75023966,
+      "size": 19390,
+      "reserved": 0,
+      "compressed": 19390,
+      "sha256": "b96ffd1f914d0e1597b04189ca2044a06378e53c91d18dfbcbc947a4a2dde21f",
+      "header": "52494646b64b000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_graze.wav",
+      "offset": 75043356,
+      "size": 4542,
+      "reserved": 0,
+      "compressed": 4542,
+      "sha256": "cca0bb46e2936548e582ebd94c995174f3a565839f32ac2950bba9459b1499e9",
+      "header": "52494646b611000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_powerup.wav",
+      "offset": 75047898,
+      "size": 367106,
+      "reserved": 0,
+      "compressed": 367106,
+      "sha256": "8f371aa483160793834df66f54e978d6ff4812b619b72f4eb9e6f94b4abe2016",
+      "header": "52494646fa99050057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_pause.wav",
+      "offset": 75415004,
+      "size": 133676,
+      "reserved": 0,
+      "compressed": 133676,
+      "sha256": "5d69f408049765fb1e4c3361b5dd8e49e646adba63767b7995cdf9dd7625f235",
+      "header": "52494646240a020057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_cardget.wav",
+      "offset": 75548680,
+      "size": 222864,
+      "reserved": 0,
+      "compressed": 222864,
+      "sha256": "825b2e9657219a3800add15dde3346ba95455c10e55fa7953b5c547816ac96ab",
+      "header": "524946468866030057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_damage01.wav",
+      "offset": 75771544,
+      "size": 27028,
+      "reserved": 0,
+      "compressed": 27028,
+      "sha256": "ea007e46843e724aed7454be86229f6b00b97c9a5464a58bd7d3c364f80254a8",
+      "header": "524946468c69000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_timeout2.wav",
+      "offset": 75798572,
+      "size": 19388,
+      "reserved": 0,
+      "compressed": 19388,
+      "sha256": "7223e92514a21ea2ca7a5a99f715afaa4b9d324de0db7f081b6046eb6ce600c2",
+      "header": "52494646b44b000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_invalid.wav",
+      "offset": 75817960,
+      "size": 62950,
+      "reserved": 0,
+      "compressed": 62950,
+      "sha256": "e747b6b52e036fc1e6141da79eaeefecb0bd1dee555aa6a7cf50d77de252c967",
+      "header": "52494646def5000057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_slash.wav",
+      "offset": 75880910,
+      "size": 54782,
+      "reserved": 0,
+      "compressed": 54782,
+      "sha256": "0b81607ea9f2f7edd72cd92114548ee3f075c834c0ec3451062dd382501e806a",
+      "header": "52494646f6d5000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_ch00.wav",
+      "offset": 75935692,
+      "size": 87564,
+      "reserved": 0,
+      "compressed": 87564,
+      "sha256": "a62988fcb445777ed15a36ce28eee1c9f8542adaebd5bd1c87ff4550c9816128",
+      "header": "524946460456010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_ch01.wav",
+      "offset": 76023256,
+      "size": 60286,
+      "reserved": 0,
+      "compressed": 60286,
+      "sha256": "b00a682f3099cb8ba8f2e2861c607167de7015e447749ee9ed13c64c958eadc7",
+      "header": "5249464676eb000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_extend.wav",
+      "offset": 76083542,
+      "size": 70188,
+      "reserved": 0,
+      "compressed": 64222,
+      "sha256": "1cf15b01b3480309c6e469ffe1aa80f1aa36b3b34de3535260190e0fb7c9b722",
+      "header": "524946462412010057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_cardget.wav",
+      "offset": 76147764,
+      "size": 222864,
+      "reserved": 0,
+      "compressed": 222864,
+      "sha256": "825b2e9657219a3800add15dde3346ba95455c10e55fa7953b5c547816ac96ab",
+      "header": "524946468866030057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_nep00.wav",
+      "offset": 76370628,
+      "size": 224926,
+      "reserved": 0,
+      "compressed": 224926,
+      "sha256": "2a7560aa679941c48b992bec677cb2420379171850efc9f8a07959d702afe023",
+      "header": "52494646966e030057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_bonus.wav",
+      "offset": 76595554,
+      "size": 45336,
+      "reserved": 0,
+      "compressed": 45336,
+      "sha256": "c40a1c57b3d73c75e1a508884bee3ce472508a7f9a6af60db8ac6eec7d0c1da3",
+      "header": "5249464610b1000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_bonus2.wav",
+      "offset": 76640890,
+      "size": 45336,
+      "reserved": 0,
+      "compressed": 45336,
+      "sha256": "d7943c70dba49574e45f66f1ed697000b66288e791834cd82b6527270c03e985",
+      "header": "5249464610b1000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_enep02.wav",
+      "offset": 76686226,
+      "size": 232708,
+      "reserved": 0,
+      "compressed": 232708,
+      "sha256": "9ac545959d56ad995220007eb90a82b3cabd3d73ef18846d3c4d5d547a7bf362",
+      "header": "52494646fc8c030057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_lazer02.wav",
+      "offset": 76918934,
+      "size": 17768,
+      "reserved": 0,
+      "compressed": 17768,
+      "sha256": "f1b20302842b7ecd31d1094d65d73a1686386a37e102ae09aeb5b4079c206a07",
+      "header": "524946466045000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_nodamage.wav",
+      "offset": 76936702,
+      "size": 13358,
+      "reserved": 0,
+      "compressed": 13358,
+      "sha256": "8d19805532f902a87efb95c944957e8bad7406917e26a03cdf6a656b3d5a7c67",
+      "header": "524946462634000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_boon00.wav",
+      "offset": 76950060,
+      "size": 35408,
+      "reserved": 0,
+      "compressed": 35408,
+      "sha256": "c957004db6a32b3cb965631a2fa9f599b8bbe9881774aa227f597f183000a050",
+      "header": "52494646488a000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_don00.wav",
+      "offset": 76985468,
+      "size": 142782,
+      "reserved": 0,
+      "compressed": 142782,
+      "sha256": "096a573464381647330372815b3697221eb44b3a27cf6ac19a1d4e3f79d4bc9e",
+      "header": "52494646b62d020057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_boon01.wav",
+      "offset": 77128250,
+      "size": 142782,
+      "reserved": 0,
+      "compressed": 142782,
+      "sha256": "860f9041b48d95ed867261495c31ad094c4c26b25b2132b65a76b637822e6dda",
+      "header": "52494646b62d020057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_ch02.wav",
+      "offset": 77271032,
+      "size": 44314,
+      "reserved": 0,
+      "compressed": 44314,
+      "sha256": "c07f1381ee5ab35a118d130a66ee79c265cb39b13879d532f8feb72e061acfad",
+      "header": "5249464612ad000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_ch03.wav",
+      "offset": 77315346,
+      "size": 26590,
+      "reserved": 0,
+      "compressed": 26590,
+      "sha256": "59d31683dc8dcbbcc1f02e96b774d5b48dbe49ac20ee5a1030d9684f5e21edd3",
+      "header": "52494646d667000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_extend2.wav",
+      "offset": 77341936,
+      "size": 27674,
+      "reserved": 0,
+      "compressed": 18031,
+      "sha256": "f3d1c6f737e0d52141750b2d124e52fe3110a1b2d277b6a68f3a1aca4040a16b",
+      "header": "52494646126c000057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_pin00.wav",
+      "offset": 77359967,
+      "size": 35410,
+      "reserved": 0,
+      "compressed": 35410,
+      "sha256": "99ddb5329f5f825a8a32dfff743274ca20cc851cd904cb2f36f4ec0b1e18b8ff",
+      "header": "524946464a8a000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_pin01.wav",
+      "offset": 77395377,
+      "size": 125670,
+      "reserved": 0,
+      "compressed": 125670,
+      "sha256": "78af4f8bf3e3cfa220e0b14f8993f8634f2df4952538d89f3627260f98323872",
+      "header": "52494646deea010057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_lgods1.wav",
+      "offset": 77521047,
+      "size": 83320,
+      "reserved": 0,
+      "compressed": 83320,
+      "sha256": "0d84ee836dcdd1af7bef61070cbb2f2d448c788cbbfaf40af10716d049a6a2e2",
+      "header": "524946467045010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_lgods2.wav",
+      "offset": 77604367,
+      "size": 62420,
+      "reserved": 0,
+      "compressed": 62420,
+      "sha256": "988be1a9b6e9fe5b0e46fd8f6069daab554fe6106f55b646060f01f1eefc9706",
+      "header": "52494646ccf3000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_lgods3.wav",
+      "offset": 77666787,
+      "size": 41870,
+      "reserved": 0,
+      "compressed": 41870,
+      "sha256": "f622c7cf49059a701a6489b3997693baaf1e8a27fa74e27ed0f94f0a5a4306e9",
+      "header": "5249464686a3000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_lgods4.wav",
+      "offset": 77708657,
+      "size": 31602,
+      "reserved": 0,
+      "compressed": 31602,
+      "sha256": "bf2c94190a91c991635ca01a6e683eeb67df3a5d0fcfbb5ac7e84b43b14095b0",
+      "header": "524946466a7b000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_lgodsget.wav",
+      "offset": 77740259,
+      "size": 44300,
+      "reserved": 0,
+      "compressed": 44300,
+      "sha256": "d3bccd38c3aa40fed7954ecd46dd68f54c518053b8f8e8bee21c03ed2dc2b209",
+      "header": "5249464604ad000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_msl.wav",
+      "offset": 77784559,
+      "size": 3258,
+      "reserved": 0,
+      "compressed": 2828,
+      "sha256": "e0dd89c26fa2d59c066d5e5905360152ff08fa336c9de8b7d18bdb0b4271fa0e",
+      "header": "52494646b20c000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_msl2.wav",
+      "offset": 77787387,
+      "size": 93220,
+      "reserved": 0,
+      "compressed": 93220,
+      "sha256": "ed72ab58e7cd763f993240d986b4ace83afddb0f1278ca6e42cff348e673c67c",
+      "header": "524946461c6c010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_pldead01.wav",
+      "offset": 77880607,
+      "size": 150900,
+      "reserved": 0,
+      "compressed": 150900,
+      "sha256": "c6d0234aaf8e9ddc7e4dce892aed0f4c67387b33585514036aad534b8375f453",
+      "header": "524946466c4d020057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_heal.wav",
+      "offset": 78031507,
+      "size": 42480,
+      "reserved": 0,
+      "compressed": 42480,
+      "sha256": "f7f055bd410ff80fe3ec0a87a13abcb0bd8f433a5eb62e456d2f16d08cee0957",
+      "header": "52494646e8a5000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_msl3.wav",
+      "offset": 78073987,
+      "size": 78360,
+      "reserved": 0,
+      "compressed": 78360,
+      "sha256": "1bf92a8263f1bfbb87f28caafe8ce8b4c0a99b242ff5fa95071d1c443b6c03af",
+      "header": "524946461032010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_fault.wav",
+      "offset": 78152347,
+      "size": 405156,
+      "reserved": 0,
+      "compressed": 343413,
+      "sha256": "6c180644a6b68b7d0980dd4359fea5ece74615ff0789b472e7a027172abe9b74",
+      "header": "524946469c2e060057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_noise.wav",
+      "offset": 78495760,
+      "size": 66270,
+      "reserved": 0,
+      "compressed": 66270,
+      "sha256": "9536d49fca50abc33e6fc02e6e183bed512cc33f71a1b39760a6559cb1a12871",
+      "header": "52494646d602010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_etbreak.wav",
+      "offset": 78562030,
+      "size": 10810,
+      "reserved": 0,
+      "compressed": 10810,
+      "sha256": "ff3e23a04267053246cef25067b7f227326f241ee67ff14f553d3c8fd6c7d1c4",
+      "header": "52494646322a000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_tan03.wav",
+      "offset": 78572840,
+      "size": 88938,
+      "reserved": 0,
+      "compressed": 88938,
+      "sha256": "baea985540a9f9b021e9cf0c5445dbe6a0360af411d6cd79e8735ad707ce6b51",
+      "header": "52494646625b010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_wolf.wav",
+      "offset": 78661778,
+      "size": 447106,
+      "reserved": 0,
+      "compressed": 447106,
+      "sha256": "2ef04cd3a99970e98f301c8d0588ef63600708c063cefc1cfb19463f5b2ae97a",
+      "header": "524946467ad2060057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_bonus4.wav",
+      "offset": 79108884,
+      "size": 45434,
+      "reserved": 0,
+      "compressed": 42713,
+      "sha256": "2317c334c5112501a9fbe9073960fbddeaafdbff913d16e48713843bb2eb4327",
+      "header": "5249464672b1000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_big.wav",
+      "offset": 79151597,
+      "size": 114858,
+      "reserved": 0,
+      "compressed": 114858,
+      "sha256": "9b37fd1306892d43cb36082877964e9476bea9aa08a318b940ea40bd7b367b6d",
+      "header": "52494646a2c0010057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_item01.wav",
+      "offset": 79266455,
+      "size": 64874,
+      "reserved": 0,
+      "compressed": 60902,
+      "sha256": "79c720ec710427e6368f998490483f8cef94194e133555d6f4a8f9f1605424e9",
+      "header": "5249464662fd000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_release.wav",
+      "offset": 79327357,
+      "size": 352924,
+      "reserved": 0,
+      "compressed": 352924,
+      "sha256": "20617d84ce5a46817df55154e9672878cdef977d1d9e7f5ac04d46be65f50dcb",
+      "header": "524946469462050057415645666d74201000000001000200"
+    },
+    {
+      "name": "se_changeitem.wav",
+      "offset": 79680281,
+      "size": 44228,
+      "reserved": 0,
+      "compressed": 44228,
+      "sha256": "50cc3f83d6209249aabd3d6e18bee73fd0c6fdbf6e5912a62915d8e7a61de588",
+      "header": "52494646bcac000057415645666d74201000000001000100"
+    },
+    {
+      "name": "se_trophy.wav",
+      "offset": 79724509,
+      "size": 114052,
+      "reserved": 0,
+      "compressed": 114052,
+      "sha256": "d38b66e0e87dff8680c740f88ea414abcd97d0eda221206b18650443d5ee34a0",
+      "header": "524946467cbd010057415645666d74201000000001000100"
+    },
+    {
+      "name": "demo1.rpy",
+      "offset": 79838561,
+      "size": 6016,
+      "reserved": 0,
+      "compressed": 6016,
+      "sha256": "d1aa7fa4d16388c1c3f98938aa8ba9915c621bab110a122828f5a93e4a5b927d",
+      "header": "743137720200000000000000b81600000000000000000000"
+    },
+    {
+      "name": "demo2.rpy",
+      "offset": 79844577,
+      "size": 7696,
+      "reserved": 0,
+      "compressed": 7696,
+      "sha256": "efc1880b729f5c81e26d8eddab6d5eecdb824ac9f816f57d4c3dfb6264a22296",
+      "header": "743137720200000000000000481d00000000000000000000"
+    },
+    {
+      "name": "demo3.rpy",
+      "offset": 79852273,
+      "size": 5502,
+      "reserved": 0,
+      "compressed": 5502,
+      "sha256": "13e05b3647cca3409be9d18cfe91fa78a18edc2258bfb767df2bbb9db12a47ad",
+      "header": "743137720200000000000000b61400000000000000000000"
+    },
+    {
+      "name": "thbgm.fmt",
+      "offset": 79857775,
+      "size": 953,
+      "reserved": 0,
+      "compressed": 442,
+      "sha256": "b4f07fcf589077508b4c4d32dc814b8740453db3b5d2b6d916813670534c6e24",
+      "header": "746831375f30312e776176000000000010000000802eee00"
+    },
+    {
+      "name": "th17_0100b.ver",
+      "offset": 79858217,
+      "size": 143,
+      "reserved": 0,
+      "compressed": 143,
+      "sha256": "c6992ed8787a4d2e0c918a949d14db0f16aace9ed28b6bfeb4e06ceb9661bd99",
+      "header": "30303032612034373636373220313538303234393736380a"
+    }
+  ],
+  "files": 256,
+  "totalBytes": 280214842
+}

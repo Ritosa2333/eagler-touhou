@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
-import {resolve, relative} from 'node:path';
+import {resolve, relative, delimiter} from 'node:path';
 import {spawnSync, execFileSync} from 'node:child_process';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {targets, root, inspectInputs, sourceDependencies, sourceIdentity, slash} from './inputs.mjs';
@@ -16,18 +16,63 @@ const ownSources = ['tools/ports/check.mjs','tools/ports/inputs.mjs','tools/port
   'launcher/config/runtime-builds.json','launcher/config/workspace.json','launcher/src/contracts/runtime-protocol.mts',
   'common/contracts/product-catalog.mjs'].map(name => resolve(root, name));
 
-function commandCheck(id, files, checks, level, output, games) {
+let cachedBunExecutable;
+function bunExecutableOnPath() {
+  if (cachedBunExecutable) return cachedBunExecutable;
+  const version = readFileSync(resolve(root,'launcher/.bun-version'),'utf8').trim();
+  const names = process.platform === 'win32' ? ['bun.exe'] : ['bun'];
+  const directories = (process.env.PATH ?? '').split(delimiter).filter(Boolean);
+  for (const name of names) for (const directory of directories) {
+      const candidate = resolve(directory.replace(/^"|"$/g, ''), name);
+      if (!existsSync(candidate)) continue;
+      try {
+        const actual = execFileSync(candidate,['--version'],{encoding:'utf8',windowsHide:true,timeout:5_000}).trim();
+        if (actual === version) return cachedBunExecutable = candidate;
+      } catch { /* Continue past shims and incompatible Bun installations. */ }
+  }
+  return null;
+}
+
+export function sharedCheckInvocation(gate, {bunExecutable} = {}) {
+  if (!gate.runner) {
+    return {executable:process.execPath, args:gate.files.map(file=>resolve(root,file))};
+  }
+  if (gate.runner !== 'vitest' || !['repository','unit','workspace'].includes(gate.project))
+    throw new Error(`Unknown shared check runner: ${gate.runner}/${gate.project ?? ''}`);
+  const bun = bunExecutable ?? bunExecutableOnPath();
+  if (!bun) throw new Error(`Bun ${readFileSync(resolve(root,'launcher/.bun-version'),'utf8').trim()} is required for shared Vitest checks.`);
+  const launcher = resolve(root,'launcher');
+  const args = gate.project === 'workspace'
+    ? ['--bun','run','vitest','run','--config','vitest.workspace.config.ts','--project','workspace']
+    : ['--bun','run','vitest','run','--project',gate.project];
+  return {
+    executable:bun,
+    args:[...args,...gate.files.map(file=>relative(launcher,resolve(root,file)).replaceAll('\\','/'))],
+  };
+}
+
+function commandCheck(gate, output, games) {
+  const {id,files,checks,level,complete=true}=gate;
   const logs = [];
   let code = 0;
-  for (const file of files) {
-    const result = spawnSync(process.execPath, [resolve(root, file)], {cwd:resolve(root,'launcher'), encoding:'utf8',
+  let invocation;
+  try {
+    invocation = sharedCheckInvocation(gate);
+  } catch (error) {
+    logs.push(`Runner setup failed: ${error.message}`);
+    code = 1;
+  }
+  const invocations = gate.runner ? [invocation] : (invocation ? invocation.args.map(file=>({executable:invocation.executable,args:[file]})) : []);
+  for (const command of invocations) {
+    if (!command) continue;
+    const result = spawnSync(command.executable, command.args, {cwd:resolve(root,'launcher'), encoding:'utf8',
       env:{...process.env,EAGLER_PORT_CHECK_GAMES:JSON.stringify(games)},
       windowsHide:true, maxBuffer:16*1024*1024, timeout:180000});
-    logs.push(`${file}\n${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`);
+    logs.push(`${command.executable} ${command.args.join(' ')}\n${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`);
     if (result.error || result.status !== 0) code = 1;
   }
   writeFileSync(resolve(output, `${id}.log`), logs.join('\n'), 'utf8');
-  return {id, checks, level, files, complete:true, status:code ? 'failed' : 'passed',
+  return {id, checks, level, files, complete, status:code ? 'failed' : 'passed',
     ...(code ? {error:`Executable checks failed; see ${id}.log`} : {})};
 }
 
@@ -35,7 +80,7 @@ function evidenceSources(target) {
   const names = execFileSync('git', ['ls-files','--cached','--others','--exclude-standard','-z','--',
     target.directory,'launcher/app','launcher/src','launcher/lib','launcher/tests','launcher/package',
     'launcher/package.json','launcher/package-lock.json',
-    'launcher/config','common/include','common/contracts','common/testkit','tools/ports','tools/build','tools/browser'],
+    'launcher/config','common/include','common/contracts','common/testkit','tools/ports','tools/build','tools/browser','tools/testing'],
     {cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:16*1024*1024}).split('\0').filter(Boolean);
   return [...ownSources, ...names.filter(name=>/\.(?:mjs|mts|ts|tsx|jsx|cpp|c|h|hpp|inc|html|json)$/.test(name))
     .map(name=>resolve(root,name)).filter(existsSync)];
@@ -97,7 +142,7 @@ async function main(args) {
   const games = [...new Set(selected.map(target=>target.game))];
   const shared = sharedPlan.gates.filter(gate=>selected.some(target=>
     (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
-    .map(gate => ({...gate, ...commandCheck(gate.id, gate.files, gate.checks, gate.level, options.output, games)}));
+    .map(gate => ({...gate, ...commandCheck(gate, options.output, games)}));
   const records = [];
   for (const target of selected) {
     const label = `${target.game}-${target.variant}`;

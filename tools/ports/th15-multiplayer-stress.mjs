@@ -52,7 +52,7 @@ try{
  browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding','--enable-unsafe-swiftshader']});
  for(const [index,c]of cases.entries()){
   const report={...c,passed:false};reports.push(report);const context=await browser.createBrowserContext(),page=await context.newPage(),errors=[],members=[],room='th15mp-stress-'+index;
-  console.log('START '+c.name);await page.setViewport({width:1280,height:1000});await page.evaluateOnNewDocument(()=>{globalThis.RTCPeerConnection=undefined;});page.on('pageerror',e=>errors.push(String(e)));
+  console.log('START '+c.name);await page.setViewport({width:1280,height:1000});page.on('pageerror',e=>errors.push(String(e)));
   try{
    for(let s=0;s<c.players;++s){const ws=new WebSocket('ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,lobby:room+'-'+s,member:room+'-private-'+s,intent:s?'join':'create',players:String(c.players),difficulty:String(c.difficulty)}));sockets.push(ws);members.push(ws);await send(ws,null);await send(ws,{type:'take-seat',seat:s,loadout:s===2?3:s},m=>!!m.room?.seats[s]);}
    await send(members[0],{type:'settings',playerCount:c.players,difficulty:c.difficulty},m=>m.room?.difficulty===c.difficulty);

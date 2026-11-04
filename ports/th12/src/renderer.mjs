@@ -9,7 +9,7 @@ import {stageClearText,stageTransitionPose} from './stage-clear-presentation.mjs
 import {readCoreDrawSchedule,orderPresentation,animationLayerPriority} from './draw-scheduler.mjs';
 import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
 import {thcrapLayout} from './localization/layout.mjs';
-import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
+import {capturePresentationOwners,interpolatePresentation,extrapolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
 import {VertexBatch} from './vertex-batch.mjs';
 import {copyMeshPose,meshVertexCount,meshCoordinate,translateMesh} from './mesh-vertices.mjs';
 export function readCoreHud(core,{highScore=0,scoreLowDigit=0}={}){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10+scoreLowDigit;if(size>40)exact[40]=Math.max(exact[3],Number.isSafeInteger(highScore)&&highScore>=0?highScore:0);return exact;}
@@ -69,18 +69,18 @@ export function messageTextPoses(message,logicalPoses,atlases,{logicalText=false
 export function readCoreAnimationPoses(core,stage=1){
   if(!core._th12_anm_draw||!core._th12_anm_draw_ptr)return [];
   const count=core._th12_anm_draw(),ptr=core._th12_anm_draw_ptr(),stride=core._th12_anm_draw_stride?.()??128;
-  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||ptr<0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
-  const view=new DataView(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
-  for(let i=0;i<count;i++){const offset=ptr+i*stride,F=n=>view.getFloat32(offset+n*4,true),I=n=>view.getInt32(offset+n*4,true),U=n=>view.getUint32(offset+n*4,true),flags=U(24),flags2=U(25),primary=rgba(U(14)),secondary=rgba(U(15)),color=flags&0x10000?secondary:primary;
-    const a={name:banks[I(16)]??null,sprite:I(17),layer:I(18),mode:I(19),anchorX:I(20),anchorY:I(21),blend:I(22),geometryCount:I(23),
-      x:0,y:0,z:F(2),rx:F(3),ry:F(4),rotation:F(5),sx:F(6),sy:F(7),u:F(8),v:F(9),uvScaleX:F(10),uvScaleY:F(11),geometryRadius:F(12),geometryWidth:F(13),
-      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
-    if(U(31)===1){a.nativeWidth=F(29);a.nativeHeight=F(30);}
-    const owner=U(27);a.visible=(flags&3)===3;
+  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
+  const f=new Float32Array(core.HEAPU8.buffer),v=new Int32Array(core.HEAPU8.buffer),u=new Uint32Array(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
+  for(let i=0;i<count;i++){const k=(ptr>>2)+i*32,flags=u[k+24],flags2=u[k+25],primary=rgba(u[k+14]),secondary=rgba(u[k+15]),color=flags&0x10000?secondary:primary;
+    const a={name:banks[v[k+16]]??null,sprite:v[k+17],layer:v[k+18],mode:v[k+19],anchorX:v[k+20],anchorY:v[k+21],blend:v[k+22],geometryCount:v[k+23],
+      x:0,y:0,z:f[k+2],rx:f[k+3],ry:f[k+4],rotation:f[k+5],sx:f[k+6],sy:f[k+7],u:f[k+8],v:f[k+9],uvScaleX:f[k+10],uvScaleY:f[k+11],geometryRadius:f[k+12],geometryWidth:f[k+13],
+      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:v[k+19]===1||v[k+19]===3};
+    if(u[k+31]===1){a.nativeWidth=f[k+29];a.nativeHeight=f[k+30];}
+    const owner=u[k+27];a.visible=(flags&3)===3;
     // Original45c93e/45c95b tests primary alpha even when flag10000 selects
     // secondary color. A secondary alpha cannot revive a faded mode0/1 quad.
     if((a.mode===0||a.mode===1)&&primary[3]===0)a.visible=false;
-    poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
+    poses.push({a,x:f[k+0],y:f[k+1],angle:0,scale:1,alpha:f[k+28],id:u[k+26],owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
   }return poses;
 }
 export function readCoreLaserSegments(core,stage=1){
@@ -197,17 +197,23 @@ export class Renderer {
     if(!Number.isInteger(stage)||stage<1||stage>7)throw Error('关卡编号无效');
     if(activate)this.requestedStage=stage;
     if(!this.stageJobs.has(stage)){const name='stage'+String(stage).padStart(2,'0'),enemy='stgenm'+String(stage).padStart(2,'0'),logo='st'+String(stage).padStart(2,'0')+'logo';
-      const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]));this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
+      const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]),{background:!activate});this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
     const background=await this.stageJobs.get(stage);if(activate&&this.requestedStage===stage)this.background=background;return background;
   }
-  async loadAtlases(names){
+  async loadAtlases(names,{background=false}={}){
     const gl=this.gl;
     // Atlas metadata may include virtual duplicate names; each physical entry
     // gets its own generated image, so images never silently overwrite others.
     const entries=[];for(const name of names){const atlas=this.atlases[name];if(!atlas)throw Error('动画资源不存在 '+name);for(let index=0;index<atlas.entries.length;index++){const e=atlas.entries[index];if(e.image&&!this.textures.has(name+':'+index))entries.push({name,index,e});}}
-    for(let start=0;start<entries.length;start+=8)await Promise.all(entries.slice(start,start+8).map(async({name,index,e})=>{
+    // A running clear scene keeps rendering while the next stage warms.
+    // Submit one texture after a display frame instead of eight uploads in
+    // the same turn; foreground loading retains its parallel fast path.
+    const parallel=background?1:8;
+    for(let start=0;start<entries.length;start+=parallel)await Promise.all(entries.slice(start,start+parallel).map(async({name,index,e})=>{
       const response=await this.fetch('/assets/'+e.image);if(!response.ok)throw Error('贴图加载失败 '+e.image);
-      const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'}),texture=gl.createTexture();
+      const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'});
+      if(background)await new Promise(done=>requestAnimationFrame(()=>setTimeout(done,0)));
+      const texture=gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bitmap);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);const wrap=gl.REPEAT; // Native4514c5/4514db defaults both texture axes to WRAP1.
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,wrap);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,wrap);
@@ -451,19 +457,19 @@ export class Renderer {
     for(const text of fpsTextDescriptors({currentFps:fps}))this.nativeText(text);
     this.flush();
   }
-  resetPresentation(){
+  resetPresentation({retainSamples=false}={}){
     // Call on start/restart, stage load, replay seek, pause/resume, focus
     // loss or any host discontinuity; the host also discards its old pair.
-    this.presentationEpoch++;this.lastFrame=-1;this.animations=new AnimationSampler(this.atlases);
+    if(this.drawBuckets)for(const bucket of this.drawBuckets)if(bucket)bucket.length=0;
+    this.presentationEpoch++;this.lastFrame=-1;
+    if(!retainSamples)this.animations=new AnimationSampler(this.atlases);
   }
   capturePresentation(core,fps={}){
     const h=[...readCoreHud(core,fps)],frame=h[0];if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0],backgroundVisible=background.authoritative||(core._th12_background_visible?.()??true);
-    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
-    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
-    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
-    const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core,logicalPoses),meshes=readCoreMeshes(core,stage),logicalOwners=(this.logicalOwners??=new Set()),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
+    logicalOwners.clear();for(const p of logicalPoses)logicalOwners.add(p.owner);for(const p of meshes)logicalOwners.add(p.owner);
     let bulletCount=0;
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases,{logicalText:!!core._th12_anm_draw}),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     for(const text of spellTextDescriptors(spell,logicalPoses,{disableMaster:fps.disableMaster}))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:text.drawFlag===0?69:45,clipped:false,order:poses.length});
@@ -475,6 +481,11 @@ export class Renderer {
     if(fps.stageClear){const text=stageClearText(h,logicalPoses,fps.practice);if(text)poses.push({nativeText:text,drawPriority:69,clip:0,order:poses.length});}
     const transition=stageTransitionPose(logicalBackground?.transition);if(transition)poses.push(transition);
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options,owner=Number.isInteger(sampling.entityId)?sampling.entityId:0;let child=0;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,owner,presentationKey:owner?'sample:'+owner+':'+id+':'+child++:undefined,order:poses.length});};
+    // Consume the draw queue after all metadata exports. No Wasm calls occur
+    // inside this loop; endpoint records own their scalars before the next export.
+    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
+    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
+    const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride),records=[];
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
       records.push({x,y,owner:entityId,bank:v[k+4],animation,kind,color,age,interrupt});
@@ -510,7 +521,7 @@ export class Renderer {
     }
     // These pose wrappers were created for this capture. Annotate them before
     // publishing the immutable endpoint; older endpoints and appearances stay intact.
-    const ordered=orderPresentation(poses,schedule,{reusePoses:true});
+    const ordered=orderPresentation(poses,schedule,{reusePoses:true,buckets:this.drawBuckets??=[]});
     this.animations.endFrame();
     // Modern cores already publish authoritative owner/lineage data. Do not
     // build a second legacy owner graph that their interpolation never uses;
@@ -523,7 +534,7 @@ export class Renderer {
     return this.renderPresentation(null,this.capturePresentation(core,{...fps,presentationContinuity:false}),1);
   }
   renderPresentation(previous,current,interpolationAlpha=1,live={}){
-    const endpoint=interpolatePresentation(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
+    const endpoint=(live.extrapolate?extrapolatePresentation:interpolatePresentation)(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
       source=this.stageBackgrounds.get(endpoint.stage),background=source&&endpoint.logicalBackground!==current.logicalBackground&&endpoint.logicalBackground?.loaded
         ?source.geometry(endpoint.logicalBackground.frame,endpoint.logicalBackground):endpoint.background;
     this.begin();const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);

@@ -5,13 +5,15 @@ const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,
 const release=process.argv.includes('--release'),eagler=process.argv.includes('--eagler'),testHarness=process.argv.includes('--test-harness');
 const acceptancePath=resolve(root,"reference/release-acceptance.json"),acceptance=existsSync(acceptancePath)?JSON.parse(readFileSync(acceptancePath,"utf8")):null;
 if(release&&!acceptance?.completeGame)throw Error("Complete native/browser acceptance before building the production release.");
-const flags=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1',`-DTH075_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','-sUSE_ZLIB=1'];
+const common=resolve(process.env.EAGLER_COMMON_ROOT||resolve(workspace,'../../common'));
+const flags=['-I'+resolve(common,'include'),'-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1',`-DTH075_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','-sUSE_ZLIB=1'];
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:process.env.EMCC_CORES||'4'};
 const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
 if(!compiler&&!printingRuntimeInputs)throw Error('Set TH075_EMSDK or EMSDK');
 const run=args=>new Promise((done,fail)=>{const p=spawn(process.env.TH_PYTHON||process.env.PYTHON||'python',[compiler,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';for(const s of [p.stdout,p.stderr])s.on('data',b=>{log+=b;process.stdout.write(b);});p.on('error',fail);p.on('exit',code=>code?fail(Error('TH075 SDL probe build failed '+code+'\n'+log)):done());});
 const files=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(resolve(dir,e.name)):/\.(cpp|hpp|h|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const sources=[...files(resolve(root,'cpp')).filter(p=>p.endsWith('.cpp')),resolve(workspace,'portable/sdl/Renderer.cpp')],headers=[...files(resolve(root,'cpp')).filter(p=>!p.endsWith('.cpp')),...files(resolve(workspace,'portable/sdl')).filter(p=>!p.endsWith('.cpp')),resolve(workspace,'portable/input/KeyboardMap.inc')].sort();
+headers.push(resolve(common,'include/eagler/audio/WebSfx.hpp'));
 const sha=b=>createHash('sha256').update(b).digest('hex');
 if(release)for(const [p,h]of Object.entries({...acceptance.sourceHashes,...acceptance.headerHashes}))if((!eagler||!p.startsWith('th075_web/cpp/sdl/'))&&sha(readFileSync(resolve(workspace,p.replace(/^th075_web\//,'web/'))))!==h)throw Error("Source changed after acceptance: "+p);
 await printRuntimeInputs({workspace,root:workspace,sources,headers,flags});

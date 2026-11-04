@@ -81,10 +81,6 @@ touhou::input::TouchState touch_state(){
  auto& stage=*app->scene();
  auto& player=*stage.battle.player;auto& motion=player.motion;
  value.context=stage.messages.active()?2:1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
- // A shield hit temporarily blocks movement before cancelling death.
- // Preserve the held finger for every absorbed layer, including the last.
- if(app->progress.character==3&&player.life.state==4&&stage.battle.session.bomb_state==1&&stage.battle.bomb&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000)))
-  value.retain_motion=static_cast<BombReisen*>(stage.battle.bomb.get())->charges>0;
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
  value.min_x=-184;value.max_x=184;value.min_y=32;value.max_y=432;return value;
 }
@@ -190,6 +186,8 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   // presentation remains governed by the real cadence and the 60Hz limiter.
   app->graphics.presentation.enabled=true;
 #endif
+  // Refill before simulation/drawing can consume a slow frame's budget.
+  app->audio_device.pump();
   const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
   unsigned completed=0;
   for(unsigned i=0;i<ticks&&ok;i++){ok=sample_and_tick();++completed;if(app->exiting||app->pending_load)break;

@@ -9,6 +9,10 @@
 | `webaudio-tinysynth@1.1.3` | [g200kg/webaudio-tinysynth](https://github.com/g200kg/webaudio-tinysynth) | Apache-2.0 | MIDI Web 构建中的免采样 General MIDI 合成；随包文件为 `public/vendor/webaudio-tinysynth.min.js`。 |
 | `fflate@0.8.3` | [101arrowz/fflate](https://github.com/101arrowz/fflate) | MIT | 导入、导出保持 `.rpy` 字节不变的原格式 Replay；随包文件为 `public/vendor/fflate.min.js`。 |
 | `marked@18.0.12` | [marked.js.org](https://marked.js.org/) | MIT | 将 FAQ、首次使用说明和多人指南 Markdown 构建为静态 HTML；属于构建依赖，不在 Launcher 运行时加载。 |
+| `fs-native-extensions@1.5.3` | [holepunchto/fs-native-extensions](https://github.com/holepunchto/fs-native-extensions) | Apache-2.0 | 构建任务的操作系统文件锁，不在浏览器加载。 |
+| Tailwind CSS、CVA、clsx、tailwind-merge | [Tailwind](https://github.com/tailwindlabs/tailwindcss)、[CVA](https://github.com/joe-bell/cva)、[clsx](https://github.com/lukeed/clsx)、[tailwind-merge](https://github.com/dcastil/tailwind-merge) | MIT | 通用 UI 的样式生成、组件变体与类名组合，版本由锁文件固定。 |
+| shadcn/ui | [官方 Radix 源码](https://github.com/shadcn-ui/ui/tree/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/registry/bases/radix) | MIT | 本地 UI 组件的组合、变体与部件设计参考。 |
+| Fumadocs Core / UI | [fuma-nama/fumadocs](https://github.com/fuma-nama/fumadocs) | MIT | 文档布局、目录与正文排版。文档和应用内说明共享阅读样式，版本由锁文件固定。 |
 
 重新生成随包 JavaScript：
 
@@ -21,7 +25,7 @@ npm run vendor
 
 | 字体 | 来源与作者 | 许可证 | 用途与随包文件 |
 | --- | --- | --- | --- |
-| Touhou 98 | [`thwiki/font-touhou98`](https://github.com/thwiki/font-touhou98)，`font-touhou98@1.0.0` | MIT | 站点字标；`public/assets/fonts/touhou98.woff2`；README 字标 SVG 基于同一字体生成。 |
+| Touhou 98 | [`thwiki/font-touhou98`](https://github.com/thwiki/font-touhou98)，`font-touhou98@1.0.0` | MIT | `public/assets/fonts/touhou98.woff2`，用于作品展示中的装饰文字。 |
 | Yatra One | [Google Fonts, Yatra One](https://github.com/google/fonts/tree/main/ofl/yatraone)；Copyright 2014 The Yatra Project Authors | SIL Open Font License 1.1 | 拉丁字母和数字；`public/assets/fonts/yatra-one-latin.woff2`，许可证 `OFL-YatraOne.txt`。 |
 | ChillRoundGothic | [Warren2060/ChillRoundGothic](https://github.com/Warren2060/ChillRoundGothic)；Copyright 2023 The ChillRoundGothic Project Authors | SIL Open Font License 1.1 | 界面文字；`public/assets/fonts/` 中的 Medium、Bold、Heavy WOFF2 子集，许可证 `OFL-ChillRoundGothic.txt`。Medium 用于正文、Bold 用于标题、Heavy 用于两张主卡片标题。 |
 | GNU Unifont 15.1.05 | [Unifoundry](https://unifoundry.com/unifont/)；Copyright 1998–2024 Roman Czyborra, Paul Hardy, Qianqian Fang, Andrew Miller, Johnnie Weaver, David Corbett, Nils Moskopp, Rebecca Bettencourt, Ho-Seok Ee et al. | 本分发采用 SIL Open Font License 1.1；Unifont 也以 GPLv2+ 和 GNU Font Embedding Exception 提供。 | 缺字回退；`public/assets/fonts/unifont-site.woff2`，许可证 `OFL-Unifont.txt`。 |
@@ -34,6 +38,10 @@ npm run vendor
 - 游戏 Runtime 使用 SDL 系列库和 Emscripten；组件版本与许可证说明位于对应 Runtime 源仓库或工具链中。上游项目：[SDL](https://github.com/libsdl-org/SDL)、[SDL_image](https://github.com/libsdl-org/SDL_image)、[SDL_ttf](https://github.com/libsdl-org/SDL_ttf) 和 [Emscripten](https://github.com/emscripten-core/emscripten)。
 
 ## 图标与服务标志
+
+站点角色头像由 plasticparakeet 绘制，来自 [RebeccaRGB/emojifont-touhou](https://github.com/RebeccaRGB/emojifont-touhou)，按 [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) 使用。站点增加双行字标、配色选择与响应式排版；头像署名和许可随资源提供。
+
+- 主页通用操作使用 [Lucide](https://github.com/lucide-icons/lucide)，包为 lucide-react@1.65.0，采用 ISC。作品封面独立于通用图标系统。
 
 - 公告栏图标来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1），采用 CC BY 4.0。Bilibili、QQ、GitHub SVG 位于 `public/assets/notice-bilibili.svg`、`notice-qq.svg` 和 `notice-github.svg`；该包也是 Mizuki 前端使用的同一图标集。
 - 站点页眉使用 `@iconify-json/material-symbols@1.2.86`，来源为 [Google Material Design Icons](https://github.com/google/material-design-icons)，采用 Apache License 2.0。内嵌图形为 `language`、`history`、`person`、`warning`；触控帮助还内嵌 `fullscreen`、`fullscreen_exit`、`help`、`screen_rotation`。

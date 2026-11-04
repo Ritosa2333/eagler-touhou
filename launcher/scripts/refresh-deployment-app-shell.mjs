@@ -62,7 +62,8 @@ const siteUrl = normalizeSiteUrl(siteUrlOption?.slice("--site-url=".length) || d
 let previousArtifact = null, selectedArtifact = null, frontend = null;
 if (reactTarget) {
   previousArtifact = await readReactFrontendArtifact({directory: root,
-    metadata: deployment.frontend.validationMetadata, expectedMountPath: deployment.frontend.mountPath});
+    metadata: deployment.frontend.validationMetadata, expectedMountPath: deployment.frontend.mountPath,
+    publicationFiles: deployment.files.map(item => item.path)});
   if ((previousArtifact.appShell === null) !== (deployment.appShell === null)) throw new Error("React deployment App Shell permission does not match its artifact");
   selectedArtifact = refreshFrontend ? await readReactFrontendArtifact({
     directory: reactFrontendArtifactDirectory({project}), expectedMountPath: previousArtifact.mountPath,
@@ -292,7 +293,10 @@ try {
     try {await renamePublicationDirectory(candidate, root);}
     catch (error) {
       try {await renamePublicationDirectory(backup, root);}
-      catch (restoreError) {throw new AggregateError([error, restoreError], `refresh replacement and rollback failed; original deployment retained at ${backup}`);}
+      catch (restoreError) {
+        throw new Error(`refresh replacement and rollback failed (${String(error)} | ${String(restoreError)}); original deployment retained at ${backup}`,
+          {cause: new AggregateError([error, restoreError])});
+      }
       throw error;
     }
     await rm(backup, {recursive: true});

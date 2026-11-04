@@ -1,13 +1,22 @@
-/** Cross-language format-adapter coverage gate.
- * Product registration and retail artwork decoding are separate owners, but
- * every formal game must have an artwork adapter before Host assembly can be
- * considered complete. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { HOST_SITE_ARTWORK_FILES } from "../lib/frontend-manifest.mjs";
+
+test("host artwork adapter coverage", async () => {
+/** Cross-language format-adapter coverage gate.
+ * Product registration and retail artwork decoding are separate owners, but
+ * every formal game must have an artwork adapter before Host assembly can be
+ * considered complete. */
+
+
+
+
+
+
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const python = process.env.EAGLER_PYTHON || process.env.PYTHON || "python";
@@ -89,5 +98,5 @@ assert.deepEqual(JSON.parse(synthetic.stdout),
   {size: [640, 480], left: [255, 0, 0, 255], right: [0, 255, 0, 255]},
   "TH13 synthetic title.anm must compose both source_x layers");
 
-console.log(JSON.stringify({ hostArtworkAdapterCoverage: "PASS", games: report.games,
-  th13SyntheticCard: "PASS" }));
+console.log(JSON.stringify({ hostArtworkAdapterCoverage: "PASS", games: report.games }));
+});

@@ -25,7 +25,7 @@ export function validateChargeReplay(bytes,game){
  if(end<0||magic.some((v,i)=>bytes[end+i]!==v))return false;
  const length=view.getUint32(end+16,true),start=end-length;
  const fail=()=>{throw Error('本地蓄力录像数据损坏或不属于这款游戏');};
- if(game!==9||view.getUint32(end+8,true)!==9||view.getUint32(end+12,true)!==1||length<5||start<0||length>32*1024*1024)fail();
+ if(game!==9||view.getUint32(end+8,true)!==9||![1,2].includes(view.getUint32(end+12,true))||length<5||start<0||length>32*1024*1024)fail();
  const plain=view.getUint32(start,true);if(plain<40||plain>40+600000*88||(plain-40)%88)fail();
  let hash=2166136261;for(let i=start;i<end;i++)hash=Math.imul(hash^bytes[i],16777619)>>>0;
  if(hash!==view.getUint32(end+20,true))fail();return true;

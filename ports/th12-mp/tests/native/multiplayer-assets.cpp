@@ -90,6 +90,12 @@ int main(int argc,char**argv){
     for(unsigned seat=0;seat<o.count;++seat){const auto& p=mp::pilots[seat];require(p.px==-12000+int(seat)*7000&&p.py==17000+int(seat)*6000&&p.playerFocused==(seat!=1),"each seat retains position/focus across stages");}
     const auto hash=mp::canonicalHash();mp::StageEntry entry;require(mp::decodeStageEntry(mp::encodeStageEntry(),entry)&&mp::restoreStageEntry(entry),"retail cross-stage restore");
     require(mp::canonicalHash()==hash&&ufoManager.inventory.count==1,"retail cross-stage RNG/UFO hash");
+    std::array<mp::Input,3> released{};
+    for(auto& input:released)input.held=128;
+    for(unsigned f=0;f<8;++f)require(mp::update(released),"cross-stage keyboard release");
+    for(unsigned seat=0;seat<o.count;++seat)require(!mp::pilots[seat].playerFocused,"released Shift clears carried focus on every seat");
+    mp::WorldState releasedCheckpoint;const auto releasedHash=mp::canonicalHash();
+    advance(0,30);releasedCheckpoint.restore();require(mp::canonicalHash()==releasedHash,"released focus survives rollback restore");
     advance(0,120);
   }
   std::puts("TH12 multiplayer retail assets: six loadouts, Normal/Extra, rollback and all stage transitions passed");

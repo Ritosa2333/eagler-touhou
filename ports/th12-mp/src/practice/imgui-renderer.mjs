@@ -25,8 +25,11 @@ export class ImGuiRenderer {
   render(){
     const gl=this.gl,heap=this.core.HEAPU8;
     const [vertices,indices,commands,vertexCount,indexCount,commandCount,stride,indexSize]=new Uint32Array(heap.buffer,this.core._th12_practice_ui_draw(),8);
+    // Normal gameplay often has no visible THPrac widgets. Do not dirty a
+    // second WebGL canvas each frame just to clear an already empty overlay.
+    if(!commandCount&&!this.hasContents)return false;
     gl.viewport(0,0,640,480);gl.disable(gl.SCISSOR_TEST);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
-    if(!commandCount)return;
+    this.hasContents=commandCount>0;if(!commandCount)return false;
     if(stride!==20||![2,4].includes(indexSize)||vertices+vertexCount*stride>heap.length||indices+indexCount*indexSize>heap.length||commands+commandCount*28>heap.length)throw Error('THPrac draw data is invalid');
     gl.useProgram(this.program);gl.bindVertexArray(this.vao);gl.bindBuffer(gl.ARRAY_BUFFER,this.vertices);gl.bufferData(gl.ARRAY_BUFFER,heap.subarray(vertices,vertices+vertexCount*stride),gl.STREAM_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.indices);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,heap.subarray(indices,indices+indexCount*indexSize),gl.STREAM_DRAW);
@@ -46,7 +49,7 @@ export class ImGuiRenderer {
       gl.vertexAttribPointer(this.attributes[2],4,gl.UNSIGNED_BYTE,true,stride,base*stride+16);
       gl.drawElements(gl.TRIANGLES,count,indexSize===2?gl.UNSIGNED_SHORT:gl.UNSIGNED_INT,start*indexSize);
     }
-    gl.disable(gl.SCISSOR_TEST);
+    gl.disable(gl.SCISSOR_TEST);return true;
   }
   destroy(){const gl=this.gl;gl.deleteTexture(this.texture);gl.deleteBuffer(this.vertices);gl.deleteBuffer(this.indices);gl.deleteVertexArray(this.vao);gl.deleteProgram(this.program);}
 }

@@ -1,25 +1,41 @@
+import {SITE_BRAND_FACES,SITE_BRAND_DEFAULT} from './site-brand.mjs';
+/** Router addresses and their mount-local publication files have one inventory. */
+export const REACT_DOCUMENTS = Object.freeze([
+  {path: '/', file: 'index.html'},
+  {path: '/en.html', file: 'en.html'},
+  {path: '/ja.html', file: 'ja.html'},
+  {path: '/lobby.html', file: 'lobby.html'},
+  {path: '/profile.html', file: 'profile.html'},
+  {path: '/login.html', file: 'login.html'},
+  {path: '/ui-review.html', file: 'ui-review.html'},
+  {path: '/faq.html', file: 'faq.html'},
+  {path: '/about.html', file: 'about.html'},
+  {path: '/guide.html', file: 'guide.html'},
+  {path: '/multiplayer.html', file: 'multiplayer.html'},
+  {path: '/uptime/', file: 'uptime/index.html'},
+].map(document => Object.freeze(document)));
+export const REACT_DOCUMENT_FILES = Object.freeze(REACT_DOCUMENTS.map(document => document.file));
+export const REACT_PRERENDER_PATHS = Object.freeze(REACT_DOCUMENTS.filter(document => document.path !== '/').map(document => document.path));
 // Repository-owned non-module frontend delivery manifest. Original-game-
 // derived artwork is intentionally absent: host assembly supplies it later.
 /** @type {Array<[string, boolean]>} */
 const entries = [
-  ['index.html', true],
-  ['en.html', true],
-  ['lobby.html', true],
+  ...REACT_DOCUMENT_FILES.map(file => /** @type {[string, boolean]} */([file, true])),
   ['lobby.css', true],
   ['site.webmanifest', true],
   ['favicon.ico', true],
   ['assets/favicon.ico', true],
+  ['assets/favicon.png', true],
+  ['assets/site-brand.mjs', true],
+  ['assets/brand/LICENSE.txt', false],
+  ['assets/brand/portrait.png', false],
+  ...SITE_BRAND_FACES.map(face=>/** @type {[string,boolean]} */([`assets/brand/${face}.svg`,face===SITE_BRAND_DEFAULT])),
   ['robots.txt', true],
   ['sitemap.xml', false],
   ['styles.css', true],
   ['features.css', true],
   ['ui-fonts.css', false],
   ['ui-fonts-deferred.css', false],
-  ['touch-guide.css', true],
-  ['about.css', true],
-  ['site-pages.mjs', true],
-  ['site-pages.css', true],
-  ['uptime/index.html', true],
   // Origin migration must always use the current network document. Caching it
   // in the App Shell could leave either side of a cutover on stale protocol
   // code even when the server correctly marks the page for revalidation.
@@ -32,11 +48,11 @@ const entries = [
   ['legacy/legacy-game-pack.mjs', false],
   ['legacy/legacy-import-storage.mjs', false],
   ['legacy/legacy-package-adapter.mjs', false],
-  ['about.html', true],
-  ['faq.html', true],
   // Deliberately standalone ES5/CSS2-friendly help page: unsupported browsers
   // must be able to read it without loading the modern Launcher or its fonts.
   ['compatibility.html', true],
+  ['compatibility.en.html', true],
+  ['compatibility.ja.html', true],
   ['vendor/fflate.min.js', true],
   ['vendor/webaudio-tinysynth.min.js', true],
   ['vendor/fflate.LICENSE', false],
@@ -44,8 +60,6 @@ const entries = [
   ['assets/touch-rotate-landscape.webp', true],
   ['assets/launcher-background.webp', true],
   ['assets/room-caret-left.svg', true],
-  ['assets/site-menu.svg', true],
-  ['assets/site-menu-close.svg', true],
   ['assets/room-caret-right.svg', true],
   ['assets/room-copy.svg', true],
   ['assets/room-gear-six.svg', true],

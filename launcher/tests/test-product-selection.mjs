@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { assertProductEntriesRegistered, normalizeProductSelection, selectProductEntries } from "../lib/product-selection.mjs";
 
+test("product selection", async () => {
 assert.deepEqual(normalizeProductSelection(), Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].buildOptIn !== true));
 assert.equal(normalizeProductSelection().includes('th13'), false, 'Production defaults do not require th13 assets');
 assert.deepEqual(normalizeProductSelection('th13'), ['th13'], 'Validation builds explicitly select th13');
@@ -26,3 +28,4 @@ assert.match(publicInstallVerifier, /isGameId\(game\)/,
 assert.doesNotMatch(publicInstallVerifier, /th\(\?:06\|07\|08\|10\)/,
   "public first-install verifier must not carry a second hard-coded game registry");
 console.log(JSON.stringify({ defaultGames: Object.keys(PRODUCT_GAMES), subset: true }));
+});

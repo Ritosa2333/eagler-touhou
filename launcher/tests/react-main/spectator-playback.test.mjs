@@ -1,5 +1,5 @@
 // Mounted adapters and the shared TH09-derived view. No native world restore claim.
-import test,{before,after,afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {createRequire} from 'node:module';
@@ -17,7 +17,7 @@ before(async()=>{
  "export * from './app/components/player/SpectatorMatchScore.tsx';",
  "export * from './src/launcher/spectator-playback.mts';",
  "export * from './app/i18n.tsx';"].join('\n')},bundle:true,format:'esm',platform:'node',jsx:'automatic',outfile,logLevel:'silent',
- plugins:[{name:'shared-react',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));}}]});
+ plugins:[{name:'shared-react',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));}}]});
  views=await import(pathToFileURL(outfile).href);
 });
 afterEach(async()=>{
@@ -58,7 +58,7 @@ for(const locale of ['zh-CN','en'])test(locale+': cooperative data and commands 
  assert.equal(panel.querySelector('[data-icon="toggle"]').getAttribute('src'),'https://example.test/assets/room-caret-right.svg');
  assert.equal(panel.querySelector('[id$="Details"]').hidden,false,'seek and live controls are immediately available');
  const nodes=[...panel.querySelectorAll('[id$="RoundMarks"] button')];assert.equal(nodes.length,2);
- assert.equal(nodes[1].getAttribute('aria-label'),(locale==='en'?'Stage 4 Boss':'第 4 面 Boss')+' · 0:10');
+ assert.equal(nodes[1].getAttribute('aria-label'),(locale==='en'?'Stage 4 Boss':'第 4 面 Boss')+' | 0:10');
  assert.equal(nodes[1].dataset.nodeKind,'boss');assert.equal(nodes[1].dataset.kind,'round');
  await React.act(async()=>nodes[1].click());assert.deepEqual(f.calls.pop(),['seek',1200,'session_1']);
  await f.click('[id$="Pause"]');assert.deepEqual(f.calls.pop(),['pause',undefined,'session_1']);
@@ -106,7 +106,7 @@ test('encoded route keys remain seek identities without becoming visible stage n
   {id:1,kind:'stage',frame:600,stage:257,bossSlots:0},{id:2,kind:'boss',frame:1200,stage:257,bossSlots:2}]}));
  const panel=f.container.querySelector('.spectator-timeline');assert.equal(panel.querySelector('[id$="Score"]').textContent,'Boss');
  await f.click('[id$="Toggle"]');const stage=panel.querySelector('[data-node-kind="stage"]');
- assert.equal(stage.getAttribute('aria-label'),'Stage · 0:00');assert.ok(!panel.textContent.includes('257'));
+ assert.equal(stage.getAttribute('aria-label'),'Stage | 0:00');assert.ok(!panel.textContent.includes('257'));
  await React.act(async()=>stage.click());assert.deepEqual(f.calls.pop(),['seek',600,'session_1']);
 });
 test('shared dragging freezes bounds and displayed time, then clamps against the latest native edge',async()=>{

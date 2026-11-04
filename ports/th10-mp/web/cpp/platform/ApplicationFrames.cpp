@@ -30,8 +30,13 @@ void AppFrames::update_input(){
 i32 AppFrames::process_loading(){return owner.engine.manager.process_loading(owner.engine.resources);}
 i32 AppFrames::transition(ApplicationState& app){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A hosted match's Quit stops this run, while the room still owns its
+    // loaded resources. The host resumes the title through sdl_room_return.
+    if(app.pending_screen==3&&owner.state.multiplayer_session.configured){
+        owner.stopped=true;return 4;
+    }
     if(app.pending_screen==12){
-        if(!owner.multiplayer_begin_replay(owner.state.replay_filename,u32(owner.state.game.stage))){owner.error=-6;return 4;}
+        if(!owner.multiplayer_begin_replay(owner.state.replay_filename,u32(owner.state.game.stage))){owner.multiplayer_fail("Open Replay file",-6);return 4;}
         // The archive supplies all-seat inputs to the same native MP lifecycle
         // as a live session; the retail single-seat decoder is not involved.
         app.pending_screen=7;

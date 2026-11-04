@@ -1,7 +1,7 @@
 import {synchronizedMainAuthority} from './source-text.mjs';
 /** Independent pinned-main component/service regression. SYNTHETIC DOM + MEMORY
  * ROUTER ONLY: not production-host wiring, browser top layer, CSS, relay or runtime QA. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -9,14 +9,18 @@ import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
-import {installMountedDom} from './mounted-dom-environment.mjs';
+import {installMountedDom, uiContractAttributes} from './mounted-dom-environment.mjs';
+import {PRODUCT_GAMES} from '../../../common/contracts/product-catalog.mjs';
+
+const spectatorProducts = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.multiplayer?.spectator).map(([game]) => game + 'mp');
 
 const here = dirname(fileURLToPath(import.meta.url)), project = resolve(here, '../..');
 const require = createRequire(resolve(project, 'package.json'));
-const {build, transform} = require('esbuild');
+const {build} = require('esbuild');
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
-let env, work, owners, React, createRoot, createMemoryRouter, RouterProvider, originalHTML, originalRows;
+let env, work, owners, React, createRoot, createMemoryRouter, RouterProvider, originalHTML;
 const mounts = new Set(), fixtures = new Set();
 const assetUrl = path => path;
 const t = (locale, key, params) => owners.translate(locale, key, params);
@@ -30,12 +34,6 @@ before(async () => {
   ({createRoot} = await import('react-dom/client'));
   ({createMemoryRouter, RouterProvider} = await import('react-router'));
   originalHTML = pinned('public/lobby.html');
-  const original = pinned('src/launcher/lobby.mts');
-  const rowSource = original.slice(original.indexOf('function titleFor('), original.indexOf('\nfunction render()'));
-  const {code} = await transform(rowSource, {loader: 'ts', target: 'es2022'});
-  // Execute the original renderer, unchanged except TS erasure, in its own DOM.
-  originalRows = new Function('document', 'rowTemplate', 'rowNodes', 'rooms', 'connection', 'mine', 'leaving',
-    'PRODUCT_GAMES', 'gameIdForProduct', 'multiplayerConfigForProduct', 'getUiLocale', 't', 'enterRoom', `${code}; return rowFor;`);
   work = await mkdtemp(resolve(here, 'directory-views-build-'));
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/directory/DirectoryRoomRows.tsx';
@@ -47,9 +45,9 @@ before(async () => {
     export * from './app/components/launcher/products.ts';
     export * from './src/contracts/product-catalog.mts';
     export * from './src/launcher/room-invite.mts';
-  `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
+  `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
     plugins: [{name: 'installed-deps-original-mts', setup(ctx) {
-      ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+      ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
       ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
     }}]});
   owners = await import(pathToFileURL(resolve(work, 'actual-bundle.mjs')));
@@ -77,9 +75,9 @@ class Socket {
   close(...args) {this.closes.push(args); this.readyState = 3;}
   emit(type, data) {if (type === 'close') this.readyState = 3; for (const fn of this.listeners.get(type) || []) fn(type === 'message' ? {data: JSON.stringify(data)} : data);}
 }
-function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadError = false} = {}) {
+function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadError = false, clientSideFiltering = false} = {}) {
   const sockets = [], timers = new Map(), events = [], sessionWrites = [], navigations = []; let timerId = 0, closeCalls = 0;
-  const real = owners.createLobbyDirectory({selectedProduct,
+  const real = owners.createLobbyDirectory({selectedProduct, clientSideFiltering,
     loadSiteManifest: async () => {if (loadError) throw Error('synthetic manifest failure'); return manifest(host);},
     createSocket: url => {const socket = new Socket(); socket.url = url; sockets.push(socket); return socket;},
     memberId: () => 'fixture-member', identity: {lobbyClientId: product => {events.push(`identity:${product}`); return 'fixture-client';}},
@@ -121,7 +119,7 @@ async function mountDialog(f, mode = 'create', extra = {}, options = {}) {
   const m = await mount(owners.DirectoryRoomDialog, {service: f.service, open: true, onCloseRequest: () => requests++, ...extra}, options);
   return {m, get requests() {return requests;}};
 }
-async function click(selector, scope) {await React.act(async () => n(selector, scope).click());}
+async function click(selector, scope) {await React.act(async () => {const target=n(selector,scope);if(target.getAttribute('aria-haspopup')==='menu'){target.focus();target.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));}else target.click();await new Promise(resolve=>setTimeout(resolve,0));});}
 async function change(selector, value) {const node = n(selector); await React.act(async () => {
   if (node.localName === 'input') Object.getOwnPropertyDescriptor(env.window.HTMLInputElement.prototype, 'value').set.call(node, value); else node.value = value;
   node.dispatchEvent(new env.window.Event(node.localName === 'input' ? 'input' : 'change', {bubbles: true}));
@@ -130,8 +128,10 @@ async function submit() {const event = new env.window.Event('submit', {bubbles: 
 function normalize(element) {
   if (element.nodeType === 3) return element.textContent.replace(/\s+/g, ' ').trim() || null;
   if (element.nodeType !== 1) return null;
-  const attrs = [...element.attributes].filter(a => !a.name.startsWith('data-i18n') && a.name !== 'open' && !(a.name === 'value' && element.localName === 'input'))
-    .map(a => [a.name, a.value]).sort(([a], [b]) => a.localeCompare(b));
+  if (element.classList.contains('ui-select')) return normalize(element.querySelector('select.custom-select-native'));
+  const kitButton = element.localName === 'button' && element.dataset.slot === 'button';
+  const attrs = uiContractAttributes(element).filter(a => !a.name.startsWith('data-i18n') && a.name !== 'open' && a.name !== 'data-ui-variant' && !(kitButton && ['data-slot','data-variant','data-size'].includes(a.name)) && !(element.localName === 'select' && ['tabindex','aria-hidden'].includes(a.name)) && !(element.localName === 'button' && a.name === 'type' && a.value === 'submit') && !(a.name === 'value' && element.localName === 'input'))
+    .map(a => [a.name, a.name === 'class' ? a.value.split(/\s+/).filter(value=>kitButton ? value.startsWith('lobby-') : !['ui-button','ui-control','custom-select-native'].includes(value)).join(' ') : a.value]).filter(([name,value])=>name!=='class'||value).sort(([a], [b]) => a.localeCompare(b));
   const children = []; let text = '';
   const flushText = () => {const value = text.replace(/\s+/g, ' ').trim(); if (value) children.push(value); text = '';};
   for (const child of element.childNodes) {if (child.nodeType === 3) text += child.textContent; else if (child.nodeType === 1) {flushText(); children.push(normalize(child));}}
@@ -143,25 +143,10 @@ function baselineDoc(locale) {
   for (const el of all('[data-i18n-aria-label]', doc)) el.setAttribute('aria-label', t(locale, el.dataset.i18nAriaLabel));
   return doc;
 }
-function expectedRow(snapshot, room, locale, initial = false) {
-  const doc = baselineDoc(locale); if (initial) doc.documentElement.setAttribute('data-lobby-boot', ''); else doc.documentElement.removeAttribute('data-lobby-boot');
-  const row = originalRows(doc, n('#roomRowTemplate', doc), new Map(), snapshot.rooms, snapshot.connection, snapshot.mine, snapshot.leaving,
-    owners.PRODUCT_GAMES, owners.gameIdForProduct, owners.multiplayerConfigForProduct, () => locale, (key, params) => t(locale, key, params), () => {})(room);
-  for (const control of row.querySelectorAll('.lobby-seat-control')) control.title = control.textContent;
-  // Full/playing membership is independent of native mid-run restoration.
-  if (room.phase !== 'lobby' || room.players >= room.capacity) {
-    const button = row.querySelector('.lobby-join');
-    button.disabled = snapshot.connection !== 'live' || !!snapshot.mine || snapshot.leaving;
-    button.textContent = t(locale, 'multiplayer.joinSpectator');
-    const game = owners.PRODUCT_GAMES[owners.gameIdForProduct(room.product)];
-    button.setAttribute('aria-label', `${t(locale,'multiplayer.joinSpectator')} ${locale === 'en' ? game.subtitle : game.title} #${room.code}`);
-  }
-  return row;
-}
 function expectedDialog(f, locale) {
   const doc = baselineDoc(locale), form = f.service.getSnapshot().form, create = form.mode === 'create', policy = owners.multiplayerConfigForProduct(form.product);
   const option = (value, text) => {const node = doc.createElement('option'); node.value = String(value); node.textContent = text; return node;};
-  n('#gameSelect', doc).replaceChildren(...f.service.getSnapshot().products.map(product => {const game = owners.PRODUCT_GAMES[owners.gameIdForProduct(product)]; return option(product, locale === 'en' ? game.subtitle : game.title);}));
+  n('#gameSelect', doc).replaceChildren(...f.service.getSnapshot().products.map(product => {const game = owners.PRODUCT_GAMES[owners.gameIdForProduct(product)]; return option(product, game.title);}));
   n('#capacitySelect', doc).replaceChildren(...policy.playerCounts.map(count => option(count, t(locale, 'lobby.playersCount', {count}))));
   const rank = n('#difficultySelect', doc); rank.className = 'difficulty-label'; rank.dataset.difficulty = (policy.difficulties[form.difficulty] || '').toLowerCase();
   rank.replaceChildren(...policy.difficulties.map((name, index) => {const node = option(index, name); node.className = 'difficulty-label'; node.dataset.difficulty = name.toLowerCase(); return node;}));
@@ -170,6 +155,7 @@ function expectedDialog(f, locale) {
   n('#createFields', doc).hidden = n('#policyFields', doc).hidden = !create; n('#codeField', doc).hidden = create;
   n('#roomCodeInput', doc).required = !create;
   n('#formNote', doc).textContent = t(locale, create ? form.visibility === 'private' ? 'room.privateHint' : 'lobby.publicRoom' : 'lobby.codeHint');
+  for (const [id, key] of [['gameSelect','lobby.game'], ['capacitySelect','lobby.capacity'], ['difficultySelect','lobby.difficulty'], ['visibilitySelect','room.visibility'], ['cheatSelect','room.cheatMovement']]) n('#'+id, doc).setAttribute('aria-label', t(locale,key));
   return n('#roomDialog', doc);
 }
 
@@ -178,11 +164,12 @@ for (const locale of ['zh-CN', 'en']) test(`Original cooperative list shows room
   const snapshot=f.service.getSnapshot();await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true},{locale});
   assert.equal(n('.lobby-room-code').textContent,'#1234');
   assert.equal(n('.lobby-difficulty').textContent,'Normal');
-  assert.equal(n('.lobby-challengeMode').textContent,t(locale,'room.challengeMode'));
+  assert.equal(n('.lobby-room-rules').textContent,t(locale,'room.challengeMode'));
   assert.equal(n('.lobby-seat-name').textContent,'Alice');
   assert.ok(n('.lobby-room-title h2').textContent.length>0);
   assert.equal(all('.lobby-seat').length,snapshot.visibleRooms[0].capacity);
-  assert.equal(n('.lobby-player-count').textContent,`${snapshot.visibleRooms[0].players} / ${snapshot.visibleRooms[0].capacity}`);
+  assert.equal(n('.lobby-party').getAttribute('aria-label'),t(locale,'lobby.count',{players:snapshot.visibleRooms[0].players,capacity:snapshot.visibleRooms[0].capacity}));
+  assert.equal(env.document.querySelector('.lobby-player-count'),null);
   assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.recruiting'));
   assert.equal(n('.lobby-room-watchers').getAttribute('aria-label'),t(locale,'th09.spectatorCount',{count:3}));
   assert.equal(n('.lobby-room-watchers').textContent,t(locale,'th09.spectatorCount',{count:3}));
@@ -201,12 +188,32 @@ test('List rows retain keyed identity and creation-time motion across reorder', 
   await f.receive([room({code:'5678'})]);await m.update({snapshot:f.service.getSnapshot()});assert.equal(original.isConnected,false);
 });
 
-test('Restored list keeps Replay available offline and preserves the directory state', async () => {
-  const f=fixture();let replays=0;
-  await mountLobby(f,{onReplay:()=>replays++});
+test('Closed rooms briefly exit, cannot be entered, and recover if they return', async () => {
+  const f = await fixture().live([room()]);
+  await mountLobby(f);
+  n('.lobby-room-row');
+  await f.receive([]);
+  const departing = n('.lobby-room-exiting');
+  assert.equal(departing.getAttribute('aria-hidden'), 'true');
+  assert.ok(departing.hasAttribute('inert'));
+  assert.equal(n('#roomList').hidden, false);
+  await f.receive([room()]);
+  assert.equal(n('.lobby-room-row'), departing);
+  assert.equal(departing.classList.contains('lobby-room-exiting'), false);
+  assert.equal(departing.hasAttribute('inert'), false);
+  await f.receive([]);
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 550));});
+  assert.equal(env.document.querySelector('.lobby-room-row'), null);
+  assert.equal(n('#roomList').hidden, true);
+});
+
+test('Offline directory keeps Replay out of room tools and preserves its state', async () => {
+  const f=fixture({loadError:true});
+  await f.start();
+  assert.equal(f.service.getSnapshot().connection,'offline');
+  await mountLobby(f);
   const before=f.service.getSnapshot();
-  assert.equal(n('#watchReplayButton').disabled,false);
-  await click('#watchReplayButton');assert.equal(replays,1);
+  assert.equal(env.document.querySelector('.lobby-actions #watchReplayButton'),null);
   assert.equal(f.service.getSnapshot(),before);
   assert.equal(f.navigations.length,0);
   assert.equal(n('#createButton').disabled,true);
@@ -229,13 +236,15 @@ test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the
   assert.equal(f.closeCalls, 0); assert.deepEqual(f.sessionWrites, [['clear', 'th06mp']]);
 });
 
-for (const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp']) test(`Full waiting room enters the spectator role through the directory: ${product}`, async () => {
+for (const product of spectatorProducts) test(`Full waiting room enters the spectator role through the directory: ${product}`, async () => {
   const f=await fixture({selectedProduct:product,host:{games:[product.slice(0,-2)]}}).live([
     room({product,capacity:2,players:2,joinable:false,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
   const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
-  assert.equal(n('.lobby-join').disabled,false);
+  const entry = '.lobby-join';
+  assert.equal(n(entry).disabled,false);
+
   if(product!=='th09mp')assert.equal(n('.lobby-join').textContent,t('en','multiplayer.joinSpectator'));
-  await click('.lobby-join');assert.equal(f.navigations.length,1);
+  await click(entry);assert.equal(f.navigations.length,1);
   const invite=owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j'));
   assert.equal(invite.g,product);assert.equal(invite.s,true);assert.equal(invite.a,'join');
   assert.equal(f.sessionWrites.some(write=>write[0]==='save'),false,'directory must not reserve a player seat');
@@ -255,24 +264,47 @@ test('Running cooperative room admits an observer even when its engine must wait
 for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list conditions and original static sections: ${locale}`, async () => {
   const f = fixture({locale}); const {opens} = await mountLobby(f, {}, {locale});
   assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listLoading').hidden, false);
-  assert.equal(n('#listHead').hidden, true); assert.equal(env.document.querySelector('#emptyState'), null);
+  assert.equal(n('#refreshRooms').getAttribute('aria-busy'), 'true');
+  assert.equal(n('#refreshRooms').dataset.loading, 'true');
+  assert.equal(env.document.querySelector('#listLoading .lobby-preload-spinner'), null);
+  assert.equal(n('#roomList').hidden, true, 'An unloaded list cannot displace the loading indicator');
+  assert.equal(n('#roomCount').hidden, true);
+  assert.equal(env.document.querySelector('#listHead'),null); assert.equal(env.document.querySelector('#emptyState'), null);
   assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true); assert.equal(n('#roomCount').textContent, '');
   await f.live(); assert.equal(n('#roomList').getAttribute('aria-busy'), 'false'); assert.equal(n('#listLoading').hidden, true);
+  assert.equal(n('#refreshRooms').getAttribute('aria-busy'), 'false');
   assert.equal(n('#emptyTitle').textContent, t(locale, 'lobby.empty')); assert.equal(n('#emptyHint').textContent, t(locale, 'lobby.emptyHint'));
+  assert.equal(n('#roomList').hidden,true,'An empty list cannot consume the empty-state layout space');
   assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 0}));
+  assert.equal(n('#roomCount').hidden, true, 'An empty directory needs no zero-room footer');
   assert.equal(n('#connectionWarning').hidden, true); assert.equal(n('#membership').hidden, true);
   const doc = baselineDoc(locale);
-  for (const selector of ['.lobby-survey-notice', '.lobby-intro', '#listHead']) {
-    assert.deepEqual(normalize(n(selector)), normalize(n(selector, doc)), `Pinned DOM: ${selector}`);
+  for (const selector of ['.lobby-intro']) {
+    const intro = n(selector).cloneNode(true);
+    intro.querySelector('.lobby-survey-link')?.remove();
+    assert.equal(intro.querySelector('h1').className,'visually-hidden');
+    intro.querySelector('h1').removeAttribute('class');
+    assert.deepEqual(normalize(intro), normalize(n(selector, doc)), `Pinned DOM: ${selector}`);
   }
+  assert.ok(n('.lobby-support-links .lobby-survey-link').textContent.includes(t(locale,'lobby.surveyAction')));
+  assert.equal(n('.lobby-survey-link').getAttribute('href'),'https://v.wjx.cn/vm/QqmTdwh.aspx#');
+  assert.equal(n('.lobby-survey-link').getAttribute('target'),'_blank');
+  assert.equal(env.document.querySelector('.book-room-view-toggle'),null);
   await click('#emptyAction'); await click('#createButton'); await click('#codeButton'); assert.deepEqual(opens, ['create', 'create', 'join']);
   assert.equal(n('#refreshRooms').getAttribute('aria-label'), t(locale, 'lobby.refresh'));
-  await f.receive([room()], {total: 45}); assert.equal(n('#listHead').hidden, false); assert.equal(env.document.querySelector('#emptyState'), null);
-  assert.equal(n('#connectionNote').hidden, false); assert.equal(n('#connectionNote').textContent, t(locale, 'lobby.truncated', {count: 1}));
+  await f.receive([room()], {total: 45}); assert.equal(env.document.querySelector('#listHead'),null); assert.equal(env.document.querySelector('#emptyState'), null);
+  assert.equal(n('#roomList').hidden,false,'Live rows use the scrolling list again');
+  assert.equal(env.document.querySelector('#connectionNote'),null,'A truncated response adds no description or layout element');
   assert.equal(n('#roomCount').getAttribute('aria-live'), 'polite'); assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 1}));
-  await click('#refreshRooms'); assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listHead').hidden, true);
+  assert.equal(n('#roomCount').hidden, false);
+  await click('#refreshRooms'); assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(env.document.querySelector('#listHead'),null);
+  assert.equal(n('#refreshRooms').dataset.loading, 'true');
+  assert.equal(n('#roomCount').hidden, false, 'Refreshing existing rows preserves the footer geometry');
+  assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 1}));
+  assert.equal(n('.lobby-join').disabled,true,'Stale room data cannot be joined during refresh');
+  const beforeRefreshJoin=f.navigations.length;await click('.lobby-join');assert.equal(f.navigations.length,beforeRefreshJoin);
   assert.equal(env.document.querySelector('#emptyState'), null); assert.deepEqual(f.socket.sent.at(-1), {type: 'refresh', product: 'th06mp'});
-  await f.receive([room()]); assert.equal(n('#connectionNote').hidden, true);
+  await f.receive([room()]); assert.equal(env.document.querySelector('#connectionNote'),null);
 });
 test('empty rows from older relays disappear with consistent totals while spectator, reconnect and own recovery remain', async () => {
   const empty=room({code:'1111',players:0,seats:[null,null,null]}), live=room({code:'2222'});
@@ -285,11 +317,15 @@ test('empty rows from older relays disappear with consistent totals while specta
   assert.deepEqual(f.service.getSnapshot().rooms.map(r=>r.code),['2222','3333','4444']);
   assert.equal(f.service.getSnapshot().total,3);
   assert.equal(all('#roomList .lobby-room-row').length,3);
-  assert.equal(n('#connectionNote').hidden,true,'filtered rows do not create a false truncated-list notice');
+  assert.equal(env.document.querySelector('#connectionNote'),null);
   assert.equal(f.service.getSnapshot().mine.recoveryToken,'retained-recovery');
   assert.equal(n('#membership').hidden,false);
   await f.receive([empty],{total:1,mine,membershipRecovery:true});
-  assert.equal(f.service.getSnapshot().total,0);assert.equal(all('#roomList .lobby-room-row').length,0);
+  assert.equal(f.service.getSnapshot().total,0);
+  assert.equal(all('#roomList .lobby-room-exiting').length,3);
+  assert.ok(all('#roomList .lobby-room-exiting').every(row=>row.getAttribute('aria-hidden')==='true'&&row.hasAttribute('inert')));
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve,550));});
+  assert.equal(all('#roomList .lobby-room-row').length,0);
   assert.equal(n('#roomCount').textContent,t('en','lobby.roomCount',{count:0}));
   assert.equal(n('#membership').hidden,false,'private recovery survives public row removal');
   await f.receive([room({...empty,seats:[{initial:'A',online:true},null,null]})],{total:1});
@@ -307,13 +343,59 @@ for (const [kind, title, hint] of [['offline', 'lobby.offline', 'lobby.refreshHi
     if (kind === 'unsupported') assert.equal(f.sockets.length, before + 1);
   });
 }
+test('favorite multiplayer rooms sort first, update immediately and retain order within each group', async () => {
+  const rooms = [room({code:'1111'}), room({product:'th07mp',code:'2222'}), room({code:'3333'}), room({product:'th07mp',code:'4444'})];
+  const f = await fixture({selectedProduct:''}).live(rooms);
+  const saved = env.window.localStorage.getItem('eagler.book.multiplayer-favorites');
+  const order = () => all('#roomList .lobby-room-row').map(el => el.dataset.key);
+  const original = rooms.map(room => `${room.product}-${room.code}`);
+  try {
+    env.window.localStorage.setItem('eagler.book.multiplayer-favorites', JSON.stringify(['th07mp']));
+    const {m} = await mountLobby(f);
+    const favoriteFirst = ['th07mp-2222','th07mp-4444','th06mp-1111','th06mp-3333'];
+    assert.deepEqual(order(), favoriteFirst);
+    const retained = n('[data-key="th06mp-1111"]');
+    await f.receive(rooms); assert.deepEqual(order(), favoriteFirst);
+    await React.act(async () => {
+      env.window.localStorage.setItem('eagler.book.multiplayer-favorites', '[]');
+      env.window.dispatchEvent(new env.window.CustomEvent('eagler-book-preferences'));
+    });
+    assert.deepEqual(order(), original); assert.equal(n('[data-key="th06mp-1111"]'),retained);
+    await React.act(async () => {
+      env.window.localStorage.setItem('eagler.book.multiplayer-favorites', JSON.stringify(['th07mp']));
+      env.window.dispatchEvent(new env.window.Event('storage'));
+    });
+    assert.deepEqual(order(), favoriteFirst);
+    await m.update({productFilters:['th06mp']});
+    assert.deepEqual(order(), ['th06mp-1111','th06mp-3333']);
+    assert.deepEqual(f.service.getSnapshot().visibleRooms.map(room => `${room.product}-${room.code}`),original);
+  } finally {
+    if (saved === null) env.window.localStorage.removeItem('eagler.book.multiplayer-favorites');
+    else env.window.localStorage.setItem('eagler.book.multiplayer-favorites',saved);
+  }
+});
+
 test('Lobby failed live connection retains stale room warning, interrupted reconnect, and recovery', async () => {
   const f = await fixture().live([room()]); await mountLobby(f); await f.emit('error');
   assert.equal(n('#connectionWarningTitle').textContent, t('en', 'lobby.disconnected')); assert.equal(n('#connectionWarning').hidden, false);
   assert.equal(n('.lobby-join').disabled, true); assert.equal(env.document.querySelector('#emptyState'), null);
   await click('#connectionRefresh'); assert.equal(f.service.getSnapshot().connection, 'loading'); assert.equal(n('#connectionWarning').hidden, false);
-  assert.equal(n('#listLoading').hidden, false); assert.equal(all('.lobby-room-row').length, 0);
-  await f.receive(); assert.equal(n('#connectionWarning').hidden, true); assert.ok(n('#emptyState'));
+  assert.equal(n('#listLoading').hidden, true); assert.equal(all('.lobby-room-row').length, 1);
+  const retainedRow = n('.lobby-room-row');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await f.emit('error'); await click('#connectionRefresh');
+    assert.equal(n('#listLoading').hidden, true);
+    assert.equal(n('#connectionWarning').hidden, false);
+    assert.equal(n('.lobby-room-row'), retainedRow, 'reconnect keeps the existing row without replaying its entrance');
+  }
+  await f.receive(); assert.equal(n('#connectionWarning').hidden, true);
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve,550));});
+  assert.ok(n('#emptyState'));
+  await f.receive([room()]);
+  await f.emit('close', {code: 1006});
+  assert.equal(n('#connectionWarning').hidden, false);
+  assert.equal(n('#listLoading').hidden, true);
+  assert.equal(all('.lobby-room-row').length, 1);
 });
 for (const locale of ['zh-CN', 'en']) test(`Lobby membership/recovery uses exact state/copy and release service action: ${locale}`, async () => {
   const mine = {product: 'th06mp', code: '9876', recoveryToken: 'fixture-token'};
@@ -342,11 +424,12 @@ for (const locale of ['zh-CN', 'en']) for (const mode of ['create', 'join']) tes
   const f = await fixture({locale}).live(); await mountDialog(f, mode, {}, {locale});
   assert.deepEqual(normalize(n('#roomDialog')), normalize(expectedDialog(f, locale)));
   assert.equal(n('#roomDialog').open, true); assert.equal(n('#roomDialog').getAttribute('aria-labelledby'), 'dialogTitle');
-  assert.deepEqual(all('#roomDialog select').map(s => s.id), ['gameSelect', 'capacitySelect', 'difficultySelect', 'visibilitySelect', 'cheatSelect']);
-  assert.equal(all('.mizuki-select, .mizuki-select-menu, [role="combobox"]').length, 0);
+  assert.deepEqual(all('#roomDialog select.custom-select-native').map(s => s.id), ['gameSelect', 'capacitySelect', 'difficultySelect', 'visibilitySelect', 'cheatSelect']);
+  assert.equal(all('#roomDialog [role="combobox"]').length, 5);
+  for (const select of all('#roomDialog select.custom-select-native')) assert.equal(select.nextElementSibling.getAttribute('aria-label'), select.getAttribute('aria-label'));
   assert.equal(n('#gameSelect').value, 'th06mp'); assert.equal(n('#capacitySelect').value, '2'); assert.equal(n('#difficultySelect').value, '1');
   assert.equal(n('#roomCodeInput').required, mode === 'join'); if (mode === 'join') assert.equal(env.document.activeElement, n('#roomCodeInput'));
-  assert.equal(all('#roomDialog input, #roomDialog select').length, 6, 'No extra room-policy fields');
+  assert.equal(all('#roomDialog input, #roomDialog select.custom-select-native').length, 6, 'No extra room-policy fields');
 });
 test('Dialog retains code/visibility/cheat fields while each open/game change resets capacity and difficulty', async () => {
   const f = await fixture().live(); const {m} = await mountDialog(f);
@@ -453,17 +536,15 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
   for(const [phase,players,key] of [['lobby',1,'lobby.recruiting'],['lobby',2,'lobby.roomFull'],['playing',2,null],['lobby',1,'lobby.recruiting']]){
     await f.receive([room({product,capacity:2,players,phase,startedAt:Date.now()-65000,seats:players===1?seats:[seats[0],{initial:'B',online:true,ready:false}]})]);
     await m.update({snapshot:f.service.getSnapshot()});
-    if(product==='th09mp'){
-      const text=n('.th09-room-duration').textContent;
-      assert.equal(env.document.querySelector('.lobby-room-state'),null,'state has one display location');
-      if(key)assert.equal(text,t(locale,key));else assert.equal(text,t(locale,'th09.elapsed',{minutes:0}));
-    }else{
+
       const state=phase==='playing'?'playing':players===2?'full':'recruiting';
       assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.'+state));
       assert.equal(!!env.document.querySelector('.room-elapsed'),phase==='playing');
-      if(phase==='playing')assert.match(n('.room-elapsed').textContent,/1:0\d/);
+      if(phase==='playing') {
+        if(product==='th09mp') assert.equal(n('.room-elapsed').textContent,t(locale,'room.elapsedTime',{time:'0:00'}));
+        else assert.match(n('.room-elapsed').textContent,/1:0\d/);
+      }
       assert.equal(env.document.querySelector('.th09-room-duration'),null);
-    }
   }
 });
 
@@ -476,16 +557,15 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
     const policy = owners.multiplayerConfigForProduct(product);
-    assert.equal(n('.lobby-difficulty').hidden, !!policy.inGameSelection);
     if (policy.inGameSelection) {
-      assert.equal(n('.lobby-difficulty').textContent, '');
+      assert.equal(env.document.querySelector('.lobby-difficulty'),null);
       assert.equal(all('.difficulty-label').length, 0);
     } else {
       assert.equal(n('.lobby-difficulty').textContent, policy.difficulties[snapshot.visibleRooms[0].difficulty]);
     }
     if (product === 'th09mp') {
-      assert.equal(n('.th09-room-score').textContent,'VS');
-      assert.equal(n('.th09-room-duration').textContent,t(locale,'lobby.recruiting'));
+      assert.equal(n('.book-room-score').textContent,'VS');
+
       assert.equal(all('.lobby-seat').length,2);
     } else {
       assert.equal(n('.lobby-room-code').textContent, '#' + snapshot.visibleRooms[0].code);
@@ -568,11 +648,160 @@ test('Unmount discards only its submitted receipt before a later dialog can clos
   f.service.formDidClose(); assert.equal(f.navigations.length, 0);
 });
 
+test('Local game filtering returns to all rooms without a loading request', async () => {
+  const f = await fixture({selectedProduct: '', clientSideFiltering: true}).live([
+    room({product: 'th06mp', code: '1234'}), room({product: 'th07mp', code: '2345'}),
+  ]);
+  const {m} = await mountLobby(f, {productFilters: []});
+  const sent = f.socket.sent.length;
+  await m.update({productFilters: ['th06mp']});
+  await React.act(async () => f.service.selectProduct('th06mp'));
+  assert.deepEqual(all('.lobby-room-row').map(row => row.dataset.key), ['th06mp-1234']);
+  assert.equal(n('#listLoading').hidden, true);
+  await m.update({productFilters: []});
+  assert.deepEqual(all('.lobby-room-row').map(row => row.dataset.key), ['th06mp-1234', 'th07mp-2345']);
+  await React.act(async () => f.service.selectProduct(''));
+  assert.equal(n('#listLoading').hidden, true);
+  assert.equal(f.socket.sent.length, sent);
+  await React.act(async () => f.service.selectProduct('th06mp'));
+  await React.act(async () => assert.equal(f.service.prepareForm('create'), true));
+  assert.equal(f.service.getSnapshot().form.product, 'th06mp');
+  await React.act(async () => f.service.refreshRooms());
+  assert.equal(f.socket.sent.at(-1).product, '');
+});
+
+test('Truncated all-game response falls back to server filtering and restores the selected room', async () => {
+  const f = fixture({selectedProduct: 'th06mp', clientSideFiltering: true});
+  const {m} = await mountLobby(f);
+  await f.start();
+  const truncated = Array.from({length: 200}, (_, index) => room({product: 'th07mp', code: String(1000 + index)}));
+  await f.receive(truncated, {product: '', total: 201});
+  assert.deepEqual(f.socket.sent.at(-1), {type: 'refresh', product: 'th06mp'});
+  assert.equal(f.service.getSnapshot().loading, true);
+
+  await f.receive([room({product: 'th06mp', code: '4321'})], {product: 'th06mp', total: 1});
+  assert.deepEqual(f.service.getSnapshot().visibleRooms.map(item => `${item.product}-${item.code}`), ['th06mp-4321']);
+  assert.deepEqual(all('.lobby-room-row').map(row => row.dataset.key), ['th06mp-4321']);
+
+  const sent = f.socket.sent.length;
+  await React.act(async () => f.service.selectProduct('th07mp'));
+  assert.equal(f.socket.sent.length, sent, 'server filter keeps the original debounce');
+  const [timerId, filterTimer] = [...f.timers].find(([, timer]) => timer.delay === 180) || [];
+  assert.ok(timerId);
+  await React.act(async () => filterTimer.fn());
+  assert.deepEqual(f.socket.sent.at(-1), {type: 'refresh', product: 'th07mp'});
+  await f.receive([room({product: 'th07mp', code: '5678'})], {product: 'th07mp', total: 1});
+  assert.deepEqual(f.service.getSnapshot().visibleRooms.map(item => `${item.product}-${item.code}`), ['th07mp-5678']);
+  assert.deepEqual(all('#roomList .lobby-room-row:not(.lobby-room-exiting)').map(row => row.dataset.key), ['th07mp-5678']);
+  assert.equal(all('#roomList .lobby-room-exiting').length, 1);
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 550));});
+  assert.deepEqual(all('#roomList .lobby-room-row').map(row => row.dataset.key), ['th07mp-5678']);
+  await m.unmount();
+});
+
+test('All multiplayer requests the unfiltered directory; multi-selection shows only checked games', async () => {
+  const f = await fixture({selectedProduct: ''}).live([
+    room({product: 'th06mp', code: '1234'}), room({product: 'th07mp', code: '2345'}), room({product: 'th08mp', code: '3456'}),
+  ]);
+  assert.equal(f.service.getSnapshot().selectedProduct, '');
+  assert.equal(f.service.getSnapshot().visibleRooms.length, 3);
+  const {m} = await mountLobby(f, {productFilters: ['th06mp', 'th08mp']});
+  assert.deepEqual(all('.lobby-room-row').map(n => n.dataset.key), ['th06mp-1234', 'th08mp-3456']);
+  await m.update({productFilters: []});
+  assert.equal(all('.lobby-room-row').length, 3);
+  await React.act(async () => f.service.selectProduct('th07mp'));
+  await f.receive([room({product: 'th07mp', code: '2345'})]);
+  await React.act(async () => f.service.selectProduct(''));
+  assert.equal(f.service.getSnapshot().selectedProduct, '');
+  await React.act(async () => f.service.refreshRooms());
+  assert.equal(f.socket.sent.at(-1).product, '');
+});
+
 for (const product of ['th06mp','th09mp']) test(`Approved public names remain complete in directory cards (${product})`,async()=>{
   const names=['完整公开昵称甲乙丙丁戊己','完整公开昵称'];
   const f=await fixture({selectedProduct:product}).live([room({product,publicNames:true,capacity:2,seats:names.map(name=>({initial:name[0],name,online:true}))})]);
   const snapshot=f.service.getSnapshot();
   assert.deepEqual(snapshot.visibleRooms[0].seats.map(seat=>seat.name),names);
   await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true});
-  assert.deepEqual(all(product==='th09mp'?'.th09-duel-name':'.lobby-seat-name').map(node=>node.textContent),names);
+  assert.deepEqual(all('.lobby-seat-name').map(node=>node.textContent),names);
+});
+
+for (const product of ['th06mp','th09mp']) test(`Approved P1/P2 names are public names, not placeholders (${product})`,async()=>{
+  const names=['P1','P2'];
+  const f=await fixture({selectedProduct:product}).live([room({product,publicNames:true,capacity:2,seats:names.map(name=>({initial:name[0],name,online:true,controlMode:'normal'}))})]);
+  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  assert.deepEqual(all('.lobby-seat-name').map(node=>node.textContent),names);
+  assert.equal(all('.lobby-seat-control').length,2);
+});
+
+test('Legacy duel names use the machine label, then initial, and describe empty seats',async()=>{
+  const f=await fixture({selectedProduct:'th09mp'}).live([room({product:'th09mp',capacity:2,seats:[{initial:'花',machineSign:'',online:true},null]})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  assert.deepEqual(all('.lobby-seat-name').map(node=>node.textContent),['花',t('en','th09.waitingPlayer')]);
+  await f.receive([room({product:'th09mp',capacity:2,seats:[{initial:'花',machineSign:'Reimu',online:true},null]})]);
+  await m.update({snapshot:f.service.getSnapshot()});
+  assert.equal(n('.lobby-seat-name').textContent,'Reimu');
+});
+
+test('Flower View keeps Japanese identity, score, shared facts and one contextual entry', async () => {
+  const f = await fixture({selectedProduct:'th09mp',locale:'zh-CN'}).live([room({product:'th09mp',capacity:2,phase:'playing',startedAt:Date.now()-65000,players:2,joinable:false,seats:[{initial:'A',online:true,stats:{wins:3,losses:2,minutes:7}},{initial:'B',online:true,stats:{wins:5,losses:1,minutes:8}}]})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-room-title h2').textContent,'東方花映塚');
+  assert.equal(env.document.querySelector('.lobby-room-subtitle'),null);
+  assert.equal(n('.book-room-score-value').textContent,'3 : 5');
+  assert.equal(n('.book-room-score').getAttribute('aria-label'),`${t('zh-CN','th09.score')} 3 : 5`);
+  assert.equal(n('.room-elapsed').textContent,t('zh-CN','room.elapsedTime',{time:'8:00'}));
+  assert.equal(env.document.querySelector('.lobby-difficulty'),null);
+  assert.equal(all('.lobby-room-row button').length,1);
+  assert.equal(n('.lobby-join').textContent,t('zh-CN','multiplayer.joinSpectator'));
+  await click('.lobby-join');
+  assert.equal(owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j')).s,true);
+  await m.unmount();
+});
+
+test('Directory gameplay flags use their own column and regular rooms name their rules', async () => {
+  const f=await fixture({locale:'zh-CN'}).live([room({disableCheatMovement:true,challengeMode:true})]);
+  const {m}=await mountLobby(f,{}, {locale:'zh-CN'});
+  assert.equal(n('.lobby-room-rules').parentElement,n('.lobby-room-row'));
+  assert.equal(n('.lobby-room-meta').nextElementSibling,n('.lobby-room-facts'));
+  assert.equal(n('.lobby-difficulty').dataset.difficulty,'normal');
+  assert.ok(n('.lobby-room-rules').textContent.includes(t('zh-CN','lobby.noCheat')));
+  assert.ok(n('.lobby-room-rules').textContent.includes(t('zh-CN','room.challengeMode')));
+  await f.receive([room()]);
+  assert.deepEqual([...n('.lobby-room-rules').children].map(node=>node.textContent),[t('zh-CN','directory.regularRules')]);
+  assert.equal(n('.lobby-room-rules').firstElementChild.classList.contains('lobby-room-rules-standard'),true);
+});
+
+
+test('room quick filters distinguish playable seats, waiting rooms and spectators and update with the live directory', async () => {
+  const rooms = [room({code: '1111'}), room({code: '2222', players: 3, seats: [...room().seats.slice(0, 2), {initial: 'S', online: true, ready: false, controlMode: 'normal'}]}), room({code: '3333', phase: 'playing', players: 3}), room({code: '4444', joinable: false})];
+  const f = await fixture({selectedProduct: ''}).live(rooms);
+  await mountLobby(f);
+  const keys = () => all('.lobby-room-row').map(n => n.dataset.key);
+  const filter = async id => {
+    await click('.book-room-filter-trigger');
+    assert.equal(n('.book-room-filter-trigger').getAttribute('aria-expanded'),'true');
+    await click(`[data-room-filter="${id}"]`);
+    assert.equal(n('.book-room-filter-trigger').getAttribute('aria-expanded'),'false','Single-choice room filter closes after selection');
+    await React.act(async()=>new Promise(resolve=>env.window.requestAnimationFrame(()=>env.window.requestAnimationFrame(resolve))));
+  };
+  assert.equal(keys().length, 4);
+  await filter('open');
+  assert.deepEqual(keys(), ['th06mp-1111']);
+  await filter('waiting');
+  assert.deepEqual(keys(), ['th06mp-1111', 'th06mp-2222', 'th06mp-4444']);
+  await filter('spectate');
+  assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
+  await filter('open');
+  await f.receive(rooms.slice(1));
+  assert.equal(all('.lobby-room-exiting').length,1);
+  assert.equal(n('.lobby-room-exiting').getAttribute('aria-hidden'),'true');
+  await React.act(async()=>{await new Promise(resolve=>setTimeout(resolve,550));});
+  assert.equal(keys().length, 0);
+  assert.equal(n('#emptyTitle').textContent, 'No matching rooms');
+  await click('#emptyAction');
+  await click('.book-room-filter-trigger');
+  assert.equal(n('[data-room-filter="all"]').getAttribute('aria-checked'), 'true');
+  assert.equal(keys().length, 3);
+  assert.equal(f.navigations.length, 0, 'filtering never enters a room');
 });

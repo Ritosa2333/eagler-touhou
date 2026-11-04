@@ -1,13 +1,14 @@
 /** Real build output contracts only. These tests never start a browser/server. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile} from 'node:fs/promises';
+import {cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {parse} from 'parse5';
+import {parse as parseJavaScript} from 'acorn';
 import {buildReactAppShell} from '../../scripts/ui-rewrite/app-shell-build.ts';
 import {APP_SHELL_RETIREMENT_WORKER} from '../../lib/app-shell-retirement.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
@@ -23,10 +24,11 @@ before(async () => {
   coldSource = resolve(work, 'source'); await mkdir(coldSource);
   // Exercise the supported build from authored inputs, never a warm ignored
   // launcher cache. Keep dependency installation shared; copy no build output.
-  for (const path of ['app', 'src', 'lib', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
+  for (const path of ['app', 'src', 'lib', 'messages', 'project.inlang/settings.json', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
     'content', 'favicon.ico', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
-    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
+    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
+    await mkdir(resolve(coldSource, path, '..'), {recursive: true});
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});
   }
   await cp(resolve('../common/contracts'), resolve(work, 'common/contracts'), {recursive: true});
@@ -36,6 +38,8 @@ before(async () => {
     const path = resolve(coldSource, file);
     await writeFile(path, await readFile(path, 'utf8') + '\n\nReact build authored-content freshness probe\n');
   }
+  const touchStyle=resolve(coldSource,'app/components/player/touch-help-ui.css');
+  await writeFile(touchStyle,await readFile(touchStyle,'utf8')+'\n.game-help-content{--build-authored-touch-proof:1}\n');
   await symlink(resolve('node_modules'), resolve(coldSource, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
   assert.equal(await exists(resolve(coldSource, '.cache/build/browser')), false);
   assert.equal(await exists(resolve(coldSource, 'assets/contracts')), false);
@@ -61,7 +65,7 @@ test('default actual build publishes an enabled same-origin offline worker', asy
   const worker = await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8');
   assert.notEqual(worker, APP_SHELL_RETIREMENT_WORKER);
   assert.match(worker, /App Shell integrity mismatch/);
-  for (const file of ['index.html', 'en.html', 'lobby.html']) {
+  for (const file of ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html']) {
     const html = await readFile(resolve(directory, file), 'utf8');
     assert.match(html, /name="eagler-react-app-shell"/);
     assert.match(html, /same-origin/);
@@ -70,7 +74,7 @@ test('default actual build publishes an enabled same-origin offline worker', asy
 test('explicitly disabled actual build publishes the retirement worker', async () => {
   const {directory} = outputs.get('disabled');
   assert.equal(await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8'), APP_SHELL_RETIREMENT_WORKER);
-  for (const file of ['index.html', 'en.html', 'lobby.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
+  for (const file of ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
 });
 for (const name of ['root', 'nested']) test(`${name} output uses actual React chunks, exact mount, canonical worker and byte identities`, async () => {
   const {directory, mountPath} = outputs.get(name), appShell = configuration(mountPath);
@@ -78,6 +82,8 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
   assert.ok(result); assert.equal(result.warnings.length, 0);
   const files = result.contract.entries;
   assert.ok(files.includes('./')); assert.ok(files.includes('about.html')); assert.ok(files.includes('faq.html')); assert.ok(files.includes('styles.css'));
+  for (const path of ['guide.html','multiplayer.html','compatibility.html', 'compatibility.en.html', 'compatibility.ja.html']) assert.ok(files.includes(path), `${path}: help is available offline`);
+  for(const path of ['about.css','site-help.mjs'])assert.equal(await exists(resolve(directory,path)),false,`${path}: retired document resource`);
   assert.equal(await exists(resolve(directory, 'migrate.html')), true); assert.equal(files.includes('migrate.html'), false);
   assert.equal(files.some(path => path.startsWith('legacy/')), false);
   assert.ok(files.some(path => /^assets\/manifest-.+\.js$/.test(path)));
@@ -89,11 +95,13 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
     const bytes = await readFile(resolve(directory, entry.url === './' ? 'index.html' : entry.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'), entry.revision, entry.url);
   }
-  for (const path of ['index.html', 'en.html', 'lobby.html']) {
+  for (const path of ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html']) {
     const html = await readFile(resolve(directory, path), 'utf8'), elements = nodes(html);
     assert.equal((await stat(resolve(directory, path))).isFile(), true, 'original flat document URL');
-    assert.equal(elements.find(node => node.tagName === 'html').attrs.find(attr => attr.name === 'lang').value, path === 'en.html' ? 'en' : 'zh-CN');
-    assert.match(html, path === 'en.html' ? /<title[^>]*>Touhou Project Original STGs ~ EAGLER TOUHOU<\/title>/ : path === 'lobby.html' ? /<title>联机大厅 ~ EAGLER TOUHOU<\/title>/ : /<title[^>]*>东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
+    const htmlAttributes = elements.find(node => node.tagName === 'html').attrs;
+    assert.equal(htmlAttributes.find(attr => attr.name === 'lang').value, path === 'en.html' ? 'en' : path === 'ja.html' ? 'ja' : 'zh-CN');
+    assert.equal(htmlAttributes.some(attr => attr.name === 'data-ui-home'), ['index.html', 'en.html', 'ja.html'].includes(path), `${path}: cold entry shares home layout`);
+    assert.match(html, path === 'en.html' ? /<title[^>]*>Touhou Project Original STGs ~ EAGLER TOUHOU<\/title>/ : path === 'ja.html' ? /<title[^>]*>東方Project 原作STG ~ EAGLER TOUHOU<\/title>/ : path === 'lobby.html' ? /<title>联机大厅 ~ EAGLER TOUHOU<\/title>/ : path === 'profile.html' ? /<title>玩家主页 ~ EAGLER TOUHOU<\/title>/ : /<title[^>]*>东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
     assert.ok(html.includes(`"basename":${JSON.stringify(mountPath)}`));
     const metadata = elements.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === 'eagler-react-app-shell'));
     const doc = {querySelectorAll: () => metadata.map(node => ({getAttribute: name => node.attrs.find(attr => attr.name === name)?.value}))};
@@ -104,7 +112,10 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
     assert.equal(readReactAppShellDeployment(doc, {href: 'https://production.invalid' + mountPath + path}), undefined);
     for (const node of elements) for (const attr of node.attrs) if (['src', 'href'].includes(attr.name) && attr.value.startsWith('/') && attr.value.includes('/assets/')) {
       assert.ok(attr.value.startsWith(mountPath + 'assets/'), attr.value);
-      assert.ok(files.includes(attr.value.slice(mountPath.length)), attr.value);
+      const asset=new URL(attr.value,origin);
+      assert.equal(asset.search,'');assert.equal(asset.hash,'');
+      if(attr.value.endsWith('#'))assert.ok(node.tagName==='link'&&attr.value.endsWith('.css#'),attr.value);
+      assert.ok(files.includes(asset.pathname.slice(mountPath.length)), attr.value);
     }
   }
   const worker = await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8');
@@ -127,14 +138,21 @@ test('mismatched graph mount, forbidden additions and missing graph inputs fail 
 test('actual build keeps canonical public URLs including bounded legacy readers', async () => {
   for (const {directory} of outputs.values()) {
     for (const file of STATIC_FRONTEND_PACKAGE_FILES) assert.equal(await exists(resolve(directory, file)), true, file);
+    for(const file of ['index.html','faq.html','about.html','guide.html','multiplayer.html']){
+      const html=await readFile(resolve(directory,file),'utf8');
+      const order=html.indexOf('id="ui-style-layers"'),style=html.indexOf('rel="stylesheet"');
+      assert.ok(order>=0&&order<style,`${file}: layer order precedes split stylesheets`);
+      assert.equal([...html.matchAll(/name="darkreader-lock"/g)].length,1,`${file}: explicit theme ownership`);
+    }
     for (const file of ['README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'NOTICE.txt']) {
       assert.deepEqual(await readFile(resolve(directory, file)), await readFile(resolve(file)));
     }
     for (const file of ['faq.html', 'content/FIRST_USE_NOTICE.html', 'content/MULTIPLAYER.html']) {
       assert.match(await readFile(resolve(directory, file), 'utf8'), /React build authored-content freshness probe/);
     }
-    const touch = await readFile(resolve(directory, 'touch-guide.css'));
-    assert.equal(createHash('sha256').update(touch).digest('hex'), 'c205a923d1ad5b439fbd5d8dc0237766bfdcc528c321aae4bd840ce8f8e90407');
+    const styles = (await readdir(resolve(directory, 'assets'))).filter(file => file.endsWith('.css'));
+    const touch = (await Promise.all(styles.map(file => readFile(resolve(directory,'assets',file),'utf8')))).join('\n');
+    assert.match(touch,/--build-authored-touch-proof:\s*1/,'Shared help styles must come from current authored CSS');
     for (const file of STATIC_FRONTEND_PACKAGE_FILES.filter(file => file.startsWith('legacy/'))) {
       const source = await readFile(resolve(directory, file), 'utf8');
       assert.doesNotMatch(source, /node:|__vite-browser-external/);
@@ -146,7 +164,16 @@ test('actual build keeps canonical public URLs including bounded legacy readers'
 });
 
 test('original legacy compatibility assertions pass unchanged against published modules', async () => {
-  const original = await readFile(resolve('tests/test-legacy-game-pack.mjs'), 'utf8');
+  const registered = await readFile(resolve('tests/test-legacy-game-pack.mjs'), 'utf8');
+  const program=parseJavaScript(registered,{ecmaVersion:'latest',sourceType:'module'});
+  const registrations=program.body.filter(node=>node.type==='ExpressionStatement'&&node.expression.type==='CallExpression'&&node.expression.callee.name==='test');
+  assert.equal(registrations.length,1,'one complete original assertion block');
+  const statement=registrations[0],callback=statement.expression.arguments[1];
+  const registrationImport=program.body.find(node=>node.type==='ImportDeclaration'&&node.source.value==='vitest');
+  assert.ok(registrationImport);
+  let original=registered;
+  for(const[start,end,value]of [[statement.start,statement.end,registered.slice(callback.body.start+1,callback.body.end-1)],[registrationImport.start,registrationImport.end,'']].sort((a,b)=>b[0]-a[0]))original=original.slice(0,start)+value+original.slice(end);
+
   for (const [name, {directory}] of outputs) {
     let replacements = 0;
     const adapted = original.replace(/"\.\.\/compat\/([^"\n]+\.mjs)"/g, (_match, file) => {

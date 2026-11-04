@@ -1,4 +1,5 @@
-import test from 'node:test';
+import {test} from 'vitest';
+import {Request} from 'undici/index.js';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile, mkdtemp, writeFile} from 'node:fs/promises';
@@ -11,11 +12,12 @@ const source = await readFile(new URL('../../src/site-mirror-sw.js', import.meta
 const scopeUrl = new URL('https://primary.test/nested/');
 const config = {schema:'eagler-touhou/site-network/1', mirrors:['https://second.test/site/', 'https://third.test:8443/']};
 function harness(fetchImpl, options = {}) {
-  const requests = [];
+  const requests = [], logs = [];
   const context = vm.createContext({URL, Request, Response, Headers, AbortController, setTimeout, clearTimeout,
+    console:{info:(...args)=>logs.push(args),warn:(...args)=>logs.push(args)},
     fetch: request => {requests.push(request); return fetchImpl(request);}});
   vm.runInContext(source, context);
-  return {requests, validate: context.validateSiteNetwork,
+  return {requests, logs, validate: context.validateSiteNetwork,
     router:context.createSiteMirrorRouting({scopeUrl, loadConfig:async () => config, timeoutMs:15, ...options})};
 }
 const read = response => response.text();
@@ -31,6 +33,13 @@ test('failed primary uses ordered mirrors and remembers failure across requests'
   assert.equal(h.requests[1].redirect, 'error');
   await h.router.run(new URL('b.js', scopeUrl), read);
   assert.equal(h.requests[2].url, 'https://second.test/site/b.js');
+  assert.equal(h.logs[0][0],'[EAGLER|入口回退]');
+  assert.equal(h.logs[0][1].node,'https://primary.test');
+  assert.equal(h.logs[1][0],'[EAGLER|入口]');
+  assert.equal(h.logs[1][1].node,'https://second.test');
+  assert.equal(h.logs[1][1].path,'/nested/a.js');
+  assert.ok(!JSON.stringify(h.logs).includes('?v='),'diagnostics omit query strings');
+  assert.equal(h.logs.length,2,'unchanged successful entry does not log every file');
 });
 
 test('connection stalls, body stalls, 5xx and failed integrity advance to the next mirror', async () => {
@@ -75,7 +84,7 @@ test('nested shells discover resources at the mirror origin root', async () => {
 
 test('build pins deployment configuration, metadata and descriptors to the shell release', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'site-mirror-build-'));
-  t.after(async () => {const {rm} = await import('node:fs/promises'); await rm(directory, {recursive:true,force:true});});
+  t.onTestFinished(async () => {const {rm} = await import('node:fs/promises'); await rm(directory, {recursive:true,force:true});});
   for (const [path, value] of Object.entries({
     'index.html':'<h1>launcher</h1>', 'site-network.json':JSON.stringify(config),
     'site-manifest.json':'{}', 'host-manifest.json':'{}',

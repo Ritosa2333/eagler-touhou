@@ -3,5 +3,5 @@ export {MultiplayerGuideDialog, type MultiplayerGuideDialogProps} from './Multip
 export {AppleRefreshDialog} from './AppleRefreshDialog';
 export {DonationDialog, type DonationDialogProps} from './DonationDialog';
 export {SiteNotice, type SiteNoticeProps, type SiteNoticeHandle} from './SiteNotice';
-export {type MainDialogProps} from './use-main-dialog';
+export type {MainDialogProps} from './use-main-dialog';
 export {ReplayDialog, type ReplayDialogProps} from './ReplayDialog';

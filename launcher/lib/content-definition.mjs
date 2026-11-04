@@ -1,3 +1,5 @@
+import {TH05_DATA_LAYOUT,TH05_MUSIC_FILES} from "./th05-content-layout.mjs";
+import {TH17_MUSIC_FILES} from "./th17-content-layout.mjs";
 import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
 import { TH13_DATA_LAYOUT, TH13_MUSIC_FILES } from "./th13-content-layout.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
@@ -10,10 +12,24 @@ const TH06_ARCHIVES = Object.freeze([
   "紅魔郷CM.DAT", "紅魔郷ED.DAT", "紅魔郷IN.DAT",
   "紅魔郷MD.DAT", "紅魔郷ST.DAT", "紅魔郷TL.DAT",
 ]);
+const TH05_PREPARED_CONTENT = Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze([
+  "th05.data", ...TH05_MUSIC_FILES.map(file => `music/${file}`), "artwork/th05-card.webp",
+])});
 
 // Product content shape only. This file declares names and Runtime mounts, but
 // never points at a workstation build, asset directory, or generated identity.
 export const PRODUCT_CONTENT = Object.freeze({
+  th05: Object.freeze({
+    original: Object.freeze({files: Object.freeze(["kaiki1.dat", "kaiki2.dat", "zun.com"]), preparedAlternative: TH05_PREPARED_CONTENT}),
+    dataLayout: TH05_DATA_LAYOUT,
+    music: Object.freeze({ogg: Object.freeze({mount: "/music", files: TH05_MUSIC_FILES})}),
+    hostPreparation: Object.freeze({
+      preparedContent: TH05_PREPARED_CONTENT,
+      artwork: Object.freeze({kind: "prepared-content", directory: "artwork"}),
+      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
+      languagePack: Object.freeze({kind: "retail-overlay-compiler", script: "scripts/prepare-th05-language-pack.mjs", optional: true, languages: Object.freeze(["lang_zh-hans"])}),
+    }),
+  }),
   th06: Object.freeze({
     original: Object.freeze({
       files: TH06_ARCHIVES,
@@ -340,6 +356,18 @@ export const PRODUCT_CONTENT = Object.freeze({
         developmentEnv: "EAGLER_TH15_ARCHIVES",
         developmentFiles: Object.freeze(["th15.dat"]),
       }),
+    }),
+  }),
+  th17: Object.freeze({
+    original: Object.freeze({files: Object.freeze(["th17.dat"]), oggSourceFiles: Object.freeze(["thbgm.dat"]),
+      preparedAlternative: Object.freeze({directory: "assets-ogg", markerFiles: Object.freeze(["th17.data", "music/th17_01.ogg"])})}),
+    dataLayout: "sha256-2f0e4367726e33911fd7efb7c49ae0e258d20be39dcff7c4b7edd41ce8104275",
+    music: Object.freeze({ogg: Object.freeze({mount: PRODUCT_GAMES.th17.package.musicMounts.ogg, files: TH17_MUSIC_FILES})}),
+    hostPreparation: Object.freeze({
+      artwork: Object.freeze({kind: "thtk-anm-title", card: Object.freeze({archive: "th17.dat", anm: "title.anm",
+        textures: Object.freeze(["title/title_bk00.png", "title/title_ch00.png", "title/title_logo.png"])})}),
+      preparedContent: Object.freeze({directory: "assets-ogg", markerFiles: Object.freeze(["th17.data", "music/th17_01.ogg"]), script: "scripts/prepare-th17-content.mjs", baseline: "host/ogg-baselines/th17.json"}),
+      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
     }),
   }),
   th20: Object.freeze({

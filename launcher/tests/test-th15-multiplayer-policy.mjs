@@ -1,4 +1,4 @@
-/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {readFile} from 'node:fs/promises';
@@ -13,6 +13,21 @@ import {loadRuntimeBuildConfig, getRuntimeBuildProfile} from '../lib/runtime-bui
 import {DEVELOPMENT_CONTENT} from '../lib/development-content.mjs';
 import {projectRelativeWorkspacePath} from '../lib/workspace-layout.mjs';
 
+test("th15 multiplayer policy", async () => {
+/** L3/module + local relay protocol. No game engine, browser or public-network evidence. */
+
+
+
+
+
+
+
+
+
+
+
+
+
 const game=PRODUCT_GAMES.th15, policy=multiplayerConfigForProduct('th15mp');
 assert.equal(isMultiplayerProductId('th15mp'),true);
 assert.equal(gameIdForProduct('th15mp'),'th15');
@@ -25,7 +40,7 @@ assert.equal(policy.spectator,true);
 assert.equal(policy.titleRoomEntry,false);
 assert.equal(policy.gameplay,'cooperative');
 assert.equal(Object.hasOwn(policy,'challengeMode'),false,'challenge is a shared cooperative room rule, not a per-title capability');
-assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:true,manualRollbackDelay:false,manualDelayLimit:9,predictionLimit:12});
+assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:true,manualDelayLimit:9,predictionLimit:12});
 for(const id of ['th06mp','th07mp','th08mp','th10mp']) assert.equal(multiplayerConfigForProduct(id).gameplay,'cooperative');
 for(const id of ['th08mp','th09mp','th10mp']) assert.equal(multiplayerInputTimingPolicy(multiplayerConfigForProduct(id)).rollback,true);
 assert.equal(game.replay.prefix,'th15');
@@ -120,7 +135,7 @@ async function connect(code,index,count,challenge){
     intent:index===0?'create':'join',players:String(count),difficulty:'4',...(challenge===undefined?{}:{challengeMode:challenge?'1':'0'})});
   const socket=new WebSocket('ws://127.0.0.1:'+port+'/?'+query);sockets.push(socket);
   const first=await nextJson(socket);
-  assert.equal(first.type,'state',`room ${code} player ${index}: ${JSON.stringify(first)}`);assert.equal(first.room.adonisMode,1);assert.equal(first.room.predictionLimit,0);
+  assert.equal(first.type,'state',`room ${code} player ${index}: ${JSON.stringify(first)}`);assert.equal(first.room.adonisMode,0);assert.equal(first.room.predictionLimit,12);
   assert.equal(first.room.challengeMode,challenge??false);
   return socket;
 }
@@ -163,3 +178,4 @@ try{
   relay.kill();
 }
 console.log('TH15 MP catalog, shared cooperative challenge, P0 timing, EBTM/EBNP and local 2P/3P relay policy PASS');
+});

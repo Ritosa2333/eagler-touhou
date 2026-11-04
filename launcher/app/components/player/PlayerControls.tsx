@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../ui/controls';
 import { useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import {createPortal} from 'react-dom';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
@@ -20,7 +21,7 @@ import { TransferPanel } from './TransferPanel';
 import { TouchControlPreview } from '../settings/TouchControlPreview';
 import { useSurfaceNavigation } from '../../navigation/surface-navigation';
 import { useLocale } from '../../i18n';
-import { playerUtilityIcons } from './utility-icons';
+import {FullscreenIcons, PlaybackExitIcon, TouchHelpIcon, OrientationIcon} from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
@@ -36,8 +37,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
   const transferHost = roomWorkspace ? stage?.querySelector<HTMLElement>('.game-viewport') : null;
   const transferPanel = <TransferPanel model={session.transfer}/>;
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot),
-    navigation = useSurfaceNavigation(),
-    { locale, t } = useLocale();
+    navigation = useSurfaceNavigation();
   const feedback = useSyncExternalStore(
     session.feedback.subscribe,
     session.feedback.getSnapshot,
@@ -85,10 +85,10 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
       {network && (
         <NetplayConnectionWindow
           network={network}
-          calibration={session.calibration}
-          english={locale === 'en'}
-          onReturn={() => {
-            if (room.room) void session.exitRoomPlayerFullscreen().then(navigation.closeRoomFullscreen);
+          calibration={session.calibration}          onReturn={() => {
+            if (room.room && network.connection?.ended) {
+              void session.requestRuntimeClose().then(closed => closed ? navigation.closeRoomFullscreen() : undefined).catch(session.reportError);
+            } else if (room.room) void session.exitRoomPlayerFullscreen().then(navigation.closeRoomFullscreen).catch(session.reportError);
             else navigation.closeSurface();
           }}
         />
@@ -107,9 +107,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
           playbackControls={!!spectatorTimeline}
         >
           <NetplayCalibrationReport
-            model={session.calibration}
-            english={locale === 'en'}
-            currentNetwork={() =>
+            model={session.calibration}            currentNetwork={() =>
               gameplay?.getSnapshot().diagnostics.runtimeNetplayQualityDiag ?? ''
             }
           />
@@ -303,40 +301,37 @@ function PlayerUtilities({
         }
       />
       <nav className="touch-utility-row" aria-label={t('touch.tools')}>
-        {canExitPlayback && state.runtime?.launched && <button
+        {canExitPlayback && state.runtime?.launched && <UiButton variant="unstyled"
           id="playbackExit" type="button" aria-label={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
           title={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
           onClick={navigation.closeSurface}
-          dangerouslySetInnerHTML={{ __html: playerUtilityIcons.exitPlayback }}
-        />}
-        {!roomWorkspace && <button
+        ><PlaybackExitIcon/></UiButton>}
+        {!roomWorkspace && <UiButton variant="unstyled"
           className="fullscreen-toggle"
           id="fullscreenToggle"
           type="button"
-          data-fullscreen={session.nativeTouch.isFullscreen() || state.roomPlayerExpanded === true}
+          data-fullscreen={session.nativeTouch.isFullscreen()}
           aria-label={t(
-            session.nativeTouch.isFullscreen() || state.roomPlayerExpanded ? 'player.exitFullscreen' : 'player.enterFullscreen',
+            session.nativeTouch.isFullscreen() ? 'player.exitFullscreen' : 'player.enterFullscreen',
           )}
           title={t(
-            session.nativeTouch.isFullscreen() || state.roomPlayerExpanded
+            session.nativeTouch.isFullscreen()
               ? 'player.exitFullscreenTitle'
               : 'player.enterFullscreenTitle',
           )}
           onClick={() => {
             void session.togglePlayerFullscreen();
           }}
-          dangerouslySetInnerHTML={{ __html: playerUtilityIcons.fullscreenToggle }}
-        />}
-        {!roomWorkspace && !spectating && <button
+        ><FullscreenIcons/></UiButton>}
+        {!roomWorkspace && !spectating && <UiButton variant="unstyled"
           className="touch-help-open"
           id="touchHelpOpen"
           type="button"
           aria-label={t('help.open')}
           title={t('help.title')}
           onClick={session.openTouchHelp}
-          dangerouslySetInnerHTML={{ __html: playerUtilityIcons.touchHelpOpen }}
-        />}
-        <button
+        ><TouchHelpIcon/></UiButton>}
+        <UiButton variant="unstyled"
           className="orientation-toggle"
           id="orientationToggle"
           type="button"
@@ -354,16 +349,9 @@ function PlayerUtilities({
             {t(portrait ? 'touch.landscape' : 'touch.portrait')}
           </strong>
           <small>{t('player.rotate')}</small>
-          <span
-            style={{ display: 'contents' }}
-            dangerouslySetInnerHTML={{
-              __html: playerUtilityIcons.orientationToggle.slice(
-                playerUtilityIcons.orientationToggle.indexOf('<svg'),
-              ),
-            }}
-          />
-        </button>
-        <button
+          <OrientationIcon/>
+        </UiButton>
+        <UiButton variant="unstyled"
           className="game-zoom-toggle"
           id="gameZoomToggle"
           type="button"
@@ -373,7 +361,7 @@ function PlayerUtilities({
         >
           <strong>{t('action.reset')}</strong>
           <small id="gameZoomScale">100%</small>
-        </button>
+        </UiButton>
       </nav>
     </>
   );

@@ -121,4 +121,25 @@ int main(){
     boss.life=100;
     assert(damage_enemy_multiplayer(boss,0,0,values,bomb_hit,owner,pilots));
     assert(boss.life==55);
+
+    // Extra's opcode 183 protects every source while any eligible pilot is
+    // bombing, even if that bomb has no active damage region this frame.
+    for(u32 count:{2u,3u})for(u32 bombing=0;bombing<count;++bombing){
+        Pilots team;team.count=count;for(u32 seat=0;seat<count;++seat)team.hits[seat]=20;
+        team.bombs[bombing]=1;team.hits[bombing]=0;
+        EclVm protected_boss{};protected_boss.flags=0x8000004au;protected_boss.life=100;
+        shared.score=0;
+        assert(enemy_bomb_protected(protected_boss,team));
+        assert(!damage_enemy_multiplayer(protected_boss,0,0,values,bomb_hit,owner,team));
+        assert(protected_boss.life==100&&protected_boss.last_damage==0&&shared.score==0);
+        for(u32 seat=0;seat<count;++seat)assert(team.damage_calls[seat]==0);
+        team.bombs[bombing]=0;
+        assert(!enemy_bomb_protected(protected_boss,team));
+        assert(damage_enemy_multiplayer(protected_boss,0,0,values,bomb_hit,owner,team));
+        assert(protected_boss.life<100);
+        team.bombs[bombing]=1;team.available[bombing]=false;
+        assert(!enemy_bomb_protected(protected_boss,team));
+        protected_boss.flags&=~0x80000000u;team.available[bombing]=true;
+        assert(!enemy_bomb_protected(protected_boss,team));
+    }
 }

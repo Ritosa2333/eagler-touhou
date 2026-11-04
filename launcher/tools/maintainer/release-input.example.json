@@ -4,6 +4,7 @@
     "RuntimeRelease": "runtime-release",
     "FeatureConfig": "features.json",
     "GameDirectories": {
+      "th05": "games/th05",
       "th06": "original/th06",
       "th07": "original/th07",
       "th075": "original/th075",
@@ -13,6 +14,7 @@
       "th11": "original/th11",
       "th12": "original/th12",
       "th15": "original/th15",
+      "th17": "games/th17",
       "th20": "original/th20"
     },
     "Music": [

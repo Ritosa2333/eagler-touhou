@@ -1,6 +1,7 @@
+import {installNativeTimeline} from './native-animation-environment.mjs';
 /** Production React chat + real room owner, synthetic DOM/socket/clock only.
  * Original browser geometry/held-iframe-key assertions remain unrun. */
-import test, { before, after, afterEach } from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach, vi} from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -182,13 +183,21 @@ function fixture() {
     model,
   };
 }
+async function chooseRoomPhrase(calls) {
+  await act(() => query('.room-quick-chat-picker [data-phrase="1"]').click());
+  // Radix restores focus in the next task before running a queued menu action.
+  await React.act(async () => {
+    await vi.waitFor(() => assert.equal(calls.at(-1)?.[0], 'send'), {timeout: 1000, interval: 1});
+  });
+}
 test('pregame room chat is independent and shares safe text, send and ten-second expiry', async () => {
   const {model,clock,calls}=fixture();
   model.update({...context(),inRoom:true});
   await mount(model,{room:true,strict:true});
   assert.equal(query('.mp-quick-chat').hidden,true);
   assert.equal(query('#mpRoomChat').contains(query('.mp-quick-chat')),false);
-  await act(()=>query('#mpRoomChat [data-phrase="1"]').click());
+  await act(()=>query('#mpRoomChat .room-quick-chat-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
+  await chooseRoomPhrase(calls);
   assert.equal(calls.at(-1)[0],'send');
   await act(()=>model.receive(message()));
   assert.equal(query('#mpRoomChat .mp-room-chat-log strong').textContent,'P2(<img src=x onerror=alert(1)>)');
@@ -202,9 +211,9 @@ test('room messages stay above the controls and sending closes the upward picker
   const {model,clock,calls}=fixture();model.update({...context(),inRoom:true});
   await mount(model,{room:'split',strict:true});
   assert.equal(query('#roomBottomControls').querySelector('.mp-room-chat-log'),null);
-  const actions=query('#mpRoomChat .room-quick-chat-trigger');await act(()=>actions.click());
+  const actions=query('#mpRoomChat .room-quick-chat-trigger');await act(()=>actions.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true})));
   assert.equal(query('#roomBottomControls').querySelector('.room-quick-chat-picker'),null);
-  await act(()=>query('.room-quick-chat-picker [data-phrase="1"]').click());
+  await chooseRoomPhrase(calls);
   assert.equal(calls.at(-1)[0],'send');assert.equal(actions.getAttribute('aria-expanded'),'false');
   await act(()=>model.receive(message()));
   assert.equal(query('#roomUpperSpace .mp-room-chat-log').children.length,1);
@@ -318,43 +327,18 @@ test('native input effects cancel focus transfer and isolate input without cance
     env.document.removeEventListener('pointerdown', leak);
   }
 });
+const expiryAnimation = record => record.keyframes.opacity?.[1] === '0';
 function animations() {
-  const previous = env.window.HTMLElement.prototype.animate,
-    media = globalThis.matchMedia;
+  const previous = env.window.HTMLElement.prototype.animate, previousGetAnimations = env.window.HTMLElement.prototype.getAnimations;
+  const media = globalThis.matchMedia, windowMedia = env.window.matchMedia;
   const records = [];
-  globalThis.matchMedia = () => ({
-    matches: false,
-  });
-  env.window.HTMLElement.prototype.animate = function (frames, options) {
-    let finish, reject;
-    const record = {
-      element: this,
-      frames,
-      options,
-      canceled: false,
-      finished: new Promise((resolve, rejectPromise) => {
-        finish = resolve;
-        reject = rejectPromise;
-      }),
-      finish: () => finish(),
-      cancel() {
-        this.canceled = true;
-        reject(new Error('Synthetic animation canceled'));
-      },
-    };
-    // Browser Animation.finished may reject on cancellation without a listener
-    // for movement-only animations. Suppress fixture-global rejection noise.
-    record.finished.catch(() => {});
-    records.push(record);
-    return record;
-  };
-  return {
-    records,
-    restore() {
-      env.window.HTMLElement.prototype.animate = previous;
-      globalThis.matchMedia = media;
-    },
-  };
+  globalThis.matchMedia = env.window.matchMedia = () => ({matches:false, addEventListener(){}, removeEventListener(){}});
+  installNativeTimeline(env.window, records);
+  return {records, restore() {
+    env.window.HTMLElement.prototype.animate = previous;
+    env.window.HTMLElement.prototype.getAnimations = previousGetAnimations;
+    globalThis.matchMedia = media; env.window.matchMedia = windowMedia;
+  }};
 }
 test('StrictMode expiry waits fade completion; reset, unmount and dispose cancel owned animation/timer work', async () => {
   const native = animations();
@@ -364,24 +348,25 @@ test('StrictMode expiry waits fade completion; reset, unmount and dispose cancel
       strict: true,
     });
     await act(() => model.receive(message()));
-    const arrival = native.records.find((record) => record.options.duration === 240);
-    assert.equal(arrival.frames[0].opacity, 0);
+    const arrival = native.records.find(record => record.keyframes.opacity?.[1] === '1');
+    assert.equal(Number(arrival.keyframes.opacity[0]), 0);
+    assert.equal(arrival.options.duration, 180);
     await act(() => clock.tick(10000));
-    const fade = native.records.find((record) => record.options.duration === 280);
+    const fade = native.records.find(expiryAnimation);
     assert.ok(fade);
     assert.equal(query('.mp-quick-chat-log').children.length, 1);
     await act(() => fade.finish());
     assert.equal(query('.mp-quick-chat-log').children.length, 0);
     await act(() => model.receive(message()));
     await act(() => clock.tick(10000));
-    const stale = native.records.findLast((record) => record.options.duration === 280);
+    const stale = native.records.findLast(expiryAnimation);
     await act(() =>
       model.update({
         ...context(),
         serial: 8,
       }),
     );
-    assert.equal(stale.canceled, true);
+    assert.equal(stale.cancelled, true);
     await act(() => {
       stale.finish();
       model.receive(
@@ -392,9 +377,9 @@ test('StrictMode expiry waits fade completion; reset, unmount and dispose cancel
     });
     assert.equal(query('.mp-quick-chat-log').children.length, 1);
     await act(() => clock.tick(10000));
-    const pending = native.records.findLast((record) => record.options.duration === 280);
+    const pending = native.records.findLast(expiryAnimation);
     await act(() => mounted.root.unmount());
-    assert.equal(pending.canceled, true);
+    assert.equal(pending.cancelled, true);
     assert.equal(model.getSnapshot().entries.length, 0);
     model.dispose();
     assert.equal(clock.tasks.size, 0);
@@ -588,7 +573,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
       phrase: 'thanks',
     })));
     assert.equal(query('.mp-quick-chat-log').children.length, 2);
-    assert.match(query('.mp-quick-chat-log').children[1].textContent, /观众\(Viewer\).*Thanks for the games/);
+    assert.match(query('.mp-quick-chat-log').children[1].textContent, /Spectator\(Viewer\).*Thanks for the games/);
     assert.equal(voices.length, 1, 'players see spectator messages without playing spectator voice');
     await act(() => query('[data-phrase="1"]').click());
     assert.deepEqual(socket.sent.at(-1), {
@@ -635,7 +620,7 @@ test('non-TH09 spectator quick chat mounts, sends through the shared model, and 
     type: 'quick-chat', room: 'th07mp-5678', serial: 7, seat: -1,
     spectator: true, clientId: 'viewer654321', phrase: 'thanks',
   }));
-  assert.match(query('.mp-quick-chat-log').textContent, /观众\(Remote viewer\).*谢谢指教/);
+  assert.match(query('.mp-quick-chat-log').textContent, /Spectator\(Remote viewer\).*谢谢指教/);
 });
 
 test('model disposal while React remains mounted cancels active fade and leaves no rows or timers', async () => {
@@ -647,10 +632,10 @@ test('model disposal while React remains mounted cancels active fade and leaves 
     });
     await act(() => model.receive(message()));
     await act(() => clock.tick(10000));
-    const fade = native.records.find((record) => record.options.duration === 280);
+    const fade = native.records.find(expiryAnimation);
     assert.ok(fade);
     await act(() => model.dispose());
-    assert.equal(fade.canceled, true);
+    assert.equal(fade.cancelled, true);
     assert.equal(query('.mp-quick-chat-log').children.length, 0);
     assert.equal(clock.tasks.size, 0);
     await act(() => fade.finish());
@@ -675,11 +660,11 @@ test('retained portals evict visible and muted rows at 50 and cancel all detache
     await act(() => model.toggleMember('b'));
     assert.equal(query('.mp-quick-chat-log').children.length, 50);
     await act(() => clock.tick(10000));
-    const fades = native.records.filter((record) => record.options.duration === 280);
+    const fades = native.records.filter(expiryAnimation);
     assert.equal(fades.length, 50);
     await act(() => model.toggleMember('b'));
     assert.equal(
-      fades.some((fade) => fade.canceled),
+      fades.some((fade) => fade.cancelled),
       false,
     );
     await act(() =>
@@ -690,7 +675,7 @@ test('retained portals evict visible and muted rows at 50 and cancel all detache
     );
     assert.equal(model.getSnapshot().entries.length, 0);
     assert.equal(
-      fades.every((fade) => fade.canceled),
+      fades.every((fade) => fade.cancelled),
       true,
     );
     assert.equal(clock.tasks.size, 0);
@@ -707,7 +692,7 @@ test('presentation remount cancels detached fade but preserves another entry and
     });
     await act(() => model.receive(message()));
     await act(() => clock.tick(10000));
-    const fade = native.records.find((record) => record.options.duration === 280);
+    const fade = native.records.find(expiryAnimation);
     await act(() => {
       model.toggleMember('b');
       model.receive(message());
@@ -715,7 +700,7 @@ test('presentation remount cancels detached fade but preserves another entry and
     assert.equal(model.getSnapshot().entries.length, 2);
     await act(() => mounted.root.unmount());
     mounted = null;
-    assert.equal(fade.canceled, true);
+    assert.equal(fade.cancelled, true);
     assert.equal(model.getSnapshot().entries.length, 1);
     assert.equal(clock.tasks.size, 1);
     await mount(model, {
@@ -725,7 +710,7 @@ test('presentation remount cancels detached fade but preserves another entry and
     await act(() => model.toggleMember('b'));
     assert.equal(query('.mp-quick-chat-log').children.length, 1);
     await act(() => clock.tick(10000));
-    await act(() => native.records.findLast((record) => record.options.duration === 280).finish());
+    await act(() => native.records.findLast(expiryAnimation).finish());
     assert.equal(query('.mp-quick-chat-log').children.length, 0);
     assert.equal(clock.tasks.size, 0);
   } finally {

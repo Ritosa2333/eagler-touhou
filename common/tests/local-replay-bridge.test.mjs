@@ -3,17 +3,36 @@ import assert from 'node:assert/strict';
 import {createLocalReplay} from '../browser/local-replay.mjs';
 import {createNativeLocalReplay} from '../browser/local-replay-native.mjs';
 
-function clock({bootstrap=0,prepare=async()=>{},openError=false,prepareTicks=0}={}) {
+function clock({bootstrap=0,prepare=async()=>{},openError=false,prepareTicks=0,relocate}={}) {
   let frame=0,ended=false,callback=null,serial=0,time=0,opens=0,stops=0,preparing=0;
-  const reports=[],errors=[],description={character:0,difficulty:1,stages:[{id:3,score:123456}]};
-  const player=createLocalReplay({inspect:()=>description,prepare,stopLoop(){stops++;},
-    open(){opens++;if(openError)throw Error('native rejected');frame=0;ended=false;preparing=prepareTicks;},
+  const reports=[],errors=[],paths=[],description={character:0,difficulty:1,stages:[{id:3,score:123456}]};
+  const player=createLocalReplay({inspect:()=>description,prepare,relocate,stopLoop(){stops++;},
+    open(path){opens++;paths.push(path);if(openError)throw Error('native rejected');frame=0;ended=false;preparing=prepareTicks;},
     step(){if(preparing)preparing--;else frame++;ended=frame>=600;return true;},state:()=>({frame,total:600,ended,stage:3,startStage:3,bootstrapTarget:bootstrap,preparing:preparing>0}),
     onState:value=>reports.push(value),onError:value=>errors.push(value),
     raf:fn=>{callback=fn;return ++serial;},cancel:()=>{callback=null;},defer:fn=>{callback=fn;return ++serial;},cancelDeferred:()=>{callback=null;},now:()=>time,hidden:()=>false});
   const pump=()=>{const fn=callback;callback=null;time+=1000/60;fn?.(time);};
-  return {player,pump,reports,errors,get frame(){return frame;},get opens(){return opens;},get stops(){return stops;}};
+  return {player,pump,reports,errors,paths,get frame(){return frame;},get opens(){return opens;},get stops(){return stops;}};
 }
+
+test('active file relocation preserves frame, speed and pause; rewind opens its new path',async()=>{
+  const moved=[],f=clock({relocate:(from,to)=>moved.push([from,to])});
+  await f.player.command({action:'open',path:'replay/a.rpy',stage:3});for(let i=0;i<100;i++)f.pump();
+  await f.player.command({action:'pause'});await f.player.command({action:'rate',value:2});
+  const before=f.frame;await f.player.command({action:'relocate',path:'replay/a.rpy',target:'replay/b.rpy'});
+  assert.deepEqual(moved,[['replay/a.rpy','replay/b.rpy']]);assert.equal(f.frame,before);assert.equal(f.opens,1);
+  assert.equal(f.reports.at(-1).path,'replay/b.rpy');assert.equal(f.reports.at(-1).paused,true);assert.equal(f.reports.at(-1).rate,2);
+  await f.player.command({action:'seek',value:0});f.pump();assert.equal(f.paths.at(-1),'replay/b.rpy');
+  assert.equal(f.frame,0);assert.equal(f.reports.at(-1).paused,true);
+  await f.player.command({action:'relocate',path:'replay/a.rpy',target:'replay/stale.rpy'});assert.equal(moved.length,1);
+  f.player.close();
+});
+
+test('failed native relocation keeps the current path and playback owner',async()=>{
+  const f=clock({relocate:()=>{throw Error('native rejected');}});await f.player.command({action:'open',path:'replay/a.rpy',stage:3});
+  await assert.rejects(f.player.command({action:'relocate',path:'replay/a.rpy',target:'replay/b.rpy'}),/native rejected/);
+  assert.equal(f.reports.at(-1).path,'replay/a.rpy');assert.equal(f.player.active,true);assert.equal(f.opens,1);f.player.close();
+});
 test('metadata inspection never starts native playback; stage must exist in the native descriptor',async()=>{
   const f=clock();await f.player.command({action:'inspect',path:'replay/a.rpy'});assert.equal(f.opens,0);assert.equal(f.stops,0);
   await assert.rejects(f.player.command({action:'open',path:'replay/a.rpy',stage:4}));assert.equal(f.opens,0);

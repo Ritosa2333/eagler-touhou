@@ -1,10 +1,10 @@
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
+import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
 import {
   validTh15ChapterThreshold,
   defaultTh15ChapterThreshold,
 } from "../../src/launcher/th15-chapter-reward.mts";
 import {
-  gameIdForProduct,
   isMultiplayerProductId,
   multiplayerConfigForProduct,
   multiplayerInputTimingPolicy,
@@ -39,6 +39,7 @@ import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts'
 import type { DecisionStore } from '../models/decisions';
 import type { DirectorySocket } from './lobby-directory';
 import { errorText } from './error-text';
+import {isAbortError} from './abort-signals';
 
 export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
@@ -199,7 +200,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let reportedSocket: RoomSocket | null = null,
     reportedResourceKey = '',
     lastActivity = 0;
-  let state = {
+  const state = {
     fromDirectory: false,
     connected: false,
     directorySupported: false,
@@ -231,6 +232,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         playerCount: room.playerCount,
         difficulty: room.difficulty,
         created: room.created,
+        ...(product==='th05mp'?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
         disableLocalChargePriority: room.disableLocalChargePriority,
@@ -357,13 +359,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       })
       .catch((error) => {
         if (!owned.isCurrent()) return;
+        const cancelled = isAbortError(error);
         reportProgress({
-          status: 'failed',
+          status: cancelled ? 'cancelled' : 'failed',
           stage: state.preparation?.stage || 'package',
           percent: null,
-          error: errorText(error),
+          error: cancelled ? '' : errorText(error),
         });
-        ports.preparationFailed(error, owned);
+        if (!cancelled) ports.preparationFailed(error, owned);
       });
     return taskOwner.task;
   }
@@ -410,6 +413,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       type: 'settings',
       playerCount: room.playerCount,
       difficulty: room.difficulty,
+      ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
@@ -444,6 +448,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
+      ...(product==='th05mp'?{initialSpares:normalized.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:normalized.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
       prankMode: false,
       inputDelayAuto: normalized.inputDelayAuto ?? false,
@@ -481,7 +486,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const ownedRoom = room,
       ownedEpoch = epoch;
     clientId = ports.identity.lobbyClientId(product);
-    let relay;
+    let relay: ReturnType<typeof buildMultiplayerLobbyRelayUrl>;
     try {
       relay = buildMultiplayerLobbyRelayUrl(ports.relayUrl(product), {
         product,
@@ -631,6 +636,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
             if (ok && current(ownedEpoch) && state.seat == null && Number.isInteger(seat))
               void takeSeat(seat);
           });
+        } else if (message.code === 'rate-limited' &&
+            message.error === '已达到同时保留的房间数量限制，请关闭原房间后重试。') {
+          // The terminal close owns this rejection and its destination notice.
         } else ports.notify(String(message.error));
       }
     });
@@ -645,7 +653,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           event.code === 4004
             ? 'lobby.expired'
             : event.code === 4008
-              ? 'lobby.replaced'
+              ? event.reason === 'room creation limit'
+                ? 'lobby.roomLimit'
+                : event.reason === 'connection limit'
+                  ? 'lobby.connectionLimit'
+                  : 'lobby.replaced'
               : event.code === 4009
                 ? 'lobby.conflict'
                 : event.code === 4010
@@ -748,6 +760,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
+      ...(product==='th05mp'?{initialSpares:saved?.room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:saved?.room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       challengeMode: saved?.room.challengeMode ?? false,
       prankMode: false,
       seats: null,
@@ -858,7 +871,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     return changeRole(() => {
-      if (!room || room.phase !== 'lobby' || room.seats?.[index]) return;
+      if (room?.phase !== 'lobby' || room.seats?.[index]) return;
       send({
         type: 'take-seat',
         seat: index,
@@ -976,6 +989,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         MultiplayerRoomState,
         | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
         | "chapterThreshold"
+        | 'initialSpares' | 'initialBombs'
       >
     >,
   ) {
@@ -991,6 +1005,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(product!=='th05mp'||room.phase!=='lobby'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))return;
     if (
       patch.chapterThreshold !== undefined &&
       (product !== "th15mp" ||
@@ -1030,6 +1045,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       playerCount,
       difficulty,
       ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
+      ...(product==='th05mp'?{initialSpares:patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
@@ -1109,11 +1125,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const automatic = !rollback && measured && state.timingChoice === 'auto';
     const selected = Number(state.timingChoice);
     const inputDelay =
-      rollback && !timingPolicy.manualRollbackDelay || automatic || rollback && state.timingChoice === 'auto'
+      rollback || automatic
         ? 0
         : Number.isInteger(selected) &&
             selected >= 0 &&
-            selected <= (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8)
+            selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
           ? selected
           : timingRecommendation().inputDelay;
     send({
@@ -1166,6 +1182,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         playerCount: room.playerCount,
         seed: Number.parseInt(room.code, 10) & 0xffff,
         difficulty: Math.max(0, Math.min(config.difficulties.length - 1, room.difficulty)),
+        ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
         ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0 } : {}),
         ...(config.inputTiming?.measuredStartup
           ? {

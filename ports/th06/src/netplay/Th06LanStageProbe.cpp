@@ -2007,6 +2007,12 @@ bool SendTailKeepalive()
     return SendScheduledLocalFrame(g_TestFrames - 1);
 }
 
+void PresentConfirmedMisses(std::uint32_t confirmedFrame, bool audible = true)
+{
+    if (SideEffects::ConsumeConfirmedMisses(g_SessionGeneration, confirmedFrame) && audible)
+        g_SoundPlayer.PlaySoundByIdx(SOUND_PICHUN);
+}
+
 int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resimulation)
 {
     g_SpectatorBossSlotsThisFrame = 0;
@@ -2838,6 +2844,7 @@ int RunCalcChain()
                 if (result == 0 || result == -1)
                     return false;
                 ++g_SimFrame;
+                PresentConfirmedMisses(packet.frame, !fastForwarding);
                 return true;
             },
             [&] {
@@ -2909,6 +2916,7 @@ int RunCalcChain()
         Fail("rollback reconcile");
         return -1;
     }
+    PresentConfirmedMisses(g_Core.ConfirmedThroughAllRemotes());
     if (!CaptureConfirmedReplayAuditFrames())
     {
         Fail("Replay confirmed input audit unavailable");
@@ -2989,6 +2997,7 @@ int RunCalcChain()
         if (result == 0 || result == -1)
             return result;
         ++g_SimFrame;
+        PresentConfirmedMisses(g_Core.ConfirmedThroughAllRemotes());
         PublishConfirmedSpectatorFrames();
 #ifdef __EMSCRIPTEN__
         if (ProductionLanMode())
@@ -3003,6 +3012,7 @@ int RunCalcChain()
         Fail("final reconcile");
         return -1;
     }
+    PresentConfirmedMisses(g_Core.ConfirmedThroughAllRemotes());
     if (!CaptureConfirmedReplayAuditFrames())
     {
         Fail("Replay confirmed input audit unavailable");

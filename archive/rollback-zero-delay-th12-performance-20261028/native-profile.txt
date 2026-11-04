@@ -1,0 +1,4 @@
+seats=2 rollback=0 bullets=987 nodes=2408 tick mean=0.4588 p95=1.0750 max=2.1809 drawExport mean=0.1167 p95=0.2007 max=0.5313
+seats=2 rollback=1 bullets=987 nodes=2408 tick mean=0.5482 p95=1.2951 max=3.2447 drawExport mean=0.1347 p95=0.2187 max=0.4661 checkpoint mean=0.4103 p95=0.8596 max=1.6087 restore mean=0.9561 p95=2.1301 max=2.1301
+seats=3 rollback=0 bullets=1015 nodes=1750 tick mean=0.7460 p95=1.5871 max=2.7817 drawExport mean=0.1670 p95=0.2906 max=1.7878
+seats=3 rollback=1 bullets=1015 nodes=1750 tick mean=0.8128 p95=2.2276 max=4.6503 drawExport mean=0.1737 p95=0.3851 max=0.8525 checkpoint mean=0.5201 p95=1.2164 max=2.5375 restore mean=1.1598 p95=2.4727 max=2.4727

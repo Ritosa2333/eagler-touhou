@@ -1,0 +1,20 @@
+{
+  "game": "th12",
+  "protocol": "eagler-touhou/1",
+  "adapter": "cpp-sdl3-gles",
+  "version": "0.5.0-sdl",
+  "profile": "normal",
+  "completeAdapter": true,
+  "features": {
+    "thprac": true,
+    "languages": true,
+    "focusHitbox": false
+  },
+  "music": [
+    "ogg-stream",
+    "ogg-full",
+    "none"
+  ],
+  "touchReplay": true,
+  "sourceSha256": "8b47a16cc1095b59b3f3a3844c381a1e4f3f00d314a36b76e0c676b72888dcc7"
+}

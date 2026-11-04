@@ -2,6 +2,8 @@
 
 构建先串行准备 SDK 中的 SDL 与字体依赖，再并行编译游戏源码；本地对象缓存与 SDK 缓存独立维护。
 
+触屏与桌面默认使用相同的 2 倍渲染倍率，不再按触屏类型自动降低画质。显式指定 `renderScale=1` 时使用 1 倍，`node --test tools/ports/mobile-render-scale.test.mjs` 验证默认值、参数优先级和原生启动接线。
+
 当前适配记录见[TH15 多人适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。
 
 桌面生产 Runtime 专项使用 `TH15_TEST_ARCHIVE`、`TH15_TEST_FONT`、`TH15_TEST_UNICODE_FONT` 显式提供 DATA 与共用字体，运行 `node ports/th15-mp/portable/multiplayer/browser-test.mjs --output=/absolute/results`。该场景覆盖纯延迟双人／三人、双人旁观与离线多人 Replay，输入哈希和实际打包清单随结果保存。
@@ -14,16 +16,16 @@
 
 ## 回滚与运行诊断
 
-房间默认使用实测纯延迟，开启回滚后提供十二帧纠正窗口。帧快照覆盖应用、战斗、动画及实体所有权，确认帧统一提交音频、录像和旁观。FPS 按可见画面的实际进展计量，等输入时保持画面并更新数字。错误报告器支持下载包含堆栈、近期日志、构建身份和运行状态的 JSON。
+房间默认启用回滚，提供十二帧纠正窗口，也可手动切换实测纯延迟。帧快照覆盖应用、战斗、动画及实体所有权，确认帧统一提交音频、录像和旁观。FPS 按可见画面的实际进展计量，等输入时保持画面并更新数字。错误报告器支持下载包含堆栈、近期日志、构建身份和运行状态的 JSON。
 
 [实验与压力验证归档](../../../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md)保存对应构建与验证口径。原生网络协议检查同时覆盖旧录像的已登记构建准入、未知构建拒绝及重编码，护盾检查分别验证版本 20 回放与版本 22 新对局。
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th15.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。未安装 Emscripten 时可运行 `python ports/th15-mp/tools/download-emscripten.py`。
+需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th15.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。未安装 Emscripten 时可运行 `python ports/th15-mp/tools/download-emscripten.py`。
 
 ```powershell
-npm --prefix launcher ci --ignore-scripts # 仅首次安装
+bun --bun run --cwd launcher install:locked # 仅首次安装
 node launcher/scripts/prepare-th15-content.mjs --original='C:\Games\TH15' --output='ports/th15/assets-ogg'
 $env:EAGLER_FONT_ROOT='C:\local-content\th15-fonts'
 $env:EAGLER_TH15_CONTENT_DIR=(Resolve-Path 'ports/th15/assets-ogg').Path
@@ -33,7 +35,7 @@ $env:EAGLER_DEVELOPMENT_GAMES='th15'
 $env:EAGLER_TOUHOU_NETPLAY_RELAY='ws://127.0.0.1:18142/'
 node launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk='/path/to/emsdk'
 node ports/th15-mp/portable/package-eagler.mjs --multiplayer
-npm --prefix launcher run build
+bun --bun run --cwd launcher build
 npm --prefix launcher run dev:workspace
 ```
 

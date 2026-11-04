@@ -1,0 +1,216 @@
+{
+  "schema": "th12-mp-rollback-storage-performance/1",
+  "baseCommit": "c7a2be6b1410e92f3e137ba68a2b31cf81be00c1",
+  "sourceCommit": "2259756f1be9f4dff59188621ab09dc93c913e12",
+  "compiler": "MSVC 19.51, CMake Release, C++20, /O2 /Ob2 /DNDEBUG",
+  "fixture": "tests/native/multiplayer-world-storage.cpp",
+  "scope": "Native logical WorldState restore/capture and ANM registry copies; 32 enemies, three ECL contexts each, 1000 operations after warmup",
+  "rounds": [
+    {
+      "round": 1,
+      "before": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 14000,
+        "restoreMs": 64.192,
+        "restoreAllocations": 403000,
+        "captureMs": 34.882,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      },
+      "after": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 0,
+        "restoreMs": 31.788,
+        "restoreAllocations": 0,
+        "captureMs": 38.337,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      }
+    },
+    {
+      "round": 2,
+      "before": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 14000,
+        "restoreMs": 76.904,
+        "restoreAllocations": 403000,
+        "captureMs": 35.157,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      },
+      "after": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 0,
+        "restoreMs": 41.33,
+        "restoreAllocations": 0,
+        "captureMs": 45.144,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      }
+    },
+    {
+      "round": 3,
+      "before": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 14000,
+        "restoreMs": 78.324,
+        "restoreAllocations": 403000,
+        "captureMs": 51.185,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      },
+      "after": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 0,
+        "restoreMs": 42.863,
+        "restoreAllocations": 0,
+        "captureMs": 47.178,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      }
+    },
+    {
+      "round": 4,
+      "before": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 14000,
+        "restoreMs": 77.614,
+        "restoreAllocations": 403000,
+        "captureMs": 39.651,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      },
+      "after": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 0,
+        "restoreMs": 39.025,
+        "restoreAllocations": 0,
+        "captureMs": 32.791,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      }
+    },
+    {
+      "round": 5,
+      "before": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 14000,
+        "restoreMs": 70.641,
+        "restoreAllocations": 403000,
+        "captureMs": 43.476,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      },
+      "after": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 0,
+        "restoreMs": 46.495,
+        "restoreAllocations": 0,
+        "captureMs": 43.642,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      }
+    },
+    {
+      "round": 6,
+      "before": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 14000,
+        "restoreMs": 78.67,
+        "restoreAllocations": 403000,
+        "captureMs": 45.29,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      },
+      "after": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 0,
+        "restoreMs": 42.746,
+        "restoreAllocations": 0,
+        "captureMs": 43.663,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      }
+    },
+    {
+      "round": 7,
+      "before": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 14000,
+        "restoreMs": 71.117,
+        "restoreAllocations": 403000,
+        "captureMs": 41.167,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      },
+      "after": {
+        "frames": 1000,
+        "enemies": 32,
+        "contextsPerEnemy": 3,
+        "registryCopies": 1000,
+        "registryAllocations": 0,
+        "restoreMs": 42.919,
+        "restoreAllocations": 0,
+        "captureMs": 36.066,
+        "captureAllocations": 1000,
+        "outputHash": "432792f128bb4690"
+      }
+    }
+  ],
+  "medians": {
+    "before": {
+      "restoreMs": 76.904,
+      "restoreAllocations": 403000,
+      "captureMs": 41.167,
+      "captureAllocations": 1000,
+      "registryAllocations": 14000
+    },
+    "after": {
+      "restoreMs": 42.746,
+      "restoreAllocations": 0,
+      "captureMs": 43.642,
+      "captureAllocations": 1000,
+      "registryAllocations": 0
+    }
+  },
+  "restoreCpuReductionPercent": 44.42
+}

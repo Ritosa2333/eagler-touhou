@@ -1,4 +1,5 @@
 import {createHash,timingSafeEqual} from 'node:crypto';
+import {publicIdentity} from './status-model.mjs';
 const finite=(n,max=1e16)=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=max;
 export function validateNodeSample(value){
   if(!value||typeof value!=='object'||typeof value.boot!=='string'||!/^[a-f0-9-]{16,64}$/i.test(value.boot))return null;
@@ -8,16 +9,23 @@ export function validateNodeSample(value){
   return Object.fromEntries(['boot','uptime','cpuTotal','cpuIdle','cores','load','memoryTotal','memoryAvailable','rxBytes','txBytes','diskTotal','diskAvailable','tcpEstablished'].map(k=>[k,value[k]]));
 }
 const digest=value=>createHash('sha256').update(value).digest();
+export function matchesBearer(authorization,token){
+  return typeof authorization==='string'&&authorization.length<=512&&typeof token==='string'&&token.length>=32&&
+    timingSafeEqual(digest(authorization),digest('Bearer '+token));
+}
 export function createNodeLoads(config=[],clock=Date.now){
   if(!Array.isArray(config)||config.length>24)throw Error('Invalid load node configuration');
-  const entries=new Map();
+  const entries=new Map(),publicIds=new Set();
   for(const node of config){
     if(!/^[a-z0-9-]{1,40}$/.test(node.id)||typeof node.label!=='string'||node.label.length>80||typeof node.token!=='string'||node.token.length<32||entries.has(node.id))throw Error('Invalid load node configuration');
+    const identity=publicIdentity(node);
+    if(publicIds.has(identity.id))throw Error('Duplicate public load node identity');
+    publicIds.add(identity.id);
     entries.set(node.id,{config:node,sample:null,at:0,cpu:null,rx:null,tx:null,history:[]});
   }
   function accept(id,authorization,raw){
     const entry=entries.get(id);
-    if(!entry||typeof authorization!=='string'||!timingSafeEqual(digest(authorization),digest('Bearer '+entry.config.token)))return false;
+    if(!entry||!matchesBearer(authorization,entry.config.token))return false;
     const sample=validateNodeSample(raw),now=clock();if(!sample||entry.at&&now-entry.at<10000)return false;
     const old=entry.sample,elapsed=old?sample.uptime-old.uptime:0;
     entry.cpu=entry.rx=entry.tx=null;
@@ -31,9 +39,12 @@ export function createNodeLoads(config=[],clock=Date.now){
     entry.history=entry.history.filter(p=>now-Date.parse(p.at)<3600000).slice(-120);
     return true;
   }
-  function snapshot(){return [...entries.values()].map(({config,sample,at,cpu,rx,tx,history})=>{
+  function snapshot({publicOnly=false}={}){return [...entries.values()].map(({config,sample,at,cpu,rx,tx,history})=>{
     const stale=!!at&&clock()-at>90000;
-    return {id:config.id,label:config.label,status:!sample?'unknown':stale?'stale':'operational',checkedAt:at?new Date(at).toISOString():null,
+    if(publicOnly)return {...publicIdentity(config),status:!sample?'unknown':stale?'stale':'operational',checkedAt:at?new Date(at).toISOString():null};
+    const identity=publicIdentity(config);
+    return {id:config.id,label:config.label,publicId:identity.id,publicLabel:identity.label,
+      status:!sample?'unknown':stale?'stale':'operational',checkedAt:at?new Date(at).toISOString():null,
       cores:sample?.cores??null,cpuPercent:stale?null:cpu,load:sample?.load??null,
       memoryTotal:sample?.memoryTotal??null,memoryUsed:sample?sample.memoryTotal-sample.memoryAvailable:null,
       diskTotal:sample?.diskTotal??null,diskUsed:sample?sample.diskTotal-sample.diskAvailable:null,

@@ -57,8 +57,10 @@
       value.frame = scalar('_' + prefix + '_frame');
       value.phase = scalar('_' + prefix + '_phase');
       value.netplayStatus = words('_' + prefix + '_mp_status', 24);
-      const rollback = words('_' + prefix + '_mp_rollback_status', 9);
-      if (rollback) value.rollback = {version:rollback[0], enabled:!!rollback[1], corrections:rollback[2], replayedFrames:rollback[3], lastDepth:rollback[4], peakDepth:rollback[5], replayRemaining:rollback[6], fenceFrame:rollback[7], presentationFps:rollback[8]/100};
+      const rollback = words('_' + prefix + '_mp_rollback_status', prefix === 'th12' ? 8 : 9);
+      if (rollback) value.rollback = prefix === 'th12'
+        ? {version:rollback[0], corrections:rollback[1], replayedFrames:rollback[2], committedFrames:rollback[3], correcting:!!rollback[4], requestedFrame:rollback[5], frontier:rollback[6], worldReady:!!rollback[7]}
+        : {version:rollback[0], enabled:!!rollback[1], corrections:rollback[2], replayedFrames:rollback[3], lastDepth:rollback[4], peakDepth:rollback[5], replayRemaining:rollback[6], fenceFrame:rollback[7], presentationFps:rollback[8]/100};
       if (context) value.gameState = plain(context());
       if (prefix === 'th12' && value.gameState?.session) {
         if (typeof core._th12_stage_flow === 'function' && typeof core._th12_stage_flow_size === 'function') {
@@ -147,7 +149,12 @@
       if (core?.HEAPU8) report.wasmMemoryBytes=core.HEAPU8.byteLength;
       const memory=performance.memory; if(memory)report.browserMemory={usedBytes:memory.usedJSHeapSize,totalBytes:memory.totalJSHeapSize,limitBytes:memory.jsHeapSizeLimit};
       const transport=globalThis.__eaglerPeerTransport;
-      if(transport)report.transport=plain({route:transport.route,connectionState:transport.connectionState,receivedQueued:transport.received?.length-(transport.receivedHead||0)});
+      if(transport)report.transport=plain({route:transport.route,connectionState:transport.connectionState,
+        receivedQueued:transport.received?.length-(transport.receivedHead||0),channelEvents:transport.channelEvents,
+        peers:transport.peers&&Array.from(transport.peers).slice(0,2).map(([peer,p])=>({peer,
+          connectionState:p.pc?.connectionState,iceConnectionState:p.pc?.iceConnectionState,sctpState:p.pc?.sctp?.state,
+          input:{readyState:p.inputDc?.readyState,bufferedAmount:p.inputDc?.bufferedAmount},
+          control:{readyState:p.controlDc?.readyState,bufferedAmount:p.controlDc?.bufferedAmount},route:p.adaptive?.snapshot?.()}))});
       let host=window;try{if(parent!==window&&parent.location.origin===location.origin)host=parent;}catch{}
       try{hostUI(host).show(report);}catch{hostUI(window).show(report);}
     } catch {}

@@ -6,7 +6,7 @@ import { isMultiplayerProductId } from '../../../common/contracts/product-catalo
 import {sanitizeDiagnostics,addMetrics,addEvent,safeEvent,historyBucket} from './status-model.mjs';
 import {createStatusMonitor,readMonitorConfig} from './status-monitor.mjs';
 import {createUptimeStore, UPTIME_RANGES} from './uptime-store.mjs';
-import {createNodeLoads} from './node-load.mjs';
+import {createNodeLoads,matchesBearer} from './node-load.mjs';
 
 const routes = ['direct', 'turn', 'mixed', 'websocket', 'unknown'];
 export function validateSample(value) {
@@ -100,6 +100,8 @@ export function createTelemetryStore(initial = {}, clock = Date.now) {
 }
 
 export async function startTelemetryServer({port=18153,host='127.0.0.1',origin,stateFile,monitorConfig={}}={}) {
+  if(monitorConfig.adminToken!=null&&(typeof monitorConfig.adminToken!=='string'||monitorConfig.adminToken.length<32||monitorConfig.adminToken.length>256))
+    throw Error('Invalid status administrator token');
   let initial={};if(stateFile)try{initial=JSON.parse(await readFile(stateFile,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
   const store=createTelemetryStore(initial);
   const uptime=createUptimeStore(initial.uptime);
@@ -111,7 +113,13 @@ export async function startTelemetryServer({port=18153,host='127.0.0.1',origin,s
   let rateAt=0,rateCount=0;
   const server=createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
-    if(req.method==='GET'&&req.url==='/netplay-stats/summary'){res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify({...store.snapshot(),monitor:monitor.snapshot(),nodes:nodeLoads.snapshot()}));return;}
+    if(req.method==='GET'&&req.url==='/netplay-stats/summary'){
+      const authorization=req.headers.authorization;
+      const admin=matchesBearer(authorization,monitorConfig.adminToken);
+      if(authorization&&!admin){res.writeHead(403).end();return;}
+      res.setHeader('Content-Type','application/json; charset=utf-8');
+      res.end(JSON.stringify({...store.snapshot(),monitor:monitor.snapshot({publicOnly:!admin}),nodes:nodeLoads.snapshot({publicOnly:!admin})}));return;
+    }
     const url=new URL(req.url??'/', 'http://loopback');
     if(req.method==='GET'&&url.pathname==='/uptime/summary'){
       const range=url.searchParams.get('range')??'24h';

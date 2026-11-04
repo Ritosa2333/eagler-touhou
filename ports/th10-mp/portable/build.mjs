@@ -13,7 +13,9 @@ import {responseFileContents} from './response-file.mjs';
 const workspace=resolve(fileURLToPath(new URL('../',import.meta.url))),game='th10',root=resolve(workspace,'web');
 const presentationLab=process.argv.includes('--presentation-lab'),multiplayer=process.argv.includes('--multiplayer'),printPlan=(process.argv.includes('--print-plan')||printingRuntimeInputs);
 const fixtures=process.argv.includes('--multiplayer-fixtures');
-if(fixtures&&(!multiplayer||game!=='th10'))throw Error('TH10 fixture builds require --multiplayer.');
+const foreignTitle=process.argv.some(value=>/^--th[0-9]+$/.test(value)&&value!==`--${game}`);
+if(fixtures&&(!multiplayer||foreignTitle))throw Error('TH10 fixture builds require --multiplayer and the th10 target.');
+if(foreignTitle)throw Error('This build entry supports th10 only.');
 if(presentationLab&&multiplayer)throw Error('Presentation Lab and multiplayer are separate build variants.');
 const profile=fixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,process.env.TH10_OUTPUT??('artifacts/'+profile));
 if(!printPlan)if(!printingRuntimeInputs)mkdirSync(out,{recursive:true});
@@ -65,7 +67,7 @@ const flags=[...common,'-std=c++17','-fno-exceptions','-fno-rtti'],linkFlags=mul
 // Test fixture setup is linked only into a diagnostic binary in a separate
 // output directory. No fixture mutation exports enter the normal MP Runtime.
 if(fixtures)sources.push('../portable/multiplayer/FixtureExports.cpp');
-await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:[resolve(imgui,'../../include/eagler/audio/WebSfx.hpp'),...headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input'))],flags});
 if(printPlan){console.log(JSON.stringify({game,profile,variant:multiplayer?'multiplayer':'normal',outputDirectory:out,flags,linkFlags,sources},null,2));process.exit(0);}
 const netplayHeaders=multiplayer?headers(resolve(netplayRoot,'include')):[];
 const capturedInputs=new Map();

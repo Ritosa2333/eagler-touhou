@@ -1,6 +1,7 @@
 #pragma once
 #include "GameTypes.hpp"
 #include "AdaptedInput.hpp"
+#include <eagler/netplay/CooperativeMenuInput.hpp>
 
 namespace th12::multiplayer {
 constexpr unsigned MaxPlayers = 3;
@@ -46,8 +47,9 @@ struct Pilot {
 extern std::array<Pilot, MaxPlayers> pilots;
 extern Options options;
 extern bool active, paused, finished;
-extern bool restartRequested,returnRequested,saveRequested,menuConfirm,menuInputReady;
-extern unsigned menuSelection,menuAction,menuPreviousHeld,menuAge,menuHoldAge,storyPreviousHeld;
+extern bool restartRequested,returnRequested,saveRequested,menuConfirm;
+extern unsigned menuSelection,menuAction,menuReadySeats,menuAge,menuHoldAge;
+extern Netplay::CooperativeMenuInput<uint32_t> menuInput,storyInput;
 extern unsigned currentSeat, tickNumber, wipeFrames, lifeFragments, bombFragments;
 extern int teamRank;
 extern std::unordered_map<uint32_t, unsigned> damageRemainders;

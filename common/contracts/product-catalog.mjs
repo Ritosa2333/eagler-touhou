@@ -84,6 +84,31 @@ export const PRODUCT_GAMES = Object.freeze({
     // support.highRefreshRate describes currently implemented presentation for
     // Launcher UI. False keeps unfinished adapters honest; it does not waive
     // the required presentation-cadence acceptance gate.
+    th05: Object.freeze({
+        testOnly: false, number: "05", title: "東方怪綺談", subtitle: "Mystic Square", cardArtwork: "th05-card.webp",
+        storage: Object.freeze({saveRoot: "/savesth05", scoreFile: "score.dat", configFiles: Object.freeze(["game.cfg", "thprac-uth05.ini"])}),
+        multiplayerRuntime: "./runtime/th05/multiplayer/th05.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.th05mp", gameplay: "cooperative",
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts: Object.freeze(["reimu","marisa","mima","yuuka"].map((name,character)=>Object.freeze({labelKey:`multiplayer.loadout.th05_${name}`,glyph:["霊","魔","魅","幽"][character],character,shot:0}))),
+            peerTransportGlobal: "__th05PeerTransport", relaySourceEnvelope: true, spectator: true, titleRoomEntry: false,
+            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
+        }),
+        runtime: "./runtime/th05/th05.html", runtimeFileLayout: "directory", dataProvider: "retail-memory", runtimeResourceTransport: "resources",
+        requiredShared: Object.freeze(["/msgothic.ttc"]),
+        runtimeAssets: Object.freeze(["th05.html", "th05.mjs", "th05.wasm", "shell.mjs", "managed.mjs", "data.mjs", "storage.mjs", "input.mjs", "pointer.mjs", "audio.mjs", "audio-layout.mjs", "music-notes.mjs", "sfx.mjs", "playback.mjs", "replay.mjs", "clock.mjs", "directory-keyboard.mjs", "keyboard-owners.mjs", "keyboard-input-bridge.mjs", "direct-input-bridge.mjs", "manifest.json"]),
+        musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection", sources: Object.freeze(["original", "akyu"])}),
+        thpracRuntime: Object.freeze({session: "native"}),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/uth05win-vibe", adaptationNotice: "early-test"}),
+        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th05.data", rawDataImport: Object.freeze({fileNames: Object.freeze(["th05.data"])}),
+            musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
+        replay: Object.freeze({prefix: "th05", slotPrefix: "replay", slots: 100, extensions: Object.freeze(["rpy"])}), features: Object.freeze({thprac: true, languages: true, focusHitbox: true}),
+    }),
+    // support.highRefreshRate describes currently implemented presentation for
+    // Launcher UI. False keeps unfinished adapters honest; it does not waive
+    // the required presentation-cadence acceptance gate.
     th06: Object.freeze({
         cardArtwork: "th06-card.webp",
         number: "06",
@@ -297,7 +322,7 @@ export const PRODUCT_GAMES = Object.freeze({
             titleKey: "game.title.th09mp",
             gameplay: "versus",
             inGameSelection: true,
-            inputTiming: Object.freeze({ rollbackLimit: 8, measuredStartup: true, manualDelayLimit: 9, manualRollbackDelay: true }),
+            inputTiming: Object.freeze({ rollbackLimit: 8, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: Object.freeze([2]),
             difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH09_MULTIPLAYER_LOADOUTS,
@@ -430,7 +455,7 @@ export const PRODUCT_GAMES = Object.freeze({
         storage: Object.freeze({saveRoot: "/savesth12", scoreFile: "scoreth12.dat", configFiles: Object.freeze(["th12.cfg"])}),
         runtime: "./runtime/th12/th12.html",
         runtimeFileLayout: "directory",
-        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "game.css", "game.mjs", "core.mjs", "core.wasm", "vorbis.mjs", "vorbis.wasm", "managed-data.mjs", "managed-shell.mjs", "storage.mjs", "replay-workspace.mjs"]),
+        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "game.css", "game.mjs", "core.mjs", "core.wasm", "managed-data.mjs", "managed-shell.mjs", "storage.mjs"]),
         requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
         dataProvider: "retail-memory",
         runtimeResourceTransport: "resources",
@@ -544,7 +569,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayer: Object.freeze({
             titleKey: "game.title.th15mp",
             gameplay: "cooperative",
-            inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, rollbackDefault: false, measuredStartup: true, manualDelayLimit: 9 }),
+            inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
             difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH15_MULTIPLAYER_LOADOUTS,
@@ -553,6 +578,25 @@ export const PRODUCT_GAMES = Object.freeze({
             titleRoomEntry: false,
         }),
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
+    }),
+    th17: Object.freeze({
+        testOnly: true,
+        number: "17", title: "東方鬼形獣", subtitle: "Wily Beast and Weakest Creature", cardArtwork: "th17-card.webp",
+        storage: Object.freeze({saveRoot: "/savesth17", scoreFile: "scoreth17.dat", configFiles: Object.freeze(["th17.cfg"])}),
+        runtime: "./runtime/th17/th17.html",
+        musicCapabilities: Object.freeze({midi: false}),
+        musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/eagler-touhou", adaptationNotice: "early-test"}),
+        runtimeFileLayout: "directory", requiredShared: Object.freeze([]),
+        runtimeAssets: Object.freeze(["th17.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs", "directory-keyboard.mjs", "gpu-timing.mjs", "th17.mjs", "th17.wasm", "resources.json",
+            ...Array.from({length: 8}, (_, index) => `fonts/font${index}.bin`), "fonts/cp932.bin", "fonts/blend4444.bin"]),
+        dataProvider: "retail-memory",
+        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th17.dat",
+            rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
+            musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
+        replay: Object.freeze({prefix: "th17"}),
+        features: Object.freeze({thprac: false, languages: false, focusHitbox: false}),
     }),
     th20: Object.freeze({
         testOnly: true,
@@ -609,7 +653,6 @@ export function multiplayerInputTimingPolicy(product) {
     return {
         measuredStartup,
         rollback,
-        manualRollbackDelay: rollback && timing?.manualRollbackDelay === true,
         manualDelayLimit: timing?.manualDelayLimit ?? (measuredStartup ? 9 : 8),
         predictionLimit: rollback ? timing?.sendPredictionLimit ?? 8 : 0,
     };

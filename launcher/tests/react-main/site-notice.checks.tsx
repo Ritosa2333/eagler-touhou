@@ -1,4 +1,5 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
+import {uiContractAttributes} from './mounted-dom-environment.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
@@ -15,6 +16,7 @@ import {createSitePreferencesModel, bindSitePreferencesToDocument, LESS_MOTION_S
 import * as contentPolicy from '@source/src/launcher/site-notice-content.mts';
 import * as reactPolicy from '@source/app/components/notices/site-notice-source.ts';
 import * as pinnedNotice from '@pinned/site-notice';
+import {installNativeTimeline} from './native-animation-environment.mjs';
 
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
 function storage(initial: Record<string, string> = {}) {
@@ -40,14 +42,14 @@ function clock() {
 }
 function installDom(dom: JSDOM) {
   Object.assign(globalThis, {window: dom.window, document: dom.window.document,
-    Node: dom.window.Node, HTMLElement: dom.window.HTMLElement, location: dom.window.location,
+    Node: dom.window.Node, Element: dom.window.Element, HTMLElement: dom.window.HTMLElement, location: dom.window.location,
     IS_REACT_ACT_ENVIRONMENT: true});
 }
 function tree(node: any): any {
   if (node.nodeType === 3) return node.textContent.trim() ? node.textContent : null;
   if (node.nodeType !== 1) return null;
   return {tag: node.tagName,
-    attrs: Object.fromEntries([...node.attributes].map(attr => [attr.name, attr.value])
+    attrs: Object.fromEntries(uiContractAttributes(node).map(attr => [attr.name, attr.value])
       .sort(([left], [right]) => left.localeCompare(right))),
     children: [...node.childNodes].map(tree).filter(Boolean)};
 }
@@ -126,21 +128,23 @@ export async function runChecks(repo: string) {
   });
   const timer = clock(); let fetches = 0;
   const state = createSiteNoticeState(prefs, {...timer, baseUrl: 'https://test.example/',
-    matchMediaImpl: () => ({matches: false}), fetchImpl: async (url, init) => {
+    fetchImpl: async (url, init) => {
       fetches++; assert.equal(url, 'NOTICE.txt'); assert.deepEqual(init, {cache: 'no-store'});
       return new Response('\uFEFF[FAQ](faq.html) [GitHub](https://github.com/test)\n<script>alert(1)</script> [bad](javascript:alert(1))');
     }});
   state.connect();
   await check('real NOTICE.txt fetch, BOM trim, parser and four-second lifespan', async () => {
-    assert.equal(await state.load(), true); assert.equal(state.getSnapshot().durationMs, 4_000);
+    assert.equal(await state.load(), true);
+    assert.ok([...timer.timers.values()].some(item => item.delay === 4_000));
     assert.equal(state.getSnapshot().lines.length, 2);
     assert.equal(state.getSnapshot().lines[1][0].type, 'text');
     assert.equal(state.getSnapshot().optOutVisible, false);
   });
-  await check('close persists dismissal and uses original 220ms animation', () => {
+  await check('close persists dismissal and waits for presentation completion', () => {
     state.dismiss(); assert.equal(saved.data.get(SITE_NOTICE_DISMISSED_KEY), '1');
     assert.equal(state.getSnapshot().closing, true); assert.equal(state.getSnapshot().hidden, false);
-    timer.fire(220); assert.equal(state.getSnapshot().hidden, true);
+    assert.equal(timer.timers.size, 0);
+    state.finishClose(); assert.equal(state.getSnapshot().hidden, true);
   });
   await check('reopening a dismissed notice exposes permanent opt-out', async () => {
     await state.load(); assert.equal(state.getSnapshot().optOutVisible, true);
@@ -155,9 +159,13 @@ export async function runChecks(repo: string) {
   await check('closing a scroll-hidden notice is immediate', () => {
     state.scroll(scroll, 40); state.close(); assert.equal(state.getSnapshot().hidden, true);
   });
-  await check('automatic expiration completes original animated dismissal', async () => {
+  await check('automatic expiration requests dismissal and presentation completes it', async () => {
     await state.load(); timer.fire(4_000); assert.equal(state.getSnapshot().closing, true);
-    timer.fire(220); assert.equal(state.getSnapshot().hidden, true);
+    state.finishClose(); assert.equal(state.getSnapshot().hidden, true);
+  });
+  await check('reopening cancels pending dismissal and rejects stale completion', async () => {
+    await state.load(); state.close(); await state.load(); state.finishClose();
+    assert.equal(state.isOpen(), true); assert.equal(state.getSnapshot().hidden, false);
   });
   await check('permanent opt-out persists and prevents additional fetches', async () => {
     state.optOut(); assert.equal(saved.data.get(SITE_NOTICE_STORAGE_KEY), '0');
@@ -220,21 +228,42 @@ export async function runChecks(repo: string) {
   const legacy = pinnedNotice.createSiteNoticeController({documentObj: original.window.document, windowObj: original.window,
     storage: storage(), fetchImpl: async () => new Response(notice), ...legacyTimer, matchMediaImpl: () => ({matches: false})});
   await legacy.load();
-  original.window.document.getElementById('siteNotice')!.style.setProperty('--site-notice-duration', '4000ms');
+  original.window.document.querySelector('.site-notice-life')!.remove();
+  const native: any[] = [];
+  installNativeTimeline(dom.window, native);
   const browserPrefs = createSitePreferencesModel({storage: storage()});
   const detach = bindSitePreferencesToDocument(browserPrefs), componentTimer = clock();
-  const environment = {...componentTimer, fetchImpl: async () => new Response(notice), baseUrl: 'https://test.example/', matchMediaImpl: () => ({matches: false})};
+  const environment = {...componentTimer, fetchImpl: async () => new Response(notice), baseUrl: 'https://test.example/'};
   const ref = createRef<SiteNoticeHandle>(), root = createRoot(document.getElementById('mount')!);
-  await check('StrictMode mounted output matches pinned main DOM, copy, icons, style and aria', async () => {
+  await check('StrictMode mounted notice preserves pinned content and aria with shared controls', async () => {
     await act(async () => root.render(<StrictMode><LocaleProvider locale="zh-CN"><SiteNotice preferences={browserPrefs}
       autoLoad edgeGestures={false} environment={environment} ref={ref}/></LocaleProvider></StrictMode>));
-    assert.deepEqual(tree(document.getElementById('siteNotice')), tree(original.window.document.getElementById('siteNotice')));
+    assert.deepEqual(tree(document.getElementById('siteNoticeContent')), tree(original.window.document.getElementById('siteNoticeContent')));
+    for (const id of ['siteNotice', 'siteNoticeOptOut', 'siteNoticeClose']) {
+      const actual = document.getElementById(id)!, expected = original.window.document.getElementById(id)!;
+      for (const name of ['id', 'role', 'aria-label', 'aria-live']) assert.equal(actual.getAttribute(name), expected.getAttribute(name));
+    }
+    assert.equal(document.querySelector('.site-notice-life'), null);
+    await act(async () => {native.forEach(item => item.finish());});
   });
   await check('mounted close click and imperative reopen preserve dismissal semantics', async () => {
     await act(async () => document.getElementById('siteNoticeClose')!.dispatchEvent(new dom.window.MouseEvent('click', {bubbles: true})));
     assert.equal(browserPrefs.getSnapshot().noticeDismissed, true);
-    await act(async () => componentTimer.fire(220)); assert.equal(document.getElementById('siteNotice')!.hidden, true);
+    const bar = document.getElementById('siteNotice')!;
+    assert.equal(bar.hidden, false); assert.equal(bar.hasAttribute('inert'), true);
+    assert.equal(componentTimer.timers.size, 0);
+    assert.ok(native.some(item => item.playState === 'running'));
+    await act(async () => {native.forEach(item => item.finish());}); assert.equal(bar.hidden, true);
     await act(async () => {await ref.current!.load();}); assert.equal(document.getElementById('siteNoticeOptOut')!.hidden, false);
+  });
+  await check('mounted quick reopen retires old exit before completing a new entrance', async () => {
+    await act(async () => ref.current!.close());
+    const exits = native.filter(item => item.playState === 'running');
+    await act(async () => {await ref.current!.load();});
+    assert.ok(exits.every(item => item.cancelled));
+    await act(async () => {exits.forEach(item => item.finish());});
+    assert.equal(document.getElementById('siteNotice')!.hidden, false);
+    assert.equal(document.getElementById('siteNotice')!.hasAttribute('inert'), false);
   });
   await check('mounted motion changes and storage events synchronize body class', async () => {
     await act(async () => browserPrefs.toggleMotion()); assert.equal(document.body.classList.contains('less-motion'), true);
@@ -256,7 +285,7 @@ export async function runChecks(repo: string) {
 
   const gestureDom = new JSDOM('<div id="mount"></div>', {url: 'https://test.example/'}); installDom(gestureDom);
   let requests = 0, hint = ''; const gestureClock = clock();
-  const gestureEnvironment = {...gestureClock, baseUrl: 'https://test.example/', matchMediaImpl: () => ({matches: true}), fetchImpl: async () => {
+  const gestureEnvironment = {...gestureClock, baseUrl: 'https://test.example/', fetchImpl: async () => {
     requests++; return new Response('[bad](javascript:alert(1)) <img src=x onerror=alert(1)> [GitHub](https://github.com/test)');
   }};
   const gesturePrefs = createSitePreferencesModel({storage: null}), handle = createRef<SiteNoticeHandle>();

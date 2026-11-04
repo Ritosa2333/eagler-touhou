@@ -1,5 +1,4 @@
-// Local build-plan acceptance with synthetic source/SDK markers. No compiler or
-// game data is executed. Covers all registered normal/multiplayer source owners.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,6 +7,18 @@ import { loadRuntimeBuildConfig } from "../lib/runtime-build-profiles.mjs";
 import { WORKSPACE_REPOSITORIES } from "../lib/workspace-layout.mjs";
 import { loadSourceLayout } from "../lib/source-layout.mjs";
 import { planRuntimeSourceBuild } from "../lib/runtime-source-plan.mjs";
+
+test("runtime source plan", async () => {
+// Local build-plan acceptance with synthetic source/SDK markers. No compiler or
+// game data is executed. Covers all registered normal/multiplayer source owners.
+
+
+
+
+
+
+
+
 
 const root = await mkdtemp(resolve(tmpdir(), "eagler-runtime-plans-"));
 async function put(path, text = "fixture") {
@@ -45,6 +56,7 @@ try {
       }
       await put(resolve(source, recipe.kind === "cmake" ? "CMakeLists.txt" : recipe.build[0]));
       for(const input of recipe.commonInputs??[])await put(resolve(layout.path("common"),input));
+      if(recipe.commonMarker)await put(resolve(layout.path("common"),recipe.commonMarker));
       const before = await readdir(source);
       const plan = await planRuntimeSourceBuild({ game, variant, emsdk: sdk }, context);
       assert.deepEqual(await readdir(source), before, "planning must not create build output");
@@ -63,7 +75,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 20);
+  assert.equal(plans.length, 21);
   const th13 = plans.find(plan => plan.game === 'th13');
   assert.equal(th13.variant, 'normal');
   assert.equal(th13.source, layout.path('th13'));
@@ -112,4 +124,5 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (20 variants, shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (21 variants, shared dependencies, explicit tools, invalid inputs)");
+});

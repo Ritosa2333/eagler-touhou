@@ -423,7 +423,7 @@ touhou::input::TouchState touch_state(){
     touhou::input::TouchState s;if(!probe)return s;if(probe->in_title||probe->paused||probe->over||probe->complete||!probe->world||!probe->session)return s;
     auto& run=*probe->session;auto& w=*probe->world;if(run.is_replay){s.context=3;return s;}if(run.phase==SessionPhase::ending){s.context=2;return s;}
     s.context=w.dialogue->id>=0?2:1;
-    i32 side=network.active?network.side:w.configuration.controllers[0]?1:0;if(w.configuration.controllers[side]){s.context=0;return s;}auto& p=*w.battle->fields[side].player;s.instance=1+side+2*w.configuration.selection.stage+32*w.rules.progress.round;s.ready=(p.control.player_state==0||p.control.player_state==3)&&p.motion.health>0;
+    i32 side=network.active?network.side:w.configuration.controllers[0]?1:0;if(w.configuration.controllers[side]){s.context=0;return s;}auto& p=*w.battle->fields[side].player;s.instance=1+side+2*w.configuration.selection.stage+32*w.rules.progress.round;s.ready=(p.control.player_state==0||p.control.player_state==3)&&p.motion.health>0&&!(w.battle->state.flags&0x1800)&&(!(w.battle->fields[side].script.flags&1)||p.motion.character==2);
     s.x=p.motion.position.x;s.y=p.motion.position.y;s.fast=p.resource.movement.normal;s.slow=p.resource.movement.focused;const auto& limit=w.battle->state.limits;s.min_x=limit.origin.x;s.max_x=limit.origin.x+limit.extent.x;s.min_y=limit.origin.y;s.max_y=limit.origin.y+limit.extent.y;return s;
 }
 void clear_inputs(){th09_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;keyboard_inputs.clear();gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}

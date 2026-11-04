@@ -12,7 +12,7 @@ test('toggle focus survives repeated player respawns without another host snapsh
   for(const instance of ['1:1','1:2','1:3'])assert.equal(touch.sample(game(instance)).held&8,8);
   touch.controls(snapshot(false),game('1:3'));assert.equal(touch.sample(game('1:3')).held&8,0);
 });
-test('respawn clears stale drag targets and Bomb pulses while retaining toggle focus',()=>{
+test('an unknown gesture scope clears stale targets and Bomb pulses while retaining toggle focus',()=>{
   const touch=input();touch.pointer({id:1,type:'down',x:100,y:200},game(),0);
   touch.pointer({id:1,type:'move',x:120,y:200},game(),10);touch.pending=2;
   const next=game('1:2');assert.deepEqual(touch.sample(next),{held:9,pressed:0,motion:null});

@@ -44,7 +44,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             let sequence = 0, receivedSequence = 0, pendingBytes = 0, receivedBytes = 0;
             let replayQueue = [];
             let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
-            let recoveryUntil = 0, lastNeed = -Infinity, verifyAfter = 0;
+            let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
             let ackPending = false;
             const policy = Object.freeze({
                 windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
@@ -57,6 +57,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 path.samples = [];
                 path.probeSequence = 0;
                 path.lastProbe = -Infinity;
+                path.lastSuccessfulProbe = 0;
+                path.lastRoundTripAt = -Infinity;
                 path.baseline = Infinity;
                 return path;
             };
@@ -241,12 +243,26 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 if (!started || !supported || !eligible()) return false;
                 const other = active === primary ? backup : primary;
                 if (!ready(other)) return false;
-                recoveryUntil ||= now() + 7000;
+                if (!recoveryUntil) {
+                    recoveryUntil = now() + 7000;
+                    recoveryProbe = active.probeSequence;
+                }
                 verify(true);
                 if (!controller && now() - lastNeed >= 1000) {
                     lastNeed = now(); sendEverywhere({kind: 'need'});
                 }
                 return true;
+            }
+            function finishRecovery(path) {
+                // A fresh input round trip and acknowledgement of all queued controls
+                // prove progress. An open DataChannel or a pre-failure pong does not.
+                // Preserve accepted epochs until the reliable handoff completes.
+                if (!recoveryUntil || path !== active || !ready(path) || proposal ||
+                    pendingControl.size || path.lastSuccessfulProbe <= recoveryProbe ||
+                    now() - path.lastRoundTripAt > policy.probeTimeoutMs) return;
+                recoveryUntil = 0;
+                if (verification) verification.force = false;
+                diagnostic('recovered');
             }
             function receive(path, kind, data) {
                 if (!alive() || path.closed) return true;
@@ -268,6 +284,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         if (sample && sample.rtt == null) {
                             sample.rtt = Math.max(0, now() - sample.at);
                             path.baseline = Math.min(path.baseline, sample.rtt);
+                            path.lastSuccessfulProbe = Math.max(path.lastSuccessfulProbe, sample.id);
+                            path.lastRoundTripAt = now();
+                            finishRecovery(path);
                         }
                     } else if (supported && kind === 'control') {
                         if (m.kind === 'pause') suspend();
@@ -278,6 +297,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                             for (const [id, packet] of pendingControl) {
                                 if (id <= m.sequence) { pendingBytes -= packet.byteLength; pendingControl.delete(id); }
                             }
+                            finishRecovery(path);
                         } else if (m.kind === 'switch' && !controller && Number.isSafeInteger(m.epoch) && m.epoch === epoch + 1 &&
                             m.generation === generation && ['primary', 'turn'].includes(m.path)) {
                             const next = m.path === 'primary' ? primary : backup;
@@ -333,6 +353,12 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             }
             function suspend() {
                 quietUntil = now() + 2000;
+                if (recoveryUntil) {
+                    // Hidden pages and scheduler gaps cannot spend the active recovery
+                    // budget. Require new probes after the existing settling window.
+                    recoveryUntil = quietUntil + 7000;
+                    recoveryProbe = active.probeSequence;
+                }
                 verification = null;
                 // An accepted/committed epoch is a promise, not a quality sample.
                 // Keep it across browser suspension so a delayed commit cannot leave
@@ -421,9 +447,15 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     const dc = control ? active.controlDc : active.inputDc;
                     if (control && supported) {
                         if (sequence >= 0xffffffff) { options.failed('RTC route control sequence exhausted'); return false; }
-                        const packet = envelope(payload, ++sequence);
-                        pendingControl.set(sequence, packet); pendingBytes += packet.byteLength;
-                        try { dc.send(packet); } catch { recover(); }
+                        const id = ++sequence, packet = envelope(payload, id);
+                        pendingControl.set(id, packet); pendingBytes += packet.byteLength;
+                        try { dc.send(packet); } catch {
+                            // Accepted reliable data owns this sequence even when the
+                            // browser temporarily refuses the send. Retry it before
+                            // admitting another control; a standby may not exist yet.
+                            replayQueue.push(id);
+                            recover();
+                        }
                         return true;
                     }
                     try { dc.send(payload); return true; } catch { return false; }
@@ -453,6 +485,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             localPlayer, playerCount, tag, legacyGlobal,
             controlLabel: `${tag}-control`, inputLabel: `${tag}-input`,
             route: null, failed: false, disconnected: false, error: String(), closed: false,
+            channelEvents: [],
             spectatorCount: Math.max(0, Number(Module.eaglerOptions?.netplaySpectatorCount) || 0),
             retainSpectatorHistory: !!stageSpectatorHistory && localPlayer === 0,
             flushSpectatorSession() {
@@ -563,14 +596,33 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     }, release);
                 }
             },
+            recordChannelEvent(peerId, dc, kind, event, error) {
+                const peer = this.peers.get(peerId), pc = peer?.pc;
+                const text = value => typeof value === 'string' ? value.slice(0, 512) : null;
+                const number = value => Number.isFinite(value) ? value : null;
+                this.channelEvents.push({time: new Date().toISOString(), peer: peerId, kind, event,
+                    frame: number(globalThis.__eaglerNetplayLanFrame),
+                    channel: {label: text(dc.label), readyState: text(dc.readyState), bufferedAmount: number(dc.bufferedAmount)},
+                    connection: {connectionState: text(pc?.connectionState), iceConnectionState: text(pc?.iceConnectionState),
+                        signalingState: text(pc?.signalingState), sctpState: text(pc?.sctp?.state)},
+                    error: error ? {name: text(error.name), message: text(error.message), errorDetail: text(error.errorDetail),
+                        sctpCauseCode: number(error.sctpCauseCode), receivedAlert: number(error.receivedAlert), sentAlert: number(error.sentAlert)} : null});
+                if (this.channelEvents.length > 8) this.channelEvents.shift();
+            },
             setupChannel(peerId, dc, kind) {
                 const peer = this.peers.get(peerId);
-                if (!peer) return;
+                if (!peer || (kind !== 'control' && kind !== 'input')) return;
                 const primary = peer.primary;
                 if (kind === 'control') peer.controlDc = dc;
                 else peer.inputDc = dc;
                 if (primary) primary[kind + 'Dc'] = dc;
                 dc.binaryType = 'arraybuffer';
+                // Events queued by a retired channel/peer cannot update its
+                // replacement. Primary messages may still arrive during the
+                // adaptive handoff's grace window; that route owns admission.
+                const current = () => !this.closed && !this.disconnected && this.peers.get(peerId) === peer &&
+                    (primary ? primary[kind + 'Dc'] === dc : peer[kind + 'Dc'] === dc);
+                const activePrimary = () => current() && (!primary || peer.pc === primary.pc);
                 // Route release is broadcast to every endpoint, so one peer
                 // can process `route=rtc` a task earlier than another and send
                 // its first HELLO/input immediately. Keep RTC packets that
@@ -580,25 +632,28 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 // traffic; if it selects RTC, the queued packet is already in
                 // order for DrainPackets().
                 dc.onmessage = event => {
+                    if (!current()) return;
                     if (peer.adaptive) { peer.adaptive.receivePrimary(kind, event.data); return; }
                     this.receivePeerData(peer, event.data);
                 };
                 dc.onopen = () => {
-                    if (peer.pc !== primary?.pc && primary) return;
+                    if (!activePrimary()) return;
                     if (kind === 'control') peer.controlOpen = true;
                     else peer.inputOpen = true;
                     peer.adaptive?.opened(kind);
                     this.maybeReportRtcReady();
                 };
                 dc.onclose = () => {
-                    if (peer.pc !== primary?.pc && primary) return;
+                    if (!activePrimary()) return;
+                    this.recordChannelEvent(peerId, dc, kind, 'close');
                     if (kind === 'control') peer.controlOpen = false;
                     else peer.inputOpen = false;
                     if (!this.route) this.sendSignal({ type: 'rtc-failed' });
                     else if (this.route === 'rtc' && !this.closed && !peer.adaptive?.recover()) this.fail(`RTC peer P${peerId + 1} ${kind} channel closed`);
                 };
-                dc.onerror = () => {
-                    if (peer.pc !== primary?.pc && primary) return;
+                dc.onerror = event => {
+                    if (!activePrimary()) return;
+                    this.recordChannelEvent(peerId, dc, kind, 'error', event?.error);
                     if (!this.route) this.sendSignal({ type: 'rtc-failed' });
                     else if (this.route === 'rtc' && !peer.adaptive?.recover()) this.fail(`RTC peer P${peerId + 1} ${kind} channel error`);
                 };

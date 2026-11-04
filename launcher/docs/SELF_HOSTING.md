@@ -4,7 +4,7 @@
 
 ## 准备输入
 
-需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
+需要 Node.js 22+、Python 3 和匹配当前 Launcher Product Catalog 的完整 `runtime-release/`。源码前端构建另需 Bun 1.4.4。每个已登记游戏都准备 `games/<game-id>/` 目录，并放入对应原作文件。游戏列表见 [`common/contracts/product-catalog.mjs`](../../common/contracts/product-catalog.mjs)。
 
 在 `launcher/` 或自托管包根目录使用以下目录结构：
 
@@ -27,8 +27,8 @@ host-root/
 从源码检出在 `launcher/` 运行：
 
 ```sh
-npm ci
-npm run build
+bun install --frozen-lockfile --ignore-scripts
+bun run build
 npm run host:doctor
 npm run host:build
 npm run verify:server -- dist/site
@@ -37,7 +37,7 @@ npm run verify:server -- dist/site
 自托管包已包含构建好的 Launcher Host 文件。从包根目录安装依赖并运行 Host 检查：
 
 ```sh
-npm ci
+npm ci --ignore-scripts
 npm run host:doctor
 npm run host:build
 npm run verify:server -- dist/site
@@ -62,3 +62,5 @@ npm run verify:deployed -- https://example.com/
 若站点让玩家自行导入 Package，运行 `npm run import`；详情见[自托管参考](SELF_HOSTING_REFERENCE.md)。若大体积 Package 放在独立源站，按[外置资源模式](EXTERNAL_RESOURCE_MODE.md)配置。
 
 源码检出的 `npm run host` 和 `npm run import` 使用同一套 Launcher Host 实现。维护者通过[发布流程](RELEASE.md)生成便携自托管包。
+
+自托管包也提供 `bun.lock`。使用 Bun 时运行 `bun install --frozen-lockfile --ignore-scripts`，然后用 `bun host/build.mjs --build-only` 启动相同 Host。两种环境分别核对依赖记录；预编译包无需安装前端编译器。

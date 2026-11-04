@@ -1,115 +1,53 @@
-# 真实 Launcher 接入
+# Launcher 接入
 
-## monorepo 开发
-
-本作已接入当前工作区，源码位于 `ports/th12`。在仓库根目录运行：
+本作品源码位于 `ports/th12-mp`。在仓库根目录构建对应模式：
 
 ```sh
-node tools/workspace.mjs select th12
-npm run build:runtime -- --game=th12 --emsdk=工具链目录
+node launcher/scripts/build-runtime.mjs --game=th12 --variant=multiplayer --emsdk=/path/to/emsdk
 npm run ports:check -- --game=th12
 ```
 
-构建产物位于 `ports/th12/build-eagler/`。源码来源见 [导入记录](../../../docs/migration/th12-eagler-20261020.json)，逐文件来源见 [eagler-source.json](../eagler-source.json)。Launcher 按测试作品提供星莲船入口，使用 `resources` 协议安装共享字体、音乐与语言包。
+正式输出为 `ports/th12-mp/build-eagler-multiplayer/`，入口为 `th12.html`。SDL3 应用、WebGL 2、字体和音频接入见 [开发指南](DEVELOPMENT.md)，构建和测试命令见 [BUILD](BUILD.md)。
 
-THPrac 使用 [紫版原生 UI 接入](../src/practice/INTEGRATION.md)，与 TH10/11 共用 ImGui、FreeType、输入工具和移动端面板。`thpracLocale` 决定工具语言；共享 `unifont.otf` 在 UI 初始化前通过 `resources` 安装。
+## 资源与存档
 
-以下独立仓库接入步骤用于同步原仓库或重建独立环境；monorepo 已包含接入改动，日常开发从上面的命令开始。
+Launcher 通过 Package Store 管理 DATA、安装代次及内容身份，通过现有资源协议提供音乐、共享字体和语言包。Runtime 在启动前挂载资源，SDL 回调负责逻辑、画面和音频。OGG 在同一 Wasm 播放器中选择流式或整曲解码。
 
-本地接入使用 `YomotsuHisami/eagler-touhou` monorepo 中的真实 React Launcher、
-Package Store、存档管理和 Runtime Generation。`adapter-preview.html` 继续作为单独
-的协议观察页。平台改动保存在 `integration/eagler-touhou-th12.patch`，来源基线见
-`integration/common-dependency.json`；本地可用不代表上游已经合并或发布。
+用户文件沿用 `/savesth12`，列出、读写、删除和同步受存档白名单约束。Replay 使用共享管理界面，具体格式和播放由本作原生代码处理。失焦清理输入，页面隐藏按原生暂停及音频生命周期处理。
 
-## 源码与构建
+多人 Runtime 发布独立产品身份，练习开关为关闭状态。房间配置、席位与旁观角色通过现有多人选项传入。普通版与 MP 分别发布自己的 Wasm、清单和文件哈希。
 
-本仓库使用 `eagler` 作为 Web 适配集成分支。以下操作在该分支执行：
+## 组装本地站点
 
-```powershell
-git switch eagler
-```
-
-在声明的上游基线上应用集成补丁，再物化本仓库源码：
-
-```powershell
-git -C D:\Sources\eagler-touhou apply D:\Sources\th12\integration\eagler-touhou-th12.patch
-node scripts/install-eagler-source.mjs --workspace=D:/Sources/eagler-touhou
-```
-
-在上游 `launcher` 目录安装锁定依赖。然后在 TH12 仓库生成浏览器代码包：
-
-```powershell
-npm --prefix D:/Sources/eagler-touhou/launcher ci --ignore-scripts --no-audit --no-fund
-$env:EAGLER_COMMON_ROOT = 'D:/Sources/eagler-touhou/common'
-npm run build:eagler
-```
-
-`build:eagler` 编译完整 THPrac 核心和 Vorbis 解码器，生成只含浏览器代码的
-`build-eagler/`。普通 `build` 仍可生成供本地行为工具使用的 Web/Node 核心；
-带 Node 内置模块依赖的核心不能作为封闭的网页 Runtime 发布。
-
-## 本地内容
-
-按照 [内容准备](CONTENT_PREPARATION.md) 从自有原版生成以下目录：
+先完成两个模式的正式构建，再按 [内容准备](CONTENT_PREPARATION.md)生成本地素材：
 
 ```text
 CONTENT/
   th12.data
-  music/                  # 18 首 OGG
+  music/
   artwork/th12-card.webp
-  shared/msgothic.ttc      # 由平台资源所有者提供
+  shared/msgothic.ttc
   shared/unifont.otf
-  language/catalog.json   # 可选，统一 thcrap 准备器的输出
+  language/catalog.json
   language/lang_zh-hans.zip
   language/lang_en.zip
 ```
 
-语言包也可以放在单独目录，通过 `--language-packs=PATH` 指定。工具接受本仓库
-统一 thcrap 准备器生成的标准 Host catalog；语言归档和
-目录声明的大小、摘要必须一致。没有语言目录时只发布日文。不能用解包后的预览
-目录替代语言 ZIP。
+站点组装入口统一由普通版目录维护。在仓库根目录运行：
 
-## 组装与启动
-
-在 TH12 仓库运行：
-
-```powershell
-node scripts/package-launcher.mjs --workspace=D:/Sources/eagler-touhou --content=D:/Private/th12-content
-node D:/Sources/eagler-touhou/launcher/scripts/serve-static.mjs D:/Sources/th12/artifacts/launcher-site 8130
+```sh
+node ports/th12/scripts/package-launcher.mjs --workspace=. --content=/private/th12-content
+node launcher/scripts/serve-static.mjs ports/th12/artifacts/launcher-site 8130
 ```
 
-默认入口为 `http://127.0.0.1:8130/`。脚本会构建真实 Launcher 页面，并调用上游的
-`package-server.mjs --games=th12` 生成站点。已有最新页面产物时可加
-`--build-launcher=0`。`--site-url` 可指定实际站点根地址，`--runtime` 可指定另外的
-TH12 浏览器代码包。`--font` 和 `--vanilla-font` 可指定平台字体位置。
+默认普通版来自 `ports/th12/build-eagler`，MP 来自 `ports/th12-mp/build-eagler-multiplayer`。`--runtime=PATH`、`--multiplayer-runtime=PATH` 分别覆盖两者，`--output=PATH` 指定忽略的 `artifacts` 子目录。MP 目录中的同名脚本转交这个入口，并提供本目录的多人 Runtime 路径。
 
-输出固定在忽略的 `artifacts` 目录下，包含独立的 DATA、OGG、共享字体、语言 ZIP、
-Package Descriptor、Release Catalog、不可变 Runtime Generation 和离线页面资源。
-默认仅绑定本机；不会执行游戏、测试或自动上传。该输出包含私有游戏素材，不能
-当成源码提交到 GitHub。
+默认选择 `ja,lang_zh-hans,lang_en`。`--language-packs=PATH` 指定已校验的语言目录，`--artwork=PATH` 指定封面目录。缺少所选内容时报告错误，日文场景可显式传入 `--languages=ja`。
 
-页面使用原启动器的游戏卡片、下载、设置、触控、THPrac、存档、Replay 及离线包
-流程。TH12 通过现有 `resources` 协议接收资源，不提供虚构的全局 Emscripten FS。
-共享字体在语言配置前安装，音乐资源可在启动后继续补齐，代码与 DATA 代际分别
-固定。其他游戏继续使用原来的资源安装路径。
+输出包含真实 Launcher、两个 Runtime、Package Descriptor、字体和本地内容。构建工具与公开程序、私有游戏素材分别按发布清单打包。
 
-录像管理使用启动器已有的持久工作区。文件列表读取 `/savesth12` IDBFS v21，
-Runtime 负责详情、选关、暂停／播放、速度和前后定位；定位通过重新执行录像输入完成。
-允许管理一层录像子目录。普通 iframe 失焦只清理输入，页面隐藏才暂停，
-避免点击启动器控制按钮时误打开原版暂停菜单。
+## 验收与维护
 
-自托管工具包通过 `preparedContent.buildSources` 显式携带 TH12 内容准备器及其
-Python／JS 依赖，优先使用包内工具，不再依赖打包者本机的 `ports/th12` 存在。
-这些文件是私有准备工具，不属于公开 App Shell 或游戏 Runtime。
+共有生命周期、房间和旁观检查见 [验证指南](../../../docs/adaptation/validation.md)，本作 SDL 自动检查见 [BUILD](BUILD.md#自动检查)。运行记录登记构建身份、输入和实际场景。
 
-普通核心已移除诊断专用导出；诊断构建单独输出到 `artifacts/diagnostic-runtime`，
-生产打包拒绝诊断核心。quick/daily 的逐 tick 数据比较入口与不可变 golden 接受流程见
-[录像验证器](../tools/replay-verifier/README.md)。仍缺完整原版提供器和经审阅的整局
-golden，不能把旧的 RNG／解密局部 Oracle 当作整局验收。
-
-发布 profile 保持 `web-validation-th12`，Runtime 保持 `completeAdapter: false`。
-2026-10-20 的 Chromium 验证使用日文 1.00b 生成的 514 项 DATA，完成受管理资源、共享
-字体、标题与第一关启动，并展示紫版高级选项和移动端折叠面板。test 发布语言为日文；
-中文本地化按 thcrap 路径接入。离线重开、实体触控、存档往返及完整流程使用各自的验收记录。
-新端口是独立浏览器存储来源，不自动迁移旧预览页
-的存档；可通过文件管理导出、导入允许的成绩、配置及 Replay。
+旧网页前端通过 `build-legacy-eagler.mjs` 构建，诊断核心和原版 Replay 对照见 [录像验证器](../tools/replay-verifier/README.md)。源码来源及独立目录历史见 [迁移登记](../../../docs/migration/th12-eagler-20261020.json)和[维护流程](../../../docs/adaptation/port-sync.md)。

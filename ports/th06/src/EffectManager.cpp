@@ -241,6 +241,9 @@ Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 cou
 
         effect->inUseFlag = 1;
         effect->effectId = effectIdx;
+#ifdef TH_ENABLE_NETPLAY
+        effect->missConfirmation = Netplay::SideEffects::CurrentMissFrameTag();
+#endif
         effect->pos1 = *pos;
         effect->prevPos = effect->pos1;
 
@@ -317,6 +320,9 @@ ChainCallbackResult EffectManager::OnDraw(EffectManager *mgr)
             continue;
         }
 
+#ifdef TH_ENABLE_NETPLAY
+        if (!Netplay::SideEffects::MissFrameVisible(effect->missConfirmation)) continue;
+#endif
         const ZunVec3 savedPos = effect->vm.pos;
         const ZunVec3 savedPrevPos = effect->vm.prevPos;
         effect->vm.pos = effect->prevPos.Lerp(effect->pos1, g_RenderAlpha);

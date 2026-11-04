@@ -288,10 +288,15 @@ void command(Enemy& e, Context& c, int op) {
       e.animationAge = 0;
     }
     bindEnemyAnimation(e, slot, script);
+    if (op == 262 && slot == 0) {
+      e.flags |= 0x80000u;
+      e.movementAnimation = script;
+      e.movementDirection = 0;
+    }
     break;
   }
   case 269: {
-    const int slot = I(0), script = e.baseAnimation + 5;
+    const int slot = I(0), script = e.movementAnimation + 5;
     if (slot == 0) {
       e.animation = script;
       e.boundBank = e.bank;
@@ -316,7 +321,7 @@ void command(Enemy& e, Context& c, int op) {
     break;
   }
   case 274: {
-    const int slot = I(0), script = e.baseAnimation + I(1) + 5;
+    const int slot = I(0), script = e.movementAnimation + I(1) + 5;
     if (slot == 0) {
       e.animation = script;
       e.boundBank = e.bank;
@@ -326,10 +331,12 @@ void command(Enemy& e, Context& c, int op) {
     break;
   }
   case 276:
-    e.animation = e.baseAnimation;
+    e.flags &= ~0x80000u;
+    e.movementDirection = 0;
+    e.animation = e.baseAnimation = e.movementAnimation;
     e.boundBank = e.bank;
     e.animationAge = 0;
-    bindEnemyAnimation(e, 0, e.baseAnimation);
+    bindEnemyAnimation(e, 0, e.movementAnimation);
     break;
   case 277:
   case 278: {

@@ -8,7 +8,9 @@
 
 `audit-history.py` 对照目录历史分支，识别整提交、文件与修改块补丁对应，生成[历史对账表](../../docs/history/port-sync-audit.md)；MP 来源比较覆盖普通版完整历史；当前内容证据结合路径迁移检查，固定快照决定明确已接收、同次维护、共用目录接替和待同步范围。MP 逐项来源与合并节点也进入固定快照决定；待同步范围须通过来源新增与目标缺失证据检查。快照变化时保留历史决定并标明需要复核。
 
-命令先编译当前前端模块，再执行各项检查。
+命令先编译当前前端模块，再执行各项检查。模块 gate 中的 Vitest 测试需要 Bun 1.4.4；`shared-checks.json` 按测试计划选择 `repository`、`unit` 或 `workspace` 项目。原生 `node:test` gate 仍由 Node 运行。CI 在 Windows 和 Linux 都安装该 Bun 版本。
+
+源码检查只包含声明了 `sourceBuild` 的目标。仅接入预制 Runtime Release 的作品不写入源码验收状态；显式选择这类作品时会报告尚未声明源码构建。浏览器 Runtime 验收仍按实际发布产品覆盖。
 
 从根目录运行 `npm run ports:check -- --all`，或用 `--game=th08 --variant=both` 选择一作。安装依赖使用 `npm --prefix launcher ci --ignore-scripts`，原生时钟组件检查使用 C++17 编译器（默认 `g++`，可设置 `CXX`）。
 

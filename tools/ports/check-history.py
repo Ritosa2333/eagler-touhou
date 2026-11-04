@@ -1,6 +1,7 @@
 """Verify retained source ancestry and exported port subtree trees."""
 
 import argparse
+import hashlib
 import json
 import os
 import pathlib
@@ -120,6 +121,51 @@ def original_identity(record):
             subtree["initialJoin"], subtree["initialSplit"])
 
 
+def delivery_snapshots(repo, head, workspace):
+    """A non-Git delivery is pinned to its original checksum manifest."""
+    records = []
+    for name in repo.git("ls-tree", "--name-only", f"{head}:docs/migration").splitlines():
+        if not re.fullmatch(r"th[0-9]+-eagler-[0-9]+\.json", name):
+            continue
+        record = repo.document(head, f"docs/migration/{name}")
+        if record.get("schema") != "eagler-touhou/source-snapshot/1":
+            continue
+        directory = record.get("destination", "")
+        if not DIRECTORY.fullmatch(directory) or directory not in workspace.values():
+            raise RuntimeError(f"Unregistered delivery directory: {directory}")
+        if record.get("sourceCommit") is not None or record.get("sourceKind") != "development-delivery-without-git":
+            raise RuntimeError(f"{directory}: delivery cannot claim Git ancestry")
+        manifest = record.get("sourceManifest", {})
+        path = manifest.get("path", "")
+        if not re.fullmatch(r"archive/[a-z0-9-]+/FILE-SHA256\.json", path):
+            raise RuntimeError(f"{directory}: invalid original checksum manifest")
+        payload = subprocess.check_output(["git", "-C", str(repo.path), "show", f"{head}:{path}"])
+        if hashlib.sha256(payload).hexdigest() != manifest.get("sha256"):
+            raise RuntimeError(f"{directory}: original checksum manifest changed")
+        checksums = json.loads(payload)
+        files = record.get("files", [])
+        if not files:
+            raise RuntimeError(f"{directory}: empty delivery inventory")
+        paths = set(repo.git("ls-tree", "-rz", "--name-only", head, "--", directory, path.rsplit("/", 1)[0]).split("\0"))
+        seen = set()
+        for row in files:
+            source, destination = row["source"], row["destination"]
+            if (source, destination) in seen or any(part in ("", ".", "..") for part in destination.split("/")):
+                raise RuntimeError(f"{directory}: invalid delivery inventory")
+            seen.add((source, destination))
+            expected = manifest["sha256"] if source == "FILE-SHA256.json" else checksums.get(source)
+            if expected != row.get("sha256") or not re.fullmatch(r"[0-9a-f]{64}", row.get("sha256", "")):
+                raise RuntimeError(f"{directory}: source checksum mismatch: {source}")
+            if not destination.startswith(directory + "/") and not destination.startswith(path.rsplit("/", 1)[0] + "/"):
+                raise RuntimeError(f"{directory}: source destination escaped its owner")
+            if destination not in paths:
+                raise RuntimeError(f"{directory}: missing migrated file: {destination}")
+        records.append(record)
+    if len({row["destination"] for row in records}) != len(records):
+        raise RuntimeError("Duplicate delivery source records")
+    return records
+
+
 def verify(repo, head="HEAD", base=None):
     head = repo.git("rev-parse", "--verify", f"{head}^{{commit}}")
     workspace = repo.document(head, "launcher/config/workspace.json")["repositories"]
@@ -138,6 +184,7 @@ def verify(repo, head="HEAD", base=None):
             raise RuntimeError(f"{target}: move source is not an ancestor of {head}")
 
     records = subtree_records(repo, head)
+    snapshots = delivery_snapshots(repo, head, workspace)
     splits = {}
     for record in records:
         directory = record["destination"]
@@ -159,11 +206,16 @@ def verify(repo, head="HEAD", base=None):
         known = {entry["target"].replace("runtimes/", "ports/", 1)
                  for entry in base_imports if entry["target"] != "launcher"}
         known.update(record["destination"] for record in records)
+        known.update(record["destination"] for record in snapshots)
+        for old in delivery_snapshots(repo, base, repo.document(base, "launcher/config/workspace.json")["repositories"]):
+            current = next((row for row in snapshots if row["destination"] == old["destination"]), None)
+            if current is None or any(current.get(key) != old.get(key) for key in ("source", "sourceManifest", "sourceCommit", "sourceKind")) or any(row not in current["files"] for row in old["files"]):
+                raise RuntimeError("Retained delivery source records changed")
         missing = sorted(added - known)
         if missing:
             raise RuntimeError("New port directories need retained source history: " + ", ".join(missing))
     return {"sourceAnchors": len(imports) - sum(row["target"] == "launcher" for row in imports),
-            "subtrees": splits}
+            "subtrees": splits, "deliverySnapshots": [row["destination"] for row in snapshots]}
 
 
 def main():
