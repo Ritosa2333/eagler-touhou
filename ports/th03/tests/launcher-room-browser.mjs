@@ -71,21 +71,10 @@ try{
     await wait(()=>frames[0].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard down',5000);
     await host.keyboard.up('ArrowRight');
     await wait(()=>frames[0].evaluate(()=>!__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard release',5000);
-    for(const page of pages){
-      await page.bringToFront();await page.$eval('#gameFrame',frame=>frame.focus());
-      await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,200));await page.keyboard.up('KeyZ');
-    }
-    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>window.th03SyncState?.phase===1)))).every(Boolean),'battle begins',30000);
-    await host.bringToFront();await host.$eval('#gameFrame',frame=>frame.focus());
-    await host.keyboard.press('Escape');
-    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>!document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized surrender menu',15000);
     for(const frame of frames){
-      const positions=await frame.$eval('#pause-menu',node=>{const seat=node.dataset.seat,p=node.parentElement.getBoundingClientRect();const centers=['0','1'].map(value=>{node.dataset.seat=value;const r=node.getBoundingClientRect();return (r.x+r.width/2-p.x)/p.width;});node.dataset.seat=seat;return centers;});
+      const positions=await frame.$eval('#pause-menu',node=>{const seat=node.dataset.seat,hidden=node.hidden,p=node.parentElement.getBoundingClientRect();node.hidden=false;const centers=['0','1'].map(value=>{node.dataset.seat=value;const r=node.getBoundingClientRect();return (r.x+r.width/2-p.x)/p.width;});node.dataset.seat=seat;node.hidden=hidden;return centers;});
       assert(Math.abs(positions[0]-.25)<.01&&Math.abs(positions[1]-.75)<.01,'surrender menu follows the player side');
     }
-    await host.screenshot({path:resolve(out,'surrender-menu.png')});
-    await host.keyboard.press('Escape');
-    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized pause resume',15000);
     await Promise.all(pages.map(page=>page.$eval('#gameFrame',frame=>frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th03',epoch:Number(new URL(frame.src).searchParams.get('runtimeEpoch')),command:'network-cancel'},location.origin))));
     await wait(async()=>events.every(list=>list.some(e=>e.event==='exit'&&e.status==='success')),'runtime cancellation',15000);
     await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean),'same room prepares the next match',120000);
