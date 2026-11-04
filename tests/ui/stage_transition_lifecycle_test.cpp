@@ -144,6 +144,7 @@ struct TransitionHarness {
         CHECK(load_bank(manager, 5, synthetic_anm(8, trivial_scripts(1))));
         CHECK(load_bank(manager, 6, synthetic_anm(64, trivial_scripts(35))));
         CHECK(load_bank(manager, 26, synthetic_anm(8, trivial_scripts(3))));
+        CHECK(load_bank(manager, 8, synthetic_anm(8, trivial_scripts(57))));  // effect.anm（0x438ec0 出生同步建 script 0x38=56）
         CHECK(load_bank(manager, 25, synthetic_anm(8, trivial_scripts(5))));  // astral spirit
         host.assets["st01.ecl"] = synthetic_stage_ecl("stage_a.anm", "stage_b.anm");
         host.assets["st02.ecl"] = synthetic_stage_ecl("stage2_a.anm", "stage2_b.anm");
