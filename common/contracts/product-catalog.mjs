@@ -28,6 +28,7 @@ export function languagePriority(id) {
                 : id === "lang_en" ? 20
                     : 100;
 }
+const TH01_REIMU = Object.freeze({ labelKey: "multiplayer.loadout.th01_reimu", glyph: "霊", character: 0, shot: 0 });
 const REIMU_A = Object.freeze({ labelKey: "multiplayer.loadout.reimuA", glyph: "霊", character: 0, shot: 0 });
 const REIMU_B = Object.freeze({ labelKey: "multiplayer.loadout.reimuB", glyph: "霊", character: 0, shot: 1 });
 const MARISA_A = Object.freeze({ labelKey: "multiplayer.loadout.marisaA", glyph: "魔", character: 1, shot: 0 });
@@ -95,7 +96,7 @@ export const PRODUCT_GAMES = Object.freeze({
         replay:Object.freeze({prefix:'th01',extensions:Object.freeze(['th01r']),naming:'filename'}),
         multiplayerRuntime:'./runtime/th01/multiplayer/th01.html',
         multiplayer:Object.freeze({titleKey:'game.title.th01mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
-            loadouts:Object.freeze([REIMU_A]),peerTransportGlobal:'__th01PeerTransport',relaySourceEnvelope:true,spectator:false,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
+            loadouts:Object.freeze([TH01_REIMU]),peerTransportGlobal:'__th01PeerTransport',relaySourceEnvelope:true,spectator:false,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
             inputTiming:Object.freeze({rollbackLimit:0,sendPredictionLimit:0,rollbackDefault:false,runtimeTiming:true})}),
         features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),

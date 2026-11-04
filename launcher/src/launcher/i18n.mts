@@ -750,6 +750,7 @@ const entries = [
   ["notice.restoreHint", "可以在右上角的收纳栏里重新打开哦~（不过你肯定不会再打开他的吧）", "You can reopen it from the tray in the upper-right corner. (Though you probably won't, right?)"],
   ["package.objectNotPersisted", "下载完成后没有持久化对象", "The downloaded object was not persisted"],
   ["music.backgroundInterrupted", "后台音乐下载暂时中断，下次启动会继续：{reason}", "Background music download was interrupted and will continue next launch: {reason}"],
+  ["multiplayer.loadout.th01_reimu", "灵梦", "Reimu"],
   ["multiplayer.loadout.reimuA", "灵梦 A", "Reimu A"], ["multiplayer.loadout.reimuB", "灵梦 B", "Reimu B"],
   ["multiplayer.loadout.reimuC", "灵梦 C", "Reimu C"],
   ["multiplayer.loadout.marisaA", "魔理沙 A", "Marisa A"], ["multiplayer.loadout.marisaB", "魔理沙 B", "Marisa B"],
