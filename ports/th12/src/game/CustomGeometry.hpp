@@ -42,18 +42,18 @@ Mesh ufoFillRing(const anm_logic::State&, const SpriteRegion&, Position origin);
 // exact copy of the first pair with the final repeated V coordinate.
 Mesh spellRing(const anm_logic::State&, const SpriteRegion&, Position origin);
 Mesh flatQuad(const anm_logic::State&, const SpriteRegion&, Position origin, float rotation,
-              float scaleX, float scaleY);
+              float scaleX, float scaleY, std::vector<Vertex> vertices = {});
 
 // 429af0/42b100 writes its absolute script position at draw time and adds pi/2
 // to angle. Main width/length scale must already contain the per-Laser20
 // native external writes before the embedded ANM tick.
 Mesh straightLaser(const laser::State&, const anm_logic::State&, const SpriteRegion&,
-                   Position viewport = {224, 16, 0});
+                   Position viewport = {224, 16, 0}, std::vector<Vertex> vertices = {});
 
 // 42cca0 uses Parameters.width (+464), not the potentially modified collision
 // State.width (+70). UV is 0..1 along node ordinal; native vertex color is white.
 Mesh curveLaser(const laser::State&, const anm_logic::State&, const SpriteRegion&,
-                Position viewport = {224, 16, 0});
+                Position viewport = {224, 16, 0}, std::vector<Vertex> vertices = {});
 // 410590/45d5d0 copies the already screen-space leaf points into one diffuse
 // line strip. Its custom callback ignores script0's transparent primary color.
 Mesh sanaeBLeaf(const pw::Leaf&, const anm_logic::State&);

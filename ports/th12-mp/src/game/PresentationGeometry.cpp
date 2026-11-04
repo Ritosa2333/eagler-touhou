@@ -40,7 +40,7 @@ custom_geometry::Position ringOrigin(const anm_logic::Node& node) {
   result.y = float(double(result.y) + node.viewportY);
   return result;
 }
-void append(custom_geometry::Mesh mesh, const anm_logic::Node& node) {
+void append(const custom_geometry::Mesh& mesh, const anm_logic::Node& node) {
   if (mesh.vertices.empty())
     return;
   meshDrawState.push_back({mesh.bank, mesh.sprite, mesh.textureEntry, mesh.layer, mesh.blend,
@@ -94,16 +94,22 @@ void captureCustomGeometry() {
                  : custom_geometry::ufoFillRing(node.vm.state(), sprite, origin),
              node);
     }
+  static std::vector<custom_geometry::Vertex> laserVertices;
+  const custom_geometry::Position laserViewport{224, 16, 0};
   for (const auto* object : laserManager.ordered()) {
     const auto& state = object->state;
     if (const auto* main =
             animationScene.find(laserAnimationKey(state.serialId, laser::Role::Main))) {
       custom_geometry::SpriteRegion sprite;
-      if (region(*main, sprite))
-        append(state.kind == laser::Kind::Curve
-                   ? custom_geometry::curveLaser(state, main->vm.state(), sprite)
-                   : custom_geometry::straightLaser(state, main->vm.state(), sprite),
-               *main);
+      if (region(*main, sprite)) {
+        auto mesh = state.kind == laser::Kind::Curve
+                        ? custom_geometry::curveLaser(state, main->vm.state(), sprite,
+                                                     laserViewport, std::move(laserVertices))
+                        : custom_geometry::straightLaser(state, main->vm.state(), sprite,
+                                                        laserViewport, std::move(laserVertices));
+        append(mesh, *main);
+        laserVertices = std::move(mesh.vertices);
+      }
     }
     const bool capVisible = state.kind == laser::Kind::Curve
                                 ? custom_geometry::curveCapVisible(state)
@@ -118,10 +124,11 @@ void captureCustomGeometry() {
         auto mesh = custom_geometry::flatQuad(
             cap->vm.state(), sprite,
             {float(double(p.x) + cap->viewportX), float(double(p.y) + cap->viewportY), p.z},
-            p.rotation, p.sx, p.sy);
+            p.rotation, p.sx, p.sy, std::move(laserVertices));
         mesh.pass = custom_geometry::DrawPass::LaserManager;
         mesh.drawPriority = 29;
-        append(std::move(mesh), *cap);
+        append(mesh, *cap);
+        laserVertices = std::move(mesh.vertices);
       }
   }
   if (const auto bank = animationScene.registry.bank(11)) {
@@ -154,7 +161,7 @@ void captureCustomGeometry() {
         mesh.drawPriority = 45;
         anm_logic::Node descriptor;
         descriptor.id = order++;
-        append(std::move(mesh), descriptor);
+        append(mesh, descriptor);
       }
     }
   }
