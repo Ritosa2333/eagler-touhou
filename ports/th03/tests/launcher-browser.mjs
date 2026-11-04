@@ -64,7 +64,11 @@ try{
     await new Promise(resolve=>setTimeout(resolve,1500));
   }
   assert(events.some(event=>event.event==='audio-health'&&event.effectsPeak>0.001),'original game effects must produce audio');
-  assert(await frame.$('#pc98-game-fps'),'frame counter is visible in the game');
+  for(let i=0;i<20;i++){
+    if(await frame.evaluate(()=>/^FPS: [1-9]\d*$/.test(document.querySelector('#pc98-game-fps')?.textContent||'')))break;
+    await page.keyboard.press('KeyZ',{delay:100});await new Promise(resolve=>setTimeout(resolve,800));
+  }
+  assert(await frame.evaluate(()=>/^FPS: [1-9]\d*$/.test(document.querySelector('#pc98-game-fps')?.textContent||'')),'running game must report its native frame rate');
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH03 solo presentation');
