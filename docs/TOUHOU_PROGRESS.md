@@ -80,15 +80,15 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/acc1b44e5ef3415d6b92790fe671b837a94ceb33)修正相机复制中字段顺序：原版 target offset 位于 FOV 前，两个未映射字位于矩阵前的零起始索引 22／23，保留全部 75 个复制步骤及复制前边界。上一轮连续字节前缀检查缺少字段语义验证，其“未映射尾部”描述在本轮纠正，旧收据按原范围保留。
+独立 C++/Wasm 实现与原版对照持续推进。[当前源码](https://github.com/AdingApkgg/thp/commit/8c6d4678ca5abed189a7f7c6347128e311cd31c3)已合入四个 C++ 文件的透视交付支持：计算前、view、projection、right XY、right Z、归一化完成六个边界，只推进已经进入的 Scene，保留借用背景 owner，并传播失败。
 
-[字段级证据](https://github.com/AdingApkgg/thp/blob/acc1b44e5ef3415d6b92790fe671b837a94ceb33/docs/porting/TH14_CAMERA_NATIVE_ORDER_NOV04.md)：原版 REP 发布与 worker 读取、六段 ANM 读取共 456 次执行；76 个前缀各比较 73 个映射字，共 5,548 字。上一公开核心在 57 个前缀有 557 个语义字错误及 76 项进度不符，本版均为零；九项中途失败、三个实际 Session 控制及四个共享标题 Stage 编译通过。未知两字的值与用途未验收，没有恢复旧原版线程调度。
+[原版组件与回归证据](https://github.com/AdingApkgg/thp/blob/8c6d4678ca5abed189a7f7c6347128e311cd31c3/docs/porting/TH14_PERSPECTIVE_PUBLICATION_NOV04.md)：原版主函数／worker REP 和本机实际 Windows x86 D3DX 服务，四组合成相机、24 次复制／1,752 字一致，24 个失败边界、六项作用域和三个实际 Session 控制通过。初版 Unicorn DLL 浮点 oracle 的 66 字差异已拒绝，改用实际 DLL 服务后同一 C++ 构建为零差异。
 
-141 核心对象全新编译，16 份有效录像新跑严格通过，共 1,379,760 回调；带实测正常 VM 身份的一份 35,000 回调记录（1,057 行 VM／303 字段、393 个战斗检查点）及相机源读取现场的 18,000 回调记录通过。当前核心静音 Application 两关 2,289 帧／27 断言、两幅图像和 1,526,784 帧离线 PCM 与封存参考相同，物理音频设备打开数零；浏览器 146 单元重编完成，未作浏览器 UI 验收。
+141 核心对象全新编译。16 份有效录像新跑严格通过，共 1,379,760 回调；带实测正常 VM 身份的 35,000 回调记录（1,057 行 VM／303 字段、393 个战斗检查点）及相机源读取现场的 18,000 回调通过。八项共享 camera／Session 编译、静音 Application 两关 2,289 帧／27 断言、两幅图像及 1,526,784 帧离线 PCM 对封存参考一致，物理音频设备打开数零；浏览器 146 单元重编完成，未据此声称原版整局渲染或浏览器 UI 通过。
 
-另有 [02eccdb 历史核心的全长 Application 复核](https://github.com/AdingApkgg/thp/blob/acc1b44e5ef3415d6b92790fe671b837a94ceb33/docs/porting/TH14_STAGE_OBJECT_FULL_APPLICATION_NOV04.md)：GLES／WebGPU 各 122,622 帧／45 断言，单独绑定历史源码，不继承为当前核心全长验收。
+[受控时钟诊断](https://github.com/AdingApkgg/thp/blob/8c6d4678ca5abed189a7f7c6347128e311cd31c3/docs/porting/TH14_CONTROLLED_CLOCK_DIAGNOSTICS_NOV04.md)只改变测试宿主的交付时点，能令旧 35,000 回调记录的既有原始载荷一致（1,072 行采样 VM、480 个战斗检查点），扩展到 71 个相机字段／2,484,929 字也一致。没有给引擎提供原版 RNG 或相机值。实验动画索引和交付点不是旧原版已观测身份；严格 Scene 合约仍拒绝实验 driver，没有放宽验收。
 
-旧 35,000 回调记录的 script seed／calls／活动自机弹数 4,137／283／1 处差异及旧相机失败仍保留。未知字、旧精确交错、默认独立调度、全模式／原始 EOF、普通原版 GUI、整局原版像素／PCM、存档及浏览器见[当前清单](https://github.com/AdingApkgg/thp/blob/acc1b44e5ef3415d6b92790fe671b837a94ceb33/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
+默认旧记录仍有 script seed／calls／活动自机弹数 4,137／283／1 处差异及相机 16,701 处差异，没有关闭旧失败。原版字 22／23 未映射，旧记录字 73／74 未捕获；矩阵内部写入、精确交错、默认独立调度、全模式／原始 EOF、普通原版 GUI、整局原版像素／PCM、存档与浏览器见[当前清单](https://github.com/AdingApkgg/thp/blob/8c6d4678ca5abed189a7f7c6347128e311cd31c3/docs/porting/TH14_REMAINING_ACCEPTANCE.md)，整作 1:1 未完成。
 
 ## [th15] 東方紺珠伝 v1.00b
 
