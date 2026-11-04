@@ -512,6 +512,24 @@ test('main 4126: cancelling language aborts launch rather than choosing optional
   assert.deepEqual(activity, [true, false]); assert.deepEqual(warnings, []); assert.equal(JSON.stringify([...state.storage]), before);
 });
 
+test('OGG startup downloads and keeps a single-file soundtrack enabled', async () => {
+  const current = generation();
+  current.descriptor.components.ogg.files = ['track-1'];
+  const acquisition = {
+    getMetadata: () => ({siteManifest: host()}),
+    getPublication: async () => ({catalog: catalog(), catalogUrl: new URL('release-catalog.json', baseUrl).href}),
+    getPackageFetch: () => fetch,
+    installPublished: async (_game, {addFileIds}) => {
+      assert.deepEqual(addFileIds, ['track-1']);
+      return {generation: added(current, addFileIds)};
+    },
+    refreshInstalled: async () => {},
+  };
+  const result = await api.ensureOggStartup({generation: current, music: 'ogg-stream', acquisition, translate: t});
+  assert.equal(result.music, 'ogg-stream');
+  assert.ok(result.generation.files['track-1']?.objectId);
+});
+
 test('complete-set OGG startup waits for every declared file and preserves DATA', async () => {
   const current = generation({ogg: ['track-1', 'track-2']}), gate = deferred(), requests = [];
   let completed = false;

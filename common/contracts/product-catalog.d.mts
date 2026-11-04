@@ -709,6 +709,57 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th13: Readonly<{
+        testOnly: true;
+        buildOptIn: true;
+        number: "13";
+        title: "東方神霊廟";
+        subtitle: "Ten Desires";
+        cardArtwork: "th13-card.webp";
+        storage: Readonly<{
+            saveRoot: "/savesth13";
+            scoreFile: "scoreth13.dat";
+            configFiles: readonly string[];
+        }>;
+        runtime: "./runtime/th13/th13.html";
+        musicCapabilities: Readonly<{
+            midi: false;
+        }>;
+        musicRuntime: Readonly<{
+            localOggConfigureMode: "runtime-selection";
+        }>;
+        touchFire: Readonly<{
+            readonly mode: "toggle";
+            readonly labelKey: "touch.tapToggle";
+        }>;
+        support: Readonly<{
+            highRefreshRate: false;
+            sourceRepository: "https://github.com/AgentMystia/th13";
+            adaptationNotice: "early-test";
+        }>;
+        runtimeFileLayout: "directory";
+        requiredShared: readonly string[];
+        runtimeAssets: readonly string[];
+        dataProvider: "retail-memory";
+        package: Readonly<{
+            dataFileId: "game-data";
+            dataTarget: "/th13.data";
+            musicSourceDirectories: Readonly<{
+                ogg: "bgm-ogg";
+            }>;
+            musicMounts: Readonly<{
+                ogg: "/assets";
+            }>;
+        }>;
+        replay: Readonly<{
+            prefix: "th13";
+        }>;
+        features: Readonly<{
+            thprac: false;
+            languages: false;
+            focusHitbox: false;
+        }>;
+    }>;
     th15: Readonly<{
         number: "15";
         title: "東方紺珠伝";
