@@ -19,7 +19,7 @@ test("runtime build profiles", async () => {
 
 
 const config = await loadRuntimeBuildConfig();
-assert.deepEqual(Object.keys(config.games).sort(), Object.keys(PRODUCT_GAMES).sort());
+assert.deepEqual(Object.keys(config.games).sort(), Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn).sort());
 for (const variant of ["normal", "multiplayer"]) {
   assert.equal(config.games.th09.variants[variant].features.thcrap, true,
     `TH09 ${variant} must attest its existing language-pack support`);

@@ -154,6 +154,7 @@
     "test:offline-game:browser": "node tests/browser/test-offline-game.mjs",
     "test:react-shell-offline:browser": "node tests/browser/test-react-shell-offline.mjs",
     "test:site-mirror:browser": "node tests/browser/test-site-mirror.mjs",
+    "test:beta-mode:browser": "node tests/browser/test-beta-mode.mjs",
     "test:resource-download:browser": "node tests/browser/test-resource-download.mjs",
     "test:th09-in-game-selection:browser": "node tests/browser/test-th09-in-game-selection.mjs",
     "test:th09-spectator-continuity:browser": "node tests/browser/test-th09-spectator-continuity.mjs",

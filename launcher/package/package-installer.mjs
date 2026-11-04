@@ -11,10 +11,10 @@ import {
   putPendingPackageObject,
   refreshPendingPackageOperation,
   packageMimeType,
+  packageObjectMatches,
   readPackageObject,
   readCurrentPackageGeneration,
   readVerifiedPackageObjectBySha256,
-  readPackageObjectKeys,
   stagePendingPackageGeneration,
 } from "./package-store.mjs";
 import { parsePackageZip } from "./package-zip.mjs";
@@ -45,9 +45,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function invalidReusableFileIds(current, descriptor, desiredFileIds) {
   if (!current?.descriptor?.files || !current.files || typeof current.files !== "object") return [];
-  const invalid = new Set();
-  const candidates = [];
-  const objectIds = [];
+  const invalid = [];
   for (const fileId of desiredFileIds) {
     const previous = current.descriptor.files[fileId];
     const next = descriptor.files[fileId];
@@ -58,37 +56,26 @@ async function invalidReusableFileIds(current, descriptor, desiredFileIds) {
     const previousHash = previous.sha256?.toLowerCase() || null;
     const nextHash = next.sha256?.toLowerCase() || null;
     if (previousBytes !== nextBytes || (previousHash && nextHash && previousHash !== nextHash)) {
-      invalid.add(fileId);
+      invalid.push(fileId);
       continue;
     }
-    candidates.push({ fileId, objectId: reference.objectId, previousHash, nextHash, bytes: nextBytes });
-    objectIds.push(reference.objectId);
-  }
-  if (!candidates.length) return [...invalid];
-  const presentObjectIds = await readPackageObjectKeys(objectIds);
-  for (const candidate of candidates) {
-    if (!presentObjectIds.has(candidate.objectId)) {
-      invalid.add(candidate.fileId);
+    const object = await readPackageObject(reference.objectId);
+    if (!await packageObjectMatches(object, nextBytes, nextHash ?? previousHash)) {
+      invalid.push(fileId);
       continue;
     }
     // Packages published before full SHA-256 declarations used only the
     // 16-character file revision. During their bounded upgrade window, hash
     // the existing object instead of downloading identical bytes again.
-    if (!candidate.previousHash && candidate.nextHash) {
-      if (!Number.isSafeInteger(candidate.bytes) || candidate.bytes < 0) {
-        invalid.add(candidate.fileId);
+    if (!previousHash && nextHash) {
+      if (!Number.isSafeInteger(nextBytes) || nextBytes < 0) {
+        invalid.push(fileId);
         continue;
       }
-      const object = await readPackageObject(candidate.objectId);
-      const actualHash = object ? await sha256Hex(object.data || object.blob) : null;
-      if (actualHash?.toLowerCase() !== candidate.nextHash) {
-        invalid.add(candidate.fileId);
-        continue;
-      }
-      await attestPackageObjectSha256(candidate.objectId, candidate.nextHash, candidate.bytes);
+      await attestPackageObjectSha256(reference.objectId, nextHash, nextBytes);
     }
   }
-  return [...invalid];
+  return invalid;
 }
 
 async function stageWhenAvailable(generation, { source, operationId: owner, signal, expectedGenerationId, webLockHeld = false }) {

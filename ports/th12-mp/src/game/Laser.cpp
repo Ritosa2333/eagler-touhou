@@ -1,5 +1,6 @@
 #include "Laser.hpp"
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <limits>
 
@@ -667,14 +668,24 @@ bool CurveLaser::update(Manager& manager, World& world) {
     return true;
   float total = 0;
   bool grazed = false;
+  bool haveOffset = false;
+  uint32_t lastAngle = 0, lastSpeed = 0;
+  Vec3 offset{};
   for (size_t i = 0; i + 1 < s.nodes.size(); ++i) {
     const auto& node = s.nodes[i];
     total = fadd(total, node.speed);
     // 42cb72..42cb81 skips only totals below16; equality is queried.
     if (total < 16)
       continue;
-    auto r = world.lineCollision(add(node.position, direction(node.angle, node.speed * .5f)),
-                                 node.angle, s.width * .5f, node.speed);
+    const auto angleBits = std::bit_cast<uint32_t>(node.angle);
+    const auto speedBits = std::bit_cast<uint32_t>(node.speed);
+    if (!haveOffset || angleBits != lastAngle || speedBits != lastSpeed) {
+      offset = direction(node.angle, node.speed * .5f);
+      lastAngle = angleBits;
+      lastSpeed = speedBits;
+      haveOffset = true;
+    }
+    auto r = world.lineCollision(add(node.position, offset), node.angle, s.width * .5f, node.speed);
     if (r == Collision::Hit)
       clearRectangle(manager, world, world.playerPosition(), {32, 32, 0}, false, true);
     else if (r == Collision::Graze && !grazed && s.grazeAge.current % 3 == 0) {

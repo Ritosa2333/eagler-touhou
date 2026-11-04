@@ -1,12 +1,24 @@
 import {normalizeGameVersion} from "./game-version.mjs";
 import { validatePackageDescriptor } from "./package-descriptor.mjs";
 import { componentFileIds } from "./package-generation.mjs";
-import { installPackageFromRemote } from "./package-installer.mjs";
-import { readCurrentPackageGeneration } from "./package-store.mjs";
+import { installPackageFromAcquisition, installPackageFromRemote } from "./package-installer.mjs";
+import { packageObjectMatches, readCurrentPackageGeneration, readPackageObject } from "./package-store.mjs";
+import { sha256Hex } from "./package-integrity.mjs";
 import { releaseCatalogEntryUrl, validateReleaseCatalog } from "../release-catalog.mjs";
 
 function unique(ids) {
   return [...new Set(ids)];
+}
+
+async function damagedInstalledFileIds(generation, ids, signal) {
+  const damaged = new Set();
+  for (const id of ids) {
+    signal?.throwIfAborted();
+    const file = generation.descriptor.files[id], ref = generation.files[id];
+    const object = await readPackageObject(ref?.objectId);
+    if (!await packageObjectMatches(object, file.bytes, file.sha256)) damaged.add(id);
+  }
+  return damaged;
 }
 
 export function canUseExistingInstallationAfterRemoteFailure({
@@ -140,10 +152,18 @@ export async function installPublishedPackage(game, {
     // Resolve preservation policy inside the installer's per-game mutation
     // queue. Otherwise a queued import/update can advance current after these
     // decisions were calculated and then be silently dropped.
-    desiredFileIds: currentResult => {
+    desiredFileIds: async currentResult => {
       if (expectedGenerationId !== null && currentResult.generation?.id !== expectedGenerationId) throw new Error('Package changed before background update');
+      let current = currentResult.generation;
+      if (current) {
+        const required = new Set(current.descriptor.base.files);
+        const optional = Object.keys(current.files).filter(id => current.files[id]?.objectId && !required.has(id));
+        const damaged = await damagedInstalledFileIds(current, optional, signal);
+        if (damaged.size) current = {...current,
+          files: Object.fromEntries(Object.entries(current.files).filter(([id]) => !damaged.has(id)))};
+      }
       return desiredFilesForPublishedPackage(published.descriptor, {
-        current: currentResult.generation, addComponents, addFileIds, selectedComponentEntries,
+        current, addComponents, addFileIds, selectedComponentEntries,
       });
     },
     source: currentResult => preserveLocalSource && currentResult.installation?.source === "local" ? "local" : "remote",
@@ -152,6 +172,53 @@ export async function installPublishedPackage(game, {
     signal,
   });
   return { ...published, ...installed };
+}
+
+export async function repairInstalledPackage({generation, installation}, {
+  getPublication, fetchImpl = globalThis.fetch, signal, onProgress,
+}) {
+  const {descriptor} = generation;
+  const ids = unique([...descriptor.base.files, ...Object.keys(generation.files)
+    .filter(id => generation.files[id]?.objectId)]);
+  const damaged = await damagedInstalledFileIds(generation, ids, signal);
+  if (!damaged.size) return generation;
+
+  // Required files must be restored. Missing optional files return to their
+  // normal acquisition/fallback path instead of blocking an unrelated launch.
+  const required = new Set(descriptor.base.files);
+  const desiredFileIds = ids.filter(id => required.has(id) || !damaged.has(id));
+
+  let published;
+  return (await installPackageFromAcquisition({
+    descriptor,
+    desiredFileIds,
+    expectedGenerationId: generation.id,
+    source: installation?.source ?? "remote",
+    reuseCurrent: true,
+    signal,
+    onProgress,
+    acquire: async (id, file) => {
+      if (!published) {
+        const {catalog, catalogUrl} = await getPublication();
+        if (catalog?.games[descriptor.game]) {
+          published = await fetchPublishedPackage(descriptor.game, {catalog, catalogUrl, fetchImpl, signal});
+        }
+      }
+      // Match content rather than package IDs, which can differ for local imports.
+      const replacement = Object.values(published?.descriptor.files ?? {}).find(candidate =>
+        candidate.target === file.target && candidate.bytes === file.bytes && candidate.sha256 &&
+        (file.sha256 ? candidate.sha256.toLowerCase() === file.sha256.toLowerCase()
+          : candidate.revision === file.revision && file.revision.toLowerCase() === candidate.sha256.slice(0, 16).toLowerCase()));
+      if (!replacement) throw new Error(`${id}: no matching cloud resource for repair`);
+      const response = await fetchImpl(new URL(replacement.source, published.descriptorUrl), {cache: "no-store", signal});
+      if (!response.ok) throw new Error(`${id}: resource repair failed (HTTP ${response.status})`);
+      const bytes = await response.arrayBuffer();
+      if (!file.sha256 && await sha256Hex(bytes) !== replacement.sha256.toLowerCase()) {
+        throw new Error(`${id}: resource repair SHA-256 mismatch`);
+      }
+      return bytes;
+    },
+  })).generation;
 }
 
 export async function publishedPackageStatus(game, catalog) {

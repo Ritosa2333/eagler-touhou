@@ -5,6 +5,17 @@ LineCollisionResult collidePlayerLine(const Vec3& origin, float angle, float tra
                                       float longitudinalSize, const PlayerCollision& p) {
   const float dx = float(double(p.position.x) - origin.x),
               dy = float(double(p.position.y) - origin.y);
+  // The graze rectangle encloses the hit rectangle. The sum of its two
+  // axis extents bounds either world coordinate after any rotation.
+  const float grazeWidth = float(double(p.hitWidth) * 16),
+              grazeHeight = float(double(p.hitHeight) * 16);
+  const double reach = std::abs(double(longitudinalSize)) +
+                       std::abs(double(transverseSize)) * .5 +
+                       std::abs(double(grazeWidth)) + std::abs(double(grazeHeight));
+  // Leave slack for the original float32 projection and extent rounding.
+  const double bound = reach * 1.000001 + .000001;
+  if (std::abs(dx) > bound || std::abs(dy) > bound)
+    return {};
   const float cosine = float(std::cos(double(-angle))), sine = float(std::sin(double(-angle)));
   const float x = float(double(cosine) * dx - double(sine) * dy),
               y = float(double(sine) * dx + double(cosine) * dy);
@@ -14,7 +25,7 @@ LineCollisionResult collidePlayerLine(const Vec3& origin, float angle, float tra
     return double(x1) <= longitudinalSize && double(y1) <= double(transverseSize) * .5 &&
            double(x2) >= 0 && double(y2) >= -double(transverseSize) * .5;
   };
-  if (!intersects(float(double(p.hitWidth) * 16), float(double(p.hitHeight) * 16)))
+  if (!intersects(grazeWidth, grazeHeight))
     return {};
   if (!intersects(p.hitWidth, p.hitHeight))
     return {Collision::Graze, false, false};

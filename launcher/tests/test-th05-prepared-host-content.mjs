@@ -13,7 +13,9 @@ const mocks = vi.hoisted(() => ({
   readReactFrontendArtifact: vi.fn(),
 }));
 
-vi.mock('../lib/host-workspace.mjs', () => ({inspectHostWorkspace: mocks.inspectHostWorkspace}));
+vi.mock('../lib/host-workspace.mjs', async importOriginal => ({
+  ...await importOriginal(), inspectHostWorkspace: mocks.inspectHostWorkspace,
+}));
 vi.mock('../host/lib/python-environment.mjs', () => ({ensurePythonEnvironment: mocks.ensurePythonEnvironment}));
 vi.mock('../host/lib/thtk.mjs', () => ({ensureThtk: mocks.ensureThtk}));
 vi.mock('../host/lib/process.mjs', () => ({run: mocks.run}));

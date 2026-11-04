@@ -13,6 +13,7 @@ export function createRelayEntryRouting(options: {
   shared(): SiteManifestShared | undefined;
   createSocket(url: string): WebSocket;
   connectTimeoutMs?: number;
+  betaMode?:boolean;
 }) {
   const selected = new Map<string, string>();
   function entries() {
@@ -22,18 +23,22 @@ export function createRelayEntryRouting(options: {
   }
   function resolve(base: string): string {
     const candidate = selected.get(base);
-    return candidate && entries().includes(candidate) ? candidate : base;
+    const value=candidate && entries().includes(candidate) ? candidate : base;
+    if(!options.betaMode||!value)return value;
+    const url=new URL(value);url.searchParams.set('channel','beta');return url.href;
   }
   function createSocket(value: string): RelayEntrySocket {
     const bases = entries();
     const input = new URL(value);
+    if(options.betaMode)input.searchParams.set('channel','beta');
     const primary = bases[0];
     const matching = bases.find(base => {
       const url = new URL(base);
       return url.origin === input.origin && url.pathname === input.pathname;
     });
-    if (!primary || !matching || bases.length < 2) return options.createSocket(value);
-    const preferred = resolve(primary);
+    if (!primary || !matching || bases.length < 2) return options.createSocket(input.href);
+    const candidate = selected.get(primary);
+    const preferred = candidate && bases.includes(candidate) ? candidate : primary;
     const candidates = [...new Set([preferred, ...bases])];
     const output = new EventTarget();
     let socket: WebSocket | null = null, state = 0, attempt = 0;

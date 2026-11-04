@@ -1,4 +1,6 @@
 #include "CustomGeometry.hpp"
+#include <array>
+#include <bit>
 
 namespace th12::custom_geometry {
 namespace {
@@ -33,11 +35,15 @@ float normalize(float angle) {
     angle = float(double(angle) + anm_logic::Tau);
   return angle;
 }
-Vertex polar(float angle, float radius, Position origin, uint32_t argb, float u, float v) {
+Position polarOffset(float angle, float radius) {
   // 4594b0/42e880 stores the fsincos product as float before adding position.
   const float dx = float(std::cos(double(angle)) * radius),
               dy = float(std::sin(double(angle)) * radius);
-  return {add(origin.x, dx), add(origin.y, dy), origin.z, 1, argb, u, v};
+  return {dx, dy, 0};
+}
+Vertex polar(float angle, float radius, Position origin, uint32_t argb, float u, float v) {
+  const auto offset = polarOffset(angle, radius);
+  return {add(origin.x, offset.x), add(origin.y, offset.y), origin.z, 1, argb, u, v};
 }
 float joinNormal(float current, float previous, bool first, float side) {
   float a = float(double(current) + side * double(anm_logic::Pi) / 2);
@@ -115,8 +121,10 @@ Mesh spellRing(const anm_logic::State& state, const SpriteRegion& region, Positi
 }
 
 Mesh flatQuad(const anm_logic::State& state, const SpriteRegion& region, Position origin,
-              float rotation, float scaleX, float scaleY) {
+              float rotation, float scaleX, float scaleY, std::vector<Vertex> vertices) {
   auto result = metadata(state, region);
+  result.vertices = std::move(vertices);
+  result.vertices.clear();
   result.primitive = Primitive::TriangleList;
   if (!drawable(state))
     return result;
@@ -153,20 +161,22 @@ Mesh flatQuad(const anm_logic::State& state, const SpriteRegion& region, Positio
 }
 
 Mesh straightLaser(const laser::State& laser, const anm_logic::State& state,
-                   const SpriteRegion& region, Position viewport) {
+                   const SpriteRegion& region, Position viewport, std::vector<Vertex> vertices) {
   const Position origin{add(add(laser.position.x, viewport.x), state.offsetX),
                         add(add(laser.position.y, viewport.y), state.offsetY),
                         add(laser.position.z, state.offsetZ)};
   auto result = flatQuad(state, region, origin, normalize(add(laser.angle, anm_logic::Pi / 2)),
-                         state.sx, state.sy);
+                         state.sx, state.sy, std::move(vertices));
   result.pass = DrawPass::LaserManager;
   result.drawPriority = 29;
   return result;
 }
 
 Mesh curveLaser(const laser::State& laser, const anm_logic::State& state,
-                const SpriteRegion& region, Position viewport) {
+                const SpriteRegion& region, Position viewport, std::vector<Vertex> vertices) {
   auto result = metadata(state, region);
+  result.vertices = std::move(vertices);
+  result.vertices.clear();
   result.pass = DrawPass::LaserManager;
   result.drawPriority = 29;
   const size_t count = laser.nodes.size();
@@ -176,16 +186,28 @@ Mesh curveLaser(const laser::State& laser, const anm_logic::State& state,
   const double textureStep = 1. / double(count - 1); //42cf9c retains the quotient until the add.
   float u = 0;
   result.vertices.reserve(count * 2);
+  std::array<Position, 2> offsets{};
+  uint32_t lastAngle = 0, lastPrevious = 0;
   for (size_t i = 0; i < count; ++i) {
     const auto& point = laser.nodes[i];
     const float previous = i ? laser.nodes[i - 1].angle : point.angle;
     // Native 42cca0 always outputs z0 and opaque white, independent of ANM
     // color and UV scroll. Only V endpoints come from the main sprite corners.
     const Position origin{add(point.position.x, viewport.x), add(point.position.y, viewport.y), 0};
-    result.vertices.push_back(polar(joinNormal(point.angle, previous, i == 0, 1), radius, origin,
-                                    0xffffffff, u, region.v0));
-    result.vertices.push_back(polar(joinNormal(point.angle, previous, i == 0, -1), radius, origin,
-                                    0xffffffff, u, region.v1));
+    const auto angleBits = std::bit_cast<uint32_t>(point.angle);
+    const auto previousBits = std::bit_cast<uint32_t>(previous);
+    // The first node uses a different join. Later nodes on a straight run
+    // share the exact same offsets, including the native float rounding.
+    if (i < 2 || angleBits != lastAngle || previousBits != lastPrevious) {
+      offsets = {polarOffset(joinNormal(point.angle, previous, i == 0, 1), radius),
+                 polarOffset(joinNormal(point.angle, previous, i == 0, -1), radius)};
+      lastAngle = angleBits;
+      lastPrevious = previousBits;
+    }
+    result.vertices.push_back({add(origin.x, offsets[0].x), add(origin.y, offsets[0].y),
+                               0, 1, 0xffffffff, u, region.v0});
+    result.vertices.push_back({add(origin.x, offsets[1].x), add(origin.y, offsets[1].y),
+                               0, 1, 0xffffffff, u, region.v1});
     u = float(double(u) + textureStep);
   }
   return result;
