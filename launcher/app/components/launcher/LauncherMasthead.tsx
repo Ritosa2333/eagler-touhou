@@ -29,7 +29,7 @@ import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launc
 import { previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
 import {BetaModeDialog} from './BetaModeDialog';
-import {BETA_OPT_IN_KEY,betaModeForBase,releaseChannelUrl} from '../../../src/launcher/release-channel.mts';
+import {betaModeEnabled,reloadReleaseMode} from '../../../src/launcher/release-channel.mts';
 
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
@@ -76,7 +76,9 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     [languagesOpen, setLanguagesOpen] = useState(false);
   const [developerOpen,setDeveloperOpen]=useState(false),[betaWarning,setBetaWarning]=useState(false);
   const betaAfterClose=useRef(false),returnToDeveloper=useRef(false);
-  const channelBase=props.assetUrl('./'),betaMode=betaModeForBase(channelBase);
+  const channelBase=props.assetUrl('./');
+  const [betaMode,setBetaMode]=useState(false);
+  useLayoutEffect(() => {if (interactive) setBetaMode(betaModeEnabled(window));}, [interactive]);
   const masthead = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     if (!interactive) return;
@@ -251,10 +253,8 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                 </DropdownMenu.CheckboxItem>
                 <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={betaMode}
                   onSelect={()=>{
-                    if(betaMode){
-                      try { window.localStorage.removeItem(BETA_OPT_IN_KEY); } catch {}
-                      window.location.replace(releaseChannelUrl(window.location.href,channelBase,false));
-                    } else betaAfterClose.current=true;
+                    if(betaMode)reloadReleaseMode(window,false);
+                    else betaAfterClose.current=true;
                   }}>
                   <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
                 </DropdownMenu.CheckboxItem>

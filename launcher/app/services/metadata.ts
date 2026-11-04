@@ -1,5 +1,5 @@
 import {loadGameVersion, descriptorGameVersion} from "../../package/game-version.mjs";
-import {betaModeForBase} from '../../src/launcher/release-channel.mts';
+import {betaModeForBase,isBetaPublication} from '../../src/launcher/release-channel.mts';
 import {shareBetaResources} from '../../src/launcher/beta-resources.mts';
 import {loadRemoteMetadata} from '../../src/launcher/remote-metadata.mts';
 import {createLocalProductManifest, PRODUCT_IDS, PRODUCT_GAMES, gameIdForProduct,
@@ -45,7 +45,8 @@ export interface MetadataServiceOptions {
 export function createMetadataService(options: MetadataServiceOptions) {
   const local = createLocalProductManifest();
   const base = new URL(options.baseUrl);
-  const testBuild = options.testBuild ?? (betaModeForBase(base.href)||base.searchParams.has('test'));
+  const beta = betaModeForBase(base.href);
+  const testBuild = options.testBuild ?? (beta||base.searchParams.has('test'));
   const listeners = new Set<() => void>();
   const controllers = new Set<AbortController>();
   const reads = new Map<GameId, number>();
@@ -125,11 +126,17 @@ export function createMetadataService(options: MetadataServiceOptions) {
     // Local package availability never waits for either network request, and a
     // slow/unavailable IndexedDB cannot hold remote metadata initialization.
     void refreshInstalled();
-    initialization = loadRemoteMetadata(fetchJson).then(async result => {
+    initialization = loadRemoteMetadata(async (file, kind) => {
+      const data = await fetchJson(file);
+      if (beta && kind === 'site-manifest' && !isBetaPublication(data)) {
+        throw new Error(options.translate(options.locale?.() ?? 'zh', 'developer.betaUnavailable'));
+      }
+      return data;
+    }).then(async result => {
       if (disposed) return;
       let siteManifest = result.siteManifest.ok ? result.siteManifest.value : snapshot.siteManifest;
       let releaseCatalog = result.releaseCatalog.ok ? result.releaseCatalog.value : snapshot.releaseCatalog;
-      if(betaModeForBase(base.href)&&siteManifest&&releaseCatalog){
+      if(beta&&siteManifest&&releaseCatalog){
         const stableBase=new URL('../',base);
         const stable=await loadRemoteMetadata(file=>fetchJson(new URL(file,stableBase).href));
         if(stable.siteManifest.ok&&stable.releaseCatalog.ok){

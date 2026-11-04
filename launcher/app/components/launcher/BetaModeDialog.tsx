@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { useLocale } from '../../i18n';
-import { BETA_OPT_IN_KEY, isBetaPublication, releaseChannelUrl } from '../../../src/launcher/release-channel.mts';
+import { betaProgramBase, isBetaPublication, reloadReleaseMode } from '../../../src/launcher/release-channel.mts';
 
 export function BetaModeDialog({
   open,
@@ -24,15 +24,13 @@ export function BetaModeDialog({
     const controller = new AbortController(),
       timer = setTimeout(() => controller.abort(), 12000);
     try {
-      const destination = releaseChannelUrl(window.location.href, baseUrl, true);
-      const response = await fetch(new URL('site-manifest.json', new URL('./', destination)), {
+      const response = await fetch(new URL('site-manifest.json', betaProgramBase(baseUrl)), {
         cache: 'no-store',
         signal: controller.signal,
       });
       if (!response.ok || !isBetaPublication(await response.json()))
         throw Error(t('developer.betaUnavailable'));
-      window.localStorage.setItem(BETA_OPT_IN_KEY, '1');
-      window.location.assign(destination);
+      reloadReleaseMode(window, true);
     } catch {
       setError(t('developer.betaUnavailable'));
       setBusy(false);

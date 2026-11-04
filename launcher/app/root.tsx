@@ -31,9 +31,7 @@ import UptimeRoute from './routes/uptime';
 import { helpDocumentAtPath, isStandalonePage } from './components/documents/catalog';
 import { isPreviewOnlyPage, previewFeaturesEnabled } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
-import { betaAccessGuardScript } from '../src/launcher/release-channel.mts';
 const HelpRoute = lazy(() => import('./routes/help'));
-const betaAccessGuard = betaAccessGuardScript(import.meta.env.BASE_URL);
 
 // Overlay history shares page scroll. Profile anchors have separate history entries.
 const pageScrollKey = (location: { pathname: string; key: string }) =>
@@ -63,7 +61,6 @@ export function Layout({ children }: { children: ReactNode }) {
     >
       <head>
         <meta charSet="utf-8" />
-        {betaAccessGuard && <script>{betaAccessGuard}</script>}
         <style id="ui-style-layers">{'@layer properties,foundation,theme,base,components,utilities;'}</style>
         <LauncherNavigationTransitionOptIn />
         <meta name="darkreader-lock" />

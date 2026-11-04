@@ -20,9 +20,21 @@ beforeAll(async()=>{
  channel=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
  ({shareBetaResources,createReplayStorageReader}=channel);
 });
-test('mode switch preserves language and clears room and replay navigation',()=>{
- assert.equal(channel.releaseChannelUrl('https://example.test/app/lobby.html?lang=en&room=1234&game=th06mp','https://example.test/app/',true),'https://example.test/app/beta/lobby.html?lang=en');
- assert.equal(channel.releaseChannelUrl('https://example.test/app/beta/index.html?test=1','https://example.test/app/beta/',false),'https://example.test/app/index.html');
+test('mode switch reloads the same page, clearing only invites from the other lobby', () => {
+ const values = new Map(), navigations = [];
+ const owner = {
+  localStorage: {getItem: key => values.get(key), setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key)},
+  history: {replaceState: (_state, _title, url) => {owner.location.href = url.href;}},
+  location: {href: 'https://example.test/app/lobby.html?lang=en&view=a%20b#games', reload() {navigations.push(this.href);}},
+ };
+ channel.reloadReleaseMode(owner, true);
+ assert.equal(channel.betaModeEnabled(owner), true);
+ assert.deepEqual(navigations, ['https://example.test/app/lobby.html?lang=en&view=a%20b#games']);
+ owner.location.href = 'https://example.test/app/lobby.html?lang=en&room=1234&j=invite&game=th06mp';
+ channel.reloadReleaseMode(owner, false);
+ assert.equal(channel.betaModeEnabled(owner), false);
+ assert.equal(navigations.at(-1), 'https://example.test/app/lobby.html?lang=en&game=th06mp');
+ assert.equal(channel.betaProgramBase('https://example.test/app/'), 'https://example.test/app/beta/');
 });
 test('room recovery and membership storage are separate while ordinary preferences share their owner',()=>{
  const entries=new Map(),storage={get length(){return entries.size;},key:i=>[...entries.keys()][i]??null,

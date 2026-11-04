@@ -5,9 +5,10 @@ import {build} from 'esbuild';
 import puppeteer from 'puppeteer-core';
 import {authoredSourcesPlugin} from '../react-main/authored-sources.mjs';
 import {betaRuntimeHtml} from '../../lib/beta-runtime-publication.mjs';
-import {betaAccessGuardScript} from '../../src/launcher/release-channel.mts';
+import {buildRuntimeProgramWorkerSource} from '../../lib/frontend-assets.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
+const programWorker = await buildRuntimeProgramWorkerSource({project});
 const bundle = await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'tsx', contents: `
   import React from 'react';
   import {createRoot} from 'react-dom/client';
@@ -40,6 +41,8 @@ const server = createServer((request, response) => {
   const path = new URL(request.url, 'http://fixture.invalid').pathname;
   if (path === '/beta/site-manifest.json') {
     response.writeHead(published ? 200 : 404, {'Content-Type': 'application/json'}); response.end(JSON.stringify(site));
+  } else if (path === '/beta/runtime-program-sw.js') {
+    response.writeHead(200, {'Content-Type': 'text/javascript'}); response.end(programWorker);
   } else if (path.endsWith('/runtime.html')) {
     response.writeHead(200, {'Content-Type': 'text/html'});
     response.end(betaRuntimeHtml('<html><head></head><body>Runtime fixture</body></html>'));
@@ -47,10 +50,11 @@ const server = createServer((request, response) => {
     response.writeHead(200, {'Content-Type': 'text/javascript'}); response.end(javascript);
   } else if (path === '/fixture.css') {
     response.writeHead(200, {'Content-Type': 'text/css'}); response.end(stylesheet);
+  } else if (path.startsWith('/beta/')) {
+    response.writeHead(404); response.end();
   } else {
     response.writeHead(200, {'Content-Type': 'text/html'});
-    const guard = path.startsWith('/beta/') ? '<script>' + betaAccessGuardScript('/beta/') + '</script>' : '';
-    response.end('<html><head>' + guard + '<link rel="stylesheet" href="/fixture.css"></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>');
+    response.end('<html><head><link rel="stylesheet" href="/fixture.css"></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>');
   }
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -60,9 +64,7 @@ try {
   browser = await puppeteer.launch({executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true});
   const page = await browser.newPage(), errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto(base + 'beta/?lang=zh-CN');
-  await page.waitForFunction(() => location.pathname === '/');
-  assert.equal(page.url(), base + '?lang=zh-CN');
+  assert.equal((await fetch(base + 'beta/')).status, 404);
   await page.goto(base + 'index.html?lang=zh-CN&room=private');
   async function developer() {
     await page.click('#mastheadMenuToggle');
@@ -87,15 +89,34 @@ try {
   await enterDialog(); assert.equal(await page.$('[role=alert]'), null);
   published = true;
   await Promise.all([page.waitForNavigation(), button('确认进入测试版')]);
-  assert.equal(page.url(), base + 'beta/index.html?lang=zh-CN');
+  assert.equal(page.url(), base + 'index.html?lang=zh-CN');
   await page.reload();
-  assert.equal(page.url(), base + 'beta/index.html?lang=zh-CN');
+  assert.equal(page.url(), base + 'index.html?lang=zh-CN');
+  const worker = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.register('/beta/runtime-program-sw.js', {scope: '/beta/runtime/'});
+    const installed = registration.active ?? registration.installing ?? registration.waiting;
+    if (!installed) throw new Error('Beta Runtime worker unavailable');
+    if (installed.state !== 'activated') await new Promise((resolve, reject) => {
+      const change = () => {
+        if (installed.state === 'activated') resolve();
+        if (installed.state === 'redundant') reject(new Error('Beta Runtime worker install failed'));
+      };
+      installed.addEventListener('statechange', change); change();
+    });
+    const capabilities = await new Promise((resolve, reject) => {
+      const channel = new MessageChannel();
+      const timer = setTimeout(() => reject(new Error('Beta Runtime worker rejected the shared Launcher')), 3000);
+      channel.port1.onmessage = event => {clearTimeout(timer); channel.port1.close(); resolve(event.data);};
+      installed.postMessage({type: 'GET_RUNTIME_GENERATION_CAPABILITIES'}, [channel.port2]);
+    });
+    return {scope: registration.scope, controlled: !!navigator.serviceWorker.controller, capable: capabilities.ok};
+  });
+  assert.deepEqual(worker, {scope: base + 'beta/runtime/', controlled: false, capable: true});
   await developer(); assert.equal(await page.$eval('#betaFeaturesToggle', node => node.getAttribute('aria-checked')), 'true');
   await Promise.all([page.waitForNavigation(), page.click('#betaFeaturesToggle')]);
   assert.equal(page.url(), base + 'index.html?lang=zh-CN');
-  await page.goto(base + 'beta/?lang=zh-CN');
-  await page.waitForFunction(() => location.pathname === '/');
-  assert.equal(page.url(), base + '?lang=zh-CN');
+  await developer(); assert.equal(await page.$eval('#betaFeaturesToggle', node => node.getAttribute('aria-checked')), 'false');
+  await page.keyboard.press('Escape');
 
   // Real same-origin iframe realms: beta interception must never modify the parent factory.
   const names = await page.evaluate(async () => {

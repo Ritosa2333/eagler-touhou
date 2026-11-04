@@ -6,7 +6,8 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { assertProductEntriesRegistered, normalizeProductSelection, selectProductEntries } from "../lib/product-selection.mjs";
 
 test("product selection", async () => {
-assert.deepEqual(normalizeProductSelection(), Object.keys(PRODUCT_GAMES));
+assert.deepEqual(normalizeProductSelection(), Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn));
+assert.deepEqual(normalizeProductSelection(["th13"]), ["th13"]);
 assert.deepEqual(normalizeProductSelection(["th07"]), ["th07"]);
 assert.deepEqual(normalizeProductSelection("th08,th06"), ["th06", "th08"]);
 for (const value of [[], ["th99"], ["th06", "th06"], "th99"]) {

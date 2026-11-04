@@ -1,35 +1,37 @@
-/** /beta/ owns program publication and native persistence on the same origin. */
+import {clearRoomUrlParams} from './route-state.mts';
+import {ROOM_INVITE_KEY} from './room-invite.mts';
+
+/** /beta/ publishes program files for the shared Launcher document. */
 export const BETA_STORAGE_PREFIX = 'beta:';
 export const BETA_OPT_IN_KEY = 'eagler-touhou-beta-opt-in-v1';
 
 // The stable launcher may predate games introduced by the beta publication.
-export function isBetaPublication(site: {
-  schema?: unknown;
-  protocol?: unknown;
-  shared?: {testBuild?: unknown; saveChannel?: unknown};
-} | null): boolean {
+export function isBetaPublication(value: unknown): boolean {
+  const site = value as {schema?: unknown; protocol?: unknown; shared?: {testBuild?: unknown; saveChannel?: unknown}} | null;
   return site?.schema === 'eagler-touhou/site-manifest/1' &&
     site.protocol === 'eagler-touhou/1' &&
     site.shared?.testBuild === true && site.shared.saveChannel === 'beta';
 }
 
-/** Runs before the beta launcher boots, including when restored from history. */
-export function betaAccessGuardScript(mountPath: string): string {
-  if (!betaModeForBase(mountPath)) return '';
-  const stablePath = mountPath.replace(/beta\/?$/, '');
-  return `(() => {
-    const key = ${JSON.stringify(BETA_OPT_IN_KEY)};
-    function enforce() {
-      try { if (localStorage.getItem(key) === '1') return; } catch {}
-      const stable = new URL(${JSON.stringify(stablePath)}, location.origin);
-      const lang = new URL(location.href).searchParams.get('lang');
-      if (lang) stable.searchParams.set('lang', lang);
-      location.replace(stable);
-    }
-    enforce();
-    addEventListener('pageshow', event => { if (event.persisted) enforce(); });
-    addEventListener('storage', event => { if (event.key === key || event.key === null) enforce(); });
-  })();`;
+export function betaModeEnabled(owner: Pick<Window, 'localStorage'>): boolean {
+  try { return owner.localStorage.getItem(BETA_OPT_IN_KEY) === '1'; }
+  catch { return false; }
+}
+
+export function betaProgramBase(launcherBase: string): string {
+  return new URL('beta/', launcherBase).href;
+}
+
+export function reloadReleaseMode(owner: Pick<Window, 'localStorage' | 'location' | 'history'>, beta: boolean): void {
+  if (beta) owner.localStorage.setItem(BETA_OPT_IN_KEY, '1');
+  else owner.localStorage.removeItem(BETA_OPT_IN_KEY);
+  const address = new URL(owner.location.href);
+  const originalQuery = address.searchParams.toString();
+  clearRoomUrlParams(address);
+  address.searchParams.delete(ROOM_INVITE_KEY);
+  // A room link belongs to its original lobby. Ordinary launcher URLs stay intact.
+  if (address.searchParams.toString() !== originalQuery) owner.history.replaceState(null, '', address);
+  owner.location.reload();
 }
 export function channelSessionStorage(storage: Storage | null, beta: boolean): Storage | null {
   if (!storage || !beta) return storage;
@@ -63,15 +65,4 @@ export function channelSessionStorage(storage: Storage | null, beta: boolean): S
 }
 export function betaModeForBase(baseUrl: string): boolean {
   return new URL(baseUrl, 'https://launcher.invalid/').pathname.replace(/\/$/, '').endsWith('/beta');
-}
-export function releaseChannelUrl(address: string, baseUrl: string, beta: boolean): string {
-  const current = new URL(address),
-    base = new URL(baseUrl, current);
-  const root = betaModeForBase(base.href) ? new URL('../', base) : base;
-  const destination = beta ? new URL('beta/', root) : root;
-  const page = current.pathname.startsWith(base.pathname) ? current.pathname.slice(base.pathname.length) : '';
-  destination.pathname += /^(?:(?:index|en|ja|lobby|faq|about)\.html)?$/.test(page) ? page : '';
-  const language = current.searchParams.get('lang');
-  if (language) destination.searchParams.set('lang', language);
-  return destination.href;
 }
