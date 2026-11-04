@@ -9,17 +9,20 @@ const relay=process.env.PC98_TEST_RELAY||'ws://127.0.0.1:18311/';
 const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
 const context=await browser.createBrowserContext(),page=await context.newPage();
 await page.setViewport({width:1280,height:800});
-let active=null,busy=false,selected=false;
+let active=null,busy=false,selected=false,missing=0;
 async function join(code){
   active=code;selected=false;
-  const url=base+'?'+new URLSearchParams({game:'th03mp',mpRoom:code,lobbyAction:'join'});
+  const url=base+'?'+new URLSearchParams({game:'th03mp',mpRoom:code,lobbyAction:'join',test:'th03'});
   await page.goto(url);await page.waitForSelector('#mpSeatStage',{timeout:60000});
+  await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
+  await page.waitForFunction(()=>!document.documentElement.hasAttribute('data-lobby-boot')&&window.__eaglerBoot?.done===true,{timeout:60000});
   console.log('joined',code);
 }
 async function tick(){
   if(busy)return;busy=true;
   try{
     if(active){
+      await page.evaluate(()=>{document.querySelector('#decisionDialog[open] #decisionConfirm')?.click();document.querySelector('#touchHelpClose')?.click();});
       const seat=await page.$('[data-mp-seat-drop="1"] button');
       if(seat&&await seat.evaluate(e=>!e.closest('[hidden]')&&!e.disabled))await seat.click();
       const ready=await page.$('#mpReady');
@@ -33,7 +36,7 @@ async function tick(){
           selected=true;console.log('character selected',active);
         }
       }
-      if(!await page.$('#mpSeatStage')){active=null;selected=false;}
+      if(page.url().includes('lobby.html')&&!await page.$('#mpRoomCode')){active=null;selected=false;}
     }
   }catch(error){console.error(error.message);active=null;selected=false;}
   finally{busy=false;}
@@ -42,8 +45,13 @@ const directory=new WebSocket(new URL('?directory=1&member=th03_idle_test_peer',
 directory.onopen=()=>directory.send(JSON.stringify({type:'refresh',product:'th03mp'}));
 directory.onmessage=event=>{
   const data=JSON.parse(event.data);
-  if(active||busy||data.type!=='directory')return;
-  const room=data.rooms?.find(r=>r.product==='th03mp'&&r.phase==='lobby'&&r.players===1&&r.capacity===2);
+  if(data.type!=='directory')return;
+  if(active){
+    missing=data.rooms?.some(r=>r.product==='th03mp'&&r.code===active&&r.seats?.[0])?0:missing+1;
+    if(missing>=3){active=null;selected=false;missing=0;}
+  }
+  if(active||busy)return;
+  const room=data.rooms?.find(r=>r.product==='th03mp'&&r.phase==='lobby'&&r.players===1&&r.capacity===2&&r.seats?.[0]?.online&&!r.seats?.[1]);
   if(room){busy=true;join(room.code).catch(error=>{console.error(error.message);active=null;}).finally(()=>busy=false);}
 };
 directory.onerror=error=>console.error('directory',error.message);
