@@ -285,6 +285,17 @@ export const PRODUCT_CONTENT = Object.freeze({
       ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
     }),
   }),
+  th13: Object.freeze({
+    original: Object.freeze({
+      files: Object.freeze(["th13.dat"]),
+      oggSourceFiles: Object.freeze(["thbgm.dat"]),
+    }),
+    dataLayout: "sha256-9aceb48a8a4c87b1f3d916ae86c8788dee80e271ce42553f3246e699d91a7f18",
+    music: Object.freeze({
+      ogg: Object.freeze({mount: PRODUCT_GAMES.th13.package.musicMounts.ogg, files: Object.freeze(["thbgm.ogg"])}),
+    }),
+    hostPreparation: Object.freeze({dataAssets: Object.freeze({kind: "prepared-content"})}),
+  }),
   th15: Object.freeze({
     original: Object.freeze({
       files: Object.freeze(["th15.dat"]),

@@ -161,6 +161,8 @@ private:
     InputSlot *GetInputSlot(std::uint8_t player, std::uint32_t frame);
     const InputSlot *FindInputSlot(std::uint8_t player, std::uint32_t frame) const;
     const UsedSlot *FindUsedSlot(std::uint32_t frame) const;
+    bool HasConfirmedInputConflict(std::uint8_t player, std::uint32_t frame,
+                                   const FrameInput &input) const;
     FrameInput PredictInput(std::uint8_t player, std::uint32_t frame) const;
     void AdvanceConfirmedThrough(std::uint8_t player);
     bool FrameIsTooOld(std::uint32_t frame) const;

@@ -177,21 +177,31 @@ custom_geometry::Mesh UfoEffects::draw(const anm_logic::Node& node) const {
     return mesh;
   if (effect->kind == UfoEffectKind::Trail) {
     mesh.primitive = custom_geometry::Primitive::LineStrip;
-    for (int i = 0; i < std::clamp(effect->timer.current, 0, 16); ++i)
+    const int count = std::clamp(effect->timer.current, 0, 16);
+    mesh.vertices.reserve(count);
+    for (int i = 0; i < count; ++i)
       mesh.vertices.push_back(vertex(effect->points[i][0], effect->points[i][1], effect->colors[i]));
     return mesh;
   }
   mesh.primitive = custom_geometry::Primitive::TriangleList;
+  static const auto directions = [] {
+    std::array<std::array<double, 2>, 33> result;
+    const float step = float(double(Tau) / 32);
+    float angle = 0;
+    for (auto& direction : result) {
+      direction = {std::cos(double(angle)), std::sin(double(angle))};
+      angle = normalize(float(double(angle) + step));
+    }
+    return result;
+  }();
   std::array<custom_geometry::Vertex, 33> outer;
-  const float step = float(double(Tau) / 32);
-  float angle = 0;
-  for (auto& point : outer) {
-    const float dx = float(std::cos(double(angle)) * effect->radius);
-    const float dy = float(std::sin(double(angle)) * effect->radius);
-    point = vertex(float(double(dx) + effect->position[0]),
-                   float(double(dy) + effect->position[1]), effect->rimColor);
-    angle = normalize(float(double(angle) + step));
+  for (size_t i = 0; i < outer.size(); ++i) {
+    const float dx = float(directions[i][0] * effect->radius);
+    const float dy = float(directions[i][1] * effect->radius);
+    outer[i] = vertex(float(double(dx) + effect->position[0]),
+                      float(double(dy) + effect->position[1]), effect->rimColor);
   }
+  mesh.vertices.reserve(32 * 3);
   const auto center = vertex(effect->position[0], effect->position[1], effect->centerColor);
   for (int i = 0; i < 32; ++i) {
     mesh.vertices.push_back(center);

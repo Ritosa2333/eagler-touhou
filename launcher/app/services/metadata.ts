@@ -1,4 +1,6 @@
 import {loadGameVersion, descriptorGameVersion} from "../../package/game-version.mjs";
+import {betaModeForBase,isBetaPublication} from '../../src/launcher/release-channel.mts';
+import {shareBetaResources} from '../../src/launcher/beta-resources.mts';
 import {loadRemoteMetadata} from '../../src/launcher/remote-metadata.mts';
 import {createLocalProductManifest, PRODUCT_IDS, PRODUCT_GAMES, gameIdForProduct,
   isMultiplayerProductId, productEnabledForBuild, languagePriority,
@@ -43,7 +45,8 @@ export interface MetadataServiceOptions {
 export function createMetadataService(options: MetadataServiceOptions) {
   const local = createLocalProductManifest();
   const base = new URL(options.baseUrl);
-  const testBuild = options.testBuild ?? base.searchParams.has('test');
+  const beta = betaModeForBase(base.href);
+  const testBuild = options.testBuild ?? (beta||base.searchParams.has('test'));
   const listeners = new Set<() => void>();
   const controllers = new Set<AbortController>();
   const reads = new Map<GameId, number>();
@@ -123,10 +126,24 @@ export function createMetadataService(options: MetadataServiceOptions) {
     // Local package availability never waits for either network request, and a
     // slow/unavailable IndexedDB cannot hold remote metadata initialization.
     void refreshInstalled();
-    initialization = loadRemoteMetadata(fetchJson).then(result => {
+    initialization = loadRemoteMetadata(async (file, kind) => {
+      const data = await fetchJson(file);
+      if (beta && kind === 'site-manifest' && !isBetaPublication(data)) {
+        throw new Error(options.translate(options.locale?.() ?? 'zh', 'developer.betaUnavailable'));
+      }
+      return data;
+    }).then(async result => {
       if (disposed) return;
-      const siteManifest = result.siteManifest.ok ? result.siteManifest.value : snapshot.siteManifest;
-      const releaseCatalog = result.releaseCatalog.ok ? result.releaseCatalog.value : snapshot.releaseCatalog;
+      let siteManifest = result.siteManifest.ok ? result.siteManifest.value : snapshot.siteManifest;
+      let releaseCatalog = result.releaseCatalog.ok ? result.releaseCatalog.value : snapshot.releaseCatalog;
+      if(beta&&siteManifest&&releaseCatalog){
+        const stableBase=new URL('../',base);
+        const stable=await loadRemoteMetadata(file=>fetchJson(new URL(file,stableBase).href));
+        if(stable.siteManifest.ok&&stable.releaseCatalog.ok){
+          ({siteManifest,releaseCatalog}=shareBetaResources(siteManifest,releaseCatalog,stable.siteManifest.value,stable.releaseCatalog.value,stableBase.href));
+        }
+      }
+      if(disposed)return;
       const metadataErrors: unknown[] = [];
       if (!result.siteManifest.ok) metadataErrors.push(result.siteManifest.error);
       if (!result.releaseCatalog.ok) metadataErrors.push(result.releaseCatalog.error);

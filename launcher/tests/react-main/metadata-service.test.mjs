@@ -168,6 +168,20 @@ test('metadata: host publication, test-only product and multiplayer-runtime filt
   hostTest.dispose();
 });
 
+test('beta metadata keeps beta programs while equal packages resolve against the parent publication', async () => {
+  const stable = host({th06: hostGame('th06')});
+  const net = network({...stable, shared: {...stable.shared, testBuild: true, saveChannel: 'beta'}});
+  const service = fixture(net, {baseUrl: 'https://launcher.invalid/deploy/beta/'});
+  await service.initialize();
+  assert.deepEqual(net.calls.map(call => new URL(call.url).pathname).sort(), [
+    '/deploy/beta/release-catalog.json', '/deploy/beta/site-manifest.json',
+    '/deploy/release-catalog.json', '/deploy/site-manifest.json',
+  ]);
+  assert.equal(service.getSnapshot().releaseCatalog.games.th06.descriptor, '/deploy/th06.package.json');
+  assert.equal(service.getSnapshot().siteManifest.games.th06.runtime, 'runtime/th06/th06.html');
+  service.dispose();
+});
+
 test('metadata: original language overlays and music context use current package hints', async () => {
   const idb = readonlyIdb(); idb.generation = generation();
   const published = host({th06: hostGame('th06', {

@@ -3,7 +3,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * first rendered pixel claim. Main app:4241–4289,5948–5983 and unchanged
  * runtime-session/generation-lease/preparation tests supply the expectations.
  */
-import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
+import {test, vi, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -71,7 +71,7 @@ function managedPlan(game = 'th10', options = {}) {
       base: {files: ['data']}, components: {}}, files: {data: {objectId: `obj-${game}-data`, revision: 'data-r1'}}},
     configure: {music: 'none', options}};
 }
-function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...overrides} = {}) {
+function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, serviceOptions, ...overrides} = {}) {
   const messageListeners = new Set(), loadListeners = new Set(), eventContexts = [], outbound = [], navigations = [], retained = [], released = [], codeCalls = [], dataReads = [];
   const timers = deterministicTimers();
   const host = {location: {origin, href: `${baseUrl}?game=th06`},
@@ -94,7 +94,7 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
       async readResource() {throw new Error('Unexpected resource in lifecycle fixture');},
       async retainGeneration(game, generation, options) {retained.push({game, generation, options});},
       async releaseGeneration(id) {released.push(id);}, ...overrides,
-    }});
+    }, ...serviceOptions});
   const emit = (data, envelope = {}) => {for (const listener of messageListeners) listener({origin, source: runtime, data, ...envelope});};
   const event = (type, extra = {}, envelope = {}) => emit({protocol: 'eagler-touhou/1', game: service.getSnapshot().game,
     epoch: service.getSnapshot().epoch, event: type, ...extra}, envelope);
@@ -108,6 +108,46 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, ...ove
   const result = {service, host, frame, runtime, timers, eventContexts, outbound, navigations, retained, released, codeCalls, dataReads, emit, event, ack, prepare, loadListeners};
   fixtures.push(result); return result;
 }
+
+test('beta refuses stable program URLs and old programs before navigating their native code', async () => {
+  const betaBase = origin + '/beta/';
+  for (const entry of [baseUrl + 'runtime/th10/old.html', betaBase + 'runtime/th10/old.html']) {
+    const f = fixture({serviceOptions: {baseUrl: betaBase, fetchImpl: async () => new Response('<html>old core</html>')},
+      async prepareCode() {return {url: entry, generation: 'beta-code'};}});
+    await assert.rejects(f.service.prepare(managedPlan()), /developer.betaUnavailable/);
+    assert.equal(f.navigations.some(url => url !== 'about:blank'), false);
+  }
+});
+
+test('beta runtime navigation includes its namespace and authenticates the installed storage channel', async () => {
+  const betaBase = origin + '/beta/';
+  const make = () => fixture({serviceOptions: {baseUrl: betaBase,
+    fetchImpl: async () => new Response('<!-- BEGIN GENERATED RUNTIME STORAGE CHANNEL -->')},
+    async prepareCode() {return {url: betaBase + 'runtime/th10/beta.html', generation: 'beta-code'};}});
+  const f = make(); f.runtime.__eaglerStorageChannel = 'beta';
+  const preparingBeta = f.service.prepare(managedPlan());
+  await vi.waitFor(() => assert.ok(f.navigations.some(url => url.startsWith(betaBase))));
+  f.event('ready'); await flush(); f.ack('configure'); await preparingBeta;
+  assert.equal(new URL(f.service.getSnapshot().source).searchParams.get('storageChannel'), 'beta');
+  const old = make(), preparing = old.service.prepare(managedPlan());
+  const rejected = assert.rejects(preparing, /developer.betaUnavailable/);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await vi.waitFor(() => assert.equal(old.navigations.filter(url => url.startsWith(betaBase)).length, attempt));
+    old.event('ready'); await flush();
+  }
+  await rejected;
+});
+
+test('cancel aborts beta program inspection and releases its network accounting', async () => {
+  let activeSignal;const states=[], betaBase=origin+'/beta/';
+  const f=fixture({onNetworkChange:value=>states.push(value), serviceOptions:{baseUrl:betaBase,fetchImpl:async(_url,init)=>{
+    activeSignal=init.signal;return new Promise(()=>{});
+  }},async prepareCode(){return {url:betaBase+'runtime/th10/beta.html',generation:'beta-code'};}});
+  const preparing=f.service.prepare(managedPlan()),rejected=assert.rejects(preparing,/SUPERSEDED/);
+  await vi.waitFor(()=>assert.ok(activeSignal));
+  f.service.cancel();await rejected;
+  assert.equal(activeSignal.aborted,true);assert.equal(states.at(-1).count,0);
+});
 
 for (const cleanupFails of [false, true]) test(`game check preserves its original failure${cleanupFails ? ' together with failed frame retirement' : ''} and releases its owner`, async () => {
   const f=fixture(), plan=managedPlan(); plan.runtimeVariant='multiplayer';

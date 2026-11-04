@@ -1,3 +1,3 @@
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { DEFAULT_BUILD_GAMES } from "../lib/product-selection.mjs";
 
-process.stdout.write(`${JSON.stringify(Object.keys(PRODUCT_GAMES))}\n`);
+process.stdout.write(`${JSON.stringify(DEFAULT_BUILD_GAMES)}\n`);

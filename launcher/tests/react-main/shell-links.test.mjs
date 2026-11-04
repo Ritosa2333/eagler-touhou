@@ -105,9 +105,21 @@ test('language list returns to its entry before Escape closes the menu',async()=
  await React.act(async()=>n('.masthead-language-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
  assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'false');
 });
-test('GitHub and donation remain the final two menu commands',async()=>{
+test('developer options follows GitHub and donation at the bottom of the menu',async()=>{
  await mount(el(Masthead));await openMasthead();const items=[...n('#mastheadMenuPanel').querySelectorAll('.ui-menu-item')];
- assert.equal(items.at(-2).textContent,'GitHub');assert.ok(items.at(-1).classList.contains('book-menu-donation'));
+ assert.equal(items.at(-3).textContent,'GitHub');assert.ok(items.at(-2).classList.contains('book-menu-donation'));
+ assert.equal(items.at(-1).textContent,owners.translate('en','developer.options'));
+});
+
+test('developer options contains diagnostics and beta mode and returns with Escape',async()=>{
+ await mount(el(Masthead));await openMasthead();
+ assert.equal(env.document.querySelector('#runtimeDiagnosticsToggle'),null);
+ await React.act(async()=>{n('.masthead-developer-trigger').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));});
+ assert.equal(n('#runtimeDiagnosticsToggle').textContent,owners.translate('en','diagnostics.toggle'));
+ assert.equal(n('#betaFeaturesToggle').getAttribute('aria-checked'),'false');
+ await React.act(async()=>n('#runtimeDiagnosticsToggle').dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
+ assert.equal(env.document.activeElement,n('.masthead-developer-trigger'));
+ assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'true');
 });
 
 test('avatar navigates to the profile address and selects only the profile destination', async () => {
