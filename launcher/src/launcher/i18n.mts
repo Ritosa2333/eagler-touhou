@@ -438,7 +438,7 @@ const entries = [
   ["settings.mobile", "触控适配", "Touch support"], ["settings.touchEnabled", "启用触摸功能", "Enable touch controls"],
   ["settings.touchLayout", "按键布局 & 触控设置", "Button layout & touch settings"],
   ["settings.touchLayoutShared", "调整按键位置、大小。\n调整触控设置，如触控灵敏度、不限速移动 / 摇杆模式、thprac 按键等内容。", "Adjust button positions and sizes.\nConfigure touch settings such as sensitivity, free movement / joystick mode, and thprac buttons."],
-  ["settings.edit", "进入", "Open"], ["settings.alwaysHitbox", "始终显示判定点", "Always show hitbox"],
+  ["settings.edit", "进入", "Open"], ["settings.alwaysHitbox", "始终显示判定点", "Always show hitbox"], ["settings.th02RapidFire", "连射", "Rapid fire"],
   ["settings.focusHitbox", "低速时显示判定点", "Show hitbox while focused"],
   ["settings.drawerClose", "关闭设置", "Close settings"],
   ["settings.drawerSwipeClose", "右滑或点击该箭头关闭", "Swipe right or click the arrow to close"],

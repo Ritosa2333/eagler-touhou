@@ -2,6 +2,7 @@ import {adaptPC98Practice} from '../../../common/browser/adapt-pc98-practice.mjs
 import {readFile,writeFile,copyFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {installPc98Pmd} from '../../../tools/build/pc98-pmd.mjs';
+import {createHash} from 'node:crypto';
 export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput}){
 await installPc98Pmd(repo,output,runtime);
 await patch('solo.js',text=>{
@@ -13,12 +14,18 @@ await patch('solo.js',text=>{
   text=replaceOnce(text,"if(config.mode!=='target')replayUI.offerSave(blob,result);","void managedSaveReplay(blob);",'managed recording');
   text=replaceOnce(text,"onError:error=>{music?.suspend();","onError:error=>{globalThis.__eaglerPC98Emit({event:'error',message:error.message});music?.suspend();",'managed solo error');
   text=replaceOnce(text,"onExit:()=>{music?.suspend();","onExit:()=>{void managedNaturalExit();music?.suspend();",'managed solo exit');
+  text=replaceOnce(text,"const replaySources=['../practice-attempt.js'","const replaySources=['../managed-rapid-fire.mjs','../practice-attempt.js'",'rapid fire replay identity');
   return text;
 });
 await adaptPC98Practice({patch,replaceOnce,game:'th02'});
 await writeFile(resolve(output,'solo.js'),await readFile(resolve(output,'solo.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-solo-api.js'),'utf8'));
 await patch('practice-attempt.js',text=>replaceOnce(text,'if(!replay)await installPractice(data,resources,practice);',`if(!replay)await installPractice(data,resources,practice);
+      if(!replay&&globalThis.__eaglerPC98Options().th02RapidFire!==false){const {Fat12}=await import('./solo-fat12.js');const {installRapidFire}=await import('./managed-rapid-fire.mjs');const fat=new Fat12(data),entry=fat.find('HUMAROKU/MAIN.EXE'),exe=fat.read(entry);installRapidFire(exe,original,false);fat.replace(entry,exe);}
       if(!replay&&globalThis.__eaglerPC98Files){const {Fat12}=await import('./solo-fat12.js');const fat=new Fat12(data);for(const [name,bytes]of globalThis.__eaglerPC98Files.memory)if(['HUUHI.DAT','HUUMA.CFG'].includes(name))fat.put('HUMAROKU/'+name,bytes);}`,'saved files'));
+await patch('netplay/runtime.js',text=>replaceOnce(text,'const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;',`const {installRapidFire}=await import('../managed-rapid-fire.mjs');installRapidFire(exe,patch,true);
+ const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;`,'rapid fire native hook'));
+await patch('netplay/th02-state.js',text=>replaceOnce(text,'((value&256)>>1);','((value&256)>>1)|((value&1024)>>1);','rapid fire input flag'));
+await patch('netplay/rollback-queue.js',text=>replaceOnce(text,'const HELD=32|64|2048,DIRECTIONS=15;','const HELD=32|64|1024|2048,DIRECTIONS=15;','rapid fire prediction'));
 // Managed Package Store owns installation. The original browser cache is bypassed.
 await patch('preload-cache.js',text=>replaceOnce(text,"if(!globalThis.indexedDB){resolve(null);return;}","if(globalThis.__eaglerPC98Content||!globalThis.indexedDB){resolve(null);return;}",'asset cache'));
 await patch('site.css',text=>replaceOnce(text,"url('assets/launcher-background.webp')","none",'standalone page artwork'));
@@ -71,12 +78,18 @@ await patch('netplay/room.js',text=>{
   text=replaceOnce(text,"if(session)navigator.sendBeacon", "if(false)navigator.sendBeacon",'legacy leave beacon');
   text=replaceOnce(text,'normalize(player.sample(keyboardBits(keys)|childBits|gamepadBits())|pendingAction)','normalize(globalThis.__eaglerPC98Input.sample({play:runtime?.touchContext()?.play===true})|pendingAction)','host input');
   text=replaceOnce(text,'packed=player.pack(bits|pendingAction,{includePointPreference:false});','packed=packTouch(bits|pendingAction,{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','host direct touch');
+  text=replaceOnce(text,'packed=packTouch(bits|pendingAction,{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','packed=packTouch(bits|pendingAction|((bits&32)&&globalThis.__eaglerPC98Options().th02RapidFire!==false?1024:0),{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','rapid fire local preference');
   text="import {packTouch} from '../touch-input.js';\n"+text;
   return text;
 });
 await writeFile(resolve(output,'netplay/room.js'),await readFile(resolve(output,'netplay/room.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-room-api.js'),'utf8'));
 await patch('netplay/runtime.html',text=>replaceOnce(text,'<script>','<script type="module">\nimport "../managed-child.mjs";','managed child resources'));
 for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
+{
+  const path=resolve(output,'netplay/runtime.json'), manifest=JSON.parse(await readFile(path,'utf8'));
+  manifest.assets['managed-rapid-fire.mjs']=createHash('sha256').update(await readFile(resolve(output,'managed-rapid-fire.mjs'))).digest('hex');
+  await writeFile(path,JSON.stringify(manifest,null,2)+'\n');
+}
 for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-game-fps.mjs','pc98-practice.mjs','pc98-practice-theme.css','pc98-pause-menu.mjs']) {await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
 for(const name of ['assets/option-0.png','assets/option-1.png','assets/option-2.png']) {await mkdir(resolve(output,'assets'),{recursive:true});await writeFile(resolve(output,name),await readInput(name));runtime.push(name);}
 const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#game,.player-stage{width:100%;height:100%;margin:0;background:#000;overflow:hidden}.player-stage{display:flex;align-items:center;justify-content:center}.solo-screen{position:relative;width:min(100vw,160vh);height:min(62.5vw,100vh);aspect-ratio:8/5;flex:none}.player-toolbar{display:none}#canvas{outline:0;width:100%;height:100%;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head><body class="shell"><div id="game" class="th02-player"><div class="player-toolbar"></div><div class="player-stage"><div class="solo-screen"><canvas id="canvas" width="640" height="400" tabindex="0"></canvas></div></div></div></body></html>`;

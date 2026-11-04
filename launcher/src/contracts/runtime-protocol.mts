@@ -81,6 +81,7 @@ export type RuntimeConfigureOptionRequirement = "required" | "profile-required" 
 // touch layout editor, magnifier and Restart-button visibility do not belong on
 // this wire object. Compatibility aliases are listed separately below.
 export interface RuntimeConfigureOptions {
+  th02RapidFire?: boolean;
   thpracEnabled?: boolean;
   limitPresentationTo60?: boolean;
   touchEnabled?: boolean;
@@ -136,6 +137,7 @@ export interface RuntimeConfigureOptions {
  * aliases live in RUNTIME_CONFIGURE_LEGACY_OPTION_KEYS instead.
  */
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
+  th02RapidFire: Object.freeze({ requirement: "optional", capability: "rapid-fire", when: "TH02" }),
   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),
   touchEnabled: Object.freeze({ requirement: "required", capability: "touch-controls" }),

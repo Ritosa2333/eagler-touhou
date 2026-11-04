@@ -5,6 +5,7 @@ export type TouchFocusMode = "two-finger" | "hold-button" | "toggle-button";
 export type MusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
 
 export interface GameOptions {
+  th02RapidFire: boolean;
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
@@ -29,6 +30,7 @@ export interface GameOptions {
 }
 
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
+  th02RapidFire: true,
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
@@ -238,6 +240,7 @@ export function normalizeStoredGamePreferences(
     : DEFAULT_GAME_OPTIONS.touchSensitivity;
 
   const options: GameOptions = {
+    th02RapidFire: booleanOption(rawOptions, "th02RapidFire", DEFAULT_GAME_OPTIONS.th02RapidFire),
     thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", /^zh(?:-|$)/i.test(context.uiLocale || "") || DEFAULT_GAME_OPTIONS.thpracEnabled),
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
