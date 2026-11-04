@@ -216,3 +216,25 @@ body.less-motion :is(.profile-display-options label,.profile-display-order li,.p
  .profile-nav-mobile a{flex:none;border-radius:0;font-size:12px}.profile-nav-mobile a[aria-current=location]{background:none;border-bottom:2px solid var(--book-ink)}
 }
 .profile-back-to-top{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));right:max(18px,env(safe-area-inset-right));z-index:var(--ui-layer-floating,40)}.profile-page .profile-social-users{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px}.profile-page .profile-social-user{min-width:0;padding:6px 0;border:0;gap:9px}.profile-page .profile-social-avatar{width:36px;height:36px;border-radius:8px}.profile-page .profile-social-user>div{min-width:0;overflow-wrap:anywhere}@media(max-width:480px){.profile-page .profile-social-users{grid-template-columns:minmax(0,1fr)}}
+.player-profile.account-settings-layout{width:min(1040px,calc(100% - 64px));margin:36px auto 72px;display:grid;grid-template-columns:208px minmax(0,1fr);gap:clamp(28px,5vw,74px);align-items:start}
+.account-settings-rail{position:sticky;top:calc(var(--site-header-height,60px) + 24px)}
+.account-settings-rail h1{margin:0 0 20px;font-size:23px}
+.account-settings-rail nav{display:grid;gap:3px}
+.account-settings-rail nav>a,.account-settings-rail nav>span,.account-settings-back{display:flex;align-items:center;gap:10px;padding:10px 12px;color:var(--book-ink);text-decoration:none;font-size:14px;border-radius:6px}
+.account-settings-rail svg,.account-settings-back svg{width:17px;height:17px}
+.account-settings-rail a[aria-current=page]{background:var(--book-raised);font-weight:600}
+.account-settings-rail nav>span{color:var(--book-muted)}.account-settings-rail small{margin-left:auto}
+.account-settings-rail a svg:last-child,.account-settings-back{display:none}
+.account-settings-body{min-width:0}
+.account-settings-body .profile-panel,.account-settings-body .profile-editor-shell,.account-settings-body .profile-security-section{max-width:none;margin:0;padding:0;border:0;background:transparent;border-radius:0;box-shadow:none}
+.account-settings-body .profile-security-section+.profile-security-section,.account-settings-body .account-privacy{padding-top:22px;margin-top:20px;border-top:1px solid var(--book-border)}
+.account-settings-body .profile-details-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+.account-settings-body .profile-section-title h2{font-size:21px}
+.account-settings-body .account-privacy label{display:flex;align-items:center;justify-content:space-between}
+@media(max-width:700px),(orientation:portrait) and (max-width:900px){
+.player-profile.account-settings-layout{display:block;width:calc(100% - 32px);margin:20px auto 48px}
+.account-settings-rail{position:static}.account-settings-rail nav>a,.account-settings-rail nav>span{min-height:48px;border-bottom:1px solid var(--book-border);border-radius:0;padding-inline:0}
+.account-settings-rail a[aria-current=page]{background:transparent;font-weight:inherit}
+.account-settings-rail a svg:last-child{display:block;margin-left:auto}.account-settings-back{display:inline-flex;padding:0 0 14px;color:var(--book-muted)}
+.account-settings-layout[data-detail=false] .account-settings-body,.account-settings-layout[data-detail=true] .account-settings-rail{display:none}
+}

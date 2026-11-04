@@ -1,29 +1,17 @@
 import {AccountRequestError, accountRequest} from '../../services/account-client';
 import {Input, Textarea} from '../../ui/input';
-import {Tabs} from 'radix-ui';
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import {AccountAvatar} from './AccountAvatar';
-import {ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MapPin, MessageCircle, TvMinimal} from 'lucide-react';
+import {ChevronLeft, ChevronRight, ShieldCheck, UserRound, Gamepad2, ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MapPin, MessageCircle, TvMinimal} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
 import {Toggle, Button as UiButton} from '../../ui/controls';
 import {BookButton} from './BookButton';
-import {useEffect, useState, type ReactNode} from 'react';
-import {flushSync} from 'react-dom';
+import {useEffect, useState} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import './profile-preview.css';
 import {SocialFollowControl, SocialSection} from './SocialSection';
-import {animateSurface, type SurfaceAnimation} from '../../ui/surface-motion';
-
-let profileAnimation: SurfaceAnimation | null = null;
-function transitionProfile(update: () => void, scope: 'page' | 'content' | 'settings' = 'page') {
-  profileAnimation?.cancel();
-  flushSync(update);
-  const target = document.querySelector<HTMLElement>(scope === 'content' ? '.profile-content' : scope === 'settings' ? '.profile-editor-shell' : '.profile-wrap');
-  profileAnimation = target ? animateSurface(target, 'enter', {kind: 'content'}) : null;
-}
-
 type SocialLink = {label: string; url: string};
 type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]};
 type ProfileDraft = Omit<Profile, 'links'> & {links: (SocialLink & {editId: number})[]};
@@ -46,7 +34,7 @@ const validDisplay = (value: unknown): value is ProfileDisplay => {
 const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: []};
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
-type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; details: (Profile & {display:ProfileDisplay}) | null};
+type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; details: (Profile & {display:ProfileDisplay}) | null};
 export function ProfilePage() {
   const {pathname} = useLocation();
   return <AccountProfile key={pathname} pathname={pathname}/>;
@@ -57,7 +45,7 @@ function AccountProfile({pathname}: {pathname:string}) {
   const navigate = useNavigate();
   const aliasSearch = pathname === '/profile.html' ? search : '';
   const aliasHash = pathname === '/profile.html' ? hash : '';
-  const panel = hash === '#edit' || hash === '#settings' ? hash : '';
+  const panel = ['#edit','#settings','#security'].includes(hash) ? hash : '';
   const [state,setState] = useState<{profile?:RemoteProfile; owner?:boolean; error?:UiMessageKey}>({});
   useEffect(() => {
     let current = true;
@@ -88,20 +76,19 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
   const location=useLocation(),navigate=useNavigate();
   const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
   const sectionAddress=(key:ProfileTab)=>({pathname:location.pathname,search:location.search,hash:`#profile-${key}`});
-  const jumpTo=(key:ProfileTab,replace=false)=>navigate(sectionAddress(key),{replace});
   const [profile, setProfile] = useState<Profile>({...blankProfile,...remote.details,name:remote.nickname}), [draft, setDraft] = useState<ProfileDraft>({...profile, links:profile.links.map(editableLink)});
-  const [editing, setEditing] = useState(owner && panel === '#edit');
-  const [display, setDisplay] = useState(validDisplay(remote.details?.display) ? remote.details.display : defaultDisplay), [displayDraft, setDisplayDraft] = useState(defaultDisplay);
-  const [displayEditing, setDisplayEditing] = useState(false);
-  const [settings, setSettings] = useState(owner && !!panel), [security, setSecurity] = useState(owner && panel === '#settings');
+  const settings = owner && !!panel;
+  const editing = panel === '#edit';
+  const savedDisplay = validDisplay(remote.details?.display) ? remote.details.display : defaultDisplay;
+  const [display,setDisplay] = useState(savedDisplay), [displayDraft,setDisplayDraft] = useState(savedDisplay);
   const visitor = !owner;
   const [saveError,setSaveError] = useState('');
   const [notice, setNotice] = useState<UiMessageKey|null>(null), [error, setError] = useState<UiMessageKey|null>(null);
   useEffect(() => {if (settings) window.scrollTo(0, 0);}, [settings]);
-  useEffect(() => () => {profileAnimation?.cancel(); profileAnimation = null;}, []);
   useEffect(() => {if (!notice) return; const timer = window.setTimeout(() => setNotice(null), 3500); return () => window.clearTimeout(timer);}, [notice]);
-  const back = () => transitionProfile(() => {setSettings(false);setSecurity(false);setDisplayEditing(false);setEditing(false);setError(null);jumpTo('overview',true);});
-  const editProfile = () => transitionProfile(() => {setSettings(true); setSecurity(false); setDraft({...profile, links: profile.links.map(editableLink)}); setDisplayEditing(false); setEditing(true); setError(null);}, settings ? 'settings' : 'page');
+  const pageLink = (hash:string) => ({pathname:location.pathname, search:location.search, hash});
+  const back = () => navigate(pageLink('#settings'));
+  const editProfile = () => navigate(pageLink('#edit'));
   const uploadImage = (file: File | undefined, field: 'avatar' | 'cover') => {
     if (!file) return;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 750_000) {setError("profile.image.invalid"); return;}
@@ -118,31 +105,15 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
         await accountRequest('auth/update-user', {name:next.name});
         setProfile(previous => ({...previous,name:next.name}));
       }
-      await accountRequest('v1/me/profile', {...next,display});
+      await accountRequest('v1/me/profile', {...next,display:displayDraft});
     } catch (cause) {setSaveError(t('account.requestFailed')); return;}
-    setProfile(next); window.dispatchEvent(new Event('account-profile-change')); setError(null); setNotice("profile.saved");
-  };
-  const editDisplay = () => transitionProfile(() => {setSettings(true); setSecurity(false); setDisplayDraft({visible: {...display.visible}, order: [...display.order]}); setDisplayEditing(true); setEditing(false);  setError(null);}, settings ? 'settings' : 'page');
-  const saveDisplay = async () => {
-    setSaveError('');
-    try {await accountRequest('v1/me/profile', {...profile,display:displayDraft});}
-    catch (cause) {setSaveError(t('account.requestFailed')); return;}
-    setDisplay(displayDraft); setNotice("profile.display.saved");
-    const tabKey = tab==="overview" ? null : tab;
-    if (visitor && tabKey && !displayDraft.visible[tabKey]) jumpTo('overview',true);
+    setDisplay(displayDraft);setProfile(next); window.dispatchEvent(new Event('account-profile-change')); setError(null); setNotice("profile.saved");
   };
   const visible = visitor ? display.visible : defaultDisplay.visible;
   const visibleTabs: ProfileTab[] = ['overview',...display.order.filter((key): key is Exclude<ProfileTab,'overview'> => key==='friends' && visible.friends)];
-  const activeTab = settings ? editing ? 'settings-profile' : displayEditing ? 'settings-display' : 'settings-security' : tab;
-  const selectTab = (value: string) => {
-    if (value === activeTab) return;
-    if (value === 'settings-profile') editProfile();
-    else if (value === 'settings-display') editDisplay();
-    else if (value === 'settings-security') transitionProfile(() => {setEditing(false); setDisplayEditing(false); setSecurity(true); setError(null);}, 'settings');
-  };
   const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
   const details = <><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p><dl className="profile-about-meta">
-    {remote.countryCode && <div><dt><MapPin/>{t('profile.region')}</dt><dd>{typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames([locale],{type:'region'}).of(remote.countryCode) : remote.countryCode}</dd></div>}
+    {remote.countryCode && <div><dt><MapPin/>{t('profile.region')}</dt><dd>{regionLabel(remote.regionCode || remote.countryCode,locale)}</dd></div>}
     <div><dt><CalendarDays/>{t('profile.registeredAt')}</dt><dd><time dateTime={remote.joinedAt}>{new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',timeZone:'UTC'}).format(new Date(remote.joinedAt))}</time></dd></div>
     </dl>{links.length > 0 && <div className="profile-links">{links.map(link => {
       const host = safeUrl(link.url)?.hostname ?? '';
@@ -150,10 +121,25 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
       return <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"><Icon aria-hidden="true"/><span>{link.label}</span><ArrowUpRight aria-hidden="true"/></a>;
     })}</div>}</>;
   const navigation = visibleTabs.filter(item => item !== 'records' && (item !== 'content' || owner)).map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
-  return <Tabs.Root value={activeTab} onValueChange={selectTab} asChild><main className={`player-profile${settings ? ' profile-editing profile-settings' : ' profile-page'}`} aria-label={settings ? t('profile.settings') : undefined} aria-labelledby={settings ? undefined : 'profile-name'}>
-    {settings && <div className="profile-topbar"><BookButton variant="quiet" type="button" onClick={back}>{t('profile.back')}</BookButton></div>}
-    <div className="profile-wrap">{saveError && <p role="alert">{saveError}</p>}
-      {settings && <div className="profile-settings-heading"><h1>{t('profile.settings')}</h1><Tabs.List asChild><nav aria-label={t('profile.settingsNavigation')}>{[['settings-profile',t('profile.edit')],['settings-display',t('profile.displayTab')],['settings-security',t('profile.security')]].map(([value,label]) => <Tabs.Trigger asChild key={value} value={value}><BookButton variant="tab" aria-current={activeTab===value ? 'page' : undefined}>{label}</BookButton></Tabs.Trigger>)}</nav></Tabs.List></div>}
+  if (settings) return <main className="player-profile account-settings-layout" data-detail={panel !== '#settings'}>
+    <aside className="account-settings-rail"><h1>{t('profile.settings')}</h1><nav aria-label={t('profile.settingsNavigation')}>
+      <Link to={pageLink('#security')} aria-current={!editing?'page':undefined}><ShieldCheck/>{t('profile.security')}<ChevronRight/></Link>
+      <Link to={pageLink('#edit')} aria-current={editing?'page':undefined}><UserRound/>{t('profile.personalSettings')}<ChevronRight/></Link>
+      <span aria-disabled="true"><Gamepad2/>{t('room.gameSettingsGroup')}<small>{t('profile.upcoming')}</small></span>
+    </nav></aside>
+    <div className="account-settings-body"><Link className="account-settings-back" to={pageLink('#settings')}><ChevronLeft/>{t('profile.settings')}</Link>
+      {saveError && <p role="alert">{saveError}</p>}
+      {editing ? <section className="profile-panel profile-editor profile-editor-shell profile-details-editor"><div className="profile-section-title"><h2><ProfileSectionIcon name="profile"/>{t('profile.personalSettings')}</h2></div><form onSubmit={event => {event.preventDefault(); saveProfile();}}>
+        <div className="profile-details-columns"><div className="profile-media-editor"><div className="profile-draft-preview"><div className={`profile-draft-cover${imageData(draft.cover) ? ' has-image' : ''}`} style={imageData(draft.cover) ? {backgroundImage: `url("${draft.cover}")`} : undefined}/><div className="profile-draft-identity"><span className="profile-draft-avatar"><AccountAvatar src={draft.avatar} alt={t('profile.avatar.preview')}/></span><strong>{draft.name || t('profile.name.missing')}</strong><p>{draft.bio.split('\n')[0] || t('profile.bio.missing')}</p></div></div>
+        <div className="profile-image-fields">{(['avatar', 'cover'] as const).map(field => <fieldset key={field}><legend>{field === 'avatar' ? t('profile.avatar') : t('profile.cover')}</legend><label className="profile-image-upload"><ProfileSectionIcon name="upload"/><span>{t('profile.image.choose')}</span><input type="file" aria-label={field === 'avatar' ? t('profile.avatar.choose') : t('profile.cover.choose')} accept="image/png,image/jpeg,image/webp" onChange={event => uploadImage(event.target.files?.[0], field)}/></label>{draft[field] && <BookButton variant="quiet" type="button" className="profile-image-remove" onClick={() => setDraft({...draft, [field]: ''})}>{t('profile.remove')}</BookButton>}</fieldset>)}</div><small className="profile-upload-hint">{t('profile.image.formats')}</small></div><div className="profile-detail-fields">
+        <label>{t('profile.name')}<Input maxLength={32} value={draft.name} onChange={event => setDraft({...draft, name: event.target.value})} placeholder={t('profile.name.placeholder')}/></label>
+        <label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
+        <fieldset><legend>{t('profile.links')}</legend>{draft.links.map((link, index) => <div className="profile-link-editor" key={link.editId}><label>{t('profile.links.name')}<Input maxLength={40} value={link.label} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, label: event.target.value} : item)})}/></label><label>{t('profile.links.address')}<Input type="url" placeholder="https://" value={link.url} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, url: event.target.value} : item)})}/></label><BookButton variant="action" type="button" aria-label={t('profile.links.delete',{number:index + 1})} onClick={() => setDraft({...draft, links: draft.links.filter((_, i) => i !== index)})}>{t('action.delete')}</BookButton></div>)}<BookButton variant="action" type="button" onClick={() => setDraft({...draft, links: [...draft.links, editableLink({label: '', url: ''})]})}>{t('profile.links.add')}</BookButton></fieldset></div></div>
+        <fieldset className="account-privacy"><legend>{t('profile.displayTab')}</legend><label><span>{t('profile.display.visible')} | {t('profile.tab.friends')}</span><Toggle checked={displayDraft.visible.friends} onCheckedChange={friends=>setDisplayDraft({...displayDraft,visible:{...displayDraft.visible,friends}})}/></label></fieldset>
+        {error && <p role="alert">{t(error)}</p>}<div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" className="profile-primary" type="submit">{t('profile.save')}</BookButton></div>
+      </form></section> : <AccountSecurity/>}
+    </div>{notice && <div className="profile-toast" role="status">{t(notice)}</div>}</main>;
+  return <main className="player-profile profile-page" aria-labelledby="profile-name"><div className="profile-wrap">
       <section id="profile-overview" className="profile-hero profile-public-section">
         <div className="profile-cover"><img src={imageData(profile.cover) ? profile.cover : backgroundUrl} alt=""/></div>
         <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}><AccountAvatar src={profile.avatar} alt={t('profile.avatar.alt')}/></UiButton>
@@ -161,28 +147,20 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
         {!settings && <div className="profile-header-details">{details}</div>}<div className="profile-actions">{!owner && <SocialFollowControl username={remote.username}/>}{!visitor && <BookButton variant="action" type="button" onClick={editProfile}>{t('profile.edit')}</BookButton>}</div></div>
         {!settings && <nav className="profile-section-nav profile-nav-mobile" aria-label={t('profile.navigationSections')}>{navigation}</nav>}
       </section>
-      <ProfileContent settings={settings} value={activeTab}>{settings && security ? <AccountSecurity/> : displayEditing ? <section className="profile-panel profile-editor-shell profile-display-editor"><div className="profile-section-title"><h2><ProfileSectionIcon name="layout"/>{t('profile.display')}</h2></div><form onSubmit={event => {event.preventDefault(); saveDisplay();}}>
-        <div className="profile-display-columns"><fieldset><legend>{t('profile.display.visible')}</legend><div className="profile-display-options">{(Object.keys(displayLabels) as DisplayKey[]).filter(key=>key==='friends').map(key => <label key={key}><span className="profile-option-name"><ProfileSectionIcon name={key}/><span>{t(displayLabels[key])}</span></span><Toggle checked={displayDraft.visible[key]} onCheckedChange={event => setDisplayDraft({...displayDraft, visible: {...displayDraft.visible, [key]: event}})}/></label>)}</div></fieldset>
-        </div>
-        <div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" type="submit" className="profile-primary">{t('profile.display.save')}</BookButton></div>
-      </form></section> : editing ? <section className="profile-panel profile-editor profile-editor-shell profile-details-editor"><div className="profile-section-title"><h2><ProfileSectionIcon name="profile"/>{t('profile.editHeading')}</h2></div><form onSubmit={event => {event.preventDefault(); saveProfile();}}>
-        <div className="profile-details-columns"><div className="profile-media-editor"><div className="profile-draft-preview"><div className={`profile-draft-cover${imageData(draft.cover) ? ' has-image' : ''}`} style={imageData(draft.cover) ? {backgroundImage: `url("${draft.cover}")`} : undefined}/><div className="profile-draft-identity"><span className="profile-draft-avatar"><AccountAvatar src={draft.avatar} alt={t('profile.avatar.preview')}/></span><strong>{draft.name || t('profile.name.missing')}</strong><p>{draft.bio.split('\n')[0] || t('profile.bio.missing')}</p></div></div>
-        <div className="profile-image-fields">{(['avatar', 'cover'] as const).map(field => <fieldset key={field}><legend>{field === 'avatar' ? t('profile.avatar') : t('profile.cover')}</legend><label className="profile-image-upload"><ProfileSectionIcon name="upload"/><span>{t('profile.image.choose')}</span><input type="file" aria-label={field === 'avatar' ? t('profile.avatar.choose') : t('profile.cover.choose')} accept="image/png,image/jpeg,image/webp" onChange={event => uploadImage(event.target.files?.[0], field)}/></label>{draft[field] && <BookButton variant="quiet" type="button" className="profile-image-remove" onClick={() => setDraft({...draft, [field]: ''})}>{t('profile.remove')}</BookButton>}</fieldset>)}</div><small className="profile-upload-hint">{t('profile.image.formats')}</small></div><div className="profile-detail-fields">
-        <label>{t('profile.name')}<Input maxLength={32} value={draft.name} onChange={event => setDraft({...draft, name: event.target.value})} placeholder={t('profile.name.placeholder')}/></label>
-        <label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
-        <fieldset><legend>{t('profile.links')}</legend>{draft.links.map((link, index) => <div className="profile-link-editor" key={link.editId}><label>{t('profile.links.name')}<Input maxLength={40} value={link.label} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, label: event.target.value} : item)})}/></label><label>{t('profile.links.address')}<Input type="url" placeholder="https://" value={link.url} onChange={event => setDraft({...draft, links: draft.links.map((item, i) => i === index ? {...item, url: event.target.value} : item)})}/></label><BookButton variant="action" type="button" aria-label={t('profile.links.delete',{number:index + 1})} onClick={() => setDraft({...draft, links: draft.links.filter((_, i) => i !== index)})}>{t('action.delete')}</BookButton></div>)}<BookButton variant="action" type="button" onClick={() => setDraft({...draft, links: [...draft.links, editableLink({label: '', url: ''})]})}>{t('profile.links.add')}</BookButton></fieldset></div></div>
-        {error && <p role="alert">{t(error)}</p>}<div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" className="profile-primary" type="submit">{t('profile.save')}</BookButton></div>
-      </form></section> : <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div><nav className="profile-section-nav profile-nav-desktop" aria-label={t('profile.navigationSections')}>{navigation}</nav></aside>
+<div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div><nav className="profile-section-nav profile-nav-desktop" aria-label={t('profile.navigationSections')}>{navigation}</nav></aside>
         <div className="profile-content">{visible.friends && <SocialSection username={remote.username}/>}
         <div className="profile-end-actions"><BackToTop/></div>
-        </div></div>}
-      </ProfileContent>
-    </div>{notice && <div className="profile-toast" role="status">{t(notice)}</div>}</main></Tabs.Root>;
+        </div></div>
+  </div></main>;
 }
 
-function ProfileContent({settings,value,children}: {settings:boolean;value:string;children:ReactNode}) {
-  const content=<div className="profile-tab-panel">{children}</div>;
-  return settings ? <Tabs.Content asChild forceMount value={value}>{content}</Tabs.Content> : content;
+function regionLabel(code:string,locale:string) {
+  if (typeof Intl.DisplayNames !== 'function') return ['HK','MO','TW'].includes(code) ? 'CN / '+code : code;
+  const names = new Intl.DisplayNames([locale],{type:'region'});
+  const flag = String.fromCodePoint(...[...code].map(letter=>127397+letter.charCodeAt(0)));
+  const special = ['HK','MO','TW'].includes(code);
+  const label = special ? names.of('CN')+' | '+new Intl.DisplayNames([locale],{type:'region',style:'short'}).of(code) : names.of(code);
+  return <><span aria-hidden="true">{flag}</span> {label}</>;
 }
 
 function AccountSecurity() {

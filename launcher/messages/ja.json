@@ -1750,6 +1750,8 @@
   "profile_display_visible": "訪問者への表示",
   "profile_display_order": "概要の表示順",
   "profile_display_save": "表示を保存",
+  "profile_personal_settings": "プロフィール",
+  "profile_upcoming": "準備中",
   "profile_edit_heading": "プロフィールの編集",
   "profile_avatar_preview": "アバターのプレビュー",
   "profile_avatar": "アバター",

@@ -7464,6 +7464,8 @@
     "id": "profile_display_save",
     "params": []
   },
+  "profile.personalSettings": {"id":"profile_personal_settings","params":[]},
+  "profile.upcoming": {"id":"profile_upcoming","params":[]},
   "profile.editHeading": {
     "id": "profile_edit_heading",
     "params": []
