@@ -34,6 +34,7 @@ test('managed spectator starts, draws confirmed frames and stops its replica',as
     const compressed=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
     socket.onmessage({data:pack(1,0,0,new TextEncoder().encode(JSON.stringify(header)))});
     socket.onmessage({data:pack(2,0,1,compressed)});
+    socket.onmessage({data:pack(5,1,0,new Uint8Array())});
     await new Promise(resolve=>setTimeout(resolve,350));
     assert.equal(api.health().gameFrame,1);assert(draws>=1);assert.deepEqual(errors,[]);
     api.stop();assert.equal(worker.terminated,true);assert.equal(removed,true);

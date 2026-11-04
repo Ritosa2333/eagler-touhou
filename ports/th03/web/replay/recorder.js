@@ -30,13 +30,13 @@ export function createRecorder(toolbar){
         localSolo=adapter==='native-local/1'&&players===1;
         open.hidden=!localSolo;
         watch.hidden=localSolo;
-        if(PORTABLE&&!localSolo)builder=createBuilder(tape.header,()=>tape,p=>{points.push(p);update();},e=>{pointError='定位点生成停止：'+e.message;update();});
+        if(PORTABLE&&!localSolo)builder=createBuilder(tape.header,()=>tape,p=>{points.push(p);publisher?.kick();update();},e=>{pointError='定位点生成停止：'+e.message;update();});
         if(!localSolo){
           channel=new BroadcastChannel('pc98-replay-'+id);
           const options=globalThis.__eaglerPC98Options?.(),url=options?.netplayUrl?new URL(options.netplayUrl):null;
           if(options?.netplayPlayer===0&&url?.searchParams.get('room')&&url.searchParams.get('run')){
             roomChannel=new BroadcastChannel('pc98-room-'+GAME+'-'+url.searchParams.get('room')+'-'+url.searchParams.get('run'));
-            publisher=globalThis.__eaglerPC98SpectatorPublisher?.(tape.header,tape,()=>globalThis['__th'+GAME+'PeerTransport']?.relay,error=>{remote.title=error.message;});
+            publisher=globalThis.__eaglerPC98SpectatorPublisher?.(tape.header,tape,()=>globalThis['__th'+GAME+'PeerTransport']?.relay,error=>{remote.title=error.message;},()=>points);
           }
         }
         let lastReply=0;

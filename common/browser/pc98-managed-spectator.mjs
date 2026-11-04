@@ -7,14 +7,15 @@ import {readLocalPoint} from './replay/local-points.js';
 import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
 
 export function createManagedSpectator(game,emit,{createAudio=createPc98SpectatorAudio}={}){
-  let viewer,canvas,audio,timer,run,revision=0;
+  let viewer,canvas,audio,timer,run,revision=0,catchingAudio=false;
   function report(){if(!viewer)return;const position=viewer.frame,received=viewer.received;
-    audio?.mode(viewer.paused||viewer.seeking);
+    if(received-position>120)catchingAudio=true;else if(received-position<45)catchingAudio=false;
+    audio?.mode(viewer.paused||!viewer.following||catchingAudio);
     emit({event:'runtime-info',spectatorPlayback:{version:1,run,revision:++revision,min:0,position,received,edge:received,target:viewer.target,
       paused:viewer.paused,seeking:viewer.seeking,following:viewer.following,ended:viewer.ended,nodes:[]}});}
   return {
     async start({options,music}){
-      const url=new URL(options.netplayUrl);run='pc98_'+game+'_'+url.searchParams.get('run');revision=0;
+      const url=new URL(options.netplayUrl);run='pc98_'+game+'_'+url.searchParams.get('run');revision=0;catchingAudio=false;
       canvas=document.createElement('canvas');canvas.width=640;canvas.height=400;
       Object.assign(canvas.style,{position:'fixed',inset:'0',width:'100%',height:'100%',objectFit:'contain',imageRendering:'pixelated',background:'#000',zIndex:'2'});
       document.body.append(canvas);const context=canvas.getContext('2d',{alpha:false});

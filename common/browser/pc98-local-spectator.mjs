@@ -50,7 +50,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       const index=validatePointIndex?validatePointIndex(data.points||[],data.available):[];
       for(let i=0;i<points.length;i++)if(stable(points[i])!==stable(index[i]))throw Error('已发布观战检查点改变');
       if(!header){header=data.header;onHeader(header);}identity??=nextIdentity;rows.push(...data.rows);available=data.available;end=data.end||end;points=index;
-      if(rows.length===available&&!replica)void boot();if(rows.length<available)pull();
+      if(rows.length===available&&!replica&&channel.ready!==false)void boot();if(rows.length<available)pull();
     }catch(error){fail(error);}
   };
   pullTimer=setInterval(pull,250);pull();

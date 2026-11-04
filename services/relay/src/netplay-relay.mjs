@@ -1787,6 +1787,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
       const first = history[index];
       if (!first) {
         if (run.spectatorStages && !sendSpectatorPayload(socket, run.spectatorStages.bootstrap(), roomId, runId, spectatorId)) return;
+        if (run.spectatorPc98 && !sendSpectatorPayload(socket, run.spectatorPc98.bootstrap(), roomId, runId, spectatorId)) return;
         socket.spectatorReplaying = false;
         return;
       }
@@ -2068,7 +2069,9 @@ server.on('connection', (socket, request) => {
           if(run.spectatorGraceTimer){clearTimeout(run.spectatorGraceTimer);run.spectatorGraceTimer=null;}
           run.spectatorPc98=stream;run.spectatorTimeline=true;run.spectatorAdmissionOpen=!stream.ended;run.spectatorComplete=stream.ended;
           run.spectatorHistory=stream.history;run.spectatorHistoryBytes=stream.bytes;run.onSpectatorAvailabilityChange=()=>roomDirectory.changed();
-          for(const [id,target] of run.spectatorClients)if(!target.spectatorReplaying)sendSpectatorPayload(target,payload,roomId,runId,id);
+          for(const [id,target] of run.spectatorClients)if(!target.spectatorReplaying){
+            if(sendSpectatorPayload(target,payload,roomId,runId,id)&&first)sendSpectatorPayload(target,stream.bootstrap(),roomId,runId,id);
+          }
           if(first||kind===3){broadcastLobby(room);roomDirectory.changed();}
           if(first)for(const id of room.lobby.spectators.keys()){const lobby=room.lobbyClients.get(id);if(lobby)sendLobby(lobby,{type:'spectator-start',serial:room.lobby.startSerial,room:lobbySnapshot(room)});}
         }catch(error){console.log(`PC98 SPECTATOR STOP room=${roomId} run=${runId} ${error.message}`);stopSpectatorStream(run);}
