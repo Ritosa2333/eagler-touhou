@@ -80,6 +80,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+[GLES 近裁剪与齐次视口修正](https://github.com/AdingApkgg/thp/blob/eeec03871077affa49be96f83abcd503f12c0cf7/docs/porting/TH14_PORTABLE_NEAR_CLIP_NOV05.md)：正式四文件渲染器重编后，21 个保留 Stage 场景、48 组矩阵／UV／排列及 16 组合成投影，共 85 个完整 BGRA 缓冲／104,448,000 字节与独立 D3D9 HAL 指令组件一致。旧正式版的一字节错误归零，二次幂视口候选的 17 字节回退保留；同仓库 TH143 裁剪与浮点乘积实现作为参考。正式路径保持整数视口和齐次 W，无逐像素修补或原生视口干预；五项共享语法通过。这里没有比较原版整局 framebuffer，也没有接受 WebGPU、其他 GPU 或当前浏览器。原版整局画面／PCM、普通 GUI、全模式、独立调度及整作 1:1 继续。
+
 [灵梦 B Easy 新完整原版记录与恢复读序](https://github.com/AdingApkgg/thp/blob/5f33a985fa4e27de6d39d067212bdeaafc378ff8/docs/porting/TH14_EASY_FULL_CONTEXT_NOV04.md)：六面 238,972 回调、零调试异常；声明时钟及推导的写入间首次脚本 RNG 读取交付下，32 项状态、17,922,825 个相机字、游标／HUD、1,301 行各 303 字动画及 1,240 个战斗检查点经原始载荷复核一致，核心未变。独立计数清零的精确交错尚未恢复，Initialize／Scene 严格门槛继续拒绝，白名单及严格模式通过数未改；旧 Easy 异常、启动超时与中止记录仍保留。普通浏览器、全模式、原版整局画面／PCM和独立线程调度未验收，整作 1:1 未完成。
 
 [当前 Application 完整回放、退出与保存](https://github.com/AdingApkgg/thp/blob/bff72362313f6765a215a07ab1d8e8be0bd1d892/docs/porting/TH14_CURRENT_APPLICATION_FULL_EXIT_NOV04.md)：含启动回退修复的版本新跑 122,780 帧／53 项断言，实际经过六面，自然结束后稳定 60 帧，再经列表／主菜单 Quit 和生产保存。与同核心封存 C++ Application 的 16 份完整载荷、10 幅完整图像／12,288,000 字节、959 行各 303 字 VM及登记顺序、90,086,400 帧静音 PCM 摘要全部一致；录像 110,022 字节未变。真实非默认成绩文件 21,656 字节与非默认音量配置在新进程读回后不变。参考为 C++ Application，未把它作为原版整局画面／音频或浏览器验收；原版普通 GUI、全模式、独立调度和整作 1:1 继续。
