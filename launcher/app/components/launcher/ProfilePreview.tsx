@@ -2,8 +2,8 @@ import {AccountRequestError, accountRequest} from '../../services/account-client
 import {Input, Textarea} from '../../ui/input';
 import {Tabs} from 'radix-ui';
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
-import {SiteBrand} from './SiteBrand';
-import {ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MapPin, MessageCircle, TvMinimal, UserRound} from 'lucide-react';
+import {AccountAvatar} from './AccountAvatar';
+import {ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MapPin, MessageCircle, TvMinimal} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
 import {Toggle, Button as UiButton} from '../../ui/controls';
 import {BookButton} from './BookButton';
@@ -156,7 +156,7 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
       {settings && <div className="profile-settings-heading"><h1>{t('profile.settings')}</h1><Tabs.List asChild><nav aria-label={t('profile.settingsNavigation')}>{[['settings-profile',t('profile.edit')],['settings-display',t('profile.displayTab')],['settings-security',t('profile.security')]].map(([value,label]) => <Tabs.Trigger asChild key={value} value={value}><BookButton variant="tab" aria-current={activeTab===value ? 'page' : undefined}>{label}</BookButton></Tabs.Trigger>)}</nav></Tabs.List></div>}
       <section id="profile-overview" className="profile-hero profile-public-section">
         <div className="profile-cover"><img src={imageData(profile.cover) ? profile.cover : backgroundUrl} alt=""/></div>
-        <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}>{imageData(profile.avatar) ? <img src={profile.avatar} alt={t('profile.avatar.alt')}/> : <SiteBrand className="profile-default-avatar" assetUrl={path => '/' + path.replace(/^\/+/, '')}/>}</UiButton>
+        <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}><AccountAvatar src={profile.avatar} alt={t('profile.avatar.alt')}/></UiButton>
         <div className="profile-name"><h1 id="profile-name" tabIndex={-1}><OverflowText>{profile.name || t('profile.name.missing')}</OverflowText></h1><Link className="profile-username" to={'/u/'+remote.username}>@{remote.username}</Link></div>
         {!settings && <div className="profile-header-details">{details}</div>}<div className="profile-actions">{!owner && <SocialFollowControl username={remote.username}/>}{!visitor && <BookButton variant="action" type="button" onClick={editProfile}>{t('profile.edit')}</BookButton>}</div></div>
         {!settings && <nav className="profile-section-nav profile-nav-mobile" aria-label={t('profile.navigationSections')}>{navigation}</nav>}
@@ -166,7 +166,7 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
         </div>
         <div className="profile-actions profile-editor-footer"><BookButton variant="action" type="button" onClick={back}>{t('action.cancel')}</BookButton><BookButton variant="primary" type="submit" className="profile-primary">{t('profile.display.save')}</BookButton></div>
       </form></section> : editing ? <section className="profile-panel profile-editor profile-editor-shell profile-details-editor"><div className="profile-section-title"><h2><ProfileSectionIcon name="profile"/>{t('profile.editHeading')}</h2></div><form onSubmit={event => {event.preventDefault(); saveProfile();}}>
-        <div className="profile-details-columns"><div className="profile-media-editor"><div className="profile-draft-preview"><div className={`profile-draft-cover${imageData(draft.cover) ? ' has-image' : ''}`} style={imageData(draft.cover) ? {backgroundImage: `url("${draft.cover}")`} : undefined}/><div className="profile-draft-identity"><span className="profile-draft-avatar">{imageData(draft.avatar) ? <img src={draft.avatar} alt={t('profile.avatar.preview')}/> : <AvatarPlaceholder/>}</span><strong>{draft.name || t('profile.name.missing')}</strong><p>{draft.bio.split('\n')[0] || t('profile.bio.missing')}</p></div></div>
+        <div className="profile-details-columns"><div className="profile-media-editor"><div className="profile-draft-preview"><div className={`profile-draft-cover${imageData(draft.cover) ? ' has-image' : ''}`} style={imageData(draft.cover) ? {backgroundImage: `url("${draft.cover}")`} : undefined}/><div className="profile-draft-identity"><span className="profile-draft-avatar"><AccountAvatar src={draft.avatar} alt={t('profile.avatar.preview')}/></span><strong>{draft.name || t('profile.name.missing')}</strong><p>{draft.bio.split('\n')[0] || t('profile.bio.missing')}</p></div></div>
         <div className="profile-image-fields">{(['avatar', 'cover'] as const).map(field => <fieldset key={field}><legend>{field === 'avatar' ? t('profile.avatar') : t('profile.cover')}</legend><label className="profile-image-upload"><ProfileSectionIcon name="upload"/><span>{t('profile.image.choose')}</span><input type="file" aria-label={field === 'avatar' ? t('profile.avatar.choose') : t('profile.cover.choose')} accept="image/png,image/jpeg,image/webp" onChange={event => uploadImage(event.target.files?.[0], field)}/></label>{draft[field] && <BookButton variant="quiet" type="button" className="profile-image-remove" onClick={() => setDraft({...draft, [field]: ''})}>{t('profile.remove')}</BookButton>}</fieldset>)}</div><small className="profile-upload-hint">{t('profile.image.formats')}</small></div><div className="profile-detail-fields">
         <label>{t('profile.name')}<Input maxLength={32} value={draft.name} onChange={event => setDraft({...draft, name: event.target.value})} placeholder={t('profile.name.placeholder')}/></label>
         <label>{t('profile.region')}<Input maxLength={48} value={draft.region} onChange={event => setDraft({...draft,region:event.target.value})}/></label><label>{t('profile.bio')}<Textarea rows={4} maxLength={500} value={draft.bio} onChange={event => setDraft({...draft, bio: event.target.value})} placeholder={t('profile.bio.placeholder')}/><small>{draft.bio.length} / 500</small></label>
@@ -229,7 +229,6 @@ function BackToTop() {
   return visible ? <BookButton variant="action" type="button" className="profile-back-to-top" aria-label={t('profile.backToTop')}
     onClick={() => {window.scrollTo({top:0});document.getElementById('profile-name')?.focus({preventScroll:true});}}><ArrowUp/></BookButton> : null;
 }
-function AvatarPlaceholder() {return <UserRound aria-hidden="true" strokeWidth={1.5}/>;}
 
 function ProfileSectionIcon({name}: {name: string}) {
   const paths: Record<string, string> = {

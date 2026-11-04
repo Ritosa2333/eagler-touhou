@@ -42,6 +42,7 @@
     white-space: nowrap;
     text-decoration: none;
   }
+  .book-brand>.site-brand{max-width:100%}
   .book-brand .brand-version {
     display: none;
   }
@@ -350,7 +351,18 @@
 }
 .less-motion .book-masthead .book-main-nav :is(a,button),.less-motion .book-masthead .book-main-nav :is(a,button)::after,.less-motion .book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {transition:none}
 
-.masthead-account-entry{display:inline-flex;align-items:center;gap:6px;min-height:36px;max-width:12rem;padding:4px 8px;border:0;background:transparent;color:var(--book-ink);font:inherit;text-decoration:none;cursor:pointer}
-.masthead-account-entry span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.masthead-account-entry img,.masthead-account-entry svg,.account-loading svg{flex:none;width:22px;height:22px}.masthead-account-entry img{object-fit:cover;border-radius:50%}.account-menu-panel{min-width:190px;max-width:calc(100vw - 20px)}.account-menu-panel .ui-menu-label{display:block;padding:8px 10px;color:var(--book-muted);overflow-wrap:anywhere}
-@media(max-width:600px){.masthead-account-entry{max-width:clamp(66px,22vw,100px);padding-inline:3px;font-size:12px;white-space:nowrap}.masthead-account-entry img,.masthead-account-entry svg{width:19px;height:19px}}
-.account-guest{gap:3px}.account-guest>a{color:inherit;text-decoration:none}.account-guest>a:hover{text-decoration:underline}
+.masthead-account-entry{display:inline-flex;align-items:center;gap:7px;min-width:0;min-height:38px;max-width:13rem;padding:3px 7px;border:0;border-radius:7px;background:transparent;color:var(--kit-foreground);font:inherit;font-size:13px;font-weight:550;text-decoration:none}
+button.masthead-account-entry{cursor:pointer}.masthead-account-entry:is(:hover,[data-state=open]){background:var(--kit-accent)}
+.account-avatar,.account-login-icon{display:inline-grid;place-items:center;width:28px;height:28px;flex:none;overflow:hidden;border-radius:50%;background:var(--kit-secondary)}
+.account-avatar>img{display:block;width:100%;height:100%;object-fit:cover}
+.account-avatar>.site-brand{display:block;width:100%;height:100%;max-width:none;aspect-ratio:1;overflow:hidden}
+.account-avatar>.site-brand img{display:block;width:312.5%;max-width:none;height:100%;object-fit:fill}
+.account-handle{min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.account-login-icon svg{width:16px;height:16px}.account-guest{gap:4px;max-width:none;white-space:nowrap}
+.account-guest>a{color:inherit;text-decoration:none}.account-guest>a:hover{text-decoration:underline}.account-guest>span{color:var(--kit-muted-foreground)}
+.account-login-link{display:inline-flex;align-items:center;gap:7px}
+.account-menu-panel{min-width:196px;max-width:calc(100vw - 20px)}
+.account-menu-identity{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:3px;border-bottom:1px solid var(--kit-border)}
+.account-menu-identity strong,.account-menu-identity small{display:block;overflow-wrap:anywhere}.account-menu-identity small{color:var(--kit-muted-foreground)}
+.profile-avatar>.account-avatar,.profile-draft-avatar>.account-avatar{width:100%;height:100%;border-radius:inherit}
+@media(max-width:600px){.masthead-account-entry{max-width:clamp(78px,24vw,110px);gap:5px;padding-inline:3px;font-size:12px}.account-guest{gap:3px;max-width:none}.account-login-link{gap:4px}.masthead-account-entry .account-avatar,.account-login-icon{width:24px;height:24px}}
