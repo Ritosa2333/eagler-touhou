@@ -59,9 +59,10 @@ export function createRecorder(toolbar){
     confirm:(prefix,dirty)=>guard(()=>{tape?.confirm(prefix,dirty);builder?.kick();network?.kick();publisher?.kick();}),
     finish:reason=>guard(()=>{tape?.finish(reason);builder?.finish();network?.kick();publisher?.kick();}),
     connectNetwork(identity){guard(()=>{if(!tape||tape.header.adapter!=='confirmed-worker/1'||network||closed)return;network=publishNetwork(tape.header,()=>tape,()=>tape.end,identity,{getPoints:()=>({points,done:!builder||builder.done}),onLink:url=>{remote.href=url;remote.hidden=false;},onStatus:text=>{remote.title=text;upload.textContent=' · '+text;}});});},
+    async sealPublisher(timeout=2000){return publisher?publisher.seal(timeout):true;},
     async seal(timeout=30000){
       if(!tape)return true;
-      tape.finish('联机会话结束');builder?.finish();network?.kick();
+      tape.finish('联机会话结束');builder?.finish();network?.kick();publisher?.kick();
       const deadline=performance.now()+timeout;upload.textContent=' · 正在封存观战历史…';
       while(builder&&!builder.done&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,50));
       const done=network?await network.seal(Math.max(0,deadline-performance.now())):!builder||builder.done;

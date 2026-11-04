@@ -7,7 +7,7 @@ export const managedAPI={
       // A local confirmed exit must not close the fast/reliable channels while
       // another native engine is still consuming the final confirmed input.
       running=false;
-      try{await relay?.finish();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0,reason});}
+      try{await relay?.finish();replayRecorder.finish(reason);await replayRecorder.sealPublisher();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0,reason});}
       catch(error){managedAPI.stop();globalThis.__eaglerPC98Emit({event:'error',message:error.message});globalThis.__eaglerPC98Emit({event:'exit',code:1});}
     })();return returningTask;
   },

@@ -17,7 +17,7 @@ export const managedAPI={
   window.th01Net={get session(){return session;},get room(){return room;}};
   await session.prepare();
  },
- end(reason){if(returningTask)return returningTask;returningTask=(async()=>{try{await session?.relay?.finish();await session?.recorder.seal(2000);managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0,reason});}catch(error){managedAPI.stop();globalThis.__eaglerPC98Emit({event:'error',message:error.message});}})();return returningTask;},
+ end(reason){if(returningTask)return returningTask;returningTask=(async()=>{try{await session?.relay?.finish();session?.recorder.finish(reason);await session?.recorder.sealPublisher();await session?.recorder.seal(2000);managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0,reason});}catch(error){managedAPI.stop();globalThis.__eaglerPC98Emit({event:'error',message:error.message});}})();return returningTask;},
  health(){const frame=session?.queue.frame??0;Object.assign(globalThis,{__eaglerNetplayLanActive:!!session?.running,__eaglerNetplayLanFrame:frame,__eaglerNetplayLanConfirmed:frame,__eaglerNetplayInputDelayFrames:session?.queue.delay??0});return {frames:session?.game.displayFrames??0,frame,confirmed:frame,running:!!session?.running,stopped:!!session?.closed,audio:{state:session?.running?'running':'loading'}};},
  files:message=>globalThis.__eaglerPC98FileCommands(message),
  playback(){throw Error('多人录像工作台尚未接入');},

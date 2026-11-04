@@ -24,5 +24,6 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{}){
     }catch(error){stop();onError(error);}
     finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,cursor<tape.length?20:250);}
   }
-  void pump();return {kick(){clearTimeout(timer);void pump();},stop,get ended(){return ended;}};
+  void pump();return {kick(){clearTimeout(timer);void pump();},stop,get ended(){return ended;},
+    async seal(timeout=2000){const deadline=performance.now()+timeout;this.kick();while(!ended&&!closed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));return ended;}};
 }
