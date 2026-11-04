@@ -5,7 +5,7 @@ import {publishNetwork} from './network.js';
 import {LOCAL_CHUNK,pointSize,pointIndex} from './local-points.js';
 // Every public operation isolates failures from the player's execution loop.
 export function createRecorder(toolbar){
-  let tape=null,error='',channel=null,builder=null,pointError='',points=[],network=null,closed=false,localSolo=false;
+  let tape=null,error='',channel=null,roomChannel=null,builder=null,pointError='',points=[],network=null,closed=false,localSolo=false;
   let id=randomId();
   const watch=document.createElement('a'),info=document.createElement('span');
   watch.textContent='同浏览器观战';watch.target='_blank';watch.rel='noopener';watch.hidden=true;
@@ -21,8 +21,8 @@ export function createRecorder(toolbar){
   return {
     async boot({settings,players,hostSlot,opening,tickMs=1000/60,adapter='confirmed-worker/1'}){
       try{
-        network?.stop();builder?.stop();channel?.close();
-        network=builder=channel=null;points=[];pointError=error='';closed=false;
+        network?.stop();builder?.stop();channel?.close();roomChannel?.close();
+        network=builder=channel=roomChannel=null;points=[];pointError=error='';closed=false;
         id=randomId();watch.href=new URL('../replay.html?watch='+id,import.meta.url).href;
         remote.hidden=true;upload.textContent='';
         const identity=await fingerprint(SOURCE_PATHS);if(closed)return;
@@ -31,19 +31,25 @@ export function createRecorder(toolbar){
         open.hidden=!localSolo;
         watch.hidden=localSolo;
         if(PORTABLE&&!localSolo)builder=createBuilder(tape.header,()=>tape,p=>{points.push(p);update();},e=>{pointError='定位点生成停止：'+e.message;update();});
-        if(!localSolo)channel=new BroadcastChannel('pc98-replay-'+id);
+        if(!localSolo){
+          channel=new BroadcastChannel('pc98-replay-'+id);
+          const options=globalThis.__eaglerPC98Options?.(),url=options?.netplayUrl?new URL(options.netplayUrl):null;
+          if(options?.netplayPlayer===0&&url?.searchParams.get('room')&&url.searchParams.get('run'))
+            roomChannel=new BroadcastChannel('pc98-room-'+GAME+'-'+url.searchParams.get('room')+'-'+url.searchParams.get('run'));
+        }
         let lastReply=0;
-        if(channel)channel.onmessage=({data})=>guard(()=>{
+        const receive=source=>({data})=>guard(()=>{
           if(data?.type==='pull-point'){
             if(typeof data.viewer!=='string'||data.viewer.length>100||!Number.isInteger(data.frame)||!Number.isInteger(data.offset)||data.offset<0||data.offset%LOCAL_CHUNK)return;
             const p=points.find(p=>p.frame===data.frame);if(!p||data.offset>=pointSize(p))return;
-            const start=data.offset/3*4;channel.postMessage({type:'point',viewer:data.viewer,frame:p.frame,sha:p.sha,size:pointSize(p),offset:data.offset,payload:p.data.slice(start,start+LOCAL_CHUNK/3*4)});return;
+            const start=data.offset/3*4;source.postMessage({type:'point',viewer:data.viewer,frame:p.frame,sha:p.sha,size:pointSize(p),offset:data.offset,payload:p.data.slice(start,start+LOCAL_CHUNK/3*4)});return;
           }
           if(data?.type!=='pull'||typeof data.viewer!=='string'||data.viewer.length>100||!Number.isInteger(data.first)||data.first<0||data.first>tape.length)return;
           // Bounded replies; a slow viewer never holds the player at a barrier.
           const now=performance.now();if(now-lastReply<10)return;lastReply=now;
-          channel.postMessage({type:'slice',viewer:data.viewer,header:tape.header,first:data.first,rows:tape.slice(data.first,data.first+60),available:tape.length,end:tape.end,points:pointIndex(points),pointsDone:!!tape.end&&(!builder||builder.done)});
-        });update();
+          source.postMessage({type:'slice',viewer:data.viewer,header:tape.header,first:data.first,rows:tape.slice(data.first,data.first+60),available:tape.length,end:tape.end,points:pointIndex(points),pointsDone:!!tape.end&&(!builder||builder.done)});
+        });
+        if(channel)channel.onmessage=receive(channel);if(roomChannel)roomChannel.onmessage=receive(roomChannel);update();
       }catch(e){fail(e);}
     },
     stage:(frame,row)=>guard(()=>{if(!tape)return;if(frame<tape.length){if(stable(row)!==stable(tape.row(frame)))throw Error('已确认录像在分组回滚时改变');return;}tape.stage(frame,row);}),
