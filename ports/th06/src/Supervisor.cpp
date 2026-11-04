@@ -310,7 +310,12 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                 // recorder here, after GameManager has stopped recording and
                 // before RegisterChain can reuse stale stage/input pointers.
                 if (PracticeRuntime::ConsumeReplayResetOnReinit())
+                {
                     ReplayManager::SaveReplay(NULL, NULL);
+                    g_GameManager.deaths = 0;
+                    g_GameManager.bombsUsed = 0;
+                    g_GameManager.spellcardsCaptured = 0;
+                }
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {
                     return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
