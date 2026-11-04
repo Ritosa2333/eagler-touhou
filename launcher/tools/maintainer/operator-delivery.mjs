@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
-import { DEFAULT_BUILD_GAMES } from "../../lib/product-selection.mjs";
+import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
 import { verifyReleaseManifest } from "../../lib/release-manifest.mjs";
 
 export const OPERATOR_PROFILE_SCHEMA = "eagler-touhou/internal-operator-profile/1";
@@ -51,7 +51,8 @@ export function validateOperatorProfile(profile) {
       ![null, "http-to-https"].includes(profile.originMigration)) {
     throw new Error("invalid internal Operator profile");
   }
-  const games = DEFAULT_BUILD_GAMES;
+  const games = Object.keys(PRODUCT_GAMES).filter(game =>
+    !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(profile.games ?? {}, game));
   if (!profile.games || !sameList(Object.keys(profile.games), games)) {
     throw new Error("internal Operator profile must contain every default build game in canonical order");
   }

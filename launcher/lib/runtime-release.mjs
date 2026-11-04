@@ -71,14 +71,11 @@ export function validateRuntimeReleaseManifest(manifest) {
   if (!manifest || ![RUNTIME_RELEASE_SCHEMA, LEGACY_RUNTIME_RELEASE_SCHEMA].includes(manifest.schema) || manifest.protocol !== "eagler-touhou/1") {
     throw new Error("invalid Runtime Release manifest");
   }
-  const registered = Object.keys(PRODUCT_GAMES);
-  const supplied = manifest.games && typeof manifest.games === 'object' && !Array.isArray(manifest.games)
-    ? Object.keys(manifest.games) : [];
-  const expected = registered.filter(game => PRODUCT_GAMES[game].buildOptIn !== true || supplied.includes(game));
-  if (JSON.stringify(supplied) !== JSON.stringify(expected)) {
+  const registered = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || Object.hasOwn(manifest.games ?? {}, game));
+  if (!manifest.games || JSON.stringify(Object.keys(manifest.games)) !== JSON.stringify(registered)) {
     throw new Error("Runtime Release must contain every default game and selected opt-in games in canonical order");
   }
-  for (const game of expected) {
+  for (const game of registered) {
     const product = PRODUCT_GAMES[game];
     const entry = manifest.games[game];
     if (!entry || entry.dataProvider !== product.dataProvider || !LAYOUT.test(entry.dataLayout || "")) {

@@ -39,7 +39,7 @@ assert.equal(manifest.schema, SITE_MANIFEST_SCHEMA);
 assert.equal(manifest.profile, "web-development");
 assert.equal(manifest.shared.testBuild, true);
 assert.equal(manifest.shared.resourceMode, "hosted");
-assert.deepEqual(Object.keys(manifest.games), [...DEFAULT_BUILD_GAMES]);
+assert.deepEqual(Object.keys(manifest.games), DEFAULT_BUILD_GAMES);
 const th13Only = await createManifest({ games: ["th13"] });
 assert.deepEqual(Object.keys(th13Only.games), ["th13"]);
 assert.doesNotThrow(() => validateSiteManifest(th13Only));

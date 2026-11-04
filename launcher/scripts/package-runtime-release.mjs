@@ -21,15 +21,11 @@ const required = name => {
 const output = required("output");
 const temporaryRoot = resolve(dirname(output), ".tmp");
 const staging = resolve(temporaryRoot, `${basename(output)}.staging-${randomUUID()}`);
-const selectedGames = Object.keys(PRODUCT_GAMES).filter(game =>
-  PRODUCT_GAMES[game].buildOptIn !== true || args[`${game}-build`] != null);
-const builds = Object.fromEntries(selectedGames.flatMap(game => {
-  const product = PRODUCT_GAMES[game];
-  return [
+const selectedGames = Object.keys(PRODUCT_GAMES).filter(game => !PRODUCT_GAMES[game].buildOptIn || args[`${game}-build`] !== undefined);
+const builds = Object.fromEntries(selectedGames.flatMap(game => [
   [game, required(`${game}-build`)],
-  ...(product.multiplayerRuntime ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
-  ];
-}));
+  ...(PRODUCT_GAMES[game].multiplayerRuntime ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
+]));
 
 async function identity(path) {
   const bytes = await readFile(path);

@@ -29,10 +29,19 @@ assert.equal(result.error, undefined, `cannot start configured Python interprete
 assert.equal(result.status, 0, result.stderr || result.stdout);
 const report = JSON.parse(result.stdout);
 assert.ok(Array.isArray(report.games));
-assert.deepEqual([...report.games].sort(), Object.keys(PRODUCT_GAMES).sort(),
-  "Host artwork format-adapter registry must cover every formal Product Catalog game");
-for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+const registeredGames = Object.keys(PRODUCT_GAMES);
+assert.equal(new Set(report.games).size, report.games.length,
+  "Host artwork format-adapter registry must not report duplicate games");
+assert.deepEqual([...report.games].sort(), [...registeredGames].sort(),
+  "Host artwork format-adapter registry must cover every registered Product Catalog game, including opt-in games");
+assert.ok(report.games.includes("th13"),
+  "Opt-in TH13 artwork adapter must remain registered even though TH13 is excluded from default builds");
+for (const game of registeredGames) {
+  const product = PRODUCT_GAMES[game];
   assert.ok(Array.isArray(report.files?.[game]), `${game}: artwork adapter did not report its outputs`);
+  assert.ok(report.files[game].length > 0, `${game}: artwork adapter must report at least one output`);
+  assert.ok(report.files[game].every(file => typeof file === "string" && file.length > 0),
+    `${game}: artwork adapter outputs must be non-empty file names`);
   if (product.cardArtwork) {
     assert.ok(report.files[game].includes(product.cardArtwork),
       `${game}: artwork adapter outputs must include Product Catalog cardArtwork ${product.cardArtwork}`);

@@ -1,6 +1,7 @@
 import {normalizeSiteManifestArguments, readCompatibleSiteManifest, writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
 import {reactAppShellMatchesSite} from '../lib/react-app-shell-deployment.mjs';
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
+import {prepareBetaRuntimePublication} from '../lib/beta-runtime-publication.mjs';
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -54,10 +55,13 @@ const required = name => {
 };
 const output = required("output");
 const siteUrl = normalizeSiteUrl(args["site-url"]);
+const betaMode = args["beta-mode"] === "1";
+if (args["beta-mode"] !== undefined && !["0", "1"].includes(args["beta-mode"])) throw Error("--beta-mode must be 0 or 1");
+if (betaMode && (!siteUrl || !new URL(siteUrl).pathname.endsWith("/beta/"))) throw Error("Beta programs require an explicit /beta/ URL");
 // React remains an explicit artifact selection. A build's isolated worker
 // permission is never widened to another public origin or mount by packaging.
 if (REACT_FRONTEND_ARTIFACT) {
-  const selectedSite = siteUrl ? new URL(siteUrl) : null;
+  const selectedSite = siteUrl ? new URL(betaMode ? "../" : "./", siteUrl) : null;
   if (selectedSite && selectedSite.pathname !== REACT_FRONTEND_ARTIFACT.mountPath) {
     throw new Error("site URL does not match the React frontend artifact mount");
   }
@@ -90,6 +94,8 @@ const hostedResources = serverResourceMode === RESOURCE_MODE_HOSTED;
 const externalResources = serverResourceMode === RESOURCE_MODE_EXTERNAL;
 if (args["test-build"] !== undefined && !["0", "1"].includes(args["test-build"])) throw new Error("--test-build must be 0 or 1");
 const testBuild = args["test-build"] === "1";
+if (betaMode && (!testBuild || !externalResources)) throw Error("Beta programs require --test-build=1 and external game resources");
+if(betaMode&&!configuredFeatures?.netplayRelay)throw Error('Beta publication requires its own Relay configured with EAGLER_RELEASE_CHANNEL=beta');
 const buildProfile = args.profile;
 const buildAuthority = classifyBuildProfile(buildProfile);
 if (!buildAuthority || buildProfile === "web-development") throw new Error("packaging requires an explicit web-validation-* or web-release-* --profile=NAME");
@@ -408,21 +414,21 @@ async function addLanguageDescriptorEntries(game, entry, packageFiles, component
 async function copyFrontend() {
   const frontend = staging;
   await mkdir(frontend, { recursive: true });
-  for (const name of FRONTEND_PACKAGE_FILES) {
+  for (const name of betaMode ? ["runtime-program-sw.js"] : FRONTEND_PACKAGE_FILES) {
     const target = resolve(frontend, name);
     await mkdir(resolve(target, ".."), { recursive: true });
     await cp(resolveFrontendPackageSource(name), target);
   }
-  for (const asset of PRIVATE_FRONTEND_ASSETS) {
+  for (const asset of betaMode ? [] : PRIVATE_FRONTEND_ASSETS) {
     const source = privateFrontendAssetSource(asset.target);
     if (!source || !existsSync(source)) continue;
     const target = resolve(frontend, asset.target);
     await mkdir(resolve(target, ".."), { recursive: true });
     await cp(source, target);
   }
-  await writeSiteMetadata(frontend, siteUrl);
+  if (!betaMode) await writeSiteMetadata(frontend, siteUrl);
   const copiedHostAssets = [];
-  const artworkNames = hostArtworkFiles(gameIds);
+  const artworkNames = betaMode ? gameIds.flatMap(game => PRODUCT_GAMES[game].cardArtwork ?? []) : hostArtworkFiles(gameIds);
   const requiredArtwork = publicationBuild ? new Set(artworkNames) : new Set();
   if (artworkDir) {
     for (const name of artworkNames) {
@@ -600,6 +606,7 @@ manifest.profile = buildProfile;
 manifest.shared = {
   resourceMode: serverResourceMode,
   testBuild,
+  ...(betaMode?{saveChannel:'beta'}:{}),
   ...(serverResourceMode === RESOURCE_MODE_HOSTED ? {
     vanillaFont: `shared/msgothic.ttc?v=${await versionFiles(dirname(vanillaFont), [basename(vanillaFont)])}`,
     unicodeFont: `shared/unifont.otf?v=${await versionFiles(dirname(font), [basename(font)])}`,
@@ -635,7 +642,8 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     await mkdir(dirname(resolve(appRuntimeRoot, name)), { recursive: true });
     await cp(source, resolve(appRuntimeRoot, name));
   }
-  await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: declared }, null, 2));
+  const publishedFiles = betaMode ? await prepareBetaRuntimePublication(appRuntimeRoot, `${stem}.html`, declared) : declared;
+  await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: publishedFiles }, null, 2));
   entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
   if (product.multiplayerRuntime) {
     const multiplayerBuild = builds[`${game}Multiplayer`];
@@ -650,7 +658,8 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
       await mkdir(dirname(resolve(multiplayerRoot, name)), { recursive: true });
       await cp(source, resolve(multiplayerRoot, name));
     }
-    await writeFile(resolve(multiplayerRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: multiplayerDeclared }, null, 2));
+    const publishedMultiplayerFiles = betaMode ? await prepareBetaRuntimePublication(multiplayerRoot, `${stem}.html`, multiplayerDeclared) : multiplayerDeclared;
+    await writeFile(resolve(multiplayerRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: publishedMultiplayerFiles }, null, 2));
     entry.multiplayerRuntime = `runtime/${game}/multiplayer/${stem}.html?hosted=1&v=${await versionFiles(multiplayerRoot, multiplayerNames)}`;
   }
   entry.features = publishedHostRuntimeFeatures(game, requestedFeatures, runtimeCapabilities);
@@ -758,6 +767,7 @@ for (const game of preloadGames) {
   for (const extension of ["html", "js", "wasm"]) {
     await cp(resolve(builds[game], `${game}.${extension}`), resolve(appRuntimeRoot, `${game}.${extension}`));
   }
+  if (betaMode) await prepareBetaRuntimePublication(appRuntimeRoot, `${game}.html`);
   const runtimeVersion = await versionFiles(appRuntimeRoot, appRuntimeFiles);
   entry.runtime = `runtime/${game}/${game}.html?hosted=1&v=${runtimeVersion}`;
   let multiplayerRuntimeVersion = null;
@@ -769,6 +779,7 @@ for (const game of preloadGames) {
     for (const extension of ["html", "js", "wasm"]) {
       await cp(resolve(multiplayerBuild, `${game}.${extension}`), resolve(multiplayerRoot, `${game}.${extension}`));
     }
+    if (betaMode) await prepareBetaRuntimePublication(multiplayerRoot, `${game}.html`);
     multiplayerRuntimeVersion = await versionFiles(multiplayerRoot, appRuntimeFiles);
     entry.multiplayerRuntime = `runtime/${game}/multiplayer/${game}.html?hosted=1&v=${multiplayerRuntimeVersion}`;
   }
@@ -932,7 +943,7 @@ validateSiteManifest(manifest);
 await writeFile(resolve(staging, SITE_MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeLegacySiteManifestAlias(staging, manifest);
 await writeFile(resolve(staging, RELEASE_CATALOG_FILE), `${JSON.stringify(releaseCatalog, null, 2)}\n`);
-const appShellBuild = REACT_FRONTEND_ARTIFACT && !REACT_FRONTEND_ARTIFACT.appShell ? null : await buildAppShell({
+const appShellBuild = betaMode || !REACT_FRONTEND_ARTIFACT.appShell ? null : await buildAppShell({
   quiet: true,
   globDirectory: staging,
   swDest: resolve(staging, "app-shell-sw.js"),
@@ -944,7 +955,7 @@ const appShellBuild = REACT_FRONTEND_ARTIFACT && !REACT_FRONTEND_ARTIFACT.appShe
     workerContractSource: await readFile(await resolveRuntimeGenerationWorkerSource(), "utf8"),
   } : {}),
 });
-if (!appShellBuild) await writeAppShellRetirementWorker(resolve(staging, "app-shell-sw.js"));
+if (!appShellBuild && !betaMode) await writeAppShellRetirementWorker(resolve(staging, "app-shell-sw.js"));
 
 const inventory = [];
 for (const path of (await walk(staging)).sort()) {
@@ -965,13 +976,13 @@ const deployment = {
   generatedAt: new Date().toISOString(),
   resourceMode: serverResourceMode,
   appShell: appShellBuild?.contract ?? null,
-  ...(REACT_FRONTEND_ARTIFACT ? { frontend: {
+  ...(betaMode ? {betaPrograms: true} : { frontend: {
     kind: "react",
     mountPath: REACT_FRONTEND_ARTIFACT.mountPath,
     // Validation inputs are covered by Release Manifest's deployment hash,
     // rather than served as public .vite build metadata.
     validationMetadata: REACT_FRONTEND_ARTIFACT.metadata,
-  } } : {}),
+  } }),
   music: serverResourceMode === RESOURCE_MODE_HOSTED ? [...modes].sort() : [],
   files: inventory,
 };
@@ -1004,7 +1015,7 @@ await writeReleaseManifest(staging, {
   sources,
   parameters: { authority: buildAuthority, resourceMode: serverResourceMode, music: deployment.music,
     runtimeBuildProvenance: runtimeRelease ? "verified-runtime-release" : "not-verified-by-packager",
-    ...(REACT_FRONTEND_ARTIFACT ? { frontend: { kind: "react", mountPath: REACT_FRONTEND_ARTIFACT.mountPath } } : {}),
+    ...(betaMode ? {betaPrograms: true} : {frontend: {kind: "react", mountPath: REACT_FRONTEND_ARTIFACT.mountPath}}),
     ...(externalRecoveryProvenance ? { externalRecovery: externalRecoveryProvenance } : {}) },
 });
 await rm(output, { recursive: true, force: true });

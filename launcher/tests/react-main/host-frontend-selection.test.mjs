@@ -86,7 +86,7 @@ test('isolated App Shell requires explicit exact origin and mount before prepara
 test('cache reuse binds frontend kind, mount, artifact bytes, metadata, and deployment', async () => {
   await fixture(async ({root, put, environment}) => {
     const selected = await resolveHostFrontend({projectRoot: root, environment});
-    const games = [...DEFAULT_BUILD_GAMES];
+    const games = DEFAULT_BUILD_GAMES;
     const site = resolve(root, 'site');
     const layout = {site, music: ['ogg'], runtimeRelease: resolve(root, 'runtime'), shared: resolve(root, 'shared'), config: resolve(root, 'host-config.json'), games: Object.fromEntries(games.map(game => [game, resolve(root, game)]))};
     await put('scripts/verify-server-build.mjs', 'process.exit(0);');
@@ -155,7 +155,7 @@ test('fresh React operator CLIs set up dependencies before full artifact parsing
   const root = await mkdtemp(resolve(tmpdir(), 'host-bootstrap-order-'));
   try {
     const project = await copyHostCode(root);
-    await writeFile(resolve(root, 'lib/host-workspace.mjs'), 'export async function inspectHostWorkspace() { return {}; }');
+    await writeFile(resolve(root, 'lib/host-workspace.mjs'), `export const HOST_WORKSPACE_GAMES = ${JSON.stringify(DEFAULT_BUILD_GAMES)}; export async function inspectHostWorkspace() { return {}; }`);
     await writeFile(resolve(root, 'host/lib/node-environment.mjs'), `
       import {existsSync} from 'node:fs';
       import {symlink} from 'node:fs/promises';
@@ -187,7 +187,7 @@ test('cache uses synthetic private override bytes without modifying artifact or 
     await symlink(resolve(project, 'node_modules'), resolve(root, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
     const isolated = await import(pathToFileURL(resolve(root, 'host/lib/site-builder.mjs')).href);
     const selected = await isolated.resolveHostFrontend({projectRoot: root, environment});
-    const games = [...DEFAULT_BUILD_GAMES], site = resolve(root, 'site');
+    const games = DEFAULT_BUILD_GAMES, site = resolve(root, 'site');
     const layout = {site, music: ['ogg'], runtimeRelease: resolve(root, 'runtime'), shared: resolve(root, 'shared'), config: resolve(root, 'config.json'), games: Object.fromEntries(games.map(game => [game, resolve(root, game)]))};
     await put('scripts/verify-server-build.mjs', 'process.exit(0);');
     for (const path of selected.artifact.packageFiles) {

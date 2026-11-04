@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
-import { normalizeProductSelection } from "./product-selection.mjs";
+import { DEFAULT_BUILD_GAMES, normalizeProductSelection } from "./product-selection.mjs";
 
 export const RELEASE_INPUT_SCHEMA = "eagler-touhou/release-input/1";
 export const RELEASE_PATH_INPUT_KEYS = Object.freeze([
@@ -19,9 +19,11 @@ const FORBIDDEN_FORMAL_BUILD_INPUTS = Object.freeze([
   "Ninja",
 ]);
 
-// Existing hidden titles retain their publication contract; explicitly
-// opt-in adapters are assembled only by a selected validation build.
-export const FORMAL_RELEASE_GAMES = Object.freeze(normalizeProductSelection());
+// Test visibility is a Launcher discovery rule. The bytes must still be in the
+// same publication so ?test=1 can launch a hidden test title on that site.
+// Explicitly opt-in adapters (e.g. th13) are assembled only by a selected
+// validation build and stay out of the default publication set.
+export const FORMAL_RELEASE_GAMES = DEFAULT_BUILD_GAMES;
 
 const legacyGameDirectoryKey = game => `Th${PRODUCT_GAMES[game].number}Directory`;
 const legacyLanguagePackKey = game => `Th${PRODUCT_GAMES[game].number}LanguagePacks`;

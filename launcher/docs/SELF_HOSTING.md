@@ -63,4 +63,14 @@ npm run verify:deployed -- https://example.com/
 
 源码检出的 `npm run host` 和 `npm run import` 使用同一套 Launcher Host 实现。维护者通过[发布流程](RELEASE.md)生成便携自托管包。
 
+## 测试版功能
+
+右上角菜单最下方的“开发人员选项”包含“显示调试信息”和“测试版功能”。确认开启或关闭后，启动器在当前页面刷新并加载对应的作品清单。切换时会清理另一版本的房间邀请。测试版使用独立的存档、录像、房间恢复信息和联机大厅。跨源迁移包含两个通道的存档和录像。
+
+使用正常挂载路径的启动器构建。组装脚本 `scripts/package-server.mjs` 接受 `--beta-mode=1 --test-build=1 --site-url=https://example.com/beta/`，将测试版清单、作品封面和 Runtime 产物发布到启动器旁的 `beta/` 资源目录。该构建使用 `resourceMode: "external"`，其余参数沿用[发布流程](RELEASE.md)。`--feature-config` 中的 `netplayRelay` 指向设置了 `EAGLER_RELEASE_CHANNEL=beta` 的[独立测试版 Relay](../../services/relay/README.md)。打包器为 Runtime 加入启动前的存储隔离脚本，再生成文件哈希和不可变版本。
+
+发布《神灵庙》时，给 `scripts/package-runtime-release.mjs` 传入 `--th13-build=PATH`，并在组装测试版时将 `th13` 加入 `--games`。
+
+两个版本共用 Launcher 页面和 Package Store。将 `beta/games/` 和 `beta/shared/` 的资源请求接到现有资源服务，供测试版独有作品和包版本使用。相同版本的描述文件以及相同哈希的音乐和语言包沿用主站资源 URL。测试版程序 Worker 的作用域为 `beta/runtime/`。
+
 自托管包也提供 `bun.lock`。使用 Bun 时运行 `bun install --frozen-lockfile --ignore-scripts`，然后用 `bun host/build.mjs --build-only` 启动相同 Host。两种环境分别核对依赖记录；预编译包无需安装前端编译器。

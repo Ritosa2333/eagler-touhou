@@ -1,14 +1,13 @@
 import { existsSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { resolve } from "node:path";
-import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
+import { DEFAULT_BUILD_GAMES } from "./product-selection.mjs";
 import { PRODUCT_CONTENT } from "./content-definition.mjs";
 import { hostConfigWarnings, readHostConfig } from "./host-config.mjs";
 import { verifyRuntimeRelease } from "./runtime-release.mjs";
 
 export const HOST_WORKSPACE_SCHEMA = "eagler-touhou/host-workspace/1";
-export const HOST_WORKSPACE_GAMES = Object.freeze(Object.keys(PRODUCT_GAMES).filter(game =>
-  PRODUCT_GAMES[game].buildOptIn !== true));
+export const HOST_WORKSPACE_GAMES = DEFAULT_BUILD_GAMES;
 
 function normalizeMusic(music) {
   const values = Array.isArray(music) ? music : String(music || "midi,ogg").split(",");

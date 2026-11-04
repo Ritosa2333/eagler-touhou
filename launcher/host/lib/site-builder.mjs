@@ -8,7 +8,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../../lib/react-frontend-artifact.mjs";
 import { privateFrontendAssetSource } from "../../lib/private-frontend-assets.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../../lib/site-metadata.mjs";
-import { inspectHostWorkspace } from "../../lib/host-workspace.mjs";
+import { HOST_WORKSPACE_GAMES as GAMES, inspectHostWorkspace } from "../../lib/host-workspace.mjs";
 import { PRODUCT_CONTENT } from "../../lib/content-definition.mjs";
 import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../../lib/workspace-layout.mjs";
@@ -16,7 +16,6 @@ import { ensurePythonEnvironment } from "./python-environment.mjs";
 import { ensureThtk } from "./thtk.mjs";
 import { run } from "./process.mjs";
 
-const GAMES = Object.freeze(Object.keys(PRODUCT_CONTENT).filter(game => PRODUCT_GAMES[game].buildOptIn !== true));
 const DEFAULT_LANGUAGES = Object.freeze(["ja", "lang_zh-hans", "lang_en"]);
 
 // Full artifact preflight runs after operator dependency setup, before content preparation.

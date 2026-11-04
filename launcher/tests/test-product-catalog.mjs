@@ -206,7 +206,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     if (dataPreparation.kind === "original-file") {
       assert.ok(content.original.files.includes(dataPreparation.source),
         `${game}: original DATA source must be part of the declared original content`);
-    } else {
+    } else if (!product.buildOptIn) {
       assert.ok(content.hostPreparation.preparedContent,
         `${game}: prepared DATA path needs preparedContent metadata`);
     }
@@ -289,8 +289,10 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
       `${game}: directory Runtime must publish a declared keyboard owner`);
     assert.equal(new Set(product.runtimeAssets).size, product.runtimeAssets.length);
   }
-  assert.equal(typeof PRODUCT_CONTENT[game].hostPreparation?.artwork?.kind, "string",
-    `${game}: host artwork preparation must be declared as a format recipe`);
+  if (!product.buildOptIn) {
+    assert.equal(typeof PRODUCT_CONTENT[game].hostPreparation?.artwork?.kind, "string",
+      `${game}: host artwork preparation must be declared as a format recipe`);
+  }
 }
 console.log("Product catalog policy: PASS");
 

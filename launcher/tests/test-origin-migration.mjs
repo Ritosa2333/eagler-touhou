@@ -48,10 +48,13 @@ assert.ok(Array.isArray(databaseOwners), "origin migration IndexedDB owner list 
 for (const product of Object.values(PRODUCT_GAMES)) {
   assert.ok(databaseOwners.includes(product.storage.saveRoot),
     `origin migration does not cover registered save root: ${product.storage.saveRoot}`);
+  assert.ok(databaseOwners.includes(`beta:${product.storage.saveRoot}`),
+    `origin migration does not cover beta save root: ${product.storage.saveRoot}`);
 }
 for (const product of PRODUCT_IDS) {
   const {database} = replayStorageLocation(product);
   assert.ok(databaseOwners.includes(database), `origin migration does not cover ${product}: ${database}`);
+  assert.ok(databaseOwners.includes(`beta:${database}`), `origin migration does not cover beta ${product}: ${database}`);
 }
 for (const database of ["eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]) {
   assert.ok(databaseOwners.includes(database), `origin migration lost persistent database owner: ${database}`);
@@ -61,13 +64,15 @@ assert.deepEqual(cacheOwners, ["eagler-touhou-game-data-v1", "eagler-touhou-lang
   "origin migration Cache Storage owners changed without an explicit data-ownership decision");
 assert.ok(!cacheOwners.some(name => name.startsWith("eagler-touhou-app-shell-")),
   "deployment/App Shell caches must never migrate as player data");
-assert.match(html, /const LEGACY_LOCAL_STORAGE_KEYS = new Set\(\["eagler\.mpSpectatorRail\.mobilePosition\.v1"\]\);/,
-  "the one published pre-canonical spectator-rail key must remain explicitly migratable");
-assert.match(html, /!key\.startsWith\("eagler-touhou-origin-migration-"\)[\s\S]*key\.startsWith\("eagler-"\)[\s\S]*LEGACY_LOCAL_STORAGE_KEYS\.has\(key\)/,
+assert.match(html, /const EXPLICIT_LOCAL_STORAGE_KEYS = new Set\(\["eagler\.mpSpectatorRail\.mobilePosition\.v1", "th13\.save", "beta:th13\.save"\]\);/,
+  "legacy spectator-rail and both TH13 save keys must be explicitly migratable");
+assert.match(html, /!key\.startsWith\("eagler-touhou-origin-migration-"\)[\s\S]*key\.startsWith\("eagler-"\)[\s\S]*EXPLICIT_LOCAL_STORAGE_KEYS\.has\(key\)/,
   "migration authorization state must never migrate as player data");
 
-assert.match(html, /key === "th13\.save"/,
-  "TH13's current localStorage save owner must migrate alongside registered databases");
+assert.match(html, /const ownedLocalStorageKey = key =>[\s\S]*EXPLICIT_LOCAL_STORAGE_KEYS\.has\(key\)/,
+  "TH13 stable and beta save keys must be owned through the explicit key set");
+assert.doesNotMatch(html, /key === "th13\.save"/,
+  "TH13 save ownership must stay in the explicit key set that also covers beta:th13.save");
 assert.match(html, /target\.protocol = "https:";/);
 assert.match(html, /source\.protocol = "http:";/);
 assert.match(html, /authorization\.token !== handoff[\s\S]*authorization\.sourceOrigin !== source\.origin[\s\S]*authorization\.targetOrigin !== location\.origin[\s\S]*authorization\.expires < Date\.now\(\)/,
