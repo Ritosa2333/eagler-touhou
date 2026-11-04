@@ -201,6 +201,7 @@
           "cache": {}
         }
       }
-    }
+    },
+    "th19": {"builder":"prebuilt","workspaceRepository":"th19","sourceBuild":{"kind":"node","build":["scripts/build-eagler.mjs"],"commonMarker":"include/eagler/input/BrowserGamepad.hpp"},"variants":{"normal":{"features":{"thcrap":false,"thprac":false},"cache":{}},"multiplayer":{"sourceBuild":{"build":["scripts/build-eagler.mjs","--multiplayer"]},"features":{"thcrap":false,"thprac":false},"cache":{}}}}
   }
 }

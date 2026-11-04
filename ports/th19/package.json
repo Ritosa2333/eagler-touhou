@@ -1,0 +1,22 @@
+{
+  "name": "th19-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TH19 C++ / SDL3 Web Runtime and Eagler Touhou adapter",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node serve.mjs",
+    "build": "node scripts/build-eagler.mjs",
+    "check": "node scripts/check-project.mjs",
+    "build:multiplayer": "node scripts/build-eagler.mjs --multiplayer",
+    "package:runtime": "node portable/package-eagler.mjs",
+    "package:multiplayer": "node portable/package-eagler.mjs --multiplayer",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser-smoke.mjs",
+    "test:launcher-gameplay": "node tests/launcher-gameplay-smoke.mjs",
+    "test:launcher-room": "node tests/launcher-room-smoke.mjs"
+  }
+}
