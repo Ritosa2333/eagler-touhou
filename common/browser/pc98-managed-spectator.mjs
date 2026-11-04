@@ -4,6 +4,7 @@ import {validateHeader,validateRow,stable} from './replay/tape.js';
 import {createReplayAudio} from './replay/audio.js';
 import {validatePointIndex} from './replay/network.js';
 import {readLocalPoint} from './replay/local-points.js';
+import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
 
 export function createManagedSpectator(game,emit){
   let viewer,canvas,audio;
@@ -15,6 +16,7 @@ export function createManagedSpectator(game,emit){
       audio=createReplayAudio(game,error=>emit({event:'error',message:error.message}));
       if(music!=='none'){const active=audio;void active.enable().then(()=>{if(audio===active)active.mode(false);});}
       viewer=createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,
+        channelFactory:()=>createPc98SpectatorChannel(options,error=>{viewer?.stop();emit({event:'error',message:error.message});}),
         onFrame:bitmap=>context.drawImage(bitmap,0,0),onEvent:event=>audio.event(event),onError:error=>emit({event:'error',message:error.message})});
     },
     health(){return {frames:viewer?.frames??0,gameFrame:viewer?.frame??0,running:!!viewer,audio:{state:'running'}};},

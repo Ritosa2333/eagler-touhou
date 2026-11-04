@@ -1,4 +1,4 @@
-const LIMIT=16384;
+const LIMIT=16383; // The relay's 16 KiB limit also includes its one-byte envelope.
 const encoder=new TextEncoder();
 async function compress(bytes){return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());}
 function packet(kind,players,first,count,body){
