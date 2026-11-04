@@ -19,3 +19,13 @@ for(const game of ['th02','th04']) test(`${game} preserves touch input while the
   motion=27;assert.equal(capture(),false);assert.equal(motion,27);assert.equal(consumed,1);
   q.frame++;assert.equal(capture(),true);assert.equal(sent[1].buttons,27);assert.equal(consumed,2);
 });
+
+for(const game of ['th02','th04']) test(`${game} corrects a late remote input without replacing local history`,async()=>{
+  const {RollbackQueue}=await import(new URL(`../../ports/${game}/web/netplay/rollback-queue.js`,import.meta.url));
+  const q=new RollbackQueue(0,2);q.frame=2;q.arm(2);
+  q.capture(32);q.commit(q.peek());
+  q.capture(4);q.commit(q.peek());
+  q.receive(2,8,1);assert.equal(q.refreshCorrection(),2);
+  q.rewind(2);assert.deepEqual(q.peek(),[32,8]);
+  q.commit(q.peek());assert.equal(q.inputs[0].get(3),4);
+});
