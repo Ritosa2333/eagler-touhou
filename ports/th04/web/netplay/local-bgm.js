@@ -54,7 +54,7 @@ export class LocalBgm {
     return pending;
   }
   prefetch(id){
-    if(!this.closed&&this.manifest.tracks[id]&&(!this.pmd||this.track(id)!==this.manifest.tracks[id]))this.download(id).catch(()=>{});
+    if(!this.closed&&this.manifest.tracks[id]&&(!this.pmd||!Object.values(this.manifest.tracks).includes(this.track(id))))this.download(id).catch(()=>{});
   }
   decode(id,track=this.track(id)){
     const cacheKey=track?.url;
@@ -91,7 +91,7 @@ export class LocalBgm {
     const item={id,generation,source:null,gain:null,volume:1,fade:null};
     this.requested=item;this.status=`本地音乐：正在加载 ${id}（不影响游戏）`;
     const track=this.track(id);
-    if(this.pmd&&track===this.manifest.tracks[id]){
+    if(this.pmd&&Object.values(this.manifest.tracks).includes(track)){
       const selected=Object.keys(this.manifest.tracks).find(key=>this.manifest.tracks[key]===track);
       const originalHash=Number(Object.keys(this.manifest.headers).find(key=>this.manifest.headers[key]===selected));
       this.pmd.engine.createSource(this.pmd.tracks.get(originalHash).bytes).then(source=>{
