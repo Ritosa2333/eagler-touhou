@@ -1671,7 +1671,6 @@ export declare function createLocalProductManifest(): {
                 inputTiming: Readonly<{
                     rollbackLimit: 12;
                     sendPredictionLimit: 12;
-                    rollbackDefault: false;
                     measuredStartup: true;
                     manualDelayLimit: 9;
                 }>;
