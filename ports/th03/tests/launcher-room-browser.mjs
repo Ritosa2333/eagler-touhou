@@ -71,6 +71,12 @@ try{
     await wait(()=>frames[0].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard down',5000);
     await host.keyboard.up('ArrowRight');
     await wait(()=>frames[0].evaluate(()=>!__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard release',5000);
+    for(const page of pages){
+      await page.bringToFront();await page.$eval('#gameFrame',frame=>frame.focus());
+      await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,200));await page.keyboard.up('KeyZ');
+    }
+    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>window.th03SyncState?.phase===1)))).every(Boolean),'battle begins',30000);
+    await host.bringToFront();await host.$eval('#gameFrame',frame=>frame.focus());
     await host.keyboard.press('Escape');
     await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>!document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized surrender menu',15000);
     for(const frame of frames){
