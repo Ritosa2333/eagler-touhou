@@ -1,16 +1,17 @@
 import {digest,stable} from './tape.js';
 export const NATIVE_LAYOUT='th01-native-state/1';
-// This exact ordinary core was audited with wasm-dis: no imports, one mutable
+// These exact ordinary cores were disassembled: no imports, one mutable
 // i32 stack pointer, fixed 64-page memory and a fixed 3-entry function table.
 // The element segment initializes that table; there are no table write/grow
 // instructions. The isolated replica exports the existing global; code/data
 // sections and the player's original module remain byte-for-byte unchanged.
-export const AUDITED_CORE='5b424c9e372635ffe9711900c2610a5fb5fece5a1e91366171db545067d1bd17';
+export const AUDITED_CORE='3dd9b4e8a2bb13d5396c1a44625bce612a26d2ddfe00aa8c927067731e0ff0bf';
+const AUDITED_CORES=new Set([AUDITED_CORE,'5b424c9e372635ffe9711900c2610a5fb5fece5a1e91366171db545067d1bd17']);
 const HEAP=4194304,MAX_JSON=16384;
 const leb=n=>{const bytes=[];do{let b=n&127;n>>>=7;bytes.push(b|(n?128:0));}while(n);return bytes;};
 function uint(bytes,cursor){let value=0,shift=0;for(let n=0;n<5;n++){const b=bytes[cursor.at++];if(b===undefined)throw Error('原生模块截断');value|=(b&127)<<shift;if(!(b&128))return value>>>0;shift+=7;}throw Error('原生模块长度无效');}
 export async function replicaBinary(bytes){
-  if(await digest(bytes)!==AUDITED_CORE)throw Error('原生核心尚未通过完整状态布局审计');
+  if(!AUDITED_CORES.has(await digest(bytes)))throw Error('原生核心尚未通过完整状态布局审计');
   const parts=[bytes.subarray(0,8)],cursor={at:8};let exported=false;
   while(cursor.at<bytes.length){
     const begin=cursor.at,id=bytes[cursor.at++],size=uint(bytes,cursor),start=cursor.at,end=start+size;if(end>bytes.length)throw Error('原生模块区段越界');
