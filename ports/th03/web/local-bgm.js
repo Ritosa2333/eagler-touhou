@@ -1,6 +1,7 @@
 import {bgmVersion,onBgmVersion,resolveBgmTrack,loadMidiTracks} from './bgm-version.js';
 import {assetBytes,freshJSON} from './preload-cache.js';
 export async function preloadOpeningMusic(){
+  if(bgmVersion()!=='new')return;
   const [manifest,alternate]=await Promise.all([freshJSON('bgm/manifest.json'),freshJSON('bgm/akyu/manifest.json')]);
   await Promise.all(['select-m26','select-m86'].map(async id=>{
     const track=resolveBgmTrack(id,manifest.tracks,alternate.tracks);
@@ -61,7 +62,7 @@ export class LocalBgm {
     return pending;
   }
   prefetch(id){
-    if(!this.closed&&this.manifest.tracks[id])this.download(id).catch(()=>{});
+    if(!this.closed&&this.manifest.tracks[id]&&(!this.pmd||this.track(id)!==this.manifest.tracks[id]))this.download(id).catch(()=>{});
   }
   decode(id,track=this.track(id)){
     const cacheKey=track?.url;
@@ -93,7 +94,7 @@ export class LocalBgm {
     // Commands arriving while decoding belong to this generation only.
     const item={id,generation,source:null,gain:null,volume:1,fade:null};
     this.requested=item;this.status=`本地音乐：正在加载 ${id}（不影响游戏）`;
-    if(this.pmd&&bgmVersion()!=='new'){
+    if(this.pmd&&this.track(id)===this.manifest.tracks[id]){
       const original=this.pmd.tracks.get(hash);
       this.pmd.engine.createSource(original.bytes).then(source=>{
         if(this.closed||generation!==this.generation){source.stop(this.context.currentTime);return;}

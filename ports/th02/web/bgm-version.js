@@ -3,7 +3,7 @@ const storageKey='th02.bgmVersion';
 const game='th02';
 export const bgmVersions=[['old','原版 FM（自动）'],
   ...(['th04','th05'].includes(game)?[['fm26','FM 26 音源'],['fm86','FM 86 音源']]:[]),
-  ...(game==='th02'?[['midi','MIDI（GM 音源）']]:[]),['new','幺乐团专辑版']];
+  ['new','幺乐团专辑版']];
 const normalize=next=>bgmVersions.some(([id])=>id===next)?next:'old';
 let value='old';
 try{value=normalize(localStorage.getItem(storageKey));}catch{}
