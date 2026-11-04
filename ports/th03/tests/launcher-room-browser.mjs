@@ -8,12 +8,13 @@ const base=process.env.PC98_LAUNCHER_URL||'http://127.0.0.1:18330/';
 const out=resolve(import.meta.dirname,'../.cache/launcher-room');await mkdir(out,{recursive:true});
 const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
 const pages=[],errors=[],events=[[],[]];
+const sharedContext=process.env.PC98_SAME_BROWSER==='1'?await browser.createBrowserContext():null;
 async function navigate(page,url){
   await page.goto(url);await page.waitForFunction(()=>/lobby\.html/.test(location.pathname)?!document.documentElement.hasAttribute('data-lobby-boot'):window.__eaglerBoot?.done===true,{timeout:45000});
   await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
 }
 async function open(seat,url){
-  const context=await browser.createBrowserContext(),page=await context.newPage();pages.push(page);await page.setViewport({width:1400,height:900});
+  const context=sharedContext??await browser.createBrowserContext(),page=await context.newPage();pages.push(page);await page.setViewport({width:1400,height:900});
   page.on('pageerror',e=>errors.push(e.message));
   await page.exposeFunction('recordRuntimeEvent',m=>events[seat].push(m));
   await page.evaluateOnNewDocument(()=>{addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1')window.recordRuntimeEvent(e.data);});});
