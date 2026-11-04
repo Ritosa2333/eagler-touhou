@@ -5,7 +5,7 @@ import {publishNetwork} from './network.js';
 import {LOCAL_CHUNK,pointSize,pointIndex} from './local-points.js';
 // Every public operation isolates failures from the player's execution loop.
 export function createRecorder(toolbar){
-  let tape=null,error='',channel=null,roomChannel=null,builder=null,pointError='',points=[],network=null,closed=false,localSolo=false;
+  let tape=null,error='',channel=null,roomChannel=null,publisher=null,builder=null,pointError='',points=[],network=null,closed=false,localSolo=false;
   let id=randomId();
   const watch=document.createElement('a'),info=document.createElement('span');
   watch.textContent='同浏览器观战';watch.target='_blank';watch.rel='noopener';watch.hidden=true;
@@ -21,8 +21,8 @@ export function createRecorder(toolbar){
   return {
     async boot({settings,players,hostSlot,opening,tickMs=1000/60,adapter='confirmed-worker/1'}){
       try{
-        network?.stop();builder?.stop();channel?.close();roomChannel?.close();
-        network=builder=channel=roomChannel=null;points=[];pointError=error='';closed=false;
+        network?.stop();publisher?.stop();builder?.stop();channel?.close();roomChannel?.close();
+        network=publisher=builder=channel=roomChannel=null;points=[];pointError=error='';closed=false;
         id=randomId();watch.href=new URL('../replay.html?watch='+id,import.meta.url).href;
         remote.hidden=true;upload.textContent='';
         const identity=await fingerprint(SOURCE_PATHS);if(closed)return;
@@ -34,8 +34,10 @@ export function createRecorder(toolbar){
         if(!localSolo){
           channel=new BroadcastChannel('pc98-replay-'+id);
           const options=globalThis.__eaglerPC98Options?.(),url=options?.netplayUrl?new URL(options.netplayUrl):null;
-          if(options?.netplayPlayer===0&&url?.searchParams.get('room')&&url.searchParams.get('run'))
+          if(options?.netplayPlayer===0&&url?.searchParams.get('room')&&url.searchParams.get('run')){
             roomChannel=new BroadcastChannel('pc98-room-'+GAME+'-'+url.searchParams.get('room')+'-'+url.searchParams.get('run'));
+            publisher=globalThis.__eaglerPC98SpectatorPublisher?.(tape.header,tape,()=>globalThis['__th'+GAME+'PeerTransport']?.relay,error=>{remote.title=error.message;});
+          }
         }
         let lastReply=0;
         const receive=source=>({data})=>guard(()=>{
@@ -54,8 +56,8 @@ export function createRecorder(toolbar){
     },
     stage:(frame,row)=>guard(()=>{if(!tape)return;if(frame<tape.length){if(stable(row)!==stable(tape.row(frame)))throw Error('已确认录像在分组回滚时改变');return;}tape.stage(frame,row);}),
     rewind:frame=>guard(()=>tape?.rewind(Math.max(frame,tape.length))),
-    confirm:(prefix,dirty)=>guard(()=>{tape?.confirm(prefix,dirty);builder?.kick();network?.kick();}),
-    finish:reason=>guard(()=>{tape?.finish(reason);builder?.finish();network?.kick();}),
+    confirm:(prefix,dirty)=>guard(()=>{tape?.confirm(prefix,dirty);builder?.kick();network?.kick();publisher?.kick();}),
+    finish:reason=>guard(()=>{tape?.finish(reason);builder?.finish();network?.kick();publisher?.kick();}),
     connectNetwork(identity){guard(()=>{if(!tape||tape.header.adapter!=='confirmed-worker/1'||network||closed)return;network=publishNetwork(tape.header,()=>tape,()=>tape.end,identity,{getPoints:()=>({points,done:!builder||builder.done}),onLink:url=>{remote.href=url;remote.hidden=false;},onStatus:text=>{remote.title=text;upload.textContent=' · '+text;}});});},
     async seal(timeout=30000){
       if(!tape)return true;
@@ -74,6 +76,6 @@ export function createRecorder(toolbar){
     snapshot,
     get error(){return error;},
     get ended(){return !tape||!!tape.end;},
-    close(){closed=true;tape?.finish('观战来源关闭');channel?.close();roomChannel?.close();builder?.stop();network?.stop();}
+    close(){closed=true;tape?.finish('观战来源关闭');channel?.close();roomChannel?.close();builder?.stop();network?.stop();publisher?.stop();}
   };
 }

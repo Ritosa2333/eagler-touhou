@@ -1,3 +1,4 @@
+import {createPc98SpectatorPublisher} from './pc98-spectator-publisher.mjs';
 import {ManagedContent,installManagedWorkers} from './managed-data.mjs';
 import {managedInput} from './managed-input.mjs';
 import {openUserFiles,userPath} from './managed-storage.mjs';
@@ -12,6 +13,7 @@ const emit=payload=>parent.postMessage({protocol,game,epoch,...payload,
 const multiplayer=query.get('runtimeVariant')==='multiplayer';
 let ready=false,configured=false,launched=false,options={},music='ogg',language='ja',api,preview,store,launchSerial=0,firstFrame=false;
 const input=managedInput({game,epoch,active:()=>launched,options:()=>options});
+globalThis.__eaglerPC98SpectatorPublisher=createPc98SpectatorPublisher;
 globalThis.__eaglerPC98Input=input;globalThis.__eaglerPC98Emit=emit;globalThis.__eaglerPC98Options=()=>options;
 function live(message){
   switch(message.command){
