@@ -71,6 +71,15 @@ try{
     await wait(()=>frames[0].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard down',5000);
     await host.keyboard.up('ArrowRight');
     await wait(()=>frames[0].evaluate(()=>!__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard release',5000);
+    await host.keyboard.press('Escape');
+    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>!document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized surrender menu',15000);
+    for(const frame of frames){
+      const position=await frame.$eval('#pause-menu',node=>{const r=node.getBoundingClientRect(),p=node.parentElement.getBoundingClientRect();return {center:r.x+r.width/2,parentCenter:p.x+p.width/2};});
+      assert(Math.abs(position.center-position.parentCenter)<2,'surrender menu is centered');
+    }
+    await host.screenshot({path:resolve(out,'surrender-menu.png')});
+    await host.keyboard.press('Escape');
+    await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized pause resume',15000);
     await Promise.all(pages.map(page=>page.$eval('#gameFrame',frame=>frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th03',epoch:Number(new URL(frame.src).searchParams.get('runtimeEpoch')),command:'network-cancel'},location.origin))));
     await wait(async()=>events.every(list=>list.some(e=>e.event==='exit'&&e.status==='success')),'runtime cancellation',15000);
     await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>document.querySelector('#mpReady')?.disabled===false)))).every(Boolean),'same room prepares the next match',120000);

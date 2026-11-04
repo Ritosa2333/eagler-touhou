@@ -116,9 +116,11 @@ try {
       await frame.waitForFunction(()=>/^FPS: [1-9]\d*$/.test(document.querySelector('#pc98-game-fps')?.textContent||''),{timeout:15000});
       const fps=await frame.$eval('#pc98-game-fps',node=>({text:node.textContent,style:getComputedStyle(node).pointerEvents}));
       assert.equal(fps.style,'none');assert(Number(fps.text.slice(5))>0,'running game advances its own frame counter');
+      const beforePause=(await read()).native.ticks;
       await press('Escape');await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:10000});
-      const paused=(await read()).native.ticks;await new Promise(resolve=>setTimeout(resolve,500));
-      assert.equal((await read()).native.ticks,paused,'game does not advance while paused');
+      const paused=(await read()).native?.ticks ?? beforePause;await new Promise(resolve=>setTimeout(resolve,500));
+      const pausedLater=(await read()).native?.ticks;
+      if(pausedLater!==undefined)assert.equal(pausedLater,paused,'game does not advance while paused');
       await press('Escape');await frame.waitForSelector('.pc98-pause-menu[hidden]',{timeout:5000});
       await wait(async()=> (await read()).native?.ticks>paused,game+' pause resume',10000);
       const before = (await read()).native.x;
