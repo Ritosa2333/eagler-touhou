@@ -306,6 +306,22 @@ bool DialogueText::set_anchor_y(AnmManager& manager, float value, std::string& e
     return true;
 }
 
+bool DialogueText::set_visible(AnmManager& manager, bool visible, std::string& error) {
+    // 0x429d00/0x429f10：对话对象 +0x4c/+0x50/+0x54/+0x58 四文本 VM 与
+    // +0x60 气泡根的 VM+0x18 bit1 清/置（含直接子链），不销毁不清像素。
+    // 懒分配的空槽与已自毁句柄空转（AnmManager::pause 对亡句柄 no-op）。
+    for (u32 handle : handles_)
+        if (handle && !manager.pause(handle, !visible)) {
+            error = "dialogue text visibility failed";
+            return false;
+        }
+    if (box_ && !manager.pause(box_, !visible)) {
+        error = "dialogue bubble visibility failed";
+        return false;
+    }
+    return true;
+}
+
 void DialogueText::release(AnmManager& manager) noexcept {
     for (u32& handle : handles_) manager.retire(handle);
     handles_.fill(0);

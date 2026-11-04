@@ -112,6 +112,7 @@ TEST(hud_timer_text_is_left_top_aligned_with_digit_alpha) {
     enemy.position[1] = 128.f;
     BossFrameInput input;
     input.boss = &enemy;
+    input.boss_slot_present = true;
     input.timer_seconds = 35;
     input.timer_frames = 30;
     input.life_initial = 0;

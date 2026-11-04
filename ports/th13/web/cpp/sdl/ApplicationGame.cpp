@@ -267,6 +267,23 @@ bool ApplicationState::can_save_replay() const {
     return !replay_active && recorder.ready();
 }
 
+bool ApplicationState::result_replay_save_available() const {
+    // 0x454050 state3：DAT_004be7c8（续关数）==0 才进 0x4549d0（回放保存）；
+    // 网页侧叠加 recorder.ready()（无录像数据时保存无意义）。
+    return !replay_active && recorder.ready() && progress.continues == 0;
+}
+
+bool ApplicationState::dialogue_visible(bool visible) {
+    // 0x43e3f0:0x43e588 → 0x429d00 / 0x43e700:0x43e749 → 0x429f10：
+    // 对话对象 9 槽 VM+0x18 bit1 清/置。立绘/名牌在 RunScene 的
+    // MsgPresentation；正文四行与气泡根在宿主 DialogueText。
+    if (run && !run->set_dialogue_visible(visible))
+        return fail(run->error.empty() ? "Dialogue visibility failed" : run->error);
+    std::string error;
+    if (!dialogue_text.set_visible(animations, visible, error)) return fail(error);
+    return true;
+}
+
 bool ApplicationState::save_replay() {
     return save_replay_slot(1, "PLAYER");
 }
@@ -276,6 +293,14 @@ bool ApplicationState::save_replay_slot(i32 slot, const std::string& name) {
     std::vector<u8> bytes;
     if (!recorder.encode(bytes, name, selection_score.score))
         return fail("Replay recording unavailable");
+    // 0x4484d0 写 replay/th13_NN.rpy 后，原版 0x4525b0 重扫目录即可在标题
+    // Replay 菜单看到；网页版没有目录重扫，这里直接走既有 import_replay_bytes
+    // 入 catalog（th13_NN.rpy → 编号槽 NN-1），标题 Replay 菜单立即可选。
+    char catalog_name[32];
+    std::snprintf(catalog_name, sizeof catalog_name, "th13_%02d.rpy", slot);
+    if (!import_replay_bytes(bytes.data(), bytes.size(), catalog_name))
+        return fail(replay_import_error_.empty() ? std::string("Replay catalog import failed")
+                                                 : replay_import_error_);
 #ifdef __EMSCRIPTEN__
     if (!th13_download_recorded_replay(bytes.data(), int(bytes.size()), slot))
         return fail("Replay download failed");

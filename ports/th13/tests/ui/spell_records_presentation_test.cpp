@@ -207,10 +207,21 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
     const float position[3] = {0, 128, 0};
     CHECK(presentation.consume(state.begin(0, "synthetic", 3000, 1, 0), position, {}, 6));
     CHECK_EQ(manager.registry.count(), 26u);
+    // 0x413270:180-194：符卡背景 translation 只在开始时写一次；逐帧 sync
+    //（即使 boss 位置变化）不得改写——回归断言（用户实测“符卡名歪”）。
+    const auto* background0 = manager.registry.find(presentation.stage_background_handle());
+    CHECK(background0 != nullptr);
+    const Vec3 anchor0 = background0->visual.translation;
     for (i32 n = 0; n < 320; ++n) {
         CHECK(manager.update());
         CHECK(state.step(false));
-        presentation.sync(state.state(), position);
+        presentation.sync(state.state());
+        const auto* background = manager.registry.find(presentation.stage_background_handle());
+        if (background) {
+            CHECK_NEAR(background->visual.translation.x, anchor0.x, 0.0001f);
+            CHECK_NEAR(background->visual.translation.y, anchor0.y, 0.0001f);
+            CHECK_NEAR(background->visual.translation.z, anchor0.z, 0.0001f);
+        }
     }
     CHECK(presentation.consume(state.end(), position, {}, 6));
     for (i32 n = 0; n < 60; ++n) CHECK(manager.update());

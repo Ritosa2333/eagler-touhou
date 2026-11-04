@@ -562,6 +562,11 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     i32 pause_option_value(i32) const override;
     bool record_result_name(const std::string&) override;
     bool result_needs_name() const override;
+    // 0x43e3f0/0x43e700：暂停激活/恢复对对话 VM 面 +0x18 bit1 清/置。
+    bool dialogue_visible(bool visible) override;
+    // 0x454050 state3：DAT_004be7c8（续关数）==0 → 流程 0xf（0x4549d0
+    // 回放保存）；标题战后流程的门（TitleScenePlatform 同名虚槽）。
+    bool result_replay_save_available() const override;
     // EndingPlatform（0x416570 场景宿主面；read_asset/request_destination/
     // queue_music 复用既有同型 override，这里只声明新增面）
     EndingSaveBytes* save_bytes() override { return &ending_save_view; }

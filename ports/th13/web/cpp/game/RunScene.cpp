@@ -350,6 +350,14 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     battle.item_manager.spirit_pickup_effect = [this](i32 script, float x, float y, float z) {
         return presentation->spirit_pickup(script, {x, y, z});
     };
+    // 0x438ec0 出生体同步建 VM：effect.anm 0x38 + astral kind*6+1/4，均
+    // 0x46f3f0 尾插、早于本帧 0x46f170 walk。此前延迟到 Update 25 的
+    // sync_item_spirits，链尾序与本帧尾插子 VM 的二次 tick 语义偏离原生。
+    battle.item_manager.spirit_spawn_animation =
+        [this](u32 slot, u32 serial, i32 kind, u32 flags, float x, float y, float z) {
+            return presentation->spirit_spawn_animation(slot, serial, kind, flags,
+                                                        x, y, z);
+        };
     battle.option_power_changed = [this](StageBattle& active) {
         return presentation->sync_player_options(active, true);
     };
@@ -506,8 +514,9 @@ bool RunScene::update_spell() {
     if (!battle.sim.spell.step(battle.bomb_timer > 0, &progress.rate))
         return fail(battle.sim.spell.error);
     battle.sim.spell.update_visibility(battle.player_y);
-    const auto* boss = battle.sim.boss();
-    spell_presentation->sync(battle.sim.spell.state(), boss ? boss->position : nullptr);
+    // 符卡背景位置在 consume() 开始时一次性写入（0x413270:180-194），逐帧
+    // sync 不携带 boss 位置——原版无追随。
+    spell_presentation->sync(battle.sim.spell.state());
     return true;
 }
 
@@ -712,6 +721,7 @@ bool RunScene::update() {
     // 装配契约）：可证字段接实值，未锚定缺口保持默认并登记，不伪造。
     BossFrameInput boss_view;
     boss_view.boss = battle.sim.boss();           // mgr+0x5c 槽 0
+    boss_view.boss_slot_present = battle.sim.boss_slot[0] >= 0;  // 0x4265a0 门
     boss_view.dialog_active = dialog.active();    // ctx+0x198 对话进行中
     boss_view.player_x = battle.player_x;         // DAT_004c22c4+0x5b8 世界位
     boss_view.player_y = battle.player_y;         // +0x5bc
@@ -883,17 +893,23 @@ void RunScene::msg_speaker_switch(i32 opcode) {
 }
 
 void RunScene::msg_release(i32 opcode) {
-    // 4/23（0x4295cf/0x4295a9）左槽；5/24（0x4295e9/0x4295bc）右槽含名牌；
-    // 6/18（0x42960c/0x429250）名牌 + 文本区（port 单名牌槽 + dialog 行块）。
+    // 4（0x4295cf）左槽 label1+清句柄；5（0x4295e9）右槽 label1+清句柄、
+    // 名牌 label1 句柄保留；23/24（0x4295a9/0x4295bc）左右槽 deferred
+    // label7——晃动/换姿分支，句柄保留，不是释放；6/18（0x42960c/0x429250）
+    // 名牌 + 文本区（port 单名牌槽 + dialog 行块）。
     if (!msg_presentation) return;
     switch (opcode) {
     case 0x04:
-    case 0x17:
         msg_presentation->release_player();
         break;
     case 0x05:
-    case 0x18:
         msg_presentation->release_side();
+        break;
+    case 0x17:  // 0x4295a9：左立绘 label7，保留句柄
+        if (!msg_presentation->fade_player(7)) fail("Dialog portrait fade: " + msg_presentation->error);
+        break;
+    case 0x18:  // 0x4295bc：右立绘 label7，保留句柄
+        if (!msg_presentation->fade_side(7)) fail("Dialog portrait fade: " + msg_presentation->error);
         break;
     case 0x06:
         msg_presentation->release_nameplates();
@@ -993,6 +1009,18 @@ bool RunScene::prepare_transition(i32 bank, const std::string& name) {
 }
 
 bool RunScene::start_transition() {
+    // 0x42b990:75-78（DAT_004dcc30==0 续关分支）：装载入口把显示分数一次性
+    // 追平当前分数（`if (DAT_004be810 < DAT_004be7c0) DAT_004be810 =
+    // DAT_004be7c0;`）。装载门内 0x42c550:248-261 的 (uVar2&4)==0 门挡住
+    // FUN_0042a370 的滚动，若不在此同步，显示分会停在装载前的旧值。
+    // My25 s05 实证：native f20234 004be810 7858765→7858841(=004be7c0)，
+    // 与 port 本函数触发帧同拍。注意 0042b990:75-78 只写 004be810，不写
+    // 0x144（GameInf 滚动值）：装载后 0x42a370 仍从旧 0x144 逐帧滚动，
+    // 004be810 因已 >= 0x144 而保持。port 的 0x144 投影是
+    // hud.displayed_score、004be810 投影是 progress.high_score，故只写
+    // 后者（写 displayed_score 会让 HUD 数字跳过滚动动画）。
+    if (progress.high_score < score_state.score)
+        progress.high_score = score_state.score;
     if (!hud.finish_stage_clear()) return fail(hud.error);
     if (previous_scenery) previous_scenery->begin_exit();
     if (scenery) scenery->begin_enter();

@@ -930,6 +930,34 @@ bool StagePresentation::spirit_pickup(i32 script, const Vec3& position) {
     return true;
 }
 
+// 0x438ec0 出生体内两处 0x46f820（反汇编 0x438ff9 / 0x43909d / 0x4390be）：
+//  1) 先建 effect.anm script 0x38（0x438ff1 push 0x38；层 -1、flags 0、
+//     位置=神霊出生位），0x46f3f0 尾插，句柄不写回（脚本自灭）；
+//  2) 再建 astral.anm kind*6+1（0x439088-0x43909d，flags bit0=0）或
+//     kind*6+4（0x4390aa-0x4390be，灵界位），层 -1、flags 0、尾插，句柄写
+//     神霊槽 +0x58（0x4390a5/0x4390c6 mov [ebx+0x58]）。
+// 时机 = 出生当帧（0x438ec0 体内），早于本帧 0x46f170 walk；此前 port 在
+// Update 25 sync_item_spirits 才建 astral VM，且从不建 0x38，使神霊链节点
+// 落在本帧子弹相位创建物之后（Pn16 s05 f11697 s174 子 VM 多 tick 一帧）。
+bool StagePresentation::spirit_spawn_animation(u32 slot, u32 serial, i32 kind,
+                                               u32 flags, float x, float y,
+                                               float z) {
+    const Vec3 position{x, y, z};
+    if (!animations.create(banks.effect, 0x38, -1, 0, position, 0, false))
+        return fail("Spirit birth effect creation failed: " + animations.error);
+    const i32 script = (flags & 1u) != 0 ? kind * 6 + 4 : kind * 6 + 1;
+    const u32 handle = animations.create(banks.spirit, script, -1, 0, position, 0,
+                                         false);
+    if (!handle)
+        return fail("Spirit animation creation failed: " + animations.error);
+    if (slot < spirit_handles_.size()) {
+        spirit_handles_[slot] = handle;
+        spirit_serials_[slot] = serial;
+        spirit_scripts_[slot] = script;
+    }
+    return true;
+}
+
 bool StagePresentation::sync_trance_effect(const StageBattle& battle) {
     const bool active=battle.sim.session&&trance_active(*battle.sim.session);
     if(active&&!trance_was_active_){

@@ -153,6 +153,7 @@ bool StageBattle::prepare_player(EclResourceProvider& provider, SessionState& pr
     sim.player_y = player_y;
     bomb_timer = 0;
     bomb_age = -1;
+    bomb_age_accumulator_ = 0;
     bomb_generation = 0;
     bomb_rays = {};
     bomb_duration_ = 0;
@@ -1369,7 +1370,33 @@ void StageBattle::step_bomb() {
         if (orb.exploding) ++orb.explosion_frame;
     }
     if (bomb_timer <= 0) return;
-    ++bomb_age;
+    // 0040a270:292 `add esi,0x18` → 00401400：Bomb 年龄 +0x1c 按 time_rate
+    // 推进（不是每帧 +1）。rate∈(0.99,1.01) 时 age+=1 且 +0x20 浮点累加器
+    // +=1.0；否则累加器 += rate、age=(int)累加器（004971f0 在真机
+    // DAT_004e6848≠0——MSVC __sse2_available——走 cvttsd2si 截断分支）。
+    // 启动帧 0040a3b0 直接写 +0x1c=0、+0x20=0 不推进；port 用 -1 哨兵表达。
+    // S5 实证：Bomb 于 f19203 启动，f19471 起 rate=0.5，age 到 301 在
+    // f19534；port 曾每帧 +1 于 f19504 提前结束，玩家 y 自 f19505 起每帧
+    // 多走 2px（f19535 原生 age 达 301 后恢复全速）。
+    const i32 age_before = bomb_age;
+    if (bomb_age < 0) {
+        bomb_age = 0;
+    } else {
+        const float rate = sim.time_rate();
+        if (rate > 0.99f && rate < 1.01f) {
+            bomb_age += 1;
+            bomb_age_accumulator_ += 1.0f;
+        } else {
+            bomb_age_accumulator_ += rate;
+            bomb_age = i32(bomb_age_accumulator_);
+        }
+    }
+    // 0040a860:54 / 0040cb50:53 的 `param_1[7] != param_1[6]` 门：rate<1 时
+    // 年龄可能整帧不变（00401400 累加器未跨整），原版据此跳过重复几何
+    // （魔理沙每 4 帧建盒、妖梦生成支路）。rate=1 时该门恒真，与旧实现
+    // 逐帧等价。port 几何用推进后的 age（与原版推进前 age 相差既有 1 帧
+    // 相位，已由既有对拍接受），故门用本帧推进前后的 age 比较。
+    const bool age_advanced = bomb_age != age_before;
     bomb_timer = std::max(0, bomb_duration_ - bomb_age);
     // 四角色更新器0040b590/0040a860/0040c2c0/0040cb50均每帧刷新40无敌，
     // 不是原有统一240帧倒计时。
@@ -1432,7 +1459,8 @@ void StageBattle::step_bomb() {
         // 0040a860：Master Spark移动系数0.2；左右移动使激光每帧转0.15度。
         if (input_state & 0x40) bomb_angle_ -= 0.0026179939f;
         else if (input_state & 0x80) bomb_angle_ += 0.0026179939f;
-        if (bomb_age % 4 == 0) {
+        // 0040a860:54-58：`age != prev` 门外层、`(age & 3) == 0` 内层。
+        if (age_advanced && bomb_age % 4 == 0) {
             static constexpr float distances[] = {208, 240, 304};
             static constexpr float heights[] = {32, 128, 256};
             static constexpr i32 damages[] = {60, 20, 20};
@@ -1499,7 +1527,8 @@ void StageBattle::step_bomb() {
         // 一次性 + 0x4119c0 场内消弹）。set_vm 由表现层回填（无头路径无
         // VM，槽状态保持——r4/bomb 测试 A1-A7 覆盖）。生成帧矩形高 0
         // （scale=0）→ 无消弹无伤害，次帧起生效。
-        if (bomb_age < YoumuBomb::kActiveFrames) {
+        // 0040cb50:53：`age != prev && param_1[0x367] < 1` 才进生成支路。
+        if (age_advanced && bomb_age < YoumuBomb::kActiveFrames) {
             GameRandom::tag(15);
             if (auto spawn = youmu_bomb_.step(bomb_age, sim.random)) {
                 youmu_slash_spawns_.push_back(*spawn);
@@ -2209,6 +2238,7 @@ void StageBattle::on_bomb_key() {
     sim.bomb_active = true;
     sim.spell.bomb_started();
     bomb_age = -1;
+    bomb_age_accumulator_ = 0;  // 0040a3b0:22 写 +0x20=0（与 +0x1c 同时清零）
     ++bomb_generation;
     // 0x40a4xx 通用 Bomb 启动包装：先以 0x460c50 在玩家 x 处播 0x2c=44，
     // 再 call 角色 vtable slot0（Youmu 0x40c910 在其 0x40c948 播 0x31=49）。

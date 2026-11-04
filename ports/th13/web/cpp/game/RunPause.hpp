@@ -31,6 +31,10 @@ struct RunPausePlatform {
     virtual bool record_result_name(const std::string&) { return false; }
     virtual bool result_needs_name() const { return false; }
     virtual bool can_save_replay() const { return false; }
+    // 0x43e3f0:0x43e588-0x43e592：Esc 暂停激活末尾对活动对话对象调
+    // 0x429d00（9 槽 VM+0x18 清 bit1，不销毁）；0x43e700:0x43e749 恢复时
+    // 0x429f10 置回。宿主实现应覆盖对话立绘/名牌/正文/气泡全部 VM。
+    virtual bool dialogue_visible(bool) { return true; }
 };
 
 class RunPause final : private PauseMenuServices {

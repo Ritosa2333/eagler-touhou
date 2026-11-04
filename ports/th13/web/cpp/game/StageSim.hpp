@@ -415,6 +415,12 @@ struct StageBullet {
     i32 offscreen_timer = 0;    // 0x100 +120c: retention countdown
     float offscreen_time = 0;  // +1210
     i32 offscreen_directional = 0; // +123c: terminate when heading cannot reenter
+    // op 0x1000 通道（0x40f030:467-471 写入；00410be0 每帧消费）。
+    // +0x10d4 已反弹次数、+0x10d8 反弹上限（int 位型）、+0x10dc 方向掩码
+    // （int 位型：bit0 y<0、bit1 y>448、bit2 x<-192、bit3 x>192）。
+    i32 ex1000_count = 0;       // 10d4
+    i32 ex1000_limit = 0;       // 10d8
+    u32 ex1000_mask = 0;        // 10dc
     // op 0x80000000 等待通道（0x40f030 case + 0x40db10 消费）。
     i32 wait_timer = 0;         // 1058（40f030 写 (int)N-1；40db10 只读 wait_time）
     float wait_time = 0;        // 105c（float = i4；<1 时 40db10 清 bb4 位并重进队列）

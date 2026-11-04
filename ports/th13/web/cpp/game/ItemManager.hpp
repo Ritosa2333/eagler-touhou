@@ -149,6 +149,15 @@ public:
     // 0x438d26/0x438d80/0x438da1 的 0x46f820 flags=0 尾插；脚本按
     // (trance bit0, kind) 查表）。返回 false 表示表现层创建失败。
     std::function<bool(i32 script, float x, float y, float z)> spirit_pickup_effect;
+    // 0x438ec0 出生瞬间同步建 VM（非 0x438730 的 Update 25 面）：
+    // 0x438ff9 effect.anm script 0x38（层 -1/flags 0/尾插）先建，
+    // 0x43909d / 0x4390be astral.anm kind*6+1（非灵界）/ kind*6+4（灵界）
+    // 后建；两处均 flags=0 → 0x46f3f0 主链尾插。创建时机 = 出生当帧
+    // （0x438ec0 体内，早于本帧 0x46f170 walk），链尾序由此确定；延迟到
+    // Update 25 会让神霊 VM 落在本帧子弹相位创建物之后（Pn16 s05 f11697
+    // 镜像重挂子 VM 多 tick 一帧的链形态根因）。返回 false = 表现层失败。
+    std::function<bool(u32 slot, u32 serial, i32 kind, u32 flags, float x, float y,
+                       float z)> spirit_spawn_animation;
     // 42edc0/42e380 call 444df0 synchronously when collected power crosses a level.
     std::function<void()> option_power_changed;
     // 43d2f0/43d330 -> 42ae90; 43d440/43d480 -> 42af60.
