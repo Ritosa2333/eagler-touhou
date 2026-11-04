@@ -80,8 +80,8 @@ try{
     await host.keyboard.press('Escape');
     await wait(async()=>(await Promise.all(frames.map(frame=>frame.evaluate(()=>!document.querySelector('#pause-menu').hidden)))).every(Boolean),'synchronized surrender menu',15000);
     for(const frame of frames){
-      const position=await frame.$eval('#pause-menu',node=>{const r=node.getBoundingClientRect(),p=node.parentElement.getBoundingClientRect();return {center:r.x+r.width/2,parentCenter:p.x+p.width/2};});
-      assert(Math.abs(position.center-position.parentCenter)<2,'surrender menu is centered');
+      const positions=await frame.$eval('#pause-menu',node=>{const seat=node.dataset.seat,p=node.parentElement.getBoundingClientRect();const centers=['0','1'].map(value=>{node.dataset.seat=value;const r=node.getBoundingClientRect();return (r.x+r.width/2-p.x)/p.width;});node.dataset.seat=seat;return centers;});
+      assert(Math.abs(positions[0]-.25)<.01&&Math.abs(positions[1]-.75)<.01,'surrender menu follows the player side');
     }
     await host.screenshot({path:resolve(out,'surrender-menu.png')});
     await host.keyboard.press('Escape');
