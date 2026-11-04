@@ -1,8 +1,6 @@
 export const THPRAC_SCHEMA = "eagler-touhou/thprac-session/1";
 
 const GAME_SCHEMAS = Object.freeze({
-  // TH05 owns its practice configuration and menus in the native Runtime.
-  th05: Object.freeze({defaults: Object.freeze({}), ranges: Object.freeze({})}),
   th06: Object.freeze({
     defaults: Object.freeze({
       mode: 1, stage: 0, warp: 0, section: 0, phase: 0, frame: 0, dlg: false,
@@ -91,7 +89,6 @@ const GAME_SCHEMAS = Object.freeze({
 export const THPRAC_SUPPORTED_GAMES = Object.freeze(Object.keys(GAME_SCHEMAS));
 
 export const THPRAC_FUNCTIONAL_FEATURES = Object.freeze({
-  th05: Object.freeze(["coarse-stage-warp", "exact-section-warp", "multi-phase-spell-start", "section-dialogue", "initial-resources", "practice-replay-metadata", "practice-assists"]),
   th06: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "initial-resources", "rank", "rank-lock", "practice-replay-metadata", "midrun-replay-save"]),
   th07: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "initial-resources", "cherry", "rank", "rank-lock", "practice-replay-metadata"]),
   th08: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "exact-section-warp", "multi-phase-spell-start", "section-dialogue", "initial-resources", "gauge", "time", "night", "familiar", "rank", "rank-lock", "practice-replay-metadata", "practice-assists"]),
@@ -105,7 +102,6 @@ export const THPRAC_FUNCTIONAL_FEATURES = Object.freeze({
 // source-level ECL patcher can add them without invalidating saved metadata.
 // They are deliberately not advertised as functional today.
 export const THPRAC_DEFERRED_FEATURES = Object.freeze({
-  th05: Object.freeze([]),
   th06: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue", "patchouli-fake-shot"]),
   th07: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue"]),
   th08: Object.freeze([]),
