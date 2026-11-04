@@ -1,7 +1,7 @@
 #include "AsciiFrame.hpp"
 namespace th13 {
 AsciiFrame::AsciiFrame(FrameScheduler& s,AsciiText& t,AnmRenderer& r,AnmDrawServices& v):scheduler(s),text(t),renderer(r),views(v){
- constexpr i32 priorities[]{4,78,51,63};
+ constexpr i32 priorities[]{4,kAsciiPassPriority[0],kAsciiPassPriority[1],kAsciiPassPriority[2]};
  for(u32 i=0;i<callbacks.size();i++){auto& c=callbacks[i];c.owner=this;c.enabled=true;
   if(i==0)c.run=[](void* p){auto& f=*static_cast<AsciiFrame*>(p);f.text.update();f.frames=wrapping_add(f.frames,1);return i32(FrameAction::Continue);};
   else if(i==1)c.run=[](void* p){return static_cast<AsciiFrame*>(p)->draw(0)?1:5;};
