@@ -6,7 +6,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "f66bf9291bae0ffcd3ed456f8cd9f1a31fbcdb2d38d7e39eef04e5820246cc40",
+      "sourceDigest": "2db564b8fc6a94383a4373d4c705cb3a47360eaffd2fb59a33168481e0cdc126",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -195,7 +195,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "c8b0933c2e03cf4e62463585a1f1e007b5e8eea92d2596da8be6db33f5dabceb",
+      "sourceDigest": "b15c109a0f8d65ab41e78d17cfa184397b0df2e27d55ab687043c3a0c6c13061",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
