@@ -36,6 +36,9 @@ try{
     await new Promise(r=>setTimeout(r,200));
   }
   assert(events.some(e=>e.event==='first-frame'),'full Launcher must present a real frame');
+  const frame=page.frames().find(f=>/th01.html.*runtimeEpoch=/.test(f.url()));
+  await new Promise(resolve=>setTimeout(resolve,2000));
+  console.log('TH01 state',await frame.evaluate(async()=>({health:(await import('./app.js')).managedAPI.health(),body:document.body.dataset.page,screen:(()=>{const c=document.querySelector('#game'),r=c.getBoundingClientRect(),s=getComputedStyle(c);return {x:r.x,y:r.y,width:r.width,height:r.height,objectFit:s.objectFit};})()})));
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH01 solo presentation');

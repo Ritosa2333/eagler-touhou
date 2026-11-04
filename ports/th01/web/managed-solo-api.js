@@ -10,7 +10,7 @@ function managedMenuInput(){
 async function managedExit(){if(managedEnded)return;managedEnded=true;nativeRecorder?.finish('退出');managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 export const managedAPI={
  async start({options,music}){if(options.replayPath)throw Error('TH01 原生命令录像播放器尚未接入');musicWanted=music!=='none';$('players').value='1';$('startStage').value='normal';await begin();},
- health(){return {frames:managedFrames,audio:{state:musicContext?.state??'suspended'}};},
+ health(){return {frames:managedFrames,menu:core?.th_get(50,0),phase:core?.th_get(0,0),audio:{state:musicContext?.state??'suspended'}};},
  async files(message){if(['sync','list','read'].includes(message.command)&&core){const data=new Uint8Array(core.memory.buffer,core.th_score_data(),core.th_score_size()).slice();if(!stageSelection(sessionConfig?.startStage).practice)await globalThis.__eaglerPC98Files.write('scores.dat',data);}return globalThis.__eaglerPC98FileCommands(message);},
  playback(){throw Error('TH01 原生命令录像播放器尚未接入');},
  stop(){managedEnded=true;configuring=true;release();stopEffects();stopMusicSource();nativeRecorder?.close();void musicContext?.suspend();},
