@@ -52,7 +52,7 @@ try {
       },game+' card selection',15000);
       await page.waitForSelector('.tools.is-open',{visible:true});
       await page.$eval('.tools.is-open', async node => Promise.all(node.getAnimations().map(a => a.finished.catch(() => {}))));
-      await page.select('#musicSelect','none');
+      await page.select('#musicSelect',process.env.PC98_PRACTICE_MUSIC||'none');
       if (mobile) await page.$eval('#touchToggle', node => {if(node.getAttribute('aria-checked') !== 'true')node.click();});
       await page.waitForFunction(() => document.querySelector('#launch')?.disabled === false);
       await page.click('#launch');

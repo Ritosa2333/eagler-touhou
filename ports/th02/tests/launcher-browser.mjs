@@ -19,8 +19,11 @@ try{
   await page.waitForSelector('.game[data-game="th02"]',{timeout:45000});
   await page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.close());
   console.log('Launcher TH02 card ready');
-  await page.click('.game[data-game="th02"]:not([data-product])');
-  await page.click('.game[data-game="th02"]:not([data-product])');
+  const selectionDeadline=Date.now()+15000;
+  while(!await page.$('.tools.is-open')&&Date.now()<selectionDeadline){
+    await page.$eval('.game[data-game="th02"]:not([data-product])',node=>node.click());
+    await new Promise(resolve=>setTimeout(resolve,100));
+  }
   await page.waitForSelector('.tools.is-open',{visible:true});
   await page.$eval('.tools.is-open',async panel=>{await Promise.all(panel.getAnimations().map(animation=>animation.finished.catch(()=>{})));});
   await page.waitForSelector('#musicSelect');
