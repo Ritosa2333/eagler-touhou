@@ -8,7 +8,7 @@ const end = '<!-- END GENERATED RUNTIME STORAGE CHANNEL -->';
 
 /** Applied after verifying the input release, before freezing its publication. */
 export function betaRuntimeHtml(html) {
-  const block = `${begin}\n<script>\n(${installRuntimeStorageChannel.toString()})(globalThis);\n</script>\n${end}`;
+  const block = `${begin}\n<meta charset="utf-8">\n<script>\n(${installRuntimeStorageChannel.toString()})(globalThis);\n</script>\n${end}`;
   if (html.includes(begin)) {
     const start = html.indexOf(begin), finish = html.indexOf(end, start);
     if (finish < 0) throw Error('Incomplete Runtime storage channel');

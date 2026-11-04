@@ -94,6 +94,7 @@ test('prebuilt beta programs receive isolation before scripts and freeze with up
   const published=await prepareBetaRuntimePublication(source,'th06.html',files);
   assert.deepEqual((await prepareBetaRuntimePublication(source,'th06.html'))['th06.html'],published['th06.html']);
   const next=await readFile(join(source,'th06.html'),'utf8');
+  assert.ok(next.indexOf('<meta charset="utf-8">')<1024,'the encoding declaration remains in the HTML prescan window');
   assert.ok(next.indexOf('installRuntimeStorageChannel')<next.indexOf('src="core.mjs"'));
   assert.equal(betaRuntimeHtml(next),next,'publication is idempotent');
   assert.notEqual(published['th06.html'].sha256,files['th06.html'].sha256);
