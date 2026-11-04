@@ -38,6 +38,18 @@ export class LocalBgm {
     if(!commands.length&&config.warmOpening!==false)for(const type of ['m26','m86'])this.prefetch(`${first}-${type}`);
   }
   track(id){return resolveBgmTrack(id,this.manifest.tracks,this.newTracks,this.midiTracks);}
+  warmOriginal(id){
+    if(!this.pmd||!this.manifest.tracks[id]||this.track(id)!==this.manifest.tracks[id])return;
+    const entry=Object.entries(this.manifest.headers).find(([,name])=>name===id);
+    const track=entry&&this.pmd.tracks.get(Number(entry[0]));
+    if(track)this.pmd.engine.prewarm(track.bytes);
+  }
+  warmFollowing(id){
+    const stage=/^st(\d\d)([bc]?)-(m26|m86)$/.exec(id);
+    if(stage){if(!stage[2])this.warmOriginal(`st${stage[1]}b-${stage[3]}`);const next=Number(stage[1])+1;if(next<=6)this.warmOriginal(`st${String(next).padStart(2,'0')}-${stage[3]}`);}
+    const th02=/^stage([0-5])-m86$/.exec(id);
+    if(th02){const n=Number(th02[1]);this.warmOriginal(`${n===4?'mima':`boss${n===5?5:n+1}`}-m86`);if(n<4)this.warmOriginal(`stage${n+1}-m86`);}
+  }
   download(id,track=this.track(id)){
     const cacheKey=track?.url;
     if(this.encoded.has(cacheKey))return Promise.resolve(this.encoded.get(cacheKey));
@@ -94,7 +106,7 @@ export class LocalBgm {
         if(this.closed||generation!==this.generation){source.stop(this.context.currentTime);return;}
         const gain=this.context.createGain();gain.gain.value=item.volume;source.connect(gain);gain.connect(this.volume);
         item.source=source;item.gain=gain;this.active=item;source.onended=()=>{source.disconnect();gain.disconnect();if(this.active===item)this.active=null;};
-        source.start();if(item.fade)this.fade(item.fade);this.status=`原版 FM：${selected}`;
+        source.start();if(item.fade)this.fade(item.fade);this.status=`原版 FM：${selected}`;this.warmFollowing(id);
       }).catch(error=>{if(generation===this.generation)this.status=`原版 FM 错误：${error.message}`;});
       return;
     }
@@ -185,5 +197,5 @@ export class LocalBgm {
     }
     this.mailbox=at;
   }
-  dispose(){this.unsubscribeVersion();this.closed=true;this.abort.abort();this.stop();this.pendingCommands=[];this.encoded.clear();this.decoded.clear();this.volume.disconnect();}
+  dispose(){this.unsubscribeVersion();this.closed=true;this.abort.abort();this.stop();this.pmd?.engine.dispose();this.pendingCommands=[];this.encoded.clear();this.decoded.clear();this.volume.disconnect();}
 }

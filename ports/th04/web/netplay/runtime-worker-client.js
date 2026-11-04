@@ -48,6 +48,7 @@ function prepareMusic(){
  if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{
   if(stopped)return;bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th04',fat),engine:pmd};bgm.setVolume(volume);
   await bgm.load({...settings,warmOpening:false});if(stopped)return;
+  const opening=`st${String(settings.stage??0).padStart(2,'0')}`;bgm.warmOriginal(`${opening}-m86`);bgm.warmOriginal(`${opening}-m26`);
   for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);
  }).catch(e=>{if(!stopped)musicError=e.message;});
  return musicTask;

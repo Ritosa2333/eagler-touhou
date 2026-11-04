@@ -37,7 +37,7 @@ function draw(){
  finally{releaseFrame(frame);}
 }
 function prepareMusic(){
- if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th02',fat),engine:pmd};bgm.setVolume(volume);await bgm.load({warmOpening:false});if(stopped)return;for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);}).catch(e=>{musicError=e.message;});
+ if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th02',fat),engine:pmd};bgm.setVolume(volume);await bgm.load({warmOpening:false});if(stopped)return;bgm.warmOriginal(`stage${settings.stage??0}-m86`);for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);}).catch(e=>{musicError=e.message;});
  return musicTask;
 }
 function music(event){

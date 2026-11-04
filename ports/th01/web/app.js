@@ -81,6 +81,11 @@ function musicCue(){
   const cue=core?.th_get(79,0)??0;
   return cue===2?'silent':cue<2?musicRoomTracks[cue].key:musicRoomTracks[cue-3].key;
 }
+function warmMusic(track){
+  if(!musicContext||musicTracks.has(track))return;
+  const pending=loadMusicTrack(musicContext,track);musicTracks.set(track,pending);
+  void pending.catch(()=>{if(musicTracks.get(track)===pending)musicTracks.delete(track);});
+}
 function stopMusicSource(){musicRequest=null;musicSource?.stop();musicSource?.disconnect();musicSource=null;musicEnabled=false;}
 let sfxEnabled=true,sfxReady=false,soundCursor=0,sfxLoading;
 const sfxBuffers=new Map(),sfxSources=new Set();
@@ -228,11 +233,7 @@ async function startMusic(){
   try{
     musicContext??=new AudioContext();await musicContext.resume();
     if(musicRequest!==request||!musicWanted||musicCue()!==track)return;
-    if(!musicTracks.has(track)){
-      const pending=loadMusicTrack(musicContext,track);
-      musicTracks.set(track,pending);
-      void pending.catch(()=>{if(musicTracks.get(track)===pending)musicTracks.delete(track);});
-    }
+    warmMusic(track);
     const [buffer,loop]=await musicTracks.get(track);
     if(musicRequest!==request||!musicWanted||musicCue()!==track)return;
     musicBuffer=buffer;musicLoop=loop;
@@ -240,6 +241,8 @@ async function startMusic(){
     musicSource.loopStart=musicLoop.loopStart;musicSource.loopEnd=musicLoop.loopEnd;
     if(!musicGain){musicGain=musicContext.createGain();musicGain.gain.value=.35;musicGain.connect(musicContext.destination);}
     musicSource.connect(musicGain);musicSource.start();musicEnabled=true;$('music').textContent='音乐：开';
+    const index=musicRoomTracks.findIndex(item=>item.key===track);
+    for(const next of musicRoomTracks.slice(index+1,index+3))warmMusic(next.key);
   }catch(error){if(musicRequest===request){if(musicWanted)$('music').textContent='音乐读取失败';console.error(error);}}
   finally{if(musicRequest===request)musicRequest=null;}
 }
