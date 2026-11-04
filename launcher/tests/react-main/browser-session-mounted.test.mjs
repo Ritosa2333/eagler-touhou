@@ -1961,7 +1961,7 @@ async function liveActualDirectory({strictMode = false} = {}) {
   await React.act(async () => {session.setLocale('en');});
   await until(() => f.sockets.some(socket => new URL(socket.url).searchParams.has('directory')), 'actual directory transport exists');
   const directorySocket = f.sockets.findLast(socket => new URL(socket.url).searchParams.has('directory'));
-  await React.act(async () => {directorySocket.open(); directorySocket.message({type: 'directory', version: 1, product: 'th06mp', rooms: [], total: 0});});
+  await React.act(async () => {directorySocket.open(); directorySocket.message({type: 'directory', version: 1, product: '', rooms: [], total: 0});});
   return {f, session, directorySocket};
 }
 for (const strictMode of [false, true]) for (const action of ['create', 'join by code', 'join row']) {
@@ -1973,7 +1973,7 @@ for (const strictMode of [false, true]) for (const action of ['create', 'join by
     if (action === 'join row') {
       await click('.book-lobby-desktop .book-lobby-all');
       await click('.book-lobby-desktop [data-lobby-product="th07mp"] .book-lobby-game');
-      await React.act(async () => {directorySocket.message({type: 'directory', version: 1, product: 'th07mp', total: 1,
+      await React.act(async () => {directorySocket.message({type: 'directory', version: 1, product: '', total: 1,
         rooms: [{product: 'th07mp', code: '4321', capacity: 2, phase: 'lobby', joinable: true, seats: [{initial: 'R'}, null], difficulty: 2}]});});
       await click('.lobby-join');
     } else {
