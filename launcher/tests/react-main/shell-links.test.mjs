@@ -122,17 +122,17 @@ test('developer options contains diagnostics and beta mode and returns with Esca
  assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'true');
 });
 
-test('avatar navigates to the profile address and selects only the profile destination', async () => {
-  await mount(el(Masthead)); await click('.book-profile-trigger');
-  assert.equal(n('#address').textContent, '/profile.html?lang=en');
-  assert.equal(n('.book-profile-trigger').getAttribute('aria-current'), 'page');
-  assert.equal(env.document.querySelectorAll('.book-main-nav [aria-current]').length, 0);
+test('pre-session masthead reserves the account slot without guessing a login destination', async () => {
+  await mount(el(Masthead, {interactive:false}));
+  assert.equal(n('.account-loading').getAttribute('aria-busy'), 'true');
+  assert.equal(env.document.querySelector('.book-profile-trigger'), null);
+  assert.equal(env.document.querySelector('.masthead-account-entry[href]'), null);
 });
 
 test('mounted Router links remove the deployment mount before navigation', async () => {
-  const masthead = el(Masthead, {variant:'help', launcherHref:'/review/en.html', assetUrl:path=>'/review/'+path});
+  const masthead = el(Masthead, {interactive:false,variant:'help', launcherHref:'/review/en.html', assetUrl:path=>'/review/'+path});
   await mount(masthead, {basename:'/review/', initialEntries:['/review/about.html?lang=zh-CN']});
-  assert.equal(n('.book-profile-trigger').getAttribute('href'), '/review/profile.html?lang=en');
+  assert.equal(n('.account-loading').getAttribute('aria-busy'), 'true');
   assert.equal(n('.book-lobby-link').getAttribute('href'), '/review/lobby.html?lang=en');
 });
 
@@ -172,9 +172,10 @@ test('production hides account routes by default and supports account-only opt-i
 });
 
 
-test('account, settings and help groups expose the handbook in its help group',async()=>{
+test('settings and help groups expose the handbook while account actions have a separate menu',async()=>{
  await mount(el(Masthead));await openMasthead();
- for(const key of ['nav.account','nav.settings','nav.help'])assert.ok(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en',key)+'"]'));
+ assert.equal(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en','nav.account')+'"]'),null);
+ for(const key of ['nav.settings','nav.help'])assert.ok(n('#mastheadMenuPanel').querySelector('[role="group"][aria-label="'+owners.translate('en',key)+'"]'));
  const link=n('#mastheadMenuPanel a[href="ui-review.html?lang=en"]');
  assert.equal(link.closest('[role="group"]').getAttribute('aria-label'),owners.translate('en','nav.help'));
  assert.equal(link.getAttribute('target'),'_blank');assert.equal(link.getAttribute('rel'),'noopener noreferrer');
