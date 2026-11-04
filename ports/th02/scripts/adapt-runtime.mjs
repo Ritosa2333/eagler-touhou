@@ -24,6 +24,7 @@ await patch('preload-cache.js',text=>replaceOnce(text,"if(!globalThis.indexedDB)
 await patch('site.css',text=>replaceOnce(text,"url('assets/launcher-background.webp')","none",'standalone page artwork'));
 await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
 await patch('room-title-worker.js',text=>{
+  text=replaceOnce(text,"const settle = ['02','04'].includes(game) ? 240 : 720;","const settle = 720;",'settled TH02 title');
   text=replaceOnce(text,"emulator = await (await import('./room-title-th05.js')).createTitleCore({canvas, disk, wasmBinary});","throw Error('TH02 title only');",'other-title preview');
   text=replaceOnce(text,'async function boot({game, canvas, disk, wasmBinary, module})','async function boot({game, canvas, disk, wasmBinary, module, managedTitle=false})','managed title mode');
   // Keep the actual settled title visible throughout an idle main room.
