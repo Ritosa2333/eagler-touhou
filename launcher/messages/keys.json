@@ -7464,6 +7464,7 @@
     "id": "profile_display_save",
     "params": []
   },
+  "profile.friendsVisibility": {"id":"profile_friends_visibility","params":[]},
   "profile.personalSettings": {"id":"profile_personal_settings","params":[]},
   "profile.upcoming": {"id":"profile_upcoming","params":[]},
   "profile.editHeading": {
