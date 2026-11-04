@@ -12,7 +12,7 @@ export function inspectExternalMemory(module){
 }
 
 export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endReason='sleep',endPhase='after-input',timeline,boundaryMode='sleep',onChunk=()=>{},onEnd=()=>{},onError=()=>{},
-  onRecordingError=onError,applyInput=()=>{},inspect,observe,maxClockBytes=512*1024*1024,clock,onBoundary=()=>{},shouldHold}={}){
+  onRecordingError=onError,applyInput=()=>{},inspect,observe,maxClockBytes=512*1024*1024,clock,onBoundary=()=>{},shouldHold,shouldFastForward=()=>false}={}){
   if(!['record','playback'].includes(mode)||!['sleep','clock'].includes(boundaryMode))throw Error('无效的单人 Replay 主机配置');
   let module=null,boundary=0,count=0,eventCursor=0,queued=[],buffer=new Uint8Array(CLOCK_BYTES*CLOCK_CHUNK),used=0;
   let stopped=false,ending=false,held=false,wake=null,timer=null,lastWake=0,recording=mode==='record',finished=false,extraClockReads=0,detached=false;
@@ -83,7 +83,8 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   Object.setPrototypeOf(HostDate,RealDate);HostDate.prototype=RealDate.prototype;HostDate.now=()=>time(2);
   const hostPerformance=new Proxy(realPerformance,{get(target,name){if(name==='now')return ()=>time(1);const value=Reflect.get(target,name,target);return typeof value==='function'?value.bind(target):value;}});
   function isFast(){
-    if(mode!=='playback'||held||stopped)return false;
+    if(held||stopped)return false;
+    if(mode==='record')return shouldFastForward();
     if(manualFast)return true;
     const ranges=timeline?.skipRanges||[];
     while(ranges[skipCursor]&&boundary>=ranges[skipCursor].to)skipCursor++;
