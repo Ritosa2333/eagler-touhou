@@ -33,7 +33,7 @@ export function titlePreview(host) {
           worker.postMessage({type:'boot',game:'03',managedTitle:true,canvas:offscreen,disk,wasmBinary},[offscreen,disk.buffer,wasmBinary.buffer]);
         });
         // Let the browser composite the offscreen presentation before ack.
-        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        await new Promise(resolve=>{let frame;const finish=()=>{document.removeEventListener('visibilitychange',changed);cancelAnimationFrame(frame);resolve();};const changed=()=>{if(document.hidden)finish();};document.addEventListener('visibilitychange',changed);if(document.hidden)finish();else frame=requestAnimationFrame(()=>{frame=requestAnimationFrame(finish);});});
         if (own!==serial) throw Error('标题预览已取消');
         return {presented:true};
       })().catch(error=>{if(own===serial)stop();throw error;});
