@@ -92,10 +92,7 @@ try{
   content.install(globalThis,base);installManagedWorkers(globalThis,content,base);
   store=globalThis.__eaglerPC98Files=await openUserFiles({multiplayer});
   if(multiplayer){
-    const html=await(await fetch('./managed-room.html')).text(),source=new DOMParser().parseFromString(html,'text/html');
-    for(const link of source.querySelectorAll('link[rel="stylesheet"]'))document.head.append(link.cloneNode());
-    document.body.replaceChildren(...source.body.childNodes);
-    const style=document.createElement('style');style.textContent='body>*:not(#game):not(#status){display:none!important}#status{position:absolute;bottom:0;z-index:1}#game{position:fixed;inset:0}.player-stage{position:relative;width:100%;height:100%}.player-stage iframe{width:100%;height:100%;border:0}.player-toolbar,.player-actions,.player-movement,.player-note,[class^="touch-"],[data-layout-control],.room-ui-return{display:none!important}';document.head.append(style);
+    const {mountManagedRoom}=await import('./managed-room-layout.mjs');mountManagedRoom();
     api=(await import('./netplay/room.js')).managedAPI;preview=titlePreview(document.querySelector('#game .player-stage'));
   }else api=(await import('./managed-solo.mjs')).managedAPI;
   ready=true;emit({event:'ready',saveRoot:'/savesth04'+(multiplayer?'mp':''),roomPreview:multiplayer});
