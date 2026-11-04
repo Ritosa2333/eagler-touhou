@@ -12,7 +12,6 @@ export const managedAPI={
    seats:{host:0,guest:1,guest2:2},ready:{host:true,guest:true,guest2:true},present:{host:true,guest:true,guest2:count===3},
    settings:{players:count,rank:options.netplayDifficulty,count,lifeCompensation:true,startStage:'normal',network:'lan',transport:'ws',ice:'all',delay:0}};
   globalThis.__eaglerPC98RoomEnd=()=>managedAPI.end('本局结束');
-  $('cover').hidden=true;$('player').hidden=false;
   session=new NetSession(identity,room,{canvas:$('canvas'),api:post,status,buttons:sample,render,failure:message=>{managedAPI.stop();globalThis.__eaglerPC98Emit({event:'error',message});}});
   session.game.setMusicVolume(music==='none'?0:.7);
   window.th01Net={get session(){return session;},get room(){return room;}};

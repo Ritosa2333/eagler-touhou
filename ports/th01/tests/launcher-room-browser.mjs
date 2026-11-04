@@ -25,6 +25,13 @@ async function wait(check,label,ms=120000){const until=Date.now()+ms;let lastLog
   if(Date.now()-lastLog>10000){console.log(label,await Promise.all(pages.map(page=>page.evaluate(()=>({status:document.querySelector('#mpRoomResourceLabel')?.textContent,ready:document.querySelector('#mpReady')?.disabled})))));lastLog=Date.now();}
   await new Promise(r=>setTimeout(r,200));
 }throw Error(label+' timeout');}
+async function assertCanvasFits(frame){
+  const box=await frame.$eval('#canvas',node=>{const r=node.getBoundingClientRect(),screen=document.querySelector('#screen').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,screenX:screen.x,screenY:screen.y,screenWidth:screen.width,screenHeight:screen.height,viewportWidth:innerWidth,viewportHeight:innerHeight};});
+  assert(Math.abs(box.width/box.height-1.6)<.01,`TH01 canvas aspect ratio: ${JSON.stringify(box)}`);
+  assert(Math.abs(box.screenX)<1&&Math.abs(box.screenY)<1&&Math.abs(box.screenWidth-box.viewportWidth)<1&&Math.abs(box.screenHeight-box.viewportHeight)<1,`TH01 screen fills viewport: ${JSON.stringify(box)}`);
+  assert(box.x>=-1&&box.y>=-1&&box.x+box.width<=box.viewportWidth+1&&box.y+box.height<=box.viewportHeight+1,`TH01 canvas fits viewport: ${JSON.stringify(box)}`);
+  assert(Math.abs(2*box.x+box.width-box.viewportWidth)<2&&Math.abs(2*box.y+box.height-box.viewportHeight)<2,`TH01 canvas is centered: ${JSON.stringify(box)}`);
+}
 try{
   for(const round of ['check','match-1','match-2']){
   for(const list of events)list.length=0;
@@ -58,14 +65,18 @@ try{
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return events.every(list=>list.some(e=>e.event==='first-frame'));},'main room native launch');
   const frames=pages.map(page=>page.frames().find(f=>/th01.html.*runtimeEpoch=/.test(f.url())));
   for(const frame of frames)assert(await frame.evaluate(()=>!!document.querySelector('canvas')&&!document.querySelector('.masthead,.mode-nav')),'managed room uses the launcher game surface');
+  for(const frame of frames)assert(await frame.evaluate(()=>!document.querySelector('#managed-room-controls,#entry,#lobby,.toolbar,link[rel="stylesheet"]')),'managed room does not mount the old page');
   await wait(async()=>{const states=await Promise.all(frames.map(frame=>frame.evaluate(async()=>{const m=await import('./netplay/app.js');return m.managedAPI.health();})));return states.every(s=>s.confirmed>=120&&s.frames>0);},'main room confirmed gameplay');
   await wait(async()=>(await Promise.all(pages.map(page=>page.evaluate(()=>{const e=document.querySelector('.room-workspace-preparation');return !e||e.hidden})))).every(Boolean),'main room loading cover must close',10000);
   for(const frame of frames)assert(await frame.$eval('canvas',e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0;}),'game canvas is visible');
+  for(const frame of frames)await assertCanvasFits(frame);
   for(const [seat,page] of pages.entries())await page.screenshot({path:resolve(out,'player-'+seat+'.png')});
   assert.deepEqual(errors,[]);console.log('PASS main Launcher create/join/seat/preload/ready/start and native multiplayer');
   if(round==='match-1'){
     await host.bringToFront();
     await host.click('.room-workspace-fullscreen');
+    await frames[0].waitForFunction(()=>!!parent.document.fullscreenElement,{timeout:5000});
+    await assertCanvasFits(frames[0]);
     await frames[0].waitForFunction(()=>__eaglerKeyboardInputBridge.active(),{timeout:5000});
     await host.$eval('#gameFrame',frame=>frame.focus());await host.keyboard.down('ArrowRight');
     await wait(()=>frames[0].evaluate(()=>__eaglerKeyboardInputBridge.keyDown('ArrowRight')),'mapped keyboard down',5000);

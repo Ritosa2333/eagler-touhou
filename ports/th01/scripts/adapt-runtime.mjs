@@ -32,17 +32,15 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=replaceOnce(text,"if(this.sawGameplay&&nativeState?.menu===1){this.fail(Error('已返回标题，本局结束。'),false);return;}","if(this.sawGameplay&&nativeState?.menu===1){void globalThis.__eaglerPC98RoomEnd();return;}",'confirmed native room exit');
     return text;
   });
-  await patch('netplay/app.js',text=>{
-    text=replaceOnce(text,'function sample(){let v=','function legacySample(){let v=','managed input');
-    text=replaceOnce(text,'async function post(action,data={}){',"async function post(action,data={}){throw Error('房间由主项目管理：'+action);",'legacy API guard');
-    text=replaceOnce(text,"async function returnToRoom(reason='本局已结束，可重新准备。',snapshot=null){","async function returnToRoom(reason='本局已结束，可重新准备。',snapshot=null){return managedAPI.end(reason);",'main room return');
-    text=replaceOnce(text,'async function poll(){','async function poll(){return;','legacy poll');
-    text=replaceOnce(text,"fetch('/api/network'", "if(false)fetch('/api/network'",'legacy service check');
-    text=replaceOnce(text,'setInterval(poll,250);','// hosted main-room lifecycle','legacy polling timer');
-    text=replaceOnce(text,"if(identity)navigator.sendBeacon",'if(false)navigator.sendBeacon','legacy leave');
-    text=text+'\n'+managedRoomApi;
-    return text;
-  });
+  await writeFile(resolve(output,'netplay/app.js'),`import {NetSession} from './session.js';
+const $=id=>document.getElementById(id),roles=['host','guest','guest2'];
+let identity,room,session,returningTask=null;
+const status=()=>{},render=()=>{};
+const post=()=>{throw Error('房间由主项目管理');};
+function clear(){globalThis.__eaglerPC98Input.clear();}
+$('canvas').addEventListener('pointerdown',()=>{$('canvas').focus();void session?.game.unlockAudio().catch(()=>{});});
+addEventListener('pagehide',()=>session?.close());
+${managedRoomApi}`);
   await patch('netplay/runtime.js',text=>{
     text=replaceOnce(text,"localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...data)));","void globalThis.__eaglerPC98Files.write('scores.dat',data);",'managed network score file');
     return replaceOnce(text,'await this.startRenderer(module,rendererSource);','// Render against the live core framebuffer.','managed native renderer');
@@ -60,6 +58,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   for(const name of ['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
   const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
   let html=strip(await readFile(resolve(web,'solo.html'),'utf8'));
+  html=html.replace(/<body([^>]*)>([\s\S]*?)<\/body>/,(_match,attributes,body)=>`<body${attributes}><template id="solo-content">${body}</template><script>const template=document.getElementById('solo-content');if(new URLSearchParams(location.search).get('runtimeVariant')!=='multiplayer')document.body.append(template.content.cloneNode(true));template.remove();</script></body>`);
   html=html.replace('</head>',`<style>html,body{margin:0;background:#000}#site-header,main>:not(#player),.diagnostics{display:none!important}main{margin:0;padding:0}#player{position:fixed;inset:0;border:0;padding:0;margin:0}#player>:not(#stage),#touch{display:none!important}#stage{width:100%;height:100%;max-width:none;max-height:none;aspect-ratio:auto;display:grid;place-items:center}#game{width:min(100vw,160vh);height:min(100vh,62.5vw);max-width:none;max-height:none;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head>`);
   await writeFile(resolve(output,'th01.html'),html);runtime.push('th01.html');
 }
