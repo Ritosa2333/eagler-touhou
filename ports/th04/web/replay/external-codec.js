@@ -13,21 +13,31 @@ async function inflate(bytes,expected){
 }
 // Preserve every IEEE-754 timestamp exactly while removing repeated high bits.
 function packClocks(bytes){
-  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),previous=[0n,0n,0n],out=[];
-  for(let at=0;at<bytes.length;at+=CLOCK_BYTES){
-    const kind=bytes[at],value=view.getBigUint64(at+1,true);let delta=value^previous[kind];previous[kind]=value;out.push(kind);
-    while(delta>=128n){out.push(Number(delta&127n)|128);delta>>=7n;}out.push(Number(delta));
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),count=bytes.length/CLOCK_BYTES,kinds=new Uint8Array(Math.ceil(count/8)),previous=[0n,0n,0n],streams=[[],[],[]];
+  for(let i=0;i<count;i++){
+    const at=i*CLOCK_BYTES,kind=bytes[at],value=view.getBigUint64(at+1,true);let delta=value^previous[kind];previous[kind]=value;
+    if(kind===2)kinds[i>>3]|=1<<(i&7);
+    while(delta>=128n){streams[kind].push(Number(delta&127n)|128);delta>>=7n;}streams[kind].push(Number(delta));
   }
-  return new Uint8Array(out);
+  return new Uint8Array([...kinds,...streams[1],...streams[2]]);
 }
-function unpackClocks(bytes,length){
-  const output=new Uint8Array(length),view=new DataView(output.buffer),previous=[0n,0n,0n];let at=0;
+function unpackClocks(bytes,length,encoding){
+  const output=new Uint8Array(length),view=new DataView(output.buffer),previous=[0n,0n,0n],count=length/CLOCK_BYTES;
+  if(encoding==='xor-varint/2'){
+    const maskBytes=Math.ceil(count/8),offsets=[[],[],[]];if(maskBytes>bytes.length)throw Error('Replay 时钟数据损坏');
+    for(let i=0;i<count;i++)offsets[bytes[i>>3]&(1<<(i&7))?2:1].push(i);
+    let at=maskBytes;
+    for(const kind of [1,2])for(const index of offsets[kind]){
+      let delta=0n,shift=0n,part;do{if(at>=bytes.length||shift>63n)throw Error('Replay 时钟数据损坏');part=bytes[at++];delta|=BigInt(part&127)<<shift;shift+=7n;}while(part&128);
+      if(delta>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');previous[kind]^=delta;output[index*CLOCK_BYTES]=kind;view.setBigUint64(index*CLOCK_BYTES+1,previous[kind],true);
+    }
+    if(at!==bytes.length)throw Error('Replay 时钟数据长度不符');return output;
+  }
+  let at=0;
   for(let offset=0;offset<length;offset+=CLOCK_BYTES){
-    const kind=bytes[at++];if(kind!==1&&kind!==2)throw Error('Replay 时钟类型无效');
-    let delta=0n,shift=0n,part;
+    const kind=bytes[at++];if(kind!==1&&kind!==2)throw Error('Replay 时钟类型无效');let delta=0n,shift=0n,part;
     do{if(at>=bytes.length||shift>63n)throw Error('Replay 时钟数据损坏');part=bytes[at++];delta|=BigInt(part&127)<<shift;shift+=7n;}while(part&128);
-    if(delta>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');
-    previous[kind]^=delta;output[offset]=kind;view.setBigUint64(offset+1,previous[kind],true);
+    if(delta>0xffffffffffffffffn)throw Error('Replay 时钟数据越界');previous[kind]^=delta;output[offset]=kind;view.setBigUint64(offset+1,previous[kind],true);
   }
   if(at!==bytes.length)throw Error('Replay 时钟数据长度不符');return output;
 }
@@ -132,7 +142,7 @@ export async function encodeExternalReplay(header,{clockChunks,events,disk,baseD
   validate({...header,version:HOST_VERSION,mode:'solo',clockCount:clocks.length/CLOCK_BYTES,diskBytes:disk.length,diskSha256},clocks.length,disk.length,eventRaw.length,events);
   const payload=new Uint8Array(clockTape.length+diskTape.length+eventTape.length+saveTape.length);payload.set(clockTape);payload.set(diskTape,clockTape.length);payload.set(eventTape,clockTape.length+diskTape.length);payload.set(saveTape,clockTape.length+diskTape.length+eventTape.length);
   const json=new TextEncoder().encode(JSON.stringify({...header,version:HOST_VERSION,mode:'solo',compression:'gzip',clockCount:clocks.length/CLOCK_BYTES,
-    clockEncoding:'xor-varint/1',clockPackedBytes:packedClocks.length,clockRawBytes:clocks.length,diskBytes:disk.length,eventRawBytes:eventRaw.length,clockPayloadBytes:clockTape.length,diskPayloadBytes:diskTape.length,
+    clockEncoding:'xor-varint/2',clockPackedBytes:packedClocks.length,clockRawBytes:clocks.length,diskBytes:disk.length,eventRawBytes:eventRaw.length,clockPayloadBytes:clockTape.length,diskPayloadBytes:diskTape.length,
     eventPayloadBytes:eventTape.length,...(header.diskBaseKind==='installed-practice/2'?{saveRawBytes:saveRaw.length,savePayloadBytes:saveTape.length}:{}),payloadSha256:await sha256(payload),diskSha256,diskEncoding:'xor-pages/1',diskBaseSha256,diskDeltaRawBytes:delta.length}));
   if(json.length>HEADER_LIMIT||json.length+payload.length+12>FILE_LIMIT)throw Error('Replay 超过文件容量限制');
   const prefix=new Uint8Array(12);prefix.set(MAGIC);new DataView(prefix.buffer).setUint32(8,json.length,true);
@@ -151,11 +161,11 @@ export async function decodeExternalReplay(file,expectedGame){
   if(compact&&(header.diskEncoding!=='xor-pages/1'||!/^[a-f0-9]{64}$/.test(header.diskBaseSha256)||
     !Number.isSafeInteger(header.diskDeltaRawBytes)||header.diskDeltaRawBytes<0||header.diskDeltaRawBytes>MAX_DISK_DELTA_BYTES))throw Error('Replay 磁盘差异无效');
   if(!compact&&header.diskEncoding!==undefined)throw Error('Replay 磁盘格式不匹配');
-  if(header.clockEncoding!==undefined&&(header.clockEncoding!=='xor-varint/1'||!Number.isSafeInteger(header.clockPackedBytes)||header.clockPackedBytes<1||header.clockPackedBytes>header.clockRawBytes*2))throw Error('Replay 时钟格式无效');
+  if(header.clockEncoding!==undefined&&(!['xor-varint/1','xor-varint/2'].includes(header.clockEncoding)||!Number.isSafeInteger(header.clockPackedBytes)||header.clockPackedBytes<1||header.clockPackedBytes>header.clockRawBytes*2))throw Error('Replay 时钟格式无效');
   if(header.diskBaseKind!==undefined&&!['installed-practice/1','installed-practice/2'].includes(header.diskBaseKind))throw Error('Replay 基础磁盘类型无效');
   if(header.diskBaseKind==='installed-practice/2'&&(!Number.isSafeInteger(header.saveRawBytes)||header.saveRawBytes<2||header.saveRawBytes>65536||!Number.isSafeInteger(header.savePayloadBytes)||header.savePayloadBytes<1||header.savePayloadBytes>payload.length))throw Error('Replay 存档载荷无效');
   let offset=0;const clockData=await inflate(payload.subarray(offset,offset+=header.clockPayloadBytes),header.clockEncoding?header.clockPackedBytes:header.clockRawBytes);
-  const clocks=header.clockEncoding?unpackClocks(clockData,header.clockRawBytes):clockData;
+  const clocks=header.clockEncoding?unpackClocks(clockData,header.clockRawBytes,header.clockEncoding):clockData;
   const diskData=await inflate(payload.subarray(offset,offset+=header.diskPayloadBytes),compact?header.diskDeltaRawBytes:header.diskBytes);
   const eventBytes=await inflate(payload.subarray(offset,offset+=header.eventPayloadBytes),header.eventRawBytes),events=JSON.parse(new TextDecoder().decode(eventBytes));
   let savedFiles={};if(header.diskBaseKind==='installed-practice/2'){
