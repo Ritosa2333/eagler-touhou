@@ -1,4 +1,5 @@
 // Same native runtime and complete checkpoints, with page-owned input/audio.
+import {stable} from '../replay/tape.js';
 const send=(message,transfer=[])=>postMessage(message,transfer);
 const audioContext={sampleRate:44100,state:'running',currentTime:0,addEventListener(){},removeEventListener(){},resume:async()=>{},close:async()=>{}};
 let ready,stopped=false,loaded=false,frameSequence=0,replayMusic;
@@ -45,6 +46,14 @@ onmessage=({data})=>{
    timed('stepMs','steps',()=>r.step(data.inputs,{frame:data.frame,replay:data.replay,offlineMask:data.offlineMask}));if(data.replay)metrics.replaySteps++;
    if(data.hash)result=timed('hashMs','hashes',()=>r.checksum());
    if(data.stagePresentation&&!data.replay)present(true);
+  }else if(data.type==='executeBatch'){
+   if(!th02WorkerHost.replayOnly||!Number.isSafeInteger(data.frame)||!Array.isArray(data.rows)||!data.rows.length||data.rows.length>32)throw Error('TH02 观战批次无效');
+   for(let i=0;i<data.rows.length;i++){
+    const row=data.rows[i],frame=data.frame+i;
+    timed('stepMs','steps',()=>r.step(row.inputs,{frame,replay:false,offlineMask:row.offlineMask}));
+    if(r.replayProof()!==row.proof||(row.hash!==null&&stable(r.checksum())!==stable(row.hash)))throw Error('录像模拟校验不一致：第 '+frame+' 步');
+    r.confirm(frame+1);
+   }
   }else if(data.type==='replay-slice'){
    if(!Array.isArray(data.plans)||!data.plans.length||data.plans.length>REPLAY_MAX_STEPS)throw Error('TH02 回滚补算批次无效');
    if(!Number.isSafeInteger(data.frame)||data.frame<0||data.plans.some((plan,index)=>!plan||plan.frame!==data.frame+index||!Array.isArray(plan.inputs)||!Number.isInteger(plan.offlineMask)))throw Error('TH02 回滚补算帧顺序无效');

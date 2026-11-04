@@ -55,7 +55,7 @@ ${managedRoomApi}`);
   await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
   await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
   for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
-  for(const name of ['pc98-spectator-channel.mjs','pc98-spectator-publisher.mjs','pc98-local-spectator.mjs','pc98-managed-spectator.mjs','directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
+  for(const name of ['pc98-spectator-audio.mjs','pc98-spectator-channel.mjs','pc98-spectator-publisher.mjs','pc98-local-spectator.mjs','pc98-managed-spectator.mjs','directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
   const strip=text=>text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
   let html=strip(await readFile(resolve(web,'solo.html'),'utf8'));
   html=html.replace(/<body([^>]*)>([\s\S]*?)<\/body>/,(_match,attributes,body)=>`<body${attributes}><template id="solo-content">${body}</template><script>const template=document.getElementById('solo-content');if(new URLSearchParams(location.search).get('runtimeVariant')!=='multiplayer')document.body.append(template.content.cloneNode(true));template.remove();</script></body>`);

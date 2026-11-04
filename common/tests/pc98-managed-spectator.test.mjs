@@ -13,6 +13,7 @@ test('managed spectator starts, draws confirmed frames and stops its replica',as
     await cp(new URL('../browser/pc98-managed-spectator.mjs',import.meta.url),join(root,'pc98-managed-spectator.mjs'));
     await cp(new URL('../browser/pc98-local-spectator.mjs',import.meta.url),join(root,'pc98-local-spectator.mjs'));
     await cp(new URL('../browser/pc98-spectator-channel.mjs',import.meta.url),join(root,'pc98-spectator-channel.mjs'));
+    await cp(new URL('../browser/pc98-spectator-audio.mjs',import.meta.url),join(root,'pc98-spectator-audio.mjs'));
     await cp(new URL('../../ports/th02/web/replay/',import.meta.url),join(root,'replay'),{recursive:true});
     await writeFile(join(root,'package.json'),'{"type":"module"}');
     globalThis.document={body:{append(){}},createElement:()=>({style:{},getContext:()=>({drawImage(){draws++;}}),remove(){removed=true;}})};
@@ -24,7 +25,7 @@ test('managed spectator starts, draws confirmed frames and stops its replica',as
     const {createManagedSpectator}=await import(pathToFileURL(join(root,'pc98-managed-spectator.mjs')));
     const {fingerprint,VERSION}=await import(pathToFileURL(join(root,'replay/tape.js')));
     const {SOURCE_PATHS}=await import(pathToFileURL(join(root,'replay/profile.js')));
-    const errors=[];api=createManagedSpectator('02',event=>{if(event.event==='error')errors.push(event);});
+    const errors=[];api=createManagedSpectator('02',event=>{if(event.event==='error')errors.push(event);},{createAudio:()=>({start:async()=>{},mode(){},event(){},stop(){}})});
     await api.start({options:{netplayUrl:'ws://localhost/?room=th02mp-1234&run=1',netplayPlayerCount:2,netplaySpectatorId:'viewer'},music:'none'});
     const header={version:VERSION,game:'02',adapter:'confirmed-worker/1',players:2,hostSlot:0,tickMs:10,settings:{},identity:await fingerprint(SOURCE_PATHS),opening:{}};
     const row={inputs:[32,0],offlineMask:0,proof:'ok',hash:null};

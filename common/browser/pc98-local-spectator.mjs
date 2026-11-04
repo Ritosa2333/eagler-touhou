@@ -1,5 +1,5 @@
 // A viewer owns its replica and only receives the host's confirmed prefix.
-export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,channelFactory=name=>new BroadcastChannel(name),onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
+export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,channelFactory=name=>new BroadcastChannel(name),onHeader=()=>{},onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
   const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
   if(!room||!run)throw Error('观战房间身份无效');
   const viewer=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
@@ -49,7 +49,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       if(end&&stable(end)!==stable(data.end))throw Error('观战结束边界改变');
       const index=validatePointIndex?validatePointIndex(data.points||[],data.available):[];
       for(let i=0;i<points.length;i++)if(stable(points[i])!==stable(index[i]))throw Error('已发布观战检查点改变');
-      header??=data.header;identity??=nextIdentity;rows.push(...data.rows);available=data.available;end=data.end||end;points=index;
+      if(!header){header=data.header;onHeader(header);}identity??=nextIdentity;rows.push(...data.rows);available=data.available;end=data.end||end;points=index;
       if(rows.length===available&&!replica)void boot();if(rows.length<available)pull();
     }catch(error){fail(error);}
   };
