@@ -80,6 +80,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+[Supervisor 入口与内部 pump 时钟对照](https://github.com/AdingApkgg/thp/blob/7a56c93e6d262e957bf08c2fbc6bd49ff356b7f2/docs/porting/TH14_SUPERVISOR_PUMP_CLOCK_NOV05.md)：固定硬件断点直接观察 34,000 个同线程 pass 的入口→pump→Player，零报告调试异常，不由 Player 计数推导物理帧。定位 worker 在入口之后、pump 之前恢复而比较器未交付内部时间；同一 Wasm 禁用组保留回调 31,009 的一帧失败与相同 RNG 负例载荷，启用组 35,000 回调的 32 状态、2,624,925 相机字、64 次实际 RNG 访问、885 行 VM及 502 个战斗检查点全部通过，额外 4 条审计未接受。仅冻结诊断构建加入时钟调用点，正式玩法未改，原始数据留本地。保留首轮零回调启动超时；调试接收时刻不证明跨线程精确执行。旧默认／争用负例、独立调度、全模式和整局像素／PCM继续，整作 1:1 未完成。
+
+
 [GLES 实际启动与异步帧循环修复](https://github.com/AdingApkgg/thp/blob/eae6adb859420ae579df90569644eae6a9087c5f/docs/porting/TH14_GLES_ASYNC_STARTUP_NOV05.md)：定位 SDL 换帧挂起时原始 RAF 提前读取 0 而只回调两次的黑屏原因，帧／加载／输入改为等待真实 C++ 返回并串行交付。实际标题、Normal 正常开局、射击／移动、暂停恢复及正常 Quit 回 Launcher 通过。去掉探针的同一 Wasm 再启动，Option 中 BGM 100% 改为 95%，正常退出、整页刷新与新 Runtime 后实际读回 95%。135 路由／28 HTTP、队列与五项共享编译检查通过；141 个玩法对象未变。保留旧黑屏及首轮构建失败。这是有限浏览器流程／单项配置持久化结果，原版整局像素／PCM、全部存档／录像、离线、全模式及独立调度继续，整作 1:1 未完成。
 
 [直接观测 pump 与首读就绪边界](https://github.com/AdingApkgg/thp/blob/eae6adb859420ae579df90569644eae6a9087c5f/docs/porting/TH14_OBSERVED_PUMP_READY_NOV05.md)：两个新原版记录各 35,000 回调、零报告调试异常；新断点切换直接观察 Player 后的 pump 再到首次读取，恢复在该 pump 前已完成，未增加多余首读等待或上一 Player 时钟替代。32 项状态、2,624,925 相机字、64 次实际指令值／计数／顺序、728 行 VM及 347 个战斗检查点一致，26 条额外模型读数未接受。原版分发假定、未捕获调用及发布交错推导仍保留，不能用 Player 计数单独证明物理帧入口；旧争用／默认时钟负例未关闭。Initialize 严格通过，Scene 仍拒绝，白名单未改。源码和计数／地址／路径／哈希索引已公开，原始记录、游戏资产与二进制留本地。
