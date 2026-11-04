@@ -9,7 +9,7 @@ import {userPath} from './managed-storage.mjs';
 
 const host=document.getElementById('game'),input=globalThis.__eaglerPC98Input;
 const nativeKeys=[['ArrowUp',1,38],['ArrowDown',2,40],['ArrowLeft',4,37],['ArrowRight',8,39],['KeyX',16,88],['KeyZ',32,90],['ShiftLeft',64,16],['Escape',128,27],['Enter',256,13]];
-const sources=['../practice-attempt.js','../direct-drag.js','../player-ui.js','../solo.js','../solo-worker.js','../solo-worker-client.js','../dosbox-adapter.js','../game-version.js','../solo-native-music.js',
+const sources=['../managed-gameover.mjs','../practice-attempt.js','../direct-drag.js','../player-ui.js','../solo.js','../solo-worker.js','../solo-worker-client.js','../dosbox-adapter.js','../game-version.js','../solo-native-music.js',
   '../touch-input.js','../vendor/dosbox-x/runtime.json','../vendor/dosbox-x/dosbox-jspi.mjs','../vendor/dosbox-x/wdosbox-x-fast.wasm',
   '../dosbox-disk.js','../frame-presenter.js','../solo-worker-environment.js','../solo-patch.json','../solo-patch-jp.json','../vendor/dosbox-x/emulators.js',
   './external-host.js','./external-loader.js','./external-codec.js','./external-recorder.js','./external-ui.js','./external-lifecycle.js',

@@ -66,7 +66,10 @@ await patch('solo.js',text=>{
 await adaptPC98Practice({patch,replaceOnce,game:'th04'});
 await writeFile(resolve(output,'solo.js'),await readFile(resolve(output,'solo.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-solo-api.js'),'utf8'));
 await patch('practice-attempt.js',text=>replaceOnce(text,'if(!replay)await installPractice(data,resources,practice);',`if(!replay)await installPractice(data,resources,practice);
+      if(!replay){const {Fat12}=await import('./solo-fat12.js');const {installGameOverTransition}=await import('./managed-gameover.mjs');const fat=new Fat12(data),entry=fat.find('GENSO/MAIN.EXE'),exe=fat.read(entry);installGameOverTransition(exe);fat.replace(entry,exe);}
       if(!replay&&globalThis.__eaglerPC98Files){const {Fat12}=await import('./solo-fat12.js');const fat=new Fat12(data);for(const [name,bytes]of globalThis.__eaglerPC98Files.memory)if(['GENSOU.SCR','MIKO.CFG'].includes(name))fat.put('GENSO/'+name,bytes);}`,'saved files'));
+await patch('netplay/runtime.js',text=>replaceOnce(text,'  installConfig(disk,patch,encodeConfig(config));',`  installConfig(disk,patch,encodeConfig(config));
+  {const {Fat12}=await import('../solo-fat12.js');const {installGameOverTransition}=await import('../managed-gameover.mjs');const fat=new Fat12(disk),entry=fat.find('GENSO/MAIN.EXE'),exe=fat.read(entry);installGameOverTransition(exe);fat.replace(entry,exe);}`,'game over transition'));
 // Managed Package Store owns installation. The original browser cache is bypassed.
 await patch('preload-cache.js',text=>replaceOnce(text,"if(!globalThis.indexedDB){resolve(null);return;}","if(globalThis.__eaglerPC98Content||!globalThis.indexedDB){resolve(null);return;}",'asset cache'));
 await patch('site.css',text=>replaceOnce(text,"url('assets/launcher-background.webp')","none",'standalone page artwork'));
