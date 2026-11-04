@@ -1,3 +1,4 @@
+import {mountPauseMenu} from './pc98-pause-menu.mjs';
 import {createSoloAttempt} from './practice-attempt.js';
 import {mountPractice} from './practice-ui.js';
 import {normalizePractice} from './practice-config.js';
@@ -47,6 +48,13 @@ function applyAssist(value){
 }
 function release(){input.releaseGameplay();if(emulator)for(const [code,bit] of nativeKeys)if(lastKeys&bit)emulator.key(code,false);lastKeys=0;}
 let replayResult=null;
+let pausePrevious=0;
+const pauseMenu=mountPauseMenu(host.querySelector('.solo-screen'),{
+  resume(){pauseMenu.close();input.clear();pausePrevious=0;emulator?.run();music?.resume();void attempt?.sfx?.resume();canvas.focus();},
+  exit(){pauseMenu.close();void naturalExit().catch(report);},
+  discard(){pauseMenu.close();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});},
+  restart(){pauseMenu.close();void restart({...lastPractice,options:practiceUI.options}).catch(report);},
+});
 const savedReplays=new WeakMap();
 async function saveReplay(blob){recordBlob=blob;if(savedReplays.has(blob))return savedReplays.get(blob);const task=(async()=>{const name=`replay/th02_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th02r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());return name;})();savedReplays.set(blob,task);return task;}
 async function syncFiles(){if(!emulator||playback)return;const fat=new Fat12(await emulator.getDiskImage('th02-solo.hdi'));
@@ -57,11 +65,14 @@ const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(
   onPause:()=>{if(emulator){emulator.key('Escape',true);setTimeout(()=>emulator?.key('Escape',false),120);}}});
 const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.practice?.status})});
 function tick(now){
-  if(!emulator)return;const state=readState(),ps=emulator.practice?.status;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});
+  if(!emulator)return;const sample=input.sample(),edge=sample&~pausePrevious;pausePrevious=sample;
+  if(pauseMenu.visible){if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);if(edge&(32|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();loop=requestAnimationFrame(tick);return;}
+  const state=readState(),ps=emulator.practice?.status;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});
 
   if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recordBlob,failed:recorder?.state.failed});
+  if((edge&128)&&state?.mode===1&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
   if(emulator.state==='running'&&!playback){
-    const playing=state?.mode===1&&!state.hit;let bits=input.sample({play:playing});
+    const playing=state?.mode===1&&!state.hit;let bits=sample;
     if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;
     if((bits&3)===3)bits&=~3;if((bits&12)===12)bits&=~12;
     for(const [code,bit] of nativeKeys)if(!!(bits&bit)!==!!(lastKeys&bit))emulator.key(code,!!(bits&bit));lastKeys=bits;
@@ -107,5 +118,5 @@ export const managedAPI={
     if(message.command==='write'){const bytes=new Uint8Array(message.bytes);if(path.endsWith('.th02r'))await decodeExternalReplay(new Blob([bytes]),'02');await store.write(path,bytes);return {};}
     throw Error('用户文件操作无效');},
   async playback(message){if(message.action!=='open'||emulator)throw Error('请从启动器打开录像');const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(message.path));if(!bytes)throw Error('录像不存在');await launch(practiceUI.configuration(),await decodeExternalReplay(new Blob([bytes]),'02'));return {};},
-  stop(){managedPractice.stop();discardRetry();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;},
+  stop(){pauseMenu.close();pausePrevious=0;managedPractice.stop();discardRetry();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;},
 };
