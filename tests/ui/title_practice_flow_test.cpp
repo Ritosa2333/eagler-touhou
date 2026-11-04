@@ -369,7 +369,10 @@ TEST(practice_return_classifier_preserves_ordinary_replay_and_gameover_paths) {
 }
 
 TEST(ordinary_and_replay_style_returns_still_enter_main) {
-    for (i32 reason : {1, 3}) {
+    // reason 3 语义更新（0x43c1c0 case0x10 → dc670=3 → 0x454050 战后名前
+    // 录入）：不再直入主菜单，战后流程由 title_result_flow_test 覆盖；
+    // 这里只保留 reason 1（自对局/回放返回）的直入主菜单语义。
+    for (i32 reason : {1}) {
         PracticeHarness h;
         h.scene->state.return_reason = reason;
         h.advance(15);

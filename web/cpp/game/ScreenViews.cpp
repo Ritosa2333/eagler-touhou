@@ -12,13 +12,27 @@ static unsigned cam_budget = 0;  // 临时探针：相机行独立预算
 void probe::probe_cam_arm(unsigned n) { cam_budget = n; }
 ScreenView screen_view(const GraphicsViewport& viewport,float fov,Vec2 offset)noexcept{
  ScreenView out;out.viewport=viewport;out.offset=offset;
- // 原版相机（0x45dc80 初建 / 0x43b900 每 tick 同构，oracle 捕获实证）：
- // eye=(cx,-cy,-h/2/tan(fov/2)) 向 +z 看、up=(0,1,0) → view 旋转恒等、
- // 平移 (-cx,cy,distance)；PerspFovLH(fov, w/h, zn=100, zf=10000)
- // （proj m22=1.01010096、m14=-101.010101、view[14]=895.6922 为对拍锚点）。
- const float x=float(float(viewport.x)+float(float(viewport.width)*.5f)),y=float(float(viewport.y)+float(float(viewport.height)*.5f));
- const float half=float(fov*.5f),distance=float(float(viewport.height>>1)/float(std::tan(double(half))));
- out.camera.view=scene_look_at({x,-y,-distance},{x,-y,0},{0,1,0});out.camera.projection=scene_perspective(fov,float(float(viewport.width)/float(viewport.height)),100,10000);return out;
+ // 原版每 tick 2D 屏幕相机 0x43b900（主循环 0x45d2f0/0x45cef0/0x45d570 帧首
+ // 调用；0x46ef60/0x46f0e0 在切视口前后重设同一相机）：
+ //   eye=(320,240,240/tan(fov/2))、at=(320,240,0)、up=(0,-1,0)
+ //   → D3DXMatrixLookAtLH: view 旋转 diag(1,-1,-1)、平移 (-320,240,240*cot)；
+ //   → D3DXMatrixPerspectiveFovLH(fov, 4/3, zn=1, zf=10000)
+ // （decomp 0043b900.c:34-45：local_14/10=320/240、up.y=-1、0x3faaaaab、
+ //  0x3f800000、0x461c4000）。相机与 viewport 无关：0x43b900 硬编码 320/240
+ //  与 4/3，视口只由 SetViewport 切换；屏幕空间 quad 走 transformed 分支
+ //  只读 viewport，不受影响。
+ // 原生对拍锚点（title oracle window B f650-749）：全部 L22/L23 world quad
+ //  view={1,0,0,0, 0,-1,0,0, 0,0,-1,0, -320,240,895.6922,1}、
+ //  proj m0=2.79903793/m5=3.73205066/m10=1.00010002/m14=-1.00010002；
+ //  battle f0 L31 ascii/loading quad 同（round-18 native-01-boot）。
+ // 旧实现复刻的是 boot 相机 0x45dc80（view 恒等、zn=100、按 viewport 取中心/
+ // 距离/宽高比），只对屏幕空间 quad 无害；layer21+ 的 world quad（ED staff
+ // 条带/st01、选人牌 Y 翻转、loading 条）全部被投到屏幕外——KI-1/KI-2 根因。
+ out.camera.projection=scene_perspective(fov,1.3333334f,1.f,10000.f);
+ // 与 world_quad 的 overlay 相机同式（240*cot），保证与已对拍窗口逐位同源。
+ const float distance=float(240.0*out.camera.projection.m[5]);
+ out.camera.view=scene_look_at({320,240,distance},{320,240,0},{0,-1,0});
+ return out;
 }
 void ScreenViews::configure(const AnmEnvironment& environment){this->environment=&environment;const float scale=environment.resolution_scale;const auto scaled=[&](float value){return u32(truncate_int(float(value*scale)));};
  views[2]=screen_view({0,0,environment.screen_width,environment.screen_height,0,1},fov);
@@ -32,15 +46,11 @@ void ScreenViews::configure(const AnmEnvironment& environment){this->environment
  views[3]=screen_view({u32(truncate_int(float(float(float(environment.screen_width)-408.f)*.5f))),u32(truncate_int(float(float(float(environment.screen_height)-476.f)*.5f))),408,476,0,1},fov);
 }
 bool ScreenViews::loading_camera(){
- // 原生 loading/2D 屏幕相机（boot draw 门逐位实证）：view 平移与
- // screen_view 相同，但旋转为 diag(1,-1,-1)；proj 同 fov/aspect，zn=1、
- // zf=10000（m10=1.00010002、m14=-1.00010002）。game scene 相机
- //（zn=100、view 恒等）用于 battle 3D/playfield，不适用于 loading quad。
+ // loading/2D 屏幕相机 = 0x43b900（screen_view 已按该式重建；battle f0-9
+ // loading quad 与 boot draw 门逐位实证：diag(1,-1,-1)、zn=1、zf=10000）。
  const u32 width=environment?u32(environment->screen_width):640u;
  const u32 height=environment?u32(environment->screen_height):480u;
  ScreenView view=screen_view({0,0,width,height,0,1},fov);
- view.camera.view.m[5]=-1.f;view.camera.view.m[10]=-1.f;
- view.camera.projection=scene_perspective(fov,float(float(width)/float(height)),1.f,10000.f);
  renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);renderer.offset={};
  return true;
 }

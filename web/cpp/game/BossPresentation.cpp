@@ -162,9 +162,12 @@ bool BossPresentation::update(const BossFrameInput& input,
         fail("Boss name retirement failed");
         return false;
     }
-    // 004265a0 timer gate is separate from ring/name visibility.
-    const bool gate = boss != nullptr && !input.boss_leaving && !input.dialog_active &&
-                      input.timer_seconds >= 0;
+    // 004265a0:98-107 timer gate is separate from ring/name visibility. The
+    // boss condition is slot occupancy (mgr+0x5c != 0), not a live entity —
+    // final-spell capture keeps the slot until BossDead's 512(-1) clears it
+    // ~60 frames later, so the timer stays visible through that window.
+    const bool gate = input.boss_slot_present && !input.boss_leaving &&
+                      !input.dialog_active && input.timer_seconds >= 0;
     if (gate != gate_) {
         gate_ = gate;
         // 0x4265a0:102-112：数字 VM 显隐位（VM+0x18 bit1）。

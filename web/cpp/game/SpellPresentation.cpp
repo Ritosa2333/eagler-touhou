@@ -240,7 +240,7 @@ bool SpellPresentation::consume(const SpellEvent& event, const float boss_positi
     return true;
 }
 
-void SpellPresentation::sync(const SpellSnapshot& state, const float* boss_position) {
+void SpellPresentation::sync(const SpellSnapshot& state) {
     const u32 old_flags = flags_;
     snapshot_ = state;
     flags_ = state.flags;
@@ -260,12 +260,12 @@ void SpellPresentation::sync(const SpellSnapshot& state, const float* boss_posit
         if (!animations_.retire(background_))
             fail("Spell hidden background retire failed: " + animations_.error);
     }
-    if (boss_position && state.active()) {
-        for (i32 i = 0; i < 3; ++i)
-            anchor_[i] = anchor_[i] + (boss_position[i] - anchor_[i]) * 0.05f;
-        if (auto* vm = animations_.registry.find(background_))
-            vm->visual.translation = {anchor_[0], anchor_[1], anchor_[2]};
-    }
+    // 0x413270:180-194 在符卡开始时把 BOSS 槽对象 +0x1230 的位置一次性写入
+    // 符卡背景根的 translation(+0x574)；0x413080（spell draw）与 0x413a60
+    //（spell end）都不再更新该字段——原版没有逐帧追随。此前这里按 5% 向
+    // boss 位置追赶，使卡面随 Boss 漂移而名字文字（text.anm 74，静止于
+    // (524,16)）固定，两者相对位置逐帧变化（用户实测“符卡名歪”）。位置只
+    // 在 consume() 开始时写一次。
 }
 
 bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attempts) {

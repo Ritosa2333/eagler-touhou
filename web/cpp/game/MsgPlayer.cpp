@@ -381,8 +381,8 @@ MsgPlayer::Flow MsgPlayer::execute(u8 opcode, const u8* args, u32 arg_bytes,
             return Flow::Advance;
         }
         case 0x12:  // 18：文本区 + 名牌槽释放（0x429250，0x424ba0 + 四槽 0x46fc30）
-        case 0x17:  // 23：释放左立绘槽（0x4295a9）
-        case 0x18:  // 24：释放右立绘槽（0x4295bc）
+        case 0x17:  // 23：左立绘 deferred label7（0x4295a9，句柄保留）
+        case 0x18:  // 24：右立绘 deferred label7（0x4295bc，句柄保留）
             host_->msg_release(i32(opcode));
             return Flow::Advance;
         case 0x19: { // 25：同一 int 参数写四条正文 VM 的 +0x4e4（视觉锚点）

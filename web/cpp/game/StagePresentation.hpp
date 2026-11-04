@@ -100,6 +100,11 @@ public:
     // 0x438730 收集瞬间的 front.anm 拾取动画（0x46f820 flags=0 尾插、layer -1、
     // 位置=神霊位、anmArg=0；句柄原版丢弃）。失败置 error_ 并返回 false。
     bool spirit_pickup(i32 script, const Vec3& position);
+    // 0x438ec0 出生瞬间建 VM（0x438ff9 effect.anm 0x38 先、0x43909d/
+    // 0x4390be astral kind*6+1/4 后；均 layer -1、flags 0 → 0x46f3f0 尾插）。
+    // astral 句柄写回 spirit_handles_[slot] 供 sync_item_spirits 复用。
+    bool spirit_spawn_animation(u32 slot, u32 serial, i32 kind, u32 flags,
+                                float x, float y, float z);
     // true = 敌机本体 VM 由 ECL 303/306 创建入池（0x41fe80/case3 同构），
     // sync 的敌机接线/清理段跳过。默认路径（2026-10-23 基座治理整改：
     // RunScene::initialize 置 true——敌机全走 AnmManager 句柄，th15

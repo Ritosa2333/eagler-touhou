@@ -18,8 +18,14 @@
 //   opcode 13/14（0x4298d4/0x4298e8）：表情切换 = 0x46fca0 立即中断，
 //     label = *(i32*)(指令 arg) + 17；13 打左（+0x40）、14 打右（+0x44）。
 //     （旧 MsgPlayer 注释「13/14 隐立绘」为误读，p58 已纠正。）
-//   opcode 4/5/23/24（0x4295cf/0x4295e9/0x4295a9/0x4295bc）：0x46fc30 释放
-//     左/右/名牌槽（mode 1/7 退出风格差异未校准，port 统一走 retire）。
+//   opcode 4/5（0x4295cf/0x4295e9）：0x46fc30(+0x40/+0x44, label1) deferred
+//     后清对应句柄；opcode 5 额外给名牌 +0x5c 发 label1（句柄不清）。VM 由
+//     label1 分支自行淡出（约 30 帧 alpha→0 后 op1 自毁）。
+//   opcode 23/24（0x4295a9/0x4295bc）：0x46fc30(+0x40/+0x44, label7) deferred，
+//     句柄保留、不清、不 retire——立绘“晃动/换姿”分支，非释放。旧实现把
+//     23/24 并入 retire 释放：st03a/c/d.msg entry1 time30 的 opcode 24 摧毁
+//     芳香立绘树，后续 opcode 14 表情切换因句柄为 0 全部空转（用户实测
+//     “3面打完 boss 对话到一半芳香立绘没了”）。
 //   opcode 6/18（0x42960c/0x429250）：释放名牌四槽 + 正文/ruby 文本区。
 //
 // bank 号 → 合并表全局脚本号：原版敌机管理器 bank 数组 +0x80+idx*4 与 ECL
@@ -75,8 +81,16 @@ public:
     bool nameplate(i32 chapter);  // opcode 20
     bool interrupt_player(i32 label);  // opcode 13 / opcode 7 的左亮
     bool interrupt_side(i32 label);    // opcode 14 / opcode 8 的右亮
-    void release_player();      // opcode 4/23
-    void release_side();        // opcode 5/24（含名牌槽 +0x5c）
+    // opcode 23/24（0x4295a9/0x4295bc）：deferred label7 中断（0x46fc30），
+    // 句柄保留、名牌不动——不是释放。label7 是立绘脚本的“晃动/换姿”可见
+    // 分支（st03enm script10 time30：仅位移/层插值后 op3 等待）。
+    bool fade_player(i32 label);
+    bool fade_side(i32 label);
+    // 0x429d00/0x429f10（Esc 暂停隐藏/恢复）：对话立绘槽 VM+0x18 bit1。
+    bool set_visible(bool visible);
+    void release_player();      // opcode 4（0x4295cf）：label1 deferred + 清 +0x40
+    void release_side();        // opcode 5（0x4295e9）：label1 deferred + 清
+                                // +0x44；名牌 label1 但句柄保留（原版不清 +0x5c）
     void release_nameplates();  // opcode 6/18 的名牌四槽语义（port 单名牌槽）
     void release_all();
 

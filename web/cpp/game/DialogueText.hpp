@@ -69,6 +69,9 @@ public:
     // 发 label（6→1 / 18→3）。原版 0x46fc30 不发像素清零；label1 8 帧 alpha
     // 淡出后 op1 回收，label3 3 帧 alpha 淡出后循环保留 VM/像素。
     bool fade(i32 label, std::string& error);
+    // 0x429d00/0x429f10（Esc 暂停/恢复）：四条正文 VM + 气泡根 VM+0x18 bit1
+    // 清/置（不销毁、不清像素）。
+    bool set_visible(AnmManager& manager, bool visible, std::string& error);
     bool set_anchor_y(AnmManager& manager, float value, std::string& error);
     // 对话销毁（0x4282b0 对象的 VM 回收）：retire 四条 VM。
     void release(AnmManager& manager) noexcept;

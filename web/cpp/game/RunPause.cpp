@@ -67,6 +67,9 @@ bool RunPause::finish_selection(i32 entry) {
         progress.rate = state.saved_rate;
         progress.scene_flags &= ~0x10u;
         environment.paused = false;
+        // 0x43e700:0x43e749-0x43e753：恢复时对话对象存在 → 0x429f10 置回
+        // VM+0x18 bit1（0x429f10 唯一非结算调用者）。
+        if (!platform.dialogue_visible(true)) return fail("Pause dialogue show failed");
         return platform.resume_music() || fail("Pause music resume failed");
     case 1:
         return platform.return_to_title() || fail("Pause title destination failed");
@@ -177,6 +180,14 @@ bool RunPause::open(PauseEntrance entrance) {
     if (!animations.interrupt(state.menu_animation, 3)) {
         rollback();
         return fail(animations.error);
+    }
+    // 0x43e3f0 激活末尾：对话对象存在（ctx+0x198 != 0）→ 0x429d00 清对话
+    // 9 槽 VM+0x18 bit1（隐藏，不销毁）。仅普通 Esc 暂停；GameOver/结算
+    // 激活路径（0x43e5a0 族）不调用 0x429d00。
+    if (entrance == PauseEntrance::Pause && !platform.dialogue_visible(false)) {
+        rollback();
+        platform.dialogue_visible(true);  // 回滚不留隐藏残态
+        return fail("Pause dialogue hide failed");
     }
     return true;
 }

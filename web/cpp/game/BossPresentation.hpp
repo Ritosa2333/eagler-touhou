@@ -50,7 +50,13 @@ namespace th13 {
 
 // 宿主装配的每帧 boss 视图（RunScene/测试填充；不复制 sim 状态）。
 struct BossFrameInput {
-    const StageEnemy* boss = nullptr;  // mgr+0x5c 槽 0（sim.boss()）
+    const StageEnemy* boss = nullptr;  // mgr+0x5c 槽 0 指向的实体（sim.boss()）
+    bool boss_slot_present = false;    // mgr+0x5c 槽 0 占用（script_id>=0）。
+                                       // 0x4265a0:98-107 计时门只看槽占用，
+                                       // 不看实体存活：终符捕获（514→BossDead）
+                                       // 后槽由 512(-1) 约 +60 帧才清，期间
+                                       // 计时器保持显示（native-s3 trace：
+                                       // boss 实体保留 61 帧）。
     bool boss_leaving = false;         // mgr+0x7c bit0
     bool dialog_active = false;        // ctx+0x198（对话进行中）
     float player_x = 0, player_y = 0;  // DAT_004c22c4+0x5b8/+0x5bc（世界位）

@@ -138,17 +138,43 @@ bool MsgPresentation::interrupt_side(i32 label) {
     return true;
 }
 
+bool MsgPresentation::fade_player(i32 label) {
+    // opcode 23（0x4295a9）：0x46fc30(+0x40, label) deferred；句柄保留。
+    if (!player_) return true;  // 空槽：0x46fc30 对 0 句柄空转
+    if (!animations.interrupt(player_, label, false)) return fail(animations.error);
+    return true;
+}
+
+bool MsgPresentation::fade_side(i32 label) {
+    // opcode 24（0x4295bc）：0x46fc30(+0x44, label) deferred；句柄保留，
+    // 名牌（+0x5c）不动。
+    if (!side_) return true;
+    if (!animations.interrupt(side_, label, false)) return fail(animations.error);
+    return true;
+}
+
+bool MsgPresentation::set_visible(bool visible) {
+    // 0x429d00/0x429f10（Esc 暂停/恢复）：对话 9 槽 VM+0x18 bit1 清/置，
+    // 不销毁、不清句柄。AnmManager::pause 即该位操作（递归含直接子）。
+    for (u32 handle : {player_, side_, nameplate_})
+        if (handle && !animations.pause(handle, !visible)) return fail(animations.error);
+    return true;
+}
+
 void MsgPresentation::release_player() {
-    if (player_ && !animations.retire(player_)) fail(animations.error);
+    // opcode 4（0x4295cf）：0x46fc30(+0x40, 1) deferred 后清 +0x40；
+    // VM 由 label1 分支自行淡出（不立即 retire）。
+    if (player_ && !animations.interrupt(player_, 1, false)) fail(animations.error);
     player_ = 0;
 }
 
 void MsgPresentation::release_side() {
-    if (side_ && !animations.retire(side_)) fail(animations.error);
+    // opcode 5（0x4295e9）：0x46fc30(+0x44, 1) deferred 后清 +0x44；
+    // 名牌 +0x5c 同发 label1 但句柄保留（原版不清 +0x5c，后续 0x429a94
+    // 因非零跳过重建；6/18 或对话拆卸再回收）。
+    if (side_ && !animations.interrupt(side_, 1, false)) fail(animations.error);
     side_ = 0;
-    // opcode 5（0x4295e9）：右立绘随名牌槽 +0x5c 一并释放。
-    if (nameplate_ && !animations.retire(nameplate_)) fail(animations.error);
-    nameplate_ = 0;
+    if (nameplate_ && !animations.interrupt(nameplate_, 1, false)) fail(animations.error);
 }
 
 void MsgPresentation::release_nameplates() {
@@ -157,9 +183,14 @@ void MsgPresentation::release_nameplates() {
 }
 
 void MsgPresentation::release_all() {
-    release_player();
-    release_side();
-    release_nameplates();
+    // 对话拆卸（对象销毁/切场景）：硬回收全部槽——不走 opcode 4/5 的
+    // label1 淡出（那是脚本内的收尾演出路径，拆卸时原版直接弃对象）。
+    if (player_ && !animations.retire(player_)) fail(animations.error);
+    player_ = 0;
+    if (side_ && !animations.retire(side_)) fail(animations.error);
+    side_ = 0;
+    if (nameplate_ && !animations.retire(nameplate_)) fail(animations.error);
+    nameplate_ = 0;
 }
 
 }  // namespace th13

@@ -77,6 +77,17 @@ bool TitleFrame::initialize() {
         callbacks[1].enabled = true;
         return menu();
     }
+    if (reason == 3) {
+        // Ending END → 0x43c1c0 case0x10 → DAT_004dc670=3 → 0x44c570 case0 的
+        // dc670==3 分支：+0x30=10、FUN_00415030(0)、FUN_00473190、
+        // FUN_0044bac0(...,0xe) → 0x454050（名前录入/成绩结算）。标题直入
+        // 菜单态（跳过 180 帧 intro），本帧即走该屏更新。
+        state.flags |= 2u;
+        state.change_screen(TitleScreen::ResultName);
+        state.return_reason = 1;
+        callbacks[1].enabled = true;
+        return menu();
+    }
     if (reason == 0) {
         // 冷启动（真机 boot）：无提示幕，走完整时序——开场 logo 幕 180 帧后
         // 标题展开、菜单 intro 180 帧插值（oracle g181/g361/g372 锚点）。
@@ -128,6 +139,11 @@ bool TitleFrame::update(const TitleFrameInput& value) {
         if (!menu()) return false;
         break;
     case 13:  // 音楽室（0x44c570 case d → 0x4554f0；列表/注释走 Draw 文本队列）
+        callbacks[1].enabled = true;
+        if (!menu()) return false;
+        break;
+    case 14:  // ResultName（0x44c570 case 0xe → 0x454050；名字编辑/成绩结算）
+    case 15:  // ResultReplaySlot（0x44c570 case 0xf → 0x4549d0；回放槽保存）
         callbacks[1].enabled = true;
         if (!menu()) return false;
         break;

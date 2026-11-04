@@ -14,7 +14,10 @@ namespace th13 {
 // 难度=5 对应物 450fb0（th13 沿 th15 位 6，待回填）、
 // 角色=7（同上）、PlayerData=10 = case a → 0x453170（记录浏览；数据服务归宿主）、
 // Replay=11 = case b → 0x4525b0（p58 反编译实证）、
-// MusicRoom=13 = case d → 0x4554f0（MenuExtras 实证）、Manual=16 = case 10
+// MusicRoom=13 = case d → 0x4554f0（MenuExtras 实证）、
+// ResultName=14 = case 0xe → 0x454050（通关成绩名前录入/结算；Ending 结束
+// dc670=3 分支进入）、ResultReplaySlot=15 = case 0xf → 0x4549d0（回放槽保存；
+// 0x454050 state3 在 DAT_004be7c8==0 时进入）、Manual=16 = case 10
 // → 0x455330（MenuExtras 实证；真实 help 查看器归宿主，wrapper≠完成）、
 // SpellPractice=17 = case 0x11/0x12/0x13 → 0x4560a0/0x456650/0x4576c0
 //（三级菜单；解锁/启动数据归宿主）。
@@ -31,6 +34,8 @@ enum class TitleScreen : i32 {
     PlayerData = 10,  // 0x44c570 case a -> 0x453170
     Replay = 11,
     MusicRoom = 13,
+    ResultName = 14,        // 0x44c570 case 0xe -> 0x454050（成绩名前录入）
+    ResultReplaySlot = 15,  // 0x44c570 case 0xf -> 0x4549d0（回放槽保存）
     Manual = 16,
     SpellPractice = 17,  // 0x44c570 case 0x11/0x12/0x13
 };
@@ -63,6 +68,16 @@ struct TitleState {
     i32 replay_index = 0;
     i32 replay_import_hint = -1;
     u32 replay_ascii_root = 0;
+    // [通关结算] 0x44c570 case 0xe/0xf 屏内状态：
+    //   result_name        = 0x454050 +0x599c 名字缓冲（8 字编辑，原版定长
+    //                        char[9]，移植用 std::string）；
+    //   result_name_cursor = +0x59b4 字符网格光标（0..90；88=SPACE/89=DEL/
+    //                        90=END，91 项 = 7 行 × 13 列）；
+    //   result_slot        = +0x28 回放槽序（0 基；文件名/宿主槽号 = +1，
+    //                        1..25，对应 "th13_%.2d.rpy"）。
+    std::string result_name;
+    i32 result_name_cursor = 90;
+    i32 result_slot = 0;
 
     TitleState() { age.set(0); }
 

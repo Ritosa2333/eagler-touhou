@@ -1113,18 +1113,24 @@ bool ApplicationState::apply_destination() {
     if (next == i32(Destination::AfterEnding)) {
         // 0x10：Ending 脚本 END（0x416610 置 0x4dcc24=0x10）→ 0x43c1c0
         // case0x10：0x4165f0 → 0x4163b0 拆卸（ANM 槽 20-23/msg/任务）→
-        // 目的地 4 + DAT_004dc670=3（标题直入菜单态 10，跳过常驻入场）。
-        // begin_title 变体 3 与原版 dc670=3 对齐（现有 reason 3 的 GameOver
-        // 语义同走直入菜单路径，行为面等价）。
+        // 目的地 4 + DAT_004dc670=3（标题 case0 dc670==3 → 流程 0xe：
+        // 0x454050 名前录入/成绩结算 → 0x4549d0 回放保存——TitleFrame
+        // reason 3 分支）。reason 3 只属于 AfterEnding。
         if (ending) {
             ending->teardown();
             ending.reset();
         }
+        // 原版结局位在内存、下一次 0x449e50 才落盘；网页版 begin_title(3)
+        // 此刻 run 与 records 均净、无下一次保存点，这里显式提交一次
+        //（EndingScene::initialize 已写入 files.ending_seen_bytes）。
+        if (!replay_active && !files.save_score()) return fail(files.error);
         return begin_title(3);
     }
     if (next == i32(Destination::Title) || next == i32(Destination::TitleFromGameOver) ||
         next == i32(Destination::TitleFromReplay)) {
-        return begin_title(next == i32(Destination::TitleFromGameOver) ? 3 : 1);
+        // GameOver 出口（0x43fa90/0x440960 → 0x414fc0(4)）不设 dc670=3，
+        // 回主菜单（reason 1 通用分支）；reason 3 专属 AfterEnding 战后流程。
+        return begin_title(1);
     }
     if (next == i32(Destination::Quit)) {
         return quit();
@@ -1180,7 +1186,14 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
     }
     if (stage_transition_active && !loaded_transition &&
         !environment.paused && !(progress.scene_flags & 0x70u)) {
-        progress.scene_flags &= ~4u;
+        // 0x42b990:45 在关卡装载入口置 stage ctx +0x60 bit2；装载成功路径
+        // 0x42b990:231（FUN_0043b5a0 之后）才清 bit2。0x42c550:248-261 的
+        // `(uVar2 & 4)==0` 门用该位挡住 FUN_0042a370 分数滚动（004be810
+        // 冻结），直到装载完成。移植的装载完成点 = activate_next_stage ->
+        // begin_run（Application.cpp:700 关首 scene_flags=0）。此前在
+        // transition 门内每帧清 bit2 会让 0042a370 在装载期间继续滚动：
+        // My25 s05 f20115 起 web 004be810 每帧 +2（native 保持 7858765 到
+        // f20233，f20234 装载完成由 0x42b990:75-78 一次性设为 004be7c0）。
         if (stage_startup_age < 0) {
             if (!(run->hud.flags & 0x100u) || run->hud.clear_age.current >= 120) {
                 // Loader gate reached its transition phase: build the next STD

@@ -177,6 +177,39 @@ TEST(msg_expression_interrupt_and_release) {
     CHECK(presentation.interrupt_side(2));
 }
 
+TEST(msg_opcode_23_24_deferred_label7_keeps_handles) {
+    // 0x4295a9/0x4295bc（opcode 23/24）：0x46fc30(+0x40/+0x44, label7)
+    // deferred，句柄保留——不是释放。st03a/c/d.msg entry1 time30 的 opcode 24
+    // 旧实现误 retire 右立绘树，后续 opcode 14 表情切换空转，芳香立绘对话
+    // 中途消失（用户实测 BUG）。
+    Fixture f;
+    MsgPresentation presentation(f.manager, f.banks);
+    CHECK(presentation.bind_stage_scripts(
+        1, {"enemy.anm", "st01enm.anm"},
+        [&](const std::string& name, std::vector<u8>& bytes) { return f.read(name, bytes); }));
+    CHECK(presentation.player_portrait(0));
+    CHECK(presentation.side_portrait(0));
+    // 取实际创建的两槽句柄（玩家立绘 + 右立绘根）。
+    std::vector<u32> handles;
+    for (u32 i = 0; i < f.manager.registry.ordered_count(false); ++i) {
+        const u32 handle = f.manager.registry.ordered_handle(false, i);
+        if (handle) handles.push_back(handle);
+    }
+    CHECK_EQ(handles.size(), 2u);
+    // opcode 24（fade_side）与 23（fade_player）：句柄保留、VM 仍可中断。
+    CHECK(presentation.fade_side(7));
+    CHECK(presentation.fade_player(7));
+    for (u32 handle : handles) CHECK(f.manager.registry.find(handle) != nullptr);
+    CHECK(f.manager.update());  // deferred label7 在下一趟 tick 消费
+    for (u32 handle : handles) CHECK(f.manager.registry.find(handle) != nullptr);
+    CHECK(presentation.interrupt_side(20));   // 表情切换仍生效（句柄在）
+    CHECK(presentation.interrupt_player(20));
+    CHECK(presentation.error.empty());
+    // opcode 5 才清右槽句柄（label1 deferred + 清）。
+    presentation.release_side();
+    CHECK(presentation.interrupt_side(2));    // 空槽空转
+}
+
 TEST(msg_missing_anim_file_fails_explicitly) {
     Fixture f;
     MsgPresentation presentation(f.manager, f.banks);
