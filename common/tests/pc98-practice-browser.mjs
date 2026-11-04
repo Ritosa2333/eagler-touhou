@@ -10,6 +10,7 @@ const puppeteer = require('puppeteer-core');
 const base = process.env.PC98_LAUNCHER_URL || 'http://127.0.0.1:18330/';
 const games = process.env.PC98_PRACTICE_GAMES?.split(',') || ['th02','th04'];
 const mobile = process.env.PC98_PRACTICE_MOBILE === '1';
+const targetStage=Number(process.env.PC98_PRACTICE_STAGE||0),latePhase=process.env.PC98_PRACTICE_LATE_PHASE==='1';
 const browser = await puppeteer.launch({executablePath:await findChromiumExecutable(), headless:true,
   args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
 const wait = async (check, label, timeout = 90000) => {
@@ -75,9 +76,9 @@ try {
       }
       console.log(game,'browser practice entry visible');
       await frame.select('[data-jump=character]','1');
-      await frame.select('[data-jump=stage]','0');
+      await frame.select('[data-jump=stage]',String(targetStage));
       await frame.select('[data-jump=entry]','boss');
-      const phase = await frame.$$eval('[data-jump=phase] option', nodes => nodes.find(n => n.value !== '0').value);
+      const phase = await frame.$$eval('[data-jump=phase] option', nodes => nodes.filter(n => n.value !== '0').at(latePhase?-1:0).value,latePhase);
       await frame.select('[data-jump=phase]',phase);
       await click('[data-jump=power]');
       await page.keyboard.down('Control'); await page.keyboard.press('KeyA'); await page.keyboard.up('Control'); await page.keyboard.type('32');
@@ -85,7 +86,7 @@ try {
       assert.equal(await frame.evaluate(() => __eaglerPC98Input.sample()),0,'form navigation never reaches the guest');
       await click('[data-practice=invincible]');
       await click('[data-practice=alwaysPoint]');
-      await click('[data-practice-jump]');
+      const targetStarted=performance.now();await click('[data-practice-jump]');
       await wait(async () => {
         const state = await read();
         if (state.native?.practice?.error) throw Error(state.native.practice.error);
@@ -93,13 +94,13 @@ try {
       },game+' actual target practice',180000);
       const target = await read();
       assert.equal(target.native.practice.setup.character,1);
-      assert.equal(target.native.practice.setup.stage,0);
+      assert.equal(target.native.practice.setup.stage,targetStage);
       assert.equal(target.native.practice.setup.entry,'boss');
       assert.equal(target.native.practice.setup.phase,Number(phase));
       assert.equal(target.native.practice.power,32);
       assert.equal(target.native.practice.options.invincible,true);
       assert.equal(target.native.practice.options.alwaysPoint,true);
-      console.log(game,'native target ready',JSON.stringify(target.native.practice.setup));
+      console.log(game,'native target ready',JSON.stringify(target.native.practice.setup),'loadMs',Math.round(performance.now()-targetStarted));
       await press('Enter');
       await wait(async () => (await read()).native?.mode === 1,game+' resume native pause',15000);
       await frame.waitForFunction(()=>/^FPS: [1-9]\d*$/.test(document.querySelector('#pc98-game-fps')?.textContent||''),{timeout:15000});
@@ -150,7 +151,7 @@ try {
         return state.native?.practice?.ready && state.native.practice.waiting && state.native.practice.elapsed === 0;
       },game+' quick retry preserves target',90000);
       const retry = await read();
-      assert.equal(retry.native.practice.setup.stage,0);
+      assert.equal(retry.native.practice.setup.stage,targetStage);
       assert.equal(retry.native.practice.setup.phase,Number(phase));
       assert.equal(retry.native.practice.options.lockPower,true);
       assert.equal(retry.native.practice.options.invincible,true);
