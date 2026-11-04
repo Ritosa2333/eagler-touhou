@@ -85,10 +85,13 @@ TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     CHECK_EQ(fixture.manager.registry.find(fixture.presentation.decoration_handle())->source_script, 157);
     for (i32 i = 0; i < 301; ++i) CHECK(fixture.state.step(false));
     fixture.boss[0] = 100;
-    fixture.presentation.sync(fixture.state.state(), fixture.boss);
+    // 0x413270:180-194：背景 translation 开符写一次，sync 不携带 boss 位置。
+    fixture.presentation.sync(fixture.state.state());
     CHECK_EQ(fixture.presentation.bonus_base(), 999720);
     CHECK_EQ(fixture.presentation.snapshot().current_bonus, fixture.state.state().current_bonus);
-    CHECK(background->visual.translation.x == 5.0f); // original 0.05 smoothing
+    // 写一次语义回归：boss 移动后背景不追随（0x413080/0x413a60 不更新
+    // +0x574；旧 5% 平滑已删，与下方 320 帧回归断言同源）。
+    CHECK(background->visual.translation.x == 0.0f);
     CHECK_EQ(event.state.current_bonus, 1000000); // value event is not live state
 }
 
