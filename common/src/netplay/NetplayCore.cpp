@@ -86,6 +86,16 @@ const RollbackCore::UsedSlot *RollbackCore::FindUsedSlot(std::uint32_t frame) co
     return slot.frame == frame ? &slot : nullptr;
 }
 
+bool RollbackCore::HasConfirmedInputConflict(std::uint8_t player, std::uint32_t frame,
+                                            const FrameInput &input) const
+{
+    if (const auto *existing = FindInputSlot(player, frame))
+        return existing->input != input;
+    const auto *used = FindUsedSlot(frame);
+    return used && lastSimulatedFrame_ != INVALID_FRAME && frame <= lastSimulatedFrame_ &&
+           !(used->predictedMask & (1u << player)) && used->inputs[player] != input;
+}
+
 bool RollbackCore::ScheduleLocalInput(std::uint32_t captureFrame, const FrameInput &input)
 {
     const std::uint32_t frame = LocalFrameForCapture(captureFrame);
@@ -142,6 +152,8 @@ RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint
         return RemoteInputResult::InvalidPlayer;
     if (FrameIsTooOld(frame))
         return RemoteInputResult::TooOld;
+    if (HasConfirmedInputConflict(player, frame, input))
+        return RemoteInputResult::ConflictingConfirmedInput;
 
     const auto &occupant = inputs_[player][frame % INPUT_HISTORY_SIZE];
     if (occupant.present && occupant.frame > frame &&
@@ -150,8 +162,7 @@ RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint
 
     InputSlot *slot = GetInputSlot(player, frame);
     if (slot->present)
-        return slot->input == input ? RemoteInputResult::Duplicate
-                                    : RemoteInputResult::ConflictingConfirmedInput;
+        return RemoteInputResult::Duplicate;
     slot->input = input;
     slot->present = true;
     AdvanceConfirmedThrough(player);
@@ -162,8 +173,7 @@ RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint
 
     const std::uint8_t mask = static_cast<std::uint8_t>(1u << player);
     if ((used->predictedMask & mask) == 0)
-        return used->inputs[player] == input ? RemoteInputResult::Duplicate
-                                             : RemoteInputResult::ConflictingConfirmedInput;
+        return RemoteInputResult::Duplicate;
     if (used->inputs[player] == input)
         return RemoteInputResult::PredictionCorrect;
 
@@ -505,6 +515,11 @@ bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult
         if (!IsValidFrameInput(packet.inputs[i])) return false;
         const auto frame = packet.firstInputFrame + i;
         if (FrameIsTooOld(frame)) continue; // benign expired retransmission
+        if (HasConfirmedInputConflict(packet.senderPlayer, frame, packet.inputs[i]))
+        {
+            if (worstResult) *worstResult = RemoteInputResult::ConflictingConfirmedInput;
+            return false;
+        }
         const auto &occupant = inputs_[packet.senderPlayer][frame % INPUT_HISTORY_SIZE];
         // An unordered retransmission may arrive after a newer frame reused
         // its slot. The confirmed prefix already accounted for that sample.
@@ -519,16 +534,6 @@ bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult
             (occupant.frame >= oldestRecoverable ||
              occupant.frame == confirmedThrough_[packet.senderPlayer]))
             return false;
-        const auto *existing = FindInputSlot(packet.senderPlayer, frame);
-        const auto *used = FindUsedSlot(frame);
-        if ((existing && existing->input != packet.inputs[i]) ||
-            (!existing && used && lastSimulatedFrame_ != INVALID_FRAME &&
-             frame <= lastSimulatedFrame_ && !(used->predictedMask & (1u << packet.senderPlayer)) &&
-             used->inputs[packet.senderPlayer] != packet.inputs[i]))
-        {
-            if (worstResult) *worstResult = RemoteInputResult::ConflictingConfirmedInput;
-            return false;
-        }
     }
     if (packet.ackFrame != INVALID_FRAME)
     {

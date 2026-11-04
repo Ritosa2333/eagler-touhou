@@ -548,7 +548,7 @@
   .site-notice {
     position: fixed;
     z-index: 70;
-    left: 50%;
+    left: max(16px, env(safe-area-inset-left));
     bottom: max(16px, env(safe-area-inset-bottom));
     box-sizing: border-box;
     width: min(480px, calc(100vw - 28px));
@@ -563,7 +563,11 @@
     font: 400 12px / 1.65 var(--kit-font);
     overflow: auto;
     opacity: 1;
-    transform: translate(-50%, 0);
+    --ui-surface-duration: 420ms;
+    --ui-surface-easing: cubic-bezier(.22, .7, .2, 1);
+  }
+  @media (max-width: 780px) {
+    .site-notice {left: 50%;transform: translateX(-50%)}
   }
   .site-notice[hidden],
   body.player-active .site-notice {

@@ -10,6 +10,17 @@ function unique(ids) {
   return [...new Set(ids)];
 }
 
+async function damagedInstalledFileIds(generation, ids, signal) {
+  const damaged = new Set();
+  for (const id of ids) {
+    signal?.throwIfAborted();
+    const file = generation.descriptor.files[id], ref = generation.files[id];
+    const object = await readPackageObject(ref?.objectId);
+    if (!await packageObjectMatches(object, file.bytes, file.sha256)) damaged.add(id);
+  }
+  return damaged;
+}
+
 export function canUseExistingInstallationAfterRemoteFailure({
   hostManifestAvailable,
   installedGeneration,
@@ -141,10 +152,18 @@ export async function installPublishedPackage(game, {
     // Resolve preservation policy inside the installer's per-game mutation
     // queue. Otherwise a queued import/update can advance current after these
     // decisions were calculated and then be silently dropped.
-    desiredFileIds: currentResult => {
+    desiredFileIds: async currentResult => {
       if (expectedGenerationId !== null && currentResult.generation?.id !== expectedGenerationId) throw new Error('Package changed before background update');
+      let current = currentResult.generation;
+      if (current) {
+        const required = new Set(current.descriptor.base.files);
+        const optional = Object.keys(current.files).filter(id => current.files[id]?.objectId && !required.has(id));
+        const damaged = await damagedInstalledFileIds(current, optional, signal);
+        if (damaged.size) current = {...current,
+          files: Object.fromEntries(Object.entries(current.files).filter(([id]) => !damaged.has(id)))};
+      }
       return desiredFilesForPublishedPackage(published.descriptor, {
-        current: currentResult.generation, addComponents, addFileIds, selectedComponentEntries,
+        current, addComponents, addFileIds, selectedComponentEntries,
       });
     },
     source: currentResult => preserveLocalSource && currentResult.installation?.source === "local" ? "local" : "remote",
@@ -161,22 +180,18 @@ export async function repairInstalledPackage({generation, installation}, {
   const {descriptor} = generation;
   const ids = unique([...descriptor.base.files, ...Object.keys(generation.files)
     .filter(id => generation.files[id]?.objectId)]);
-  let needsRepair = false;
-  for (const id of ids) {
-    signal?.throwIfAborted();
-    const file = descriptor.files[id], ref = generation.files[id];
-    const object = await readPackageObject(ref?.objectId);
-    if (!await packageObjectMatches(object, file.bytes, file.sha256)) {
-      needsRepair = true;
-      break;
-    }
-  }
-  if (!needsRepair) return generation;
+  const damaged = await damagedInstalledFileIds(generation, ids, signal);
+  if (!damaged.size) return generation;
+
+  // Required files must be restored. Missing optional files return to their
+  // normal acquisition/fallback path instead of blocking an unrelated launch.
+  const required = new Set(descriptor.base.files);
+  const desiredFileIds = ids.filter(id => required.has(id) || !damaged.has(id));
 
   let published;
   return (await installPackageFromAcquisition({
     descriptor,
-    desiredFileIds: ids,
+    desiredFileIds,
     expectedGenerationId: generation.id,
     source: installation?.source ?? "remote",
     reuseCurrent: true,

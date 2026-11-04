@@ -72,6 +72,21 @@ test('entrance and exit share tokens and never animate layout or centering trans
   finish(element); await exited.finished; assert.equal(element.style.opacity, '');
 });
 
+test('notice enters and exits from the left on desktop and below on mobile', async () => {
+  const element = surface();
+  Object.defineProperties(element, {offsetWidth: {value: 480}, offsetHeight: {value: 120}});
+  const desktop = animate(element, 'enter', {kind: 'notice'});
+  assert.deepEqual(native.at(-1).keyframes, {translate: ['-512px 0', '0 0']});
+  finish(element); await desktop.finished;
+  const originalMatchMedia = env.window.matchMedia;
+  env.window.matchMedia = query => query === '(max-width: 780px)' ? {matches: true} : originalMatchMedia(query);
+  try {
+    const mobile = animate(element, 'exit', {kind: 'notice'});
+    assert.deepEqual(native.at(-1).keyframes, {translate: ['0 0', '0 152px']});
+    finish(element); await mobile.finished;
+  } finally {env.window.matchMedia = originalMatchMedia;}
+});
+
 test('interrupted close and reopen continue from current opacity and retire stale completion', async () => {
   const element = surface(), entrance = animate(element, 'enter'); native.at(-1).values.opacity = '.4';
   const exit = animate(element, 'exit', {fromCurrent: true});

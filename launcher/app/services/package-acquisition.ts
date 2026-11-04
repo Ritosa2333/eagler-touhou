@@ -267,7 +267,16 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       return {...installed, generation};
     } catch (error) {
       checkPreparationAbort(request.signal);
-      throw new GameDataAcquisitionError(preparationErrorText(error), {cause: error});
+      let failure = error;
+      if (request.decideUpdate) {
+        try {
+          const updated = await installedResult(installed, {...request, updateBeforePrepare: true});
+          if (updated.kind === 'managed' && updated.generation.id !== installed.generation?.id)
+            return {...installed, generation: updated.generation};
+        } catch (updateError) {failure = updateError;}
+      }
+      checkPreparationAbort(request.signal);
+      throw new GameDataAcquisitionError(preparationErrorText(failure), {cause: failure});
     } finally {if (active) request.onAcquisitionActivity?.(false);}
   }
   async function importPackage({game, file, signal, onProgress, gameVersion}: {

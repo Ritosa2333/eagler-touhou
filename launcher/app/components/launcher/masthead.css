@@ -14,7 +14,7 @@
     max-width: none;
     min-height: 60px;
     margin: 0;
-    padding: 0 max(28px, calc((100% - 1280px) / 2 + 28px));
+    padding: 0 max(var(--launcher-layout-gutter), calc((100% - var(--launcher-layout-width)) / 2 + var(--launcher-layout-gutter)));
     border: 0;
     border-bottom: 1px solid var(--kit-border);
     border-radius: 0;
@@ -68,19 +68,20 @@
     min-width: 0;
   }
   .book-masthead .book-main-nav :is(a, button) {
+    position: relative;
     appearance: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    min-width: 76px;
+    min-width: 90px;
     min-height: 60px;
     padding: 0 16px;
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
     color: var(--kit-muted-foreground);
-    font: 500 14px / 1.2 var(--kit-font);
+    font: 600 16px / 1.2 var(--kit-font);
     letter-spacing: normal;
     text-decoration: none;
     cursor: pointer;
@@ -92,13 +93,15 @@
     gap: 7px;
   }
   .book-masthead .book-main-nav .book-navigation-icon {
-    width: 17px;
-    height: 17px;
+    width: 19px;
+    height: 19px;
   }
   .book-masthead .book-main-nav :is([aria-current="page"], [aria-pressed="true"]) {
     color: var(--kit-foreground);
-    border-bottom-color: var(--kit-foreground);
+    border-bottom-color: transparent;
   }
+  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--kit-foreground);transform:scaleX(0);transform-origin:center;transition:transform 420ms cubic-bezier(.22,.7,.2,1)}
+  .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"])::after {transform:scaleX(1)}
   .book-main-nav button:disabled {
     opacity: 0.45;
     cursor: default;
@@ -173,19 +176,15 @@
     width: 24px;
     height: 24px;
     border: 0;
-    border-radius: 50%;
+    border-radius: 6px;
     background: transparent;
   }
   .book-masthead .book-profile-trigger img {
     display: block;
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 6px;
     object-fit: cover;
-  }
-  .book-masthead .book-profile-trigger[aria-current="page"] > span {
-    outline: 2px solid var(--kit-ring);
-    outline-offset: 2px;
   }
   .book-masthead .book-navigation-icon {
     display: block;
@@ -281,7 +280,7 @@
       flex: 1;
       min-height: 44px;
       padding: 0 12px;
-      font-size: 13px;
+      font-size: 14px;
     }
     .book-masthead :is(.book-theme-toggle, .masthead-menu-toggle, .book-profile-trigger) {
       width: 44px;
@@ -324,3 +323,29 @@
     }
   }
 }
+
+.book-masthead .book-profile-trigger {position:relative;overflow:visible}
+.book-masthead .book-profile-trigger .book-profile-trace {position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;fill:none;stroke:var(--kit-ring);stroke-width:1;stroke-linecap:round}
+.book-masthead .book-profile-trigger .book-profile-trace rect {opacity:0;stroke-dasharray:0 100;stroke-dashoffset:0;transition:opacity 160ms ease,stroke-dasharray 1100ms ease-in-out,stroke-dashoffset 1100ms ease-in-out}
+.book-masthead .book-profile-trigger:is(:hover,:focus-visible,[aria-current='page']) .book-profile-trace rect {opacity:1;stroke-dasharray:100 0;stroke-dashoffset:-25}
+.book-masthead .book-theme-toggle svg {rotate:0deg;transition:rotate 500ms cubic-bezier(.2,.65,.25,1)}
+@media (hover:hover) and (pointer:fine) {.book-masthead .book-theme-toggle:not(:disabled):hover svg {rotate:15deg}}
+.book-masthead .masthead-menu-toggle svg path {transition:translate 400ms ease;}
+.book-masthead .masthead-menu-toggle:is(:hover,:focus-visible,[aria-expanded='true']) svg path:nth-child(2) {translate:2px 0}
+.book-masthead .masthead-menu-toggle[aria-expanded='true'] {color:var(--kit-foreground);background:var(--kit-accent)}
+@media (prefers-reduced-motion:reduce) {.book-masthead .book-profile-trigger .book-profile-trace rect {transition:none}.book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}.book-masthead .masthead-menu-toggle svg path {transition:none;translate:none!important}}
+.less-motion .book-masthead .book-profile-trigger .book-profile-trace rect {transition:none}
+.less-motion .book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}
+.less-motion .book-masthead .masthead-menu-toggle svg path {transition:none;translate:none!important}
+
+@media (hover:hover) and (pointer:fine) {
+  .book-masthead .book-main-nav :is(a,button),
+  .book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {
+    transition:background-color 320ms ease, color 320ms ease, border-color 320ms ease;
+  }
+  .book-masthead .book-main-nav :is(a,button):not(:disabled):hover::after {transform:scaleX(1)}
+}
+@media (prefers-reduced-motion:reduce) {
+  .book-masthead .book-main-nav :is(a,button),.book-masthead .book-main-nav :is(a,button)::after,.book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {transition:none}
+}
+.less-motion .book-masthead .book-main-nav :is(a,button),.less-motion .book-masthead .book-main-nav :is(a,button)::after,.less-motion .book-masthead :is(.book-theme-toggle,.masthead-menu-toggle,.book-profile-trigger,.masthead-link) {transition:none}
