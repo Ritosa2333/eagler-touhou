@@ -5,6 +5,7 @@ import {build} from 'esbuild';
 import puppeteer from 'puppeteer-core';
 import {authoredSourcesPlugin} from '../react-main/authored-sources.mjs';
 import {betaRuntimeHtml} from '../../lib/beta-runtime-publication.mjs';
+import {betaAccessGuardScript} from '../../src/launcher/release-channel.mts';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const bundle = await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'tsx', contents: `
@@ -32,7 +33,7 @@ const stylesheet = bundle.outputFiles.find(file => file.path.endsWith('.css'))?.
 const hash = 'a'.repeat(64);
 const site = {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-validation-test',
   shared: {resourceMode: 'hosted', vanillaFont: 'font.ttc', unicodeFont: 'font.otf', testBuild: true, saveChannel: 'beta'},
-  games: {th06: {runtime: 'runtime/th06/th06.html', music: {midi: {files: []}},
+  games: {futureGame: {runtime: 'runtime/futureGame/game.html', music: {midi: {files: []}},
     gameData: {version: `sha256-${hash}`, layout: `sha256-${hash}`, path: 'th06.data', bytes: 1, sha256: hash}}}};
 let published = false;
 const server = createServer((request, response) => {
@@ -48,7 +49,8 @@ const server = createServer((request, response) => {
     response.writeHead(200, {'Content-Type': 'text/css'}); response.end(stylesheet);
   } else {
     response.writeHead(200, {'Content-Type': 'text/html'});
-    response.end('<html><head><link rel="stylesheet" href="/fixture.css"></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>');
+    const guard = path.startsWith('/beta/') ? '<script>' + betaAccessGuardScript('/beta/') + '</script>' : '';
+    response.end('<html><head>' + guard + '<link rel="stylesheet" href="/fixture.css"></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>');
   }
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -58,6 +60,9 @@ try {
   browser = await puppeteer.launch({executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true});
   const page = await browser.newPage(), errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  await page.goto(base + 'beta/?lang=zh-CN');
+  await page.waitForFunction(() => location.pathname === '/');
+  assert.equal(page.url(), base + '?lang=zh-CN');
   await page.goto(base + 'index.html?lang=zh-CN&room=private');
   async function developer() {
     await page.click('#mastheadMenuToggle');
@@ -83,9 +88,14 @@ try {
   published = true;
   await Promise.all([page.waitForNavigation(), button('确认进入测试版')]);
   assert.equal(page.url(), base + 'beta/index.html?lang=zh-CN');
+  await page.reload();
+  assert.equal(page.url(), base + 'beta/index.html?lang=zh-CN');
   await developer(); assert.equal(await page.$eval('#betaFeaturesToggle', node => node.getAttribute('aria-checked')), 'true');
   await Promise.all([page.waitForNavigation(), page.click('#betaFeaturesToggle')]);
   assert.equal(page.url(), base + 'index.html?lang=zh-CN');
+  await page.goto(base + 'beta/?lang=zh-CN');
+  await page.waitForFunction(() => location.pathname === '/');
+  assert.equal(page.url(), base + '?lang=zh-CN');
 
   // Real same-origin iframe realms: beta interception must never modify the parent factory.
   const names = await page.evaluate(async () => {

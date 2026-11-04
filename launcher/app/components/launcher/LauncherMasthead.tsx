@@ -29,7 +29,7 @@ import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launc
 import { previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
 import {BetaModeDialog} from './BetaModeDialog';
-import {betaModeForBase,releaseChannelUrl} from '../../../src/launcher/release-channel.mts';
+import {BETA_OPT_IN_KEY,betaModeForBase,releaseChannelUrl} from '../../../src/launcher/release-channel.mts';
 
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
@@ -251,8 +251,10 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                 </DropdownMenu.CheckboxItem>
                 <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={betaMode}
                   onSelect={()=>{
-                    if(betaMode)window.location.assign(releaseChannelUrl(window.location.href,channelBase,false));
-                    else betaAfterClose.current=true;
+                    if(betaMode){
+                      try { window.localStorage.removeItem(BETA_OPT_IN_KEY); } catch {}
+                      window.location.replace(releaseChannelUrl(window.location.href,channelBase,false));
+                    } else betaAfterClose.current=true;
                   }}>
                   <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
                 </DropdownMenu.CheckboxItem>

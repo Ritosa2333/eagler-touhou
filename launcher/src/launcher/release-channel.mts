@@ -1,5 +1,36 @@
 /** /beta/ owns program publication and native persistence on the same origin. */
 export const BETA_STORAGE_PREFIX = 'beta:';
+export const BETA_OPT_IN_KEY = 'eagler-touhou-beta-opt-in-v1';
+
+// The stable launcher may predate games introduced by the beta publication.
+export function isBetaPublication(site: {
+  schema?: unknown;
+  protocol?: unknown;
+  shared?: {testBuild?: unknown; saveChannel?: unknown};
+} | null): boolean {
+  return site?.schema === 'eagler-touhou/site-manifest/1' &&
+    site.protocol === 'eagler-touhou/1' &&
+    site.shared?.testBuild === true && site.shared.saveChannel === 'beta';
+}
+
+/** Runs before the beta launcher boots, including when restored from history. */
+export function betaAccessGuardScript(mountPath: string): string {
+  if (!betaModeForBase(mountPath)) return '';
+  const stablePath = mountPath.replace(/beta\/?$/, '');
+  return `(() => {
+    const key = ${JSON.stringify(BETA_OPT_IN_KEY)};
+    function enforce() {
+      try { if (localStorage.getItem(key) === '1') return; } catch {}
+      const stable = new URL(${JSON.stringify(stablePath)}, location.origin);
+      const lang = new URL(location.href).searchParams.get('lang');
+      if (lang) stable.searchParams.set('lang', lang);
+      location.replace(stable);
+    }
+    enforce();
+    addEventListener('pageshow', event => { if (event.persisted) enforce(); });
+    addEventListener('storage', event => { if (event.key === key || event.key === null) enforce(); });
+  })();`;
+}
 export function channelSessionStorage(storage: Storage | null, beta: boolean): Storage | null {
   if (!storage || !beta) return storage;
   const owner = storage;

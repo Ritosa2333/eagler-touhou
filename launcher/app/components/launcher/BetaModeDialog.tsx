@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { useLocale } from '../../i18n';
-import { releaseChannelUrl } from '../../../src/launcher/release-channel.mts';
-import { validateSiteManifest } from '../../../src/contracts/site-manifest.mts';
+import { BETA_OPT_IN_KEY, isBetaPublication, releaseChannelUrl } from '../../../src/launcher/release-channel.mts';
 
 export function BetaModeDialog({
   open,
@@ -30,10 +29,9 @@ export function BetaModeDialog({
         cache: 'no-store',
         signal: controller.signal,
       });
-      if (!response.ok) throw Error(t('developer.betaUnavailable'));
-      const site = validateSiteManifest(await response.json());
-      if (site.shared.testBuild !== true || site.shared.saveChannel !== 'beta')
+      if (!response.ok || !isBetaPublication(await response.json()))
         throw Error(t('developer.betaUnavailable'));
+      window.localStorage.setItem(BETA_OPT_IN_KEY, '1');
       window.location.assign(destination);
     } catch {
       setError(t('developer.betaUnavailable'));
