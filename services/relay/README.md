@@ -2,6 +2,8 @@
 
 Relay 为联机客户端提供房间目录、等待室、信令、WebSocket 回退、旁观转发和昵称服务。产品规则与昵称规范从 [`common/contracts/`](../../common/contracts/README.md) 读取。
 
+匿名昵称也可以作为独立 HTTP 服务运行。配置 `EAGLER_NETPLAY_NICKNAME_STATE`、`EAGLER_NETPLAY_NICKNAME_API_KEY` 和至少 32 字符的 `NICKNAME_BRIDGE_SECRET`，执行 `npm run start:anonymous-api`。它默认监听本机 18411 端口，支持通过 Bearer 凭据调用 `POST /current` 和 `POST /submit`。同一份游客数据库由一个审核进程使用。
+
 ## 本地运行
 
 需要 Node.js 22.13 或更新版本。在本目录安装依赖、运行测试并启动：
