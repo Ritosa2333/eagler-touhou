@@ -47,6 +47,11 @@ try{
     await page.keyboard.down('KeyZ');await new Promise(resolve=>setTimeout(resolve,200));await page.keyboard.up('KeyZ');await new Promise(resolve=>setTimeout(resolve,1500));
   }
   assert(events.some(e=>e.event==='audio-health'&&e.effectsPeak>0.001),'original sound effects must produce audio');
+  await page.click('.fullscreen-toggle');
+  const gameFrame=page.frames().find(frame=>/th02\.html.*runtimeEpoch=/.test(frame.url()));
+  await gameFrame.click('#canvas');
+  assert.equal(await gameFrame.$eval('#canvas',node=>getComputedStyle(node).outlineStyle),'none','focused game canvas has no outline');
+  assert.equal(await page.$eval('#gameFrame',node=>getComputedStyle(node).outlineStyle),'none','focused game frame has no outline');
   await page.screenshot({path:resolve(out,'solo.png')});
   assert.deepEqual(errors,[]);
   console.log('PASS full Launcher Package Store installation and TH02 solo presentation');
