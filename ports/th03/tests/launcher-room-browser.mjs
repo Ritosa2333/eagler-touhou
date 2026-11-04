@@ -56,6 +56,7 @@ try{
     await host.screenshot({path:resolve(out,'preflight.png')});console.log('PASS main room check presents native title without gameplay transport');
   }else{
   for(const page of pages)await page.click('#mpReady');
+  if(sharedContext)await host.bringToFront();
   await host.waitForFunction(()=>document.querySelector('#mpStartGame')?.disabled===false,{timeout:30000});
   await host.click('#mpStartGame');
   await wait(async()=>{const e=events.flat().filter(e=>e.event==='error');if(e.length)throw Error(JSON.stringify(e));return events.every(list=>list.some(e=>e.event==='first-frame'));},'main room native launch');
