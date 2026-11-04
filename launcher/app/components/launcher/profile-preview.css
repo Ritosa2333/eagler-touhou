@@ -194,7 +194,7 @@ body.less-motion :is(.profile-display-options label,.profile-display-order li,.p
 .profile-about-meta{display:grid;gap:7px;margin:14px 0 0;font-size:13px}
 .profile-about-meta>div,.profile-about-meta dt,.profile-links{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
 .profile-about-meta dt{color:var(--book-muted)}.profile-about-meta svg{width:14px;height:14px}.profile-about-meta dd{margin:0}
-.profile-links{margin-top:10px}.profile-nav-desktop{display:grid;gap:4px}
+.profile-links{margin-top:10px}.profile-links a{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;color:var(--book-muted);font-size:13px}.profile-links a span{min-width:0;overflow-wrap:anywhere}.profile-links a svg{width:14px;height:14px;flex:none}.profile-sidebar-details .profile-links a svg:last-child{display:none}.profile-nav-desktop{display:grid;gap:4px}
 .profile-section-nav a{display:block;padding:8px 12px;border-radius:6px;color:var(--book-muted);font-size:14px}
 .profile-section-nav a[aria-current=location]{background:var(--book-raised);color:var(--book-ink)}
 .profile-end-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}

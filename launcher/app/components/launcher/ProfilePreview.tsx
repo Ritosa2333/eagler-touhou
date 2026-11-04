@@ -3,7 +3,7 @@ import {Input, Textarea} from '../../ui/input';
 import {Tabs} from 'radix-ui';
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import {SiteBrand} from './SiteBrand';
-import {ArrowUp, CalendarDays, MapPin, UserRound} from 'lucide-react';
+import {ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MapPin, MessageCircle, TvMinimal, UserRound} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
 import {Toggle, Button as UiButton} from '../../ui/controls';
 import {BookButton} from './BookButton';
@@ -189,7 +189,11 @@ function ProfileBody({remote,owner}: {remote:RemoteProfile; owner:boolean}) {
   const details = <><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p><dl className="profile-about-meta">
     {profile.region && <div><dt><MapPin/>{t('profile.region')}</dt><dd>{profile.region}</dd></div>}
     <div><dt><CalendarDays/>{t('profile.registeredAt')}</dt><dd><time dateTime={remote.joinedAt}>{new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',timeZone:'UTC'}).format(new Date(remote.joinedAt))}</time></dd></div>
-    </dl>{links.length > 0 && <div className="profile-links">{links.map(link => <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div>}</>;
+    </dl>{links.length > 0 && <div className="profile-links">{links.map(link => {
+      const host = safeUrl(link.url)?.hostname ?? '';
+      const Icon = /(^|\.)github\.com$/.test(host) ? CodeXml : /(^|\.)(discord\.com|discord\.gg)$/.test(host) ? MessageCircle : /(^|\.)(bilibili\.com|b23\.tv)$/.test(host) ? TvMinimal : Link2;
+      return <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"><Icon aria-hidden="true"/><span>{link.label}</span><ArrowUpRight aria-hidden="true"/></a>;
+    })}</div>}</>;
   const navigation = visibleTabs.filter(item => item !== 'records' && (item !== 'content' || owner)).map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
   return <Tabs.Root value={activeTab} onValueChange={selectTab} asChild><main className={`player-profile${settings ? ' profile-editing profile-settings' : ' profile-page'}`} aria-label={settings ? t('profile.settings') : undefined} aria-labelledby={settings ? undefined : 'profile-name'}>
     {(settings || article || guideDraft) && <div className="profile-topbar"><BookButton variant="quiet" type="button" onClick={back}>{t('profile.back')}</BookButton></div>}
