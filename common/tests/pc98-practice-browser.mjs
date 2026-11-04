@@ -127,9 +127,9 @@ try {
       }
       assert(Math.abs(compact.screen.w/compact.screen.h-1.6)<.01,'original 640x400 picture ratio');
       if(mobile){
-        const position=(await read()).native.x,header=await frame.$('#practice-panel header'),box=await header.boundingBox(),touch=await page.createCDPSession();
+        const position=(await read()).native.x,header=await frame.$('#practice-panel .practice-switches label'),box=await header.boundingBox(),touch=await page.createCDPSession();
         const x=box.x+10,y=box.y+box.height/2;
-        assert(await frame.$eval('#practice-panel header',node=>{const r=node.getBoundingClientRect();return !!document.elementFromPoint(r.x+10,r.y+r.height/2)?.closest('#practice-panel');}),'controller receives the drag at its visible header');
+        assert(await frame.$eval('#practice-panel .practice-switches label',node=>{const r=node.getBoundingClientRect();return !!document.elementFromPoint(r.x+10,r.y+r.height/2)?.closest('#practice-panel');}),'controller receives the drag at its visible header');
         await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
         await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+25,y,id:1}]});
         await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
