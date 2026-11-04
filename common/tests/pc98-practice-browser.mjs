@@ -78,7 +78,7 @@ try {
       await frame.select('[data-jump=character]','1');
       await frame.select('[data-jump=stage]',String(targetStage));
       await frame.select('[data-jump=entry]','boss');
-      const phase = await frame.$$eval('[data-jump=phase] option', nodes => nodes.filter(n => n.value !== '0').at(latePhase?-1:0).value,latePhase);
+      const phase = await frame.$$eval('[data-jump=phase] option', (nodes,late) => nodes.filter(n => n.value !== '0').at(late?-1:0).value,latePhase);
       await frame.select('[data-jump=phase]',phase);
       await click('[data-jump=power]');
       await page.keyboard.down('Control'); await page.keyboard.press('KeyA'); await page.keyboard.up('Control'); await page.keyboard.type('32');
