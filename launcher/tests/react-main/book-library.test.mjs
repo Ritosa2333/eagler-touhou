@@ -96,8 +96,13 @@ test('anchored multiplayer menu preserves deep-link selection and shares multi-s
   assert.deepEqual([...env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]')].map(n=>n.dataset.lobbyToggle),['th15mp']);
   await React.act(async()=>new Promise(resolve=>env.window.requestAnimationFrame(()=>env.window.requestAnimationFrame(resolve))));
   await click('.book-lobby-picker-trigger');
-  await click('.book-lobby-picker .book-lobby-menu-check');
+  await click('.book-lobby-picker [data-lobby-product="th06mp"] .book-lobby-menu-check');
+  assert.deepEqual([...env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]')].map(n=>n.dataset.lobbyToggle),['th06mp','th15mp']);
+  await click('.book-lobby-picker [data-lobby-product="th15mp"] .book-lobby-menu-check');
+  assert.deepEqual([...env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]')].map(n=>n.dataset.lobbyToggle),['th06mp']);
+  await click('.book-lobby-picker .book-lobby-menu-all');
   assert.equal(env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]').length,0);
+  assert.equal(node('#lobbyGameRail .book-lobby-all').getAttribute('aria-pressed'),'true');
   await React.act(async()=>{env.document.activeElement.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));await new Promise(resolve=>setTimeout(resolve,0));});
   assert.equal(env.document.querySelector('.book-lobby-picker'),null);
 });

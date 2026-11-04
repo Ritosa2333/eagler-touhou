@@ -20,6 +20,11 @@
   --kit-control-border:#555660;
   --kit-brand:#e4868e;--kit-font:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;
 }
+@media (prefers-reduced-motion: no-preference) {
+  :is(.book-art,.book-lobby-cover,.lobby-cover) img {transition:filter 300ms ease}
+  html.ui-theme-changing:not(:has(body.less-motion)) :is(.book-art,.book-lobby-cover,.lobby-cover) img {filter:brightness(.86)}
+  html.ui-theme-changing :is(.launcher-page-surface,.book-masthead) {view-transition-name:none!important}
+}
 html[data-book-theme='light'] {
   color-scheme:only light;
   --kit-background:#f7f7f8;--kit-foreground:#27272d;--kit-card:#ffffff;--kit-popover:#ffffff;

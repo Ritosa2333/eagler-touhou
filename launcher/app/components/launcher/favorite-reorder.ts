@@ -14,24 +14,25 @@ export function beginFilterReorder() {
 
 /** Animate deliberate list changes without disturbing normal room arrivals or exits. */
 export function useFavoriteReorder(selector: string, favorites: readonly string[], filterSignature?: string) {
-  const positions = useRef<{items: Map<HTMLElement, DOMRect>; filter: boolean} | null>(null);
+  const positions = useRef<{items: Map<HTMLElement, DOMRect>; filter: boolean; signature: string; selector: string} | null>(null);
   const signature = JSON.stringify([[...favorites].sort(), filterSignature]);
+  const listensForFilters = filterSignature !== undefined;
   useLayoutEffect(() => {
     const capture = (filter: boolean) => {
-      positions.current = {filter, items: new Map(Array.from(document.querySelectorAll<HTMLElement>(selector))
+      positions.current = {filter, signature, selector, items: new Map(Array.from(document.querySelectorAll<HTMLElement>(selector))
         .filter(element => element.getClientRects().length > 0)
         .map(element => [element, element.getBoundingClientRect()]))};
     };
     const favorite = () => capture(false);
     const filter = () => capture(true);
     window.addEventListener(FAVORITE_REORDER_EVENT, favorite);
-    if (filterSignature !== undefined) window.addEventListener(FILTER_REORDER_EVENT, filter);
+    if (listensForFilters) window.addEventListener(FILTER_REORDER_EVENT, filter);
     return () => {window.removeEventListener(FAVORITE_REORDER_EVENT, favorite); window.removeEventListener(FILTER_REORDER_EVENT, filter);};
-  }, [selector, filterSignature !== undefined]);
+  }, [selector, signature, listensForFilters]);
   useLayoutEffect(() => {
     const previous = positions.current;
     positions.current = null;
-    if (!previous) return;
+    if (!previous || previous.signature === signature || previous.selector !== selector) return;
     for (const [element, before] of previous.items) {
       if (!element.isConnected || !element.getClientRects().length) continue;
       running.get(element)?.cancel();
@@ -48,5 +49,5 @@ export function useFavoriteReorder(selector: string, favorites: readonly string[
         {duration: 500, easing: 'cubic-bezier(.22, .7, .2, 1)'});
       if (animation) running.set(element, animation);
     }
-  }, [signature]);
+  }, [selector, signature]);
 }

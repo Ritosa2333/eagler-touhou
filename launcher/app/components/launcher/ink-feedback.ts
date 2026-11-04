@@ -19,7 +19,7 @@ export function impressTheme(button: HTMLElement) {
     if (!button.isConnected || window.matchMedia('(prefers-reduced-motion: reduce)').matches || button.closest('.less-motion')) return;
     const icon = button.querySelector('svg');
     if (!icon) return;
-    icon.getAnimations().forEach(animation => animation.cancel());
+    icon.getAnimations().forEach(animation => {animation.cancel();});
     icon.animate([
       {opacity: .35, transform: 'rotate(-40deg) scale(.8)', offset: 0},
       {opacity: 1, transform: 'rotate(5deg) scale(1.08)', offset: .72},

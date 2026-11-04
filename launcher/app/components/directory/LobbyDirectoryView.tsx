@@ -26,7 +26,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
   const seenRooms = useRef<Set<string> | null>(null);
   const arrivalTimers = useRef(new Set<number>());
   const [arrivals, setArrivals] = useState<ReadonlySet<string>>(() => new Set());
-  useEffect(() => () => {arrivalTimers.current.forEach(timer => window.clearTimeout(timer)); arrivalTimers.current.clear();}, []);
+  useEffect(() => () => {arrivalTimers.current.forEach(timer => {window.clearTimeout(timer);}); arrivalTimers.current.clear();}, []);
   useEffect(() => {
     if (snapshot.connection !== 'live' || snapshot.loading) return;
     const keys = snapshot.rooms.map(room => `${room.product}-${room.code}`);
@@ -37,7 +37,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
     setArrivals(current => new Set([...current, ...added]));
     const timer = window.setTimeout(() => {
       arrivalTimers.current.delete(timer);
-      setArrivals(current => {const next = new Set(current); added.forEach(key => next.delete(key)); return next;});
+      setArrivals(current => {const next = new Set(current); added.forEach(key => {next.delete(key);}); return next;});
     }, 850);
     arrivalTimers.current.add(timer);
   }, [snapshot.rooms, snapshot.connection, snapshot.loading]);
@@ -59,17 +59,20 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows =
   const previousVisible = useRef<readonly DirectoryRoom[]>([]);
   const exitTimers = useRef(new Map<string, number>());
   const [exiting, setExiting] = useState<readonly DirectoryRoom[]>([]);
-  useEffect(() => () => {exitTimers.current.forEach(timer => window.clearTimeout(timer)); exitTimers.current.clear();}, []);
+  useEffect(() => () => {exitTimers.current.forEach(timer => {window.clearTimeout(timer);}); exitTimers.current.clear();}, []);
   useLayoutEffect(() => {
     if (snapshot.connection !== 'live' || snapshot.loading) return;
     const key = (room: DirectoryRoom) => `${room.product}-${room.code}`;
     const live = new Set(snapshot.rooms.map(key));
     const removed = previousVisible.current.filter(room => !live.has(key(room)));
     previousVisible.current = state.visibleRooms;
+    const returned = new Set<string>();
     if (live.size) {
-      for (const [id, timer] of exitTimers.current) if (live.has(id)) {window.clearTimeout(timer); exitTimers.current.delete(id);}
+      for (const [id, timer] of exitTimers.current) if (live.has(id)) {
+        window.clearTimeout(timer); exitTimers.current.delete(id); returned.add(id);
+      }
     }
-    if (removed.length || exiting.some(room => live.has(key(room)))) {
+    if (removed.length || returned.size) {
       const newlyRemoved = removed.filter(room => !exitTimers.current.has(key(room)));
       setExiting(current => [...current.filter(room => !live.has(key(room))), ...newlyRemoved]);
       for (const room of newlyRemoved) {
