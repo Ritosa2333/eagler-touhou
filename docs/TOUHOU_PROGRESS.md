@@ -80,7 +80,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
-独立 C++/Wasm 实现继续推进。[当前源码与公开证据](https://github.com/AdingApkgg/thp/commit/a2ed896be3ff984c4423a0afe4d4aeb53924d37b)对应[四个生产源文件修复](https://github.com/AdingApkgg/thp/commit/51fcb47992be0af65777d2ea87e9e409be6cc641)：相机归一化按 X／Y／Z 分别写回，增加中间交付点；Scene 按原版顺序读取 75 字，可以暂停、续读，未完成的 incoming owner 保持私有，完成后发布。
+[最新启动配置回退修复](https://github.com/AdingApkgg/thp/blob/bee144963075ead0528359dbcb4788d207c1c9e4/docs/porting/TH14_CONFIG_STARTUP_FALLBACK_NOV04.md)已发布：损坏的 `th14.cfg` 在冷启动时按原版分支恢复默认值，继续进入主菜单；有效配置的 92 字节及严格导入 ABI 保持。原版 1,568 组指令组件、13 个实际 Application 用例／5,772 帧与新进程读回通过；旧二进制的错误签名启动失败保留。仅改一个 Application 调用点，141 个玩法对象未改。四标题语法检查通过；浏览器重编 1 单元、复用 145 对象，139 条路由／27 HTTP 通过，生成资源复用、物理音频设备数零。[生产源码](https://github.com/AdingApkgg/thp/commit/ae284631c2ebaf4006eb8b17662bc5caeeb6da5c)和路径／哈希索引公开，原始文件、游戏资产及二进制留在本地。没有启动浏览器窗口，IndexedDB、原版普通 GUI和整局像素／PCM仍未验收，整作 1:1 未完成。
+
+独立 C++/Wasm 实现继续推进。[相机读取修复及公开证据](https://github.com/AdingApkgg/thp/commit/a2ed896be3ff984c4423a0afe4d4aeb53924d37b)对应[四个生产源文件修复](https://github.com/AdingApkgg/thp/commit/51fcb47992be0af65777d2ea87e9e409be6cc641)：相机归一化按 X／Y／Z 分别写回，增加中间交付点；Scene 按原版顺序读取 75 字，可以暂停、续读，未完成的 incoming owner 保持私有，完成后发布。
 
 [新完整记录及反例](https://github.com/AdingApkgg/thp/blob/a2ed896be3ff984c4423a0afe4d4aeb53924d37b/docs/porting/TH14_SCENE_WORD_READ_NOV04.md)：新静音原版经过六面，共 122,285 回调、无报告调试异常。显式重放原版时钟与合法的部分读写交错，全部已采集 32 状态字段、从第二回调开始的 75 字相机／9,171,300 字、四个回放游标字段、2,411 行各 303 字段 VM 和 1,044 个战斗检查点一致。读取前缀 16 为直接观测；发布前缀 13 及恢复安排由混合副本约束推导，未声称唯一原版指令调度或独立调度已恢复。不向 GameSession 灌入原版种子、矩阵或逐帧状态值。
 
