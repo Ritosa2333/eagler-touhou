@@ -931,6 +931,7 @@ function observeInput(){
   inputLatch.observe(controlEditor.isEditing()?0:normalize(player.sample(keyboardBits(keys)|childBits|gamepadBits())|pendingAction));
 }
 function captureLocalInput(frontier=queue.frame,context=null){
+  if(!queue.needsCapture(frontier))return false;
   // Continue authoritative synchronization while hidden, with neutral input.
   // Do not poll held gamepads, touch auto-fire or menu pulses in the background.
   let packed=0;

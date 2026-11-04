@@ -84,6 +84,7 @@ export class RollbackQueue {
     if(this.inputDelay>this.lockstepDelay)throw Error('回滚输入缓冲尚未预填');
     this.activation=frame;
   }
+  needsCapture(frontier=this.frame){return !this.inputs[this.slot].has(frontier+(this.active?this.inputDelay:this.lockstepDelay));}
   capture(buttons,frontier=this.frame){
     // Keep current physical input on the live timeline during historical repair.
     if(!Number.isSafeInteger(frontier)||frontier<this.frame||frontier>this.frame+MAX_ROLLBACK||

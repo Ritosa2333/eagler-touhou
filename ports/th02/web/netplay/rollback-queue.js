@@ -79,6 +79,7 @@ export class RollbackQueue {
     if(this.inputDelay>this.lockstepDelay)throw Error('回滚输入缓冲尚未预填');
     this.activation=frame;
   }
+  needsCapture(frontier=this.frame){return !this.inputs[this.slot].has(frontier+(this.active?this.inputDelay:this.lockstepDelay));}
   capture(buttons,frontier=this.frame){
     // A repair can sample its old live frontier without assigning today's
     // physical input to a historical frame or changing a published packet.

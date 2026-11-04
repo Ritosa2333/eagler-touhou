@@ -880,6 +880,7 @@ function observeInput(){
   inputLatch.observe(controlEditor.isEditing()?0:normalize(player.sample(keyboardBits(keys)|childBits|gamepadBits())|pendingAction));
 }
 function captureLocalInput(frontier=queue.frame,context=null){
+  if(!queue.needsCapture(frontier))return false;
   // Hidden pages must still produce authoritative input. Never read a held
   // gamepad, touch auto-fire or menu pulse while the player is away.
   let packed=0;
