@@ -95,7 +95,7 @@ export const managedAPI={
   async start(value){options=value.options;language=value.language==='ja'?'jp':'cn';musicMode=value.music;let replay;
     if(options.replayPath){const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(options.replayPath));if(!bytes)throw Error('录像不存在');replay=await decodeExternalReplay(new Blob([bytes]),'02');}
     await launch(practiceUI.configuration(),replay);},
-  health(){return {frames:emulator?.module.renderMetrics?.drawn??emulator?.module.framePresenter?.info().drawn??0,audio:{state:emulator?.audio.context.state,musicStatus:music?.player.status??null,effectsPeak:attempt?.sfx?.peak??0}};},
+  health(){return {gameFrame:readState()?.ticks,frames:emulator?.module.renderMetrics?.drawn??emulator?.module.framePresenter?.info().drawn??0,audio:{state:emulator?.audio.context.state,musicStatus:music?.player.status??null,effectsPeak:attempt?.sfx?.peak??0}};},
   practiceState(){return {...managedPractice.state(),retry:{state:retrySlot?(retrySlot.ready?'ready':'preparing'):retryBlocked?'unavailable':'idle',last:lastRetry}};},
   finishRecording(){recorder?.finish();},
   saveRecording(){return recordBlob?saveReplay(recordBlob):null;},

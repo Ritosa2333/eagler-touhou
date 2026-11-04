@@ -1,3 +1,4 @@
+import {mountGameFps} from './pc98-game-fps.mjs';
 import {ManagedContent,installManagedWorkers} from './managed-data.mjs';
 import {managedInput} from './managed-input.mjs';
 import {openUserFiles,userPath} from './managed-storage.mjs';
@@ -95,11 +96,12 @@ try{
     const {mountManagedRoom}=await import('./managed-room-layout.mjs');mountManagedRoom();
     api=(await import('./managed-room.mjs')).managedAPI;preview=titlePreview(document.querySelector('#screen'));
   }else api=(await import('./managed-solo.mjs')).managedAPI;
+  const fps=mountGameFps();
   ready=true;emit({event:'ready',saveRoot:'/savesth03'+(multiplayer?'mp':''),roomPreview:multiplayer});
   let lastFrames=0,lastAt=performance.now(),lastHealth=0;
   setInterval(()=>{
     if(!launched||options.multiplayerPreflight)return;
-    const health=api.health(),now=performance.now();
+    const health=api.health(),now=performance.now();fps.update(health.gameFrame,now);
     if(!firstFrame&&health.frames>0){firstFrame=true;emit({event:'first-frame',launchSerial});}
     if(now-lastHealth<1000)return;lastHealth=now;
     emit({event:'frame-health',fps:(health.frames-lastFrames)*1000/(now-lastAt),frameMs:health.frameMs??0});

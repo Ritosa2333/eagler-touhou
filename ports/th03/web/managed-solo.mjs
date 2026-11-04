@@ -114,7 +114,7 @@ async function start({language,music,options}){
 }
 export const managedAPI={
   start,
-  health(){return {frames:emulator?.module.frameUploads??0,audio:{state:emulator?.context?.state,music:soloMusic?.player.active?.id??null,musicStatus:soloMusic?.player.status??null,
+  health(){return {gameFrame:emulator?.snapshot?.state?.ticks,frames:emulator?.module.frameUploads??0,audio:{state:emulator?.context?.state,music:soloMusic?.player.active?.id??null,musicStatus:soloMusic?.player.status??null,
     effectsPlayed:localSfx?.played??0,effectsPeak:localSfx?.peak??0,queuedMs:Math.max(0,((emulator?.audioEnd??0)-(emulator?.context?.currentTime??0))*1000)}};},
   async files(message){
     const store=globalThis.__eaglerPC98Files;
