@@ -864,7 +864,8 @@ function lobbySnapshot(room) {
     spectators,
     spectatorCount: spectators.length,
     ...((process.env.EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE === '1' && room.id.startsWith('th09mp-')) ||
-        room.runs.get(String(room.lobby.startSerial))?.spectatorStages
+        room.runs.get(String(room.lobby.startSerial))?.spectatorStages ||
+        room.runs.get(String(room.lobby.startSerial))?.spectatorPc98
       ? { spectatorTimeline: true }
       : {}),
     seats: room.lobby.seats.map((seat) =>

@@ -24,7 +24,7 @@ test('managed spectator starts, draws confirmed frames and stops its replica',as
     const {createManagedSpectator}=await import(pathToFileURL(join(root,'pc98-managed-spectator.mjs')));
     const {fingerprint,VERSION}=await import(pathToFileURL(join(root,'replay/tape.js')));
     const {SOURCE_PATHS}=await import(pathToFileURL(join(root,'replay/profile.js')));
-    const errors=[];api=createManagedSpectator('02',event=>errors.push(event));
+    const errors=[];api=createManagedSpectator('02',event=>{if(event.event==='error')errors.push(event);});
     await api.start({options:{netplayUrl:'ws://localhost/?room=th02mp-1234&run=1',netplayPlayerCount:2,netplaySpectatorId:'viewer'},music:'none'});
     const header={version:VERSION,game:'02',adapter:'confirmed-worker/1',players:2,hostSlot:0,tickMs:10,settings:{},identity:await fingerprint(SOURCE_PATHS),opening:{}};
     const row={inputs:[32,0],offlineMask:0,proof:'ok',hash:null};

@@ -79,6 +79,7 @@ async function command(message){
     case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();api.stop();launched=false;emit({event:'exit',code:0});return {};
     case 'list':case 'read':case 'write':case 'remove':case 'sync':return api.files(message);
     case 'playback':return api.playback(message);
+    case 'spectator-playback':if(!options.netplaySpectator)throw Error('当前不是观战模式');return api.playback(message);
     default:throw Error('未支持的运行命令：'+message.command);
   }
 }

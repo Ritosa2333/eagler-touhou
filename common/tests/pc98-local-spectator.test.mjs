@@ -40,3 +40,16 @@ test('a late viewer restores the latest confirmed checkpoint',async()=>{
   await new Promise(resolve=>setTimeout(resolve,50));
   assert.equal(restored,true);assert.equal(viewer.frame,3);assert.equal(error,undefined);viewer.stop();
 });
+
+test('viewer rewinds independently and can return to live',async()=>{
+  let channel,request,created=0,error;
+  const header={version:VERSION,game:'02',adapter:'confirmed-worker/1',players:2,hostSlot:0,tickMs:10,settings:{},identity:'a'.repeat(64),opening:{}};
+  const row={inputs:[32,0],offlineMask:0,proof:'ok',hash:null};
+  const viewer=createLocalSpectator({game:'02',options:{netplayUrl:'ws://localhost/?room=r&run=1'},validateHeader,validateRow,stable,
+    channelFactory:()=>channel={postMessage:m=>request=m,close(){}},
+    createReplica:async()=>{created++;let frame=0;return {get frame(){return frame;},async advance(){frame++;},async present(){},stop(){}};},onError:e=>error=e});
+  channel.onmessage({data:{type:'slice',viewer:request.viewer,header,first:0,rows:Array(20).fill(row),available:20,end:null}});
+  await new Promise(resolve=>setTimeout(resolve,100));assert.equal(viewer.frame,20);
+  viewer.seek(5);await new Promise(resolve=>setTimeout(resolve,80));assert.equal(viewer.frame,5);assert(viewer.paused);assert.equal(created,2);
+  viewer.live();await new Promise(resolve=>setTimeout(resolve,80));assert.equal(viewer.frame,20);assert(viewer.following);assert.equal(error,undefined);viewer.stop();
+});
