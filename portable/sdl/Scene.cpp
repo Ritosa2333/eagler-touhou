@@ -188,8 +188,11 @@ void Scene::capture_background(){
             // Clip the near plane before projection; never discard a whole tile
             // just because one corner is behind the camera.
             for(int plane=0;plane<2;++plane){
-                const double limit=plane?exe.far_plane:exe.near_plane;clipped.clear();
+                const double limit=plane?exe.far_plane:exe.near_plane;
                 const auto keep=[&](double d){return plane?d<=0:d>=0;};
+                const auto inside=[&](const P& vertex){return keep(vertex.depth-limit);};
+                if(std::all_of(polygon.begin(),polygon.end(),inside))continue;
+                clipped.clear();
                 for(size_t i=0;i<polygon.size();++i){const P& p=polygon[i];const P& n=polygon[(i+1)%polygon.size()];const bool in=keep(p.depth-limit);
                     if(in)clipped.push_back(p);
                     if(in!=keep(n.depth-limit)){const double t=(limit-p.depth)/(n.depth-p.depth);
@@ -220,6 +223,7 @@ void Scene::capture_background(){
 void Scene::capture(const Options& o){
     using namespace th12;
     poses.clear();texts.clear();dialogues.clear();live_fps_text=-1;
+    stage_backdrops.fill(-1);
     const float* raw=th12_hud();std::copy_n(raw,hud.size(),hud.begin());
     const i32 stored=th12_score_stored();hud[3]=float(double(stored)*10);hud[40]=hud[3];
     if(o.score_low_digit){hud[3]+=float(o.score_low_digit);hud[40]+=float(o.score_low_digit);}
@@ -255,7 +259,15 @@ void Scene::capture(const Options& o){
     const auto owned=[&](u32 id){return std::binary_search(owners.begin(),owners.end(),id);};
     const auto find_logical=[&](i32 bank,i32 sprite_id)->const Pose*{for(const auto& p:logical_poses)if(p.a.bank==bank&&p.a.sprite==sprite_id)return &p;return nullptr;};
     // Logical poses, without the text VMs replaced by dialogue lines.
-    for(const auto& p:logical_poses){if(p.a.bank==BankText&&((p.a.sprite>=0&&p.a.sprite<4)||p.a.sprite==7))continue;poses.push_back(p);}
+    for(size_t i=0;i<logical_poses.size();++i){
+        const auto& p=logical_poses[i];
+        if(p.a.bank==BankStage&&p.owner>=0xc0000000u&&p.owner<0xc0000008u){
+            if(!(stageState.flags&8))stage_backdrops[p.owner-0xc0000000u]=i32(i);
+            continue;
+        }
+        if(p.a.bank==BankText&&((p.a.sprite>=0&&p.a.sprite<4)||p.a.sprite==7))continue;
+        poses.push_back(p);
+    }
     // Native MSG remains authoritative. Multiplayer language views select
     // local text surfaces by its retail entry/PC, without modifying any VM.
     const auto* local_message=translated_message(messageVM.entry,messageVM.pc);
@@ -521,7 +533,6 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     Canvas canvas;canvas.reset(d.source_width,d.source_height);
     const auto draw=[&](const std::u32string& text,float x,float scale_x=1){
         const float y=d.raster?d.source_y:2;
-        for(const auto& off:d.outline)raster.fill(canvas,text,x+off[0]*scale_x,y+off[1]-2,serif,weight,size,0x000000,0,scale_x);
         raster.fill(canvas,text,x,y,serif,weight,size,rgb,0,scale_x);
     };
     if(d.localized_spell){
@@ -540,6 +551,7 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     }
     else if(d.spacing){for(size_t i=0;i<d.bytes.size();i+=2)draw(decode_cp932(d.bytes.substr(i,2)),float(2*d.offset+i64(i)*d.spacing));}
     else draw(d.text,d.raster?d.source_x:float(2*d.offset+2));
+    canvas.outline_text();
     Texture t;t.name=gpu.create_texture(canvas.width,canvas.height,canvas.rgba.data(),true);t.w=float(canvas.width);t.h=float(canvas.height);t.repeat=false;
     cache.push_front({key,t});
     if(cache.size()>(d.menu?96u:16u)){gpu.delete_texture(cache.back().texture.name);cache.pop_back();}
@@ -584,6 +596,13 @@ void Scene::stage_surface(i32 priority,i32 clip,bool& copied,bool& composited){
 void Scene::render(float alpha,float live_fps){
     if(live_fps>=0&&live_fps_text>=0){auto& t=texts[size_t(live_fps_text)];t.text=fixed1(live_fps?double(live_fps)+.05:0)+"fps";t.x=f32(588.0-std::max<double>(0,double(t.text.size())-7)*7);t.color=live_fps<=30?0xff5050ff:live_fps<40?0xffa0a0ff:0xffffffff;}
     gpu.begin();gpu.clip(1);gpu.fog_color(fog.r,fog.g,fog.b);gpu.clear(fog);
+    // 4039d9 draws Stage+1cc's eight embedded VMs in slot order, with
+    // depth writes disabled, before 403a8f submits the 3D STD scenery.
+    for(const i32 index:stage_backdrops){
+        if(index<0)continue;
+        const auto& p=logical_poses[size_t(index)];
+        draw_state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,nullptr);
+    }
     gpu.primitive(Renderer::Triangles);
     for(const auto& t:triangles){const Texture tex=texture(BankStage,t.entry);if(!tex.name)continue;gpu.material(t.blend);gpu.bind(tex,t.point);for(const auto& v:t.v)gpu.push(v);}
     gpu.flush();
@@ -670,7 +689,7 @@ void Scene::render_menu(const std::vector<Appearance>& list,float x,float y,bool
         if(!a.visible||a.alpha<=0)continue;
         // A menu line: 32px MS Gothic at half size with a black outline.
         Dialogue d;d.text=a.text->text;d.menu=d.raster=true;d.width=a.text->width;d.height=a.text->height;d.source_width=u32(d.width*2);d.source_height=u32(d.height*2);
-        d.source_x=0;d.source_y=0;d.foreground=a.text->color;const i32 outline[4][2]{{2,2},{-2,2},{2,-2},{-2,-2}};std::memcpy(d.outline,outline,sizeof outline);
+        d.source_x=0;d.source_y=0;d.foreground=a.text->color;
         draw_text_quad(d,a,x+a.x,y+a.y,1,nullptr);
     }
     if(texts)for(const auto& t:*texts)render_text(t);
