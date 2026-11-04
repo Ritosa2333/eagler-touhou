@@ -35,6 +35,7 @@ void Renderer::clear(u32 flags,u32 color,float,u32,const i32* rect,u32) {
     rendered += "clear:"+std::to_string(state.target)+":"+std::to_string(flags)+":"+std::to_string(color)+(rect?hex(rect,16):"")+";";
 }
 void Renderer::changed(u32 id,u32 previous,const std::array<u32,4>&) { rendered += "update:"+std::to_string(id)+":"+std::to_string(previous)+";"; }
+void Renderer::read(u32 id) { rendered += "read:"+std::to_string(id)+";"; }
 void Renderer::prepare(u32 id) { rendered += "prepare:"+std::to_string(id)+";"; }
 void Renderer::release(u32 id) { rendered += "release:"+std::to_string(id)+";"; }
 void Renderer::present(u32 id) { rendered += "present:"+std::to_string(id)+";"; }

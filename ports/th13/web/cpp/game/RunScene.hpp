@@ -39,6 +39,8 @@ struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices
     virtual bool request_pause() = 0;
     virtual bool request_practice_end() { return false; }
     virtual bool record_spell_event(const SpellEvent&) { return true; }
+    virtual void update_spell_time(bool) {}
+    virtual i32 spell_elapsed_time() const { return 0; }
     virtual bool record_spell_practice_score(i32) { return true; }
     virtual bool record_stage_clear() { return true; }
     virtual bool request_stage6_fade() { return false; }
@@ -233,6 +235,17 @@ public:
     // 0x44ad60：道具得分弹字入池（ScorePopup 事件宿主钩子）。
     bool spawn_score_popup(i32 value, float x, float y, u32 color) {
         return score_popups.spawn(value, x, y, color);
+    }
+    // 0x42a430 case2/4（front61/63）与 0x43d530（front108/109/110）提示
+    // 横幅的宿主入口：spell_presentation 是私有实现句柄，经此窄接口暴露给
+    // ApplicationState::hud_notice / hud_spirit_notice。空句柄返回 true
+    //（资源未就绪时不制造新失败，与 StageBattleServices 默认实现同义）。
+    bool show_notice(i32 front_script) {
+        return !spell_presentation || spell_presentation->show_notice(front_script);
+    }
+    bool show_spirit_notice(i32 level, float x, float y, float z) {
+        return !spell_presentation ||
+               spell_presentation->show_spirit_notice(level, x, y, z);
     }
     bool draw();
     bool draw_stage(u32 pass);  // 战斗直绘（initialize 注册的 4 个 Draw 回调）

@@ -48,6 +48,12 @@ bool ReplayRecorder::begin_stage(const std::vector<u8>& header) {
     if(stages_.size()>=8) return false;
     ReplayStage stage; stage.number=number; stage.header=header; stages_.push_back(std::move(stage)); return true;
 }
+bool ReplayRecorder::record_spell_time(u32 index, i32 packed) {
+    // 00412ee0 writes the per-stage array at header+0x70 (21 dwords).
+    if (stages_.empty() || index >= (0xc4u - 0x70u) / 4u) return false;
+    put32(stages_.back().header, 0x70 + index * 4, u32(packed));
+    return true;
+}
 bool ReplayRecorder::record(const GameInput& input,u8 slow_rate) {
     if(stages_.empty()) return false;
     auto& stage=stages_.back();

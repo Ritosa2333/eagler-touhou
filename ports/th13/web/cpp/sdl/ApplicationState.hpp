@@ -6,6 +6,7 @@
 #include "../game/TitlePlayerDataMenu.hpp"
 #include "../game/TitleSpellPracticeMenu.hpp"
 #include "../game/SpellCatalog.hpp"
+#include "../game/SpellElapsedTime.hpp"
 
 namespace th13::sdl {
 
@@ -141,6 +142,7 @@ inline bool transition_gate_should_interrupt(u32 frames, bool paused,
 #include "../game/RunPause.hpp"
 #include "../game/PlayfieldTargets.hpp"
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -273,6 +275,11 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 0x448200 节奏逐帧接管 controls——装载态/难度/角色取自录像头，直入对局。
     ReplayFile replay_file;
     ReplayRecorder recorder;
+    // 00412ee0 edges are latched from 00413270/00413a60 events, not by
+    // sampling manager+0x7c bit0 at Update 26: a same-tick Begin+End must
+    // still advance manager+0x8c once. Clock owns start stamp + slot index.
+    SpellTimeClock spell_time_clock;
+    i32 spell_time_stage = 0, spell_time_packed = 0;
     bool stage_transition_loading = false, stage_transition_active = false;
     i32 stage_startup_age = -1;
     // 0xc 换关门内帧计数（prepare_next_stage 当帧=0，门内每 step 尾 +1）。
@@ -506,6 +513,8 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool request_stage6_fade() override;
     bool request_extra_results() override;
     bool record_spell_event(const SpellEvent&) override;
+    void update_spell_time(bool) override;
+    i32 spell_elapsed_time() const override { return spell_time_packed; }
     bool record_spell_practice_score(i32 score) override;
     bool record_stage_clear() override;
     bool ordinary_records_dirty = false;
@@ -547,6 +556,12 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
         if (!run) return true;
         return run->spawn_score_popup(value, x, y, color);
     }
+    // 0x42a430 分发器 case2/case4（front61/63，0x42ee28/0x43d23e/0x43d3a6）
+    // 与 0x43d530 吸灵满槽提示（front108/109/110）：经
+    // RunScene::spell_presentation 转发到 SpellPresentation 的横幅面；
+    // 空 run / 空 spell_presentation 由转发实现返回 true（不制造新失败）。
+    bool hud_notice(i32 front_script) override;
+    bool hud_spirit_notice(i32 level, float x, float y, float z) override;
     // RunPausePlatform
     bool suspend_music() override;
     bool resume_music() override;
@@ -567,6 +582,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 0x454050 state3：DAT_004be7c8（续关数）==0 → 流程 0xf（0x4549d0
     // 回放保存）；标题战后流程的门（TitleScenePlatform 同名虚槽）。
     bool result_replay_save_available() const override;
+    bool result_screen_data(TitleResultScreenData&) const override;
     // EndingPlatform（0x416570 场景宿主面；read_asset/request_destination/
     // queue_music 复用既有同型 override，这里只声明新增面）
     EndingSaveBytes* save_bytes() override { return &ending_save_view; }

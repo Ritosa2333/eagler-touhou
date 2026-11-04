@@ -368,6 +368,13 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
         // 0x42a430 的 59/60 横幅创建）把倒计时数字组从 y=51 拉回 y=23
         //（ascii.anm script2/3 label3）。缺失时首卡后数字组恒停 51。
         if (event.kind == SpellEventKind::End) hud.boss_hud.spell_ended();
+        // 00412ee0 的 +0x7c bit0/bit0x40 边沿在 00413270/00413a60 指令处锁存：
+        // 同 tick Begin+End 也必须结束一次并推进 +0x8c，不能靠 Update 26
+        // 采样 +0x18（会漏掉同帧成对的 begin/end，后续 replay 时间槽错位）。
+        if (event.kind == SpellEventKind::Begin)
+            host.update_spell_time(true);
+        else if (event.kind == SpellEventKind::End)
+            host.update_spell_time(false);
         if (!host.record_spell_event(event)) return fail("Spell record persistence failed");
         // 0x41381e 直读章节 DAT_004be824：与名牌 0x429a94 同一 ECL 524 变量。
         if (!spell_presentation->consume(event, enemy.position,
@@ -514,6 +521,8 @@ bool RunScene::update_spell() {
     if (!battle.sim.spell.step(battle.bomb_timer > 0, &progress.rate))
         return fail(battle.sim.spell.error);
     battle.sim.spell.update_visibility(battle.player_y);
+    // Spell time starts/ends on the Begin/End events consumed above, not by
+    // sampling active() here (same-tick begin+end would be lost).
     // 符卡背景位置在 consume() 开始时一次性写入（0x413270:180-194），逐帧
     // sync 不携带 boss 位置——原版无追随。
     spell_presentation->sync(battle.sim.spell.state());
@@ -1019,6 +1028,10 @@ bool RunScene::start_transition() {
     // 004be810 因已 >= 0x144 而保持。port 的 0x144 投影是
     // hud.displayed_score、004be810 投影是 progress.high_score，故只写
     // 后者（写 displayed_score 会让 HUD 数字跳过滚动动画）。
+    // 与 0043d650:8-12、0042a370:35-39 同式（be810 全局单调 max）；此处是
+    // 同一收敛在 start_transition 触发帧的落地，score_state.score 即 be7c0，
+    // 不是新的写入源（另两处：Application::prepare_next_stage 门首、
+    // GameHud::update_score 的 displayed_score 缓动值）。
     if (progress.high_score < score_state.score)
         progress.high_score = score_state.score;
     if (!hud.finish_stage_clear()) return fail(hud.error);
@@ -1104,6 +1117,8 @@ bool RunScene::draw_scenery(u32 pass) {
 
 bool RunScene::draw() {
     if (!error.empty()) return false;
+    if (!spell_presentation->draw_capture_times(host, host.spell_elapsed_time()))
+        return fail(spell_presentation->error);
     hud.draw(HudDrawContext{}, host);
     // 对话正文已在 update 内写入 text.anm texture0；四条文本 VM 由
     // AnmDrawSchedule 层 26（Draw 优先级 59）生产绘制，故 draw 不补画文本。

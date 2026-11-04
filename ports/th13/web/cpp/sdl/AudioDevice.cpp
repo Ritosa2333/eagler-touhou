@@ -4,6 +4,7 @@
 #include "AudioDevice.hpp"
 #include "../game/SoundEffects.hpp"
 #include "../game/MusicLayout.hpp"
+#include <eagler/audio/WebSfx.hpp>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -27,6 +28,7 @@ EM_JS(void, th13_publish_audio, (double mixed, double nonzero, double requests,
 });
 #endif
 namespace th13::sdl {
+namespace web_sfx = eagler::audio::web_sfx;
 namespace {
 u16 half(const u8* p) { u16 v; std::memcpy(&v, p, 2); return v; }
 u32 word(const u8* p) { u32 v; std::memcpy(&v, p, 4); return v; }
@@ -70,7 +72,7 @@ struct AudioDevice::Impl {
     struct Sample { std::vector<float> pcm; u32 frames = 0; };
     // One voice object per original voice ID (004e0c28 + id*0x18, 71 slots).
     // pan/attenuation mirror voice+0x10 and the 0x4613c0 start-time volume.
-    struct Voice { u32 cursor = 0; bool playing = false; i32 pan = 0, buffer_pan = 0, attenuation = 0; };
+    struct Voice { u32 cursor = 0; bool playing = false; i32 pan = 0, buffer_pan = 0, attenuation = 0; bool immediate = false; };
     struct Request { i32 code, value, step = 0; std::string text; };
     std::array<Sample, 60> samples;
     // 00460bc0/00460c50 build a per-frame channel table: 12 distinct voice IDs
@@ -102,7 +104,53 @@ struct AudioDevice::Impl {
     std::array<float, 4096> music_buffer{};
     u32 music_buffer_size = 0, music_buffer_at = 0;
     std::array<float, 2> held_music{};
+    // The frame-channel table still owns all TH13 sequencing. Only browser
+    // device voices bypass the prequeued music stream (AUDIO-07).
+    bool immediate_output() const {
+#if defined(__EMSCRIPTEN__) || defined(TH13_AUDIO_IMMEDIATE_TEST)
+        return stats.device;
+#else
+        return false;
+#endif
+    }
+    bool prepare_voice(u32 id) {
+        auto& voice = voices[id];
+        if (!immediate_output()) return true;
+        if (web_sfx::contains(&voice)) return true;
+        const auto& sample = samples[u32(definitions[id]->sample)];
+        return web_sfx::upload(&voice, sample.pcm.data(), sample.frames, 2, 44100);
+    }
+    bool start_immediate(u32 id, u32 frame, std::string& why) {
+        auto& voice = voices[id];
+        if (!prepare_voice(id)) {
+            why = "TH13 immediate sound upload failed: " + std::to_string(id);
+            return false;
+        }
+        web_sfx::volume(&voice, voice.attenuation <= -10000 ? 0.f : amplitude(voice.attenuation));
+        web_sfx::pan(&voice, std::clamp(float(voice.buffer_pan) / 1000.f, -1.f, 1.f));
+        web_sfx::stop(&voice);
+        web_sfx::seek(&voice, frame, 44100);
+        if (!web_sfx::play(&voice, (definitions[id]->flags & 1) != 0)) {
+            why = "TH13 immediate sound start failed: " + std::to_string(id);
+            return false;
+        }
+        return true;
+    }
+    bool initialize_immediate(std::string& why) {
+        if (!immediate_output()) return true;
+        web_sfx::suspend(false);
+        for (u32 id = 0; id < voices.size(); ++id) {
+            if (!definitions[id]) continue;
+            if (!prepare_voice(id)) {
+                why = "TH13 immediate sound upload failed: " + std::to_string(id);
+                return false;
+            }
+            voices[id].immediate = true;
+        }
+        return true;
+    }
     ~Impl() {
+        for (auto& voice : voices) if (voice.immediate) web_sfx::erase(&voice);
 #ifndef TH13_AUDIO_MIXER_ONLY
         if (stream) SDL_DestroyAudioStream(stream);
 #endif
@@ -233,7 +281,10 @@ bool AudioDevice::initialize(bool device) {
 #else
     if (device) { error = "Mixer-only diagnostic binary has no SDL output device"; return false; }
 #endif
-    a.stats.ready = true; a.stats.device = device; return true;
+    a.stats.device = device;
+    if (!a.initialize_immediate(error)) return false;
+    a.stats.ready = true;
+    return true;
 }
 #ifdef TH13_AUDIO_MIXER_ONLY
 bool AudioDevice::initialize_effects_for_test(const std::string& asset_root) {
@@ -249,8 +300,11 @@ bool AudioDevice::initialize_effects_for_test(const std::string& asset_root) {
             return false;
         }
     }
+#ifdef TH13_AUDIO_IMMEDIATE_TEST
+    a.stats.device = true;
+    if (!a.initialize_immediate(error)) return false;
+#endif
     a.stats.ready = true;
-    a.stats.device = false;
     return true;
 }
 bool AudioDevice::initialize_for_test(const std::string& asset_root,
@@ -283,7 +337,10 @@ bool AudioDevice::set_voice_pan(i32 id, float pan) {
         if (error.empty()) error = "Invalid or uninitialized TH13 sound pan: " + std::to_string(id);
         return false;
     }
-    a.voices[u32(id)].buffer_pan = pan_entry(pan);
+    auto& voice = a.voices[u32(id)];
+    voice.buffer_pan = pan_entry(pan);
+    if (voice.immediate)
+        web_sfx::pan(&voice, std::clamp(float(voice.buffer_pan) / 1000.f, -1.f, 1.f));
     return true;
 }
 bool AudioDevice::queue_voice(i32 id, i32 entry) {
@@ -339,7 +396,10 @@ bool AudioDevice::stop(i32 id) {
     }
     // 00460d40 negative id: stop every per-ID voice object.
     if (id < 0) {
-        for (auto& voice : a.voices) voice.playing = false;
+        for (auto& voice : a.voices) {
+            voice.playing = false;
+            if (voice.immediate) web_sfx::stop(&voice);
+        }
         ++a.stats.stopped;
         return true;
     }
@@ -451,8 +511,10 @@ void AudioDevice::update() {
         a.channels[i] = -1;
         a.channel_requests[i] = 0;
         if (count < 0) {
-            if (a.voices[u32(id)].playing) ++a.stats.stopped;
-            a.voices[u32(id)].playing = false;
+            auto& voice = a.voices[u32(id)];
+            if (voice.playing) ++a.stats.stopped;
+            voice.playing = false;
+            if (voice.immediate) web_sfx::stop(&voice);
         } else {
             // 0x461325-0x461350: sum the channel entries and divide by the
             // count (signed idiv, truncation toward zero). The average is the
@@ -467,6 +529,11 @@ void AudioDevice::update() {
             // 0x4613c0 reads the current global volume once, at start.
             voice.attenuation =
                 effect_attenuation(effect_volume, a.definitions[u32(id)]->volume);
+            if (voice.immediate) {
+                // Recreate buffers if SDL replaced its AudioContext. Never mix
+                // the same voice into the queued music stream as well.
+                if (!a.start_immediate(u32(id), 0, error)) return;
+            }
             ++a.stats.started;
         }
     }
@@ -479,6 +546,7 @@ bool AudioDevice::finish_music_requests() {
 void AudioDevice::pause_music(bool value) { impl->music_paused = value; }
 void AudioDevice::suspend(bool value) {
     auto& a = *impl; a.suspended = value;
+    if (a.immediate_output()) web_sfx::suspend(value);
 #ifndef TH13_AUDIO_MIXER_ONLY
     if (a.stream) {
         const bool ok = value ? SDL_PauseAudioStreamDevice(a.stream) : SDL_ResumeAudioStreamDevice(a.stream);
@@ -498,6 +566,15 @@ bool AudioDevice::mix(float* pcm, u32 frames) {
     for (size_t i = 0; i < a.voices.size(); ++i) {
         auto& v = a.voices[i];
         if (!v.playing) continue;
+        if (v.immediate) {
+            // SDL may replace its AudioContext on device recovery. Restore
+            // live voices at their last observed cursor instead of losing loops.
+            if (!web_sfx::contains(&v) && !a.start_immediate(u32(i), v.cursor, error))
+                return false;
+            v.playing = web_sfx::playing(&v);
+            v.cursor = web_sfx::cursor(&v);
+            continue;
+        }
         const auto& d = *a.definitions[i];
         const auto& sample = a.samples[u32(d.sample)];
         // The attenuation was fixed by 0x4613c0 at voice start; a later
@@ -556,7 +633,8 @@ AudioDevice::Statistics AudioDevice::statistics() const {
     s.music_cursor = a.music_cursor; s.track = a.track;
     s.music_paused = a.music_paused; s.suspended = a.suspended;
     s.active_voices = 0;
-    for (const auto& voice : a.voices) s.active_voices += voice.playing ? 1u : 0u;
+    for (const auto& voice : a.voices)
+        s.active_voices += (voice.immediate ? web_sfx::playing(&voice) : voice.playing) ? 1u : 0u;
     s.pending_voices = 0;
     for (i32 id : a.channels) s.pending_voices += id >= 0 ? 1u : 0u;
 #ifndef TH13_AUDIO_MIXER_ONLY

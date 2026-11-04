@@ -44,6 +44,13 @@ struct ResultHost final : TitleScenePlatform {
     std::vector<std::string> saved_names;
     std::vector<i32> sounds;
     std::vector<HudTextDraw> texts;
+    bool provide_result_data = false;
+    TitleResultScreenData result_data;
+    bool result_screen_data(TitleResultScreenData& out) const override {
+        if (!provide_result_data) return false;
+        out = result_data;
+        return true;
+    }
 
     bool clear_title_overlay() override { return true; }
     bool queue_title_music(i32, i32, const std::string&) override { return true; }
@@ -146,6 +153,11 @@ TEST(result_return_reason_three_enters_name_entry_before_main) {
     h.advance(8);
     CHECK_EQ(h.scene->state.substate, 2);
     CHECK_EQ(h.scene->state.result_name_cursor, 90);
+    // 0x454050 case0 建面：背景 root89 + script107 + 角色条 143+c + 难度条 147+d。
+    CHECK(h.scene->state.handles[89] != 0);
+    CHECK(h.scene->state.handles[107] != 0);
+    CHECK(h.scene->state.handles[143 + h.scene->state.result_character] != 0);
+    CHECK(h.scene->state.handles[147 + h.scene->state.result_difficulty] != 0);
     CHECK(h.host.recorded.empty());
 }
 
@@ -154,34 +166,84 @@ TEST(result_name_confirm_records_typed_name_then_returns_main_without_replay) {
     h.host.replay_available = false;  // DAT_004be7c8 != 0（或宿主未接查询）
     h.enter_name_editor();
     h.type_aaa_to_end();
-    h.frame(1);  // END：record_result_name → 回放不可用 → 主菜单
+    h.frame(1);  // END：record_result_name → 0x454050 case3（不立即收面）
     CHECK_EQ(h.host.recorded.size(), size_t(1));
     if (!h.host.recorded.empty()) CHECK_EQ(h.host.recorded[0], std::string("AAA"));
+    CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::ResultName));
+    CHECK_EQ(h.scene->state.substate, 3);
+    CHECK(h.scene->state.handles[107] != 0);  // case3 age<=5：面未收
+    h.advance(7);  // case3 age>5 才 retire + 回主菜单
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Main));
+    CHECK_EQ(h.scene->state.handles[107], 0u);
     CHECK(h.host.saved_slots.empty());
     CHECK_EQ(h.scene->state.return_reason, 1);
+}
+
+TEST(result_name_grid_uses_original_layout_and_special_glyph_bytes) {
+    ResultHarness h;
+    h.enter_name_editor();
+    h.host.texts.clear();
+    CHECK(h.scheduler.draw() >= 0);
+    CHECK(h.scene->error.empty());
+    // 原版 0x454690：不画 "RESULT NAME"/"SAVE REPLAY" 长文本（字框是
+    // title.anm script107/108 位图）；91 格起点 (212,360)，列+18。
+    bool grid_a = false, space_glyph = false, del_glyph = false, end_glyph = false;
+    bool legacy_banner = false;
+    for (const auto& text : h.host.texts) {
+        if (text.text == "RESULT NAME" || text.text == "SAVE REPLAY") legacy_banner = true;
+        if (text.text == "A" && text.position.x == 212 && text.position.y == 360) grid_a = true;
+        if (text.text == std::string(1, char(0x81))) space_glyph = true;
+        if (text.text == std::string(1, char(0x80))) del_glyph = true;
+        if (text.text == std::string(1, char(0x7f))) end_glyph = true;
+    }
+    CHECK(!legacy_banner);
+    CHECK(grid_a);
+    CHECK(space_glyph);
+    CHECK(del_glyph);
+    CHECK(end_glyph);
 }
 
 TEST(result_name_confirm_opens_replay_slots_and_saves_one_based_slot) {
     ResultHarness h;
     h.host.replay_available = true;  // DAT_004be7c8 == 0 → 流程 0xf
+    h.host.provide_result_data = true;
+    h.host.result_data.rank = 0;
+    h.host.result_data.current.available = true;
+    h.host.result_data.current.timestamp = 1700000000;
     h.enter_name_editor();
     h.type_aaa_to_end();
-    h.frame(1);  // END → ResultReplaySlot
+    h.frame(1);  // END → 0x454050 case3
     CHECK_EQ(h.host.recorded.size(), size_t(1));
     if (!h.host.recorded.empty()) CHECK_EQ(h.host.recorded[0], std::string("AAA"));
+    CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::ResultName));
+    CHECK_EQ(h.scene->state.substate, 3);
+    h.advance(7);  // case3 age>5 → 0xf
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::ResultReplaySlot));
     h.enter_replay_slots();
     CHECK_EQ(h.scene->state.result_slot, 0);
+    CHECK(h.scene->state.handles[108] != 0);
+    CHECK(h.scene->state.handles[89] != 0);
 
-    // 槽屏显示：1 基编号 / 25。
+    // 0x454f90 state2：25 行列表 (58,80) 行距 15，不再有移植自造的
+    // "REPLAY SLOT n / 25" 单行文本。
     h.host.texts.clear();
     CHECK(h.scheduler.draw() >= 0);
     CHECK(h.scene->error.empty());
-    bool shown = false;
-    for (const auto& text : h.host.texts)
-        if (text.text == "REPLAY SLOT 1 / 25") shown = true;
-    CHECK(shown);
+    i32 slots = 0;
+    bool first_row = false, legacy_line = false, legacy_name_grid = false;
+    for (const auto& text : h.host.texts) {
+        if (text.text.rfind("No.", 0) == 0) ++slots;
+        if (text.text == "No.01 -------- --/--/-- --:-- ------- ------- --- ---%")
+            first_row = true;
+        if (text.text.rfind("REPLAY SLOT ", 0) == 0) legacy_line = true;
+        if (text.text == "RESULT NAME") legacy_name_grid = true;
+        if (text.text == "A" && text.position.x == 212 && text.position.y == 360)
+            legacy_name_grid = true;
+    }
+    CHECK_EQ(slots, 25);
+    CHECK(first_row);
+    CHECK(!legacy_line);
+    CHECK(!legacy_name_grid);
 
     h.frame(0x20);
     h.frame(0x20);
@@ -189,15 +251,51 @@ TEST(result_name_confirm_opens_replay_slots_and_saves_one_based_slot) {
     CHECK_EQ(h.scene->state.result_slot, 3);
     h.host.texts.clear();
     CHECK(h.scheduler.draw() >= 0);
-    shown = false;
+    bool selected_row = false;
     for (const auto& text : h.host.texts)
-        if (text.text == "REPLAY SLOT 4 / 25") shown = true;
-    CHECK(shown);
+        if (text.text.rfind("No.04 ", 0) == 0 && text.position.x == 58 &&
+            text.position.y == 80 + 3 * 15 && text.style.color == 0xffffff00u)
+            selected_row = true;
+    CHECK(selected_row);
 
-    h.frame(1);  // Z：slot+1 = 4，名字沿用 0x454050 编辑结果
+    // 0x4549d0 case2 Z：进本屏 8 字名字编辑，不立即落盘。
+    h.frame(1);
+    CHECK_EQ(h.scene->state.substate, 3);
+    CHECK(h.host.saved_slots.empty());
+    h.advance(10);  // 0045507b: age>=10 before names/grid appear.
+    h.host.texts.clear();
+    CHECK(h.scheduler.draw() >= 0);
+    bool editor_name = false, editor_grid = false, selected_line = false;
+    bool selected_named = false;
+    for (const auto& text : h.host.texts) {
+        if (text.text == "AAA" && text.position.x == 112 && text.position.y == 240)
+            editor_name = true;
+        if (text.text == "A" && text.position.x == 212 && text.position.y == 360)
+            editor_grid = true;
+        if (text.text.rfind("No.04 ", 0) == 0 && text.position.x == 58 &&
+            text.position.y == 240) {
+            selected_line = true;
+            // 00454f90 state3：头部行读当前待存 replay 头的名字，而非空格。
+            selected_named = text.text.find("AAA") != std::string::npos;
+        }
+    }
+    CHECK(editor_name);
+    CHECK(editor_grid);
+    CHECK(selected_line);
+    CHECK(selected_named);
+
+    // END（光标初值 0x5a）→ 写 slot+1 = 4，名字沿用 0x454050 编辑结果。
+    h.frame(1);
     CHECK_EQ(h.host.saved_slots.size(), size_t(1));
     if (!h.host.saved_slots.empty()) CHECK_EQ(h.host.saved_slots[0], 4);
     if (!h.host.saved_names.empty()) CHECK_EQ(h.host.saved_names[0], std::string("AAA"));
+    CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::ResultReplaySlot));
+    CHECK_EQ(h.scene->state.substate, 2);
+
+    // X → case4；age>5 后回主菜单。
+    h.frame(0x100);
+    CHECK_EQ(h.scene->state.substate, 4);
+    h.advance(7);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Main));
 }
 
@@ -206,12 +304,79 @@ TEST(result_replay_slot_cancel_returns_main_without_saving) {
     h.host.replay_available = true;
     h.enter_name_editor();
     h.type_aaa_to_end();
-    h.frame(1);
+    h.frame(1);  // END → 0x454050 case3
+    h.advance(7);  // case3 age>5 → 0xf
     h.enter_replay_slots();
-    h.frame(0x100);  // X/Esc：跳过保存
+    h.frame(0x100);  // X/Esc：0x4549d0 case2 → case4
+    CHECK_EQ(h.scene->state.substate, 4);
+    h.advance(7);    // case4 age>5 收面
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Main));
     CHECK(h.host.saved_slots.empty());
     CHECK(h.host.saved_names.empty());
+}
+
+TEST(result_original_ten_rows_keep_current_name_columns_blank) {
+    ResultHarness h;
+    h.host.provide_result_data = true;
+    auto& data = h.host.result_data;
+    data.rank = 9;
+    data.character = 3;
+    data.difficulty = 2;
+    for (auto& record : data.records) {
+        record.available = true;
+        record.score = 123;
+        record.name = "OLD";
+    }
+    h.enter_name_editor();
+    h.host.texts.clear();
+    CHECK(h.scheduler.draw() >= 0);
+    i32 rows = 0;
+    bool current = false;
+    for (const auto& text : h.host.texts) {
+        if (text.position.x == 48) {
+            ++rows;
+            if (text.position.y == 322) {
+                current = true;
+                CHECK(text.text.find("OLD") == std::string::npos);
+                CHECK(text.text.find("--------") == std::string::npos);
+            }
+        }
+    }
+    CHECK_EQ(rows, 10);
+    CHECK(current);
+    CHECK(h.scene->state.handles[146] != 0);
+    CHECK(h.scene->state.handles[149] != 0);
+}
+
+TEST(result_slot_editor_waits_ten_frames_and_uses_original_slide) {
+    ResultHarness h;
+    h.host.replay_available = true;
+    h.enter_name_editor();
+    h.frame(1);  // END → 0x454050 case3
+    h.advance(7);  // case3 age>5 → 0xf
+    h.enter_replay_slots();
+    h.frame(1);
+    h.host.texts.clear();
+    CHECK(h.scheduler.draw() >= 0);
+    CHECK_EQ(h.host.texts.size(), size_t(1));
+    if (!h.host.texts.empty()) {
+        CHECK_EQ(h.host.texts[0].position.x, 58.f);
+        CHECK(h.host.texts[0].position.y >= 80.f);
+        CHECK(h.host.texts[0].position.y <= 240.f);
+    }
+    h.advance(10);
+    h.host.texts.clear();
+    CHECK(h.scheduler.draw() >= 0);
+    CHECK(h.host.texts.size() > size_t(90));
+    bool end_glyph = false, delete_glyph = false;
+    for (const auto& text : h.host.texts) {
+        if (text.position.x == 410 && text.position.y == 456)
+            delete_glyph = text.text == std::string(1, char(0x7f));
+        if (text.position.x == 428 && text.position.y == 456)
+            end_glyph = text.text == std::string(1, char(0x80));
+    }
+    CHECK(delete_glyph);
+    CHECK(end_glyph);
 }
 
 int main() { return th13test::run_all("Title result flow"); }

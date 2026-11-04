@@ -2,6 +2,7 @@
 // 帧序固定「装载完成 → 场景 controls+scheduler → 显示绘制 → 装载挡板 →
 // apply_destination」，docs/plans/ui-base.md §四）。
 #include "ApplicationState.hpp"
+#include "StageTransitionClock.hpp"
 #include "game/TitleFrame.hpp"
 #include "game/VisualBootstrap.hpp"
 
@@ -665,26 +666,26 @@ bool ApplicationState::begin_run() {
         release_run(preserve_hud);
         next_scenery_bank = 26;
     }
-    // 对局数值通道预置（0x42b990:103-110 关首语义子集，DAT_004be7d0/0x4be7dc/0x4be7e4）：
-    // 初值表 0x4c0ab0[diff]×100（EXE .data 实读 5000/10000/15000/20000/20000 →
-    // 0x4be7e0）；封顶表 0x4c0ac8[diff]×100（100000/250000/500000/500000/500000 →
-    // 0x4be7e4，Extra 行 4）。0x42bb8c 起字节实证：db 05 fimul [0x4be7e0]；
-    // dd 05 fld qword[0x4ae868]（=100.0）；dc f9 fdiv；d9 5c 24 14/d8 4c 24 14
-    // ×100 同值往返；e8 call 0x4971f0（ftol，吃 FPU 浮点——Ghidra 把 0x42b990
-    // 读成 float 参数即此误源）→ DAT_004be7dc = 初值 = 0x4c0ab0[diff]×100。
-    // Normal 开局点值 10000×100 = 1000000，HUD 显示 /100（0x427910:236
-    // 0x403ec0(4be7dc/100-(4be7dc/100)%10)）即屏显 10000 点（stage1-check2.png
-    // 实证），非封顶 250000。graze 关首清零（:103）。
-    // Six entries at 004c0ab0/004c0ac8, including Overdrive (rank 5).
-    static constexpr i32 kPointInitTable[6] = {5000, 10000, 15000, 20000, 20000, 100000};
-    static constexpr i32 kPointCapTable[6] = {100000, 250000, 500000, 500000, 500000, 1000000};
+    // 对局数值通道预置（0x42b990:103-110 dcc30!=0 新局/Retry 分支的关首语义子集，
+    // DAT_004be7c0/0x4be7d0/0x4be7dc/0x4be7e4；0xc 换关延续 dcc30==0 分支 :54-78
+    // 不重置）。初值表 0x4c0ab0[diff]×100（EXE .data 实读 5000/10000/15000/
+    // 20000/20000 → 0x4be7e0）；封顶表 0x4c0ac8[diff]×100（100000/250000/
+    // 500000/500000/500000 → 0x4be7e4，Extra 行 4）。0x42bb8c 起字节实证：
+    // db 05 fimul [0x4be7e0]；dd 05 fld qword[0x4ae868]（=100.0）；dc f9 fdiv；
+    // d9 5c 24 14/d8 4c 24 14 ×100 同值往返；e8 call 0x4971f0（ftol，吃 FPU
+    // 浮点——Ghidra 把 0x42b990 读成 float 参数即此误源）→ DAT_004be7dc =
+    // 初值 = 0x4c0ab0[diff]×100。Normal 开局点值 10000×100 = 1000000，HUD
+    // 显示 /100（0x427910:236 0x403ec0(4be7dc/100-(4be7dc/100)%10)）即屏显
+    // 10000 点（stage1-check2.png 实证），非封顶 250000。
+    // score/graze/max_point/封顶只在 !continuing（新局/Retry/回放冷启动）重置；
+    // 0xc 换关（continuing=true）全部跨关保留（:54-78 仅 be810=max(be810,be7c0)）。
     if (!ecl_difficulty_mask(progress.difficulty)) return fail("Invalid run difficulty");
+    run_entry_reset_points(continuing, progress.difficulty, selection_score.score,
+                           progress.max_point, progress.max_point_cap, progress.graze);
     const u32 difficulty = u32(progress.difficulty);
-    progress.max_point_cap = kPointCapTable[difficulty] * 100;
-    if (!continuing) {
-        progress.max_point = kPointInitTable[difficulty] * 100;
-        progress.graze = 0;
-    }
+    spell_time_stage = progress.stage;
+    spell_time_packed = 0;
+    spell_time_clock.reset();
     progress.chapter = progress.chapter_frame = 0;
     for (auto& callback : animation_updates) callback.enabled = true;
     if (new_run) {
@@ -895,8 +896,17 @@ bool ApplicationState::begin_record_stage() {
 
 bool ApplicationState::prepare_next_stage() {
     if (!run) return fail("Stage transition has no run");
-    // 42b990's DAT_004dcc30==0 continuation catches up the record before
-    // Replay restoration/loading. The loading gate skips HUD convergence.
+    // 0042b990:74-78（DAT_004dcc30==0 分支）唯一的数值写。
+    // 注意：「dcc30==0 即 0xc 换关」是端口侧语义推断，非 EXE 硬事实：
+    // EXE 里 0xc 场景请求的判据是 DAT_004dcc24==0xc（0x42d0c1），且
+    // 0x42bfa0 的 0xc 分支置 be830|=2；两者是不同全局。可确证的是该
+    // dcc30==0 分支（0x42bcfc-0x42bd09）不写 be7d0/be7c0/be7dc。
+    // `if (DAT_004be810 < DAT_004be7c0) DAT_004be810 = DAT_004be7c0;`
+    // 即 be810(HiScore)=max(be810,be7c0)，与 0043d650:8-12 全局单调、
+    // 0042a370:35-39 同源。装载门会跳过 0042a370 的 HUD 滚动，故在回放
+    // 恢复/装载前先收敛到本局分（be7c0 = selection_score.score）。
+    // 该分支不清 be7d0(Graze)/be7c0/be7dc(最大得点)：清零只在 :79-110
+    // 的 dcc30!=0（新局/Retry）分支，见下方 else 与 begin_run()。
     if (progress.high_score < selection_score.score)
         progress.high_score = selection_score.score;
     stage_transition_loading = false;
@@ -917,6 +927,11 @@ bool ApplicationState::prepare_next_stage() {
     // 0046f820 creates ASCII script17 in the main ANM manager; the create
     // only performs the root's initial tick, and the scheduler's animation
     // passes (priorities 9/34) advance it later in this same frame.
+    // 坐标核对（th13.exe 原始字节）：00417370(0x417376/0x41738a) 以
+    // {480.0, 392.0, 0.0} 组 vec3；0xc 调用点 0x42bffd 与 0xa/0xb
+    // 分支 0x42c09b 都从 0x4aef14(=392.0f) 取 Y。400.0f(0x4af084)
+    // 全 exe 仅 0x441e94 一处引用（boss 世界位 +0x5bc），与字幕无关，
+    // 故 0xc 路径保持 392，不改 400（改则造成 8px 视觉回归）。
     if (!transition_prayer) {
         transition_prayer = animations.create(2, 17, -1, 0, {480,392,0});
         if (!transition_prayer) return fail("Next-stage loading caption: " + animations.error);
@@ -967,9 +982,11 @@ bool ApplicationState::prepare_next_stage() {
         // 抽取，随后 gs/vs 重打 stamp、gi 清零。恢复延迟到本帧 step 尾部。
         pending_transition_restore = true;
     } else {
-        static constexpr i32 point_init[] = {5000,10000,15000,20000,20000,100000};
-        progress.max_point = point_init[progress.difficulty] * 100;
-        progress.graze = 0;
+        // 0042b990:54-78（DAT_004dcc30==0 的 0xc 换关延续）只做 Sleep(0x3c)
+        // 与 `if (be810 < be7c0) be810 = be7c0`（见本函数门首）；be7d0
+        // (Graze)/be7c0(本局分)/be7dc(最大得点) 的清零与 point_init 初值
+        // 全在 :79-110 的 dcc30!=0（新局/Retry）分支，由 begin_run() 的
+        // !continuing 承担。这里不得重置 max_point/graze，否则跨关值丢失。
         // 448ec0 creates the next recording slot at activation; the old slot
         // continues collecting inputs throughout the HUD/startup gates.
     }
@@ -1187,13 +1204,18 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
     if (stage_transition_active && !loaded_transition &&
         !environment.paused && !(progress.scene_flags & 0x70u)) {
         // 0x42b990:45 在关卡装载入口置 stage ctx +0x60 bit2；装载成功路径
-        // 0x42b990:231（FUN_0043b5a0 之后）才清 bit2。0x42c550:248-261 的
+        // 0x42b990:231（FUN_0043b5a0 之后）清 bit2。0x42c550:248-261 的
         // `(uVar2 & 4)==0` 门用该位挡住 FUN_0042a370 分数滚动（004be810
-        // 冻结），直到装载完成。移植的装载完成点 = activate_next_stage ->
-        // begin_run（Application.cpp:700 关首 scene_flags=0）。此前在
-        // transition 门内每帧清 bit2 会让 0042a370 在装载期间继续滚动：
-        // My25 s05 f20115 起 web 004be810 每帧 +2（native 保持 7858765 到
-        // f20233，f20234 装载完成由 0x42b990:75-78 一次性设为 004be7c0）。
+        // 冻结）；0x45f430 的退场淡出计时也用同一位冻结。装载完成点 =
+        // 本分支的 start_transition 帧（0x42b990:75-78 追平 be810 的同一拍；
+        // native My25 s05 f20234），不是 30 帧后的 activate_next_stage。
+        // 此前在 transition 门内每帧清 bit2 会让 0042a370 在 120 帧 HUD 门
+        // 内继续滚动（My25 s05 f20115 起 web 004be810 每帧 +2，native 保持
+        // 7858765 到 f20233）；但若拖到 begin_run 才清，0x409270 在装载门
+        // 创建的 30 帧淡出（45f430，kind2/port kind5）会把计时器冻结在
+        // time=0/alpha=0，换面淡出动画整段消失。故只在 start_transition
+        // 成功后清 bit2：HUD 120 帧门仍被冻结，淡出/分数滚动按装载完成帧
+        // 启动（0x42c550:248-261 的放行点）。
         if (stage_startup_age < 0) {
             if (!(run->hud.flags & 0x100u) || run->hud.clear_age.current >= 120) {
                 // Loader gate reached its transition phase: build the next STD
@@ -1207,6 +1229,8 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
                     transition_scenery_pending = false;
                 }
                 if (!run->start_transition()) return false;
+                progress.scene_flags =
+                    stage_loader_completed_scene_flags(progress.scene_flags);
                 stage_startup_age = 0;
             }
         } else if (stage_startup_age == 30) {
@@ -1517,7 +1541,8 @@ bool ApplicationState::open_ending_window(i32 kind, i32 duration) {
             }
         }
         // 45f430 holds its timer on GameInf bits0/2; 45ef50 does not.
-        if (fade.kind != 5 || !(fade.owner->progress.scene_flags & 5u)) ++fade.time;
+        if (!stage_loading_holds_game_fade(fade.kind, fade.owner->progress.scene_flags))
+            ++fade.time;
         return i32(FrameAction::Continue);
     };
     item->draw.owner = item;

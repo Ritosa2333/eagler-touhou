@@ -5,7 +5,8 @@
 #include <functional>
 
 namespace th13::sdl {
-// SDL output and no-device diagnostic mixing share the exact same PCM path.
+// TH13 owns decoding and frame-channel sequencing. Browser device SFX use the
+// shared immediate output; native/no-device diagnostics retain the PCM mixer.
 // Diagnostic mode has no device, but still requires all original assets.
 class AudioDevice {
     struct Impl;

@@ -24,7 +24,7 @@ bool GameHud::update(const HudFrameContext& context, HudFrameServices& services)
         error = "HUD sound service failed";
         return false;
     };
-    (void)sound;  // 通知/符卡音效随对应分期接入
+    (void)sound;  // 0x4265a0：帧侧无原版独立警告音调用点；Boss 段警告音已由 boss_hud.update 的 sound 回调（本文件 :55）处理。无原版独立调用点，BLOCKED——强行接线会多发声音，属行为回归。
     if (context.player_position) {
         // 0x4265a0:85-96：玩家进入左下角时灵界槽淡化（label 5 -> alpha 32），
         // 离开时恢复（label 4 -> alpha 255）。y 用 400/384 迟滞，x 用 -64。

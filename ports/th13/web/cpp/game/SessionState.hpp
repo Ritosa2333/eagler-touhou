@@ -14,7 +14,9 @@ struct SessionState {
     i32 continue_stock = 3;
     // hi-score（0x4be810，点值制）：新档默认 = score file 行 hi 100000
     //（0x449760 默认表首行 100000；0x403fd0 显示 ×10 ⇒ 1,000,000）。
-    // Application 按存档状态预置；对局中只增（0x42a370/0x43d650）。
+    // Application 按存档状态预置；对局中只增、全局单调：
+    // 0043d650:8-12 与 0042b990:74-78 `be810 = max(be810, be7c0)`，
+    // 0042a370:35-39 更新时另置 be830|=4、be814=continue 计数。
     i32 high_score = 100000, high_score_extra = 0;
     i32 configured_lives = 3;
     i32 starting_stage = 1;
@@ -67,9 +69,12 @@ struct SessionState {
     // 门控、0x40db10:228/0x419a90:299 弹幕碰撞类），非敌击破。
     // HUD 显示值 = 当前/100 再抹个位（0x427910:236），Normal 开局屏显 10000
     //（demo-original-live/stage1-check2.png 实证），封顶显示 250000。
+    // 上述初值只在 0x42b990:79-110 的 dcc30!=0 分支写入；0xc 换关延续
+    // （:54-78）保留 be7dc 现值，不在 prepare_next_stage() 重置。
     i32 max_point = 0, max_point_cap = 0;
     // Graze（DAT_004be7d0）：每弹幕擦弹 +1（0x445900:11-13，调用方为弹幕
-    // 碰撞类，非敌击破计数），封顶 99,999,999。0x42b990:103 关首清零。
+    // 碰撞类，非敌击破计数），封顶 99,999,999。0x42b990:103 仅在
+    // dcc30!=0（新局/Retry）分支清零；0xc 换关延续（:54-78）不重置。
     i32 graze = 0;
     // ---- 残机/灵击碎片分母（DAT_004be7fc = 0x4be7b8+0x44）----
     // 阈值下标，0x43d330 每获得一残机 +1（结构体 +0x44，:56 无条件递增）。

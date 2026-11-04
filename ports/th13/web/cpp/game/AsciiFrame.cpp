@@ -12,10 +12,10 @@ AsciiFrame::AsciiFrame(FrameScheduler& s,AsciiText& t,AnmRenderer& r,AnmDrawServ
 }
 AsciiFrame::~AsciiFrame(){for(auto& c:callbacks)scheduler.remove(c);}
 bool AsciiFrame::draw(i32 space){
- if(space!=0&&!views.camera(DrawCamera::Hud,false)){error="Caption playfield camera failed";return false;}
- if(space==1){renderer.flush();text.scene_origin(true);}
+ // 00404140 filters by space, independently of the camera selector.
+ // TH13's selector stays zero: every text pass uses the full-screen view.
+ if(!views.camera(DrawCamera::Fullscreen,false)){error="Caption screen camera failed";return false;}
  const bool rendered=text.draw(space,renderer);
- if(space==1)text.scene_origin(false);
  if(!rendered){error=text.error;return false;}
  if(!views.camera(DrawCamera::Fullscreen,false)){error="Caption full-screen camera failed";return false;}
  if(space==1)renderer.flush();

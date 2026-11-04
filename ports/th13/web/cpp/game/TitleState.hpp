@@ -78,6 +78,17 @@ struct TitleState {
     std::string result_name;
     i32 result_name_cursor = 90;
     i32 result_slot = 0;
+    // 0x4549d0 case2 Z 拍：当前待保存 replay 的名字（原版从 score+0x1b260
+    // 拷进 +0x599c 的默认名，也是 00454f90 state3 头部行的名字来源）。
+    std::string result_slot_name;
+    // 0x454050 建面用的角色/难度（be7b8/be7c4 快照）与 +0x690 背景根。
+    // 角色名牌 = script143+character，难度条 = script147+difficulty
+    //（difficulty=4 用 script151 EXTRA）。result_rank = 本次入榜行 0..7，
+    // -1 = 未入榜（原版 +0x59ac=1 锁定态）。
+    i32 result_character = 0;
+    i32 result_difficulty = 0;
+    i32 result_rank = 0;
+    u32 result_background = 0;
 
     TitleState() { age.set(0); }
 
