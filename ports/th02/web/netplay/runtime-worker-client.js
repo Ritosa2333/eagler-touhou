@@ -36,12 +36,16 @@ function draw(){
  catch(error){fatal(error.message);}
  finally{releaseFrame(frame);}
 }
+function prepareMusic(){
+ if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th02',fat),engine:pmd};bgm.setVolume(volume);await bgm.load({warmOpening:false});if(stopped)return;for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);}).catch(e=>{musicError=e.message;});
+ return musicTask;
+}
 function music(event){
  if(event.name){if(playedName!==event.name){pendingMusic.push([0,event.name]);if(event.ax>>>8)pendingMusic.push([event.ax,event.name]);}else pendingMusic.push([event.ax,event.name]);playedName=event.name;}
  else if(playedName)pendingMusic.push([event.ax,playedName]);
  if(pendingMusic.length>64)pendingMusic.splice(0,pendingMusic.length-64);
  if(bgm?.manifest){for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);return;}
- if(!musicTask&&!musicError)musicTask=Promise.resolve().then(async()=>{bgm=new LocalBgm(context,()=>{});bgm.pmd={tracks:extractOriginalPmd('th02',fat),engine:pmd};bgm.setVolume(volume);await bgm.load({warmOpening:false});if(stopped)return;for(const [ax,name]of pendingMusic.splice(0))bgm.commandTrack(ax,name);}).catch(e=>{musicError=e.message;});
+ void prepareMusic();
 }
 async function load(config){
  settings=config;context=new AudioContext({sampleRate:44100,latencyHint:'interactive'});await context.resume().catch(()=>{});
@@ -49,6 +53,7 @@ async function load(config){
  fat=new Fat12(await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true}));
  [sfx,pmd]=await Promise.all([OriginalSfx.create('th02',fat),PmdPlayer.prepare(context,new URL('../',import.meta.url))]);
  if(stopped){sfx.dispose();throw Error('TH02 worker 已停止');}
+ void prepareMusic();
  worker=new Worker(new URL('./runtime-worker.js',import.meta.url),{type:'module'});
  worker.onerror=e=>fatal(e.message||'TH02 worker 失败');
  worker.onmessage=({data})=>{
