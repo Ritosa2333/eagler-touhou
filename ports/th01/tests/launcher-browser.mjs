@@ -48,7 +48,8 @@ try{
   await checkRatio();
   await page.setViewport({width:480,height:800});await checkRatio();
   await page.setViewport({width:1360,height:900});
-  await page.click('.room-workspace-fullscreen, #fullscreenPlayer, #playerFullscreen, [data-player-fullscreen]').catch(()=>{});
+  if(!await page.evaluate(()=>!!document.fullscreenElement))await page.click('#fullscreenToggle');
+  await page.waitForFunction(()=>!!document.fullscreenElement,{timeout:5000});
   await checkRatio();await page.screenshot({path:resolve(out,'solo.png')});
   await frame.$eval('#game',node=>node.focus());await page.keyboard.press('KeyZ',{delay:100});
   await frame.waitForFunction(async()=> (await import('./app.js')).managedAPI.health().menu===0,{timeout:5000});
