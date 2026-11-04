@@ -38,6 +38,7 @@ globalThis.__eaglerPC98FileCommands=async message=>{
     await store.write(path,bytes);return {};
   }throw Error('用户文件操作无效');
 };
+let playerApi;
 let queue=Promise.resolve();
 async function command(message){
   if(!ready)throw Error('游戏资源尚未就绪');
@@ -52,7 +53,7 @@ async function command(message){
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
       const next={...message.options};
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
-      if(next.netplaySpectator||next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
+      if(next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();
       options=next;music=message.music;language=nextLanguage;configured=true;
       globalThis.Module ??= {}; globalThis.Module.eaglerOptions=options;
@@ -62,13 +63,14 @@ async function command(message){
     case 'prepare-room':if(!multiplayer||!configured||launched)throw Error('房间预载状态无效');return preview.prepare(language);
     case 'launch':
       if(!configured||launched)throw Error('游戏启动状态无效');
-      if(multiplayer&&options.multiplayerPreflight){
+      if(multiplayer&&options.multiplayerPreflight&&!options.netplaySpectator){
         launchSerial=message.launchSerial??0;
         await preview.prepare(language);launched=true;firstFrame=true;
         emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});
         emit({event:'first-frame',launchSerial});return {};
       }
       preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
+      api=multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('03',emit):playerApi;
       try{await api.start({options,music,language});}catch(error){launched=false;api.stop();throw error;}
       emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});return {};
     case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();api.stop();launched=false;emit({event:'exit',code:0});return {};
@@ -96,11 +98,12 @@ try{
     const {mountManagedRoom}=await import('./managed-room-layout.mjs');mountManagedRoom();
     api=(await import('./managed-room.mjs')).managedAPI;preview=titlePreview(document.querySelector('#screen'));
   }else api=(await import('./managed-solo.mjs')).managedAPI;
+  playerApi=api;
   const fps=mountGameFps();
   ready=true;emit({event:'ready',saveRoot:'/savesth03'+(multiplayer?'mp':''),roomPreview:multiplayer});
   let lastFrames=0,lastAt=performance.now(),lastHealth=0;
   setInterval(()=>{
-    if(!launched||options.multiplayerPreflight)return;
+    if(!launched||options.multiplayerPreflight&&!options.netplaySpectator)return;
     const health=api.health(),now=performance.now();fps.update(health.gameFrame,now);
     if(!firstFrame&&health.frames>0){firstFrame=true;emit({event:'first-frame',launchSerial});}
     if(now-lastHealth<1000)return;lastHealth=now;
