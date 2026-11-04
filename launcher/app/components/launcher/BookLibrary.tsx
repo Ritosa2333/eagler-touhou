@@ -11,7 +11,6 @@ import {
   Shapes,
   History,
   X,
-  ArrowUpRight,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { ChoiceGroup, ChoiceItem } from '../../ui/choice-group';
@@ -31,7 +30,9 @@ import {
   type BookCategory,
 } from './book-preferences';
 import { bookArtwork } from './book-artwork';
+import {impressFavorite} from './ink-feedback';
 import { BookWorkNumber } from './BookWorkNumber';
+import {useLibraryMotion} from './use-library-motion';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & { footer?: ReactNode };
 const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
@@ -57,6 +58,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   const input = useRef<HTMLInputElement>(null),
     results = useRef<HTMLDivElement>(null),
     selectedCard = useOptionsTarget('selectedCard');
+  const {run: animateLibraryChange, cancel: cancelLibraryMotion} = useLibraryMotion(results);
   function reserveResultsSpace() {
     if (!results.current) return;
     // Keep the exposed canvas in the same viewport when filtering shortens it.
@@ -142,7 +144,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
         </span>
         <span title={product.subtitle}>{product.subtitle}</span>
       </span>
-      {recentLink && <ArrowUpRight className="book-recent-arrow" aria-hidden="true" />}
     </a>
   );
   const displayedRecent =
@@ -193,7 +194,9 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
           onValueChange={(value) => {
             if (value) {
               reserveResultsSpace();
-              setCategory(value as BookCategory);
+              const next = value as BookCategory;
+              const nextIds = new Set(filterBookProducts(products, next, favorites, query, sort).map(product => product.id));
+              animateLibraryChange(() => setCategory(next), view === 'covers' ? nextIds : undefined);
             }
           }}
           disabled={!interactive}
@@ -205,6 +208,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 key={id}
                 value={id}
                 data-book-category={id}
+                onClick={() => {if (id === category) cancelLibraryMotion();}}
                 className="grid min-h-10 w-full shrink-0 pointer-coarse:min-h-11 grid-cols-[18px_minmax(0,1fr)_auto] justify-start gap-2.5 px-2.5 text-left text-[13px] max-[780px]:inline-flex max-[780px]:min-h-11 max-[780px]:w-auto max-[780px]:min-w-max max-[780px]:text-xs"
               >
                 <Icon aria-hidden="true" />
@@ -249,12 +253,12 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
               <ChoiceGroup
                 type="single"
                 className="book-view-switch"
+                data-view={view}
                 value={view}
                 onValueChange={(value) => {
                   if (value === 'covers' || value === 'list') {
                     reserveResultsSpace();
-                    setView(value);
-                    writeBookPreference('view', value);
+                    animateLibraryChange(() => {setView(value); writeBookPreference('view', value);});
                   }
                 }}
                 disabled={!interactive}
@@ -263,6 +267,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 <ChoiceItem
                   value="covers"
                   data-book-view="covers"
+                  onClick={() => {if (view === 'covers') cancelLibraryMotion();}}
                   className="min-h-7 px-2.5 pointer-coarse:min-h-11 py-1.5 text-xs data-[state=on]:bg-card max-[780px]:min-h-11"
                 >
                   <LayoutGrid aria-hidden="true" />
@@ -271,6 +276,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 <ChoiceItem
                   value="list"
                   data-book-view="list"
+                  onClick={() => {if (view === 'list') cancelLibraryMotion();}}
                   className="min-h-7 px-2.5 pointer-coarse:min-h-11 py-1.5 text-xs data-[state=on]:bg-card max-[780px]:min-h-11"
                 >
                   <List aria-hidden="true" />
@@ -306,17 +312,17 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
             style={resultsMinHeight ? { minHeight: resultsMinHeight } : undefined}
           >
             {list.map((product) => (
-              <article key={product.id} className="book-card">
+              <article key={product.id} className="book-card" data-book-card={product.id}>
                 {gameLink(product)}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="book-favorite rounded-full aria-pressed:text-[var(--kit-brand)]"
+                  className="book-favorite rounded-full"
                   data-book-favorite={product.id}
                   disabled={!interactive}
                   aria-label={t('library.favorite', { title: product.title })}
                   aria-pressed={favorites.includes(product.id)}
-                  onClick={() => toggleFavorite(product.id)}
+                  onClick={(event) => {impressFavorite(event.currentTarget); toggleFavorite(product.id);}}
                 >
                   <Star aria-hidden="true" />
                 </Button>

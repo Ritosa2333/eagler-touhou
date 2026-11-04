@@ -146,7 +146,7 @@ function Header({session, firstUse, donationAvailable}: {
   const [menuOpen, setMenuOpen] = useState(false), url = (path: string) => new URL(path, session.baseUrl).href;
   return <LauncherMasthead updatedAge={updatedAge} variant={navigation.context} assetUrl={url} launcherHref={url(localeHome(locale))}
     replayActive={navigation.infoDialogOpen('replayDialog')}
-    onReplay={() => {const product = navigation.productId ?? session.settings.getSnapshot()?.context.productId ?? session.metadata.getSnapshot().products[0]; if (product) void session.openReplayViewer(product).catch(session.reportError);}}
+    onReplay={() => {const product = navigation.context === 'lobby' ? session.directory.getSnapshot().selectedProduct || session.directory.getSnapshot().products[0] || 'th06mp' : navigation.productId ?? session.settings.getSnapshot()?.context.productId ?? session.metadata.getSnapshot().products[0]; if (product) void session.openReplayViewer(product).catch(session.reportError);}}
     faqHref={withUiLanguage(url('faq.html'),locale)} aboutHref={withUiLanguage(url('about.html'),locale)} migrationPolicyKnown={metadata.siteManifest !== null} migrationHref={metadata.siteManifest && siteOriginMigrationAvailable(metadata.siteManifest, window.location.protocol) ? url('migrate.html') : undefined}
     menuOpen={menuOpen} onMenuOpenChange={setMenuOpen} lessMotion={prefs.lessMotion} onToggleMotion={session.preferences.toggleMotion}
     noticeEnabled={prefs.noticeEnabled} onToggleNotice={session.preferences.toggleNotice}
@@ -198,7 +198,6 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
     }}
     assetUrl={path => new URL(path, session.baseUrl).href} onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
     onNetwork={() => {navigation.openInfoDialog('lobbyNetworkDialog'); void network.current?.run();}}
-    onReplay={() => {void session.openReplayViewer(directory.selectedProduct || directory.products[0] || 'th06mp');}}
     onOpenForm={mode => {if (session.directory.prepareForm(mode)) navigation.openDirectoryForm(mode);}}/>;
 }
 function SessionLaunchActions({session}: {session: BrowserSession}) {

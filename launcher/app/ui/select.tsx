@@ -19,6 +19,7 @@ import { uiPortalHost } from './portal';
 import { useSurfaceMotion } from './use-surface-motion';
 import { cn } from './utils';
 import { listPopupIndicatorClass } from './list-popup';
+import './menu-motion.css';
 
 type SelectContextValue = {
   trigger: RefObject<HTMLButtonElement | null>;
@@ -244,7 +245,7 @@ export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
           collisionPadding={12}
           data-slot="select-content"
           data-ui-surface={dataUiSurface ?? surface}
-          className={cn('ui-select-content ui-kit-select-content', className)}
+          className={cn('ui-select-content ui-kit-select-content ui-select-exit-motion', className)}
         >
           <Primitive.ScrollUpButton className="ui-select-scroll">
             <ChevronUp aria-hidden="true" />
