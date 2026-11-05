@@ -1,5 +1,5 @@
 import {createRoomMusic} from '../services/room-music';
-import {createTuneWeaveProvider} from '../services/music-provider';
+import {createMetingProvider} from '../services/music-provider';
 import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
 import { createRoomNetwork } from '../../src/launcher/room-network.mts';
 import { createMultiplayerQuickChatModel } from '../../src/launcher/multiplayer-quick-chat-model.mts';
@@ -48,7 +48,9 @@ export function createRoomSession(options: RoomSessionOptions) {
     }
   };
   const music = testFeaturesEnabled(window) ? createRoomMusic({
-    provider: createTuneWeaveProvider(import.meta.env?.VITE_MUSIC_API_URL || '/music-api'),
+    provider: createMetingProvider(
+      import.meta.env?.VITE_METING_API_URL || 'https://open.motues.top/music',
+    ),
     storage: options.storage, send: message => service.sendControl(message),
     createAudio: () => document.createElement('audio'),
   }) : null;

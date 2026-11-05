@@ -36,6 +36,7 @@ import '../../ui/menu-motion.css';
 const time = (seconds: number) =>
   `${Math.floor(Math.max(0, seconds) / 60)}:${String(Math.floor(Math.max(0, seconds) % 60)).padStart(2, '0')}`;
 export type MusicPanelTab = 'search' | 'queue';
+const tracksPerPage = 30;
 const paletteCache = new Map<string, string[]>();
 function MusicCover({ url, onColors }: { url?: string; onColors?(colors: string[]): void }) {
   const [cors, setCors] = useState(!!onColors),
@@ -353,10 +354,9 @@ export function RoomMusicPanel({
     [results, setResults] = useState<MusicTrack[]>([]);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<MusicError | null>(null),
-    [more, setMore] = useState(false);
+    [visibleCount, setVisibleCount] = useState(tracksPerPage);
   const pending = useRef<AbortController | null>(null),
-    searchKey = useRef(''),
-    nextOffset = useRef(0);
+    searchKey = useRef('');
   const enabled = state.inRoom;
   useEffect(() => {
     if (hidden || !enabled) {
@@ -373,40 +373,28 @@ export function RoomMusicPanel({
     pending.current?.abort();
     pending.current = null;
     searchKey.current = '';
-    nextOffset.current = 0;
     setBusy(false);
     setError(null);
     setResults([]);
-    setMore(false);
+    setVisibleCount(tracksPerPage);
   }
-  async function search(append = false) {
+  async function search() {
     if (!query.trim() || !enabled) return;
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
     const timeout = setTimeout(() => controller.abort(), 25000);
     controller.signal.addEventListener('abort', () => clearTimeout(timeout), { once: true });
-    const key = `${platform}:${mode}:${query.trim()}`;
-    const offset = append && searchKey.current === key ? nextOffset.current : 0;
-    searchKey.current = key;
+    searchKey.current = query.trim();
     setBusy(true);
     setError(null);
     try {
-      const found =
-        mode === 'playlist'
-          ? await model.provider.playlist(platform, musicPlaylistId(platform, query), offset, controller.signal)
-          : await model.provider.search(platform, query.trim(), offset, controller.signal);
+      const found = mode === 'playlist'
+        ? await model.provider.playlist(platform, musicPlaylistId(platform, query), controller.signal)
+        : await model.provider.search(platform, query.trim(), controller.signal);
       if (controller.signal.aborted || pending.current !== controller) return;
-      nextOffset.current = offset + found.length;
-      const limit = mode === 'playlist' ? 100 : 300;
-      setResults((previous) =>
-        [
-          ...new Map(
-            (offset ? [...previous, ...found] : found).map((track) => [`${track.platform}:${track.id}`, track]),
-          ).values(),
-        ].slice(0, limit),
-      );
-      setMore(found.length === 30 && offset + found.length < limit);
+      setResults(found);
+      setVisibleCount(tracksPerPage);
     } catch (failure) {
       if (pending.current === controller)
         setError(failure instanceof Error && failure.message === 'invalidPlaylist' ? 'invalidPlaylist' : 'unavailable');
@@ -587,7 +575,9 @@ export function RoomMusicPanel({
                     </Button>
                   )}
                 </div>
-                <ul className="room-music-results">{results.map((track, index) => trackRow(track, index, false))}</ul>
+                <ul className="room-music-results">
+                  {results.slice(0, visibleCount).map((track, index) => trackRow(track, index, false))}
+                </ul>
               </>
             )}
             {!results.length && !searchKey.current && state.selected && mode === 'search' && (
@@ -618,14 +608,12 @@ export function RoomMusicPanel({
                 </p>
               </div>
             )}
-            {more && (
+            {visibleCount < results.length && (
               <Button
                 className="room-music-load-more"
                 variant="quiet"
                 disabled={busy}
-                onClick={() => {
-                  void search(true);
-                }}
+                onClick={() => setVisibleCount((count) => count + tracksPerPage)}
               >
                 {t('music.more')}
               </Button>

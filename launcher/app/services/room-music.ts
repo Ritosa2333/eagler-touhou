@@ -238,7 +238,7 @@ export function createRoomMusic({
     const isCurrent = () => controller === task && serial === transportSerial && !task.signal.aborted && !disposed;
     if (!player || !isCurrent()) return;
     stopTicker();
-    if (progress() >= snapshot.duration) {
+    if (snapshot.session?.ended || progress() >= snapshot.duration) {
       finished();
       return;
     }
@@ -311,30 +311,32 @@ export function createRoomMusic({
     patch({ status: 'loading', error: null, position: 0, duration: 0 });
     const isCurrent = () => !task.signal.aborted && !disposed && controller === task;
     try {
-      const stream = await provider.stream(state.track, task.signal);
+      const urls = await provider.stream(state.track, task.signal);
       if (!isCurrent()) return;
-      patch({ duration: stream.duration });
       audio ??= createAudio();
       audio.volume = snapshot.volume;
-      for (let i = 0; i < stream.urls.length; i++) {
+      for (const [index, url] of urls.entries()) {
         try {
-          await load(audio, stream.urls[i], task.signal);
-          if (!isCurrent()) return;
-          if (!snapshot.joined && personal?.pausedAt === null) {
-            // A personal track starts when it is ready. Shared tracks follow the room clock.
-            personal.startedAt += clock() - anchor.local;
-            const ready = personalSnapshot(personal);
-            anchor = { server: ready.serverTime, local: ready.serverTime };
-            patch({ session: ready });
-          }
-          await applyTransport(task, key);
-          return;
+          await load(audio, url, task.signal);
+          break;
         } catch (error) {
           if (!isCurrent()) return;
-          if (error instanceof Error && error.name === 'NotAllowedError') throw Error('blocked');
-          if (i === stream.urls.length - 1) throw error;
+          if (index === urls.length - 1) throw error;
         }
       }
+      if (!isCurrent()) return;
+      const duration = audio.duration;
+      if (!Number.isFinite(duration) || duration <= 0 || duration * 1000 > MUSIC_POSITION_LIMIT)
+        throw Error('unavailable');
+      patch({ duration });
+      if (!snapshot.joined && personal?.pausedAt === null) {
+        // A personal track starts when it is ready. Shared tracks follow the room clock.
+        personal.startedAt += clock() - anchor.local;
+        const ready = personalSnapshot(personal);
+        anchor = { server: ready.serverTime, local: ready.serverTime };
+        patch({ session: ready });
+      }
+      await applyTransport(task, key);
     } catch (error) {
       playbackFailed(task, key, error);
     } finally {
@@ -435,7 +437,7 @@ export function createRoomMusic({
       details = null;
       const label = state.queue?.[state.queueIndex ?? 0];
       patch({ current: label || { ...state.track, name: state.track.id, artist: '' } });
-      if (joined) resolveDetails(state.track);
+      if (joined || !label?.cover) resolveDetails(state.track);
     }
     if (deferSeekTransport) return;
     const key = mediaKey(state);
@@ -444,7 +446,7 @@ export function createRoomMusic({
     else if (controller && (restarted || pauseChanged || (state.pausedAt != null && snapshot.status !== 'paused'))) {
       const task = controller;
       // A pending stream reads the latest transport state when it finishes loading.
-      if (snapshot.status !== 'loading' || audio?.readyState) {
+      if (snapshot.duration > 0 && (snapshot.status !== 'loading' || audio?.readyState)) {
         void applyTransport(task, key).catch((error) => playbackFailed(task, key, error));
       }
     }
