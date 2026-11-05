@@ -21,13 +21,30 @@ try {
       const gameplayTap = game === 'th01' ? input.nativeSample({menu:false}) : input.sample({play:true});
       pointer('down',.5,.5); pointer('move',.6,.5);
       const movement = game === 'th01' ? input.localSample() : input.motion().x;
-      return {idle,tap,down,gameplayTap,movement};
+      let focus = 0, releasedFocus = 0, back = 0;
+      if (game !== 'th01') {
+        input.clear(); options.touchFocusMode = 'two-finger';
+        input.pointer({type:'down',id:1,x:.5,y:.5}); input.pointer({type:'down',id:2,x:.6,y:.5});
+        focus = input.sample({play:true});
+        input.pointer({type:'up',id:2,x:.6,y:.5}); releasedFocus = input.sample({play:true});
+        input.clear(); input.pointer({type:'down',id:1,x:.5,y:.5}); input.pointer({type:'down',id:2,x:.6,y:.5});
+        input.pointer({type:'up',id:2,x:.6,y:.5}); input.pointer({type:'up',id:1,x:.5,y:.5}); back = menu();
+      } else {
+        input.clear(); input.pointer({type:'down',id:1,x:.5,y:.5}); input.pointer({type:'down',id:2,x:.6,y:.5});
+        input.pointer({type:'up',id:2,x:.6,y:.5}); input.pointer({type:'up',id:1,x:.5,y:.5}); back = menu();
+      }
+      return {idle,tap,down,gameplayTap,movement,focus,releasedFocus,back};
     }, game);
     assert.equal(result.idle & (game === 'th01' ? 4 : 256), 0, `${game}: menu must not auto-confirm`);
     assert.equal(result.tap & (game === 'th01' ? 64 : 256), game === 'th01' ? 64 : 256, `${game}: tap confirms`);
     assert.equal(result.down & (game === 'th01' ? 32 : 2), game === 'th01' ? 32 : 2, `${game}: swipe moves down`);
     assert.equal(result.gameplayTap & (game === 'th01' ? 64 : 256), 0, `${game}: gameplay tap does not confirm a menu`);
     assert.ok(game === 'th01' ? result.movement & 2 : result.movement > 0, `${game}: direct movement reaches the game`);
+    if (game !== 'th01') {
+      assert.equal(result.focus & 64, 64, `${game}: second finger holds focus`);
+      assert.equal(result.releasedFocus & 64, 0, `${game}: releasing second finger releases focus`);
+      assert.equal(result.back & 384, 128, `${game}: two-finger menu tap goes back without confirming`);
+    } else assert.equal(result.back & 192, 128, `${game}: two-finger menu tap goes back without confirming`);
     console.log('PASS', game, result);
   }
 } finally { await browser.close(); }
