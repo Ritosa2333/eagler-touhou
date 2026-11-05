@@ -21,7 +21,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=replaceOnce(text,'if(configuring){last=now;','managedMenuInput();if(configuring){last=now;','managed menu input');
     text=replaceOnce(text,'drawMs+=performance.now()-start;++draws;','drawMs+=performance.now()-start;++draws;++managedFrames;','render health');
     text=replaceOnce(text,"window.addEventListener('blur',()=>{if(core&&started&&!configuring)setPaused(true);});","window.addEventListener('blur',release);",'hosted focus release');
-    text=replaceOnce(text,'else if(action===3||action===4){paused=true;stopEffects();release();}',"else if(action===3||action===4){paused=true;stopEffects();release();if(action===3){nativeRecorder?.finish('退出');core.th_menu_open(1,$('compensation').checked?1:0);}}",'managed return to title');
+    text=replaceOnce(text,'else if(action===3||action===4){paused=true;stopEffects();release();}',"else if(action===3||action===4){paused=true;stopEffects();release();if(action===3){nativeRecorder?.finish('退出');nativeRecording=null;nativeReplayFinished=true;core.th_menu_open(1,$('compensation').checked?1:0);}}",'managed return to title');
     text=text.replace("const dialog=$('solo-replay-dialog');\n  if(dialog){","const dialog=null;\n  if(dialog){");
     return text;
   });
