@@ -7,15 +7,22 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   const abort=new AbortController();
   let header,identity,replica,available=0,end=null,points=[],closed=false,busy=false,booting=false,paused=false,following=true,target=null,generation=0,timer=null,pullTimer=null,frames=0;
   let last=performance.now(),lastPresent=0,budget=0;
+  let catching=false,delayed=false,delayFrames=0,catchSince=0;
   const fail=error=>{stop();onError(error);};
   function stop(){if(closed)return;closed=true;abort.abort();clearTimeout(timer);clearInterval(pullTimer);channel.close();replica?.stop();}
   function pull(){if(!closed)channel.postMessage({type:'pull',viewer,first:rows.length});}
   async function pump(){
     if(closed||busy||!replica)return;busy=true;
-    const owner=replica;let catching=false;
+    const owner=replica;
     try{
       const now=performance.now(),tick=header.tickMs;budget=Math.min(8,budget+(now-last)/tick);last=now;
-      const delay=Math.round(600/tick),lag=rows.length-owner.frame;catching=target!==null||following&&lag>delay+30;
+      const lag=rows.length-owner.frame,normalDelay=Math.round(600/tick);
+      catching=target!==null||following&&!delayed&&lag>normalDelay+30;
+      if(catching&&following){
+        if(!catchSince)catchSince=now;
+        else if(now-catchSince>=4000){delayed=true;delayFrames=lag;target=null;catching=false;}
+      }else catchSince=0;
+      const delay=delayed?delayFrames:normalDelay;
       const limit=catching?32:Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.min(rows.length,Math.max(1,rows.length-delay)):rows.length;let count=0;
       while(!closed&&owner===replica&&(!paused||target!==null)&&owner.frame<edge&&count<limit){
         if(target!==null&&owner.frame>=target)break;
@@ -56,9 +63,9 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   };
   pullTimer=setInterval(pull,50);pull();
   return {stop,pause(value){paused=!!value;following=!paused;target=null;last=performance.now();},
-    seek(frame){if(!Number.isInteger(frame)||frame<0||frame>rows.length)throw Error('观战位置无效');following=false;paused=true;target=frame;
+    seek(frame){if(!Number.isInteger(frame)||frame<0||frame>rows.length)throw Error('观战位置无效');following=false;paused=true;target=frame;catching=true;
       if(!replica||frame<replica.frame){generation++;replica?.stop();replica=null;void boot();}},
-    live(){following=true;paused=false;target=rows.length;},
+    live(){following=true;paused=false;target=rows.length;delayed=false;catchSince=0;catching=true;},
     get frame(){return replica?.frame??0;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},
-    get paused(){return paused;},get following(){return following;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
+    get paused(){return paused;},get following(){return following;},get catching(){return catching;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
 }
