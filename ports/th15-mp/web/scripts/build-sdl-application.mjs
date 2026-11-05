@@ -56,11 +56,14 @@ if(thprac)source.push(...['imgui.cpp','imgui_draw.cpp','imgui_tables.cpp','imgui
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(imgui),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(commonInclude,'eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp'),resolve(commonInclude,'eagler/text/RuntimeFontRaster.hpp')].sort();
 if(multiplayer)headers.push(...headerFiles(resolve(netplayCommon,'include')));
+const diagnosticHeaders=multiplayer&&!release?[resolve(root,'tests/sdl/rollback-performance.inc'),resolve(workspace,'portable/rollback/battle-fingerprint.hpp')]:[];
+headers.push(...diagnosticHeaders);
 await printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
 const sha=b=>createHash('sha256').update(b).digest('hex');
-const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
+const headerHash=sha(headers.filter(p=>!diagnosticHeaders.includes(p)).map(p=>p+sha(readFileSync(p))).join('\n'));
+const diagnosticHash=sha(diagnosticHeaders.map(p=>p+sha(readFileSync(p))).join('\n'));
 const settings=JSON.stringify([common,headerHash]);
-async function compile(file){const name=relative(workspace,file).replaceAll('\\','_').replaceAll('/','_'),object=resolve(objects,name+'.o'),key=sha(settings+sha(readFileSync(file)));if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;await run([...common,'-c',file,'-o',object]);writeFileSync(object+'.key',key);return object;}
+async function compile(file){const name=relative(workspace,file).replaceAll('\\','_').replaceAll('/','_'),object=resolve(objects,name+'.o'),key=sha(settings+sha(readFileSync(file))+(file===resolve(root,'cpp/sdl/BrowserRuntime.cpp')?diagnosticHash:''));if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;await run([...common,'-c',file,'-o',object]);writeFileSync(object+'.key',key);return object;}
 // Prepare SDK ports once, including when all game objects are already cached.
 await run([...common,'-x','c++','-fsyntax-only','-']);
 const buildJobs=Math.max(1,Math.min(16,Number.parseInt(process.env.TH_BUILD_JOBS||'4',10)||4));

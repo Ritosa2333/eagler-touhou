@@ -21,7 +21,8 @@ BulletFrameResult BulletState::update(const BulletFrameContext& context,Rng& ran
         u32 iterations=0;
         for(;;){
             if(++iterations>4096){error="Bullet transform completion cycle";return BulletFrameResult::error;}
-            if(!(transform_flags&0x4000000)&&!activate(context.player,random,&host,&host,error))return BulletFrameResult::error;
+            const bool pending=transform_index<0||(transform_index<18&&transforms[transform_index].type);
+            if(!(transform_flags&0x4000000)&&pending&&!activate(context.player,random,&host,&host,error))return BulletFrameResult::error;
             if(!transform_flags)break;
             u32 completed=0;
             if(transform_flags&1)completed+=update_boost(rate);

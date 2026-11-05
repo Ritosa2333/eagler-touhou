@@ -20,6 +20,16 @@
 
 [实验与压力验证归档](../../../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md)保存对应构建与验证口径。原生网络协议检查同时覆盖旧录像的已登记构建准入、未知构建拒绝及重编码，护盾检查分别验证版本 20 回放与版本 22 新对局。
 
+回滚性能驱动为 [`tools/ports/th15-rollback-performance.mjs`](../../../tools/ports/th15-rollback-performance.mjs)。沿用本页的 DATA 与字体环境变量，先设置 `TH15_OUTPUT=artifacts/rollback-performance` 并运行 `node ports/th15-mp/web/scripts/build-sdl-application.mjs --multiplayer --profile`，再运行性能驱动。它默认逐组采样 600 个实际推进帧，覆盖一面、Extra 的双人／三人，以及近满子弹池压力。日志场景使用 4x CPU 限速；强回滚场景使用 2x，每个样本都纠正五帧。
+
+`--require-budget` 要求所有所选场景 P95 小于 16.67ms，且世界、确认输入和画面与完整输入执行一致。`TH15_PROFILE_FRAMES` 指定样本数，`TH15_PROFILE_CASES` 接受含 `stage`、`players`、`depth`、`mismatch`、`cpu` 的 JSON 数组，可另设 `warmup` 与 `dense`。输出记录原始样本、分段耗时、构建和机器身份，见 [性能验证归档](../../../archive/th15-rollback-performance-20261105/README.md)。
+
+高刷新率回归使用 `node --test ports/th15-mp/web/tests/sdl/high-refresh-browser.test.mjs`。`TH15_ORIGINAL_DAT` 指定 DATA，字体沿用上述两个显式输入；`EAGLER_FONT_ROOT` 需含 `cp932.bin`。可用 `TH15_TEST_BUILD=artifacts/rollback-performance` 指定当前开发构建，检查 60／120／144／165／240Hz 的固定逻辑步进与呈现节奏。
+
+键盘时序验证使用 `node ports/th15-mp/portable/multiplayer/input-latency-browser.mjs --samples=60`。多人模块沿用上述开发构建；普通版对照先设置 `TH15_OUTPUT=artifacts/input-latency`，运行 `node ports/th15/web/scripts/build-sdl-application.mjs --profile`。驱动读取单机、双人静态输入和双人／三人 RTC 纠正场景的 DOM 按键到本机移动提交时间，并分别记录事件分发、帧推进和回滚计数。
+
+`--recovery-only` 验证收包纠正保持本地采样前沿，与完整实际输入执行比较世界指纹和确认录像输入，并检查三人暂停边界打断恢复后仍执行到期的新帧。完整测试另覆盖等包唤醒、时钟额度及停止后旧任务失效。`--build`、`--single-build`、`--bridge` 和 `--output` 可指定对照构建与结果目录。联机场景在首次快照之前设置同一碰撞保护，维持各次采样的角色活动状态。
+
 ## 构建并在 Launcher 启动
 
 需要 Bun 1.4.4、Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th15.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。未安装 Emscripten 时可运行 `python ports/th15-mp/tools/download-emscripten.py`。

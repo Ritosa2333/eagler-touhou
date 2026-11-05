@@ -1,16 +1,29 @@
 #include "AnimationState.hpp"
 #include "VmPointerMap.hpp"
 #include "FramePointerIndex.hpp"
+#include "FrameValues.hpp"
 #include "../game/AnmOverlay.hpp"
 #include <bitset>
 #include <algorithm>
-#include <deque>
 #include <limits>
 #include <unordered_set>
 
 namespace th15::multiplayer {
 namespace {
 constexpr u32 none=std::numeric_limits<u32>::max();
+// Stable VM addresses with sequential payload storage. A deque can allocate
+// one large VM per block; fixed pages also bound growth during cancellation.
+template<class T>class VmImages {
+    static constexpr size_t page_size=64;
+    std::vector<std::unique_ptr<T[]>> pages;
+    size_t count=0;
+public:
+    size_t size()const noexcept{return count;}
+    void resize(size_t size){while(pages.size()*page_size<size)pages.push_back(std::make_unique<T[]>(page_size));count=size;}
+    T& operator[](size_t index)noexcept{return pages[index/page_size][index%page_size];}
+    const T& operator[](size_t index)const noexcept{return pages[index/page_size][index%page_size];}
+    size_t retained_bytes()const noexcept{return pages.size()*page_size*sizeof(T)+pages.capacity()*sizeof(std::unique_ptr<T[]>);}
+};
 template<class F> void paired_vms(const AnmVm& from,AnmVm& to,F&& visit){
     visit(from,to);
     if(from.geometry.overlay&&to.geometry.overlay)
@@ -50,10 +63,10 @@ struct AnimationState::Data {
     // A cancellation burst can add thousands of roots to all 13 frame slots.
     // Keep VM payloads in stable blocks: growing a contiguous vector otherwise
     // doubles every full image and holds its old/new allocations simultaneously.
-    std::deque<Image> nodes;
+    VmImages<Image> nodes;
     size_t count=0;
     struct RootImage {AnmVm vm;AnmVm* original=nullptr;};
-    std::deque<RootImage> roots;
+    VmImages<RootImage> roots;
     size_t root_count=0;
     std::bitset<0x1fff> present;
     std::vector<u32> free_slots,pending;
@@ -63,6 +76,7 @@ struct AnimationState::Data {
     // Capture scratch survives ring reuse, including its flat address index.
     std::vector<const AnmRegistry::Node*> selected;
     FramePointerIndex<AnmRegistry::Node> indices;
+    FramePointerIndex<AnmVm> root_indices;
     std::vector<AnmVm*> unregistered;
     u32 generation=0,active_count=0;
     u64 presentation_counter=0;
@@ -91,10 +105,10 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     for(const auto& entry:registry.external)add(entry.second.get());
     for(const auto& layer:registry.layers)for(auto* vm:layer)add(registry.node(*vm));
     for(auto* n:registry.pending_deletion)add(n);
-    auto& unregistered=s.unregistered;unregistered.assign(owned_roots.begin(),owned_roots.end());
-    std::sort(unregistered.begin(),unregistered.end(),std::less<AnmVm*>{});
-    unregistered.erase(std::unique(unregistered.begin(),unregistered.end()),unregistered.end());
-    unregistered.erase(std::remove_if(unregistered.begin(),unregistered.end(),[&](AnmVm* vm){if(!vm)return true;if(auto* n=registry.node(*vm)){add(n);return true;}return false;}),unregistered.end());
+    auto& unregistered=s.unregistered;unregistered.clear();s.root_indices.reset(owned_roots.size());
+    for(auto* vm:owned_roots)if(s.root_indices.insert(vm,0)){
+        if(auto* n=registry.node(*vm))add(n);else unregistered.push_back(vm);
+    }
     for(size_t i=0;i<selected.size();++i){
         add(selected[i]->parent);
         for(auto* child:selected[i]->children)add(child);
@@ -111,14 +125,14 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
         const auto& n=*selected[i];auto& image=s.nodes[i];
         image.borrowed=n.borrowed;image.external=n.borrowed!=nullptr;image.frozen=n.frozen_root;
         image.original=n.borrowed?n.borrowed:&n.vm;image.nested=nested.count(image.original)!=0;
-        image.vm=n.borrowed?*n.borrowed:n.vm;
+        frame_values::copy_vm(image.vm,n.borrowed?*n.borrowed:n.vm);
         image.slot=n.slot;image.handle=n.handle;image.active=n.active;image.registered=n.registered;image.alternate=n.alternate;
         image.parent=indices.find(n.parent);
         if(n.parent&&image.parent==none){error="Rollback animation parent is missing";return false;}
         image.children.clear();for(auto* child:n.children){const auto index=indices.find(child);if(index==none){error="Rollback animation child is missing";return false;}image.children.push_back(index);}
     }
     s.root_count=unregistered.size();if(s.roots.size()<s.root_count)s.roots.resize(s.root_count);
-    for(size_t i=0;i<s.root_count;++i){s.roots[i].original=unregistered[i];s.roots[i].vm=*unregistered[i];}
+    for(size_t i=0;i<s.root_count;++i){s.roots[i].original=unregistered[i];frame_values::copy_vm(s.roots[i].vm,*unregistered[i]);}
     for(size_t i=0;i<s.count;++i){if(s.nodes[i].nested)continue;const auto& n=*selected[i];
         paired_vms(n.borrowed?*n.borrowed:n.vm,s.nodes[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace_back(&original,&copy);});
     }
@@ -172,11 +186,11 @@ bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,con
     // overlay panels. Copying a panel again would invalidate its children.
     for(size_t i=0;i<s.count;++i){const auto& image=s.nodes[i];if(image.nested)continue;auto& node=*nodes[i];
         if(image.external&&!image.frozen){node.borrowed=roots?roots(image.borrowed):image.borrowed;if(!node.borrowed){registry.error="Rollback animation owner was not rebound";return false;}}
-        auto& vm=node.borrowed?*node.borrowed:node.vm;vm=image.vm;pair(image.vm,vm);
+        auto& vm=node.borrowed?*node.borrowed:node.vm;frame_values::copy_vm(vm,image.vm);pair(image.vm,vm);
     }
     std::vector<AnmVm*> targets(s.root_count);
     for(size_t i=0;i<s.root_count;++i){const auto& image=s.roots[i];auto* target=roots?roots(image.original):image.original;
-        if(!target){registry.error="Rollback embedded VM owner was not rebound";return false;}*target=image.vm;targets[i]=target;pair(image.vm,*target);
+        if(!target){registry.error="Rollback embedded VM owner was not rebound";return false;}frame_values::copy_vm(*target,image.vm);targets[i]=target;pair(image.vm,*target);
     }
     for(const auto& link:s.originals){auto* found=copies.find(link.second);if(!found){registry.error="Rollback animation graph is incomplete";return false;}originals.emplace(link.first,found);}
     for(size_t i=0;i<s.count;++i){const auto& image=s.nodes[i];auto& node=*nodes[i];
@@ -198,11 +212,11 @@ bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,con
     registry.free_slots=s.free_slots;registry.generation=s.generation;registry.active_count=s.active_count;registry.error=s.error;AnmVm::presentation_counter=s.presentation_counter;return true;
 }
 size_t AnimationState::retained_bytes()const noexcept{
-    if(!saved_)return 0;const auto& s=*saved_;size_t bytes=sizeof(Data)+s.nodes.size()*sizeof(Data::Image)+s.roots.size()*sizeof(Data::RootImage)+s.free_slots.capacity()*sizeof(u32)+s.pending.capacity()*sizeof(u32);
-    for(const auto& image:s.nodes)bytes+=dynamic_bytes(image.vm)+image.children.capacity()*sizeof(u32);
-    for(const auto& image:s.roots)bytes+=dynamic_bytes(image.vm);
+    if(!saved_)return 0;const auto& s=*saved_;size_t bytes=sizeof(Data)+s.nodes.retained_bytes()+s.roots.retained_bytes()+s.free_slots.capacity()*sizeof(u32)+s.pending.capacity()*sizeof(u32);
+    for(size_t i=0;i<s.nodes.size();++i){const auto& image=s.nodes[i];bytes+=dynamic_bytes(image.vm)+image.children.capacity()*sizeof(u32);}
+    for(size_t i=0;i<s.roots.size();++i)bytes+=dynamic_bytes(s.roots[i].vm);
     for(const auto& group:s.groups)bytes+=group.capacity()*sizeof(u32);
     for(const auto& layer:s.layers)bytes+=layer.capacity()*sizeof(AnmVm*);
-    return bytes+s.originals.capacity()*sizeof(decltype(s.originals)::value_type)+s.selected.capacity()*sizeof(void*)+s.unregistered.capacity()*sizeof(void*)+s.indices.retained_bytes();
+    return bytes+s.originals.capacity()*sizeof(decltype(s.originals)::value_type)+s.selected.capacity()*sizeof(void*)+s.unregistered.capacity()*sizeof(void*)+s.indices.retained_bytes()+s.root_indices.retained_bytes();
 }
 }

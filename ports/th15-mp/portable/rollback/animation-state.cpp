@@ -168,6 +168,64 @@ void bounded_snapshot_growth(){
     require(nodes.restore(graph),"restore after bounded node growth");
     for(unsigned i=0;i<handles.size();++i)require(graph.find(handles[i])->visual.translation.x==float(i),"bounded node growth lost VM state");
 }
+void geometry_copy_reuse(){
+    AnmVm source,target;
+    source.geometry.distortion=std::make_unique<AnmDistortion>();
+    source.geometry.trail=std::make_unique<AnmTrail>();
+    source.geometry.gather=std::make_unique<AnmGatherEffect>();
+    source.geometry.overlay=std::make_unique<AnmOverlay>();
+    source.geometry.overlay->panels[0]=std::make_unique<AnmVm>();
+    source.geometry.screen_vertices.resize(8);source.geometry.world_vertices.resize(8);
+    target=source;
+    for(unsigned n=0;n<32;++n){
+        source.geometry.overlay->frames=n;source.geometry.overlay->panels[0]->variables.integers[0]=n;
+        source.geometry.distortion->radius[0]=float(n);source.geometry.trail->points[0].x=float(n);
+        source.geometry.gather->phase[0]=n;source.geometry.screen_vertices[0].color=n;
+        source.geometry.world_vertices[0].color=n;source.timer.set(n);
+        allocation_count=0;count_allocations=true;target=source;count_allocations=false;
+        require(allocation_count==0,"steady VM copies must reuse independent geometry storage");
+        require(target.geometry.overlay.get()!=source.geometry.overlay.get()&&target.geometry.overlay->panels[0].get()!=source.geometry.overlay->panels[0].get(),"copied overlays must own their panels");
+        require(target.timer.current==int(n)&&target.geometry.overlay->frames==int(n)&&target.geometry.overlay->panels[0]->variables.integers[0]==int(n),"VM and nested state copied exactly");
+        require(target.geometry.distortion->radius[0]==float(n)&&target.geometry.trail->points[0].x==float(n)&&target.geometry.gather->phase[0]==int(n)&&target.geometry.screen_vertices[0].color==n&&target.geometry.world_vertices[0].color==n,"all geometry payloads copied exactly");
+    }
+    source.geometry.clear();target=source;
+    require(!target.geometry.distortion&&!target.geometry.trail&&!target.geometry.gather&&!target.geometry.overlay&&target.geometry.screen_vertices.empty()&&target.geometry.world_vertices.empty(),"copying an empty geometry clears the abandoned payload");
+}
+void tracked_interpolation(){
+    AnmResource resource;resource.scripts.resize(1);resource.sprites.resize(1);resource.textures.resize(1);resource.textures[0].width=resource.textures[0].height=256;resource.sprites[0].width=resource.sprites[0].height=16;
+    auto bits=[](float value){u32 out;std::memcpy(&out,&value,4);return out;};auto& code=resource.scripts[0].bytes;
+    const auto command=[&](i16 opcode,i16 time,std::initializer_list<u32> args){const auto offset=code.size();const u16 length=u16(8+args.size()*4),mask=0;code.resize(offset+length);std::memcpy(code.data()+offset,&opcode,2);std::memcpy(code.data()+offset+2,&length,2);std::memcpy(code.data()+offset+4,&time,2);std::memcpy(code.data()+offset+6,&mask,2);size_t at=offset+8;for(auto value:args){std::memcpy(code.data()+at,&value,4);at+=4;}};
+    command(400,0,{bits(1),bits(2),bits(0)});command(415,5,{bits(0),bits(0),bits(.05f)});command(407,12,{3,0,bits(20),bits(-1),bits(0)});command(300,17,{0});command(425,25,{bits(.001f)});command(435,30,{5,0,bits(3),bits(4)});command(3,50,{});command(5,0,{42});command(409,0,{4,0,32});command(7,1,{});command(-1,0,{});
+    AnmVm fast,scalar;require(fast.bind(resource,0)&&scalar.bind(resource,0),"bind interpolation comparison");Rng a,b;
+    for(unsigned frame=0;frame<240;++frame){if(frame==120)fast.pending_interrupt=scalar.pending_interrupt=42;
+        const auto first=fast.tick_tracked(a,.625f),second=scalar.tick(b,.625f);
+        require(first==second&&fast.error==scalar.error&&fast.instruction_offset==scalar.instruction_offset&&fast.pending_interrupt==scalar.pending_interrupt&&fast.visible==scalar.visible,"tracked interpolation changed execution flow");
+        require(!std::memcmp(&fast.variables,&scalar.variables,sizeof fast.variables)&&!std::memcmp(&fast.visual,&scalar.visual,sizeof fast.visual)&&!std::memcmp(&fast.interpolators,&scalar.interpolators,sizeof fast.interpolators)&&!std::memcmp(&fast.timer,&scalar.timer,sizeof fast.timer)&&!std::memcmp(&fast.age,&scalar.age,sizeof fast.age),"tracked interpolation differs from full stepping");
+    }
+    const auto saved=fast;require(fast.select_sprite(0),"change atlas identity");const auto abandoned=fast.program_version;fast=saved;require(fast.select_sprite(0)&&fast.program_version!=abandoned,"corrected future reused a program identity");
+    fast=scalar;fast.interpolators.alpha.begin(4,0,{0},{255});scalar.interpolators.alpha.begin(4,0,{0},{255});require(fast.tick(a,1)==scalar.tick(b,1)&&fast.visual.color==scalar.visual.color,"external interpolation bypassed full stepping");
+}
+void stopped_wait(){
+    for(i16 opcode:{i16(3),i16(4)})for(float rate:{0.f,.625f,1.f,1.005f,1.25f}){
+        AnmScript code;code.bytes.resize(16);const u16 length=8;const i16 end=-1;std::memcpy(code.bytes.data(),&opcode,2);std::memcpy(code.bytes.data()+2,&length,2);std::memcpy(code.bytes.data()+8,&end,2);
+        AnmVm fast,scalar,parent;AnmEnvironment environment;Rng a,b;require(fast.bind(code)&&scalar.bind(code),"bind stopped comparison");
+        fast.environment=scalar.environment=&environment;fast.visual.flags=scalar.visual.flags=1;fast.visual.render_flags=scalar.visual.render_flags=0x4000;
+        fast.slowdown=scalar.slowdown=.125f;
+        for(unsigned frame=0;frame<96;++frame){
+            environment.paused=frame==5;environment.background_delta={1,2,3};
+            if(frame==10)fast.visual.flags=scalar.visual.flags=fast.visual.flags|0x8000;
+            if(frame==20){fast.visual.flags=scalar.visual.flags=fast.visual.flags&~0x8000u;fast.visual.render_flags=scalar.visual.render_flags=0x1004000;fast.visual.angular_velocity.z=scalar.visual.angular_velocity.z=.1f;}
+            if(frame==30)fast.visual.angular_velocity.z=scalar.visual.angular_velocity.z=0;
+            if(frame==40)fast.pending_interrupt=scalar.pending_interrupt=999;
+            if(frame==50)fast.visual.flags=scalar.visual.flags=fast.visual.flags|(9u<<25);
+            if(frame==60)fast.visual.flags=scalar.visual.flags=fast.visual.flags&~(31u<<25);
+            if(frame==70)fast.rotation_parent=scalar.rotation_parent=&parent;
+            if(frame==80)fast.rotation_parent=scalar.rotation_parent=nullptr;
+            require(fast.tick_tracked(a,rate)==scalar.tick(b,rate)&&fast.error==scalar.error,"stopped fast path changed its result");
+            require(!std::memcmp(&fast.variables,&scalar.variables,sizeof fast.variables)&&!std::memcmp(&fast.visual,&scalar.visual,sizeof fast.visual)&&!std::memcmp(&fast.timer,&scalar.timer,sizeof fast.timer)&&!std::memcmp(&fast.age,&scalar.age,sizeof fast.age)&&fast.visible==scalar.visible&&fast.instruction_offset==scalar.instruction_offset&&fast.pending_interrupt==scalar.pending_interrupt,"stopped fast path changed durable VM state");
+        }
+    }
+}
 
 }
-int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();std::puts("TH15 animation rollback ownership checks passed");}
+int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}
