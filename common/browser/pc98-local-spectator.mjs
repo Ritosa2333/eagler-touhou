@@ -16,7 +16,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
     try{
       const now=performance.now(),tick=header.tickMs;budget=Math.min(8,budget+(now-last)/tick);last=now;
       const delay=Math.round(600/tick),lag=rows.length-owner.frame;catching=target!==null||following&&lag>delay+30;
-      const limit=catching?32:Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.max(1,rows.length-delay):rows.length;let count=0;
+      const limit=catching?32:Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.min(rows.length,Math.max(1,rows.length-delay)):rows.length;let count=0;
       while(!closed&&owner===replica&&(!paused||target!==null)&&owner.frame<edge&&count<limit){
         if(target!==null&&owner.frame>=target)break;
         if(owner.advanceBatch){const end=Math.min(edge,owner.frame+limit-count,target??edge),batch=rows.slice(owner.frame,end);await owner.advanceBatch(batch);count+=batch.length;}

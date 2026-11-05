@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import {createLocalSpectator} from '../browser/pc98-local-spectator.mjs';
 import {validateHeader,validateRow,VERSION,stable} from '../../ports/th02/web/replay/tape.js';
 
+test('a viewer never sends an empty batch before the first confirmed frame',async()=>{
+  let channel,request,frame=0,error;const batches=[];
+  const header={version:VERSION,game:'02',adapter:'confirmed-worker/1',players:2,hostSlot:0,tickMs:10,settings:{},identity:'a'.repeat(64),opening:{}};
+  const viewer=createLocalSpectator({game:'02',options:{netplayUrl:'ws://localhost/?room=r&run=1'},validateHeader,validateRow,stable,
+    channelFactory:()=>channel={postMessage:m=>request=m,close(){}},
+    createReplica:async()=>({get frame(){return frame;},async advanceBatch(rows){assert(rows.length>0);batches.push(rows.length);frame+=rows.length;},async present(){},stop(){}}),onError:e=>{error=e;}});
+  channel.onmessage({data:{type:'slice',viewer:request.viewer,header,first:0,rows:[],available:0,end:null}});
+  await new Promise(resolve=>setTimeout(resolve,100));assert.deepEqual(batches,[]);assert.equal(error,undefined);
+  const row={inputs:[32,0],offlineMask:0,proof:'ok',hash:null};
+  channel.onmessage({data:{type:'slice',viewer:request.viewer,header,first:0,rows:[row],available:1,end:null}});
+  await new Promise(resolve=>setTimeout(resolve,100));assert.deepEqual(batches,[1]);assert.equal(error,undefined);viewer.stop();
+});
+
 test('a real presented frame ends loading while the viewer catches up',async()=>{
   let channel,request,draw,frame=0,release;const gate=new Promise(resolve=>{release=resolve;});
   const header={version:VERSION,game:'02',adapter:'confirmed-worker/1',players:2,hostSlot:0,tickMs:10,settings:{},identity:'a'.repeat(64),opening:{}};
