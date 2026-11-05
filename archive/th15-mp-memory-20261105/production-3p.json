@@ -1,0 +1,1417 @@
+{
+  "schema": "eagler-touhou/mp-browser/1",
+  "startedAt": "2026-11-05T11:21:52.414Z",
+  "finishedAt": "2026-11-05T11:22:42.007Z",
+  "passed": true,
+  "coverage": {
+    "required": 1,
+    "executed": 1,
+    "passed": 1,
+    "missing": [],
+    "unexpected": [],
+    "duplicates": [],
+    "complete": true
+  },
+  "players": 3,
+  "frames": 600,
+  "scope": "Actual native MP games and independent spectators through a real local relay and the production Runtime protocol",
+  "harnessSha256": "857ecc825304ffd297f9d49aed70790cc724bfefcaada36b704e03f7ed6141a2",
+  "patchSha256": "46504ddcede588dfbd14d2d390dd3713a299ea24d67ac362002fb9ad03f59c80",
+  "browser": "156.0.8078.81",
+  "commit": "480ef2906ccc4bec00dc121a53cc4b8f6d465a6f",
+  "route": "relay",
+  "cases": [
+    {
+      "id": "th15-3p-normal-relay",
+      "passed": true,
+      "errors": [],
+      "httpErrors": [],
+      "playersReady": [
+        {
+          "menu": false,
+          "playback": null,
+          "frame": 186,
+          "failed": false,
+          "error": "",
+          "native": [
+            1,
+            1,
+            1,
+            186,
+            187,
+            3,
+            0,
+            2,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1151,
+            1177,
+            0,
+            22,
+            1,
+            2,
+            1,
+            0,
+            0
+          ],
+          "state": null,
+          "world": null,
+          "menuState": null,
+          "transport": {
+            "route": "relay",
+            "failed": false,
+            "error": "",
+            "closed": false,
+            "peers": 0
+          },
+          "replayFile": {
+            "uploaded": null
+          },
+          "spectatorSession": {
+            "type": "spectator-session",
+            "session": "6c785f20548083f5",
+            "seed": 417,
+            "generation": 0
+          },
+          "receiveEpoch": 0,
+          "reconnectAttempt": 0,
+          "body": "",
+          "options": {
+            "thpracEnabled": false,
+            "touchEnabled": false,
+            "netplayMode": "lan",
+            "netplayChapterThreshold": 1500000,
+            "netplayChallengeMode": false,
+            "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=41f8a8973374427dba97872acfae6dec",
+            "netplayPlayer": 0,
+            "netplayPlayerCount": 3,
+            "netplaySeed": 417,
+            "netplayDifficulty": 1,
+            "netplayInputDelay": 2,
+            "netplayAdonisMode": 1,
+            "netplayInputDelayAuto": false,
+            "netplayPredictionReserve": 2,
+            "netplayPredictionLimit": 0,
+            "netplaySpectator": false,
+            "netplaySpectatorId": "",
+            "netplaySpectatorCount": 1,
+            "netplaySpectatorTimeline": true,
+            "netplayIceServers": [],
+            "netplayAllowWebsocketFallback": true,
+            "netplayLoadouts": [
+              {
+                "character": 0,
+                "shot": 0
+              },
+              {
+                "character": 1,
+                "shot": 0
+              },
+              {
+                "character": 2,
+                "shot": 0
+              }
+            ],
+            "limitPresentationTo60": true
+          },
+          "terminal": []
+        },
+        {
+          "menu": false,
+          "playback": null,
+          "frame": 186,
+          "failed": false,
+          "error": "",
+          "native": [
+            1,
+            1,
+            1,
+            186,
+            187,
+            3,
+            1,
+            2,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1153,
+            1176,
+            0,
+            22,
+            1,
+            2,
+            1,
+            0,
+            0
+          ],
+          "state": null,
+          "world": null,
+          "menuState": null,
+          "transport": {
+            "route": "relay",
+            "failed": false,
+            "error": "",
+            "closed": false,
+            "peers": 0
+          },
+          "replayFile": {},
+          "spectatorSession": null,
+          "receiveEpoch": 0,
+          "reconnectAttempt": 0,
+          "body": "",
+          "options": {
+            "thpracEnabled": false,
+            "touchEnabled": false,
+            "netplayMode": "lan",
+            "netplayChapterThreshold": 1500000,
+            "netplayChallengeMode": false,
+            "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=233fd474ac9846a9808f2312d1acba68",
+            "netplayPlayer": 1,
+            "netplayPlayerCount": 3,
+            "netplaySeed": 417,
+            "netplayDifficulty": 1,
+            "netplayInputDelay": 2,
+            "netplayAdonisMode": 1,
+            "netplayInputDelayAuto": false,
+            "netplayPredictionReserve": 2,
+            "netplayPredictionLimit": 0,
+            "netplaySpectator": false,
+            "netplaySpectatorId": "",
+            "netplaySpectatorCount": 1,
+            "netplaySpectatorTimeline": true,
+            "netplayIceServers": [],
+            "netplayAllowWebsocketFallback": true,
+            "netplayLoadouts": [
+              {
+                "character": 0,
+                "shot": 0
+              },
+              {
+                "character": 1,
+                "shot": 0
+              },
+              {
+                "character": 2,
+                "shot": 0
+              }
+            ],
+            "limitPresentationTo60": true
+          },
+          "terminal": []
+        },
+        {
+          "menu": false,
+          "playback": null,
+          "frame": 186,
+          "failed": false,
+          "error": "",
+          "native": [
+            1,
+            1,
+            1,
+            186,
+            187,
+            3,
+            2,
+            2,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1151,
+            1177,
+            0,
+            22,
+            1,
+            2,
+            1,
+            0,
+            0
+          ],
+          "state": null,
+          "world": null,
+          "menuState": null,
+          "transport": {
+            "route": "relay",
+            "failed": false,
+            "error": "",
+            "closed": false,
+            "peers": 0
+          },
+          "replayFile": {},
+          "spectatorSession": null,
+          "receiveEpoch": 0,
+          "reconnectAttempt": 0,
+          "body": "",
+          "options": {
+            "thpracEnabled": false,
+            "touchEnabled": false,
+            "netplayMode": "lan",
+            "netplayChapterThreshold": 1500000,
+            "netplayChallengeMode": false,
+            "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=7a40e0b681a041b19561471e6125fa5d",
+            "netplayPlayer": 2,
+            "netplayPlayerCount": 3,
+            "netplaySeed": 417,
+            "netplayDifficulty": 1,
+            "netplayInputDelay": 2,
+            "netplayAdonisMode": 1,
+            "netplayInputDelayAuto": false,
+            "netplayPredictionReserve": 2,
+            "netplayPredictionLimit": 0,
+            "netplaySpectator": false,
+            "netplaySpectatorId": "",
+            "netplaySpectatorCount": 1,
+            "netplaySpectatorTimeline": true,
+            "netplayIceServers": [],
+            "netplayAllowWebsocketFallback": true,
+            "netplayLoadouts": [
+              {
+                "character": 0,
+                "shot": 0
+              },
+              {
+                "character": 1,
+                "shot": 0
+              },
+              {
+                "character": 2,
+                "shot": 0
+              }
+            ],
+            "limitPresentationTo60": true
+          },
+          "terminal": []
+        }
+      ],
+      "pause": {
+        "paused": {
+          "version": 1,
+          "run": "s6c785f20548083f5_0f0d3813",
+          "revision": 11,
+          "min": 0,
+          "position": 130,
+          "received": 667,
+          "edge": 577,
+          "target": 0,
+          "paused": true,
+          "seeking": false,
+          "following": false,
+          "ended": false,
+          "nodes": [
+            {
+              "id": 1,
+              "kind": "stage",
+              "frame": 0,
+              "stage": 1,
+              "bossSlots": 0
+            }
+          ]
+        },
+        "held": {
+          "version": 1,
+          "run": "s6c785f20548083f5_0f0d3813",
+          "revision": 13,
+          "min": 0,
+          "position": 130,
+          "received": 695,
+          "edge": 605,
+          "target": 0,
+          "paused": true,
+          "seeking": false,
+          "following": false,
+          "ended": false,
+          "nodes": [
+            {
+              "id": 1,
+              "kind": "stage",
+              "frame": 0,
+              "stage": 1,
+              "bossSlots": 0
+            }
+          ]
+        },
+        "target": 20
+      },
+      "backpressure": {
+        "before": {
+          "menu": false,
+          "playback": {
+            "version": 1,
+            "run": "s6c785f20548083f5_0f0d3813",
+            "revision": 24,
+            "min": 0,
+            "position": 94,
+            "received": 800,
+            "edge": 710,
+            "target": 20,
+            "paused": false,
+            "seeking": false,
+            "following": false,
+            "ended": false,
+            "nodes": [
+              {
+                "id": 1,
+                "kind": "stage",
+                "frame": 0,
+                "stage": 1,
+                "bossSlots": 0
+              }
+            ]
+          },
+          "frame": 99,
+          "failed": false,
+          "error": "",
+          "native": [
+            1,
+            1,
+            1,
+            99,
+            4294967295,
+            3,
+            0,
+            2,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            3,
+            1,
+            0,
+            0
+          ],
+          "state": null,
+          "world": null,
+          "menuState": null,
+          "transport": {
+            "route": "spectator",
+            "failed": false,
+            "error": "",
+            "closed": false,
+            "peers": 0
+          },
+          "replayFile": {},
+          "spectatorSession": {
+            "type": "spectator-session",
+            "session": "6c785f20548083f5",
+            "seed": 417,
+            "generation": 0
+          },
+          "receiveEpoch": 1,
+          "reconnectAttempt": 0,
+          "body": "",
+          "options": {
+            "thpracEnabled": false,
+            "touchEnabled": false,
+            "netplayMode": "lan",
+            "netplayChapterThreshold": 1500000,
+            "netplayChallengeMode": false,
+            "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=7e0eacf0231d455288bd0ba34382174b",
+            "netplayPlayer": 0,
+            "netplayPlayerCount": 3,
+            "netplaySeed": 417,
+            "netplayDifficulty": 1,
+            "netplayInputDelay": 2,
+            "netplayAdonisMode": 1,
+            "netplayInputDelayAuto": false,
+            "netplayPredictionReserve": 2,
+            "netplayPredictionLimit": 0,
+            "netplaySpectator": true,
+            "netplaySpectatorId": "viewer_fb6293352fcc4e51b8f1352cb843c463",
+            "netplaySpectatorCount": 1,
+            "netplaySpectatorTimeline": true,
+            "netplayIceServers": [],
+            "netplayAllowWebsocketFallback": true,
+            "netplayLoadouts": [
+              {
+                "character": 0,
+                "shot": 0
+              },
+              {
+                "character": 1,
+                "shot": 0
+              },
+              {
+                "character": 2,
+                "shot": 0
+              }
+            ],
+            "limitPresentationTo60": true
+          },
+          "terminal": []
+        },
+        "after": {
+          "menu": false,
+          "playback": {
+            "version": 1,
+            "run": "s6c785f20548083f5_0f0d3813",
+            "revision": 33,
+            "min": 0,
+            "position": 228,
+            "received": 935,
+            "edge": 845,
+            "target": 20,
+            "paused": false,
+            "seeking": false,
+            "following": false,
+            "ended": false,
+            "nodes": [
+              {
+                "id": 1,
+                "kind": "stage",
+                "frame": 0,
+                "stage": 1,
+                "bossSlots": 0
+              }
+            ]
+          },
+          "frame": 234,
+          "failed": false,
+          "error": "",
+          "native": [
+            1,
+            1,
+            1,
+            234,
+            4294967295,
+            3,
+            0,
+            2,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            3,
+            1,
+            0,
+            0
+          ],
+          "state": null,
+          "world": null,
+          "menuState": null,
+          "transport": {
+            "route": "spectator",
+            "failed": false,
+            "error": "",
+            "closed": false,
+            "peers": 0
+          },
+          "replayFile": {},
+          "spectatorSession": {
+            "type": "spectator-session",
+            "session": "6c785f20548083f5",
+            "seed": 417,
+            "generation": 0
+          },
+          "receiveEpoch": 1,
+          "reconnectAttempt": 0,
+          "body": "",
+          "options": {
+            "thpracEnabled": false,
+            "touchEnabled": false,
+            "netplayMode": "lan",
+            "netplayChapterThreshold": 1500000,
+            "netplayChallengeMode": false,
+            "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=7e0eacf0231d455288bd0ba34382174b",
+            "netplayPlayer": 0,
+            "netplayPlayerCount": 3,
+            "netplaySeed": 417,
+            "netplayDifficulty": 1,
+            "netplayInputDelay": 2,
+            "netplayAdonisMode": 1,
+            "netplayInputDelayAuto": false,
+            "netplayPredictionReserve": 2,
+            "netplayPredictionLimit": 0,
+            "netplaySpectator": true,
+            "netplaySpectatorId": "viewer_fb6293352fcc4e51b8f1352cb843c463",
+            "netplaySpectatorCount": 1,
+            "netplaySpectatorTimeline": true,
+            "netplayIceServers": [],
+            "netplayAllowWebsocketFallback": true,
+            "netplayLoadouts": [
+              {
+                "character": 0,
+                "shot": 0
+              },
+              {
+                "character": 1,
+                "shot": 0
+              },
+              {
+                "character": 2,
+                "shot": 0
+              }
+            ],
+            "limitPresentationTo60": true
+          },
+          "terminal": []
+        },
+        "fault": {
+          "reads": 158,
+          "started": 23680.10000000149,
+          "finished": 23831.20000000298,
+          "stopped": false,
+          "failed": false
+        },
+        "sourceBefore": [
+          {
+            "menu": false,
+            "playback": null,
+            "frame": 806,
+            "failed": false,
+            "error": "",
+            "native": [
+              1,
+              1,
+              1,
+              806,
+              807,
+              3,
+              0,
+              2,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5267,
+              5363,
+              0,
+              100,
+              1,
+              2,
+              1,
+              0,
+              0
+            ],
+            "state": null,
+            "world": null,
+            "menuState": null,
+            "transport": {
+              "route": "relay",
+              "failed": false,
+              "error": "",
+              "closed": false,
+              "peers": 0
+            },
+            "replayFile": {
+              "uploaded": null
+            },
+            "spectatorSession": {
+              "type": "spectator-session",
+              "session": "6c785f20548083f5",
+              "seed": 417,
+              "generation": 0
+            },
+            "receiveEpoch": 0,
+            "reconnectAttempt": 0,
+            "body": "",
+            "options": {
+              "thpracEnabled": false,
+              "touchEnabled": false,
+              "netplayMode": "lan",
+              "netplayChapterThreshold": 1500000,
+              "netplayChallengeMode": false,
+              "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=41f8a8973374427dba97872acfae6dec",
+              "netplayPlayer": 0,
+              "netplayPlayerCount": 3,
+              "netplaySeed": 417,
+              "netplayDifficulty": 1,
+              "netplayInputDelay": 2,
+              "netplayAdonisMode": 1,
+              "netplayInputDelayAuto": false,
+              "netplayPredictionReserve": 2,
+              "netplayPredictionLimit": 0,
+              "netplaySpectator": false,
+              "netplaySpectatorId": "",
+              "netplaySpectatorCount": 1,
+              "netplaySpectatorTimeline": true,
+              "netplayIceServers": [],
+              "netplayAllowWebsocketFallback": true,
+              "netplayLoadouts": [
+                {
+                  "character": 0,
+                  "shot": 0
+                },
+                {
+                  "character": 1,
+                  "shot": 0
+                },
+                {
+                  "character": 2,
+                  "shot": 0
+                }
+              ],
+              "limitPresentationTo60": true
+            },
+            "terminal": []
+          },
+          {
+            "menu": false,
+            "playback": null,
+            "frame": 806,
+            "failed": false,
+            "error": "",
+            "native": [
+              1,
+              1,
+              1,
+              806,
+              807,
+              3,
+              1,
+              2,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5267,
+              5363,
+              0,
+              100,
+              1,
+              2,
+              1,
+              0,
+              0
+            ],
+            "state": null,
+            "world": null,
+            "menuState": null,
+            "transport": {
+              "route": "relay",
+              "failed": false,
+              "error": "",
+              "closed": false,
+              "peers": 0
+            },
+            "replayFile": {},
+            "spectatorSession": null,
+            "receiveEpoch": 0,
+            "reconnectAttempt": 0,
+            "body": "",
+            "options": {
+              "thpracEnabled": false,
+              "touchEnabled": false,
+              "netplayMode": "lan",
+              "netplayChapterThreshold": 1500000,
+              "netplayChallengeMode": false,
+              "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=233fd474ac9846a9808f2312d1acba68",
+              "netplayPlayer": 1,
+              "netplayPlayerCount": 3,
+              "netplaySeed": 417,
+              "netplayDifficulty": 1,
+              "netplayInputDelay": 2,
+              "netplayAdonisMode": 1,
+              "netplayInputDelayAuto": false,
+              "netplayPredictionReserve": 2,
+              "netplayPredictionLimit": 0,
+              "netplaySpectator": false,
+              "netplaySpectatorId": "",
+              "netplaySpectatorCount": 1,
+              "netplaySpectatorTimeline": true,
+              "netplayIceServers": [],
+              "netplayAllowWebsocketFallback": true,
+              "netplayLoadouts": [
+                {
+                  "character": 0,
+                  "shot": 0
+                },
+                {
+                  "character": 1,
+                  "shot": 0
+                },
+                {
+                  "character": 2,
+                  "shot": 0
+                }
+              ],
+              "limitPresentationTo60": true
+            },
+            "terminal": []
+          },
+          {
+            "menu": false,
+            "playback": null,
+            "frame": 806,
+            "failed": false,
+            "error": "",
+            "native": [
+              1,
+              1,
+              1,
+              806,
+              807,
+              3,
+              2,
+              2,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5253,
+              5370,
+              0,
+              100,
+              1,
+              2,
+              1,
+              0,
+              0
+            ],
+            "state": null,
+            "world": null,
+            "menuState": null,
+            "transport": {
+              "route": "relay",
+              "failed": false,
+              "error": "",
+              "closed": false,
+              "peers": 0
+            },
+            "replayFile": {},
+            "spectatorSession": null,
+            "receiveEpoch": 0,
+            "reconnectAttempt": 0,
+            "body": "",
+            "options": {
+              "thpracEnabled": false,
+              "touchEnabled": false,
+              "netplayMode": "lan",
+              "netplayChapterThreshold": 1500000,
+              "netplayChallengeMode": false,
+              "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=7a40e0b681a041b19561471e6125fa5d",
+              "netplayPlayer": 2,
+              "netplayPlayerCount": 3,
+              "netplaySeed": 417,
+              "netplayDifficulty": 1,
+              "netplayInputDelay": 2,
+              "netplayAdonisMode": 1,
+              "netplayInputDelayAuto": false,
+              "netplayPredictionReserve": 2,
+              "netplayPredictionLimit": 0,
+              "netplaySpectator": false,
+              "netplaySpectatorId": "",
+              "netplaySpectatorCount": 1,
+              "netplaySpectatorTimeline": true,
+              "netplayIceServers": [],
+              "netplayAllowWebsocketFallback": true,
+              "netplayLoadouts": [
+                {
+                  "character": 0,
+                  "shot": 0
+                },
+                {
+                  "character": 1,
+                  "shot": 0
+                },
+                {
+                  "character": 2,
+                  "shot": 0
+                }
+              ],
+              "limitPresentationTo60": true
+            },
+            "terminal": []
+          }
+        ],
+        "sourceAfter": [
+          {
+            "menu": false,
+            "playback": null,
+            "frame": 942,
+            "failed": false,
+            "error": "",
+            "native": [
+              1,
+              1,
+              1,
+              942,
+              943,
+              3,
+              0,
+              2,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6163,
+              6287,
+              0,
+              116,
+              1,
+              2,
+              1,
+              0,
+              0
+            ],
+            "state": null,
+            "world": null,
+            "menuState": null,
+            "transport": {
+              "route": "relay",
+              "failed": false,
+              "error": "",
+              "closed": false,
+              "peers": 0
+            },
+            "replayFile": {
+              "uploaded": null
+            },
+            "spectatorSession": {
+              "type": "spectator-session",
+              "session": "6c785f20548083f5",
+              "seed": 417,
+              "generation": 0
+            },
+            "receiveEpoch": 0,
+            "reconnectAttempt": 0,
+            "body": "",
+            "options": {
+              "thpracEnabled": false,
+              "touchEnabled": false,
+              "netplayMode": "lan",
+              "netplayChapterThreshold": 1500000,
+              "netplayChallengeMode": false,
+              "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=41f8a8973374427dba97872acfae6dec",
+              "netplayPlayer": 0,
+              "netplayPlayerCount": 3,
+              "netplaySeed": 417,
+              "netplayDifficulty": 1,
+              "netplayInputDelay": 2,
+              "netplayAdonisMode": 1,
+              "netplayInputDelayAuto": false,
+              "netplayPredictionReserve": 2,
+              "netplayPredictionLimit": 0,
+              "netplaySpectator": false,
+              "netplaySpectatorId": "",
+              "netplaySpectatorCount": 1,
+              "netplaySpectatorTimeline": true,
+              "netplayIceServers": [],
+              "netplayAllowWebsocketFallback": true,
+              "netplayLoadouts": [
+                {
+                  "character": 0,
+                  "shot": 0
+                },
+                {
+                  "character": 1,
+                  "shot": 0
+                },
+                {
+                  "character": 2,
+                  "shot": 0
+                }
+              ],
+              "limitPresentationTo60": true
+            },
+            "terminal": []
+          },
+          {
+            "menu": false,
+            "playback": null,
+            "frame": 942,
+            "failed": false,
+            "error": "",
+            "native": [
+              1,
+              1,
+              1,
+              942,
+              943,
+              3,
+              1,
+              2,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6199,
+              6269,
+              0,
+              116,
+              1,
+              2,
+              1,
+              0,
+              0
+            ],
+            "state": null,
+            "world": null,
+            "menuState": null,
+            "transport": {
+              "route": "relay",
+              "failed": false,
+              "error": "",
+              "closed": false,
+              "peers": 0
+            },
+            "replayFile": {},
+            "spectatorSession": null,
+            "receiveEpoch": 0,
+            "reconnectAttempt": 0,
+            "body": "",
+            "options": {
+              "thpracEnabled": false,
+              "touchEnabled": false,
+              "netplayMode": "lan",
+              "netplayChapterThreshold": 1500000,
+              "netplayChallengeMode": false,
+              "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=233fd474ac9846a9808f2312d1acba68",
+              "netplayPlayer": 1,
+              "netplayPlayerCount": 3,
+              "netplaySeed": 417,
+              "netplayDifficulty": 1,
+              "netplayInputDelay": 2,
+              "netplayAdonisMode": 1,
+              "netplayInputDelayAuto": false,
+              "netplayPredictionReserve": 2,
+              "netplayPredictionLimit": 0,
+              "netplaySpectator": false,
+              "netplaySpectatorId": "",
+              "netplaySpectatorCount": 1,
+              "netplaySpectatorTimeline": true,
+              "netplayIceServers": [],
+              "netplayAllowWebsocketFallback": true,
+              "netplayLoadouts": [
+                {
+                  "character": 0,
+                  "shot": 0
+                },
+                {
+                  "character": 1,
+                  "shot": 0
+                },
+                {
+                  "character": 2,
+                  "shot": 0
+                }
+              ],
+              "limitPresentationTo60": true
+            },
+            "terminal": []
+          },
+          {
+            "menu": false,
+            "playback": null,
+            "frame": 942,
+            "failed": false,
+            "error": "",
+            "native": [
+              1,
+              1,
+              1,
+              942,
+              943,
+              3,
+              2,
+              2,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6137,
+              6300,
+              0,
+              116,
+              1,
+              2,
+              1,
+              0,
+              0
+            ],
+            "state": null,
+            "world": null,
+            "menuState": null,
+            "transport": {
+              "route": "relay",
+              "failed": false,
+              "error": "",
+              "closed": false,
+              "peers": 0
+            },
+            "replayFile": {},
+            "spectatorSession": null,
+            "receiveEpoch": 0,
+            "reconnectAttempt": 0,
+            "body": "",
+            "options": {
+              "thpracEnabled": false,
+              "touchEnabled": false,
+              "netplayMode": "lan",
+              "netplayChapterThreshold": 1500000,
+              "netplayChallengeMode": false,
+              "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=7a40e0b681a041b19561471e6125fa5d",
+              "netplayPlayer": 2,
+              "netplayPlayerCount": 3,
+              "netplaySeed": 417,
+              "netplayDifficulty": 1,
+              "netplayInputDelay": 2,
+              "netplayAdonisMode": 1,
+              "netplayInputDelayAuto": false,
+              "netplayPredictionReserve": 2,
+              "netplayPredictionLimit": 0,
+              "netplaySpectator": false,
+              "netplaySpectatorId": "",
+              "netplaySpectatorCount": 1,
+              "netplaySpectatorTimeline": true,
+              "netplayIceServers": [],
+              "netplayAllowWebsocketFallback": true,
+              "netplayLoadouts": [
+                {
+                  "character": 0,
+                  "shot": 0
+                },
+                {
+                  "character": 1,
+                  "shot": 0
+                },
+                {
+                  "character": 2,
+                  "shot": 0
+                }
+              ],
+              "limitPresentationTo60": true
+            },
+            "terminal": []
+          }
+        ]
+      },
+      "sustained": {
+        "menu": false,
+        "playback": {
+          "version": 1,
+          "run": "s6c785f20548083f5_0f0d3813",
+          "revision": 73,
+          "min": 0,
+          "position": 828,
+          "received": 1535,
+          "edge": 1445,
+          "target": 20,
+          "paused": false,
+          "seeking": false,
+          "following": false,
+          "ended": false,
+          "nodes": [
+            {
+              "id": 1,
+              "kind": "stage",
+              "frame": 0,
+              "stage": 1,
+              "bossSlots": 0
+            }
+          ]
+        },
+        "frame": 831,
+        "failed": false,
+        "error": "",
+        "native": [
+          1,
+          1,
+          1,
+          831,
+          4294967295,
+          3,
+          0,
+          2,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          3,
+          1,
+          0,
+          0
+        ],
+        "state": null,
+        "world": null,
+        "menuState": null,
+        "transport": {
+          "route": "spectator",
+          "failed": false,
+          "error": "",
+          "closed": false,
+          "peers": 0
+        },
+        "replayFile": {},
+        "spectatorSession": {
+          "type": "spectator-session",
+          "session": "6c785f20548083f5",
+          "seed": 417,
+          "generation": 0
+        },
+        "receiveEpoch": 1,
+        "reconnectAttempt": 0,
+        "body": "",
+        "options": {
+          "thpracEnabled": false,
+          "touchEnabled": false,
+          "netplayMode": "lan",
+          "netplayChapterThreshold": 1500000,
+          "netplayChallengeMode": false,
+          "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=7e0eacf0231d455288bd0ba34382174b",
+          "netplayPlayer": 0,
+          "netplayPlayerCount": 3,
+          "netplaySeed": 417,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 2,
+          "netplayAdonisMode": 1,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionReserve": 2,
+          "netplayPredictionLimit": 0,
+          "netplaySpectator": true,
+          "netplaySpectatorId": "viewer_fb6293352fcc4e51b8f1352cb843c463",
+          "netplaySpectatorCount": 1,
+          "netplaySpectatorTimeline": true,
+          "netplayIceServers": [],
+          "netplayAllowWebsocketFallback": true,
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            },
+            {
+              "character": 2,
+              "shot": 0
+            }
+          ],
+          "limitPresentationTo60": true
+        },
+        "terminal": []
+      },
+      "late": {
+        "menu": false,
+        "playback": {
+          "version": 1,
+          "run": "s6c785f20548083f5_0f0d3813",
+          "revision": 9,
+          "min": 0,
+          "position": 126,
+          "received": 1994,
+          "edge": 1904,
+          "target": 0,
+          "paused": false,
+          "seeking": false,
+          "following": false,
+          "ended": false,
+          "nodes": [
+            {
+              "id": 1,
+              "kind": "stage",
+              "frame": 0,
+              "stage": 1,
+              "bossSlots": 0
+            }
+          ]
+        },
+        "frame": 129,
+        "failed": false,
+        "error": "",
+        "native": [
+          1,
+          1,
+          1,
+          129,
+          4294967295,
+          3,
+          0,
+          2,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          3,
+          1,
+          0,
+          0
+        ],
+        "state": null,
+        "world": null,
+        "menuState": null,
+        "transport": {
+          "route": "spectator",
+          "failed": false,
+          "error": "",
+          "closed": false,
+          "peers": 0
+        },
+        "replayFile": {},
+        "spectatorSession": {
+          "type": "spectator-session",
+          "session": "6c785f20548083f5",
+          "seed": 417,
+          "generation": 0
+        },
+        "receiveEpoch": 1,
+        "reconnectAttempt": 0,
+        "body": "",
+        "options": {
+          "thpracEnabled": false,
+          "touchEnabled": false,
+          "netplayMode": "lan",
+          "netplayChapterThreshold": 1500000,
+          "netplayChallengeMode": false,
+          "netplayUrl": "ws://127.0.0.1:59045/?room=th15mp-3068&run=1&member=05e96b2a103c4a96847e6e6d517fa66d",
+          "netplayPlayer": 0,
+          "netplayPlayerCount": 3,
+          "netplaySeed": 417,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 2,
+          "netplayAdonisMode": 1,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionReserve": 2,
+          "netplayPredictionLimit": 0,
+          "netplaySpectator": true,
+          "netplaySpectatorId": "viewer_62d3bdaa33e947bab59f467326c70e7c",
+          "netplaySpectatorCount": 1,
+          "netplaySpectatorTimeline": true,
+          "netplayIceServers": [],
+          "netplayAllowWebsocketFallback": true,
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            },
+            {
+              "character": 2,
+              "shot": 0
+            }
+          ],
+          "limitPresentationTo60": true
+        },
+        "terminal": []
+      },
+      "runtime": {
+        "crash-code-identities.json": {
+          "bytes": 312,
+          "sha256": "d7721b8b1f655d41cbb0deb2e0391562bb5758e7067aef202fc3297a32cea6e8"
+        },
+        "runtime-crash-reporter.js": {
+          "bytes": 16483,
+          "sha256": "7b69322fe8d78c47da9e2efd2c8f08aed6ca7bdccf4acf1dd6c678b4714bd9d6"
+        },
+        "th15.html": {
+          "bytes": 555,
+          "sha256": "1eda5d7e5d7a74142f6e284c7a61b4e30f823622cf3f055e2740f7aeede1f3a0"
+        },
+        "manifest.json": {
+          "bytes": 1356,
+          "sha256": "2488087f1d54eaf3beb64719de8192da0b829680682ea8343ae2dbf05de2bc93"
+        },
+        "startup-branding.mjs": {
+          "bytes": 38200,
+          "sha256": "f69b813c6132bcdde504c2713e4f7713df17f92fb05a03d19f31dba89aa5c222"
+        },
+        "shell.mjs": {
+          "bytes": 35742,
+          "sha256": "c7f837f2de56f288e56c2425a3efa06a1e1eb98056ad60ac8bc372c2cb0e6ea1"
+        },
+        "managed.css": {
+          "bytes": 733,
+          "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+        },
+        "keyboard.mjs": {
+          "bytes": 1298,
+          "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11600,
+          "sha256": "72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d"
+        },
+        "th15.mjs": {
+          "bytes": 289174,
+          "sha256": "c550e6dc41f4befba40cde1a36dc084df2c3daf526a37dbda0004611dba53e8e"
+        },
+        "th15.wasm": {
+          "bytes": 3594534,
+          "sha256": "4c91e6f385e7f3368fa16f08fd75047b03f9028403bbbe5cff4957551ffaeb71"
+        },
+        "resources.json": {
+          "bytes": 183,
+          "sha256": "2943b9bf5ed453125b17a42ec4afb7ee8dba26c8527280f3209bd1850ed10467"
+        },
+        "fonts/cp932.bin": {
+          "bytes": 131072,
+          "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+        },
+        "multiplayer.mjs": {
+          "bytes": 8081,
+          "sha256": "289acbdf66c9b74d6620a540752cb1d9c6986b80a6d28a554d2d1175c982a89c"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        }
+      }
+    }
+  ]
+}
