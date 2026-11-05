@@ -165,7 +165,7 @@ const bool* game_keyboard_state(){
         std::array<unsigned char,256> virtualKeys{};
         eagler::input::ApplyGamepadVirtualKeys(virtualKeys,bits);
         const int vk[]={90,88,16,27,38,40,37,39,17,13,67,82};
-        const int scans[]={SDL_SCANCODE_Z,SDL_SCANCODE_X,SDL_SCANCODE_LSHIFT,SDL_SCANCODE_ESCAPE,SDL_SCANCODE_UP,SDL_SCANCODE_DOWN,SDL_SCANCODE_LEFT,SDL_SCANCODE_RIGHT,SDL_SCANCODE_LCTRL,SDL_SCANCODE_RETURN,SDL_SCANCODE_C,SDL_SCANCODE_R};
+        const int scans[]={SDL_SCANCODE_Z,SDL_SCANCODE_C,SDL_SCANCODE_LSHIFT,SDL_SCANCODE_ESCAPE,SDL_SCANCODE_UP,SDL_SCANCODE_DOWN,SDL_SCANCODE_LEFT,SDL_SCANCODE_RIGHT,SDL_SCANCODE_LCTRL,SDL_SCANCODE_RETURN,SDL_SCANCODE_X,SDL_SCANCODE_R};
         for(unsigned n=0;n<12;++n)mapped[scans[n]]=mapped[scans[n]]||virtualKeys[vk[n]];
     }else{
         int count=0;SDL_JoystickID* ids=SDL_GetGamepads(&count);
@@ -563,6 +563,8 @@ std::map<u32,std::pair<i32,i32>> g_ability_sprites;
 std::unordered_map<i32,th19::AnmScriptLoc> g_ability_scripts;
 
 std::vector<int> g_owned_cards;
+std::vector<int> g_opponent_cards;
+const std::vector<int>& player_cards(int side){return side?g_opponent_cards:g_owned_cards;}
 std::vector<th19::AnmVm> g_owned_card_vms;
 bool g_cards_dim=false;
 int g_cards_draw_frame=-1;
@@ -730,8 +732,8 @@ bool trigger_player_barrier(int side){
     g_barrier_vm[side].interrupt_all(1);
     // Card20: native409060 sets +ba; barrier break calls4ee770 at radius128.
     // This call targets ordinary bullets only and preserves cancellation locks.
-    if(side==0&&std::find(g_owned_cards.begin(),g_owned_cards.end(),20)!=g_owned_cards.end())
-        g_ecl_fields[side].world.cancel_bullets_circle(g_p1_x,g_p1_y,128.f);
+    if(th19::ownsCard(player_cards(side),20))
+        g_ecl_fields[side].world.cancel_bullets_circle(side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y,128.f);
     return true;
 }
 bool g_focus_down[2]{},g_focus_active[2]{};
@@ -1717,7 +1719,7 @@ static const char* const KEY_ACTIONS[10] = {
     "Shot", "Charge", "Bomb", "Slow", "Pause", "Up", "Down", "Left", "Right", "Quit"
 };
 static const char* const KEY_NAMES[10] = {
-    "Z", "C", "X", "Shift", "Esc", "Up", "Down", "Left", "Right", "Esc"
+    "Z", "X", "C", "Shift", "Esc", "Up", "Down", "Left", "Right", "Esc"
 };
 
 // Controller Select 屏项（源码 FUN_005231b0：1Player/2Player/KeyConfig ALL Reset/Quit）
@@ -3090,9 +3092,13 @@ void start_vs_match(bool newMatch=true) {
         // 0x517790: subsequent rounds reuse the participating side already chosen.
         g_vs_scene_side=g_vs_scene_rng.next()&1;
         g_vs_scene=th19::vsScene(g_char_sel,g_opp_sel,g_vs_scene_side);
-        g_owned_cards.clear();g_owned_card_vms.clear();g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
-        // VS selection must supply verified card IDs for each side.
-        // Do not fabricate a hand from character indices or grant the whole bank.
+        g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
+        load_ability_cards();
+        for(int side=0;side<2;++side){
+            const int mode=g_vs_rules[2],character=side?g_opp_sel:g_char_sel;
+            const int card=mode==0?0:mode==1?1+int(g_vs_scene_rng.next()%38):g_vs_cards[side].card(character,mode==3);
+            if(card>0&&card<=38)(side?g_opponent_cards:g_owned_cards).push_back(card);
+        }
     }else g_vs_match.next();
     g_vs_mode=1;
     // Difficulty must come from the difficulty selector, never the VS menu index.
@@ -3203,7 +3209,7 @@ void start_dialogue() {
     g_vs_mode=0;g_life_capacity[0]=g_life_capacity[1]=5;
     g_story_challenge_run=true;g_story_initial_lives=5;g_story_continues=0;
     g_story_switch.phase=0;
-    g_owned_cards.clear();g_owned_card_vms.clear();g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
+    g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
     g_p1_lives=g_p2_lives=5;g_p1_bombs=g_p2_bombs=3;g_p1_fragments=g_p2_fragments=0;g_player_collision_enabled=true;
     g_story_session.begin(th19::STORY_ROUTES[g_char_sel]);
     enter_story_stage();
@@ -4130,7 +4136,7 @@ void tick_charge_visuals(){
         }
         g_barrier_vm[side].tick();
         if(g_barrier_vm[side].stream&&!g_barrier_vm[side].visible)g_barrier_vm[side]={};
-        g_barrier[side].tick(); // 544dd0 creates the ring on the next ready-state tick.
+        g_barrier[side].tick(!g_vs_mode||g_vs_rules[5+side]!=1); // 544dd0 creates the ring on the next ready-state tick.
         auto&pattern=g_charge_pattern[side];auto&region=g_region_vm[side];
         const bool held=g_screen==SCR_GAME&&g_charge[side].held;
         const int level=g_charge[side].level(),ch=side?g_opp_sel:g_char_sel;
@@ -4197,28 +4203,30 @@ void init_player_options(){
 }
 void tick_player_options(bool focused){
     // 408310/408c50/408d60/408e60/408f60: simple additional options, default546d10 follow.
-    std::vector<int> desired;
-    for(int id:g_owned_cards)if(th19::cardOption(id)&&desired.size()<12)desired.push_back(id);
+    std::vector<std::pair<int,int>> desired;
+    for(int side=0;side<2;++side)for(int id:player_cards(side))if(th19::cardOption(id)&&desired.size()<24)desired.push_back({side,id});
     bool rebuild=desired.size()!=g_card_options.size();
-    if(!rebuild)for(size_t i=0;i<desired.size();++i)if(desired[i]!=g_card_options[i].card_id)rebuild=true;
-    if(rebuild){g_card_options.clear();for(int id:desired){
-        PlayerProjectile option{};option.card_id=id;option.offset_y=th19::cardOption(id)->y;
-        option.x=g_p1_x;option.y=g_p1_y+option.offset_y;option.offset_x=g_p1_x;option.card_lock_y=g_p1_y;option.ability_bank=true;if(id==27){option.offset_x=0;option.card_lock_y=0;}
+    if(!rebuild)for(size_t i=0;i<desired.size();++i)if((desired[i].first!=g_card_options[i].side||desired[i].second!=g_card_options[i].card_id))rebuild=true;
+    if(rebuild){g_card_options.clear();for(auto [side,id]:desired){
+        const float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
+        PlayerProjectile option{};option.side=side;option.card_id=id;option.offset_y=th19::cardOption(id)->y;
+        option.x=px;option.y=py+option.offset_y;option.offset_x=px;option.card_lock_y=py;option.ability_bank=true;if(id==27){option.offset_x=0;option.card_lock_y=0;}
         const int script=th19::cardOption(id)->script;
         if(bind_player_animation(option.vm,script,g_ability_entries,g_ability_scripts))g_card_options.push_back(std::move(option));
     }}
     for(auto&o:g_card_options){
+        const int side=o.side;const float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;const bool cardFocused=side?(g_opponent_controls&8)!=0:focused;
         if(o.card_id==7||o.card_id==8){
-            if(!focused){o.offset_x=g_p1_x;o.card_lock_y=g_p1_y;}
+            if(!cardFocused){o.offset_x=px;o.card_lock_y=py;}
             o.x=o.offset_x;o.y=o.card_lock_y+o.offset_y;o.vm.tick();continue;
         }
         if(o.card_id==27){
-            const auto&trail=g_player_trail[0];
-            if(!g_charge[0].held&&!trail.empty()){const auto&t=trail[std::min(size_t(8),trail.size()-1)];o.offset_x=t.x-g_p1_x;o.card_lock_y=t.y-g_p1_y;}
-            const float spread=g_charge[0].held?1.5f:1.f;o.x=g_p1_x+o.offset_x*spread;o.y=g_p1_y+o.card_lock_y*spread;o.vm.tick();continue;
+            const auto&trail=g_player_trail[side];
+            if(!g_charge[side].held&&!trail.empty()){const auto&t=trail[std::min(size_t(8),trail.size()-1)];o.offset_x=t.x-px;o.card_lock_y=t.y-py;}
+            const float spread=g_charge[side].held?1.5f:1.f;o.x=px+o.offset_x*spread;o.y=py+o.card_lock_y*spread;o.vm.tick();continue;
         }
         if(o.card_id==35){
-            auto&enemies=g_ecl_fields[0].world.enemies;const th19::Enemy*target=nullptr;float best=1e20f;
+            auto&enemies=g_ecl_fields[side].world.enemies;const th19::Enemy*target=nullptr;float best=1e20f;
             for(const auto&e:enemies)if(e.active&&e.sprite>=0&&!(e.flags&0x21)&&!(e.status_flags&0xc00)){
                 float d=(e.x-o.x)*(e.x-o.x)+(e.y-o.y)*(e.y-o.y);
                 if(e.id==o.target_id){target=&e;best=d;break;}if(d<best){target=&e;best=d;}
@@ -4229,8 +4237,8 @@ void tick_player_options(bool focused){
                 o.y=std::trunc((o.y+(target->y-o.y)/std::max(1.f,distance)*step)*128)/128;}
             o.vm.tick();continue;
         }
-        int x=int(o.x*128),y=int(o.y*128),dx=(int(g_p1_x*128)-x)*30/100,dy=(int((g_p1_y+o.offset_y)*128)-y)*30/100;
-        if(dx==0&&dy==0){o.x=g_p1_x;o.y=g_p1_y+o.offset_y;}else{o.x=(x+dx)/128.f;o.y=(y+dy)/128.f;}
+        int x=int(o.x*128),y=int(o.y*128),dx=(int(px*128)-x)*30/100,dy=(int((py+o.offset_y)*128)-y)*30/100;
+        if(dx==0&&dy==0){o.x=px;o.y=py+o.offset_y;}else{o.x=(x+dx)/128.f;o.y=(y+dy)/128.f;}
         o.vm.tick();
     }
     for(int side=0;side<2;++side){int ch=side?g_opp_sel:g_char_sel;bool slow=side?(g_opponent_controls&8)!=0:focused;
@@ -4297,7 +4305,7 @@ void tick_spirit_transits(){
     for(auto&v:g_spirit_flights){if(v.state.tick()){
         const auto&r=v.state.request;const int k=r.kind-2,target=1-v.sender;
         const auto a=th19::spiritArrival(v.sender,r.kind,r.inherited,v.state.targetX,
-            k>=0&&k<3&&(g_spirit_enhanced[v.sender][k]||(v.sender==0&&th19::cardEnhancesSpirit(g_owned_cards,r.kind))),k>=0&&k<3&&(g_spirit_suppressed[target][k]||(target==0&&th19::cardSuppressesSpirit(g_owned_cards,r.kind))));
+            k>=0&&k<3&&(g_spirit_enhanced[v.sender][k]||th19::cardEnhancesSpirit(player_cards(v.sender),r.kind)),k>=0&&k<3&&(g_spirit_suppressed[target][k]||th19::cardSuppressesSpirit(player_cards(target),r.kind)));
         if(g_ecl_fields[target].world.receive_spirit(a,v.state.targetX,v.state.targetY))++g_spirit_arrivals;
     }else{v.curve.frame=std::max(0,v.state.age);if(v.vm.stream)v.vm.tick();}}
     g_spirit_flights.erase(std::remove_if(g_spirit_flights.begin(),g_spirit_flights.end(),[](const auto&v){return v.state.age>v.state.duration;}),g_spirit_flights.end());
@@ -4352,11 +4360,11 @@ void tick_player_shots(bool firing,bool focused){
     // 54e490: ordinary emitter is disabled while the aura/charge counter is active.
     firing=firing&&!g_charge[0].held;
     const bool rightFiring=(g_opponent_controls&1)&&g_player_damage[1].controllable()&&!g_charge[1].held;
-    for(int side=0;side<2;++side)g_ecl_fields[side].world.card_near_damage=side==0&&th19::ownsCard(g_owned_cards,28);
+    for(int side=0;side<2;++side)g_ecl_fields[side].world.card_near_damage=th19::ownsCard(player_cards(side),28);
     for(auto&v:g_reflected_flights){auto&s=v.state;
         if(++s.frame>=s.duration){auto&b=g_ecl_fields[v.target_side].world.spawn_bullet();b.x=v.target_x;b.y=v.target_y;
             b.kind=s.type;b.color=s.color;b.sprite=th19::nativeBulletSprite(s.type,s.color);b.reflected=true;
-            float angle=s.arrivalAngle(b.x,g_reflection_rng.unit());float speed=th19::cardArrivalSpeed(s.arrivalSpeed(g_reflection_rng.unit(),g_reflection_rank,g_reflection_rank_cap),v.target_side==0&&th19::ownsCard(g_owned_cards,36));
+            float angle=s.arrivalAngle(b.x,g_reflection_rng.unit());float speed=th19::cardArrivalSpeed(s.arrivalSpeed(g_reflection_rng.unit(),g_reflection_rank,g_reflection_rank_cap),th19::ownsCard(player_cards(v.target_side),36));
             b.vx=std::cos(angle)*speed;b.vy=std::sin(angle)*speed;++g_reflection_arrivals;}}
     g_reflected_flights.erase(std::remove_if(g_reflected_flights.begin(),g_reflected_flights.end(),[](const auto&v){return v.state.arrived();}),g_reflected_flights.end());
     for(int side=0;side<2;++side){
@@ -4446,7 +4454,7 @@ void tick_player_shots(bool firing,bool focused){
         if(b.lifetime>0&&b.age>=b.lifetime&&!b.ending){b.vm.interrupt_all(1);b.ending=true;b.damage=0;}
         const bool beam=b.type==2||b.update==9;
         if(beam){float x=side?g_p2_x:g_p1_x,y=side?g_p2_y:g_p1_y;if(b.option>0&&b.option<=int(g_player_options[side].size())){x=g_player_options[side][b.option-1].x;y=g_player_options[side][b.option-1].y;}
-            if(b.ability_bank){auto card=std::find_if(g_card_options.begin(),g_card_options.end(),[&](const auto&o){return o.card_id==b.card_id;});if(card!=g_card_options.end()){x=card->x;y=card->y;}else b.ending=true;}
+            if(b.ability_bank){auto card=std::find_if(g_card_options.begin(),g_card_options.end(),[&](const auto&o){return o.side==b.side&&o.card_id==b.card_id;});if(card!=g_card_options.end()){x=card->x;y=card->y;}else b.ending=true;}
             // Marisa's released beam stays at its release origin (0x54c830).
             if(b.update==9){x=b.x-b.offset_x;y=b.y-b.offset_y;}
             b.x=x+b.offset_x;b.y=y+b.offset_y;
@@ -4556,7 +4564,7 @@ void tick_player_shots(bool firing,bool focused){
         ++b.age;b.vm.tick();
         collect_shot_detached_anms(b);
     }
-    for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;const bool collectCard=side==0&&std::find(g_owned_cards.begin(),g_owned_cards.end(),4)!=g_owned_cards.end();w.pickup_speed=collectCard?10:5;w.pickup_range=collectCard?110:70;w.tick_pickups(side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y);g_charge[side].energy=std::clamp(g_charge[side].energy+w.pending_energy,0,2500);w.pending_energy=0;}
+    for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;const bool collectCard=th19::ownsCard(player_cards(side),4);w.pickup_speed=collectCard?10:5;w.pickup_range=collectCard?110:70;w.tick_pickups(side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y);g_charge[side].energy=std::clamp(g_charge[side].energy+w.pending_energy,0,2500);w.pending_energy=0;}
     g_player_projectiles.erase(std::remove_if(g_player_projectiles.begin(),g_player_projectiles.end(),[](const auto& b){
         // 0x54df10 skips viewport culling for SHT types 2 and 8. In
         // particular Orin's tail remains visible after its head leaves.
@@ -4594,12 +4602,12 @@ void tick_player_shots(bool firing,bool focused){
     }
     };
     const int power=g_char_sel==3?g_attacks[0].ran_skill.power(g_player_power):g_player_power;
-    if(firing){if(!g_test_card_shoot_only)emit(0,power+(focused?5:0),g_shoot_frame,g_shoot_frame,false);for(const auto&o:g_card_options)emit(0,th19::cardOption(o.card_id)->group,g_shoot_frame,g_shoot_frame,false,&o);++g_shoot_frame;}else g_shoot_frame=0;
+    if(firing){if(!g_test_card_shoot_only)emit(0,power+(focused?5:0),g_shoot_frame,g_shoot_frame,false);for(const auto&o:g_card_options)if(o.side==0)emit(0,th19::cardOption(o.card_id)->group,g_shoot_frame,g_shoot_frame,false,&o);++g_shoot_frame;}else g_shoot_frame=0;
     if(g_attacks[0].charge_attack.firing()){
         emit(0,g_attacks[0].charge_attack.group+(g_char_sel==3&&g_attacks[0].ran_skill.active()?1:0),g_attacks[0].charge_attack.frame,g_attacks[0].charge_attack.secondary_clock(),true);
         if(g_char_sel==1&&g_charge[0].last_release==2&&g_attacks[0].charge_attack.frame==0)emit(0,11,0,0,true);
     }
-    if(rightFiring){emit(1,(g_opp_sel==3?g_attacks[1].ran_skill.power(g_player_power):g_player_power)+((g_opponent_controls&8)?5:0),g_opp_shoot_frame,g_opp_shoot_frame,false);++g_opp_shoot_frame;}else g_opp_shoot_frame=0;
+    if(rightFiring){for(const auto&o:g_card_options)if(o.side==1)emit(1,th19::cardOption(o.card_id)->group,g_opp_shoot_frame,g_opp_shoot_frame,false,&o);emit(1,(g_opp_sel==3?g_attacks[1].ran_skill.power(g_player_power):g_player_power)+((g_opponent_controls&8)?5:0),g_opp_shoot_frame,g_opp_shoot_frame,false);++g_opp_shoot_frame;}else g_opp_shoot_frame=0;
     // Do not carry the disputed Skill side-beam branch into a later C1 release.
     auto&rightAttack=g_attacks[1].charge_attack;
     if(rightAttack.firing())emit(1,rightAttack.group+(g_opp_sel==3&&g_attacks[1].ran_skill.active()?1:0),rightAttack.frame,rightAttack.secondary_clock(),true);
@@ -4676,7 +4684,7 @@ void tick_charge_release(int side,bool down,bool slow){
  float cx=side?GAME_F2_CX:GAME_F1_CX,ocx=side?GAME_F1_CX:GAME_F2_CX;
  auto&entries=side?g_opp:g_player;auto&scripts=side?g_opp_scripts:g_player_scripts;
  auto&bombs=side?g_p2_bombs:g_p1_bombs;auto&fragments=side?g_p2_fragments:g_p1_fragments;
-bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].charge_speed_percent=side==0&&std::find(g_owned_cards.begin(),g_owned_cards.end(),9)!=g_owned_cards.end()?125:100;g_charge[side].tick(g_player_damage[side].controllable()&&down,g_attacks[side].charge_attack.frame>=0||g_attacks[side].charge_area.frame>=0);
+bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].charge_speed_percent=th19::ownsCard(player_cards(side),9)?125:100;g_charge[side].tick(g_player_damage[side].controllable()&&down,g_attacks[side].charge_attack.frame>=0||g_attacks[side].charge_area.frame>=0);
                 if(g_charge[side].held&&!held)play_sfx(84);
                 if(g_charge[side].level()>level)play_sfx(g_charge[side].level()==4?88:86);
                 if(!g_charge[side].held&&held){stop_sfx(84);stop_sfx(88);if(g_charge[side].last_release>=1){
@@ -4731,7 +4739,7 @@ bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].ch
                             if(it!=g_aura_scripts.end())g_attack_warning_vm.bind_entry(it->second.stream,it->second.len,&g_aura_scripts);
                             g_attack_warning_frame=-1;bind_warning_portrait(ch,side);play_sfx(77);g_charge[side].spend_attack(tier);
                             // Native4e7b2a/4e8184 ->537b90: one fragment per accepted EX/Boss.
-                            if(side==0&&th19::ownsCard(g_owned_cards,38)&&th19::mamizouSkillFragment(bombs,fragments))play_sfx(46);
+                            if(th19::ownsCard(player_cards(side),38)&&th19::mamizouSkillFragment(bombs,fragments))play_sfx(46);
                         }
                     }
                     // 0x4e83b9..0x4e8440 gates the ordinary release on the
@@ -4750,7 +4758,7 @@ bool start_player_bomb(int side){
     if(!scripts.count(area)||!scripts.count(back))return false;
     auto&stock=side?g_p2_bombs:g_p1_bombs;
     if(!b.start(ch,g_charge[side].energy,stock,side?g_p2_x:g_p1_x,side?g_p2_y:g_p1_y,side?g_opp_direction:g_p1_dir))return false;
-    if(side==0&&std::find(g_owned_cards.begin(),g_owned_cards.end(),12)!=g_owned_cards.end()){
+    if(th19::ownsCard(player_cards(side),12)){
         b.duration=b.duration*150/100;if(ch==0)b.duration=b.duration*150/100;
     }
     auto bind=[&](th19::AnmVm&v,int script){v={};auto l=scripts.at(script);v.bind_entry(l.stream,l.len,&scripts);v.tick();};
@@ -4879,7 +4887,7 @@ void draw_player_shots(){
         }}for(const auto&c:v.children)self(self,c,x,y,inheritedX*v.sx,inheritedY*v.sy);
         };draw(draw,b.vm,b.x,b.y,1,1);
     };
-    if(g_player_damage[0].visible())for(const auto&o:g_card_options)drawShot(o);
+    for(const auto&o:g_card_options)if(g_player_damage[o.side].visible())drawShot(o);
     for(const auto&b:g_player_projectiles)drawShot(b);
     for(const auto&b:g_player_hit_effects)drawShot(b);
     g_actor_clip=-1;
@@ -5085,7 +5093,7 @@ void check_player_contacts(){
     for(int side=0;side<2;++side){
         auto&d=g_player_damage[side];auto&barrier=g_barrier[side];
         auto&w=g_ecl_fields[side].world;float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
-        const float cardRadius=side==0&&std::find(g_owned_cards.begin(),g_owned_cards.end(),2)!=g_owned_cards.end()?1.5f:3.f;
+        const float cardRadius=th19::ownsCard(player_cards(side),2)?1.5f:3.f;
         w.tick_bullet_graze(px,py,cardRadius);
         if(!d.vulnerable(barrier.invulnerable))continue;
         bool hit=false;float sx=0,sy=0;
@@ -5098,7 +5106,7 @@ void check_player_contacts(){
             // 0x509980: bit 1/5 excludes contact, status 0x400 excludes contact;
             // ECL557 enables the rotated rectangle path (549570 / 4d44e0).
             if(!e.active||e.sprite<0||(e.flags&0x22)||(e.status_flags&0x400))continue;
-            if(side==0&&th19::cardIgnoresSpirit(g_owned_cards,e.status_flags))continue;
+            if(th19::cardIgnoresSpirit(player_cards(side),e.status_flags))continue;
             if((e.flags&0x1000)?th19::nativeEnemyRectangleContact(px-e.x,py-e.y,e.contact_angle,e.contact_w,e.contact_h,cardRadius):th19::nativeCircleContact(px-e.x,py-e.y,3,e.contact_w*.5f)){hit=true;sx=e.x;sy=e.y;break;}
         }
         if(!hit)for(const auto&laser:w.lasers){
@@ -5762,7 +5770,7 @@ void game_tick() {
                 if(dx!=g_opp_direction){g_opp_direction=dx;bind_opp_dir(dx);}
             }
             if(g_big_sprite<0)for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;auto&r=w.charge_region;float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
-                r.tick(side?g_opp_sel:g_char_sel,g_charge[side].held,px,py,side==0&&std::find(g_owned_cards.begin(),g_owned_cards.end(),10)!=g_owned_cards.end()?125.f:100.f);
+                r.tick(side?g_opp_sel:g_char_sel,g_charge[side].held,px,py,th19::ownsCard(player_cards(side),10)?125.f:100.f);
                 if(r.character==5){const auto target=w.nazrin_seek_target(r.x,r.y,px,py);r.seek(target.x,target.y);}
                 if(r.character==13)for(int i=1;i<3;++i){const auto&o=g_player_options[side];r.centers[i]=i<=int(o.size())?th19::ChargeRegion::Point{o[i-1].x,o[i-1].y}:th19::ChargeRegion::Point{px,py};}
             }
@@ -5909,10 +5917,14 @@ __attribute__((export_name("th19_checkpoint_release"))) void th19_checkpoint_rel
  rb_checkpoints.erase(it);
 }
 
-static i32 networkRules[4]={0,1,2,2};
-__attribute__((export_name("th19_network_set_rules"))) u32 th19_network_set_rules(i32 time,i32 rounds,i32 left,i32 right){
- if(g_network_active||time!=0||rounds<0||rounds>2||left<0||left>4||right<0||right>4)return 0;
- networkRules[0]=time;networkRules[1]=rounds;networkRules[2]=left;networkRules[3]=right;return 1;
+static i32 networkRules[9]={4,1,1,1,1,1,1,0,0};
+__attribute__((export_name("th19_network_set_rules"))) u32 th19_network_set_rules(i32 time,i32 rounds,i32 ability,i32 left,i32 right,i32 barrierLeft,i32 barrierRight,i32 cardLeft,i32 cardRight){
+ const i32 values[]={time,rounds,ability,left,right,barrierLeft,barrierRight,cardLeft,cardRight};
+ const int counts[]={7,3,4,5,5,4,4,39,39};
+ if(g_network_active)return 0;
+ for(int i=0;i<9;++i)if(values[i]<0||values[i]>=counts[i])return 0;
+ if(ability==2&&(cardLeft>1||cardRight>1))return 0;
+ std::copy(values,values+9,networkRules);return 1;
 }
 
 // Network frames enter the existing local human-versus-human simulation.
@@ -5926,7 +5938,7 @@ __attribute__((export_name("th19_network_begin"))) u32 th19_network_begin(u32 se
     g_story_switch.phase=0;g_vs_dialogue_active=false;g_paused=g_pause_confirm=false;
     g_confirm_delay=g_cancel_delay=g_game_load_frames=0;g_notice_id=-1;
     g_vs_entry=0;g_char_sel=left;g_opp_sel=right;g_story_difficulty=difficulty;
-    const int rules[7]={networkRules[0],networkRules[1],1,networkRules[2],networkRules[3],1,1};std::copy(rules,rules+7,g_vs_rules);
+    std::copy(networkRules,networkRules+7,g_vs_rules);g_vs_cards[0].reset(networkRules[7]);g_vs_cards[1].reset(networkRules[8]);
     std::fill(std::begin(g_injected_keys),std::end(g_injected_keys),0);
     g_touch_unlimited=false;g_touch_motion_x=g_touch_motion_y=0;
     start_vs_match();g_cpu_automatic=false;g_player_collision_enabled=true;
@@ -5968,7 +5980,7 @@ __attribute__((export_name("th19_network_hash"))) u32 th19_network_hash(){
     u32 hash=2166136261u;
     auto integer=[&](u32 value){for(int i=0;i<4;++i){hash^=(value>>(8*i))&255;hash*=16777619u;}};
     auto number=[&](float value){u32 bits;std::memcpy(&bits,&value,4);integer(bits);};
-    integer(g_network_frame);integer(g_screen);integer(g_vs_match.round);
+    integer(g_network_frame);integer(g_screen);integer(g_vs_match.round);integer(g_story_difficulty);for(int rule:g_vs_rules)integer(rule);for(int side=0;side<2;++side){integer(player_cards(side).size());for(int id:player_cards(side))integer(id);}
     integer(g_vs_match.wins[0]);integer(g_vs_match.wins[1]);integer(g_vs_match.remaining);
     integer(g_paused);integer(g_battle_report_frame);integer(g_battle_winner);
     number(g_p1_x);number(g_p1_y);number(g_p2_x);number(g_p2_y);
@@ -6001,9 +6013,10 @@ __attribute__((export_name("th19_room_title"))) u32 th19_room_title(){
     start_animation();start_title_music();g_loop_paused=false;render();return 1;
 }
 __attribute__((export_name("th19_network_info"))) u32 th19_network_info(){
-    static i32 state[8];state[0]=g_network_active;state[1]=g_network_frame;state[2]=g_network_finished;
+    static i32 state[32];state[0]=g_network_active;state[1]=g_network_frame;state[2]=g_network_finished;
     state[3]=g_vs_mode;state[4]=g_vs_entry;state[5]=g_cpu_automatic;
-    state[6]=g_char_sel;state[7]=g_opp_sel;return (u32)state;
+    state[6]=g_char_sel;state[7]=g_opp_sel;state[8]=g_story_difficulty;state[9]=g_ecl_fields[0].world.difficulty;state[10]=g_ecl_fields[1].world.difficulty;state[11]=g_cpu_difficulty.difficulty;
+    std::copy(g_vs_rules,g_vs_rules+7,state+12);state[19]=g_vs_match.limit;state[20]=g_vs_match.target;state[21]=g_p1_lives;state[22]=g_p2_lives;state[23]=g_owned_cards.empty()?0:g_owned_cards[0];state[24]=g_opponent_cards.empty()?0:g_opponent_cards[0];state[25]=g_barrier[0].recovery;state[26]=g_barrier[1].recovery;state[27]=g_charge[0].held;state[28]=g_charge[1].held;state[29]=g_charge[0].charge_speed_percent;state[30]=g_charge[1].charge_speed_percent;return (u32)state;
 }
 
 __attribute__((export_name("th19_game_open"))) u32 th19_game_open(u32 seed) {
@@ -6525,7 +6538,7 @@ __attribute__((export_name("th19_test_battle_result"))) i32 th19_test_battle_res
 // No keyboard shortcut in normal gameplay.
 __attribute__((export_name("th19_test_card_reward"))) void th19_test_card_reward(i32 id){
     const bool append=id<0;if(append)id=-id;
-    if(id<1||id>38)return;load_ability_cards();if(!append){g_owned_cards.clear();g_owned_card_vms.clear();g_card_options.clear();}
+    if(id<1||id>38)return;load_ability_cards();if(!append){g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_card_options.clear();}
     begin_card_reward((id-1)/2);g_card_reward=id;g_card_reward_vm.sprite=5+2*id;
     for(int i=0;i<120;++i)tick_card_reward(false);tick_card_reward(true);
     for(int i=0;i<10;++i)tick_card_reward(false);g_card_reward_exit=-1;

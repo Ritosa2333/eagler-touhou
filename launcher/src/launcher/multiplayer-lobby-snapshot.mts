@@ -1,3 +1,4 @@
+import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import { validTh15ChapterThreshold } from "./th15-chapter-reward.mjs";
 import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
@@ -43,6 +44,7 @@ export interface MultiplayerLobbySpectator {
 }
 
 export interface NormalizedMultiplayerLobbySnapshot {
+  th19Rules?: number[];
   initialSpares?: number;
   initialBombs?: number;
   timingChoice?: 'auto' | number;
@@ -99,6 +101,7 @@ export function normalizeMultiplayerLobbySnapshot(
   },
 ): NormalizedMultiplayerLobbySnapshot | null {
   const source = record(value);
+  if(source?.th19Rules!==undefined&&!validTh19VersusRules(source.th19Rules))return null;
   if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
   if (!source ||
     (source.chapterThreshold !== undefined &&
@@ -212,6 +215,7 @@ export function normalizeMultiplayerLobbySnapshot(
 
   return {
     playerCount,
+    ...(source.th19Rules!==undefined?{th19Rules:[...source.th19Rules as number[]]}:{}),
     ...(source.initialSpares!==undefined?{initialSpares:source.initialSpares as number}:{}),
     ...(source.initialBombs!==undefined?{initialBombs:source.initialBombs as number}:{}),
     ...(source.chapterThreshold !== undefined

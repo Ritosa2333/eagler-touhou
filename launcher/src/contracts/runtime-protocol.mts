@@ -118,6 +118,7 @@ export interface RuntimeConfigureOptions {
   netplayDifficulty?: number;
   netplayChallengeMode?: boolean;
   netplayDisableLocalChargePriority?: boolean;
+  netplayTh19Rules?: number[];
   netplayChapterThreshold?: number;
   netplayInitialSpares?: number;
   netplayInitialBombs?: number;
@@ -177,6 +178,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplaySeed: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
   netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH06/TH07/TH08/TH10 multiplayer; fixed before start" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
+  netplayTh19Rules: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH19 only; nine native rule and card-selection indices; immutable after start"}),
   netplayChapterThreshold: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH15 multiplayer chapter reward; 500000–5000000 in steps of 250000; immutable after start"}),
   netplayInitialSpares: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH05 multiplayer; team spare lives 0–5 excluding the current life; fixed before HELLO"}),
   netplayInitialBombs: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH05 multiplayer; team starting Bombs 0–3; fixed before HELLO"}),

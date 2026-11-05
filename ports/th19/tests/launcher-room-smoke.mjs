@@ -45,6 +45,12 @@ try{
   report.room=await page.$eval('#mpRoomCode',e=>e.textContent.trim());save();
 
  }
+ const rules=[6,2,3,4,0,2,3,9,9];
+ for(const page of pages)await click(page,'#roomWorkspaceTab-game');
+ await until(()=>pages[0].evaluate(()=>!!document.querySelector('#mpTh19Rule0')),'TH19 rule controls');
+ for(let index=0;index<9;index++){await select(pages[0],'#mpTh19Rule'+index,String(rules[index]));await until(()=>pages[1].evaluate((index,value)=>document.querySelector('#mpTh19Rule'+index)?.value===String(value),index,rules[index]),'rule '+index+' synchronized');}
+ await pages[0].evaluate(()=>document.querySelector('[data-mp-difficulty="3"]')?.click());
+ report.rules=rules;
  for(let side=0;side<2;side++){
   const page=pages[side];
   await until(()=>page.evaluate(()=>{if(document.querySelector('#decisionDialog')?.open)document.querySelector('#decisionConfirm')?.click();return document.querySelector('#mpReady')?.disabled===false;}),'P'+side+' resources');
@@ -58,11 +64,12 @@ try{
   return page.evaluate(()=>document.querySelector('#gameFrame')?.contentWindow?.__th19Runtime?.netplay?.active===true);
  },'native RTC running');
  for(const page of pages)await page.evaluate(()=>{const core=document.querySelector('#gameFrame').contentWindow.__th19Runtime.core,step=core._th19_network_step;core._th19_network_step=(...args)=>{args[9]=0;return step(...args);};});
- const snapshot=page=>page.evaluate(()=>{const r=document.querySelector('#gameFrame').contentWindow.__th19Runtime;return {active:r.netplay.active,frame:r.netplay.frame,route:r.netplay.socket.route,hashes:[...r.netplay.hashes],options:{side:r.core.eaglerOptions.netplayPlayer,count:r.core.eaglerOptions.netplayPlayerCount}};});
+ const snapshot=page=>page.evaluate(()=>{const r=document.querySelector('#gameFrame').contentWindow.__th19Runtime;return {active:r.netplay.active,frame:r.netplay.frame,route:r.netplay.socket.route,hashes:[...r.netplay.hashes],options:{side:r.core.eaglerOptions.netplayPlayer,count:r.core.eaglerOptions.netplayPlayerCount,difficulty:r.core.eaglerOptions.netplayDifficulty,rules:r.core.eaglerOptions.netplayTh19Rules},native:Array.from(r.core.HEAP32.subarray(r.core._th19_network_info()/4,r.core._th19_network_info()/4+31))};});
  await until(async()=> (await Promise.all(pages.map(snapshot))).every(s=>s.active&&s.frame>=360),'360 room-started frames');
  const states=await Promise.all(pages.map(snapshot));report.states=states;
  assert(states.every(s=>s.route==='rtc'));assert.deepEqual(states.map(s=>s.options.side),[0,1]);
  const remote=new Map(states[1].hashes),common=states[0].hashes.filter(([f])=>remote.has(f));assert(common.length>=2);for(const [f,h]of common)assert.equal(h,remote.get(f));
+ for(const state of states){assert.deepEqual(state.options.rules,rules);assert.equal(state.options.difficulty,3);assert.deepEqual(state.native.slice(8,12),[3,3,3,3]);assert.deepEqual(state.native.slice(12,19),rules.slice(0,7));}
  assert.deepEqual(report.errors,[]);
  report.results.push({check:'Launcher create/join/seat/ready/start and native RTC state agreement',passed:true,hashes:common});report.passed=true;report.stage='complete';save();console.log(JSON.stringify(report));
 }catch(error){report.failure=error.stack;report.pages=await Promise.all(pages.map(async p=>({url:p.url(),body:await p.evaluate(()=>document.body.innerText).catch(()=>''),native:await p.evaluate(()=>{const r=document.querySelector('#gameFrame')?.contentWindow?.__th19Runtime;return r?{active:r.netplay?.active,frame:r.netplay?.frame,status:r.status()}:null;}).catch(()=>null)})));save();throw error;}finally{await browser.close();}

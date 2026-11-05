@@ -61,6 +61,7 @@ const TH15_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu", "marisa", "sanae", "re
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
 const TH09_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic"]);
+const TH19_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic"]);
 // Character IDs follow TH09's original character_labels table in TitleData.inc.
 const TH09_MULTIPLAYER_GLYPHS = Object.freeze(["霊", "魔", "咲", "妖", "鈴", "チ", "リ", "ミ", "て", "幽", "文", "メ", "小", "映", "メ", "ル"]);
 const TH09_MULTIPLAYER_LOADOUTS = Object.freeze(Array.from({ length: 16 }, (_, character) => Object.freeze({ labelKey: `multiplayer.loadout.th09_${character}`, glyph: TH09_MULTIPLAYER_GLYPHS[character], character, shot: 0 })));
@@ -611,7 +612,7 @@ export const PRODUCT_GAMES = Object.freeze({
         package: Object.freeze({dataFileId: "game-data",dataTarget: "/th19.dat",rawDataImport: Object.freeze({fileNames: Object.freeze(["th19.dat"])}),musicSourceDirectories: Object.freeze({ogg: "music"}),musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th19"}),
         multiplayerRuntime: "./runtime/th19/multiplayer/th19.html",
-        multiplayer: Object.freeze({titleKey: "game.title.th19mp",gameplay: "versus",playerCounts: Object.freeze([2]),difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
+        multiplayer: Object.freeze({titleKey: "game.title.th19mp",gameplay: "versus",playerCounts: Object.freeze([2]),difficulties: TH19_MULTIPLAYER_DIFFICULTIES,
             loadouts: Object.freeze(TH19_CHARACTERS.map((glyph,character)=>Object.freeze({labelKey:`multiplayer.loadout.th19_${character}`,glyph,character,shot:0}))),
             inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,manualDelayLimit:8}),peerTransportGlobal:"__th19PeerTransport",spectator:false,titleRoomEntry:false}),
         features: Object.freeze({thprac:false,languages:false,focusHitbox:false}),

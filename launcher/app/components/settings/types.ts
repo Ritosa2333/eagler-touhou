@@ -32,6 +32,8 @@ export interface SettingsActions {
   externalMidi: ExternalMidiPort;
   gamepad?: GamepadMappingModel;
   keyboard?: KeyboardPreferences;
+  th19Keyboard?: KeyboardPreferences;
+  th19Gamepad?: GamepadMappingModel;
   th09Local?:Th09LocalInput;
 }
 export interface TouchEditorNativePorts {

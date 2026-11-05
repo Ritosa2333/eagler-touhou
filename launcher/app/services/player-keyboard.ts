@@ -19,6 +19,7 @@ export interface PlayerKeyboardOptions {
   isPlayerFullscreen(): boolean;
   android: boolean;
   preferences?:KeyboardPreferences;
+  th19Preferences?:KeyboardPreferences;
   th09Local?:Th09LocalInput;
   now?: () => number;
   setInterval?: typeof globalThis.setInterval;
@@ -116,7 +117,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     const inputContext = options.runtime.getInputContext();
     const mappingTarget = inputContext.target;
     if (mappingTarget && keyboardInputBridge(inputContext)) {
-      const owner = new KeyboardMapping(options.preferences?.getSnapshot,options.th09Local);
+      const owner = new KeyboardMapping(()=>(options.runtime.getInputContext().game==='th19'?options.th19Preferences:options.preferences)?.getSnapshot()??{},options.th09Local);
       mapping = owner;
       let clearing = false;
       port = {
@@ -160,13 +161,14 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   options.frame.addEventListener('load', rebind);
   const unsubscribe = options.runtime.subscribe(rebind);
   const unsubscribePreferences = options.preferences?.subscribe(clear);
+  const unsubscribeTh19 = options.th19Preferences?.subscribe(clear);
   const unsubscribeLocal = options.th09Local?.subscribe(clear);
   rebind();
   return {
     clear, rebind, startFocusRelay, stopFocusRelay, focusBrowsingContext,
     dispose() {
       if (disposed) return;
-      clear(); disposed = true; stopFocusRelay(); unsubscribe(); unsubscribePreferences?.();unsubscribeLocal?.(); unbind?.(); unbind = null; bound = null;
+      clear(); disposed = true; stopFocusRelay(); unsubscribe(); unsubscribePreferences?.();unsubscribeTh19?.();unsubscribeLocal?.(); unbind?.(); unbind = null; bound = null;
       options.window.removeEventListener('keydown', forward, true);
       options.window.removeEventListener('keyup', forward, true);
       options.window.removeEventListener('blur', clear);

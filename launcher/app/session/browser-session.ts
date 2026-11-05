@@ -117,6 +117,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   try {storage = window.localStorage;} catch {}
   const gamepad = createGamepadMappingModel({storage,getGamepads:typeof window.navigator.getGamepads==='function'?()=>window.navigator.getGamepads():undefined});
   const keyboardPreferences = createKeyboardPreferences(storage);
+  const th19Keyboard = createKeyboardPreferences(storage,'th19');
+  const th19Gamepad = createGamepadMappingModel({storage,scope:'th19',getGamepads:typeof window.navigator.getGamepads==='function'?()=>window.navigator.getGamepads():undefined});
   const th09LocalInput = createTh09LocalInput(storage);
   const mobile = (window.navigator as Navigator & {userAgentData?: {mobile?: boolean}}).userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent) || window.navigator.maxTouchPoints > 1 && /Macintosh/i.test(window.navigator.userAgent);
   const primaryTouchPointer = window.matchMedia('(pointer: coarse)');
@@ -578,7 +580,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   document.addEventListener('fullscreenchange', fullscreenChanged); document.addEventListener('webkitfullscreenchange', fullscreenChanged);
   const settingsActions: SettingsActions = {
-    confirm: decisions.askConfirmation, externalMidi, gamepad, keyboard:keyboardPreferences, th09Local:th09LocalInput, reportError,
+    confirm: decisions.askConfirmation, externalMidi, gamepad, th19Gamepad, th19Keyboard, keyboard:keyboardPreferences, th09Local:th09LocalInput, reportError,
     showAppleNotice: () => requiredNavigation().openInfoDialog('appleRefreshDialog'),
     feedback(message, status) {if (message) feedback.toast(message); if (status) feedback.status(status);},
     file: (action, product) => activity(async () => {if (!files) throw new Error('File service is not attached'); await files.run(action, product);}),
@@ -1210,7 +1212,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       const command = spectatorPlaybackCommand(state, action, frame);
       if (command) await owner.send('spectator-playback', command);
     },
-    room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, programBaseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
+    room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, programBaseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th19Keyboard, th19Gamepad, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     initialize, attachFrame, requestRuntimeClose, requestReplayManagerClose, launch, openReplayViewer, exitRoomPlayerFullscreen,
     restoreRoomFromUrl,

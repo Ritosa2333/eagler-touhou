@@ -23,7 +23,7 @@ export class Netplay {
  sample(){
   let keys=0;for(const code of this.keys)keys|=keyBits[code]||0;
   const pad=globalThis.__eaglerGamepadInputBridge?.sample(0)??-1;
-  if(pad>=0){const actions=[1,2,8,1024,16,32,64,128,0,1,4,0];for(let n=0;n<actions.length;n++)if(pad&(1<<n))keys|=actions[n];}
+  if(pad>=0){const actions=[1,4,8,1024,16,32,64,128,0,1,2,0];for(let n=0;n<actions.length;n++)if(pad&(1<<n))keys|=actions[n];}
   if(this.core._th19_touch_sample){const p=this.core._th19_touch_sample(this.side),words=new Uint32Array(this.core.HEAPU8.buffer,p,2),motion=new Float32Array(this.core.HEAPU8.buffer,p+8,2);return {keys:keys|words[0],direct:words[1],x:motion[0],y:motion[1]};}
   const limit=value=>Math.fround(Math.max(-512,Math.min(512,value)));
   // A saved touch preference must not suppress the keyboard. Only a frame
@@ -52,7 +52,7 @@ export class Netplay {
   this.rollbackEnabled=mode!==1;
   // The shared run serial gives each rematch a fresh, identical seed on both seats.
   const seed=((options.netplaySeed>>>0)^Math.imul(Number(url.searchParams.get('run')),0x9e3779b9))>>>0;
-  const rules=options.netplayTh19Rules??[0,1,2,2];const v=rules;if(!(Array.isArray(v)&&v.length===4&&v[0]===0&&v.every((n,i)=>Number.isInteger(n)&&n>=0&&n<([7,3,5,5][i]))))throw Error("对战规则无效");
+  const rules=options.netplayTh19Rules??[4,1,1,1,1,1,1,0,0];const v=rules;if(!(Array.isArray(v)&&v.length===9&&v.every((n,i)=>Number.isInteger(n)&&n>=0&&n<([7,3,4,5,5,4,4,39,39][i]))&&(v[2]!==2||(v[7]<2&&v[8]<2))))throw Error("对战规则无效");
   this.config={rules,protocol:1,build,seed:seed||1,difficulty,characters,delay,rollback:this.rollbackEnabled};
   this.core.eaglerOptions=options;
   this.side=side;this.core._th19_touch_side?.(side);this.delay=delay;this.direct=options.touchEnabled===true&&options.touchMovementMode==='touch-unlimited';

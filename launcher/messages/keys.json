@@ -8806,5 +8806,91 @@
   "multiplayer.loadout.th19_18": {
     "id": "multiplayer_loadout_th19_18",
     "params": []
+  },
+  "th19.time": {
+    "id": "th19_time",
+    "params": []
+  },
+  "th19.rounds": {
+    "id": "th19_rounds",
+    "params": []
+  },
+  "th19.ability": {
+    "id": "th19_ability",
+    "params": []
+  },
+  "th19.life1": {
+    "id": "th19_life1",
+    "params": []
+  },
+  "th19.life2": {
+    "id": "th19_life2",
+    "params": []
+  },
+  "th19.barrier1": {
+    "id": "th19_barrier1",
+    "params": []
+  },
+  "th19.barrier2": {
+    "id": "th19_barrier2",
+    "params": []
+  },
+  "th19.card1": {
+    "id": "th19_card1",
+    "params": []
+  },
+  "th19.card2": {
+    "id": "th19_card2",
+    "params": []
+  },
+  "th19.none": {
+    "id": "th19_none",
+    "params": []
+  },
+  "th19.random": {
+    "id": "th19_random",
+    "params": []
+  },
+  "th19.self": {
+    "id": "th19_self",
+    "params": []
+  },
+  "th19.all": {
+    "id": "th19_all",
+    "params": []
+  },
+  "th19.manual": {
+    "id": "th19_manual",
+    "params": []
+  },
+  "th19.long": {
+    "id": "th19_long",
+    "params": []
+  },
+  "th19.short": {
+    "id": "th19_short",
+    "params": []
+  },
+  "th19.minutes": {
+    "id": "th19_minutes",
+    "params": [
+      "count"
+    ]
+  },
+  "th19.card": {
+    "id": "th19_card",
+    "params": [
+      "number"
+    ]
+  },
+  "th19.selfCard": {
+    "id": "th19_selfCard",
+    "params": [
+      "number"
+    ]
+  },
+  "th19.input": {
+    "id": "th19_input",
+    "params": []
   }
 }
