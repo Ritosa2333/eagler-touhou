@@ -308,6 +308,17 @@ jobs:
     - name: Verify th12 SDL application and browser boundary
       if: matrix.game == 'th12'
       run: npm --prefix ${{ matrix.directory }} run test:sdl
+    - name: Verify th19 transport, rollback and Runtime packaging
+      if: matrix.game == 'th19'
+      shell: bash
+      run: |
+        npm --prefix ports/th19 test
+        node ports/th19/portable/check-frame-cadence.mjs
+        if [ "${{ matrix.variant }}" = "multiplayer" ]; then
+          node ports/th19/portable/package-eagler.mjs --multiplayer
+        else
+          node ports/th19/portable/package-eagler.mjs
+        fi
     - name: Verify th12 multiplayer native input and rollback
       if: matrix.game == 'th12' && matrix.variant == 'multiplayer'
       shell: bash

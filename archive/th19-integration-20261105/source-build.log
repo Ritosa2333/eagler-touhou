@@ -1,0 +1,9 @@
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+In file included from <workspace>\ports\th19\web\cpp\sdl\Application.cpp:72:
+<workspace>\ports\th19\portable\sdl\third_party/stb_vorbis.h:1404:75: warning: pointer comparison always evaluates to false [-Wtautological-compare]
+ 1404 |       if (f->stream_start + loc >= f->stream_end || f->stream_start + loc < f->stream_start) {
+      |                                                                           ^
+1 warning generated.
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+{"output":"<workspace>\\ports\\th19\\runtime","variant":"normal","files":["th19.html","shell.mjs","managed.css","keyboard.mjs","netplay.mjs","peer-socket.mjs","rollback-session.mjs","native-adapter.mjs","directory-keyboard.mjs","keyboard-owners.mjs","keyboard-input-bridge.mjs","th19.mjs","th19.wasm","manifest.json","th19-multiplayer.html"],"wasm":"a10571aca07be8a581c52e0826143b42fff0e879f0a7c00f275656328d2e6380"}
+Build source receipt: <workspace>\artifacts\validation\source-builds\th19-normal.json

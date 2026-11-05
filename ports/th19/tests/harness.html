@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="icon" href="data:,"><style>html,body,iframe{margin:0;width:100%;height:100%;border:0;background:#000}</style></head><body><script type="module">
+const query=new URLSearchParams(location.search),game='th19',protocol='eagler-touhou/1',epoch=Date.now();
+const frame=document.createElement('iframe'),pending=new Map(),events=[],errors=[];
+let request=0;
+window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await (await fetch('../content/th19.dat')).arrayBuffer()});
+const command=(command,fields={})=>new Promise((resolve,reject)=>{const id=String(++request);const timer=setTimeout(()=>{pending.delete(id);reject(Error(`Command timeout: ${command}`));},30000);pending.set(id,{resolve,reject,timer});frame.contentWindow.postMessage({protocol,game,epoch,request:id,command,...fields},location.origin);});
+window.__TH19_HARNESS={frame,command,events,errors,epoch,ready:false,launched:false};
+window.addEventListener('message',async e=>{
+ const m=e.data;if(e.source!==frame.contentWindow||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||m.epoch!==epoch)return;
+ if(pending.has(m.request)){const p=pending.get(m.request);pending.delete(m.request);clearTimeout(p.timer);m.ok?p.resolve(m):p.reject(Error(m.error));return;}
+ events.push(m);if(m.event==='error')errors.push(m.error);
+ if(m.event==='first-frame')window.__TH19_HARNESS.launched=true;
+ if(m.event==='ready')try{
+  window.__TH19_HARNESS.ready=true;
+  const options={touchEnabled:true,touchSensitivity:100,touchMovementMode:'touch',touchFocusMode:'hold-button'};
+  if(query.has('side')){
+   const side=Number(query.get('side')),url=new URL(query.get('relay')||'ws://127.0.0.1:18142/');url.searchParams.set('room',query.get('room')||'th19mp-1901');url.searchParams.set('run','1');url.searchParams.set('player',String(side));url.searchParams.set('players','2');
+   Object.assign(options,{netplayMode:'lan',netplayUrl:url.href,netplayPlayer:side,netplayPlayerCount:2,netplaySeed:190001,netplayDifficulty:1,netplayInputDelay:0,netplayAdonisMode:Number(query.get('mode')||0),netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayIceServers:[]});
+  }
+  await command('configure',{music:'none',options,sharedResources:[{path:'/msgothic.ttc',url:new URL('../content/msgothic.ttf',location.href).href}]});
+  window.__TH19_HARNESS.configured=true;
+  if(query.has('side')){const preview=await command('prepare-room');if(preview.presented!==true)throw Error('Native room title did not present');window.__TH19_HARNESS.preview=true;}
+  if(query.get('autolaunch')!=='0')await command('launch',{launchSerial:1});
+ }catch(error){errors.push(error.message);}
+});
+const url=new URL(query.has('side')?'../runtime/th19-multiplayer.html':'../runtime/th19.html',location.href);url.searchParams.set('managedData','1');url.searchParams.set('gameGeneration','test-fixture');url.searchParams.set('runtimeEpoch',String(epoch));frame.src=url.href;document.body.append(frame);
+</script></body></html>

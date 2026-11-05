@@ -5,6 +5,7 @@ import {
   parseRuntimeDownloadProgress, type RuntimeDownloadProgress, type RuntimeManifest,
 } from "../contracts/runtime-generations.mjs";
 import {consumeNetworkBody} from './network-activity.mjs';
+import {sha256Hex} from './sha256.mjs';
 
 export interface PreparedRuntime {
   url: string;
@@ -26,8 +27,7 @@ interface LaunchOptions {
   onProgress?: (progress: RuntimeDownloadProgress) => void;
 }
 async function digest(bytes: ArrayBuffer): Promise<string> {
-  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
-    byte => byte.toString(16).padStart(2, "0")).join("");
+  return sha256Hex(bytes);
 }
 async function bounded<T>(task: PromiseLike<T>, timeout: number, fallback: T): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;

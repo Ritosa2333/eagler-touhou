@@ -5,6 +5,7 @@ import {spawnSync, execFileSync} from 'node:child_process';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {targets, root, inspectInputs, sourceDependencies, sourceIdentity, slash} from './inputs.mjs';
 import {checkRuntimeSource, runtimeSourceFiles} from './runtime-contracts.mjs';
+import {nodeHostExecutable} from '../../launcher/lib/node-runtime.mjs';
 import {STATUS_SCHEMA, checkStates, retainedVerification, validateStatusReport, readStatusReport} from './status.mjs';
 import {adaptationMarkdown, preserveManualEvidence, portDefinitions, notApplicable} from '../docs/new-adaptation.mjs';
 
@@ -26,7 +27,7 @@ function bunExecutableOnPath() {
       const candidate = resolve(directory.replace(/^"|"$/g, ''), name);
       if (!existsSync(candidate)) continue;
       try {
-        const actual = execFileSync(candidate,['--version'],{encoding:'utf8',windowsHide:true,timeout:5_000}).trim();
+        const actual = execFileSync(candidate,['--version'],{encoding:'utf8',windowsHide:true,timeout:30_000}).trim();
         if (actual === version) return cachedBunExecutable = candidate;
       } catch { /* Continue past shims and incompatible Bun installations. */ }
   }
@@ -35,7 +36,7 @@ function bunExecutableOnPath() {
 
 export function sharedCheckInvocation(gate, {bunExecutable} = {}) {
   if (!gate.runner) {
-    return {executable:process.execPath, args:gate.files.map(file=>resolve(root,file))};
+    return {executable:nodeHostExecutable(), args:gate.files.map(file=>resolve(root,file))};
   }
   if (gate.runner !== 'vitest' || !['repository','unit','workspace'].includes(gate.project))
     throw new Error(`Unknown shared check runner: ${gate.runner}/${gate.project ?? ''}`);

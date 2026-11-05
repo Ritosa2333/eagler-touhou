@@ -93,11 +93,11 @@ export function bindPlayerInput({session, document, window, translate: t}: {sess
     iosWebKitTouch: ios, refocus, zoom, document, window, elements: {frame, directSurface,
       fire: element('touchFire'), focus: element('touchFocus'), functionKey: element('touchFunction'), escape: element('touchEscape'), bomb: element('touchBomb'), restart: element('touchRestart'),
       joystick: element('touchJoystick'), joystickKnob: element('touchJoystickKnob'), thpracBackspace: element('touchThpracBackspace'), thpracKeys: [...player.querySelectorAll<HTMLElement>('[data-thprac-key]')]}});
-  const keyboard = createPlayerKeyboard({runtime, window, document, frame, preferences:session.keyboardPreferences,th09Local:session.th09LocalInput, playerOpen: () => session.getSnapshot().playerOpen, android,
+  const keyboard = createPlayerKeyboard({runtime, window, document, frame, preferences:session.keyboardPreferences,th19Preferences:session.th19Keyboard,th09Local:session.th09LocalInput, playerOpen: () => session.getSnapshot().playerOpen, android,
     launcherOwnsTarget: target => target instanceof Element && !!target.closest('input,select,textarea,button,dialog,[role=dialog]'),
     releaseHeldTouchFire: touch.releaseHeldTouchFire, cancelTouchFunction: touch.cancelTouchFunction,
     isPlayerFullscreen: session.nativeTouch.isFullscreen, toggleFullscreen: () => {void session.togglePlayerFullscreen();}});
-  const gamepad = createPlayerGamepad({runtime,model:session.gamepad,th09Local:session.th09LocalInput,window,document,playerOpen:()=>session.getSnapshot().playerOpen && !editing() && !document.activeElement?.closest('input,select,textarea,button,dialog,[role=dialog]')});
+  const gamepad = createPlayerGamepad({runtime,model:session.gamepad,th19Model:session.th19Gamepad,th09Local:session.th09LocalInput,window,document,playerOpen:()=>session.getSnapshot().playerOpen && !editing() && !document.activeElement?.closest('input,select,textarea,button,dialog,[role=dialog]')});
   let currentNative: ReturnType<typeof runtime.getMidiEventContext> = null, startedEpoch: number | null = null, requestedEpoch: number | null = null;
   function applyLayout() {
     applySavedPlayerTouchLayout(player, safe, profile());

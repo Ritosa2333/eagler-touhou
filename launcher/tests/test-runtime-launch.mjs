@@ -155,5 +155,20 @@ await prepareRuntimeLaunch(root+"game.html",{baseUrl,fetchImpl:fontFetch,worker:
 assert.deepEqual(fontModes,[["game.html","error"],["fonts/blend4444.bin","follow"]]);
 corruptFont=true;
 await assert.rejects(prepareRuntimeLaunch(root+"game.html",{baseUrl,fetchImpl:fontFetch,worker:null}),/integrity mismatch/);
+// HTTP deployments expose random values, but do not expose SubtleCrypto.
+const cryptoDescriptor=Object.getOwnPropertyDescriptor(globalThis,'crypto');
+const originalCrypto=globalThis.crypto;
+try {
+  Object.defineProperty(globalThis,'crypto',{configurable:true,value:{getRandomValues:originalCrypto.getRandomValues.bind(originalCrypto)}});
+  const insecure=await prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker:null,requireCurrent:true});
+  assert.equal(insecure.generation,B.descriptor.generation);
+  bad=true;
+  await assert.rejects(prepareRuntimeLaunch(root+'game.html',{baseUrl,fetchImpl,worker:null,requireCurrent:true}),/integrity mismatch/);
+} finally {
+  bad=false;
+  if(cryptoDescriptor)Object.defineProperty(globalThis,'crypto',cryptoDescriptor);
+  else delete globalThis.crypto;
+}
+
 console.log("Launcher offline-first, verified background updates, strict MP versions, whole-generation fallback, bounded downloads and DATA identity separation: PASS");
 });

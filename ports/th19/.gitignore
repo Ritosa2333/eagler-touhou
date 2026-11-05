@@ -1,0 +1,14 @@
+node_modules/
+work/
+artifacts/
+.cache/
+web/artifacts/
+build-eagler*/
+runtime/
+content/
+fonts/
+tools/emsdk/
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

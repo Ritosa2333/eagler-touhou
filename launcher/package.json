@@ -206,7 +206,9 @@
     "test:profile-motion:browser": "node tests/browser/test-profile-motion.mjs",
     "test:theme-layout:browser": "node tests/browser/test-theme-layout.mjs",
     "test:host-node": "node tests/test-node-environment.mjs",
-    "install:locked": "bun scripts/install-dependencies.mjs"
+    "install:locked": "bun scripts/install-dependencies.mjs",
+    "test:th19-touch:browser": "node tests/browser/test-th19-touch-charge.mjs",
+    "test:th19-touch-room:browser": "node tests/browser/test-th19-touch-charge-room.mjs"
   },
   "dependencies": {
     "@radix-ui/colors": "3.0.0",
