@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>东方梦时空 · 原版单人</title>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="site.css"><link rel="stylesheet" href="site-adapter.css"><link rel="stylesheet" href="player-ui.css"><link rel="stylesheet" href="touch-overlay.css"><link rel="stylesheet" href="touch-adapter.css">
+<style>
+.solo-assists{display:grid;gap:10px;padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid #ffffff16}
+.solo-assists strong{font-size:13px}
+.solo-launch-assists{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px}
+.solo-launch-assists label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.solo-launch-assists input[type=checkbox]{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--pink)}
+.solo-launch-assists label:has(input:disabled){opacity:.55;cursor:default}
+#solo-replay label{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+#solo-replay input[type=checkbox]{width:18px;height:18px;min-height:0;margin:0}
+#solo-replay input[type=file]{width:min(100%,240px);min-height:0;padding:6px}
+#solo-replay p{overflow-wrap:anywhere}
+</style></head>
+<body class="shell game-page"><header class="masthead"><a class="brand" href="index.html">TOUHOU / 03 · 测试 beta0.3 · 性能版</a><small>東方夢時空 · PHANTASMAGORIA OF DIM.DREAM</small></header><nav class="mode-nav" aria-label="游戏模式"><a data-mode="solo" aria-current="page" href="solo.html">单机游戏</a><a data-mode="local" href="local.html">本地双人</a><a data-mode="lan" data-network="lan" href="lan.html?network=lan">局域网联机</a><a data-mode="public" data-network="public" href="lan.html?network=public">公网联机</a></nav><main>
+<header class="intro"><span class="eyebrow">ORIGINAL / SINGLE PLAYER</span><h1>单机游戏</h1><p>选择中文汉化或日文版，从开头进入梦时空。默认 Lunatic，全部九名角色已解锁；可在原版菜单内选择难度和角色，保留剧情与排行榜记录。</p></header>
+<section class="panel local-music-settings" aria-label="本机音乐">
+<label class="bgm-version">本机音乐 <select data-bgm-version-control aria-label="本机音乐版本"><option value="old">游戏原版</option><option value="new">幺乐团专辑版</option></select><small data-bgm-restart-note></small></label>
+<p class="muted">仅影响本机播放的音乐，不改变其他玩家的选择；自动保存，游戏中切换会从头播放当前曲目。</p>
+</section>
+
+<section class="panel" id="solo-replay"><h2>单人 Replay</h2><label><input id="record-enabled" type="checkbox" checked> 录制本次首局</label><p class="muted">结束或通关时询问保存，只保留首次续关之前的操作。播放自动快进开头和录下的暂停；Esc / 空格暂停，Ctrl 快进。重新启动游戏可录制新局。</p><div class="row"><button id="record-finish" disabled>结束录制</button><button id="record-save" disabled>保存 Replay</button><button id="record-discard" disabled>丢弃 Replay</button><label>导入 Replay <input id="replay-file" type="file" accept=".th03r,application/octet-stream"></label><button id="replay-play" disabled>播放 Replay</button><button id="replay-pause" disabled>暂停播放</button><button id="replay-stop" disabled>停止播放</button></div><p id="replay-status" role="status">等待开始首局；结束或通关时询问保存 Replay。</p></section>
+<fieldset class="launch-settings"><legend>启动设置</legend><div class="settings-grid">
+<label>游戏语言 <select id="language"><option value="jp">日文原版</option><option value="cn">中文汉化</option></select></label>
+<label>声音 <select id="audio-mode" aria-describedby="audio-help"><option value="independent">独立音乐（手机建议）</option><option value="buffered">原声·缓冲</option><option value="original">原声·低延迟</option></select></label><small id="audio-help">独立音乐保持正常速度，不随游戏掉帧变调；音效仍由游戏播放。原声由模拟器播放，独立音乐由浏览器播放。</small>
+<select id="clock" hidden aria-hidden="true"><option value="32" selected>自动</option></select></div></fieldset>
+<div class="row launch-toolbar"><button id="start" class="primary" disabled>启动原版游戏 →</button><div class="solo-launch-assists" role="group" aria-label="单人低速设置"><label><input id="solo-focus-enabled" type="checkbox" disabled> 启用低速（按住空格）</label><label><input id="solo-focus-points" type="checkbox" disabled> 低速时显示判定点</label></div></div>
+<section id="screen" class="screen" aria-label="游戏"><canvas id="canvas" width="640" height="400" tabindex="0" aria-label="梦时空游戏画面"></canvas><div id="cover"><span>选择语言，点击“启动原版游戏”。</span></div></section>
+<nav class="toolbar"><div class="commands"><button id="reset" disabled>重启</button><button id="export" disabled>导出存档</button><label class="file-button">导入原版存档<input id="import" type="file" accept=".hdi"></label></div></nav>
+<div class="status"><span id="status" role="status">正在初始化单机页面…</span><span id="save-status"></span></div>
+<p>键盘：方向键移动，Z/J 连发（点按单次、按住最高速，60帧下每秒15次），Shift/K 蓄力，X/L Bomb，Esc 原版暂停。启用低速后可按住空格。触屏：拖动移动，按住独立蓄力键蓄力，松手释放；菜单方向键和确认可直接点击。“按键与触控”中可设置辅助、使用独立连发键、调整布局和全屏。</p>
+</main><footer class="footer"><a href="index.html">← 返回启动器</a><span>TH03 · PHANTASMAGORIA OF DIM.DREAM</span></footer><script type="module" src="solo-bootstrap.js"></script><script type="module" src="bgm-version.js"></script></body></html>

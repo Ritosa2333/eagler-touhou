@@ -1,0 +1,117 @@
+/* TH06 default direct-touch geometry and final transparency pass. */
+.th02-player{display:block!important;padding:0!important;position:relative;background:#000!important;overflow:hidden}.th02-player .player-stage{position:absolute;inset:0;width:100%;height:100%}.th02-player .player-note{display:none}.th02-player [hidden]{display:none!important}
+.th02-player [data-layout-control]{display:none;position:absolute;z-index:31;touch-action:none;user-select:none;-webkit-user-select:none;border:0!important;border-radius:11px;background:rgba(20,23,19,.56)!important;color:#f4eee5;padding:6px 10px;min-height:0;box-shadow:0 4px 12px #0004;transition:none}
+.has-touch [data-layout-control]{display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+.th02-player [data-layout-control=escape]{display:flex;flex-direction:column;justify-content:center;align-items:center}
+.th02-player [data-layout-control] strong{font:700 13px/1.1 system-ui;letter-spacing:.18em}.th02-player [data-layout-control] small{font:8px/1 system-ui;color:#918c84;margin-top:4px}
+.th02-player .touch-focus,.th02-player .touch-fire{left:max(14px,env(safe-area-inset-left));width:96px;height:44px}.th02-player .touch-focus{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 134px)}.th02-player .touch-fire{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 82px)}
+.th02-player [data-layout-control][aria-pressed=true],.th02-player [data-layout-control].pressed{background:rgba(91,27,37,.62)!important}
+.th02-player .touch-bomb{left:max(14px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));width:74px;height:74px;border-radius:50%;align-items:center;background:rgba(51,25,29,.58)!important}.th02-player .touch-bomb strong{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;background:#d94d552b;color:#ff858e;font:700 17px Georgia}.th02-player .touch-bomb small{font:700 8px/1 system-ui;letter-spacing:.16em;color:#eee}
+.th02-player .touch-escape{left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));width:42px;height:42px;padding:0;align-items:center;opacity:.72}.th02-player .touch-escape strong{font:700 10px/1 system-ui}
+.th02-player .touch-rescue{right:max(10px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));width:96px;height:44px}
+.th02-player [data-layout-control=confirm],.th02-player [data-layout-control=up],.th02-player [data-layout-control=down]{right:10px;width:104px;height:58px;align-items:center;font-size:13px}.th02-player [data-layout-control=up]{top:calc(50% - 68px)}.th02-player [data-layout-control=down]{top:calc(50% + 2px)}.th02-player [data-layout-control=confirm]{top:calc(50% + 72px)}
+.th02-player:not(.touch-menu):not(.touch-layout-edit) :is([data-layout-control=up],[data-layout-control=down]){display:none}
+.th02-player .touch-help-open,.th02-player .touch-full-open{position:absolute;z-index:40;top:max(10px,env(safe-area-inset-top));height:42px;min-height:0;padding:0 10px;background:#121511d1;border:0;border-radius:10px;color:#eee;font:12px system-ui}.th02-player .touch-help-open{right:max(62px,calc(env(safe-area-inset-right) + 62px))}.th02-player .touch-full-open{right:max(10px,env(safe-area-inset-right));width:42px;font-size:22px}
+@media(max-width:760px){.th02-player .touch-fire,.th02-player .touch-focus{left:max(8px,env(safe-area-inset-left));width:86px;height:40px}.th02-player .touch-bomb{left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));width:64px;height:64px}.th02-player .touch-fire{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 70px)}.th02-player .touch-focus{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 116px)}.th02-player .touch-escape{left:max(8px,env(safe-area-inset-left));width:40px;height:40px}.th02-player .touch-help-open{right:max(56px,calc(env(safe-area-inset-right) + 56px));height:40px}.th02-player .touch-full-open{width:40px;height:40px}}
+
+/* Unified touch workbench: one movable surface, with a clear editing hierarchy. */
+.th02-player .touch-layout-editor{
+  width:min(288px,calc(100% - 32px));max-height:min(470px,calc(100% - 32px));
+  display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;
+  border:1px solid #ffffff16;border-radius:20px;background:#191a17;color:#eee9e1;
+  box-shadow:0 14px 42px #0005;overflow:hidden;
+  font:400 13px/1.5 system-ui;transform-origin:50% 18%;
+}
+.th02-player .touch-layout-editor[hidden],.th02-player .touch-layout-editor [hidden]{display:none!important}
+.touch-workbench-header{display:flex;align-items:center;gap:4px;flex:none;padding:5px 10px}
+.th02-player .touch-layout-editor .touch-layout-editor-copy{display:flex;align-items:center;gap:8px;min-width:0;flex:1;padding:6px 0;touch-action:none;user-select:none}
+.th02-player .touch-layout-editor .touch-workbench-grip{color:#797b70;font:22px/1 sans-serif}
+.th02-player .touch-layout-editor .touch-layout-editor-copy strong{font:700 14px/1.3 system-ui;letter-spacing:0;color:#eee9e1}
+.th02-player .touch-layout-editor .touch-layout-editor-copy em{margin-left:auto;border:0;border-radius:8px;padding:5px 8px;background:#30322c;color:#cbcbbf;font:500 11px/1 system-ui;white-space:nowrap}
+.touch-workbench-collapse{display:grid;place-items:center;flex:none;width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:#b7b8ac;cursor:pointer}
+.touch-workbench-collapse svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .16s ease}
+.is-collapsed .touch-workbench-collapse svg{transform:rotate(180deg)}
+.touch-workbench-body{display:flex;flex-direction:column;min-height:0}
+.touch-workbench-divider{height:0;margin:4px 0 12px;border:0;border-top:1px solid #ffffff14}
+.touch-workbench-scroll{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#53554a transparent;padding:0 16px}
+.touch-layout-arrangement{padding:4px 0 6px}
+.th02-player .touch-layout-editor input[type="range"]{height:34px;touch-action:pan-x}
+.th02-player .touch-layout-editor input[type="range"]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-9px;box-shadow:none;background:#e6b3bf}
+.th02-player .touch-layout-editor input[type="range"]::-moz-range-thumb{width:22px;height:22px;box-shadow:none;background:#e6b3bf}
+.touch-layout-secondary-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.touch-layout-secondary-actions button{min-height:40px;border:0;border-radius:12px;padding:8px 6px;background:#292b25;color:#c6c8b9;font:500 11px/1.4 system-ui;cursor:pointer}
+.touch-workbench-note{margin:14px 0 0;font-size:11px;line-height:1.7;color:#919385}
+.touch-workbench-footer{display:flex;flex-direction:column;gap:8px;flex:none;padding:8px 16px 14px;background:transparent}
+.touch-workbench-footer>small{display:block;font-size:10px;line-height:1.4;color:#8f9183}
+.th02-player .touch-layout-editor .touch-layout-editor-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;justify-self:auto}
+.th02-player .touch-layout-editor .touch-layout-editor-actions button{min-height:40px;border:0;border-radius:12px;padding:8px;font:600 13px/1.2 system-ui;box-shadow:none}
+.th02-player .touch-layout-editor .touch-layout-editor-actions [data-save]{background:#f1e4e6;color:#a93243}
+.th02-player .touch-layout-editor .touch-layout-editor-actions [data-close]{background:#2a2c25;color:#c3c5b6}
+.th02-player .touch-layout-editor .touch-layout-settings{position:static;width:auto;height:auto;max-height:none;display:block;padding:0;margin:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.th02-player .touch-layout-editor .touch-layout-settings-list{display:flex;flex-direction:column;gap:10px;padding:2px 0;border:0;border-radius:0;background:transparent;overflow:visible}
+.th02-player .touch-layout-editor .touch-layout-setting-row{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;min-height:0;padding:0;border:0;border-radius:0;background:transparent;color:#e4e2d7;font:500 11px/1.35 system-ui}
+.th02-player .touch-layout-editor .touch-layout-setting-row:has(>label+ .mizuki-select){grid-template-columns:58px minmax(0,1fr);align-items:center;gap:8px}
+.th02-player .touch-layout-editor .touch-layout-setting-row:has(>.option-switch){grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:14px}
+.th02-player .touch-layout-editor .touch-layout-setting-row small{margin-top:2px;font:400 10px/1.4 system-ui;color:#999b8d}
+.th02-player .touch-layout-editor .touch-layout-setting-row .option-switch{margin:0;align-self:center;min-width:36px;min-height:20px}
+.th02-player .touch-layout-editor .touch-layout-setting-row .option-switch i{top:5px}
+.th02-player .touch-layout-editor .touch-layout-setting-row .mizuki-select-trigger{min-height:30px;padding:6px 8px;border-radius:8px;background:#2a2c25;color:#ddded0;font:500 10px/1.3 system-ui}
+.th02-player .touch-layout-editor .touch-sensitivity-heading output{color:#e6b3bf;font:600 16px/1.2 var(--art-font)}
+.th02-player .touch-layout-editor .touch-sensitivity-presets{gap:4px}
+.th02-player .touch-layout-editor .touch-sensitivity-presets button{min-height:30px;border:0;border-radius:8px;padding:5px 2px;background:#2a2c25;color:#c9cbbb;font:600 10px/1.2 system-ui;transition:background-color .15s,color .15s}
+.th02-player .touch-layout-editor .touch-sensitivity-presets button.selected{background:#f1e4e6;color:#a93243}
+.th02-player .touch-layout-editor .touch-sensitivity-custom{grid-template-columns:1fr;gap:2px}
+.th02-player .touch-layout-editor .touch-sensitivity-custom>span{font-size:10px;color:#a4a697}
+.th02-player .touch-layout-editor .touch-layout-viewport-actions{gap:6px}
+.th02-player .touch-layout-editor .touch-layout-viewport-actions button{min-height:30px;border-radius:8px;padding:5px 8px;font-size:10px;box-shadow:none}
+.th02-player .touch-layout-editor .touch-layout-viewport-actions #touchViewportAdjust{background:#423035;color:#ead2d8}
+.th02-player .touch-layout-editor button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.th02-player .touch-layout-editor button:active{transform:scale(.97)}
+.th02-player .touch-layout-editor button:focus-visible{outline:2px solid #e6b3bf;outline-offset:2px}
+.th02-player .touch-layout-editor.is-collapsed{width:min(240px,calc(100% - 32px));border-radius:18px}
+.th02-player .touch-layout-editor.is-collapsed .touch-workbench-header{padding:5px 10px}
+.player.touch-layout-preparing{opacity:0}
+@media(orientation:portrait){.th02-player .touch-layout-editor{max-height:min(430px,50dvh)}}
+@media(max-height:500px){.th02-player .touch-layout-editor{width:min(288px,calc(100% - 32px))}.touch-workbench-header{padding:5px 10px}.touch-workbench-footer{padding:10px 16px}.touch-workbench-footer>small{display:none}}
+
+/* TH04 adapter: only game-specific actions differ from the TH06 workbench. */
+.th02-player .touch-layout-editor{position:absolute;z-index:50;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%)}
+.th02-player .touch-layout-editor .player-movement{position:static;display:grid;gap:12px;padding:8px 0;width:100%;max-width:none;background:none}
+.th02-player .touch-layout-editor label{display:block;font:500 11px/1.5 system-ui;color:#e4e2d7}
+.th02-player .touch-layout-editor input[type=checkbox]{width:auto;min-height:0;accent-color:#e6b3bf}
+.th02-player .touch-layout-editor input[type=range]{width:100%;padding:0;accent-color:#e6b3bf}
+.th02-player .touch-layout-editor select{width:100%;min-width:0;padding:6px;background:#292b25;color:#eee;border:0;border-radius:8px}
+.th02-player .touch-layout-editor .player-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
+.th02-player .touch-layout-editor button{min-height:30px;border:0;border-radius:8px;padding:6px 8px;background:#292b25;color:#c9cbbb;font:500 11px/1.3 system-ui}
+.th02-player .touch-layout-editor .touch-workbench-collapse{width:40px;height:40px;padding:0;font-size:22px;background:transparent}
+.th02-player .touch-layout-size{display:grid!important;grid-template-columns:auto minmax(0,1fr) 40px;align-items:center;gap:6px}
+.th02-player .touch-layout-editor header{cursor:move;touch-action:none}
+.th02-player .touch-layout-editor footer{margin:0}
+.th02-player .touch-layout-editor .player-menu-directions{display:none}
+.touch-layout-safe-zone{position:absolute;z-index:29;inset:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));pointer-events:none}
+.touch-layout-edit .touch-layout-safe-zone{border:1px dashed #ffffff2e;border-radius:12px}
+.layout-resize{display:none}
+.touch-layout-edit .layout-resize{display:grid;position:absolute;right:-8px;bottom:-8px;width:24px;height:24px;place-items:center;border-radius:50%;background:#a93243;color:white;font:12px system-ui;touch-action:none}
+.th02-player.touch-layout-edit [data-layout-control]{display:flex;outline:1px dashed #eee;cursor:move}
+.th02-player.touch-layout-edit .touch-layout-selected{outline:2px solid #fff;box-shadow:0 0 0 3px #d94d55}
+.touch-layout-edit .touch-surface{pointer-events:none}
+.th02-player.touch-layout-edit>.touch-help-open,.th02-player.touch-layout-edit>.touch-full-open{display:none}
+.th02-player [data-layout-control].custom-position{right:auto;bottom:auto;transform:translate(-50%,-50%) scale(var(--control-scale,1));transform-origin:center}
+.th02-player .player-stage>.screen,.th02-player .player-stage>iframe{transform:translateX(var(--viewport-offset,0px))}
+.th02-player .player-diagnostics{z-index:60}
+.th02-player [data-layout-control]{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;box-shadow:0 4px 12px #00000042,inset 0 0 0 1px #ffffff09}
+.th02-player .touch-bomb{box-shadow:0 5px 14px #0000004d,inset 0 0 0 1px #ffffff08}
+
+
+/* Original solo menus also need left/right for character and option choices. */
+.th02-player.solo-player [data-layout-control=left],.th02-player.solo-player [data-layout-control=right]{width:44px;height:40px;align-items:center;top:calc(50% + 2px)}
+.th02-player.solo-player [data-layout-control=left]{right:106px}
+.th02-player.solo-player [data-layout-control=right]{right:10px}
+.th02-player.solo-player [data-layout-control=up],.th02-player.solo-player [data-layout-control=down]{right:58px;width:44px}
+.th02-player.solo-player [data-layout-control=confirm]{right:58px;width:44px;top:calc(50% + 50px)}
+.th02-player.solo-player:not(.touch-menu):not(.touch-layout-edit) :is([data-layout-control=left],[data-layout-control=right]){display:none}
+.th02-player.solo-player [data-layout-control].custom-position{right:auto}
+
+.th02-player.solo-player [data-layout-control=confirm]{width:64px;right:48px;padding:4px;white-space:nowrap}
+.th02-player.solo-player [data-layout-control=confirm] strong{letter-spacing:0}
+.th02-player.solo-player [data-layout-control=confirm].custom-position{right:auto}

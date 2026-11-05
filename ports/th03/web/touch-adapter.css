@@ -1,0 +1,12 @@
+.th03-player { height: min(85dvh, 800px); margin: 0; border: 0; border-radius: 0; }
+.th03-player #cover { z-index: 5; }
+.th03-player #pause-shade { z-index: 44; }
+.th03-player #pause-menu { z-index: 45; }
+.th03-player .touch-layout-editor header { margin: 0; }
+.th03-player [data-layout-control] strong { letter-spacing: 0; }
+.th03-player .touch-surface { -webkit-tap-highlight-color: transparent; }
+.players .touch-controls { display: none; }
+body.embedded .players .p2 { display: none; }
+@media (orientation: portrait) {
+  .th03-player { height: 70dvh; min-height: 400px; }
+}

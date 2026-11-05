@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "game": "TH03",
+  "sampleRate": 44100,
+  "channels": 1,
+  "source": {
+    "ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22
+    ],
+    "bankSha256": "d535609f167eca0f6f26e8eb0fc7f27b16ae1607de931f0dc74de73ad9511262",
+    "driverSha256": "cbbe9bd610aedda586d8bd7f6dd13d21f037a089458a21ddda0b11a53b4b29e4",
+    "renderer": "original PMD.COM in DOSBox-X PC-98, isolated effect, no BGM"
+  },
+  "effects": {
+    "1": {
+      "url": "se-01.wav",
+      "bytes": 10838,
+      "sha256": "996cca2ffecd2db64b2324489c462d589f018f902a45a5264d82e847750e6840",
+      "duration": 0.12238095238095238
+    },
+    "2": {
+      "url": "se-02.wav",
+      "bytes": 262104,
+      "sha256": "44fdcc02d10271146e9019f792735fed9c868deaa10f527838d5a847fb7337a7",
+      "duration": 2.971201814058957
+    },
+    "3": {
+      "url": "se-03.wav",
+      "bytes": 64478,
+      "sha256": "6edfe6d6340182299fb709357c24194c1bae4488ead754fa93dbf3acf3cee9ec",
+      "duration": 0.7305442176870748
+    },
+    "4": {
+      "url": "se-04.wav",
+      "bytes": 15708,
+      "sha256": "41d3781f10142468197fd12c36aa982960a2c7fd51fbeaa308d254b9c2de6e1d",
+      "duration": 0.17759637188208616
+    },
+    "5": {
+      "url": "se-05.wav",
+      "bytes": 289212,
+      "sha256": "457b0baaae06b083a46c524163b900d89efcc4aa169e8d7248bba72e1de5bffe",
+      "duration": 3.278548752834467
+    },
+    "6": {
+      "url": "se-06.wav",
+      "bytes": 79116,
+      "sha256": "11b752b2ab06fcec59c0e1d97267196e99cc714e6c698395171d10d41e5d552d",
+      "duration": 0.8965079365079365
+    },
+    "7": {
+      "url": "se-07.wav",
+      "bytes": 59608,
+      "sha256": "f35532a584d84e1bfc46df6f2c4dc46d74115528d4de404100a99c3b1b48a295",
+      "duration": 0.675328798185941
+    },
+    "8": {
+      "url": "se-08.wav",
+      "bytes": 143180,
+      "sha256": "9ccd2f07be434c0b7a179961a525cb04a370bc6f516dc09b3b36862bbe9e023c",
+      "duration": 1.6228571428571428
+    },
+    "9": {
+      "url": "se-09.wav",
+      "bytes": 516986,
+      "sha256": "4040a70e23792fcf7ed19553095abfa2c0db2f47ae4534817e429d4038223c13",
+      "duration": 5.861020408163266
+    },
+    "10": {
+      "url": "se-10.wav",
+      "bytes": 201576,
+      "sha256": "0d27d4df07b11864cdd7035ee9a2801d26c87a6e055da4098b9c945a76b7a6aa",
+      "duration": 2.2849433106575963
+    },
+    "11": {
+      "url": "se-11.wav",
+      "bytes": 10836,
+      "sha256": "80cde9c7c8a1b96709241d590cd404a73d526c1ff89f8384b2871ae88b9dbfe6",
+      "duration": 0.12235827664399093
+    },
+    "12": {
+      "url": "se-12.wav",
+      "bytes": 290892,
+      "sha256": "c9918638d48321e0410fc9f74d8b37a62a197ca2f17182fb1bad2e1667d8241c",
+      "duration": 3.297596371882086
+    },
+    "13": {
+      "url": "se-13.wav",
+      "bytes": 194708,
+      "sha256": "25245205095a35c4d09135277a232636038c1e2ecb0720ce890f1ecb11c67662",
+      "duration": 2.207074829931973
+    },
+    "14": {
+      "url": "se-14.wav",
+      "bytes": 370560,
+      "sha256": "1695e4ac3e78d998d5b6d437673b7fd501655189b4fba12cdd57cdbcc101cdc4",
+      "duration": 4.200861678004535
+    },
+    "15": {
+      "url": "se-15.wav",
+      "bytes": 318238,
+      "sha256": "584398e5121fc0a60fd1f3924d4388d271bfab2e7eb628331683d73f231088d3",
+      "duration": 3.607641723356009
+    },
+    "16": {
+      "url": "se-16.wav",
+      "bytes": 153886,
+      "sha256": "884ef522be0239b1af8062750a0a8c31f8f52e5693f49cd84544aebacc115076",
+      "duration": 1.7442403628117913
+    },
+    "17": {
+      "url": "se-17.wav",
+      "bytes": 573232,
+      "sha256": "2f6f52e84d4bf5966f535b78e7296470449262f802f1c3ab483307c24ca25817",
+      "duration": 6.498730158730159
+    },
+    "18": {
+      "url": "se-18.wav",
+      "bytes": 347394,
+      "sha256": "da2ed079460727410444a9b30f3d4744fe9752e29e09c4d273b221f9e2f69d94",
+      "duration": 3.938208616780045
+    },
+    "19": {
+      "url": "se-19.wav",
+      "bytes": 88852,
+      "sha256": "c760a552123892acf21bff97374434775a99258a5bdb4f5621a4e18feb00d834",
+      "duration": 1.0068934240362812
+    },
+    "20": {
+      "url": "se-20.wav",
+      "bytes": 79118,
+      "sha256": "3ade9ad8b0bf5372935aa10233fa5d4f525ce2da1f8e1cfef480c66d31b3952b",
+      "duration": 0.8965306122448979
+    },
+    "21": {
+      "url": "se-21.wav",
+      "bytes": 128294,
+      "sha256": "1610effeb630798c6b8deb4ac498b6d0008d3c253f43552c7bbac13aa5617c39",
+      "duration": 1.4540816326530612
+    },
+    "22": {
+      "url": "se-22.wav",
+      "bytes": 166216,
+      "sha256": "4a3b567a526e24f3a79de1375e1920ed657396e919a4ac0a55f2d51621aaafdc",
+      "duration": 1.8840362811791382
+    }
+  }
+}

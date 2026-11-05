@@ -1,0 +1,9 @@
+#game>.launch-settings,#game>.launch-toolbar,#game>.players{display:none}
+#game .screen{position:relative;aspect-ratio:8/5;overflow:hidden;background:#000}
+#game canvas{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+#game #cover:not([hidden]){position:absolute;inset:0;display:grid;place-items:center;background:#10110f}
+#game #pause-shade{position:absolute;inset:0}
+#game #pause-menu{position:absolute;z-index:40}
+#game>.toolbar .commands:last-child{display:none}
+#game .th03-player:not(.immersive):not(:fullscreen){height:clamp(400px,62.5vw,800px);min-height:0}
+#game .th03-player .player-stage>.screen{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}

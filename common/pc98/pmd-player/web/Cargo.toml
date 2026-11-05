@@ -1,0 +1,11 @@
+[package]
+name = "pc98-pmd-web"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pmd-core = { path = "../pmd-core" }

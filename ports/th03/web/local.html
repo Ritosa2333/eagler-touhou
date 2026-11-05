@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>东方梦时空 · 本地双人</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="site-adapter.css">
+  <link rel="stylesheet" href="player-ui.css">
+  <link rel="stylesheet" href="touch-overlay.css">
+  <link rel="stylesheet" href="touch-adapter.css">
+</head>
+<body class="shell game-page">
+<header class="masthead"><a class="brand" href="index.html">TOUHOU / 03 · 测试 beta0.3 · 性能版</a><small>東方夢時空 · PHANTASMAGORIA OF DIM.DREAM</small></header><nav class="mode-nav" aria-label="游戏模式"><a data-mode="solo" href="solo.html">单机游戏</a><a data-mode="local" aria-current="page" href="local.html">本地双人</a><a data-mode="lan" data-network="lan" href="lan.html?network=lan">局域网联机</a><a data-mode="public" data-network="public" href="lan.html?network=public">公网联机</a></nav>
+  <main>
+    <header class="intro"><span class="eyebrow">LOCAL / TWO PLAYERS</span><h1>本地双人</h1><p>一台电脑，两位玩家。选择游戏版本与难度，再进入原生双人选人画面。</p></header>
+<section class="panel local-music-settings" aria-label="本机音乐">
+<label class="bgm-version">本机音乐 <select data-bgm-version-control aria-label="本机音乐版本"><option value="old">游戏原版</option><option value="new">幺乐团专辑版</option></select><small data-bgm-restart-note></small></label>
+<p class="muted">仅影响本机播放的音乐，不改变其他玩家的选择；自动保存，游戏中切换会从头播放当前曲目。</p>
+</section>
+
+    <fieldset class="launch-settings"><legend>本局设置</legend><div class="settings-grid">
+      <label>游戏语言 <select id="language"><option value="jp">日文原版</option><option value="cn">中文汉化</option></select></label>
+      <label>难度 <select id="difficulty"><option value="0">Easy</option><option value="1">Normal</option><option value="2">Hard</option><option value="3" selected>Lunatic</option></select></label>
+      <select id="clock" hidden aria-hidden="true"><option value="32" selected>自动</option></select>
+    </div></fieldset>
+    <div class="row launch-toolbar"><button id="start" class="primary" type="button">启动游戏 →</button><span class="muted">1P 方向键 / Z / X · 2P WASD / J / L</span></div>
+    <p id="connection-path" role="status" hidden></p>
+    <section id="screen" class="screen" aria-label="游戏">
+      <canvas id="canvas" width="640" height="400" tabindex="0" aria-label="梦时空游戏画面"></canvas>
+      <div id="cover"><span>选择本局设置，点击“启动游戏”。</span></div>
+      <div id="pause-shade" hidden></div>
+      <section id="pause-menu" hidden lang="ja" role="dialog" aria-modal="true" aria-labelledby="pause-title" aria-describedby="pause-help pause-message" data-seat="0">
+        <h2 id="pause-title">1P 一時停止</h2>
+        <button type="button" data-choice="resume">再開</button>
+        <button type="button" data-choice="round" disabled>ラウンド降参</button>
+        <button type="button" data-choice="match" disabled>背水の陣</button>
+        <p id="pause-help"></p>
+        <p id="pause-message" role="status" aria-live="polite"></p>
+      </section>
+    </section>
+    <nav class="toolbar" aria-label="游戏控制">
+      <div class="commands">
+        <button id="reset" type="button" disabled>重启</button>
+        <button id="fullscreen" type="button">全屏</button>
+        <button id="controls" type="button">操作设置</button>
+      </div>
+      <div class="commands">
+        <button id="export" type="button" disabled>导出存档</button>
+        <label class="file-button">导入存档<input id="import" type="file" accept=".hdi" aria-label="导入存档"></label>
+      </div>
+    </nav>
+    <div class="status"><span id="status" role="status" aria-live="polite">等待启动</span><span id="save-status"></span></div>
+    <details class="performance-details"><summary>性能与音乐状态</summary><pre id="performance-stats" style="white-space:pre-wrap">等待游戏启动</pre></details>
+    <section class="players" aria-label="双人操作">
+      <div class="player p1"><div class="player-heading"><strong>1P</strong><span id="summary-0"></span></div><div class="touch-controls" data-slot="0"></div></div>
+      <div class="player p2"><div class="player-heading"><strong>2P</strong><span id="summary-1"></span></div><div class="touch-controls" data-slot="1"></div></div>
+    </section>
+  </main>
+<footer class="footer"><a href="index.html">← 返回启动器</a><span>TH03 · PHANTASMAGORIA OF DIM.DREAM</span></footer>
+  <dialog id="settings">
+    <form method="dialog" class="dialog-heading"><h2>操作设置</h2><button type="submit" aria-label="关闭操作设置">关闭</button></form>
+    <div id="bindings"></div>
+    <div class="focus-settings" aria-label="低速设置">
+      <fieldset><legend>1P</legend><label><input id="focus-enabled-0" type="checkbox" checked>启用低速模式</label><label><input id="focus-points-0" type="checkbox" checked>低速时显示判定点</label></fieldset>
+      <fieldset><legend>2P</legend><label><input id="focus-enabled-1" type="checkbox" checked>启用低速模式</label><label><input id="focus-points-1" type="checkbox" checked>低速时显示判定点</label></fieldset>
+    </div>
+    <p class="control-hint">按住低速键减速至一半；默认 1P 空格、2P 左 Ctrl。手柄 RB / R1 低速。</p>
+    <div class="pad-settings"><label>1P 手柄<select id="pad-0"></select></label><label>2P 手柄<select id="pad-1"></select></label></div>
+    <div class="settings-footer"><span id="binding-status" role="status"></span><button id="defaults" type="button">恢复默认键位</button></div>
+  </dialog>
+  <script type="module" src="app.js"></script>
+<script type="module" src="bgm-version.js"></script></body>
+</html>

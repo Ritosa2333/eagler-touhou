@@ -1,0 +1,197 @@
+{
+  "game": "TH03",
+  "cycles": 16000,
+  "tickHz": 60,
+  "snapshotStride": 2,
+  "idleFusion": "th03-battle-wait-four-instructions",
+  "zeroTimeCooperativeYields": true,
+  "sourceRevisions": {
+    "emulators": "6bbf0925d221a7304ea8e0dda1e89b8dc01569b2",
+    "dosbox-x": "788fde99d3d451eab3621009186e5abe516f2b9c"
+  },
+  "gameplayAccepted": false,
+  "files": {
+    "dosbox-rollback.mjs": "6413468063aab490225edaf90d0fc5af42675ab83220f599bb45c5b78e4dc7dd",
+    "dosbox-rollback-tracked.mjs": "6519cdb4b4d0bef1b63e534d5f25f3de2124c1859b5783462120d8147b6ee5aa",
+    "wdosbox-x-rollback.wasm": "cc557b7af3651f166c59968310863d300e7caa23830fff300cde2a1a9c3c2bd3",
+    "wdosbox-x-rollback-tracked.wasm": "270d5d491e09f04028d4f89cf828c1d6c4a8ad462ecdcfb326193117f8602a99",
+    "snapshot-diff-tracked.wasm": "d3eff5c0bb6c0dd7df1abb1f61ae38ff15b7139b7fdb3142bab465e13c564bec"
+  },
+  "sourceTools": {
+    "audit_native_build.cjs": "7627bcce9196f31fcc6a8680f82921cf2c43a97e57cab5ce6d27452cef3f48c6",
+    "build_native_hash.cjs": "b12bf8806821767a06a4d3694dbb8122caa271f1b697fa9d290bff564ee59256",
+    "build_native_scheduler.py": "2aac8476d6d4bd3d4cb03d4eb8885db94ee6e05f63b1134a61c6573723a55829",
+    "build_native_scheduler_tracked.cjs": "870728c100e7dae3c0263ec5068981a5a9befffbde6c865e1128610e0840dd76",
+    "instrument_native_scheduler.ps1": "5b5be111a2dbff8fdd85fb4f46d460c46339ea586dac010386c688f3e78d09bd",
+    "native-cpu-helpers.h": "cbf12814fb0a00437e647a5749d6b1e53c49d766497955bc043235a428d3bc19",
+    "native-cpu-memory.h": "19628a04e388a9f7da1dd213cf2e6ee8c421241cd1b1fa3b3e00b25962d3e417",
+    "native-cpu-preflight.h": "40fcc6d28748d113e683d5fc6b45d6ab359c3f5cf0abc0de7165f1e7b59c15f0",
+    "native-scheduler-clock.cpp": "3ce2dd7d42ecce0d7cf0a4d4aeda4ec13b355cd9e90089f97c32ec04f13d643a",
+    "native-scheduler-clock.h": "6a95d4bbbd87a5269cfa9aefa0e8ded8f5d389b0919add976cb02a501ad14a64",
+    "native_scheduler_server.py": "1addb6dfec27535b71d70f74189eaeec04748e997be443d1e0347606c589b208",
+    "patch_native_scheduler.py": "9bb008c5ebe76433c7a950dbdaeda046f577e354c5284d659ed591fe6352d39f",
+    "prepare_native_scheduler.py": "5831311be409ecee57fdba2ff5415175ae927171a44f04f8390e369f30235010",
+    "prepare_native_scheduler_runtime.cjs": "f7ee1cfe429c2f9296bf0ea34da70783a6e24719159d520a14026f078e2c24f3",
+    "profile_native_hash.cjs": "d6ec8931228c3722985641b28a508bb3b03fcfaf2ac5175ab2c779d2338d18b9",
+    "test_music_native.py": "f5bd701161291e58e3b29afd7702cf08bcd65ff35ee96627dc76a09d1b98a79b",
+    "test_native_hash.mjs": "aa822a89e402f96bc8c8c106ba48818b20ed7720f7b55c3ec9c22c78d74de8fb",
+    "test_native_snapshots.mjs": "ed4ea8052e510cfbb8a41d4f0c3ea6caafaf85f3b28ed4405e6d9afdb51e15f6",
+    "test_solo_native.py": "a72693efa8d657724acda6126f67988ba7a9574e2b670cdf492e76c60aa7045a",
+    "test_th03_native_core.cjs": "ac9624cb6f26bd4eeae6a7464fc7bf5d1d1f8e02bbf54e2638073dadd4e3d116",
+    "test_touch_native.py": "5fcbd1abab7d63dc761e49537634a0c2aa135167b5a735be626c17325bad6f65",
+    "patch_pc98_planar.py": "57f732004a51fedacc15409624ffcea3eac940fe0efeaab1d5d269bab054cf35",
+    "build_memcmp_candidate.mjs": "f5351db8cbc445f2a91c7272e8cfdf6063c96f0fa95ca621ce60136da42b5bf2",
+    "build_dirty_core.mjs": "fd0a1daad80da64c97618d9e4c68dbb00b426f91d721b745ef0ab59f54bb1a2a",
+    "prepare_dirty_runtime.cjs": "35bbe3cf9631e3ee32ff83cfc1c1cbfb52c325e20684af0ca2846df1d0f887f5",
+    "build_th03_core_candidate.py": "2a0d5a6fc9a43b6d3dd37c27b193ba2377442c0f594fbe4a73124395ba4855dd",
+    "build_th03_snapshot_candidate.cjs": "51f5ee8991256d85d7c0d38bfe204d504563f81494aea7734c382850a04daaf3",
+    "snapshot-diff.wat": "2a64594bfbebb784a5af56aeb57eec1846bad7f169abf53dc3be094ae46db56b"
+  },
+  "rawWasmSha256": "bcccb737e3eb713f5c939e4d914795c8c3954a44d0663706886aebbc4a5c79b5",
+  "parentCandidateSha256": "24ce890c9d98d8c77a9031efc47aa863e68a52230f025e4720403895d8fb2b36",
+  "snapshotScan": "adaptive-word8",
+  "releaseProfile": {
+    "nativeScheduling": true,
+    "nativeCpu": true,
+    "nativePlanar": false,
+    "nativeFramePresentation": false
+  },
+  "localRuntimeFiles": {
+    "wdosbox-x-fast.wasm": "bcf82c465a012bd19c0999a31c5fb15efcee6d32b28bd4f7d23ca1a030e92cee",
+    "wdosbox-x-jspi.wasm": "c154235667747e613be00d0955f068b54cbf8e1fb8e5c34d34e5552292f4c72a",
+    "dosbox-jspi.mjs": "b762346410a2ca8d66af37a6e48024bb8b28376bbb83d3b84020f305e94a677e"
+  },
+  "behaviorFiles": {
+    "disks/manifest.json": "7ae3cfd3bbb1c3af1e1a89d635c5ec6e3eeca13dd680d9758e21117e5091edda",
+    "native-patch.json": "11ff9c5473d2497d96b0ada615685155decda5078c6bb3340722e5b47159a2ac",
+    "native/main.exe": "70e1b6ccb6b0d4491117ff16e794a31d99c8ddf07dbdcf5fca3bc44e2f57ac90",
+    "native/start.com": "56936478df4a99bc5c80e87b88243d607d52d4845f21e0d5a76b49b7fa8b51e4",
+    "native/music.com": "46ecae8ab9e22a4d99f847cdbd019d724925134a80d821981c6b8195721cfe56",
+    "controls.js": "ab98a2e219bcc6cb76aac6cabce326cf58ecd03a6cee05a9b2370565b5b510ca",
+    "fire-control.js": "5a97f636996386694884cf110c20db9478df19e00b7ab79de0e3ac915f123c2f",
+    "native-music.js": "fdbb791ca9e5b7c920ab1b4fd9cce6c18163ed5a4a676c1b8739d139a6d22b4e",
+    "lockstep.js": "7294c1ef065cc27ddf491285d9b205117b20ed2dd1efde1c4ef7e46fe3c651db",
+    "dosbox-disk.js": "37ebddc4bfe02cfb3d53bfaee5cde69efbc1a63d8b1c4672332b18fdf0860694",
+    "frame-queue.js": "38e42220c06cd820254cf804c1ac25140ddc3b74a67338c84c712535188ce514",
+    "netplay.js": "8f39c1c80aa277bf62a742e90c88f532059966f01b8a1e236a44d0d411737ac0",
+    "netplay/input-policy.js": "82b449760fcb066099c6e7bfb639f8c84a62270a1f9b711a372f1cca90afd2f7",
+    "native-pause.js": "76c91720c9358efd910382c2fabe0a7a0d454a9df106a64014adaf6a9101cf4f",
+    "netplay/async-lockstep.js": "2afb38800e11ffaddbdc39f272a0e8b24649347cd07d6a9fb1e4f9b296289fb7",
+    "netplay/frame-controls.js": "36ab58422ec4814c3002da3ea269bd68ce4cc433883fcd78d0eb5ca80f7c17c4",
+    "netplay/simulation.js": "db1cde530a11784d90b3caa9b3b07ef851f2e7360ad83d438f0c4457c4ee9cb8",
+    "netplay/simulation-worker.js": "b8fb2d17719a5bbba7434e260beebce18a75da181bfebcfe4e0bfe69f6c70d05",
+    "netplay/simulation-client.js": "860d153dcd42d366d3deb6d4ef3b1a9abd3191c2b0c7e669d7e3195508a7c617"
+  },
+  "browserTextEol": "LF",
+  "normalizedBrowserText": {
+    "native-patch.json": {
+      "before": "6c8da21dbb851955391494852719aa2a9e1a7786e42cbf938cbfa3dc15931c8e",
+      "after": "11ff9c5473d2497d96b0ada615685155decda5078c6bb3340722e5b47159a2ac"
+    },
+    "player-ui.js": {
+      "before": "08b81ad80585a2ad045b816221a835991676802dc231308a270371e10ec371a4",
+      "after": "61761d4e7c16349610d2465794fac683340791339897b5df2fad8ba1d8c3b63c"
+    },
+    "solo-assist.json": {
+      "before": "6c0951fa1dc1bd5578df3192bfb0e71727486520e724cba17928852fc8f39479",
+      "after": "e31a83b69765df91c9c87b7a3b670f289d40b15bc6f23783b43b200270cd6f5a"
+    },
+    "solo-music.js": {
+      "before": "5759129ac7f738b0a0d5a396cea5acc0bf13809155887ba4295b73a230a18540",
+      "after": "15f2618acdf7c1907a79a19ec12cbe88446084ac4d5265039251b828495bde0f"
+    },
+    "solo-music.json": {
+      "before": "0ba8dc520288a861f92efb09a5f8e24403c73d6f33967bf5a79900218a83c9ba",
+      "after": "a8818856328fe2c454e857fc62e1fe0625b72b15623138e306ed43836806c66a"
+    },
+    "solo-worker-client.js": {
+      "before": "7dedf3bb479f0127ce04de82a5919415a18a36a6317a716e71f15abdcccb53a8",
+      "after": "af3cecfe575e5feadc00c42e09bf1310945105b35dfbe8a4be4190fd1ff013f9"
+    },
+    "touch-overlay.css": {
+      "before": "b484dac8f23122d25ae507c873ea2ea4b1f2c725520c2c954d2b8cdbd6d91f38",
+      "after": "c09495fb75c2de83ad71335ff38bd9df57dbed9ffe741880acf29cc65f0bc611"
+    },
+    "bgm/manifest.json": {
+      "before": "98ecaf0c7bdf20d2dbf785246c2eb4468496bfc595c8fd403acbb33c233a9b19",
+      "after": "b31757c63d8454083b56e80a32f8911f39072725dd645be1ca6a545942e18cd8"
+    },
+    "disks/manifest.json": {
+      "before": "76872109412660d892c69a62dcf2b8bbe7068837280590928858271c390e2460",
+      "after": "7ae3cfd3bbb1c3af1e1a89d635c5ec6e3eeca13dd680d9758e21117e5091edda"
+    }
+  },
+  "battleIdle": {
+    "loops": [
+      {
+        "file": "main.exe",
+        "sha256": "70e1b6ccb6b0d4491117ff16e794a31d99c8ddf07dbdcf5fca3bc44e2f57ac90",
+        "offsets": [
+          45631,
+          45668
+        ]
+      },
+      {
+        "file": "solo-main.exe",
+        "sha256": "338f066d59a5f7c106af9b6d4a1154b8c04a1db91175e10262c01be6d58e6da5",
+        "offsets": [
+          45631,
+          45668
+        ]
+      },
+      {
+        "file": "original-main.exe",
+        "sha256": "f41fde47ea36bf4d985ff9127b67fe93d5ecb58cc36e7cffab86959db7f2ce6b",
+        "offsets": [
+          45631,
+          45668
+        ]
+      }
+    ],
+    "builderSha256": "f9c0fdd5cece8b6f57ade253407a7e143d415e1da5ad6b669f82ca124d49a0ef",
+    "parentCores": {
+      "wdosbox-x-rollback.wasm": "3712f15fcf85f49fc1a5f3dd97f53071114e15ced190e113c92d075c03b3d520",
+      "wdosbox-x-rollback-tracked.wasm": "e28fec0e9bb9ca212e5c911d9c19a11cfba5f894f2ba53d6136a8c44a6193745"
+    }
+  },
+  "inputPolicy": {
+    "mode": "room-rtt-hybrid",
+    "minInputDelay": 0,
+    "maxInputDelay": 6,
+    "zeroDelayRttMs": 20,
+    "rttSamples": 3,
+    "directionPrediction": 6,
+    "maxPredictionLead": 4,
+    "maxRollback": 12,
+    "lockstepBootDelay": 2,
+    "schedulingMarginSteps": 0,
+    "policySchema": 2,
+    "hybridReserveSteps": 2,
+    "predictionJitterSteps": 2
+  },
+  "bridgeLifecycle": {
+    "version": 1,
+    "pauseWrites": "battle-phase-only",
+    "dosRange": "cached-and-rollbackable"
+  },
+  "confirmationDedupe": {
+    "version": 1,
+    "boundaries": [
+      "confirmed-prefix",
+      "snapshot-retention"
+    ],
+    "invalidateOnRestore": true
+  },
+  "inputSampling": {
+    "version": 1,
+    "keyboardEventSampling": true,
+    "liveFrontierCapture": true
+  },
+  "networkWorker": {
+    "version": 1,
+    "default": "page",
+    "selection": "per-device-opt-in",
+    "maxImageTransfers": 2,
+    "serializedGuestTransactions": true
+  }
+}

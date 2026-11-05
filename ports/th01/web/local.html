@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#11131a"><title>东方灵异传 · 本地合作</title>
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="site.css"><link rel="stylesheet" href="site-adapter.css">
+</head>
+<body class="shell game-page" data-page="local">
+<div id="site-header"></div><main>
+<header class="intro"><span class="eyebrow">HIGHLY RESPONSIVE TO PRAYERS / LOCAL</span><h1>本地合作</h1><p>同一台设备支持双人或三人。在网页选择人数、难度与玉数，开始后直接进入所选关卡。</p></header>
+  <section id="setup" class="setup panel" aria-label="启动设置"><div class="settings-grid">
+    <label>人数<select id="players"><option value="2">双人合作</option><option value="3" selected>三人合作</option></select></label>
+    <label>阴阳玉<select id="orbs"><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option selected>8</option></select></label>
+    <label>难度<select id="difficulty"><option value="0">Easy</option><option value="1">Normal</option><option value="2">Hard</option><option value="3">Lunatic</option></select></label>
+    <label>起始关卡<select id="startStage"><option value="normal">正常流程 · 从第 1 关开始</option></select></label>
+    <label class="check"><input type="checkbox" id="compensation" checked>多玉生命补偿</label>
+    <label class="check"><input type="checkbox" id="reducedFlash" checked>柔和 Bomb</label>
+</div><p id="setupSummary" class="muted" aria-live="polite"></p><div class="row"><button id="start" class="primary" disabled>加载游戏资源…</button><button id="cancelSetup" hidden>返回当前游戏</button></div><p class="small">同一台设备支持双人或三人。在网页选择人数、难度与玉数，开始后直接进入所选关卡。 所有普通关等待任意玩家射击后开球和倒计时。</p></section>
+<section id="player" class="player panel" hidden><div class="toolbar"><button id="settings">重新设置</button><button id="title">标题</button><button id="scores">成绩记录</button><button id="restart">重新开始</button><button id="pause">暂停</button><button id="music">音乐：开（待操作）</button><button id="sfx">音效：开</button><button id="fullscreen" aria-label="全屏">全屏 ↗</button>
+  </div>
+  <p id="sessionSettings" class="small"></p>
+  <nav id="menuControls" aria-label="菜单操作" hidden><button data-menu="0">↑</button><button data-menu="1">↓</button><button data-menu="2">←</button><button data-menu="3">→</button><button data-menu="4">确定 Z</button><button data-menu="5">返回 X</button><button id="saveName" hidden>保存姓名 Enter</button></nav>
+  <p id="scoreStatus" class="small" aria-live="polite"></p>
+  <section class="stage" id="stage">
+    <canvas id="game" width="640" height="400" tabindex="0" aria-label="东方灵异传游戏画面"></canvas>
+    <div class="touch" id="touch" aria-label="触屏操作">
+      <div class="touch-left"><button data-bit="1" aria-label="向左移动">◀</button><button data-bit="2" aria-label="向右移动">▶</button></div>
+      <div class="touch-right"><button data-bit="4">射击</button><button data-bit="8">御币</button><button data-bit="16">Bomb</button></div>
+    </div>
+  </section>
+  <div class="statusline" id="overlay"><span id="phaseLabel">正在加载</span><span id="phaseTitle">准备游戏…</span><span id="phaseHint">加载资源</span><button id="launch" hidden>开球</button></div>
+  </section>
+  <section class="details"><div><h3>操作</h3><div class="keyrow"><b>P1</b><span>← → 移动 · Z 射击 · X 御币 · C Bomb</span></div><div class="keyrow"><b>P2</b><span>A D 移动 · J 射击 · K 御币 · L Bomb</span></div><div class="keyrow"><b>P3</b><span>F H 移动 · T 射击 · Y 御币 · U Bomb</span></div><p class="small">Esc / 空格暂停 · F10 第五关试玩 · Enter 进入下一关或续关</p></div><div class="scope"><h3>这一版可以体验什么</h3><p>神社与魔界／地狱两条路线的全部普通关卡，原作布局、背景、音乐、计时、炮台、传送门与挡板；保留多玉、合作和幽灵救援。</p><p>第五关 SinGyoku、两路线第 10 关 Boss 和第 15 关 Elis／菊理已接入，含路线选择与 Boss 结算；魔界最终关 Sariel 双形态已接入；地狱最终关矜羯罗（Konngara）已接入，两个路线均可击破最终 Boss 并进入结尾、评定和成绩登记。</p></div></section>
+    <details class="diagnostics" hidden><summary>测试与调试（F8 无敌）</summary><div class="debug-controls"><label class="check"><input type="checkbox" id="god">测试无敌</label><label>触屏控制<select id="touchSlot"><option value="0">P1</option><option value="1">P2</option><option value="2">P3</option></select></label><button id="bossPreview">第五关试玩 F10</button><button id="yuugenPreview">魔界第十关 · 幽玄魔眼</button><button id="sarielPreview">魔界最终关 · Sariel</button><button id="konngaraPreview">地狱最终关 · 矜羯罗</button><button id="elisPreview">魔界第十五关 · Elis</button><button id="kikuriPreview">地狱第十五关 · 菊理</button><button id="mimaPreview">地狱第十关 · 魅魔</button><button data-ending="0">魔界好结局预览</button><button data-ending="1">魔界坏结局预览</button><button data-ending="2">地狱好结局预览</button><button data-ending="3">地狱坏结局预览</button><button id="touchToggle">触屏按键</button><button id="hit">P1 受伤</button><button id="ghost">P2 变幽灵</button></div><section class="telemetry" aria-live="off"><span id="phase">准备中</span><span id="rate">— 步/秒</span><span id="compute">逻辑 — ms</span><span id="draw">绘制 — ms</span><span id="memory">— MiB</span><span id="hash" class="hash">—</span></section><p class="small">F4 循环难度并重新开始 · F8 开关全员测试无敌，重开与续关保留。伤害／幽灵调试按钮会主动触发受伤流程。</p></details>
+  <footer class="footer"><a href="index.html">← 返回启动器</a><span>C++ 游戏核心 · 直接编译 WASM</span><a href="https://github.com/nmlgc/ReC98" target="_blank" rel="noreferrer">Based on ReC98</a></footer>
+</main>
+<script type="module" src="site-ui.js"></script><script type="module" src="app.js"></script>
+</body></html>

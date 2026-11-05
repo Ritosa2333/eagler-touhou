@@ -1,0 +1,69 @@
+PMDMINI-RS THIRD-PARTY NOTICES
+
+Project license
+---------------
+Unless a file or component states otherwise, PMDMINI-RS original source is
+distributed under the GNU Affero General Public License, version 3.0 only
+(AGPL-3.0-only). This project-level declaration does not relicense third-party
+material; the notices and terms below remain applicable to the material they
+describe.
+
+ymfm / OPNA implementation
+--------------------------
+The table values and algorithms ported from the upstream ymfm implementation
+retain the following attribution and BSD 3-Clause terms:
+
+Copyright (c) 2021, Aaron Giles
+
+The complete BSD 3-Clause text is retained in the `pmd-core/src/opna/` source
+headers.
+
+Shinonome bitmap font
+---------------------
+The embedded Unicode-indexed bitmap table is converted from the Shinonome
+0.9.11p1 source archive, specifically `bdf/shnmk16.bdf` (16-dot JIS X
+0208 Gothic) and `bdf/shnm8x16r.bdf` (16-dot JIS X 0201 ASCII and half-width
+katakana):
+
+https://openlab.jp/efont/dist/shinonome/shinonome-0.9.11p1.tar.bz2
+
+The archive was designed by Yasuyuki Furukawa and maintained and distributed
+by the Electronic Font Open Laboratory (/efont/). Its SHA-256 is
+`95663c95c92ba5765f63ccbdf033eb93b707be01812a989c548db943479c838f`.
+The conversion is reproducible with
+`tools/src/bin/convert-shinonome.rs`; the BDF sources themselves are not
+committed.
+
+The source archive's `LICENSE` terms, translated into English, are:
+
+> All font data, documentation, and scripts included in this archive are
+> provided in the Public Domain. In Japan it is legally impossible at present
+> to waive copyright; the authors listed in `AUTHORS` declare that they will
+> not exercise those rights, making the work effectively Public Domain. Free
+> modification, conversion to other formats, embedding, and redistribution are
+> permitted. All of these are provided without warranty.
+
+The Shinonome `k16` source notes that some symbol patterns originate from the
+XFree86 `jiskanji16` font; that attribution is retained by using the complete
+Shinonome source notice and its redistribution terms.
+
+fmgen / rhythm attribution
+--------------------------
+The upstream PMDWin notice credits the rhythm engine lineage to cisc:
+
+FM Sound Generator with OPN/OPM interface
+Copyright (C) by cisc 1998, 2003.
+
+The reference identifies this as fmgen 008, with PMDWin-specific changes. This
+rewrite contains no fmgen source; its rhythm behavior is reimplemented from
+the observed PMDWin behavior.
+
+PMDWin / Professional Music Driver
+----------------------------------
+Professional Music Driver 4.8 was written by M. Kajihara and ported to Windows
+by C60. The upstream reference identifies PMDWin as GPL version 2 and includes
+additional attribution, source-disclosure, and contact conditions.
+
+This repository does not include PMDWin source. The Rust implementation is a
+clean-room reimplementation based on observed behavior. PMDWin's attribution
+and applicable upstream conditions are recorded here for redistribution.

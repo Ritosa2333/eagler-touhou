@@ -1,0 +1,22 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "game": "th04",
+  "repository": "https://github.com/IxinorTyan/th04-coop-lab",
+  "branch": "main",
+  "commit": "a6eca059e09ac99c1958189e48069c2ccf83d413",
+  "destination": "ports/th04",
+  "sourceManifest": "../../ports/th04/source-import.json",
+  "mode": "managed-adapter-preview",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "a6eca059e09ac99c1958189e48069c2ccf83d413",
+    "initialJoin": "c7dc06f0e6175a4c6547ba7a7dd448fe377070aa",
+    "initialSplit": "1bd7ae65ab4c9385fbe8ecc74fa3fb2afd5f6e91",
+    "latestJoin": "3f431abcbd6f2895fa79e96079206b87768cd9de",
+    "currentSplit": "bd2ebb2ce2ea5bf6822e0a0a052f2068c9f0f864"
+  },
+  "builder": "ports/th04/scripts/build-eagler.mjs",
+  "inputIdentityRecord": "ports/th04/content/source.json",
+  "normalAndMultiplayer": "shared adapter with separate Runtime entry points",
+  "record": "docs/migration/th04-eagler-20261025.md"
+}

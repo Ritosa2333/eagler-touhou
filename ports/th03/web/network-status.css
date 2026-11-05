@@ -1,0 +1,10 @@
+.network-status{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%;font:12px/1.6 system-ui,sans-serif;color:#c2d6bc;white-space:normal;overflow-wrap:anywhere;flex-shrink:1}
+.network-status-summary::before{content:'●';margin-right:6px;color:#88b87c}
+.network-status[data-tone=neutral]{color:#bdbdb4}.network-status[data-tone=neutral] .network-status-summary::before{color:#93968b}
+.network-status[data-tone=warning]{color:#f2d58f}.network-status[data-tone=warning] .network-status-summary::before{color:#e2b859}
+.network-status[data-tone=error]{color:#f0b2a5}.network-status[data-tone=error] .network-status-summary::before{color:#df786a}
+.network-status-details{display:block}.network-status-details>.network-status-summary{font-weight:600}.network-status-details p{margin:6px 0;font-size:12px;line-height:1.6}.network-status-peer{border-top:1px solid #54564b;margin-top:12px;padding-top:10px}.network-status-details small{display:block;margin-top:16px;color:#b8b9ad;font-size:11px}
+.network-status-announcement{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.room-ui-header>.network-status{flex-basis:100%;padding-left:2px}.player-toolbar>.network-status,.toolbar>.network-status{margin-inline-start:auto;padding:3px 6px}
+.unified-room .room-ui-header{flex-wrap:wrap}
+@media(max-width:760px){.player-toolbar>.network-status,.toolbar>.network-status{font-size:11px;flex-basis:100%;margin-inline-start:0}.room-ui-header>.network-status{font-size:11px}}

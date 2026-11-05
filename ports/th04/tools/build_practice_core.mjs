@@ -1,0 +1,17 @@
+import fs from 'node:fs';import {createHash} from 'node:crypto';
+import b from '../build/binaryen-132/package/index.js';
+const hash=x=>createHash('sha256').update(x).digest('hex');
+const web=new URL('../web/',import.meta.url),source=fs.readFileSync(new URL('vendor/dosbox-x/wdosbox-x-fast.wasm',web));
+if(hash(source)!=='124e7a66aeac80f997000b5a6c542bda909b9901f33d473e251ccbea01be2fe9')throw Error('Unaudited TH04 source core');
+const m=b.readBinary(source);m.setFeatures(b.Features.All&~b.Features.CompactImports);
+const f=m.getFunction('9160'),info=b.getFunctionInfo(f);
+if(b.expandType(info.params).length!==3||info.results!==b.none)throw Error('IO_WriteDefault changed');
+m.addFunctionImport('th04_practice','env','th04_practice',b.createType([b.i32,b.i32]),b.none);
+const arg=i=>m.local.get(i,b.i32),c=n=>m.i32.const(n);
+const marker=m.i32.and(m.i32.lt_u(m.i32.sub(arg(0),c(0x7fe0)),c(6)),m.i32.eq(arg(2),c(4)));
+b.Function.setBody(f,m.block(null,[m.if(marker,m.block(null,[m.call('th04_practice',[arg(0),arg(1)],b.none),m.return()])),info.body]));
+if(!m.validate())throw Error('Invalid practice core');const bytes=m.emitBinary();m.dispose();
+if(!WebAssembly.validate(bytes))throw Error('Invalid practice WASM');
+fs.writeFileSync(new URL('vendor/dosbox-x/wdosbox-x-practice.wasm',web),bytes);
+fs.writeFileSync(new URL('practice-core.json',web),JSON.stringify({source:hash(source),sha256:hash(bytes),url:'vendor/dosbox-x/wdosbox-x-practice.wasm',ports:[0x7fe0,0x7fe1,0x7fe2,0x7fe3,0x7fe4,0x7fe5]},null,2)+'\n');
+console.log('Built isolated TH04 practice core',hash(bytes));

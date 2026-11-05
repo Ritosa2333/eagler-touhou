@@ -1,0 +1,123 @@
+{
+  "game": "th02",
+  "version": 1,
+  "sampleRate": 44100,
+  "channels": 1,
+  "source": "Native TH02 PMD INT60h AX=0Cxx, BGM disabled; unmodified FM bank",
+  "effects": {
+    "0": {
+      "file": "se-00.wav",
+      "sha256": "3cdd176f8914da7c3d9d298ea2c4793d4d43bf3ce3e7c6cdf1bbe749a0f2f5c9",
+      "frames": 441,
+      "silent": true
+    },
+    "1": {
+      "file": "se-01.wav",
+      "sha256": "8fc3b0b5d729f2426a3df450aa629338c19972f95be2fb20ede7f046b60dd9de",
+      "frames": 5842,
+      "silent": false
+    },
+    "2": {
+      "file": "se-02.wav",
+      "sha256": "d595e454ea5dcaf06da584c62135951acfcb6f3ac52d3bcc703920a49f70041b",
+      "frames": 113132,
+      "silent": false
+    },
+    "3": {
+      "file": "se-03.wav",
+      "sha256": "4cb49d6aefa62d901f3343f36c81398c81af92ede88695969eb9816eeff87301",
+      "frames": 32661,
+      "silent": false
+    },
+    "4": {
+      "file": "se-04.wav",
+      "sha256": "950b7437c250b001b3259266c59c40575ee6e760d1c27992ed37f26426c6a369",
+      "frames": 12354,
+      "silent": false
+    },
+    "5": {
+      "file": "se-05.wav",
+      "sha256": "c0249fbac956d02f6a29da20067c6ad179f6f25c98b330d5546fd8bd842dcafb",
+      "frames": 39981,
+      "silent": false
+    },
+    "6": {
+      "file": "se-06.wav",
+      "sha256": "8d5412f6cb8bc8ec764ed2015dfc908dfe2a9619276862acd3fd2737bdd5e5c2",
+      "frames": 40807,
+      "silent": false
+    },
+    "7": {
+      "file": "se-07.wav",
+      "sha256": "0cc880b085637cc33c48ee83c46c48acaf2f22ac03d82bc195b8d90cee4bb944",
+      "frames": 32161,
+      "silent": false
+    },
+    "8": {
+      "file": "se-08.wav",
+      "sha256": "998108178d9a2304c0c5f9ffb466cbb19c0326c89491b40bd692e3dc3cfef98e",
+      "frames": 54645,
+      "silent": false
+    },
+    "9": {
+      "file": "se-09.wav",
+      "sha256": "bdfab3d6cf31bbe7d3be8d004250e0dd351955aef6003c3718d453db7dcb4051",
+      "frames": 87854,
+      "silent": false
+    },
+    "10": {
+      "file": "se-10.wav",
+      "sha256": "5db9102555b421b112e811c22dcd0aeacd363753112d9fb600078012a8fc46a4",
+      "frames": 44820,
+      "silent": false
+    },
+    "11": {
+      "file": "se-11.wav",
+      "sha256": "74c02801e6545d9aa20e80630052f106b33d497ce6d54f147d47795e0e70c806",
+      "frames": 5895,
+      "silent": false
+    },
+    "12": {
+      "file": "se-12.wav",
+      "sha256": "3ed8a104bdca86b085e62bb748f10b01448ec83f87e514c205c5a04b5c4cef8d",
+      "frames": 39981,
+      "silent": false
+    },
+    "13": {
+      "file": "se-13.wav",
+      "sha256": "25ebc524866ae30685d801cccb0a31ac602b18b55d1de0d70e0731150a1e9590",
+      "frames": 11633,
+      "silent": false
+    },
+    "14": {
+      "file": "se-14.wav",
+      "sha256": "acbeca9b4f94a2c59f5622756710186002e754e7d8b906a16c109bb160095d2e",
+      "frames": 90400,
+      "silent": false
+    },
+    "15": {
+      "file": "se-15.wav",
+      "sha256": "06cc0f852f27c6231d78b4edafbed3fc9b2e975899494bd8aa83509653b3648c",
+      "frames": 18903,
+      "silent": false
+    },
+    "16": {
+      "file": "se-16.wav",
+      "sha256": "69249f95d566a9f80f88db7b068a03b3dd15cbbe966c3e4ea38b71f25bb5e4d5",
+      "frames": 60055,
+      "silent": false
+    },
+    "17": {
+      "file": "se-17.wav",
+      "sha256": "355eb9e8fd882cede475e4deb6d6179330f3ab7a02f12057438b899322ae75f6",
+      "frames": 157418,
+      "silent": false
+    },
+    "18": {
+      "file": "se-18.wav",
+      "sha256": "0903952795fd5a6d44065ce6f430398fbea4dc269bdd62b5e5e4bb055e6b7ee8",
+      "frames": 156155,
+      "silent": false
+    }
+  }
+}

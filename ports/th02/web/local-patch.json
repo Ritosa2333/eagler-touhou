@@ -1,0 +1,1669 @@
+{
+  "schema": 2,
+  "game": "th02",
+  "mode": "local-coop",
+  "core": "dosbox-x-jspi",
+  "insert": 64192,
+  "gap": 16896,
+  "codeSegment": 2838,
+  "dataSegment": 8647,
+  "headerSize": 6656,
+  "entries": {
+    "stage_hook": 19190,
+    "continue_hook": 19703,
+    "invalidate_hook": 19794,
+    "input_hook": 19850,
+    "render_hook": 20096,
+    "item_hook": 20241,
+    "mailbox": 34252,
+    "run_config": 34083,
+    "swap_player": 20450,
+    "guest_bank": 34128,
+    "snapshot": 20706,
+    "apply_loadout": 19713,
+    "p1_out": 34090,
+    "p2_out": 34091,
+    "update_one": 20066,
+    "guest_collision_allowed": 20362,
+    "exit_hook": 20419,
+    "respawn_x_hook": 20432,
+    "coop_tick": 24291,
+    "rescue_state": 24217,
+    "rescue_clear": 24226,
+    "ghosts_render": 25219,
+    "hud_render": 27202,
+    "ghost_match_palette": 24992,
+    "ghost_palette_map": 24227,
+    "boss_gauge_update": 29496,
+    "boss_gauge_reset": 29478,
+    "boss_current": 29302,
+    "boss_max": 29304,
+    "boss_bar": 29306,
+    "boss_visible": 29307,
+    "active": 34087,
+    "power_hook": 27182,
+    "debug_protect": 19953,
+    "debug_applied": 34093,
+    "debug_saved": 34096,
+    "boss_world": 30317,
+    "aim_vector": 30374,
+    "aim_vector_pointer": 30461,
+    "aim_angle": 30465,
+    "aim_angle_pointer": 30526,
+    "aim_special": 30530,
+    "target_count": 29926,
+    "target_players": 29927,
+    "targets_refresh": 29992,
+    "target_choose": 30136,
+    "target_counts": 29951,
+    "attack_counts": 29963,
+    "target_slot": 29975,
+    "focus_move": 30624,
+    "focus_remainder": 30609,
+    "focus_points_render": 30837,
+    "select_player": 20464,
+    "player_input": 20679,
+    "player_count": 34088,
+    "third_bank": 34190,
+    "p3_out": 34092,
+    "guest_types": 34099,
+    "rescue_target": 24223,
+    "touch_state": 31069,
+    "touch_remainder": 31093,
+    "touch_move": 31268,
+    "touch_reset": 31106,
+    "touch_paused": 31105,
+    "pause_hook": 31161,
+    "offline_mask": 23591,
+    "offline_apply": 23607,
+    "offline_seen": 23592,
+    "offline_stocks": 23593,
+    "shot_spawn_tail": 24164,
+    "shot_option_tail": 24172,
+    "shot_option_seen": 24180,
+    "shot_option_alive": 23803,
+    "hud_number": 29049,
+    "hud_stage_cell": 27703,
+    "hud_cells": 27817,
+    "hud_attrs": 28433,
+    "shot_collect": 24036,
+    "shot_hit_begin": 24076,
+    "shot_hit_next": 24105,
+    "shot_hit_count": 23806,
+    "shot_hit_pointers": 23808,
+    "personal_stats": 31710,
+    "team_score": 31758,
+    "score_factor": 31762,
+    "damage_denominator": 31764,
+    "hit_weights": 31766,
+    "hit_owner": 31772,
+    "bomb_owner": 31773,
+    "bomb_previous": 32003,
+    "shot_owners": 31775,
+    "shot_levels": 31889,
+    "bomb_art_type": 31774,
+    "balance_after_update": 32185,
+    "bomb_art_default": 32238,
+    "bomb_art_select": 32244,
+    "damage_remainder": 32004,
+    "balance_credit_raw": 32661,
+    "balance_credit_points": 32680,
+    "balance_world_raw": 32938,
+    "balance_kill_raw": 32948,
+    "balance_refresh": 32974,
+    "balance_scale": 33279,
+    "balance_hit_reset": 33046,
+    "balance_hit_slot": 33075,
+    "balance_hit_base": 33161,
+    "balance_hit_explosion": 33180,
+    "balance_hit_finish": 33193,
+    "player_art_put": 27008,
+    "art_context": 27174,
+    "shot_art_put_tiny": 27104,
+    "shot_art_put_large": 27139,
+    "collision_0": 21026,
+    "collision_1": 21220,
+    "collision_2": 21343,
+    "collision_3": 21471,
+    "collision_4": 21596,
+    "collision_5": 21846,
+    "collision_6": 22017,
+    "collision_7": 22156,
+    "collision_8": 22276,
+    "collision_9": 22396,
+    "collision_10": 22516,
+    "collision_11": 22679,
+    "collision_12": 22854,
+    "collision_13": 23100,
+    "collision_14": 23209,
+    "collision_15": 23383,
+    "balance_hit_heavy_high": 33311,
+    "balance_hit_heavy_medium": 33330,
+    "balance_reset_102b9": 33344,
+    "balance_reset_1393f": 33358,
+    "balance_reset_13b08": 33372,
+    "balance_reset_14289": 33386,
+    "balance_reset_152c1": 33400,
+    "balance_reset_1672e": 33414,
+    "balance_reset_169d4": 33428,
+    "balance_reset_195c2": 33442,
+    "balance_reset_1973a": 33456,
+    "balance_reset_197fc": 33470,
+    "balance_reset_198ea": 33484,
+    "balance_reset_19b50": 33498,
+    "balance_reset_1a25e": 33512,
+    "balance_reset_1a9d6": 33526,
+    "balance_reset_10298": 33540,
+    "balance_reset_1278f": 33554,
+    "balance_damage_13a39": 33568,
+    "balance_damage_13ee9": 33588,
+    "balance_damage_1437b": 33608,
+    "balance_damage_14648": 33628,
+    "balance_damage_15940": 33664,
+    "balance_damage_17cd0": 33684,
+    "balance_damage_1a068": 33704,
+    "balance_damage_1aaab": 33724,
+    "balance_damage_115d9": 33747,
+    "balance_damage_11655": 33789,
+    "balance_damage_118c1": 33812,
+    "balance_kill_1167a": 33836,
+    "balance_kill_118eb": 33850,
+    "balance_kill_13a7a": 33864,
+    "balance_kill_13f1d": 33878,
+    "balance_kill_143bc": 33892,
+    "balance_kill_14679": 33906,
+    "balance_kill_1a0a0": 33920,
+    "balance_kill_1aac8": 33934,
+    "balance_kill_1abe5": 33948,
+    "balance_kill_16939": 33962,
+    "balance_kill_17ceb": 33976,
+    "balance_enemy_kill": 33990,
+    "balance_bonus_fdf0": 33994,
+    "balance_bonus_ff6f": 34010,
+    "balance_world_19d37": 34026,
+    "balance_world_19e11": 34040
+  },
+  "bankMap": {
+    "2722": 0,
+    "2723": 1,
+    "2724": 2,
+    "2725": 3,
+    "2726": 4,
+    "2727": 5,
+    "2728": 6,
+    "2729": 7,
+    "2730": 8,
+    "2731": 9,
+    "2732": 10,
+    "2733": 11,
+    "2860": 12,
+    "2861": 13,
+    "11126": 14,
+    "11127": 15,
+    "11128": 16,
+    "11129": 17,
+    "11130": 18,
+    "11131": 19,
+    "11132": 20,
+    "11133": 21,
+    "11134": 22,
+    "11135": 23,
+    "11136": 24,
+    "11137": 25,
+    "11138": 26,
+    "11139": 27,
+    "11140": 28,
+    "11141": 29,
+    "11142": 30,
+    "11143": 31,
+    "11144": 32,
+    "11145": 33,
+    "11146": 34,
+    "11147": 35,
+    "11148": 36,
+    "11149": 37,
+    "11150": 38,
+    "11151": 39,
+    "11152": 40,
+    "11153": 41,
+    "11154": 42,
+    "11155": 43,
+    "11156": 44,
+    "11157": 45,
+    "11158": 46,
+    "11161": 47,
+    "11162": 48,
+    "11163": 49,
+    "11164": 50,
+    "11165": 51,
+    "11166": 52,
+    "11167": 53,
+    "11168": 54,
+    "11169": 55,
+    "15938": 56,
+    "4253": 57,
+    "4254": 58,
+    "21210": 59,
+    "21211": 60,
+    "10464": 61
+  },
+  "disks": {
+    "jp": {
+      "file": "th02-local-jp.hdi.gz",
+      "sha256": "588c6482e462668a73aa1aa1111f42a6cc8463d1d0147351c4995df6817ac289",
+      "compressedSha256": "0590dea962aec890502a72f0d9b709a58d7c9cb05facfa19d3d8db76bd1e3517",
+      "size": 21415936,
+      "mainSha256": "6564aab376ddf45523be2aa33cc9c8e808f759bf5a8269f211d066606d1b8173",
+      "opSha256": "e2022a3a4725cc53499eccfd46fd73816dda222a43d00c499b014852276f7731",
+      "originalOpMD5": "9fb2839db50f38119d0b98d4fb70cd0e"
+    },
+    "cn": {
+      "file": "th02-local-cn.hdi.gz",
+      "sha256": "5fe6b1d957f71131550f8370108e774ef9bb5bc67148678f3ce93b339e158c80",
+      "compressedSha256": "b06151564100431653ebee6e24b9102a1a45fc5e9c104a1b8f197122624637ab",
+      "size": 21415936,
+      "mainSha256": "affb7969bd8e32d1b35e759a96e1293dd460c80ab77fc24556dff56aebe12d18",
+      "opSha256": "4260d79cd3287b750283b3a4d0f7a7588e902203834b43b86d0cbafee7dccd41",
+      "originalOpMD5": "b17105388f7289e08dd80815f82ab0bb"
+    }
+  },
+  "source": {
+    "jp": {
+      "sha256": "7f8a97fee102c762b6c8800ffe788ebc555111e443aa1d2d53842a2c3976dbe6",
+      "mainMD5": "96cee07713a8e6460ae72276f3a9f909"
+    },
+    "cn": {
+      "sha256": "c2a6f3eefddeddf29232aaa6eba9030b8ee47acde3222887d5ebfc3f3d58179d",
+      "mainMD5": "c054e96ed57e26f00198f29b282737dd"
+    }
+  },
+  "hooks": [
+    {
+      "at": 46619,
+      "expected": "e8920f",
+      "entry": "stage_hook"
+    },
+    {
+      "at": 47531,
+      "expected": "e8020c",
+      "entry": "continue_hook"
+    },
+    {
+      "at": 48381,
+      "expected": "e8b209",
+      "entry": "invalidate_hook"
+    },
+    {
+      "at": 48588,
+      "expected": "e80934",
+      "entry": "input_hook"
+    },
+    {
+      "at": 48598,
+      "expected": "ff1e0c1a",
+      "entry": "boss_world"
+    },
+    {
+      "at": 62203,
+      "expected": "5657e8c3fb",
+      "entry": "focus_move"
+    },
+    {
+      "at": 48643,
+      "expected": "e8dcfb",
+      "entry": "pause_hook"
+    },
+    {
+      "at": 48616,
+      "expected": "e84b31",
+      "entry": "render_hook"
+    },
+    {
+      "at": 61351,
+      "expected": "9a46310000",
+      "entry": "player_art_put"
+    },
+    {
+      "at": 61570,
+      "expected": "9a46310000",
+      "entry": "player_art_put"
+    },
+    {
+      "at": 61887,
+      "expected": "9a46310000",
+      "entry": "player_art_put"
+    },
+    {
+      "at": 54658,
+      "expected": "9a08370000",
+      "entry": "shot_art_put_tiny"
+    },
+    {
+      "at": 54682,
+      "expected": "9a46310000",
+      "entry": "shot_art_put_large"
+    },
+    {
+      "at": 54798,
+      "expected": "9a08370000",
+      "entry": "shot_art_put_tiny"
+    },
+    {
+      "at": 50551,
+      "expected": "e8d01c",
+      "entry": "exit_hook"
+    },
+    {
+      "at": 61828,
+      "expected": "b8d000",
+      "entry": "respawn_x_hook"
+    },
+    {
+      "at": 57005,
+      "expected": "558bec83ec18",
+      "entry": "power_hook"
+    },
+    {
+      "at": 51917,
+      "expected": "5e5dc20400",
+      "entry": "shot_spawn_tail"
+    },
+    {
+      "at": 52008,
+      "expected": "5e5dc20600",
+      "entry": "shot_option_tail"
+    },
+    {
+      "at": 54373,
+      "expected": "807c0f007403fe46fd",
+      "entry": "shot_option_seen"
+    },
+    {
+      "at": 56641,
+      "expected": "558bec83ec04",
+      "entry": "balance_refresh"
+    },
+    {
+      "at": 56574,
+      "expected": "558bec66a13c3e",
+      "entry": "balance_refresh"
+    },
+    {
+      "at": 56910,
+      "expected": "558bec66a13c3e",
+      "entry": "balance_refresh"
+    },
+    {
+      "at": 56227,
+      "expected": "803e942b007520a1862b05f8ff3b062a3e7f14a1862b0518003b062a3e7c0856e840fd0bc07530",
+      "entry": "item_hook"
+    },
+    {
+      "at": 68722,
+      "end": 68821,
+      "name": "ordinary_bullets",
+      "entry": "collision_0",
+      "length": 7,
+      "expected": "8a4401983d0100"
+    },
+    {
+      "at": 76651,
+      "end": 76691,
+      "name": "stage1_laser",
+      "entry": "collision_1",
+      "length": 6,
+      "expected": "a1fc5f05e8ff"
+    },
+    {
+      "at": 83432,
+      "end": 83477,
+      "name": "meira_contact",
+      "entry": "collision_2",
+      "length": 6,
+      "expected": "8b1eee2b8b37"
+    },
+    {
+      "at": 83817,
+      "end": 83867,
+      "name": "meira_particles",
+      "entry": "collision_3",
+      "length": 6,
+      "expected": "8b440205f0ff"
+    },
+    {
+      "at": 87963,
+      "end": 88129,
+      "name": "stones_contact",
+      "entry": "collision_4",
+      "length": 7,
+      "expected": "c45efc268b4702"
+    },
+    {
+      "at": 88394,
+      "end": 88479,
+      "name": "marisa_contact",
+      "entry": "collision_5",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 88857,
+      "end": 88914,
+      "name": "marisa_laser_growing",
+      "entry": "collision_6",
+      "length": 5,
+      "expected": "a01e7bb400"
+    },
+    {
+      "at": 89075,
+      "end": 89117,
+      "name": "marisa_laser_hold",
+      "entry": "collision_7",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 89194,
+      "end": 89232,
+      "name": "marisa_laser_flash",
+      "entry": "collision_8",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 89327,
+      "end": 89365,
+      "name": "marisa_laser_final",
+      "entry": "collision_9",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 95617,
+      "end": 95679,
+      "name": "ordinary_enemies",
+      "entry": "collision_10",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 97529,
+      "end": 97618,
+      "name": "mima_contact",
+      "entry": "collision_11",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 97711,
+      "end": 97867,
+      "name": "mima_summons",
+      "entry": "collision_12",
+      "length": 5,
+      "expected": "a0a82bb400"
+    },
+    {
+      "at": 99116,
+      "end": 99142,
+      "name": "mima_lightning",
+      "entry": "collision_13",
+      "length": 6,
+      "expected": "8b1eec2b8b07"
+    },
+    {
+      "at": 109270,
+      "end": 109358,
+      "name": "extra_contact",
+      "entry": "collision_14",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 109550,
+      "end": 109670,
+      "name": "extra_turrets",
+      "entry": "collision_15",
+      "length": 5,
+      "expected": "a0a92bb400"
+    },
+    {
+      "at": 67197,
+      "expected": "9a6101450f",
+      "entry": "aim_vector"
+    },
+    {
+      "at": 91265,
+      "expected": "9a6101450f",
+      "entry": "aim_vector"
+    },
+    {
+      "at": 92990,
+      "expected": "9a6101450f",
+      "entry": "aim_vector"
+    },
+    {
+      "at": 100595,
+      "expected": "9a6101450f",
+      "entry": "aim_vector"
+    },
+    {
+      "at": 101268,
+      "expected": "9a6101450f",
+      "entry": "aim_vector"
+    },
+    {
+      "at": 72885,
+      "expected": "9a781e0000",
+      "entry": "aim_angle"
+    },
+    {
+      "at": 72984,
+      "expected": "9a781e0000",
+      "entry": "aim_angle"
+    },
+    {
+      "at": 73792,
+      "expected": "9a781e0000",
+      "entry": "aim_angle"
+    },
+    {
+      "at": 101579,
+      "expected": "9a781e0000",
+      "entry": "aim_angle"
+    },
+    {
+      "at": 102901,
+      "expected": "9a781e0000",
+      "entry": "aim_angle"
+    },
+    {
+      "at": 68017,
+      "expected": "a1882b050800",
+      "entry": "aim_special"
+    },
+    {
+      "at": 75873,
+      "expected": "c746f80000",
+      "entry": "balance_hit_reset"
+    },
+    {
+      "at": 75911,
+      "expected": "be0829c746fe0000",
+      "entry": "shot_hit_begin"
+    },
+    {
+      "at": 76203,
+      "expected": "ff46fe83c610837efe237d03e9d5fe",
+      "entry": "shot_hit_next"
+    },
+    {
+      "at": 76012,
+      "expected": "ff46f8837c0e32",
+      "entry": "balance_hit_base"
+    },
+    {
+      "at": 76197,
+      "expected": "8b46f00146f8",
+      "entry": "balance_hit_explosion"
+    },
+    {
+      "at": 76237,
+      "expected": "8b46f801063c3e8b46f8",
+      "entry": "balance_hit_finish"
+    },
+    {
+      "at": 76055,
+      "expected": "8b46eeeb07",
+      "entry": "balance_hit_heavy_high"
+    },
+    {
+      "at": 76060,
+      "expected": "c64401028b46f20146f8",
+      "entry": "balance_hit_heavy_medium"
+    },
+    {
+      "at": 66233,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_102b9"
+    },
+    {
+      "at": 80191,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_1393f"
+    },
+    {
+      "at": 80648,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_13b08"
+    },
+    {
+      "at": 82569,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_14289"
+    },
+    {
+      "at": 86721,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_152c1"
+    },
+    {
+      "at": 91950,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_1672e"
+    },
+    {
+      "at": 92628,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_169d4"
+    },
+    {
+      "at": 103874,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_195c2"
+    },
+    {
+      "at": 104250,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_1973a"
+    },
+    {
+      "at": 104444,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_197fc"
+    },
+    {
+      "at": 104682,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_198ea"
+    },
+    {
+      "at": 105296,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_19b50"
+    },
+    {
+      "at": 107102,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_1a25e"
+    },
+    {
+      "at": 109014,
+      "expected": "c706ea2b0000",
+      "entry": "balance_reset_1a9d6"
+    },
+    {
+      "at": 66200,
+      "expected": "c787d42b0000",
+      "entry": "balance_reset_10298"
+    },
+    {
+      "at": 75663,
+      "expected": "c787d42b0000",
+      "entry": "balance_reset_1278f"
+    },
+    {
+      "at": 80441,
+      "expected": "0106ea2b813eea2b2c01",
+      "entry": "balance_damage_13a39"
+    },
+    {
+      "at": 81641,
+      "expected": "0106ea2b813eea2bd408",
+      "entry": "balance_damage_13ee9"
+    },
+    {
+      "at": 82811,
+      "expected": "0106ea2b813eea2b7c01",
+      "entry": "balance_damage_1437b"
+    },
+    {
+      "at": 83528,
+      "expected": "0106ea2b6a04",
+      "entry": "balance_damage_14648"
+    },
+    {
+      "at": 88384,
+      "expected": "c706de2b82000106ea2b",
+      "entry": "balance_damage_15940"
+    },
+    {
+      "at": 97488,
+      "expected": "0106ea2b813eea2b7017",
+      "entry": "balance_damage_17cd0"
+    },
+    {
+      "at": 106600,
+      "expected": "013eea2b8b360893",
+      "entry": "balance_damage_1a068"
+    },
+    {
+      "at": 109227,
+      "expected": "0106ea2beb0a",
+      "entry": "balance_damage_1aaab"
+    },
+    {
+      "at": 71129,
+      "expected": "01bfd42b56",
+      "entry": "balance_damage_115d9"
+    },
+    {
+      "at": 71253,
+      "expected": "01bfd42b8bde",
+      "entry": "balance_damage_11655"
+    },
+    {
+      "at": 71873,
+      "expected": "01bfd42b83fe04",
+      "entry": "balance_damage_118c1"
+    },
+    {
+      "at": 71290,
+      "expected": "6681063c3e204e0000",
+      "entry": "balance_kill_1167a"
+    },
+    {
+      "at": 71915,
+      "expected": "6681063c3e30750000",
+      "entry": "balance_kill_118eb"
+    },
+    {
+      "at": 80506,
+      "expected": "6681063c3e10270000",
+      "entry": "balance_kill_13a7a"
+    },
+    {
+      "at": 81693,
+      "expected": "6681063c3e204e0000",
+      "entry": "balance_kill_13f1d"
+    },
+    {
+      "at": 82876,
+      "expected": "6681063c3e204e0000",
+      "entry": "balance_kill_143bc"
+    },
+    {
+      "at": 83577,
+      "expected": "6681063c3e30750000",
+      "entry": "balance_kill_14679"
+    },
+    {
+      "at": 106656,
+      "expected": "6681063c3e50c30000",
+      "entry": "balance_kill_1a0a0"
+    },
+    {
+      "at": 109256,
+      "expected": "6681063c3e204e0000",
+      "entry": "balance_kill_1aac8"
+    },
+    {
+      "at": 109541,
+      "expected": "6681063c3e88130000",
+      "entry": "balance_kill_1abe5"
+    },
+    {
+      "at": 92473,
+      "expected": "668106280be0930400",
+      "entry": "balance_kill_16939"
+    },
+    {
+      "at": 97515,
+      "expected": "668106280b20a10700",
+      "entry": "balance_kill_17ceb"
+    },
+    {
+      "at": 96374,
+      "expected": "6601063c3e",
+      "entry": "balance_enemy_kill"
+    },
+    {
+      "at": 65008,
+      "expected": "6601063c3e",
+      "entry": "balance_bonus_fdf0"
+    },
+    {
+      "at": 65391,
+      "expected": "6601063c3e",
+      "entry": "balance_bonus_ff6f"
+    },
+    {
+      "at": 105783,
+      "expected": "668106280b50c30000",
+      "entry": "balance_world_19d37"
+    },
+    {
+      "at": 106001,
+      "expected": "668106280ba0860100",
+      "entry": "balance_world_19e11"
+    },
+    {
+      "at": 72053,
+      "expected": "833e882b60",
+      "targetCoordinate": 37698
+    },
+    {
+      "at": 72802,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 84256,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 85138,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 89458,
+      "expected": "813e862bd000",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 89869,
+      "expected": "813e862bd000",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 90070,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 90079,
+      "expected": "a1882b",
+      "targetCoordinate": 37698
+    },
+    {
+      "at": 91384,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91403,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91420,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91439,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91510,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91517,
+      "expected": "a1882b",
+      "targetCoordinate": 37698
+    },
+    {
+      "at": 91579,
+      "expected": "813e862bd000",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91683,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91690,
+      "expected": "a1882b",
+      "targetCoordinate": 37698
+    },
+    {
+      "at": 91819,
+      "expected": "a1862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 91826,
+      "expected": "a1882b",
+      "targetCoordinate": 37698
+    },
+    {
+      "at": 98778,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 100647,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 100925,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 101484,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 101587,
+      "expected": "813e862bd000",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 101890,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 104596,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 111983,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 114313,
+      "expected": "3b06862b",
+      "targetCoordinate": 37696
+    },
+    {
+      "at": 68038,
+      "expected": "a1862b",
+      "targetCoordinate": 37700
+    }
+  ],
+  "contextRanges": [
+    [
+      2722,
+      12
+    ],
+    [
+      2860,
+      2
+    ],
+    [
+      11126,
+      33
+    ],
+    [
+      11161,
+      9
+    ],
+    [
+      15938,
+      1
+    ],
+    [
+      4253,
+      2
+    ],
+    [
+      21210,
+      2
+    ],
+    [
+      10464,
+      1
+    ]
+  ],
+  "runtimeSha256": "77efbc5cac5de8a2b92a3943bec93f1811ac738a8d3947c1e1f3414a0136a431",
+  "ghost": {
+    "file": "assets/ghost-32.png",
+    "sha256": "b65bde17c040b32d2c3ca90436a8905006c4c4fc4dabb899876fecf2374674d2",
+    "colors": 12,
+    "native": true
+  },
+  "playerArt": {
+    "schema": 1,
+    "game": "TH02",
+    "file": "assets/th02-player-art.bin",
+    "sha256": "b7c89902236db00efb8c37dc1d5289985a762508e91ed9df21bb507c8b9ae65b",
+    "bytes": 240256,
+    "variants": [
+      "p1-original",
+      "p2-blue",
+      "p3-green"
+    ],
+    "framesPerSeat": 12,
+    "pixelsPerFrame": 1536,
+    "bodyFrames": 10,
+    "bodySize": [
+      32,
+      48
+    ],
+    "ghostFrame": 10,
+    "ghostSize": [
+      32,
+      32
+    ],
+    "bodySource": "ghost-preview/th02-player-colors",
+    "ghostSource": "ghost-preview/th05-four-player-colors/reimu",
+    "originalGenjiiPreserved": true,
+    "sources": {
+      "th02-player-colors/p1-original/player-00.png": "16660b5b9d23d3d048b58c655e23300b647b12164b0cc03be7af8841e9c5a9d1",
+      "th02-player-colors/p1-original/player-01.png": "81ffa27fbd2b5077a3d6b64ea81703af09911e1b8043a00cc909a5eba85bec5e",
+      "th02-player-colors/p1-original/player-02.png": "e5641b831d1f3f55e8c7f7ca957f77fb4cbaadb0f1e071b743fa1e9e1e56a86a",
+      "th02-player-colors/p1-original/player-03.png": "ceed4eafff6cef8f50b47cbfca47dba5dbe9952d362a8839454a7dbcd0281517",
+      "th02-player-colors/p1-original/player-04.png": "4b72ab59da7969139f8674ff766f410649feae201455ef623796697597f2f8ac",
+      "th02-player-colors/p1-original/player-05.png": "d4b979bfccf6b8d8ff9f2ca960d2c5a5340212e29b0f6ce770da603abb62d658",
+      "th02-player-colors/p1-original/player-06.png": "702135a92ac25498c9387524d1e86fee190b65878faa6e5dd01403d44336c654",
+      "th02-player-colors/p1-original/player-07.png": "3903f008b2a0c2d6495cb45f1767a2598c1776f2f4462bcd777e7c5353fda799",
+      "th02-player-colors/p1-original/player-08.png": "87d3e84c9295cae5ae558112872997376c7a19426f6dd10d3c0b7cb29229400f",
+      "th02-player-colors/p1-original/player-09.png": "8718e6cc9a208079ef6be038addc3e3f727950c85890a3e804109aaef3d2f371",
+      "th05-four-player-colors/reimu/p1-original/ghost-32.png": "b65bde17c040b32d2c3ca90436a8905006c4c4fc4dabb899876fecf2374674d2",
+      "th02-player-colors/p2-blue/player-00.png": "f8a4cc40e728a0e1b7d29545b2317de869a40f82ba6ca04ed2f4a68b3d2c7283",
+      "th02-player-colors/p2-blue/player-01.png": "6310bd01ff3f78259062a08cc157dfc1631fab34d0c811a76cf9a31a02be8619",
+      "th02-player-colors/p2-blue/player-02.png": "edbd1e26d21add8417e4a61b2fd4ef851db9a74e369ca421daed96e48244ab63",
+      "th02-player-colors/p2-blue/player-03.png": "01734f036fb084f8e75f238263768d936774f3b931ebb5af53affed4aac621ec",
+      "th02-player-colors/p2-blue/player-04.png": "d9a140a0dc806c2dc66e9e42aab004e4751e6f9f40c65ea17651e0e929b0ad1e",
+      "th02-player-colors/p2-blue/player-05.png": "c598918e52901ac22919b22ff8a7fd8faf7a1a1ed8cfd858f876e90f92cafa28",
+      "th02-player-colors/p2-blue/player-06.png": "ea7bc0341ee8f0f13b59bbfad6a90d3099d79f2980da20c0a313ffc208b6995b",
+      "th02-player-colors/p2-blue/player-07.png": "640f5ae093bef2daa26d6602b86ff6902ad16a6c66b900d34eca89f4084c8408",
+      "th02-player-colors/p2-blue/player-08.png": "51279e1bfb47452238d5abd1b27d10d7cbc0ad2f5e8cd38fd05cdf7d330c2fc5",
+      "th02-player-colors/p2-blue/player-09.png": "8718e6cc9a208079ef6be038addc3e3f727950c85890a3e804109aaef3d2f371",
+      "th05-four-player-colors/reimu/p2-blue/ghost-32.png": "e81a19bb2b30822165f5de413eea0c9d21cf0d8d1b82fb12b68de9d886a1ae55",
+      "th02-player-colors/p3-green/player-00.png": "4ae8993fcf4b374ccf75bee2d79b5b132068faad42424da7deb10d9f3a1c4cb9",
+      "th02-player-colors/p3-green/player-01.png": "9a89ffb92e5b64cc5ddf69c41d76e9cbeb42e1668d3f06127b262b0104e488db",
+      "th02-player-colors/p3-green/player-02.png": "2c5412aa1ca67dd333a2082058c0fcd1f8cce058bbd193cfb89bd92bc2ce7f7a",
+      "th02-player-colors/p3-green/player-03.png": "66f268cb35c59c1e0ef16fbe95dfff520910c5cfc258a8a94e736260fb25e764",
+      "th02-player-colors/p3-green/player-04.png": "5c00dc1e2ab27fa0e4a6817c3ab90a49ae2c0823ca6d40f88508044b9eafb1a6",
+      "th02-player-colors/p3-green/player-05.png": "f9b3018a43cf227b97f7b826e7bb1cf022d0df9a764fa2d8279bf447ed9a86a6",
+      "th02-player-colors/p3-green/player-06.png": "a9758a5585087ebb31baa869ee937cb3b817fdaa29f239624514b73c37f9fd6d",
+      "th02-player-colors/p3-green/player-07.png": "b9e4f20c029c94bd5538facd2c442d7608c2c18d99f57851842a61b37bc1de6c",
+      "th02-player-colors/p3-green/player-08.png": "f9c9e05dc34cad0ada2e8188f53260e8f7c8d1886b33e0c2ce5384a5ecfa1327",
+      "th02-player-colors/p3-green/player-09.png": "8718e6cc9a208079ef6be038addc3e3f727950c85890a3e804109aaef3d2f371",
+      "th05-four-player-colors/reimu/p3-green/ghost-32.png": "e1bbc19fdf6de4f4e9d0abea54951ecd233327856923aef6be8bc4e84d171017"
+    },
+    "hudShot": {
+      "source": "TH02 MIKO16.BFT frame 4",
+      "sourceSha256": "f5728c03573095815b9483201bccabd71b1658c0188f259dc74abe1abbc4a759",
+      "pattern": 52,
+      "frame": 11,
+      "size": [
+        16,
+        16
+      ],
+      "bulletX": 480,
+      "optionX": 504,
+      "gapPixels": 8,
+      "files": {
+        "p1-original": "assets/hud-ofuda-p1-original.png",
+        "p2-blue": "assets/hud-ofuda-p2-blue.png",
+        "p3-green": "assets/hud-ofuda-p3-green.png"
+      },
+      "sha256": {
+        "p1-original": "b37e36b50161916c1888eda080dcda79132286b06758b9ae2ed0431e7ceab7fa",
+        "p2-blue": "581192e5ee4e668c2daa9c4e3069f526061f8865ea37dbee3c2182a640f3f05f",
+        "p3-green": "a5b7d234f1e280ddc382911a6b8f76c5180d78f256186142aeb31db08243cbe2"
+      }
+    },
+    "projectiles": {
+      "contextFrame": 13,
+      "tagBase": 60000,
+      "paletteTagBase": 60016,
+      "ownerEntry": "shot_owners",
+      "nativeShapesAndPhysics": true,
+      "paletteMaps": {
+        "p1-original": {},
+        "p2-blue": {
+          "1": [
+            34,
+            68,
+            170
+          ],
+          "2": [
+            68,
+            136,
+            255
+          ],
+          "10": [
+            17,
+            34,
+            85
+          ],
+          "3": [
+            102,
+            51,
+            170
+          ],
+          "4": [
+            170,
+            119,
+            238
+          ],
+          "5": [
+            51,
+            187,
+            187
+          ],
+          "6": [
+            17,
+            102,
+            119
+          ]
+        },
+        "p3-green": {
+          "1": [
+            17,
+            119,
+            68
+          ],
+          "2": [
+            51,
+            204,
+            119
+          ],
+          "10": [
+            0,
+            68,
+            34
+          ],
+          "3": [
+            17,
+            119,
+            136
+          ],
+          "4": [
+            85,
+            221,
+            204
+          ],
+          "5": [
+            221,
+            187,
+            68
+          ],
+          "6": [
+            136,
+            102,
+            34
+          ]
+        }
+      },
+      "sources": {
+        "th02-player-colors/projectiles-manifest.json": "a99ab075b4e7a71371d7ecbf27e40c56406180e461e4e115aa554d7418d0c340",
+        "th02-player-colors/p1-original/projectiles/miko16-00-pat048.png": "86e39e041af11e39541a2401f7d2b0e770232b9a4db6ce340dc4004879b34d50",
+        "th02-player-colors/p2-blue/projectiles/miko16-00-pat048.png": "9771fdf517a32895f36c8cd8d39c4e5b5f31246b2be94efa3b43b3956061177e",
+        "th02-player-colors/p3-green/projectiles/miko16-00-pat048.png": "656964b3570cf8d9f6d53724a1f99a37d5a61a60e1a147030d7f47878955501d",
+        "th02-player-colors/p1-original/projectiles/miko16-01-pat049.png": "33acdfa19ffd010fa5c8505dab02c74fd07e5eef1ff5706ca22e295b20fbfaaa",
+        "th02-player-colors/p2-blue/projectiles/miko16-01-pat049.png": "74e308c13569bf6234edc24f949cbd2af6f57569a2eb4ec7f05e335e4e710962",
+        "th02-player-colors/p3-green/projectiles/miko16-01-pat049.png": "67ba06c4e4633d93c9402c14f6046fd83824fe639c111a98d139fce8690fe650",
+        "th02-player-colors/p1-original/projectiles/miko16-02-pat050.png": "fc66aef460fee772d1eb92115bc7544eecb9cf789655e97309a33354c3f24f84",
+        "th02-player-colors/p2-blue/projectiles/miko16-02-pat050.png": "6a03811e7b2c406cf8b04b8a71bb829837e143e3546e184df003ffcde90c844c",
+        "th02-player-colors/p3-green/projectiles/miko16-02-pat050.png": "b3546e58aaacb5421c2a7f4b762faf7ad4fe6ea807d6a16312c13ffc6c70c183",
+        "th02-player-colors/p1-original/projectiles/miko16-03-pat051.png": "50afa20f86fa17f211babe4c7ca71cb664d290d8bd575751326a92a1ba23a8e3",
+        "th02-player-colors/p2-blue/projectiles/miko16-03-pat051.png": "5bec7a18a20aa53813597f90fde90670997c1c4fab7210c2f07b331c88883da4",
+        "th02-player-colors/p3-green/projectiles/miko16-03-pat051.png": "e7f20da1de7f3aab3db11731e3ba7ea11ea1389813623479d77aa98b84316c42",
+        "th02-player-colors/p1-original/projectiles/miko16-04-pat052.png": "b37e36b50161916c1888eda080dcda79132286b06758b9ae2ed0431e7ceab7fa",
+        "th02-player-colors/p2-blue/projectiles/miko16-04-pat052.png": "581192e5ee4e668c2daa9c4e3069f526061f8865ea37dbee3c2182a640f3f05f",
+        "th02-player-colors/p3-green/projectiles/miko16-04-pat052.png": "a5b7d234f1e280ddc382911a6b8f76c5180d78f256186142aeb31db08243cbe2",
+        "th02-player-colors/p1-original/projectiles/miko16-05-pat053.png": "a829fc94d8ce2ec3391594a6694210672d3b50abe5cfc07806733dd7df8f2c75",
+        "th02-player-colors/p2-blue/projectiles/miko16-05-pat053.png": "f287a0e77d6269ac7bc5dcbcf9b4a1bd4003fefa218fcaa2489986cd478911ad",
+        "th02-player-colors/p3-green/projectiles/miko16-05-pat053.png": "22dbc9db19af7cac9aecfd5bde150428843eee558f47689c6ca9fd044f1be3c8",
+        "th02-player-colors/p1-original/projectiles/miko16-06-pat054.png": "a48e51a95ea635eb9a4370e85e3a3d00e9f9d88417ad367f9e2f97d2f471556f",
+        "th02-player-colors/p2-blue/projectiles/miko16-06-pat054.png": "11ef4b09718e07fce621b4d14295ed7cb632af1689bd71e95f20bf64b998dd67",
+        "th02-player-colors/p3-green/projectiles/miko16-06-pat054.png": "184c6cbfe64098ce78a0228a8f6c910b8d64016502b8addeeffa89a5457839a7",
+        "th02-player-colors/p1-original/projectiles/miko16-07-pat055.png": "5dd4c799cc3ff60e61db7b80fa043d093442c78e3deefde11db498b740cd093c",
+        "th02-player-colors/p2-blue/projectiles/miko16-07-pat055.png": "0ebe6fdc3603bbb4753ee81061e0c315784af144b8c5664691575dcc715e3d70",
+        "th02-player-colors/p3-green/projectiles/miko16-07-pat055.png": "23f6a6e6ec5691ba1370953e433c48df9e4c6fba88cc1b07fc54e289d1e1fb28",
+        "th02-player-colors/p1-original/projectiles/miko16-08-pat056.png": "a86025520d905ad9d400de54f94fcc23c6ec3aab673c2e834628d98cddf32f31",
+        "th02-player-colors/p2-blue/projectiles/miko16-08-pat056.png": "52e08b6e5c3c0bf28e040d1c30df2f055b05e68329e1a89bd2a14565aad4d777",
+        "th02-player-colors/p3-green/projectiles/miko16-08-pat056.png": "9cc93b1e15453aa990a9f93dbb05f04e2b5764db48f81e18f3c228461ee362b7",
+        "th02-player-colors/p1-original/projectiles/miko16-09-pat057.png": "42063ad24b2046729ce6e3821e6c0e9dcfe3e6d874b5a70970db03d719579b18",
+        "th02-player-colors/p2-blue/projectiles/miko16-09-pat057.png": "690be9780359f33e28f83206fdf85d48917573daa3e4cad7be1d71dab93bb609",
+        "th02-player-colors/p3-green/projectiles/miko16-09-pat057.png": "bbc1e5e2e4003bce62208744016ab64fc9309eaa0dd58752040075b3b4d81a74",
+        "th02-player-colors/p1-original/projectiles/miko16-10-pat058.png": "310f57b7c3f02fccf70c2c6c611223e268cf701f833c69322502b9c3b91c2fda",
+        "th02-player-colors/p2-blue/projectiles/miko16-10-pat058.png": "673ccd140c739bd67f7355e074b050c900fde85d91218bc269f7fef7d9a214e9",
+        "th02-player-colors/p3-green/projectiles/miko16-10-pat058.png": "c068521df85b2275da145700ea1092fb19513617498c787f0af7266e9e6d33a7",
+        "th02-player-colors/p1-original/projectiles/miko16-11-pat059.png": "462cc4136e19322c94728644530271f7b49239373ca51af829a04aef72398e66",
+        "th02-player-colors/p2-blue/projectiles/miko16-11-pat059.png": "c185d084dbd8eb1db7856ad63fd96de6da4fa421013b906572c6e2297ff471cc",
+        "th02-player-colors/p3-green/projectiles/miko16-11-pat059.png": "6b002c2e7078d14a6a09c89ae27f753f3add803f3dbfe588ffe2c4b970dbc940",
+        "th02-player-colors/p1-original/projectiles/miko16-12-pat060.png": "98d04f720f7ecba9017da3f93826720e4005b2e2d555909eb66dc7ae943c043d",
+        "th02-player-colors/p2-blue/projectiles/miko16-12-pat060.png": "ea46410596c696358cdc9e8ffe440dc7f7d3706992ea39f5740fa8e344379391",
+        "th02-player-colors/p3-green/projectiles/miko16-12-pat060.png": "094763cd7128f48e83b0e311efe453f826f1af9be0ccc11fd76c4d9898fd7fbd",
+        "th02-player-colors/p1-original/projectiles/miko16-13-pat061.png": "92e578db770432c31f6df39dd66c40cff905332c52eda9bfa2476b0f6505b584",
+        "th02-player-colors/p2-blue/projectiles/miko16-13-pat061.png": "a0c8b5e47d884a9fe02aab128cf4a8c8ae7ab8065da9d2dff8e4c8cd1ba9993f",
+        "th02-player-colors/p3-green/projectiles/miko16-13-pat061.png": "dbecd065eac91377c2b91ef514c9d4faec0f975b0eb6e2725d153b058e650b5c",
+        "th02-player-colors/p1-original/projectiles/miko16-14-pat062.png": "2ae2814d0f5bd04cba1fe78000dfad6e5a3ec83e962f200c7c6e8015e61cf9f9",
+        "th02-player-colors/p2-blue/projectiles/miko16-14-pat062.png": "2d29bf302a1d60a6f817fdc7679e89a4f0bb1930afc7124c66d113618c116702",
+        "th02-player-colors/p3-green/projectiles/miko16-14-pat062.png": "22f01acf4d6263dc192616e196bc3db945d7965f739d538fda0060a304493b1d",
+        "th02-player-colors/p1-original/projectiles/miko16-15-pat063.png": "d594213739d5c10065a4c48c2be70085ed36574ed9d6f893964a6378eae69e77",
+        "th02-player-colors/p2-blue/projectiles/miko16-15-pat063.png": "c72302b1fb31719bc2e6d473c57b18bb85b4bf6ce15022d5874fec1294ac00e5",
+        "th02-player-colors/p3-green/projectiles/miko16-15-pat063.png": "46a2eb8ef2f6b1b361d31b780c41039a54e166892a74668414a36d7db8e79f2d",
+        "th02-player-colors/p1-original/projectiles/miko16-16-pat064.png": "9b4be55d557ee7a62e6d543adcca0f9a79c22993320c579c39402520eb437481",
+        "th02-player-colors/p2-blue/projectiles/miko16-16-pat064.png": "51b9126b4c8731f5621ed68b9fb2efb210fec418e81180f99c1b4c1965c3a0d7",
+        "th02-player-colors/p3-green/projectiles/miko16-16-pat064.png": "877e065a4117d0a5955b2309aa4b50a836d318e900029726e77d7d231d9fb753",
+        "th02-player-colors/p1-original/projectiles/miko16-17-pat065.png": "fa1d2719deecdfc5b008348de68440812eedfc91f67eef4b9996654d197359dd",
+        "th02-player-colors/p2-blue/projectiles/miko16-17-pat065.png": "0b657a54a2ca1f819cf7b2ae54abc64f4a79bce66f41859a4443334f23fc8c5c",
+        "th02-player-colors/p3-green/projectiles/miko16-17-pat065.png": "f8f65033d3f3a1d6dbd8254219ece28c7fc55615afdcd39b1ba5322248773b3f",
+        "th02-player-colors/p1-original/projectiles/miko16-18-pat066.png": "06771d457b9496c0ca46ce4bd72955bb82a7438e59be9ed2a0cf206f754fd93d",
+        "th02-player-colors/p2-blue/projectiles/miko16-18-pat066.png": "e38732999f353d9819edde58c967fb183e39e69bd7eccfa13709767e57759e00",
+        "th02-player-colors/p3-green/projectiles/miko16-18-pat066.png": "8a8e5294e762d4138174e73638fadbd75d156427a00f574d664ac37ffa4ea699",
+        "th02-player-colors/p1-original/projectiles/miko16-19-pat067.png": "c359ee1ea967829962a8df47fec0da318fed3970aa4148204131c0c2cbd6f953",
+        "th02-player-colors/p2-blue/projectiles/miko16-19-pat067.png": "e1e6817a6eb8078e231ff9d2ab0801edfe183bcb7d006b501be070246154b88b",
+        "th02-player-colors/p3-green/projectiles/miko16-19-pat067.png": "f03cbbd449f92b4b33bb996b69251b2b994a8de795e5ad7e0f81fb094dad1943",
+        "th02-player-colors/p1-original/projectiles/miko16-27-pat075.png": "9ae61e3f51ce450d4a476c871e0c6d9c439597d3d476c3320f2f11e623e46060",
+        "th02-player-colors/p2-blue/projectiles/miko16-27-pat075.png": "37d4fb51e0f41214d92ec1f8ec64ec93a635431743cc95d10fdaec74f9cc5201",
+        "th02-player-colors/p3-green/projectiles/miko16-27-pat075.png": "1ecd433adafcd65a470b8880cdda870d56f7a57a156ff77eead5c67e9c282614",
+        "th02-player-colors/p1-original/projectiles/miko16-28-pat076.png": "051b2728e3dc9c8ae03d69f963007322502ae7d1a2447c15e7397dd4c22f9e07",
+        "th02-player-colors/p2-blue/projectiles/miko16-28-pat076.png": "98ec99fdb36cf51a05ef0c08a2b518b3cf2d1c35004f93791a9c1a75d0c41de9",
+        "th02-player-colors/p3-green/projectiles/miko16-28-pat076.png": "e58a8f493b68dba1a0836509f3eee6672a93daf37d741659a587b532c6f8db07",
+        "th02-player-colors/p1-original/projectiles/miko16-29-pat077.png": "9f7f0f2a627f119de6b9c365ab65b921427911468788d682e995bd815416e970",
+        "th02-player-colors/p2-blue/projectiles/miko16-29-pat077.png": "eed3f06386edeb48456cce57c7a3168f1ef15760c91f555ee1f3bab69a9d31bd",
+        "th02-player-colors/p3-green/projectiles/miko16-29-pat077.png": "4bc12636519a9d9864a9eea35b50421d0eac106d0eabd32f4784928398e96847",
+        "th02-player-colors/p1-original/projectiles/miko16-30-pat078.png": "9c9981a1577785f79e2c41b3107a90150697db4ac55daa655c445f5f43c9099a",
+        "th02-player-colors/p2-blue/projectiles/miko16-30-pat078.png": "e13f808f5b443ac4af40ddb3596715def7e42af7486726579567ec2056123a91",
+        "th02-player-colors/p3-green/projectiles/miko16-30-pat078.png": "1bc156343f3da549663b82b979a4d153cb1a8be9cabe9be62adbb82b8a0d2584",
+        "th02-player-colors/p1-original/projectiles/miko16-31-pat079.png": "b6315b77da76ae3719aee130a1845cf4a78d12aa61d6df083e5ce9367dfe4595",
+        "th02-player-colors/p2-blue/projectiles/miko16-31-pat079.png": "46f7fb8feb2588db3464fa94740f2fb895492208ca249f03816243604e1cbdcf",
+        "th02-player-colors/p3-green/projectiles/miko16-31-pat079.png": "f56fec226566b55a212327d9e0025d9e2ab176ed165b11d1ab1d8789294b6536",
+        "th02-player-colors/p1-original/projectiles/miko16-76-pat124.png": "89af86829184b1ac5be4e7ac8dbdbaea7fcb402b660351a1d5c94264a16134da",
+        "th02-player-colors/p2-blue/projectiles/miko16-76-pat124.png": "70b01531f4d727c59fad6733efaa9fb80cb52ebfa775c9ace007f6454d01304b",
+        "th02-player-colors/p3-green/projectiles/miko16-76-pat124.png": "db1a24d3cd163c2e88442ba03d8a0e372f50ed22dc43fe04ce2c572f2dc39409",
+        "th02-player-colors/p1-original/projectiles/miko16-77-pat125.png": "e030f1d18d09953d4e92e48940ce5168a8465e809f5b4c6ed70635c282f933e0",
+        "th02-player-colors/p2-blue/projectiles/miko16-77-pat125.png": "1f216f21af5edc879347f33f6976123b86b6a9c7b132887cb5e81b27a1417b5f",
+        "th02-player-colors/p3-green/projectiles/miko16-77-pat125.png": "19e5cfdbb140d75665aab2ca591a22bdf2a01e2ae9388774b044ee9bafbf14a5",
+        "th02-player-colors/p1-original/projectiles/miko16-78-pat126.png": "a73f25de892aca356776e3210cabdd0c15d706144b91c740ed53afea6e11b9cc",
+        "th02-player-colors/p2-blue/projectiles/miko16-78-pat126.png": "e8b1cb1e2f178ab5ebb0c9c14b839b3f3d974eab15e6611dee8cd033137271c7",
+        "th02-player-colors/p3-green/projectiles/miko16-78-pat126.png": "33dbe26332e9cbf2e4a48a7f3e0d7f33b0b6dfc2d51520e896401bd2bb720f17",
+        "th02-player-colors/p1-original/projectiles/miko16-79-pat127.png": "09d6b275b3e33a0f4c0bd9173f05765c5ebb39f88f43072837e53c2160d7ad28",
+        "th02-player-colors/p2-blue/projectiles/miko16-79-pat127.png": "09d6b275b3e33a0f4c0bd9173f05765c5ebb39f88f43072837e53c2160d7ad28",
+        "th02-player-colors/p3-green/projectiles/miko16-79-pat127.png": "09d6b275b3e33a0f4c0bd9173f05765c5ebb39f88f43072837e53c2160d7ad28",
+        "th02-player-colors/p1-original/projectiles/miko32-29-pat039.png": "995e282b10cf20de87dc143addfaaff8514927d032856afb936fdab69a3b17d3",
+        "th02-player-colors/p2-blue/projectiles/miko32-29-pat039.png": "9081399dcdf8d93b064b3d3f0fbe42f8b9ca502815ef40b7385e83b720eb42a3",
+        "th02-player-colors/p3-green/projectiles/miko32-29-pat039.png": "5619da0c859c1193831c5711540ad26594b11fff5c2c89a45e7d2a19201343ba",
+        "th02-player-colors/p1-original/projectiles/miko32-30-pat040.png": "ecdb78fbfba7d769fcc298699d7bfe3912432dc3f1cc96e7baefbe0cc430ba1f",
+        "th02-player-colors/p2-blue/projectiles/miko32-30-pat040.png": "178c57ccfec1098f40a3b9dba46bc1adf066281fc4013c8e2fdb3f520f60eae1",
+        "th02-player-colors/p3-green/projectiles/miko32-30-pat040.png": "a8431453d42c97c99e14269746d673356c1c8706c54676d1f2274659c46e9f84",
+        "th02-player-colors/p1-original/projectiles/miko32-31-pat041.png": "12efc782e23f2ac3202b84b6656bf850db101ccb583e97f708c54cbb62e87d9d",
+        "th02-player-colors/p2-blue/projectiles/miko32-31-pat041.png": "2b7652d93c89b071215534ae62d0c7ccd0459971800fbf85ea4e02871c78043a",
+        "th02-player-colors/p3-green/projectiles/miko32-31-pat041.png": "fbd70ac3f61ef3fc2f70b5e0c7d0d224f87fa9cfd362056bcbae5bc5623f82f7",
+        "th02-player-colors/p1-original/projectiles/miko32-37-pat047.png": "12ad25c849969190456192010cd4fdd0476a86601181e2f272022710b748f342",
+        "th02-player-colors/p2-blue/projectiles/miko32-37-pat047.png": "0444bc12cb2a5a012a4ad61646b48e7e1c347e6c33358889cc609415b3a0420c",
+        "th02-player-colors/p3-green/projectiles/miko32-37-pat047.png": "c59954c5942a0257b0155aebe8d91731cefcf98a6152e7b786d0146dbc4db636"
+      },
+      "patterns": [
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        75,
+        76,
+        77,
+        78,
+        79,
+        124,
+        125,
+        126,
+        127,
+        39,
+        40,
+        41,
+        47
+      ],
+      "source": "ghost-preview/th02-player-colors/projectiles-manifest.json",
+      "originalOptionsPreserved": true,
+      "originalP1Preserved": true,
+      "includesOptionProjectiles": true
+    },
+    "contextEntry": "art_context",
+    "cores": {
+      "wdosbox-x-fast.wasm": "77efbc5cac5de8a2b92a3943bec93f1811ac738a8d3947c1e1f3414a0136a431",
+      "wdosbox-x-rollback.wasm": "bb711759ac1b20873e5276a10ac63d216b530157beaee6cb5dfd09500b7fde53",
+      "wdosbox-x-rollback-tracked.wasm": "4f3e9d6205cd1f1c9eee0a4a768e09f3ba6073e71c3706a274ba4fa6e22213e9"
+    }
+  },
+  "shots": {
+    "base": 37824,
+    "count": 114,
+    "stride": 16,
+    "originalCount": 38,
+    "extraBssBytes": 1824,
+    "fullNativeCadence": true,
+    "ownerAtSpawn": true,
+    "independentOptionPhase": true,
+    "liveHitList": true
+  },
+  "hudBuffer": {
+    "rows": 14,
+    "columns": 22,
+    "top": 8,
+    "left": 56,
+    "bounded": true
+  },
+  "players": {
+    "capacity": 3,
+    "countOffset": 110,
+    "configCountOffset": 2,
+    "mailboxSize": 144,
+    "inputOffsets": [
+      24,
+      26,
+      108
+    ],
+    "stateOffsets": [
+      32,
+      48,
+      112
+    ],
+    "itemOffsets": [
+      76,
+      80,
+      128
+    ],
+    "progressOffsets": [
+      84,
+      85,
+      132
+    ],
+    "latchOffsets": [
+      86,
+      87,
+      133
+    ],
+    "recipientOffsets": [
+      134,
+      135,
+      136
+    ]
+  },
+  "debug": {
+    "invincibilityMailboxOffset": 89,
+    "defaultEnabled": false
+  },
+  "offline": {
+    "maskEntry": "offline_mask",
+    "outValue": 2,
+    "permanent": true
+  },
+  "touch": {
+    "stride": 8,
+    "unitsPerPixel": 16,
+    "movement": "native",
+    "bounds": [
+      28,
+      390,
+      16,
+      344
+    ]
+  },
+  "balance": {
+    "version": 1,
+    "fixedStartingCount": true,
+    "powerMultipliers": [
+      1.5,
+      2
+    ],
+    "fullPowerSupport": {
+      "enabled": true,
+      "kinds": [
+        0,
+        3
+      ],
+      "priority": [
+        "lowest-power",
+        "nearest-item",
+        "seat"
+      ],
+      "score": "team",
+      "overlay": [
+        57009,
+        57362
+      ]
+    },
+    "bossMultipliers": [
+      1.5,
+      2.2
+    ],
+    "scoreMultipliers": [
+      1,
+      1
+    ],
+    "scoreScope": "team",
+    "extendAward": "team-1up",
+    "maxPower": 80,
+    "maxSpareLives": 5,
+    "maxBombs": 5,
+    "bombItem": "all-living",
+    "lifeItem": "all-living-and-revive-ghosts",
+    "statsEntry": "personal_stats",
+    "statsStride": 16,
+    "scoreOffset": 0,
+    "extendsOffset": 4,
+    "nextExtendOffset": 8,
+    "powerRemainderOffset": 12,
+    "teamScoreEntry": "team_score",
+    "scoreUnits": "displayed-points",
+    "extends": [
+      1000000,
+      2000000,
+      3000000,
+      5000000,
+      8000000
+    ],
+    "personalScoreVisible": false
+  },
+  "extraUnlock": {
+    "imageOffset": 47367,
+    "expected": "8bc7",
+    "replacement": "b001"
+  },
+  "targeting": {
+    "policy": "nearest-live",
+    "capacity": 3,
+    "players": 3,
+    "enabledOffset": 104,
+    "defaultEnabled": true,
+    "bossReads": [
+      72053,
+      72802,
+      84256,
+      85138,
+      89458,
+      89869,
+      90070,
+      90079,
+      91384,
+      91403,
+      91420,
+      91439,
+      91510,
+      91517,
+      91579,
+      91683,
+      91690,
+      91819,
+      91826,
+      98778,
+      100647,
+      100925,
+      101484,
+      101587,
+      101890,
+      104596,
+      111983,
+      114313
+    ],
+    "vectors": [
+      67197,
+      91265,
+      92990,
+      100595,
+      101268
+    ],
+    "angles": [
+      72885,
+      72984,
+      73792,
+      101579,
+      102901
+    ],
+    "special": 68017,
+    "scratch": [
+      37696,
+      37698,
+      37700,
+      37702
+    ]
+  },
+  "focus": {
+    "percentOffsets": [
+      100,
+      101,
+      137
+    ],
+    "enabledOffset": 102,
+    "pointOffset": 103,
+    "defaultPercent": 50,
+    "defaultEnabledMask": 7,
+    "defaultPointMask": 7,
+    "range": [
+      10,
+      100
+    ],
+    "pointCenter": [
+      16,
+      21
+    ]
+  },
+  "rescue": {
+    "taps": 5,
+    "tapWindowFrames": 24,
+    "invincibilityFrames": 150,
+    "bulletClearFrames": 20,
+    "maxSpareLives": 5,
+    "hudRows": [
+      0,
+      1,
+      2
+    ]
+  },
+  "bossHud": {
+    "steps": 128,
+    "style": "th04-native",
+    "scope": "whole-fight",
+    "limits": [
+      2261,
+      2400,
+      1450,
+      900,
+      4700,
+      8500
+    ],
+    "stones": [
+      140,
+      140,
+      120,
+      120,
+      930
+    ],
+    "mimaPhases": [
+      600,
+      700,
+      800,
+      1500,
+      1100
+    ],
+    "sigmaPhases": [
+      1800,
+      1800,
+      1800,
+      1800,
+      1300
+    ],
+    "sigmaFinal": 1300
+  },
+  "nativeBossHud": {
+    "schema": 1,
+    "implementation": "guest-ems",
+    "module": "A:\\NBHUD.BIN",
+    "moduleSha256": "00ca2b9a44eff57dcd04f6048332bba9658a9eef8b53353e9f9fbefef3bd637f",
+    "moduleBytes": 2060,
+    "emsPages": 1,
+    "conventionalBytesAdded": 512,
+    "bridge": {
+      "entry": 35168,
+      "cleanup": 35246,
+      "handle": 35271,
+      "status": 35273,
+      "pointer": 35274
+    },
+    "hp": true,
+    "phaseCuts": true,
+    "timer": "native audited deadlines; unavailable deadlines blank",
+    "browserOverlay": false
+  },
+  "hitClear": {
+    "version": 1,
+    "trigger": "new-hit",
+    "testInvincibility": true,
+    "pools": {
+      "bullets": 150,
+      "lasers": 12
+    },
+    "renderEntry": 29500,
+    "collisionAllowedEntry": 29583,
+    "edits": {
+      "jp": [
+        {
+          "codeOffset": 29496,
+          "expected": "6660803ef619010f850a0166a10c1a663b06101a0f85fd006685c00f84f6000fb61ef50883fb050f87ea0083fb027409803efa2b000f85dc002ec6067b7201d1e32e8b877c722ea3787283fb04746383fb08741783fb0a742c8b16ea2b85d2790231d229d07f6f31c0eb6b8b1ef89183fb0a7603bb0a00d1e32e8b8788722e8b8f9e72eb190fb61e427b83fb0a7603bb0a00d1e32e8b87b4",
+          "replacement": "3c738f739c6660803e942b007443803ea70a00753c803e962b007535803e952b0074082e803e2586007426be182cb99600803c017503c6040283c614e2f3be6c5fb90c00803c017503c6040283c60ce2f366619de947ca532e803ee2850074352e0fb61e27852e80bf2a85007527803e942b007520803ea70a007519803e443e007512803e952b0074082e803e25860074035bf8c35bf9c3"
+        },
+        {
+          "codeOffset": 20149,
+          "expected": "e81eef",
+          "replacement": "e88424"
+        },
+        {
+          "codeOffset": 20362,
+          "expected": "532e80",
+          "replacement": "e90224"
+        }
+      ],
+      "cn": [
+        {
+          "codeOffset": 29496,
+          "expected": "6660803ef619010f850a0166a10c1a663b06101a0f85fd006685c00f84f6000fb61ef50883fb050f87ea0083fb027409803efa2b000f85dc002ec6067b7201d1e32e8b877c722ea3787283fb04746383fb08741783fb0a742c8b16ea2b85d2790231d229d07f6f31c0eb6b8b1ef89183fb0a7603bb0a00d1e32e8b8788722e8b8f9e72eb190fb61e427b83fb0a7603bb0a00d1e32e8b87b4",
+          "replacement": "3c738f739c6660803e942b007443803ea70a00753c803e962b007535803e952b0074082e803e2586007426be182cb99600803c017503c6040283c614e2f3be6c5fb90c00803c017503c6040283c60ce2f366619de947ca532e803ee2850074352e0fb61e27852e80bf2a85007527803e942b007520803ea70a007519803e443e007512803e952b0074082e803e25860074035bf8c35bf9c3"
+        },
+        {
+          "codeOffset": 20149,
+          "expected": "e81eef",
+          "replacement": "e88424"
+        },
+        {
+          "codeOffset": 20362,
+          "expected": "532e80",
+          "replacement": "e90224"
+        }
+      ]
+    }
+  }
+}

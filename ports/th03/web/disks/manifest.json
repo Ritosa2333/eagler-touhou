@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "games": {
+    "3-jp": {
+      "url": "disks/3-jp.hdi.gz",
+      "size": 21415936,
+      "compressedSize": 1800070,
+      "sha256": "1261d725195fd35b4c601c65eccd2dff1a2e69f217db0c195e97d89545e3bb74",
+      "autoexecOffset": 302080,
+      "autoexecCapacity": 8192,
+      "autoexecSizeOffset": 48444,
+      "languageMarkerOffset": 48192,
+      "languageMarker": "TH03JP  ",
+      "game": "3",
+      "lang": "jp",
+      "keyboardConfig": {
+        "offset": 12196864,
+        "size": 8,
+        "original": "0100001100f09f00"
+      }
+    },
+    "3-cn": {
+      "url": "disks/3-cn.hdi.gz",
+      "size": 21415936,
+      "compressedSize": 1815717,
+      "sha256": "776472cb4c98b99e5143f735ec988712a3ec470a7b9a37001490193135d81f56",
+      "autoexecOffset": 302080,
+      "autoexecCapacity": 8192,
+      "autoexecSizeOffset": 48444,
+      "languageMarkerOffset": 48192,
+      "languageMarker": "TH03CN  ",
+      "game": "3",
+      "lang": "cn",
+      "keyboardConfig": {
+        "offset": 1891328,
+        "size": 8,
+        "original": "0100001100ef9f00"
+      }
+    }
+  }
+}

@@ -1,0 +1,73 @@
+import {readFile,writeFile,copyFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {installPc98Pmd} from '../../../tools/build/pc98-pmd.mjs';
+export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files}){
+  await installPc98Pmd(repo,output,runtime);
+  await patch('solo.js',text=>{
+    const a=text.indexOf('async function storage('),b=text.indexOf('\nfunction validate(',a);
+    if(a<0||b<0)throw Error('TH03 solo storage changed');
+    text=text.slice(0,a)+`async function storage(language,mode,value){return undefined;}\n`+text.slice(b);
+    text=replaceOnce(text,'const disk=playback?source:prepareSoloDisk(source);',`const disk=playback?source:prepareSoloDisk(source);
+      if(!playback){const fat=new Fat12(disk);for(const [name,bytes]of globalThis.__eaglerPC98Files.memory)if(['YUME.NEM','YUME.CFG'].includes(name))fat.put('YUMEZIKU/'+name,bytes);}`,'main save import');
+    text=replaceOnce(text,"bits=player.sample();for(const code of [...physical,...tapped])bits|=physicalActions[code]||0;tapped.clear();","bits=globalThis.__eaglerPC98Input.sample();tapped.clear();",'hosted solo input');
+    text=replaceOnce(text,'synthetic.add(event);canvas.dispatchEvent(event);',"synthetic.add(event);Object.defineProperty(event,'__eaglerPC98Synthetic',{value:true});canvas.dispatchEvent(event);",'allow game keyboard events through managed input');
+    text=replaceOnce(text,'const packed=player.pack(0),touch=unpackTouch(packed);',"const packed=packTouch(0,globalThis.__eaglerPC98Input.motion()),touch=unpackTouch(packed);",'hosted solo touch');
+    text=replaceOnce(text,"import {unpackTouch} from './touch-input.js';","import {unpackTouch,packTouch} from './touch-input.js';",'touch codec');
+    text=replaceOnce(text,'replayUI.offerSave(blob,value);','void managedSaveReplay(blob);','managed replay export');
+    text=replaceOnce(text,'onExit:()=>{soloMusic?.reset();','onExit:()=>{void managedNaturalExit();soloMusic?.reset();','managed solo exit');
+    return text;
+  });
+  await writeFile(resolve(output,'solo.js'),await readFile(resolve(output,'solo.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-solo-api.js'),'utf8'));
+  await patch('startup-assets.js',text=>replaceOnce(text,'async function cache(mode, key, value) {','async function cache(mode, key, value) {if(globalThis.__eaglerPC98Content)return undefined;','managed content cache').replace("new URL('runtime.json', vendor)","new URL('./vendor/dosbox-x/runtime.json', import.meta.url)").replace("new URL('wdosbox-x-fast.wasm', vendor).href","new URL('./vendor/dosbox-x/wdosbox-x-fast.wasm', import.meta.url).href"));
+  await patch('app.js',text=>{
+    text="import {PmdPlayer} from './pmd-player.mjs';\nimport {extractOriginalPmd} from './pmd-archives.mjs';\nimport {OriginalSfx} from './original-sfx.mjs';\n"+text;
+    text=replaceOnce(text,"&& /^[0-9]{4}$/.test(netQuery.get('room') || '')", "&& !!netQuery.get('room')",'main room identity');
+    text=replaceOnce(text,"const response = await fetch(`/api/state?${query}`, {cache: 'no-store'});",'const response={ok:true,json:async()=>globalThis.th03RoomHost.state};','managed room settings');
+    text=replaceOnce(text,'function report(error) {',"function report(error) {globalThis.__eaglerPC98Emit({event:'error',message:String(error.message||error)});",'managed error');
+    text=replaceOnce(text,"if(netQuery.get('role')==='host')replayRecorder.connectNetwork",'if(false)replayRecorder.connectNetwork','standalone replay service');
+    text=replaceOnce(text,"if (!controlsOnly&&(restartOnLoad || embedded || roomHost)) $('start').click();",'// The managed shell starts after configure.','managed lifecycle');
+    text=replaceOnce(text,"localBgm = new LocalBgm(emulator.module.SDL2.audioContext, () => {});",`localBgm = new LocalBgm(emulator.module.SDL2.audioContext, () => {});
+    localBgm.pmd={tracks:extractOriginalPmd('th03',new Fat12(disk)),engine:await PmdPlayer.prepare(localBgm.context,import.meta.url)};`,'original music');
+    text=replaceOnce(text,`localSfx=new LocalSfx(emulator.module.SDL2.audioContext);
+      // Load every small effect before simulation: no downloads/decoding on a
+      // shot, and no muted-PCM game if any local effect failed to load.
+      await localSfx.load(networkAssets.soundAssets);`,`localSfx=await OriginalSfx.create('th03',new Fat12(disk));`,'original effects');
+    return text;
+  });
+  await writeFile(resolve(output,'app.js'),await readFile(resolve(output,'app.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-room-api.js'),'utf8'));
+  await patch('netplay.js',text=>{
+    text="import {createManagedTransport} from './managed-transport.mjs';\n"+text;
+    const a=text.indexOf('  async start(){'),b=text.indexOf('  async state(){',a);
+    if(a<0||b<0)throw Error('TH03 transport lifecycle changed');
+    text=text.slice(0,a)+`  async start(){
+      const options=globalThis.__eaglerPC98Options();this.localSeat=options.netplayPlayer;
+      this.network='lan';this.ice='all';this.metricsTimer=setInterval(()=>this.observeConnection(),500);
+      this.managedTransport=createManagedTransport(options,['host','guest'],error=>this.fail(error));
+      await new Promise((resolve,reject)=>{
+        this.rtcResolve=resolve;this.rtcReject=reject;
+        this.rtcTimer=setTimeout(()=>reject(Error('等待另一端连接超时')),120000);
+        this.attach(this.managedTransport.channelFor(this.role==='host'?'guest':'host'));
+        this.managedTransport.connect();
+      });
+    }
+`+text.slice(b);
+    return replaceOnce(text,'close(){if(this.closed)return;this.closed=true;', 'close(){if(this.closed)return;this.closed=true;this.managedTransport?.close();','managed transport cleanup');
+  });
+  await patch('room-title-worker.js',text=>{
+    text=replaceOnce(text,"emulator = await (await import('./room-title-th05.js')).createTitleCore({canvas, disk, wasmBinary});","throw Error('TH03 title only');",'title core closure');
+    text=replaceOnce(text,'async function boot({game, canvas, disk, wasmBinary, module})','async function boot({game, canvas, disk, wasmBinary, module,managedTitle=false})','managed title');
+    return replaceOnce(text,"send('ready', {frames, pixels, program: m.UTF8ToString(m._emGetRunningProgram())});","send('ready', {frames, pixels, program: m.UTF8ToString(m._emGetRunningProgram())});if(managedTitle)return;",'hold title');
+  });
+  await patch('replay/audio.js',text=>text
+    .replace("if(game==='01'){const {LocalAudio}=await import('../netplay/audio.js');native=new LocalAudio();await native.unlock();context=native.context;await context.suspend();return;}","if(game!=='03')throw Error('TH03 Replay only');")
+    .replace("const {LocalBgm}=await import('../netplay/local-bgm.js');bgm=new LocalBgm(context,()=>{});","throw Error('TH03 Replay only');")
+    .replace("const {LocalSe}=await import('../netplay/local-se.js');sfx=new LocalSe(context);","throw Error('TH03 Replay only');")
+    .replace("const {LocalSfx}=await import('../netplay/local-sfx.js');sfx=new LocalSfx(context);","throw Error('TH03 Replay only');"));
+  await patch('replay/external-loader.js',text=>text.replace("new URL('dosbox-jspi.mjs',vendor)","new URL('../vendor/dosbox-x/dosbox-jspi.mjs',import.meta.url)").replace("new URL('wdosbox-x-fast.wasm',vendor)","new URL('../vendor/dosbox-x/wdosbox-x-fast.wasm',import.meta.url)"));
+  await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
+  await patch('site.css',text=>text.replace("url('assets/launcher-background.webp')",'none'));
+  for(const name of await files(resolve(port,'web')))if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')){await copyFile(resolve(port,'web',name),resolve(output,name));runtime.push(name);}
+  for(const name of ['pc98-spectator-audio.mjs','pc98-spectator-channel.mjs','pc98-spectator-publisher.mjs','pc98-local-spectator.mjs','pc98-managed-spectator.mjs','directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs','pc98-game-fps.mjs','pc98-pause-menu.mjs']){await copyFile(resolve(repo,'common/browser',name),resolve(output,name));runtime.push(name);}
+  const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#screen{width:100%;height:100%;margin:0;background:#000;overflow:hidden}#canvas{outline:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style><script type="module" src="managed-shell.mjs"></script></head><body><div id="screen"><canvas id="canvas" width="640" height="400" tabindex="0"></canvas></div></body></html>`;
+  await writeFile(resolve(output,'th03.html'),html);runtime.push('th03.html');
+}

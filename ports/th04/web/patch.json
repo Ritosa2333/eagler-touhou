@@ -1,0 +1,620 @@
+{
+  "original_md5": "e2b685961daaa8b668b3914461fbdb8a",
+  "original_size": 156258,
+  "patched_size": 169362,
+  "native_crash_fixes": [
+    {
+      "name": "stage-4 Marisa zero-divisor flystep stays still",
+      "image_offset": 93061,
+      "bytes": 128,
+      "original_sha256": "e441622bb8806d953e657d208aabaf4a138a6110bcc9d451f13dae17ea918973",
+      "replacement_sha256": "6cd2afd613df1a32fba5711b4b6fc60bde6f6bdd4f83830162f7547eeb09d8b8",
+      "undefined_durations": [
+        12,
+        13
+      ],
+      "payload_bytes_added": 0
+    },
+    {
+      "name": "shared ring bullet zero-count divide guard",
+      "image_offset": 118986,
+      "bytes": 66,
+      "original_sha256": "fe683d83fb49dd5e153085acf7540c8d9564ba7c7f7ac406b1c08918a2e99243",
+      "replacement_sha256": "3e50d3eb3dcd29c69f9f6ca25f2c1bb7456edaf22c8a1d038e8eea4b5a0aff8e",
+      "undefined_count": 0,
+      "fallback_count": 1,
+      "payload_bytes_added": 0
+    }
+  ],
+  "insert_image_offset": 78048,
+  "insert_size": 13104,
+  "payload_size": 13094,
+  "heap_bytes": 379664,
+  "payload_and_heap_bytes": 392768,
+  "payload_padding_bytes": 10,
+  "body_layer_cs_offset": 39879,
+  "player_art": {
+    "assignment": "occurrence of the same character in seat order",
+    "variants": [
+      "p1-original",
+      "p2-blue",
+      "p3-green"
+    ],
+    "characters": [
+      "reimu",
+      "marisa"
+    ],
+    "mount_start_row": {
+      "reimu": 30,
+      "marisa": 37
+    },
+    "ghost_colors": 12,
+    "ghost_shape_offsets": [
+      0,
+      143
+    ],
+    "ghost_rgb_bytes": 66,
+    "ghost_color_id_bytes": 72,
+    "ghost_mask_bytes": 278,
+    "accessory_palette": "native blue 8/9 and green 4/5; other pixels nearest stage RGB",
+    "ghost_dictionary_rows": 119,
+    "source_sha256": {
+      "ghost-preview\\th05-four-player-colors\\reimu\\p1-original\\ghost-32.png": "b65bde17c040b32d2c3ca90436a8905006c4c4fc4dabb899876fecf2374674d2",
+      "ghost-preview\\th05-four-player-colors\\reimu\\p2-blue\\ghost-32.png": "e81a19bb2b30822165f5de413eea0c9d21cf0d8d1b82fb12b68de9d886a1ae55",
+      "ghost-preview\\th05-four-player-colors\\reimu\\p3-green\\ghost-32.png": "e1bbc19fdf6de4f4e9d0abea54951ecd233327856923aef6be8bc4e84d171017",
+      "ghost-preview\\th05-four-player-colors\\marisa\\p1-original\\ghost-32.png": "33d89334ccdc04ca428bc4d1233d4d84c179274a10d2f628ec8b4e4071e8bf8d",
+      "ghost-preview\\th05-four-player-colors\\marisa\\p2-blue\\ghost-32.png": "01320a87ff717696d0dea392f7824c3b85b4686bf5e852573970f3b5beacfb95",
+      "ghost-preview\\th05-four-player-colors\\marisa\\p3-green\\ghost-32.png": "c830cca4eb9f53e56ee29e47378b6b4e7c431ad367a894670862c9a261ab0ced"
+    },
+    "select_cs_offset": 39032,
+    "render_cs_offset": 39677,
+    "minimum_heap_bytes": 379584
+  },
+  "projectileArt": {
+    "file": "assets/projectiles-rgb.bin",
+    "sha256": "d477bef6b82fae1f04e0b6fdbc4e458ce526b8437d8f78e75f57ec28720916f3",
+    "bytes": 262144,
+    "context_cs_offset": 39470
+  },
+  "shot_art": {
+    "render_cs_offset": 39285,
+    "laser_color_cs_offset": 39401,
+    "owners_cs_offset": 39081,
+    "assignment": "occurrence of the same character in seat order",
+    "shared_palette_restored_after_each_blit": true
+  },
+  "shot_pool": {
+    "count": 204,
+    "stride": 18,
+    "base": 46430,
+    "ranges": [
+      {
+        "base": 46430,
+        "count": 73,
+        "end": 47744
+      },
+      {
+        "base": 48576,
+        "count": 131,
+        "end": 50934
+      }
+    ],
+    "end": 50934,
+    "collision_base": 17574,
+    "collision_stride": 2,
+    "extra_bss_bytes": 2368,
+    "stack_bytes_preserved": 4096,
+    "allocate_cs_offset": 40304,
+    "begin_cs_offset": 39974,
+    "flush_cs_offset": 40193,
+    "batch_cs_offset": 39932,
+    "queue_cs_offset": 39938,
+    "queue_stride": 12,
+    "priority": "rotate per firing wave; no seat quota",
+    "scan": "one shared cursor per wave"
+  },
+  "entries": [
+    34446,
+    34839,
+    35017,
+    34994,
+    34991,
+    37700,
+    35446,
+    35539,
+    35687,
+    35962,
+    35988,
+    36081,
+    36288,
+    36498,
+    36554,
+    36600,
+    35705,
+    35765,
+    34735,
+    35874,
+    36414,
+    38439,
+    38545,
+    38610,
+    38654,
+    38682,
+    38710,
+    38389,
+    38818,
+    38882,
+    38926,
+    38815,
+    38549,
+    40618,
+    41414,
+    41190,
+    40555,
+    41230,
+    41704,
+    35111,
+    43091,
+    43094,
+    44257,
+    44292,
+    44305,
+    44111,
+    44337,
+    44463,
+    44484,
+    44505,
+    44447,
+    44451,
+    44455,
+    44459,
+    44585,
+    44572,
+    44573,
+    44758,
+    45052,
+    45774,
+    45468,
+    45522,
+    45556,
+    45526,
+    45541,
+    45480,
+    45492,
+    45507,
+    45918,
+    45924,
+    45575,
+    45599,
+    45630,
+    45655,
+    45669,
+    45112,
+    46422,
+    46211,
+    46235
+  ],
+  "near_code_guard": {
+    "image_offset": 78048,
+    "original": "8346fe1a83fe107cdb5f5ec9c3"
+  },
+  "mailbox_cs_offset": 37700,
+  "relocations_rebased": 1136,
+  "native_pause_cs_offset": 44447,
+  "offline_mask_cs_offset": 44572,
+  "focus_visible_mask_cs_offset": 44758,
+  "personal_stats": {
+    "cs_offset": 45052,
+    "stride": 20,
+    "players": 3,
+    "bonus_cs_offset": 45112,
+    "score": 0,
+    "high_score": 4,
+    "point": 8,
+    "dream_count": 9,
+    "dream": 10,
+    "graze": 12,
+    "total_point": 14,
+    "max_point": 16,
+    "extends": 18,
+    "score_cap": 99999999
+  },
+  "score_scope": "team",
+  "extend_award": "team-1up",
+  "score_multiplier": {
+    "2_players": 1,
+    "3_players": 1
+  },
+  "score_award_hooks": [
+    67336,
+    93495,
+    98157,
+    106367,
+    106473,
+    107009,
+    117033,
+    117041,
+    117440,
+    117697,
+    120833,
+    121363,
+    122280
+  ],
+  "power_pickup_multiplier": {
+    "2_players": 1.5,
+    "3_players": 2,
+    "fraction_resource_offset": 12
+  },
+  "loadout_cs_offset": 38389,
+  "loadout_file_offset": 88293,
+  "bomb_owner_cs_offset": 38815,
+  "entry_count": 79,
+  "touch_cs_offset": 46211,
+  "touch_stride": 8,
+  "touch_status_cs_offset": 46235,
+  "rescue_cs_offset": 40555,
+  "p3_input_cs_offset": 43091,
+  "p3_motion_cs_offset": 43094,
+  "boss_damage_call_sites": [
+    124409,
+    111620,
+    82539,
+    124468
+  ],
+  "boss_resistance_hook": 96735,
+  "effective_boss_hp": {
+    "2_players": 1.5,
+    "3_players": 2.2,
+    "method": "fractional damage scaling"
+  },
+  "aim_call_sites": [
+    82699,
+    85091,
+    85173,
+    86170,
+    86429,
+    87489,
+    90919,
+    94440,
+    99322,
+    104260,
+    106925,
+    113144,
+    113748,
+    114331,
+    114638,
+    114914,
+    116590,
+    119197,
+    122543,
+    126276,
+    127096,
+    129834,
+    130619,
+    130950
+  ],
+  "added_relocations": 25,
+  "resource_schema": {
+    "offset": 609,
+    "stride": 16,
+    "capacity": 4,
+    "players": 2,
+    "power_max": 128,
+    "lives_include_current": true,
+    "players_max": 3
+  },
+  "hooks": [
+    {
+      "image_offset": 68469,
+      "original": "e8d8fd",
+      "target_cs_offset": 46422,
+      "name": "synchronized direct touch velocity"
+    },
+    {
+      "image_offset": 43934,
+      "original": "9ac4060e13",
+      "target_cs_offset": 44585,
+      "name": "offline seats before world update"
+    },
+    {
+      "image_offset": 43950,
+      "original": "e81e07",
+      "target_cs_offset": 44463,
+      "name": "native pause entry"
+    },
+    {
+      "image_offset": 45783,
+      "original": "9abc060e13",
+      "target_cs_offset": 44484,
+      "name": "pause release at entry"
+    },
+    {
+      "image_offset": 45851,
+      "original": "9a33010e13",
+      "target_cs_offset": 44505,
+      "name": "pause synchronized menu input"
+    },
+    {
+      "image_offset": 45991,
+      "original": "9abc060e13",
+      "target_cs_offset": 44484,
+      "name": "pause release at resume"
+    },
+    {
+      "image_offset": 44918,
+      "original": "e85702",
+      "target_cs_offset": 34446,
+      "name": "stage init"
+    },
+    {
+      "image_offset": 44001,
+      "original": "e8db5e",
+      "target_cs_offset": 34839,
+      "name": "player update"
+    },
+    {
+      "image_offset": 44056,
+      "original": "e8e25f",
+      "target_cs_offset": 35017,
+      "name": "player render"
+    },
+    {
+      "image_offset": 52062,
+      "original": "e8813c",
+      "target_cs_offset": 34994,
+      "name": "background invalidation"
+    },
+    {
+      "image_offset": 68528,
+      "original": "ff169a44",
+      "target_cs_offset": 34991,
+      "name": "shot dispatch"
+    },
+    {
+      "image_offset": 68279,
+      "original": "e887da",
+      "target_cs_offset": 36288,
+      "name": "last life / retirement"
+    },
+    {
+      "image_offset": 61041,
+      "original": "c41e86ba26807f0b63772726fe470b",
+      "target_cs_offset": 36498,
+      "name": "team score extend and ghost revival"
+    },
+    {
+      "image_offset": 44004,
+      "original": "e8cf58",
+      "target_cs_offset": 38610,
+      "name": "shared shots and independent lasers update"
+    },
+    {
+      "image_offset": 44053,
+      "original": "e83a59",
+      "target_cs_offset": 38654,
+      "name": "shared shots and independent lasers render"
+    },
+    {
+      "image_offset": 66979,
+      "original": "e8a0bf",
+      "target_cs_offset": 39285,
+      "name": "per-owner projectile palette during native tiny blit"
+    },
+    {
+      "image_offset": 57981,
+      "original": "e8e2de",
+      "target_cs_offset": 39401,
+      "name": "bound player laser palette"
+    },
+    {
+      "image_offset": 58033,
+      "original": "e8b4db",
+      "target_cs_offset": 39448,
+      "name": "clear native laser RGB context"
+    },
+    {
+      "image_offset": 52065,
+      "original": "e8e038",
+      "target_cs_offset": 38682,
+      "name": "shared shots and independent lasers invalidate"
+    },
+    {
+      "image_offset": 67332,
+      "original": "660fb7c7",
+      "target_cs_offset": 38710,
+      "name": "guest laser damage"
+    },
+    {
+      "image_offset": 44944,
+      "original": "e8a14f",
+      "target_cs_offset": 38818,
+      "name": "preload both Bomb characters"
+    },
+    {
+      "image_offset": 65530,
+      "original": "c606684301",
+      "target_cs_offset": 38882,
+      "name": "latch Bomb owner"
+    },
+    {
+      "image_offset": 67043,
+      "original": "33ffc646f100",
+      "target_cs_offset": 45575,
+      "name": "reset hit ownership"
+    },
+    {
+      "image_offset": 67135,
+      "original": "03f8fe064046",
+      "target_cs_offset": 45599,
+      "name": "record shot damage owner"
+    },
+    {
+      "image_offset": 67195,
+      "original": "83c705803e5c1b00",
+      "target_cs_offset": 45630,
+      "name": "record Bomb damage owner"
+    },
+    {
+      "image_offset": 67252,
+      "original": "83c703fe064046",
+      "target_cs_offset": 45655,
+      "name": "record first P1 laser"
+    },
+    {
+      "image_offset": 67300,
+      "original": "83c703fe064046",
+      "target_cs_offset": 45655,
+      "name": "record second P1 laser"
+    },
+    {
+      "image_offset": 44039,
+      "original": "e80056",
+      "target_cs_offset": 38926,
+      "name": "render owner Bomb resources"
+    },
+    {
+      "image_offset": 73110,
+      "original": "33c0803e664344",
+      "target_cs_offset": 40304,
+      "name": "bounded shared shot allocation and direct owner tagging"
+    },
+    {
+      "image_offset": 48081,
+      "original": "b90800268b0426890583c65083c750e2f281ef8002",
+      "target_cs_offset": 46739,
+      "name": "fixed eight-row EGC tile copy; original read/write order"
+    },
+    {
+      "image_offset": 50622,
+      "original": "add3c88af022c226890532c674042688450283c750fecd75e7",
+      "target_cs_offset": 46845,
+      "name": "16x16 even four-row blit; equivalent SHRD rotation"
+    },
+    {
+      "image_offset": 50726,
+      "original": "add3c88af022c226880532c686e02689450183c750fecd75e7",
+      "target_cs_offset": 46975,
+      "name": "16x16 odd four-row blit; equivalent SHRD rotation"
+    },
+    {
+      "image_offset": 50306,
+      "original": "e8550075fb",
+      "target_cs_offset": 47105,
+      "name": "32x32 even inline cloud rows"
+    },
+    {
+      "image_offset": 50352,
+      "original": "e8590075fb",
+      "target_cs_offset": 47158,
+      "name": "32x32 odd inline cloud rows"
+    },
+    {
+      "image_offset": 49728,
+      "original": "ad0ae47405268905eb070ac0740326880583c750e2ea",
+      "target_cs_offset": 47220,
+      "name": "spark four-row blit"
+    },
+    {
+      "image_offset": 51691,
+      "original": "a583c74ee2fa",
+      "target_cs_offset": 47338,
+      "name": "point-bullet full six-row blit"
+    },
+    {
+      "image_offset": 48744,
+      "original": "56578bc8c1f8038bf880e10732e48a878a0fd3c88bdac1e20603fac1ea0203faba00a88ec2c1ee048bce03cb81f9900177068bce33d2eb09b990012bcb8bd62bd10ae4740990ab83c74ee2faeb06aa83c74fe2fa0bd2740881ef007d87caebe15f5ec390",
+      "target_cs_offset": 4984,
+      "name": "in-place twin-row Marisa laser body; native row write order"
+    }
+  ],
+  "sha256": "e50c83cdecb937ac1a853b8c65ad91fffd405750c622aeb59d253759dd0c09a5",
+  "source": {
+    "language": "zh-CN",
+    "file": "4-cn.hdi.gz",
+    "sha256": "53ab10bdcf0869be854069a91680411e2efdd5cd8173e3e782a40644796d7b65",
+    "main_md5": "e2b685961daaa8b668b3914461fbdb8a"
+  },
+  "power_support": {
+    "enabled": true,
+    "kinds": [
+      0,
+      3
+    ],
+    "priority": [
+      "lowest-power",
+      "nearest-item",
+      "seat"
+    ],
+    "score": "team",
+    "overlay": [
+      61161,
+      61540
+    ]
+  },
+  "code_segment": 2735,
+  "data_segment": 9319,
+  "launch_config": {
+    "schema": 2,
+    "defaults": [
+      2,
+      1,
+      3,
+      2,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      2
+    ],
+    "targets": [
+      [
+        6411493,
+        6411494,
+        6411495,
+        6411496,
+        6411497,
+        6411498,
+        6411499,
+        6411500,
+        6411501,
+        6411502,
+        6411503
+      ],
+      [
+        326673,
+        326674,
+        326675,
+        326676,
+        326677,
+        326678,
+        326679,
+        326680,
+        326681,
+        326682,
+        326683
+      ]
+    ]
+  },
+  "native_boss_hud": {
+    "schema": 1,
+    "implementation": "guest-ems",
+    "module": "A:\\NBHUD.BIN",
+    "moduleSha256": "4228ecf8131dd78b01db1b67b2ae76426c0198734982ed8264cdfd18cb289eb6",
+    "moduleBytes": 3941,
+    "emsPages": 1,
+    "conventionalBytesAdded": 0,
+    "bridge": {
+      "entry": 17901,
+      "cleanup": 17985,
+      "handle": 18010,
+      "status": 18012,
+      "pointer": 18013
+    },
+    "hp": true,
+    "phaseCuts": true,
+    "timer": "native audited deadlines; unavailable deadlines blank",
+    "browserOverlay": false
+  }
+}
