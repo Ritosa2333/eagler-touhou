@@ -83,7 +83,7 @@ function tick(now){
     if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;
     if((bits&3)===3)bits&=~3;if((bits&12)===12)bits&=~12;
     for(const [code,bit] of nativeKeys)if(!!(bits&bit)!==!!(lastKeys&bit))emulator.key(code,!!(bits&bit));lastKeys=bits;
-    if(state){const motion=input.motion();emulator.assist({address:mailbox,generation:state.generation,currentInput:bits&64?0x100:0,focusEnabled:!ps?.options.disableFocus,points:options.alwaysHitbox||ps?.options.alwaysPoint?8:0,
+    if(state){const motion=input.motion();emulator.assist({address:mailbox,generation:state.generation,currentInput:bits&64?0x100:0,focusEnabled:!ps?.options.disableFocus,points:1|(options.alwaysHitbox||ps?.options.alwaysPoint?8:0),
       touchAction:playing&&motion.active?'add':'clear',begin:!!motion.begin,unlimited:!!motion.unlimited,x:motion.x||0,y:motion.y||0});}
     music?.poll(emulator.module.HEAPU8,now);
   }
