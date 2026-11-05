@@ -13,7 +13,27 @@ const source = resolve(args.source||port), web=resolve(source,'web');
 const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
 const privateInputs=new Set(sourceIdentity?.resources||[]);
 const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+async function nativeMarkerInputs(){
+  const meta=JSON.parse(await readFile(resolve(web,'native-patch.json'),'utf8'));
+  const source=await readFile(resolve(privateInputs.has('native/main.exe')?assets:web,'native/main.exe'));
+  if(createHash('sha256').update(source).digest('hex')!==meta.sha256)throw Error('TH03 native marker source identity mismatch');
+  const bytes=Buffer.from(source), header=bytes.readUInt16LE(8)*16;
+  const origin=header+meta.codeSegment*16+meta.hooks.find(h=>h.imageOffset===0x990b).target;
+  const region=bytes.subarray(origin,origin+256);
+  for(const [before,after] of [['83c00e','83c00f'],['bbf800','bb7000'],['bb7000d3cbb0ff','bb2000d3cbb0ff']]){
+    const old=Buffer.from(before,'hex'), at=region.indexOf(old);
+    if(at<0||region.indexOf(old,at+1)!==-1)throw Error('TH03 native marker instruction changed');
+    Buffer.from(after,'hex').copy(region,at);
+  }
+  const sha=createHash('sha256').update(bytes).digest('hex');
+  return {bytes,meta:Buffer.from(JSON.stringify({...meta,sha256:sha,acceptedMainHashes:[...new Set([...meta.acceptedMainHashes,sha])]},null,2)+'\n')};
+}
+let markerInputs;
 async function readInput(name){
+  if(name==='native/main.exe'||name==='native-patch.json'){
+    markerInputs??=await nativeMarkerInputs();
+    return name==='native/main.exe'?markerInputs.bytes:markerInputs.meta;
+  }
   try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
   catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
 }
@@ -54,7 +74,7 @@ for(const manifestPath of ['netplay/runtime.json','lockstep-runtime.json']) {
   let manifest;try{manifest=JSON.parse(await readFile(resolve(output,manifestPath),'utf8'));}catch(error){if(error.code==='ENOENT')continue;throw error;}
   for(const table of [manifest.files,manifest.assets])if(table)for(const name of Object.keys(table)) {
     if(name===manifestPath)throw Error('Self-referencing runtime hash');
-    try{const bytes=await readFile(resolve(output,name));if(typeof table[name]==='string')table[name]=sha(bytes);}catch(error){if(error.code!=='ENOENT')throw error;if(!names.includes(name))delete table[name];}
+    try{const bytes=await readFile(resolve(output,name));if(typeof table[name]==='string')table[name]=sha(bytes);}catch(error){if(error.code!=='ENOENT')throw error;const packaged=input.find(item=>item.path===name);if(packaged&&typeof table[name]==='string')table[name]=packaged.sha256;else if(!packaged)delete table[name];}
   }
   await writeFile(resolve(output,manifestPath),JSON.stringify(manifest,null,2)+'\n');
 }
