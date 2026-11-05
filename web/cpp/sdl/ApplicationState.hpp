@@ -231,6 +231,19 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 生产路径不设置（-1 = 用真实 last_fps_）。
     float fps_color_override_ = -1;
     void set_fps_color_override(float value) { fps_color_override_ = value; }
+    // 0x424990 慢速率累加器（结算条目 float@24 与回放 slow% 同源）：每 ≥1s
+    // 窗采样 fps；游戏态有效（未装载/未暂停/无覆盖层，原生 +0x60&0x14 门）
+    // 时分母 +60.0，fps≤57.0 分母计实际值否则计 60.0。0x42b990 关首清零 →
+    // 结算百分比反映最后一段关卡。录像 slow 事件字节（回放 FPS 显示直读）
+    // 取最近采样窗的整数 fps。
+    double slow_actual_ = 0.0, slow_budget_ = 0.0;
+    double slow_window_time_ = 0.0;
+    u32 slow_window_frames_ = 0;
+    float slow_window_fps_ = 60.0f;
+    void reset_slow_rate() {
+        slow_actual_ = 0.0; slow_budget_ = 0.0;
+        slow_window_time_ = 0.0; slow_window_frames_ = 0;
+    }
     unsigned pending_load = 0, loading_frames = 0;
     bool loading_startup = false;
     double loading_debt = 0;
@@ -576,6 +589,11 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool change_pause_option(i32, i32) override;
     i32 pause_option_value(i32) const override;
     bool record_result_name(const std::string&) override;
+    // 全通结算（0x454050）专用：条目 stage 字节 = 8（表 0x4bb944[8]="Clear"，
+    // Extra 全通同 8）；对局内 GameOver 插入（0x43f8f0）仍走 record_result_name
+    // 的当前关。共享实现 record_result_entry(name, stage)。
+    bool record_clear_result_name(const std::string&) override;
+    bool record_result_entry(const std::string& name, i32 stage);
     bool result_needs_name() const override;
     // 0x43e3f0/0x43e700：暂停激活/恢复对对话 VM 面 +0x18 bit1 清/置。
     bool dialogue_visible(bool visible) override;

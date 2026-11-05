@@ -410,8 +410,8 @@ void TitleCharacterMenu::return_difficulty() {
                                             : resources.char_menu_root);
     visuals.retire(resources.character_root);
     state.change_screen(TitleScreen::Difficulty);
-    if (state.menu.cursor >= kTitleCharacterFirst && state.menu.cursor <= kTitleCharacterLast)
-        settings.preferred_character = title_character_at(state.menu.cursor);
+    // 0x451450 case4（Esc 取消）不写 DAT_004dc678：preferred_character 只在
+    // 确认（case3/练习确认）更新；取消后再进屏的初始光标保持上次确认值。
     state.menu.pop();
 }
 

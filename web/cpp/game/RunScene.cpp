@@ -226,6 +226,17 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     };
     if (scheduler.add(spirit_update, FramePass::Update, 25) < 0)
         fail("Spirit update registration failed");
+    // 0x424f46/0x424f4b：原版 Boss HUD（0x4265a0 经 thunk 0x428280）注册于
+    // Update 0x1c=28——晚于道具(0x18=24)/神霊(0x19=25)。此前打包进
+    // RunScene::update(20) 造成同帧音序反转（th13_01 s3 f11317/11437：
+    // native 37(道具)→11(Boss警告)，web 相反；2026-11-05 全窗 sfx 对拍实证）。
+    boss_hud_update.owner = this;
+    boss_hud_update.enabled = true;
+    boss_hud_update.run = [](void* owner) -> i32 {
+        return static_cast<RunScene*>(owner)->update_boss_hud() ? 1 : 5;
+    };
+    if (scheduler.add(boss_hud_update, FramePass::Update, 28) < 0)
+        fail("Boss HUD update registration failed");
     for (auto& callback : spell_callbacks) {
         callback.owner = this;
         callback.enabled = true;
@@ -727,8 +738,29 @@ bool RunScene::update() {
     }
 
     if (!presentation->sync(battle, input.held)) return fail(presentation->error());
-    // Boss HUD 每帧视图装配（HudFrameContext.boss；0x4265a0 驱动面，RunScene
-    // 装配契约）：可证字段接实值，未锚定缺口保持默认并登记，不伪造。
+    // Boss HUD（0x4265a0）已拆出为独立任务 update_boss_hud（Update 0x1c=28，
+    // 晚于道具 24/神霊 25，原版 0x424f46/0x424f4b）——视图装配随之迁移。
+    HudFrameContext frame;
+    frame.dialogue = dialog.active();
+    // 0x4265a0:85-96 灵界槽淡化状态机消费 DAT_004c22c4+0x5b8/+0x5bc 世界位
+    //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
+    const Vec3 player_position{battle.player_x, battle.player_y, 0};
+    frame.player_position = &player_position;
+    hud.update(frame, host);
+    // 覆盖层/通关演出推进（0x43dbc0 行为子集 + GameInf 0x4000 路径）。
+    post_flow.update();
+    if (!post_flow.error.empty()) return fail(post_flow.error);
+    return hud.error.empty() || fail(hud.error);
+}
+
+bool RunScene::update_boss_hud() {
+    // Boss HUD 任务（原版 0x4265a0 经 0x428280 注册 Update 0x1c=28）。沿用
+    // RunScene::update 的暂停/覆盖层门——此前该面随 update 聚合执行，同门。
+    if (!error.empty()) return false;
+    if (environment.paused || (progress.scene_flags & 0x4010u) == 0x4010u ||
+        (progress.scene_flags & 0x70u)) return true;
+    // Boss HUD 每帧视图装配（0x4265a0 驱动面，RunScene 装配契约）：可证字段
+    // 接实值，未锚定缺口保持默认并登记，不伪造。
     BossFrameInput boss_view;
     boss_view.boss = battle.sim.boss();           // mgr+0x5c 槽 0
     boss_view.boss_slot_present = battle.sim.boss_slot[0] >= 0;  // 0x4265a0 门
@@ -753,18 +785,9 @@ bool RunScene::update() {
         boss_view.markers[i].frame=battle.sim.boss_markers[0][i].color;
     }
     if(!boss_view.boss)battle.sim.boss_markers[0]={}; // 4265a0 clears vacant slot ratios
-    HudFrameContext frame;
-    frame.dialogue = boss_view.dialog_active;
-    frame.boss = &boss_view; // a vacant boss slot must also retire its HUD
-    // 0x4265a0:85-96 灵界槽淡化状态机消费 DAT_004c22c4+0x5b8/+0x5bc 世界位
-    //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
-    const Vec3 player_position{battle.player_x, battle.player_y, 0};
-    frame.player_position = &player_position;
-    hud.update(frame, host);
-    // 覆盖层/通关演出推进（0x43dbc0 行为子集 + GameInf 0x4000 路径）。
-    post_flow.update();
-    if (!post_flow.error.empty()) return fail(post_flow.error);
-    return hud.error.empty() || fail(hud.error);
+    if (!hud.update_boss(boss_view, host))
+        return fail(hud.error.empty() ? "Boss HUD update failed" : hud.error);
+    return true;
 }
 
 void RunScene::open_dialog(i32 entry) {

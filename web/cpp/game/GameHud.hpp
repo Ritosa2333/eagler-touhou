@@ -36,6 +36,10 @@ class GameHud {
     bool direct_interrupt(u32, i32);
 
 public:
+    // Boss 面独立推进：原版 0x4265a0 经 thunk 0x428280 注册为 Update 任务
+    // 0x1c=28（0x424f46/0x424f4b），晚于道具(0x18=24)/神霊(0x19=25)——
+    // 2026-11-05 从 update()（RunScene 聚合优先级 20）拆出，恢复同帧内序。
+    bool update_boss(BossFrameInput& view, HudFrameServices& services);
     std::array<u32, 8> life_icons{}, bomb_icons{};
     u32 root = 0, difficulty_notice = 0, difficulty_label = 0;
     u32 flags = 0;

@@ -206,7 +206,7 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
                 if (!host.sound(7)) return fail("Replay slot confirm sound failed");
                 state.change_substate(2);
             } else {
-                if (state.result_rank >= 0 && !host.record_result_name(state.result_name))
+                if (state.result_rank >= 0 && !host.record_clear_result_name(state.result_name))
                     return fail("Result name record failed");
                 if (!host.sound(7)) return fail("Result name confirm sound failed");
                 // 0x454050 case2 END → FUN_0044bb20(3)；收面/转场在 case3 的
