@@ -2,7 +2,7 @@
 import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile} from 'node:fs/promises';
+import {cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, symlink, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
@@ -47,6 +47,7 @@ before(async () => {
   for (const [name, mountPath, enabled] of [['default', '/', true], ['disabled', '/', false], ['root', '/', true], ['nested', '/nested/', true]]) {
     const output = resolve(work, name);
     const env = {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath,
+      VITE_ACCOUNTS_ENABLED: ['root', 'nested'].includes(name) ? 'true' : 'false',
       EAGLER_REACT_APP_SHELL: name === 'default' ? '' : enabled ? 'isolated' : 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: name !== 'default' && enabled ? origin : '', EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN: ''};
     try {execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: coldSource, env, encoding: 'utf8', stdio: 'pipe', timeout: 120000});}
     catch (error) {throw new Error(`React ${name} build failed:\n${error.stdout ?? ''}\n${error.stderr ?? ''}`, {cause: error});}
@@ -228,7 +229,12 @@ test('selected self-host bundle consumes prebuilt React and private graph inputs
     }
     // These are declared operator parsers and their locked transitive decoder,
     // not the maintainer's TS/React Router/esbuild dependency environment.
-    for (const dependency of ['acorn', 'parse5', 'entities']) await cp(resolve('node_modules', dependency), resolve(operator, 'node_modules', dependency), {recursive: true});
+    // Worktree dependencies may be junctions into the shared install. Copy the
+    // resolved package directory so the temporary operator bundle stays portable.
+    for (const dependency of ['acorn', 'parse5', 'entities']) {
+      const source = await realpath(resolve('node_modules', dependency));
+      await cp(source, resolve(operator, 'node_modules', dependency), {recursive: true});
+    }
     const environment = {...process.env, EAGLER_FRONTEND: 'react'};
     delete environment.EAGLER_REACT_BUILD_DIRECTORY; delete environment.EAGLER_REACT_MOUNT_PATH;
     const script = `import {FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT} from './lib/frontend-manifest.mjs';
