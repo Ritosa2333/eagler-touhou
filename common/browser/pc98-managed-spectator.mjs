@@ -7,7 +7,7 @@ import {readLocalPoint} from './replay/local-points.js';
 import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
 
 export function createManagedSpectator(game,emit,{createAudio=createPc98SpectatorAudio}={}){
-  let viewer,canvas,audio,timer,run,revision=0,catchingAudio=false;
+  let viewer,canvas,audio,timer,run,transport,revision=0,catchingAudio=false;
   function report(){if(!viewer)return;const position=viewer.frame,received=viewer.received;
     if(received-position>120)catchingAudio=true;else if(received-position<45)catchingAudio=false;
     audio?.mode(viewer.paused||!viewer.following||catchingAudio);
@@ -21,7 +21,7 @@ export function createManagedSpectator(game,emit,{createAudio=createPc98Spectato
       document.body.append(canvas);const context=canvas.getContext('2d',{alpha:false});
       audio=createAudio(game,music,error=>emit({event:'error',message:error.message}));
       viewer=createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,
-        channelFactory:()=>createPc98SpectatorChannel(options,error=>{viewer?.stop();emit({event:'error',message:error.message});}),
+        channelFactory:()=>{const channel=createPc98SpectatorChannel(options,error=>{viewer?.stop();emit({event:'error',message:error.message});});transport={peers:new Map(),get relay(){return channel.relay;}};globalThis['__th'+game+'PeerTransport']=transport;return channel;},
         onHeader:header=>{void audio.start(header.settings);},
         onFrame:bitmap=>context.drawImage(bitmap,0,0),onEvent:event=>audio.event(event),onError:error=>emit({event:'error',message:error.message})});
       timer=setInterval(report,200);
@@ -34,6 +34,6 @@ export function createManagedSpectator(game,emit,{createAudio=createPc98Spectato
       if(message.action==='seek'){viewer.seek(message.frame);audio.mode(true);report();return {};}
       throw Error('观战命令无效');},
     files:message=>globalThis.__eaglerPC98FileCommands(message),
-    stop(){clearInterval(timer);viewer?.stop();viewer=null;audio?.stop();audio=null;canvas?.remove();canvas=null;emit({event:'runtime-info',spectatorPlayback:null});},
+    stop(){clearInterval(timer);viewer?.stop();viewer=null;audio?.stop();audio=null;canvas?.remove();canvas=null;if(globalThis['__th'+game+'PeerTransport']===transport)delete globalThis['__th'+game+'PeerTransport'];transport=null;emit({event:'runtime-info',spectatorPlayback:null});},
   };
 }

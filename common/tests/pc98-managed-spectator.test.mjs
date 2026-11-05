@@ -18,7 +18,7 @@ test('managed spectator starts, draws confirmed frames and stops its replica',as
     await writeFile(join(root,'package.json'),'{"type":"module"}');
     globalThis.document={body:{append(){}},createElement:()=>({style:{},getContext:()=>({drawImage(){draws++;}}),remove(){removed=true;}})};
     globalThis.fetch=async()=>new Response('runtime');
-    globalThis.WebSocket=class {constructor(url){socket=this;this.url=url;}close(){}};
+    globalThis.WebSocket=class {constructor(url){socket=this;this.url=url;this.readyState=1;}close(){this.readyState=3;}};
     globalThis.Worker=class {constructor(){worker=this;this.frame=0;}postMessage(data){if(data.type==='frame-ack')return;
       queueMicrotask(()=>{if(data.type==='execute')this.frame++;if(data.type==='present')this.onmessage({data:{type:'frame',bitmap:{close(){}},sequence:1}});
         this.onmessage({data:{id:data.id,result:data.type==='load'?{}:undefined,status:{proof:'ok'}}});});}terminate(){this.terminated=true;}};
@@ -27,6 +27,7 @@ test('managed spectator starts, draws confirmed frames and stops its replica',as
     const {SOURCE_PATHS}=await import(pathToFileURL(join(root,'replay/profile.js')));
     const errors=[];api=createManagedSpectator('02',event=>{if(event.event==='error')errors.push(event);},{createAudio:()=>({start:async()=>{},mode(){},event(){},stop(){}})});
     await api.start({options:{netplayUrl:'ws://localhost/?room=th02mp-1234&run=1',netplayPlayerCount:2,netplaySpectatorId:'viewer'},music:'none'});
+    assert.equal(globalThis.__th02PeerTransport.relay,socket);assert.equal(globalThis.__th02PeerTransport.relay.readyState,1);assert(globalThis.__th02PeerTransport.peers instanceof Map);
     const header={version:VERSION,game:'02',adapter:'confirmed-worker/1',players:2,hostSlot:0,tickMs:10,settings:{},identity:await fingerprint(SOURCE_PATHS),opening:{}};
     const row={inputs:[32,0],offlineMask:0,proof:'ok',hash:null};
     const pack=(kind,first,count,body)=>{const data=new Uint8Array(16+body.length),view=new DataView(data.buffer);data.set([80,57,56,83,1,kind,2,0]);view.setUint32(8,first,true);view.setUint32(12,count,true);data.set(body,16);return data.buffer;};
@@ -37,6 +38,6 @@ test('managed spectator starts, draws confirmed frames and stops its replica',as
     socket.onmessage({data:pack(5,1,0,new Uint8Array())});
     await new Promise(resolve=>setTimeout(resolve,350));
     assert.equal(api.health().gameFrame,1);assert(draws>=1);assert.deepEqual(errors,[]);
-    api.stop();assert.equal(worker.terminated,true);assert.equal(removed,true);
+    api.stop();assert.equal(worker.terminated,true);assert.equal(removed,true);assert.equal(globalThis.__th02PeerTransport,undefined);
   }finally{api?.stop();Object.assign(globalThis,saved);await rm(root,{recursive:true,force:true});}
 });

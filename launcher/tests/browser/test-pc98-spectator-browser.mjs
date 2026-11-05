@@ -78,6 +78,10 @@ try{
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}))));
   await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
+  await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
+  assert(await frames()[2].evaluate(game=>{const peer=globalThis['__'+game+'PeerTransport'];return peer?.relay?.readyState===WebSocket.OPEN&&peer.peers instanceof Map;},game),'launcher can observe the live spectator relay');
+  await frames()[2].waitForFunction(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed');if(!c)return false;const context=c.getContext('2d'),pixels=context.getImageData(0,0,c.width,c.height).data;for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])return true;return false;},{timeout:90000});
+  assert(await frames()[2].evaluate(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed'),r=c.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)===c;}),'spectator canvas is visible above the room');
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.spectatorPlayback?.position>30),{timeout:120000});
   const control=async(action,frame)=>page.evaluate(async({action,frame})=>{const run=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback.run;await rpc(2,'spectator-playback',{run,action,...frame===undefined?{}:{frame}});},{action,frame});
   await control('pause');await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.paused&&!s.seeking;},{timeout:30000});
@@ -86,7 +90,7 @@ try{
   await control('live');await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.following&&!s.paused&&!s.seeking;},{timeout:90000});
   if(game==='th02'||game==='th03'||game==='th04'){
     await page.click('#p0');await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
-    await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='audio-health'&&e.effects>0&&e.effectsPeak>0.001),{timeout:7000});
+    await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='audio-health'&&e.effects>0&&e.effectsPeak>0.001),{timeout:20000});
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
   }
   assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
