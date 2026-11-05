@@ -14,13 +14,17 @@ const {default:puppeteer}=await import(pathToFileURL(modulePath).href);
 const browser=await puppeteer.launch({executablePath,headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding'],defaultViewport:{width:960,height:720},timeout:60000});
 const errors=[],results=[];
 writeFileSync(resolve(directory,'gameplay-report.json'),JSON.stringify({passed:false,status:'running'})+'\n');
+let page;
 try{
- const page=await browser.newPage();
+ page=await browser.newPage();
+ await page.evaluateOnNewDocument(()=>{window.__TH19_SMOKE_EVENTS=[];addEventListener("message",e=>{if(e.data?.protocol==="eagler-touhou/1"&&e.data.game==="th19")window.__TH19_SMOKE_EVENTS.push({event:e.data.event,ok:e.data.ok,error:e.data.error,request:e.data.request});});});
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
  await page.goto(new URL('?game=th19',base).href,{waitUntil:'domcontentloaded',timeout:120000});
  async function until(check,label){const end=Date.now()+120000;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw Error('Timeout '+label);}
- await until(()=>page.evaluate(()=>!!document.querySelector('#launch')),'launcher boot');
- await page.evaluate(()=>document.querySelector('#firstUseNoticeCloseHint')?.click());
+ await until(()=>page.evaluate(()=>window.__eaglerBoot?.done===true&&!!document.querySelector('#launch')),'launcher boot');
+ await until(()=>page.evaluate(()=>localStorage.getItem('eagler-touhou-first-use-notice-seen-v1')==='1'||document.querySelector('#firstUseNoticeDialog')?.open===true),'first-use notice');
+ await page.evaluate(()=>{if(document.querySelector('#firstUseNoticeDialog')?.open)document.querySelector('#firstUseNoticeClose')?.click();});
+ await until(()=>page.evaluate(()=>document.querySelector('#firstUseNoticeDialog')?.open!==true),'first-use notice closed');
  await page.click('#launch');
  await until(async()=>{await page.evaluate(()=>document.querySelector('#decisionConfirm')?.click());return page.evaluate(()=>{const r=document.querySelector('#gameFrame')?.contentWindow?.__th19Runtime;return !!r&&r.status().title[0]>0;});},'native first frame');
  results.push({check:'Launcher online DATA and OGG installation, configure and first frame',passed:true});
@@ -57,4 +61,4 @@ try{
  assert.deepEqual(errors,[]);
  writeFileSync(resolve(directory,'gameplay-report.json'),JSON.stringify({passed:true,results,diagnostics,errors},null,2));
  console.log(JSON.stringify({passed:true,results,diagnostics,errors}));
-}catch(error){writeFileSync(resolve(directory,'gameplay-report.json'),JSON.stringify({passed:false,results,errors,failure:error.stack},null,2)+'\n');throw error;}finally{await browser.close();}
+}catch(error){const diagnostics=await page?.evaluate(()=>({body:document.body.innerText,frame:document.querySelector('#gameFrame')?.src,events:window.__TH19_SMOKE_EVENTS})).catch(()=>null);writeFileSync(resolve(directory,'gameplay-report.json'),JSON.stringify({passed:false,results,errors,diagnostics,failure:error.stack},null,2)+'\n');throw error;}finally{await browser.close();}
