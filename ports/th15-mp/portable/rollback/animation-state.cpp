@@ -91,13 +91,33 @@ void unregistered_overlay_owner(){
     AnmRegistry registry;AnmVm owner;owner.geometry.overlay=std::make_unique<AnmOverlay>();
     owner.geometry.overlay->panels[0]=std::make_unique<AnmVm>();auto* panel=owner.geometry.overlay->panels[0].get();
     panel->creation_parent=&owner;panel->visual.translation={43,81,0};
+    panel->geometry.overlay=std::make_unique<AnmOverlay>();
+    auto& nested=panel->geometry.overlay->panels[1];
+    nested=std::make_unique<AnmVm>();
+    auto& sibling=owner.geometry.overlay->panels[2];
+    sibling=std::make_unique<AnmVm>();
+    nested->rotation_parent=sibling.get();
+    sibling->creation_parent=nested.get();
     auto* child=registry.allocate();const auto handle=registry.submit(*child,2);require(registry.attach(*child,*panel),"attach to nested owned VM");child->creation_parent=child->rotation_parent=panel;
+    auto* deep_child=registry.allocate();
+    const auto deep_handle=registry.submit(*deep_child,2);
+    require(registry.attach(*deep_child,*nested),"attach to deeper owned VM");
+    deep_child->rotation_parent=nested.get();
     AnimationState saved;require(saved.capture(registry,{&owner}),"capture unregistered overlay owner");
-    require(registry.destroy_tree(*child),"remove future nested child");owner.geometry.overlay.reset();
-    require(saved.restore(registry),"recreate owning root before borrowed panel binding");
-    auto* restored=owner.geometry.overlay->panels[0].get();child=registry.find(handle);
-    require(restored&&child&&child->creation_parent==restored&&restored->creation_parent==&owner,"nested registry and owning-VM references rebound together");
+    require(registry.destroy_tree(*panel)&&registry.destroy_tree(*nested),"remove future nested owners");
+    owner.geometry.overlay.reset();
+    AnmVm replacement;
+    require(saved.restore(registry,[&](AnmVm* original){return original==&owner?&replacement:original;}),"recreate owning root before borrowed panel binding");
+    auto* restored=replacement.geometry.overlay->panels[0].get();child=registry.find(handle);
+    require(restored&&child&&child->creation_parent==restored&&restored->creation_parent==&replacement,"nested registry and owning-VM references rebound together");
     require(restored->visual.translation.x==43&&registry.children(*restored).size()==1,"nested owned payload and registry graph");
+    auto* restored_nested=restored->geometry.overlay->panels[1].get();
+    auto* restored_sibling=replacement.geometry.overlay->panels[2].get();
+    deep_child=registry.find(deep_handle);
+    require(restored_nested&&restored_sibling&&deep_child&&deep_child->rotation_parent==restored_nested,
+            "deeper panel and its registered child rebound together");
+    require(restored_nested->rotation_parent==restored_sibling&&restored_sibling->creation_parent==restored_nested,
+            "panel references survive sibling and depth changes in traversal");
 }
 void repeated_restore_allocations(){
     AnmRegistry registry;std::vector<u32> handles;

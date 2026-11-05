@@ -10,6 +10,7 @@ namespace multiplayer { class AnimationState; struct AnimationStateCache; }
 // so stale owners cannot accidentally address a reused animation.
 class AnmRegistry {
     friend class multiplayer::AnimationState;
+    friend struct multiplayer::AnimationStateCache;
     mutable std::shared_ptr<multiplayer::AnimationStateCache> frame_images;
     struct Node {
         AnmVm vm;AnmVm* borrowed=nullptr;u32 slot=0x1fff,handle=0;bool active=false,registered=false,alternate=false;
