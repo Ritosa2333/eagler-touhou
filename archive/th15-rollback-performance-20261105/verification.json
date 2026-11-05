@@ -101,7 +101,7 @@
       "ports/th15-mp/web/scripts/build-sdl-application.mjs": "54ca796edd72b4a9a60655d7c313b7f2333cd05505c22cfc5efab7697e57a01a",
       "ports/th15-mp/web/tests/sdl/high-refresh-browser.test.mjs": "fa686c48d2ef957372f64cf103cc2b20e7f5c1bb7cda36f6acab3e2f882b8de3",
       "ports/th15-mp/web/tests/sdl/rollback-performance.inc": "4df63e337a488c2908397fa345a85b5219704d84716d8c2a2f59101c5706bff7",
-      "tools/ports/th15-rollback-performance.mjs": "e5068b724978c5d41cc4d1b25f42004c66810dbb16e6abc0b17f943d1fff03f8"
+      "ports/th15-mp/rollback-performance.mjs": "e5068b724978c5d41cc4d1b25f42004c66810dbb16e6abc0b17f943d1fff03f8"
     }
   },
   "cases": [

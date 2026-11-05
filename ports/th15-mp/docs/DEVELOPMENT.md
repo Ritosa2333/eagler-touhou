@@ -20,7 +20,7 @@
 
 [实验与压力验证归档](../../../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md)保存对应构建与验证口径。原生网络协议检查同时覆盖旧录像的已登记构建准入、未知构建拒绝及重编码，护盾检查分别验证版本 20 回放与版本 22 新对局。
 
-回滚性能驱动为 [`tools/ports/th15-rollback-performance.mjs`](../../../tools/ports/th15-rollback-performance.mjs)。沿用本页的 DATA 与字体环境变量，先设置 `TH15_OUTPUT=artifacts/rollback-performance` 并运行 `node ports/th15-mp/web/scripts/build-sdl-application.mjs --multiplayer --profile`，再运行性能驱动。它默认逐组采样 600 个实际推进帧，覆盖一面、Extra 的双人／三人，以及近满子弹池压力。日志场景使用 4x CPU 限速；强回滚场景使用 2x，每个样本都纠正五帧。
+回滚性能驱动为 [`ports/th15-mp/rollback-performance.mjs`](../rollback-performance.mjs)。沿用本页的 DATA 与字体环境变量，先设置 `TH15_OUTPUT=artifacts/rollback-performance` 并运行 `node ports/th15-mp/web/scripts/build-sdl-application.mjs --multiplayer --profile`，再运行性能驱动。它默认逐组采样 600 个实际推进帧，覆盖一面、Extra 的双人／三人，以及近满子弹池压力。日志场景使用 4x CPU 限速；强回滚场景使用 2x，每个样本都纠正五帧。
 
 `--require-budget` 要求所有所选场景 P95 小于 16.67ms，且世界、确认输入和画面与完整输入执行一致。`TH15_PROFILE_FRAMES` 指定样本数，`TH15_PROFILE_CASES` 接受含 `stage`、`players`、`depth`、`mismatch`、`cpu` 的 JSON 数组，可另设 `warmup` 与 `dense`。输出记录原始样本、分段耗时、构建和机器身份，见 [性能验证归档](../../../archive/th15-rollback-performance-20261105/README.md)。
 

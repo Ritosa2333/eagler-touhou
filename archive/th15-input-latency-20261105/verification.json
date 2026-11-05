@@ -9,7 +9,7 @@
     "ports/th15-mp/portable/multiplayer/browser-test.mjs": "9e95cf851d6facf6bb85c95bfaea36d90ea8c3890e8fce6290b834e96dd564f0",
     "ports/th15-mp/portable/multiplayer/module-test.mjs": "63e0af742e25807deadbc374b9dcb600e4cf05287d4b97554e0e25971b16f732",
     "ports/th15-mp/web/tests/sdl/high-refresh-browser.test.mjs": "fa686c48d2ef957372f64cf103cc2b20e7f5c1bb7cda36f6acab3e2f882b8de3",
-    "tools/ports/th15-rollback-performance.mjs": "e5068b724978c5d41cc4d1b25f42004c66810dbb16e6abc0b17f943d1fff03f8"
+    "ports/th15-mp/rollback-performance.mjs": "e5068b724978c5d41cc4d1b25f42004c66810dbb16e6abc0b17f943d1fff03f8"
   },
   "input": {
     "samples": 60,
