@@ -6,16 +6,17 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   const channel=channelFactory(`pc98-room-${game}-${room}-${run}`),rows=[];
   const abort=new AbortController();
   let header,identity,replica,available=0,end=null,points=[],closed=false,busy=false,booting=false,paused=false,following=true,target=null,generation=0,timer=null,pullTimer=null,frames=0;
-  let last=performance.now(),budget=0;
+  let last=performance.now(),lastPresent=0,budget=0;
   const fail=error=>{stop();onError(error);};
   function stop(){if(closed)return;closed=true;abort.abort();clearTimeout(timer);clearInterval(pullTimer);channel.close();replica?.stop();}
   function pull(){if(!closed)channel.postMessage({type:'pull',viewer,first:rows.length});}
   async function pump(){
     if(closed||busy||!replica)return;busy=true;
-    const owner=replica;
+    const owner=replica;let catching=false;
     try{
       const now=performance.now(),tick=header.tickMs;budget=Math.min(8,budget+(now-last)/tick);last=now;
-      const delay=Math.round(600/tick),lag=rows.length-owner.frame,catching=target!==null||following&&lag>delay+30,limit=catching?32:Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.max(1,rows.length-delay):rows.length;let count=0;
+      const delay=Math.round(600/tick),lag=rows.length-owner.frame;catching=target!==null||following&&lag>delay+30;
+      const limit=catching?32:Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.max(1,rows.length-delay):rows.length;let count=0;
       while(!closed&&owner===replica&&(!paused||target!==null)&&owner.frame<edge&&count<limit){
         if(target!==null&&owner.frame>=target)break;
         if(owner.advanceBatch){const end=Math.min(edge,owner.frame+limit-count,target??edge),batch=rows.slice(owner.frame,end);await owner.advanceBatch(batch);count+=batch.length;}
@@ -23,8 +24,8 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       }
       if(!catching)budget=Math.max(0,budget-count);
       if(owner===replica&&target!==null&&owner.frame>=target){target=null;paused=!following;}
-      if(count&&owner===replica)await owner.present();
-    }catch(error){if(!closed&&owner===replica)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,8);}
+      if(count&&owner===replica&&(!catching||performance.now()-lastPresent>=150)){await owner.present();lastPresent=performance.now();}
+    }catch(error){if(!closed&&owner===replica)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,catching?0:8);}
   }
   async function boot(){
     if(booting||replica||closed)return;booting=true;
