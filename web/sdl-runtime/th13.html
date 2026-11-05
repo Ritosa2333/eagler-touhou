@@ -32,7 +32,8 @@ import {bindTouchControls} from './touch-controls.mjs';
 const status = text => document.getElementById('loading').textContent = text;
 const fail = text => { document.getElementById('loading').textContent = ''; document.getElementById('error').textContent = text; };
 window.__th13_log = [];
-const note = (kind, text) => { window.__th13_log.push(kind + ' ' + text); };
+// 环形上限：只留最近 400 条，错误现场不丢，长会话不再无界增长。
+const note = (kind, text) => { window.__th13_log.push(kind + ' ' + text); if (window.__th13_log.length > 400) window.__th13_log.shift(); };
 try {
   const Module = await import('../artifacts/sdl3/th13-sdl.mjs');
   const canvas = document.getElementById('canvas');
@@ -138,8 +139,7 @@ try {
   bindTouchControls(mod, canvas);
   status('');  // 启动完成：装载文字退场，画面交给游戏（操作说明在游戏内，页面不常驻 UI）
   mod.onGameFrame = (ok) => {
-    note('frame', 'ok=' + ok);
-    if (!ok) fail('运行时错误：' + runtime_error());
+    if (!ok) { note('frame', 'ok=0'); fail('运行时错误：' + runtime_error()); }
   };
   // 版本角标：右上角显示 wasm 构建哈希前 8 位（判别浏览器是否跑旧缓存）。
   {
@@ -201,6 +201,10 @@ try {
   const builtinReplayList = [
     'demo0.rpy', 'th13_01.rpy', 'th13_udMy25.rpy', 'th13_udN01.rpy', 'th13_udPn16.rpy',
   ];
+  // 完成旗标（测试启动栅栏用）：内置导入是 loop_start 之后的异步序列，每次
+  // 成功导入都会清空 replay_import_error —— replay-import-error.lifetime 测试
+  // 的稳定性断言必须等本序列结束（2026-11-05 探针实证 +50ms 翻空竞态）。
+  window.__th13_builtin_replays_done = false;
   for (const name of builtinReplayList) {
     try {
       const response = await fetch('replays/' + name);
@@ -220,6 +224,7 @@ try {
       note('replay-builtin', '内置录像跳过：' + name);
     }
   }
+  window.__th13_builtin_replays_done = true;
 
   // 帧泵看门狗：requestAnimationFrame 停摆的宿主（后台/嵌入式 webview）经
   // setTimeout 以 60fps 节奏持续驱动 th13_frame_tick；rAF 心跳恢复即让位。

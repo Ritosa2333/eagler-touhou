@@ -20,11 +20,14 @@
 EM_JS(void, th13_publish_audio, (double mixed, double nonzero, double requests,
       double started, double submitted, double loops, int queued, int track,
       int cursor, int paused, int suspended, int device, int failed, double dropped), {
-    Module.th13Audio = {mixedFrames:mixed, nonzeroSamples:nonzero, requests:requests,
-      started:started, submittedFrames:submitted, musicLoops:loops,
-      queuedFrames:queued, track:track, musicCursor:cursor,
-      paused:!!paused, suspended:!!suspended, device:!!device,
-      failed:!!failed, droppedRequests:dropped, sampleRate:44100};
+    // 每帧发布：复用同一对象（消费方只读字段/快照拷贝），避免逐帧分配。
+    let a = Module.th13Audio;
+    if (!a) a = Module.th13Audio = {};
+    a.mixedFrames = mixed; a.nonzeroSamples = nonzero; a.requests = requests;
+    a.started = started; a.submittedFrames = submitted; a.musicLoops = loops;
+    a.queuedFrames = queued; a.track = track; a.musicCursor = cursor;
+    a.paused = !!paused; a.suspended = !!suspended; a.device = !!device;
+    a.failed = !!failed; a.droppedRequests = dropped; a.sampleRate = 44100;
 });
 #endif
 namespace th13::sdl {

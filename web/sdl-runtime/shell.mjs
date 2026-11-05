@@ -10,6 +10,13 @@ const epoch = Number(query.get('runtimeEpoch'));
 const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
 let core, launched = false, first = false, stopping = false, options = {}, music = true, queue = Promise.resolve();
 const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event, ...fields}, location.origin);
+// 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
+// pointermove 消息都强制布局（getBoundingClientRect）。
+let canvasBox = null;
+const invalidateCanvasBox = () => { canvasBox = null; };
+addEventListener('resize', invalidateCanvasBox);
+visualViewport?.addEventListener?.('resize', invalidateCanvasBox);
+const canvasRect = () => canvasBox ??= canvas.getBoundingClientRect();
 const keyboard = createBrowserKeyboard({
   hostContext: {
     protocol,
@@ -143,7 +150,7 @@ async function command(m) {
       if (m.type === 'cancel') { core._th13_touch_cancel(); return {}; }
       if (!launched || document.hidden || stopping || !options.touchEnabled ||
           !['down', 'move', 'up'].includes(m.type) || ![m.x, m.y, m.id].every(Number.isFinite)) return {};
-      const b = canvas.getBoundingClientRect();
+      const b = canvasRect();
       if (b.width && b.height) core._th13_touch(({down: 0, move: 1, up: 2})[m.type], m.id,
         (m.x * innerWidth - b.left) / b.width, (m.y * innerHeight - b.top) / b.height);
       return {};
@@ -173,7 +180,12 @@ async function command(m) {
           try { scaleOption = new URLSearchParams(parent.location.search).get('renderScale'); } catch {}
         }
         const requested = Number(scaleOption);
-        core._th13_render_scale(options.renderScale === 1 ? 1 : options.renderScale === 2 ? 2 : requested === 1 ? 1 : 2);
+        // 移动端默认 renderScale=1（= 原版原生 640×480 分辨率）：粗指针/小屏
+        // 默认降档保 60fps；显式 options/URL 指定优先。桌面与无头捕获不受影响。
+        const mobileDefault = matchMedia('(pointer: coarse)').matches ||
+            Math.min(screen.width || 9999, screen.height || 9999) < 640 ? 1 : 2;
+        core._th13_render_scale(options.renderScale === 1 ? 1 : options.renderScale === 2 ? 2
+          : requested === 1 ? 1 : requested === 2 ? 2 : mobileDefault);
         if (!core._th13_prepare_loading()) throw Error(err());
         $('#loading').textContent = '';
         const startupImageAt = performance.now();
