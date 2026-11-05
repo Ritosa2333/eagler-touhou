@@ -61,7 +61,7 @@ function tick(now){
     bits=(bits&~544)|(shot?32:0);
     send(bits);
     emulator.setInput({generation:state?.generation,focus:playing&&!!(bits&64)?1:0,
-      touch:[playing?packTouch(0,input.motion()):0,0]});
+      touch:[playing?packTouch(0,{...input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox}):0,0]});
   }
   loop=requestAnimationFrame(tick);
 }

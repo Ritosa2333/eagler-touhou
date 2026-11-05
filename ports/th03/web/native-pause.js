@@ -115,7 +115,7 @@ export class NativePause {
       for(const [offset,delta] of [[2,touch.x],[4,touch.y]])
         view.setInt16(base+offset,Math.max(-8192,Math.min(8191,view.getInt16(base+offset,true)+delta)),true);
     }
-    heap[at+f.alwaysPoint]=0;
+    heap[at+f.alwaysPoint]=this.meta.signature==='TH03SOLOASSIST1!' ? points & 1 : 0;
   }
   markers() {
     const heap=this.getEmulator()?.module.HEAPU8,at=this.live,f=this.meta.fields;

@@ -100,6 +100,12 @@ try{
     await new Promise(r=>setTimeout(r,1500));
   }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}))));
+  if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
+    await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
+    const start=await frames()[1].evaluate(playerFrame);
+    await wait(async()=>await frames()[1].evaluate(playerFrame)>=start+300,'native marker keeps cooperative match synchronized',30000);
+    await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:false}));
+  }
   async function measure(label){const start=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame))),at=performance.now();await new Promise(r=>setTimeout(r,5000));const end=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));const seconds=(performance.now()-at)/1000;console.log('QA player rate',label,end.map((value,i)=>((value-start[i])/seconds).toFixed(1)));}
   if(process.env.PC98_SPECTATOR_PERF==='1')await measure('before spectator');
   await configure(2,1);
