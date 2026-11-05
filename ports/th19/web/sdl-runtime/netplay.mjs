@@ -57,7 +57,16 @@ export class Netplay {
   this.side=side;this.core._th19_touch_side?.(side);this.delay=delay;this.direct=options.touchEnabled===true&&options.touchMovementMode==='touch-unlimited';
   this.connected=true;this.lastReceived=performance.now();this.lastHello=0;this.lastPing=0;
   this.socket=new PeerSocket(url,options);this.socket.binaryType='arraybuffer';
-  globalThis.__th19PeerTransport={relay:this.socket,peers:new Map(),failed:false};
+  const socket=this.socket;
+  // Launcher samples the same live connection used by the game. The single
+  // ordered channel carries both input and control packets.
+  const peer={
+   get pc(){return socket.pc;},
+   get inputOpen(){return socket.route==='rtc'&&socket.readyState===1&&socket.channel?.readyState==='open';},
+   get controlOpen(){return this.inputOpen;},
+   rttMs:null,
+  };
+  globalThis.__th19PeerTransport={relay:socket,peers:new Map([[1-side,peer]]),failed:false};
   globalThis.__eaglerNetplayTransport='relay';
   this.socket.onopen=()=>this.onStatus('已连接中继，等待对手…');
   this.socket.onmessage=event=>{
@@ -134,7 +143,6 @@ export class Netplay {
   if(this.active||!this.prepared||!this.peerReady)return;
   this.active=true;this.lastTick=performance.now();this.budget=0;
   this.inputBudget=0;this.nextInputFrame=this.delay;this.lastPing=-Infinity;
-  globalThis.__th19PeerTransport.peers.set(1-this.side,{inputOpen:true,controlOpen:true,rttMs:null});
   globalThis.__eaglerNetplayLanActive=true;
   globalThis.__eaglerNetplayLanFrame=0;
   globalThis.__eaglerNetplayLanConfirmed=0;
