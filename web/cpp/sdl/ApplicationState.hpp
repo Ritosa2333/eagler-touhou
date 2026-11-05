@@ -19,7 +19,7 @@ namespace th17::sdl {
 struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGameplayServices,RunPausePlatform,StageDrawServices,AssetSource,ApplicationFlowServices,RunInputServices {
  GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;FileStore files;
  Rng visual;AnmEnvironment environment;AnmManager animations{visual,environment};AnmRenderer renderer{graphics};ScreenViews views{renderer,environment};AsciiText captions{animations,environment};FrameScheduler scheduler;
- GameConfig config;GameRun progress;GameSelection selection;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings choices;TitleAudioSettings volumes;TitleControllerSettings controller;MusicComments comments;TrophyCatalog trophy_catalog;TitleSpellMemory spell_memory;TitleKeyboard keyboard_state;
+ GameConfig config;GameRun progress;GameSelection selection;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings choices;TitleAudioSettings volumes;TitleControllerSettings controller;LocalizationTable spell_names;MusicComments comments;TrophyCatalog trophy_catalog;TitleSpellMemory spell_memory;TitleKeyboard keyboard_state;
  ApplicationFlow flow{progress,*this};std::unordered_map<std::string,i32> shared;
  std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<AnmDrawSchedule> global_layers;std::unique_ptr<AsciiDrawSchedule> global_letters;
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<RunInput> run_input;std::unique_ptr<RunPause> pause;std::unique_ptr<SceneDisplay> display;
@@ -29,7 +29,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  StageCamera camera;PlayerTouch touch;GameInput physical_input,retained_input;FramePerformance performance;u32 controller_buttons=0,frames=0,manual_pressed=0,manual_repeated=0,transition_overlay=0,loading_handle=0;u16 stage_seed=0;
  std::vector<u8> pending_png,pending_animation;i32 pending_page=-1,pending_bank=-1,frame_skip=0,preview_index=-1;
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;
- bool initialized=false,exiting=false,completed_recording=false;std::array<i32,16> projected{};std::string failure;
+ bool initialized=false,exiting=false,completed_recording=false,has_language_pack=false;std::array<i32,16> projected{};std::string failure;
  AppScene loading_destination=AppScene::Uninitialized;u32 loading_frames=0,loading_duration=0;Rng loading_visual,loading_game;
  void remember_title()noexcept;bool fail(const std::string&);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);const i32* projection();
  FrameScheduler& active_scheduler()noexcept{return scene()?scene()->frame_scheduler():scheduler;}
@@ -37,7 +37,9 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool save_settings();bool preload_run();bool bind_display(StageGameplay* previous=nullptr);bool draw_global();bool screen_fade(i32,i32,i32,bool,bool,u32=0);void reset_graphics();
  bool advance_flow();bool step_loading();bool draw_loading();
  bool read(const std::string&,std::vector<u8>&)override;
+ bool localized_message(const std::string&)const override;
  bool begin_loading(bool&)override;bool shutdown()override;bool shutdown_delay(i32)override;bool release_game()override;bool release_title()override;bool release_ending()override;bool begin_game(bool)override;bool begin_title()override;bool begin_ending()override;
+ const std::string* localized_spell(i32 id)const override{return spell_names.spell_name(id);}
  bool sound(i32)override;bool text(AnmVm&,const TextureText&)override;bool hud_text(const HudTextDraw&)override;bool keyboard(TitleKeyboard&)override;bool calendar(i64,ReplayCalendar&)override;bool capture_score_details(PauseScoreDetails&)override;bool seconds(double&)override;
  // TitleScene dispatches its named menu controllers before reaching the platform.
  bool update_title_menu(TitleScreen,const TitleFrameInput&)override{return true;}bool draw_title_menu(TitleScreen)override{return true;}

@@ -1,6 +1,6 @@
 #include "ApplicationState.hpp"
 namespace th17::sdl {
-bool ApplicationState::read_message(const std::string& name,MessageResource& program){std::vector<u8> bytes;return read(name,bytes)&&program.open(bytes.data(),bytes.size(),true)||fail(program.error);}
+bool ApplicationState::read_message(const std::string& name,MessageResource& program){std::vector<u8> bytes;return read(name,bytes)&&program.open(bytes.data(),bytes.size(),true,localized_message(name))||fail(program.error);}
 bool ApplicationState::request_animation(i32 bank,const std::string& name){if(pending_bank>=0)return fail("Overlapping ending animation requests");if(!read(name,pending_animation))return false;pending_bank=bank;return true;}
 bool ApplicationState::prepare_animation(AnmResource& resource){return graphics.preload(resource)||fail(graphics.error);}
 bool ApplicationState::cancel_animation_request(){pending_bank=-1;pending_animation.clear();return true;}

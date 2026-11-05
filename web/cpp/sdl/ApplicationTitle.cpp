@@ -4,7 +4,9 @@
 #include <cstdio>
 namespace th17::sdl {
 bool ApplicationState::sound(i32 id){return audio_device.effects.enqueue(id)||fail(audio_device.effects.error);}
-bool ApplicationState::text(AnmVm& vm,const TextureText& value){return fonts.text(vm,value)||fail(fonts.error);}
+bool ApplicationState::text(AnmVm& vm,const TextureText& value){if(!ending||value.utf8||!fonts.translated_message(value.bytes))return fonts.text(vm,value)||fail(fonts.error);
+ auto translated=value;translated.utf8=true;
+ return fonts.text(vm,translated)||fail(fonts.error);}
 bool ApplicationState::hud_text(const HudTextDraw& value){return (display?display->hud_text(value):captions.hud_text(value))||fail(captions.error);}
 bool ApplicationState::keyboard(TitleKeyboard& value){value=keyboard_state;return true;}
 bool ApplicationState::calendar(i64 stamp,ReplayCalendar& value){const time_t time=stamp;const auto* tm=std::localtime(&time);if(!tm)return fail("Replay date outside calendar range");value={tm->tm_year+1900,tm->tm_mon+1,tm->tm_mday,tm->tm_hour,tm->tm_min};return true;}

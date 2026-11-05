@@ -4,7 +4,7 @@
 namespace th17 {
 bool TitleSpellPractice::check(bool ok,const char* why){if(!ok&&error.empty())error=why;return ok;}
 bool TitleSpellPractice::visual(bool ok){return check(ok,visuals.error.c_str());}
-bool TitleSpellPractice::text(i32 row,const std::string& bytes,u32 color){auto* vm=animations.registry.find(state.handles[291+row]);if(!vm){state.handles[291+row]=0;return check(false,"Spell practice text row unavailable");}TextureText request;request.bytes=bytes;request.color=color;return check(host.text(*vm,request),"Spell practice text rendering failed");}
+bool TitleSpellPractice::text(i32 row,const std::string& bytes,u32 color,bool utf8){auto* vm=animations.registry.find(state.handles[291+row]);if(!vm){state.handles[291+row]=0;return check(false,"Spell practice text row unavailable");}TextureText request;request.bytes=bytes;request.color=color;request.utf8=utf8;return check(host.text(*vm,request),"Spell practice text rendering failed");}
 bool TitleSpellPractice::paint(i32 selected_group){
  if(stage<0||stage>=7||selected_group<0||selected_group>=SpellCatalog::groups[stage]||state.spell_character.selected<0||state.spell_character.selected>=9)return check(false,"Spell practice group outside original range");
  spells.fill(-2);for(i32 i=262;i<=268;i++){u32 old=state.handles[i];if(!check(animations.retire(old),"Spell practice label retirement failed"))return false;}
@@ -15,7 +15,13 @@ bool TitleSpellPractice::paint(i32 selected_group){
   const i32 id=raw[n],difficulty=SpellCatalog::rank(id),slot=stage==6?(difficulty==4?0:1):difficulty;
   if(stage==6&&!visual(visuals.create(difficulty==4?266:268)))return false;
   const auto& all=records.spells.aggregate[id];const auto& personal=records.spells.loadouts[state.spell_character.selected][id];char prefix[32];std::snprintf(prefix,sizeof prefix," No.%3d  ",id+1);
-  if(all.attempts[0]){spells[slot]=id;std::string name=all.name;while(name.size()<42)name+=' ';if(!text(slot,std::string(prefix)+name,personal.captures[1]?0xffff80:0xefefef))return false;}
+  if(all.attempts[0]){
+   spells[slot]=id;
+   const auto* translated=host.localized_spell(id);
+   std::string name=translated?*translated:all.name;
+   if(!translated)while(name.size()<42)name+=' ';
+   if(!text(slot,std::string(prefix)+name,personal.captures[1]?0xffff80:0xefefef,translated!=nullptr))return false;
+  }
   else {spells[slot]=-1;std::string unknown;for(i32 i=0;i<11;i++){unknown+=char(0x81);unknown+=char(0x48);}if(!text(slot,std::string(prefix)+unknown,0xb0b0b0))return false;}
   if(!visual(visuals.interrupt(291+slot,2)))return false;highest=std::max(highest,slot);
  }
