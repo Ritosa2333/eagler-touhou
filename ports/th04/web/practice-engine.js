@@ -96,7 +96,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     // Preserve the real final-survival HP carried through the preceding kill.
     if(type==='boss'&&setup.phase&&i16(0x53d6)<=0&&seekFinalHp>0)w16(0x53d6,seekFinalHp);
     if(setup.entry!=='stage')clearEntryProjectiles();
-    resources();ready=true;preparing=false;waiting=true;selectedPhase=phase;refreshResources(3);clearEntry();
+    resources();heap().fill(0,d+0x4349,d+0x4351);heap().fill(0,d+0x435a,d+0x4362);w8(0x1a66,0);ready=true;preparing=false;waiting=true;selectedPhase=phase;refreshResources(3);clearEntry();
     if(setup.hp&&type){const at=type==='mid'?0x53c2:0x53d6,max=i16(at),min=type==='mid'?0:i16(0x53e0);w16(at,Math.max(min+1,Math.min(max,setup.hp)));}
     flag('entryPause',1);elapsed=misses=bombsUsed=0;lastNativeBombs=heap()[resident+50];clock?.setSpeed(options.speed);return true;
   }

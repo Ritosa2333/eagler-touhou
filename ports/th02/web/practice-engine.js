@@ -61,7 +61,7 @@ export function createPracticeEngine({mod,patch,config,clock}){
     if(type==='mid')reached=reached&&(s===0?u16(0x2be0)>=18:s===1?u16(0x2be0)>=320:s===2?u16(0x2be0)>=128:s===3?u16(0x2be0)>=2:u16(0x2be0)>=2);
     if(type==='boss')reached=reached&&!u8(0x2bfa)&&(setup.phase?p===setup.phase:s>=4?p%2===1:true);
     if(reached){
-      resources();ready=true;preparing=false;waiting=true;selectedPhase=p;setHP();clearEntry();flag('entryPause',1);elapsed=misses=bombsUsed=0;lastBombs=u8(0xbde);clock?.setSpeed(options.speed);return;
+      resources();w32(0xb28,0);w32(0x3e3c,0);w16(0x3e40,0);w16(0xb46,0);ready=true;preparing=false;waiting=true;selectedPhase=p;setHP();clearEntry();flag('entryPause',1);elapsed=misses=bombsUsed=0;lastBombs=u8(0xbde);clock?.setSpeed(options.speed);return;
     }
     resources();w8(0x2b94,0);w8(0x2b95,2);
     if(type==='boss'&&setup.phase>p&&s===4&&p%2===0&&p<8)w16(0x2be0,100);

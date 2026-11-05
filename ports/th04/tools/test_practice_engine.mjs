@@ -22,7 +22,8 @@ function instance(mode='target',setup={},options={}){
   t.b(0x4669,1);t.signal(0x7fe4);assert.equal(t.engine.status.misses,1);t.signal(0x7fe2);assert.equal(t.engine.status.misses,1);checks++;
 }
 {
-  const t=instance();t.signal(0x7fe0);t.signal(0x7fe1);
+  const t=instance();t.h.fill(7,d+0x4349,d+0x4351);t.h.fill(9,d+0x435a,d+0x4362);t.b(0x1a66,3);t.signal(0x7fe0);t.signal(0x7fe1);
+  assert(t.h.slice(d+0x4349,d+0x4351).every(n=>n===0));assert(t.h.slice(d+0x435a,d+0x4362).every(n=>n===0));assert.equal(t.h[d+0x1a66],0);
   assert(t.engine.status.ready&&t.engine.status.waiting);assert.equal(t.h[cb+entries.entryPause],1);assert.equal(t.h[r+11],1);assert.equal(t.h[r+13],0);
   assert.equal(t.engine.status.invincibility,0);assert.equal(t.engine.status.power,128);checks++;
   assert.equal(t.engine.status.dream,0);assert.equal(t.engine.status.dreamItems,0);assert.equal(t.h[cb+entries.resourceDirty],3);checks++;

@@ -28,6 +28,14 @@ export async function installPractice(data,resources,value){
     if(patched[branch]!==0x74)throw Error('练习资源补丁版本不匹配');
     patched[branch]=0xeb;
   }
+  // Refresh the native score HUD immediately before the arrival pause.
+  const code=header+cs*16,call=entries.frame+43,cave=entries.entryPause-98;
+  const v=new DataView(patched.buffer,patched.byteOffset,patched.byteLength);
+  const pause=call+3+v.getInt16(code+call+1,true);
+  patched.set([0x6a,0x06,0x66,0xff,0x36,0x28,0x0b,0xe8,0,0,0xe9,0,0],code+cave);
+  v.setInt16(code+cave+8,(0xdc55-cs*16)-(cave+10),true);
+  v.setInt16(code+cave+11,pause-(cave+13),true);
+  v.setInt16(code+call+1,cave-(call+3),true);
   fat.replace(fat.find('HUMAROKU/MAIN.EXE'),patched);
   if(config.mode!=='target')return;
   const bytes=await verified(manifest.launcher),sig=new TextEncoder().encode(manifest.launcher.signature),found=bytes.findIndex((b,i)=>b===sig[0]&&sig.every((v,j)=>bytes[i+j]===v));

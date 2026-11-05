@@ -32,8 +32,8 @@ for(const game of games){
     if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');
     res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
     let contents=await readFile(file);
-    if(process.env.PC98_PRACTICE_DEATH==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeHit(lives){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;h[d+0xb2c]=lives;h[d+0x2b94]=1;}\n`:`\nexport function testPracticeHit(lives){return emulator.call('practiceTestHit',[lives]);}\n`)]);
-    if(process.env.PC98_PRACTICE_DEATH==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;h[r+11]=args[0]+1;h[d+0x4669]=1;return;}if(method==='soloFault')"));
+    if(process.env.PC98_PRACTICE_DEATH==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeHit(lives){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;h[d+0xb2c]=lives;h[d+0xb2d]=0;h[d+0x2b94]=1;}\n`:`\nexport function testPracticeHit(lives){return emulator.call('practiceTestHit',[lives]);}\n`)]);
+    if(process.env.PC98_PRACTICE_DEATH==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;h[r+11]=args[0]+1;h[r+13]=0;h[d+0x4669]=1;return;}if(method==='soloFault')"));
     res.end(contents);
   }catch{res.writeHead(404).end();}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -50,8 +50,9 @@ for(const game of games){
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch=1'));
     await frame.evaluate(async()=>{
       const {OriginalSfx}=await import('./original-sfx.mjs'),create=OriginalSfx.create;
-      globalThis.practiceEffectsCreated=0;
+      const command=OriginalSfx.prototype.command;globalThis.practiceEffectsCreated=0;globalThis.practiceLoadingEffects=0;
       OriginalSfx.create=async(...args)=>{practiceEffectsCreated++;return create.call(OriginalSfx,...args);};
+      OriginalSfx.prototype.command=function(...args){if(!document.querySelector('.practice-preparing').hidden)practiceLoadingEffects++;return command.apply(this,args);};
     });
     await page.evaluate(()=>rpc('configure',{music:'none',options:{touchEnabled:false},resources:[],runtimeResources:[],sharedResources:[]}));
     await page.evaluate(()=>rpc('launch',{launchSerial:1}));
@@ -105,12 +106,14 @@ for(const game of games){
       await page.screenshot({path:resolve(output,`${label}-${game}-${kind}-running.png`)});
     }
     assert((await frame.evaluate(()=>practiceEffectsCreated))>=2,'standby owns its own original effect driver');
+    if(game==='th04')assert.equal(await frame.evaluate(()=>practiceLoadingEffects),0,'loading and standby must not play sound effects');
     if(process.env.PC98_PRACTICE_DEATH==='1'){
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeHit(1));
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.missTimer>0;},{timeout:15000});
       assert.equal((await state()).native.practice.outcome,null,'contact and death animation do not end the attempt');
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.lives===0&&!p.missTimer&&p.invincibility===0;},{timeout:30000});
       assert.equal((await state()).native.practice.outcome,null,'the last spare life respawns');
+      assert.equal((await state()).native.practice.bombs,game==='th04'?2:stage===5?3:5,'respawn restores native Bomb stock');
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeHit(0));
       await frame.evaluate(()=>{globalThis.practiceResultShownAt=null;new MutationObserver(()=>{if(document.querySelector('#practice-result-dialog[open]'))globalThis.practiceResultShownAt??=performance.now();}).observe(document.body,{attributes:true,subtree:true,attributeFilter:['open']});});
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.outcome==='failed';},{timeout:30000}).catch(async error=>{console.error('Final death',JSON.stringify(await state()));throw error;});

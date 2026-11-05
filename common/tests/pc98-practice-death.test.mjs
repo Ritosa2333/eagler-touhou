@@ -19,7 +19,9 @@ test('TH02 counts a final death after native deathbomb and respawn handling',asy
   v.setUint16(d+0x27fe,0x9000,true);v.setUint16(d+0x27fc,0,true);
   const engine=createPracticeEngine({mod:{HEAPU8:h},patch,config:{version:PRACTICE_VERSION,mode:'target',setup:{stage:0,entry:'stage',lives:2,bombs:3},options:PRACTICE_DEFAULTS},clock:{setSpeed(){}}});
   const signal=port=>engine.signal(port,ds<<16|cs),write=(offset,value)=>h[d+offset]=value;
+  v.setUint32(d+0xb28,100000,true);v.setUint32(d+0x3e3c,999,true);v.setUint16(d+0x3e40,10,true);v.setUint16(d+0xb46,3,true);
   signal(0x7fd0);signal(0x7fd1);assert.equal(engine.status.lives,2);assert.equal(engine.status.bombs,3);
+  assert.equal(v.getUint32(d+0xb28,true),0);assert.equal(v.getUint32(d+0x3e3c,true),0);assert.equal(v.getUint16(d+0x3e40,true),0);assert.equal(v.getUint16(d+0xb46,true),0);
   write(0x2b94,1);signal(0x7fd4);assert.equal(engine.status.outcome,null,'contact is not game over');
   write(0x2b94,0);write(0xaa7,1);write(0x2b99,10);signal(0x7fd4);write(0xaa7,0);write(0x2b99,0);signal(0x7fd4);
   assert.equal(engine.status.outcome,null,'cancelled death and spare lives do not end practice');
