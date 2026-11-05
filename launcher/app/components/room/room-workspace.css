@@ -193,7 +193,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  .room-workspace-chat{height:clamp(156px,calc(300px - var(--room-playback-height,0px)),300px);min-height:0}
  .room-seat-player-tag{font-size:10px}
  /* Keep the original card contents beside an avatar-only spectator rail. */
- #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]){display:grid;grid-template-columns:minmax(0,3fr) minmax(64px,1fr);gap:8px}
+ #player.room-workspace .room-workspace-roster[data-side-lounge="true"]:is([data-player-count="2"],[data-player-count="3"]){display:grid;grid-template-columns:minmax(0,3fr) minmax(64px,1fr);gap:8px}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-lounge-host{position:relative;align-self:stretch}
  #player.room-workspace .room-workspace-roster .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]){grid-template-columns:minmax(0,1fr)!important}
  #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat{min-height:84px!important;padding:8px 10px!important}
@@ -265,7 +265,9 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-spectator-copy strong{overflow:hidden;font-size:13px;text-overflow:ellipsis;white-space:nowrap}
 #mpRoomView :is(.mp-spectator-copy small,.mp-spectator-marker,.mp-spectator-empty){color:var(--kit-muted-foreground);font-size:12px}
 #mpRoomView .mp-room-setting-title{height:auto;margin:12px 0 8px;color:var(--kit-muted-foreground);font-size:12px}
-#mpRoomView .room-workspace-tabs{flex:none;gap:16px;padding:0 16px}
+#mpRoomView .room-workspace-tab-bar{display:flex;align-items:center;flex:none}
+#mpRoomView .room-workspace-tabs{flex:1;min-width:0;gap:clamp(4px,2vw,16px);padding:0 12px}
+#mpRoomView .room-workspace-music-toggle{flex:none;margin-inline-end:8px;white-space:nowrap}
 #mpRoomView .room-workspace-tabs button{flex:1;min-width:0}
 #mpRoomView .room-workspace-actions button{flex:1;min-height:44px;height:44px;font-size:14px}
 .room-settings-group{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--kit-border)}

@@ -1,3 +1,4 @@
+import {RoomMusicStrip,RoomMusicPanel,RoomMusicToggle,type MusicPanelTab} from './RoomMusic';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '../../ui/tabs';
 import {Button as UiButton} from '../../ui/controls';
 import {useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
@@ -26,6 +27,8 @@ export function RoomWorkspace(props: RoomViewProps) {
   const state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   useSyncExternalStore(network.subscribe, network.getSnapshot, network.getSnapshot);
   const [tab, setTab] = useState<'chat'|'game'>('chat');
+  const [musicOpen,setMusicOpen]=useState(false);
+  const [musicTab,setMusicTab]=useState<MusicPanelTab>('search');
   const [narrow, setNarrow] = useState(false);
   const [loungeHost, setLoungeHost] = useState<HTMLDivElement | null>(null);
   const [playbackHost, setPlaybackHost] = useState<HTMLDivElement | null>(null);
@@ -35,7 +38,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const currentPanel = props.panel || retainedPanel.current;
   const code = state.room?.code;
   // biome-ignore lint/correctness/useExhaustiveDependencies: A different room starts on its chat tab.
-  useLayoutEffect(()=>{setTab('chat');}, [state.product,code]);
+  useLayoutEffect(()=>{setTab('chat');setMusicOpen(false);setMusicTab('search');}, [state.product,code]);
   useLayoutEffect(()=>{service.setRoomSettingsOpen(props.visible !== false && tab === 'game');return ()=>service.setRoomSettingsOpen(false);}, [service,tab,props.visible]);
   useLayoutEffect(()=>{
     const media = window.matchMedia('(max-width:760px)');
@@ -47,9 +50,9 @@ export function RoomWorkspace(props: RoomViewProps) {
   if (!view || !props.workspaceHost || !props.workspaceStage || props.visible === false) return null;
   const {room,game,config,ready,owner} = view;
   const viewport = props.workspaceStage.querySelector<HTMLElement>('.game-viewport');
-  const activePanel = props.panel?.kind === 'personal' || props.panel?.kind === 'network' || props.panel?.kind === 'spectators';
+  const activePanel = props.panel?.kind === 'personal' || props.panel?.kind === 'network' || props.panel?.kind === 'spectators' || (props.panel?.kind === 'music' && !!props.music);
   const openPanel = (kind:RoomPanelKind, element:HTMLElement, peerId?:string)=>{trigger.current=element;props.onOpenPanel(kind,peerId);};
-  const sideLounge = narrow;
+  const sideLounge = narrow && !musicOpen;
   const locked = room.phase !== 'lobby' || state.launchBusy || !!context.launchStage;
   const selecting = state.seat != null && !state.spectatorRequested;
   const preparation = state.preparation;
@@ -57,7 +60,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const loadingText = t(context.launchStage ? 'room.preparingRuntime' : loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
   const icon = (name:string)=><img className="room-icon" src={assetUrl(`assets/${name}.svg`)} alt=""/>;
   const lounge = <RoomSpectatorPreview state={state} service={service} assetUrl={assetUrl} open={props.panel?.kind==='spectators'} onOpen={element=>openPanel('spectators',element)}/>;
-  const roster = <div className="room-workspace-roster" data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
+  const roster = <div className="room-workspace-roster" data-side-lounge={sideLounge} data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
   return <>
     {createPortal(<section id="mpRoomView" className="mp-room-view room-workspace-view" data-public-names={state.nickname ? 'true' : undefined} data-roster-identities="true" aria-label={`${game.title} ${t('multiplayer.roomAria')}`} inert={props.settingsOpen}>
       <header className="mp-room-head room-workspace-header">
@@ -66,13 +69,16 @@ export function RoomWorkspace(props: RoomViewProps) {
         <div className="room-workspace-top-actions"><UiButton size="lg" className="mp-room-code mp-room-top-action" id="mpCopyRoomCode" type="button" aria-label={t('multiplayer.copyRoomCode')} onClick={()=>{void props.onCopyRoomCode(room.code);}}><span className="mp-room-code-label">{t('multiplayer.roomCode')}</span><strong id="mpRoomCode">{room.code}</strong>{icon('room-copy')}</UiButton>
           <UiButton size="lg" className="mp-room-top-action" id="mpSettingsRoomDrawerToggle" type="button" aria-label={t('settings.title')} aria-expanded={props.settingsOpen} aria-controls="mpSettingsRoomDrawer" disabled={locked} onClick={props.onOpenSettings}>{icon('room-gear-six')}<span>{t('room.gameSettingsGroup')}</span></UiButton></div>
       </header>
-      <div className="room-workspace-column"><Tabs value={tab} onValueChange={value=>setTab(value as 'chat'|'game')} asChild><aside className="room-workspace-sidebar"><TabsList asChild><div className="room-workspace-tabs" role="tablist" aria-label={t('multiplayer.gameSettings')}>
+      <div className="room-workspace-column"><Tabs value={tab} onValueChange={value=>setTab(value as 'chat'|'game')} asChild><aside className="room-workspace-sidebar"><div className="room-workspace-tab-bar"><TabsList asChild><div className="room-workspace-tabs" role="tablist" aria-label={t('multiplayer.gameSettings')}>
         {(['chat','game'] as const).map(name=><TabsTrigger key={name} value={name} id={`roomWorkspaceTab-${name}`} aria-controls={`roomWorkspacePanel-${name}`}>{t(name==='chat'?'chat.title':'multiplayer.gameSettings')}</TabsTrigger>)}
-      </div></TabsList><div className="room-workspace-panels">
+      </div></TabsList>
+        {props.music && <RoomMusicToggle model={props.music} open={musicOpen} onToggle={()=>setMusicOpen(open=>!open)}/>}
+      </div><div className="room-workspace-panels">
         <TabsContent value="chat" forceMount asChild><div className="room-workspace-chat" id="roomWorkspacePanel-chat" role="tabpanel" aria-labelledby="roomWorkspaceTab-chat" hidden={tab!=='chat'}>{props.quickChat && <><RoomQuickChat model={props.quickChat} part="log"/><RoomQuickChat model={props.quickChat} part="actions"/></>}</div></TabsContent>
         <TabsContent value="game" forceMount asChild><div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings state={state} service={service} hidden={false}/></fieldset><UiButton variant="quiet" size="sm" id="mpRoomGuideOpen" type="button" onClick={props.onGuide}>{t('multiplayerGuide.action')}</UiButton></div></TabsContent>
       </div></aside></Tabs>
       <div className="room-workspace-playback-host" ref={setPlaybackHost}/>
+      {props.music && musicOpen && <RoomMusicStrip model={props.music} open={props.panel?.kind==='music'} onOpen={(element,tab)=>{setMusicTab(tab);openPanel('music',element);}}/>}
       {!sideLounge && lounge}
       </div>
       <footer className="room-workspace-actions" hidden={!room.synced || !selecting}>
@@ -82,6 +88,7 @@ export function RoomWorkspace(props: RoomViewProps) {
       <RoomPanel open={!!activePanel} kind={currentPanel.kind} peerId={currentPanel.peerId} trigger={trigger} onCloseRequest={props.onClosePanel} onClosed={()=>{}}>
         <RoomPersonal state={state} service={service} network={network} assetUrl={assetUrl} th09NetworkOverlayOpen={context.th09NetworkOverlayOpen} hidden={currentPanel.kind!=='personal'}/>
         <RoomNetwork state={state} network={network} context={context} peerId={currentPanel.peerId} hidden={currentPanel.kind!=='network'}/>
+        {props.music && <RoomMusicPanel model={props.music} hidden={currentPanel.kind!=='music'} tab={musicTab} onTabChange={setMusicTab}/>}
         <RoomSpectators state={state} service={service} hidden={currentPanel.kind!=='spectators'}/>
       </RoomPanel>
     </section>,props.workspaceHost)}

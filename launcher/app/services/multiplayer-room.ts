@@ -67,6 +67,7 @@ export interface RoomOwnerSnapshot {
   connected: boolean;
   directorySupported: boolean;
   controlModesSupported: boolean;
+  listenTogetherSupported?: boolean;
   seat: number | null;
   ready: boolean;
   spectatorRequested: boolean;
@@ -143,6 +144,7 @@ export interface MultiplayerRoomPorts {
     suspend?(): void;
   };
   quickChat?: { receive(message: Record<string, unknown>): void };
+  music?: {receive(message: Record<string, unknown>): void};
   online?(): boolean;
   visible?(): boolean;
   now?(): number;
@@ -208,6 +210,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     connected: false,
     directorySupported: false,
     controlModesSupported: false,
+    listenTogetherSupported: false,
     seat: null as number | null,
     ready: false,
     spectatorRequested: false,
@@ -385,6 +388,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     socket = null;
     socketRoom = '';
     state.connected = false;
+    state.listenTogetherSupported = false;
     if (previous && previous.readyState < 2) {
       try {
         previous.close(1000, 'leave room');
@@ -520,6 +524,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const previous = socket;
     socket = null;
     state.connected = false;
+    state.listenTogetherSupported = false;
     if (previous && previous.readyState < 2) {
       try {
         previous.close(1000, 'replace lobby socket');
@@ -588,6 +593,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         void ports.network.receive(message);
         return;
       }
+      if (message.type === 'listen-together') {
+        ports.music?.receive(message);
+        return;
+      }
       if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result'].includes(String(message.type))) {
         ports.quickChat?.receive(message);
         return;
@@ -600,6 +609,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
               next.send(JSON.stringify({type:'account-nickname',ticket:result.ticket}));
           }).catch(() => { /* Guest nicknames are provided by the relay. */ });
         }
+        if (message.listenTogether === 2) state.listenTogetherSupported = true;
         if (record(message.roomDirectory)?.version === 1) state.directorySupported = true;
         if (record(message.roomDirectory)?.controlModes === true)
           state.controlModesSupported = true;
@@ -664,6 +674,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ports.network.reset(true);
       socket = null;
       state.connected = false;
+      state.listenTogetherSupported = false;
       if ([4004, 4007, 4008, 4009, 4010].includes(event.code)) {
         stopped = true;
         const message = ports.translate(

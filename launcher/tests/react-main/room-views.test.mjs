@@ -22,6 +22,7 @@ before(async () => {
   work = await mkdtemp(resolve(project, '.cache/room-views-'));
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/room/index.ts';
+    export * from './app/components/room/RoomMusic.tsx';
     export * from './app/components/room/RoomPanel.tsx';
     export * from './app/components/room/presentation.ts';
     export * from './app/components/launcher/OptionsPanel.tsx';
@@ -829,4 +830,25 @@ test('public nickname editor waits for review and locks changes until the server
  await act(()=>status({name:'Alice',status:'cooldown',attemptsLeft:0,nextChangeAt:Date.now()+86400000}));
  assert.equal(n('#mpNicknameSave').disabled,true);assert.match(n('#mpNicknameStatus').textContent,/No retries remaining/);
  await m.unmount();
+});
+
+
+test('Music seek stays at the released target through old ticks, then follows the room acknowledgement', async () => {
+  let state = {enabled:true,inRoom:true,eligible:true,connected:true,joined:true,syncState:'shared',volume:1,position:90,seekTarget:null,duration:120,status:'playing',error:null,
+    current:{platform:'netease',id:'123',name:'Song',artist:'Artist'},session:{session:'listen',playback:1,revision:2,startedAt:0,pausedAt:null}};
+  const listeners=new Set(), seeks=[];
+  let accepted=true;
+  const model={getSnapshot:()=>state,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);},seek:seconds=>{seeks.push(seconds);if(accepted){state={...state,seekTarget:seconds};for(const listener of listeners)listener();}return accepted;}};
+  const publish=patch=>act(()=>{state={...state,...patch};for(const listener of listeners)listener();});
+  await mount(owners.RoomMusicStrip,{model,open:false,onOpen() {}});
+  const thumb=()=>n('.room-music-progress [role="slider"]');
+  const key=value=>act(()=>thumb().dispatchEvent(new env.window.KeyboardEvent('keydown',{key:value,bubbles:true,cancelable:true})));
+  await key('Home');
+  assert.deepEqual(seeks,[0]);assert.equal(thumb().getAttribute('aria-valuenow'),'0');
+  await publish({position:91});assert.equal(thumb().getAttribute('aria-valuenow'),'0','An old ticker update must not snap the released thumb backwards');
+  await publish({position:0,seekTarget:null,session:{...state.session,revision:3,playback:2}});
+  await publish({position:1});assert.equal(thumb().getAttribute('aria-valuenow'),'1');
+  accepted=false;await key('End');assert.equal(thumb().getAttribute('aria-valuenow'),'1','Rejected commands release their preview');
+  accepted=true;await key('End');await publish({error:'unavailable',seekTarget:null});
+  assert.equal(thumb().getAttribute('aria-valuenow'),'1','Failures release pending targets');
 });
