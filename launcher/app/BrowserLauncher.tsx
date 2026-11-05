@@ -68,9 +68,8 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const [donationAvailable, setDonationAvailable] = useState(true);
   const [settingsClosing, setSettingsClosing] = useState(false);
   const assetUrl = useMemo(() => (path: string) => new URL(path, session.baseUrl).href, [session]);
-  const artworkUrl = useMemo(() => (path: string) => new URL(path, session.programBaseUrl).href, [session]);
-  const products = useMemo(() => createLibraryProducts(metadataProducts, artworkUrl, id => `?game=${id}`), [metadataProducts, artworkUrl]);
-  const catalogProducts = useMemo(() => createLibraryProducts(PRODUCT_IDS, artworkUrl, id => `?game=${id}`), [artworkUrl]);
+  const products = useMemo(() => createLibraryProducts(metadataProducts, assetUrl, id => `?game=${id}`), [metadataProducts, assetUrl]);
+  const catalogProducts = useMemo(() => createLibraryProducts(PRODUCT_IDS, assetUrl, id => `?game=${id}`), [assetUrl]);
   const masthead = <Header session={session} firstUse={firstUse} donationAvailable={donationAvailable}/>;
   const host: LauncherHost = {
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, touchLayout: session.touchLayout,
@@ -187,7 +186,7 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
       window.removeEventListener('online', session.directory.online); window.removeEventListener('offline', session.directory.offline); document.removeEventListener('visibilitychange', visible); connection?.removeEventListener('change', session.directory.networkChanged);};
   }, [session]);
   useEffect(() => {session.directory.selectProduct(productFilters.length === 1 ? productFilters[0] : viewingProduct);}, [session, productFilters, viewingProduct]);
-  return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} products={createLibraryProducts(directory.products, path => new URL(path, session.programBaseUrl).href, id => `?game=${id}`)}
+  return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} products={createLibraryProducts(directory.products, path => new URL(path, session.baseUrl).href, id => `?game=${id}`)}
     viewingProduct={viewingProduct} onSelect={id => {
       const next = new URL(window.location.href); next.searchParams.delete('games');
       next.searchParams.delete('game'); if (id) next.searchParams.set('game', id);
