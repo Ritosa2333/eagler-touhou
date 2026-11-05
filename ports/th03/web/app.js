@@ -154,7 +154,7 @@ const markerNodes=[0,1].map(()=>{const node=document.createElement('i');node.hid
 viewport.append(markerLayer);
 function drawLocalPoints(){
   for(const node of markerNodes)node.hidden=true;
-  if(!closed&&!closing)for(const point of nativePause?.markers()||[]){
+  if(!nativePause?.nativeMarkers&&!closed&&!closing)for(const point of nativePause?.markers()||[]){
     const settingSeat=online?0:point.seat;
     const ownSeat=netplay?.localSeat??0;
     if((online&&point.seat!==ownSeat)||!(point.focused&&controls.pointEnabled(settingSeat)||point.seat===ownSeat&&player.alwaysPoint()))continue;

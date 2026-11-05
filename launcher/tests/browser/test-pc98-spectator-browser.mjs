@@ -89,6 +89,11 @@ try{
     for(let i=1;i<=8;i++){await page.evaluate(i=>rpc(1,'direct-touch',{type:'move',id:42,x:.4+i*.015,y:.5}),i);await new Promise(r=>setTimeout(r,100));}
     await page.evaluate(()=>rpc(1,'direct-touch',{type:'up',id:42,x:.52,y:.5}));await new Promise(r=>setTimeout(r,500));
     assert.notEqual(await position(),before,'P2 drag moves the actual player');
+    await page.evaluate(()=>rpc(1,'keyboard',{code:'Space',key:' ',keyCode:32,location:0,down:true}));
+    await wait(async()=>frames()[1].evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.some(p=>p.seat===1&&p.focused)),'native focus activated',20000);
+    const beforeFocus=await frames()[1].evaluate(playerFrame);
+    await wait(async()=>(await frames()[1].evaluate(playerFrame))>=beforeFocus+300,'native marker keeps match synchronized',20000);
+    await page.evaluate(()=>rpc(1,'keyboard',{code:'Space',key:' ',keyCode:32,location:0,down:false}));
   }
   if(game==='th01'){
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));await new Promise(r=>setTimeout(r,180));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
