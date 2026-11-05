@@ -1067,6 +1067,7 @@ body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s c
 }
 .player.touch-enabled:not(.touch-layout-custom) #touchEscape{left:max(12px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));width:44px;height:44px;transform:none}
 .player.touch-enabled .touch-hud :is(#touchBomb,#touchFunction)>strong{font:600 8px/1 var(--ui-font);margin-top:5px}
+.player.touch-enabled .touch-hud #touchFunction.touch-charge>strong{font-size:13px;letter-spacing:0}
 .fullscreen-enter-icon,.fullscreen-exit-icon{display:flex}
 .fullscreen-exit-icon{display:none}
 [data-fullscreen="true"] .fullscreen-enter-icon{display:none}

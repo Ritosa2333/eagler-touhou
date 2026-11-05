@@ -254,6 +254,7 @@ export function bindPlayerInput({
     document,
     frame,
     preferences: session.keyboardPreferences,
+    th19Preferences: session.th19Keyboard,
     th09Local: session.th09LocalInput,
     playerOpen: () => session.getSnapshot().playerOpen,
     android,
@@ -268,6 +269,7 @@ export function bindPlayerInput({
   const gamepad = createPlayerGamepad({
     runtime,
     model: session.gamepad,
+    th19Model: session.th19Gamepad,
     th09Local: session.th09LocalInput,
     window,
     document,

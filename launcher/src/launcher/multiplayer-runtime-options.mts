@@ -1,3 +1,4 @@
+import {TH19_VERSUS_RULES,validTh19VersusRules} from './th19-versus-rules.mjs';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 import {
   validTh15ChapterThreshold,
@@ -23,6 +24,7 @@ export interface MultiplayerRuntimeOptionConstraints {
 }
 
 export interface MultiplayerRuntimeOptionInput {
+  th19Rules?: number[];
   initialSpares?: number;
   initialBombs?: number;
   url: string;
@@ -51,6 +53,7 @@ export interface MultiplayerRuntimeOptionInput {
 }
 
 export interface MultiplayerRuntimeOptions {
+  netplayTh19Rules?: number[];
   netplayInitialSpares?: number;
   netplayInitialBombs?: number;
   netplayMode: 'lan';
@@ -95,6 +98,7 @@ export function buildMultiplayerRuntimeOptions(
   }
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if(input.th19Rules!==undefined&&(roomProduct!=='th19mp'||!validTh19VersusRules(input.th19Rules)))throw new Error('TH19 versus rules are invalid');
   if(input.initialSpares!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares))||input.initialBombs!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs)))throw new Error('TH05 initial stocks are invalid');
   if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
     throw new Error('WebSocket 回退开关必须为布尔值');
@@ -183,7 +187,8 @@ export function buildMultiplayerRuntimeOptions(
     !Number.isInteger(requestedMode) ||
     requestedMode < 0 ||
     requestedMode > 2 ||
-    (requestedMode !== 0 && !measuredTitle)
+    (requestedMode === 1 && !product.inputTiming) ||
+    (requestedMode === 2 && !measuredTitle)
   )
     throw new Error('该多人 Runtime 不支持 Adonis 时序');
   if (
@@ -200,6 +205,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
   return {
     netplayMode: 'lan',
+    ...(roomProduct==='th19mp'?{netplayTh19Rules:[...(input.th19Rules??TH19_VERSUS_RULES)]}:{}),
     ...(roomProduct==='th05mp'?{netplayInitialSpares:input.initialSpares??TH05_INITIAL_STOCK.spares,netplayInitialBombs:input.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
     ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
     ...(roomProduct === "th15mp"

@@ -28,6 +28,7 @@ export interface PlayerKeyboardOptions {
   chat?: Pick<MultiplayerQuickChatModel, 'getSnapshot' | 'subscribe' | 'openComposer' | 'dismiss'>;
   chatOwnsTarget?(target: EventTarget | null): boolean;
   preferences?: KeyboardPreferences;
+  th19Preferences?: KeyboardPreferences;
   th09Local?: Th09LocalInput;
   now?: () => number;
   setInterval?: typeof globalThis.setInterval;
@@ -298,7 +299,10 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     const inputContext = options.runtime.getInputContext();
     const mappingTarget = inputContext.target;
     if (!options.shortcutsOnly && mappingTarget && keyboardInputBridge(inputContext)) {
-      const owner = new KeyboardMapping(options.preferences?.getSnapshot, options.th09Local);
+      const owner = new KeyboardMapping(
+        () => (options.runtime.getInputContext().game === 'th19' ? options.th19Preferences : options.preferences)?.getSnapshot() ?? {},
+        options.th09Local,
+      );
       mapping = owner;
       let clearing = false;
       port = {
@@ -378,6 +382,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   options.frame.addEventListener('load', rebind);
   const unsubscribe = options.runtime.subscribe(rebind);
   const unsubscribePreferences = options.preferences?.subscribe(clear);
+  const unsubscribeTh19 = options.th19Preferences?.subscribe(clear);
   const unsubscribeLocal = options.th09Local?.subscribe(clear);
   const unsubscribeChat = options.chat?.subscribe(syncChat);
   rebind();
@@ -397,6 +402,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       stopFocusRelay();
       unsubscribe();
       unsubscribePreferences?.();
+      unsubscribeTh19?.();
       unsubscribeLocal?.();
       unsubscribeChat?.();
       unbind?.();

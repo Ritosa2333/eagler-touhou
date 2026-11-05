@@ -9020,5 +9020,191 @@
   "cloudSave.backupUsed": {
     "id": "cloudSave_backupUsed",
     "params": []
+  },
+  "game.name.th19": {
+    "id": "game_name_th19",
+    "params": []
+  },
+  "game.title.th19mp": {
+    "id": "game_title_th19mp",
+    "params": []
+  },
+  "multiplayer.loadout.th19_0": {
+    "id": "multiplayer_loadout_th19_0",
+    "params": []
+  },
+  "multiplayer.loadout.th19_1": {
+    "id": "multiplayer_loadout_th19_1",
+    "params": []
+  },
+  "multiplayer.loadout.th19_2": {
+    "id": "multiplayer_loadout_th19_2",
+    "params": []
+  },
+  "multiplayer.loadout.th19_3": {
+    "id": "multiplayer_loadout_th19_3",
+    "params": []
+  },
+  "multiplayer.loadout.th19_4": {
+    "id": "multiplayer_loadout_th19_4",
+    "params": []
+  },
+  "multiplayer.loadout.th19_5": {
+    "id": "multiplayer_loadout_th19_5",
+    "params": []
+  },
+  "multiplayer.loadout.th19_6": {
+    "id": "multiplayer_loadout_th19_6",
+    "params": []
+  },
+  "multiplayer.loadout.th19_7": {
+    "id": "multiplayer_loadout_th19_7",
+    "params": []
+  },
+  "multiplayer.loadout.th19_8": {
+    "id": "multiplayer_loadout_th19_8",
+    "params": []
+  },
+  "multiplayer.loadout.th19_9": {
+    "id": "multiplayer_loadout_th19_9",
+    "params": []
+  },
+  "multiplayer.loadout.th19_10": {
+    "id": "multiplayer_loadout_th19_10",
+    "params": []
+  },
+  "multiplayer.loadout.th19_11": {
+    "id": "multiplayer_loadout_th19_11",
+    "params": []
+  },
+  "multiplayer.loadout.th19_12": {
+    "id": "multiplayer_loadout_th19_12",
+    "params": []
+  },
+  "multiplayer.loadout.th19_13": {
+    "id": "multiplayer_loadout_th19_13",
+    "params": []
+  },
+  "multiplayer.loadout.th19_14": {
+    "id": "multiplayer_loadout_th19_14",
+    "params": []
+  },
+  "multiplayer.loadout.th19_15": {
+    "id": "multiplayer_loadout_th19_15",
+    "params": []
+  },
+  "multiplayer.loadout.th19_16": {
+    "id": "multiplayer_loadout_th19_16",
+    "params": []
+  },
+  "multiplayer.loadout.th19_17": {
+    "id": "multiplayer_loadout_th19_17",
+    "params": []
+  },
+  "multiplayer.loadout.th19_18": {
+    "id": "multiplayer_loadout_th19_18",
+    "params": []
+  },
+  "th19.time": {
+    "id": "th19_time",
+    "params": []
+  },
+  "th19.rounds": {
+    "id": "th19_rounds",
+    "params": []
+  },
+  "th19.ability": {
+    "id": "th19_ability",
+    "params": []
+  },
+  "th19.life1": {
+    "id": "th19_life1",
+    "params": []
+  },
+  "th19.life2": {
+    "id": "th19_life2",
+    "params": []
+  },
+  "th19.barrier1": {
+    "id": "th19_barrier1",
+    "params": []
+  },
+  "th19.barrier2": {
+    "id": "th19_barrier2",
+    "params": []
+  },
+  "th19.card1": {
+    "id": "th19_card1",
+    "params": []
+  },
+  "th19.card2": {
+    "id": "th19_card2",
+    "params": []
+  },
+  "th19.none": {
+    "id": "th19_none",
+    "params": []
+  },
+  "th19.random": {
+    "id": "th19_random",
+    "params": []
+  },
+  "th19.self": {
+    "id": "th19_self",
+    "params": []
+  },
+  "th19.all": {
+    "id": "th19_all",
+    "params": []
+  },
+  "th19.manual": {
+    "id": "th19_manual",
+    "params": []
+  },
+  "th19.long": {
+    "id": "th19_long",
+    "params": []
+  },
+  "th19.short": {
+    "id": "th19_short",
+    "params": []
+  },
+  "th19.minutes": {
+    "id": "th19_minutes",
+    "params": [
+      "count"
+    ]
+  },
+  "th19.card": {
+    "id": "th19_card",
+    "params": [
+      "number"
+    ]
+  },
+  "th19.selfCard": {
+    "id": "th19_selfCard",
+    "params": [
+      "number"
+    ]
+  },
+  "th19.input": {
+    "id": "th19_input",
+    "params": []
+  },
+  "th19.lives": {
+    "id": "th19_lives",
+    "params": []
+  },
+  "th19.touchChargeHint": {
+    "id": "th19_touchChargeHint",
+    "params": []
+  },
+  "th19.chargeCancel": {
+    "id": "th19_chargeCancel",
+    "params": []
+  },
+  "th19.charge": {
+    "id": "th19_charge",
+    "params": []
   }
 }

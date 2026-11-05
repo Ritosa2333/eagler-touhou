@@ -1,3 +1,4 @@
+import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../../common/contracts/th19-versus-rules.mjs';
 import {createNicknameService} from './nickname-service.mjs';
 import {createNicknameRequestGuard} from './nickname-request-guard.mjs';
 import {normalizePublicNickname} from '../../../common/contracts/public-nickname.mjs';
@@ -382,6 +383,7 @@ function getRoom(id, socket) {
       lobby: {
         playerCount: defaultPlayerCount(multiplayer),
         difficulty: 1,
+        ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
         visibility: 'public',
         disableCheatMovement: false,
         ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
@@ -879,6 +881,7 @@ function lobbySnapshot(room) {
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
+    ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
     prankMode: room.lobby.prankMode,
@@ -999,6 +1002,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     socket.close(4007, "invalid settings");
     return;
   }
+  if(initialPolicy?.th19Rules!==undefined&&(!roomId.startsWith('th19mp-')||!validTh19VersusRules(initialPolicy.th19Rules))){sendLobby(socket,{type:'error',error:'invalid TH19 versus rules'});socket.close(4007,'invalid settings');return;}
   const existing = rooms.get(roomId);
   if (!existing && intent !== 'join' && !abuseGuard.canCreateRoom(socket.relayAddress)) {
     rejectRoomCreation(socket);
@@ -1023,6 +1027,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   const room = getRoom(roomId, socket);
   if (!room) return;
   if (!existing && intent === 'create') {
+    if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...(initialPolicy?.th19Rules??TH19_VERSUS_RULES)];
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
@@ -1491,6 +1496,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         sendLobby(socket, { type: 'state', room: lobbySnapshot(room) });
         return;
       }
+      if(message.th19Rules!==undefined&&(!room.id.startsWith('th19mp-')||!validTh19VersusRules(message.th19Rules))){sendLobby(socket,{type:'error',error:'invalid TH19 versus rules'});return;}
+      const th19Rules=message.th19Rules??room.lobby.th19Rules;
       const playerCount = Number(message.playerCount);
       if (!validPlayerCount(room.multiplayer, playerCount)) {
         sendLobby(socket, { type: 'error', error: 'invalid player count' });
@@ -1537,6 +1544,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       const prankMode = false;
       room.lobby.visibility = visibility;
       if (
+        (room.id.startsWith('th19mp-')&&JSON.stringify(room.lobby.th19Rules)!==JSON.stringify(th19Rules)) ||
         room.lobby.playerCount !== playerCount ||
         room.lobby.difficulty !== difficulty ||
         room.lobby.disableCheatMovement !== disableCheatMovement ||
@@ -1546,6 +1554,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
       ) {
         invalidateLobbyReady(room);
+        if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...th19Rules];
         room.lobby.disableCheatMovement = disableCheatMovement;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         room.lobby.challengeMode = challengeMode;
@@ -1656,7 +1665,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         predictionReserve < 1 ||
         predictionReserve > 2 ||
         (message.predictionReserve !== undefined && !adonisSupported) ||
-        (adonisMode !== 0 && !adonisSupported) ||
+        (adonisMode === 1 && !room.multiplayer?.inputTiming) ||
+        (adonisMode === 2 && !adonisSupported) ||
         (!timingPolicy.rollback &&
           (adonisMode !== 1 ||
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
@@ -1922,6 +1932,7 @@ server.on('connection', (socket, request) => {
       visibility: url.searchParams.get('visibility'),
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
       disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
+      th19Rules: url.searchParams.has('th19Rules') ? (()=>{try{return JSON.parse(url.searchParams.get('th19Rules'));}catch{return null;}})() : undefined,
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))
         : undefined,

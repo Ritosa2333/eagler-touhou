@@ -48,24 +48,24 @@ function chatFixture({registered=true,context={}}={}) {
     dismiss(){calls.dismiss++;snapshot.pickerOpen=false;publish();}},
     update(patch){Object.assign(snapshot,patch);if(patch.context)snapshot.context={...snapshot.context,...patch.context};publish();}};
 }
-function fixture({android = false,chat:chatState=null,shortcutsOnly=false,mappingBridge=false} = {}) {
+function fixture({android = false,chat:chatState=null,shortcutsOnly=false,mappingBridge=false,game='th15',preferences,th19Preferences} = {}) {
   const dom = new JSDOM('<!doctype html><html><body><div id="gameTarget" tabindex="0"></div><section class="mp-quick-chat"><input id="chatInput"></section><input id="input"><select id="select"><option>A</option></select><textarea id="textarea"></textarea><button id="button">Button</button><dialog id="dialog"><span id="dialogChild"></span></dialog><div role="dialog"><span id="roleDialogChild"></span></div></body></html>', {url: 'https://launcher.invalid/', pretendToBeVisual: true});
   const {window} = dom, {document} = window, win = tracked(window), doc = tracked(document), time = clock();
   let visibility = 'visible', playerOpen = true, fullscreen = false, frameWindow;
   Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => visibility});
-  const input = {target: null, game: 'th15', epoch: 1, launched: true, ready: true, spectator: false,
+  const input = {target: null, game, epoch: 1, launched: true, ready: true, spectator: false,
     targetOrigin: 'https://launcher.invalid', protocol: 'eagler-touhou/1'};
   const snapshot = {ready: true, launched: true, firstFrame: false};
   const nativeTargets = [], messages = [], bridgeMessages=[], calls = {release: 0, cancel: 0, toggle: 0, frameFocus: [], nativeFocus: 0};
   function installKeyboardBridge(target,epoch) {
     if(!mappingBridge)return;
-    target.__eaglerKeyboardInputBridge={schema:'eagler-touhou/keyboard-input/1',protocol:'eagler-touhou/1',game:'th15',epoch,
+    target.__eaglerKeyboardInputBridge={schema:'eagler-touhou/keyboard-input/1',protocol:'eagler-touhou/1',game:input.game,epoch,
       origin:'https://launcher.invalid',submit(message){bridgeMessages.push(message);return true;}};
   }
   function makeNative() {
     const item = tracked(new window.EventTarget()); item.target.focus = () => calls.nativeFocus++;installKeyboardBridge(item.target,input.epoch);nativeTargets.push(item); return item;
   }
-  let native = makeNative(), nativeContext = {epoch: 1, game: 'th15', document: {}, target: native.target, music: 'none'};
+  let native = makeNative(), nativeContext = {epoch: 1, game: input.game, document: {}, target: native.target, music: 'none'};
   input.target = native.target; frameWindow = native.target;
   const frame = tracked(new window.EventTarget()); frame.target.focus = options => calls.frameFocus.push(options);
   Object.defineProperty(frame.target, 'contentWindow', {get: () => frameWindow});
@@ -76,6 +76,7 @@ function fixture({android = false,chat:chatState=null,shortcutsOnly=false,mappin
   const owner = createPlayerKeyboard({runtime, window, document, frame: frame.target, playerOpen: () => playerOpen,
     launcherOwnsTarget: target => !!target&&'closest' in target&&typeof target.closest==='function'&&!!target.closest('input,select,textarea,button,dialog,[role="dialog"],[role="menu"]'),
     chat:chatState?.model,chatOwnsTarget:target=>target instanceof window.Element&&!!target.closest('.mp-quick-chat')&&!target.closest('[role="menu"]'),
+    preferences,th19Preferences,
     shortcutsOnly,
     releaseHeldTouchFire: () => calls.release++, cancelTouchFunction: () => calls.cancel++, toggleFullscreen: () => calls.toggle++,
     isPlayerFullscreen: () => fullscreen, android, now: time.now, setInterval: time.setInterval, clearInterval: time.clearInterval});
@@ -206,6 +207,31 @@ test('chat shortcut: mapping bridge consumes Alt before mapped game keys and ret
   assert.equal(chat.calls.open,1);
   assert.equal(f.bridgeMessages.filter(message=>message.command==='keyboard').length,0);
   assert.ok(f.bridgeMessages.every(message=>message.command==='keyboard-clear'));
+});
+
+test('TH19 key profile and multiplayer chat shortcut coexist on the native keyboard bridge', () => {
+  const chat = chatFixture(); let th19Unsubscribed = 0;
+  const preferences = {getSnapshot: () => ({KeyK: 'KeyY'}), subscribe: () => () => {}};
+  const th19Preferences = {getSnapshot: () => ({KeyK: 'KeyX'}), subscribe: () => () => {th19Unsubscribed++;}};
+  const f = fixture({chat, mappingBridge: true, game: 'th19', preferences, th19Preferences});
+  const port = f.native().target.__eaglerKeyboardMapping;
+  assert.equal(port.game, 'th19');
+
+  const alt = {code: 'AltLeft', key: 'Alt', keyCode: 18, location: 1, altKey: true, repeat: false, isComposing: false};
+  assert.deepEqual(port.map(alt, true, 'physical', 'standard'), []);
+  assert.deepEqual(port.map({...alt, altKey: false}, false, 'physical', 'standard'), []);
+  assert.equal(chat.calls.open, 1);
+  assert.equal(f.bridgeMessages.some(message => message.command === 'keyboard'), false);
+  port.map(alt, true, 'physical', 'standard');
+  port.map({...alt, altKey: false}, false, 'physical', 'standard');
+  assert.equal(chat.calls.dismiss, 1);
+
+  const key = {code: 'KeyK', key: 'k', keyCode: 75, location: 0};
+  assert.deepEqual(port.map(key, true, 'physical', 'standard')?.map(({code, down}) => [code, down]), [['KeyX', true]]);
+  assert.deepEqual(port.map(key, false, 'physical', 'standard')?.map(({code, down}) => [code, down]), [['KeyX', false]]);
+
+  f.owner.dispose();
+  assert.equal(th19Unsubscribed, 1);
 });
 
 test('chat shortcut: opening on Android stops the focus relay', () => {

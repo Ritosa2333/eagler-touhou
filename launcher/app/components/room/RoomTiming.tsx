@@ -9,7 +9,7 @@ export type RoomTimingActions = Pick<MultiplayerRoomService, 'timingRecommendati
 
 export function RoomTiming({state, service, settings = false}: {state: RoomOwnerSnapshot; service: RoomTimingActions; settings?: boolean}) {
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
-  const policy = multiplayerInputTimingPolicy(config), supported = !!config.inputTiming?.measuredStartup && policy.rollback;
+  const policy = multiplayerInputTimingPolicy(config), supported = !!config.inputTiming && policy.rollback;
   const rollback = supported && (room.phase === 'lobby' ? state.rollbackEnabled : room.adonisMode !== 1);
   const editable = ready && owner && room.phase === 'lobby' && !!config.inputTiming;
   const advice = service.timingRecommendation();

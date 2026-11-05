@@ -1,7 +1,7 @@
 import {PRODUCT_GAMES} from '../../src/contracts/product-catalog.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {postHostedKey, postTouchControls, postTouchCancel, type HostedKeySpec, type TouchControlsSnapshot} from '../../src/launcher/touch-runtime-protocol.mts';
-import {createFunctionKeyOwner, functionKeySpec} from '../../src/launcher/touch-function-key.mts';
+import {createFunctionKeyOwner, functionKeySpec, th19ChargeKeySpec} from '../../src/launcher/touch-function-key.mts';
 import type {SettingsSnapshot} from '../models/game-settings';
 import type {RuntimeService, RuntimeMidiEventContext} from './runtime';
 import {bindPlayerDirectTouch, type TouchZoomPort} from './player-direct-touch';
@@ -94,7 +94,10 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     movement: () => settings()?.options.touchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode,
     axes(x, y) {controls.joystickX = x; controls.joystickY = y;}, schedule: queueControls});
   function refocus() {if (!(ios && direct.hasPointers())) options.refocus();}
-  const functionOwner = createFunctionKeyOwner(down => {functionDown = down; publish(); key(functionKeySpec, down);});
+  const ordinaryFunctionOwner = createFunctionKeyOwner(down => {functionDown = down; publish(); key(functionKeySpec, down);});
+  const th19ChargeOwner = createFunctionKeyOwner(down => {functionDown = down; publish(); key(th19ChargeKeySpec, down);}, 'hold');
+  const functionOwner = () => settings()?.gameId === 'th19' ? th19ChargeOwner : ordinaryFunctionOwner;
+  function cancelTouchFunction() {ordinaryFunctionOwner.cancel(); th19ChargeOwner.cancel();}
   function on<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: (event: HTMLElementEventMap[K]) => void, config?: AddEventListenerOptions) {
     element.addEventListener(type, listener, config); cleanup.push(() => element.removeEventListener(type, listener, config));
   }
@@ -139,17 +142,17 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   on(el.focus, 'click', event => {if (event.detail === 0 && allowed() && settings()?.options.touchFocusMode === 'toggle-button') setFocus(!controls.focusEnabled);});
   on(el.functionKey, 'pointerdown', event => {
     if (ios || !allowed() || el.functionKey.hidden) return; event.preventDefault();
-    if (functionOwner.down(event.pointerId)) capture(el.functionKey, event);
+    if (functionOwner().down(event.pointerId)) capture(el.functionKey, event);
   });
-  on(el.functionKey, 'pointerup', event => {if (!ios) {event.preventDefault(); functionOwner.up(event.pointerId);}});
-  for (const type of ['pointercancel', 'lostpointercapture'] as const) on(el.functionKey, type, event => {if (!ios) functionOwner.lost(event.pointerId);});
+  on(el.functionKey, 'pointerup', event => {if (!ios) {event.preventDefault(); functionOwner().up(event.pointerId);}});
+  for (const type of ['pointercancel', 'lostpointercapture'] as const) on(el.functionKey, type, event => {if (!ios) functionOwner().lost(event.pointerId);});
   on(el.functionKey, 'touchstart', event => {
     if (!ios || !allowed() || el.functionKey.hidden || !event.changedTouches.length) return;
-    event.preventDefault(); functionOwner.down(event.changedTouches[0].identifier);
+    event.preventDefault(); functionOwner().down(event.changedTouches[0].identifier);
   }, {passive: false});
-  on(el.functionKey, 'touchend', event => {if (ios) {event.preventDefault(); for (const touch of Array.from(event.changedTouches)) functionOwner.up(touch.identifier);}}, {passive: false});
-  on(el.functionKey, 'touchcancel', event => {if (ios) for (const touch of Array.from(event.changedTouches)) functionOwner.lost(touch.identifier);});
-  on(el.functionKey, 'click', event => {if (event.detail === 0 && allowed() && !el.functionKey.hidden) {functionOwner.down(-1); functionOwner.up(-1);}});
+  on(el.functionKey, 'touchend', event => {if (ios) {event.preventDefault(); for (const touch of Array.from(event.changedTouches)) functionOwner().up(touch.identifier);}}, {passive: false});
+  on(el.functionKey, 'touchcancel', event => {if (ios) for (const touch of Array.from(event.changedTouches)) functionOwner().lost(touch.identifier);});
+  on(el.functionKey, 'click', event => {if (event.detail === 0 && allowed() && !el.functionKey.hidden) {functionOwner().down(-1); functionOwner().up(-1);}});
   function setHeldFire(held: boolean) {
     if (held) {
       const current = settings(); if (!current || !allowed() || heldFire) return;
@@ -203,12 +206,12 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     on(button, 'click', event => {if (event.detail === 0 && allowed() && !(button === el.fire && heldMode())) activate();});
   }
   function cancelPointers() {
-    clearCustomActions(); functionOwner.cancel(); direct.cancel(false); joystick.reset(false); controls.focusEnabled = false; publish();
+    clearCustomActions(); cancelTouchFunction(); direct.cancel(false); joystick.reset(false); controls.focusEnabled = false; publish();
     postTouchCancel(context()); syncControls();
   }
   function reset(notify = true) {
     const previousMuted = muted; if (!notify) muted = true;
-    clearCustomActions(); releaseHeldTouchFire(); functionOwner.cancel(); direct.cancel(notify); joystick.reset(false);
+    clearCustomActions(); releaseHeldTouchFire(); cancelTouchFunction(); direct.cancel(notify); joystick.reset(false);
     if (raf !== null) win.cancelAnimationFrame(raf); raf = null;
     for (const timer of timers) win.clearTimeout(timer); timers.clear();
     controls.focusEnabled = false; controls.bombSerial = 0; controls.escapeSerial = 0; thpracMenuOpen = false;
@@ -218,7 +221,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     if (disposed) return;
     const current = runtime.getInputContext();
     if (identity.epoch !== current.epoch || identity.target !== current.target || identity.game !== current.game) {reset(false); identity = current;}
-    if (!allowed()) {clearCustomActions(); releaseHeldTouchFire(); functionOwner.cancel(); direct.cancel(); joystick.reset(false);}
+    if (!allowed()) {clearCustomActions(); releaseHeldTouchFire(); cancelTouchFunction(); direct.cancel(); joystick.reset(false);}
     const next = runtime.getMidiEventContext();
     if (native?.epoch !== next?.epoch || native?.document !== next?.document || native?.target !== next?.target) {
       unbindNative?.(); unbindNative = null; native = next;
@@ -241,7 +244,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   const unsubscribe = runtime.subscribe(sync); sync();
   return {
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
-    sync, syncControls, reset, cancelPointers, releaseHeldTouchFire, cancelTouchFunction: () => functionOwner.cancel(),
+    sync, syncControls, reset, cancelPointers, releaseHeldTouchFire, cancelTouchFunction,
     hasDirectPointers: direct.hasPointers, pulseThprac,
     dispose() {
       if (disposed) return; reset(); disposed = true; unsubscribe(); unbindNative?.();

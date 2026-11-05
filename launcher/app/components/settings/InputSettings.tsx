@@ -20,10 +20,12 @@ export function InputSettings({
   keyboard,
   gamepad,
   th09Local,
+  th19=false,
 }: {
   keyboard?: KeyboardPreferences;
   gamepad?: GamepadMappingModel;
   th09Local?: Th09LocalInput;
+  th19?:boolean;
 }) {
   const { t } = useLocale(),
     id = useId(),
@@ -41,7 +43,7 @@ export function InputSettings({
   useEffect(() => {
     if (!th09Local) setScope('general');
   }, [th09Local]);
-  const title = t('input.text.input_settings');
+  const title = t(th19?'th19.input':'input.text.input_settings');
   function edit(value: 'keyboard' | 'gamepad', node: HTMLButtonElement) {
     trigger.current = node;
     setDevice(value);
@@ -155,9 +157,9 @@ export function InputSettings({
                           ) : (
                             <>
                               {device === 'keyboard' && keyboard && (
-                                <KeyboardSettings model={keyboard} active={editing} />
+                                <KeyboardSettings model={keyboard} active={editing} th19={th19} />
                               )}
-                              {device === 'gamepad' && gamepad && <GamepadSettings model={gamepad} active={editing} />}
+                              {device === 'gamepad' && gamepad && <GamepadSettings model={gamepad} active={editing} th19={th19} />}
                             </>
                           )}
                         </div>

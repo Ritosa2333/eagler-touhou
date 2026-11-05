@@ -1,4 +1,5 @@
 import {accountRequest} from './account-client';
+import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../src/launcher/th19-versus-rules.mts';
 import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
 import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from '../../src/launcher/th05-initial-stock.mts';
 import {
@@ -234,6 +235,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         playerCount: room.playerCount,
         difficulty: room.difficulty,
         created: room.created,
+        ...(product==='th19mp'?{th19Rules:[...(room.th19Rules??TH19_VERSUS_RULES)]}:{}),
         ...(product==='th05mp'?{initialSpares:room.initialSpares,initialBombs:room.initialBombs}:{}),
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
@@ -415,7 +417,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       type: 'settings',
       playerCount: room.playerCount,
       difficulty: room.difficulty,
-      ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+      ...(product==='th19mp'?{th19Rules:[...(room.th19Rules??TH19_VERSUS_RULES)]}:{}),
+        ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
@@ -440,7 +443,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       loadouts: config.loadouts,
       inputTiming: config.inputTiming,
     });
-    if (!normalized) return;
+    if (!normalized || product!=='th19mp'&&normalized.th19Rules!==undefined) return;
     const movementChanged = !room.disableCheatMovement && normalized.disableCheatMovement;
     if (normalized.timingChoice !== undefined) {
       state.timingChoice = normalized.timingChoice;
@@ -450,6 +453,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
+      ...(product==='th19mp'?{th19Rules:[...(normalized.th19Rules??TH19_VERSUS_RULES)]}:{}),
       ...(product==='th05mp'?{initialSpares:normalized.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:normalized.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
       prankMode: false,
@@ -500,6 +504,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         disableCheatMovement: room.disableCheatMovement,
         disableLocalChargePriority: room.disableLocalChargePriority,
         chapterThreshold: room.chapterThreshold,
+        ...(product==='th19mp'?{th19Rules:room.th19Rules}:{}),
         challengeMode: room.challengeMode,
         prankMode: false,
         playerCount: room.playerCount,
@@ -772,6 +777,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
+      ...(product==='th19mp'?{th19Rules:[...(saved?.room.th19Rules??TH19_VERSUS_RULES)]}:{}),
       ...(product==='th05mp'?{initialSpares:saved?.room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:saved?.room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       challengeMode: saved?.room.challengeMode ?? false,
       prankMode: false,
@@ -1002,7 +1008,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         MultiplayerRoomState,
         | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
         | "chapterThreshold"
-        | 'initialSpares' | 'initialBombs'
+        | 'initialSpares' | 'initialBombs' | 'th19Rules'
       >
     >,
   ) {
@@ -1018,6 +1024,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if(patch.th19Rules!==undefined&&(product!=='th19mp'||room.phase!=='lobby'||!validTh19VersusRules(patch.th19Rules)))return;
     if((patch.initialSpares!==undefined||patch.initialBombs!==undefined)&&(product!=='th05mp'||room.phase!=='lobby'||!validTh05InitialSpares(patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares)||!validTh05InitialBombs(patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs)))return;
     if (
       patch.chapterThreshold !== undefined &&
@@ -1058,6 +1065,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       playerCount,
       difficulty,
       ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
+      ...(product==='th19mp'?{th19Rules:[...(patch.th19Rules??room.th19Rules??TH19_VERSUS_RULES)]}:{}),
       ...(product==='th05mp'?{initialSpares:patch.initialSpares??room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:patch.initialBombs??room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
@@ -1113,7 +1121,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (
       !ownerLocal() ||
       room?.phase !== 'lobby' ||
-      !policy()?.inputTiming?.measuredStartup ||
+      !policy()?.inputTiming ||
       !multiplayerInputTimingPolicy(policy()).rollback
     )
       return;
@@ -1134,7 +1142,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const timingPolicy = multiplayerInputTimingPolicy(policy());
     const rollback = timingPolicy.rollback && state.rollbackEnabled;
     const measured = timingPolicy.measuredStartup,
-      adonisMode = measured ? (rollback ? 0 : 1) : 0;
+      adonisMode = rollback ? 0 : 1;
     const automatic = !rollback && measured && state.timingChoice === 'auto';
     const selected = Number(state.timingChoice);
     const inputDelay =
@@ -1148,7 +1156,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     send({
       type: 'start',
       inputDelay,
-      ...(measured ? { adonisMode, inputDelayAuto: automatic, predictionReserve: 2 } : {}),
+      adonisMode,
+      ...(measured ? { inputDelayAuto: automatic, predictionReserve: 2 } : {}),
       ...(!timingPolicy.rollback || timing.sendPredictionLimit != null
         ? { predictionLimit: timingPolicy.predictionLimit }
         : {}),
@@ -1195,13 +1204,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         playerCount: room.playerCount,
         seed: Number.parseInt(room.code, 10) & 0xffff,
         difficulty: Math.max(0, Math.min(config.difficulties.length - 1, room.difficulty)),
+        ...(product==='th19mp'?{th19Rules:[...(room.th19Rules??TH19_VERSUS_RULES)]}:{}),
         ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
-        ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0 } : {}),
+        ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0, adonisMode: Number(room.adonisMode) || 0 } : {}),
         ...(config.inputTiming?.measuredStartup
           ? {
               inputDelayAuto: room.inputDelayAuto ?? false,
               predictionReserve: room.predictionReserve ?? 2,
-              adonisMode: Number(room.adonisMode) || 0,
             }
           : {}),
         ...(!multiplayerInputTimingPolicy(config).rollback ||
