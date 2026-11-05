@@ -6,7 +6,7 @@ namespace th17::sdl {
 class FontDevice {GraphicsDevice& graphics;TextRaster raster;std::array<bool,15> loaded{};bool load(u32 slot);
  std::string font_path;
  std::array<TTF_Font*,9> localized_fonts{},japanese_fallback{};
- bool has_japanese_fallback=false;
+ bool has_japanese_fallback=false,english_music_details=false;
  bool localization_checked=false,ttf_initialized=false;
  bool load_localized_font();
  bool write_localized(TextureImage&,const TextLayout&,const TextureText&);

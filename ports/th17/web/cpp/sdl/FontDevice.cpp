@@ -13,5 +13,5 @@ bool FontDevice::text(AnmVm& vm,const TextureText& request){
  graphics.backend.flush();if(!(request.utf8?write_localized(*image,layout,request):raster.write(*image,layout.region,request.bytes,layout.style))){error="TH17 text raster bounds or format";return false;}graphics.changed(handle,{u32(layout.region.left),u32(layout.region.top),u32(layout.region.right),u32(layout.region.bottom)});vm.visual.flags|=1;++writes;return true;
 }
 bool FontDevice::dialogue(AnmVm& vm,u32 color,u32 outline,i32 style,i32 x,i32 spacing,const std::string& bytes){return text(vm,{color,outline,style,x,spacing,false,false,bytes,translated_message(bytes)});}
-bool FontDevice::spell_title(AnmVm& vm,const std::string& bytes,bool utf8){return text(vm,{0xffffff,0,0,0,0,true,false,bytes,utf8});}
+bool FontDevice::spell_title(AnmVm& vm,const std::string& bytes,bool utf8){return text(vm,{0xffffff,0,utf8?8:0,0,0,true,false,bytes,utf8});}
 }
