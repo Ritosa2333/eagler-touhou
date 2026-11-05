@@ -115,7 +115,7 @@ render_hook:
     mov bx,bp
     shl bx,1
     add ax,[bx+0x659c]
-    add ax,16-1
+    add ax,16-2
     cmp bp,0
     je .x_ready
     add ax,320
@@ -123,7 +123,7 @@ render_hook:
     ; TH03 uses 200 VRAM rows. Include PLAYFIELD_TOP=16 screen pixels.
     ; sprite16_put divides screen Y by two (native player top is y-16,
     ; sprite height is 64 screen pixels, so its center is y+16).
-    ; A 5x3 VRAM marker (black border, white middle) follows that same grid.
+    ; Two VRAM rows display as four screen pixels; use a 4x4 square.
     mov dx,[si+2]
     sar dx,5
     add dx,8-1
@@ -138,7 +138,7 @@ render_hook:
     and cx,7
     shr ax,3
     add di,ax
-    mov bx,0x0070
+    mov bx,0x00f0
     ror bx,cl                  ; spans two bytes at every X alignment
     mov ax,0xa800
     mov es,ax
@@ -151,8 +151,7 @@ render_hook:
     out 0x7e,al
     mov [es:di],bx
     mov [es:di+80],bx
-    mov [es:di+160],bx
-    mov bx,0x0020
+    mov bx,0x0060
     ror bx,cl
     mov al,0xff
     out 0x7e,al

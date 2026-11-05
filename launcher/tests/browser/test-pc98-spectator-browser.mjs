@@ -91,6 +91,9 @@ try{
     assert.notEqual(await position(),before,'P2 drag moves the actual player');
     await page.evaluate(()=>rpc(1,'keyboard',{code:'Space',key:' ',keyCode:32,location:0,down:true}));
     await wait(async()=>frames()[1].evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.some(p=>p.seat===1&&p.focused)),'native focus activated',20000);
+    const marker=await frames()[1].evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.find(p=>p.seat===1));
+    await (await frames()[1].$('#canvas')).screenshot({path:resolve(out,'native-marker.png')});
+    console.log('Native marker position',JSON.stringify(marker));
     const beforeFocus=await frames()[1].evaluate(playerFrame);
     await wait(async()=>(await frames()[1].evaluate(playerFrame))>=beforeFocus+300,'native marker keeps match synchronized',20000);
     await page.evaluate(()=>rpc(1,'keyboard',{code:'Space',key:' ',keyCode:32,location:0,down:false}));
