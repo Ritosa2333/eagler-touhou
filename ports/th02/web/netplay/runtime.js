@@ -7,6 +7,7 @@ import {runBoot} from './boot-runner.js';
 import {LocalSfx} from './local-sfx.js';
 import {assetBytes} from '../preload-cache.js';
 import {hashNativeMemory} from './native-hash.js';
+import {collisionPoints} from './collision-points.js';
 const workerHost=globalThis.th02WorkerHost;
 const PROTOCOL='th02-rollback/6',canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');nativeCanvas.width=640;nativeCanvas.height=400;
@@ -306,13 +307,7 @@ function checksum(){
  return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:state()?.gameFrame||0};
 }
 function hitPoints(){
- const s=state(),p=s?.players[localSlot];
- if(!raw&&p&&!p.hit&&!p.out&&!nativePaused(emulator.module.HEAPU8,mailbox,patch)&&(points.always||(points.focus&&(previousInputs[localSlot]&64)))){
-  // Native rendering adds 0x28d4 hardware scroll; scanout removes it. The
-  // published player coordinates are already the visible screen position.
-  return [[p.x+16,p.y+21]];
- }
- return [];
+ return collisionPoints({state:state(),slot:localSlot,raw,paused:nativePaused(emulator.module.HEAPU8,mailbox,patch),preferences:points,inputs:previousInputs});
 }
 function present(){
  if(!enabled||!pending||!emulator.module.netPresent())return false;
