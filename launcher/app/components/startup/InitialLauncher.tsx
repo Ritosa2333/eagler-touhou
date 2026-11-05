@@ -1,8 +1,6 @@
 import { MainSelect } from '../launcher/MainSelect';
-import { AccountPage } from '../launcher/AccountPage';
-import { ProfilePage } from '../launcher/ProfilePreview';
 import { useLocation } from 'react-router';
-import { useRef, type ReactNode } from 'react';
+import { lazy, Suspense, useRef, type ReactNode } from 'react';
 import { PRODUCT_IDS, productEnabledForBuild } from '../../../src/contracts/product-catalog.mts';
 import { LocaleProvider, useLocale, translate } from '../../i18n';
 import { LibrarySurface } from '../launcher/LibrarySurface';
@@ -20,6 +18,9 @@ import {
   type UiLocale,
 } from '../../../src/launcher/i18n.mts';
 import { accountsEnabled } from '../../release-features';
+
+const AccountPage = lazy(() => import('../launcher/AccountPage').then(module => ({default:module.AccountPage})));
+const ProfilePage = lazy(() => import('../launcher/ProfilePreview').then(module => ({default:module.ProfilePage})));
 
 const assetUrl = (path: string) => path;
 const inactive = () => {};
@@ -87,12 +88,12 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
   return account ? (
     <>
       {masthead}
-      <AccountPage />
+      <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
     </>
   ) : profile ? (
     <>
       {masthead}
-      <ProfilePage />
+      <Suspense fallback={<main className="player-profile" aria-busy="true"/>}><ProfilePage /></Suspense>
     </>
   ) : lobby ? (
     <LobbySurface

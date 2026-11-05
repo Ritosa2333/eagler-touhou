@@ -46,13 +46,9 @@ export function ReplayWorkspace({session}: {session: BrowserSession}) {
   const [moving, setMoving] = useSurfaceLayerState<string | null>('replay-move', null);
   const [destination, setDestination] = useState('replay'), [newFolder, setNewFolder] = useState(''), [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const closing = useRef(false), routeVisible = useRef(false), routeOpen = navigation.infoDialogOpen('replayDialog');
+  const closing = useRef(false);
   const playback = app.runtime?.runtimeInfo.playback as ReplayPlaybackState | undefined;
   const folders = groupReplayFolders(files.rows), rows = files.rows.filter(row => row.path.slice(0, row.path.lastIndexOf('/')) === (folder ?? 'replay'));
-  useEffect(() => {
-    if (routeOpen) {routeVisible.current = true; if (!files.open && files.productId) void model.open(files.productId).catch(session.reportError);}
-    else if (routeVisible.current) {routeVisible.current = false; if (files.open) model.close();}
-  }, [routeOpen, model, files.open, files.productId, session.reportError]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: File navigation state resets when switching the manager's product.
   useEffect(() => {setExpanded(null); if (folder) setFolder(null); else setMoving(null); setError('');}, [files.productId]);
   const folderExists = !folder || folders.some(item => item.key === folder);

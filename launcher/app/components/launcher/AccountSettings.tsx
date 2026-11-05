@@ -1,29 +1,38 @@
 import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
 import {Link, useLocation} from 'react-router';
-import {ChevronLeft, ChevronRight, Gamepad2, ShieldCheck, UserRound} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Gamepad2, ImagePlus, LoaderCircle, Plus, Save, ShieldCheck, Trash2, UserRound} from 'lucide-react';
 import {Input, Textarea} from '../../ui/input';
 import {Button} from '../../ui/button';
 import {Toggle} from '../../ui/controls';
 import {Field, FieldContent, FieldGroup, FieldLabel} from '../../ui/field';
 import {animateSurface} from '../../ui/surface-motion';
-import {accountRequest} from '../../services/account-client';
+import {AccountRequestError,accountRequest} from '../../services/account-client';
+import {prepareCroppedProfileImage, validateProfileImage, ProfileImageError, type ProfileImageCrop, type ProfileImageKind} from '../../services/profile-image';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {AccountAvatar} from './AccountAvatar';
+import {useUnsavedChanges} from '../../navigation/unsaved-changes';
+import {useSurfaceLayerState} from '../../navigation/surface-layer';
+import {CloudSaves} from './CloudSaves';
+import type {LocalSaveReader} from '../../services/local-save-storage';
+import ProfileImageCropDialog from './ProfileImageCropDialog';
 import type {Profile, ProfileDisplay} from './ProfilePreview';
 import './account-settings.css';
 
-export function AccountSettings({initialProfile, initialDisplay, panel, onSave}: {
+export function AccountSettings({initialProfile, initialDisplay, panel, onSave,readLocalSaves}: {
   initialProfile:Profile; initialDisplay:ProfileDisplay; panel:string;
   onSave(profile:Profile, display:ProfileDisplay):void;
+  readLocalSaves?:LocalSaveReader;
 }) {
   const {t} = useLocale();
   const location = useLocation();
   const editing = panel === '#edit';
+  const gameSettings = panel === '#game-settings';
   const detail = panel !== '#settings';
   const content = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const node = content.current;
     if (!node) return;
+    window.scrollTo(0,0);
     const animation = animateSurface(node, 'enter', {kind:'content'});
     return () => animation?.cancel();
   },[panel]);
@@ -32,14 +41,14 @@ export function AccountSettings({initialProfile, initialDisplay, panel, onSave}:
     <aside className="account-settings-nav">
       <h1>{t('profile.settings')}</h1>
       <nav aria-label={t('profile.settingsNavigation')}>
-        <Link to={address('#security')} aria-current={!editing?'page':undefined}><ShieldCheck aria-hidden="true"/><span>{t('profile.security')}</span><ChevronRight aria-hidden="true"/></Link>
+        <Link to={address('#security')} aria-current={!editing&&!gameSettings?'page':undefined}><ShieldCheck aria-hidden="true"/><span>{t('profile.security')}</span><ChevronRight aria-hidden="true"/></Link>
         <Link to={address('#edit')} aria-current={editing?'page':undefined}><UserRound aria-hidden="true"/><span>{t('profile.personalSettings')}</span><ChevronRight aria-hidden="true"/></Link>
-        <span aria-disabled="true"><Gamepad2 aria-hidden="true"/><span>{t('room.gameSettingsGroup')}</span><small>{t('profile.upcoming')}</small></span>
+        <Link to={address('#game-settings')} aria-current={gameSettings?'page':undefined}><Gamepad2 aria-hidden="true"/><span>{t('room.gameSettingsGroup')}</span><ChevronRight aria-hidden="true"/></Link>
       </nav>
     </aside>
     <div className="account-settings-content" ref={content}>
       <Link className="account-settings-back" to={address('#settings')}><ChevronLeft aria-hidden="true"/>{t('profile.settings')}</Link>
-      {editing ? <ProfileSettings initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/> : <SecuritySettings/>}
+      {editing ? <ProfileSettings initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/> : gameSettings ? <CloudSaves readLocalSaves={readLocalSaves}/> : <SecuritySettings/>}
     </div>
   </main>;
 }
@@ -49,82 +58,147 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
 }) {
   const {t} = useLocale();
   const [profile,setProfile] = useState(initialProfile);
-  const [visible,setVisible] = useState(initialDisplay.visible.friends);
+  const [visible,setVisible] = useState(initialDisplay.visible);
   const [busy,setBusy] = useState(false);
+  const [processing,setProcessing] = useState<Partial<Record<ProfileImageKind,boolean>>>({});
+  const uploadTasks = useRef<Partial<Record<ProfileImageKind,AbortController>>>({});
+  const [cropRequest,setCropRequest]=useState<{file:File;kind:ProfileImageKind}>();
+  const [cropOpen,setCropOpen]=useSurfaceLayerState<boolean>('profile-image-crop',false);
+  const wasCropping=useRef(false);
+  useEffect(()=>{if(wasCropping.current&&!cropOpen)setCropRequest(undefined);wasCropping.current=cropOpen;},[cropOpen]);
+  const processingImages = !!processing.avatar || !!processing.cover;
   const [error,setError] = useState<UiMessageKey>();
   const [saved,setSaved] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null), coverInput = useRef<HTMLInputElement>(null);
   const nextId = useRef(0);
   const [linkIds,setLinkIds] = useState(() => initialProfile.links.map(() => nextId.current++));
+  useEffect(() => () => {
+    for (const task of Object.values(uploadTasks.current)) task?.abort();
+    uploadTasks.current = {};
+  }, []);
+  const dirty = cropOpen || processingImages || profile.name !== initialProfile.name || profile.bio !== initialProfile.bio ||
+    profile.avatar !== initialProfile.avatar || profile.cover !== initialProfile.cover ||
+    Object.keys(visible).some(key=>visible[key as keyof typeof visible]!==initialDisplay.visible[key as keyof typeof visible]) || profile.links.length !== initialProfile.links.length ||
+    profile.links.some((link,index) => link.label !== initialProfile.links[index]?.label || link.url !== initialProfile.links[index]?.url);
+  useUnsavedChanges(dirty, () => {
+    for (const task of Object.values(uploadTasks.current)) task?.abort();
+    uploadTasks.current = {};setProcessing({});setError(undefined);
+    setProfile(initialProfile);setVisible(initialDisplay.visible);setSaved(false);setCropOpen(false);setCropRequest(undefined);
+    setLinkIds(initialProfile.links.map(() => nextId.current++));
+  });
   const change = (next:Profile) => {setProfile(next);setSaved(false);};
-  const upload = async (file:File|undefined,key:'avatar'|'cover') => {
+  const chooseImage = (file:File|undefined,key:ProfileImageKind) => {
+    if(!file)return;
+    try {validateProfileImage(file);} catch(error) {setError(error instanceof ProfileImageError?`profile.image.${error.code}`:'profile.image.readFailed');return;}
+    uploadTasks.current[key]?.abort();delete uploadTasks.current[key];setProcessing(current=>({...current,[key]:false}));
+    setError(undefined);setCropRequest({file,kind:key});setCropOpen(true);
+  };
+  const upload = async (file:File|undefined,key:ProfileImageKind,crop:ProfileImageCrop) => {
     if (!file) return;
-    if (!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size>750000) {setError('profile.image.invalid');return;}
-    const reader = new FileReader();
-    reader.onload = () => {if (typeof reader.result === 'string') {const image=reader.result;setProfile(current=>({...current,[key]:image}));setSaved(false);setError(undefined);}};
-    reader.onerror = () => setError('profile.image.readFailed');
-    reader.readAsDataURL(file);
+    uploadTasks.current[key]?.abort();
+    const task = new AbortController();
+    uploadTasks.current[key] = task;
+    setProcessing(current=>({...current,[key]:true}));setSaved(false);setError(undefined);
+    try {
+      const image = await prepareCroppedProfileImage(file,key,crop,task.signal);
+      if (task.signal.aborted || uploadTasks.current[key] !== task) return;
+      setProfile(current=>({...current,[key]:image}));setError(undefined);
+    } catch (error) {
+      if (!task.signal.aborted && uploadTasks.current[key] === task)
+        setError(error instanceof ProfileImageError ? `profile.image.${error.code}` : 'profile.image.readFailed');
+    } finally {
+      if (uploadTasks.current[key] === task) {
+        delete uploadTasks.current[key];
+        setProcessing(current=>({...current,[key]:false}));
+      }
+    }
+  };
+  const removeImage = (key:ProfileImageKind) => {
+    uploadTasks.current[key]?.abort();delete uploadTasks.current[key];
+    setProcessing(current=>({...current,[key]:false}));
+    setProfile(current=>({...current,[key]:''}));setSaved(false);setError(undefined);
   };
   async function save(event:FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || processingImages || cropOpen) return;
+    if ([...profile.name.trim()].length > 12) {setError('account.nicknameLength');return;}
     const links = profile.links.map(link => ({label:link.label.trim(),url:link.url.trim()}));
     if (links.some(link => {
       try {return !link.label || !['https:','http:'].includes(new URL(link.url).protocol);} catch {return true;}
     })) {setError('profile.links.invalid');return;}
     setBusy(true);setError(undefined);setSaved(false);
     const next = {...profile,name:profile.name.trim(),links};
-    const display = {...initialDisplay,visible:{...initialDisplay.visible,friends:visible}};
+    const display = {...initialDisplay,visible};
     try {
-      if (next.name !== initialProfile.name) await accountRequest('auth/update-user',{name:next.name});
-      await accountRequest('v1/me/profile',{...next,display});
+      await accountRequest('v1/me/profile',{...next,display},{timeoutMs:60_000});
+      setProfile(current => current === profile ? next : current);
       onSave(next,display);setSaved(true);
       window.dispatchEvent(new Event('account-profile-change'));
-    } catch {setError('account.requestFailed');}
+    } catch(error) {setError(error instanceof AccountRequestError && error.code==='CONTENT_REJECTED'?'profile.contentRejected':error instanceof AccountRequestError && error.code==='REVIEW_UNAVAILABLE'?'profile.reviewUnavailable':error instanceof AccountRequestError && error.code==='SAVE_QUOTA_EXCEEDED'?'cloudSave.quota':'account.requestFailed');}
     finally {setBusy(false);}
   }
   return <section aria-labelledby="profile-settings-title">
+    {cropOpen&&cropRequest&&<ProfileImageCropDialog file={cropRequest.file} kind={cropRequest.kind}
+      onClose={()=>{setCropOpen(false);setCropRequest(undefined);}}
+      onConfirm={crop=>{const request=cropRequest;setCropOpen(false);setCropRequest(undefined);void upload(request.file,request.kind,crop);}}/>}
     <header className="account-settings-heading"><h2 id="profile-settings-title">{t('profile.personalSettings')}</h2></header>
     <form onSubmit={save}>
-      <FieldGroup>
-        <Field orientation="responsive"><FieldLabel htmlFor="settings-avatar">{t('profile.avatar')}</FieldLabel><FieldContent>
-          <div className="settings-media-row"><AccountAvatar src={profile.avatar}/><div className="settings-media-actions">
-            <Button variant="outline" size="sm" type="button" onClick={()=>avatarInput.current?.click()}>{t('profile.image.choose')}</Button>
-            <input ref={avatarInput} className="sr-only" id="settings-avatar" aria-label={t('profile.avatar')} type="file" accept="image/png,image/jpeg,image/webp" onChange={event=>void upload(event.target.files?.[0],'avatar')}/>
-            {profile.avatar && <Button variant="ghost" size="sm" type="button" onClick={()=>change({...profile,avatar:''})}>{t('profile.remove')}</Button>}
-          </div></div>
-        </FieldContent></Field>
-        <Field orientation="responsive"><FieldLabel htmlFor="settings-cover">{t('profile.cover')}</FieldLabel><FieldContent>
-          <div className="settings-media-row"><div className="settings-cover-preview">{profile.cover && <img src={profile.cover} alt=""/>}</div><div className="settings-media-actions">
-            <Button variant="outline" size="sm" type="button" onClick={()=>coverInput.current?.click()}>{t('profile.image.choose')}</Button>
-            <input ref={coverInput} className="sr-only" id="settings-cover" aria-label={t('profile.cover')} type="file" accept="image/png,image/jpeg,image/webp" onChange={event=>void upload(event.target.files?.[0],'cover')}/>
-            {profile.cover && <Button variant="ghost" size="sm" type="button" onClick={()=>change({...profile,cover:''})}>{t('profile.remove')}</Button>}
-          </div></div>
-        </FieldContent></Field>
-        <Field orientation="responsive"><FieldLabel htmlFor="settings-name">{t('profile.name')}</FieldLabel><FieldContent>
-          <Input id="settings-name" autoComplete="nickname" required maxLength={32} value={profile.name} onChange={event=>change({...profile,name:event.target.value})}/>
-        </FieldContent></Field>
-        <Field orientation="responsive"><FieldLabel htmlFor="settings-bio">{t('profile.bio')}</FieldLabel><FieldContent>
-          <Textarea id="settings-bio" maxLength={500} rows={3} value={profile.bio} onChange={event=>change({...profile,bio:event.target.value})}/>
-        </FieldContent></Field>
-        <Field orientation="responsive"><FieldLabel>{t('profile.links')}</FieldLabel><FieldContent>
-          <div className="settings-links">{profile.links.map((link,index)=><div className="settings-link" key={linkIds[index]}>
-            <Input aria-label={t('profile.links.name')} maxLength={40} value={link.label} onChange={event=>change({...profile,links:profile.links.map((item,i)=>i===index?{...item,label:event.target.value}:item)})}/>
-            <Input aria-label={t('profile.links.address')} type="url" value={link.url} placeholder="https://" onChange={event=>change({...profile,links:profile.links.map((item,i)=>i===index?{...item,url:event.target.value}:item)})}/>
-            <Button variant="ghost" size="sm" type="button" aria-label={t('profile.links.delete',{number:index+1})} onClick={()=>{change({...profile,links:profile.links.filter((_,i)=>i!==index)});setLinkIds(linkIds.filter((_,i)=>i!==index));}}>{t('action.delete')}</Button>
-          </div>)}</div>
-          <Button variant="outline" size="sm" type="button" disabled={profile.links.length>=12} onClick={()=>{change({...profile,links:[...profile.links,{label:'',url:''}]});setLinkIds([...linkIds,nextId.current++]);}}>{t('profile.links.add')}</Button>
-        </FieldContent></Field>
-      </FieldGroup>
-      <section className="settings-section" aria-labelledby="settings-privacy-title">
-        <h3 id="settings-privacy-title">{t('profile.displayTab')}</h3>
-        <Field orientation="horizontal" className="settings-switch-row"><FieldLabel htmlFor="settings-friends">{t('profile.friendsVisibility')}</FieldLabel><FieldContent>
-          <Toggle id="settings-friends" checked={visible} onCheckedChange={value=>{setVisible(value);setSaved(false);}}/>
-        </FieldContent></Field>
-      </section>
-      <div className="settings-form-actions">
-        <Button type="submit" disabled={busy}>{t('profile.save')}</Button>
-        {error && <span role="alert">{t(error)}</span>}{saved && <span role="status">{t('profile.saved')}</span>}
+      <div className="profile-settings-editor">
+        <div className="settings-artwork">
+          <div className="settings-profile-preview" aria-hidden="true">
+            <div className="settings-preview-cover">{profile.cover && <img src={profile.cover} alt=""/>}</div>
+            <div className="settings-preview-identity"><AccountAvatar src={profile.avatar}/><strong>{profile.name || t('profile.name.missing')}</strong>
+              {profile.bio && <p>{profile.bio}</p>}
+            </div>
+          </div>
+          <FieldGroup>
+            <Field orientation="horizontal" className="settings-artwork-upload"><FieldLabel htmlFor="settings-avatar">{t('profile.avatar')}</FieldLabel><FieldContent>
+              <div className="settings-media-actions">
+                <Button variant="outline" size="sm" type="button" disabled={busy} aria-busy={!!processing.avatar} onClick={()=>avatarInput.current?.click()}>{processing.avatar ? <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true"/> : <ImagePlus aria-hidden="true"/>}{t('profile.image.choose')}</Button>
+                <input ref={avatarInput} className="sr-only" id="settings-avatar" aria-label={t('profile.avatar')} type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={event=>{const file=event.target.files?.[0];event.target.value='';chooseImage(file,'avatar');}}/>
+                {(profile.avatar || processing.avatar) && <Button variant="ghost" size="icon-sm" type="button" disabled={busy} aria-label={t('profile.avatar')+' | '+t('profile.remove')} onClick={()=>removeImage('avatar')}><Trash2 aria-hidden="true"/></Button>}
+              </div>
+            </FieldContent></Field>
+            <Field orientation="horizontal" className="settings-artwork-upload"><FieldLabel htmlFor="settings-cover">{t('profile.cover')}</FieldLabel><FieldContent>
+              <div className="settings-media-actions">
+                <Button variant="outline" size="sm" type="button" disabled={busy} aria-busy={!!processing.cover} onClick={()=>coverInput.current?.click()}>{processing.cover ? <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true"/> : <ImagePlus aria-hidden="true"/>}{t('profile.image.choose')}</Button>
+                <input ref={coverInput} className="sr-only" id="settings-cover" aria-label={t('profile.cover')} type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={event=>{const file=event.target.files?.[0];event.target.value='';chooseImage(file,'cover');}}/>
+                {(profile.cover || processing.cover) && <Button variant="ghost" size="icon-sm" type="button" disabled={busy} aria-label={t('profile.cover')+' | '+t('profile.remove')} onClick={()=>removeImage('cover')}><Trash2 aria-hidden="true"/></Button>}
+              </div>
+            </FieldContent></Field>
+          </FieldGroup>
+          <small className="settings-image-hint">{t('profile.image.formats')}</small>
+          {processingImages && <span className="sr-only" role="status">{t('profile.image.processing')}</span>}
+        </div>
+        <div className="settings-text-fields">
+          <FieldGroup>
+            <Field><FieldLabel htmlFor="settings-name">{t('profile.name')}</FieldLabel><FieldContent>
+              <Input id="settings-name" autoComplete="nickname" required maxLength={24} value={profile.name} onChange={event=>change({...profile,name:[...event.target.value].slice(0,12).join('')})} placeholder={t('profile.name.placeholder')}/>
+            </FieldContent></Field>
+            <Field><FieldLabel htmlFor="settings-bio">{t('profile.bio')}</FieldLabel><FieldContent>
+              <Textarea id="settings-bio" maxLength={500} rows={4} value={profile.bio} onChange={event=>change({...profile,bio:event.target.value})} placeholder={t('profile.bio.placeholder')}/>
+              <small className="settings-character-count">{profile.bio.length} / 500</small>
+            </FieldContent></Field>
+            <Field><FieldLabel>{t('profile.links')}</FieldLabel><FieldContent>
+              <div className="settings-links">{profile.links.map((link,index)=><div className="settings-link" key={linkIds[index]}>
+                <Input aria-label={t('profile.links.name')} maxLength={40} value={link.label} placeholder={t('profile.links.name')} onChange={event=>change({...profile,links:profile.links.map((item,i)=>i===index?{...item,label:event.target.value}:item)})}/>
+                <Input aria-label={t('profile.links.address')} type="url" value={link.url} placeholder="https://" onChange={event=>change({...profile,links:profile.links.map((item,i)=>i===index?{...item,url:event.target.value}:item)})}/>
+                <Button variant="ghost" size="icon-sm" type="button" aria-label={t('profile.links.delete',{number:index+1})} onClick={()=>{change({...profile,links:profile.links.filter((_,i)=>i!==index)});setLinkIds(linkIds.filter((_,i)=>i!==index));}}><Trash2 aria-hidden="true"/></Button>
+              </div>)}</div>
+              <Button variant="outline" size="sm" type="button" disabled={profile.links.length>=12} onClick={()=>{change({...profile,links:[...profile.links,{label:'',url:''}]});setLinkIds([...linkIds,nextId.current++]);}}><Plus aria-hidden="true"/>{t('profile.links.add')}</Button>
+            </FieldContent></Field>
+          </FieldGroup>
+          <section className="settings-section" aria-labelledby="settings-privacy-title">
+            <h3 id="settings-privacy-title">{t('profile.displayTab')}</h3>
+            {(['career','records','friends'] as const).map(key=><Field key={key} orientation="horizontal" className="settings-switch-row"><FieldLabel htmlFor={'settings-'+key}>{t(key==='friends'?'profile.friendsVisibility':key==='career'?'profile.careerVisibility':'profile.recordsVisibility')}</FieldLabel><FieldContent>
+              <Toggle id={'settings-'+key} checked={visible[key]} onCheckedChange={value=>{setVisible(current=>({...current,[key]:value}));setSaved(false);}}/>
+            </FieldContent></Field>)}
+          </section>
+        </div>
+      </div>
+      <div className="settings-form-actions settings-profile-actions">
+        {error && <span role="alert">{t(error)}</span>}{saved && !dirty && <span role="status">{t('profile.saved')}</span>}
+        <Button type="submit" className="settings-save-profile" aria-busy={busy} disabled={busy || processingImages}>{busy?<LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true"/>:<Save aria-hidden="true"/>}{t('profile.save')}</Button>
       </div>
     </form>
   </section>;

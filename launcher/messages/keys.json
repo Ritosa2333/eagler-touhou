@@ -7464,9 +7464,18 @@
     "id": "profile_display_save",
     "params": []
   },
-  "profile.friendsVisibility": {"id":"profile_friends_visibility","params":[]},
-  "profile.personalSettings": {"id":"profile_personal_settings","params":[]},
-  "profile.upcoming": {"id":"profile_upcoming","params":[]},
+  "profile.friendsVisibility": {
+    "id": "profile_friends_visibility",
+    "params": []
+  },
+  "profile.personalSettings": {
+    "id": "profile_personal_settings",
+    "params": []
+  },
+  "profile.upcoming": {
+    "id": "profile_upcoming",
+    "params": []
+  },
   "profile.editHeading": {
     "id": "profile_edit_heading",
     "params": []
@@ -8688,6 +8697,328 @@
   },
   "developer.betaFeatures": {
     "id": "developer_betaFeatures",
+    "params": []
+  },
+  "chat.title": {
+    "id": "chat_title",
+    "params": []
+  },
+  "chat.keyboardHint": {
+    "id": "chat_keyboardHint",
+    "params": []
+  },
+  "chat.message": {
+    "id": "chat_message",
+    "params": []
+  },
+  "chat.send": {
+    "id": "chat_send",
+    "params": []
+  },
+  "chat.report": {
+    "id": "chat_report",
+    "params": []
+  },
+  "chat.messageActions": {
+    "id": "chat_messageActions",
+    "params": []
+  },
+  "chat.reported": {
+    "id": "chat_reported",
+    "params": []
+  },
+  "chat.reportRateLimited": {
+    "id": "chat_reportRateLimited",
+    "params": []
+  },
+  "chat.reportInProgress": {
+    "id": "chat_reportInProgress",
+    "params": []
+  },
+  "chat.banned": {
+    "id": "chat_banned",
+    "params": []
+  },
+  "chat.permanentlyBanned": {
+    "id": "chat_permanentlyBanned",
+    "params": []
+  },
+  "chat.bannedUntil": {
+    "id": "chat_bannedUntil",
+    "params": [
+      "time"
+    ]
+  },
+  "chat.sendRateLimited": {
+    "id": "chat_sendRateLimited",
+    "params": []
+  },
+  "chat.signInRequired": {
+    "id": "chat_signInRequired",
+    "params": []
+  },
+  "chat.reviewUnavailable": {
+    "id": "chat_reviewUnavailable",
+    "params": []
+  },
+  "chat.failed": {
+    "id": "chat_failed",
+    "params": []
+  },
+  "profile.contentRejected": {
+    "id": "profile_contentRejected",
+    "params": []
+  },
+  "profile.reviewUnavailable": {
+    "id": "profile_reviewUnavailable",
+    "params": []
+  },
+  "profile.image.sourceTooLarge": {
+    "id": "profile_image_sourceTooLarge",
+    "params": []
+  },
+  "profile.image.processing": {
+    "id": "profile_image_processing",
+    "params": []
+  },
+  "profile.unsaved.title": {
+    "id": "profile_unsaved_title",
+    "params": []
+  },
+  "profile.unsaved.message": {
+    "id": "profile_unsaved_message",
+    "params": []
+  },
+  "account.usernameFormat": {
+    "id": "account_usernameFormat",
+    "params": []
+  },
+  "account.nicknameLength": {
+    "id": "account_nicknameLength",
+    "params": []
+  },
+  "profile.image.cropAvatar": {
+    "id": "profile_image_cropAvatar",
+    "params": []
+  },
+  "profile.image.cropCover": {
+    "id": "profile_image_cropCover",
+    "params": []
+  },
+  "profile.image.cropHint": {
+    "id": "profile_image_cropHint",
+    "params": []
+  },
+  "profile.image.zoom": {
+    "id": "profile_image_zoom",
+    "params": []
+  },
+  "profile.image.zoomIn": {
+    "id": "profile_image_zoomIn",
+    "params": []
+  },
+  "profile.image.zoomOut": {
+    "id": "profile_image_zoomOut",
+    "params": []
+  },
+  "profile.image.resetCrop": {
+    "id": "profile_image_resetCrop",
+    "params": []
+  },
+  "profile.image.useCrop": {
+    "id": "profile_image_useCrop",
+    "params": []
+  },
+  "profile.image.coverSafeArea": {
+    "id": "profile_image_coverSafeArea",
+    "params": []
+  },
+  "profile.careerVisibility": {
+    "id": "profile_careerVisibility",
+    "params": []
+  },
+  "profile.recordsVisibility": {
+    "id": "profile_recordsVisibility",
+    "params": []
+  },
+  "cloudSave.title": {
+    "id": "cloudSave_title",
+    "params": []
+  },
+  "cloudSave.refresh": {
+    "id": "cloudSave_refresh",
+    "params": []
+  },
+  "cloudSave.manualHint": {
+    "id": "cloudSave_manualHint",
+    "params": []
+  },
+  "cloudSave.game": {
+    "id": "cloudSave_game",
+    "params": []
+  },
+  "cloudSave.latest": {
+    "id": "cloudSave_latest",
+    "params": []
+  },
+  "cloudSave.choose": {
+    "id": "cloudSave_choose",
+    "params": []
+  },
+  "cloudSave.upload": {
+    "id": "cloudSave_upload",
+    "params": []
+  },
+  "cloudSave.download": {
+    "id": "cloudSave_download",
+    "params": []
+  },
+  "cloudSave.delete": {
+    "id": "cloudSave_delete",
+    "params": []
+  },
+  "cloudSave.deleteConfirm": {
+    "id": "cloudSave_deleteConfirm",
+    "params": []
+  },
+  "cloudSave.requiredFiles": {
+    "id": "cloudSave_requiredFiles",
+    "params": [
+      "files"
+    ]
+  },
+  "cloudSave.previous": {
+    "id": "cloudSave_previous",
+    "params": []
+  },
+  "cloudSave.downloadPrevious": {
+    "id": "cloudSave_downloadPrevious",
+    "params": []
+  },
+  "cloudSave.uploaded": {
+    "id": "cloudSave_uploaded",
+    "params": []
+  },
+  "cloudSave.deleted": {
+    "id": "cloudSave_deleted",
+    "params": []
+  },
+  "cloudSave.conflict": {
+    "id": "cloudSave_conflict",
+    "params": []
+  },
+  "cloudSave.busy": {
+    "id": "cloudSave_busy",
+    "params": []
+  },
+  "cloudSave.quota": {
+    "id": "cloudSave_quota",
+    "params": []
+  },
+  "cloudSave.tooLarge": {
+    "id": "cloudSave_tooLarge",
+    "params": []
+  },
+  "cloudSave.invalid": {
+    "id": "cloudSave_invalid",
+    "params": []
+  },
+  "cloudSave.unsupportedVersion": {
+    "id": "cloudSave_unsupportedVersion",
+    "params": []
+  },
+  "cloudSave.statisticsFailed": {
+    "id": "cloudSave_statisticsFailed",
+    "params": []
+  },
+  "profile.flightTime": {
+    "id": "profile_flightTime",
+    "params": []
+  },
+  "profile.playCount": {
+    "id": "profile_playCount",
+    "params": [
+      "count"
+    ]
+  },
+  "profile.clear.oneCredit": {
+    "id": "profile_clear_oneCredit",
+    "params": []
+  },
+  "profile.clear.cleared": {
+    "id": "profile_clear_cleared",
+    "params": []
+  },
+  "profile.clear.uncleared": {
+    "id": "profile_clear_uncleared",
+    "params": []
+  },
+  "profile.clear.unread": {
+    "id": "profile_clear_unread",
+    "params": []
+  },
+  "profile.clear.allGames": {
+    "id": "profile_clear_allGames",
+    "params": []
+  },
+  "profile.clear.openGame": {
+    "id": "profile_clear_openGame",
+    "params": [
+      "game"
+    ]
+  },
+  "profile.loadoutNumber": {
+    "id": "profile_loadoutNumber",
+    "params": [
+      "number"
+    ]
+  },
+  "profile.team.barrier": {
+    "id": "profile_team_barrier",
+    "params": []
+  },
+  "profile.team.magic": {
+    "id": "profile_team_magic",
+    "params": []
+  },
+  "profile.team.scarlet": {
+    "id": "profile_team_scarlet",
+    "params": []
+  },
+  "profile.team.ghost": {
+    "id": "profile_team_ghost",
+    "params": []
+  },
+  "profile.mode.legacy": {
+    "id": "profile_mode_legacy",
+    "params": []
+  },
+  "profile.mode.pointdevice": {
+    "id": "profile_mode_pointdevice",
+    "params": []
+  },
+  "profile.clear.unavailable": {
+    "id": "profile_clear_unavailable",
+    "params": []
+  },
+  "cloudSave.chooseLocal": {
+    "id": "cloudSave_chooseLocal",
+    "params": []
+  },
+  "cloudSave.noLocalSave": {
+    "id": "cloudSave_noLocalSave",
+    "params": []
+  },
+  "cloudSave.th06TimeHint": {
+    "id": "cloudSave_th06TimeHint",
+    "params": []
+  },
+  "cloudSave.th05ClearHint": {
+    "id": "cloudSave_th05ClearHint",
+    "params": []
+  },
+  "cloudSave.backupUsed": {
+    "id": "cloudSave_backupUsed",
     "params": []
   }
 }

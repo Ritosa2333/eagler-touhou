@@ -1,3 +1,4 @@
+import {collectLocalSaveFiles} from '../services/local-save-storage';
 import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
 import {loadGameVersion} from "../../package/game-version.mjs";
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
@@ -1207,6 +1208,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (command) await owner.send('spectator-playback', command);
     },
     room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
+    readLocalSaves:(product:ProductId,names:readonly string[])=>collectLocalSaveFiles({product,names,language:capturedSettings(product).language,indexedDB:window.indexedDB,runtime}),
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     initialize, attachFrame, requestRuntimeClose, requestReplayManagerClose, launch, openReplayViewer, exitRoomPlayerFullscreen,
     restoreRoomFromUrl,

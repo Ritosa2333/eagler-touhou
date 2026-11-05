@@ -8,6 +8,7 @@ import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {parse} from 'parse5';
+import {parse as parseCss} from 'postcss';
 import {parse as parseJavaScript} from 'acorn';
 import {buildReactAppShell} from '../../scripts/ui-rewrite/app-shell-build.ts';
 import {APP_SHELL_RETIREMENT_WORKER} from '../../lib/app-shell-retirement.mjs';
@@ -60,6 +61,30 @@ function nodes(html) {
   const result = []; const visit = node => {if (node.tagName) result.push(node); for (const child of node.childNodes ?? []) visit(child);};
   visit(parse(html)); return result;
 }
+async function builtCssRules(directory) {
+  const assets = resolve(directory, 'assets');
+  const rules = [];
+  for (const name of (await readdir(assets)).filter(name => name.endsWith('.css'))) {
+    const root = parseCss(await readFile(resolve(assets, name), 'utf8'));
+    root.walkRules(rule => {
+      const declarations = new Map();
+      rule.walkDecls(declaration => declarations.set(declaration.prop.toLowerCase(), declaration.value.toLowerCase()));
+      rules.push({selector: rule.selector.replace(/\s+/g, ''), declarations});
+    });
+  }
+  return rules;
+}
+test('actual builds preserve composed individual transforms in shared and route styles', async () => {
+  for (const [name, {directory}] of outputs) {
+    const rules = await builtCssRules(directory);
+    const contains = (selector, translate, transform) => rules.some(rule => rule.selector.includes(selector)
+      && rule.declarations.get('translate') === translate
+      && rule.declarations.get('transform') === transform);
+    assert.ok(contains('.book-lobby-checksvg', '-2px -6px', 'scale(.7)'), `${name}: lobby check keeps its optical offset and scale`);
+    assert.ok(contains('.ui-button:active', 'none', 'none'), `${name}: shared button active state keeps both transform properties`);
+    assert.ok(contains('.less-motion.book-recent-link', 'none', 'none'), `${name}: reduced-motion rule keeps both transform properties`);
+  }
+});
 test('default actual build publishes an enabled same-origin offline worker', async () => {
   const {directory} = outputs.get('default');
   const worker = await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8');

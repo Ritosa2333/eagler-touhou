@@ -9,10 +9,12 @@ import {notifyAccountChange,useAccountSession} from '../../services/account-sess
 import {useLocale} from '../../i18n';
 import {withUiLanguage,localeHome} from '../../../src/launcher/i18n.mts';
 import {uiPortalHost} from '../../ui/portal';
+import {useConfirmDiscardChanges} from '../../navigation/unsaved-changes';
 
 export function AccountMenu({interactive}:{interactive:boolean}) {
   const {locale,t} = useLocale(), {state,retry} = useAccountSession(interactive);
   const path = useLocation();
+  const confirmDiscard = useConfirmDiscardChanges();
   const user = state.status === 'member' ? state.user : null;
   const [identity,setIdentity] = useState<{username:string; nickname:string; avatar:string}>(), [failed,setFailed] = useState(false), [busy,setBusy] = useState(false);
   useEffect(() => {
@@ -40,10 +42,11 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
   async function logout() {
     if (busy) return;
     setFailed(false);setBusy(true);
+    if (!await confirmDiscard()) {setBusy(false);return;}
     try {await accountRequest('auth/sign-out',{});notifyAccountChange();location.replace(new URL(localeHome(locale),location.origin+'/').href);}
     catch {setFailed(true);setBusy(false);}
   }
-  return <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="masthead-account-entry" aria-label={t('nav.account')+' '+nickname}>
+  return <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="masthead-account-entry" aria-label={t('account.actions')+' '+nickname}>
     <AccountAvatar src={avatar}/><span className="account-handle">{nickname}</span>
   </button></DropdownMenu.Trigger><DropdownMenu.Portal container={uiPortalHost()}>
     <DropdownMenu.Content align="end" sideOffset={8} className="ui-menu account-menu-panel ui-dropdown-motion">
@@ -52,7 +55,7 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
       <DropdownMenu.Item asChild><AppLink className="ui-menu-item" href={profile+'#edit'}>{t('profile.edit')}</AppLink></DropdownMenu.Item>
       <DropdownMenu.Item asChild><AppLink className="ui-menu-item" href={profile+'#settings'}>{t('profile.settings')}</AppLink></DropdownMenu.Item>
       <DropdownMenu.Separator className="ui-menu-separator"/>
-      <DropdownMenu.Item className="ui-menu-item" disabled={busy} onSelect={event=>{event.preventDefault();void logout();}}>{t('account.signOut')}</DropdownMenu.Item>
+      <DropdownMenu.Item className="ui-menu-item" disabled={busy} onSelect={()=>{void logout();}}>{t('account.signOut')}</DropdownMenu.Item>
       {failed && <span role="alert">{t('account.requestFailed')}</span>}
     </DropdownMenu.Content></DropdownMenu.Portal></DropdownMenu.Root>;
 }

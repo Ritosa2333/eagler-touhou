@@ -39,17 +39,31 @@ function clock() {
       const [id,item] = next; now = item.at; item.at += item.ms; item.callback();
     } now = end;}};
 }
-function fixture({android = false} = {}) {
-  const dom = new JSDOM('<!doctype html><html><body><div id="gameTarget" tabindex="0"></div><input id="input"><select id="select"><option>A</option></select><textarea id="textarea"></textarea><button id="button">Button</button><dialog id="dialog"><span id="dialogChild"></span></dialog><div role="dialog"><span id="roleDialogChild"></span></div></body></html>', {url: 'https://launcher.invalid/', pretendToBeVisual: true});
+function chatFixture({registered=true,context={}}={}) {
+  const listeners=new Set(),calls={open:0,dismiss:0};
+  const snapshot={registered,authorId:registered?'account-1':'',pickerOpen:false,context:{visible:true,room:'th06mp-1234',connected:true,inRoom:false,localSeat:0,localSpectator:false,...context}};
+  const publish=()=>{for(const listener of listeners)listener();};
+  return {snapshot,calls,model:{getSnapshot:()=>snapshot,subscribe(listener){listeners.add(listener);return()=>listeners.delete(listener);},
+    openComposer(){calls.open++;snapshot.pickerOpen=true;publish();},
+    dismiss(){calls.dismiss++;snapshot.pickerOpen=false;publish();}},
+    update(patch){Object.assign(snapshot,patch);if(patch.context)snapshot.context={...snapshot.context,...patch.context};publish();}};
+}
+function fixture({android = false,chat:chatState=null,shortcutsOnly=false,mappingBridge=false} = {}) {
+  const dom = new JSDOM('<!doctype html><html><body><div id="gameTarget" tabindex="0"></div><section class="mp-quick-chat"><input id="chatInput"></section><input id="input"><select id="select"><option>A</option></select><textarea id="textarea"></textarea><button id="button">Button</button><dialog id="dialog"><span id="dialogChild"></span></dialog><div role="dialog"><span id="roleDialogChild"></span></div></body></html>', {url: 'https://launcher.invalid/', pretendToBeVisual: true});
   const {window} = dom, {document} = window, win = tracked(window), doc = tracked(document), time = clock();
   let visibility = 'visible', playerOpen = true, fullscreen = false, frameWindow;
   Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => visibility});
   const input = {target: null, game: 'th15', epoch: 1, launched: true, ready: true, spectator: false,
     targetOrigin: 'https://launcher.invalid', protocol: 'eagler-touhou/1'};
   const snapshot = {ready: true, launched: true, firstFrame: false};
-  const nativeTargets = [], messages = [], calls = {release: 0, cancel: 0, toggle: 0, frameFocus: [], nativeFocus: 0};
+  const nativeTargets = [], messages = [], bridgeMessages=[], calls = {release: 0, cancel: 0, toggle: 0, frameFocus: [], nativeFocus: 0};
+  function installKeyboardBridge(target,epoch) {
+    if(!mappingBridge)return;
+    target.__eaglerKeyboardInputBridge={schema:'eagler-touhou/keyboard-input/1',protocol:'eagler-touhou/1',game:'th15',epoch,
+      origin:'https://launcher.invalid',submit(message){bridgeMessages.push(message);return true;}};
+  }
   function makeNative() {
-    const item = tracked(new window.EventTarget()); item.target.focus = () => calls.nativeFocus++; nativeTargets.push(item); return item;
+    const item = tracked(new window.EventTarget()); item.target.focus = () => calls.nativeFocus++;installKeyboardBridge(item.target,input.epoch);nativeTargets.push(item); return item;
   }
   let native = makeNative(), nativeContext = {epoch: 1, game: 'th15', document: {}, target: native.target, music: 'none'};
   input.target = native.target; frameWindow = native.target;
@@ -60,7 +74,9 @@ function fixture({android = false} = {}) {
     getSnapshot: () => ({...snapshot}), postInput(command, payload) {messages.push({command, payload, epoch: input.epoch, target: input.target}); return true;},
     subscribe(listener) {listeners.add(listener); return () => listeners.delete(listener);}};
   const owner = createPlayerKeyboard({runtime, window, document, frame: frame.target, playerOpen: () => playerOpen,
-    launcherOwnsTarget: target => target instanceof window.Element && !!target.closest('input,select,textarea,button,dialog,[role="dialog"]'),
+    launcherOwnsTarget: target => !!target&&'closest' in target&&typeof target.closest==='function'&&!!target.closest('input,select,textarea,button,dialog,[role="dialog"],[role="menu"]'),
+    chat:chatState?.model,chatOwnsTarget:target=>target instanceof window.Element&&!!target.closest('.mp-quick-chat')&&!target.closest('[role="menu"]'),
+    shortcutsOnly,
     releaseHeldTouchFire: () => calls.release++, cancelTouchFunction: () => calls.cancel++, toggleFullscreen: () => calls.toggle++,
     isPlayerFullscreen: () => fullscreen, android, now: time.now, setInterval: time.setInterval, clearInterval: time.clearInterval});
   const notify = () => {for (const listener of listeners) listener();};
@@ -72,18 +88,133 @@ function fixture({android = false} = {}) {
   // Snapshot only listeners installed by this service construction.
   const ownedWindowListeners = [...win.active].flatMap(([key,set]) => [...set].map(listener => [key,listener]));
   const ownedDocumentListeners = [...doc.active].flatMap(([key,set]) => [...set].map(listener => [key,listener]));
-  const result = {ownedWindowListeners, ownedDocumentListeners, dom, owner, runtime, input, snapshot, messages, calls, clock: time, window, document, win, doc, frame, nativeTargets, listeners, key, notify,
+  const nativeKey = (type,fields={}) => {
+    const event=new window.KeyboardEvent(type,{bubbles:true,cancelable:true,code:'KeyU',key:'u',keyCode:85,...fields});
+    native.target.dispatchEvent(event);return event;
+  };
+  const result = {ownedWindowListeners, ownedDocumentListeners, dom, owner, runtime, input, snapshot, messages, bridgeMessages, calls, chat:chatState, shortcutsOnly, clock: time, window, document, win, doc, frame, nativeTargets, listeners, key,nativeKey,notify,
     native: () => native, setVisibility(value) {visibility = value; document.dispatchEvent(new window.Event('visibilitychange'));},
     setOpen(value) {playerOpen = value;}, setFrameWindow(value) {frameWindow = value;},
     setFullscreen(value, type = 'fullscreenchange') {fullscreen = value; document.dispatchEvent(new window.Event(type));},
     replaceContext({epoch = input.epoch + 1, documentOnly = false, notifyNow = true} = {}) {
       if (!documentOnly) native = makeNative(); input.target = native.target; input.epoch = epoch; frameWindow = native.target;
+      installKeyboardBridge(input.target,epoch);
       nativeContext = {epoch, game: input.game, document: {}, target: native.target, music: 'none'}; if (notifyNow) notify();
     },
     invalidateNativeDocument() {nativeContext = null; input.target = null;},
   }; fixtures.push(result); return result;
 }
 const keyboard = f => f.messages.filter(item => item.command === 'keyboard');
+
+test('chat shortcut: bare Alt toggles on keyup, repeat is consumed, and close returns focus to the game', () => {
+  const chat=chatFixture(),f=fixture({chat}),alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
+  const down=f.key('keydown',alt),repeat=f.key('keydown',{...alt,repeat:true});
+  assert.equal(down.defaultPrevented,true);assert.equal(repeat.defaultPrevented,true);
+  assert.equal(chat.calls.open,0,'Alt is only a candidate until keyup');
+  const up=f.key('keyup',{...alt,altKey:false});
+  assert.equal(up.defaultPrevented,true);assert.equal(chat.calls.open,1);assert.equal(chat.snapshot.pickerOpen,true);
+  assert.equal(keyboard(f).length,0);
+
+  f.key('keydown',alt);f.key('keyup',{...alt,altKey:false});
+  assert.equal(chat.calls.dismiss,1);assert.equal(chat.snapshot.pickerOpen,false);
+  assert.ok(f.calls.frameFocus.length>0,'closing chat restores game focus');
+  assert.equal(keyboard(f).length,0);
+
+  const nativeChat=chatFixture(),native=fixture({chat:nativeChat});
+  native.nativeKey('keydown',alt);
+  assert.equal(nativeChat.calls.open,0);
+  assert.equal(native.nativeKey('keyup',{...alt,altKey:false}).defaultPrevented,true);
+  assert.equal(nativeChat.calls.open,1,'native window capture shares the bare Alt transition');
+  assert.equal(keyboard(native).length,0);
+});
+
+test('chat shortcut: Tab blur, fullscreen, Ctrl+Alt, AltGraph and Option text do not open chat', () => {
+  const chat=chatFixture(),f=fixture({chat}),alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
+  f.key('keydown',alt);f.key('keydown',{code:'Tab',key:'Tab',keyCode:9,altKey:true});
+  f.window.dispatchEvent(new f.window.Event('blur'));
+  f.key('keyup',{...alt,altKey:false});
+  assert.equal(chat.calls.open,0,'switching windows cancels the bare Alt candidate');
+
+  f.nativeKey('keydown',alt);
+  f.nativeKey('keydown',{code:'Enter',key:'Enter',keyCode:13,altKey:true});
+  f.nativeKey('keyup',{code:'Enter',key:'Enter',keyCode:13,altKey:false});
+  f.nativeKey('keyup',{...alt,altKey:false});
+  assert.equal(f.calls.toggle,1,'Alt+Enter remains the fullscreen chord');
+  assert.equal(chat.calls.open,0);
+
+  f.key('keydown',{...alt,ctrlKey:true});f.key('keyup',{...alt,altKey:false,ctrlKey:true});
+  f.key('keydown',{code:'AltRight',key:'AltGraph',keyCode:18,location:2,altKey:true,ctrlKey:true});
+  f.key('keyup',{code:'AltRight',key:'AltGraph',keyCode:18,location:2,altKey:false,ctrlKey:true});
+  f.key('keydown',alt);f.key('keydown',{code:'KeyE',key:'e',keyCode:69,altKey:true});
+  f.key('keyup',{code:'KeyE',key:'e',keyCode:69,altKey:true});f.key('keyup',{...alt,altKey:false});
+  assert.equal(chat.calls.open,0,'modifier and text-entry chords cancel the candidate');
+});
+
+test('chat shortcut: Escape closes, focuses the game, and suppresses every repeat until keyup', () => {
+  const chat=chatFixture(),f=fixture({chat}),alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
+  f.key('keydown',alt);f.key('keyup',{...alt,altKey:false});
+  assert.equal(chat.snapshot.pickerOpen,true);
+  const escape={code:'Escape',key:'Escape',keyCode:27};
+  assert.equal(f.key('keydown',escape).defaultPrevented,true);
+  assert.equal(chat.snapshot.pickerOpen,false);assert.ok(f.calls.frameFocus.length>0);
+  const count=keyboard(f).length;
+  for(let i=0;i<3;i++)assert.equal(f.key('keydown',{...escape,repeat:true}).defaultPrevented,true);
+  assert.equal(keyboard(f).length,count,'repeated Escape cannot leak into gameplay after the panel closes');
+  assert.equal(f.key('keyup',escape).defaultPrevented,true);
+});
+
+test('chat shortcut: unavailable guest, solo, room, disconnected and inactive states do not toggle', () => {
+  const cases=[
+    ['guest',chatFixture({registered:false})],
+    ['solo',chatFixture({context:{visible:false}})],
+    ['room workspace',chatFixture({context:{inRoom:true}})],
+    ['disconnected',chatFixture({context:{connected:false}})],
+    ['unseated',chatFixture({context:{localSeat:null}})],
+  ];
+  for(const [label,chat] of cases){
+    const f=fixture({chat}),alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
+    f.key('keydown',alt);f.key('keyup',{...alt,altKey:false});
+    assert.equal(chat.calls.open,0,label);
+  }
+  const chat=chatFixture(),f=fixture({chat}),alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
+  f.input.launched=false;f.snapshot.launched=false;
+  f.key('keydown',alt);f.key('keyup',{...alt,altKey:false});assert.equal(chat.calls.open,0,'before game launch');
+  f.input.launched=true;f.snapshot.launched=true;f.setOpen(false);
+  f.key('keydown',alt);f.key('keyup',{...alt,altKey:false});assert.equal(chat.calls.open,0,'closed player');
+});
+
+test('chat shortcut: spectator uses shortcut-only binding and emits no game keyboard input', () => {
+  const chat=chatFixture({context:{localSeat:null,localSpectator:true}}),f=fixture({chat,shortcutsOnly:true,mappingBridge:true});
+  f.input.spectator=true;
+  const alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
+  f.key('keydown',alt);f.key('keyup',{...alt,altKey:false});
+  assert.equal(chat.calls.open,1);assert.equal(chat.snapshot.pickerOpen,true);
+  assert.equal(f.native().target.__eaglerKeyboardMapping,undefined,'spectator does not install a keyboard mapping owner');
+  assert.equal(keyboard(f).length,0);assert.equal(f.bridgeMessages.length,0);
+});
+
+test('chat shortcut: mapping bridge consumes Alt before mapped game keys and retires candidates on rebind', () => {
+  const chat=chatFixture(),f=fixture({chat,mappingBridge:true}),alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true,repeat:false,isComposing:false,target:f.document.getElementById('gameTarget')};
+  const oldTarget=f.native().target,oldPort=oldTarget.__eaglerKeyboardMapping;
+  assert.ok(oldPort);assert.deepEqual(oldPort.map(alt,true,'physical','standard'),[]);
+  f.replaceContext();
+  assert.deepEqual(oldPort.map(alt,false,'physical','standard'),[],'retired mapping cannot complete the shortcut');
+  assert.equal(chat.calls.open,0);
+  const nextPort=f.native().target.__eaglerKeyboardMapping;
+  assert.ok(nextPort);assert.deepEqual(nextPort.map(alt,true,'physical','standard'),[]);
+  assert.deepEqual(nextPort.map({...alt,altKey:false},false,'physical','standard'),[]);
+  assert.equal(chat.calls.open,1);
+  assert.equal(f.bridgeMessages.filter(message=>message.command==='keyboard').length,0);
+  assert.ok(f.bridgeMessages.every(message=>message.command==='keyboard-clear'));
+});
+
+test('chat shortcut: opening on Android stops the focus relay', () => {
+  const chat=chatFixture(),f=fixture({android:true,chat});
+  f.owner.startFocusRelay();assert.equal(f.clock.pending.size,1);
+  const alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
+  f.key('keydown',alt);f.key('keyup',{...alt,altKey:false});
+  assert.equal(chat.calls.open,1);assert.equal(f.clock.pending.size,0);
+});
 
 test('keyboard: TH15 U forwards with exact key identity and prevents handled defaults', () => {
   const f = fixture(); const down = f.key('keydown'), up = f.key('keyup');

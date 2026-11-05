@@ -11,6 +11,7 @@ import {encodeRoomInvite, ROOM_INVITE_KEY} from '../../src/launcher/room-invite.
 import {localeHome, uiLocaleSearch, type UiLocale} from '../../src/launcher/i18n.mts';
 import {updateSearchParameters} from '../../src/launcher/url-query.mts';
 import {SurfaceLayersContext, type LayerEntry, type LayerValue} from './surface-layer';
+import {UnsavedChangesContext, type UnsavedChangesGuard} from './unsaved-changes';
 const noDecisionSubscription = () => () => {};
 const noDecisionSnapshot = () => null;
 let dialogSessionSequence = 0;
@@ -153,6 +154,21 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   children: ReactNode;
 }) {
   const {t, locale} = useLocale();
+  const [unsavedGuard, setUnsavedGuard] = useState<UnsavedChangesGuard | null>(null);
+  const registerUnsavedGuard = useCallback((guard: UnsavedChangesGuard) => {
+    setUnsavedGuard(guard);
+    return () => setUnsavedGuard(current => current === guard ? null : current);
+  }, []);
+  const confirmDiscard = async () => {
+    if (!unsavedGuard) return true;
+    const confirmed = await decisions?.askConfirmation({
+      title: t('profile.unsaved.title'), message: t('profile.unsaved.message'),
+      confirmText: t('touch.discardChanges'), cancelText: t('career.continue'), tone: 'danger',
+    });
+    if (!confirmed) return false;
+    unsavedGuard.discard();
+    return true;
+  };
   const applicationDecision = useSyncExternalStore(decisions?.subscribe ?? noDecisionSubscription,
     decisions?.getSnapshot ?? noDecisionSnapshot, decisions?.getSnapshot ?? noDecisionSnapshot);
   const location = useLocation();
@@ -325,7 +341,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
         return state;
       })()});
   }, [staleTouch, staleHidden, staleInfo, retiredLobbyOptions, retiredForm, stalePanel, staleSettings, retiredGameEntry, staleLocalLayers, location, navigate]);
-  const pendingBlockKind = useRef<'touch' | 'runtime' | 'room' | 'page' | 'room-fullscreen' | 'replay' | null>(null);
+  const pendingBlockKind = useRef<'touch' | 'unsaved' | 'runtime' | 'room' | 'page' | 'room-fullscreen' | 'replay' | null>(null);
   const roomPolicyNavigation = useRef(false);
   // Browser POP arrives later than cleanup, unlike a synchronous MemoryRouter.
   // Authorize only the exact cleanup destination until that event arrives.
@@ -430,6 +446,10 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     if (roomPolicyNavigation.current || currentLocation.key === nextLocation.key) return false;
     // Child-window Back never tears down its enclosing editor, Runtime or room.
     if (localLayerTransition(currentLocation, nextLocation)) return false;
+    if (unsavedGuard?.shouldBlock({currentLocation, nextLocation, historyAction})) {
+      pendingBlockKind.current = 'unsaved';
+      return true;
+    }
     if (selectionHidden && historyAction === 'POP' && (validInfo || plainState(plainState(nextLocation.state)[infoEntryKey]).session === dialogSession)) {
       pendingHiddenSelection.current = {destination: nextLocation.key, productId: address.productId};
     }
@@ -509,6 +529,9 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   });
   const latestBlocker = useRef(blocker);
   latestBlocker.current = blocker;
+  useEffect(() => {
+    if (blocker.state === 'blocked' && pendingBlockKind.current === 'unsaved' && !unsavedGuard) blocker.proceed();
+  }, [blocker, unsavedGuard]);
   const replayCloseTask = useRef<Promise<void> | null>(null);
   useEffect(() => {
     if (blocker.state !== 'blocked' || pendingBlockKind.current !== 'replay' || replayCloseTask.current) return;
@@ -661,12 +684,13 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   useEffect(() => {
     // A decision already on screen wins. Main rejects a new confirmation while
     // its decisionResolver/native dialog is occupied, rather than replacing it.
-    if (applicationDecision && blocker.state === 'blocked' && pendingBlockKind.current === 'touch') {
+    const draftDecision = blocker.state === 'blocked' && (pendingBlockKind.current === 'touch' || pendingBlockKind.current === 'unsaved');
+    if (applicationDecision && draftDecision) {
       closeIssuedKey.current = null;
       surfaceOpenIssuedKey.current = null;
       blocker.reset();
     }
-    decisions?.setNavigationDecisionOpen(!applicationDecision && blocker.state === 'blocked' && pendingBlockKind.current === 'touch');
+    decisions?.setNavigationDecisionOpen(!applicationDecision && draftDecision);
     return () => { decisions?.setNavigationDecisionOpen(false); };
   }, [applicationDecision, blocker, decisions]);
 
@@ -1061,13 +1085,13 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     void navigate(target(params), {replace: true, preventScrollReset: true, state: withoutEntry(location.state)});
   }
   return <NavigationContext.Provider value={{...address, navigateAddress: address => {void navigate(address);}, hasSelection, routedProductId: baseAddress.productId, applyHostSelection, syncSelectionFromRoute, filterProductId: urlAddress.context === 'lobby' ? urlAddress.productId : null, openOptions, selectLobbyProduct, openDirectory, setLocaleAddress, restoreRoomRoute, enterRoomRoute, settleRoomInvite, leaveTitleRoomRoute, leaveRoomRoute, roomPanel, roomNetworkPeer: validPanel && typeof panelEntry.peer === 'string' ? panelEntry.peer : undefined, openRoomPanel, closeRoomPanel, roomSettingsOpen, openRoomSettings, closeRoomSettings, directoryFormMode, directoryFormParentKey: validForm && typeof formEntry.parentKey === 'string' && formEntry.parentKey !== location.key ? formEntry.parentKey : null, openDirectoryForm, closeDirectoryForm, openTouchLayout, playerOpen, openPlayer, openRoomFullscreen, closeRoomFullscreen, closeSurface, completeRuntimeClose, infoDialogOpen, openInfoDialog, closeInfoDialog}}>
-    <SurfaceLayersContext.Provider value={{values: localValues, set: setSurfaceLayer}}>{children}</SurfaceLayersContext.Provider>
+    <UnsavedChangesContext.Provider value={{register: registerUnsavedGuard, confirmDiscard}}><SurfaceLayersContext.Provider value={{values: localValues, set: setSurfaceLayer}}>{children}</SurfaceLayersContext.Provider></UnsavedChangesContext.Provider>
     <FullscreenTransient><ConfirmationDialog key={applicationDecision ? `application:${applicationDecision.requestId}` : 'navigation'}
-      open={applicationDecision !== null || (blocker.state === 'blocked' && pendingBlockKind.current === 'touch')}
-      title={applicationDecision?.title || t('dialog.confirmTitle')}
-      message={applicationDecision ? applicationDecision.message || '' : t('touch.layoutDiscardConfirm')}
+      open={applicationDecision !== null || (blocker.state === 'blocked' && (pendingBlockKind.current === 'touch' || pendingBlockKind.current === 'unsaved'))}
+      title={applicationDecision?.title || t(pendingBlockKind.current === 'unsaved' ? 'profile.unsaved.title' : 'dialog.confirmTitle')}
+      message={applicationDecision ? applicationDecision.message || '' : t(pendingBlockKind.current === 'unsaved' ? 'profile.unsaved.message' : 'touch.layoutDiscardConfirm')}
       confirmText={applicationDecision ? applicationDecision.confirmText || t('action.confirm') : t('touch.discardChanges')}
-      cancelText={applicationDecision?.cancelText || t('action.cancel')}
+      cancelText={applicationDecision?.cancelText || t(pendingBlockKind.current === 'unsaved' ? 'career.continue' : 'action.cancel')}
       secondaryText={applicationDecision?.secondaryText || ''}
       tone={applicationDecision ? applicationDecision.tone || 'normal' : 'danger'}
       variant={applicationDecision?.variant || ''} hideCancel={applicationDecision?.hideCancel || false}
@@ -1083,6 +1107,10 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       onConfirm={value => {
         if (applicationDecision) {decisions?.resolve('confirm', value); return;}
         if (blocker.state !== 'blocked' || pendingKey.current !== blocker.location.key) return;
+        if (pendingBlockKind.current === 'unsaved') {
+          unsavedGuard?.discard();
+          return;
+        }
         onDiscard();
         blocker.proceed();
       }}/></FullscreenTransient>

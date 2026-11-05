@@ -54,9 +54,11 @@ export default defineConfig({base: deployment.mountPath,
   // The build's preview fetch and listener share one explicit loopback family.
   preview: {host: '127.0.0.1'},
   // Keep generated JavaScript within the browser floor admitted by bootstrap.
-  build: {manifest: true, target: 'chrome108'},
+  // Lightning CSS merges independent transforms and drops optical offsets.
+  // https://github.com/parcel-bundler/lightningcss/issues/426
+  build: {manifest: true, target: 'chrome108', cssMinify: 'esbuild'},
   define: {__REACT_APP_SHELL_DEPLOYMENT__: JSON.stringify(deployment.appShell)},
-  plugins: [uiTranslations(sourceRoot), documentHistory(sourceRoot), layoutWatch(), tailwindcss(), {name: 'local-ui-site-manifest', configureServer(server) {
+  plugins: [uiTranslations(sourceRoot), documentHistory(sourceRoot), layoutWatch(), tailwindcss({optimize: false}), {name: 'local-ui-site-manifest', configureServer(server) {
     if (!uiSiteManifest) return;
     server.middlewares.use((req, res, next) => {
       if (req.url?.split('?')[0] !== deployment.mountPath + 'site-manifest.json') {next();return;}

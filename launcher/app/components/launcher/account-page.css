@@ -34,7 +34,7 @@ html:has(body.less-motion) .account-mode-content{animation:none}
  .account-shell{isolation:isolate;grid-template-columns:minmax(0,1fr);height:auto;min-height:calc(100svh - var(--account-header-height,108px));background:var(--book-bg)}
  .account-art{display:none}
  .account-content,.is-registering .account-content{position:relative;z-index:1;width:100%;max-width:440px;max-height:none;overflow:visible;align-self:start;padding:32px 24px 44px;justify-content:flex-start}
- .account-content input{min-height:50px}
+ .account-content input{min-height:50px;font-size:16px}
  .account-content form,.is-registering form{gap:20px}
  .account-content label{gap:9px;font-size:13px}
  .account-password-toggle{height:44px;width:42px}

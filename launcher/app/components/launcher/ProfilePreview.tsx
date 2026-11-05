@@ -2,17 +2,22 @@ import {AccountRequestError, accountRequest} from '../../services/account-client
 
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import {AccountAvatar} from './AccountAvatar';
-import {ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MapPin, MessageCircle, TvMinimal} from 'lucide-react';
+import {ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MessageCircle, TvMinimal} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
 import {Button as UiButton} from '../../ui/controls';
+import {Button} from '../../ui/button';
 import {BookButton} from './BookButton';
-import {useEffect, useState} from 'react';
+import {lazy, Suspense, useEffect, useState} from 'react';
 import {Link, useLocation, useNavigate} from 'react-router';
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import './profile-preview.css';
 import {AccountSettings} from './AccountSettings';
+import {CountryFlag} from './CountryFlag';
 import {SocialFollowControl, SocialSection} from './SocialSection';
+import {getProfileStatistics, type ProfileStatistics} from '../../services/cloud-saves';
+import type {LocalSaveReader} from '../../services/local-save-storage';
+const ProfileGameData=lazy(()=>import('./ProfileGameData'));
 type SocialLink = {label: string; url: string};
 export type Profile = {name: string; bio: string; avatar: string; cover: string; links: SocialLink[]};
 type DisplayKey = 'friends' | 'career' | 'records' | 'content';
@@ -33,17 +38,17 @@ const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: 
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
 type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; details: (Profile & {display:ProfileDisplay}) | null};
-export function ProfilePage() {
+export function ProfilePage({readLocalSaves}:{readLocalSaves?:LocalSaveReader}={}) {
   const {pathname} = useLocation();
-  return <AccountProfile key={pathname} pathname={pathname}/>;
+  return <AccountProfile key={pathname} pathname={pathname} readLocalSaves={readLocalSaves}/>;
 }
-function AccountProfile({pathname}: {pathname:string}) {
+function AccountProfile({pathname,readLocalSaves}: {pathname:string;readLocalSaves?:LocalSaveReader}) {
   const {locale,t} = useLocale();
   const {hash,search} = useLocation();
   const navigate = useNavigate();
   const aliasSearch = pathname === '/profile.html' ? search : '';
   const aliasHash = pathname === '/profile.html' ? hash : '';
-  const panel = ['#edit','#settings','#security'].includes(hash) ? hash : '';
+  const panel = ['#edit','#settings','#security','#game-settings'].includes(hash) ? hash : '';
   const [state,setState] = useState<{profile?:RemoteProfile; owner?:boolean; error?:UiMessageKey}>({});
   useEffect(() => {
     let current = true;
@@ -64,12 +69,12 @@ function AccountProfile({pathname}: {pathname:string}) {
     load().catch(error => {if (current) setState({error:error instanceof AccountRequestError && error.status === 404 ? 'profile.notFound' : 'account.requestFailed'});});
     return () => {current = false;};
   }, [pathname,aliasSearch,aliasHash,locale,navigate]);
-  if (state.profile) return <ProfileBody panel={panel} remote={state.profile} owner={!!state.owner}/>;
+  if (state.profile) return <ProfileBody panel={panel} remote={state.profile} owner={!!state.owner} readLocalSaves={readLocalSaves}/>;
   return <main className="player-profile"><div className="profile-wrap" aria-busy={!state.error}>
     {state.error && <p role="alert">{t(state.error)}</p>}
   </div></main>;
 }
-function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean; panel:string}) {
+function ProfileBody({remote,owner,panel,readLocalSaves}: {remote:RemoteProfile; owner:boolean; panel:string;readLocalSaves?:LocalSaveReader}) {
   const {locale,t}=useLocale();
   const location=useLocation(),navigate=useNavigate();
   const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
@@ -77,32 +82,40 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
   const [profile, setProfile] = useState<Profile>({...blankProfile,...remote.details,name:remote.nickname});
   const settings = owner && !!panel;
   const [display,setDisplay] = useState(validDisplay(remote.details?.display) ? remote.details.display : defaultDisplay);
+  const [statistics,setStatistics]=useState<ProfileStatistics>(),[statisticsError,setStatisticsError]=useState(false);
+  useEffect(()=>{
+    let current:AbortController|undefined;
+    const load=()=>{current?.abort();const controller=new AbortController();current=controller;void getProfileStatistics(remote.username,controller.signal).then(value=>{if(!controller.signal.aborted){setStatistics(value);setStatisticsError(false);}}).catch(()=>{if(!controller.signal.aborted)setStatisticsError(true);});};
+    load();window.addEventListener('cloud-save-change',load);
+    return()=>{current?.abort();window.removeEventListener('cloud-save-change',load);};
+  },[remote.username]);
   const visitor = !owner;
   const editProfile = () => navigate({pathname:location.pathname,search:location.search,hash:'#edit'});
   const visible = visitor ? display.visible : defaultDisplay.visible;
-  const visibleTabs: ProfileTab[] = ['overview',...display.order.filter((key): key is Exclude<ProfileTab,'overview'> => key==='friends' && visible.friends)];
+  const visibleTabs: ProfileTab[] = ['overview',...display.order.filter((key): key is Exclude<ProfileTab,'overview'> => key==='friends'&&visible.friends || key==='career'&&!!statistics?.career&&statistics.games.some(item=>item.statistics.progress.length>0) || key==='records'&&!!statistics?.records&&statistics.games.some(item=>item.statistics.playtimeSeconds!==null||item.statistics.playCount!==null))];
   const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
   const details = <><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p><dl className="profile-about-meta">
-    {remote.countryCode && <div><dt><MapPin/>{t('profile.region')}</dt><dd>{regionLabel(remote.regionCode || remote.countryCode,locale)}</dd></div>}
     <div><dt><CalendarDays/>{t('profile.registeredAt')}</dt><dd><time dateTime={remote.joinedAt}>{new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',timeZone:'UTC'}).format(new Date(remote.joinedAt))}</time></dd></div>
     </dl>{links.length > 0 && <div className="profile-links">{links.map(link => {
       const host = safeUrl(link.url)?.hostname ?? '';
       const Icon = /(^|\.)github\.com$/.test(host) ? CodeXml : /(^|\.)(discord\.com|discord\.gg)$/.test(host) ? MessageCircle : /(^|\.)(bilibili\.com|b23\.tv)$/.test(host) ? TvMinimal : Link2;
       return <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"><Icon aria-hidden="true"/><span>{link.label}</span><ArrowUpRight aria-hidden="true"/></a>;
     })}</div>}</>;
-  const navigation = visibleTabs.filter(item => item !== 'records' && (item !== 'content' || owner)).map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
-  if (settings) return <AccountSettings initialProfile={profile} initialDisplay={display} panel={panel}
+  const navigation = visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
+  if (settings) return <AccountSettings initialProfile={profile} initialDisplay={display} panel={panel} readLocalSaves={readLocalSaves}
     onSave={(next,visibility) => {setProfile(next);setDisplay(visibility);}}/>;
   return <main className="player-profile profile-page" aria-labelledby="profile-name"><div className="profile-wrap">
       <section id="profile-overview" className="profile-hero profile-public-section">
         <div className="profile-cover"><img src={imageData(profile.cover) ? profile.cover : backgroundUrl} alt=""/></div>
         <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}><AccountAvatar src={profile.avatar} alt={t('profile.avatar.alt')}/></UiButton>
-        <div className="profile-name"><h1 id="profile-name" tabIndex={-1}><OverflowText>{profile.name || t('profile.name.missing')}</OverflowText></h1><Link className="profile-username" to={'/u/'+remote.username}>@{remote.username}</Link></div>
-        <div className="profile-header-details">{details}</div><div className="profile-actions">{!owner && <SocialFollowControl username={remote.username}/>}{!visitor && <BookButton variant="action" type="button" onClick={editProfile}>{t('profile.edit')}</BookButton>}</div></div>
+        <div className="profile-name"><h1 id="profile-name" tabIndex={-1}><OverflowText>{profile.name || t('profile.name.missing')}</OverflowText>{remote.countryCode && <CountryFlag code={remote.regionCode || remote.countryCode} label={regionLabel(remote.regionCode || remote.countryCode,locale)}/>}</h1><Link className="profile-username" to={'/u/'+remote.username}>@{remote.username}</Link></div>
+        <div className="profile-header-details">{details}</div><div className="profile-actions">{!owner && <SocialFollowControl username={remote.username}/>}{owner&&<Button variant="outline" asChild><Link to={{pathname:location.pathname,search:location.search,hash:'#game-settings'}}>{t('cloudSave.title')}</Link></Button>}{!visitor && <BookButton variant="action" type="button" onClick={editProfile}>{t('profile.edit')}</BookButton>}</div></div>
         {<nav className="profile-section-nav profile-nav-mobile" aria-label={t('profile.navigationSections')}>{navigation}</nav>}
       </section>
 <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div><nav className="profile-section-nav profile-nav-desktop" aria-label={t('profile.navigationSections')}>{navigation}</nav></aside>
-        <div className="profile-content">{visible.friends && <SocialSection username={remote.username}/>}
+        <div className="profile-content">{statistics&&<Suspense fallback={null}><ProfileGameData data={statistics} order={display.order} owner={owner} settingsHref={location.pathname+location.search+'#game-settings'}/></Suspense>}
+        {statisticsError&&owner&&<p role="alert">{t('cloudSave.statisticsFailed')} <UiButton variant="quiet" onClick={()=>window.dispatchEvent(new Event('cloud-save-change'))}>{t('cloudSave.refresh')}</UiButton></p>}
+        {visible.friends && <SocialSection username={remote.username}/>}
         <div className="profile-end-actions"><BackToTop/></div>
         </div></div>
   </div></main>;
@@ -111,10 +124,9 @@ function ProfileBody({remote,owner,panel}: {remote:RemoteProfile; owner:boolean;
 function regionLabel(code:string,locale:string) {
   if (typeof Intl.DisplayNames !== 'function') return ['HK','MO','TW'].includes(code) ? 'CN / '+code : code;
   const names = new Intl.DisplayNames([locale],{type:'region'});
-  const flag = String.fromCodePoint(...[...code].map(letter=>127397+letter.charCodeAt(0)));
   const special = ['HK','MO','TW'].includes(code);
   const label = special ? names.of('CN')+' | '+new Intl.DisplayNames([locale],{type:'region',style:'short'}).of(code) : names.of(code);
-  return <><span aria-hidden="true">{flag}</span> {label}</>;
+  return label || code;
 }
 
 function BackToTop() {

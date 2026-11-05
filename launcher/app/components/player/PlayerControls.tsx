@@ -1,17 +1,18 @@
-import {Button as UiButton} from '../../ui/controls';
+import { Button as UiButton } from '../../ui/controls';
 import { useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import {createPortal} from 'react-dom';
+import { createPortal } from 'react-dom';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
-import {PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
+import { PRODUCT_GAMES } from '../../../src/contracts/product-catalog.mts';
 import type { BrowserSession } from '../../session/browser-session';
 import {
   bindPlayerInput,
+  bindSpectatorChatKeyboard,
   bindPlayerLayoutUpdates,
   applySavedPlayerTouchLayout,
 } from '../../services/player-input';
 import type { PlayerTouch } from '../../services/player-touch';
 import type { SettingsSnapshot } from '../../models/game-settings';
-import {playerUsesGameInput} from '../../models/player-mode';
+import { playerUsesGameInput } from '../../models/player-mode';
 import { TouchHelp } from './TouchHelp';
 import { TitleNetworkOverlay } from './TitleNetworkOverlay';
 import { NetplayConnectionWindow } from '../NetplayConnectionWindow';
@@ -21,21 +22,29 @@ import { TransferPanel } from './TransferPanel';
 import { TouchControlPreview } from '../settings/TouchControlPreview';
 import { useSurfaceNavigation } from '../../navigation/surface-navigation';
 import { useLocale } from '../../i18n';
-import {FullscreenIcons, PlaybackExitIcon, TouchHelpIcon, OrientationIcon} from './utility-icons';
+import { FullscreenIcons, PlaybackExitIcon, TouchHelpIcon, OrientationIcon } from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
-import {NetplayPlayerStatus} from './NetplayPlayerStatus';
-import {PlayerStage} from './PlayerSurface';
+import { NetplayPlayerStatus } from './NetplayPlayerStatus';
+import { PlayerStage } from './PlayerSurface';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
 const noNetwork = () => null;
 /** The editor and actual game use one original control markup tree. Only this
  * mounted gameplay binding can deliver native input. */
-export function PlayerControls({ session, replayWorkspace = false, roomWorkspace = false }: { session: BrowserSession; replayWorkspace?: boolean; roomWorkspace?: boolean }) {
+export function PlayerControls({
+  session,
+  replayWorkspace = false,
+  roomWorkspace = false,
+}: {
+  session: BrowserSession;
+  replayWorkspace?: boolean;
+  roomWorkspace?: boolean;
+}) {
   const stage = useContext(PlayerStage);
   const transferHost = roomWorkspace ? stage?.querySelector<HTMLElement>('.game-viewport') : null;
-  const transferPanel = <TransferPanel model={session.transfer}/>;
+  const transferPanel = <TransferPanel model={session.transfer} />;
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot),
     navigation = useSurfaceNavigation();
   const feedback = useSyncExternalStore(
@@ -58,104 +67,134 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
   );
   useLayoutEffect(() => {
     const player = document.getElementById('player');
-    player?.classList.toggle(
-      'netplay-player-status-visible',
-      network?.playerStatusVisible === true,
-    );
+    player?.classList.toggle('netplay-player-status-visible', network?.playerStatusVisible === true);
     player?.style.setProperty('--netplay-status-lines', String(network?.playerStatus.length || 1));
-    return () => {player?.classList.remove('netplay-player-status-visible');player?.style.removeProperty('--netplay-status-lines');};
+    return () => {
+      player?.classList.remove('netplay-player-status-visible');
+      player?.style.removeProperty('--netplay-status-lines');
+    };
   }, [network?.playerStatusVisible, network?.playerStatus.length]);
   const room = useSyncExternalStore(
     session.room.service.subscribe,
     session.room.service.getSnapshot,
     session.room.service.getSnapshot,
   );
-  const spectatorTimeline =
-    state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
-  const mode = session.getPlayerMode(), spectating = mode === 'spectator';
+  const spectatorTimeline = state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
+  const mode = session.getPlayerMode(),
+    spectating = mode === 'spectator';
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
   const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
-  const cooperativeSpectator = state.runtime?.launched === true && state.runtime.spectator === true &&
-    state.runtime.game !== 'th09' && !state.replayViewer;
+  const cooperativeSpectator =
+    state.runtime?.launched === true &&
+    state.runtime.spectator === true &&
+    state.runtime.game !== 'th09' &&
+    !state.replayViewer;
   const informationColumn = th09Information || cooperativeSpectator;
   const wins = [room.room?.seats?.[0]?.stats?.wins ?? 0, room.room?.seats?.[1]?.stats?.wins ?? 0] as const;
   return (
     <>
       <TitleNetworkOverlay model={session.titleNetwork} />
+      {spectating && !roomWorkspace && !replayWorkspace && state.playerOpen && navigation.surface !== 'touch' && (
+        <SpectatorChatKeyboard session={session} />
+      )}
       {network && (
         <NetplayConnectionWindow
           network={network}
-          calibration={session.calibration}          onReturn={() => {
+          calibration={session.calibration}
+          onReturn={() => {
             if (room.room && network.connection?.ended) {
-              void session.requestRuntimeClose().then(closed => closed ? navigation.closeRoomFullscreen() : undefined).catch(session.reportError);
-            } else if (room.room) void session.exitRoomPlayerFullscreen().then(navigation.closeRoomFullscreen).catch(session.reportError);
+              void session
+                .requestRuntimeClose()
+                .then((closed) => (closed ? navigation.closeRoomFullscreen() : undefined))
+                .catch(session.reportError);
+            } else if (room.room)
+              void session.exitRoomPlayerFullscreen().then(navigation.closeRoomFullscreen).catch(session.reportError);
             else navigation.closeSurface();
           }}
         />
       )}
-      <PlayerInformationColumn enabled={informationColumn} className={th09Information ? 'th09-player-information' : undefined}>
-      {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} />}
-      {th09Information && !roomWorkspace && (spectatorTimeline ? <SpectatorMatchScore wins={wins} minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
-        names={[room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? '']}/>
-        : !room.spectatorRequested && room.seat != null ? <Th09MatchStats wins={wins}
-          minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
-          spectators={Math.max(room.room?.spectatorCount ?? 0,room.room?.spectators?.length ?? 0)}/> : null)}
-      {diagnostics && !replayWorkspace && (
-        <RuntimeDiagnostics
-          model={diagnostics}
-          netplay={netplay}
-          playbackControls={!!spectatorTimeline}
-        >
-          <NetplayCalibrationReport
-            model={session.calibration}            currentNetwork={() =>
-              gameplay?.getSnapshot().diagnostics.runtimeNetplayQualityDiag ?? ''
-            }
-          />
-        </RuntimeDiagnostics>
-      )}
-      <NetplayPlayerStatus visible={network?.playerStatusVisible === true} rows={network?.playerStatus ?? []}/>
+      <PlayerInformationColumn
+        enabled={informationColumn}
+        className={th09Information ? 'th09-player-information' : undefined}
+      >
+        {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} />}
+        {th09Information &&
+          !roomWorkspace &&
+          (spectatorTimeline ? (
+            <SpectatorMatchScore
+              wins={wins}
+              minutes={Math.max(...(room.room?.seats ?? []).map((seat) => seat?.stats?.minutes ?? 0), 0)}
+              names={[room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? '']}
+            />
+          ) : !room.spectatorRequested && room.seat != null ? (
+            <Th09MatchStats
+              wins={wins}
+              minutes={Math.max(...(room.room?.seats ?? []).map((seat) => seat?.stats?.minutes ?? 0), 0)}
+              spectators={Math.max(room.room?.spectatorCount ?? 0, room.room?.spectators?.length ?? 0)}
+            />
+          ) : null)}
+        {diagnostics && !replayWorkspace && (
+          <RuntimeDiagnostics model={diagnostics} netplay={netplay} playbackControls={!!spectatorTimeline}>
+            <NetplayCalibrationReport
+              model={session.calibration}
+              currentNetwork={() => gameplay?.getSnapshot().diagnostics.runtimeNetplayQualityDiag ?? ''}
+            />
+          </RuntimeDiagnostics>
+        )}
+        <NetplayPlayerStatus visible={network?.playerStatusVisible === true} rows={network?.playerStatus ?? []} />
       </PlayerInformationColumn>
       {transferHost ? createPortal(transferPanel, transferHost) : transferPanel}
       <span id="playerStatus" className="visually-hidden" role="status">
         {feedback.playerStatus}
       </span>
-      {settings && !replayWorkspace && <PlayerUtilities session={session} settings={settings} roomWorkspace={roomWorkspace} canExitPlayback={state.replayViewer || room.spectatorRequested} />}
+      {settings && !replayWorkspace && (
+        <PlayerUtilities
+          session={session}
+          settings={settings}
+          roomWorkspace={roomWorkspace}
+          canExitPlayback={state.replayViewer || room.spectatorRequested}
+        />
+      )}
       {settings &&
         !replayWorkspace &&
         !roomWorkspace &&
         !spectating &&
         state.bootTouchPreview &&
         !session.getActiveSettings() &&
-        navigation.surface !== 'touch' && (
-          <BootTouchControls session={session} settings={settings} />
-        )}
-      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
-        <GameplayControls session={session} />
-      )}
+        navigation.surface !== 'touch' && <BootTouchControls session={session} settings={settings} />}
+      {session.getActiveSettings() &&
+        playerUsesGameInput(mode) &&
+        !replayWorkspace &&
+        !roomWorkspace &&
+        navigation.surface !== 'touch' &&
+        state.playerOpen && <GameplayControls session={session} />}
     </>
   );
 }
-function PlayerInformationColumn({enabled,children,className}: {enabled:boolean;children:ReactNode;className?:string}) {
-  return enabled ? <div className={`player-information-column${className ? ` ${className}` : ''}`}>{children}</div> : <>{children}</>;
+function PlayerInformationColumn({
+  enabled,
+  children,
+  className,
+}: {
+  enabled: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  return enabled ? (
+    <div className={`player-information-column${className ? ` ${className}` : ''}`}>{children}</div>
+  ) : (
+    <>{children}</>
+  );
 }
 /** Boot preview is original static presentation; it creates no native input owner. */
-function BootTouchControls({
-  session,
-  settings,
-}: {
-  session: BrowserSession;
-  settings: SettingsSnapshot;
-}) {
+function BootTouchControls({ session, settings }: { session: BrowserSession; settings: SettingsSnapshot }) {
   const enabled = settings.options.touchEnabled,
     wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   useLayoutEffect(() => {
     const player = document.getElementById('player')!;
     player.classList.toggle('touch-enabled', enabled);
     player.classList.toggle('touch-joystick-enabled', enabled && wheel);
-    player.style.setProperty(
-      '--touch-control-opacity',
-      String(settings.options.touchControlOpacity / 100),
-    );
+    player.style.setProperty('--touch-control-opacity', String(settings.options.touchControlOpacity / 100));
     return () => {
       player.classList.remove('touch-enabled', 'touch-joystick-enabled');
       player.style.removeProperty('--touch-control-opacity');
@@ -165,18 +204,12 @@ function BootTouchControls({
     const player = document.getElementById('player')!,
       safe = document.getElementById('touchLayoutSafeZone')!;
     const apply = () => {
-      const width =
-        window.visualViewport?.width || document.documentElement.clientWidth || player.clientWidth;
-      const height =
-        window.visualViewport?.height ||
-        document.documentElement.clientHeight ||
-        player.clientHeight;
+      const width = window.visualViewport?.width || document.documentElement.clientWidth || player.clientWidth;
+      const height = window.visualViewport?.height || document.documentElement.clientHeight || player.clientHeight;
       applySavedPlayerTouchLayout(
         player,
         safe,
-        session.touchLayout.getSnapshot().saved?.profiles[
-          width >= height ? 'landscape' : 'portrait'
-        ] ?? null,
+        session.touchLayout.getSnapshot().saved?.profiles[width >= height ? 'landscape' : 'portrait'] ?? null,
       );
     };
     const updates = bindPlayerLayoutUpdates({ window, safeZone: safe, applyLayout: apply });
@@ -195,6 +228,13 @@ function BootTouchControls({
       <TouchControlPreview settings={settings} fireEnabled={session.touchFireState.getEnabled()} />
     </>
   );
+}
+function SpectatorChatKeyboard({ session }: { session: BrowserSession }) {
+  useLayoutEffect(() => {
+    const input = bindSpectatorChatKeyboard({ session, document, window });
+    return () => input.dispose();
+  }, [session]);
+  return null;
 }
 function GameplayControls({ session }: { session: BrowserSession }) {
   const { t } = useLocale(),
@@ -232,10 +272,7 @@ function GameplayControls({ session }: { session: BrowserSession }) {
     const player = document.getElementById('player')!;
     player.classList.toggle('touch-enabled', enabled);
     player.classList.toggle('touch-joystick-enabled', enabled && wheel);
-    player.style.setProperty(
-      '--touch-control-opacity',
-      String(settings.options.touchControlOpacity / 100),
-    );
+    player.style.setProperty('--touch-control-opacity', String(settings.options.touchControlOpacity / 100));
     return () => {
       player.classList.remove('touch-enabled', 'touch-joystick-enabled', 'touch-layout-custom');
       player.style.removeProperty('--touch-control-opacity');
@@ -273,8 +310,7 @@ function PlayerUtilities({
   const [, updateOrientation] = useState(0);
   const spectating = session.getPlayerMode() === 'spectator';
   const portrait =
-    (window.visualViewport?.height || window.innerHeight) >
-    (window.visualViewport?.width || window.innerWidth);
+    (window.visualViewport?.height || window.innerHeight) > (window.visualViewport?.width || window.innerWidth);
   useLayoutEffect(() => {
     const update = () => updateOrientation((value) => value + 1);
     window.addEventListener('resize', update);
@@ -301,37 +337,49 @@ function PlayerUtilities({
         }
       />
       <nav className="touch-utility-row" aria-label={t('touch.tools')}>
-        {canExitPlayback && state.runtime?.launched && <UiButton variant="unstyled"
-          id="playbackExit" type="button" aria-label={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
-          title={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
-          onClick={navigation.closeSurface}
-        ><PlaybackExitIcon/></UiButton>}
-        {!roomWorkspace && <UiButton variant="unstyled"
-          className="fullscreen-toggle"
-          id="fullscreenToggle"
-          type="button"
-          data-fullscreen={session.nativeTouch.isFullscreen()}
-          aria-label={t(
-            session.nativeTouch.isFullscreen() ? 'player.exitFullscreen' : 'player.enterFullscreen',
-          )}
-          title={t(
-            session.nativeTouch.isFullscreen()
-              ? 'player.exitFullscreenTitle'
-              : 'player.enterFullscreenTitle',
-          )}
-          onClick={() => {
-            void session.togglePlayerFullscreen();
-          }}
-        ><FullscreenIcons/></UiButton>}
-        {!roomWorkspace && !spectating && <UiButton variant="unstyled"
-          className="touch-help-open"
-          id="touchHelpOpen"
-          type="button"
-          aria-label={t('help.open')}
-          title={t('help.title')}
-          onClick={session.openTouchHelp}
-        ><TouchHelpIcon/></UiButton>}
-        <UiButton variant="unstyled"
+        {canExitPlayback && state.runtime?.launched && (
+          <UiButton
+            variant="unstyled"
+            id="playbackExit"
+            type="button"
+            aria-label={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
+            title={t(state.replayViewer ? 'player.exitPlayback' : 'player.exitSpectating')}
+            onClick={navigation.closeSurface}
+          >
+            <PlaybackExitIcon />
+          </UiButton>
+        )}
+        {!roomWorkspace && (
+          <UiButton
+            variant="unstyled"
+            className="fullscreen-toggle"
+            id="fullscreenToggle"
+            type="button"
+            data-fullscreen={session.nativeTouch.isFullscreen()}
+            aria-label={t(session.nativeTouch.isFullscreen() ? 'player.exitFullscreen' : 'player.enterFullscreen')}
+            title={t(session.nativeTouch.isFullscreen() ? 'player.exitFullscreenTitle' : 'player.enterFullscreenTitle')}
+            onClick={() => {
+              void session.togglePlayerFullscreen();
+            }}
+          >
+            <FullscreenIcons />
+          </UiButton>
+        )}
+        {!roomWorkspace && !spectating && (
+          <UiButton
+            variant="unstyled"
+            className="touch-help-open"
+            id="touchHelpOpen"
+            type="button"
+            aria-label={t('help.open')}
+            title={t('help.title')}
+            onClick={session.openTouchHelp}
+          >
+            <TouchHelpIcon />
+          </UiButton>
+        )}
+        <UiButton
+          variant="unstyled"
           className="orientation-toggle"
           id="orientationToggle"
           type="button"
@@ -345,13 +393,12 @@ function PlayerUtilities({
             void session.switchPlayerOrientation(portrait ? 'landscape' : 'portrait');
           }}
         >
-          <strong id="orientationTarget">
-            {t(portrait ? 'touch.landscape' : 'touch.portrait')}
-          </strong>
+          <strong id="orientationTarget">{t(portrait ? 'touch.landscape' : 'touch.portrait')}</strong>
           <small>{t('player.rotate')}</small>
-          <OrientationIcon/>
+          <OrientationIcon />
         </UiButton>
-        <UiButton variant="unstyled"
+        <UiButton
+          variant="unstyled"
           className="game-zoom-toggle"
           id="gameZoomToggle"
           type="button"

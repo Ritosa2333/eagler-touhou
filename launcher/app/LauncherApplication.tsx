@@ -1,6 +1,4 @@
 import { useLocation } from 'react-router';
-import { AccountPage } from './components/launcher/AccountPage';
-import { ProfilePage } from './components/launcher/ProfilePreview';
 import { bookArtwork } from './components/launcher/book-artwork';
 import {
   useEffect,
@@ -8,6 +6,8 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  lazy,
+  Suspense,
   type ReactNode,
   type RefCallback,
 } from 'react';
@@ -24,7 +24,6 @@ import { OptionsOwnership } from './components/launcher/options-ownership';
 import { useLibraryOptionsPresence } from './components/launcher/use-library-options-presence';
 import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
-import { TouchLayoutEditor } from './components/settings/TouchLayoutEditor';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
 import type { GameSettingsModel, SettingsContext } from './models/game-settings';
 import type { DecisionStore } from './models/decisions';
@@ -32,6 +31,11 @@ import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
 import { accountsEnabled } from './release-features';
+import type {LocalSaveReader} from './services/local-save-storage';
+
+const AccountPage = lazy(() => import('./components/launcher/AccountPage').then(module => ({default:module.AccountPage})));
+const ProfilePage = lazy(() => import('./components/launcher/ProfilePreview').then(module => ({default:module.ProfilePage})));
+const TouchLayoutEditor = lazy(() => import('./components/settings/TouchLayoutEditor').then(module => ({default:module.TouchLayoutEditor})));
 
 export type LobbyPresentation = Omit<
   LobbySurfaceProps,
@@ -40,6 +44,7 @@ export type LobbyPresentation = Omit<
 /** One document-lived domain host. Tests may explicitly inject fixture ports;
  * production must supply the actual storage, file, runtime and room owners. */
 export interface LauncherHost {
+  readLocalSaves?:LocalSaveReader;
   locale: UiLocale;
   lessMotion?: boolean;
   products: readonly LibraryProduct[];
@@ -240,7 +245,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     </OptionsPanel>
   );
   const editor = playerElement && navigation.surface === 'touch' && settings && (
-    <TouchLayoutEditor
+    <Suspense><TouchLayoutEditor
       playerElement={playerElement}
       model={host.touchLayout}
       settings={host.settings}
@@ -252,7 +257,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       previewImage={
         host.previewImage ?? (selectedProduct?.artwork ? `url(${JSON.stringify(selectedProduct.artwork)})` : 'none')
       }
-    />
+    /></Suspense>
   );
   const lobbyProps: LobbySurfaceProps = {
     ...host.lobby,
@@ -284,9 +289,9 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         data-page={accountPage ? 'account' : profilePage ? 'profile' : navigation.context}
       >
         {accountPage ? (
-          <AccountPage />
+          <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
         ) : profilePage ? (
-          <ProfilePage />
+          <Suspense fallback={<main className="player-profile" aria-busy="true"/>}><ProfilePage readLocalSaves={host.readLocalSaves}/></Suspense>
         ) : navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)

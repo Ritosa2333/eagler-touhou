@@ -1,0 +1,91 @@
+@layer components {
+  .room-chat-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .room-chat-controls form {
+    flex: 1;
+    min-width: 0;
+  }
+  .room-chat-controls .ui-kit-input-group {
+    gap: 4px;
+    padding-inline: 10px 4px;
+  }
+  .room-chat-controls .ui-kit-input {
+    min-width: 0;
+    font-size: 14px;
+  }
+  .room-chat-controls[data-member="false"] > button:first-child {
+    flex: 1;
+    width: auto;
+  }
+  .room-chat-entry {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+  }
+  .room-chat-message {
+    min-width: 0;
+    flex: 1;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .room-chat-message[data-actions] {
+    padding-inline-end: 24px;
+  }
+  .mp-quick-chat-picker .room-chat-controls {
+    padding: 8px;
+  }
+  .mp-quick-chat[data-member="true"] {
+    width: 360px;
+    max-width: calc(100% - 20px);
+    gap: 8px;
+  }
+  .mp-quick-chat[data-member="true"] .mp-quick-chat-picker {
+    position: relative;
+    inset: auto;
+    color: var(--kit-foreground);
+    background: var(--kit-popover);
+    border-color: var(--kit-border);
+    box-shadow: 0 6px 20px #0003;
+  }
+  .mp-quick-chat[data-member="true"] .mp-quick-chat-log {
+    margin-bottom: 0;
+    max-height: min(160px, max(0px, calc(100dvh - var(--mp-chat-lift, 10px) - 200px)));
+  }
+  .mp-quick-chat[data-member="true"][data-composer-open="true"] .mp-quick-chat-log {
+    pointer-events: auto;
+    touch-action: pan-y;
+  }
+  .mp-quick-chat .room-chat-message-action {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    opacity: 0.7;
+  }
+  .mp-quick-chat .room-chat-message-action:is(:hover, :focus-visible, [data-state="open"]) {
+    opacity: 1;
+  }
+  .mp-quick-chat-shortcut {
+    margin-inline-start: 6px;
+    font: inherit;
+    font-size: 11px;
+    opacity: 0.65;
+  }
+  @media (max-width: 780px) {
+    .mp-quick-chat .room-chat-controls .ui-kit-input {
+      font-size: 16px;
+    }
+  }
+}
+.room-chat-entry > .room-chat-message-action {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0;
+  width: 20px;
+  height: 1.4em;
+  min-height: 0;
+  padding: 0;
+}

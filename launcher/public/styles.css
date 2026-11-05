@@ -907,13 +907,11 @@ body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s c
 .mp-quick-chat button{font:inherit;color:inherit;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(24,24,27,.82);padding:5px 6px;cursor:pointer;touch-action:manipulation;pointer-events:auto}
 .mp-quick-chat button:focus-visible{outline:2px solid #e7d6ef;outline-offset:1px}
 .mp-quick-chat button:disabled{opacity:.45;cursor:default}
-.mp-quick-chat-mute{font-size:10px!important;color:#aeb4a7!important;margin-top:4px}
 .mp-quick-chat-log{position:relative;z-index:29;margin-bottom:8px;max-height:min(160px,calc(100dvh - var(--mp-chat-lift,10px) - 70px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;overflow-wrap:anywhere;text-shadow:0 1px 3px #000,0 0 2px #000;pointer-events:none;touch-action:auto}
 .mp-quick-chat-log:empty{pointer-events:none}
 .mp-quick-chat-log p{margin:0 0 6px;white-space:normal;overflow-wrap:anywhere}.mp-quick-chat-log strong{color:#e7d6ef;font-weight:700}
 .mp-quick-chat-prompt{position:relative;z-index:34;height:28px;font-size:11px!important;text-align:center;flex-shrink:0;background:rgba(24,24,27,.82)!important}
 .mp-quick-chat-picker{position:absolute;z-index:34;left:0;right:auto;top:auto;bottom:36px;width:100%;max-height:min(45vh,calc(100dvh - var(--mp-chat-lift,10px) - 70px));overflow-y:auto;overscroll-behavior:contain;background:rgba(24,24,27,.96);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:5px;box-sizing:border-box;pointer-events:auto}
-.mp-quick-chat-row{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;flex-shrink:0}.mp-quick-chat-row.paired{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-quick-chat-phrase{min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mp-quick-chat-picker button{text-align:left}.mp-quick-chat-picker p{margin:4px;color:#aeb4a7}
 .mp-quick-chat{font-size:13px}
 .mp-quick-chat .mp-quick-chat-prompt{display:flex;align-items:center;gap:7px;width:fit-content;min-height:36px;height:auto;padding:7px 12px;font-size:13px!important;text-align:left}

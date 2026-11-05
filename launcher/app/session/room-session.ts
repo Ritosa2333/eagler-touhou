@@ -36,6 +36,11 @@ export function createRoomSession(options: RoomSessionOptions) {
       service.sendControl(message);
     },
     voice: playQuickChatVoice,
+    notify: code => options.notify(options.translate(({
+      'reported':'chat.reported','report-rate-limited':'chat.reportRateLimited','report-in-progress':'chat.reportInProgress',
+      'chat-banned':'chat.banned','send-rate-limited':'chat.sendRateLimited','sign-in-required':'chat.signInRequired',
+      'review-unavailable':'chat.reviewUnavailable',
+    } as const)[code as 'reported'] ?? 'chat.failed')),
     timers: window,
   });
   const changed = () => {

@@ -1,5 +1,6 @@
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, type ProductId, type GameId} from '../../../src/contracts/product-catalog.mts';
 const shortTitles:Record<GameId,string>={th05:'怪',th06:'红',th07:'妖',th075:'萃',th08:'永',th09:'花',th10:'风',th11:'地',th12:'星',th13:'神',th15:'绀',th17:'兽',th20:'锦'};
+export const bookGameShortTitle=(game:GameId)=>shortTitles[game];
 
 /** Host/publication decides membership and URLs before constructing this view data. */
 export interface LibraryProduct {

@@ -19,7 +19,7 @@ before(async () => {
       if (path.startsWith(resolve(root, 'src') + '/') && existsSync(authored)) return {path: authored};
     });}}]}); ({createStartupController} = await import(pathToFileURL(outfile).href));
 });
-afterEach(() => {for (const x of active) x.owner.dispose(); active = []; env.document.body.replaceChildren(); env.document.documentElement.removeAttribute('data-lobby-boot'); env.document.documentElement.removeAttribute('data-original-entry'); assert.deepEqual(env.errors, []);});
+afterEach(() => {for (const x of active) x.owner.dispose(); active = []; env.document.body.replaceChildren(); env.document.documentElement.removeAttribute('data-ui-app'); env.document.documentElement.removeAttribute('data-lobby-boot'); env.document.documentElement.removeAttribute('data-original-entry'); assert.deepEqual(env.errors, []);});
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function deferred() {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};}
@@ -162,6 +162,16 @@ test('library deferred fonts load only on first interaction and never duplicate'
   env.window.dispatchEvent(new env.window.Event('keydown'));
   assert.equal(env.document.querySelectorAll('link[data-deferred-ui-fonts]').length, 1);
   assert.equal(env.document.querySelector('link[data-deferred-ui-fonts]').href, 'https://launcher.invalid/mount/ui-fonts-deferred.css');
+});
+test('modern library omits hidden background decode while account/profile routes retain it', async () => {
+  env.document.documentElement.setAttribute('data-ui-app', '');
+  const home = fixture(); home.owner.attach(home.ports); await tick();
+  home.owner.attach(home.ports); await tick();
+  assert.equal(home.decoded.some(source => source.endsWith('/assets/launcher-background.webp')), false);
+  assert.equal(home.fonts.length, 4, 'the library still waits for its critical fonts');
+
+  home.owner.attach({...home.ports, url: 'https://launcher.invalid/u/performance-check'}); await tick();
+  assert.ok(home.decoded.includes('https://launcher.invalid/mount/assets/launcher-background.webp'));
 });
 
 test('lobby notice completion cannot consume interrupted library first-use on return', async () => {

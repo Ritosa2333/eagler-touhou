@@ -583,7 +583,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         void ports.network.receive(message);
         return;
       }
-      if (message.type === 'quick-chat') {
+      if (['quick-chat','free-chat','chat-history','chat-retract','chat-status','chat-result'].includes(String(message.type))) {
         ports.quickChat?.receive(message);
         return;
       }

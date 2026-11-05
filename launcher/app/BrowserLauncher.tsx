@@ -1,6 +1,6 @@
 import {LaunchActions} from './components/launcher/LaunchActions';
 import {UI_LOCALES, UI_LOCALE_LABELS, isUiLocale, localeHome, withUiLanguage} from '../src/launcher/i18n.mts';
-import {useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
+import {lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS} from '../src/contracts/product-catalog.mts';
@@ -23,7 +23,6 @@ import {FirstUseNotice, SiteNotice, DonationDialog, AppleRefreshDialog, Multipla
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
 import {PlayerControls} from './components/player/PlayerControls';
-import {ReplayWorkspace} from './components/player/ReplayWorkspace';
 import {FullscreenTransient} from './components/FullscreenTransient';
 import {StartupError} from './components/feedback/StartupError';
 import {InitialLauncher} from './components/startup/InitialLauncher';
@@ -33,6 +32,8 @@ import {isLauncherHomePath, launcherBaseUrl, routerDestination} from './navigati
 import {useLocale} from './i18n';
 import {recordBookLaunch} from './components/launcher/book-preferences';
 import type {LobbySurfaceProps} from './components/launcher/LobbySurface';
+
+const ReplayWorkspace = lazy(() => import('./components/player/ReplayWorkspace').then(module => ({default:module.ReplayWorkspace})));
 
 /** Created after hydration, so SPA prerender never touches storage/native APIs. */
 export function BrowserLauncher() {
@@ -73,7 +74,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const masthead = <Header session={session} firstUse={firstUse} donationAvailable={donationAvailable}/>;
   const host: LauncherHost = {
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, touchLayout: session.touchLayout,
-    settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions,
+    settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves,
     bootTouchPreview: state.bootTouchPreview !== null, bootTouchPreviewImage: state.bootTouchPreviewImage,
     nativeTouch: session.nativeTouch, touchFireEnabled: state.touchFireEnabled, assetUrl, lobbyHref: assetUrl('lobby.html'), masthead,
     footer: <Footer donationAvailable={donationAvailable}/>, serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,
@@ -84,7 +85,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,
     roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing} workspaceVisible={roomWorkspace}/>,
     roomDrawer: <RoomDrawer session={session} onClosingChange={setSettingsClosing}/>,
-    runtimeControls: <><PlayerControls session={session} replayWorkspace={replayWorkspace} roomWorkspace={roomWorkspace}/>{replayModel && <ReplayWorkspace session={session}/>}<MultiplayerQuickChat model={session.room.quickChat}/></>,
+    runtimeControls: <><PlayerControls session={session} replayWorkspace={replayWorkspace} roomWorkspace={roomWorkspace}/>{replayModel && <ReplayWorkspaceHost session={session}/>}<MultiplayerQuickChat model={session.room.quickChat}/></>,
     // The real directory renderer derives these slots from the live service;
     // this structural value is never rendered by BrowserWorkspace.
     lobby: {masthead, onGuide: null, onNetwork: null, roomTools: null, roomList: null, hasRooms: false, loading: true, emptyState: null, roomCount: ''},
@@ -104,6 +105,26 @@ function RecentLaunchRecorder({session, replayWorkspace}: {session: BrowserSessi
 }
 const emptySubscribe = () => () => {};
 const noDiagnostics = () => null;
+
+/** History stays active before the large replay view is requested or ready. */
+export function ReplayWorkspaceHost({session}: {session: BrowserSession}) {
+  const navigation = useSurfaceNavigation(), model = session.getReplays()!;
+  const files = useSyncExternalStore(model.subscribe,model.getSnapshot,model.getSnapshot);
+  const routeOpen = navigation.infoDialogOpen('replayDialog'), routeVisible = useRef(false);
+  const [requested,setRequested] = useState(routeOpen);
+  useEffect(() => {
+    if (routeOpen) {
+      setRequested(true); routeVisible.current = true;
+      if (!files.open && files.productId) void model.open(files.productId).catch(session.reportError);
+    } else if (routeVisible.current) {
+      routeVisible.current = false;
+      if (files.open) model.close();
+    }
+  },[routeOpen,model,files.open,files.productId,session.reportError]);
+  // Once requested, the view keeps its layer IDs for nested Back/Forward entries.
+  return requested || routeOpen ? <Suspense><ReplayWorkspace session={session}/></Suspense> : null;
+}
+
 function InlineMultiplayerDiagnostics({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation();
   if (navigation.context === 'lobby') return null;
