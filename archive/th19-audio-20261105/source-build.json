@@ -1,0 +1,87 @@
+{
+  "schema": "eagler-touhou/source-build/1",
+  "game": "th19",
+  "variant": "normal",
+  "owner": "th19",
+  "source": "C:\\Users\\Administrator\\Documents\\Codex\\2026-11-04\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou\\ports\\th19",
+  "common": "C:\\Users\\Administrator\\Documents\\Codex\\2026-11-04\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou\\common",
+  "features": {
+    "thcrap": false,
+    "thprac": false
+  },
+  "toolchain": {
+    "root": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
+    "compiler": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk\\install\\emscripten\\emcc.py",
+    "version": "6.0.9-git",
+    "metadata": {
+      "version": "6.0.9",
+      "url": "https://storage.googleapis.com/webassembly/emscripten-releases-builds/win/f04ea239d533260dd1db760dd2d668d5f9a88d6b/wasm-binaries.zip",
+      "size": 654169912,
+      "md5": "8cfb4f89c1349d4aed4acb91dde898e5"
+    }
+  },
+  "environment": {
+    "EMSDK": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
+    "TH09_EMSDK": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
+    "TH15_EMSDK": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
+    "EM_CONFIG": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk\\.emscripten",
+    "PYTHON": "python",
+    "TH_PYTHON": "python",
+    "EMCC_CORES": "4",
+    "TH_BUILD_JOBS": "4",
+    "EAGLER_COMMON_ROOT": "C:\\Users\\Administrator\\Documents\\Codex\\2026-11-04\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou\\common",
+    "EAGLER_COMMON_NETPLAY_ROOT": "C:\\Users\\Administrator\\Documents\\Codex\\2026-11-04\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou\\common",
+    "TH_ENABLE_THCRAP": "0",
+    "TH_ENABLE_THPRAC": "0"
+  },
+  "steps": [
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Administrator\\Documents\\Codex\\2026-11-04\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou\\ports\\th19\\scripts\\build-eagler.mjs"
+      ],
+      "cwd": "C:\\Users\\Administrator\\Documents\\Codex\\2026-11-04\\https-github-com-ritosa2333-eagler-touhou\\work\\eagler-touhou\\ports\\th19"
+    }
+  ],
+  "sources": {
+    "source": {
+      "revision": "f53b9eebaa8e78a5b2bdcabb92712a643983afd0",
+      "sourcePath": "ports/th19",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "73776b6e82be4621f6fe1ab613cacf3eaeeec7ea0b8fd3f5fb7ee0b799662c6c",
+      "untracked": [
+        {
+          "path": "tests/sfx-browser-smoke.mjs",
+          "sha256": "136f6363459c22f042c53a716bfaddf2fb3c22f8cf1a242e1f37331d8a54148a"
+        },
+        {
+          "path": "web/sdl-runtime/resource-integrity.mjs",
+          "sha256": "d015bffaa7d39c253affbce6b55f437b957b15ab3fd73c7c6f3681b35872e8d7"
+        }
+      ],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "24fcaacbd84672d9d39a7dee3075ebe9b8015363b68ae95d5e9c0d00fc5052c0"
+    },
+    "common": {
+      "revision": "f53b9eebaa8e78a5b2bdcabb92712a643983afd0",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "88c3079aabeb319e92fede99d2f216feb97a4faf676d8f9699d1e39d755fa8c0",
+      "untracked": [],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "4164b4dfb2ec6dffcde6eff9d3347d713cf6b7d380f0dcb6afde0edf18b2657f"
+    },
+    "netplayCommon": {
+      "revision": "f53b9eebaa8e78a5b2bdcabb92712a643983afd0",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "88c3079aabeb319e92fede99d2f216feb97a4faf676d8f9699d1e39d755fa8c0",
+      "untracked": [],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "4164b4dfb2ec6dffcde6eff9d3347d713cf6b7d380f0dcb6afde0edf18b2657f"
+    }
+  }
+}
