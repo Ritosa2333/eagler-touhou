@@ -88,7 +88,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       if(attempt.error)throw attempt.error;
       mark('core');
       attempt.recorder?.attach(attempt.core);
-      if(attempt.core.isWorker)attempt.core.onMusic=(ax,hash)=>{if((ax>>>8)===12)attempt.sfx?.command(ax);else attempt.music?.player.command(ax,hash);};
+      if(attempt.core.isWorker)attempt.core.onMusic=(ax,hash)=>{if((ax>>>8)===12){const state=attempt.core.snapshot.practice;if(attempt.foreground&&(practice.mode!=='target'||state?.ready&&!state.waiting&&!state.outcome))attempt.sfx?.command(ax);}else attempt.music?.player.command(ax,hash);};
       else attempt.core.module.observeReplayBoundary=()=>attempt.music?.poll(attempt.core.module.HEAPU8,performance.now(),true);
       await attempt.core.addDiskImage('th04-solo.hdi',data);
       await attempt.core.setHdd(0,'th04-solo.hdi');

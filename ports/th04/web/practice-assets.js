@@ -33,7 +33,7 @@ export async function installPractice(data,resources,value){
   const bytes=await verified(manifest.launcher),signature=new TextEncoder().encode(manifest.launcher.signature);
   const at=bytes.findIndex((b,i)=>b===signature[0]&&signature.every((v,j)=>bytes[i+j]===v))+signature.length;
   if(at<signature.length||bytes[at]!==2)throw Error('练习启动器配置无效');
-  bytes[at+1]=config.setup.difficulty;bytes[at+2]=1;bytes[at+3]=0;
+  bytes[at+1]=config.setup.difficulty;bytes[at+2]=1;bytes[at+3]=2;
   bytes[at+4]=config.setup.character>>>1;bytes[at+5]=config.setup.character&1;
   fat.put('GENSO/PRACTICE.COM',bytes);
   const entry=fat.find('GENSO/GAME.BAT');let text=Array.from(fat.read(entry),b=>String.fromCharCode(b)).join(''),count=0;

@@ -32,7 +32,7 @@ export async function installPractice(data,resources,value){
   if(config.mode!=='target')return;
   const bytes=await verified(manifest.launcher),sig=new TextEncoder().encode(manifest.launcher.signature),found=bytes.findIndex((b,i)=>b===sig[0]&&sig.every((v,j)=>bytes[i+j]===v));
   if(found<0||bytes[found+sig.length]!==1)throw Error('练习启动器配置无效');const at=found+sig.length;
-  bytes.set([config.setup.stage,config.setup.difficulty,0,0,config.setup.character],at+1);
+  bytes.set([config.setup.stage,config.setup.difficulty,0,config.setup.stage===5?1:3,config.setup.character],at+1);
   fat.put('HUMAROKU/WEBSTART.COM',bytes);
   const entry=fat.find('HUMAROKU/GAME.BAT');let text=Array.from(fat.read(entry),b=>String.fromCharCode(b)).join(''),count=0;
   text=text.replace(/^zun zunsoft\.com[ \t]*\r*$/gm,()=>{count++;return '';});if(count!==6)throw Error('练习标志动画入口不匹配');count=0;
