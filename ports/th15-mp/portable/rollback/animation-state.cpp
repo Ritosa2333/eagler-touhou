@@ -9,8 +9,8 @@
 #include <vector>
 #include <new>
 
-namespace {bool count_allocations=false;size_t allocation_count=0,largest_allocation=0;}
-void* operator new(size_t bytes){if(count_allocations){++allocation_count;largest_allocation=std::max(largest_allocation,bytes);}if(auto* value=std::malloc(bytes?bytes:1))return value;throw std::bad_alloc();}
+namespace {bool count_allocations=false;size_t allocation_count=0,largest_allocation=0,allocation_bytes=0;}
+void* operator new(size_t bytes){if(count_allocations){++allocation_count;allocation_bytes+=bytes;largest_allocation=std::max(largest_allocation,bytes);}if(auto* value=std::malloc(bytes?bytes:1))return value;throw std::bad_alloc();}
 void operator delete(void* value)noexcept{std::free(value);}
 void* operator new[](size_t bytes){return ::operator new(bytes);}
 void operator delete[](void* value)noexcept{std::free(value);}
@@ -168,6 +168,32 @@ void bounded_snapshot_growth(){
     require(nodes.restore(graph),"restore after bounded node growth");
     for(unsigned i=0;i<handles.size();++i)require(graph.find(handles[i])->visual.translation.x==float(i),"bounded node growth lost VM state");
 }
+void shared_snapshot_storage(){
+    AnmRegistry registry;std::vector<AnmVm> roots(512);std::vector<AnmVm*> input;
+    for(unsigned i=0;i<roots.size();++i){roots[i].visual.translation.x=float(i);input.push_back(&roots[i]);}
+    std::array<AnimationState,13> ring;
+    require(ring[0].capture(registry,input),"warm shared frame images");
+    allocation_bytes=0;count_allocations=true;
+    for(unsigned i=1;i<ring.size();++i)require(ring[i].capture(registry,input),"capture unchanged owning roots");
+    count_allocations=false;
+    std::printf("13 frames / 512 unchanged roots: %zu additional allocated bytes; VM bytes %zu\n",allocation_bytes,sizeof(AnmVm));
+    require(allocation_bytes<roots.size()*sizeof(AnmVm)*2,"unchanged VMs were cloned into every rollback slot");
+    roots[5].visual.translation.x=777;
+    roots[7].geometry.trail=std::make_unique<AnmTrail>();roots[7].geometry.trail->angle=3;
+    AnimationState changed;require(changed.capture(registry,input),"capture changed shared root and geometry");
+    roots[5].visual.translation.x=-1;roots[7].geometry.trail->angle=-1;
+    for(auto& frame:ring){
+        require(frame.restore(registry),"restore immutable shared frame");
+        require(roots[5].visual.translation.x==5&&!roots[7].geometry.trail,"future writes changed a retained snapshot");
+    }
+    require(changed.restore(registry),"restore copy-on-write frame");
+    require(roots[5].visual.translation.x==777&&roots[7].geometry.trail&&roots[7].geometry.trail->angle==3,"copy-on-write lost updated VM or geometry");
+    for(auto& frame:ring){frame.discard();require(!frame.ready()&&frame.instances()==0,"confirmed snapshot remains ready");
+        require(frame.retained_bytes()<roots.size()*sizeof(AnmVm)/2,"confirmed snapshot still owns its VM payloads");}
+    changed.discard();
+    require(ring[0].capture(registry,{input[0]}),"reuse after releasing confirmed snapshots");
+    roots[0].visual.translation.x=-1;require(ring[0].restore(registry)&&roots[0].visual.translation.x==0,"discard/reuse lost root identity");
+}
 void geometry_copy_reuse(){
     AnmVm source,target;
     source.geometry.distortion=std::make_unique<AnmDistortion>();
@@ -228,4 +254,4 @@ void stopped_wait(){
 }
 
 }
-int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}
+int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();shared_snapshot_storage();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}

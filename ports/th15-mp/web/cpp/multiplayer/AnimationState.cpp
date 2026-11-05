@@ -7,19 +7,20 @@
 #include <algorithm>
 #include <limits>
 #include <unordered_set>
+#include <cstring>
 
 namespace th15::multiplayer {
 namespace {
 constexpr u32 none=std::numeric_limits<u32>::max();
-// Stable VM addresses with sequential payload storage. A deque can allocate
-// one large VM per block; fixed pages also bound growth during cancellation.
+// Keep snapshot metadata addresses stable without duplicating a growing vector.
+// VM payload ownership is released separately when a frame is confirmed.
 template<class T>class VmImages {
     static constexpr size_t page_size=64;
     std::vector<std::unique_ptr<T[]>> pages;
     size_t count=0;
 public:
     size_t size()const noexcept{return count;}
-    void resize(size_t size){while(pages.size()*page_size<size)pages.push_back(std::make_unique<T[]>(page_size));count=size;}
+    void resize(size_t size){while(pages.size()*page_size<size)pages.push_back(std::make_unique<T[]>(page_size));for(size_t i=size;i<count;++i)(*this)[i].vm.reset();count=size;}
     T& operator[](size_t index)noexcept{return pages[index/page_size][index%page_size];}
     const T& operator[](size_t index)const noexcept{return pages[index/page_size][index%page_size];}
     size_t retained_bytes()const noexcept{return pages.size()*page_size*sizeof(T)+pages.capacity()*sizeof(std::unique_ptr<T[]>);}
@@ -49,23 +50,40 @@ size_t dynamic_bytes(const AnmVm& vm){
     return bytes;
 }
 }
+// One current image per live source; frame journals share unchanged plain VMs.
+// A write copies the image while an unconfirmed frame still references it.
+struct AnimationStateCache {
+    struct Entry {std::shared_ptr<AnmVm> image;u64 seen=0;};
+    std::unordered_map<const AnmVm*,Entry> entries;
+    u64 epoch=0;
+    void begin(){if(!++epoch){entries.clear();++epoch;}}
+    std::shared_ptr<AnmVm> capture(const AnmVm& source){
+        auto& entry=entries[&source];entry.seen=epoch;
+        const bool same=entry.image&&source.error.empty()&&entry.image->error.empty()&&
+            source.geometry.empty()&&entry.image->geometry.empty()&&
+            std::memcmp(static_cast<const AnmVmState*>(&source),static_cast<const AnmVmState*>(entry.image.get()),sizeof(AnmVmState))==0;
+        if(!same){
+            if(!entry.image||!entry.image.unique())entry.image=std::make_shared<AnmVm>();
+            frame_values::copy_vm(*entry.image,source);
+        }
+        return entry.image;
+    }
+    void finish(){for(auto it=entries.begin();it!=entries.end();)if(it->second.seen!=epoch)it=entries.erase(it);else ++it;}
+};
 struct AnimationState::Data {
     struct Image {
-        AnmVm vm;
+        std::shared_ptr<AnmVm> vm;
         AnmVm* borrowed=nullptr;
         const AnmVm* original=nullptr;
         u32 slot=none,handle=0,parent=none;
         bool active=false,registered=false,alternate=false,frozen=false,external=false,nested=false;
         std::vector<u32> children;
     };
-    // Retain high-water storage across captures; inactive pool payloads are not
-    // cloned. Their allocation presence and exact free-list order are retained.
-    // A cancellation burst can add thousands of roots to all 13 frame slots.
-    // Keep VM payloads in stable blocks: growing a contiguous vector otherwise
-    // doubles every full image and holds its old/new allocations simultaneously.
+    // Reuse small metadata pages across captures. Payloads are shared through
+    // the registry cache; inactive pool allocation and free-list order remain exact.
     VmImages<Image> nodes;
     size_t count=0;
-    struct RootImage {AnmVm vm;AnmVm* original=nullptr;};
+    struct RootImage {std::shared_ptr<AnmVm> vm;AnmVm* original=nullptr;};
     VmImages<RootImage> roots;
     size_t root_count=0;
     std::bitset<0x1fff> present;
@@ -88,6 +106,7 @@ AnimationState::~AnimationState()=default;
 AnimationState::AnimationState(AnimationState&&)noexcept=default;
 AnimationState& AnimationState::operator=(AnimationState&&)noexcept=default;
 bool AnimationState::ready()const noexcept{return saved_&&saved_->captured;}
+void AnimationState::discard()noexcept{if(saved_){auto& s=*saved_;s.nodes.resize(0);s.roots.resize(0);s.count=s.root_count=0;s.originals.clear();s.captured=false;}}
 size_t AnimationState::instances()const noexcept{return ready()?saved_->count+saved_->root_count:0;}
 bool AnimationState::registered_tree(const AnmRegistry& registry,const AnmVm& vm){bool found=false;each_vm(vm,[&](const AnmVm& value){found|=registry.node(const_cast<AnmVm&>(value))!=nullptr;});return found;}
 bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm*>& owned_roots){
@@ -96,7 +115,9 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     // consume presentation identities or change any live allocator state.
     struct IdentityGuard{u64 value=AnmVm::presentation_counter;~IdentityGuard(){AnmVm::presentation_counter=value;}} guard;
     if(!saved_)saved_=std::make_unique<Data>();
-    auto& s=*saved_;s.captured=false;s.count=s.root_count=0;s.present.reset();s.originals.clear();
+    if(!registry.frame_images)registry.frame_images=std::make_shared<AnimationStateCache>();
+    auto& images=*registry.frame_images;images.begin();
+    discard();auto& s=*saved_;s.present.reset();
     auto& selected=s.selected;selected.clear();auto& indices=s.indices;
     indices.reset(registry.nodes.size()+registry.external.size());
     auto add=[&](const AnmRegistry::Node* n){if(n&&indices.insert(n,u32(selected.size())))selected.push_back(n);};
@@ -120,23 +141,23 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     for(const auto* n:selected)ownership(n->borrowed?*n->borrowed:n->vm);
     for(auto* vm:unregistered)ownership(*vm);
     unregistered.erase(std::remove_if(unregistered.begin(),unregistered.end(),[&](const AnmVm* vm){return nested.count(vm)!=0;}),unregistered.end());
-    s.count=selected.size();if(s.nodes.size()<s.count)s.nodes.resize(s.count);
+    s.count=selected.size();s.nodes.resize(s.count);
     for(size_t i=0;i<s.count;++i){
         const auto& n=*selected[i];auto& image=s.nodes[i];
         image.borrowed=n.borrowed;image.external=n.borrowed!=nullptr;image.frozen=n.frozen_root;
         image.original=n.borrowed?n.borrowed:&n.vm;image.nested=nested.count(image.original)!=0;
-        frame_values::copy_vm(image.vm,n.borrowed?*n.borrowed:n.vm);
+        image.vm=images.capture(n.borrowed?*n.borrowed:n.vm);
         image.slot=n.slot;image.handle=n.handle;image.active=n.active;image.registered=n.registered;image.alternate=n.alternate;
         image.parent=indices.find(n.parent);
         if(n.parent&&image.parent==none){error="Rollback animation parent is missing";return false;}
         image.children.clear();for(auto* child:n.children){const auto index=indices.find(child);if(index==none){error="Rollback animation child is missing";return false;}image.children.push_back(index);}
     }
-    s.root_count=unregistered.size();if(s.roots.size()<s.root_count)s.roots.resize(s.root_count);
-    for(size_t i=0;i<s.root_count;++i){s.roots[i].original=unregistered[i];frame_values::copy_vm(s.roots[i].vm,*unregistered[i]);}
+    s.root_count=unregistered.size();s.roots.resize(s.root_count);
+    for(size_t i=0;i<s.root_count;++i){s.roots[i].original=unregistered[i];s.roots[i].vm=images.capture(*unregistered[i]);}
     for(size_t i=0;i<s.count;++i){if(s.nodes[i].nested)continue;const auto& n=*selected[i];
-        paired_vms(n.borrowed?*n.borrowed:n.vm,s.nodes[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace_back(&original,&copy);});
+        paired_vms(n.borrowed?*n.borrowed:n.vm,*s.nodes[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace_back(&original,&copy);});
     }
-    for(size_t i=0;i<s.root_count;++i)paired_vms(*s.roots[i].original,s.roots[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace_back(&original,&copy);});
+    for(size_t i=0;i<s.root_count;++i)paired_vms(*s.roots[i].original,*s.roots[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace_back(&original,&copy);});
     const auto by_original=[](const auto& a,const auto& b){return std::less<const AnmVm*>{}(a.first,b.first);};
     if(!nested.empty())std::sort(s.originals.begin(),s.originals.end(),by_original);
     for(size_t i=0;i<s.count;++i)if(const auto& image=s.nodes[i];image.nested&&image.original){
@@ -147,7 +168,7 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     for(size_t layer=0;layer<s.layers.size();++layer)s.layers[layer].assign(registry.layers[layer].begin(),registry.layers[layer].end());
     s.pending.clear();for(auto* n:registry.pending_deletion){const auto index=indices.find(n);if(index==none){error="Rollback pending animation is missing";return false;}s.pending.push_back(index);}
     s.free_slots=registry.free_slots;s.generation=registry.generation;s.active_count=registry.active_count;s.presentation_counter=guard.value;s.error=registry.error;
-    s.captured=true;return true;
+    images.finish();s.captured=true;return true;
 }
 bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,const SpriteResolver& sprites)const{
     if(!ready())return false;const auto& s=*saved_;
@@ -186,11 +207,11 @@ bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,con
     // overlay panels. Copying a panel again would invalidate its children.
     for(size_t i=0;i<s.count;++i){const auto& image=s.nodes[i];if(image.nested)continue;auto& node=*nodes[i];
         if(image.external&&!image.frozen){node.borrowed=roots?roots(image.borrowed):image.borrowed;if(!node.borrowed){registry.error="Rollback animation owner was not rebound";return false;}}
-        auto& vm=node.borrowed?*node.borrowed:node.vm;frame_values::copy_vm(vm,image.vm);pair(image.vm,vm);
+        auto& vm=node.borrowed?*node.borrowed:node.vm;frame_values::copy_vm(vm,*image.vm);pair(*image.vm,vm);
     }
     std::vector<AnmVm*> targets(s.root_count);
     for(size_t i=0;i<s.root_count;++i){const auto& image=s.roots[i];auto* target=roots?roots(image.original):image.original;
-        if(!target){registry.error="Rollback embedded VM owner was not rebound";return false;}frame_values::copy_vm(*target,image.vm);targets[i]=target;pair(image.vm,*target);
+        if(!target){registry.error="Rollback embedded VM owner was not rebound";return false;}frame_values::copy_vm(*target,*image.vm);targets[i]=target;pair(*image.vm,*target);
     }
     for(const auto& link:s.originals){auto* found=copies.find(link.second);if(!found){registry.error="Rollback animation graph is incomplete";return false;}originals.emplace(link.first,found);}
     for(size_t i=0;i<s.count;++i){const auto& image=s.nodes[i];auto& node=*nodes[i];
@@ -213,8 +234,8 @@ bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,con
 }
 size_t AnimationState::retained_bytes()const noexcept{
     if(!saved_)return 0;const auto& s=*saved_;size_t bytes=sizeof(Data)+s.nodes.retained_bytes()+s.roots.retained_bytes()+s.free_slots.capacity()*sizeof(u32)+s.pending.capacity()*sizeof(u32);
-    for(size_t i=0;i<s.nodes.size();++i){const auto& image=s.nodes[i];bytes+=dynamic_bytes(image.vm)+image.children.capacity()*sizeof(u32);}
-    for(size_t i=0;i<s.roots.size();++i)bytes+=dynamic_bytes(s.roots[i].vm);
+    for(size_t i=0;i<s.nodes.size();++i){const auto& image=s.nodes[i];if(image.vm)bytes+=sizeof(AnmVm)+dynamic_bytes(*image.vm);bytes+=image.children.capacity()*sizeof(u32);}
+    for(size_t i=0;i<s.roots.size();++i)if(s.roots[i].vm)bytes+=sizeof(AnmVm)+dynamic_bytes(*s.roots[i].vm);
     for(const auto& group:s.groups)bytes+=group.capacity()*sizeof(u32);
     for(const auto& layer:s.layers)bytes+=layer.capacity()*sizeof(AnmVm*);
     return bytes+s.originals.capacity()*sizeof(decltype(s.originals)::value_type)+s.selected.capacity()*sizeof(void*)+s.unregistered.capacity()*sizeof(void*)+s.indices.retained_bytes()+s.root_indices.retained_bytes();
