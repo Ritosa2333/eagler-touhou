@@ -1,0 +1,17 @@
+
+ RUN  v5.0.5 C:/Users/Administrator/Documents/Codex/2026-11-04/https-github-com-ritosa2333-eagler-touhou/work/eagler-touhou/launcher
+
+stdout | tests/test-runtime-launch.mjs > runtime launch
+Launcher offline-first, verified background updates, strict MP versions, whole-generation fallback, bounded downloads and DATA identity separation: PASS
+
+ ✓ |repository| tests/test-runtime-launch.mjs > runtime launch 1587ms
+stdout | tests/test-sha256.mjs > sha256
+{"sha256":"PASS","paths":["webcrypto","fallback"],"vectors":4}
+
+ ✓ |repository| tests/test-sha256.mjs > sha256 8ms
+
+ Test Files  2 passed (2)
+      Tests  2 passed (2)
+   Start at  08:52:43
+   Duration  4.63s (tests 85%, transform 10%, setup 2%, import 2%, worker 1%)
+

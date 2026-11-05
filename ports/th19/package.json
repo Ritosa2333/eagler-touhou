@@ -17,6 +17,7 @@
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser-smoke.mjs",
     "test:launcher-gameplay": "node tests/launcher-gameplay-smoke.mjs",
-    "test:launcher-room": "node tests/launcher-room-smoke.mjs"
+    "test:launcher-room": "node tests/launcher-room-smoke.mjs",
+    "test:sfx:browser": "node tests/sfx-browser-smoke.mjs"
   }
 }

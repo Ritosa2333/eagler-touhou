@@ -57,3 +57,9 @@ npm run test:launcher-room -- --url=http://127.0.0.1:8140/ --output=artifacts/la
 ```
 
 独立浏览器检查配置持久化、两种 RTC 输入模式及原生房间返回。Launcher 验收从原有 UI 安装资源，分别检查原生玩法和创建／加入／入座／准备／同步开局。多人标题预加载在后台标签页也完成 ACK，返回房间保留已加载的 Wasm 和 DATA。
+
+## 音效重复播放验收
+
+运行 `npm run test:sfx:browser -- --url=<独立游戏服务> --output=artifacts/audio-browser`。测试关闭背景音乐，操作原生菜单，同一音效连续触发四次，每次检查从头播放且产生非零 PCM 波形。
+
+原生音效命令对即时输出执行 stop → seek(0) → play，保持与 miniaudio 分支一致的从头播放行为。WebSfx 服务本身仍按当前游标播放。
