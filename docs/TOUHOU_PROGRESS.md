@@ -80,6 +80,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+2026-11-05 [独立 RNG 交付组件](https://github.com/AdingApkgg/thp/blob/7ceed30e291f259da9b197efdfebf155262c8d49/docs/porting/TH14_INDEPENDENT_RNG_DELIVERY_NOV05.md)：真实 Worker 在单次同步 Wasm 内推进生产恢复 job 三个存储，三次运行及取消／旧任务控制通过；12 次捕获的合成 RNG 调用经原版算术、返回拼接和脚本存储指令组件复核，48 字一致，五个错侧读取控制均拒绝。同线程定时器在同步调用内交付零存储。未改正式玩法，普通 Application 接入、第四次录像全局复制、原版独立调度与整作 1:1 仍未验收，通过数不变。
+
 2026-11-05 [当前构建的新录像普通流程](https://github.com/AdingApkgg/thp/blob/a2fe6b5df4ea7ecb8a99cdd8f4ac1fbb26fd9efc/docs/porting/TH14_BROWSER_CURRENT_RECORDING_NOV05.md)：7396f28… 静音候选实际保存空 No.01 C（灵梦 B Normal），整页刷新后的普通回放自然结束，选定终局 4,320 分／擦弹 13 等 HUD 与现场一致；两次 Quit 后侧栏和管理器均直接正常。未选择时 8 次 Tab 排除隐藏侧栏。未取得导出文件，字节／原版解码／原版新录像回放均未验证；侧栏长运行控制、全部模式及整作 1:1 继续，正式玩法／通过数不变。
 
 2026-11-05 [侧栏隐藏方式兼容候选](https://github.com/AdingApkgg/thp/blob/3bd640a4b0a4f24324f01f17109f3568feb0dc6f/docs/porting/TH14_SIDEBAR_VISIBILITY_NOV05.md)：冻结 TH14 单作品启动页用 hidden/display:none 代替侧栏 inert 切换，Wasm／玩法和资产路由不变。一轮 Normal 灵梦 A 自然 Game Over／继续、射击、暂停、返回标题／Quit 后，侧栏及 Tab／Enter 打开的录像管理正常，无刷新／更新日志恢复。未修改版短局同样通过，旧长运行间歇性故障仍保留，不认定永久修复；独立测试来源为空，用户页面／数据未动，全程静音。全模式、独立调度、完整浏览器／原版整局图像与 PCM 仍开放，整作 1:1 未完成。
