@@ -2,7 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createPracticeEngine} from '../../ports/th02/web/practice-engine.js';
-import {PRACTICE_DEFAULTS,PRACTICE_VERSION} from '../../ports/th02/web/practice-config.js';
+import {PRACTICE_DEFAULTS,PRACTICE_VERSION,normalizePracticeSetup} from '../../ports/th02/web/practice-config.js';
+
+test('TH02 allows at most five spare lives and bombs',()=>{
+  assert.equal(normalizePracticeSetup({lives:5,bombs:5}).lives,5);
+  assert.throws(()=>normalizePracticeSetup({lives:6}),/超出范围/);
+  assert.throws(()=>normalizePracticeSetup({bombs:6}),/超出范围/);
+});
 
 test('TH02 counts a final death after native deathbomb and respawn handling',async()=>{
   const manifest=JSON.parse(await readFile(new URL('../../ports/th02/web/practice-assets.json',import.meta.url)));
