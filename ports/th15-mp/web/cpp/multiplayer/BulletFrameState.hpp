@@ -9,9 +9,10 @@ public:
     BulletFrameState();~BulletFrameState();
     BulletFrameState(BulletFrameState&&)noexcept;
     BulletFrameState& operator=(BulletFrameState&&)noexcept;
-    static void append_roots(BulletScene&,const AnmRegistry&,std::vector<AnmVm*>&);
-    // Full battle snapshots let AnimationState own the VM values once.
-    bool capture(BulletScene&,bool own_visuals=true);
+    void append_roots(std::vector<AnmVm*>&)const;
+    // Full battles share complex VM graphs with AnimationState; plain bullet
+    // bodies use a contiguous image of their complete fixed state.
+    bool capture(BulletScene&,bool own_visuals=true,const AnmRegistry* registry=nullptr);
     bool restore(BulletScene&)const;
 };
 }

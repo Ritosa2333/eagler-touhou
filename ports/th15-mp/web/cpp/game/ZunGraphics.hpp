@@ -9,6 +9,7 @@ struct GraphicsViewport {u32 x=0,y=0,width=640,height=480;float near_depth=0,far
 // this production boundary.
 class ZunGraphics:public touhou::graphics::StateCommands {
 public:
+    virtual bool logical_frame()const noexcept{return false;}
     virtual void presentation_offset(Vec2){}
     virtual void presentation_range(const AnmVm&,u32,u32,u32=0){}
     virtual void presentation_camera(bool){}
