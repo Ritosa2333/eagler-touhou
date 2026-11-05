@@ -80,6 +80,9 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+[自有 RAF 与 SDL 交换间隔时钟修复](https://github.com/AdingApkgg/thp/blob/965677620476c9b2417742bbb043cc98f28a9aee/docs/porting/TH14_RAF_OWNED_SWAP_NOV05.md)：定位 SDL 将交换间隔延迟到首轮事件轮询后设置不存在的 Emscripten main loop；仅 Emscripten TH14 跳过该请求，自有异步 RAF 不变。重编一个 Renderer、145 对象／141 玩法对象复用；五项共享分支编译、135 路由／28 HTTP及三份服务文件版本回读通过。实际 Normal 灵梦 A 开局、射击、暂停恢复／移动、返回标题／Quit、整页刷新再启动及再 Quit 通过，控制台 warning/error 为空。旧错误和管理窗口偶发失败仍保留，旧版持久化不自动转为新版本验收；全模式、离线、独立时序及整局原版像素／PCM继续，整作 1:1 未完成。
+
+
 [普通新录像保存、刷新与回放](https://github.com/AdingApkgg/thp/blob/0a89fc450a73657d4f597e6c613d9da3c8f4d105/docs/porting/TH14_BROWSER_NEW_RECORDING_NOV05.md)：实际灵梦 B Normal 经正常碰撞 Game Over、未续关，Save 写入原本为空的 No.02，姓名删除／输入 B／End 通过。整页刷新后的普通 Replay 自然结束，选定 HUD 与现场一致；1,240 字节文件完整原版解密／解压机器码组件校验通过，声明 1,294 帧未当实测回调数。旧五份和新一份界面导出共 420,661 字节均与基线相同。保留回放 Quit 后管理窗口首次未打开，刷新恢复及后续两次标题 Quit 成功不构成修复。正式源码未改，其他分支、离线、独立时序和整局原版像素／PCM继续，整作 1:1 未完成。
 
 
