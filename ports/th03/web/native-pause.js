@@ -4,7 +4,7 @@ export class NativePause {
   constructor(getEmulator, meta) {
     this.getEmulator = getEmulator;
     this.meta = meta;
-    this.nativeMarkers = meta.signature === 'TH03LOCALPAUSE1!';
+    this.nativeMarkers = meta.signature === 'TH03LOCALPAUSE1!' || meta.signature === 'TH03SOLOASSIST1!';
     this.signature = new TextEncoder().encode(meta.signature);
     this.residentSignature = new TextEncoder().encode('YUMEConfig\0');
     this.reset();
@@ -93,7 +93,7 @@ export class NativePause {
     if (!heap || !this.valid(heap, this.live) || heap[this.live + this.meta.fields.phase] !== 1) return;
     const at = this.live, f = this.meta.fields;
     emulator.module.thDirtyMark?.(at,this.meta.mailboxSize);
-    heap[at + f.points] = this.nativeMarkers ? 3 : 0;
+    heap[at + f.points] = this.nativeMarkers ? (this.meta.signature === 'TH03SOLOASSIST1!' ? 1 : 3) : 0;
     heap[at + f.focus] = emulator.state === 'running' && heap[at + f.phase] === 1 ? mask & 3 : 0;
   }
   setTouch(inputs) {

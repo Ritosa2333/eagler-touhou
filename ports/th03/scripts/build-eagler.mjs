@@ -2,6 +2,7 @@ import {printPC98Inputs} from '../../../tools/build/pc98-inputs.mjs';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,readdir,copyFile,stat,mkdtemp,rename,rm} from 'node:fs/promises';
 import {resolve,relative,dirname} from 'node:path';
+import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {assertPortableRuntimeSources} from '../../../launcher/lib/runtime-generations.mjs';
@@ -26,13 +27,44 @@ async function nativeMarkerInputs(){
     Buffer.from(after,'hex').copy(region,at);
   }
   const sha=createHash('sha256').update(bytes).digest('hex');
-  return {bytes,meta:Buffer.from(JSON.stringify({...meta,sha256:sha,acceptedMainHashes:[...new Set([...meta.acceptedMainHashes,sha])]},null,2)+'\n')};
+  const soloMeta=JSON.parse(await readFile(resolve(web,'solo-assist.json'),'utf8'));
+  const original=await readFile(resolve(privateInputs.has('native/original-main.exe')?assets:web,'native/original-main.exe'));
+  if(createHash('sha256').update(original).digest('hex')!==soloMeta.originalSha256)throw Error('TH03 solo source identity mismatch');
+  const temp=await mkdtemp(resolve(tmpdir(),'th03-native-marker-'));
+  let payload;
+  try{
+    const out=resolve(temp,'solo.bin');
+    execFileSync(process.env.NASM||'nasm',['-f','bin','patches/solo-marker.asm','-o',out],{cwd:port,stdio:'inherit'});
+    payload=await readFile(out);
+  }finally{await rm(temp,{recursive:true,force:true});}
+  const entries=Array.from({length:6},(_,i)=>payload.readUInt16LE(i*2));
+  const insert=0xe8f0, codeBase=0x96e0, tail=Buffer.from('ff207c9a5f5ec9c3','hex');
+  const gap=(tail.length+payload.length+15)&~15, headerSize=original.readUInt16LE(8)*16;
+  const hdr=Buffer.from(original.subarray(0,headerSize)),image=Buffer.from(original.subarray(headerSize));
+  if(!image.subarray(insert,insert+tail.length).equals(tail))throw Error('TH03 solo native insertion anchor changed');
+  const count=hdr.readUInt16LE(6),table=hdr.readUInt16LE(24),relocations=[];
+  for(let i=0;i<count;i++){
+    const at=hdr.readUInt16LE(table+i*4)+hdr.readUInt16LE(table+i*4+2)*16;relocations.push(at);
+    const target=image.readUInt16LE(at);if(target*16>=insert)image.writeUInt16LE(target+gap/16,at);
+    const moved=at+(at>=insert?gap:0);hdr.writeUInt16LE(moved%16,table+i*4);hdr.writeUInt16LE(Math.floor(moved/16),table+i*4+2);
+  }
+  for(const at of [14,22]){const segment=hdr.readUInt16LE(at);if(segment*16>=insert)hdr.writeUInt16LE(segment+gap/16,at);}
+  const hooks=[[0x977e,'e8b70c',entries[0]],[0x972f,'e84600',entries[1]],[0xdaca,'e851fc',entries[3]],[0x9842,'e8602f',entries[4]],[0x990b,'e80a46',entries[5]]];
+  for(const [at,expected,target] of hooks){
+    if(image.subarray(at,at+3).toString('hex')!==expected||relocations.some(x=>x>=at-1&&x<at+3))throw Error('TH03 solo native hook changed');
+    image[at]=0xe8;image.writeUInt16LE((codeBase+target-at-3)&0xffff,at+1);
+  }
+  const body=Buffer.concat([image.subarray(0,insert),tail,payload,Buffer.alloc(gap-tail.length-payload.length),image.subarray(insert)]);
+  const length=hdr.length+body.length;hdr.writeUInt16LE(length%512,2);hdr.writeUInt16LE(Math.ceil(length/512),4);
+  const soloBytes=Buffer.concat([hdr,body]);
+  const newSoloMeta={...soloMeta,sha256:createHash('sha256').update(soloBytes).digest('hex'),bytes:soloBytes.length,insertSize:gap,dataSegment:0x1d56+gap/16,mailboxCsOffset:entries[2],hooks:hooks.map(([imageOffset,original,target])=>({imageOffset,original,target}))};
+  return {bytes,meta:Buffer.from(JSON.stringify({...meta,sha256:sha,acceptedMainHashes:[...new Set([...meta.acceptedMainHashes,sha])]},null,2)+'\n'),soloBytes,soloMeta:Buffer.from(JSON.stringify(newSoloMeta,null,2)+'\n')};
 }
 let markerInputs;
 async function readInput(name){
-  if(name==='native/main.exe'||name==='native-patch.json'){
+  if(['native/main.exe','native-patch.json','native/solo-main.exe','solo-assist.json'].includes(name)){
     markerInputs??=await nativeMarkerInputs();
-    return name==='native/main.exe'?markerInputs.bytes:markerInputs.meta;
+    return name==='native/main.exe'?markerInputs.bytes:name==='native-patch.json'?markerInputs.meta:name==='native/solo-main.exe'?markerInputs.soloBytes:markerInputs.soloMeta;
   }
   try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
   catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
