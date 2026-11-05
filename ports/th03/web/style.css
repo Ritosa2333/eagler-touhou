@@ -14,7 +14,7 @@ button:focus-visible, select:focus-visible, .file-button:focus-within { outline:
 button:disabled { opacity: .4; cursor: default; }
 .screen { width: 100%; aspect-ratio: 8 / 5; background: #000; position: relative; overflow: hidden; }
 .hit-points { position:absolute; inset:0; pointer-events:none; }
-.hit-points i { position:absolute; width:0.78125%; height:1.5%; background:#fff; border:1px solid #000; transform:translate(-50%,-50%); box-sizing:border-box; }
+.hit-points i { position:absolute; width:0.46875%; height:0.75%; background:#fff; border-radius:50%; box-shadow:0 0 0 0.6px #111; transform:translate(-50%,-50%); }
 canvas { display: block; width: 100%; height: 100%; object-fit: contain; outline: none; image-rendering: pixelated; }
 #cover { position: absolute; inset: 0; display: grid; place-items: center; background: #101213; }
 #cover[hidden] { display: none; }
