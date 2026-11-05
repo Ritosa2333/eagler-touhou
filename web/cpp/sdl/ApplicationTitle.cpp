@@ -27,8 +27,31 @@ bool ApplicationState::begin_transition(u32& handle){
  // backdrop. The base ANM script alone is an invisible waiting controller.
  return vm&&animations.spawn_effect(*vm,0)||fail(animations.error.empty()?"Title transition owner unavailable":animations.error);
 }
+PracticeMenuResult ApplicationState::configure_practice(i32 stage,i32 spell,bool available){
+ if(!practice.enabled||spell<-1||(spell>=0&&practice_phase_count(0,spell)==1))return PracticeMenuResult::Native;
+ if(practice.confirmed){practice.confirmed=false;practice.accepted=true;return PracticeMenuResult::Confirm;}
+ practice.standard_available=available;
+ if(!available)practice.purple=true;
+ auto& patch=practice.settings.patch;
+ if(patch.stage!=stage||practice.spell!=spell){
+  patch.section=patch.phase=0;patch.dialogue=patch.keep_drops=false;
+  patch.stage=stage;
+ }
+ practice.spell=spell;
+ practice.menu=true;
+ return PracticeMenuResult::Configure;
+}
 bool ApplicationState::start_game(i32 stage){
- progress.stage=progress.initial_stage=stage;progress.character=selection.character;progress.animal=selection.animal;progress.difficulty=selection.difficulty;progress.spell_id=selection.spell_id;progress.scoring.mode_flags=selection.mode_flags;progress.practice_lives=selection.practice_checkpoint;progress.demo_slot=-1;selected_replay.reset();flow.title_return_reason=title?title->state.return_reason:1;flow.pending=AppScene::Game;return true;
+ practice.active={};
+ if(practice.accepted){
+  practice.accepted=false;
+  if(practice.spell>=0||practice.purple){
+   practice.active=practice.settings.patch;
+   stage=practice.active.stage;
+   if(practice.spell<0)selection.spell_id=-1;
+  }
+ }
+ progress.stage=progress.initial_stage=stage;progress.character=selection.character;progress.animal=selection.animal;progress.difficulty=stage==7?4:selection.difficulty;progress.spell_id=selection.spell_id;progress.scoring.mode_flags=selection.mode_flags;progress.practice_lives=selection.practice_checkpoint;progress.demo_slot=-1;selected_replay.reset();flow.title_return_reason=title?title->state.return_reason:1;flow.pending=AppScene::Game;return true;
 }
 i32 ApplicationState::checkpoint_key()const{for(i32 number=1;number<=9;number++)if(keyboard_state.keys[(keyboard_state.format==2?48:1)+number]&0x80)return number;return 0;}
 bool ApplicationState::fade_music(float duration){return audio_device.queue_music(5,truncate_int(duration),"FadeOut")||fail(audio_device.error);}
@@ -36,7 +59,7 @@ bool ApplicationState::transition_size(float width,float height){auto* vm=animat
 bool ApplicationState::request_catalog(){if(!title)return fail("Replay catalog has no title owner");if(!files.catalog(title->catalog))return fail(files.error);title->replay_catalog_ready();return true;}
 bool ApplicationState::release_catalog(){if(title)title->catalog.clear();return true;}
 bool ApplicationState::start_replay(const ReplayStartRequest& value){
- if(!files.replay(value.filename,selected_replay)||!selected_replay)return fail(files.error.empty()?"Selected replay unavailable":files.error);progress.stage=progress.initial_stage=value.stage;progress.character=value.character;progress.animal=value.animal;progress.difficulty=value.difficulty;progress.spell_id=value.spell;progress.scoring.mode_flags=(progress.scoring.mode_flags&~0x30u)|(value.spell_practice?0x20u:0);progress.demo_slot=-1;
+ if(!files.replay(value.filename,selected_replay)||!selected_replay)return fail(files.error.empty()?"Selected replay unavailable":files.error);progress.stage=progress.initial_stage=value.stage;progress.character=value.character;progress.animal=value.animal;progress.difficulty=value.difficulty;progress.spell_id=value.spell;progress.scoring.mode_flags=(progress.scoring.mode_flags&~0x30u)|(value.spell_practice?0x20u:selected_replay->practice()?0x10u:0);progress.demo_slot=-1;
  selection={progress.scoring.mode_flags,progress.spell_id,progress.difficulty,progress.character,progress.animal,progress.stage,0};flow.title_return_reason=2;flow.pending=AppScene::ReplayStart;return true;
 }
 bool ApplicationState::clear_page(){auto* bank=animations.resource(19);return bank&&graphics.clear_image(graphics.texture(*bank,1))||fail(graphics.error);}

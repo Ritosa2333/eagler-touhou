@@ -66,7 +66,10 @@ bool TitleStageMenu::update(u32 pressed,u32 repeated,const TitleRecords& records
         if(pressed&0x80001){
             const i32 c=selection.character,a=selection.animal,d=selection.difficulty,s=state.menu.selected;
             if(c<0||c>=3||a<0||a>=3||d<0||d>=5||s<0||s>=8)return check(false,"Practice selection outside records");
-            if(!records.stage_available[c*3+a][d][s])return check(host.sound(16),"Practice unavailable sound service missing");
+            const bool available=records.stage_available[c*3+a][d][s];
+            const auto practice=host.configure_practice(s+1,-1,available);
+            if(practice==PracticeMenuResult::Configure)return true;
+            if(!available&&practice!=PracticeMenuResult::Confirm)return check(host.sound(16),"Practice unavailable sound service missing");
             state.change_substate(3);if(!check(host.sound(7),"Practice confirmation sound unavailable")||!check(host.sound(50),"Game start sound unavailable"))return false;
             settings.practice_stage=state.menu.selected;selection.practice_checkpoint=host.checkpoint_key();return check(host.fade_menu_music(),"Practice music service unavailable");
         }break;

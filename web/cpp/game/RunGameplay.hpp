@@ -1,5 +1,6 @@
 #pragma once
 #include "StageGameplay.hpp"
+#include "Practice.hpp"
 namespace th17 {
 // Stage-specific STD/ECL/MSG owners may overlap for the original 30-frame
 // transition. Combat pools and effect hooks belong to the entire run.
@@ -14,7 +15,7 @@ public:
     std::string error;
     RunGameplay(AssetSource&,AnmManager&,AnmEnvironment&,Rng&,Rng&,GameRun&,GameRecords&,SpellRecords&,StageGameplayServices&,const std::unordered_map<std::string,i32>* shared=nullptr);
     ~RunGameplay();
-    bool load(i32 stage,const StageCamera&,const ReplayStageState* replay=nullptr);
+    bool load(i32 stage,const StageCamera&,const ReplayStageState* replay=nullptr,const PracticePatch& practice={});
     bool next(i32 stage,const StageCamera&,const ReplayStageState* replay=nullptr);
     bool update_previous(float rate);bool release_previous();
     StageGameplay* scene()const noexcept{return active.gameplay.get();}

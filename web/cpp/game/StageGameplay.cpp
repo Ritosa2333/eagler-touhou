@@ -67,6 +67,7 @@ bool StageGameplay::prepare(const StageCamera& camera,const ReplayStageState* re
     if(prepared)return fail("Stage gameplay already prepared");if(!assets.ready())return fail(assets.error);
     const bool fresh=!retained&&!objects.ready();
     if(!assets.definition||run.stage!=assets.definition->stage||run.character!=assets.character||run.animal!=assets.animal||u32(run.difficulty)>4)return fail("Stage resources differ from run selection");
+    battle.enhanced_practice=run.enhanced_practice;
     battle.stage=run.stage;battle.score.difficulty=run.difficulty;battle.session.animal=run.animal;
     battle.enemy_world.mode_flags=run.scoring.mode_flags;battle.enemy_world.spell_id=run.spell_id;battle.enemy_world.script_value_101=run.demo_slot;battle.session.replay_state=(run.scoring.mode_flags&2)?1:0;
     if(retained){

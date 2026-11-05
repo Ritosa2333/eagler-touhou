@@ -97,6 +97,7 @@ bool ApplicationState::release_game(){
  run.reset();for(i32 bank:{0,6,8})animations.retire_resource(bank);animations.collect_resources();reset_graphics();if(!scene_effects&&!exiting)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);return true;
 }
 bool ApplicationState::begin_title(){
+ practice.active={};practice.menu=practice.confirmed=practice.accepted=false;
  reset_graphics();if(!scene_effects)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);
  title=std::make_unique<TitleScene>(progress,selection,selection_player,selection_score,records,choices,volumes,controller,comments,trophy_catalog,spell_memory,animations,*this,scheduler);
  title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();return title->error.empty()||fail(title->error);
@@ -109,15 +110,31 @@ bool ApplicationState::bind_display(StageGameplay* previous){
 }
 bool ApplicationState::begin_game(bool playback){
  if(!save_settings())return false;scene_effects.reset();reset_graphics();progress.scene_flags=0;progress.ending_age=0;progress.practice_record=playback;
+ if(playback)practice.active=selected_replay?selected_replay->practice():PracticePatch{};
+ progress.enhanced_practice=bool(practice.active);
+ practice.tools=0;
  progress.historical_web_replay=playback&&selected_replay&&selected_replay->historical_web_recording();
  if(flow.fresh&&progress.historical_web_replay&&progress.stage!=1)return fail("This early WEB recording needs continuous playback from Stage 1");
  ReplayStageState entry;const ReplayStageState* initial=nullptr;if(playback){if(!selected_replay||!selected_replay->initial_state(progress.stage,entry))return fail("Requested original replay stage unavailable");initial=&entry;stage_seed=entry.seed;}
  else {stage_seed=environment.game_rng.seed;if(!flow.fresh)visual.seed=stage_seed;environment.game_rng.calls=0;}
  if(flow.fresh){run.reset();run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,records.game,records.spells,*this,&shared);
   if(!playback){recording=std::make_unique<ReplayRecording>();auto& description=recording->description();std::memcpy(description.data()+0x88,&progress.character,4);std::memcpy(description.data()+0x8c,&progress.animal,4);std::memcpy(description.data()+0x90,&progress.difficulty,4);std::memcpy(description.data()+0x98,&progress.scoring.continues,4);std::memcpy(description.data()+0x9c,&progress.spell_id,4);description[10]=u8((progress.scoring.mode_flags>>4&1)|((progress.scoring.mode_flags&0x30)==0x20?2:0));}
-  else recording.reset();completed_recording=false;if(!run->load(progress.stage,camera,initial))return fail(run->error);
+  else recording.reset();completed_recording=false;if(!run->load(progress.stage,camera,initial,practice.active))return fail(run->error);
+  if(practice.active){
+   if(recording)recording->use_practice(practice.active);
+   const auto* parameters=playback?selected_replay->native_practice_settings():&practice.settings;
+   if(parameters&&(progress.scoring.mode_flags&0x30)==0x10){
+    const auto& settings=*parameters;auto& battle=scene()->battle;
+    if(playback)battle.items->roaring.state={};
+    battle.session.extra_lives=settings.lives;battle.session.life_pieces=settings.life_pieces;
+    battle.session.bombs=settings.bombs;battle.session.bomb_pieces=settings.bomb_pieces;
+    battle.session.power=std::min(settings.power,battle.score.max_power);
+    battle.score.score=i32(settings.score/10);battle.score.point_value=settings.value*100;
+    progress.initial_point_value=battle.score.point_value;battle.graze_total=settings.graze;
+   }
+  }
  }else if(!run||!run->next(progress.stage,camera,initial))return fail(run?run->error:"Retained run unavailable");
- if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();
+ if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,practice.active&&!practice.active.dialogue&&practice_bgm(practice.active.section)?assets()->definition->boss_music:assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();
  if(!flow.fresh)run_input->input=retained_input;
  if(recording){recording->use_current_web_rules();live_description=recording->description();}else if(selected_replay)std::copy_n(selected_replay->decoded().begin(),live_description.size(),live_description.begin());
  if(!bind_display(run->previous_scene())||!retire_loading())return false;
@@ -137,9 +154,12 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  if(!initialized||exiting||!failure.empty())return false;if(loading_destination!=AppScene::Uninitialized)return step_loading();manual_pressed=pressed;manual_repeated=repeated;physical_input.update(held);
  if(pending_page>=0){pending_page=-1;if(title){if(!title->manual_page_ready())return fail(title->error);}else if(pause_manual&&!pause_manual->page_loaded())return fail(pause_manual->error);}
  if(pending_bank>=0&&ending){const auto bank=pending_bank;pending_bank=-1;auto bytes=std::move(pending_animation);if(!ending->animation_ready(bank,bytes.data(),bytes.size()))return fail(ending->error);}
- if(title)title->controls({held,pressed,repeated,0,1},controller_buttons);if(ending)ending->controls({held,pressed,physical_input.duration[0],1},0);
+ if(title){
+  if(practice.confirmed)title->controls({1,1,0,0,1},0);
+  else title->controls({held,pressed,repeated,0,1},controller_buttons);
+ }if(ending)ending->controls({held,pressed,physical_input.duration[0],1},0);
  if(scene()){
-  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
+  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,practice.active&&!progress.practice_record?practice.tools:0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
   if(!scene()->step(input))return fail(scene()->error.empty()?run_input->error:scene()->error);
   if(run->previous_scene()&&!run->update_previous(progress.rate))return fail(run->error);
  }else {if(scheduler.update()<0)return fail(title&&!title->error.empty()?title->error:ending&&!ending->error.empty()?ending->error:animations.error);}

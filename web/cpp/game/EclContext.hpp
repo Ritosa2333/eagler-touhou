@@ -61,6 +61,6 @@ public:
     bool enter_frame(i32 size)noexcept;bool leave_frame()noexcept;
     bool bind_code(const u8* bytes,u32 size,i32 routine_id=0)noexcept;
     bool bind(EclProgram&,i32 routine_id)noexcept;
-    int step(float elapsed);
+    int step(float elapsed,bool lock_stage_clock=false);
 };
 }
