@@ -34,6 +34,7 @@ bool CCommonFunctionSystem::GetFileMD5(unsigned char* result,const char* path){F
 namespace web {
 bool ReplayViewer(){return replayViewer;}
 void SetKey(int key,bool down){if(key<0||key>=256)return;bool repeated=down&&physical[key];physical[key]=down;
+ if(ImGui::GetCurrentContext())ImGui::GetIO().KeysDown[key]=down;
  practice::WindowMessage(nullptr,down?WM_KEYDOWN:WM_KEYUP,key,repeated?(1L<<30):0);
 }
 void TouchMotion(float& x,float& y,float speed){x=float(touchX);y=float(touchY);touchX=touchY=0;const float length=sqrtf(x*x+y*y);if(!touchUnlimited&&length>speed){x*=speed/length;y*=speed/length;}}
