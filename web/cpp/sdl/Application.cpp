@@ -806,7 +806,10 @@ bool ApplicationState::begin_run() {
             return fail("Next-stage loading caption release: " + animations.error);
     }
     if (!replay_session) run->record_input = [this](const GameInput& input) {
-        if (!recorder.record(input, 0)) fail("Replay input recording failed");
+        // 录像 slow 事件字节（0x4484d0；回放 FPS 显示直读该流）：取最近
+        // 1s 采样窗的整数 fps，正常 60 → 恒 60 字节（slow rate 0%）。
+        const u8 slow = u8(std::min(255.0f, std::max(0.0f, slow_window_fps_ + 0.5f)));
+        if (!recorder.record(input, slow)) fail("Replay input recording failed");
     };
     if (replay_session) {
         int restore_player_first = 1;
@@ -888,6 +891,8 @@ bool ApplicationState::begin_run() {
 }
 
 bool ApplicationState::begin_record_stage() {
+    // 0x42b990 关首清零慢速率累加器：结算百分比/回放 slow% 反映本段关卡。
+    reset_slow_rate();
     const auto header = ReplayRecorder::stage_snapshot(progress, selection_player, selection_score,
         game_random.seed(), run_player ? run_player->fixed_x : 0,
         run_player ? run_player->fixed_y : 51200, run_player && run_player->focus);
@@ -1305,7 +1310,26 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
     audio_device.update();
     if (!audio_device.error.empty()) return fail(audio_device.error);
     frames++;
-    if (run) last_fps_ = fps;
+    if (run) {
+        last_fps_ = fps;
+        // 0x424990 慢速率窗：每 tick 计帧，≥1s 结算一次；游戏态有效
+        //（未暂停/无覆盖层/非装载，原生 0x4c2194+0x60&0x14 门）才计入
+        // 分母 60.0 与分子（fps≤57 计实际值，否则 60.0）。
+        if (fps > 0.0f) slow_window_time_ += 1.0 / fps;
+        ++slow_window_frames_;
+        if (slow_window_time_ >= 1.0) {
+            const float window_fps =
+                float(double(slow_window_frames_) / slow_window_time_);
+            slow_window_fps_ = window_fps;
+            if (!environment.paused && !(progress.scene_flags & 0x70u) &&
+                !loading_waiting()) {
+                slow_budget_ += 60.0;
+                slow_actual_ += window_fps <= 57.0f ? double(window_fps) : 60.0;
+            }
+            slow_window_time_ = 0.0;
+            slow_window_frames_ = 0;
+        }
+    }
     if (pause && !pause->draw_overlay(static_cast<RunSceneServices&>(*this))) return fail(pause->error);
     if (!display->draw()) return fail(display->error);
     if (pending_destination == i32(Destination::Run) || pending_destination == i32(Destination::Ending)) {

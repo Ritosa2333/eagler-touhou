@@ -417,14 +417,27 @@ bool ApplicationState::change_pause_option(i32 row, i32 delta) {
     return files.save() || fail(files.error);
 }
 
-bool ApplicationState::record_result_name(const std::string& name) {
+bool ApplicationState::record_result_entry(const std::string& name, i32 stage) {
     if (replay_active || progress.practice_mode != 0) return true;
     TitlePlayerDataScore result;
-    result.score=selection_score.score; result.stage=progress.stage;
+    result.score=selection_score.score; result.stage=stage;
     result.continues=progress.continues; result.name=name;
-    result.timestamp=i64(std::time(nullptr)); result.progress_percent=0; result.available=true;
+    result.timestamp=i64(std::time(nullptr));
+    // 0x43d6b0:42-44：float@24 = 100 − 慢速率分子/分母×100（0x424990 累加
+    // 器，关首 0x42b990 清零 → 末段值）；分母为 0（无有效帧）时记 0。
+    result.progress_percent = slow_budget_ > 0.0
+        ? float(100.0 - slow_actual_ / slow_budget_ * 100.0) : 0.0f;
+    result.available=true;
     files.record_high_score(progress.character, progress.difficulty, result);
     return files.save_score() || fail(files.error);
+}
+
+bool ApplicationState::record_result_name(const std::string& name) {
+    return record_result_entry(name, progress.stage);
+}
+
+bool ApplicationState::record_clear_result_name(const std::string& name) {
+    return record_result_entry(name, 8);
 }
 
 bool ApplicationState::result_needs_name() const {

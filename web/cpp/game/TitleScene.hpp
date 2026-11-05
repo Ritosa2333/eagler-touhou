@@ -45,6 +45,9 @@ struct TitleScenePlatform : TitleFramePlatform, TitleReplayPlatform, TitleOption
     virtual bool save_replay_slot(i32, const std::string&) { return false; }
     virtual bool can_save_replay() const { return false; }
     virtual bool record_result_name(const std::string&) { return false; }
+    // 全通结算（0x454050，先 DAT_004be81c=8 再插入）与对局内插入
+    //（0x43f8f0，当前关）stage 字节不同：全通走此独立槽。
+    virtual bool record_clear_result_name(const std::string&) { return false; }
     // 0x454050 state3 的 DAT_004be7c8（续关数）==0 门：true → 流程 0xf =
     // 0x4549d0（回放槽保存）；false → 回主菜单。默认 false = 宿主未接查询。
     virtual bool result_replay_save_available() const { return false; }

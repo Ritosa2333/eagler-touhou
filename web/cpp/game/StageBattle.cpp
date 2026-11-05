@@ -761,8 +761,12 @@ void StageBattle::fire_shots(i32 frame) {
         const u32 block = progress_ && trance_active(*progress_) ? 10u
                           : u32(level) + (focus ? 5u : 0u);
         // 临时探针（TH13_SHOT_PROBE=1）：P0 弹迹对拍（与 tools/shot_probe.py 同窗）。
-        const char* probe = std::getenv("TH13_SHOT_PROBE");
-        const bool shot_probe = probe && probe[0] == '1';
+        // 一次性静态读取：wasm 侧 getenv 恒空但每帧开火都有调用开销，缓存后
+        // 热路径只剩一次 bool 判断（WASI harness 侧环境变量语义不变）。
+        static const bool shot_probe = [] {
+            const char* probe = std::getenv("TH13_SHOT_PROBE");
+            return probe && probe[0] == '1';
+        }();
         for (const auto& record : sht_shots[block]) {
             // 0x446000:24：帧 % 间隔 == 相位才出膛（无冷却计数）。
             if (record.interval <= 0) continue;
@@ -1020,8 +1024,11 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
     // has not advanced an integer tick (including half-speed Boss deaths).
     if (player_phase_clock_.current == player_phase_clock_.previous) return 0;
     // 临时探针（TH13_SHOT_PROBE=1）：P0 命中检测对拍（与 stage1_oracle HITCHK 同窗）。
-    const char* probe = std::getenv("TH13_SHOT_PROBE");
-    const bool shot_probe = probe && probe[0] == '1';
+    // 同上：一次性静态读取，避免逐敌机逐帧 getenv。
+    static const bool shot_probe = [] {
+        const char* probe = std::getenv("TH13_SHOT_PROBE");
+        return probe && probe[0] == '1';
+    }();
     // 0041a8a0 resolves this enemy after its ECL and before the next enemy.
     StageEnemy* enemy = &state;
     float damage = 0;
@@ -1345,6 +1352,11 @@ void StageBattle::collide_shots(StageEnemy& state) {
 
 void StageBattle::explode_orb(PlayerBombOrb& orb) {
     if (!orb.active) return;
+    // 0040b2b4-0x40b2c2：珠 VM 存活门通过后先播 id27（se_tan00，EDI=0x1b，
+    // x=[ebx+4]）再消弹——几何早已移植，此声音调用此前缺失（2026-11-05
+    // Hi-Fi 全窗 sfx 对拍发现：th13_01 s3 缺 29 条/s6 缺 82 条全为 id27）。
+    if (host_ && !host_->hud_sound(27, orb.x))
+        error_ = "Reimu bomb orb explosion sound failed";
     // 40b2a0 creates the explosion registration before releasing the orb's
     // own long-lived registration; this order affects later slot allocation.
     const i32 explosion = register_circle({orb.x, orb.y, 0}, 64, 8, 11, 60);
@@ -1433,6 +1445,10 @@ void StageBattle::step_bomb() {
             if (orb.registration_slot >= 0 &&
                 damage_registrations[size_t(orb.registration_slot)].accumulated_damage >= 300) {
                 explode_orb(orb);
+                // 0040b802-0x40b812：伤害爆炸支路在（有门的）40b2a0 之外
+                // 无条件再播一次 id27——即 native 同帧 "27:2" 双发的来源。
+                if (host_ && !host_->hud_sound(27, orb.x))
+                    error_ = "Reimu bomb orb damage explosion sound failed";
                 // 40b590 registers one 45f7c0 callback per damage explosion.
                 if (reimu_explosion_shake && !reimu_explosion_shake())
                     error_ = "Reimu explosion screen shake registration failed";
@@ -2382,7 +2398,8 @@ bool StageBattle::step(const GameInput& input) {
     }
     // 临时探针（TH13_BOMB_PROBE=1）：Bomb 全窗逐帧对照（r4/combat 权威
     // 对拍）：age/timer/库存/无敌、8 珠态、敌 HP、存活弹数、game RNG 计数。
-    if (std::getenv("TH13_BOMB_PROBE")) {
+    static const bool bomb_probe = std::getenv("TH13_BOMB_PROBE") != nullptr;
+    if (bomb_probe) {
         std::printf("BOMB f=%d age=%d timer=%d stock=%d invuln=%d rng=%u",
                     sim.frame, bomb_age, bomb_timer, player_ ? player_->bombs : -1,
                     invulnerable, sim.random.index());
