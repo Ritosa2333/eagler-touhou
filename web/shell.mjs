@@ -25,7 +25,7 @@ const emit=(event,payload={})=>bridge?.emit(event,payload);
 function error(value){const message=value?.message??String(value);emit('error',{message,error:message});}
 let nativeAborted=false,finishTask;
 function fatal(reason){void finish(1,reason);}
-function nativeKey(code,down,owner){const key=virtualKey(code);if(!key)return;let keys=owners.get(owner);if(!keys){keys=new Set();owners.set(owner,keys);}const was=[...owners.values()].some(set=>set.has(key));if(down)keys.add(key);else keys.delete(key);const now=[...owners.values()].some(set=>set.has(key));if(was!==now)module?._th05_key(key,+now);}
+function nativeKey(code,down,owner){if(nativeAborted)return;const key=virtualKey(code);if(!key)return;let keys=owners.get(owner);if(!keys){keys=new Set();owners.set(owner,keys);}const was=[...owners.values()].some(set=>set.has(key));if(down)keys.add(key);else keys.delete(key);const now=[...owners.values()].some(set=>set.has(key));if(was!==now)module?._th05_key(key,+now);}
 function keyboardReady(){return launched&&!closed&&!document.hidden&&!(options.replayViewer||options.netplaySpectator);}
 const keyboard=createBrowserKeyboard({send:(code,down)=>nativeKey(code,down,'keyboard'),hostContext:{protocol,game:'th05',epoch:Number(query.get('runtimeEpoch')),origin:location.origin,ready:keyboardReady,reset:clearKeyboard}});
 const touch=createTouchInput({send:(code,down)=>nativeKey(code,down,'touch'),position:()=>({x:module?._th05_player_x()??224,y:module?._th05_player_y()??376}),options:()=>options,scene:()=>module?._th05_input_scene()??0,move:(x,y,unlimited)=>{if(multiplayer){
@@ -34,7 +34,7 @@ const touch=createTouchInput({send:(code,down)=>nativeKey(code,down,'touch'),pos
  }else module?._th05_touch_motion(x,y,+unlimited);}});
 function clearKeyboard(){if(nativeAborted)return;keyboard.clear();owners.delete('keyboard');reconcile();}
 function cancelTouch(){if(nativeAborted)return;motion=[0,0,0];touch.cancel();pointers?.cancel();owners.delete('touch');module?._th05_touch_motion(0,0,0);reconcile();}
-function reconcile(){module?._th05_clear();for(const keys of owners.values())for(const key of keys)module?._th05_key(key,1);}
+function reconcile(){if(nativeAborted)return;module?._th05_clear();for(const keys of owners.values())for(const key of keys)module?._th05_key(key,1);}
 function clearAll(){if(nativeAborted)return;motion=[0,0,0];keyboard.clear();touch.cancel();pointers?.cancel();owners.clear();module?._th05_clear();}
 function sameOrigin(value){const url=new URL(value,location.href);if(url.origin!==location.origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');return url;}
 function allowedResource(path){
@@ -145,10 +145,10 @@ const api={multiplayer,saveRoot:multiplayer?"/savesth05mp":SAVE_ROOT,running:()=
  launched=true;launchSerial=message.launchSerial;clock.reset();clock.credit=1/56;presentation.reset();lastHealth=performance.now();emit('runtime-info',{renderer:'C++ / WebGL GLES2',architecture:'uth05win-native-cpp',version:'1.0.0',protocol});raf=requestAnimationFrame(frame);saveTimer=setInterval(()=>{unloadSync=sync().catch(error);},3000);},
  spectatorPlayback(message){if(!launched||!options.netplaySpectator)throw Error('Spectator playback is not active');return netplay.command(message);},
  async playback(message){if(!launched||!options.replayViewer)throw Error('Launch the Replay workspace first');return playback.command(message);},
- key(message){if(!options.replayViewer&&!options.netplaySpectator)keyboard.event(message,message.down,'hosted');audio.resume();},clearKeyboard,cancelTouch,
- touch(message){if(!options.replayViewer&&!options.netplaySpectator){audio.resume();touch.controls(message);module.eaglerControls={thpracMobilePanelsEnabled:options.thpracEnabled===true&&message.thpracMobilePanelsEnabled===true,thpracMobilePanelsVisible:message.thpracMobilePanelsVisible===true};}},
- pointer(message){if(!options.replayViewer&&!options.netplaySpectator){audio.resume();const rect=canvas.getBoundingClientRect();pointers.pointer(hostedPoint(message,rect.width,rect.height));}},
- practicePointer(message){if(!options.replayViewer&&!options.netplaySpectator)pointers.pointer({...message,id:message.id??0},true);},
+ key(message){if(!closed&&!options.replayViewer&&!options.netplaySpectator)keyboard.event(message,message.down,'hosted');audio.resume();},clearKeyboard,cancelTouch,
+ touch(message){if(!closed&&!options.replayViewer&&!options.netplaySpectator){audio.resume();touch.controls(message);module.eaglerControls={thpracMobilePanelsEnabled:options.thpracEnabled===true&&message.thpracMobilePanelsEnabled===true,thpracMobilePanelsVisible:message.thpracMobilePanelsVisible===true};}},
+ pointer(message){if(!closed&&!options.replayViewer&&!options.netplaySpectator){audio.resume();const rect=canvas.getBoundingClientRect();pointers.pointer(hostedPoint(message,rect.width,rect.height));}},
+ practicePointer(message){if(!closed&&!options.replayViewer&&!options.netplaySpectator)pointers.pointer({...message,id:message.id??0},true);},
 };
 try{
  bridge=installManagedShell(api,window);
