@@ -9,7 +9,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=text.slice(0,a)+`async function storage(language,mode,value){return undefined;}\n`+text.slice(b);
     text=replaceOnce(text,'const disk=playback?source:prepareSoloDisk(source);',`const disk=playback?source:prepareSoloDisk(source);
       if(!playback){const fat=new Fat12(disk);for(const [name,bytes]of globalThis.__eaglerPC98Files.memory)if(['YUME.NEM','YUME.CFG'].includes(name))fat.put('YUMEZIKU/'+name,bytes);}`,'main save import');
-    text=replaceOnce(text,"bits=player.sample();for(const code of [...physical,...tapped])bits|=physicalActions[code]||0;tapped.clear();","bits=globalThis.__eaglerPC98Input.sample();tapped.clear();",'hosted solo input');
+    text=replaceOnce(text,"bits=player.sample();for(const code of [...physical,...tapped])bits|=physicalActions[code]||0;tapped.clear();","bits=globalThis.__eaglerPC98Input.sample({play:playing});tapped.clear();",'hosted solo input');
     text=replaceOnce(text,'synthetic.add(event);canvas.dispatchEvent(event);',"synthetic.add(event);Object.defineProperty(event,'__eaglerPC98Synthetic',{value:true});canvas.dispatchEvent(event);",'allow game keyboard events through managed input');
     text=replaceOnce(text,'const packed=player.pack(0),touch=unpackTouch(packed);',"const packed=packTouch(0,globalThis.__eaglerPC98Input.motion()),touch=unpackTouch(packed);",'hosted solo touch');
     text=replaceOnce(text,"import {unpackTouch} from './touch-input.js';","import {unpackTouch,packTouch} from './touch-input.js';",'touch codec');

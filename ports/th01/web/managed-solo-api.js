@@ -1,9 +1,9 @@
 let managedFrames=0,managedPrevious=0,managedEnded=false;
-function nativeSample(){return globalThis.__eaglerPC98Input.nativeSample?.()??globalThis.__eaglerPC98Input.sample();}
+function nativeSample(menu){return globalThis.__eaglerPC98Input.nativeSample?.({menu})??globalThis.__eaglerPC98Input.sample();}
 function buttons(){return [globalThis.__eaglerPC98Input.localSample(),0,0];}
 function managedMenuInput(){
  if(!started||configuring||managedEnded)return;
- const bits=nativeSample(),edge=bits&~managedPrevious;managedPrevious=bits;
+ const bits=nativeSample(!!core.th_get(50,0)),edge=bits&~managedPrevious;managedPrevious=bits;
  if(core.th_get(50,0)){const key=edge&16?0:edge&32?1:edge&1?2:edge&2?3:edge&64?(core.th_get(50,0)===12?6:4):edge&4?4:edge&(8|128)?5:-1;if(key>=0)menuInput(key);}
  else if(edge&128)setPaused(!paused);else if(edge&(4|64)&&core.th_get(0,0)>=2){core.th_continue();updatePhase();}
 }

@@ -297,7 +297,7 @@ export function mountControls({canvas, getEmulator, getNetwork, getTouch, getMan
     const touch = getTouch?.();
     let packed = 0;
     const managed=getManagedInput();
-    const managedBits=managed?.sample()||0,managedEdge=managedBits&~managedPrevious;
+    const managedBits=managed?.sample({play:inGameplay()&&!isPaused()})||0,managedEdge=managedBits&~managedPrevious;
     managedPrevious=managedBits;
     if(isPaused()){
       if(managedEdge&128)onMenu(0,'resume');

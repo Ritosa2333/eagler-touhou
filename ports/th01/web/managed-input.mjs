@@ -3,12 +3,12 @@ const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:32,
 const netButtons={ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:4096,ArrowUp:16,ArrowDown:32,Enter:64,Escape:128};
 const localButtons={ArrowLeft:1,ArrowRight:2,KeyZ:4,KeyX:8,KeyC:16};
 export function managedInput({game, epoch, active, options}) {
-  const held = new Set(); let touch = {}, pulse = 0, localPulse = 0, netKeyPulse = 0, localKeyPulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
+  const held = new Set(); let touch = {}, pulse = 0, menuPulse = 0, localPulse = 0, netKeyPulse = 0, localKeyPulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
   const keyboard = createBrowserKeyboard({send:(code, down) => {if(down){held.add(code);netKeyPulse|=netButtons[code]??0;localKeyPulse|=localButtons[code]??0;keyPulse|=buttons[code]??0;}else held.delete(code);},
     hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
   const input = {
     key(message) { keyboard.event(message, message.down, 'hosted'); },
-    clear() { keyboard.clear(); touch = {}; pulse = localPulse = netKeyPulse = localKeyPulse = keyPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
+    clear() { keyboard.clear(); touch = {}; pulse = menuPulse = localPulse = netKeyPulse = localKeyPulse = keyPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
       if (message.bombSerial !== bomb) {pulse |= 16; localPulse |= 16;}
@@ -17,20 +17,25 @@ export function managedInput({game, epoch, active, options}) {
     },
     pointer(message) {
       if (!['down','move','up'].includes(message.type) || !Number.isSafeInteger(message.id) || !Number.isFinite(message.x) || !Number.isFinite(message.y)) throw Error('触控坐标无效');
-      if (message.type === 'down') { point = message; motion = {x:0,y:0,active:true,begin:true}; }
+      if (message.type === 'down') { point = {...message, startX:message.x, startY:message.y, menuMoved:false}; motion = {x:0,y:0,active:true,begin:true}; }
       else if (point?.id === message.id && message.type === 'move') {
         const scale = 16 * (options().touchSensitivity ?? 150) / 100;
-        motion.x += (message.x - point.x) * 640 * scale; motion.y += (message.y - point.y) * 400 * scale; point = message;
-      } else if (point?.id === message.id) { point = null; motion = {x:0,y:0,active:false}; }
+        motion.x += (message.x - point.x) * 640 * scale; motion.y += (message.y - point.y) * 400 * scale;
+        const dx=message.x-point.startX, dy=message.y-point.startY;
+        if (!point.menuMoved && Math.max(Math.abs(dx),Math.abs(dy)) >= 0.05) {menuPulse |= Math.abs(dx)>Math.abs(dy) ? (dx<0?1:2) : (dy<0?16:32);point.menuMoved=true;}
+        point = {...point, x:message.x, y:message.y};
+      } else if (point?.id === message.id) { if (!point.menuMoved) menuPulse |= 64; point = null; motion = {x:0,y:0,active:false}; }
     },
-    nativeSample() {
+    nativeSample({menu = false} = {}) {
       if (!active()) return 0;
       let bits=netKeyPulse;netKeyPulse=0;
       for(const code of held)bits|=netButtons[code]??0;
       const directions=touch.joystickX<0?1:touch.joystickX>0?2:0;
       if(directions&1)bits|=1;if(directions&2)bits|=2;
       if(touch.joystickY<0)bits|=16;if(touch.joystickY>0)bits|=32;
-      if(touch.fireEnabled)bits|=4;if(pulse&16)bits|=4096;if(pulse&128)bits|=128; pulse = 0;
+      if(menu){bits|=menuPulse;menuPulse=0;motion.x=motion.y=0;}
+      else if(options().netplayMode){if(motion.x<0)bits|=1;else if(motion.x>0)bits|=2;motion.x=motion.y=0;menuPulse=0;}
+      if(touch.fireEnabled&&!menu)bits|=4;if(pulse&16)bits|=4096;if(pulse&128)bits|=128; pulse = 0;
       const pad=globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer??0);
       if(pad>=0)for(const [mask,out] of [[1,4],[2,8],[4,4096],[16,16],[32,32],[64,1],[128,2],[512,64]])if(pad&mask)bits|=out;
       return bits;
@@ -38,7 +43,8 @@ export function managedInput({game, epoch, active, options}) {
     localSample() {
       if (!active()) return 0;
       let bits=localKeyPulse;localKeyPulse=0;for(const code of held)bits|=localButtons[code]??0;
-      if(touch.joystickX<0)bits|=1;if(touch.joystickX>0)bits|=2;
+      if(touch.joystickX<0||motion.x<0)bits|=1;if(touch.joystickX>0||motion.x>0)bits|=2;
+      motion.x=motion.y=0;menuPulse=0;
       if(touch.fireEnabled)bits|=4;if(localPulse&16)bits|=16; localPulse = 0;
       const pad=globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer??0);
       if(pad>=0)for(const [mask,out] of [[1,4],[2,8],[4,16],[64,1],[128,2]])if(pad&mask)bits|=out;
