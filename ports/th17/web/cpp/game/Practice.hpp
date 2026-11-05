@@ -14,9 +14,31 @@ enum PracticeTool : u32 {
     PracticeInfiniteRoaring=1<<6,
     PracticeNoHyper=1<<7,
     PracticeEnemyInvincible=1<<8,
+    PracticeNoSpirits=1<<9,
+    PracticeUncapScore=1<<10,
+    PracticeAllClearBonus=1<<11,
 };
-inline constexpr u32 practice_tool_mask=(1<<9)-1;
+inline constexpr u32 practice_boss_range_shift=12;
+inline constexpr u32 practice_boss_range_steps=500;
+inline constexpr u32 practice_tool_mask=(1<<21)-1;
+inline u32 practice_boss_range(u32 tools) noexcept{return tools>>practice_boss_range_shift;}
+inline i32 add_practice_score(i32 score,i32 amount,bool uncapped) noexcept{
+    const u64 total=u64(u32(score))+u32(amount);
+    const u64 cap=uncapped?0xffffffffu:999999999u;
+    return signed_bits(u32(total<cap?total:cap));
+}
 struct PracticeToolChange {u32 frame, tools;};
+struct PracticeSpiritSpawn {
+    i32 kind=0;
+    float x=0,y=0,angle=0;
+    bool force=false,random=false;
+    explicit operator bool()const noexcept{return kind!=0;}
+    bool valid()const noexcept{
+        return kind>=1&&kind<=17&&x>-192.f&&x<192.f&&y>128.f&&y<448.f&&
+            angle>=-3.1415927f&&angle<=3.1415927f&&!(force&&random);
+    }
+};
+struct PracticeSpiritEvent {u32 frame;PracticeSpiritSpawn spawn;};
 
 struct PracticePatch {
     i32 stage=0, section=0, phase=0;

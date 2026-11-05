@@ -5,13 +5,16 @@
 #include "../game/SpellCatalog.hpp"
 #include "../game/PracticeLicense.hpp"
 #include <eagler/thprac/PracticeMobilePanels.hpp>
+#include <eagler/thprac/PracticeKeyMonitor.hpp>
 #include <eagler/thprac/PracticeNavigation.hpp>
 #include <eagler/thprac/PracticeSdlKeyboard.hpp>
 #include <imgui_freetype.h>
 #include <algorithm>
 #include <cfloat>
 #include <cstdio>
+#include <ctime>
 #include <deque>
+#include <random>
 #include <emscripten.h>
 
 namespace th17::sdl::ThpracUi {
@@ -21,6 +24,8 @@ namespace nav=eagler::thprac::navigation;
 bool initialized=false,desktop=false,cheats=false,armed=false,was_open=false,drain_navigation=false;
 bool down[256]{},edge[256]{};
 bool editing=false,keiki_options=false,show_license=false,reset_speed_ui=false;
+bool spirit_menu=false,spirit_pointer=false;
+PracticeSpiritSpawn spirit_tool;
 int locale=0;
 float px=-FLT_MAX,py=-FLT_MAX;
 bool pointer_down=false,sampled_down=false;
@@ -31,6 +36,16 @@ const char* tr(const char* zh,const char* en,const char* ja){
     return locale==1?en:locale==2?ja:zh;
 }
 const char* label(const char* const* value){return value[locale];}
+eagler::thprac::PracticeKeyMonitor key_monitor;
+#include <eagler/thprac/PracticeKeyHud.inc>
+struct PracticeCounter {int64_t QuadPart=0;};
+void practice_counter_frequency(PracticeCounter* c){c->QuadPart=1000000000;}
+void practice_counter_now(PracticeCounter* c){c->QuadPart=int64_t(SDL_GetTicksNS());}
+std::function<unsigned()> practice_random_generator(unsigned minimum,unsigned maximum){
+    return std::bind(std::uniform_int_distribution<unsigned>(minimum,maximum),std::mt19937(std::mt19937::result_type(std::time(nullptr))));
+}
+#include <eagler/thprac/PracticeReaction.inc>
+THGuiTestReactionTest reaction_test;
 #include <eagler/thprac/PracticeSpeed.inc>
 
 template<size_t N>
@@ -205,6 +220,7 @@ void setup(ApplicationState& app){
     if(!armed||busy||mobile::captures_advanced(state.advanced))return;
     if(edge[88]||edge[27]){
         state.menu=false;
+        state.cancelled=!spell;
         drain_navigation=true;
         return;
     }
@@ -236,16 +252,120 @@ void input_options(eagler::thprac::PracticeInput& input){
     ImGui::Checkbox(label(practice_THPRAC_AUTO_SHOOT),&input.enable_auto_shoot);
     if(ImGui::IsItemHovered())ImGui::SetTooltip("%s",tr("按 A 切换","Toggle with A","A で切替"));
 }
+void help(const char* text){
+    ImGui::SameLine();ImGui::TextDisabled("(?)");
+    if(ImGui::IsItemHovered())ImGui::SetTooltip("%s",text);
+}
+void key_monitor_options(bool& enabled){
+    ImGui::Checkbox(label(practice_THPRAC_KB_OPEN),&enabled);
+    if(!enabled)return;
+    if(!key_monitor.g_record_key_aps){
+        if(ImGui::Button(label(practice_THPRAC_KB_RECORD_START))){
+            key_monitor.clear_record();key_monitor.g_record_key_aps=true;
+        }
+    }else if(ImGui::Button(label(practice_THPRAC_KB_RECORD_STOP)))key_monitor.g_record_key_aps=false;
+    ImGui::SameLine();
+    if(ImGui::Button(label(practice_THPRAC_KB_OUTPUT))){
+        const auto csv=key_monitor.csv();
+        EM_ASM({
+            const blob=new Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'});
+            const url=URL.createObjectURL(blob);const link=document.createElement('a');
+            link.href=url;link.download='APS.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        },csv.c_str());
+    }
+    const auto& aps=key_monitor.g_recorded_aps;
+    if(aps.size()>=2)ImGui::PlotLines("##APS",[](void* data,int idx){
+        const auto& values=*static_cast<const std::vector<int>*>(data);
+        return float(values[(values.size()>600?values.size()-600:0)+idx]);
+    },const_cast<std::vector<int>*>(&aps),int(std::min<size_t>(600,aps.size())),0,nullptr,FLT_MAX,FLT_MAX,{0,ImGui::GetFrameHeight()*3});
+}
+void keiki_phase_tracker(const ApplicationState& app){
+    if(!ImGui::CollapsingHeader(label(practice_TH17_KEIKI_FINAL_PHASETRACK)))return;
+    const auto* scene=app.scene();
+    const auto& patch=app.practice.active;
+    std::array<i32,3> offsets{-1,-1,-1};
+    if(scene){
+        const auto& frames=scene->battle.enemy_world.keiki_phase_frames;
+        const auto first=std::find_if(frames.begin(),frames.end(),[](i32 frame){return frame>=0;});
+        if(first!=frames.end()){
+            const auto phase=first-frames.begin();
+            const i32 start=*first-(phase?patch.keiki_offsets[phase-1]:0);
+            for(size_t i=0;i<offsets.size();++i)
+                if(patch.keiki_offsets[i]>0)offsets[i]=patch.keiki_offsets[i];
+                else if(frames[i+1]>=0)offsets[i]=frames[i+1]-start;
+        }
+    }
+    for(size_t i=0;i<offsets.size();++i)ImGui::Text("P%zu: %d",i+1,offsets[i]);
+    ImGui::BeginDisabled(offsets[0]<0);
+    if(ImGui::Button(label(practice_TH_COPY_CFG_CODE))){
+        char code[25];std::snprintf(code,sizeof code,"%08X%08X%08X",u32(offsets[0]),u32(offsets[1]),u32(offsets[2]));
+        EM_ASM({navigator.clipboard?.writeText(UTF8ToString($0)).catch(()=>{});},code);
+    }
+    ImGui::EndDisabled(offsets[0]<0);
+    help(label(offsets[0]<0?practice_TH17_KEIKI_FINAL_PHASETRACK_NONE_HINT:practice_TH_COPY_CFG_CODE_HINT));
+}
+void gameplay_options(ApplicationState& app){
+    auto& state=app.practice;
+    input_options(state.input);
+    key_monitor_options(state.keyboard_monitor);
+    ImGui::Checkbox(label(practice_THPRAC_INFLIVES_MAP),&state.life_until_continue);
+    ImGui::Checkbox(label(practice_TH_BOSS_FORCE_MOVE_DOWN),&state.lower_boss);
+    help(label(practice_TH_BOSS_FORCE_MOVE_DOWN_DESC));
+    ImGui::SameLine();ImGui::SetNextItemWidth(180.f);
+    if(ImGui::DragFloat(label(practice_TH_BOSS_FORCE_MOVE_DOWN_RANGE),&state.boss_range,.002f,0.f,1.f))
+        state.boss_range=std::clamp(state.boss_range,0.f,1.f);
+    ImGui::Checkbox(label(practice_TH17_NO_GOAST),&state.no_spirits);
+    ImGui::Checkbox(label(practice_TH18_UNCAP),&state.uncap_score);
+    ImGui::Checkbox(label(practice_TH_ENABLE_LOCK_TIMER),&state.show_lock_timer);
+    ImGui::Checkbox(label(practice_TH_DISABLE_MASTER),&state.hide_master);
+    help(label(practice_TH_DISABLE_MASTER_DESC));
+    ImGui::Checkbox(label(practice_TH_FACTOR_ACB),&state.all_clear_bonus);
+    help(label(practice_TH_FACTOR_ACB_DESC));
+    keiki_phase_tracker(app);
+    ImGui::Checkbox(label(practice_TH17_GOAST_REPFIX),&state.repair_roaring_replay);
+    help(label(practice_TH17_GOAST_REPFIX_DESC));
+    if(ImGui::Button(label(practice_TH17_SPAWN_A_GOAST)))spirit_menu=true;
+}
+void spirit_options(){
+    ImGui::TextUnformatted(label(practice_TH17_SPAWN_A_GOAST));ImGui::Separator();
+    if(ImGui::Button(label(practice_TH_BACK))){spirit_menu=false;return;}
+    combo(label(practice_TH17_GOAST),spirit_tool.kind,practice_TH17_GOAST_SELECT_TOKENS);
+    ImGui::BeginDisabled(!spirit_tool.kind);
+    ImGui::BeginDisabled(spirit_tool.random);
+    ImGui::SliderFloat(label(practice_TH17_GOAST_ANGLE),&spirit_tool.angle,-3.1415927f,3.1415927f);
+    ImGui::Checkbox(label(practice_TH17_FORCE_ANGLE),&spirit_tool.force);
+    help(label(practice_TH17_FORCE_ANGLE_HELP));
+    ImGui::EndDisabled(spirit_tool.random);
+    ImGui::Checkbox(label(practice_TH17_RANDOM_ANGLE),&spirit_tool.random);
+    const auto point=ImGui::GetCursorScreenPos();
+    ImGui::Dummy({160,120});
+    const char* preview=label(practice_TH17_ANGLE_PREVIEW);
+    const auto center=ImVec2(point.x+80,point.y+60);
+    auto* draw=ImGui::GetWindowDrawList();
+    const int begin=draw->VtxBuffer.Size;
+    const auto extent=ImGui::CalcTextSize(preview);
+    draw->AddText({center.x-extent.x*.5f,center.y-extent.y*.5f},ImGui::GetColorU32(ImGuiCol_Text),preview);
+    const float angle=spirit_tool.angle,sine=std::sin(angle),cosine=std::cos(angle);
+    for(int i=begin;i<draw->VtxBuffer.Size;++i){
+        auto& pos=draw->VtxBuffer[i].pos;
+        const float x=pos.x-center.x,y=pos.y-center.y;
+        pos={center.x+x*cosine-y*sine,center.y+x*sine+y*cosine};
+    }
+    ImGui::EndDisabled(!spirit_tool.kind);
+}
 void advanced(ApplicationState& app){
     auto& state=app.practice;
     ImGui::SetNextWindowPos({0,0},ImGuiCond_Always);
     ImGui::SetNextWindowSize({640,480},ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(.8f);
     if(mobile::begin(mobile::Advanced,"Advanced###th17-purple-advanced",fixed_window,locale)){
+        if(spirit_menu){spirit_options();ImGui::End();return;}
         ImGui::TextUnformatted(label(practice_TH_ADV_OPT));ImGui::Separator();
         ImGui::BeginChild("Adv. Options",{0,0});
         if(ImGui::CollapsingHeader(label(practice_TH_GAME_SPEED)))GameFPSOpt(state.speed,true,&reset_speed_ui,15);
-        if(ImGui::CollapsingHeader(label(practice_TH_GAMEPLAY)))input_options(state.input);
+        if(ImGui::CollapsingHeader(label(practice_TH_GAMEPLAY)))gameplay_options(app);
+        if(ImGui::CollapsingHeader(label(practice_THPRAC_TOOLS_REACTION_TEST)))reaction_test.GuiUpdate(true);
+        else reaction_test.Reset();
         if(ImGui::CollapsingHeader(label(practice_TH_ABOUT_THPRAC))){
             ImGui::Text(label(practice_TH_ABOUT_VERSION),practice_version);
             ImGui::TextUnformatted(label(practice_TH_ABOUT_AUTHOR));
@@ -391,6 +511,8 @@ void shutdown(){
     reset_input();
     if(initialized)ImGui::DestroyContext();
     initialized=desktop=cheats=was_open=false;
+    key_monitor={};reaction_test.Reset();
+    spirit_tool={};spirit_menu=spirit_pointer=false;
     mobile::reset();
     publish_menu(false);
 }
@@ -426,7 +548,9 @@ bool captures_pointer(float x,float y){
         if(window->Active&&!window->Hidden&&!(window->Flags&ImGuiWindowFlags_NoMouseInputs)&&window->OuterRectClipped.Contains({x,y}))return true;
     return false;
 }
-bool passive_pointer(float x,float y){return initialized&&mobile::passive_pointer(x,y);}
+bool passive_pointer(float x,float y){
+    return initialized&&(mobile::passive_pointer(x,y)||(spirit_pointer&&x>32&&x<416&&y>144&&y<464));
+}
 void update_input(ApplicationState& app,const bool* keys){
     if(!initialized)return;
     const u32 bits=u32(EM_ASM_INT({return Module.eaglerControls?.thpracKeyboardBits|0;}));
@@ -437,6 +561,9 @@ void update_input(ApplicationState& app,const bool* keys){
         down[i]=pressed;
     }
     if(!down[90]&&!down[13]&&!down[88]&&!down[27])drain_navigation=false;
+}
+void record_keys(const ApplicationState& app,Uint32 held){
+    if(initialized&&app.practice.keyboard_monitor)key_monitor.record(17,held);
 }
 bool render(ApplicationState& app){
     if(!initialized)return true;
@@ -483,10 +610,36 @@ bool render(ApplicationState& app){
     if(advanced_open)std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);
     nav::prepare(state.menu&&!advanced_open);
     ImGui::NewFrame();
+    spirit_pointer=live_practice&&spirit_tool.kind&&!advanced_open&&!state.menu&&
+        !(app.progress.scene_flags&0x4004)&&!app.scene()->battle.dialogue_present();
+    if(spirit_pointer&&app.run_input&&ImGui::IsMouseClicked(ImGuiMouseButton_Left)&&!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)){
+        auto spawn=spirit_tool;spawn.x=io.MousePos.x-224;spawn.y=io.MousePos.y-16;spawn.force&=!spawn.random;
+        app.run_input->spawn_spirit(spawn);
+    }
     if(state.menu)setup(app);else was_open=false;
     if(mobile::show(mobile::Advanced,state.advanced))advanced(app);
     if(mobile::show(mobile::Cheats,cheats))cheat_overlay(app,live_practice);
     if(app.scene()&&mobile::show(mobile::Information,state.information))information(app);
+    if(app.scene()&&state.keyboard_monitor&&mobile::draw_tool(mobile::Keyboard,"Keys###th17-mobile-keys",{420,65},locale)){
+        KeyRectStyle style;style.text_color_press=style.text_color_release=IM_COL32(32,32,32,255);
+        KeysHUD(17,{1280,0},{840,0},style,true,false);
+    }
+    const bool lock_timer=app.scene()&&app.run_input&&state.show_lock_timer&&
+        (app.scene()->battle.session.practice_tools&PracticeTimeLock);
+    const bool auto_shoot=app.scene()&&state.input.enable_auto_shoot&&state.input.is_auto_shooting;
+    if((lock_timer||auto_shoot)&&mobile::draw_tool(mobile::Indicators,"Tools###th17-mobile-tools",{120,65},locale)){
+        auto* draw=ImGui::GetOverlayDrawList();
+        if(auto_shoot){
+            draw->AddRectFilled({0,0},{16,16},0xffffdddd);
+            draw->AddText({4,0},0xffcc2222,"A");
+        }
+        if(lock_timer){
+            char value[32];std::snprintf(value,sizeof value,"%.2f",app.run_input->lock_frames/60.f);
+            const auto size=ImGui::CalcTextSize(value);
+            draw->AddRectFilled({32,0},{110,size.y},0xffffffff);
+            draw->AddText({110-size.x,0},0xff000000,value);
+        }
+    }
     ImGui::Render();
     std::fill(std::begin(edge),std::end(edge),false);
     app.graphics.backend.render_imgui(ImGui::GetDrawData(),GraphicsDevice::screen);

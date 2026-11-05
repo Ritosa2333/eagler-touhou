@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 namespace th17 {
-struct ReplayInput {u16 held=0,pressed=0,released=0;u8 fps=0;bool end=false;PlayerTouch touch;u32 practice_tools=0;};
+struct ReplayInput {u16 held=0,pressed=0,released=0;u8 fps=0;bool end=false;PlayerTouch touch;u32 practice_tools=0;PracticeSpiritSpawn spirit;};
 struct ReplayTouch {u32 frame=0;PlayerTouch motion;};
 struct ReplayStage {u16 number=0,seed=0;u32 offset=0,frames=0,payload_size=0;};
 // Native t17r v2. Keep the complete stage state for the scene restoration path.
@@ -20,7 +20,8 @@ class Replay {
     PracticePatch practice_patch;
     PracticeSettings native_practice;
     std::vector<PracticeToolChange> practice_changes;
-    u32 practice_cursor=0;
+    std::vector<PracticeSpiritEvent> practice_spirits;
+    u32 practice_cursor=0,spirit_cursor=0;
     std::string failure;
 public:
     bool open(const u8*,u32);

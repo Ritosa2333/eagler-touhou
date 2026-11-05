@@ -25,15 +25,27 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  ApplicationFlow flow{progress,*this};std::unordered_map<std::string,i32> shared;
  std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<AnmDrawSchedule> global_layers;std::unique_ptr<AsciiDrawSchedule> global_letters;
  struct PracticeState {
-  bool enabled=false, menu=false, confirmed=false, accepted=false, advanced=false, information=false;
+  bool enabled=false, menu=false, confirmed=false, cancelled=false, accepted=false, advanced=false, information=false;
   bool purple=true;
   i32 spell=-1;
   u32 tools=0;
-  bool everlasting_bgm=false;
+  bool everlasting_bgm=false,keyboard_monitor=false,life_until_continue=false,show_lock_timer=false,hide_master=false;
+  bool lower_boss=false,no_spirits=false,uncap_score=false,all_clear_bonus=false;
+  bool repair_roaring_replay=false;
+  float boss_range=.5f;
   PracticeSettings settings;
   PracticePatch active;
   eagler::thprac::PracticeSpeed speed;
   eagler::thprac::PracticeInput input;
+  u32 active_tools(i32 continues)const noexcept{
+   u32 value=tools;
+   if(life_until_continue&&continues)value&=~PracticeInfiniteLives;
+   if(no_spirits)value|=PracticeNoSpirits;
+   if(uncap_score)value|=PracticeUncapScore;
+   if(all_clear_bonus)value|=PracticeAllClearBonus;
+   if(lower_boss)value|=u32(boss_range*practice_boss_range_steps+.5f)<<practice_boss_range_shift;
+   return value;
+  }
  } practice;
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<RunInput> run_input;std::unique_ptr<RunPause> pause;std::unique_ptr<SceneDisplay> display;
  std::shared_ptr<Replay> selected_replay;std::unique_ptr<ReplayRecording> recording;std::array<u8,0xa0> live_description{};

@@ -30,6 +30,8 @@ bool ApplicationState::begin_transition(u32& handle){
 PracticeMenuResult ApplicationState::configure_practice(i32 stage,i32 spell,bool available){
  if(!practice.enabled||spell<-1||(spell>=0&&practice_phase_count(0,spell)==1))return PracticeMenuResult::Native;
  if(practice.confirmed){practice.confirmed=false;practice.accepted=true;return PracticeMenuResult::Confirm;}
+ if(practice.cancelled){practice.cancelled=false;return PracticeMenuResult::Cancel;}
+ if(practice.menu)return PracticeMenuResult::Configure;
  if(!available)practice.purple=true;
  auto& patch=practice.settings.patch;
  if(patch.stage!=stage||practice.spell!=spell){

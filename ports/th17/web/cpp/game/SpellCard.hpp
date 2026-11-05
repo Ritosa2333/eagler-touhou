@@ -25,7 +25,7 @@ class SpellCard {
 public:
     Timer age;i32 maximum_bonus=0,duration=0,active_frames=0,loadout=0;
     SpellCaptureClock result_clock;
-    std::string name,error;Vec3 anchor{};std::array<u32,5> handles{};bool replay=false,practice=false;
+    std::string name,error;Vec3 anchor{};std::array<u32,5> handles{};bool replay=false,practice=false,uncap_score=false,hide_master=false;
     SpellCard(PlayerSpellStatus& state,i32& score,SpellRecords& records,u32& roaring,SpellCardHost& services):status(state),host(services),records(records),score(score),roaring_flags(roaring){age.set(0);}
     bool begin(const SpellStartRequest&,const SpellStartContext&);bool update(const SpellFrameContext&);bool finish();
     PlayerSpellStatus& state()noexcept{return status;}

@@ -20,7 +20,7 @@ public:
     std::string error;
     AnimalSpirits(AnmManager& a,Rng& r,AnimalSpiritHost& h,i32 bank):animations(a),random(r),host(h),resource(bank){}
     ~AnimalSpirits();
-    u32 spawn(i32 kind,const Vec3&,float angle,bool practice=false);
+    u32 spawn(i32 kind,const Vec3&,float angle,bool practice=false,bool force_angle=false);
     bool update(const Vec3& player,float rate);
     bool clear();
     u32 count()const noexcept{return entries.size();}

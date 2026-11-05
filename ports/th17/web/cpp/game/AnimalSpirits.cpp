@@ -12,12 +12,14 @@ bool AnimalSpirits::adjust_direction(AnimalSpiritState& s,float angle){
         if(!retry)return true;
     }
 }
-u32 AnimalSpirits::spawn(i32 kind,const Vec3& p,float angle,bool practice){
+u32 AnimalSpirits::spawn(i32 kind,const Vec3& p,float angle,bool practice,bool force_angle){
     error.clear();if(entries.size()>=40)return 0;if(kind<1||kind>17){error="Invalid animal spirit kind";return 0;}
     entries.push_back({++generation,{}});auto& entry=entries.back();auto& s=entry.state;s.age.set(0);s.outside.set(0);
     const bool rotating=kind>=15&&kind<=17;s.animation=animations.create(resource,rotating?kind-15:kind-1,-1,0);if(!s.animation){error=animations.error;entries.pop_back();return 0;}
     if(rotating){s.kind=kind-14;s.flags=(s.flags&~4u)|2;s.cycle.set(240);}else{s.kind=kind;if(kind<=3&&!animations.interrupt(s.animation,7)){error=animations.error;return 0;}}
-    s.position=p;if(auto* vm=animations.registry.find(s.animation))vm->visual.translation=p;if(!adjust_direction(s,angle))return 0;
+    s.position=p;if(auto* vm=animations.registry.find(s.animation))vm->visual.translation=p;
+    if(force_angle)s.velocity={float(std::cos(double(angle))),float(std::sin(double(angle))),0};
+    else if(!adjust_direction(s,angle))return 0;
     if(kind>=8&&kind<=14){if(!practice&&!host.trophy(kind+25)){error="Animal spirit trophy service failed";return 0;}if(!host.sound(74)){error="Animal spirit audio failed";return 0;}}
     else if(!host.sound(59)){error="Animal spirit audio failed";return 0;}return entry.id;
 }

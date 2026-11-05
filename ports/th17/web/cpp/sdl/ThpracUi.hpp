@@ -10,6 +10,7 @@ void shutdown();
 void reset_input();
 void process_event(const SDL_Event&,float scale);
 void update_input(ApplicationState&,const bool* keys);
+void record_keys(const ApplicationState&,Uint32 held);
 bool render(ApplicationState&);
 void mouse(int type,float x,float y);
 void cancel_pointer();
@@ -22,6 +23,7 @@ inline void shutdown(){}
 inline void reset_input(){}
 inline void process_event(const SDL_Event&,float){}
 inline void update_input(ApplicationState&,const bool*){}
+inline void record_keys(const ApplicationState&,Uint32){}
 inline bool render(ApplicationState&){return true;}
 inline void mouse(int,float,float){}
 inline void cancel_pointer(){}

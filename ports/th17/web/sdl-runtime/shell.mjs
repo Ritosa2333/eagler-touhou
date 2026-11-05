@@ -25,7 +25,7 @@ async function stop(){if(stopping)return;stopping=true;try{core._th17_loop_stop(
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth17\//,'').replace(/^\//,'');if(!/^(?:scoreth17\.dat|th17\.cfg|replay\/th17_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 function apply(){core.eaglerOptions=options;core._th17_always_hitbox(+(options.alwaysHitbox===true));core._th17_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th17_music_enabled(+music);}
 const sharedFonts=['/msgothic.ttc','/unifont.otf'];
-const fontNames=[...Array.from({length:8},(_,i)=>'font'+i+'.bin'),'cp932.bin','blend4444.bin'];
+const fontNames=['cp932.bin'];
 async function resource(r){
  if(!r||(!/^\/music\/(?:th17_\d{2}|th128_08)\.ogg$/.test(r.path)&&!fontNames.some(n=>r.path==='/fonts/'+n)&&!sharedFonts.includes(r.path)))throw Error('资源路径无效');
  const u=new URL(r.url,location.href);if(u.origin!==location.origin||!['http:','https:','blob:'].includes(u.protocol))throw Error('资源来源无效');

@@ -1,5 +1,6 @@
 #include "EnemyMovementCommands.hpp"
 #include "AnmVisualState.hpp"
+#include "Practice.hpp"
 #include <cmath>
 namespace th17 {
 namespace {
@@ -69,7 +70,15 @@ int EnemyMovementCommands::execute(EclContext& context,u16 opcode){
         case 432:case 433:{const i32 id=integer_arg(0);if(!ok)return -2;auto* target=world.lookup(u32(id));if(!target){context.error="Enemy movement target unavailable";return -2;}(opcode==432?enemy.absolute:enemy.relative).position=target->motion.position;break;}
         case 414:case 415:if(!world.boss){context.error="Enemy movement boss target unavailable";return -2;}else(opcode==414?enemy.absolute:enemy.relative).position=world.boss->motion.position;break;
         case 424:{i32 value;if(instruction->length<20||!context.integer(0,instruction->argument<i32>(0),value)){context.error="Enemy mirror argument unavailable";return -2;}enemy.flags=(enemy.flags&~0x80000u)|(u32(value)<<19&0x80000u);break;}
-        case 504:{const float x=arg(0),y=arg(1),width=arg(2),height=arg(3);if(!ok)return -2;enemy.flags|=0x20000;enemy.bound_center={x,y};enemy.bound_size={width,height};break;}
+        case 504:{
+            const float x=arg(0),y=arg(1),width=arg(2),height=arg(3);if(!ok)return -2;
+            enemy.flags|=0x20000;enemy.bound_center={x,y};enemy.bound_size={width,height};
+            if(const auto range=practice_boss_range(world.practice_tools)){
+                const float max_y=y+height*.5f,min_y=max_y-height*(1.f-float(range)/practice_boss_range_steps);
+                enemy.bound_center.y=(max_y+min_y)*.5f;enemy.bound_size.y=max_y-min_y;
+            }
+            break;
+        }
         case 505:enemy.flags&=~0x20000u;break;
         case 427:enemy.absolute.position={float(enemy.absolute.position.x+enemy.relative.position.x),float(enemy.absolute.position.y+enemy.relative.position.y),float(enemy.absolute.position.z+enemy.relative.position.z)};enemy.relative.position={};enemy.absolute.speed=enemy.relative.speed=0;enemy.absolute.velocity=enemy.relative.velocity={};enemy.absolute.flags&=~15u;enemy.relative.flags&=~15u;enemy.absolute_position.duration=enemy.relative_position.duration=0;enemy.absolute_angle.duration=enemy.relative_angle.duration=enemy.absolute_speed.duration=enemy.relative_speed.duration=0;enemy.absolute_shape.duration=enemy.relative_shape.duration=enemy.absolute_wave.duration=enemy.relative_wave.duration=0;break;
         default:context.error="Unimplemented TH17 enemy ECL opcode "+std::to_string(opcode);return -2;

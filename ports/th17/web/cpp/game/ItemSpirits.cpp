@@ -4,7 +4,7 @@ ItemSpirits::ItemSpirits(AnmManager& a,EffectManager& e,Rng& game,Rng& visual,Pl
     items.sound=[this](i32 id){return world.sound(id,true);};items.immediate_sound=[this](i32 id){return world.sound(id,false);};
 }
 bool ItemSpirits::collect_spirit(i32 kind){if(!roaring.collect(kind)){error=roaring.error;return false;}before_player();return true;}
-bool ItemSpirits::spirit(i32 kind,const Vec3& p,float angle){spirits.spawn(kind,p,angle,practice);if(spirits.error.empty())return true;error=spirits.error;return false;}
+bool ItemSpirits::spirit(i32 kind,const Vec3& p,float angle){if(session.practice_tools&PracticeNoSpirits)return true;spirits.spawn(kind,p,angle,practice);if(spirits.error.empty())return true;error=spirits.error;return false;}
 bool ItemSpirits::item(i32 kind,const Vec3& p,float angle,float speed,i32 delay,i32 sound){return spawn(kind,p,angle,speed,delay,sound);}
 bool ItemSpirits::spawn(i32 kind,const Vec3& p,float angle,float speed,i32 delay,i32 sound){
     error.clear();ItemSpawnContext context{game_random,player.position,[this](i32 type,const Vec3& p,float angle){return spirit(type,p,angle);}};

@@ -17,9 +17,19 @@ bool RunInput::activate(){
 }
 i32 RunInput::scheduled(){
  if(!error.empty())return i32(FrameAction::Error);if(!active)return i32(FrameAction::Continue);
- PlayerTouch movement=touch;u32 tools=practice_tools;if(replay){const auto value=replay->tick();tools=value.practice_tools;recorded_fps=value.fps;if(value.end){input={};auto& frame=scene.battle.active_frame();frame.held=frame.pressed=0;frame.shoot_frames=frame.skip_frames=0;scene.battle.player->motion.touch={};if(!host.replay_finished())return i32(FrameAction::Error);frame.game_flags=progress.scene_flags;return i32(FrameAction::Continue);}input.update(value.held);movement=value.touch;}
- else {input.recording_update(u16(physical),auto_focus);if(recording&&!recording->tick({u16(input.held),u16(input.pressed),u16(input.released),0,false,{},tools},fps,false,touch)){fail(recording->error());return i32(FrameAction::Error);}}
+ PlayerTouch movement=touch;u32 tools=practice_tools;auto spirit=pending_spirit;pending_spirit={};
+ if(replay){const auto value=replay->tick();tools=value.practice_tools;spirit=value.spirit;recorded_fps=value.fps;if(value.end){input={};auto& frame=scene.battle.active_frame();frame.held=frame.pressed=0;frame.shoot_frames=frame.skip_frames=0;scene.battle.player->motion.touch={};if(!host.replay_finished())return i32(FrameAction::Error);frame.game_flags=progress.scene_flags;return i32(FrameAction::Continue);}input.update(value.held);movement=value.touch;}
+ else {input.recording_update(u16(physical),auto_focus);if(recording&&!recording->tick({u16(input.held),u16(input.pressed),u16(input.released),0,false,{},tools,spirit},fps,false,touch)){fail(recording->error());return i32(FrameAction::Error);}}
  scene.battle.session.practice_tools=scene.battle.enemy_world.practice_tools=tools;
+ scene.battle.score.uncapped=scene.battle.player->damage.uncap_score=(tools&PracticeUncapScore)!=0;
+ if(scene.battle.spell_card)scene.battle.spell_card->uncap_score=scene.battle.score.uncapped;
+ if(tools&PracticeTimeLock)++lock_frames;else lock_frames=0;
+ if(spirit){
+  const float angle=spirit.random?scene.battle.enemy_world.random->signed_unit()*3.1415927f:spirit.angle;
+  auto& spirits=scene.battle.items->spirits;
+  spirits.spawn(spirit.kind,{spirit.x,spirit.y,0},angle,true,spirit.force);
+  if(!spirits.error.empty()){fail(spirits.error);return i32(FrameAction::Error);}
+ }
  auto& frame=scene.battle.active_frame();frame.held=input.held;frame.pressed=input.pressed;frame.shoot_frames=i32(input.duration[0]);frame.skip_frames=i32(input.duration[9]);scene.battle.player->motion.touch=movement;return i32(FrameAction::Continue);
 }
 i32 RunInput::accelerate_replay(){

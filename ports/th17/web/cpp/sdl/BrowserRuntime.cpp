@@ -55,9 +55,10 @@ touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->run_input)return value;
  if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)return value;
  if(app->progress.practice_record){value.context=3;return value;}
- auto& stage=*app->scene();if(stage.battle.dialogue_present()){value.context=2;return value;}
+ auto& stage=*app->scene();
  auto& player=*stage.battle.player;auto& motion=player.motion;
- value.context=1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
+ value.context=stage.battle.dialogue_present()?2:1;
+ value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
  value.min_x=-184;value.max_x=184;value.min_y=32;value.max_y=432;return value;
 }
@@ -190,6 +191,7 @@ EMSCRIPTEN_KEEPALIVE int th17_probe_tick(){return !th17::sdl::running&&th17::sdl
 // Diagnostic replay batches retain every update/draw and defer only window presentation.
 EMSCRIPTEN_KEEPALIVE int th17_probe_ticks(unsigned count){using namespace th17::sdl;if(running||!app||count>120)return 0;app->graphics.backend.defer=true;bool ok=true;for(unsigned i=0;i<count&&ok;i++)ok=sample_and_tick();app->graphics.backend.commit();app->graphics.backend.defer=false;return ok;}
 EMSCRIPTEN_KEEPALIVE const int* th17_probe_state(){using namespace th17::sdl;return app?app->projection():nullptr;}
+EMSCRIPTEN_KEEPALIVE int th17_probe_dialogue(){return th17::sdl::touch_state().context==2;}
 // On-demand development snapshot, never sampled by the production frame loop.
 // Each record identifies a bank/script/layer/mode and its live instance count.
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_probe_animation_load(){using namespace th17::sdl;static std::vector<unsigned> result;result.assign(3,0);if(!app)return result.data();auto& registry=app->animations.registry;result[1]=registry.count();for(unsigned layer=0;layer<44;layer++)for(auto* vm:registry.layer(layer)){const unsigned bank=unsigned(app->animations.resource_id(vm->resource)),script=unsigned(vm->source_script),mode=vm->visual.draw_mode();size_t at=3;for(;at<result.size();at+=5)if(result[at]==bank&&result[at+1]==script&&result[at+2]==layer&&result[at+3]==mode)break;if(at==result.size())result.insert(result.end(),{bank,script,layer,mode,0});++result[at+4];++result[2];}result[0]=(result.size()-3)/5;return result.data();}

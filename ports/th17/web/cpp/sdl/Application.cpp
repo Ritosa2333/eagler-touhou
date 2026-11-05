@@ -1,4 +1,5 @@
 #include "ApplicationState.hpp"
+#include "ThpracUi.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <ctime>
@@ -61,7 +62,7 @@ bool ApplicationState::initialize(bool device){
   if(!animations.load(bank.second,std::move(logical))||!animations.name_resource(bank.second,bank.first))return fail("Application animation load: "+std::string(bank.first)+": "+animations.error);shared.emplace(bank.first,bank.second);if(bank.second==0&&!animations.sprite_fallback(0))return fail("ASCII fallback atlas unavailable");
   if(!graphics.preload(*animations.resource(bank.second),false,atlas))return fail(graphics.error);
  }
- if(!animations.sprite_fallback(0))return fail("ASCII fallback atlas unavailable");for(i32 style=0;style<23;style++)if(!fonts.preload(style))return fail(fonts.error);
+ if(!animations.sprite_fallback(0))return fail("ASCII fallback atlas unavailable");
  if(!read("musiccmt.txt",bytes)||!comments.open(bytes.data(),bytes.size()))return fail(comments.error);
  LocalizationTable themes,music_comments;
  load_table(spell_names,"spells.etl");
@@ -97,7 +98,7 @@ bool ApplicationState::release_game(){
  run.reset();for(i32 bank:{0,6,8})animations.retire_resource(bank);animations.collect_resources();reset_graphics();if(!scene_effects&&!exiting)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);return true;
 }
 bool ApplicationState::begin_title(){
- practice.active={};practice.menu=practice.confirmed=practice.accepted=false;
+ practice.active={};practice.menu=practice.confirmed=practice.cancelled=practice.accepted=false;
  reset_graphics();if(!scene_effects)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);
  title=std::make_unique<TitleScene>(progress,selection,selection_player,selection_score,records,choices,volumes,controller,comments,trophy_catalog,spell_memory,animations,*this,scheduler);
  title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();return title->error.empty()||fail(title->error);
@@ -115,7 +116,12 @@ bool ApplicationState::begin_game(bool playback){
  practice.tools=0;
  progress.historical_web_replay=playback&&selected_replay&&selected_replay->historical_web_recording();
  if(flow.fresh&&progress.historical_web_replay&&progress.stage!=1)return fail("This early WEB recording needs continuous playback from Stage 1");
- ReplayStageState entry;const ReplayStageState* initial=nullptr;if(playback){if(!selected_replay||!selected_replay->initial_state(progress.stage,entry))return fail("Requested original replay stage unavailable");initial=&entry;stage_seed=entry.seed;}
+ ReplayStageState entry;const ReplayStageState* initial=nullptr;if(playback){
+  if(!selected_replay||!selected_replay->initial_state(progress.stage,entry))return fail("Requested original replay stage unavailable");
+  if(flow.fresh&&practice.repair_roaring_replay&&!selected_replay->web_rules_revision()&&entry.run.initial_stage==progress.stage)
+   entry.run.roaring.flags&=~6u;
+  initial=&entry;stage_seed=entry.seed;
+ }
  else {stage_seed=environment.game_rng.seed;if(!flow.fresh)visual.seed=stage_seed;environment.game_rng.calls=0;}
  if(flow.fresh){run.reset();run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,records.game,records.spells,*this,&shared);
   if(!playback){recording=std::make_unique<ReplayRecording>();auto& description=recording->description();std::memcpy(description.data()+0x88,&progress.character,4);std::memcpy(description.data()+0x8c,&progress.animal,4);std::memcpy(description.data()+0x90,&progress.difficulty,4);std::memcpy(description.data()+0x98,&progress.scoring.continues,4);std::memcpy(description.data()+0x9c,&progress.spell_id,4);description[10]=u8((progress.scoring.mode_flags>>4&1)|((progress.scoring.mode_flags&0x30)==0x20?2:0));}
@@ -159,7 +165,9 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   else title->controls({held,pressed,repeated,0,1},controller_buttons);
  }if(ending)ending->controls({held,pressed,physical_input.duration[0],1},0);
  if(scene()){
-  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,practice.active&&!progress.practice_record?practice.tools:0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
+  ThpracUi::record_keys(*this,held);
+  if(scene()->battle.spell_card)scene()->battle.spell_card->hide_master=practice.hide_master;
+  if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,practice.active&&!progress.practice_record?practice.active_tools(progress.scoring.continues):0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
   if(!scene()->step(input))return fail(scene()->error.empty()?run_input->error:scene()->error);
   if(run->previous_scene()&&!run->update_previous(progress.rate))return fail(run->error);
  }else {if(scheduler.update()<0)return fail(title&&!title->error.empty()?title->error:ending&&!ending->error.empty()?ending->error:animations.error);}

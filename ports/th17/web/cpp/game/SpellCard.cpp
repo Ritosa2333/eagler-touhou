@@ -1,4 +1,5 @@
 #include "SpellCard.hpp"
+#include "Practice.hpp"
 namespace th17 {
 bool SpellCard::check(bool ok,const char* message){if(!ok&&error.empty())error=message;return ok;}
 bool SpellCard::banners(i32 label){for(u32 i=1;i<=3;i++)if(!check(host.interrupt(handles[i],label),"Spell banner interrupt failed"))return false;return true;}
@@ -29,7 +30,7 @@ bool SpellCard::update(const SpellFrameContext& c){
 }
 bool SpellCard::finish(){
     if(!(status.flags&1))return true;if(!check(host.background_visible(true),"Spell background restoration failed")||!banners(1))return false;status.flags&=~1u;if(!check(host.retire(handles[0]),"Spell background retirement failed"))return false;status.flags&=~32u;if(!check(host.prepare_hud(false),"Spell HUD finish failed")||!check(host.retire(handles[4]),"Spell boss ring retirement failed"))return false;
-    if(status.flags&2){score=wrapping_add(score,status.bonus/10);if(u32(score)>999999999u)score=999999999;if(!check(host.result(status.bonus,false),"Spell capture result failed"))return false;if(!replay){bool all=false;if(!check(records.capture(status.id,loadout,practice,all),"Spell capture history failed"))return false;if(all&&!check(host.trophy(32),"Spell trophy unavailable"))return false;}if(!check(host.sound(46,true),"Spell capture sound failed"))return false;}else if(!check(host.result(0,true),"Spell failure result failed"))return false;
+    if(status.flags&2){score=add_practice_score(score,status.bonus/10,uncap_score);if(!check(host.result(status.bonus,false),"Spell capture result failed"))return false;if(!replay){bool all=false;if(!check(records.capture(status.id,loadout,practice,all),"Spell capture history failed"))return false;if(all&&!check(host.trophy(32),"Spell trophy unavailable"))return false;}if(!check(host.sound(46,true),"Spell capture sound failed"))return false;}else if(!check(host.result(0,true),"Spell failure result failed"))return false;
     return !(status.flags&128)||check(host.sound(69,true),"Spell auxiliary sound failed");
 }
 }
