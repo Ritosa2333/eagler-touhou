@@ -17,7 +17,7 @@
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th16.jpg" width="40" height="40" alt="东方天空璋"> | **[th16] 東方天空璋 v1.00a** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th17.jpg" width="40" height="40" alt="东方鬼形兽"> | **[th17] 東方鬼形獣 v1.00b** | SteinsGateON<br>![In Progress][in-progress] | [源码与构建](../ports/th17/README.md)<br>![In Progress][in-progress] | [共用启动器适配](../ports/th17/ADAPTATION.md)<br>![In Progress][in-progress] | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th18.jpg" width="40" height="40" alt="东方虹龙洞"> | **[th18] 東方虹龍洞 v1.00a** | [owo-aya](https://github.com/owo-aya)<br>![In Progress][in-progress] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | - | - | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![Done][done] | ![Done][done] | ![Done][done] | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th20.jpg" width="40" height="40" alt="东方锦上京"> | **[th20] 東方錦上京 v1.00c** | [Oracatt](https://github.com/Oracatt/Touhou20/tree/main)<br>![Done][done] | [Ritosa2333](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th20)<br>![Done][done] | 搁置 | - |
 
 ## 旧作（PC-98）
