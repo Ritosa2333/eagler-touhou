@@ -1,5 +1,5 @@
 import {NativeSimulation} from '../netplay/runtime-core.js';
-import {digest} from './tape.js';
+import {digest,stable} from './tape.js';
 import {replicaBinary,captureNative,encodeNative,decodeNative,restoreNative} from './native-state.js';
 import {NativeLocalSimulation,nativeLocalOpening,loadLocalOpening} from './native-local-core.js';
 let simulation,canvas,context,image,serial=0,closed=false,confirmed=0,identity,base,loaded=false;
@@ -17,10 +17,25 @@ async function load(header){
   return header.adapter==='native-local/1'?nativeLocalOpening(core):digest(new TextEncoder().encode(JSON.stringify({version,settings:header.settings,hostSlot:header.hostSlot})));
 }
 let chain=Promise.resolve();
+function execute(frame,inputs,hash){
+  if(frame!==simulation.frame)throw Error('原生录像缺帧');
+  if(simulation instanceof NativeLocalSimulation)simulation.command(inputs[0]);else simulation.step(inputs);
+  const check=hash?simulation.checksum():undefined,e=simulation.core,end=e.th_get(11,0)>>>0,ids=[];
+  for(let n=Math.max(0,end-128);n<end;n++)ids.push(e.th_sound_event(n));
+  postMessage({type:'native-audio',event:{cue:e.th_get(79,0),end,ids}});return check;
+}
 onmessage=({data})=>{if(data.type==='frame-ack')return;chain=chain.then(async()=>{
   if(closed)return;let result;
   if(data.type==='load')result=await load(data.header);
-  else if(data.type==='execute'){if(data.frame!==simulation.frame)throw Error('原生录像缺帧');if(simulation instanceof NativeLocalSimulation)simulation.command(data.inputs[0]);else simulation.step(data.inputs);if(data.hash)result=simulation.checksum();const e=simulation.core,end=e.th_get(11,0)>>>0,ids=[];for(let n=Math.max(0,end-128);n<end;n++)ids.push(e.th_sound_event(n));postMessage({type:'native-audio',event:{cue:e.th_get(79,0),end,ids}});}
+  else if(data.type==='execute')result=execute(data.frame,data.inputs,data.hash);
+  else if(data.type==='executeBatch'){
+    if(!Array.isArray(data.rows)||!data.rows.length||data.rows.length>32)throw Error('原生观战批次无效');
+    for(const [i,row] of data.rows.entries()){
+      const frame=data.frame+i,check=execute(frame,row.inputs,row.hash!==null),proof=JSON.stringify(simulation.checksum());
+      if(proof!==row.proof||(row.hash!==null&&stable(check)!==stable(row.hash)))throw Error('录像模拟校验不一致：第 '+frame+' 步');
+      confirmed=simulation.frame;
+    }
+  }
   else if(data.type==='present'){simulation.core.th_render();context.putImageData(image,0,0);const bitmap=canvas.transferToImageBitmap();postMessage({type:'frame',bitmap,sequence:++serial},[bitmap]);}
   else if(data.type==='confirm'){if(data.args[0]!==simulation.frame)throw Error('原生回放确认边界无效');confirmed=simulation.frame;}
   else if(data.type==='replaySave'){
