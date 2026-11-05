@@ -19,13 +19,13 @@ const emit=(event,payload={})=>bridge?.emit(event,payload);
 function error(value){const message=value?.message??String(value);emit('error',{message,error:message});}
 let nativeAborted=false,finishTask;
 function fatal(reason){void finish(1,reason);}
-function nativeKey(code,down,owner){const key=virtualKey(code);if(!key)return;let keys=owners.get(owner);if(!keys){keys=new Set();owners.set(owner,keys);}const was=[...owners.values()].some(set=>set.has(key));if(down)keys.add(key);else keys.delete(key);const now=[...owners.values()].some(set=>set.has(key));if(was!==now)module?._th05_key(key,+now);}
+function nativeKey(code,down,owner){if(nativeAborted)return;const key=virtualKey(code);if(!key)return;let keys=owners.get(owner);if(!keys){keys=new Set();owners.set(owner,keys);}const was=[...owners.values()].some(set=>set.has(key));if(down)keys.add(key);else keys.delete(key);const now=[...owners.values()].some(set=>set.has(key));if(was!==now)module?._th05_key(key,+now);}
 function keyboardReady(){return launched&&!closed&&!document.hidden&&!(options.replayViewer);}
 const keyboard=createBrowserKeyboard({send:(code,down)=>nativeKey(code,down,'keyboard'),hostContext:{protocol,game:'th05',epoch:Number(query.get('runtimeEpoch')),origin:location.origin,ready:keyboardReady,reset:clearKeyboard}});
 const touch=createTouchInput({send:(code,down)=>nativeKey(code,down,'touch'),position:()=>({x:module?._th05_player_x()??224,y:module?._th05_player_y()??376}),options:()=>options,scene:()=>module?._th05_input_scene()??0,move:(x,y,unlimited)=>module?._th05_touch_motion(x,y,+unlimited)});
 function clearKeyboard(){if(nativeAborted)return;keyboard.clear();owners.delete('keyboard');reconcile();}
 function cancelTouch(){if(nativeAborted)return;touch.cancel();pointers?.cancel();owners.delete('touch');module?._th05_touch_motion(0,0,0);reconcile();}
-function reconcile(){module?._th05_clear();for(const keys of owners.values())for(const key of keys)module?._th05_key(key,1);}
+function reconcile(){if(nativeAborted)return;module?._th05_clear();for(const keys of owners.values())for(const key of keys)module?._th05_key(key,1);}
 function clearAll(){if(nativeAborted)return;keyboard.clear();touch.cancel();pointers?.cancel();owners.clear();module?._th05_clear();}
 function sameOrigin(value){const url=new URL(value,location.href);if(url.origin!==location.origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');return url;}
 function allowedResource(path){
@@ -84,10 +84,10 @@ const api={running:()=>launched,viewer:()=>options.replayViewer===true,resources
  },
  async launch(message){if(!configured||closed)throw Error('Runtime cannot launch');clearAll();cstring(language,game=>cstring(options.thpracLocale??(language==='ja'?'ja-JP':'zh-CN'),locale=>module._th05_language_configure(game,locale)));module._th05_viewer(+!!options.replayViewer);module._th05_practice_configure(+(options.thpracEnabled===true&&!options.replayViewer));if(!module._th05_initialize())throw Error('TH05 initialization failed');module._th05_options(+(options.alwaysHitbox===true),+(options.focusHitboxEnabled===true));if(options.replayPath)openReplay(options.replayPath);launched=true;launchSerial=message.launchSerial;clock.reset();clock.credit=1/56;presentation.reset();lastHealth=performance.now();emit('runtime-info',{renderer:'C++ / WebGL GLES2',architecture:'uth05win-native-cpp',version:'1.0.0',protocol});raf=requestAnimationFrame(frame);saveTimer=setInterval(()=>{unloadSync=sync().catch(error);},3000);},
  async playback(message){if(!launched||!options.replayViewer)throw Error('Launch the Replay workspace first');return playback.command(message);},
- key(message){if(!options.replayViewer)keyboard.event(message,message.down,'hosted');audio.resume();},clearKeyboard,cancelTouch,
- touch(message){if(!options.replayViewer){audio.resume();touch.controls(message);module.eaglerControls={thpracMobilePanelsEnabled:options.thpracEnabled===true&&message.thpracMobilePanelsEnabled===true,thpracMobilePanelsVisible:message.thpracMobilePanelsVisible===true};}},
- pointer(message){if(!options.replayViewer){audio.resume();const rect=canvas.getBoundingClientRect();pointers.pointer(hostedPoint(message,rect.width,rect.height));}},
- practicePointer(message){if(!options.replayViewer)pointers.pointer({...message,id:message.id??0},true);},
+ key(message){if(!closed&&!options.replayViewer)keyboard.event(message,message.down,'hosted');audio.resume();},clearKeyboard,cancelTouch,
+ touch(message){if(!closed&&!options.replayViewer){audio.resume();touch.controls(message);module.eaglerControls={thpracMobilePanelsEnabled:options.thpracEnabled===true&&message.thpracMobilePanelsEnabled===true,thpracMobilePanelsVisible:message.thpracMobilePanelsVisible===true};}},
+ pointer(message){if(!closed&&!options.replayViewer){audio.resume();const rect=canvas.getBoundingClientRect();pointers.pointer(hostedPoint(message,rect.width,rect.height));}},
+ practicePointer(message){if(!closed&&!options.replayViewer)pointers.pointer({...message,id:message.id??0},true);},
 };
 try{
  bridge=installManagedShell(api,window);
@@ -111,7 +111,7 @@ try{
  addEventListener('blur',clearAll);
  document.addEventListener('visibilitychange',()=>{if(closed)return;clearAll();clock.reset();presentation.reset();module._th05_focus(+!document.hidden);audio.visibility(document.hidden);if(document.hidden)unloadSync=sync().catch(error);});
  const pointer=event=>{const rect=canvas.getBoundingClientRect(),scale=Math.min(rect.width/640,rect.height/480),left=rect.left+(rect.width-640*scale)/2,top=rect.top+(rect.height-480*scale)/2;return {id:event.pointerId,x:(event.clientX-left)/scale,y:(event.clientY-top)/scale,type:event.type==='pointerdown'?'down':event.type==='pointermove'?'move':'up'};};
- for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(options.replayViewer)return;pointers.pointer(message,event.pointerType!=='touch'&&event.pointerType!=='pen');audio.resume();event.preventDefault();});
+ for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(closed||options.replayViewer)return;pointers.pointer(message,event.pointerType!=='touch'&&event.pointerType!=='pen');audio.resume();event.preventDefault();});
  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();fatal(Error('TH05 WebGL context lost'));});
  addEventListener('pagehide',()=>{if(closed){bridge.close();return;}clearAll();cancelAnimationFrame(raf);clearInterval(saveTimer);module._th05_save();unloadSync=store.sync().catch(console.error);audio.close();bridge.close();closed=true;});
  bridge.ready();
