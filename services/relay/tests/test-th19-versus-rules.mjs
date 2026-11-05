@@ -37,12 +37,13 @@ try {
     assert.equal(code,1008);assert.equal(String(reason),'runtime version mismatch');
   }
   const host=connect({lobby:'th19_host_123',member:'host_member_123'}),guest=connect({lobby:'th19_guest_123',member:'guest_member_123'});
-  const first=await host.wait(m=>m.type==='state');await guest.wait(m=>m.type==='state');assert.deepEqual(first.room.th19Rules,[4,1,1,1,1,1,1,0,0]);
+  const first=await host.wait(m=>m.type==='state');await guest.wait(m=>m.type==='state');assert.deepEqual(first.room.th19Rules,[0,1,1,4,4,1,1,0,0]);
   await send(host,{type:'take-seat',seat:0,loadout:0},m=>m.room?.seats[0]);await send(guest,{type:'take-seat',seat:1,loadout:1},m=>m.room?.seats[1]);
   await send(host,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[0]?.ready);await send(guest,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[1]?.ready);
-  const rules=[6,2,3,4,0,2,3,9,38],changed=await send(host,{type:'settings',playerCount:2,difficulty:3,th19Rules:rules},m=>JSON.stringify(m.room?.th19Rules)===JSON.stringify(rules));assert(changed.room.seats.slice(0,2).every(s=>!s.ready));assert(changed.room.settingsVersion>first.room.settingsVersion);assert.equal(changed.room.difficulty,3);
+  const rules=[0,2,3,3,3,1,1,9,38],changed=await send(host,{type:'settings',playerCount:2,difficulty:3,th19Rules:rules},m=>JSON.stringify(m.room?.th19Rules)===JSON.stringify(rules));assert(changed.room.seats.slice(0,2).every(s=>!s.ready));assert(changed.room.settingsVersion>first.room.settingsVersion);assert.equal(changed.room.difficulty,3);
   await guest.wait(m=>JSON.stringify(m.room?.th19Rules)===JSON.stringify(rules));
   await send(host,{type:'settings',playerCount:2,difficulty:1,th19Rules:[0,1,2,2]},m=>m.type==='error');
+  for(const [index,value] of [[0,1],[4,2],[5,2],[6,3]]){const invalid=[...rules];invalid[index]=value;await send(host,{type:'settings',playerCount:2,difficulty:3,th19Rules:invalid},m=>m.type==='error');}
   const unrelated=connect({room:'th06mp-75684313',lobby:'other_host_123',member:'other_member_123'});assert.equal('th19Rules' in (await unrelated.wait(m=>m.type==='state')).room,false);await send(unrelated,{type:'take-seat',seat:0,loadout:0},m=>m.room?.seats[0]);await send(unrelated,{type:'settings',playerCount:2,difficulty:1,th19Rules:rules},m=>m.type==='error');
   console.log('TH19 relay: defaults, all rules, remote synchronization, ready invalidation, invalid rules and other-product rejection PASS');
 } finally {

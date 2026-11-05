@@ -2106,5 +2106,6 @@
   "th19_minutes": "{count} 分",
   "th19_card": "カード #{number}",
   "th19_selfCard": "専用カード {number}",
-  "th19_input": "TH19 専用入力設定"
+  "th19_input": "TH19 専用入力設定",
+  "th19_lives": "両プレイヤーの初期ライフ"
 }

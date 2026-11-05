@@ -45,10 +45,11 @@ try{
   report.room=await page.$eval('#mpRoomCode',e=>e.textContent.trim());save();
 
  }
- const rules=[6,2,3,4,0,2,3,9,9];
+ const rules=[0,2,3,3,3,1,1,9,9];
  for(const page of pages)await click(page,'#roomWorkspaceTab-game');
- await until(()=>pages[0].evaluate(()=>!!document.querySelector('#mpTh19Rule0')),'TH19 rule controls');
- for(let index=0;index<9;index++){await select(pages[0],'#mpTh19Rule'+index,String(rules[index]));await until(()=>pages[1].evaluate((index,value)=>document.querySelector('#mpTh19Rule'+index)?.value===String(value),index,rules[index]),'rule '+index+' synchronized');}
+ await until(()=>pages[0].evaluate(()=>!!document.querySelector('#mpTh19Rule3')),'TH19 rule controls');
+ for(const page of pages){const controls=await page.evaluate(()=>({life:document.querySelector('#mpTh19Rule3')?.value,removed:[0,4,5,6].every(index=>!document.querySelector('#mpTh19Rule'+index))}));assert.equal(controls.life,'4');assert.equal(controls.removed,true);}
+ for(const index of [1,2,3,7,8]){await select(pages[0],'#mpTh19Rule'+index,String(rules[index]));await until(()=>pages[1].evaluate((index,value)=>document.querySelector('#mpTh19Rule'+index)?.value===String(value),index,rules[index]),'rule '+index+' synchronized');}
  await pages[0].evaluate(()=>document.querySelector('[data-mp-difficulty="3"]')?.click());
  report.rules=rules;
  for(let side=0;side<2;side++){
@@ -69,7 +70,7 @@ try{
  const states=await Promise.all(pages.map(snapshot));report.states=states;
  assert(states.every(s=>s.route==='rtc'));assert.deepEqual(states.map(s=>s.options.side),[0,1]);
  const remote=new Map(states[1].hashes),common=states[0].hashes.filter(([f])=>remote.has(f));assert(common.length>=2);for(const [f,h]of common)assert.equal(h,remote.get(f));
- for(const state of states){assert.deepEqual(state.options.rules,rules);assert.equal(state.options.difficulty,3);assert.deepEqual(state.native.slice(8,12),[3,3,3,3]);assert.deepEqual(state.native.slice(12,19),rules.slice(0,7));}
+ for(const state of states){assert.deepEqual(state.options.rules,rules);assert.equal(state.options.difficulty,3);assert.deepEqual(state.native.slice(8,12),[3,3,3,3]);assert.deepEqual(state.native.slice(12,19),rules.slice(0,7));assert.deepEqual(state.native.slice(19,23),[0,3,4,4]);assert.deepEqual(state.native.slice(25,27),[60000,60000]);}
  assert.deepEqual(report.errors,[]);
  report.results.push({check:'Launcher create/join/seat/ready/start and native RTC state agreement',passed:true,hashes:common});report.passed=true;report.stage='complete';save();console.log(JSON.stringify(report));
 }catch(error){report.failure=error.stack;report.pages=await Promise.all(pages.map(async p=>({url:p.url(),body:await p.evaluate(()=>document.body.innerText).catch(()=>''),native:await p.evaluate(()=>{const r=document.querySelector('#gameFrame')?.contentWindow?.__th19Runtime;return r?{active:r.netplay?.active,frame:r.netplay?.frame,status:r.status()}:null;}).catch(()=>null)})));save();throw error;}finally{await browser.close();}

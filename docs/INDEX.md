@@ -1,6 +1,6 @@
 # 文档总表
 
-共 417 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 418 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -295,6 +295,7 @@
 | 历史记录 | [archive/th19-audio-20261105/README.md](../archive/th19-audio-20261105/README.md) | TH19 重复音效验收 |
 | 历史记录 | [archive/th19-development-20261104/README.md](../archive/th19-development-20261104/README.md) | TH19 源码交付来源 |
 | 历史记录 | [archive/th19-integration-20261105/README.md](../archive/th19-integration-20261105/README.md) | TH19 接入验收 |
+| 历史记录 | [archive/th19-match-policy-20261105/README.md](../archive/th19-match-policy-20261105/README.md) | TH19 统一生命与固定对局规则 |
 | 历史记录 | [archive/th19-versus-settings-20261105/README.md](../archive/th19-versus-settings-20261105/README.md) | TH19 专属输入与对局设置验收 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |
 | 历史记录 | [archive/turn-fallback-20261028/README.md](../archive/turn-fallback-20261028/README.md) | TURN 选择同步 |

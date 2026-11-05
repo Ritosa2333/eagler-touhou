@@ -2106,5 +2106,6 @@
   "th19_minutes": "{count} min",
   "th19_card": "Card #{number}",
   "th19_selfCard": "Character card {number}",
-  "th19_input": "TH19 input profile"
+  "th19_input": "TH19 input profile",
+  "th19_lives": "Starting life (both players)"
 }
