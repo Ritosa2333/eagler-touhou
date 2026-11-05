@@ -9,7 +9,7 @@ u32 dword(const u8* p){u32 v;std::memcpy(&v,p,4);return v;}
 u16 word(const u8* p){u16 v;std::memcpy(&v,p,2);return v;}
 }
 bool Replay::open(const u8* source,u32 size){
-    bytes.clear();stages={};touches={};count=selected=cursor=touch_cursor=0;input={};historical_web=false;web_rules=0;practice_patch={};native_practice={};practice_changes.clear();practice_cursor=0;failure.clear();
+    bytes.clear();stages={};touches={};count=selected=cursor=touch_cursor=0;input={};historical_web=false;web_rules=0;practice_patch={};native_practice={};practice_changes.clear();practice_spirits.clear();practice_cursor=spirit_cursor=0;failure.clear();
     auto fail=[&](const char* reason){failure=reason;return false;};
     if(!source||size<36||dword(source)!=0x72373174||word(source+4)!=2)return fail("Not a TH17 version 2 replay");
     const u32 packed=dword(source+28),unpacked=dword(source+32);
@@ -40,6 +40,7 @@ bool Replay::open(const u8* source,u32 size){
     const i32 rank=signed_bits(dword(decoded.data()+0x90));
     const i32 spell=(decoded[10]&2)?signed_bits(dword(decoded.data()+0x9c)):-1;
     std::vector<PracticeToolChange> imported_tools;
+    std::vector<PracticeSpiritEvent> imported_spirits;
     bool found_touch=false;std::array<std::vector<ReplayTouch>,8> imported;
     for(u32 tail=0x24+packed;size-tail>=12;){
         if(dword(source+tail)!=0x52455355)break;
@@ -82,10 +83,24 @@ bool Replay::open(const u8* source,u32 size){
                 return fail("Invalid TH17 practice tools stream");
             for(u32 at=20;at<length;at+=8){
                 const u32 frame=dword(source+tail+at),tools=dword(source+tail+at+4);
-                if((tools&~practice_tool_mask)||frame>=parsed[imported_practice.stage].frames||
+                if((tools&~practice_tool_mask)||practice_boss_range(tools)>practice_boss_range_steps||frame>=parsed[imported_practice.stage].frames||
                    (!imported_tools.empty()&&frame<=imported_tools.back().frame))
                     return fail("Invalid TH17 practice tools entry");
                 imported_tools.push_back({frame,tools});
+            }
+        }else if(dword(source+tail+8)==0x1b){
+            if(!imported_practice||native_settings.patch||!imported_spirits.empty()||length<44||(length-20)%24||
+               dword(source+tail+12)!=0x53373154||dword(source+tail+16)!=1)
+                return fail("Invalid TH17 practice spirit stream");
+            for(u32 at=20;at<length;at+=24){
+                const auto* p=source+tail+at;
+                const u32 frame=dword(p),flags=dword(p+20);
+                const PracticeSpiritSpawn spawn{signed_bits(dword(p+4)),float_from_bits(dword(p+8)),
+                    float_from_bits(dword(p+12)),float_from_bits(dword(p+16)),bool(flags&1),bool(flags&2)};
+                if(flags>3||!spawn.valid()||frame>=parsed[imported_practice.stage].frames||
+                   (!imported_spirits.empty()&&frame<=imported_spirits.back().frame))
+                    return fail("Invalid TH17 practice spirit entry");
+                imported_spirits.push_back({frame,spawn});
             }
         }tail+=length;
     }
@@ -93,7 +108,7 @@ bool Replay::open(const u8* source,u32 size){
     // fingerprint of the user-confirmed historical sample is recognized;
     // filenames, zero metadata and keyboard/touch guesses are insufficient.
     if(!web_rules&&decoded.size()==632081){u64 identity=14695981039346656037ull;for(const auto value:decoded)identity=(identity^value)*1099511628211ull;historical_web=identity==0x1ba464935e1f8f79ull;}
-    bytes.swap(decoded);stages=parsed;practice_patch=imported_practice;native_practice=native_settings;practice_changes.swap(imported_tools);touches.swap(imported);count=n;return true;
+    bytes.swap(decoded);stages=parsed;practice_patch=imported_practice;native_practice=native_settings;practice_changes.swap(imported_tools);practice_spirits.swap(imported_spirits);touches.swap(imported);count=n;return true;
 }
 const ReplayStage* Replay::stage(u32 number)const{return number<stages.size()&&stages[number].number?&stages[number]:nullptr;}
 const u8* Replay::header(u32 number)const{auto* s=stage(number);return s?bytes.data()+s->offset:nullptr;}
@@ -102,7 +117,7 @@ u32 Replay::character()const{return bytes.empty()?0:dword(bytes.data()+0x88);}
 u32 Replay::animal()const{return bytes.empty()?0:dword(bytes.data()+0x8c);}
 u32 Replay::difficulty()const{return bytes.empty()?0:dword(bytes.data()+0x90);}
 u32 Replay::mode_flags()const{return bytes.empty()?0:bytes[10];}
-bool Replay::select(u32 number){if(!stage(number))return false;selected=number;cursor=touch_cursor=practice_cursor=0;input={};return true;}
+bool Replay::select(u32 number){if(!stage(number))return false;selected=number;cursor=touch_cursor=practice_cursor=spirit_cursor=0;input={};return true;}
 ReplayInput Replay::tick(bool active){
     if(!active)return input;
     const u16 previous=input.held;const u8 fps=input.fps;const u32 tools=input.practice_tools;input={};input.fps=fps;input.practice_tools=tools;
@@ -113,6 +128,8 @@ ReplayInput Replay::tick(bool active){
         const auto& stream=touches[selected];if(touch_cursor<stream.size()&&stream[touch_cursor].frame==cursor)input.touch=stream[touch_cursor++].motion;
         if(practice_cursor<practice_changes.size()&&practice_changes[practice_cursor].frame==cursor)
             input.practice_tools=practice_changes[practice_cursor++].tools;
+        if(spirit_cursor<practice_spirits.size()&&practice_spirits[spirit_cursor].frame==cursor)
+            input.spirit=practice_spirits[spirit_cursor++].spawn;
         input.held=word(p);
         // Original 0x44f2f0 invokes 0x41b550 after loading the three words.
         // Edges used by the game are recomputed from the previous held state.

@@ -10,6 +10,7 @@ struct RecordedReplayStage {
  std::vector<std::array<u16,3>> inputs;std::vector<u8> frame_rates;
  std::vector<ReplayTouch> touches;
  std::vector<PracticeToolChange> practice_changes;
+ std::vector<PracticeSpiritEvent> practice_spirits;
  bool present=false;
 };
 // File snapshots are encoded bytes, not executable guest memory. The recording

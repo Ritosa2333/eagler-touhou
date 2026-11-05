@@ -70,6 +70,7 @@ struct EnemyWorldState {
     i32 player_damage_state=0,damage_disabled=0,shot_damage=0,other_damage=0;
     i32 boss_seconds=0,boss_hundredths=0,game_state=0,boss_damage_gate=0;float player_damage_scale=1;
     u32 game_frame_flags=0,player_behavior_flags=0,practice_tools=0;float last_death_angle=0;
+    std::array<i32,4> keiki_phase_frames{-1,-1,-1,-1};
     i32 active_count()const noexcept{u32 count=0;for(const auto* e:enemies)if(!(e->flags&0x31)&&e->collision_timer.current<=0)count++;return signed_bits(count);}
     EnemyState* find(u32 id)const noexcept{if(id)for(auto* e:enemies)if(e->id==id)return e;return nullptr;}
     EnemyState* lookup(u32 id)const noexcept{if(!id)return nullptr;EnemyState* last=nullptr;for(auto* e:enemies){last=e;if(e->id==id)break;}return last;}

@@ -1,4 +1,5 @@
 #include "DamageSources.hpp"
+#include "Practice.hpp"
 #include "AnmVisualState.hpp"
 #include <cmath>
 namespace th17 {
@@ -45,6 +46,6 @@ DamageResult DamageSources::query(const DamageQuery& q,bool frame_changed,i32 bo
         if(!hit)continue;const u32 group=u32(s.overlap_group)-1;if(group<4){if(group_seen[group]&&s.damage<group_priority[group])continue;out.amount=wrapping_sub(out.amount,group_damage[group]);group_seen[group]=true;group_priority[group]=s.damage;}if(q.target!=0&&s.last_target==q.target)continue;if(q.target!=0)s.last_target=q.target;if(s.flags&4)out.direct=true;
         i32 amount=s.damage;if(!q.preview){if(s.callback_kind!=0){if(!hit_callback){error="Damage-source hit callback unavailable";out.amount=-1;return out;}s.callback_target=q.target;const i32 callback_amount=hit_callback(s,q);if(callback_amount>=0)amount=callback_amount;if(!error.empty()){out.amount=-1;return out;}}s.accumulated=wrapping_add(s.accumulated,s.damage);}
         if(group<4)group_damage[group]=amount;out.amount=wrapping_add(out.amount,amount);out.position=s.motion.position;out.position_written=true;if(s.damage_limit<9999999&&s.damage_limit<=s.accumulated){s.flags&=~1u;s.damage=0;}
-    }if(maximum_damage<out.amount)out.amount=maximum_damage;if(!q.preview&&out.amount!=0){auto& total=shared_score?*shared_score:score;total=wrapping_add(total,(out.amount/10+10)/10);if(total>999999999)total=999999999;score=total;}return out;
+    }if(maximum_damage<out.amount)out.amount=maximum_damage;if(!q.preview&&out.amount!=0){auto& total=shared_score?*shared_score:score;total=add_practice_score(total,(out.amount/10+10)/10,uncap_score);score=total;}return out;
 }
 }

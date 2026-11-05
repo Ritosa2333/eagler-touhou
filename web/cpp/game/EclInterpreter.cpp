@@ -32,6 +32,7 @@ int EclContext::step(float elapsed,bool lock_stage_clock){
         }
         u32 length=instruction->length;if(length<16||length%4||length>available)return fail("Invalid ECL instruction length");
         const Op op=Op(instruction->opcode);const bool enabled=(instruction->difficulty&difficulty)!=0;
+        if(enabled&&observe_instruction)observe_instruction(observer_owner,*this);
         bool ok=true,adjust=false;
         auto integer_arg=[&](u32 n,bool consume=false){i32 value=0;if(16+n*4+4>length){error="Truncated ECL arguments";ok=false;}else if(!integer(n,instruction->argument<i32>(n),value,consume))ok=false;return value;};
         auto float_arg=[&](u32 n,bool consume=false){float value=0;if(16+n*4+4>length){error="Truncated ECL arguments";ok=false;}else if(!floating(n,instruction->argument<float>(n),value,consume))ok=false;return value;};

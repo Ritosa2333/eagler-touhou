@@ -2,7 +2,7 @@
 #include "ItemState.hpp"
 #include "PlayerLife.hpp"
 namespace th17 {
-struct ItemScoreState {i32 score=0,point_value=0,max_point_value=0,point_items=0,life_piece_tier=0,difficulty=0,max_power=400;};
+struct ItemScoreState {i32 score=0,point_value=0,max_point_value=0,point_items=0,life_piece_tier=0,difficulty=0,max_power=400;bool uncapped=false;};
 struct ItemCollectionHost {
     virtual ~ItemCollectionHost()=default;
     virtual bool options_changed()=0;virtual bool notice(i32)=0;virtual bool sound(i32,bool queued)=0;

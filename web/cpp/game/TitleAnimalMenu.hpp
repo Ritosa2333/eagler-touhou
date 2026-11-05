@@ -3,7 +3,7 @@
 #include "HudDrawData.hpp"
 namespace th17 {
 struct GameRecords;
-enum class PracticeMenuResult { Native, Configure, Confirm };
+enum class PracticeMenuResult { Native, Configure, Confirm, Cancel };
 struct TitleGameStartServices {
     virtual ~TitleGameStartServices()=default;
     virtual bool sound(i32)=0;
@@ -26,6 +26,7 @@ public:
 class TitleStageMenu {
     TitleState& state;GameSelection& selection;TitleSelectionSettings& settings;AnmManager& animations;TitleAnimations visuals;TitleGameStartServices& host;
     bool check(bool,const char*);bool visual(bool);u32 transition=0;
+    bool custom=false;
 public:
     std::string error;
     TitleStageMenu(TitleState& s,GameSelection& p,TitleSelectionSettings& settings,AnmManager& a,TitleGameStartServices& host):state(s),selection(p),settings(settings),animations(a),visuals(s,a),host(host){}

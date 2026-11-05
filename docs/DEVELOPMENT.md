@@ -16,13 +16,13 @@ node ports/th17/web/scripts/build-sdl-application.mjs --release --thprac --print
 
 直接构建可设置 `TH17_EMSDK` 或 `EMSDK`，Python 可由 `TH_PYTHON` 指定。产物位于 `web/artifacts/sdl-release/`。生产构建去除开发探针，保留游戏逻辑、文件格式验证与原生录像启动接口。
 
-设置 `EAGLER_FONT_ROOT` 为个人提供的测量字体目录（原开发包 `th17_web/assets/sdl-native/fonts`），运行：
+打包 Runtime：
 
 ```sh
 node ports/th17/portable/package-eagler.mjs
 ```
 
-`build-eagler/` 输出 `th17.html`、程序、Runtime 字体表、资源清单和逐文件 SHA-256，可通过共用 Runtime Release 打包入口使用。`EAGLER_RUNTIME_OUTPUT` 可指定输出目录。字体由 Runtime 挂载至 `/fonts`，原版 DATA 与音乐由 Package Store 提供。
+`build-eagler/` 输出 `th17.html`、程序、CP932 转码表、资源清单和逐文件 SHA-256，可通过共用 Runtime Release 打包入口使用。`EAGLER_RUNTIME_OUTPUT` 可指定输出目录。Host 从 Package Store 挂载共用 MS Gothic 和 Unifont、原版 DATA 与音乐。浏览器渲染时按需生成和缓存字形。SDL 浏览器测试可用 `TH17_SHARED_FONT_ROOT` 指向这两份共用字体。
 
 ## 本地输入
 
@@ -36,7 +36,7 @@ node launcher/scripts/prepare-th17-content.mjs --original=/path/to/original --ou
 
 ## thcrap 语言包
 
-启动器为 TH17 提供日语原文、简体中文和英文。Host 使用共用的 thcrap 编译入口，从补丁依赖链读取贴图和文本。翻译使用共用 Unifont，MS Gothic 补充缺字。离线语言包附带 Unifont 子集，日语原文使用原作测量字形。手工准备时，对每个语言执行一次，并用 `--refresh 1` 获取当前补丁清单。
+启动器为 TH17 提供日语原文、简体中文和英文。Host 使用共用的 thcrap 编译入口，从补丁依赖链读取贴图和文本。翻译使用 Unifont，MS Gothic 补充缺字；日语原文使用 MS Gothic，Unifont 补充缺字。离线语言包附带 Unifont 子集。手工准备时，对每个语言执行一次，并用 `--refresh 1` 获取当前补丁清单。
 
 ```sh
 node launcher/scripts/prepare-th06-language-pack.mjs --game th17 --language lang_zh-hans --archive /path/to/th17.dat --thdat /path/to/thdat --thmsg /path/to/thmsg --font-file /path/to/unifont.otf --output /path/to/th17-language-packs --refresh 1
@@ -46,9 +46,9 @@ node launcher/scripts/prepare-th06-language-pack.mjs --game th17 --language lang
 
 ## thprac 练习
 
-TH17 普通版 Runtime 使用 `--thprac` 编入练习面板。启动前启用 thprac，在原作的关卡练习菜单中确认关卡后，可以选整关、道中波次、道中 Boss、关底 Boss、非符或符卡。偶像恶魔和鬼畜生的所业在符卡练习中也有阶段选择。按 Z 或 Enter 确认，按 X 或 Esc 返回。触屏可轻点面板外确认。增强练习可配置残机、炸弹、火力、分数、擦弹和起始灵体，结果保存在练习录像里。
+TH17 普通版 Runtime 使用 `--thprac` 编入练习面板。启动前启用 thprac，在关卡练习中选完动物灵便打开 thprac 选关。面板可选择原版或增强练习；增强练习可以选整关、道中波次、道中 Boss、关底 Boss、非符或符卡。偶像恶魔和鬼畜生的所业在符卡练习中也有阶段选择。按 Z 或 Enter 确认，按 X 或 Esc 返回。触屏可轻点面板外确认。增强练习可配置残机、炸弹、火力、分数、擦弹和起始灵体，结果保存在练习录像里。
 
-桌面用 Backspace 打开作弊菜单、F12 打开高级设置、Tab 切换状态信息。手机启用 thprac 触控键后，通过触控栏打开可折叠的 ImGui 面板。触点从面板开始时交给面板处理，自机拖动沿用原来的触控轨迹。练习面板采用启动器语言和 Unifont。
+桌面用 Backspace 打开作弊菜单、F12 打开高级设置、Tab 切换状态信息。手机启用 thprac 触控键后，通过触控栏打开可折叠的 ImGui 面板。对话期间可继续拖动或用摇杆移动，轻点推进对话。高级设置提供键位和按键速率监视、反应测试、偶像恶魔阶段记录及咆哮录像修复。增强练习录像也记录 Boss 移动范围、灵体生成、分数上限和全通奖励设置。练习面板采用启动器语言和 Unifont。
 
 分段与阶段规则取自 [thprac purple](https://github.com/rueee/thprac/tree/master_2) 的 TH17 源码，运行时验证 1.00b ECL。更新生成文件时，在仓库根目录运行：
 

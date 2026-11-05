@@ -1,6 +1,6 @@
 #include "ItemCollection.hpp"
 namespace th17 {
-void ItemCollection::add_score(i32 value)noexcept{score.score=wrapping_add(score.score,value/10);if(score.score>999999999)score.score=999999999;}
+void ItemCollection::add_score(i32 value)noexcept{score.score=add_practice_score(score.score,value/10,score.uncapped);}
 i32 ItemCollection::point_value(const ItemState& item,u32& color)const noexcept{
     const i32 threshold=character==1?148:128,p=score.point_value/100,base=wrapping_sub(p,p%10);i32 value;
     if(motion.position.y<=float(threshold)||item.state==3){color=0xffffff00;value=wrapping_mul(base/10,10);}
@@ -34,7 +34,7 @@ bool ItemCollection::life_piece(){
 bool ItemCollection::award(const ItemState& item){
     error.clear();if(player.power_step<=0||character<0||character>2){error="Invalid item collection configuration";return false;}bool result=true;
     switch(item.kind){case 1:result=power(item,false);break;case 2:result=point(item);break;case 3:result=power(item,true);break;case 4:result=life_piece();break;case 5:result=life();break;case 6:result=bomb_piece();break;case 7:result=bomb();break;case 8:result=full_power(item);break;
-    case 9:case 10:case 11:case 12:case 13:case 14:{constexpr i32 values[]={500,1000,2000,3000,4000,5000};score.point_value=wrapping_add(score.point_value,values[item.kind-9]);if(score.point_value>score.max_point_value)score.point_value=score.max_point_value;const i32 p=score.point_value/100;score.score=wrapping_add(score.score,wrapping_sub(p,p%10)/100);if(score.score>999999999)score.score=999999999;break;}
+    case 9:case 10:case 11:case 12:case 13:case 14:{constexpr i32 values[]={500,1000,2000,3000,4000,5000};score.point_value=wrapping_add(score.point_value,values[item.kind-9]);if(score.point_value>score.max_point_value)score.point_value=score.max_point_value;const i32 p=score.point_value/100;score.score=add_practice_score(score.score,wrapping_sub(p,p%10)/100,score.uncapped);break;}
     default:error="Invalid collected item kind";return false;}
     if(!result&&error.empty())error="Item collection world service failed";return result;
 }
