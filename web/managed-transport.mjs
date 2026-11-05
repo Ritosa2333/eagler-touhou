@@ -12,6 +12,8 @@ export function createManagedTransport(options, roles, fail, environment = globa
   let earlyBytes = 0, timeout;
   let endTask,endResolve,endReject,endTimer,endGrace,localEnded=false;
   const endSeen=new Set(),endAck=new Set();
+  let abortTask,abortResolve,abortTimer;
+  const abortAck=new Set();
   const peers = new Map(), early = [], encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', {fatal:true});
   const fatal = error => { if (!closed) {
     if(localEnded&&endSeen.size===peers.size&&endAck.size===peers.size){clearTimeout(endTimer);clearTimeout(endGrace);endReject=null;endResolve?.();return;}
@@ -22,6 +24,7 @@ export function createManagedTransport(options, roles, fail, environment = globa
   function close() {
     if (closed) return; closed = true;status.disconnected=true;clearTimeout(timeout);
     clearTimeout(endTimer);clearTimeout(endGrace);endReject?.(Error('本局网络在结束确认前关闭'));endReject=null;
+    clearTimeout(abortTimer);abortResolve?.();
     for (const peer of peers.values()) {
       peer.channel.readyState = 'closed'; peer.channel.onclose?.();
       peer.rtc?.close(); peer.pc?.close();
@@ -33,8 +36,36 @@ export function createManagedTransport(options, roles, fail, environment = globa
     if (closed || route || rtcFailed) return;
     rtcFailed = true; control({type:'rtc-failed'});
   }
+  function relayControl(peer,message){
+    if(data?.readyState!==1)return false;
+    const bytes=encoder.encode(JSON.stringify(message)),packet=new Uint8Array(bytes.length+2);
+    packet.set([0xe7,peer.id]);packet.set(bytes,2);data.send(packet);return true;
+  }
+  // Failure notices use the authenticated relay even on RTC, so missing input
+  // fences cannot hide the reason when a native engine has already aborted.
+  function abortControl(peer,text){
+    const message=JSON.parse(text);
+    if(message.type==='eagler-run-aborted'){
+      if(typeof message.reason!=='string'||!message.reason||message.reason.length>512)throw Error('无效异常退出通知');
+      relayControl(peer,{type:'eagler-run-abort-ack'});
+      if(!abortTask)fatal(Error(`P${peer.id+1} 的 TH05 发生错误，本局已停止：${message.reason}`));
+      return true;
+    }
+    if(message.type==='eagler-run-abort-ack'){
+      abortAck.add(peer.id);if(abortAck.size===peers.size)abortResolve?.();return true;
+    }
+    return false;
+  }
+  function abort(reason){
+    if(abortTask)return abortTask;if(closed)return Promise.resolve();
+    abortTask=new Promise(resolve=>{abortResolve=resolve;abortTimer=setTimeout(resolve,500);});
+    const message={type:'eagler-run-aborted',reason:String(reason?.message??reason).slice(0,512)||'TH05 runtime error'};
+    for(const peer of peers.values())try{relayControl(peer,message);}catch{}
+    return abortTask.finally(()=>{clearTimeout(abortTimer);close();});
+  }
   function deliver(peer, text) {
     if (typeof text !== 'string' || encoder.encode(text).length > 16382) throw Error('同步消息过大');
+    if(abortControl(peer,text))return;
     if (!route || peer.channel.readyState !== 'open') {
       earlyBytes += encoder.encode(text).length;
       if (early.length >= 512 || earlyBytes > 262144) throw Error('开局接收队列已满');
@@ -144,11 +175,12 @@ export function createManagedTransport(options, roles, fail, environment = globa
       signal = new environment.WebSocket(signalUrl);
       data.onmessage = guard(event => {
         if (typeof event.data === 'string') { const message=JSON.parse(event.data); if (message.type==='route') selected(message.mode); else if(message.type==='error') throw Error(message.error); return; }
-        if (route === 'rtc') return;
         const packet = new Uint8Array(event.data), peer = peers.get(packet[1]);
         // 0xe6 is added by the authenticated main relay, never by the sender.
         if (packet.length<3 || packet[0]!==0xe6 || !peer) throw Error('同步消息来源无效');
-        deliver(peer,decoder.decode(packet.subarray(2)));
+        const text=decoder.decode(packet.subarray(2));
+        if(route==='rtc'){abortControl(peer,text);return;}
+        deliver(peer,text);
       });
       signal.onmessage = guard(event => {
         const message = JSON.parse(event.data);
@@ -167,6 +199,6 @@ export function createManagedTransport(options, roles, fail, environment = globa
       });
       for (const socket of [data,signal]) { socket.onerror=() => { if (!route) fallback(); }; socket.onclose=() => { if (!closed && (route !== 'rtc' || socket === signal)) fatal(Error('本局网络连接已关闭')); }; }
       timeout=setTimeout(() => fatal(Error('等待主项目网络路由超时')),45000);
-    }, close, finish,
+    }, close, finish, abort,
   };
 }

@@ -2,8 +2,35 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createMultiplayer,multiplayerOptions} from '../web/multiplayer.mjs';
 import {runtimeOptions} from '../web/managed.mjs';
+import {createManagedTransport} from '../web/managed-transport.mjs';
 
 const options=(count,local)=>({netplayMode:'lan',netplayPlayerCount:count,netplayPlayer:local,netplayUrl:'wss://example.test/relay?room=th05mp-test&run=one&member=seat&runtimeGeneration=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',netplaySeed:42,netplayDifficulty:1,netplayLoadouts:Array.from({length:count},(_,character)=>({character,shot:0})),netplayInputDelayAuto:true,netplayAdonisMode:1,netplayPredictionLimit:0});
+
+for(const route of ['relay','rtc'])test(`TH05 ${route} crash identifies the failed seat to both teammates`,async()=>{
+ const sockets=[],failures=Array.from({length:3},()=>[]),transports=[];
+ for(let local=0;local<3;local++){
+  const environment={WebSocket:class{
+   constructor(url){this.url=new URL(url);this.readyState=1;this.bufferedAmount=0;if(!this.url.searchParams.has('signal'))sockets[local]=this;}
+   send(packet){if(typeof packet==='string')return;const bytes=new Uint8Array(packet);assert.equal(bytes[0],0xe7);
+    const incoming=bytes.slice();incoming[0]=0xe6;incoming[1]=local;
+    queueMicrotask(()=>sockets[bytes[1]].onmessage?.({data:incoming.buffer}));
+   }
+   close(){this.readyState=3;}
+  }};
+  const transport=createManagedTransport(options(3,local),['p1','p2','p3'],error=>failures[local].push(error.message),environment);
+  transport.connect();
+  // Model an established RTC lane with no gameplay callback: the crash
+  // notice must still arrive through the authenticated relay.
+  if(route==='rtc')for(const peer of environment.__th05PeerTransport.peers.values())peer.rtc={readyState:'open',close(){},send(){throw Error('failure notice entered gameplay input fence');}};
+  sockets[local].onmessage({data:JSON.stringify({type:'route',mode:route})});
+  transports.push(transport);
+ }
+ try{
+  await transports[0].abort(Error('Mismatching io.KeyCtrl/io.KeyShift vs io.KeyMods'));
+  assert.deepEqual(failures[0],[]);
+  for(const list of failures.slice(1)){assert.equal(list.length,1);assert.match(list[0],/P1.*TH05.*KeyMods/);}
+ }finally{transports.forEach(t=>t.close());}
+});
 test('native room configuration rejects absent identity and unsupported seats/modes',()=>{
  const good=options(3,2);assert.equal(multiplayerOptions(good),good);assert.throws(()=>runtimeOptions(good),/Unsupported/);assert.equal(runtimeOptions(good,true).netplayPlayer,2);
  for(const patch of [{netplayPlayerCount:4},{netplayPlayer:3},{netplaySeed:-1},{netplayDifficulty:5},{netplayAdonisMode:3},{netplayPredictionLimit:6},{netplaySpectator:true},{netplayLoadouts:[{character:0,shot:1}]},{netplayUrl:'wss://example.test/relay'}])assert.throws(()=>multiplayerOptions({...good,...patch}));

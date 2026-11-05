@@ -30,6 +30,23 @@ try{
  const launch=await page.evaluate(count=>Promise.all(Array.from({length:count},(_,seat)=>command(seat,'launch',{launchSerial:1}))),count);assert.ok(launch.every(r=>r.ok),JSON.stringify(launch));
  await page.waitForFunction(count=>[...document.querySelectorAll('iframe')].every(f=>f.contentWindow.__eaglerNetplayLanFrame>250),count,{timeout:30000});
  report.running=await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>({frame:f.contentWindow.__eaglerNetplayLanFrame,route:f.contentWindow.__eaglerNetplayTransport,inputDelay:f.contentWindow.__eaglerNetplayInputDelay,saveRoot:f.contentWindow.Module.FS.readlink('/savesth05')})));
+ if(process.env.TH05_MP_CRASH==='1'){
+  const started=Date.now();
+  await page.evaluate(()=>{
+   const m=document.querySelector('iframe').contentWindow.Module;
+   for(const name of ['_th05_clear','_th05_shutdown','_th05_net_close','_th05_save'])m[name]=()=>{throw Error('crashed Wasm called again: '+name);};
+   m.onAbort('Mismatching io.KeyCtrl/io.KeyShift vs io.KeyMods');
+  });
+  await page.waitForFunction(count=>events.filter(e=>e.event==='exit'&&e.status==='error').length===count,count,{timeout:5000});
+  report.crash=await page.evaluate(()=>events.filter(e=>e.event==='error'||e.event==='exit'));
+  report.notificationMs=Date.now()-started;
+  for(const command of ['keyboard-clear','touch-cancel']){
+   const result=await page.evaluate(command=>window.command(0,command),command);
+   assert.equal(result.ok,true,JSON.stringify(result));
+  }
+  for(let seat=1;seat<count;seat++)assert(report.crash.some(e=>e.epoch===7+seat&&e.event==='error'&&/P1.*TH05.*KeyMods/.test(e.message)),JSON.stringify(report.crash));
+  assert.deepEqual(errors,[],'aborted engine cleanup does not call Wasm again');
+ }else{
  if(jitter){
   await page.evaluate(()=>{for(const iframe of document.querySelectorAll('iframe')){
    const w=iframe.contentWindow;w.__rollbackTestDelays=0;
@@ -124,6 +141,7 @@ try{
  report.secondStart=await page.evaluate(count=>{
   return [...document.querySelectorAll('iframe')].map((f,seat)=>f.contentWindow.Module._th05_coop_start(count,seat,1,740,0,1,2));
  },count);assert.ok(report.secondStart.every(v=>v===1));
+ }
  await writeFile(resolve(out,`${count}p-${route}.json`),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
 }catch(error){console.error(report,log);throw error;}
 finally{await browser?.close();await site?.close();for(const ws of sockets)ws.terminate();relay.kill();}
