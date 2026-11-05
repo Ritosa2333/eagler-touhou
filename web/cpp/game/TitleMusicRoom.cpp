@@ -34,7 +34,7 @@ void MusicComments::localize(const LocalizationTable& themes,const LocalizationT
 }
 bool TitleMusicRoom::check(bool ok){if(!ok&&error.empty())error=visuals.error.empty()?animations.error:visuals.error;return ok;}
 bool TitleMusicRoom::interrupt(u32 handle,i32 label){return check(animations.interrupt(handle,label));}
-bool TitleMusicRoom::text(u32 handle,const std::string& bytes,u32 color,bool utf8,bool centered){auto* vm=animations.registry.find(handle);if(!vm){error="Music text animation unavailable";return false;}TextureText request;request.bytes=bytes;request.color=color;request.utf8=utf8;request.centered=centered;return services.text(*vm,request)||check(false);}
+bool TitleMusicRoom::text(u32 handle,const std::string& bytes,u32 color,bool utf8,bool centered,bool detail){auto* vm=animations.registry.find(handle);if(!vm){error="Music text animation unavailable";return false;}TextureText request;request.bytes=bytes;request.color=color;request.utf8=utf8;request.centered=centered;request.music_detail=detail;return services.text(*vm,request)||check(false);}
 bool TitleMusicRoom::create_entries(){
  const i32 start=2*state.age.current-2,end=2*state.age.current;float y=float(float(float(96.f-float(float(scroll)*20.f))+float(state.age.current*40-40))*2.f);
  for(i32 i=start;i<end&&i<i32(catalog.count());i++){
@@ -68,7 +68,7 @@ bool TitleMusicRoom::paint_comment(){
  const auto* translated_warning=locked?catalog.warning_line(comment_line):nullptr;
  const auto& line=translated_warning?*translated_warning:locked?music_warning[comment_line]:entry.comments[comment_line];
  const bool utf8=locked?translated_warning!=nullptr:entry.utf8_comments[comment_line];
- if(!text(state.handles[327+comment_line],line,locked?0x8080ff:0xffffff,utf8,translated_warning!=nullptr)||!interrupt(state.handles[327+comment_line],2))return false;comment_line++;return true;
+ if(!text(state.handles[327+comment_line],line,locked?0x8080ff:0xffffff,utf8,translated_warning!=nullptr,comment_line>0)||!interrupt(state.handles[327+comment_line],2))return false;comment_line++;return true;
 }
 bool TitleMusicRoom::cancel(){
  for(i32 i=0;i<i32(catalog.count());i++)if(!interrupt(state.handles[307+i],1))return false;

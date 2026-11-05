@@ -34,6 +34,7 @@ async function resource(r){
  core.FS.mkdirTree(r.path.slice(0,r.path.lastIndexOf('/'))||'/');core.FS.writeFile(r.path,bytes,{canOwn:true});
  emit('transfer',{mode:r.path.startsWith('/music/')?'ogg':'runtime',loaded:bytes.length,total:bytes.length,path:r.path});
 }
+const runtimeLocalePath='/thcrap/th17/runtime-language.txt';
 let runtimePackFiles=[];
 function mountLanguagePack(pack,language){
  if(language==='ja'&&!pack){
@@ -51,7 +52,7 @@ function mountLanguagePack(pack,language){
   !path.includes('\\')&&!path.includes('\0')&&path.split('/').slice(1).every(part=>part&&part!=='.'&&part!=='..');
  const expected=new Map();
  for(const file of manifest.files){
-  if(!safe(file?.path)||expected.has(file.path)||!Number.isSafeInteger(file.bytes)||file.bytes<0||file.bytes>64*1024*1024)throw Error('TH17 语言包路径或大小无效');
+  if(!safe(file?.path)||file.path===runtimeLocalePath||expected.has(file.path)||!Number.isSafeInteger(file.bytes)||file.bytes<0||file.bytes>64*1024*1024)throw Error('TH17 语言包路径或大小无效');
   expected.set(file.path,file.bytes);
  }
  for(const file of pack.files){
@@ -65,6 +66,9 @@ function mountLanguagePack(pack,language){
   core.FS.writeFile(file.path,file.bytes,{canOwn:true});
   runtimePackFiles.push(file.path);
  }
+ core.FS.mkdirTree('/thcrap/th17');
+ core.FS.writeFile(runtimeLocalePath,language);
+ runtimePackFiles.push(runtimeLocalePath);
 }
 function openReplay(value){const name=path(value).replace(/^replay\//,'');if(!/\.rpyx?$/.test(name))throw Error('录像路径无效');const bytes=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=core._malloc(bytes.length);if(!ptr)throw Error('录像内存不足');try{core.HEAPU8.set(bytes,ptr);if(!core._th17_open_replay(ptr,0))throw Error('录像启动失败');}finally{core._free(ptr);}}
 async function command(m){switch(m.command){
