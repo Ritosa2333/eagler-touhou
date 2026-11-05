@@ -216,6 +216,7 @@ export function SettingsBody({
         onOpenChange={(open) => model.setDisclosure('display', open)}
         bodyClassName="options-advanced-body"
       >
+        {state.gameId === 'th02' && <OptionRow className={item('option-frame-limit')} label={t('settings.th02RapidFire')} control={<OptionSwitch id={id('th02RapidFireToggle')} label={t('settings.th02RapidFire')} checked={options.th02RapidFire} onChange={() => model.setOption('th02RapidFire', !options.th02RapidFire)}/>}/>}
         <OptionRow
           className={item('option-frame-limit')}
           hidden={!product.support.highRefreshRate}

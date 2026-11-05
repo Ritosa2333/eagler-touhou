@@ -27,6 +27,7 @@ import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
 import {NetplayPlayerStatus} from './NetplayPlayerStatus';
 import {PlayerStage} from './PlayerSurface';
+import './browser-practice.css';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
 const noNetwork = () => null;
@@ -129,7 +130,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>
@@ -211,9 +212,35 @@ function GameplayControls({ session }: { session: BrowserSession }) {
   const spectator = session.getPlayerMode() === 'spectator',
     enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
-  const hostDirect =
+  const product = PRODUCT_GAMES[settings.gameId];
+  const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
+  const hostDirect = !browserPractice && (
     /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+  useLayoutEffect(() => {
+    if (!browserPractice) return;
+    const runtime = session.getRuntime(), player = document.getElementById('player');
+    if (!runtime || !player) return;
+    let nativeDocument: Document | null = null, observer: MutationObserver | null = null;
+    const update = () => {
+      const open = runtime.getSnapshot().launched && nativeDocument?.documentElement.dataset.browserPracticeOpen === 'true';
+      if (open && !player.classList.contains('browser-practice-open')) input?.cancelPointers();
+      player.classList.toggle('browser-practice-open',open);
+    };
+    const sync = () => {
+      const next = runtime.getMidiEventContext()?.document as Document | null;
+      if (next !== nativeDocument) {
+        observer?.disconnect(); nativeDocument = next;
+        if (next?.documentElement) {
+          observer = new MutationObserver(update);
+          observer.observe(next.documentElement,{attributes:true,attributeFilter:['data-browser-practice-open']});
+        }
+      }
+      update();
+    };
+    const unsubscribe = runtime.subscribe(sync); sync();
+    return () => {unsubscribe();observer?.disconnect();player.classList.remove('browser-practice-open');};
+  },[session,browserPractice,input]);
   useLayoutEffect(() => {
     const binding = bindPlayerInput({
       session,

@@ -8892,5 +8892,41 @@
   "th19.charge": {
     "id": "th19_charge",
     "params": []
+  },
+  "game.title.th01mp": {
+    "id": "game_title_th01mp",
+    "params": []
+  },
+  "game.title.th02mp": {
+    "id": "game_title_th02mp",
+    "params": []
+  },
+  "game.title.th03mp": {
+    "id": "game_title_th03mp",
+    "params": []
+  },
+  "game.title.th04mp": {
+    "id": "game_title_th04mp",
+    "params": []
+  },
+  "multiplayer.loadout.th01_reimu": {
+    "id": "multiplayer_loadout_th01_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.th02_fast": {
+    "id": "multiplayer_loadout_th02_fast",
+    "params": []
+  },
+  "multiplayer.loadout.th02_balanced": {
+    "id": "multiplayer_loadout_th02_balanced",
+    "params": []
+  },
+  "multiplayer.loadout.th02_slow": {
+    "id": "multiplayer_loadout_th02_slow",
+    "params": []
+  },
+  "settings.th02RapidFire": {
+    "id": "settings_th02RapidFire",
+    "params": []
   }
 }

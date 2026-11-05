@@ -2106,5 +2106,14 @@
   "th19_lives": "Starting life (both players)",
   "th19_touchChargeHint": "Hold X to charge; release to fire",
   "th19_chargeCancel": "Charge / menu cancel",
-  "th19_charge": "Charge"
+  "th19_charge": "Charge",
+  "game_title_th01mp": "Touhou 1 Multiplayer",
+  "game_title_th02mp": "Touhou 2 Multiplayer",
+  "game_title_th03mp": "Touhou 3 Multiplayer",
+  "game_title_th04mp": "Touhou 4 Multiplayer",
+  "multiplayer_loadout_th01_reimu": "Reimu",
+  "multiplayer_loadout_th02_fast": "Fast",
+  "multiplayer_loadout_th02_balanced": "Balanced",
+  "multiplayer_loadout_th02_slow": "Slow",
+  "settings_th02RapidFire": "Rapid fire"
 }
