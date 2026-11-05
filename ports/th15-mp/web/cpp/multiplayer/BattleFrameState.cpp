@@ -9,10 +9,21 @@
 #include "LaserFrameState.hpp"
 #include "../game/RecordStore.hpp"
 #include <optional>
+#if TH15_DEVELOPMENT_HARNESS
+#include <emscripten.h>
+namespace {std::array<double,5> capture_parts{};}
+extern "C" EMSCRIPTEN_KEEPALIVE const double* th15_probe_capture_parts(){return capture_parts.data();}
+extern "C" EMSCRIPTEN_KEEPALIVE void th15_probe_capture_reset(){capture_parts.fill(0);}
+#define CAPTURE_BEGIN double capture_begin=emscripten_get_now()
+#define CAPTURE_PART(index) do{const auto now=emscripten_get_now();capture_parts[index]+=now-capture_begin;capture_begin=now;}while(false)
+#else
+#define CAPTURE_BEGIN
+#define CAPTURE_PART(index)
+#endif
 namespace th15::multiplayer {
 auto BattleFrameState::battle_fields(GameBattle& b){return std::tie(b.initialized,b.input,b.session,b.spell,b.score,b.bomb_enemies,b.stage,b.spell_visuals,b.mp_options,b.mp_enabled,b.mp_rebinding,b.mp_contact_seat,b.mp_item_targets,b.mp_gift_targets,b.mp_fragments,b.error);}
 auto BattleFrameState::pilot_fields(MultiplayerPilot& p){return std::tie(p.owned_session,p.owned_life_piece_tier,p.keys,p.input,p.ghost,p.spell_startup_bomb,p.ghost_clock,p.ghost_random,p.ghost_dx,p.ghost_dy,p.life_hold,p.power_taps,p.power_gap,p.life_latched,p.graze_animations);}
-auto BattleFrameState::visual_fields(PlayerAnmHost& v){return std::tie(v.hitbox_display,v.previous_focus_display,v.root,v.focus_handle,v.barrier_handle,v.option_handles);}
+auto BattleFrameState::visual_fields(PlayerAnmHost& v){auto& h=v.hitbox_display;return std::tie(h.child_template,h.environment,h.random,h.previous,h.rate,h.child_active,v.previous_focus_display,v.focus_handle,v.barrier_handle,v.option_handles);}
 auto BattleFrameState::life_fields(PlayerLife& l){return std::tie(l.practice,l.state,l.base_bombs,l.age,l.invulnerability,l.last_death_position,l.error);}
 auto BattleFrameState::frame_fields(PlayerFrame& f){return std::tie(f.context,f.input_age,f.ready_age,f.shooting,f.bounds,f.collision,f.error);}
 auto BattleFrameState::shot_context_fields(PlayerShotContext& c){return std::tie(c.option_angles,c.laser_power,c.power,c.power_step,c.shoot_frame,c.enemy_scene,c.bomb_active,c.enemies,c.screen_origin,c.background_delta);}
@@ -59,14 +70,19 @@ BattleFrameState::~BattleFrameState()=default;
 BattleFrameState::BattleFrameState(BattleFrameState&&)noexcept=default;
 BattleFrameState& BattleFrameState::operator=(BattleFrameState&&)noexcept=default;
 bool BattleFrameState::capture(GameBattle& battle,const std::vector<AnmVm*>& extra_roots){
+    CAPTURE_BEGIN;
     frame_values::IdentityGuard guard;error.clear();if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;s.ready=false;
     s.owner=&battle;s.progress_owner=battle.progress;s.record_owner=battle.records;s.schedule_owner=battle.active_schedule;
     if(!battle.mp_enabled||!battle.active_schedule||!battle.enemies||!battle.laser_scene||!battle.bullet_scene||!battle.items){error="Battle owner is not ready for rollback";return false;}
     s.resources=battle.animations.retain_resources();
+    CAPTURE_PART(0);
+    if(!s.bullets.capture(*battle.bullet_scene,false,&battle.animations.registry)){error=s.bullets.error;return false;}
+    CAPTURE_PART(3);
     s.roots.assign(extra_roots.begin(),extra_roots.end());
     for(auto& pilot:battle.pilots)if(pilot&&pilot->player){auto& v=pilot->player->visuals;s.roots.push_back(&v.root);for(auto& marker:v.hitbox_display.markers)s.roots.push_back(&marker);}
-    BulletFrameState::append_roots(*battle.bullet_scene,battle.animations.registry,s.roots);LaserFrameState::append_roots(*battle.laser_scene,battle.animations.registry,s.roots);ItemFrameState::append_roots(*battle.items,battle.animations.registry,s.roots);
+    s.bullets.append_roots(s.roots);LaserFrameState::append_roots(*battle.laser_scene,battle.animations.registry,s.roots);ItemFrameState::append_roots(*battle.items,battle.animations.registry,s.roots);
     if(!s.animations.capture(battle.animations.registry,s.roots)){error=s.animations.error;return false;}
+    CAPTURE_PART(0);
     if(!s.callbacks.capture(*battle.active_schedule)){error=s.callbacks.error;return false;}
     s.battle=battle_fields(battle);s.spell=spell_fields(battle.spell_card);
     s.environment=battle.environment;s.visual=battle.visual_random;s.presentation_counter=guard.value;
@@ -91,10 +107,12 @@ bool BattleFrameState::capture(GameBattle& battle,const std::vector<AnmVm*>& ext
         default:error="Unknown bomb rollback kind";return false;
         }
     }
+    CAPTURE_PART(1);
     if(!s.enemies.capture(*battle.enemies)){error=s.enemies.error;return false;}
     if(!s.lasers.capture(*battle.laser_scene,false)){error=s.lasers.error;return false;}
-    if(!s.bullets.capture(*battle.bullet_scene,false)){error=s.bullets.error;return false;}
+    CAPTURE_PART(2);
     if(!s.items.capture(*battle.items,false)){error=s.items.error;return false;}
+    CAPTURE_PART(4);
     s.ready=true;return true;
 }
 bool BattleFrameState::restore(GameBattle& battle)const{

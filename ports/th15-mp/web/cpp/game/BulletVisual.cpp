@@ -22,9 +22,9 @@ bool BulletVisual::bind(i32 script,i32 overlay_script){
 }
 bool BulletVisual::interrupt(i32 id)noexcept{body.pending_interrupt=id;state.hit_interrupt=id;return true;}
 bool BulletVisual::interrupt_overlay(i32 id)noexcept{overlay.pending_interrupt=id;return true;}
-i32 BulletVisual::tick(bool overlay_animation){
+i32 BulletVisual::tick(bool overlay_animation,bool tracked_interpolators){
     AnmVm& vm=overlay_animation?overlay:body;if(!overlay_animation)push();
-    const int result=vm.tick(random,rate);if(!overlay_animation)pull();
+    const int result=tracked_interpolators&&!overlay_animation?vm.tick_tracked(random,rate):vm.tick(random,rate);if(!overlay_animation)pull();
     if(result<0)error=vm.error;return result;
 }
 }

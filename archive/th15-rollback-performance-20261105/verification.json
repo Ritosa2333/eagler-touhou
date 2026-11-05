@@ -1,0 +1,1936 @@
+{
+  "schema": "th15-rollback-performance/1",
+  "validatedAt": "2026-11-04T23:33:53.448Z",
+  "baseCommit": "3855650cf5812801fe6790d147e42908f173a606",
+  "branch": "perf/th15mp-rollback",
+  "workload": {
+    "framesPerCase": 600,
+    "frameBudgetMs": 16.67,
+    "percentile": "floor(sampleCount * 0.95)",
+    "renderScale": 2,
+    "presentationHz": 60,
+    "music": "none",
+    "soundEffects": true,
+    "seed": 417,
+    "collisionProtection": true,
+    "rollbackWindow": 12,
+    "forcedDepth": 5
+  },
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i7-14650HX",
+    "memoryBytes": 34075353088,
+    "platform": "win32",
+    "osRelease": "10.0.26300",
+    "browser": "Chrome/153.0.8010.12",
+    "node": "v24.13.0"
+  },
+  "identity": {
+    "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+    "fonts": [
+      {
+        "kind": "vanilla",
+        "bytes": 8990160,
+        "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+      },
+      {
+        "kind": "unicode",
+        "bytes": 5105508,
+        "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+      }
+    ],
+    "wasm": "d3e049abfed1be9bfdfc2408b85f6e3ea12119ffb7e7102908501b45e49ab2b1",
+    "driver": "e5068b724978c5d41cc4d1b25f42004c66810dbb16e6abc0b17f943d1fff03f8",
+    "builtAt": "2026-11-04T23:08:29.470Z",
+    "buildKind": "th15-sdl3-application-integration-development",
+    "compiler": "Emscripten 6.0.9 | O2 | ffp-contract=off | fno-strict-aliasing",
+    "sourceManifestSha256": "612a1f3cb583927d034b6539d816dfaec7e8e9f29da70a8ee471e5b3dd34b360",
+    "patchInputs": {
+      "ports/th15-mp/portable/multiplayer/graze-view-check.cpp": "8ecb9e4903163340212afcb1a5a881af5fcdecea62cdc16126cf6ae4b20c3828",
+      "ports/th15-mp/portable/multiplayer/spectator-stage-lab.inc": "9181ca33e7f9a232fa59023cf204452720488432730f9e301f63ef460eacb4ad",
+      "ports/th15-mp/portable/rollback/CMakeLists.txt": "ad4f35d54443d0ce0e05907e9fe35240b1e692a85a9dde5da9d431da11a0fddd",
+      "ports/th15-mp/portable/rollback/animation-state.cpp": "88779fde361193ee5277ca89a672313c54dd1ad84cd8415944c9fa11704fb4ac",
+      "ports/th15-mp/portable/rollback/battle-digest.hpp": "34b0a11f578702fa775c7973678d8be5844da773435717a9996eff29df238b1f",
+      "ports/th15-mp/portable/rollback/battle-fingerprint.hpp": "7daea1159c54dd51857722bf929568f572420fd8e322e65e6276e56c1e9ee6d0",
+      "ports/th15-mp/portable/rollback/battle-state.cpp": "8e2f6a2f221107ee6a2807bc7ddc5e5e51e319be1191ec315bf18de1fb6e6b1b",
+      "ports/th15-mp/web/cpp/game/AnmGeometry.cpp": "422b0e4c237b39294a14bd5310844622c5a01ece3ad293f7052d362baf063dff",
+      "ports/th15-mp/web/cpp/game/AnmGeometry.hpp": "419d2bbd8a88d763684f1418dd0eaaef4a756556324910f3008c39fa5a69d424",
+      "ports/th15-mp/web/cpp/game/AnmInterpolators.cpp": "7f1ab5f8b091854b8544ec3f29990b2dc92552f1437f6ea6ce6bbeaaa3a3d622",
+      "ports/th15-mp/web/cpp/game/AnmInterpolators.hpp": "4b6f2bc22f470a5c0648c15631985532ebd0b91d713f6ab42fab3a99f1b03a08",
+      "ports/th15-mp/web/cpp/game/AnmInterpreter.cpp": "75e92098d60bf4a32e1e8329488fd0ab8558018e1c326a68f3a178131a34f822",
+      "ports/th15-mp/web/cpp/game/AnmOverlay.cpp": "fc7943f319493792a4fd49c9e1c13ec927f28091de525ccb9fa4423586a0c208",
+      "ports/th15-mp/web/cpp/game/AnmOverlay.hpp": "e56547c58a927fe11ef9b04e3e7760cc067480b32eaf01b17125d399e4ddeaf0",
+      "ports/th15-mp/web/cpp/game/AnmRenderer.cpp": "53f1c9bb128d1dabe90d87cb63ea167753e8f2d811f8ef9a21d84af34c609943",
+      "ports/th15-mp/web/cpp/game/AnmRenderer.hpp": "24a566a7797b7f9f763720a8c43e9db90252c2da7222b6fc685f23235b037402",
+      "ports/th15-mp/web/cpp/game/AnmUpdate.cpp": "c682a3d9f378475575df23f01e403c71b66722cf8c18df2e97684936c84e4a66",
+      "ports/th15-mp/web/cpp/game/AnmVisualState.hpp": "e2b8c3280da7adcd507ad344641d0d26af4a4c7c9dd35121b72b77a6ef787a8c",
+      "ports/th15-mp/web/cpp/game/AnmVm.hpp": "74fed6373e5eb09553171b696251b86211b2c81faf479cb04119350d01fb15b5",
+      "ports/th15-mp/web/cpp/game/BulletArea.cpp": "3154d95563d82132438a1ec4a21f39ceb729ecbf04265e17a51d07c431a397a9",
+      "ports/th15-mp/web/cpp/game/BulletArea.hpp": "0c9c3e537cde6cd8849ba0281161565059e22b095b871743e644c359cad7eb31",
+      "ports/th15-mp/web/cpp/game/BulletCheckpoint.cpp": "268b2d741cb0fbf41f884d3e00f21cbea45f89ec2a4cf7b54a8274264e5b451c",
+      "ports/th15-mp/web/cpp/game/BulletCollision.cpp": "44c05f308b64c265262d18333368bc725d652a65cfc90093ad67dcd6946ab589",
+      "ports/th15-mp/web/cpp/game/BulletDraw.cpp": "1520366ac6f932eb0d57e5bf9696d0a1f5daa5d4c8828874801c01580af09d6b",
+      "ports/th15-mp/web/cpp/game/BulletFrame.cpp": "8b16ec2b1e3f37b2a54b6ed44029ad8ee1b573f727fb29bcbba1db4199370692",
+      "ports/th15-mp/web/cpp/game/BulletManager.cpp": "1ab57bc22a1b1a18ea14e883dc2ae75af3a2f63ff44496994bd7bc067099488e",
+      "ports/th15-mp/web/cpp/game/BulletManager.hpp": "e2a1c0fb2540e9d55e48afd4d5dc5f4bd819ac755587f0f17fff50b16f786607",
+      "ports/th15-mp/web/cpp/game/BulletScene.cpp": "86c6b331257caaebadd490b309576bfd9fe647b667ed709d27ef1d082c872a74",
+      "ports/th15-mp/web/cpp/game/BulletScene.hpp": "7d47cf1669731ec40e9a94280404681fc6d274156489de6c3c7350680ca4450a",
+      "ports/th15-mp/web/cpp/game/BulletState.hpp": "a1d55ae7b715481180cef3d6aaaf4df3f62f9c43c849cd54a80ff7de30736e59",
+      "ports/th15-mp/web/cpp/game/BulletVisual.cpp": "06165a5ab48ec6176c4e594fb991acf9399555895ef87fd790b3695b80fe7426",
+      "ports/th15-mp/web/cpp/game/BulletVisual.hpp": "d0d7763d21aac73badc9522f3c66c136023ff5a1b3cba7a6e94de393d75d83bb",
+      "ports/th15-mp/web/cpp/game/EnemyCallbacks.cpp": "dd7501a35800144904a62ae9e83500e5cc9190d8917294f6b6445907b0fcb2fb",
+      "ports/th15-mp/web/cpp/game/GameBattle.cpp": "ab221e7d8082c24d9749b47ecaec92293aebfcfa302cec11ad032c6b01965dd2",
+      "ports/th15-mp/web/cpp/game/GameDraw.cpp": "cd3e8c99ce964d0b6ee5824a70ea8060950849465b99d5b5d40d6e6436589acf",
+      "ports/th15-mp/web/cpp/game/ItemCheckpoint.cpp": "a1f2c3322567f47cf8e8caed7816ff31afe1288405285b86af5f38de25de82f9",
+      "ports/th15-mp/web/cpp/game/ItemDraw.cpp": "2d600e38ad98f1146145a2961765bccc2ec5941c8b3a55da61c0214f7bd23cbd",
+      "ports/th15-mp/web/cpp/game/ItemFrame.cpp": "33c4bad505b512c0e58858dbfbff17e3907f7c5398f5b0d173b4e0eeee7d49ed",
+      "ports/th15-mp/web/cpp/game/ItemManager.cpp": "db049bbe2ebbdc1d24bf5b55a8972a22a49f11bcc360c21001ef7c4fae20a3be",
+      "ports/th15-mp/web/cpp/game/ItemManager.hpp": "66dc2afb2b80d464e779b5a90d8572df49d2e2b7c7678aa63e36d953b569cff6",
+      "ports/th15-mp/web/cpp/game/RecordStore.cpp": "9567b52ce81c6e4177743852e5ed3323fea696048ee49bd38c9b3ef6e3c6297f",
+      "ports/th15-mp/web/cpp/game/RecordStore.hpp": "986d80383d26d30ef1966d34c9b6464936fa2d7a6a8ca6a7e2f764dfd8814530",
+      "ports/th15-mp/web/cpp/game/ZunGraphics.hpp": "b261f982b8434dab855c1c06fd6ed4117dc065acd3cd688b11c0313506339f73",
+      "ports/th15-mp/web/cpp/multiplayer/AnimationState.cpp": "e0e28425149fa6c6836400f66b4952cdd3dd2490d71878fe40de0e86dbb3f732",
+      "ports/th15-mp/web/cpp/multiplayer/BattleFrameState.cpp": "25f0b2e8334088693c30dd46a35de9f7ac17f1079c95fbb775e79e15bf4ac019",
+      "ports/th15-mp/web/cpp/multiplayer/BulletFrameState.hpp": "13de506da6667bac0e51251dc13fa7985a00a748381f758c0b56ef7ccbb28454",
+      "ports/th15-mp/web/cpp/multiplayer/BulletFrameStateImpl.hpp": "b3dd5739649ac814922bbc1754b3a17ae64a4f5c835c20a4e83533a6a231533a",
+      "ports/th15-mp/web/cpp/multiplayer/FrameValues.hpp": "3b7e475ee09edbde9e6d9fd11301adb1cb42f4784c26942334d7686acfbaf787",
+      "ports/th15-mp/web/cpp/multiplayer/ItemFrameState.cpp": "f11dd7f6edfaf13158222e81707cd96e2a98b5170b822a71116418b5a6d62caa",
+      "ports/th15-mp/web/cpp/multiplayer/StageFrameState.cpp": "23c6dbb5a8db9317609ada14115253dfb14525d8789805a54755fcedd67f07a6",
+      "ports/th15-mp/web/cpp/sdl/AppFrameState.cpp": "f12ff14fcf03ff1ac1118198b8a649e603feebb983a47b19ceffa4d5952d67f6",
+      "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp": "c279b11e7807152452ac0579b74ca6f3ea9f207cafad77a41011de11ad87f1ff",
+      "ports/th15-mp/web/cpp/sdl/GraphicsDevice.hpp": "7f1fe14ab76243579ab28cb2a31a521f591eb6936ad0b0908437e4d244ee9cf3",
+      "ports/th15-mp/web/scripts/build-sdl-application.mjs": "54ca796edd72b4a9a60655d7c313b7f2333cd05505c22cfc5efab7697e57a01a",
+      "ports/th15-mp/web/tests/sdl/high-refresh-browser.test.mjs": "fa686c48d2ef957372f64cf103cc2b20e7f5c1bb7cda36f6acab3e2f882b8de3",
+      "ports/th15-mp/web/tests/sdl/rollback-performance.inc": "4df63e337a488c2908397fa345a85b5219704d84716d8c2a2f59101c5706bff7",
+      "tools/ports/th15-rollback-performance.mjs": "e5068b724978c5d41cc4d1b25f42004c66810dbb16e6abc0b17f943d1fff03f8"
+    }
+  },
+  "cases": [
+    {
+      "stage": 1,
+      "players": 3,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "name": "3p-stage1-rollback5-cpu2",
+      "workMs": {
+        "count": 600,
+        "mean": 6.753333332439263,
+        "p50": 6.700000047683716,
+        "p95": 7.900000035762787,
+        "p99": 8.600000023841858,
+        "max": 16.19999998807907
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 2.7416666634877522,
+        "p50": 2.700000047683716,
+        "p95": 3.2999998927116394,
+        "p99": 3.5000000596046448,
+        "max": 4.099999964237213
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.1494999981919924,
+          "p50": 1.1000000834465027,
+          "p95": 1.5,
+          "p99": 1.7000000476837158,
+          "max": 1.9000000357627869
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.4646666692694028,
+          "p50": 0.4999999403953552,
+          "p95": 0.7999999523162842,
+          "p99": 0.9000000357627869,
+          "max": 1.0000001192092896
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.24833333204189936,
+          "p50": 0.20000004768371582,
+          "p95": 0.5000001192092896,
+          "p99": 0.699999988079071,
+          "max": 0.9000000357627869
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.8071666657924652,
+          "p50": 0.800000011920929,
+          "p95": 1.100000023841858,
+          "p99": 1.3999999165534973,
+          "max": 1.5000001192092896
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.03916666467984518,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.2999999523162842,
+          "max": 0.3999999761581421
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.5434999989469846,
+        "p50": 0.5,
+        "p95": 0.800000011920929,
+        "p99": 0.9000000357627869,
+        "max": 1.199999988079071
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 5,
+      "maxAnimationNodes": 393,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          3261437498,
+          2124839649
+        ],
+        "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
+        "confirmedFrames": 873,
+        "image": "b0128f2a9449aa73f05f875a174e26d44c77d6f70c16a8b503ee08674d7d96ae"
+      },
+      "oracle": {
+        "fingerprint": [
+          3261437498,
+          2124839649
+        ],
+        "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
+        "confirmedFrames": 873,
+        "image": "b0128f2a9449aa73f05f875a174e26d44c77d6f70c16a8b503ee08674d7d96ae"
+      },
+      "samplesSha256": "18798b8c09225a3c456d635e862de3424b1cbf6e6de5a532e2ecd056cf090b9b"
+    },
+    {
+      "stage": 1,
+      "players": 2,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "name": "2p-stage1-rollback5-cpu2",
+      "workMs": {
+        "count": 600,
+        "mean": 6.314833334386349,
+        "p50": 6.199999988079071,
+        "p95": 7.800000011920929,
+        "p99": 8.5,
+        "max": 9.700000047683716
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 2.6080000006159145,
+        "p50": 2.599999964237213,
+        "p95": 3.1000000834465027,
+        "p99": 3.5999999046325684,
+        "max": 4.100000023841858
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.0625000006953875,
+          "p50": 1.0999999642372131,
+          "p95": 1.399999976158142,
+          "p99": 1.600000023841858,
+          "max": 1.899999976158142
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.39016666541496914,
+          "p50": 0.3999999761581421,
+          "p95": 0.699999988079071,
+          "p99": 0.800000011920929,
+          "max": 0.9000002145767212
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.2690000001589457,
+          "p50": 0.2999999523162842,
+          "p95": 0.5999999642372131,
+          "p99": 0.7000000476837158,
+          "max": 0.9000000357627869
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.8160000027219454,
+          "p50": 0.800000011920929,
+          "p95": 1.100000023841858,
+          "p99": 1.2000000476837158,
+          "max": 1.5
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.04233333190282186,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.2999999523162842,
+          "max": 0.3999999761581421
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.5096666671832403,
+        "p50": 0.5,
+        "p95": 0.7000000476837158,
+        "p99": 1,
+        "max": 1.199999988079071
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 7,
+      "maxAnimationNodes": 340,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          1928272070,
+          2462669080
+        ],
+        "replayInputs": "41118a13d61a1fa2051c468afc5283a818195be2185d2fafd0662a5e361a805a",
+        "confirmedFrames": 873,
+        "image": "7abda8631ddfa6e1c155c655f96b591f11edb5b9f565af7515dcc394f24ec2b8"
+      },
+      "oracle": {
+        "fingerprint": [
+          1928272070,
+          2462669080
+        ],
+        "replayInputs": "41118a13d61a1fa2051c468afc5283a818195be2185d2fafd0662a5e361a805a",
+        "confirmedFrames": 873,
+        "image": "7abda8631ddfa6e1c155c655f96b591f11edb5b9f565af7515dcc394f24ec2b8"
+      },
+      "samplesSha256": "463bc3376c8dae7bea2640602d20b3162e83e53521be42ea58868295029c2f23"
+    },
+    {
+      "stage": 1,
+      "players": 2,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "name": "2p-stage1-journal-cpu4",
+      "workMs": {
+        "count": 600,
+        "mean": 4.870833334426085,
+        "p50": 4.600000023841858,
+        "p95": 7,
+        "p99": 8,
+        "max": 13.600000023841858
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 1.593333334128062,
+        "p50": 1.5999999642372131,
+        "p95": 2,
+        "p99": 2.5,
+        "max": 9.300000011920929
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 0.717666667898496,
+          "p50": 0.699999988079071,
+          "p95": 1,
+          "p99": 1.199999988079071,
+          "max": 8.300000011920929
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.22016666491826375,
+          "p50": 0.19999998807907104,
+          "p95": 0.40000003576278687,
+          "p99": 0.5,
+          "max": 1.100000023841858
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.14916666785875957,
+          "p50": 0.19999998807907104,
+          "p95": 0.30000001192092896,
+          "p99": 0.40000003576278687,
+          "max": 0.5999999642372131
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.4533333335320155,
+          "p50": 0.40000003576278687,
+          "p95": 0.699999988079071,
+          "p99": 0.800000011920929,
+          "max": 2.800000011920929
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.025499999423821768,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.2999999523162842,
+          "max": 0.7000000476837158
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 7,
+      "maxAnimationNodes": 337,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          3358989705,
+          2033555703
+        ],
+        "replayInputs": "93a94ba3195b82aa0f7acefd39bc9b44fceee5d43c1f7e31b7ff5f4340cd5208",
+        "confirmedFrames": 873,
+        "image": "5b47b7f33b13b256cc270a64399f52e73a56f0b0d1b482ffbefa4282c3a42634"
+      },
+      "oracle": {
+        "fingerprint": [
+          3358989705,
+          2033555703
+        ],
+        "replayInputs": "93a94ba3195b82aa0f7acefd39bc9b44fceee5d43c1f7e31b7ff5f4340cd5208",
+        "confirmedFrames": 873,
+        "image": "5b47b7f33b13b256cc270a64399f52e73a56f0b0d1b482ffbefa4282c3a42634"
+      },
+      "samplesSha256": "6e3f8174bd691f194b830b8dde2196712fa277a5085ad92e1c1181a7141f3500"
+    },
+    {
+      "stage": 1,
+      "players": 3,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "name": "3p-stage1-journal-cpu4",
+      "workMs": {
+        "count": 600,
+        "mean": 5.112833331823349,
+        "p50": 5,
+        "p95": 7.300000011920929,
+        "p99": 8,
+        "max": 8.699999988079071
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 1.612999999622504,
+        "p50": 1.600000023841858,
+        "p95": 2,
+        "p99": 2.399999976158142,
+        "max": 3.199999988079071
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 0.726833333571752,
+          "p50": 0.699999988079071,
+          "p95": 1,
+          "p99": 1.2000000476837158,
+          "max": 1.300000011920929
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.25749999900658926,
+          "p50": 0.19999998807907104,
+          "p95": 0.5,
+          "p99": 0.6000000238418579,
+          "max": 0.8999999761581421
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.13366666773955027,
+          "p50": 0.10000002384185791,
+          "p95": 0.30000001192092896,
+          "p99": 0.5999999642372131,
+          "max": 0.800000011920929
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.44266666561365126,
+          "p50": 0.40000003576278687,
+          "p95": 0.699999988079071,
+          "p99": 1,
+          "max": 2
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.023333333730697632,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.20000004768371582,
+          "max": 0.3999999761581421
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 5,
+      "maxAnimationNodes": 393,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          3632950471,
+          2288141892
+        ],
+        "replayInputs": "1f4894867cc5ad506ce05ab0162b6aef343a9ead8a0d24683e37eb445e190d60",
+        "confirmedFrames": 873,
+        "image": "d52a23c2d5240c1c8ebb5eed4175480e6a52e7fd75b7c948b1d95beec28542d7"
+      },
+      "oracle": {
+        "fingerprint": [
+          3632950471,
+          2288141892
+        ],
+        "replayInputs": "1f4894867cc5ad506ce05ab0162b6aef343a9ead8a0d24683e37eb445e190d60",
+        "confirmedFrames": 873,
+        "image": "d52a23c2d5240c1c8ebb5eed4175480e6a52e7fd75b7c948b1d95beec28542d7"
+      },
+      "samplesSha256": "469f6decbe12a3dfb6dbbf01b5dfb03c96fb52b2099c96a86e0fa828049c560f"
+    },
+    {
+      "stage": 7,
+      "players": 2,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "name": "2p-stage7-journal-cpu4",
+      "workMs": {
+        "count": 600,
+        "mean": 4.585999999344349,
+        "p50": 4.5,
+        "p95": 6.099999964237213,
+        "p99": 7.100000023841858,
+        "max": 10
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 1.6134999986489613,
+        "p50": 1.5999999642372131,
+        "p95": 2,
+        "p99": 2.600000023841858,
+        "max": 3.100000023841858
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 0.8209999982515971,
+          "p50": 0.800000011920929,
+          "p95": 1.100000023841858,
+          "p99": 1.4000000357627869,
+          "max": 2
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.2156666659315427,
+          "p50": 0.19999998807907104,
+          "p95": 0.3999999761581421,
+          "p99": 0.6000000238418579,
+          "max": 1.5
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.0549999996026357,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.30000001192092896,
+          "max": 0.800000011920929
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.46516666750113167,
+          "p50": 0.40000003576278687,
+          "p95": 0.800000011920929,
+          "p99": 1.0999999642372131,
+          "max": 2.300000011920929
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.031000000536441804,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.2999999523162842,
+          "max": 0.800000011920929
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 16,
+      "maxAnimationNodes": 307,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          2712578994,
+          1538167270
+        ],
+        "replayInputs": "93a94ba3195b82aa0f7acefd39bc9b44fceee5d43c1f7e31b7ff5f4340cd5208",
+        "confirmedFrames": 873,
+        "image": "947f0a1e60adf8ebfa8afa698a2b27b6e01f135e4b9cd47e2e67152be333782f"
+      },
+      "oracle": {
+        "fingerprint": [
+          2712578994,
+          1538167270
+        ],
+        "replayInputs": "93a94ba3195b82aa0f7acefd39bc9b44fceee5d43c1f7e31b7ff5f4340cd5208",
+        "confirmedFrames": 873,
+        "image": "947f0a1e60adf8ebfa8afa698a2b27b6e01f135e4b9cd47e2e67152be333782f"
+      },
+      "samplesSha256": "38f4dcb37cde566e9937f0ad6d5aa789617ad3bfc1897ff5bfe8d3f68827b1a9"
+    },
+    {
+      "stage": 7,
+      "players": 2,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "name": "2p-stage7-rollback5-cpu2",
+      "workMs": {
+        "count": 600,
+        "mean": 6.0255000004172325,
+        "p50": 5.800000011920929,
+        "p95": 8.600000023841858,
+        "p99": 9.400000035762787,
+        "max": 9.799999952316284
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 2.6173333323995274,
+        "p50": 2.5000000596046448,
+        "p95": 3.5999999046325684,
+        "p99": 3.899999976158142,
+        "max": 4.199999928474426
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.2503333312273026,
+          "p50": 1.199999988079071,
+          "p95": 1.9999999403953552,
+          "p99": 2.200000047683716,
+          "max": 2.399999976158142
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.3788333354393641,
+          "p50": 0.3999999761581421,
+          "p95": 0.699999988079071,
+          "p99": 0.7999999523162842,
+          "max": 0.9999999403953552
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.07333333204189936,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.30000007152557373,
+          "max": 0.40000009536743164
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.8261666668454806,
+          "p50": 0.800000011920929,
+          "p95": 1.100000023841858,
+          "p99": 1.2999998927116394,
+          "max": 1.4999999403953552
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.05783333420753479,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.3999999761581421,
+          "max": 0.40000003576278687
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.5434999999403953,
+        "p50": 0.5,
+        "p95": 0.800000011920929,
+        "p99": 1,
+        "max": 1.300000011920929
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 15,
+      "maxAnimationNodes": 294,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          2593066566,
+          1066243935
+        ],
+        "replayInputs": "41118a13d61a1fa2051c468afc5283a818195be2185d2fafd0662a5e361a805a",
+        "confirmedFrames": 873,
+        "image": "f9cca135c6e63ee9afe736eec5c8527685c306d400e1fd6950df4452241d2654"
+      },
+      "oracle": {
+        "fingerprint": [
+          2593066566,
+          1066243935
+        ],
+        "replayInputs": "41118a13d61a1fa2051c468afc5283a818195be2185d2fafd0662a5e361a805a",
+        "confirmedFrames": 873,
+        "image": "f9cca135c6e63ee9afe736eec5c8527685c306d400e1fd6950df4452241d2654"
+      },
+      "samplesSha256": "7a8be45870aceb1ec7651ec2d83f75ff32a59b86ecb6947024bad569cfbb7bb3"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "name": "3p-stage7-journal-cpu4",
+      "workMs": {
+        "count": 600,
+        "mean": 5.759000000258287,
+        "p50": 5.5,
+        "p95": 7.900000035762787,
+        "p99": 9.299999952316284,
+        "max": 17.899999976158142
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 1.8656666666269301,
+        "p50": 1.800000011920929,
+        "p95": 2.300000011920929,
+        "p99": 3.199999988079071,
+        "max": 13.899999976158142
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 0.99900000055631,
+          "p50": 1,
+          "p95": 1.399999976158142,
+          "p99": 1.800000011920929,
+          "max": 12.800000011920929
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.263666666050752,
+          "p50": 0.20000004768371582,
+          "p95": 0.40000003576278687,
+          "p99": 0.5,
+          "max": 1.199999988079071
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.058833333849906924,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.30000001192092896,
+          "max": 0.6000000238418579
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.4844999994834264,
+          "p50": 0.40000003576278687,
+          "p95": 0.7000000476837158,
+          "p99": 1.300000011920929,
+          "max": 2.099999964237213
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.033333333233992256,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.30000001192092896,
+          "max": 0.5
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 14,
+      "maxAnimationNodes": 372,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          754076135,
+          2086573727
+        ],
+        "replayInputs": "1f4894867cc5ad506ce05ab0162b6aef343a9ead8a0d24683e37eb445e190d60",
+        "confirmedFrames": 873,
+        "image": "60ad35f46e3cc5e6725c8b1c4f5416be24e4521a24dd5fd15f682d5b56d34c36"
+      },
+      "oracle": {
+        "fingerprint": [
+          754076135,
+          2086573727
+        ],
+        "replayInputs": "1f4894867cc5ad506ce05ab0162b6aef343a9ead8a0d24683e37eb445e190d60",
+        "confirmedFrames": 873,
+        "image": "60ad35f46e3cc5e6725c8b1c4f5416be24e4521a24dd5fd15f682d5b56d34c36"
+      },
+      "samplesSha256": "07270daef9192f1a090d694520195d9a30a5380f506087a9fcb80210f9b6d11f"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "name": "3p-stage7-rollback5-cpu2",
+      "workMs": {
+        "count": 600,
+        "mean": 7.352833334207535,
+        "p50": 7.199999988079071,
+        "p95": 9.5,
+        "p99": 11,
+        "max": 12.100000023841858
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 3.030000003874302,
+        "p50": 2.9999999403953552,
+        "p95": 3.800000011920929,
+        "p99": 4.5,
+        "max": 5.799999952316284
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.5153333302338918,
+          "p50": 1.4999999403953552,
+          "p95": 2.100000023841858,
+          "p99": 2.600000023841858,
+          "max": 3.8000000715255737
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.47633333414793017,
+          "p50": 0.4999999403953552,
+          "p95": 0.8000000715255737,
+          "p99": 1,
+          "max": 1.1000000834465027
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.08350000063578288,
+          "p50": 0.09999996423721313,
+          "p95": 0.30000001192092896,
+          "p99": 0.40000003576278687,
+          "max": 0.5
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.8580000030994416,
+          "p50": 0.8999999165534973,
+          "p95": 1.2000000476837158,
+          "p99": 1.399999976158142,
+          "max": 1.7000001072883606
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.06850000192721685,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.3999999761581421,
+          "max": 0.6000000834465027
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.6255000000198682,
+        "p50": 0.6000000238418579,
+        "p95": 1,
+        "p99": 1.199999988079071,
+        "max": 1.4000000357627869
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 15,
+      "maxAnimationNodes": 373,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          4233157276,
+          695613322
+        ],
+        "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
+        "confirmedFrames": 873,
+        "image": "166dbbb004f35fab5ce7e7f1b793c27eeeca0617ffd624c91536efd155dd3a7e"
+      },
+      "oracle": {
+        "fingerprint": [
+          4233157276,
+          695613322
+        ],
+        "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
+        "confirmedFrames": 873,
+        "image": "166dbbb004f35fab5ce7e7f1b793c27eeeca0617ffd624c91536efd155dd3a7e"
+      },
+      "samplesSha256": "d3a2910a32467c8990f2af9175923656dcdbca6c9153ce75c9f7425b2379b8ba"
+    },
+    {
+      "stage": 1,
+      "players": 3,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "warmup": 1200,
+      "name": "3p-stage1-journal-cpu4-from1200",
+      "workMs": {
+        "count": 600,
+        "mean": 4.252499999503295,
+        "p50": 4,
+        "p95": 6.100000023841858,
+        "p99": 7.699999988079071,
+        "max": 8.699999988079071
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 1.5409999985496203,
+        "p50": 1.5,
+        "p95": 2.100000023841858,
+        "p99": 2.899999976158142,
+        "max": 4.199999988079071
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 0.667666665116946,
+          "p50": 0.6000000238418579,
+          "p95": 1,
+          "p99": 1.4000000357627869,
+          "max": 2.199999988079071
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.27566666722297667,
+          "p50": 0.20000004768371582,
+          "p95": 0.5,
+          "p99": 0.8999999761581421,
+          "max": 2.800000011920929
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.06699999938408534,
+          "p50": 0,
+          "p95": 0.2999999523162842,
+          "p99": 0.40000003576278687,
+          "max": 0.6000000238418579
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.47950000057617825,
+          "p50": 0.40000003576278687,
+          "p95": 0.800000011920929,
+          "p99": 1.199999988079071,
+          "max": 2.299999952316284
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.02233333349227905,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.20000004768371582,
+          "max": 0.3999999761581421
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 1232,
+      "frameEnd": 1832,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 26,
+      "maxAnimationNodes": 373,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          3951676528,
+          316228325
+        ],
+        "replayInputs": "974dfd80608363774a6dad40d854e59065db4816cd26dd2be1e4e37b53d3e6aa",
+        "confirmedFrames": 1833,
+        "image": "432a14f248425f67293ec73bf60a6f954a5365f31924a3de21aa105420bf4e5d"
+      },
+      "oracle": {
+        "fingerprint": [
+          3951676528,
+          316228325
+        ],
+        "replayInputs": "974dfd80608363774a6dad40d854e59065db4816cd26dd2be1e4e37b53d3e6aa",
+        "confirmedFrames": 1833,
+        "image": "432a14f248425f67293ec73bf60a6f954a5365f31924a3de21aa105420bf4e5d"
+      },
+      "samplesSha256": "82c9ebf04f8184e1302bfd0910fd7384557f9eb466ba51bb9b9594af222f0b19"
+    },
+    {
+      "stage": 1,
+      "players": 3,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "warmup": 1200,
+      "name": "3p-stage1-rollback5-cpu2-from1200",
+      "workMs": {
+        "count": 600,
+        "mean": 6.110333334008852,
+        "p50": 6.100000023841858,
+        "p95": 7.599999964237213,
+        "p99": 8.100000023841858,
+        "max": 10
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 2.6505000030001002,
+        "p50": 2.600000023841858,
+        "p95": 3.299999952316284,
+        "p99": 3.600000023841858,
+        "max": 3.9999999403953552
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.1261666678388913,
+          "p50": 1.100000023841858,
+          "p95": 1.5,
+          "p99": 1.6000000834465027,
+          "max": 2
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.4949999980131785,
+          "p50": 0.5,
+          "p95": 0.800000011920929,
+          "p99": 0.9000000953674316,
+          "max": 1.2999999523162842
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.09783333629369735,
+          "p50": 0.09999996423721313,
+          "p95": 0.3999999761581421,
+          "p99": 0.5000000596046448,
+          "max": 0.6000000238418579
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.8465000007549922,
+          "p50": 0.8000000715255737,
+          "p95": 1.1999999284744263,
+          "p99": 1.3000000715255737,
+          "max": 1.5999999642372131
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.04366666615009308,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.30000001192092896,
+          "max": 0.40000003576278687
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.4866666667660077,
+        "p50": 0.5,
+        "p95": 0.699999988079071,
+        "p99": 0.8999999761581421,
+        "max": 1.100000023841858
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 1232,
+      "frameEnd": 1832,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 26,
+      "maxAnimationNodes": 375,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          3130610112,
+          4104518118
+        ],
+        "replayInputs": "7f69c14f2c94b09ad2a035d6f29dbd05c2026b01e0a9dea9e25b2059b1df8443",
+        "confirmedFrames": 1833,
+        "image": "c89f856e3149429ebddf976772261e3c66fbcfb18a9d40e0b87795edb5c8357b"
+      },
+      "oracle": {
+        "fingerprint": [
+          3130610112,
+          4104518118
+        ],
+        "replayInputs": "7f69c14f2c94b09ad2a035d6f29dbd05c2026b01e0a9dea9e25b2059b1df8443",
+        "confirmedFrames": 1833,
+        "image": "c89f856e3149429ebddf976772261e3c66fbcfb18a9d40e0b87795edb5c8357b"
+      },
+      "samplesSha256": "91a51fdf2276a061af15c0401309c0458ec37c55aa3c0be76a79b0f7ce2a48a6"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "warmup": 1200,
+      "name": "3p-stage7-journal-cpu4-from1200",
+      "workMs": {
+        "count": 600,
+        "mean": 5.594166666368643,
+        "p50": 5.399999976158142,
+        "p95": 7.599999964237213,
+        "p99": 9.800000011920929,
+        "max": 10.600000023841858
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 2.1038333332538603,
+        "p50": 2,
+        "p95": 2.800000011920929,
+        "p99": 3.5,
+        "max": 4.900000035762787
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.1410000003377596,
+          "p50": 1.100000023841858,
+          "p95": 1.5,
+          "p99": 2,
+          "max": 3.699999988079071
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.2581666671236356,
+          "p50": 0.20000004768371582,
+          "p95": 0.40000003576278687,
+          "p99": 0.6000000238418579,
+          "max": 1.199999988079071
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.06766666620969772,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.3999999761581421,
+          "max": 0.5999999642372131
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.5661666671435038,
+          "p50": 0.5,
+          "p95": 1,
+          "p99": 1.399999976158142,
+          "max": 2.199999988079071
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.04116666634877523,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.30000001192092896,
+          "max": 0.5
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 1232,
+      "frameEnd": 1832,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 345,
+      "maxAnimationNodes": 385,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          679219286,
+          1259399639
+        ],
+        "replayInputs": "974dfd80608363774a6dad40d854e59065db4816cd26dd2be1e4e37b53d3e6aa",
+        "confirmedFrames": 1833,
+        "image": "2ecbac35874a64eabd45fbda2b6b37d7f5479f96f586f71030f42349f3e1bf0c"
+      },
+      "oracle": {
+        "fingerprint": [
+          679219286,
+          1259399639
+        ],
+        "replayInputs": "974dfd80608363774a6dad40d854e59065db4816cd26dd2be1e4e37b53d3e6aa",
+        "confirmedFrames": 1833,
+        "image": "2ecbac35874a64eabd45fbda2b6b37d7f5479f96f586f71030f42349f3e1bf0c"
+      },
+      "samplesSha256": "f39f13702cd16cdaffdbba33e0bdc763d486a8900d144dc544e5473ed9054229"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "warmup": 1200,
+      "name": "3p-stage7-rollback5-cpu2-from1200",
+      "workMs": {
+        "count": 600,
+        "mean": 8.171000000933805,
+        "p50": 8.099999964237213,
+        "p95": 10.099999964237213,
+        "p99": 11,
+        "max": 28.19999998807907
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 3.609166665375233,
+        "p50": 3.5000000596046448,
+        "p95": 4.3000001311302185,
+        "p99": 4.700000107288361,
+        "max": 22.40000009536743
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.9823333336909612,
+          "p50": 1.9000000953674316,
+          "p95": 2.400000035762787,
+          "p99": 2.800000011920929,
+          "max": 20.499999940395355
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.49933332949876785,
+          "p50": 0.5,
+          "p95": 0.800000011920929,
+          "p99": 0.9999999403953552,
+          "max": 1.399999976158142
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.10333333293596904,
+          "p50": 0.09999996423721313,
+          "p95": 0.30000007152557373,
+          "p99": 0.5,
+          "max": 0.5000001192092896
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.9160000011324883,
+          "p50": 0.9000000357627869,
+          "p95": 1.300000011920929,
+          "p99": 1.4000000953674316,
+          "max": 1.5999999642372131
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.0718333351612091,
+          "p50": 0,
+          "p95": 0.2999999523162842,
+          "p99": 0.30000007152557373,
+          "max": 0.40000009536743164
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.7286666679382324,
+        "p50": 0.699999988079071,
+        "p95": 1,
+        "p99": 1.2999999523162842,
+        "max": 1.5999999642372131
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 1232,
+      "frameEnd": 1832,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 284,
+      "maxAnimationNodes": 387,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          305326582,
+          2282117355
+        ],
+        "replayInputs": "7f69c14f2c94b09ad2a035d6f29dbd05c2026b01e0a9dea9e25b2059b1df8443",
+        "confirmedFrames": 1833,
+        "image": "aefba13aaf240fc274a9ea2d0c31e89ea2af1ab9610e1feddcfb4fa1120f9f5b"
+      },
+      "oracle": {
+        "fingerprint": [
+          305326582,
+          2282117355
+        ],
+        "replayInputs": "7f69c14f2c94b09ad2a035d6f29dbd05c2026b01e0a9dea9e25b2059b1df8443",
+        "confirmedFrames": 1833,
+        "image": "aefba13aaf240fc274a9ea2d0c31e89ea2af1ab9610e1feddcfb4fa1120f9f5b"
+      },
+      "samplesSha256": "2c36e5a83f5af9c5d553577f7c1d1d3a641bfecbdd709d7146311362e78ca811"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "warmup": 2400,
+      "name": "3p-stage7-journal-cpu4-from2400",
+      "workMs": {
+        "count": 600,
+        "mean": 4.904833333392938,
+        "p50": 4.700000047683716,
+        "p95": 6.300000011920929,
+        "p99": 7.600000023841858,
+        "max": 13.100000023841858
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 1.9314999983708063,
+        "p50": 1.899999976158142,
+        "p95": 2.400000035762787,
+        "p99": 3.399999976158142,
+        "max": 6.600000023841858
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.0693333340684572,
+          "p50": 1,
+          "p95": 1.4000000357627869,
+          "p99": 2.200000047683716,
+          "max": 3.300000011920929
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.2668333331743876,
+          "p50": 0.20000004768371582,
+          "p95": 0.5,
+          "p99": 0.800000011920929,
+          "max": 2.600000023841858
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.04400000025828679,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.30000001192092896,
+          "max": 0.3999999761581421
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.4856666645407677,
+          "p50": 0.40000003576278687,
+          "p95": 0.800000011920929,
+          "p99": 1.0999999642372131,
+          "max": 1.300000011920929
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.03783333251873652,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.30000001192092896,
+          "max": 0.40000003576278687
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 2432,
+      "frameEnd": 3032,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 30,
+      "maxAnimationNodes": 339,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          3967030023,
+          409497022
+        ],
+        "replayInputs": "fb20f5a38b65821b0ff9f76be0075bcade4ca3b3605d865289ae6e6b2197b34e",
+        "confirmedFrames": 3033,
+        "image": "b0669a35f1da9447d446db1495eba01d262ed54306724bd4c7f69ecfd35472e1"
+      },
+      "oracle": {
+        "fingerprint": [
+          3967030023,
+          409497022
+        ],
+        "replayInputs": "fb20f5a38b65821b0ff9f76be0075bcade4ca3b3605d865289ae6e6b2197b34e",
+        "confirmedFrames": 3033,
+        "image": "b0669a35f1da9447d446db1495eba01d262ed54306724bd4c7f69ecfd35472e1"
+      },
+      "samplesSha256": "4c8707d19c9a54c982f682b93fcd6e94bb2579f66c68ba61c36ad61d1e2739e9"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "warmup": 2400,
+      "name": "3p-stage7-rollback5-cpu2-from2400",
+      "workMs": {
+        "count": 600,
+        "mean": 7.362333334783713,
+        "p50": 7.199999988079071,
+        "p95": 8.899999976158142,
+        "p99": 10,
+        "max": 10.600000023841858
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 3.449666663209597,
+        "p50": 3.400000035762787,
+        "p95": 4.100000083446503,
+        "p99": 4.500000059604645,
+        "max": 5.099999964237213
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.940166662335396,
+          "p50": 1.9000000357627869,
+          "p95": 2.400000035762787,
+          "p99": 2.6000000834465027,
+          "max": 3.5
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.4701666677991549,
+          "p50": 0.4999999403953552,
+          "p95": 0.800000011920929,
+          "p99": 0.9000000357627869,
+          "max": 1
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.07933333317438761,
+          "p50": 0,
+          "p95": 0.2999999523162842,
+          "p99": 0.40000003576278687,
+          "max": 0.5
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 0.8351666658123335,
+          "p50": 0.8000000715255737,
+          "p95": 1.1999999284744263,
+          "p99": 1.4000000953674316,
+          "max": 1.7000000476837158
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.08483333319425583,
+          "p50": 0.09999996423721313,
+          "p95": 0.30000001192092896,
+          "p99": 0.40000003576278687,
+          "max": 0.6000000238418579
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.7345000017682711,
+        "p50": 0.699999988079071,
+        "p95": 1,
+        "p99": 1.300000011920929,
+        "max": 1.5
+      },
+      "heapBytes": 577437696,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 2432,
+      "frameEnd": 3032,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 25,
+      "maxAnimationNodes": 337,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          373649465,
+          1345426917
+        ],
+        "replayInputs": "9b67a8eeca35073ee0350f5112865487a7fa1bcc67db2422c5a8b3ec44739dd1",
+        "confirmedFrames": 3033,
+        "image": "14ee69ef95fc38a1fa403d908206bbb8de8d13a06a75d6aa8dde697ab993464c"
+      },
+      "oracle": {
+        "fingerprint": [
+          373649465,
+          1345426917
+        ],
+        "replayInputs": "9b67a8eeca35073ee0350f5112865487a7fa1bcc67db2422c5a8b3ec44739dd1",
+        "confirmedFrames": 3033,
+        "image": "14ee69ef95fc38a1fa403d908206bbb8de8d13a06a75d6aa8dde697ab993464c"
+      },
+      "samplesSha256": "c95b890c0c8f6d692fb3bda0d8fcc4797d8bdb91226cfa4de22f28f529505211"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": false,
+      "cpu": 4,
+      "dense": true,
+      "name": "3p-stage7-journal-cpu4-dense",
+      "workMs": {
+        "count": 600,
+        "mean": 8.822499999701977,
+        "p50": 8.600000023841858,
+        "p95": 11.299999952316284,
+        "p99": 12.700000047683716,
+        "max": 16.299999952316284
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 2.3261666670441628,
+        "p50": 2.300000011920929,
+        "p95": 2.800000011920929,
+        "p99": 3.200000047683716,
+        "max": 5.299999952316284
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 0.9223333339889844,
+          "p50": 0.8999999761581421,
+          "p95": 1.300000011920929,
+          "p99": 1.4999999403953552,
+          "max": 4.199999988079071
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.24766666611035665,
+          "p50": 0.19999998807907104,
+          "p95": 0.40000003576278687,
+          "p99": 0.5,
+          "max": 1.2000000476837158
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.05266666760047277,
+          "p50": 0,
+          "p95": 0.20000004768371582,
+          "p99": 0.30000001192092896,
+          "max": 0.3999999761581421
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 1.044999998807907,
+          "p50": 1,
+          "p95": 1.300000011920929,
+          "p99": 1.5,
+          "max": 2.199999988079071
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.0311666668454806,
+          "p50": 0,
+          "p95": 0.19999998807907104,
+          "p99": 0.30000001192092896,
+          "max": 0.3999999761581421
+        }
+      },
+      "restoreMs": {
+        "count": 0
+      },
+      "heapBytes": 678166528,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {},
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 0,
+      "replayedFrames": 0,
+      "loggedFrames": 600,
+      "maxBullets": 1946,
+      "maxAnimationNodes": 369,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          3024012425,
+          2399043958
+        ],
+        "replayInputs": "1f4894867cc5ad506ce05ab0162b6aef343a9ead8a0d24683e37eb445e190d60",
+        "confirmedFrames": 873,
+        "image": "a4fcebf01cb1dee30d8cc10ecd969cd9e9f811522a65cd2268624e7c9c8b3f32"
+      },
+      "oracle": {
+        "fingerprint": [
+          3024012425,
+          2399043958
+        ],
+        "replayInputs": "1f4894867cc5ad506ce05ab0162b6aef343a9ead8a0d24683e37eb445e190d60",
+        "confirmedFrames": 873,
+        "image": "a4fcebf01cb1dee30d8cc10ecd969cd9e9f811522a65cd2268624e7c9c8b3f32"
+      },
+      "samplesSha256": "a97e01d61463a5593a0c932a6f3e9cf700a5859eddc19465956e2795be378d50"
+    },
+    {
+      "stage": 7,
+      "players": 3,
+      "depth": 5,
+      "mismatch": true,
+      "cpu": 2,
+      "dense": true,
+      "name": "3p-stage7-rollback5-cpu2-dense",
+      "workMs": {
+        "count": 600,
+        "mean": 13.020000001291434,
+        "p50": 12.600000023841858,
+        "p95": 15.899999976158142,
+        "p99": 17.30000001192093,
+        "max": 23.599999964237213
+      },
+      "captureMs": {
+        "count": 600,
+        "mean": 4.198166664938132,
+        "p50": 4.100000023841858,
+        "p95": 5.199999928474426,
+        "p99": 5.700000047683716,
+        "max": 12.900000035762787
+      },
+      "capturePartsMs": {
+        "animations": {
+          "count": 600,
+          "mean": 1.6941666663686434,
+          "p50": 1.699999988079071,
+          "p95": 2.200000047683716,
+          "p99": 2.600000023841858,
+          "max": 4.899999976158142
+        },
+        "playersRecordsCallbacks": {
+          "count": 600,
+          "mean": 0.4994999976952871,
+          "p50": 0.5,
+          "p95": 0.8000000715255737,
+          "p99": 1,
+          "max": 1.1999999284744263
+        },
+        "enemiesLasers": {
+          "count": 600,
+          "mean": 0.08950000077486038,
+          "p50": 0.09999996423721313,
+          "p95": 0.30000001192092896,
+          "p99": 0.3999999761581421,
+          "max": 0.5000000596046448
+        },
+        "bullets": {
+          "count": 600,
+          "mean": 1.8048333323001862,
+          "p50": 1.7999999523162842,
+          "p95": 2.300000011920929,
+          "p99": 2.599999964237213,
+          "max": 10.100000023841858
+        },
+        "items": {
+          "count": 600,
+          "mean": 0.0726666671037674,
+          "p50": 0,
+          "p95": 0.2999999523162842,
+          "p99": 0.3999999761581421,
+          "max": 0.5999999642372131
+        }
+      },
+      "restoreMs": {
+        "count": 600,
+        "mean": 0.9470000010728836,
+        "p50": 0.9000000357627869,
+        "p95": 1.2000000476837158,
+        "p99": 1.5999999642372131,
+        "max": 2.300000011920929
+      },
+      "heapBytes": 678166528,
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "depths": {
+        "5": 600
+      },
+      "frameStart": 272,
+      "frameEnd": 872,
+      "corrections": 600,
+      "replayedFrames": 3000,
+      "loggedFrames": 3000,
+      "maxBullets": 1947,
+      "maxAnimationNodes": 372,
+      "passed": true,
+      "endpoint": {
+        "fingerprint": [
+          1772438721,
+          3772566112
+        ],
+        "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
+        "confirmedFrames": 873,
+        "image": "8dcadd5ab2f0652cd593856dd09e7d2f6f119660d884af1b19dc16943dddd5fb"
+      },
+      "oracle": {
+        "fingerprint": [
+          1772438721,
+          3772566112
+        ],
+        "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
+        "confirmedFrames": 873,
+        "image": "8dcadd5ab2f0652cd593856dd09e7d2f6f119660d884af1b19dc16943dddd5fb"
+      },
+      "samplesSha256": "fb58eaa5f3123e447bbda137f8a36a1bfc93e5a527d28ab9883c33015e1c51e7"
+    }
+  ],
+  "validation": {
+    "native": {
+      "tests": 16,
+      "passed": true,
+      "logSha256": "a8ea4d9aee0911cb78cc2b558265a4bf7f9bd914a83b50072f9ea523906019fd"
+    },
+    "previousCodeEndpoints": {
+      "wasm": "47739ee0963b565f8da737e54f23e6328e9b1fafe8780edacc683633aa6e900b",
+      "cases": 16,
+      "matched": true
+    },
+    "production": {
+      "version": "1.0.3-eagler-12fa8658ab53",
+      "sha256": "12fa8658ab53e44f85df26bafa747a285475b393c05ea8bc3dfa748f03a38ad5",
+      "diagnosticExports": false,
+      "runtimeFilesSha256": "d6c7c7f9cbec0cfe82e02605a85569adab47bca9bb11a15e878ecc182a746bcf",
+      "files": 15
+    },
+    "rtc": [
+      {
+        "timingMode": 0,
+        "players": 2,
+        "stalledFps": 0,
+        "stalledScenePixels": [
+          0.9338235294117647,
+          0.931132779198636,
+          0.969575873827792
+        ],
+        "rollback": {
+          "enabled": true,
+          "corrections": 3,
+          "replayedFrames": 12,
+          "lastDepth": 4,
+          "peakDepth": 4,
+          "pending": 0
+        },
+        "frame": 539,
+        "recordedSeat": 0,
+        "frameZeroBarrier": true,
+        "missingInputWait": true,
+        "replayValidated": true,
+        "spectator": true,
+        "offlinePlayback": true
+      },
+      {
+        "timingMode": 0,
+        "players": 3,
+        "stalledFps": 0,
+        "stalledScenePixels": [
+          0.9561221227621484,
+          0.9559356351236147,
+          0.9499946717817562
+        ],
+        "rollback": {
+          "enabled": true,
+          "corrections": 5,
+          "replayedFrames": 37,
+          "lastDepth": 9,
+          "peakDepth": 9,
+          "pending": 0
+        },
+        "frame": 401,
+        "recordedSeat": 2,
+        "frameZeroBarrier": true,
+        "missingInputWait": true,
+        "replayValidated": true,
+        "spectator": false,
+        "offlinePlayback": true
+      }
+    ],
+    "rtcFirstAttempt": {
+      "passed": false,
+      "phase": "three-player startup",
+      "error": "Invalid peer packet",
+      "sameBuildRetryPassed": true,
+      "logSha256": "d0ca7dbee771443904dbe023510e3b3399084f164b244d9f91261086743cb408"
+    },
+    "highRefresh": {
+      "passed": true,
+      "scope": "Actual SDL browser RAF loop, original archive, full Stage 1 state and GPU calls. Presentation-only RAF submits recorded Draw commands without input/simulation. Cadence check only; complete state coverage is a separate gate.",
+      "rates": [
+        {
+          "rate": 60,
+          "ticks": 120,
+          "presentations": 120,
+          "lockedTicks": 60,
+          "lockedPresentations": 60
+        },
+        {
+          "rate": 120,
+          "ticks": 120,
+          "presentations": 237,
+          "lockedTicks": 60,
+          "lockedPresentations": 60
+        },
+        {
+          "rate": 144,
+          "ticks": 120,
+          "presentations": 283,
+          "lockedTicks": 60,
+          "lockedPresentations": 60
+        },
+        {
+          "rate": 165,
+          "ticks": 120,
+          "presentations": 326,
+          "lockedTicks": 60,
+          "lockedPresentations": 60
+        },
+        {
+          "rate": 240,
+          "ticks": 120,
+          "presentations": 474,
+          "lockedTicks": 60,
+          "lockedPresentations": 60
+        }
+      ],
+      "reportSha256": "4361e82d7640fa1ca8a0c6b3f94bd0c27e7ad2de10602e15e61dbbe3b1d5d847"
+    },
+    "portChecks": {
+      "sourceDigest": "0b3a44a55c98fb516b28673f089527c41fc7edec542e17404b82e40e2eaf6f00",
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "status": "passed",
+          "level": "module",
+          "complete": false
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "status": "passed",
+          "level": "source-contract",
+          "complete": false
+        },
+        {
+          "id": "package-store",
+          "status": "passed",
+          "level": "module",
+          "complete": true
+        },
+        {
+          "id": "launcher-input-owners",
+          "status": "passed",
+          "level": "module",
+          "complete": true
+        },
+        {
+          "id": "shared-touch-controls",
+          "status": "passed",
+          "level": "module",
+          "complete": true
+        }
+      ]
+    }
+  }
+}

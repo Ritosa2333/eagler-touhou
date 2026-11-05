@@ -14,10 +14,13 @@ struct CharacterRecords {std::array<ModeRecords,2> modes{};std::array<std::array
 // File layouts live only in import/export. Gameplay and title menus share these
 // named records; no original object addresses or packed executable structures.
 class RecordStore final:public SessionRecords,public CompletionRecords {
- ScoreFile file;bool fail(const char*);bool character_valid(i32)const noexcept;bool stage_valid(i32,i32,i32)const noexcept;
+ ScoreFile file;
+ inline static u64 codec_serial=0;u64 codec_version=0;
+ bool fail(const char*);bool character_valid(i32)const noexcept;bool stage_valid(i32,i32,i32)const noexcept;
  void decode();void encode();static void count(i32&,i32)noexcept;
  ModeRecords& mode(i32 character,bool legacy){return characters[character].modes[legacy?1:0];}
 public:
+ RecordStore()=default;RecordStore(const RecordStore&)=default;RecordStore& operator=(const RecordStore&);
  std::array<CharacterRecords,5> characters{};std::array<u8,20> music{};std::array<char,9> name{};u64 total_play_centiseconds=0;std::string error;
  std::array<u8,8> endings{};u8 ending_seen=0;
  std::function<bool(i32,i32)> checkpoint_remove;

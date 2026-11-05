@@ -1,12 +1,14 @@
 #include "native-world.hpp"
 #include "../../web/cpp/game/ScreenViews.hpp"
 #include <algorithm>
+#include <cstring>
 struct GrazeGraphics final:ZunGraphics {
+ bool historical=false;bool logical_frame()const noexcept override{return historical;}
  touhou::graphics::PipelineState state;u32 submitted=0;std::vector<u32> colors;
  touhou::graphics::PipelineState& pipeline()override{return state;}
  u32 texture(const AnmResource&,u32 index)override{return index+1;}void bind_texture(u32)override{}
  void set_layout(touhou::graphics::VertexLayout)override{}void set_matrix(touhou::graphics::MatrixKind,const Matrix4&)override{}
- void triangles(u32 n,const void* data,u32 stride)override{submitted+=n;if(stride==sizeof(AnmGeometryVertex)){auto* v=static_cast<const AnmGeometryVertex*>(data);for(u32 i=0;i<n*3;++i)colors.push_back(v[i].color);}}void primitives(touhou::graphics::Topology,u32 n,const void*,u32)override{submitted+=n;}
+ void triangles(u32 n,const void* data,u32 stride)override{if(historical)return;submitted+=n;if(stride==sizeof(AnmGeometryVertex)){auto* v=static_cast<const AnmGeometryVertex*>(data);for(u32 i=0;i<n*3;++i)colors.push_back(v[i].color);}}void primitives(touhou::graphics::Topology,u32 n,const void*,u32)override{if(!historical)submitted+=n;}
  bool select_target(const AnmResource*,u32)override{return true;}bool clear_target(u32,const GraphicsViewport*)override{return true;}bool clear_depth(const GraphicsViewport*)override{return true;}void set_viewport(const GraphicsViewport&)override{}
 };
 
@@ -29,6 +31,11 @@ int main(int argc,char** argv){
    require(bullet->visual_flags==flags&&bullet->graze_color==color&&bullet->visual_jitter.x==jitter.x&&bullet->visual_jitter.y==jitter.y,"Viewpoint draw mutated authoritative bullet");
    require(game==w.environment.game_rng.calls&&visual==w.visual.calls&&graze==b.score.graze_total,"Viewpoint draw changed RNG or shared Graze");
   }
+  auto& body=b.bullet_scene->visual(index)->body;body.visual.translation={91,92,0};body.visual.quad[0]={77,78,79};body.variables.rotation.z=7;const auto original=body;const auto original_flags=bullet->visual_flags;
+  require(b.bullet_scene->draw(renderer),b.bullet_scene->error);renderer.flush();const auto expected=body;const auto expected_flags=bullet->visual_flags;
+  body=original;bullet->visual_flags=original_flags;graphics.historical=true;graphics.submitted=0;
+  require(b.bullet_scene->draw(renderer),b.bullet_scene->error);renderer.flush();
+  require(!graphics.submitted&&!std::memcmp(&body.visual,&expected.visual,sizeof body.visual)&&!std::memcmp(&body.variables,&expected.variables,sizeof body.variables)&&body.presentation_motion==expected.presentation_motion&&bullet->visual_flags==expected_flags,"historical bullet Draw differs from displayed Draw's durable state");graphics.historical=false;
   require(!own_colors.empty()&&!other_colors.empty()&&own_colors!=other_colors,"Actual bullet draw colors did not follow the selected Graze viewpoint");
   auto& pilot=*b.pilots[grazing];const auto handle=pilot.player->visuals.barrier_handle;pilot.player->visuals.barrier_handle=0;b.mp_options.local_seat=(grazing+1)%count;b.mp_prepare_presentation(renderer);
   require(std::find(renderer.multiplayer_hidden_hitboxes.begin(),renderer.multiplayer_hidden_hitboxes.end(),w.animations.registry.find(handle))!=renderer.multiplayer_hidden_hitboxes.end(),"Fading graze ring leaked after owner lost handle");
