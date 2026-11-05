@@ -601,6 +601,7 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({thprac: false, languages: false, focusHitbox: false}),
     }),
     th19: Object.freeze({
+        testOnly: true,
         number: "19", title: "東方獣王園", subtitle: "Unfinished Dream of All Living Ghost",
         storage: Object.freeze({saveRoot: "/savesth19", scoreFile: "scoreth19.dat", configFiles: Object.freeze(["th19.cfg"])}),
         runtime: "./runtime/th19/th19.html", runtimeFileLayout: "directory", dataProvider: "retail-memory",
@@ -608,7 +609,7 @@ export const PRODUCT_GAMES = Object.freeze({
         runtimeAssets: Object.freeze(["th19.html","manifest.json","resource-integrity.mjs","shell.mjs","managed.css","keyboard.mjs","directory-keyboard.mjs","keyboard-owners.mjs","keyboard-input-bridge.mjs","netplay.mjs","peer-socket.mjs","rollback-session.mjs","native-adapter.mjs","th19.mjs","th19.wasm"]),
         musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
         touchFire: TOGGLE_TOUCH_FIRE,
-        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Ritosa2333/eagler-touhou"}),
+        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Ritosa2333/eagler-touhou", adaptationNotice: "early-test"}),
         package: Object.freeze({dataFileId: "game-data",dataTarget: "/th19.dat",rawDataImport: Object.freeze({fileNames: Object.freeze(["th19.dat"])}),musicSourceDirectories: Object.freeze({ogg: "music"}),musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th19"}),
         multiplayerRuntime: "./runtime/th19/multiplayer/th19.html",
