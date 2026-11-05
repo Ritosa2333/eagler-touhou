@@ -71,6 +71,12 @@ struct ResultHost final : TitleScenePlatform {
         recorded.push_back(name);
         return record_ok;
     }
+    // 全通结算条目走 clear 槽（0x454050:209 → stage=8，与
+    // ApplicationState::record_clear_result_name 同构落同一记录面）。
+    bool record_clear_result_name(const std::string& name) override {
+        recorded.push_back(name);
+        return record_ok;
+    }
     bool result_replay_save_available() const override { return replay_available; }
 };
 

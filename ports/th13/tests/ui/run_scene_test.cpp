@@ -118,6 +118,7 @@ struct RunHost final : RunSceneServices {
     int pauses = 0, game_overs = 0;
     std::vector<std::string> lines;
     std::vector<MsgLine> dialogue_lines;
+    std::vector<i32> sounds;
     std::map<std::string, std::vector<u8>> assets;
     explicit RunHost(AnmManager& manager) : manager(manager) {
         assets["st01.ecl"] = synthetic_stage_ecl();
@@ -151,7 +152,7 @@ struct RunHost final : RunSceneServices {
         SpellTimeClock::End end;
         if (spell_time_clock.end(now, end)) spell_time_indexes.push_back(end.index);
     }
-    bool hud_sound(i32) override { return true; }
+    bool hud_sound(i32 id) override { sounds.push_back(id); return true; }
     bool life_hud(i32, i32) override { return true; }
     bool bomb_hud(i32, i32) override { return true; }
     bool camera(DrawCamera, bool) override { return true; }
@@ -205,8 +206,9 @@ struct RunHarness {
     RunHost host{manager};
     std::unique_ptr<RunScene> scene;
 
-    explicit RunHarness(i32 character = 0) {
+    explicit RunHarness(i32 character = 0, const std::vector<u8>& msg = {}) {
         progress.character = character;
+        if (!msg.empty()) host.assets["st01a.msg"] = msg;
         CHECK(load_bank(manager, 3, synthetic_anm(8, trivial_scripts(176))));  // front 0..175（0x425170 灵界计主脚本 171 spawn 172-175）
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(46))));  // ascii（boss 计时数字 2/3）
         CHECK(load_bank(manager, 4, synthetic_anm(8, trivial_scripts(4))));   // stage 合并位
@@ -241,6 +243,13 @@ TEST(run_scene_initializes_hud_handles) {
         CHECK(harness.scene->hud.bomb_icons[i] != 0);
     }
     CHECK(harness.scene->error.empty());
+}
+
+TEST(run_scene_destruction_detaches_hud_msg_task) {
+    RunHarness harness;
+    harness.scene.reset();
+    CHECK_EQ(harness.scheduler.update(), 0);
+    CHECK_EQ(harness.scheduler.draw(), 0);
 }
 
 TEST(run_scene_loads_stage_battle) {
@@ -439,6 +448,98 @@ TEST(run_scene_draws_dialogue_japanese_and_ruby) {
     sim.current = sim.enemies.front().get();
     CHECK_EQ(sim.commands.execute(context, 519), 1);
     sim.current = nullptr;
+}
+
+TEST(run_scene_msg_runs_after_spirits_with_one_effective_input) {
+    // 424f46/424f4b registers 4265a0 at28; 4274cc calls MSG after HUD.
+    // A phase27 witness catches the old task20 execution without sorting sound.
+    InstructionBuilder entry;
+    entry.add(0, 0x0b, {0x58, 0x02, 0, 0});
+    entry.add(0, 12);
+    entry.text(0, "After input");
+    entry.end(100);
+    RunHarness harness(0, build_msg({entry.bytes}));
+    auto& scene = *harness.scene;
+    scene.open_dialog(0);
+    CHECK(scene.dialog_active());
+    CHECK(scene.battle.sim.boss() == nullptr);
+    CHECK(harness.scheduler.update() >= 0); // Arm the wait without a key edge.
+
+    GameInput live, replay;
+    replay.update(1);
+    scene.controls(live);
+    int consumed = 0, recorded = 0;
+    scene.playback_input = [&]() -> const GameInput* { ++consumed; return &replay; };
+    scene.record_input = [&](const GameInput& input) {
+        ++recorded;
+        CHECK_EQ(input.pressed, 1u);
+    };
+    harness.host.sounds.clear();
+    struct Witness { RunHarness& harness; GameInput& replay; } witness{harness, replay};
+    FrameCallback before, after;
+    before.enabled = after.enabled = true;
+    before.owner = &witness;
+    before.run = [](void* owner) -> i32 {
+        auto& w = *static_cast<Witness*>(owner);
+        CHECK(w.harness.host.sounds.empty());
+        CHECK(!w.harness.scene->dialog_wait_released());
+        CHECK(w.harness.host.dialogue_lines.empty());
+        w.harness.host.hud_sound(63);
+        w.replay.update(0); // Later tasks cannot replace the input selected at20.
+        return 1;
+    };
+    after.owner = &witness;
+    after.run = [](void* owner) -> i32 {
+        auto& h = static_cast<Witness*>(owner)->harness;
+        CHECK(h.scene->dialog_wait_released());
+        CHECK_EQ(h.host.sounds.size(), size_t(2));
+        if (h.host.sounds.size() == 2) {
+            CHECK_EQ(h.host.sounds[0], 63);
+            CHECK_EQ(h.host.sounds[1], 0);
+        }
+        CHECK_EQ(h.host.dialogue_lines.size(), size_t(1));
+        return 1;
+    };
+    CHECK(harness.scheduler.add(before, FramePass::Update, 27) >= 0);
+    CHECK(harness.scheduler.add(after, FramePass::Update, 29) >= 0);
+    CHECK(harness.scheduler.update() >= 0);
+    harness.scheduler.remove(before);
+    harness.scheduler.remove(after);
+    CHECK_EQ(consumed, 1);
+    CHECK_EQ(recorded, 1);
+    CHECK(scene.error.empty());
+}
+
+TEST(run_scene_msg_freeze_eof_and_transition_do_not_reuse_input) {
+    InstructionBuilder entry;
+    entry.add(0, 0x0b, {0x58, 0x02, 0, 0});
+    entry.add(0, 12);
+    entry.end(100);
+    for (int gate = 0; gate < 4; ++gate) {
+        RunHarness harness(0, build_msg({entry.bytes}));
+        auto& scene = *harness.scene;
+        scene.open_dialog(0);
+        CHECK(harness.scheduler.update() >= 0);
+        GameInput input;
+        input.update(1);
+        scene.controls(input);
+        int consumed = 0, recorded = 0;
+        scene.playback_input = [&]() -> const GameInput* {
+            ++consumed;
+            return gate == 2 ? nullptr : &input;
+        };
+        scene.record_input = [&](const GameInput&) { ++recorded; };
+        harness.host.sounds.clear();
+        if (gate == 0) harness.environment.paused = true;
+        if (gate == 1) harness.progress.scene_flags |= 0x10u;
+        if (gate == 3) scene.transition_wait = true;
+        CHECK(harness.scheduler.update() >= 0);
+        CHECK(!scene.dialog_wait_released());
+        CHECK(harness.host.sounds.empty());
+        CHECK_EQ(consumed, gate >= 2 ? 1 : 0);
+        CHECK_EQ(recorded, gate == 3 ? 1 : 0);
+        CHECK(scene.error.empty());
+    }
 }
 
 TEST(run_scene_ecl_alpha_sees_same_turn_slot_four_birth) {
