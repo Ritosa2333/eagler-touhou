@@ -10,7 +10,7 @@ void InitializeUI(){auto& io=ImGui::GetIO();io.DisplaySize=ImVec2(640,480);io.Ba
  unsigned char* data;int w,h;io.Fonts->GetTexDataAsRGBA32(&data,&w,&h);glGenTextures(1,&atlas);glBindTexture(GL_TEXTURE_2D,atlas);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,data);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);io.Fonts->SetTexID((ImTextureID)(uintptr_t)atlas);previous=emscripten_get_now();
 }
 void ShutdownUI(){if(atlas)glDeleteTextures(1,&atlas);atlas=0;}
-void BeginUI(){BYTE scans[256];SampleKeys(scans);BeginPointerFrame();double now=emscripten_get_now();ImGui::GetIO().DeltaTime=float((now-previous)/1000);if(ImGui::GetIO().DeltaTime<=0)ImGui::GetIO().DeltaTime=1.f/56;previous=now;}
+void BeginUI(){SampleUIKeys();BeginPointerFrame();double now=emscripten_get_now();ImGui::GetIO().DeltaTime=float((now-previous)/1000);if(ImGui::GetIO().DeltaTime<=0)ImGui::GetIO().DeltaTime=1.f/56;previous=now;}
 void EndUI(){auto* data=ImGui::GetDrawData();if(!data)return;
  glPushAttrib(GL_ALL_ATTRIB_BITS);glEnable(GL_BLEND);glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);glDisable(GL_DEPTH_TEST);glDisable(GL_POLYGON_STIPPLE);glEnable(GL_TEXTURE_2D);glEnable(GL_SCISSOR_TEST);glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);glColorMask(1,1,1,1);
  glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();glOrtho(0,640,480,0,-1,1);glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();

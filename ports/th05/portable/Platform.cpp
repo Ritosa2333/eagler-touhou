@@ -32,14 +32,23 @@ void CCommonFunctionSystem::CreateConsoleWindow(){}
 bool CCommonFunctionSystem::GetFileMD5(unsigned char* result,const char* path){FILE* file=fopen(path,"rb");if(!file)return false;MD5_CTX state;MD5Init(&state);unsigned char bytes[8192];size_t n;while((n=fread(bytes,1,sizeof(bytes),file)))MD5Update(&state,bytes,n);fclose(file);MD5Final(result,&state);return true;}
 namespace web {
 void SetKey(int key,bool down){if(key<0||key>=256)return;bool repeated=down&&physical[key];physical[key]=down;
- if(ImGui::GetCurrentContext()){auto& io=ImGui::GetIO();io.KeysDown[key]=down;io.KeyShift=physical[VK_LSHIFT]||physical[VK_RSHIFT]||physical[VK_SHIFT];io.KeyCtrl=physical[VK_LCONTROL]||physical[VK_RCONTROL]||physical[VK_CONTROL];}
  practice::WindowMessage(nullptr,down?WM_KEYDOWN:WM_KEYUP,key,repeated?(1L<<30):0);
 }
 void TouchMotion(float& x,float& y,float speed){x=float(touchX);y=float(touchY);touchX=touchY=0;const float length=sqrtf(x*x+y*y);if(!touchUnlimited&&length>speed){x*=speed/length;y*=speed/length;}}
-void ClearKeys(){touchX=touchY=0;memset(physical,0,sizeof(physical));practice::WindowMessage(nullptr,WM_KILLFOCUS,0,0);if(ImGui::GetCurrentContext()){auto& io=ImGui::GetIO();memset(io.KeysDown,0,sizeof(io.KeysDown));memset(io.MouseDown,0,sizeof(io.MouseDown));io.KeyShift=io.KeyCtrl=false;}}
-void SampleKeys(BYTE* scans){if(replayViewer){memset(scans,0,256);return;}BYTE keys[256]{};for(int i=0;i<256;i++)keys[i]=physical[i]?128:0;
+void ClearKeys(){touchX=touchY=0;memset(physical,0,sizeof(physical));practice::WindowMessage(nullptr,WM_KILLFOCUS,0,0);}
+namespace {
+void ReadKeys(BYTE* keys){memset(keys,0,256);if(replayViewer)return;for(int i=0;i<256;i++)keys[i]=physical[i]?128:0;
  eagler::input::ApplyGamepadVirtualKeys(keys,eagler::input::BrowserGamepadState());
- if(ImGui::GetCurrentContext()){auto& io=ImGui::GetIO();for(int i=0;i<256;i++)io.KeysDown[i]=keys[i]!=0;io.KeyShift=keys[VK_SHIFT]||keys[VK_LSHIFT]||keys[VK_RSHIFT];io.KeyCtrl=keys[VK_CONTROL]||keys[VK_LCONTROL]||keys[VK_RCONTROL];}
+}
+}
+// Legacy ImGui snapshots KeyMods in NewFrame(). Gameplay sampling may call
+// back into the Launcher, so only publish UI keys before that frame begins.
+void SampleUIKeys(){if(!ImGui::GetCurrentContext())return;BYTE keys[256];ReadKeys(keys);auto& io=ImGui::GetIO();
+ for(int i=0;i<256;i++)io.KeysDown[i]=keys[i]!=0;
+ io.KeyShift=keys[VK_SHIFT]||keys[VK_LSHIFT]||keys[VK_RSHIFT];io.KeyCtrl=keys[VK_CONTROL]||keys[VK_LCONTROL]||keys[VK_RCONTROL];
+ io.KeyAlt=io.KeySuper=false;
+}
+void SampleKeys(BYTE* scans){BYTE keys[256];ReadKeys(keys);
  memset(scans,0,256);scans[DIK_UP]=keys[VK_UP];scans[DIK_DOWN]=keys[VK_DOWN];scans[DIK_LEFT]=keys[VK_LEFT];scans[DIK_RIGHT]=keys[VK_RIGHT];scans[DIK_Z]=keys['Z'];scans[DIK_X]=keys['X'];scans[DIK_LSHIFT]=keys[VK_SHIFT]|keys[VK_LSHIFT]|keys[VK_RSHIFT];scans[DIK_LCONTROL]=keys[VK_CONTROL]|keys[VK_LCONTROL]|keys[VK_RCONTROL];scans[DIK_ESCAPE]=keys[VK_ESCAPE];scans[DIK_RETURN]=keys[VK_RETURN];scans[DIK_Q]=keys['Q'];
 }
 void MusicTrack(const char* name){EM_ASM({Module.eaglerAudio?.select(UTF8ToString($0));},name);}

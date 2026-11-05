@@ -44,7 +44,7 @@ export function createMultiplayer(options,{module,sample,saveReplay,emit=()=>{},
  // A rejection can precede the caller awaiting start (e.g. early transport
  // failure); retain it without generating an unhandled rejection.
  startTask.catch(()=>{});
- const fatal=reason=>{if(closed)return;record(r=>r.stop());closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport?.close();module._th05_net_close();rejectStart(reason);fail(reason);};
+ const fatal=reason=>{if(closed)return;closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);rejectStart(reason);fail(reason);};
  const send=(peer,message)=>peer.channel.send(JSON.stringify(message));
  const broadcast=message=>{for(const peer of peers.values())send(peer,message);};
  const guarded=fn=>(...args)=>{if(closed)return;try{return fn(...args);}catch(error){fatal(error);}};
@@ -128,7 +128,7 @@ export function createMultiplayer(options,{module,sample,saveReplay,emit=()=>{},
 
  function close(){
   if(closed)return;record(r=>r.stop());closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport.close();
-  module._th05_net_close();globalThis.__eaglerNetplayLanActive=false;for(const row of rows)row.clear();
+  if(!module.eaglerAborted)module._th05_net_close();globalThis.__eaglerNetplayLanActive=false;for(const row of rows)row.clear();
  }
  transport=transportFactory(options,roles,fatal);
  for(let id=0;id<count;id++)if(id!==local){
@@ -165,6 +165,15 @@ export function createMultiplayer(options,{module,sample,saveReplay,emit=()=>{},
    }
    ++frame;lastProgress=now();globalThis.__eaglerNetplayFrame=globalThis.__eaglerNetplayLanFrame=frame;
    if(module._th05_coop_finished())void end();return true;
+  },
+  async abort(reason){
+   ending=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);
+   rejectStart(reason);
+   try{await transport.abort(reason);}finally{
+    if(!module.eaglerAborted)record(r=>r.stop());
+    transport.close();if(!module.eaglerAborted)module._th05_net_close();
+    closed=true;globalThis.__eaglerNetplayLanActive=false;
+   }
   },
   end,close,get frame(){return frame;},get delay(){return delay;},get confirmed(){return module._th05_net_confirmed();},get revision(){return module._th05_net_stat(8);},get recovering(){return module._th05_net_stat(5)<frame;},get active(){return started&&!closed&&!ending;},
  };

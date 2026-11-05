@@ -23,6 +23,8 @@ let lastHealth=0,healthFrames=0,maxGap=0,launchSerial,unloadSync;
 const owners=new Map();
 const emit=(event,payload={})=>bridge?.emit(event,payload);
 function error(value){const message=value?.message??String(value);emit('error',{message,error:message});}
+let nativeAborted=false,finishTask;
+function fatal(reason){void finish(1,reason);}
 function nativeKey(code,down,owner){const key=virtualKey(code);if(!key)return;let keys=owners.get(owner);if(!keys){keys=new Set();owners.set(owner,keys);}const was=[...owners.values()].some(set=>set.has(key));if(down)keys.add(key);else keys.delete(key);const now=[...owners.values()].some(set=>set.has(key));if(was!==now)module?._th05_key(key,+now);}
 function keyboardReady(){return launched&&!closed&&!document.hidden&&!(options.replayViewer||options.netplaySpectator);}
 const keyboard=createBrowserKeyboard({send:(code,down)=>nativeKey(code,down,'keyboard'),hostContext:{protocol,game:'th05',epoch:Number(query.get('runtimeEpoch')),origin:location.origin,ready:keyboardReady,reset:clearKeyboard}});
@@ -30,10 +32,10 @@ const touch=createTouchInput({send:(code,down)=>nativeKey(code,down,'touch'),pos
  if(options.touchMovementMode?.startsWith('touch'))motion=[(module._th05_player_x()+x-32)*16,(module._th05_player_y()+y-56)*16,2+Number(unlimited)];
  else motion=[x*16,y*16,+unlimited];
  }else module?._th05_touch_motion(x,y,+unlimited);}});
-function clearKeyboard(){keyboard.clear();owners.delete('keyboard');reconcile();}
-function cancelTouch(){motion=[0,0,0];touch.cancel();pointers?.cancel();owners.delete('touch');module?._th05_touch_motion(0,0,0);reconcile();}
+function clearKeyboard(){if(nativeAborted)return;keyboard.clear();owners.delete('keyboard');reconcile();}
+function cancelTouch(){if(nativeAborted)return;motion=[0,0,0];touch.cancel();pointers?.cancel();owners.delete('touch');module?._th05_touch_motion(0,0,0);reconcile();}
 function reconcile(){module?._th05_clear();for(const keys of owners.values())for(const key of keys)module?._th05_key(key,1);}
-function clearAll(){motion=[0,0,0];keyboard.clear();touch.cancel();pointers?.cancel();owners.clear();module?._th05_clear();}
+function clearAll(){if(nativeAborted)return;motion=[0,0,0];keyboard.clear();touch.cancel();pointers?.cancel();owners.clear();module?._th05_clear();}
 function sameOrigin(value){const url=new URL(value,location.href);if(url.origin!==location.origin||!['http:','https:','blob:'].includes(url.protocol))throw Error('Resource must be same-origin');return url;}
 function allowedResource(path){
  if(typeof path!=='string'||/[\\\x00-\x1f]/.test(path)||path.split('/').slice(1).some(p=>!p||p==='.'||p==='..'))return false;
@@ -59,7 +61,18 @@ function roomView(){
  module._th05_coop_draw();module._th05_present();firstFrame=false;
  emit('room-menu',{presented:true,launchSerial});
 }
-async function finish(code=0){if(closed)return;netplay?.close();closed=true;launched=false;cancelAnimationFrame(raf);clearInterval(saveTimer);clearAll();module?._th05_shutdown();audio?.close();await store?.sync();emit('exit',{code,status:code===0?'success':'error'});}
+function finish(code=0,reason){
+ if(finishTask)return finishTask;if(closed)return Promise.resolve();
+ closed=true;launched=false;cancelAnimationFrame(raf);clearInterval(saveTimer);
+ finishTask=(async()=>{
+  try{if(reason&&netplay?.abort)await netplay.abort(reason);else netplay?.close();}catch{}
+  if(!nativeAborted){try{clearAll();module?._th05_shutdown();}catch(failure){reason??=failure;code=1;}}
+  try{audio?.close();}catch{}
+  try{await store?.sync();}catch(failure){reason??=failure;code=1;}
+  if(reason)error(reason);
+  emit('exit',{code,status:code===0?'success':'error'});
+ })();return finishTask;
+}
 function saveCoopReplay(bytes){
  const occupied=new Set(store.list().map(file=>file.path.toLowerCase()));
  for(let slot=0;slot<=0xffff;slot++){
@@ -97,7 +110,7 @@ function frame(time){raf=0;if(closed||!launched)return;
   if((steps||options.replayViewer)&&!firstFrame){firstFrame=true;requestAnimationFrame(()=>{if(!closed)emit('first-frame',launchSerial===undefined?{}:{launchSerial});});}
   if(time-lastHealth>=1000){emit('frame-health',{fps:healthFrames*1000/Math.max(1,time-lastHealth),maxGapMs:maxGap,frameMs:module._th05_frame_seconds()*1000,scene:module._th05_scene(),ticks:module._th05_ticks()});emit('audio-health',audio.health());lastHealth=time;healthFrames=0;maxGap=0;}
   raf=requestAnimationFrame(frame);
- }catch(reason){error(reason);void finish(1);}
+ }catch(reason){fatal(reason);}
 }
 const api={multiplayer,saveRoot:multiplayer?"/savesth05mp":SAVE_ROOT,running:()=>launched,viewer:()=>options.replayViewer===true,resources,languagePack,
  get store(){return store;},sync,
@@ -121,7 +134,7 @@ const api={multiplayer,saveRoot:multiplayer?"/savesth05mp":SAVE_ROOT,running:()=
  async returnRoom(){if(netplay)await netplay.end();return {presented:true};},
  async launch(message){if(!configured||closed)throw Error('Runtime cannot launch');clearAll();cstring(language,game=>cstring(options.thpracLocale??(language==='ja'?'ja-JP':'zh-CN'),locale=>module._th05_language_configure(game,locale)));module._th05_viewer(+!!options.replayViewer);module._th05_practice_configure(+(options.thpracEnabled===true&&!options.replayViewer));if(!initialized){if(!module._th05_initialize())throw Error('TH05 initialization failed');initialized=true;}module._th05_options(+(options.alwaysHitbox===true),+(options.focusHitboxEnabled===true));if(options.replayPath&&!multiplayer)openReplay(options.replayPath);if(multiplayer&&!options.replayViewer){
  if(!options.netplayMode)throw Error('TH05 multiplayer requires a room run');
- netplay=(options.netplaySpectator?createSpectator:createMultiplayer)(options,{module,saveReplay:saveCoopReplay,emit:(event,payload)=>{if(event==='netplay-ended')roomView();else emit(event,payload);},fail:reason=>{error(reason);void finish(1);},sample(){touch.tick();const value=[module._th05_sample_buttons()|menuPulse,...motion];motion=[0,0,0];menuPulse=0;return value;}});
+ netplay=(options.netplaySpectator?createSpectator:createMultiplayer)(options,{module,saveReplay:saveCoopReplay,emit:(event,payload)=>{if(event==='netplay-ended')roomView();else emit(event,payload);},fail:fatal,sample(){touch.tick();const value=[module._th05_sample_buttons()|menuPulse,...motion];motion=[0,0,0];menuPulse=0;return value;}});
  module.eaglerCoopAction=index=>{menuPulse=index===0?4096:index===1?32768:16384;};
  await netplay.start();
  }
@@ -139,7 +152,7 @@ const api={multiplayer,saveRoot:multiplayer?"/savesth05mp":SAVE_ROOT,running:()=
 };
 try{
  bridge=installManagedShell(api,window);
- module=await createModule({canvas,print:console.log,printErr:console.error,eaglerError:error,onAbort:reason=>error(Error(String(reason)))});globalThis.Module=module;
+ module=await createModule({canvas,print:console.log,printErr:console.error,eaglerError:error,onAbort:reason=>{nativeAborted=true;if(module)module.eaglerAborted=true;fatal(Error(String(reason)));}});globalThis.Module=module;
  store=createStore(module,{root:multiplayer?'/savesth05mp':SAVE_ROOT});await store.initialize();if(multiplayer)module.FS.symlink('/savesth05mp',SAVE_ROOT);module.FS.mkdirTree('/data');module.FS.mkdirTree('/music');
  if(query.get('managedData')!=='1'||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('TH05 requires the Launcher DATA provider');
  const prepared=await parent.__eaglerPrepareManagedRuntimeDataV1({game:'th05',generation:query.get('gameGeneration'),epoch:bridge.epoch}),files=await decodeContent(prepared.buffer);
@@ -158,10 +171,10 @@ try{
   if(keyboard.event(event,down))event.preventDefault();
  },{capture:true});
  addEventListener('blur',clearAll);
- document.addEventListener('visibilitychange',()=>{clearAll();clock.reset();presentation.reset();module._th05_focus(+!document.hidden);audio.visibility(document.hidden);if(document.hidden)unloadSync=sync().catch(error);});
+ document.addEventListener('visibilitychange',()=>{if(closed)return;clearAll();clock.reset();presentation.reset();module._th05_focus(+!document.hidden);audio.visibility(document.hidden);if(document.hidden)unloadSync=sync().catch(error);});
  const pointer=event=>{const rect=canvas.getBoundingClientRect(),scale=Math.min(rect.width/640,rect.height/480),left=rect.left+(rect.width-640*scale)/2,top=rect.top+(rect.height-480*scale)/2;return {id:event.pointerId,x:(event.clientX-left)/scale,y:(event.clientY-top)/scale,type:event.type==='pointerdown'?'down':event.type==='pointermove'?'move':'up'};};
  for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{const message=pointer(event);if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);if(options.replayViewer||options.netplaySpectator)return;pointers.pointer(message,event.pointerType!=='touch'&&event.pointerType!=='pen');audio.resume();event.preventDefault();});
- canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();error(Error('TH05 WebGL context lost'));void finish(1);});
- addEventListener('pagehide',()=>{netplay?.close();clearAll();cancelAnimationFrame(raf);clearInterval(saveTimer);module._th05_save();unloadSync=store.sync().catch(console.error);audio.close();bridge.close();closed=true;});
+ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();fatal(Error('TH05 WebGL context lost'));});
+ addEventListener('pagehide',()=>{if(closed){bridge.close();return;}netplay?.close();clearAll();cancelAnimationFrame(raf);clearInterval(saveTimer);module._th05_save();unloadSync=store.sync().catch(console.error);audio.close();bridge.close();closed=true;});
  bridge.ready();
 }catch(reason){error(reason);}

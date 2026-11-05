@@ -16,6 +16,21 @@ try{
    const response=await page.evaluate(async({seat,command,payload})=>{if(command==='configure'&&seat===1){payload.language='lang_zh-hans';payload.runtimePack=await(await fetch('/language.json')).json();for(const file of payload.runtimePack.files)file.bytes=new Uint8Array(file.bytes);}return window.command(seat,command,payload);},{seat,command,payload});assert.equal(response.ok,true,JSON.stringify(response));
   }
  }
+ report.modifiers=await page.evaluate(()=>{
+  return [...document.querySelectorAll('iframe')].map(f=>{
+   const w=f.contentWindow,m=w.Module,previous=w.__eaglerGamepadInputBridge;let reads=0;
+   try {
+    for(let n=0;n<8;n++){
+     reads=0;m._th05_clear();
+     w.__eaglerGamepadInputBridge={sample:()=>{++reads;if(reads===2){m._th05_key(162,1);return 256;}return 0;}};
+     if(!m._th05_step())throw Error('modifier frame failed');
+     m._th05_clear();
+    }
+    return m._th05_alive();
+   } finally {w.__eaglerGamepadInputBridge=previous;m._th05_clear();}
+  });
+ });
+ assert.deepEqual(report.modifiers,[1,1,1]);
  report.resources=await page.evaluate(()=>{
   const m=document.querySelector('iframe').contentWindow.Module;if(!m._th05_coop_start(3,0,1,741,0,1,2))throw Error('start');
   const probe=(op,seat,value)=>{if(!m._th05_native_coop_probe(op,seat,value))throw Error('probe');};
