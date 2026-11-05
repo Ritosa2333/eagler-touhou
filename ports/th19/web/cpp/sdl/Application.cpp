@@ -241,7 +241,13 @@ struct AudioEngine {
     void play_sfx(i32 id) {
         auto it = sfx.find(id);
         if (it == sfx.end()) return;
-        if(it->second->immediate){eagler::audio::web_sfx::play(it->second.get());return;}
+        if(it->second->immediate){
+            // Each native sound command restarts this one-shot, just like the
+            // miniaudio branch. WebSfx play resumes its current cursor.
+            eagler::audio::web_sfx::stop(it->second.get());
+            eagler::audio::web_sfx::seek(it->second.get(),0,44100);
+            eagler::audio::web_sfx::play(it->second.get());return;
+        }
         ma_sound_seek_to_pcm_frame(&it->second->sound, 0);
         ma_sound_start(&it->second->sound);
     }

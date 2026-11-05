@@ -1,3 +1,4 @@
+import {sha256Hex} from './resource-integrity.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import createModule from './th19.mjs';
 import {Netplay} from './netplay.mjs';
@@ -89,7 +90,7 @@ async function resource(r){
  const response=await fetch(u);if(!response.ok)throw Error(`资源读取失败: ${r.path} (${response.status})`);
  const bytes=new Uint8Array(await response.arrayBuffer()),expected=r.bytes??r.size;
  if(bytes.length>64*1024*1024||(expected!=null&&bytes.length!==expected))throw Error('资源大小错误');
- if(r.sha256){const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');if(hash!==r.sha256)throw Error('资源校验失败');}
+ if(r.sha256){const hash=await sha256Hex(bytes);if(hash!==r.sha256)throw Error('资源校验失败');}
  core.FS.mkdirTree(r.path.slice(0,r.path.lastIndexOf('/'))||'/');core.FS.writeFile(r.path,bytes,{canOwn:true});
  emit('transfer',{mode:r.path.startsWith('/music/')?'ogg':'runtime',loaded:bytes.length,total:bytes.length,path:r.path});
 }

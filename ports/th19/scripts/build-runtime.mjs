@@ -48,7 +48,7 @@ if(args.includes('--print-inputs')){
  }else if(!existsSync(loader))loader=resolve(root,'runtime/th19.mjs');
  mkdirSync(output,{recursive:true});
  const shellDirectory=resolve(root,'web/sdl-runtime');
- const names=['shell.mjs','managed.css','keyboard.mjs','netplay.mjs','peer-socket.mjs','rollback-session.mjs','native-adapter.mjs','directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs'];
+ const names=['resource-integrity.mjs','shell.mjs','managed.css','keyboard.mjs','netplay.mjs','peer-socket.mjs','rollback-session.mjs','native-adapter.mjs','directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs'];
  for(const name of names)copyFileSync(resolve(shellDirectory,name),resolve(output,name));
  let html=readFileSync(resolve(shellDirectory,'managed.html'),'utf8').replace('content="normal"',`content="${variant}"`);
  writeFileSync(resolve(output,'th19.html'),html);

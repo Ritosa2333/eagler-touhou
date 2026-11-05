@@ -21,6 +21,9 @@ let cachedBunExecutable;
 function bunExecutableOnPath() {
   if (cachedBunExecutable) return cachedBunExecutable;
   const version = readFileSync(resolve(root,'launcher/.bun-version'),'utf8').trim();
+  // Bun's package runner may expose its own executable through a temporary
+  // node shim. Its in-process version is authoritative and needs no cold spawn.
+  if (process.versions.bun === version) return cachedBunExecutable = process.execPath;
   const names = process.platform === 'win32' ? ['bun.exe'] : ['bun'];
   const directories = (process.env.PATH ?? '').split(delimiter).filter(Boolean);
   for (const name of names) for (const directory of directories) {

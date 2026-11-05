@@ -604,7 +604,7 @@ export const PRODUCT_GAMES = Object.freeze({
         storage: Object.freeze({saveRoot: "/savesth19", scoreFile: "scoreth19.dat", configFiles: Object.freeze(["th19.cfg"])}),
         runtime: "./runtime/th19/th19.html", runtimeFileLayout: "directory", dataProvider: "retail-memory",
         requiredShared: Object.freeze(["/msgothic.ttc"]),
-        runtimeAssets: Object.freeze(["th19.html","manifest.json","shell.mjs","managed.css","keyboard.mjs","directory-keyboard.mjs","keyboard-owners.mjs","keyboard-input-bridge.mjs","netplay.mjs","peer-socket.mjs","rollback-session.mjs","native-adapter.mjs","th19.mjs","th19.wasm"]),
+        runtimeAssets: Object.freeze(["th19.html","manifest.json","resource-integrity.mjs","shell.mjs","managed.css","keyboard.mjs","directory-keyboard.mjs","keyboard-owners.mjs","keyboard-input-bridge.mjs","netplay.mjs","peer-socket.mjs","rollback-session.mjs","native-adapter.mjs","th19.mjs","th19.wasm"]),
         musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Ritosa2333/eagler-touhou"}),

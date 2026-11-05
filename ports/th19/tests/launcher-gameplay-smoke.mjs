@@ -20,7 +20,7 @@ try{
  await page.evaluateOnNewDocument(()=>{window.__TH19_SMOKE_EVENTS=[];addEventListener("message",e=>{if(e.data?.protocol==="eagler-touhou/1"&&e.data.game==="th19")window.__TH19_SMOKE_EVENTS.push({event:e.data.event,ok:e.data.ok,error:e.data.error,request:e.data.request});});});
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
  await page.goto(new URL('?game=th19',base).href,{waitUntil:'domcontentloaded',timeout:120000});
- async function until(check,label){const end=Date.now()+120000;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw Error('Timeout '+label);}
+ async function until(check,label){const end=Date.now()+Number(option('timeout','120000'));while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw Error('Timeout '+label);}
  await until(()=>page.evaluate(()=>window.__eaglerBoot?.done===true&&!!document.querySelector('#launch')),'launcher boot');
  await until(()=>page.evaluate(()=>localStorage.getItem('eagler-touhou-first-use-notice-seen-v1')==='1'||document.querySelector('#firstUseNoticeDialog')?.open===true),'first-use notice');
  await page.evaluate(()=>{if(document.querySelector('#firstUseNoticeDialog')?.open)document.querySelector('#firstUseNoticeClose')?.click();});
