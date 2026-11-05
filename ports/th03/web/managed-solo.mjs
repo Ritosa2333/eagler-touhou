@@ -45,7 +45,7 @@ const pauseMenu=mountPauseMenu(document.getElementById('screen'),{
 });
 function tick(now){
   if(!emulator)return;
-  const sample=globalThis.__eaglerPC98Input.sample(),edge=sample&~pausePrevious;pausePrevious=sample;
+  const sample=globalThis.__eaglerPC98Input.sample({play:emulator.snapshot.state?.phase===1&&!pauseMenu.visible}),edge=sample&~pausePrevious;pausePrevious=sample;
   if(pauseMenu.visible){
     if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);
     if(edge&(32|512|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();

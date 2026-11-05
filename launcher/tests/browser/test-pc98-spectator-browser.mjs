@@ -63,7 +63,7 @@ try{
   for(let actor=0;actor<2;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
   const start=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
   let run=start.serial,roles=[0,1,null];
-  const options=actor=>({touchEnabled:false,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
+  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
   const configure=async(actor,serial)=>{
     await page.evaluate(async({actor,options})=>rpc(actor,'configure',{music:'none',options,resources:[],runtimeResources:[],sharedResources:[]}),{actor,options:options(actor)});
     // Give the running native title several ticks between protocol commands.
@@ -72,9 +72,24 @@ try{
     await page.evaluate(({actor,serial})=>rpc(actor,'launch',{launchSerial:serial}),{actor,serial});
   };
   await Promise.all([configure(0,1),configure(1,1)]);
-  if(game==='th03')for(let i=0;i<4;i++)for(const actor of [0,1]){await frames()[actor].click('#canvas');for(const down of [true,false]){await page.evaluate(({actor,down})=>rpc(actor,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down}),{actor,down});await new Promise(r=>setTimeout(r,250));}}
+  if(game==='th03')for(let i=0;i<4;i++)for(const actor of [0,1]){
+    await frames()[actor].click('#canvas');
+    if(process.env.PC98_TOUCH_INPUT==='1'){
+      await page.evaluate(()=>{let button=document.getElementById('focus-out');if(!button){button=document.createElement('button');button.id='focus-out';button.textContent='focus';document.body.append(button);}button.focus();});
+      for(const type of ['down','up']){await page.evaluate(({actor,type})=>rpc(actor,'direct-touch',{type,id:1,x:.5,y:.5}),{actor,type});await new Promise(r=>setTimeout(r,250));}
+    }else for(const down of [true,false]){await page.evaluate(({actor,down})=>rpc(actor,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down}),{actor,down});await new Promise(r=>setTimeout(r,250));}
+  }
   if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
+  if(game==='th03'&&process.env.PC98_TOUCH_INPUT==='1'){
+    await wait(async()=>(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(()=>globalThis.th03SyncState?.phase===1)))).every(Boolean),'touch selection enters gameplay',30000);
+    const position=()=>frames()[1].evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.find(p=>p.seat===1)?.x);
+    const before=await position();assert.equal(typeof before,'number');
+    await page.evaluate(()=>rpc(1,'direct-touch',{type:'down',id:42,x:.4,y:.5}));
+    for(let i=1;i<=8;i++){await page.evaluate(i=>rpc(1,'direct-touch',{type:'move',id:42,x:.4+i*.015,y:.5}),i);await new Promise(r=>setTimeout(r,100));}
+    await page.evaluate(()=>rpc(1,'direct-touch',{type:'up',id:42,x:.52,y:.5}));await new Promise(r=>setTimeout(r,500));
+    assert.notEqual(await position(),before,'P2 drag moves the actual player');
+  }
   if(game==='th01'){
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));await new Promise(r=>setTimeout(r,180));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
     await new Promise(r=>setTimeout(r,1500));

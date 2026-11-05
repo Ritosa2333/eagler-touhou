@@ -306,7 +306,7 @@ export function mountControls({canvas, getEmulator, getNetwork, getTouch, getMan
       else if(managedEdge&(512|256))onMenu(0,'confirm');
       else if(managedEdge&16)onMenu(0,'resume');
     }else if(managedEdge&128)onEscape();
-    if (focused && !document.hidden && !dialog.open && !touch?.isEditing() && getEmulator()) {
+    if ((focused || managed) && !document.hidden && !dialog.open && !touch?.isEditing() && getEmulator()) {
       const list = pads();
       for (let slot = 0; slot < 2; slot++) {
         if (network && slot === 1) continue;
@@ -349,7 +349,7 @@ export function mountControls({canvas, getEmulator, getNetwork, getTouch, getMan
       }else if(fire[slot].sample(rapid,charge,performance.now()))target.add(`${slot}:shot`);
     }
     if(isPaused()||getEmulator()?.state!=='running'){target.clear();if(!network?.isLockstep)fire.forEach(f=>f.reset());}
-    if(!focused||document.hidden||dialog.open||touch?.isEditing()||isPaused()||getEmulator()?.state!=='running')network?.clearLocal?.();
+    if((!focused&&!managed)||document.hidden||dialog.open||touch?.isEditing()||isPaused()||getEmulator()?.state!=='running')network?.clearLocal?.();
     send(target, packed, cancelled);
   }
   function poll(){refreshPads();sampleLocal();requestAnimationFrame(poll);}
