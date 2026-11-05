@@ -959,31 +959,6 @@
   .player-profile .profile-display-options label:has([data-state="checked"]) {
     background: var(--kit-card);
   }
-  .account-page {
-    --account-header-height: 60px;
-    --account-header-overlap: 0px;
-  }
-  .account-content h1 {
-    font-weight: 600;
-    letter-spacing: -0.025em;
-  }
-  .account-content label {
-    font-weight: 500;
-  }
-  .account-page .account-password-toggle {
-    top: 0;
-    right: 0;
-    width: 36px;
-    height: 36px;
-    min-height: 36px;
-  }
-  .account-page .account-password input {
-    padding-right: 44px;
-  }
-  .account-page .account-field-error,
-  .account-page .account-feedback.is-error {
-    color: var(--kit-destructive);
-  }
   @media (max-width: 780px), (pointer: coarse) {
     :is(
         .profile-detail-fields,
@@ -996,14 +971,6 @@
       :is(input:not(.ui-input):not([type="checkbox"]):not([type="range"]):not([type="file"]), textarea:not(.ui-input)) {
       min-height: 44px;
       font-size: 16px;
-    }
-    .account-page {
-      --account-header-height: 100px;
-    }
-    .account-page .account-password-toggle {
-      width: 44px;
-      height: 44px;
-      min-height: 44px;
     }
   }
 }

@@ -92,7 +92,7 @@ function subscribe(listener: () => void) {
 const getSnapshot = () => state;
 const getServerSnapshot = () => loading;
 const inactiveSubscription = () => () => {};
-export const accountSession = {subscribe, getSnapshot};
+export const accountSession = {subscribe, getSnapshot,whenReady:()=>state.status==='loading'?refresh():Promise.resolve()};
 
 export function useAccountSession(interactive = true) {
   const snapshot = useSyncExternalStore(interactive ? subscribe : inactiveSubscription,

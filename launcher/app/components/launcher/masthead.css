@@ -366,3 +366,5 @@ button.masthead-account-entry{cursor:pointer}.masthead-account-entry:is(:hover,[
 .account-menu-identity strong,.account-menu-identity small{display:block;overflow-wrap:anywhere}.account-menu-identity small{color:var(--kit-muted-foreground)}
 .profile-avatar>.account-avatar,.profile-draft-avatar>.account-avatar{width:100%;height:100%;border-radius:inherit}
 @media(max-width:600px){.masthead-account-entry{max-width:clamp(78px,24vw,110px);gap:5px;padding-inline:3px;font-size:12px}.account-guest{gap:3px;max-width:none}.account-login-link{gap:4px}.masthead-account-entry .account-avatar,.account-login-icon{width:24px;height:24px}}
+@media(max-width:380px){.account-guest{gap:0}.account-guest-separator,.account-register-link{display:none}.account-login-link{width:44px;min-width:44px;min-height:44px;padding:0;justify-content:center;gap:0;border-radius:7px}.account-login-link:hover{background:var(--kit-accent);text-decoration:none}.account-guest-label{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}}
+@media(max-width:380px){.book-masthead .site-brand{width:136px}}

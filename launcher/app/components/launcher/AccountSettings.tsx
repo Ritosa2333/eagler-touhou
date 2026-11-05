@@ -1,3 +1,4 @@
+import type {CloudSaveSync} from '../../services/cloud-save-sync';
 import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
 import {Link, useLocation} from 'react-router';
 import {ChevronLeft, ChevronRight, Gamepad2, ImagePlus, LoaderCircle, Plus, Save, ShieldCheck, Trash2, UserRound} from 'lucide-react';
@@ -18,10 +19,10 @@ import ProfileImageCropDialog from './ProfileImageCropDialog';
 import type {Profile, ProfileDisplay} from './ProfilePreview';
 import './account-settings.css';
 
-export function AccountSettings({initialProfile, initialDisplay, panel, onSave,readLocalSaves}: {
+export function AccountSettings({initialProfile, initialDisplay, panel, onSave,readLocalSaves,cloudSync}: {
   initialProfile:Profile; initialDisplay:ProfileDisplay; panel:string;
   onSave(profile:Profile, display:ProfileDisplay):void;
-  readLocalSaves?:LocalSaveReader;
+  readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;
 }) {
   const {t} = useLocale();
   const location = useLocation();
@@ -48,7 +49,7 @@ export function AccountSettings({initialProfile, initialDisplay, panel, onSave,r
     </aside>
     <div className="account-settings-content" ref={content}>
       <Link className="account-settings-back" to={address('#settings')}><ChevronLeft aria-hidden="true"/>{t('profile.settings')}</Link>
-      {editing ? <ProfileSettings initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/> : gameSettings ? <CloudSaves readLocalSaves={readLocalSaves}/> : <SecuritySettings/>}
+      {editing ? <ProfileSettings initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/> : gameSettings ? <CloudSaves readLocalSaves={readLocalSaves} sync={cloudSync}/> : <SecuritySettings/>}
     </div>
   </main>;
 }

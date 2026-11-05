@@ -9206,5 +9206,85 @@
   "th19.charge": {
     "id": "th19_charge",
     "params": []
+  },
+  "account.forgotPassword": {
+    "id": "account_forgotPassword",
+    "params": []
+  },
+  "account.resetPassword": {
+    "id": "account_resetPassword",
+    "params": []
+  },
+  "account.backToLogin": {
+    "id": "account_backToLogin",
+    "params": []
+  },
+  "account.newPassword": {
+    "id": "account_newPassword",
+    "params": []
+  },
+  "account.resetCodeSent": {
+    "id": "account_resetCodeSent",
+    "params": []
+  },
+  "account.passwordResetDone": {
+    "id": "account_passwordResetDone",
+    "params": []
+  },
+  "cloudSave.autoHint": {
+    "id": "cloudSave_autoHint",
+    "params": []
+  },
+  "cloudSave.syncConflict": {
+    "id": "cloudSave_syncConflict",
+    "params": []
+  },
+  "cloudSave.syncPending": {
+    "id": "cloudSave_syncPending",
+    "params": []
+  },
+  "cloudSave.syncConflictChoice": {
+    "id": "cloudSave_syncConflictChoice",
+    "params": []
+  },
+  "cloudSave.otherDevicePending": {
+    "id": "cloudSave_otherDevicePending",
+    "params": []
+  },
+  "cloudSave.otherAccountPending": {
+    "id": "cloudSave_otherAccountPending",
+    "params": []
+  },
+  "cloudSave.syncOffline": {
+    "id": "cloudSave_syncOffline",
+    "params": []
+  },
+  "cloudSave.syncUnavailable": {
+    "id": "cloudSave_syncUnavailable",
+    "params": []
+  },
+  "cloudSave.sameBrowserActive": {
+    "id": "cloudSave_sameBrowserActive",
+    "params": []
+  },
+  "cloudSave.pendingSession": {
+    "id": "cloudSave_pendingSession",
+    "params": []
+  },
+  "cloudSave.useCloud": {
+    "id": "cloudSave_useCloud",
+    "params": []
+  },
+  "cloudSave.useLocal": {
+    "id": "cloudSave_useLocal",
+    "params": []
+  },
+  "cloudSave.continueLocal": {
+    "id": "cloudSave_continueLocal",
+    "params": []
+  },
+  "cloudSave.claimLocal": {
+    "id": "cloudSave_claimLocal",
+    "params": []
   }
 }

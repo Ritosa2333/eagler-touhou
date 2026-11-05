@@ -1,3 +1,4 @@
+import type {CloudSaveSync} from './services/cloud-save-sync';
 import { useLocation } from 'react-router';
 import { bookArtwork } from './components/launcher/book-artwork';
 import {
@@ -45,6 +46,7 @@ export type LobbyPresentation = Omit<
  * production must supply the actual storage, file, runtime and room owners. */
 export interface LauncherHost {
   readLocalSaves?:LocalSaveReader;
+  cloudSync?:CloudSaveSync|null;
   locale: UiLocale;
   lessMotion?: boolean;
   products: readonly LibraryProduct[];
@@ -291,7 +293,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         {accountPage ? (
           <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
         ) : profilePage ? (
-          <Suspense fallback={<main className="player-profile" aria-busy="true"/>}><ProfilePage readLocalSaves={host.readLocalSaves}/></Suspense>
+          <Suspense fallback={<main className="player-profile" aria-busy="true"/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync}/></Suspense>
         ) : navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)

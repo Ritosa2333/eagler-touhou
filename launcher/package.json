@@ -197,6 +197,7 @@
     "test:repository": "bun scripts/prepare-tests.mjs --full && bun --bun run vitest run --project repository",
     "test:workspace": "bun scripts/prepare-tests.mjs --full && bun --bun run vitest run --config vitest.workspace.config.ts",
     "test:account:browser": "node tests/browser/test-account-page.mjs",
+    "test:cloud-save-web-lock:browser": "node tests/browser/test-cloud-save-web-lock.mjs",
     "test:career:browser": "node tests/browser/test-career-chart.mjs",
     "test:career-hover:browser": "node tests/browser/test-career-thumbnail-hover.mjs",
     "test:page-transitions:browser": "node tests/browser/test-launcher-page-transitions.mjs",

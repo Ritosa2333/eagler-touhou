@@ -13,7 +13,8 @@ const statistics=z.object({game:z.custom<GameId>(isGameId),parserVersion:z.liter
 const productId=z.custom<string>(value=>typeof value==='string'&&isProductId(value));
 const fileInfo=z.object({name:z.string(),bytes:z.number().int().positive(),sha256:z.string().regex(/^[a-f0-9]{64}$/)});
 const snapshot=z.object({product:productId,revision:z.number().int().positive(),uploadedAt:z.string().datetime(),files:z.array(fileInfo).max(6),statistics});
-const listing=z.object({products:z.array(z.object({id:productId,game:z.custom<GameId>(isGameId),multiplayer:z.boolean(),files:z.array(z.string()),requiredFiles:z.array(z.string()),revision:z.number().int().nonnegative()})).max(32),saves:z.array(snapshot).max(64),limits:z.object({fileBytes:z.number().positive(),totalBytes:z.number().positive(),files:z.number().int().positive().max(6)})});
+const pendingSession=z.object({product:productId,deviceId:z.string().uuid(),runId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),startedAt:z.string().datetime()});
+const listing=z.object({products:z.array(z.object({id:productId,game:z.custom<GameId>(isGameId),multiplayer:z.boolean(),files:z.array(z.string()),requiredFiles:z.array(z.string()),revision:z.number().int().nonnegative()})).max(32),saves:z.array(snapshot).max(64),pending:z.array(pendingSession).max(512).default([]),limits:z.object({fileBytes:z.number().positive(),totalBytes:z.number().positive(),files:z.number().int().positive().max(6)})});
 const profile=z.object({career:z.boolean(),records:z.boolean(),playtimeSeconds:time,games:z.array(z.object({product:productId,uploadedAt:z.string().datetime(),statistics})).max(16)});
 export type CloudSaveList=z.infer<typeof listing>;
 export type CloudSaveSnapshot=z.infer<typeof snapshot>;
@@ -27,8 +28,9 @@ export function cloudSaveFileName(allowed:readonly string[],name:string) {
 }
 function parse<S extends z.ZodTypeAny>(schema:S,value:unknown):z.output<S> {const result=schema.safeParse(value);if(!result.success)throw new AccountRequestError('ACCOUNT_RESPONSE_INVALID');return result.data;}
 export async function listCloudSaves(signal?:AbortSignal) {return parse(listing,await accountRequest('v1/me/cloud-saves',undefined,{signal}));}
-export async function uploadCloudSave(product:string,revision:number,files:File[],signal?:AbortSignal) {
+export async function uploadCloudSave(product:string,revision:number,files:File[],signal?:AbortSignal,session?:{deviceId:string;runId:string}) {
   const form=new FormData();form.append('baseRevision',String(revision));for(const file of files)form.append('files',file,file.name);
+  if(session){form.append('deviceId',session.deviceId);form.append('runId',session.runId);}
   return parse(snapshot,await accountRequest('v1/me/cloud-saves/'+product,form,{signal,timeoutMs:90_000}));
 }
 export async function deleteCloudSave(product:string,baseRevision:number,signal?:AbortSignal) {

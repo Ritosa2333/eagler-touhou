@@ -1,4 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState, useSyncExternalStore} from 'react';
+import type {CloudSaveSync} from '../../services/cloud-save-sync';
 import {CloudUpload, Download, LoaderCircle, RefreshCw, Trash2} from 'lucide-react';
 import {PRODUCT_GAMES, isProductId} from '../../../src/contracts/product-catalog.mts';
 import {Button} from '../../ui/button';
@@ -16,7 +17,9 @@ const errorKey=(error:unknown):UiMessageKey=>{
   const code=error instanceof AccountRequestError?error.code:'';
   return code==='SAVE_CONFLICT'?'cloudSave.conflict':code==='SAVE_BUSY'?'cloudSave.busy':code==='SAVE_QUOTA_EXCEEDED'?'cloudSave.quota':code==='SAVE_TOO_LARGE'||code==='SAVE_PARSE_LIMIT'?'cloudSave.tooLarge':code==='INVALID_SAVE'||code==='WRONG_SAVE_GAME'||code==='INVALID_SAVE_FILE'||code==='MAIN_SAVE_REQUIRED'?'cloudSave.invalid':code==='UNSUPPORTED_SAVE_VERSION'?'cloudSave.unsupportedVersion':'account.requestFailed';
 };
-export function CloudSaves({readLocalSaves}:{readLocalSaves?:LocalSaveReader}) {
+const noSubscribe=()=>()=>{},noSync=()=>null;
+export function CloudSaves({readLocalSaves,sync}:{readLocalSaves?:LocalSaveReader;sync?:CloudSaveSync|null}) {
+  const syncStatus=useSyncExternalStore(sync?.subscribe??noSubscribe,sync?.getSnapshot??noSync,noSync);
   const {locale,t}=useLocale();
   const [data,setData]=useState<CloudSaveList>(),[product,setProduct]=useState('th06'),[files,setFiles]=useState<File[]>([]);
   const [busy,setBusy]=useState(false),[error,setError]=useState<UiMessageKey>(),[message,setMessage]=useState<UiMessageKey>();
@@ -29,6 +32,7 @@ export function CloudSaves({readLocalSaves}:{readLocalSaves?:LocalSaveReader}) {
     setData(value);setProduct(value.saves[0]?.product??(value.products.some(item=>item.id==='th06')?'th06':value.products[0]?.id??'th06'));
   }).catch(error=>{if(!controller.signal.aborted)setError(errorKey(error));});return()=>{mounted.current=false;controller.abort();task.current?.abort();};},[]);
   useUnsavedChanges(files.length>0,()=>setFiles([]));
+  useEffect(()=>{const refresh=()=>void listCloudSaves().then(value=>{if(mounted.current)setData(value);}).catch(()=>{});window.addEventListener('cloud-save-change',refresh);return()=>window.removeEventListener('cloud-save-change',refresh);},[]);
   async function perform(action:(signal:AbortSignal)=>Promise<void>) {
     if(task.current)return;const controller=new AbortController();task.current=controller;setBusy(true);setError(undefined);setMessage(undefined);
     try{await action(controller.signal);}catch(error){if(!controller.signal.aborted&&mounted.current){setError(errorKey(error));if(error instanceof AccountRequestError&&error.code==='SAVE_CONFLICT')void listCloudSaves().then(value=>{if(mounted.current)setData(value);}).catch(()=>{});}}
@@ -55,7 +59,9 @@ export function CloudSaves({readLocalSaves}:{readLocalSaves?:LocalSaveReader}) {
     <header className="account-settings-heading"><h2 id="game-settings-title">{t('room.gameSettingsGroup')}</h2></header>
     <section className="settings-section settings-section-first cloud-save-section" aria-labelledby="cloud-save-title" aria-busy={busy||!data&&!error}>
       <div className="cloud-save-heading"><h3 id="cloud-save-title">{t('cloudSave.title')}</h3><Button variant="ghost" size="icon-sm" disabled={busy} aria-label={t('cloudSave.refresh')} onClick={()=>void perform(async signal=>setData(await listCloudSaves(signal)))}><RefreshCw/></Button></div>
-      <p className="cloud-save-hint">{t('cloudSave.manualHint')}</p>
+      <p className="cloud-save-hint">{t(sync?'cloudSave.autoHint':'cloudSave.manualHint')}</p>
+      {syncStatus&&<p className="cloud-save-error" role="status">{PRODUCT_GAMES[syncStatus.product as keyof typeof PRODUCT_GAMES]?.title} | {t(syncStatus.error)} <Button variant="ghost" size="sm" onClick={()=>void sync?.flush()}>{t('cloudSave.refresh')}</Button></p>}
+      {data?.pending?.some(item=>item.product===product)&&<p className="cloud-save-hint">{t('cloudSave.pendingSession')}</p>}
       {data&&<>
         <label className="cloud-save-game-label" htmlFor="cloud-save-game">{t('cloudSave.game')}</label>
         <Select value={product} onValueChange={value=>{setProduct(value);setFiles([]);setError(undefined);setMessage(undefined);}} disabled={busy}>

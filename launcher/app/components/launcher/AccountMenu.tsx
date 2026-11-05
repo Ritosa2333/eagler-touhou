@@ -37,8 +37,13 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
     if (path.pathname !== '/login.html') login.searchParams.set('next',path.pathname+path.search+path.hash);
     const loginHref = login.pathname+login.search;
     login.searchParams.set('mode','register');
-    return <span className="masthead-account-entry account-guest"><AppLink className="account-login-link" href={loginHref}><span className="account-login-icon"><LogIn aria-hidden="true"/></span>{t('account.login')}</AppLink>
-      <span aria-hidden="true">/</span><AppLink href={login.pathname+login.search}>{t('account.register')}</AppLink></span>;
+    return <span className="masthead-account-entry account-guest">
+      <AppLink className="masthead-link account-login-link" href={loginHref} aria-label={t('account.login')+' / '+t('account.register')}>
+        <span className="account-login-icon"><LogIn aria-hidden="true"/></span><span className="account-guest-label">{t('account.login')}</span>
+      </AppLink>
+      <span className="account-guest-separator" aria-hidden="true">/</span>
+      <AppLink className="masthead-link account-register-link" href={login.pathname+login.search} aria-label={t('account.register')}>{t('account.register')}</AppLink>
+    </span>;
   }
   const current = identity?.username === user.username ? identity : undefined;
   const nickname = current?.nickname || user.name;

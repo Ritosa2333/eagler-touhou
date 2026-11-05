@@ -1,3 +1,4 @@
+import type {CloudSaveSync} from '../../services/cloud-save-sync';
 import {AccountRequestError, accountRequest} from '../../services/account-client';
 import {useAccountSession} from '../../services/account-session';
 
@@ -38,7 +39,7 @@ const blankProfile: Profile = {name: '', bio: '', avatar: '', cover: '', links: 
 const imageData = (value: string) => /^data:image\/(png|jpeg|webp);base64,/i.test(value);
 const safeUrl = (value: string) => {try {const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null;} catch {return null;}};
 type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; details: (Profile & {display:ProfileDisplay}) | null};
-export function ProfilePage({readLocalSaves}:{readLocalSaves?:LocalSaveReader}={}) {
+export function ProfilePage({readLocalSaves,cloudSync}:{readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null}={}) {
   const {pathname} = useLocation();
   const {state,retry} = useAccountSession();
   const {t} = useLocale();
@@ -46,9 +47,9 @@ export function ProfilePage({readLocalSaves}:{readLocalSaves?:LocalSaveReader}={
     {state.status === 'error' && <p role="alert">{t('account.requestFailed')} <Button variant="outline" onClick={retry}>{t('cloudSave.refresh')}</Button></p>}
   </div></main>;
   const viewer = state.status === 'member' ? state.user.username : '';
-  return <AccountProfile key={pathname+'|'+viewer} pathname={pathname} viewer={viewer} readLocalSaves={readLocalSaves}/>;
+  return <AccountProfile key={pathname+'|'+viewer} pathname={pathname} viewer={viewer} readLocalSaves={readLocalSaves} cloudSync={cloudSync}/>;
 }
-function AccountProfile({pathname,viewer,readLocalSaves}: {pathname:string;viewer:string;readLocalSaves?:LocalSaveReader}) {
+function AccountProfile({pathname,viewer,readLocalSaves,cloudSync}: {pathname:string;viewer:string;readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null}) {
   const {locale,t} = useLocale();
   const {hash,search} = useLocation();
   const navigate = useNavigate();
@@ -78,12 +79,12 @@ function AccountProfile({pathname,viewer,readLocalSaves}: {pathname:string;viewe
     load().catch(error => {if (!controller.signal.aborted) setState({error:error instanceof AccountRequestError && error.status === 404 ? 'profile.notFound' : 'account.requestFailed'});});
     return () => controller.abort();
   }, [pathname,viewer,aliasSearch,aliasHash,signInHref,navigate,attempt]);
-  if (state.profile) return <ProfileBody panel={panel} remote={state.profile} owner={!!state.owner} readLocalSaves={readLocalSaves}/>;
+  if (state.profile) return <ProfileBody panel={panel} remote={state.profile} owner={!!state.owner} readLocalSaves={readLocalSaves} cloudSync={cloudSync}/>;
   return <main className="player-profile"><div className="profile-wrap" aria-busy={!state.error}>
     {state.error && <p role="alert">{t(state.error)} {state.error !== 'profile.notFound' && <Button variant="outline" onClick={()=>setAttempt(value=>value+1)}>{t('cloudSave.refresh')}</Button>}</p>}
   </div></main>;
 }
-function ProfileBody({remote,owner,panel,readLocalSaves}: {remote:RemoteProfile; owner:boolean; panel:string;readLocalSaves?:LocalSaveReader}) {
+function ProfileBody({remote,owner,panel,readLocalSaves,cloudSync}: {remote:RemoteProfile; owner:boolean; panel:string;readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null}) {
   const {locale,t}=useLocale();
   const location=useLocation(),navigate=useNavigate();
   const anchor=location.hash.replace(/^#profile-/,''),tab:ProfileTab=Object.hasOwn(tabLabels,anchor)?anchor as ProfileTab:'overview';
@@ -111,7 +112,7 @@ function ProfileBody({remote,owner,panel,readLocalSaves}: {remote:RemoteProfile;
       return <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"><Icon aria-hidden="true"/><span>{link.label}</span><ArrowUpRight aria-hidden="true"/></a>;
     })}</div>}</>;
   const navigation = visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
-  if (settings) return <AccountSettings initialProfile={profile} initialDisplay={display} panel={panel} readLocalSaves={readLocalSaves}
+  if (settings) return <AccountSettings initialProfile={profile} initialDisplay={display} panel={panel} readLocalSaves={readLocalSaves} cloudSync={cloudSync}
     onSave={(next,visibility) => {setProfile(next);setDisplay(visibility);}}/>;
   return <SocialProvider key={remote.username} username={remote.username}><main className="player-profile profile-page" aria-labelledby="profile-name"><div className="profile-wrap">
       <section id="profile-overview" className="profile-hero profile-public-section">

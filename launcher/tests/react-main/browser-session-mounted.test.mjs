@@ -64,6 +64,9 @@ before(async () => {
     export {getSettingsRenderCount} from 'captured-settings-render';
     export {getAcquisitionOptions} from 'captured-acquisition';
     export {setPackageReadGate} from 'gated-package-read';
+    export {setCloudSaveBeforeLaunch, getCloudSaveBeforeLaunchCalls, getCloudSaveEvents} from 'captured-cloud-save-sync';
+    export {setAccountSessionResult} from 'captured-account-client';
+    export {accountSession as testAccountSession} from './app/services/account-session.ts';
     export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES, multiplayerConfigForProduct} from './src/contracts/product-catalog.mts';
     export {encodeRoomInvite} from './src/launcher/room-invite.mts';
@@ -82,7 +85,10 @@ before(async () => {
     plugins: [{name: 'native-acquisition-scheduling', setup(ctx) {
       // Test-only references and a storage-read scheduling edge. Both wrappers
       // delegate to the authored owners; no preparation/queue policy is replaced.
-      ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition)$/}, args => ({path: args.path, namespace: 'session-edge'}));
+      ctx.onResolve({filter: /^(captured-browser-session|gated-package-read|captured-acquisition|captured-cloud-save-sync|captured-account-client|cloud-sync-release-features)$/}, args => ({path: args.path, namespace: 'session-edge'}));
+      ctx.onResolve({filter: /release-features$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'cloud-sync-release-features',namespace:'session-edge'} : undefined);
+      ctx.onResolve({filter: /account-client$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/account-session.ts') ? {path:'captured-account-client',namespace:'session-edge'} : undefined);
+      ctx.onResolve({filter: /services\/cloud-save-sync$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'captured-cloud-save-sync',namespace:'session-edge'} : undefined);
       ctx.onResolve({filter: /session\/browser-session$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/BrowserLauncher.tsx') ? {path: 'captured-browser-session', namespace: 'session-edge'} : undefined);
       ctx.onResolve({filter: /package-store\.mjs$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/services/package-acquisition.ts') ? {path: 'gated-package-read', namespace: 'session-edge'} : undefined);
       ctx.onResolve({filter: /services\/package-acquisition$/}, args => args.importer.replaceAll('\\', '/').endsWith('/app/session/browser-session.ts') ? {path:'captured-acquisition', namespace:'session-edge'} : undefined);
@@ -90,10 +96,25 @@ before(async () => {
         import {createBrowserSession as create} from './app/session/browser-session.ts';
         let session; export const getTestSession = () => session;
         export function createBrowserSession(options) {return session = create(options);}
+      ` : args.path === 'captured-account-client' ? `
+        let sessionResult=new Error('account service offline');
+        export function setAccountSessionResult(value){sessionResult=value;}
+        export async function accountRequest(path){if(path!=='auth/get-session')throw Error('Unexpected account request '+path);if(sessionResult instanceof Error)throw sessionResult;return sessionResult;}
+        export function cancelAccountRequests(){}
+        export class AccountRequestError extends Error {constructor(code,status){super(code);this.name='AccountRequestError';this.status=status;}}
       ` : args.path === 'captured-acquisition' ? `
         import {createPackageAcquisition as create} from './app/services/package-acquisition.ts';
         let options; export const getAcquisitionOptions = () => options;
         export function createPackageAcquisition(value) {options = value; return create(value);}
+      ` : args.path === 'captured-cloud-save-sync' ? `
+        let beforeLaunchGate=null; const calls=[],events=[]; export let cloudSaveEnabled=false;
+        export function setCloudSaveBeforeLaunch(value){beforeLaunchGate=value;cloudSaveEnabled=!!value;calls.length=0;events.length=0;}
+        export function getCloudSaveBeforeLaunchCalls(){return [...calls];}
+        export function getCloudSaveEvents(){return [...events];}
+        export function createCloudSaveSync(){return {beforeLaunch(product,signal){calls.push({product,signal});events.push({type:'beforeLaunch',product});return beforeLaunchGate?beforeLaunchGate(product,signal):Promise.resolve(true);},finished(){events.push({type:'finished'});},dispose(){events.push({type:'dispose'});}};}
+      ` : args.path === 'cloud-sync-release-features' ? `
+        import {cloudSaveEnabled} from 'captured-cloud-save-sync';
+        export {cloudSaveEnabled as accountsEnabled};
       ` : `
         import {readCurrentPackageGeneration as readCurrent} from './package/package-store.mjs';
         let gate; export function setPackageReadGate(value) {gate = value;}
@@ -116,6 +137,8 @@ before(async () => {
 });
 afterEach(async () => {
   api?.setPackageReadGate(null);
+  api?.setCloudSaveBeforeLaunch(null);
+  api?.setAccountSessionResult(new Error('account service offline'));
   if (mounted?.root) {
     const current = mounted;
     await React.act(async () => {current.root.unmount(); current.releaseHost?.(); current.releaseFirstUse?.(); await Promise.resolve();});
@@ -634,6 +657,65 @@ test('actual BrowserLauncher: fullscreen exit during native preparation conceals
   await React.act(async () => {f.native.emit('ready');}); await tick();
   assert.equal(commands().includes('configure'), false); assert.equal(commands().includes('launch'), false);
   assert.equal(f.native.location.href, 'about:blank'); assert.equal(currentUrl(), '/?game=th06&keep=a%20b');
+});
+
+for (const cancellation of ['runtime-close', 'options-close', 'product-change']) test(`actual BrowserLauncher: ${cancellation} cancels an awaited cloud-save launch before Player or Runtime configuration`, async () => {
+  let release;
+  const gate = new Promise(resolve => {release = resolve;});
+  api.setCloudSaveBeforeLaunch(() => gate);
+  const f = await mountBrowser();
+  await start();
+  await until(() => api.getCloudSaveBeforeLaunchCalls().length === 1, 'cloud-save launch gate is awaiting confirmation');
+  const [call] = api.getCloudSaveBeforeLaunchCalls();
+  assert.equal(call.product, 'th06');
+  assert.equal(playerOpen(), false, 'the Player stays closed while cloud-save confirmation is pending');
+
+  if (cancellation === 'runtime-close') {
+    assert.equal(await React.act(async () => api.getTestSession().requestRuntimeClose()), true);
+  } else if (cancellation === 'options-close') {
+    await click('#libraryBack');
+    await until(() => {const url=new URL(currentUrl(),'https://launcher.invalid');return !url.searchParams.has('game')&&url.searchParams.get('keep')==='a b';}, 'closing Options returns to the Library');
+  } else {
+    await React.act(async () => api.getTestSession().selectRouteProduct('th07'));
+    assert.equal(api.getTestSession().settings.getSnapshot().context.productId, 'th07');
+  }
+
+  assert.equal(call.signal.aborted, true, 'the pending cloud-save decision receives cancellation');
+  await React.act(async () => {release(true); await Promise.resolve();});
+  await until(() => api.getTestSession().getSnapshot().activity === 0, 'cancelled Start settles');
+  assert.equal(playerOpen(), false);
+  assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false);
+  assert.equal(f.navigations.some(url => url !== 'about:blank'), false, 'no Runtime document is opened after cancellation');
+});
+
+test('actual BrowserLauncher: a confirmed account arriving after an offline cloud gate cancels the unknown-identity launch', async () => {
+  let releaseFullscreen;
+  api.setCloudSaveBeforeLaunch(() => Promise.resolve(true));
+  api.setAccountSessionResult(new Error('account service offline'));
+  const f = await mountBrowser();
+  f.fullscreenReady = new Promise(resolve => {releaseFullscreen = resolve;});
+
+  try {
+    await start();
+    await until(() => api.getCloudSaveBeforeLaunchCalls().length === 1, 'cloud-save gate accepts the start');
+    const [call] = api.getCloudSaveBeforeLaunchCalls();
+    await until(() => api.testAccountSession.getSnapshot().status === 'error' && f.order.includes('fullscreen-enter'), 'offline account check leaves the Player waiting for fullscreen');
+    assert.equal(call.signal.aborted, false, 'an unconfirmed identity does not cancel by itself');
+    assert.equal(playerOpen(), true);
+    assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false);
+
+    api.setAccountSessionResult({user: {username: 'alice', name: 'Alice'}});
+    await React.act(async () => env.window.dispatchEvent(new env.window.StorageEvent('storage', {key: 'account-session-changed', newValue: 'other-tab'})));
+    await until(() => api.testAccountSession.getSnapshot().status === 'member' && call.signal.aborted, 'confirmed Alice identity cancels the start that passed with unknown identity');
+    await React.act(async () => releaseFullscreen());
+    await until(() => !playerOpen(), 'cancelled unknown-identity Player closes after fullscreen settles');
+
+    assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false, 'the stale start never configures Runtime');
+    assert.equal(f.native.location.href, 'about:blank');
+    assert.ok(visibleOptions(), 'the user can retry Start under the confirmed account');
+  } finally {
+    if (releaseFullscreen) await React.act(async () => releaseFullscreen());
+  }
 });
 
 test('actual BrowserLauncher: warning cancel has no fullscreen/native side effect, repeated Start owns one launch', async () => {
@@ -1532,6 +1614,52 @@ for (const boundary of ['warning', 'fullscreen']) test(`actual BrowserLauncher: 
   assert.equal(node('#gameFrame'), frame); assert.equal(playerOpen(), true);
   assert.equal(f.order.filter(value => value === 'fullscreen-enter').length, 1);
   await back(); await until(() => !playerOpen(), 'selected fallback Runtime closes normally');
+});
+
+for (const acceptFallbackGate of [true, false]) test(`actual BrowserLauncher: Host fallback ${acceptFallbackGate ? 'waits for the selected product gate' : 'returns to Options when its cloud save gate is declined'}`, async () => {
+  let releaseOldProduct, releaseFullscreen, releaseSelectedProduct;
+  const oldProductGate = new Promise(resolve => {releaseOldProduct = resolve;});
+  const selectedProductGate = new Promise(resolve => {releaseSelectedProduct = resolve;});
+  api.setCloudSaveBeforeLaunch(product => product === 'th07' ? oldProductGate : selectedProductGate);
+  const initial = '/?game=th07&keep=a%20b#retained';
+  const f = await mountBrowser({initial, holdHost: true, host: subsetHost(['th06']), seedStorage(storage) {
+    storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'none', options: {touchEnabled: false}}));
+  }});
+  f.fullscreenReady = new Promise(resolve => {releaseFullscreen = resolve;});
+  await click('#launch');
+  assert.equal(node('#decisionDialog').open, true);
+  await click('#decisionConfirm');
+  await until(() => api.getCloudSaveBeforeLaunchCalls().some(call => call.product === 'th07'), 'original product passes cloud save gate');
+  assert.equal(playerOpen(), false, 'Player stays closed until the original product gate succeeds');
+  await React.act(async () => {releaseOldProduct(true);});
+  await until(() => f.order.includes('fullscreen-enter'), 'Player waits for fullscreen while the cloud run is active');
+  await acceptHeldHost(f);
+  assert.equal(node('#gameId').dataset.game, 'th06');
+  await React.act(async () => {releaseFullscreen();});
+  await until(() => api.getCloudSaveBeforeLaunchCalls().some(call => call.product === 'th06'), 'selected Host fallback passes a fresh cloud save gate');
+
+  const events = api.getCloudSaveEvents();
+  const oldGate = events.findIndex(event => event.type === 'beforeLaunch' && event.product === 'th07');
+  const releasedOldRun = events.findIndex((event,index) => index > oldGate && event.type === 'finished');
+  const newGate = events.findIndex((event,index) => index > releasedOldRun && event.type === 'beforeLaunch' && event.product === 'th06');
+  assert.ok(oldGate >= 0 && releasedOldRun > oldGate && newGate > releasedOldRun, 'the old product lock is released before acquiring the fallback product');
+  const selectedCall = api.getCloudSaveBeforeLaunchCalls().find(call => call.product === 'th06');
+  assert.equal(selectedCall.signal.aborted, false, 'the fallback product gets a live cancellation signal');
+  assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false, 'Runtime configuration waits for the fallback product gate');
+
+  await React.act(async () => {releaseSelectedProduct(acceptFallbackGate);});
+  if (acceptFallbackGate) {
+    await until(() => commands().includes('launch'), 'the fallback Runtime launches after its cloud save gate succeeds');
+    assert.equal(f.outbound.find(message => message.command === 'configure').game, 'th06');
+    assert.match(f.native.location.href, /\/runtime\/th06\/th06\.html/);
+    await back(); await until(() => !playerOpen(), 'selected fallback Runtime closes normally');
+  } else {
+    await until(() => !playerOpen(), 'declined fallback gate closes the unlaunched Player');
+    assert.ok(visibleOptions(), 'the selected Host options return after declining cloud sync');
+    assert.equal(currentUrl(), initial, 'the original product URL remains intact');
+    assert.equal(commands().some(command => command === 'configure' || command === 'launch'), false);
+    assert.equal(f.native.location.href, 'about:blank');
+  }
 });
 
 // Host fallback before Start changes the music choice; the current UI presents
