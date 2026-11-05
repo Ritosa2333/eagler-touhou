@@ -11,3 +11,7 @@
 HTTP 场景使用既有 SHA-256 回退算法验证程序和 Runtime 资源，校验损坏文件的拒绝测试见 [回归结果](http-integrity-tests.log)。WebCrypto 可用时继续使用原生实现。
 
 公开部署参数由本机运行包持有，游戏接入源码不包含机器 IP 或固定外网端口。
+
+本次音效修复的 WASM SHA-256 为 `922bc6c850406d17d3409ee4a382bbbfec1c1599a29172b230ee608f9e2d3eb0`。普通版 10/10、多人版 9/9 的完整接口检查见 [结果](port-check.log)，实际编译来源见 [记录](source-build.json)。
+
+Windows 本机检查为冷启动测试程序保留 60 秒启动时间；Bun 版本探测保留 30 秒。检测仍要求准确的版本、原生程序退出成功和全部断言通过。node:test 使用真实 Node，Vitest 使用实际 Bun 可执行文件。
