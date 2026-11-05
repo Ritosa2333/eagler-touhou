@@ -329,21 +329,6 @@ describe('opt-in React artifacts use the actual server packager and generic veri
     assert.equal(deployment.resourceMode, 'external');
     assert.ok(deployment.files.some((item) => item.path === 'th08.package.json'));
     assert.ok(deployment.files.every((item) => !/^(?:games|shared)\//.test(item.path)));
-    const beta = resolve(temporary, 'beta-programs');
-    await writeFile(
-      resolve(temporary, 'external-features.json'),
-      JSON.stringify({...features, resourceMode: 'external', netplayRelay: 'wss://beta.invalid/relay/'}),
-    );
-    await command([...externalArgs, `--output=${beta}`, '--beta-mode=1', '--test-build=1',
-      '--site-url=https://launcher.invalid/beta/'], environment);
-    await verify(beta);
-    const betaDeployment = await json(resolve(beta, 'deployment.json'));
-    assert.equal(betaDeployment.betaPrograms, true);
-    assert.equal(betaDeployment.frontend, undefined);
-    assert.equal(betaDeployment.appShell, null);
-    assert.ok(betaDeployment.files.some(item => item.path === 'runtime-program-sw.js'));
-    assert.ok(!betaDeployment.files.some(item => ['index.html', 'app-shell-sw.js'].includes(item.path)));
-    assert.deepEqual(await json(resolve(beta, 'th08.package.json')), await json(resolve(external, 'th08.package.json')));
   });
   test('graph omission fails despite fresh release hashes', async () => {
     const { plain, rejectsMutation } = context;

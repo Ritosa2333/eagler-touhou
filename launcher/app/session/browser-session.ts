@@ -61,7 +61,7 @@ import {createFileActions, type ImportFileKind} from '../services/files';
 import {createReplayStorageReader} from '../services/replay-storage';
 import {errorText} from '../services/error-text';
 import {launcherBaseUrl} from '../navigation/addresses';
-import {betaModeEnabled,betaProgramBase,channelSessionStorage,isBetaPublication} from '../../src/launcher/release-channel.mts';
+import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
 import type {SettingsActions} from '../components/settings/types';
 import type {InformationDialogId, HostSelection, SurfaceContext, Surface} from '../navigation/surface-navigation';
 
@@ -111,8 +111,8 @@ export interface BrowserSessionSnapshot {
  * from React render. The permanent iframe is attached once by its callback ref. */
 export function createBrowserSession({document, window, baseUrl: configuredBaseUrl, appShellDeployment}: {document: Document; window: Window; baseUrl?: string; appShellDeployment?: AppShellOptions['deployment']}) {
   const baseUrl = configuredBaseUrl ?? launcherBaseUrl(window.location.href);
-  const betaMode = betaModeEnabled(window);
-  const programBaseUrl = betaMode ? betaProgramBase(baseUrl) : baseUrl;
+  const entryUrl = new URL(window.location.href);
+  const testBuild = testFeaturesEnabled(window) || entryUrl.searchParams.has('test');
   let storage: Storage | null = null;
   try {storage = window.localStorage;} catch {}
   const gamepad = createGamepadMappingModel({storage,getGamepads:typeof window.navigator.getGamepads==='function'?()=>window.navigator.getGamepads():undefined});
@@ -261,14 +261,14 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   const fetchResource = window.fetch.bind(window);
   const network = createNetworkActivityTracker({fetchImpl: fetchResource, onChange: transfer.networkSnapshot});
-  const metadata = createMetadataService({baseUrl: programBaseUrl, storage, getGameVersion: selectedVersion, indexedDBFactory: window.indexedDB,
+  const metadata = createMetadataService({baseUrl, storage, getGameVersion: selectedVersion, indexedDBFactory: window.indexedDB,
     translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(isUiLocale(locale) ? locale : 'zh-CN', key, params);},
     webAudioAvailable: audio, webMidiAvailable: 'requestMIDIAccess' in window.navigator, mobile: preferTouchSettings(), locale: () => snapshot.locale,
-    testBuild: betaMode||new URL(window.location.href).searchParams.has('test')});
+    testBuild});
   function settingsContext(product: ProductId, locale: string) {const room = roomSession?.service.getSnapshot(); return {...metadata.settingsContext(product, locale), mobile: preferTouchSettings(), forbidUnlimitedMovement: !!room?.room?.disableCheatMovement && room.seat != null};}
-  const entryUrl = new URL(window.location.href), directoryEntry = /\/lobby(?:\.html)?\/?$/.test(entryUrl.pathname);
+  const directoryEntry = /\/lobby(?:\.html)?\/?$/.test(entryUrl.pathname);
   const rawInitialProduct = directoryEntry ? null : routedProductFromUrl(entryUrl, new Set(PRODUCT_IDS));
-  const initialProduct = rawInitialProduct && productEnabledForBuild(rawInitialProduct, betaMode||entryUrl.searchParams.has('test')) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
+  const initialProduct = rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
   settings.hydrate(settingsContext(DEFAULT_PRODUCT_ID, snapshot.locale));
   if (initialProduct !== DEFAULT_PRODUCT_ID) settings.hydrate(settingsContext(initialProduct, snapshot.locale));
   touchLayout.setGame(settings.getSnapshot()?.gameId ?? DEFAULT_PRODUCT_ID);
@@ -279,7 +279,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   if (touchPreview === 'touch' || touchPreview === 'touch-hud') {
     settings.applyBootTouchPreview();
     const game = PRODUCT_GAMES[gameIdForProduct(initialProduct)];
-    const artwork = 'cardArtwork' in game && game.cardArtwork ? `url(${JSON.stringify(new URL(`assets/${game.cardArtwork}`, programBaseUrl).href)})` : 'none';
+    const artwork = 'cardArtwork' in game && game.cardArtwork ? `url(${JSON.stringify(new URL(`assets/${game.cardArtwork}`, baseUrl).href)})` : 'none';
     publish({bootTouchPreview: touchPreview, bootTouchPreviewImage: artwork, playerOpen: true, touchHelpOpen: touchPreview === 'touch'});
   }
   const syncTouchSettingsOrder = () => settings.setTouchSettingsPriority(preferTouchSettings());
@@ -300,7 +300,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (firstHost && !runtime?.getSnapshot().launched) settings.restoreHostPreferences(settingsContext(product, snapshot.locale));
       appliedHost = host;
       localPackageMaintenance.schedule();
-      const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && productEnabledForBuild(rawInitialProduct, betaMode||entryUrl.searchParams.has('test')));
+      const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild));
       pendingHostSelection = {productId: product, hasSelection: hadSelection && current.products.includes(product)};
       if (navigation) {navigation.applyHostSelection(pendingHostSelection); pendingHostSelection = null;}
       if (roomSession?.service.getSnapshot().room && host.shared.netplayRelay) roomSession.service.reconnect();
@@ -316,28 +316,24 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     scheduler: {requestFrame: callback => window.requestAnimationFrame(callback), cancelFrame: id => window.cancelAnimationFrame(id),
       setTimer: callback => window.setTimeout(callback, 0), clearTimer: id => window.clearTimeout(id)},
   });
-  const preparationNetwork = createPreparationNetwork({foreground: network, baseUrl: programBaseUrl, translate: t, fetchImpl: fetchResource});
-  const acquisition = createPackageAcquisition({metadata, baseUrl: programBaseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: fetchResource, network: preparationNetwork,
-    testBuild: betaMode||entryUrl.searchParams.has('test'),
+  const preparationNetwork = createPreparationNetwork({foreground: network, baseUrl, translate: t, fetchImpl: fetchResource});
+  const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: fetchResource, network: preparationNetwork,
+    testBuild,
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
   let sessionStorage: Storage | null = null; try {sessionStorage = window.sessionStorage;} catch {}
-  sessionStorage=channelSessionStorage(sessionStorage,betaMode);
-  const identity = createMultiplayerIdentityStore({persistentStorage: channelSessionStorage(storage,betaMode), sessionStorage});
+  const identity = createMultiplayerIdentityStore({persistentStorage: storage, sessionStorage});
   const sessions = createMultiplayerRoomSessionStore({storage: sessionStorage});
   const relayRouting = createRelayEntryRouting({
-    betaMode,
     shared: () => directoryEntry ? directory.getSnapshot().siteManifest?.shared : metadata.getSnapshot().siteManifest?.shared,
     createSocket: url => new WebSocket(url),
   });
   const directory = createLobbyDirectory({
     clientSideFiltering: true,
-    testBuild: betaMode||entryUrl.searchParams.has('test'),
+    testBuild,
     loadSiteManifest: signal => loadCompatibleSiteManifest(async file => {
-      const response = await window.fetch(new URL(file, programBaseUrl), {cache: 'no-store', signal});
+      const response = await window.fetch(new URL(file, baseUrl), {cache: 'no-store', signal});
       if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status});
-      const site = await response.json();
-      if (betaMode && !isBetaPublication(site)) throw new Error(t('developer.betaUnavailable'));
-      return site;
+      return response.json();
     }),
     createSocket: url => relayRouting.createSocket(url), memberId: multiplayerMemberId,
     identity, sessions, sessionStorage, translate: t,
@@ -400,7 +396,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     };
     const requireIdle = () => {if (owner.getSnapshot().epoch !== null) throw new RuntimeSessionSupersededError();};
     try {
-      const plan = await prepareFilePlan({productId: product, settings: capturedSettings(product), acquisition, baseUrl: programBaseUrl, translate: t,
+      const plan = await prepareFilePlan({productId: product, settings: capturedSettings(product), acquisition, baseUrl, translate: t,
         signal: controller.signal, onAcquisitionActivity: active => {
           if (active) {requireIdle(); fileDownload = {controller, ownsPresentation}; if (ownsPresentation()) transfer.setCancellation(t('package.cancelDownload'));}
           else if (fileDownload?.controller === controller) {fileDownload = null; if (ownsCurrentEpoch() && ownsPresentation()) transfer.setCancellation(blockingDownload?.label ?? null);}
@@ -596,7 +592,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     frame = element;
     let nativeFailure: {epoch:number; reason:string}|null=null;
     unbindPixelPerfectDisplay = bindPixelPerfectDisplay(element, () => activeSettings?.options.pixelPerfectEnabled === true);
-    runtime = createRuntimeService({frame: element, hostWindow: window, baseUrl: programBaseUrl, translate: t, network, worker: !betaMode && appShellDeployment ? appShell!.activeWorker() : undefined, onLocalResourceProgress: transfer.localProgress, onWarning: reportError,
+    runtime = createRuntimeService({frame: element, hostWindow: window, baseUrl, translate: t, network, worker: appShellDeployment ? appShell!.activeWorker() : undefined, onLocalResourceProgress: transfer.localProgress, onWarning: reportError,
       onUpdateReady: (game, epoch) => {
         if (activeSettings?.gameId === game && runtime?.getSnapshot().epoch === epoch)
           gameUpdates?.ready({product:activeSettings.context.productId, gameVersion:activeSettings.gameVersion, epoch});
@@ -647,7 +643,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       userAgentDataPlatform: (window.navigator as Navigator & {userAgentData?: {platform?: string}}).userAgentData?.platform,
       mobile, brave: !!(window.navigator as Navigator & {brave?: unknown}).brave});
     diagnostics = createRuntimeDiagnostics({runtime, frame: element, window, storage, translate: stringTranslate,
-      browser: () => browser.browser, testBuild: () => betaMode||metadata.getSnapshot().siteManifest?.shared.testBuild === true,
+      browser: () => browser.browser, testBuild: () => testBuild || metadata.getSnapshot().siteManifest?.shared.testBuild === true,
       frameLimit60: () => activeSettings?.options.frameLimit60Enabled === true});
     gameplayNetwork = createGameplayNetwork({runtime, timers: window, english: () => snapshot.locale === 'en', translate: stringTranslate,
       context: () => {
@@ -673,7 +669,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     midi = createMidiBridge({runtime, external: externalMidi, loadSynth: ports.loadSynth, webAudioAvailable: audio, translate: t,
       frame: element, window, document, playerOpen: () => snapshot.playerOpen});
     unsubscribeRuntime = runtime.subscribe(() => {const current = runtime!.getSnapshot(); if (calibration.getSnapshot().epoch !== (current.epoch ?? 0)) calibration.reset(current.epoch ?? 0); spectatorPlayback.update(current, current.runtimeInfo.spectatorPlayback); publish({runtime: current}); roomSession?.sync(); if (invalidatedSettingsEpoch !== null) queueMicrotask(retireChangedSettings);});
-    const replayStorage = createReplayStorageReader(() => ({indexedDB: window.indexedDB, keyRange: (window as Window & {IDBKeyRange: typeof IDBKeyRange}).IDBKeyRange}),betaMode);
+    const replayStorage = createReplayStorageReader(() => ({indexedDB: window.indexedDB, keyRange: (window as Window & {IDBKeyRange: typeof IDBKeyRange}).IDBKeyRange}));
     replays = createReplayModel({runtime, prepareFiles, prepareViewer: prepareReplayWorkspace, releasePrepared, translate: stringTranslate,
       storage: {async read(product, selection) {
         const owner = requiredRuntime(), state = owner.getSnapshot(), variant = isMultiplayerProductId(product) ? 'multiplayer' : 'normal';
@@ -774,7 +770,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     launchAbort = controller; activeSettings = clickSettings; updateAbort = new AbortController(); musicAbort = new AbortController();
     startupError.close();
     const cancellation = () => {if (launchAbort === controller) {transfer.setCancellation(updating ? t('package.cancelUpdate') : downloadingMusic ? t('music.cancelDownload') : downloadingPackage || downloadingLanguage ? t('package.cancelDownload') : blockingDownload?.label ?? null); publish({});}};
-    const input: GamePreparationInput & {runtime: RuntimeService; signal: AbortSignal} = {productId: product, settings: clickSettings, acquisition, baseUrl: programBaseUrl, translate: t,
+    const input: GamePreparationInput & {runtime: RuntimeService; signal: AbortSignal} = {productId: product, settings: clickSettings, acquisition, baseUrl, translate: t,
       signal, multiplayer, replayPath, updateSignal: updateAbort.signal, musicDownloadSignal: musicAbort.signal,
       onUpdateActivity: value => {if (launchAbort === controller) {updating = value; cancellation();}},
       onMusicDownloadActivity: value => {if (launchAbort === controller) {downloadingMusic = value; cancellation();}},
@@ -1050,8 +1046,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     markBoot: phase => (window as Window & {__eaglerBoot?: {mark(value: string): void}}).__eaglerBoot?.mark(phase),
     onSettled: () => {if (!runtime?.getSnapshot().launched && navigation && !navigation.hasSelection) navigation.syncSelectionFromRoute(); publish({metadataRevision: snapshot.metadataRevision + 1});},
   });
-  const roomPreparation = createRoomPreparation({acquisition, metadataReady: metadata.initialize, baseUrl: programBaseUrl, translate: t,
-    activeWorker: () => betaMode ? Promise.resolve(null) : appShellOwner.activeWorker(), network});
+  const roomPreparation = createRoomPreparation({acquisition, metadataReady: metadata.initialize, baseUrl, translate: t,
+    activeWorker: () => appShellOwner.activeWorker(), network});
   roomSession = createRoomSession({document, window, storage, identity, sessions, memberId: multiplayerMemberId,
     createSocket: url => relayRouting.createSocket(url), relayUrl: () => relayRouting.resolve(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''),
     settingsModel: settings, sitePreferences: preferences, runtime: () => runtime, replayViewer: () => snapshot.replayViewer,
@@ -1212,7 +1208,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       const command = spectatorPlaybackCommand(state, action, frame);
       if (command) await owner.send('spectator-playback', command);
     },
-    room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, programBaseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th19Keyboard, th19Gamepad, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
+    room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th19Keyboard, th19Gamepad, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     initialize, attachFrame, requestRuntimeClose, requestReplayManagerClose, launch, openReplayViewer, exitRoomPlayerFullscreen,
     restoreRoomFromUrl,

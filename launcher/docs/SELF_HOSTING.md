@@ -65,12 +65,8 @@ npm run verify:deployed -- https://example.com/
 
 ## 测试版功能
 
-右上角菜单最下方的“开发人员选项”包含“显示调试信息”和“测试版功能”。确认开启或关闭后，启动器在当前页面刷新并加载对应的作品清单。切换时会清理另一版本的房间邀请。测试版使用独立的存档、录像、房间恢复信息和联机大厅。跨源迁移包含两个通道的存档和录像。
+右上角菜单的“开发人员选项”包含“显示调试信息”和“测试版功能”。测试版开关保存于本机，刷新当前页面后显示已发布的抢先体验作品。它只控制可见性，所有作品共用站点清单、Runtime、存档、录像与联机大厅。
 
-使用正常挂载路径的启动器构建。组装脚本 `scripts/package-server.mjs` 接受 `--beta-mode=1 --test-build=1 --site-url=https://example.com/beta/`，将测试版清单、作品封面和 Runtime 产物发布到启动器旁的 `beta/` 资源目录。该构建使用 `resourceMode: "external"`，其余参数沿用[发布流程](RELEASE.md)。`--feature-config` 中的 `netplayRelay` 指向设置了 `EAGLER_RELEASE_CHANNEL=beta` 的[独立测试版 Relay](../../services/relay/README.md)。打包器为 Runtime 加入启动前的存储隔离脚本，再生成文件哈希和不可变版本。
+按[发布流程](RELEASE.md)把隐藏作品和常规作品一起发布。`testOnly` 控制作品默认是否显示，`--test-build=1` 可让站点默认显示测试作品。账号与内部预览入口由各自的部署配置控制。
 
-发布《神灵庙》时，给 `scripts/package-runtime-release.mjs` 传入 `--th13-build=PATH`，并在组装测试版时将 `th13` 加入 `--games`。
-
-两个版本共用 Launcher 页面和 Package Store。将 `beta/games/` 和 `beta/shared/` 的资源请求接到现有资源服务，供测试版独有作品和包版本使用。相同版本的描述文件以及相同哈希的音乐和语言包沿用主站资源 URL。测试版程序 Worker 的作用域为 `beta/runtime/`。
-
-自托管包也提供 `bun.lock`。使用 Bun 时运行 `bun install --frozen-lockfile --ignore-scripts`，然后用 `bun host/build.mjs --build-only` 启动相同 Host。两种环境分别核对依赖记录；预编译包无需安装前端编译器。
+th13 的程序产物目前需显式提供：给 `scripts/package-runtime-release.mjs` 传入 `--th13-build=PATH`，组装站点时将 `th13` 加入 `--games`。它随同一站点发布，玩家开启测试版功能后即可看到。
