@@ -5,7 +5,6 @@
 #include "ApplicationState.hpp"
 #include "../game/GameInput.hpp"
 #include "../game/GameKeyboard.hpp"
-#include "../game/Probe.hpp"
 #include "../game/ReplayEntityState.hpp"
 #include "../../../portable/sdl/FrameCadence.hpp"
 #include "../../../portable/input/TouchController.hpp"
@@ -1468,36 +1467,6 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_draw_report() {
     }
     return report.c_str();
 }
-// 临时探针（-96px 排查；用后即删）：置位相机/顶点预算打印 + 环境快照。
-EMSCRIPTEN_KEEPALIVE const char* th13_probe_camera(int enable) {
-    using namespace th13::sdl;
-    th13::probe::enabled = enable != 0;
-    th13::probe::budget = enable != 0 ? 1u : 0u;
-    th13::probe::probe_cam_arm(enable != 0 ? 300u : 0u);
-    static std::string report;
-    report.clear();
-    if (app) {
-        const auto& e = app->environment;
-        char line[160];
-        std::snprintf(line, sizeof line,
-                      "env offsets={%d,%d,%d,%d} screen=%ux%u raster=%.3f res=%.3f\n",
-                      e.screen_offsets[0], e.screen_offsets[1], e.screen_offsets[2],
-                      e.screen_offsets[3], e.screen_width, e.screen_height,
-                      double(e.raster_scale), double(e.resolution_scale));
-        report += line;
-        for (th13::u32 i = 0; i < 4; i++) {
-            const auto& v = app->views.view(th13::DrawCamera(i));
-            std::snprintf(line, sizeof line,
-                          "view[%u] vp={%u,%u,%u,%u} view12=%.4f view13=%.4f proj0=%.9g\n", i,
-                          v.viewport.x, v.viewport.y, v.viewport.width, v.viewport.height,
-                          double(v.camera.view.m[12]), double(v.camera.view.m[13]),
-                          double(v.camera.projection.m[0]));
-            report += line;
-        }
-    }
-    return report.c_str();
-}
-
 // Production submission trace v2, NOT legacy draw-v1. Each present completes
 // one frame. Consumers must validate schema and the successful end frame count.
 EMSCRIPTEN_KEEPALIVE int th13_debug_capture_begin(const char* path) {
