@@ -112,8 +112,13 @@ for(const game of games){
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.lives===0&&!p.missTimer&&p.invincibility===0;},{timeout:30000});
       assert.equal((await state()).native.practice.outcome,null,'the last spare life respawns');
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeHit(0));
+      await frame.evaluate(()=>{globalThis.practiceResultShownAt=null;new MutationObserver(()=>{if(document.querySelector('#practice-result-dialog[open]'))globalThis.practiceResultShownAt??=performance.now();}).observe(document.body,{attributes:true,subtree:true,attributeFilter:['open']});});
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.outcome==='failed';},{timeout:30000}).catch(async error=>{console.error('Final death',JSON.stringify(await state()));throw error;});
+      const outcomeObservedAt=await frame.evaluate(()=>performance.now());
       await frame.waitForSelector('#practice-result-dialog[open]',{visible:true,timeout:3000});
+      const resultShownAt=await frame.evaluate(()=>globalThis.practiceResultShownAt);
+      console.log(game,'result menu after observed game over:',Math.round(resultShownAt-outcomeObservedAt),'ms');
+      await page.screenshot({path:resolve(output,`${label}-${game}-result.png`)});
       const resultStyle=await frame.$eval('#practice-result-dialog',node=>{const r=node.getBoundingClientRect(),screen=node.parentElement.querySelector('.solo-screen').getBoundingClientRect(),button=node.querySelector('button'),s=getComputedStyle(button);return {left:(r.left-screen.left)/screen.width,top:(r.top-screen.top)/screen.height,width:r.width/screen.width,height:r.height/screen.height,background:s.backgroundColor,selected:button.classList.contains('selected')};});
       assert(Math.abs(resultStyle.left-.05)<.01&&Math.abs(resultStyle.top-1/30)<.01&&Math.abs(resultStyle.width-.6)<.01&&Math.abs(resultStyle.height-14/15)<.01,'result uses pause menu geometry');
       assert.equal(resultStyle.background,'rgb(71, 122, 172)');assert(resultStyle.selected);
