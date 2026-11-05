@@ -64,7 +64,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th03.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
-        touchFire:Readonly<{mode:'held-key';labelKey:'touch.actionHold';key:Readonly<{code:'KeyZ';key:'z';keyCode:90}>}>;
+        touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th03';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th03/multiplayer/th03.html';

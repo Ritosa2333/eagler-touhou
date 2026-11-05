@@ -48,6 +48,15 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
   }; active.push(f); return f;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+test('TH03 fire is a persistent toggle like TH02 and TH04', () => {
+  const f=fixture({game:'th03'});
+  f.touch.syncControls(); assert.equal(f.sent.at(-1).fireEnabled,true);
+  f.pointer('fire','pointerdown'); f.pointer('fire','pointerup');
+  assert.equal(f.touch.getSnapshot().fireEnabled,false);
+  f.pointer('fire','pointerdown'); f.pointer('fire','pointerup');
+  assert.equal(f.touch.getSnapshot().fireEnabled,true);
+  assert.equal(f.sent.at(-1).fireEnabled,true);
+});
 test('declared native actions hold A/B/C/D together without keyboard or auto-fire ownership', () => {
   const f=fixture({game:'th075'});
   for(const [index,name] of ['fire','bomb','focus','functionKey'].entries())f.pointer(name,'pointerdown',{pointerId:index+1});

@@ -214,9 +214,8 @@ function GameplayControls({ session }: { session: BrowserSession }) {
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   const product = PRODUCT_GAMES[settings.gameId];
   const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
-  const hostDirect = (
-    /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+  const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||
+    /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent);
   useLayoutEffect(() => {
     if (!browserPractice) return;
     const runtime = session.getRuntime(), player = document.getElementById('player');
