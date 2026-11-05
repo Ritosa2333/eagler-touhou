@@ -70,7 +70,12 @@ for(const game of games){
     await frame.select('[data-jump=stage]',String(stage));
     await frame.select('[data-jump=entry]',entry);
     const lives=Number(process.env.PC98_PRACTICE_LIVES??2),bombs=Number(process.env.PC98_PRACTICE_BOMBS??3);
-    for(const [name,value] of [['lives',lives],['bombs',bombs]])await frame.$eval(`[data-jump=${name}]`,(node,value)=>{node.value=String(value);},value);
+    for(const [name,value] of [['lives',lives],['bombs',bombs]]){
+      await frame.focus(`[data-jump=${name}]`);await page.keyboard.press('ArrowRight');
+      assert.equal(await frame.$eval(`[data-jump=${name}]`,node=>node.value),'1',name+' increases with the right arrow');
+      await page.keyboard.press('ArrowLeft');assert.equal(await frame.$eval(`[data-jump=${name}]`,node=>node.value),'0',name+' decreases with the left arrow');
+      await frame.$eval(`[data-jump=${name}]`,(node,value)=>{node.value=String(value);},value);
+    }
     if(game==='th04'&&stage===6)await frame.select('[data-jump=branch]','gengetsu');
     const phase=process.env.PC98_PRACTICE_PHASE??await frame.$$eval('[data-jump=phase] option',nodes=>(nodes.filter(n=>n.value!=='0').at(-1)||nodes[0]).value);
     await frame.select('[data-jump=phase]',phase);
@@ -108,6 +113,10 @@ for(const game of games){
       assert.equal((await state()).native.practice.outcome,null,'the last spare life respawns');
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeHit(0));
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.outcome==='failed';},{timeout:30000}).catch(async error=>{console.error('Final death',JSON.stringify(await state()));throw error;});
+      await frame.waitForSelector('#practice-result-dialog[open]',{visible:true,timeout:3000});
+      const resultStyle=await frame.$eval('#practice-result-dialog',node=>{const r=node.getBoundingClientRect(),screen=node.parentElement.querySelector('.solo-screen').getBoundingClientRect(),button=node.querySelector('button'),s=getComputedStyle(button);return {left:(r.left-screen.left)/screen.width,top:(r.top-screen.top)/screen.height,width:r.width/screen.width,height:r.height/screen.height,background:s.backgroundColor,selected:button.classList.contains('selected')};});
+      assert(Math.abs(resultStyle.left-.05)<.01&&Math.abs(resultStyle.top-1/30)<.01&&Math.abs(resultStyle.width-.6)<.01&&Math.abs(resultStyle.height-14/15)<.01,'result uses pause menu geometry');
+      assert.equal(resultStyle.background,'rgb(71, 122, 172)');assert(resultStyle.selected);
       console.log(game,'PASS native spare life and final game over');
     }
     if(process.env.PC98_PRACTICE_REPLAY==='1'){

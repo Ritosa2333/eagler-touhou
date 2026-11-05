@@ -62,6 +62,11 @@ export function mountPractice({host,onChange=()=>{},onStart=()=>{},onRetry=()=>{
         else if(['Tab','ArrowUp','ArrowDown'].includes(event.code)){const list=controls(),at=list.indexOf(control),step=event.code==='ArrowUp'||event.code==='Tab'&&event.shiftKey?-1:1;const next=list[(at+step+list.length)%list.length];next?.focus({preventScroll:true});next?.scrollIntoView({block:'nearest'});}
         else if(panel.contains(control))control.click();return;
       }
+      if(control?.matches('input[type=number]')&&['ArrowLeft','ArrowRight'].includes(event.code)){
+        event.preventDefault();event.stopImmediatePropagation();
+        const min=Number(control.min),max=Number(control.max),step=Number(control.step)||1,current=Number(control.value),next=current+(event.code==='ArrowLeft'?-step:step);
+        control.value=String(next<min?max:next>max?min:next);control.dispatchEvent(new Event('input',{bubbles:true}));control.dispatchEvent(new Event('change',{bubbles:true}));return;
+      }
       if(control?.matches('select')&&['ArrowLeft','ArrowRight'].includes(event.code)){
         event.preventDefault();event.stopImmediatePropagation();const opts=[...control.options].filter(item=>!item.disabled),at=opts.indexOf(control.selectedOptions[0]),step=event.code==='ArrowLeft'?-1:1;
         if(opts.length){control.value=opts[(at+step+opts.length)%opts.length].value;control.dispatchEvent(new Event('change',{bubbles:true}));}return;
@@ -83,7 +88,7 @@ export function mountPractice({host,onChange=()=>{},onStart=()=>{},onRetry=()=>{
   window.addEventListener('keydown',onKey,true);
   function selectResult(button){for(const item of result.querySelectorAll('.practice-result-choices button'))item.classList.toggle('selected',item===button);button?.focus({preventScroll:true});}
   result.addEventListener('focusin',event=>{if(event.target.matches('.practice-result-choices button'))for(const item of result.querySelectorAll('.practice-result-choices button'))item.classList.toggle('selected',item===event.target);});
-  function positionResult(){if(!result.open)return;const r=screen.getBoundingClientRect();result.style.left=`${r.left+r.width*.35}px`;result.style.top=`${r.top+r.height*.5}px`;result.style.width=`${Math.min(440,Math.max(0,r.width*.6-20))}px`;result.style.maxHeight=`${Math.max(0,r.height-16)}px`;}
+  function positionResult(){if(!result.open)return;const r=screen.getBoundingClientRect();result.style.left=`${r.left+r.width*.05}px`;result.style.top=`${r.top+r.height/30}px`;result.style.width=`${r.width*.6}px`;result.style.height=`${r.height*14/15}px`;}
   const observer=new ResizeObserver(positionResult);observer.observe(screen);window.addEventListener('resize',positionResult);window.addEventListener('scroll',positionResult,true);
   render();return {configuration,open:()=>show(true),get enabled(){return true;},get options(){return {...options};},complete({outcome='clear',recording=false,ready=false,failed=false}={}){result.querySelector('#practice-result-title').textContent=outcome==='clear'?'练习成功':'练习失败';result.querySelector('[data-practice-again]').textContent=outcome==='clear'?'重来':'继续练习';result.querySelector('[data-practice-save]').disabled=!ready;result.querySelector('[data-result-message]').textContent=(outcome==='clear'?'所选练习目标已完成。':'本次练习中弹失败。')+(ready?'本次录像已就绪，可保存或从同一起点重来。':failed?'录像处理失败，可从同一起点重来。':recording?'正在封存本次录像…':'本次未启用录像，可从同一起点重来。');if(!result.open&&!resultDismissed){panel.hidden=true;result.showModal();resultOpenedAt=performance.now();selectResult(result.querySelector('[data-practice-again]'));}positionResult();},setRunning(value,config){running=value;panel.hidden=true;result.close();resultDismissed=false;preparing.hidden=!value||config?.mode!=='target';if(config){options={...config.options};current=config;render();}if(!value){overlay.hidden=true;current=null;}},
     update(state){current=state?.practice;const targeted=current?.mode==='target';preparing.hidden=!running||!targeted||current.ready;preparing.firstElementChild.textContent=current?.error||'正在加载练习目标…\n载入时静音，到达后进入原版暂停';panel.querySelector('[data-practice-retry]').disabled=!running||!targeted;

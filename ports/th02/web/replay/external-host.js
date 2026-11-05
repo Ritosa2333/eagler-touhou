@@ -5,10 +5,17 @@ export const CLOCK_BYTES=9,CLOCK_CHUNK=4096;
 const RealDate=Date,realPerformance=globalThis.performance;
 const realNow=()=>realPerformance.now();
 
-export function inspectExternalMemory(module){
+export async function inspectExternalMemory(module){
   const bytes=module.HEAPU8.slice();let hash=2166136261;
-  for(const value of bytes)hash=Math.imul(hash^value,16777619);
-  return sha256(bytes).then(memorySha256=>({memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length}));
+  // Snapshot first, then yield between chunks so the result menu can paint
+  // while the exact final-state checksum is being calculated.
+  for(let start=0;start<bytes.length;start+=1024*1024){
+    await new Promise(resolve=>setTimeout(resolve,0));
+    const end=Math.min(start+1024*1024,bytes.length);
+    for(let i=start;i<end;i++)hash=Math.imul(hash^bytes[i],16777619);
+  }
+  const memorySha256=await sha256(bytes);
+  return {memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length};
 }
 
 export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endReason='sleep',endPhase='after-input',timeline,boundaryMode='sleep',onChunk=()=>{},onEnd=()=>{},onError=()=>{},

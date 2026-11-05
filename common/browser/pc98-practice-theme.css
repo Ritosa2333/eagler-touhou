@@ -19,5 +19,12 @@ body.shell #game .practice-screen>.practice-panel.practice-full label{font:inher
 body.shell #game .practice-screen>.practice-panel.practice-full details>.practice-switches{display:grid;grid-template-columns:1fr 1fr;gap:2px}body.shell #game .practice-screen>.practice-panel.practice-full details>.practice-switches label{display:flex;align-items:center;gap:4px;min-height:0;font:inherit}
 body.shell #game .practice-screen>.practice-overlay{top:auto;bottom:4%;right:2%;left:auto;width:30%;max-width:30%;background:rgba(0,0,0,.9);font:clamp(9px,1.9cqh,18px)/1.3 monospace}
 .practice-result{border:0;border-radius:0;background:rgba(0,0,0,.8);color:#fff;box-shadow:none}.practice-result .practice-result-choices button.selected{color:#fff;background:#477aac;border-color:transparent}
+.practice-result[open]{box-sizing:border-box;position:fixed;inset:auto;margin:0;transform:none;max-width:none;max-height:none;overflow:hidden;padding:0;border:0;border-radius:0;background:rgba(0,0,0,.8);container-type:size}
+.practice-result::backdrop{background:transparent}
+.practice-result>h2,.practice-result>[data-result-message],.practice-result>.practice-menu-help{display:none}
+.shell #game .practice-result .practice-result-choices{position:absolute;top:31.25%;left:31%;width:38%;display:flex;flex-direction:column;gap:1cqh}
+.shell #game .practice-result .practice-result-choices button{box-sizing:border-box;width:100%;min-height:5.58cqh;padding:0;border:0;border-radius:0;color:white;background:#294a70;text-align:center;font:clamp(10px,3.6cqh,23px)/1.15 sans-serif;cursor:pointer}
+.shell #game .practice-result .practice-result-choices button.selected,.shell #game .practice-result .practice-result-choices button:hover{background:#477aac;outline:1px solid #b5d9ff}
+.shell #game .practice-result .practice-result-choices button.selected::before{content:none}
 
 body.shell #game .practice-screen>.practice-panel.practice-full>.practice-switches{display:grid;grid-template-columns:1fr 1fr;gap:2px}body.shell #game .practice-screen>.practice-panel.practice-full>.practice-switches label{display:flex;align-items:center;gap:4px;min-height:0;font:inherit}
