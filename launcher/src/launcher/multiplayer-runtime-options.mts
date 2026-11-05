@@ -187,7 +187,8 @@ export function buildMultiplayerRuntimeOptions(
     !Number.isInteger(requestedMode) ||
     requestedMode < 0 ||
     requestedMode > 2 ||
-    (requestedMode !== 0 && !measuredTitle)
+    (requestedMode === 1 && !product.inputTiming) ||
+    (requestedMode === 2 && !measuredTitle)
   )
     throw new Error('该多人 Runtime 不支持 Adonis 时序');
   if (

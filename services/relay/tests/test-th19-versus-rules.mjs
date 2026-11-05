@@ -45,7 +45,15 @@ try {
   await send(host,{type:'settings',playerCount:2,difficulty:1,th19Rules:[0,1,2,2]},m=>m.type==='error');
   for(const [index,value] of [[0,1],[4,2],[5,2],[6,3]]){const invalid=[...rules];invalid[index]=value;await send(host,{type:'settings',playerCount:2,difficulty:3,th19Rules:invalid},m=>m.type==='error');}
   const unrelated=connect({room:'th06mp-75684313',lobby:'other_host_123',member:'other_member_123'});assert.equal('th19Rules' in (await unrelated.wait(m=>m.type==='state')).room,false);await send(unrelated,{type:'take-seat',seat:0,loadout:0},m=>m.room?.seats[0]);await send(unrelated,{type:'settings',playerCount:2,difficulty:1,th19Rules:rules},m=>m.type==='error');
-  console.log('TH19 relay: defaults, all rules, remote synchronization, ready invalidation, invalid rules and other-product rejection PASS');
+  await send(host,{type:'timing-settings',rollbackEnabled:false,timingChoice:3},m=>m.room?.adonisMode===1&&m.room?.inputDelay===3);
+  await send(host,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[0]?.ready);
+  await send(guest,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[1]?.ready);
+  await send(host,{type:'start',adonisMode:2,inputDelay:3},m=>m.type==='error');
+  await send(host,{type:'start',adonisMode:1,inputDelay:0,inputDelayAuto:true},m=>m.type==='error');
+  const started=await send(host,{type:'start',adonisMode:1,inputDelay:3},m=>m.type==='start');
+  assert.equal(started.room.adonisMode,1);assert.equal(started.room.inputDelay,3);assert.equal(started.room.inputDelayAuto,false);
+  const remoteStart=await guest.wait(m=>m.type==='start');assert.equal(remoteStart.room.adonisMode,1);assert.equal(remoteStart.room.inputDelay,3);
+  console.log('th19 Relay: rule synchronization, ready invalidation, invalid rule rejection and fixed delay PASS');
 } finally {
   for(const socket of sockets)if(socket.readyState<2)socket.terminate();
   if(relay.exitCode===null){const ended=once(relay,'exit');relay.kill();await ended;}

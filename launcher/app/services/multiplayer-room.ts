@@ -1108,7 +1108,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (
       !ownerLocal() ||
       room?.phase !== 'lobby' ||
-      !policy()?.inputTiming?.measuredStartup ||
+      !policy()?.inputTiming ||
       !multiplayerInputTimingPolicy(policy()).rollback
     )
       return;
@@ -1129,7 +1129,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const timingPolicy = multiplayerInputTimingPolicy(policy());
     const rollback = timingPolicy.rollback && state.rollbackEnabled;
     const measured = timingPolicy.measuredStartup,
-      adonisMode = measured ? (rollback ? 0 : 1) : 0;
+      adonisMode = rollback ? 0 : 1;
     const automatic = !rollback && measured && state.timingChoice === 'auto';
     const selected = Number(state.timingChoice);
     const inputDelay =
@@ -1143,7 +1143,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     send({
       type: 'start',
       inputDelay,
-      ...(measured ? { adonisMode, inputDelayAuto: automatic, predictionReserve: 2 } : {}),
+      adonisMode,
+      ...(measured ? { inputDelayAuto: automatic, predictionReserve: 2 } : {}),
       ...(!timingPolicy.rollback || timing.sendPredictionLimit != null
         ? { predictionLimit: timingPolicy.predictionLimit }
         : {}),
@@ -1192,12 +1193,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         difficulty: Math.max(0, Math.min(config.difficulties.length - 1, room.difficulty)),
         ...(product==='th19mp'?{th19Rules:[...(room.th19Rules??TH19_VERSUS_RULES)]}:{}),
         ...(product==='th05mp'?{initialSpares:room.initialSpares??TH05_INITIAL_STOCK.spares,initialBombs:room.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
-        ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0 } : {}),
+        ...(config.inputTiming ? { inputDelay: Number(room.inputDelay) || 0, adonisMode: Number(room.adonisMode) || 0 } : {}),
         ...(config.inputTiming?.measuredStartup
           ? {
               inputDelayAuto: room.inputDelayAuto ?? false,
               predictionReserve: room.predictionReserve ?? 2,
-              adonisMode: Number(room.adonisMode) || 0,
             }
           : {}),
         ...(!multiplayerInputTimingPolicy(config).rollback ||

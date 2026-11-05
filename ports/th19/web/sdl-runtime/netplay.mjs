@@ -1,8 +1,7 @@
 import {PeerSocket} from './peer-socket.mjs';
 import {RollbackSession} from './rollback-session.mjs';
 import {nativeRollbackCore} from './native-adapter.mjs';
-// TH09's shared lobby supplies seats, characters and the authenticated relay URL.
-// TH19 advances its existing VS simulation only after both inputs are confirmed.
+// The shared lobby supplies seats, characters and the authenticated relay URL.
 const magic=[0x54,0x31,0x39,0x4e,1];
 const packet=(type,length=6)=>{const bytes=new Uint8Array(length);bytes.set(magic);bytes[5]=type;return bytes;};
 const keyBits={KeyZ:1,Enter:1,NumpadEnter:1,KeyX:2,KeyC:4,ShiftLeft:8,ShiftRight:8,
@@ -143,7 +142,7 @@ export class Netplay {
   globalThis.__eaglerNetplayLanResimulated=0;
   globalThis.__eaglerNetplayInputDelayFrames=this.delay;
   globalThis.__eaglerNetplayPath=this.socket.route||'relay';
-  this.onStatus(`对局开始 · 人间 vs 人间 · 输入延迟 ${this.delay} 帧 · 回滚${this.rollbackEnabled?'开启':'关闭'}`);
+  this.onStatus(`对局开始 | 人间 vs 人间 | 输入延迟 ${this.delay} 帧 | 回滚${this.rollbackEnabled?'开启':'关闭'}`);
  }
  pump(){
   if(!this.connected)return;

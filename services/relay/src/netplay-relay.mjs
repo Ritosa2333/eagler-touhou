@@ -1667,7 +1667,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         predictionReserve < 1 ||
         predictionReserve > 2 ||
         (message.predictionReserve !== undefined && !adonisSupported) ||
-        (adonisMode !== 0 && !adonisSupported) ||
+        (adonisMode === 1 && !room.multiplayer?.inputTiming) ||
+        (adonisMode === 2 && !adonisSupported) ||
         (!timingPolicy.rollback &&
           (adonisMode !== 1 ||
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
