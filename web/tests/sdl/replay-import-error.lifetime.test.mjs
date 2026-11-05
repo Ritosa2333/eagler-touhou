@@ -73,6 +73,12 @@ test('th13_replay_import_error: exact text stable across heap churn, cleared on 
     // 页面壳启动序到标题（app 活着且 initialized；phase 0 = title）。
     await page.waitForFunction('window.mod && window.mod._th13_phase() === 0',
                                null, {timeout: 180000});
+    // 启动栅栏：th13.html 的内置录像导入是 loop_start 之后的异步序列，任一
+    // 成功导入都会 clear() replay_import_error（Application.cpp:173）。探针
+    // 实证（tools/probe_import_error_race.mjs，2026-11-05）文本会在导入后
+    // +50ms 被成功导入清空 —— 稳定性断言必须等该序列完成。
+    await page.waitForFunction('window.__th13_builtin_replays_done === true',
+                               null, {timeout: 30000});
 
     // 导入辅助：bytes + name → {ok, text}（text = 导出面 UTF8ToString 读回）。
     const importBytes = (bytes, name) => page.evaluate(({bytes, name}) => {
