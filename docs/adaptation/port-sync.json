@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "f4136acc296873ca51bc04b5f3b358be3aff0266",
+      "base": "ceeec35a3981957a46d792518e3fa754cb76628b",
       "history": [
         {
           "kind": "manual",
@@ -66,6 +66,16 @@
             "ports/th05-mp/web/shell.mjs"
           ],
           "note": "普通版与多人版在 BeginUI 固定修饰键快照，游戏逻辑采样不再改写 ImGui IO；两侧补齐 Wasm abort 清理，多人增加认证中继错误通知。多人保留独立回滚、观战与房间流程，以原生三端测试替代普通版 pen 夹具；接收现有键位映射与 node:test presentation 适配。目录历史合并 eca74877ca3a12d179aac9d291fe32439535e3bf 已按多人验证树写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "f4136acc296873ca51bc04b5f3b358be3aff0266",
+          "source": "ceeec35a3981957a46d792518e3fa754cb76628b",
+          "targetHead": "a223717026faf884d931e8748c4ceb79acc13d98",
+          "paths": [
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "两侧 Runtime 拦截 native abort 后的按键、触控、暂停菜单与清理消息；MP 三端实测通知原因和退出状态，晚到输入不再访问 Wasm。普通版历史通过 bf8078f3f06f8fa4207428fd051033ca9d6653ff 合入 MP 验证树。"
         }
       ]
     },
