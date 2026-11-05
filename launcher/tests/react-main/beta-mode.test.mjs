@@ -1,137 +1,63 @@
-import {test,beforeAll} from 'vitest';
+import {beforeAll, test} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {fileURLToPath} from 'node:url';
-import {IDBFactory,IDBKeyRange} from 'fake-indexeddb';
-import {installRuntimeStorageChannel} from '../../lib/runtime-storage-channel.mjs';
-import {betaRuntimeHtml,prepareBetaRuntimePublication} from '../../lib/beta-runtime-publication.mjs';
-import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
-import {join} from 'node:path';
-import {createHash} from 'node:crypto';
 
-let channel,shareBetaResources,createReplayStorageReader;
-beforeAll(async()=>{
- const result=await build({stdin:{resolveDir:fileURLToPath(new URL('../../',import.meta.url)),contents:`
-   export * from './src/launcher/release-channel.mts';
-   export * from './src/launcher/beta-resources.mts';
-   export * from './app/services/replay-storage.ts';
- `},bundle:true,write:false,format:'esm',platform:'node'});
- channel=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
- ({shareBetaResources,createReplayStorageReader}=channel);
+let testFeatures, identity;
+beforeAll(async () => {
+  const result = await build({stdin: {resolveDir: fileURLToPath(new URL('../../', import.meta.url)), contents: `
+    export * from './src/launcher/test-features.mts';
+    export * from './src/launcher/multiplayer-identity.mts';
+  `}, bundle: true, write: false, format: 'esm', platform: 'node'});
+  const loaded = await import('data:text/javascript;base64,' + Buffer.from(result.outputFiles[0].text).toString('base64'));
+  testFeatures = loaded;
+  identity = loaded;
 });
-test('mode switch reloads the same page, clearing only invites from the other lobby', () => {
- const values = new Map(), navigations = [];
- const owner = {
-  localStorage: {getItem: key => values.get(key), setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key)},
-  history: {replaceState: (_state, _title, url) => {owner.location.href = url.href;}},
-  location: {href: 'https://example.test/app/lobby.html?lang=en&view=a%20b#games', reload() {navigations.push(this.href);}},
- };
- channel.reloadReleaseMode(owner, true);
- assert.equal(channel.betaModeEnabled(owner), true);
- assert.deepEqual(navigations, ['https://example.test/app/lobby.html?lang=en&view=a%20b#games']);
- owner.location.href = 'https://example.test/app/lobby.html?lang=en&room=1234&j=invite&game=th06mp';
- channel.reloadReleaseMode(owner, false);
- assert.equal(channel.betaModeEnabled(owner), false);
- assert.equal(navigations.at(-1), 'https://example.test/app/lobby.html?lang=en&game=th06mp');
- assert.equal(channel.betaProgramBase('https://example.test/app/'), 'https://example.test/app/beta/');
-});
-test('room recovery and membership storage are separate while ordinary preferences share their owner',()=>{
- const entries=new Map(),storage={get length(){return entries.size;},key:i=>[...entries.keys()][i]??null,
-  getItem:key=>entries.get(key)??null,setItem:(key,value)=>entries.set(key,value),removeItem:key=>entries.delete(key),clear:()=>entries.clear()};
- const beta=channel.channelSessionStorage(storage,true);
- storage.setItem('room','stable');beta.setItem('room','beta');
- assert.equal(storage.getItem('room'),'stable');assert.equal(beta.getItem('room'),'beta');
- assert.equal(beta.length,1);beta.clear();assert.equal(storage.getItem('room'),'stable');
-});
-function database(factory,name,version=21){
- return new Promise((ok,no)=>{
-  const request=factory.open(name,version);
-  request.onupgradeneeded=()=>request.result.createObjectStore('FILE_DATA');
-  request.onsuccess=()=>ok(request.result);request.onerror=()=>no(request.error);
- });
+
+class MemoryStorage {
+  values;
+  constructor(entries = []) {this.values = new Map(entries);}
+  getItem(key) {return this.values.get(key) ?? null;}
+  setItem(key, value) {this.values.set(key, String(value));}
+  removeItem(key) {this.values.delete(key);}
 }
-async function save(factory,name,value){
- const db=await database(factory,name);
- await new Promise((ok,no)=>{
-  const tx=db.transaction('FILE_DATA','readwrite');
-  tx.objectStore('FILE_DATA').put({contents:new Uint8Array([value]),mode:0o100666,timestamp:new Date()},'/savesth06/replay/th6_01.rpy');
-  tx.oncomplete=ok;tx.onabort=()=>no(tx.error);
- });db.close();
-}
-test('native saves and the offline replay reader share the beta namespace, with common content storage',async()=>{
- const factory=new IDBFactory();
- const betaFactory={open:factory.open.bind(factory),deleteDatabase:factory.deleteDatabase.bind(factory),databases:factory.databases.bind(factory)};
- const beta={location:{href:'https://example.test/beta/runtime/th06/core.html'},indexedDB:betaFactory};
- installRuntimeStorageChannel(beta);
- await save(factory,'/savesth06',1);await save(betaFactory,'/savesth06',2);
- const stableRead=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}));
- const betaRead=createReplayStorageReader(()=>({indexedDB:factory,keyRange:IDBKeyRange}),true);
- assert.deepEqual([...(await stableRead.read('th06'))[0].bytes],[1]);
- assert.deepEqual([...(await betaRead.read('th06'))[0].bytes],[2]);
- const shared=await database(betaFactory,'eagler-touhou-package-store-v1');
- shared.close();
- const names=(await factory.databases()).map(db=>db.name);
- assert.ok(names.includes('eagler-touhou-package-store-v1'));
- assert.ok(!names.includes('beta:eagler-touhou-package-store-v1'));
- assert.deepEqual((await betaFactory.databases()).map(db=>db.name),['/savesth06']);
-});
-test('equal package identities reuse stable resource URLs and retain beta program entries',()=>{
- const game={runtime:'runtime/th06/beta.html',music:{midi:{files:[]},ogg:{files:['a.ogg'],sha256:['a'],base:'games/th06/music/ogg/'}},gameData:{}};
- const site={shared:{vanillaFont:'shared/font.ttc'},games:{th06:game}};
- const stable={shared:{vanillaFont:'shared/font.ttc'},games:{th06:{...game,runtime:'runtime/th06/stable.html'}}};
- const catalog={games:{th06:{revision:'same',descriptor:'th06.package.json'}}};
- const result=shareBetaResources(site,catalog,stable,catalog,'https://example.test/');
- assert.equal(result.releaseCatalog.games.th06.descriptor,'/th06.package.json');
- assert.equal(result.siteManifest.games.th06.runtime,'runtime/th06/beta.html');
- assert.equal(result.siteManifest.games.th06.music.ogg.base,'https://example.test/games/th06/music/ogg/');
- assert.equal(result.siteManifest.shared.vanillaFont,'https://example.test/shared/font.ttc');
- const changed=shareBetaResources(site,{games:{th06:{revision:'different',descriptor:'beta.package.json'}}},stable,catalog,'https://example.test/');
- assert.equal(changed.releaseCatalog.games.th06.descriptor,'beta.package.json');
+
+test('the visibility preference reloads the same room URL and keeps multiplayer identity', () => {
+  const roomUrl = 'https://example.test/app/lobby.html?lang=zh-CN&room=2468&game=th06mp&run=run-1&member=m0123456789abcdef#room';
+  const localStorage = new MemoryStorage([
+    ['eagler-touhou-mp-display-name-v1', 'Alice'],
+    ['eagler-touhou-mp-member-v1', 'm0123456789abcdef'],
+  ]);
+  const clientKey = identity.multiplayerLobbyClientStorageKey('th06mp');
+  const sessionStorage = new MemoryStorage([[clientKey, 'client_12345678']]);
+  const navigations = [];
+  const owner = {localStorage, sessionStorage, location: {href: roomUrl, reload() {navigations.push(this.href);}}};
+  const before = identity.createMultiplayerIdentityStore({persistentStorage: localStorage, sessionStorage});
+  const displayName = before.loadDisplayName(), clientId = before.lobbyClientId('th06mp');
+  const memberId = localStorage.getItem('eagler-touhou-mp-member-v1');
+
+  assert.equal(testFeatures.testFeaturesEnabled(owner), false);
+  testFeatures.reloadTestFeatures(owner, true);
+  assert.equal(testFeatures.testFeaturesEnabled(owner), true);
+  assert.equal(owner.location.href, roomUrl);
+  assert.deepEqual(navigations, [roomUrl]);
+  assert.equal(localStorage.getItem(testFeatures.TEST_FEATURES_KEY), '1');
+
+  const after = identity.createMultiplayerIdentityStore({persistentStorage: localStorage, sessionStorage});
+  assert.equal(after.loadDisplayName(), displayName);
+  assert.equal(after.lobbyClientId('th06mp'), clientId);
+  assert.equal(localStorage.getItem('eagler-touhou-mp-member-v1'), memberId);
+  assert.equal(sessionStorage.getItem(clientKey), clientId);
+
+  testFeatures.reloadTestFeatures(owner, false);
+  assert.equal(testFeatures.testFeaturesEnabled(owner), false);
+  assert.equal(owner.location.href, roomUrl);
+  assert.deepEqual(navigations, [roomUrl, roomUrl]);
+  assert.equal(localStorage.getItem(testFeatures.TEST_FEATURES_KEY), null);
+  assert.equal(after.lobbyClientId('th06mp'), clientId);
 });
 
-test('TH13 beta saves use a separate localStorage key', () => {
- const entries = new Map([['th13.save', 'stable']]);
- class Storage {
-  getItem(key) {return entries.get(key) ?? null;}
-  setItem(key, value) {entries.set(key, value);}
-  removeItem(key) {entries.delete(key);}
- }
- const beta = {location: {href: 'https://example.test/beta/runtime/th13/th13.html'},
-  indexedDB: new IDBFactory(), Storage, localStorage: new Storage()};
- installRuntimeStorageChannel(beta);
- assert.equal(beta.localStorage.getItem('th13.save'), null);
- beta.localStorage.setItem('th13.save', 'beta');
- assert.equal(beta.localStorage.getItem('th13.save'), 'beta');
- assert.equal(entries.get('th13.save'), 'stable');
- beta.localStorage.removeItem('th13.save');
- assert.deepEqual([...entries], [['th13.save', 'stable']]);
-});
-
-test('prebuilt beta programs receive isolation before scripts and freeze with updated identities',async()=>{
- const root=await mkdtemp(join(tmpdir(),'beta-publication-'));
- try {
-  const source=join(root,'input');await mkdir(source);
-  const html='<html><head><script src="core.mjs"></script></head><body></body></html>';
-  const wasm=new Uint8Array([0,97,115,109]);
-  const input={'th06.html':html,'core.mjs':'export const core = true;','core.wasm':wasm};
-  const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
-  const files={};
-  for(const [path,content] of Object.entries(input)){
-   await writeFile(join(source,path),content);
-   files[path]={bytes:Buffer.byteLength(content),sha256:hash(content)};
-  }
-  const published=await prepareBetaRuntimePublication(source,'th06.html',files);
-  assert.deepEqual((await prepareBetaRuntimePublication(source,'th06.html'))['th06.html'],published['th06.html']);
-  const next=await readFile(join(source,'th06.html'),'utf8');
-  assert.ok(next.indexOf('<meta charset="utf-8">')<1024,'the encoding declaration remains in the HTML prescan window');
-  assert.ok(next.indexOf('installRuntimeStorageChannel')<next.indexOf('src="core.mjs"'));
-  assert.equal(betaRuntimeHtml(next),next,'publication is idempotent');
-  assert.notEqual(published['th06.html'].sha256,files['th06.html'].sha256);
-  assert.equal(published['th06.html'].sha256,hash(next));
-  assert.deepEqual(published['core.wasm'],files['core.wasm']);
-  const {writeRuntimeGeneration,verifyRuntimeGenerationDirectory}=await import('../../lib/runtime-generations.mjs');
-  const generation=await writeRuntimeGeneration({site:root,root:'runtime/th06/',entry:'th06.html',source,names:Object.keys(files),expected:published});
-  await verifyRuntimeGenerationDirectory(root,'runtime/th06/',generation);
- } finally {await rm(root,{recursive:true,force:true});}
+test('storage denial leaves the visibility preference disabled', () => {
+  const owner = {localStorage: {getItem() {throw new Error('blocked');}}};
+  assert.equal(testFeatures.testFeaturesEnabled(owner), false);
 });

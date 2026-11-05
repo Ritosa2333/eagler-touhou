@@ -8706,21 +8706,5 @@
   "developer.betaFeatures": {
     "id": "developer_betaFeatures",
     "params": []
-  },
-  "developer.betaWarning": {
-    "id": "developer_betaWarning",
-    "params": []
-  },
-  "developer.betaConfirm": {
-    "id": "developer_betaConfirm",
-    "params": []
-  },
-  "developer.betaCancel": {
-    "id": "developer_betaCancel",
-    "params": []
-  },
-  "developer.betaUnavailable": {
-    "id": "developer_betaUnavailable",
-    "params": []
   }
 }

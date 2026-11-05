@@ -2061,9 +2061,5 @@
   "settings_th05_numericDream": "夢ゲージを数値で表示",
   "settings_th05_numericPower": "パワーを数値で表示",
   "developer_options": "開発者向けオプション",
-  "developer_betaFeatures": "ベータ版機能",
-  "developer_betaWarning": "ベータ版モードに入ります。このモードでは不安定なベータ版機能を体験できます。セーブやリプレイデータの破損・消失、ゲームの動作が不安定になる可能性があります。そのため、セーブ、リプレイ、オンラインロビーは正式版と分かれています。十分ご注意ください。このボタンからいつでもベータ版モードを終了できます。",
-  "developer_betaConfirm": "ベータ版に入る",
-  "developer_betaCancel": "入らない",
-  "developer_betaUnavailable": "現在ベータ版を利用できません。後でもう一度お試しください。"
+  "developer_betaFeatures": "ベータ版機能"
 }

@@ -50,34 +50,23 @@ if (!inferredAuthority || (deployment.authority != null && deployment.authority 
 }
 // The verified deployment owns its frontend identity. The verifier's process
 // environment cannot switch a published site to a different artifact graph.
-const betaPrograms = deployment.betaPrograms === true;
-if (betaPrograms !== (releaseIdentity?.parameters?.betaPrograms === true)) throw new Error("Beta program provenance mismatch");
-if (betaPrograms) {
-  if (deployment.frontend !== undefined || deployment.appShell !== null ||
-      !deployment.siteUrl || !new URL(normalizeSiteUrl(deployment.siteUrl)).pathname.endsWith("/beta/")) {
-    throw new Error("Invalid beta program publication");
-  }
-} else if (deployment.frontend?.kind !== "react") throw new Error("Current publications must use the React frontend");
-let reactFrontend = null;
-if (Object.hasOwn(deployment, "frontend")) {
-  if (deployment.frontend?.kind !== "react" || typeof deployment.frontend.mountPath !== "string" ||
-      !deployment.frontend.validationMetadata) throw new Error("invalid deployment frontend identity");
-  reactFrontend = await readReactFrontendArtifact({directory: root,
-    metadata: deployment.frontend.validationMetadata, expectedMountPath: deployment.frontend.mountPath});
-  const provenance = {kind: "react", mountPath: reactFrontend.mountPath};
-  if (!isDeepStrictEqual(releaseIdentity?.parameters?.frontend, provenance)) {
-    throw new Error("deployment frontend does not match Release Manifest provenance");
-  }
-  const selectedSite = deployment.siteUrl ? new URL(normalizeSiteUrl(deployment.siteUrl)) : null;
-  if (selectedSite && selectedSite.pathname !== reactFrontend.mountPath) throw new Error("site URL does not match the React frontend artifact mount");
-  if (!reactAppShellMatchesSite(reactFrontend.appShell, selectedSite)) {
-    throw new Error("React App Shell deployment does not match its exact isolated origin and mount");
-  }
-  if ((reactFrontend.appShell === null) !== (deployment.appShell === null)) {
-    throw new Error("React App Shell deployment does not match its artifact permission");
-  }
-} else if (releaseIdentity?.parameters?.frontend != null) {
+if (deployment.betaPrograms || releaseIdentity?.parameters?.betaPrograms) throw new Error("Separate beta program publications are retired");
+if (deployment.frontend?.kind !== "react") throw new Error("Current publications must use the React frontend");
+if (typeof deployment.frontend.mountPath !== "string" ||
+    !deployment.frontend.validationMetadata) throw new Error("invalid deployment frontend identity");
+const reactFrontend = await readReactFrontendArtifact({directory: root,
+  metadata: deployment.frontend.validationMetadata, expectedMountPath: deployment.frontend.mountPath});
+const provenance = {kind: "react", mountPath: reactFrontend.mountPath};
+if (!isDeepStrictEqual(releaseIdentity?.parameters?.frontend, provenance)) {
   throw new Error("deployment frontend does not match Release Manifest provenance");
+}
+const selectedSite = deployment.siteUrl ? new URL(normalizeSiteUrl(deployment.siteUrl)) : null;
+if (selectedSite && selectedSite.pathname !== reactFrontend.mountPath) throw new Error("site URL does not match the React frontend artifact mount");
+if (!reactAppShellMatchesSite(reactFrontend.appShell, selectedSite)) {
+  throw new Error("React App Shell deployment does not match its exact isolated origin and mount");
+}
+if ((reactFrontend.appShell === null) !== (deployment.appShell === null)) {
+  throw new Error("React App Shell deployment does not match its artifact permission");
 }
 const declaredResourceMode = deployment.resourceMode || "hosted";
 const resourceMode = normalizeResourceMode(declaredResourceMode);
@@ -89,27 +78,22 @@ if (!gameIds.length || gameIds.some(game => !Object.hasOwn(PRODUCT_GAMES, game))
   throw new Error("Site Manifest contains no products or an unregistered product");
 }
 const preloadGames = gameIds.filter(game => PRODUCT_GAMES[game].dataProvider === "emscripten-preload");
-if (betaPrograms) {
-  if (resourceMode !== RESOURCE_MODE_EXTERNAL || !games.shared.runtimeManifest || !games.shared.netplayRelay ||
-      games.shared.saveChannel !== "beta" || games.shared.testBuild !== true) throw new Error("Incomplete beta program manifest");
-} else {
-  if (!deployment.files.some(item => item.path === "site.webmanifest")) throw new Error("Home Screen Web App manifest missing from deployment");
-  if (!reactFrontend.appShell) {
-    if (!deployment.files.some(item => item.path === "app-shell-sw.js") ||
-        await readFile(resolve(root, "app-shell-sw.js"), "utf8") !== APP_SHELL_RETIREMENT_WORKER) {
-      throw new Error("disabled React App Shell must publish its canonical retirement worker");
-    }
-  } else if (!deployment.files.some(item => item.path === "app-shell-sw.js")) throw new Error("App Shell Service Worker missing from deployment");
-  if (!deployment.files.some(item => item.path === "migrate.html")) throw new Error("origin migration page missing from deployment");
-  if (!deployment.files.some(item => item.path === "about.html")) throw new Error("about page missing from deployment");
-  if (!deployment.files.some(item => item.path === "faq.html")) throw new Error("FAQ page missing from deployment");
-  if (!deployment.files.some(item => item.path === "content/FIRST_USE_NOTICE.html")) throw new Error("content/FIRST_USE_NOTICE.html missing from deployment");
-  if (!deployment.files.some(item => item.path === "content/MULTIPLAYER.html")) throw new Error("content/MULTIPLAYER.html missing from deployment");
-  for (const font of ["yatra-one-latin.woff2", "chill-round-gothic-site-medium.woff2", "chill-round-gothic-site-bold.woff2", "chill-round-gothic-site-heavy.woff2"]) {
-    if (!deployment.files.some(item => item.path === `assets/fonts/${font}`)) throw new Error(`UI font missing from deployment: ${font}`);
+if (!deployment.files.some(item => item.path === "site.webmanifest")) throw new Error("Home Screen Web App manifest missing from deployment");
+if (!reactFrontend.appShell) {
+  if (!deployment.files.some(item => item.path === "app-shell-sw.js") ||
+      await readFile(resolve(root, "app-shell-sw.js"), "utf8") !== APP_SHELL_RETIREMENT_WORKER) {
+    throw new Error("disabled React App Shell must publish its canonical retirement worker");
   }
-  if (reactFrontend.appShell) assertAppShellContract(deployment.appShell, games, {shellFiles: reactFrontend.shellFiles});
+} else if (!deployment.files.some(item => item.path === "app-shell-sw.js")) throw new Error("App Shell Service Worker missing from deployment");
+if (!deployment.files.some(item => item.path === "migrate.html")) throw new Error("origin migration page missing from deployment");
+if (!deployment.files.some(item => item.path === "about.html")) throw new Error("about page missing from deployment");
+if (!deployment.files.some(item => item.path === "faq.html")) throw new Error("FAQ page missing from deployment");
+if (!deployment.files.some(item => item.path === "content/FIRST_USE_NOTICE.html")) throw new Error("content/FIRST_USE_NOTICE.html missing from deployment");
+if (!deployment.files.some(item => item.path === "content/MULTIPLAYER.html")) throw new Error("content/MULTIPLAYER.html missing from deployment");
+for (const font of ["yatra-one-latin.woff2", "chill-round-gothic-site-medium.woff2", "chill-round-gothic-site-bold.woff2", "chill-round-gothic-site-heavy.woff2"]) {
+  if (!deployment.files.some(item => item.path === `assets/fonts/${font}`)) throw new Error(`UI font missing from deployment: ${font}`);
 }
+if (reactFrontend.appShell) assertAppShellContract(deployment.appShell, games, {shellFiles: reactFrontend.shellFiles});
 if (games.shared.runtimeManifest) {
   await verifyRuntimePublication(root, games);
   const bytes = await readFile(resolve(root, RUNTIME_MANIFEST_FILE));
@@ -134,16 +118,11 @@ if (deployment.appShell) {
 }
 
 const knownHostUiPaths = new Set(hostArtworkFiles(Object.keys(PRODUCT_GAMES)).map(name => `assets/${name}`));
-const selectedArtwork = betaPrograms ? gameIds.flatMap(game => PRODUCT_GAMES[game].cardArtwork ?? []) : hostArtworkFiles(gameIds);
-const betaMetadata = new Set([SITE_MANIFEST_FILE, "host-manifest.json", RELEASE_CATALOG_FILE, RUNTIME_MANIFEST_FILE, "runtime-program-sw.js",
-  ...gameIds.map(game => games.games[game].package?.descriptor), ...selectedArtwork.map(name => `assets/${name}`)]);
+const selectedArtwork = hostArtworkFiles(gameIds);
 const inventoryPaths = new Set();
 for (const item of deployment.files) {
   if (item.path.includes("..") || item.path.startsWith("/")) throw new Error(`unsafe inventory path: ${item.path}`);
   if (inventoryPaths.has(item.path)) throw new Error(`duplicate inventory path: ${item.path}`);
-  if (betaPrograms && !betaMetadata.has(item.path) && !/^(?:runtime\/|games\/th075\/language\/)/.test(item.path)) {
-    throw new Error(`Unexpected file in beta program publication: ${item.path}`);
-  }
   inventoryPaths.add(item.path);
   const path = resolve(root, item.path);
   const info = await stat(path);
@@ -159,7 +138,6 @@ for (const item of deployment.files) {
     }
   }
 }
-if (betaPrograms && !inventoryPaths.has("runtime-program-sw.js")) throw new Error("Beta Runtime worker missing");
 if (inferredAuthority === BUILD_AUTHORITY_PUBLICATION) {
   for (const name of selectedArtwork) {
     const path = `assets/${name}`;
@@ -187,18 +165,16 @@ const actualPaths = new Set((await walk(root))
 for (const path of actualPaths) if (!inventoryPaths.has(path)) throw new Error(`file missing from inventory: ${path}`);
 for (const path of inventoryPaths) if (!actualPaths.has(path)) throw new Error(`inventory file missing: ${path}`);
 
-if (!betaPrograms) {
-  const migrationHtml = await readFile(resolve(root, "migrate.html"), "utf8");
-  if (!migrationHtml.includes('const PROTOCOL = "eagler-touhou/origin-migration/1";') ||
-      !migrationHtml.includes('source.protocol = "http:";') ||
-      !migrationHtml.includes('openHttp.onclick = () => {') ||
-      !migrationHtml.includes('location.href = sourceLink.href;') ||
-      !migrationHtml.includes('pageTitle.textContent = heading;')) {
-    throw new Error("origin migration page is missing the HTTPS -> HTTP migration entry contract");
-  }
-  if (/<script\b[^>]+src=/i.test(migrationHtml) || /<link\b[^>]+stylesheet/i.test(migrationHtml)) {
-    throw new Error("origin migration page must remain self-contained");
-  }
+const migrationHtml = await readFile(resolve(root, "migrate.html"), "utf8");
+if (!migrationHtml.includes('const PROTOCOL = "eagler-touhou/origin-migration/1";') ||
+    !migrationHtml.includes('source.protocol = "http:";') ||
+    !migrationHtml.includes('openHttp.onclick = () => {') ||
+    !migrationHtml.includes('location.href = sourceLink.href;') ||
+    !migrationHtml.includes('pageTitle.textContent = heading;')) {
+  throw new Error("origin migration page is missing the HTTPS -> HTTP migration entry contract");
+}
+if (/<script\b[^>]+src=/i.test(migrationHtml) || /<link\b[^>]+stylesheet/i.test(migrationHtml)) {
+  throw new Error("origin migration page must remain self-contained");
 }
 
 async function verifyHtmlReferences(relativeHtmlPath) {
@@ -234,14 +210,11 @@ async function verifyHtmlReferences(relativeHtmlPath) {
     }
   }
 }
-const htmlPaths = betaPrograms ? [] : ["index.html", "migrate.html", "about.html", "faq.html", "en.html"];
+const htmlPaths = ["index.html", "migrate.html", "about.html", "faq.html", "en.html"];
 for (const game of gameIds) {
   const entry = games.games[game];
   for (const runtime of [entry.runtime, entry.multiplayerRuntime].filter(Boolean)) {
     const pathname = new URL(runtime, "https://eagler.invalid/").pathname.slice(1);
-    if (betaPrograms && !(await readFile(resolve(root, pathname), "utf8")).includes("<!-- BEGIN GENERATED RUNTIME STORAGE CHANNEL -->")) {
-      throw new Error(`Beta Runtime is missing storage isolation: ${pathname}`);
-    }
     htmlPaths.push(pathname);
   }
 }

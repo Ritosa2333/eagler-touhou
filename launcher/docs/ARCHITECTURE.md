@@ -34,7 +34,7 @@
 
 批量发布 Runtime 使用 `scripts/package-runtime-release.mjs`；装配部署站点使用 `host/build.mjs`。本地开发需要前端构建、所选 Runtime 和本地游戏包，作品由 `EAGLER_DEVELOPMENT_GAMES` 选择。
 
-作品目录以 `testOnly` 统一控制默认入口。th075 普通版和多人版、th20 普通版在常规游戏列表与大厅中隐藏，通过页面 `?test` 或站点 `shared.testBuild: true` 显示。测试模式同时覆盖大厅筛选与创建房间表单，构建和资源能力继续由同一作品目录声明。
+作品目录以 `testOnly` 控制抢先体验内容的默认可见性。设置中的“测试版功能”、页面 `?test` 或站点 `shared.testBuild: true` 可显示这些作品，覆盖主页、大厅筛选和创建房间表单。开关只改变界面可见性，作品共用发布清单、Runtime、Relay、存档和联机身份。新增测试作品随常规发布提供资源，开启后即可体验。
 
 隔离部署的 App Shell 按 origin 与挂载目录核对 Service Worker 身份，将已发布的字体修复别名纳入同一应用的迁移入口。后续安装统一使用 `app-shell-sw.js`，更新等待正在运行的游戏和交互完成。
 

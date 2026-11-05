@@ -2,7 +2,6 @@
 // Runtime-only registration. It never controls/preloads Launcher pages, DATA,
 // fonts from shared/ or games/, or mutable save/replay content.
 const programMount = new URL('./', self.location.href);
-const launcherMount = /\/beta\/$/.test(programMount.pathname) ? new URL('../', programMount) : programMount;
 const programCache = createRuntimeCache({scopeUrl: programMount, catalog: {
   schema: EaglerRuntimeGenerations.RUNTIME_MANIFEST_SCHEMA,
   protocol: EaglerRuntimeGenerations.RUNTIME_PROTOCOL, groups: [],
@@ -16,7 +15,7 @@ self.addEventListener('message', event => {
   const port = event.ports?.[0], C = EaglerRuntimeGenerations;
   if (![C.RUNTIME_CAPABILITIES, C.RUNTIME_PREPARE, C.RUNTIME_IMPORT].includes(event.data?.type)) return;
   const source = event.source?.url && new URL(event.source.url);
-  if (!source || source.origin !== launcherMount.origin || !source.pathname.startsWith(launcherMount.pathname)) return;
+  if (!source || source.origin !== programMount.origin || !source.pathname.startsWith(programMount.pathname)) return;
   event.waitUntil((async () => {
     try {
       if (event.data.type === C.RUNTIME_CAPABILITIES) {

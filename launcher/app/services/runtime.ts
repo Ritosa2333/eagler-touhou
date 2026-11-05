@@ -2,7 +2,6 @@
 // behavioral authority; first-frame and localized fallback policy are restored
 // below. No candidate UI, core replacement or test oracle is imported.
 import type {Translate} from '../i18n';
-import {betaModeForBase} from '../../src/launcher/release-channel.mts';
 import {directPreloadRuntimeUrl} from './direct-preload-runtime';
 import {liveRuntimeEntryAuthorized} from './runtime-entry-authority';
 import {errorText} from './error-text';
@@ -272,11 +271,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     releaseGeneration: releasePackageGeneration, ...options.dependencies };
   const network = options.network ?? createNetworkActivityTracker({ fetchImpl: options.fetchImpl ?? globalThis.fetch.bind(globalThis), onChange: options.onNetworkChange });
   const programTransfers = new Map<string, {id: string; epoch: number}>();
-  const programInspections = new Map<number, AbortController>();
   function finishProgramTransfers(epoch?: number) {
-    for (const [id, controller] of programInspections) if (epoch === undefined || id === epoch) {
-      controller.abort(); programInspections.delete(id);
-    }
     for (const [key, task] of programTransfers) if (epoch === undefined || task.epoch === epoch) {
       network.finish(task.id); programTransfers.delete(key);
     }
@@ -582,10 +577,6 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (message.event === 'ready' && !snapshot.ready) {
       try { runtimeDocument = runtimeIdentity(token).document; }
       catch (error) { fail(error); return; }
-      if(betaModeForBase(baseUrl)&&(frame.contentWindow as unknown as {__eaglerStorageChannel?:string})?.__eaglerStorageChannel!=='beta'){
-        fail(new Error(options.translate('developer.betaUnavailable')));
-        return;
-      }
       update({ ready: true, roomPreviewSupported: message.roomPreview === true, roomReturnSupported: message.roomReturn === true }); settle('ready');
     } else if (message.event === 'first-frame' && launchRequested &&
         (!snapshot.roomReturnSupported || message.launchSerial === roomLaunchSerial)) {
@@ -919,17 +910,6 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           }
           const url = plan.generation ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
           if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
-          if(betaModeForBase(baseUrl)){
-            if(!url.pathname.startsWith(new URL(baseUrl).pathname))throw Error(options.translate('developer.betaUnavailable'));
-            url.searchParams.set('storageChannel','beta');
-            const controller=new AbortController();programInspections.set(token.id,controller);
-            try {
-              const response=await network.fetch(url,{signal:controller.signal},packageNetworkMetadata(plan.game,url,baseUrl,options.translate));
-              if(!response.ok||!(await response.text()).includes('<!-- BEGIN GENERATED RUNTIME STORAGE CHANNEL -->'))
-                throw Error(options.translate('developer.betaUnavailable'));
-            } finally {programInspections.delete(token.id);}
-            assertOperation();assertCurrent(token);
-          }
           url.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(token.id));
           update({ source: url.href, codeGeneration });
           const ready = waitFor('ready', token, options.timeouts?.ready ?? 120_000);

@@ -28,8 +28,7 @@ import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
 import { previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
-import {BetaModeDialog} from './BetaModeDialog';
-import {betaModeEnabled,reloadReleaseMode} from '../../../src/launcher/release-channel.mts';
+import {testFeaturesEnabled,reloadTestFeatures} from '../../../src/launcher/test-features.mts';
 
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
@@ -74,11 +73,10 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     returnToLanguage = useRef(false),
     replayAfterClose = useRef(false),
     [languagesOpen, setLanguagesOpen] = useState(false);
-  const [developerOpen,setDeveloperOpen]=useState(false),[betaWarning,setBetaWarning]=useState(false);
-  const betaAfterClose=useRef(false),returnToDeveloper=useRef(false);
-  const channelBase=props.assetUrl('./');
-  const [betaMode,setBetaMode]=useState(false);
-  useLayoutEffect(() => {if (interactive) setBetaMode(betaModeEnabled(window));}, [interactive]);
+  const [developerOpen,setDeveloperOpen]=useState(false);
+  const returnToDeveloper=useRef(false);
+  const [testFeatures,setTestFeatures]=useState(false);
+  useLayoutEffect(() => {if (interactive) setTestFeatures(testFeaturesEnabled(window));}, [interactive]);
   const masthead = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     if (!interactive) return;
@@ -127,7 +125,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     }
   }, [languagesOpen, developerOpen, menuOpen]);
   return (
-    <><header
+    <header
       ref={masthead}
       className={`masthead book-masthead${variant === 'lobby' ? ' lobby-masthead' : ''}${props.compactDocumentation ? ' documentation-masthead' : ''}`}
     >
@@ -217,12 +215,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
               sideOffset={8}
               collisionPadding={padding}
               onCloseAutoFocus={(event) => {
-                if(betaAfterClose.current){
-                  betaAfterClose.current=false;
-                  event.preventDefault();
-                  setBetaWarning(true);
-                  return;
-                }
                 if (!replayAfterClose.current) return;
                 replayAfterClose.current = false;
                 event.preventDefault();
@@ -251,11 +243,8 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                   checked={props.diagnosticsEnabled} onCheckedChange={props.onToggleDiagnostics}>
                   <ActivityLogIcon/>{t('diagnostics.toggle')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
                 </DropdownMenu.CheckboxItem>
-                <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={betaMode}
-                  onSelect={()=>{
-                    if(betaMode)reloadReleaseMode(window,false);
-                    else betaAfterClose.current=true;
-                  }}>
+                <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={testFeatures}
+                  onCheckedChange={enabled=>reloadTestFeatures(window,enabled===true)}>
                   <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
                 </DropdownMenu.CheckboxItem>
               </> : languagesOpen ? (
@@ -446,6 +435,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </nav>
-    </header><BetaModeDialog open={betaWarning} onOpenChange={setBetaWarning} onClosed={()=>trigger.current?.focus({preventScroll:true})} baseUrl={channelBase}/></>
+    </header>
   );
 }
