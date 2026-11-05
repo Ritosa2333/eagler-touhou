@@ -14,7 +14,7 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
   </script>`;
   const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;if(path==='/'){res.setHeader('content-type','text/html');return res.end(html);}if(path==='/data')return res.end(data);
     const file=resolve(root,path.slice(9));if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');res.setHeader('content-type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
-    let bytes=await readFile(file);if(game==='th01'&&path==='/runtime/app.js')bytes=Buffer.concat([bytes,Buffer.from('\nwindow.testMenuInput=menuInput;\n')]);if(game==='th03'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet testPrevious;export function testState(){return emulator?.snapshot?.state;} export function testMark(){testPrevious=emulator;} export function testChanged(){return !!emulator&&emulator!==testPrevious;}\n')]);
+    let bytes=await readFile(file);if(game==='th01'&&path==='/runtime/app.js')bytes=Buffer.concat([bytes,Buffer.from('\nwindow.testMenuInput=menuInput;\n')]);if(game==='th03'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet testPrevious;export function testState(){return emulator?.snapshot?.state;} export function testMarkers(){return emulator?.snapshot?.markers;} export function testMark(){testPrevious=emulator;} export function testChanged(){return !!emulator&&emulator!==testPrevious;}\n')]);
     if(game==='th04'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nexport function testTurbo(){return emulator.call("testTurbo");}\n')]);
     if(game==='th04'&&path==='/runtime/solo-worker.js')bytes=Buffer.from(bytes.toString().replace("if(method==='soloFault')","if(method==='testTurbo'){const d=emulator.practice.debug.d;return d<0?null:emulator.module.HEAPU8[d+0x53a0];}if(method==='soloFault')"));res.end(bytes);
   }catch{res.writeHead(404).end();}});
@@ -39,8 +39,22 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
       assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testTurbo()),1,'normal game uses native Turbo mode');
     }else{
       // Start a single-player game through its own title menu.
-      for(let i=0;i<15;i++){await frame.click('#canvas');await page.keyboard.press('KeyZ',{delay:120});await new Promise(r=>setTimeout(r,500));if(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1))break;}
+      for(let i=0;i<15;i++){
+        if(process.env.PC98_TOUCH_INPUT==='1'){
+          await page.evaluate(()=>rpc('direct-touch',{type:'down',id:1,x:.5,y:.5}));await new Promise(r=>setTimeout(r,100));
+          await page.evaluate(()=>rpc('direct-touch',{type:'up',id:1,x:.5,y:.5}));
+        }else{await frame.click('#canvas');await page.keyboard.press('KeyZ',{delay:120});}
+        await new Promise(r=>setTimeout(r,500));if(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1))break;
+      }
       await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1,{timeout:90000}).catch(async error=>{console.log('TH03 state',await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()));throw error;});
+      if(process.env.PC98_TOUCH_INPUT==='1'){
+        await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testMarkers()?.some(p=>p.seat===0),{timeout:30000});
+        const position=()=>frame.evaluate(async()=>(await import('./managed-solo.mjs')).testMarkers().find(p=>p.seat===0)?.x);
+        const before=await position();await page.evaluate(()=>rpc('direct-touch',{type:'down',id:5,x:.4,y:.5}));
+        for(let i=1;i<=8;i++){await page.evaluate(i=>rpc('direct-touch',{type:'move',id:5,x:.4+i*.015,y:.5}),i);await new Promise(r=>setTimeout(r,100));}
+        await page.evaluate(()=>rpc('direct-touch',{type:'up',id:5,x:.52,y:.5}));await new Promise(r=>setTimeout(r,500));
+        assert.notEqual(await position(),before,'touch drag moves the actual TH03 solo player');
+      }
       await frame.click('#canvas');await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:true}));await new Promise(r=>setTimeout(r,150));await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:false}));await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:15000}).catch(async error=>{console.log('TH03 pause state',await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()));throw error;});
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testMark());
       await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(n=>n.textContent==='不存 REP 退出游戏').click());

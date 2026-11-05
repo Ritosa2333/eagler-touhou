@@ -35,15 +35,15 @@ try {
       }
       return {idle,tap,down,gameplayTap,movement,focus,releasedFocus,back};
     }, game);
-    assert.equal(result.idle & (game === 'th01' ? 4 : 256), 0, `${game}: menu must not auto-confirm`);
-    assert.equal(result.tap & (game === 'th01' ? 64 : 256), game === 'th01' ? 64 : 256, `${game}: tap confirms`);
+    assert.equal(result.idle & (game === 'th01' ? 4 : game === 'th03' ? 512 : 256), 0, `${game}: menu must not auto-confirm`);
+    assert.equal(result.tap & (game === 'th01' ? 64 : game === 'th03' ? 512 : 256), game === 'th01' ? 64 : game === 'th03' ? 512 : 256, `${game}: tap confirms`);
     assert.equal(result.down & (game === 'th01' ? 32 : 2), game === 'th01' ? 32 : 2, `${game}: swipe moves down`);
-    assert.equal(result.gameplayTap & (game === 'th01' ? 64 : 256), 0, `${game}: gameplay tap does not confirm a menu`);
+    assert.equal(result.gameplayTap & (game === 'th01' ? 64 : game === 'th03' ? 512 : 256), game === 'th03' ? 512 : 0, `${game}: gameplay tap does not confirm a menu`);
     assert.ok(game === 'th01' ? result.movement & 2 : result.movement > 0, `${game}: direct movement reaches the game`);
     if (game !== 'th01') {
       assert.equal(result.focus & 64, 64, `${game}: second finger holds focus`);
       assert.equal(result.releasedFocus & 64, 0, `${game}: releasing second finger releases focus`);
-      assert.equal(result.back & 384, 128, `${game}: two-finger menu tap goes back without confirming`);
+      assert.equal(result.back & (game === 'th03' ? 640 : 384), 128, `${game}: two-finger menu tap goes back without confirming`);
     } else assert.equal(result.back & 192, 128, `${game}: two-finger menu tap goes back without confirming`);
     console.log('PASS', game, result);
   }
