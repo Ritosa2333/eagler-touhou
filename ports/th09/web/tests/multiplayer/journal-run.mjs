@@ -1,0 +1,41 @@
+// Retain bounded local build/test invocations without publishing or overwriting evidence.
+import {spawnSync} from 'node:child_process';
+import {mkdirSync,readFileSync,writeFileSync,readdirSync,existsSync,openSync,closeSync} from 'node:fs';
+import {resolve,relative} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+import {performance} from 'node:perf_hooks';
+const owner=fileURLToPath(new URL('../../../',import.meta.url));
+const root=resolve(process.env.JOURNAL_COMMAND_ROOT||owner);
+const label=process.env.RUN_LABEL;
+if(!label||!/^[A-Za-z0-9_-]+$/.test(label))throw Error('Unique RUN_LABEL required');
+const args=process.argv.slice(2);
+if(!args.length)throw Error('Expected Node script or test flags and arguments');
+const out=resolve(owner,'web/artifacts/multiplayer-tests');
+mkdirSync(out,{recursive:true});
+const invocation=resolve(out,label+'-invocation.json'),log=resolve(out,label+'-process.log');
+if(existsSync(invocation)||existsSync(log))throw Error('Retained invocation already exists: '+label);
+const sha=b=>createHash('sha256').update(b).digest('hex');
+const common=resolve(process.env.EAGLER_COMMON_ROOT);
+const files=[];
+const scan=dir=>{for(const e of readdirSync(dir,{withFileTypes:true})){const p=resolve(dir,e.name);if(e.isDirectory())scan(p);else if(/\.(cpp|hpp|h|inc)$/.test(e.name))files.push(p);}};
+for(const p of [resolve(root,'web/cpp'),resolve(root,'portable/sdl'),resolve(root,'portable/input'),resolve(common,'include'),resolve(common,'src/netplay')])scan(p);
+files.push(...['managed.mjs','shared-netplay.mjs'].map(name=>resolve(root,'web/sdl-runtime',name)),fileURLToPath(import.meta.url));
+for(const arg of args)if(/\.(mjs|cjs|js|cpp)$/.test(arg)&&existsSync(resolve(root,arg)))files.push(resolve(root,arg));
+const identities=()=>Object.fromEntries([...new Set(files)].sort().map(p=>[p,sha(readFileSync(p))]));
+const before=identities(),startedAt=new Date().toISOString(),start=performance.now();
+const keys=['TH09_OUTPUT','TH09_PROFILE','TH09_AUDIO_SIMD','TH09_BUILD_JOBS','EMCC_CORES','TH09_FIXTURE_ROOT','EAGLER_COMMON_ROOT','TH09_TEST_DEPENDENCIES_ROOT','EAGLER_RELAY_SOURCE','TH09_EMSDK','WASI_SDK_BIN','NODE_OPTIONS','PC_BUILD','PC_REFERENCE','CPU_RATE','CPU_P1_RATE','NATIVE_GPU','PC_ACTIVATE_PAGE','PC_CHECKPOINT_BLOCKS','FRAMES','HEADED_CONTROL','DELAY_MS','JITTER_MS','DROP_EVERY','IMPAIRMENT_SITE','INPUT_MODE','TOUCH_PROFILE','TOUCH_SOURCE_HZ','TOUCH_DURATION_MS','TOUCH_PATTERN','BURST_AT_MS','BURST_FOR_MS','BURST_DELAY_MS','AUDIO_OUTPUT','RAF_DIAGNOSTICS','HOST_LOAD','NETWORK_TRACE','RELAY_TRACE','LIVE_COST','PROFILE_CPU','RESPONSIVENESS','RAF_ANOMALY','CHROME_SCHED_TRACE','CHROME_SCHED_TRACE_PROFILE','STARTUP_TRACE','EXPECT_RTC_PATH','RENDER_WORK','DISABLE_GPU_VSYNC','CHARACTERS'];
+keys.push('JOURNAL_COMMAND_ROOT','JOURNAL_EXPECTED_DELAY_MS','PEER_FRAMES','FIXED_DELAY_FRAMES','FORCE_CORRECTION','DELIVERY_CLOCK','ADONIS_MODE','INPUT_DELAY_FRAMES','CAPTURE_TRACE','PAUSE_TRACE','PEER_INPUT_TRACE');
+const environment=Object.fromEntries(keys.filter(k=>process.env[k]!==undefined).map(k=>[k,process.env[k]]));
+const gitHead=p=>spawnSync('git',['rev-parse','HEAD'],{cwd:p,encoding:'utf8',windowsHide:true}).stdout.trim();
+const head=gitHead(root),commonHead=gitHead(common);
+writeFileSync(invocation,JSON.stringify({state:'running',startedAt,label,root,args,head,commonHead,environment,identityBefore:before},null,2)+'\n',{flag:'wx'});
+const fd=openSync(log,'wx');
+let result;
+try{result=spawnSync(process.execPath,args,{cwd:root,env:process.env,windowsHide:true,stdio:['ignore',fd,fd],timeout:540000});}
+finally{closeSync(fd);}
+const after=identities(),changed=Object.keys(before).filter(p=>before[p]!==after[p]);
+const record={state:'complete',startedAt,endedAt:new Date().toISOString(),elapsedMs:performance.now()-start,label,root,args,head,commonHead,environment,status:result.status,signal:result.signal,error:result.error?String(result.error):null,sourceStable:changed.length===0,changed,identityBefore:before,identityAfter:after,log:{path:log,sha256:sha(readFileSync(log))}};
+writeFileSync(invocation,JSON.stringify(record,null,2)+'\n');
+console.log(JSON.stringify({label,status:record.status,signal:record.signal,error:record.error,elapsedMs:record.elapsedMs,sourceStable:record.sourceStable,changed,invocation,log}));
+if(result.status!==0||changed.length)process.exitCode=1;

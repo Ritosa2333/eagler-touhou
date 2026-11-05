@@ -1,0 +1,92 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TH07 netplay Replay browser host</title>
+<iframe id="runtime" style="width:640px;height:480px;border:0"></iframe>
+<pre id="status">boot</pre>
+<script>
+(() => {
+  "use strict";
+  const protocol = "eagler-touhou/1";
+  const game = "th07";
+  const epoch = 1;
+  const params = new URLSearchParams(location.search);
+  const player = Number(params.get("player") || 0);
+  const playerCount = Number(params.get("players") || 2);
+  const testFrames = Number(params.get("frames") || 600);
+  const relay = String(params.get("relay") || "");
+  const iframe = document.getElementById("runtime");
+  const status = document.getElementById("status");
+  const pending = new Map();
+  let request = 0;
+
+  function send(command, body = {}) {
+    const id = `th07-replay-${++request}`;
+    return new Promise((resolve, reject) => {
+      pending.set(id, { resolve, reject });
+      iframe.contentWindow.postMessage(
+        { protocol, game, epoch, command, request: id, ...body }, location.origin);
+      setTimeout(() => {
+        const waiter = pending.get(id);
+        if (!waiter) return;
+        pending.delete(id);
+        reject(new Error(`${command} timeout`));
+      }, 15000);
+    });
+  }
+
+  window.addEventListener("message", async event => {
+    if (event.source !== iframe.contentWindow || event.origin !== location.origin) return;
+    const message = event.data || {};
+    if (message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
+    if (message.request && pending.has(message.request)) {
+      const waiter = pending.get(message.request);
+      pending.delete(message.request);
+      if (message.ok) waiter.resolve(message);
+      else waiter.reject(new Error(message.error || "runtime request failed"));
+      return;
+    }
+    if (message.event !== "ready") return;
+    try {
+      await send("configure", {
+        music: "none",
+        resources: [],
+        sharedResources: [{ url: "/assets/msgothic.ttc", path: "/msgothic.ttc" }],
+        thpracCatalog: [],
+        options: {
+          debugHarness: "netplay-lan-stage1",
+          netplayMode: "lan",
+          netplayInputDelayFrames: params.has("inputDelay") ? Number(params.get("inputDelay")) : undefined,
+          netplayBulletSnapshot: params.get("bulletSnapshot") || undefined,
+          netplayUrl: relay,
+          netplayPlayer: player,
+          netplayPlayerCount: playerCount,
+          netplayTestFrames: testFrames,
+          netplaySeed: 19005,
+          netplayDifficulty: 1,
+          netplayIceServers: [],
+          netplayLoadouts: [
+            { character: 0, shot: 0 },
+            { character: 1, shot: 1 },
+            { character: 2, shot: 0 },
+          ].slice(0, playerCount),
+          netplayPhysicalInput: false,
+          netplayScriptedInput: true,
+          netplayRollbackProbe: true,
+          netplayReplayPlaybackCycle: true,
+          netplayTestIncrementalTouch: true,
+        },
+      });
+      await send("launch");
+      globalThis.__th07ReplaySmokeLaunched = true;
+      status.textContent = "launched";
+    } catch (error) {
+      globalThis.__th07ReplaySmokeFailure = String(error?.message || error);
+      status.textContent = `failed: ${globalThis.__th07ReplaySmokeFailure}`;
+    }
+  });
+
+  const build = params.get("build") || "build-web-th07-netplay-replay-audit";
+  if (!/^[A-Za-z0-9_.-]+$/.test(build)) throw new Error("invalid Replay test build");
+  iframe.src = `/${build}/th07.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
+})();
+</script>

@@ -1,0 +1,554 @@
+{
+  "game": "th15",
+  "original": "Japanese 1.00b",
+  "date": "2026-10-05",
+  "implementation": "Named C++ game / shared SDL3-WebGL2 / final launcher",
+  "productionWasmSha256": "d75950f168ec4328b02805f1f2bc1c62d98e7d9644a1f1166e4660a53bc1c3d9",
+  "coreWasmSha256": "8e372c5b32823a2aa226572e3775cd77df32ba69ab0d7a3c54fbb1552ea71e92",
+  "verification": "artifacts/cpp/verification/fps-release.json",
+  "gameplaySourceUnchanged": true,
+  "webRelease": {
+    "version": "1.0.3",
+    "date": "2026-10-05",
+    "manifestVersion": "2ea2acf4808e508e33aa307c",
+    "verification": "artifacts/cpp/verification/fps-release.json",
+    "publicVerification": "artifacts/cpp/verification/public-fps-release.json",
+    "publicStartupVerification": "artifacts/cpp/verification/public-fps-startup.json"
+  },
+  "previousAcceptance": {
+    "game": "th15",
+    "original": "Japanese 1.00b",
+    "date": "2026-10-04",
+    "implementation": "Named C++ game / shared SDL3-WebGL2 / final launcher",
+    "productionWasmSha256": "1c31f3a7e0f3fd5e7d84f61eb36e0d5510a5fac4b2405ebef3d1ad487444397e",
+    "coreWasmSha256": "8e372c5b32823a2aa226572e3775cd77df32ba69ab0d7a3c54fbb1552ea71e92",
+    "verification": "artifacts/cpp/verification/game-performance-release.json",
+    "previousAcceptance": {
+      "game": "th15",
+      "original": "Japanese 1.00b",
+      "date": "2026-10-04",
+      "implementation": "Named C++ game / shared SDL3-WebGL2 / final launcher",
+      "productionWasmSha256": "6c934ff00e2ae80828e691a9f4a3f000398bbf9a7a6f7197f076c701c563adde",
+      "coreWasmSha256": "351a9d34f5fee3accb742b97a1064ce13964c1e11d26bb909794b940e993ca43",
+      "verification": "artifacts/cpp/verification/stage5-performance-release.json",
+      "previousAcceptance": {
+        "game": "th15",
+        "original": "Japanese 1.00b",
+        "date": "2026-10-04",
+        "implementation": "named C++ application; shared SDL3/WebGL2 and final launcher",
+        "productionWasmSha256": "249885f72db143829d503d9039ef6070d15cdf2ad181fc3447c5df4f76601438",
+        "coreWasmSha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+        "checks": {
+          "tester-extra-replay": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/tester-extra-replay.json",
+            "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+            "checks": 40860
+          },
+          "tester-easy-reisen-replay": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/tester-easy-reisen-replay.json",
+            "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+            "checks": 123606
+          },
+          "anm-screen-overlay": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/anm-screen-overlay.json",
+            "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+            "checks": 150720
+          },
+          "chapter-checkpoint": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/chapter-checkpoint.json",
+            "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+            "checks": 175776
+          },
+          "sdl-restart-background": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/sdl-restart-background.json",
+            "sha256": "2b35f89408a0492b15756b385f782cf060e5fdf062971fdd14f1121f1d644204"
+          },
+          "sdl-restart-background-2x": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/sdl-restart-background-2x.json",
+            "sha256": "2b35f89408a0492b15756b385f782cf060e5fdf062971fdd14f1121f1d644204"
+          },
+          "sdl-application-pointdevice": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/sdl-application-pointdevice.json",
+            "sha256": "2b35f89408a0492b15756b385f782cf060e5fdf062971fdd14f1121f1d644204"
+          },
+          "sdl-production-restart-background": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/sdl-production-restart-background.json",
+            "sha256": "249885f72db143829d503d9039ef6070d15cdf2ad181fc3447c5df4f76601438"
+          },
+          "sdl-alpha-hotfix-production-title": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/sdl-alpha-hotfix-production-title.json",
+            "sha256": "249885f72db143829d503d9039ef6070d15cdf2ad181fc3447c5df4f76601438"
+          },
+          "restart-background-package-integrity": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/restart-background-package-integrity.json",
+            "sha256": "249885f72db143829d503d9039ef6070d15cdf2ad181fc3447c5df4f76601438"
+          },
+          "restart-background-source-scope": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/restart-background-source-scope.json",
+            "sha256": "249885f72db143829d503d9039ef6070d15cdf2ad181fc3447c5df4f76601438"
+          },
+          "public-restart-background-verification": {
+            "passed": true,
+            "evidence": "artifacts/cpp/verification/public-restart-background-verification.json",
+            "sha256": "249885f72db143829d503d9039ef6070d15cdf2ad181fc3447c5df4f76601438"
+          }
+        },
+        "status": "native-alpha-surface-restart-backdrop-and-overlay-animation-group-verified-and-publicly-deployed",
+        "scope": "Original alpha-surface format condition enables the fifth patterned transition panel; Restart effect creation uses the native overlay group that updates while gameplay waits. Prior build reproduces flat background; current actual Pointdevice death/Continue at both render scales and final production launcher keyboard Retry/confirmation show the pattern and transition back to the stage. Actual persistent checkpoint cold resume and native animation/checkpoint regressions pass. Supplied Extra and Reisen replays retain their original state comparisons. Public exact manifest/Wasm verified; no exhaustive claim about every possible input or mobile driver.",
+        "previousAcceptance": {
+          "game": "th15",
+          "original": "Japanese 1.00b",
+          "date": "2026-10-03",
+          "implementation": "named C++ application; shared SDL3/WebGL2 and final launcher",
+          "productionWasmSha256": "7689e4a8a3e0a6445224193ad1d7474ad4bcc349ef69a5b99dd871231f29b44f",
+          "coreWasmSha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+          "checks": {
+            "tester-extra-replay": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/tester-extra-replay.json",
+              "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+              "checks": 40860
+            },
+            "tester-easy-reisen-replay": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/tester-easy-reisen-replay.json",
+              "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+              "checks": 123606
+            },
+            "external-replay-original-process-state": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/external-replay-original-process-state.json",
+              "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+              "checks": 146865
+            },
+            "extra-replay-original-process-state": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/extra-replay-original-process-state.json",
+              "sha256": "03d67dd0a7eafed3640520f2c8c95f0bc51b55998e4ec1b5fe2d6300d31d34df",
+              "checks": 101788
+            },
+            "sdl-tester-replays": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/sdl-tester-replays.json",
+              "sha256": "dfccb49f13a15ea92ba3f3cda4f2896a86a8a4cb45ed9dda12a9c7483e32be49",
+              "checks": 1797
+            },
+            "sdl-tester-replay-catalog": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/sdl-tester-replay-catalog.json",
+              "sha256": "dfccb49f13a15ea92ba3f3cda4f2896a86a8a4cb45ed9dda12a9c7483e32be49"
+            },
+            "sdl-store": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/sdl-store.json",
+              "sha256": "53c8c45bddcd28e5755bfbd8700145582389357184f850ab433b4cdf79c58bc6"
+            },
+            "sdl-alpha-hotfix-production-title": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/sdl-alpha-hotfix-production-title.json",
+              "sha256": "7689e4a8a3e0a6445224193ad1d7474ad4bcc349ef69a5b99dd871231f29b44f"
+            },
+            "tester-replay-package-integrity": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/tester-replay-package-integrity.json",
+              "sha256": "7689e4a8a3e0a6445224193ad1d7474ad4bcc349ef69a5b99dd871231f29b44f"
+            },
+            "public-tester-replay-verification": {
+              "passed": true,
+              "evidence": "artifacts/cpp/verification/public-tester-replay-verification.json",
+              "sha256": "7689e4a8a3e0a6445224193ad1d7474ad4bcc349ef69a5b99dd871231f29b44f"
+            }
+          },
+          "status": "original-replay-slot-order-and-shared-enemy-reward-counters-verified-and-publicly-deployed",
+          "scope": "Fixed original numbered replay slots with empty rows, separate user pages and shared player/Bomb/ECL manager counters. Actual supplied Sanae Extra: all 40860 active frames through all recorded boss phases, 14 gameplay fields plus stock fragments/tier, no invulnerability. Supplied Reisen Easy: 123606 valid atomic native samples across six stages. Actual final developer launcher playback to Extra EOF and final production title composition passed. Package hashes, fresh source agreement and exact public HTTPS Wasm verified. These scoped samples do not constitute exhaustive proof of every possible input or device.",
+          "previousAcceptance": {
+            "game": "th15",
+            "original": "Japanese 1.00b",
+            "date": "2026-10-03",
+            "implementation": "named C++ application; shared SDL3/WebGL2 and final launcher",
+            "productionWasmSha256": "11ac871045521985162b369d1411271ba288193e468b205a0c6ff9716bfdd646",
+            "coreWasmSha256": "3d1d7ed4d1ed7eb3d59a7ddc754ea9253976e5a055d7a83cd9d837a61a24079c",
+            "checks": {
+              "replay-acceleration": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/replay-acceleration.json",
+                "sha256": "3d1d7ed4d1ed7eb3d59a7ddc754ea9253976e5a055d7a83cd9d837a61a24079c"
+              },
+              "replay-strip-regression-result": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/replay-strip-regression-result.json",
+                "sha256": "3d1d7ed4d1ed7eb3d59a7ddc754ea9253976e5a055d7a83cd9d837a61a24079c"
+              },
+              "sdl-application-alpha": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/sdl-application-alpha.json",
+                "sha256": "e6cbcf28863194e121bdba1ea3c73f3c66ad0e857b36a3b00bf85333a15ca232"
+              },
+              "sdl-application-playfield": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/sdl-application-playfield.json",
+                "sha256": "e6cbcf28863194e121bdba1ea3c73f3c66ad0e857b36a3b00bf85333a15ca232"
+              },
+              "sdl-launcher-replay-acceleration": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/sdl-launcher-replay-acceleration.json",
+                "sha256": "e6cbcf28863194e121bdba1ea3c73f3c66ad0e857b36a3b00bf85333a15ca232"
+              },
+              "sdl-replay-strip-production-title": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/sdl-replay-strip-production-title.json",
+                "sha256": "11ac871045521985162b369d1411271ba288193e468b205a0c6ff9716bfdd646"
+              },
+              "replay-strip-old-control": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/replay-strip-old-control.json"
+              },
+              "replay-strip-source-scope": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/replay-strip-source-scope.json",
+                "sha256": "11ac871045521985162b369d1411271ba288193e468b205a0c6ff9716bfdd646"
+              },
+              "replay-strip-package-integrity": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/replay-strip-package-integrity.json",
+                "sha256": "11ac871045521985162b369d1411271ba288193e468b205a0c6ff9716bfdd646"
+              },
+              "public-replay-strip-verification": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/public-replay-strip-verification.json",
+                "sha256": "11ac871045521985162b369d1411271ba288193e468b205a0c6ff9716bfdd646"
+              },
+              "external-replay-original-process-state": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/external-replay-original-process-state.json",
+                "sha256": "3d1d7ed4d1ed7eb3d59a7ddc754ea9253976e5a055d7a83cd9d837a61a24079c"
+              },
+              "extra-replay-original-process-state": {
+                "passed": true,
+                "evidence": "artifacts/cpp/verification/extra-replay-original-process-state.json",
+                "sha256": "3d1d7ed4d1ed7eb3d59a7ddc754ea9253976e5a055d7a83cd9d837a61a24079c"
+              }
+            },
+            "status": "playfield-camera-order-and-native-replay-acceleration-verified-and-publicly-deployed",
+            "scope": "Actual stage transition reproduces the 96-pixel right black strip with prior SceneDisplay object and passes whole-strip pixel checks after the construction-order fix at both scales. Native priority-35 acceleration and real launcher Z/left Ctrl/right Ctrl keyboard events pass. Ten frozen core regressions pass, including original-process replay state comparisons. Production/development source hashes agree; shared renderer and launcher unchanged. Public exact Wasm/manifest verified; fresh public full-asset browser loading is not counted as passed.",
+            "public": {
+              "passed": true,
+              "url": "https://api.steinsgateon.com/",
+              "port": 3007,
+              "manifestVersion": "c482d51d710759922c417f99",
+              "wasmSha256": "11ac871045521985162b369d1411271ba288193e468b205a0c6ff9716bfdd646",
+              "wasmBytes": 1944624,
+              "noDevelopmentExports": true,
+              "denied": [
+                {
+                  "path": "/.env",
+                  "status": 404
+                },
+                {
+                  "path": "/.git/config",
+                  "status": 404
+                },
+                {
+                  "path": "/reference/release-acceptance.json",
+                  "status": 404
+                },
+                {
+                  "path": "/cpp/game/BulletFrame.cpp",
+                  "status": 404
+                },
+                {
+                  "path": "/scripts/serve.mjs",
+                  "status": 404
+                }
+              ],
+              "scope": "Public HTTPS returns the exact accepted candidate manifest and Wasm; isolation headers and selected private path denial checked. Local full package bytes independently verified. Gameplay smoke is a separate browser check.",
+              "fullBrowserVisualCheck": "not-run-this-round-local-production-visuals-and-public-exact-bytes-verified"
+            },
+            "fixReport": "docs/2026-10-03-游戏区黑条与录像加速修复.md",
+            "remainingValidation": [
+              "Re-test the identified fixed transition/pause black strip on the affected mobile hardware.",
+              "Actual tester failing Extra replay was not supplied; the diagnostic original-process comparison does not cover all possible inputs.",
+              "A separate grey loading screen beyond the previously identified ending overlay needs its precise scene verified."
+            ],
+            "previousAcceptance": {
+              "game": "th15",
+              "original": "Japanese 1.00b",
+              "date": "2026-10-03",
+              "implementation": "complete named C++ application; shared SDL3/WebGL2 and final launcher",
+              "productionWasmSha256": "b1cd3a312c00dcbf79e1a0c7c18c3247edf59f3437313b2eabcaa2c2a1b02d9a",
+              "coreWasmSha256": "1b9297f6c50f854926f2878f5f6c3d1898a03bf715e66eada4e4dc99ad0c6a3f",
+              "checks": {
+                "sdl-application-alpha": {
+                  "passed": true,
+                  "sha256": "ac59ec6355eaf064d67c96fab3618f94f2d7212b9cca33394f49283cf7a7ae74",
+                  "evidence": "artifacts/cpp/verification/sdl-application-alpha.json"
+                },
+                "sdl-alpha-hotfix-production-title": {
+                  "passed": true,
+                  "sha256": "b1cd3a312c00dcbf79e1a0c7c18c3247edf59f3437313b2eabcaa2c2a1b02d9a",
+                  "evidence": "artifacts/cpp/verification/sdl-alpha-hotfix-production-title.json"
+                },
+                "alpha-hotfix-package-integrity": {
+                  "passed": true,
+                  "sha256": "b1cd3a312c00dcbf79e1a0c7c18c3247edf59f3437313b2eabcaa2c2a1b02d9a",
+                  "evidence": "artifacts/cpp/verification/alpha-hotfix-package-integrity.json"
+                },
+                "public-alpha-hotfix-verification": {
+                  "passed": true,
+                  "sha256": "b1cd3a312c00dcbf79e1a0c7c18c3247edf59f3437313b2eabcaa2c2a1b02d9a",
+                  "evidence": "artifacts/cpp/verification/public-alpha-hotfix-verification.json"
+                },
+                "alpha-hotfix-source-scope": {
+                  "passed": true,
+                  "sha256": "b1cd3a312c00dcbf79e1a0c7c18c3247edf59f3437313b2eabcaa2c2a1b02d9a",
+                  "evidence": "artifacts/cpp/verification/alpha-hotfix-source-scope.json"
+                }
+              },
+              "status": "alpha-pipeline-hotfix-local-pixels-production-title-and-public-byte-verification-passed",
+              "scope": "The previous application pipeline reset introduced black rectangles. Correct baseline blending/alpha/depth state is restored. New actual-application alpha arithmetic tests fail with the previous buggy object and pass with the fixed one; production desktop/mobile-DPR2 title screenshots pass locally. Public manifest and exact Wasm bytes match. Full public browser test did not pass: first asset download timed out and verified-cache simulation also timed out. These are not counted as visual passes. Game core sources are unchanged; prior 324 core tests and native replay state evidence remain separate valid core evidence.",
+              "public": {
+                "url": "https://api.steinsgateon.com/",
+                "port": 3007,
+                "manifestVersion": "b234edcf4e1e6f44c9b51566",
+                "wasmSha256": "b1cd3a312c00dcbf79e1a0c7c18c3247edf59f3437313b2eabcaa2c2a1b02d9a",
+                "evidence": "artifacts/cpp/verification/public-alpha-hotfix-verification.json",
+                "fullBrowserVisualCheck": "not-passed-timeout-not-counted"
+              },
+              "fixReport": "docs/2026-10-03-标题黑块修复.md",
+              "remainingValidation": [
+                "Re-test intermittent half-screen black on the originally affected mobile hardware.",
+                "Re-test testers actual failing Extra replay; diagnostic Extra sample does not cover all characters/inputs.",
+                "Loading fix covers the identified wrong ending-load overlay; a different reported grey loading screen needs its precise scene checked."
+              ],
+              "previousAcceptance": {
+                "game": "th15",
+                "original": "Japanese 1.00b",
+                "date": "2026-10-03",
+                "implementation": "complete named C++ application; shared SDL3/WebGL2 and final launcher",
+                "productionWasmSha256": "47ef8431c92a848b7ca342053c2cee1fddfc8afbc7a1bbdaf363ec47e1f253c7",
+                "coreWasmSha256": "1b9297f6c50f854926f2878f5f6c3d1898a03bf715e66eada4e4dc99ad0c6a3f",
+                "checks": {
+                  "testgroup-11-final-result": {
+                    "passed": true,
+                    "sha256": "1b9297f6c50f854926f2878f5f6c3d1898a03bf715e66eada4e4dc99ad0c6a3f",
+                    "evidence": "artifacts/cpp/verification/testgroup-11-final-result.json",
+                    "tests": 324
+                  },
+                  "external-replay-original-process-state": {
+                    "passed": true,
+                    "sha256": "1b9297f6c50f854926f2878f5f6c3d1898a03bf715e66eada4e4dc99ad0c6a3f",
+                    "evidence": "artifacts/cpp/verification/external-replay-original-process-state.json",
+                    "checks": 146865
+                  },
+                  "extra-replay-original-process-state": {
+                    "passed": true,
+                    "sha256": "1b9297f6c50f854926f2878f5f6c3d1898a03bf715e66eada4e4dc99ad0c6a3f",
+                    "evidence": "artifacts/cpp/verification/extra-replay-original-process-state.json",
+                    "frames": 101788,
+                    "checks": 101788
+                  },
+                  "sdl-webgl-pixels": {
+                    "passed": true,
+                    "sha256": "8d9009ada5042c6db4124afd9e12599e47c59f6715a4f5cd4aeb5ebfbc6518d4",
+                    "evidence": "artifacts/cpp/verification/sdl-webgl-pixels.json",
+                    "frames": 120,
+                    "checks": 262800
+                  },
+                  "sdl-application-completion": {
+                    "passed": true,
+                    "sha256": "3bbf7d49b748b9fe78757aede8fdc84403664b0a8a15c10e4151e2e6cd52516e",
+                    "evidence": "artifacts/cpp/verification/sdl-application-completion.json"
+                  },
+                  "sdl-extra-reentry-1x": {
+                    "passed": true,
+                    "sha256": "3bbf7d49b748b9fe78757aede8fdc84403664b0a8a15c10e4151e2e6cd52516e",
+                    "evidence": "artifacts/cpp/verification/sdl-extra-reentry-1x.json"
+                  },
+                  "sdl-extra-reentry-2x": {
+                    "passed": true,
+                    "sha256": "3bbf7d49b748b9fe78757aede8fdc84403664b0a8a15c10e4151e2e6cd52516e",
+                    "evidence": "artifacts/cpp/verification/sdl-extra-reentry-2x.json"
+                  },
+                  "sdl-production-launcher": {
+                    "passed": true,
+                    "sha256": "47ef8431c92a848b7ca342053c2cee1fddfc8afbc7a1bbdaf363ec47e1f253c7",
+                    "evidence": "artifacts/cpp/verification/sdl-production-launcher.json"
+                  },
+                  "sdl-public-production-launcher": {
+                    "passed": true,
+                    "sha256": "47ef8431c92a848b7ca342053c2cee1fddfc8afbc7a1bbdaf363ec47e1f253c7",
+                    "evidence": "artifacts/cpp/verification/sdl-public-production-launcher.json"
+                  },
+                  "testgroup-11-package-integrity": {
+                    "passed": true,
+                    "sha256": "47ef8431c92a848b7ca342053c2cee1fddfc8afbc7a1bbdaf363ec47e1f253c7",
+                    "evidence": "artifacts/cpp/verification/testgroup-11-package-integrity.json",
+                    "packageFilesChecked": 115,
+                    "noDevelopmentExports": true
+                  },
+                  "testgroup-11-build-consistency": {
+                    "passed": true,
+                    "sha256": "47ef8431c92a848b7ca342053c2cee1fddfc8afbc7a1bbdaf363ec47e1f253c7",
+                    "evidence": "artifacts/cpp/verification/testgroup-11-build-consistency.json",
+                    "productionSourceAndHeaderFiles": 485,
+                    "commonSourceAndHeaderFiles": 485
+                  },
+                  "public-testgroup-11-verification": {
+                    "passed": true,
+                    "sha256": "47ef8431c92a848b7ca342053c2cee1fddfc8afbc7a1bbdaf363ec47e1f253c7",
+                    "evidence": "artifacts/cpp/verification/public-testgroup-11-verification.json",
+                    "noDevelopmentExports": true
+                  }
+                },
+                "status": "testgroup-11-fixes-regression-browser-and-public-verification-passed",
+                "scope": "Implementation completeness is not a zero-bug claim. Final frozen tests, real original-process sampled state equality, controlled scene/replay lifecycle, software GPU touch simulation and actual mobile hardware are separate evidence. Extra probe is diagnostic Marisa shooting/focus input with matching test protection; testers actual failing Extra replay has not been supplied. State-reset fix for intermittent half-screen black is applied but the specific real-phone fault was not independently reproduced.",
+                "public": {
+                  "url": "https://api.steinsgateon.com/",
+                  "port": 3007,
+                  "manifestVersion": "44ae1efbafd5df0821a5c8b5",
+                  "wasmSha256": "47ef8431c92a848b7ca342053c2cee1fddfc8afbc7a1bbdaf363ec47e1f253c7",
+                  "evidence": "artifacts/cpp/verification/public-testgroup-11-verification.json",
+                  "browserEvidence": "artifacts/cpp/verification/sdl-public-production-launcher.json"
+                },
+                "fixReport": "docs/2026-10-03-测试组问题修复与验收.md",
+                "intentionalDifferences": [
+                  "Legacy ranking/replay captions use actual row mode instead of original cursor-parity display bug, as requested.",
+                  "Physical rendering can use 1280x960 while original logical gameplay coordinates remain unchanged. Existing 00 replay imports remain readable; new save files start at 01."
+                ],
+                "remainingValidation": [
+                  "Re-test intermittent half-screen black on the originally affected mobile hardware.",
+                  "Re-test testers actual failing Extra replay; diagnostic Extra sample does not cover all characters/inputs.",
+                  "Loading fix covers the identified wrong ending-load overlay; a different reported grey loading screen needs its precise scene checked."
+                ],
+                "previousAcceptance": {
+                  "game": "th15",
+                  "original": "Japanese 1.00b",
+                  "implementation": "complete named C++ application; shared SDL3/WebGL2 and final launcher",
+                  "checks": {
+                    "replay-desync-fix-result": {
+                      "passed": true,
+                      "sha256": "333cb64b43666946ed5569eeecf80940fc30fc7d87a7eea35d252bd9c35cbddc",
+                      "tests": 322
+                    },
+                    "external-replay-original-process-state": {
+                      "passed": true,
+                      "sha256": "333cb64b43666946ed5569eeecf80940fc30fc7d87a7eea35d252bd9c35cbddc",
+                      "frames": 146865
+                    },
+                    "sdl-external-replay-to-eof": {
+                      "passed": true,
+                      "sha256": "2112b6ee5419995b891612f47a7f699d764ff9df46da06db0c85bff7b7337f59",
+                      "nativeChecks": 4895
+                    },
+                    "sdl-replay-fix-candidate-launcher": {
+                      "passed": true,
+                      "sha256": "95db2767831e2dcdda0a757875330c7f5989885f7baa51f60a7e37ca7bf28693"
+                    },
+                    "public-replay-fix-verification": {
+                      "passed": true,
+                      "sha256": "95db2767831e2dcdda0a757875330c7f5989885f7baa51f60a7e37ca7bf28693",
+                      "packageFilesChecked": 115,
+                      "noDevelopmentExports": true
+                    }
+                  },
+                  "productionWasmSha256": "95db2767831e2dcdda0a757875330c7f5989885f7baa51f60a7e37ca7bf28693",
+                  "status": "original-replay-fix-regression-browser-and-public-verification-passed",
+                  "scope": "Implementation completeness is not an assertion of zero bugs or proof of every possible frame/input. Native sample equality, module coverage, controlled full-stage flow, actual browser lifecycle and mobile simulation are separate evidence. Real phone driver/FPS is to be tested by the user.",
+                  "public": {
+                    "url": "https://api.steinsgateon.com/",
+                    "port": 3007,
+                    "manifestVersion": "5970dc68450b6d0d85e91dd9",
+                    "wasmSha256": "95db2767831e2dcdda0a757875330c7f5989885f7baa51f60a7e37ca7bf28693",
+                    "evidence": "artifacts/cpp/verification/public-replay-fix-verification.json"
+                  },
+                  "previousAcceptance": {
+                    "productionWasmSha256": "8da13bf463ece7dad04365b322a5b7d75a6f418d7b6f4363192a071fd09e7fa2",
+                    "status": "implementation-local-release-and-public-verification-passed",
+                    "checks": {
+                      "world-completion-regression-result": {
+                        "passed": true,
+                        "sha256": "56769ddb5e8d48a457497c844a6d19c816b4d81a625cb21c185103b93bbe209b"
+                      },
+                      "stage-scene-render": {
+                        "passed": true,
+                        "sha256": null
+                      },
+                      "sdl-application-completion": {
+                        "passed": true,
+                        "sha256": "783e0f53d7804b1d6a591f06aceec2d1c5cd8e9a3469f5c8bc4383e49701aa48"
+                      },
+                      "sdl-application-all-stage-checkpoints": {
+                        "passed": true,
+                        "sha256": "783e0f53d7804b1d6a591f06aceec2d1c5cd8e9a3469f5c8bc4383e49701aa48"
+                      },
+                      "sdl-application-menus-practice": {
+                        "passed": true,
+                        "sha256": "783e0f53d7804b1d6a591f06aceec2d1c5cd8e9a3469f5c8bc4383e49701aa48"
+                      },
+                      "sdl-production-launcher": {
+                        "passed": true,
+                        "sha256": "8da13bf463ece7dad04365b322a5b7d75a6f418d7b6f4363192a071fd09e7fa2"
+                      },
+                      "sdl-original-replays-to-eof": {
+                        "passed": true,
+                        "sha256": null
+                      },
+                      "sdl-completion-original-replay-decode": {
+                        "passed": true,
+                        "sha256": null
+                      },
+                      "production-package-integrity": {
+                        "passed": true,
+                        "sha256": "8da13bf463ece7dad04365b322a5b7d75a6f418d7b6f4363192a071fd09e7fa2"
+                      }
+                    },
+                    "public": {
+                      "url": "https://api.steinsgateon.com/",
+                      "port": 3007,
+                      "manifestVersion": "876099fa81234ac7c3a01138",
+                      "wasmSha256": "8da13bf463ece7dad04365b322a5b7d75a6f418d7b6f4363192a071fd09e7fa2",
+                      "evidence": "artifacts/cpp/verification/public-release-verification.json"
+                    }
+                  }
+                },
+                "knownVisualRegression": {
+                  "reported": true,
+                  "cause": "Application release_run pipeline reset disabled blending and alpha comparison; earlier visual guards checked content existence but not transparency.",
+                  "supersededBy": "alpha-pipeline-hotfix-2026-10-03"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webRelease": {
+      "version": "1.0.2",
+      "date": "2026-10-04",
+      "manifestVersion": "690ab96b361155397eb01de7",
+      "verification": "artifacts/cpp/verification/resolution-release.json",
+      "publicVerification": "artifacts/cpp/verification/public-resolution-release.json",
+      "publicStartupVerification": "artifacts/cpp/verification/public-resolution-startup.json",
+      "gameplayWasmUnchanged": true,
+      "previousWebRelease": {
+        "version": "1.0.1",
+        "date": "2026-10-04",
+        "manifestVersion": "700a20bd22130bdbdf5b9f16",
+        "verification": "artifacts/cpp/verification/web-version-release.json",
+        "publicVerification": "artifacts/cpp/verification/public-web-version-release.json",
+        "gameplayUnchanged": true
+      }
+    }
+  }
+}

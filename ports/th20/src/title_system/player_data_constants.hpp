@@ -1,0 +1,46 @@
+#pragma once
+namespace th20::source::title::player_data_constants {
+inline constexpr char s_00572384[]="\x94\x8e\x97\xed\x20\x97\xec\x96\xb2";
+inline constexpr char s_00572390[]="\x96\xb6\x89\x4a\x20\x96\x82\x97\x9d\x8d\xb9";
+inline constexpr char s_00572424[]="\x74\x65\x73\x74\x20\x20\x20";
+inline constexpr char s_0057242c[]="\x53\x74\x61\x67\x65\x20\x31";
+inline constexpr char s_00572434[]="\x53\x74\x61\x67\x65\x20\x32";
+inline constexpr char s_0057243c[]="\x53\x74\x61\x67\x65\x20\x33";
+inline constexpr char s_00572444[]="\x53\x74\x61\x67\x65\x20\x34";
+inline constexpr char s_0057244c[]="\x53\x74\x61\x67\x65\x20\x35";
+inline constexpr char s_00572454[]="\x53\x74\x61\x67\x65\x20\x36";
+inline constexpr char s_005723fc[]="\x45\x78\x74\x72\x61\x20\x20";
+inline constexpr char s_0057245c[]="\x43\x6c\x65\x61\x72\x20\x20";
+inline constexpr char s_00574f60[]="\x82\x4f";
+inline constexpr char s_00574f64[]="\x82\x50";
+inline constexpr char s_00574f68[]="\x82\x51";
+inline constexpr char s_00574f6c[]="\x82\x52";
+inline constexpr char s_00574f70[]="\x82\x53";
+inline constexpr char s_00574f74[]="\x82\x54";
+inline constexpr char s_00574f78[]="\x82\x55";
+inline constexpr char s_00574f7c[]="\x82\x56";
+inline constexpr char s_00574f80[]="\x82\x57";
+inline constexpr char s_00574f84[]="\x82\x58";
+inline constexpr char s_005752c8[]="\x25\x32\x64\x20\x20\x25\x73\x20\x20\x25\x39\x6c\x6c\x75\x25\x64\x20\x20\x25\x2e\x34\x64\x2f\x25\x2e\x32\x64\x2f\x25\x2e\x32\x64\x20\x25\x2e\x32\x64\x3a\x25\x2e\x32\x64\x20\x20\x25\x73\x20\x20\x25\x32\x2e\x31\x66\x25\x25";
+inline constexpr char s_00575300[]="\x25\x32\x64\x20\x20\x25\x73\x20\x20\x25\x39\x6c\x6c\x75\x25\x64\x20\x20\x2d\x2d\x2d\x2d\x2f\x2d\x2d\x2f\x2d\x2d\x20\x2d\x2d\x3a\x2d\x2d\x20\x20\x53\x74\x61\x67\x65\x20\x2d\x20\x20\x2d\x2d\x2d\x25\x25";
+inline constexpr char s_00575334[]="\x81\x40";
+inline constexpr char s_00575338[]="\x4e\x6f\x2e\x25\x73\x25\x73\x25\x73\x20\x20\x20\x25\x73";
+inline constexpr char s_00575348[]="\x25\x34\x64\x2f\x25\x34\x64";
+inline constexpr char s_00575350[]="\x4e\x6f\x2e\x25\x73\x25\x73\x25\x73\x20\x20\x20\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48";
+inline constexpr char s_00575388[]="\x20\x20\x20\x20\x25\x35\x64";
+inline constexpr char s_00575390[]="\x25\x33\x6c\x6c\x64\x3a\x25\x2e\x32\x6c\x6c\x64\x3a\x25\x2e\x32\x6c\x6c\x64";
+inline constexpr float f_0056f10c=0x1.4000000000000p+8f;
+inline constexpr float f_0056fa30=0x1.4000000000000p+6f;
+inline constexpr float f_0056fe7c=0x1.8000000000000p+6f;
+inline constexpr float f_0056fb7c=0x1.8000000000000p+5f;
+inline constexpr float f_0057566c=0x1.6000000000000p+7f;
+inline constexpr float f_00572644=0x1.2000000000000p+4f;
+inline constexpr float f_0056cda0=0x1.0000000000000p+8f;
+inline constexpr float f_0056ec9c=0x1.2c00000000000p+8f;
+inline constexpr float f_00575680=0x1.4800000000000p+8f;
+inline constexpr float f_00575690=0x1.7a00000000000p+8f;
+inline constexpr const char* characters[]={s_00572384,s_00572390};
+inline constexpr const char* stages[]={s_00572424,s_0057242c,s_00572434,s_0057243c,s_00572444,s_0057244c,s_00572454,s_005723fc,s_0057245c};
+inline constexpr const char* digits[]={s_00574f60,s_00574f64,s_00574f68,s_00574f6c,s_00574f70,s_00574f74,s_00574f78,s_00574f7c,s_00574f80,s_00574f84};
+inline constexpr unsigned unlock_keys[]={46,38,30,31,31,23,46,38,30,34,18,19};
+}

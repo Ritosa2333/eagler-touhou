@@ -1,0 +1,389 @@
+{
+  "passed": true,
+  "files": [
+    {
+      "target": "main",
+      "path": "runtime/th06/8a86d3ff70409929893b1d7d2b351bc4bd5a21523cf6831068e090c7bef34bfd/th06.js",
+      "bytes": 254102,
+      "sha256": "85430ce2aff183818efdc3db8a8a3086bfbb6a92ed22c9703ce859d45ed2615c",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th06/8a86d3ff70409929893b1d7d2b351bc4bd5a21523cf6831068e090c7bef34bfd/th06.wasm",
+      "bytes": 2598561,
+      "sha256": "4967d3c40323c1413f2919a4faf270e3985253b1ce29c2a52e1f3643279d71aa",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th06/8a86d3ff70409929893b1d7d2b351bc4bd5a21523cf6831068e090c7bef34bfd/runtime-generation.json",
+      "bytes": 674,
+      "sha256": "bf163155455b2efec32b0b650990414a08f3bd47dc32d245a141b442b7860cd2",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th06/th06.html",
+      "bytes": 210,
+      "sha256": "4c6e827d96d6f97abb5f33392bd9dfa7443e6d82f7bb2d3ae29ab6d4290bc7d8",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th07/6b272551679e0abb45792e9a888923579da4967587aeb170b83b124ecc604955/th07.js",
+      "bytes": 252517,
+      "sha256": "769e7842807cf6cf2b9c693d0b2badff3c7100450a1ee3c67d7be642261a8a25",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th07/6b272551679e0abb45792e9a888923579da4967587aeb170b83b124ecc604955/th07.wasm",
+      "bytes": 2856663,
+      "sha256": "225aa0a67291cc54984513dd29f86ed8dcd4042530d1dc08ce9f00300cef793e",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th07/6b272551679e0abb45792e9a888923579da4967587aeb170b83b124ecc604955/runtime-generation.json",
+      "bytes": 674,
+      "sha256": "3863f47411a9af15ca5427d2117a4e370d8d03762a267b4a582b38e87c90979c",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th07/th07.html",
+      "bytes": 210,
+      "sha256": "299fc5691197b984fb74152e20b260b8d6905005565c84fc814094f1397fe269",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/3544f32f8edb6f163c7d2ed24f4645bb1caa67db8568f8df7d151abac58c0a81/manifest.json",
+      "bytes": 1003,
+      "sha256": "1b0d712eb996a852b4823153e89039d416e92a01e42b737a7d681e02d6218e51",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/3544f32f8edb6f163c7d2ed24f4645bb1caa67db8568f8df7d151abac58c0a81/th08-sdl.mjs",
+      "bytes": 236300,
+      "sha256": "8c692e30bd5cbbb96d465b6801534647192c7393ee76306ba94a2fb484c5149e",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/3544f32f8edb6f163c7d2ed24f4645bb1caa67db8568f8df7d151abac58c0a81/th08-sdl.wasm",
+      "bytes": 3465670,
+      "sha256": "9e751d40a1ea82ce2d536741f5090ab89ba83f7be30071f275068fdac04ca720",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/3544f32f8edb6f163c7d2ed24f4645bb1caa67db8568f8df7d151abac58c0a81/runtime-generation.json",
+      "bytes": 2499,
+      "sha256": "43e77ba93e99c8433219819e3603960ed943687d8454dd76e2fff6fcdb52b7aa",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/th08.html",
+      "bytes": 210,
+      "sha256": "ee8a7330f6b8facbc7550830c93464ae70429f71390dd8f38307ffb2207575df",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/multiplayer/e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b/manifest.json",
+      "bytes": 1068,
+      "sha256": "851956e2c540f3c5e5fff5e6398a66a2d562f8381664015dbb45fed7ded93467",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/multiplayer/e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b/th08-sdl.mjs",
+      "bytes": 295759,
+      "sha256": "4a74ef27eed4d079db7152fed8c68089fcf5ce885ce53263fec3572d36b53ea4",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/multiplayer/e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b/th08-sdl.wasm",
+      "bytes": 3778992,
+      "sha256": "e02e44fcb6aa3bd66548fd79d8a37f1cba7bc7f24c0e012a5e3a4e97be95a74a",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/multiplayer/e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b/runtime-generation.json",
+      "bytes": 2974,
+      "sha256": "6f1e6448ab9ec56df578986e65d123ae9ef8a132269fb36c287e9229cfb4dac6",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th08/multiplayer/th08.html",
+      "bytes": 210,
+      "sha256": "40eb75aacc05231ae6feedd67c44c4097631dd37a25ff86ef8bd1401929f336f",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th10/cf05230c84601e98f15817ed866e0a51e96de4d7c47a338dfa43b809a8cb7c11/manifest.json",
+      "bytes": 991,
+      "sha256": "f6f1b705080f42b9d7f72af95339794ad4d4ea7fe1ec565ff1c5ce469b602e14",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th10/cf05230c84601e98f15817ed866e0a51e96de4d7c47a338dfa43b809a8cb7c11/th10-sdl.mjs",
+      "bytes": 250556,
+      "sha256": "a2a3f00de5bcb367376c69b0956d3b2aa6a834ea86eea267a6a9255a5169fd1e",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th10/cf05230c84601e98f15817ed866e0a51e96de4d7c47a338dfa43b809a8cb7c11/th10-sdl.wasm",
+      "bytes": 3357249,
+      "sha256": "8ef204a09b84fed21f4433304b6596b483c39977c1270d483e121273129f4a3d",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th10/cf05230c84601e98f15817ed866e0a51e96de4d7c47a338dfa43b809a8cb7c11/runtime-generation.json",
+      "bytes": 2503,
+      "sha256": "5415ec2038c98881cf1007c7b422786ad70dd5d7d20fe3bc7e93777e73d67c4a",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th10/th10.html",
+      "bytes": 210,
+      "sha256": "4a3c013f811163bc40882fce3ba60fc91ad0ebcae53a80f73adde01004e38b75",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th11/783182f24d2221012ed18365136f8ae67efdf86e20be7fbb7c579d5adf8082f5/manifest.json",
+      "bytes": 1022,
+      "sha256": "0912350ea1402bdfff640c1e545a36963d774914de7da8253e1c40f41cc3ab6a",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th11/783182f24d2221012ed18365136f8ae67efdf86e20be7fbb7c579d5adf8082f5/th11-sdl.mjs",
+      "bytes": 232956,
+      "sha256": "bf238a9a4fd43b5073de20a9c4b7ec43410162fed4c1e6ec7ae6bce45a0ed376",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th11/783182f24d2221012ed18365136f8ae67efdf86e20be7fbb7c579d5adf8082f5/th11-sdl.wasm",
+      "bytes": 3081789,
+      "sha256": "3dc54a76913e0fe785f4b4527f1a5c8a669041cab0f17ef16772d1e1b11847ad",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th11/783182f24d2221012ed18365136f8ae67efdf86e20be7fbb7c579d5adf8082f5/runtime-generation.json",
+      "bytes": 2181,
+      "sha256": "2295c5857bc5f209fbc4920e1e0b76743d8887f292b5a4dce093a9c3dd692df2",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th11/th11.html",
+      "bytes": 210,
+      "sha256": "670bce22ed27abca358a1a5ba52fe1939798bc28ce08626995180f7ee06be271",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th15/24065eee08767aff00a6c26cb7226813b5b35d554456955b9811acf726390717/manifest.json",
+      "bytes": 1354,
+      "sha256": "59cf01eb9957876db5d7b61fc566b0f69d0c1bdc09e3866aa8f432556b3d9439",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th15/24065eee08767aff00a6c26cb7226813b5b35d554456955b9811acf726390717/th15.mjs",
+      "bytes": 232108,
+      "sha256": "1ab8214182130747e5a60ba36e8371af50aa18ae7d3a54b553d7f8f8fd3c6d64",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th15/24065eee08767aff00a6c26cb7226813b5b35d554456955b9811acf726390717/th15.wasm",
+      "bytes": 3620141,
+      "sha256": "9fbd2350739a5b436cb1d467c215e1377065cb9b5d6da0a6f4dab6bc6cca5874",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th15/24065eee08767aff00a6c26cb7226813b5b35d554456955b9811acf726390717/runtime-generation.json",
+      "bytes": 1872,
+      "sha256": "cf33298d69f5c0775559be2a19bae300c9fee4dec0a86bd4e136dfcd294b1708",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime/th15/th15.html",
+      "bytes": 210,
+      "sha256": "769a76288d7c46e9884d074194c53b2389e8d8296c21d19f89200449afffc898",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "site-manifest.json",
+      "bytes": 54275,
+      "sha256": "f6849f36eb08e2f659cb62e8b5e7288a97879def95f313c49927074977c016da",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "host-manifest.json",
+      "bytes": 54275,
+      "sha256": "f6849f36eb08e2f659cb62e8b5e7288a97879def95f313c49927074977c016da",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "runtime-manifest.json",
+      "bytes": 135621,
+      "sha256": "105e43a82ed689383b93395cab9a888dee1ff802ba6f672779d8af92bccb6c16",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "app-shell-sw.js",
+      "bytes": 161268,
+      "sha256": "6cc889932fc6f990b91375dacc85d53c2f9f92b5ee1c891aa6672d5081f4d610",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "deployment.json",
+      "bytes": 1470092,
+      "sha256": "26d741f53a69f8640d8874ffdc84604ee016b29081261ae551792373837b7d6c",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "release-manifest.json",
+      "bytes": 1741946,
+      "sha256": "c5ac77e0ae438df3fa623219339e36d66d91cb58186c3727b805209bad23a463",
+      "passed": true
+    },
+    {
+      "target": "main",
+      "path": "checksums.txt",
+      "bytes": 1022123,
+      "sha256": "0a2336add97a065e9af4de7607154e2af70ba5ef11cb98db6b98b08948e56d40",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "runtime/th12/multiplayer/62669af64dc7c92d58694accec7f81e5dfacd42ba52ae431772e3849b140a6e9/title-scenes.mjs",
+      "bytes": 31631,
+      "sha256": "b8c90500d94493b282c238186f1b852872836db6d1758453fc41a7c601169be5",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "runtime/th12/multiplayer/62669af64dc7c92d58694accec7f81e5dfacd42ba52ae431772e3849b140a6e9/runtime-generation.json",
+      "bytes": 10307,
+      "sha256": "61253cd392b4d2036dcb12a5bc6d48543be822fd6cd0cef7b2ff2d718f1bcde4",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "runtime/th12/multiplayer/th12.html",
+      "bytes": 210,
+      "sha256": "de447bd33b80e53f46cd583dc6c9c58d8c6e9ac0138d8130c0f53ffeac2558e9",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "site-manifest.json",
+      "bytes": 49768,
+      "sha256": "cf0d4e13ffdef7e2595953045bbe03d5486771480929f65ca0db5585064e1b28",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "host-manifest.json",
+      "bytes": 49768,
+      "sha256": "cf0d4e13ffdef7e2595953045bbe03d5486771480929f65ca0db5585064e1b28",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "runtime-manifest.json",
+      "bytes": 189678,
+      "sha256": "f934a9554b6e4466cf48140a60ae82dedaf1b56f8b7c359dbc8994f418d4e9c6",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "app-shell-sw.js",
+      "bytes": 196503,
+      "sha256": "b4854cb3debc35a899c7a404a026c2c1697ba6b6adc5c5e2b21dd90d3ff9803c",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "app-shell-sw-fontfix-1fefcaa790f0.js",
+      "bytes": 196503,
+      "sha256": "b4854cb3debc35a899c7a404a026c2c1697ba6b6adc5c5e2b21dd90d3ff9803c",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "deployment.json",
+      "bytes": 1570283,
+      "sha256": "e7433209a462c5d264f2bbca8c504996e02ae25aa8fbcb3411fa995402ca6f69",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "release-manifest.json",
+      "bytes": 2087685,
+      "sha256": "15d108f49bc86f64ae5637446e2c2ee1a36498c57c4d34fd8ab7bf16279fd08a",
+      "passed": true
+    },
+    {
+      "target": "test",
+      "path": "checksums.txt",
+      "bytes": 1098123,
+      "sha256": "fb4632fbeb3d79ef9169f55ab7fe083cd18bc6a997f85421e2e8448b8782d28f",
+      "passed": true
+    }
+  ],
+  "pages": [
+    {
+      "target": "main",
+      "title": "东方Project 原作 STG ~ EAGLER TOUHOU",
+      "bodyLength": 1104,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "target": "test",
+      "title": "东方Project 原作 STG ~ EAGLER TOUHOU",
+      "bodyLength": 1482,
+      "errors": [],
+      "passed": true
+    }
+  ],
+  "th12PublicEndingFlow": {
+    "before": {
+      "scene": "name",
+      "context": "title",
+      "after": "replay-save",
+      "rank": 123456
+    },
+    "scene": "replay-save",
+    "slots": 25,
+    "mode": "multiplayer"
+  }
+}

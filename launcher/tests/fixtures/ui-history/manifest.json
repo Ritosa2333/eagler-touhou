@@ -1,0 +1,292 @@
+{
+  "schema": "eagler-touhou/ui-history-fixtures/1",
+  "entries": [
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "lib/launcher-optimization.mjs",
+      "sha256": "41b32d6aeb309fed982b6a3126226af6e046261eac63e1ee5c3298254c4bb6e8",
+      "bytes": 12640,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/lib/launcher-optimization.mjs"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "lib/runtime-generations.mjs",
+      "sha256": "a138ebd5edd418f5ff71e4d149a9363dfec0b76d8ec790f64c1de47b15203dab",
+      "bytes": 15002,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/lib/runtime-generations.mjs"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "public/content/FIRST_USE_NOTICE.html",
+      "sha256": "4668f6c911d6cb89e19a21636f5ae7208d9938db53f26620e1d02294819e10a0",
+      "bytes": 1109,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/public/content/FIRST_USE_NOTICE.html"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "public/index.html",
+      "sha256": "51af136626f271de61f16a571fd2fdee78ca5e63d09f77ecf793a6843fd6f4a1",
+      "bytes": 115002,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/public/index.html"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "public/lobby.css",
+      "sha256": "009b41f938f2a0d5f2e669242e40c85eb8a72307c51dfb554ef32c7de76d3fb5",
+      "bytes": 17825,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/public/lobby.css"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "public/lobby.html",
+      "sha256": "ed7531ba599acf775f28ac16dd820c2df6164c1cd0dc16c7154c521bd4bfa591",
+      "bytes": 21448,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/public/lobby.html"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "public/styles.css",
+      "sha256": "065f7f973d4954275098ef33861fc00f288201b272cc38b461d12a6925dae4a6",
+      "bytes": 290764,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/public/styles.css"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "scripts/package-server.mjs",
+      "sha256": "d56cd6d1afd553734857bc7d6823a9ab11220643be9032dd10a80300ffbd6950",
+      "bytes": 50055,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/scripts/package-server.mjs"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/contracts/multiplayer-quick-chat.mts",
+      "sha256": "67f9a0c39948d302b610573675ccb02228f367df5a2e16f29665b00dd6694113",
+      "bytes": 1634,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/contracts/multiplayer-quick-chat.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/app.mts",
+      "sha256": "1fe7cc207ad13227765e752427d4c8e26126a6e6f56d85f4ca538604b631dde2",
+      "bytes": 465275,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/app.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/content-fragment.mts",
+      "sha256": "caa9cfbd9ae59313f4dce5f9d547328c34031ac7865d76ccb953813d3dc5933e",
+      "bytes": 3019,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/content-fragment.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/custom-select.mts",
+      "sha256": "48cf33ebefedb53c9eef0b0e393555fbd3036881a2e3db54e2b9487670a94bde",
+      "bytes": 11258,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/custom-select.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/dialog-navigation.mts",
+      "sha256": "8366833188b99c66fccf1d374a9fdad57ff296bea0802c0fac4418cc855f630b",
+      "bytes": 2758,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/dialog-navigation.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/first-use-notice.mts",
+      "sha256": "9777314a49a917d7e0476561d0590bd7dfafa5fad98b01bceee7b17b1e88e6d2",
+      "bytes": 6252,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/first-use-notice.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/game-library.mts",
+      "sha256": "06acdacd32f55c16e0029acda3b9842f11ffd5319381a16f32cc4fc47e8b6b98",
+      "bytes": 22657,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/game-library.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/i18n.mts",
+      "sha256": "980d3033f3316595b274c4afff640efc91f607db9a7406ba8b387beed888eca6",
+      "bytes": 99101,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/i18n.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/lobby.mts",
+      "sha256": "c25ff7d46b86212d38a251420688d84549cfd4bd8293d8be91a7b8deb0a61b8c",
+      "bytes": 42656,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/lobby.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/multiplayer-guide.mts",
+      "sha256": "c72ea46be949dfde9115f3c47ed1e6b6818ff8400b57ca96c418af0b28d81a01",
+      "bytes": 11822,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/multiplayer-guide.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/netplay-calibration-report.mts",
+      "sha256": "222ec58d508791c5ee1152769719fb8d3f11e04dd17abfa5106388389c30d089",
+      "bytes": 4989,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/netplay-calibration-report.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/network-diagnostics.mts",
+      "sha256": "d439d81f32f39f04364301675b919ba6ecc813026387ec78033c5796c56ca27c",
+      "bytes": 19062,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/network-diagnostics.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/quick-chat-voice.mts",
+      "sha256": "530dd0376468ebb1a39e636ad44dc762b49d6f098b4c580ae9d108aa48e0e32a",
+      "bytes": 920,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/quick-chat-voice.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "src/launcher/site-notice.mts",
+      "sha256": "fafac7e9fac43779aa844bd0b1af2cc45aa07d636b597b1c74899153bb8c0c29",
+      "bytes": 10538,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/src/launcher/site-notice.mts"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/browser/launcher-playwright-webkit.py",
+      "sha256": "33a07679c91452d4150b3e32e0bc7ae4dfeef5b1d72f929a9f46ca4c2e2a7cbd",
+      "bytes": 39419,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/browser/launcher-playwright-webkit.py"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/browser/test-content-fragments.mjs",
+      "sha256": "5b3abb5985702267954aa1036001b9a7311f92e58c57370e37d66e0ce0ed5cdf",
+      "bytes": 5620,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/browser/test-content-fragments.mjs"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/browser/test-playwright-webkit-gate.mjs",
+      "sha256": "64554ee73f5ad12bfd718e56498786f8528cafd03644adf1b0535ad569c58001",
+      "bytes": 4977,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/browser/test-playwright-webkit-gate.mjs"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-keyboard-ownership-browser.py",
+      "sha256": "db3b875dfa38422f83717d35c4138b8217aca0f4dd9b4ff4f9d0daa7b11a2322",
+      "bytes": 16989,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-keyboard-ownership-browser.py"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-mp-runtime-exit-room.py",
+      "sha256": "c1134e40778ed89a6bd44c62f20f48608663b3d8fe48f8a793249c464b2ad90c",
+      "bytes": 11734,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-mp-runtime-exit-room.py"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-multiplayer-quick-chat-browser.mjs",
+      "sha256": "9206ae032eb84b2049db887d0512c836de3f03d516fca9374135a1dcdf87dd73",
+      "bytes": 11943,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-multiplayer-quick-chat-browser.mjs"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-package-update-atomicity-browser.py",
+      "sha256": "99221bd9e7f73a17fda45c025c6df7ab177768a523b8a01958ad9c7a416a3e7f",
+      "bytes": 33314,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-package-update-atomicity-browser.py"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-runtime-storage-conformance.py",
+      "sha256": "d46cf67e94f489dc4ad9d3fd4f8c5ebd649710d74dabcbf12b6dd9b4c679c6c3",
+      "bytes": 18652,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-runtime-storage-conformance.py"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-th09mp-launch.py",
+      "sha256": "ebea5d9cfa2abb45dfc2c77a7c4ca19b6413bc9454836d430fbba9c8ca539c81",
+      "bytes": 25945,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-th09mp-launch.py"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-th15-launcher-browser.mjs",
+      "sha256": "22688d5b742cec082fe22093301d4e1fbfab2a8db882a714f26a49e5551c8ede",
+      "bytes": 10115,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-th15-launcher-browser.mjs"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-th20-import-launch-browser.py",
+      "sha256": "49a477ab40ada32f02758f65dc648c9c1bd41f1f881bacbb82c2ecbd92456620",
+      "bytes": 9081,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-th20-import-launch-browser.py"
+    },
+    {
+      "revision": "edee9633e5e3ee79cd2e1aa334f84f6caf755090",
+      "path": "tests/test-th20-touch-browser.py",
+      "sha256": "8ac7ce9b5026bb6f6937ab1aa49c739a25318135e8a2eabdef78a322b757ff87",
+      "bytes": 27594,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/edee9633e5e3ee79cd2e1aa334f84f6caf755090/tests/test-th20-touch-browser.py"
+    },
+    {
+      "revision": "8bdf6dbf4a81032f0725cc841b86d03e1465fe07",
+      "path": "public/content/MULTIPLAYER.html",
+      "sha256": "5ce3c4deef8c89d0d97bcbf0716519cb1fc3457c3923336f5b550473236b499f",
+      "bytes": 14071,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/8bdf6dbf4a81032f0725cc841b86d03e1465fe07/public/content/MULTIPLAYER.html"
+    },
+    {
+      "revision": "8bdf6dbf4a81032f0725cc841b86d03e1465fe07",
+      "path": "src/app-shell-sw.js",
+      "sha256": "9e1210a3ef5ac6f15e85d454f437aa34493f32e95191fd67d89f232e9297364b",
+      "bytes": 12985,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/8bdf6dbf4a81032f0725cc841b86d03e1465fe07/src/app-shell-sw.js"
+    },
+    {
+      "revision": "8bdf6dbf4a81032f0725cc841b86d03e1465fe07",
+      "path": "src/launcher/app-shell-client.mts",
+      "sha256": "0271a736bfff31238e469dcce1db5caf26879c50bccce35a7d1bb5d633253204",
+      "bytes": 11697,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/8bdf6dbf4a81032f0725cc841b86d03e1465fe07/src/launcher/app-shell-client.mts"
+    },
+    {
+      "revision": "8bdf6dbf4a81032f0725cc841b86d03e1465fe07",
+      "path": "src/launcher/app.mts",
+      "sha256": "1f064813a66ec49a62f30a7e8c75730bf3108675617f9b18f1ead7f2b650e50c",
+      "bytes": 467790,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/8bdf6dbf4a81032f0725cc841b86d03e1465fe07/src/launcher/app.mts"
+    },
+    {
+      "revision": "8bdf6dbf4a81032f0725cc841b86d03e1465fe07",
+      "path": "src/launcher/content-fragment.mts",
+      "sha256": "caa9cfbd9ae59313f4dce5f9d547328c34031ac7865d76ccb953813d3dc5933e",
+      "bytes": 3019,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/8bdf6dbf4a81032f0725cc841b86d03e1465fe07/src/launcher/content-fragment.mts"
+    },
+    {
+      "revision": "8bdf6dbf4a81032f0725cc841b86d03e1465fe07",
+      "path": "src/launcher/i18n.mts",
+      "sha256": "751fe9e71402ddaff76d96cac61b05cabe6635c74a0c9d3c206be83755447342",
+      "bytes": 99180,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/8bdf6dbf4a81032f0725cc841b86d03e1465fe07/src/launcher/i18n.mts"
+    },
+    {
+      "revision": "8bdf6dbf4a81032f0725cc841b86d03e1465fe07",
+      "path": "src/launcher/multiplayer-guide.mts",
+      "sha256": "e5ba511fdd4869ab80421b965bf3fc4218dfd9506a69806d7cb1538819417cd9",
+      "bytes": 11890,
+      "source": "https://github.com/YomotsuHisami/eagler-touhou/blob/8bdf6dbf4a81032f0725cc841b86d03e1465fe07/src/launcher/multiplayer-guide.mts"
+    }
+  ]
+}

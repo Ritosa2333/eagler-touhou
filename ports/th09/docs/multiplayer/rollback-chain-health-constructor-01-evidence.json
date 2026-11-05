@@ -1,0 +1,3123 @@
+{
+  "schema": "th09/health-constructor-evidence/1",
+  "input": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback-transport-health-rtc-constructor-01-report.json",
+    "bytes": 5888543,
+    "sha256": "29ce80f26ef37f2449d0bf8158e2da4ea0e15040eb746cdd7a5a8fbe4325dc58"
+  },
+  "analyzer": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-health-constructor.mjs",
+    "sha256": "1d90aeed62451657639d2effed9c292631632d106c0cf21ada9e24676047d449"
+  },
+  "label": "rollback-transport-health-rtc-constructor-01",
+  "passed": false,
+  "parameters": {
+    "route": "rtc",
+    "frames": 720,
+    "hz": 60,
+    "packetsPerFrame": 2,
+    "seed": 12345,
+    "cpuRates": [
+      1,
+      4
+    ],
+    "pollMs": 4,
+    "heartbeatMs": 10,
+    "drainMs": 2000,
+    "blockMs": 0,
+    "blockAtMs": 4000,
+    "blockSide": 1,
+    "impairmentSite": "none",
+    "hostLoad": true,
+    "browserOnlyProxyBypass": false,
+    "rtcConstructorTrace": true,
+    "injection": {
+      "inject": false,
+      "delay": 0,
+      "jitter": 0,
+      "burstAt": 0,
+      "burstFor": 0,
+      "burstDelay": 0
+    }
+  },
+  "sourceIdentity": {
+    "commonHead": "43add4dc9085c65468f7ab15428c00206cbe3834",
+    "expectedCommonHead": "43add4dc9085c65468f7ab15428c00206cbe3834",
+    "files": [
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-browser.mjs",
+        "bytes": 37695,
+        "sha256": "abbe62fbca8a1374095a3418024d76c96453642ac1963223fb865353955d5c7d"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-fixture.mjs",
+        "bytes": 20300,
+        "sha256": "f6d7cfe02f5ff9f2de0c4d0d285f41abd581e35924c2730033aa1f007e6dcb0b"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-controller.mjs",
+        "bytes": 2154,
+        "sha256": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-fixture.mjs",
+        "bytes": 2435,
+        "sha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-probe.mjs",
+        "bytes": 14412,
+        "sha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\host-load-probe.mjs",
+        "bytes": 11201,
+        "sha256": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\scripts\\native\\browser-launch.mjs",
+        "bytes": 1461,
+        "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-transport-common\\src\\netplay\\BrowserPeerTransport.cpp",
+        "bytes": 46540,
+        "sha256": "64a66f9bbb31accf5e88b64893a6b62eef40b1060e0c0c0e303b10114197a42f"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+        "bytes": 57525,
+        "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c"
+      }
+    ],
+    "after": [
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-browser.mjs",
+        "bytes": 37695,
+        "sha256": "abbe62fbca8a1374095a3418024d76c96453642ac1963223fb865353955d5c7d"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\transport-health-fixture.mjs",
+        "bytes": 20300,
+        "sha256": "f6d7cfe02f5ff9f2de0c4d0d285f41abd581e35924c2730033aa1f007e6dcb0b"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-controller.mjs",
+        "bytes": 2154,
+        "sha256": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-fixture.mjs",
+        "bytes": 2435,
+        "sha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-transport-probe.mjs",
+        "bytes": 14412,
+        "sha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\host-load-probe.mjs",
+        "bytes": 11201,
+        "sha256": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\scripts\\native\\browser-launch.mjs",
+        "bytes": 1461,
+        "sha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-transport-common\\src\\netplay\\BrowserPeerTransport.cpp",
+        "bytes": 46540,
+        "sha256": "64a66f9bbb31accf5e88b64893a6b62eef40b1060e0c0c0e303b10114197a42f"
+      },
+      {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+        "bytes": 57525,
+        "sha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c"
+      }
+    ],
+    "rtcConstructorTraceSourceSha256": "f6d7cfe02f5ff9f2de0c4d0d285f41abd581e35924c2730033aa1f007e6dcb0b",
+    "functionBodies": {
+      "eagler_peer_connect": {
+        "args": [
+          "relayUrlPtr",
+          "tagPtr",
+          "localPlayer",
+          "playerCount"
+        ],
+        "sha256": "fc055078336544f0c2d667b3de07e61859e52b36dc946ad3e04a943e680c2632"
+      },
+      "eagler_peer_close": {
+        "args": [],
+        "sha256": "3439c791ad2b96f29ede0562a37aea26605185b400a8e78587101501a4486ed6"
+      },
+      "eagler_peer_is_open": {
+        "args": [],
+        "sha256": "a7997ddf8fc5bc8c581fb459d71632f79fb762e4f48ad94d50fcfc924d28c2eb"
+      },
+      "eagler_peer_send": {
+        "args": [
+          "data",
+          "size",
+          "control"
+        ],
+        "sha256": "a6970ee30615109438a2c524ebed330b6a7818a12be9f281995bfadfd8304acf"
+      },
+      "eagler_peer_send_to": {
+        "args": [
+          "peerId",
+          "data",
+          "size"
+        ],
+        "sha256": "5b0f2c4ed87ca07b4ee87c1a3870254c61a6c05aec18e4ba54f458724dd334f8"
+      },
+      "eagler_peer_poll_copy": {
+        "args": [
+          "out",
+          "capacity"
+        ],
+        "sha256": "abd3ae0efc2f362eec5077e007a7c0cb9e0c2702adf3723e3379a2d6ba1d7304"
+      }
+    }
+  },
+  "browsers": [
+    {
+      "side": 0,
+      "version": "153.0.8010.12",
+      "args": [
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding"
+      ],
+      "requestedCpuRate": 1,
+      "timeOrigin": 1791649867673.705,
+      "visibility": "visible",
+      "hasFocus": true
+    },
+    {
+      "side": 1,
+      "version": "153.0.8010.12",
+      "args": [
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding"
+      ],
+      "requestedCpuRate": 4,
+      "timeOrigin": 1791649868618.09,
+      "visibility": "visible",
+      "hasFocus": true
+    }
+  ],
+  "failures": {
+    "total": 29,
+    "redactedResourceCount": 28,
+    "allNonResourceFailures": [
+      {
+        "index": 26,
+        "message": "P1: direct assertion: unknown or relay selected candidate"
+      }
+    ]
+  },
+  "peers": [
+    {
+      "side": 0,
+      "clock": {
+        "started": {
+          "timeOrigin": 1791649867673.705,
+          "before": 1299.6949999928474,
+          "epochMs": 1791649868973,
+          "after": 1299.6949999928474
+        },
+        "armed": {
+          "timeOrigin": 1791649867673.705,
+          "before": 2820.979999989271,
+          "epochMs": 1791649870494,
+          "after": 2820.979999989271
+        },
+        "stopped": {
+          "timeOrigin": 1791649867673.705,
+          "before": 18394.689999997616,
+          "epochMs": 1791649886068,
+          "after": 18394.689999997616
+        }
+      },
+      "plannedScheduleStartEpochMs": 1791649871991,
+      "constructorTrace": {
+        "version": 1,
+        "enabled": true,
+        "limit": 96,
+        "overflow": 0,
+        "counts": {
+          "entered": 1,
+          "returned": 1,
+          "threw": 0,
+          "observerErrors": 0
+        },
+        "valid": true,
+        "coverage": {
+          "exercised": true
+        },
+        "identity": {
+          "constructorCurrent": true
+        },
+        "events": [
+          {
+            "id": 0,
+            "call": 0,
+            "event": "enter",
+            "at": 1352.2999999821186,
+            "errorName": null
+          },
+          {
+            "id": 1,
+            "call": 0,
+            "event": "returned",
+            "at": 2675.229999989271,
+            "errorName": null
+          }
+        ],
+        "scope": "performance.now() immediately around existing super(...args), before local channel observer attachment. The captured NativePC may include preinstalled browser/page wrappers. No additional connection, timer, proxy change, constructor argument or error message capture.",
+        "timeOrigin": 1791649867673.705
+      },
+      "calls": [
+        {
+          "call": 0,
+          "enteredAt": 1352.2999999821186,
+          "exitedAt": 2675.229999989271,
+          "exit": "returned",
+          "errorName": null,
+          "durationMs": 1322.9300000071526,
+          "enteredEpochMs": 1791649869026.0051,
+          "exitedEpochMs": 1791649870348.935
+        }
+      ],
+      "packetAudit": [
+        {
+          "phase": "api",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": true,
+          "channelKinds": null
+        },
+        {
+          "phase": "send",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": null,
+          "channelKinds": [
+            "rtc"
+          ]
+        },
+        {
+          "phase": "message",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": null,
+          "channelKinds": [
+            "rtc"
+          ]
+        },
+        {
+          "phase": "poll-copy",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": null,
+          "channelKinds": null
+        }
+      ],
+      "counts": {
+        "api": 1440,
+        "send": 1440,
+        "message": 1440,
+        "pollCopy": 1440,
+        "emptyPolls": 3064,
+        "unrecognizedBinary": 0,
+        "nonBinarySend": 3,
+        "nonBinaryMessage": 5,
+        "invalidPayloads": 0,
+        "schedulerCalls": 821,
+        "statsSkipped": 0
+      },
+      "overflow": {
+        "packets": 0,
+        "events": 0,
+        "heartbeats": 0,
+        "rafs": 0,
+        "states": 0,
+        "rtc": 0,
+        "errors": 0,
+        "channels": 0
+      },
+      "fixtureErrors": [],
+      "final": {
+        "route": "rtc",
+        "failed": false,
+        "closed": false,
+        "disconnected": false,
+        "queue": 0,
+        "peers": [
+          {
+            "id": 1,
+            "pc": "connected",
+            "ice": "connected",
+            "input": {
+              "state": "open",
+              "ordered": false,
+              "maxRetransmits": 0
+            },
+            "control": {
+              "state": "open",
+              "ordered": true,
+              "maxRetransmits": null
+            }
+          }
+        ]
+      },
+      "stateEdges": [
+        {
+          "at": 1301.9399999976158,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": []
+        },
+        {
+          "at": 1312.8199999928474,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": []
+        },
+        {
+          "at": 2676.9299999773502,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 1,
+              "pc": "new",
+              "ice": "new"
+            }
+          ]
+        },
+        {
+          "at": 2722.5399999916553,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 1,
+              "pc": "new",
+              "ice": "checking"
+            }
+          ]
+        },
+        {
+          "at": 2732.544999986887,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 1,
+              "pc": "connecting",
+              "ice": "checking"
+            }
+          ]
+        },
+        {
+          "at": 2742.109999984503,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 1,
+              "pc": "connected",
+              "ice": "connected"
+            }
+          ]
+        },
+        {
+          "at": 2752.3849999904633,
+          "route": "rtc",
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 1,
+              "pc": "connected",
+              "ice": "connected"
+            }
+          ]
+        },
+        {
+          "at": 2762.810000002384,
+          "route": "rtc",
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 1,
+              "pc": "connected",
+              "ice": "connected"
+            }
+          ]
+        }
+      ],
+      "allSelectedCandidateSamples": [
+        {
+          "sampleIndex": 1,
+          "at": 2816.1949999928474,
+          "epochMs": 1791649870489.9001,
+          "reason": "ready",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 2,
+          "at": 3304.064999997616,
+          "epochMs": 1791649870977.77,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 3,
+          "at": 4304.469999998808,
+          "epochMs": 1791649871978.175,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 4,
+          "at": 5303.959999978542,
+          "epochMs": 1791649872977.665,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 5,
+          "at": 6306.439999997616,
+          "epochMs": 1791649873980.145,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 6,
+          "at": 7322.094999998808,
+          "epochMs": 1791649874995.8,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 7,
+          "at": 8303.569999992847,
+          "epochMs": 1791649875977.2751,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 8,
+          "at": 9304.699999988079,
+          "epochMs": 1791649876978.405,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 9,
+          "at": 10309.584999978542,
+          "epochMs": 1791649877983.29,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 10,
+          "at": 11320.625,
+          "epochMs": 1791649878994.33,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 11,
+          "at": 12320.914999991655,
+          "epochMs": 1791649879994.62,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 12,
+          "at": 13321.479999989271,
+          "epochMs": 1791649880995.185,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 13,
+          "at": 14320.334999978542,
+          "epochMs": 1791649881994.04,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 14,
+          "at": 15320.214999973774,
+          "epochMs": 1791649882993.9202,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 15,
+          "at": 16308.019999980927,
+          "epochMs": 1791649883981.725,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 16,
+          "at": 17307.899999976158,
+          "epochMs": 1791649884981.605,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 17,
+          "at": 18312.319999992847,
+          "epochMs": 1791649885986.0251,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "in-progress",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 18,
+          "at": 18394.644999980927,
+          "epochMs": 1791649886068.35,
+          "reason": "stop",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        }
+      ],
+      "allOriginalStrictPairViolations": [
+        {
+          "sampleIndex": 17,
+          "at": 18312.319999992847,
+          "epochMs": 1791649885986.0251,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 1,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "in-progress",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        }
+      ],
+      "selectedCandidateScope": "Candidate type/state only; no addresses, ports, candidate text, SDP or opaque candidate IDs."
+    },
+    {
+      "side": 1,
+      "clock": {
+        "started": {
+          "timeOrigin": 1791649868618.09,
+          "before": 367.9950000047684,
+          "epochMs": 1791649868986,
+          "after": 367.9950000047684
+        },
+        "armed": {
+          "timeOrigin": 1791649868618.09,
+          "before": 1876.9099999964237,
+          "epochMs": 1791649870495,
+          "after": 1876.9099999964237
+        },
+        "stopped": {
+          "timeOrigin": 1791649868618.09,
+          "before": 17501.805000007153,
+          "epochMs": 1791649886119,
+          "after": 17501.810000002384
+        }
+      },
+      "plannedScheduleStartEpochMs": 1791649871991,
+      "constructorTrace": {
+        "version": 1,
+        "enabled": true,
+        "limit": 96,
+        "overflow": 0,
+        "counts": {
+          "entered": 1,
+          "returned": 1,
+          "threw": 0,
+          "observerErrors": 0
+        },
+        "valid": true,
+        "coverage": {
+          "exercised": true
+        },
+        "identity": {
+          "constructorCurrent": true
+        },
+        "events": [
+          {
+            "id": 0,
+            "call": 0,
+            "event": "enter",
+            "at": 411.5600000023842,
+            "errorName": null
+          },
+          {
+            "id": 1,
+            "call": 0,
+            "event": "returned",
+            "at": 1729,
+            "errorName": null
+          }
+        ],
+        "scope": "performance.now() immediately around existing super(...args), before local channel observer attachment. The captured NativePC may include preinstalled browser/page wrappers. No additional connection, timer, proxy change, constructor argument or error message capture.",
+        "timeOrigin": 1791649868618.09
+      },
+      "calls": [
+        {
+          "call": 0,
+          "enteredAt": 411.5600000023842,
+          "exitedAt": 1729,
+          "exit": "returned",
+          "errorName": null,
+          "durationMs": 1317.4399999976158,
+          "enteredEpochMs": 1791649869029.6501,
+          "exitedEpochMs": 1791649870347.09
+        }
+      ],
+      "packetAudit": [
+        {
+          "phase": "api",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": true,
+          "channelKinds": null
+        },
+        {
+          "phase": "send",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": null,
+          "channelKinds": [
+            "rtc"
+          ]
+        },
+        {
+          "phase": "message",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": null,
+          "channelKinds": [
+            "rtc"
+          ]
+        },
+        {
+          "phase": "poll-copy",
+          "count": 1440,
+          "expected": 1440,
+          "exactlyOnce": true,
+          "minSequence": 1,
+          "maxSequence": 1440,
+          "correctSenderAndDestination": true,
+          "noThrows": true,
+          "allApiAccepted": null,
+          "channelKinds": null
+        }
+      ],
+      "counts": {
+        "api": 1440,
+        "send": 1440,
+        "message": 1440,
+        "pollCopy": 1440,
+        "emptyPolls": 1013,
+        "unrecognizedBinary": 0,
+        "nonBinarySend": 3,
+        "nonBinaryMessage": 4,
+        "invalidPayloads": 0,
+        "schedulerCalls": 273,
+        "statsSkipped": 0
+      },
+      "overflow": {
+        "packets": 0,
+        "events": 0,
+        "heartbeats": 0,
+        "rafs": 0,
+        "states": 0,
+        "rtc": 0,
+        "errors": 0,
+        "channels": 0
+      },
+      "fixtureErrors": [],
+      "final": {
+        "route": "rtc",
+        "failed": false,
+        "closed": false,
+        "disconnected": false,
+        "queue": 0,
+        "peers": [
+          {
+            "id": 0,
+            "pc": "connected",
+            "ice": "connected",
+            "input": {
+              "state": "open",
+              "ordered": false,
+              "maxRetransmits": 0
+            },
+            "control": {
+              "state": "open",
+              "ordered": true,
+              "maxRetransmits": null
+            }
+          }
+        ]
+      },
+      "stateEdges": [
+        {
+          "at": 380.77000001072884,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": []
+        },
+        {
+          "at": 395.6299999952316,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": []
+        },
+        {
+          "at": 1732.4200000166893,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 0,
+              "pc": "new",
+              "ice": "new"
+            }
+          ]
+        },
+        {
+          "at": 1783.25,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 0,
+              "pc": "connecting",
+              "ice": "connected"
+            }
+          ]
+        },
+        {
+          "at": 1793.5049999952316,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 0,
+              "pc": "connected",
+              "ice": "connected"
+            }
+          ]
+        },
+        {
+          "at": 1801.9850000143051,
+          "route": null,
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 0,
+              "pc": "connected",
+              "ice": "connected"
+            }
+          ]
+        },
+        {
+          "at": 1812.4950000047684,
+          "route": "rtc",
+          "failed": false,
+          "closed": false,
+          "disconnected": false,
+          "peers": [
+            {
+              "id": 0,
+              "pc": "connected",
+              "ice": "connected"
+            }
+          ]
+        }
+      ],
+      "allSelectedCandidateSamples": [
+        {
+          "sampleIndex": 1,
+          "at": 1872.9200000166893,
+          "epochMs": 1791649870491.01,
+          "reason": "ready",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 2,
+          "at": 2385.185000002384,
+          "epochMs": 1791649871003.2751,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 3,
+          "at": 3640.9749999940395,
+          "epochMs": 1791649872259.0652,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 4,
+          "at": 4682.344999998808,
+          "epochMs": 1791649873300.435,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 5,
+          "at": 5570.860000014305,
+          "epochMs": 1791649874188.9502,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 6,
+          "at": 6433.465000003576,
+          "epochMs": 1791649875051.5552,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 7,
+          "at": 7468.104999989271,
+          "epochMs": 1791649876086.195,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 8,
+          "at": 8432.379999995232,
+          "epochMs": 1791649877050.47,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 9,
+          "at": 9490.800000011921,
+          "epochMs": 1791649878108.8901,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 10,
+          "at": 10426.479999989271,
+          "epochMs": 1791649879044.57,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 11,
+          "at": 11405.555000007153,
+          "epochMs": 1791649880023.645,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 12,
+          "at": 12433.694999992847,
+          "epochMs": 1791649881051.7852,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 13,
+          "at": 13460.009999990463,
+          "epochMs": 1791649882078.1,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 14,
+          "at": 14440.985000014305,
+          "epochMs": 1791649883059.0752,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 15,
+          "at": 15409.979999989271,
+          "epochMs": 1791649884028.07,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 16,
+          "at": 16403.47499999404,
+          "epochMs": 1791649885021.5652,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 17,
+          "at": 17409.75,
+          "epochMs": 1791649886027.84,
+          "reason": "periodic",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        },
+        {
+          "sampleIndex": 18,
+          "at": 17501.530000001192,
+          "epochMs": 1791649886119.62,
+          "reason": "stop",
+          "route": "rtc",
+          "peerId": 0,
+          "pc": "connected",
+          "ice": "connected",
+          "pair": {
+            "state": "succeeded",
+            "nominated": true
+          },
+          "localCandidateType": "host",
+          "remoteCandidateType": "host"
+        }
+      ],
+      "allOriginalStrictPairViolations": [],
+      "selectedCandidateScope": "Candidate type/state only; no addresses, ports, candidate text, SDP or opaque candidate IDs."
+    }
+  ],
+  "alignedConstructors": {
+    "windowEpochMs": [
+      1791649869026.0051,
+      1791649870348.935
+    ],
+    "enterSpreadMs": 3.64501953125,
+    "returnSpreadMs": 1.844970703125
+  },
+  "relay": {
+    "valid": true,
+    "counts": {
+      "receive": 0,
+      "scheduled": 0,
+      "sent": 0,
+      "cancelled": 0,
+      "burstScheduled": 0,
+      "otherBinaryReceive": 0,
+      "otherBinarySend": 0,
+      "unsupported": 0,
+      "malformed": 0,
+      "syncThrows": 0,
+      "asyncThrows": 0,
+      "budgetFailures": 0,
+      "forwardWithoutReceive": 0,
+      "timingTicks": 232
+    },
+    "coverage": {
+      "exercised": false,
+      "connectionHookExercised": true,
+      "exactNativeAcceptance": false,
+      "osArrivalIncluded": false,
+      "relayTraceIncluded": true
+    },
+    "overflow": {
+      "packets": 0,
+      "events": 0,
+      "connections": 0,
+      "timing": 0,
+      "errors": 0,
+      "firstAt": null
+    },
+    "errors": [],
+    "clock": {
+      "unit": "milliseconds",
+      "started": {
+        "timeOrigin": 1791649867054.795,
+        "before": 50.5315,
+        "epochMs": 1791649867106,
+        "after": 50.5346
+      },
+      "stopped": {
+        "timeOrigin": 1791649867054.795,
+        "before": 25276.0015,
+        "epochMs": 1791649892331,
+        "after": 25276.0099
+      },
+      "snapshot": {
+        "timeOrigin": 1791649867054.795,
+        "before": 25276.0395,
+        "epochMs": 1791649892331,
+        "after": 25276.0429
+      }
+    },
+    "sourceIdentity": {
+      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+      "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+      "probeSha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
+      "fixtureSha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",
+      "startupProbeSha256": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a",
+      "wsModule": "D:\\workspace\\eagler\\eagler-touhou\\node_modules\\ws\\index.js",
+      "wsSha256": "924564d5be26d59b9682c4263f68320e48dde7240bd2d1ad17ec305537429dd2"
+    },
+    "scope": "Binary E9NP path is expected empty for actual RTC; no relay signaling trace was enabled in this health condition."
+  },
+  "hostLoad": {
+    "version": 1,
+    "startedAtUtcMs": 1791649867020,
+    "endedAtUtcMs": 1791649895902,
+    "snapshotAtMs": 28882.3086,
+    "stopped": true,
+    "cpuIntervalMs": 1000,
+    "processIntervalMs": 5000,
+    "complete": true,
+    "valid": true,
+    "scope": "Read-only host CPU counters and candidate process CPU counters. No performance samples are excluded or reweighted.",
+    "limitations": [
+      "Aggregate CPU occupancy does not establish single-core availability, CPU frequency, thermal state, GPU load, or a stable benchmark environment.",
+      "Process names are candidates for contention, not proof that a process is compiling. Known harness/relay/helper PIDs are labeled separately; other node processes remain unlabeled candidates.",
+      "Process CPU is cumulative lifetime CPU seconds. A first sighting is not CPU consumed during this run; PID reuse or counter reset can break a delta.",
+      "The 5 s process snapshots miss short tasks that start and exit between snapshots. Timer delays and source/receive times are retained.",
+      "This observer has overhead. Its own PowerShell helper is intentionally not a candidate process, but its work is included in aggregate CPU counters.",
+      "Overflow and sampling failures make this evidence incomplete; they are never a reason to silently remove a game result."
+    ],
+    "processRowFields": [
+      "pid",
+      "name",
+      "cpuSeconds"
+    ],
+    "processSampler": {
+      "platform": "win32",
+      "ownNodePid": 53320,
+      "helperPid": 67724,
+      "status": "closed",
+      "exitCode": null,
+      "signal": "SIGTERM",
+      "stopRequested": true,
+      "stopConfirmed": true
+    },
+    "limits": {
+      "cpuSamples": 4096,
+      "processSamples": 1024,
+      "processRows": 32768,
+      "rowsPerProcessSample": 512,
+      "stdoutChars": 262144,
+      "knownProcesses": 32,
+      "marks": 128,
+      "errors": 64
+    },
+    "counts": {
+      "cpuAttempts": 29,
+      "processMessages": 6,
+      "processRowsSeen": 204,
+      "processRowsStored": 204,
+      "stdoutBytes": 5536,
+      "stderrBytes": 0
+    },
+    "overflow": {
+      "cpuSamples": false,
+      "processSamples": false,
+      "processRows": false,
+      "processRowsPerSample": false,
+      "stdout": false,
+      "knownProcesses": false,
+      "marks": false,
+      "errors": false
+    },
+    "cpuSamples": [
+      {
+        "kind": "initial",
+        "atMs": 0.5464000000000624,
+        "utcMs": 1791649867021,
+        "logicalCpus": 24,
+        "idleMs": 3416143520,
+        "totalMs": 4384178001,
+        "intervalMs": null,
+        "deltaIdleMs": null,
+        "deltaTotalMs": null,
+        "busyFraction": null,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 1008.4389,
+        "utcMs": 1791649868028,
+        "logicalCpus": 24,
+        "idleMs": 3416161225,
+        "totalMs": 4384202204,
+        "intervalMs": 1007.8924999999999,
+        "deltaIdleMs": 17705,
+        "deltaTotalMs": 24203,
+        "busyFraction": 0.26847911415940173,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 2022.8071,
+        "utcMs": 1791649869043,
+        "logicalCpus": 24,
+        "idleMs": 3416178065,
+        "totalMs": 4384226907,
+        "intervalMs": 1014.3682,
+        "deltaIdleMs": 16840,
+        "deltaTotalMs": 24703,
+        "busyFraction": 0.3183014208800551,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 3018.8721,
+        "utcMs": 1791649870039,
+        "logicalCpus": 24,
+        "idleMs": 3416195536,
+        "totalMs": 4384250895,
+        "intervalMs": 996.065,
+        "deltaIdleMs": 17471,
+        "deltaTotalMs": 23988,
+        "busyFraction": 0.2716775054193764,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 4034.2811,
+        "utcMs": 1791649871054,
+        "logicalCpus": 24,
+        "idleMs": 3416211584,
+        "totalMs": 4384275506,
+        "intervalMs": 1015.4090000000001,
+        "deltaIdleMs": 16048,
+        "deltaTotalMs": 24611,
+        "busyFraction": 0.347933850717159,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 5045.5751,
+        "utcMs": 1791649872066,
+        "logicalCpus": 24,
+        "idleMs": 3416230117,
+        "totalMs": 4384299901,
+        "intervalMs": 1011.2939999999999,
+        "deltaIdleMs": 18533,
+        "deltaTotalMs": 24395,
+        "busyFraction": 0.24029514244722283,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 6049.5491999999995,
+        "utcMs": 1791649873070,
+        "logicalCpus": 24,
+        "idleMs": 3416246441,
+        "totalMs": 4384324440,
+        "intervalMs": 1003.9740999999995,
+        "deltaIdleMs": 16324,
+        "deltaTotalMs": 24539,
+        "busyFraction": 0.33477321814254857,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 7053.6166,
+        "utcMs": 1791649874074,
+        "logicalCpus": 24,
+        "idleMs": 3416263614,
+        "totalMs": 4384348720,
+        "intervalMs": 1004.0674000000008,
+        "deltaIdleMs": 17173,
+        "deltaTotalMs": 24280,
+        "busyFraction": 0.29271004942339374,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 8054.3554,
+        "utcMs": 1791649875074,
+        "logicalCpus": 24,
+        "idleMs": 3416280301,
+        "totalMs": 4384373037,
+        "intervalMs": 1000.7388000000001,
+        "deltaIdleMs": 16687,
+        "deltaTotalMs": 24317,
+        "busyFraction": 0.31377225809104736,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 9060.2244,
+        "utcMs": 1791649876080,
+        "logicalCpus": 24,
+        "idleMs": 3416297647,
+        "totalMs": 4384397619,
+        "intervalMs": 1005.8689999999988,
+        "deltaIdleMs": 17346,
+        "deltaTotalMs": 24582,
+        "busyFraction": 0.29436172809372707,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 10067.4208,
+        "utcMs": 1791649877087,
+        "logicalCpus": 24,
+        "idleMs": 3416315209,
+        "totalMs": 4384422150,
+        "intervalMs": 1007.1964000000007,
+        "deltaIdleMs": 17562,
+        "deltaTotalMs": 24531,
+        "busyFraction": 0.284089519383637,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 11080.4102,
+        "utcMs": 1791649878100,
+        "logicalCpus": 24,
+        "idleMs": 3416332380,
+        "totalMs": 4384446644,
+        "intervalMs": 1012.9894000000004,
+        "deltaIdleMs": 17171,
+        "deltaTotalMs": 24494,
+        "busyFraction": 0.2989711766146812,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 12090.4282,
+        "utcMs": 1791649879110,
+        "logicalCpus": 24,
+        "idleMs": 3416350943,
+        "totalMs": 4384471317,
+        "intervalMs": 1010.018,
+        "deltaIdleMs": 18563,
+        "deltaTotalMs": 24673,
+        "busyFraction": 0.24763911968548613,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 13094.1936,
+        "utcMs": 1791649880114,
+        "logicalCpus": 24,
+        "idleMs": 3416368163,
+        "totalMs": 4384495818,
+        "intervalMs": 1003.7654000000002,
+        "deltaIdleMs": 17220,
+        "deltaTotalMs": 24501,
+        "busyFraction": 0.29717154401861146,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 14097.9567,
+        "utcMs": 1791649881118,
+        "logicalCpus": 24,
+        "idleMs": 3416385022,
+        "totalMs": 4384520082,
+        "intervalMs": 1003.7631000000001,
+        "deltaIdleMs": 16859,
+        "deltaTotalMs": 24264,
+        "busyFraction": 0.3051846356742499,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 15097.9019,
+        "utcMs": 1791649882118,
+        "logicalCpus": 24,
+        "idleMs": 3416402802,
+        "totalMs": 4384544238,
+        "intervalMs": 999.9452000000001,
+        "deltaIdleMs": 17780,
+        "deltaTotalMs": 24156,
+        "busyFraction": 0.26395098526246064,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 16099.2125,
+        "utcMs": 1791649883119,
+        "logicalCpus": 24,
+        "idleMs": 3416421348,
+        "totalMs": 4384568581,
+        "intervalMs": 1001.3105999999989,
+        "deltaIdleMs": 18546,
+        "deltaTotalMs": 24343,
+        "busyFraction": 0.23813827383642117,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 17107.9398,
+        "utcMs": 1791649884128,
+        "logicalCpus": 24,
+        "idleMs": 3416438068,
+        "totalMs": 4384593297,
+        "intervalMs": 1008.7273000000005,
+        "deltaIdleMs": 16720,
+        "deltaTotalMs": 24716,
+        "busyFraction": 0.32351513189836545,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 18112.04,
+        "utcMs": 1791649885132,
+        "logicalCpus": 24,
+        "idleMs": 3416452612,
+        "totalMs": 4384617363,
+        "intervalMs": 1004.1002000000008,
+        "deltaIdleMs": 14544,
+        "deltaTotalMs": 24066,
+        "busyFraction": 0.39566192969334335,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 19125.076200000003,
+        "utcMs": 1791649886145,
+        "logicalCpus": 24,
+        "idleMs": 3416471567,
+        "totalMs": 4384642211,
+        "intervalMs": 1013.0362000000023,
+        "deltaIdleMs": 18955,
+        "deltaTotalMs": 24848,
+        "busyFraction": 0.23716194462330975,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 20856.941700000003,
+        "utcMs": 1791649887877,
+        "logicalCpus": 24,
+        "idleMs": 3416501820,
+        "totalMs": 4384683914,
+        "intervalMs": 1731.8654999999999,
+        "deltaIdleMs": 30253,
+        "deltaTotalMs": 41703,
+        "busyFraction": 0.27456058317147447,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 21908.5063,
+        "utcMs": 1791649888929,
+        "logicalCpus": 24,
+        "idleMs": 3416521459,
+        "totalMs": 4384709241,
+        "intervalMs": 1051.5645999999979,
+        "deltaIdleMs": 19639,
+        "deltaTotalMs": 25327,
+        "busyFraction": 0.22458246140482485,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 22913.2374,
+        "utcMs": 1791649889933,
+        "logicalCpus": 24,
+        "idleMs": 3416539801,
+        "totalMs": 4384733508,
+        "intervalMs": 1004.7311000000009,
+        "deltaIdleMs": 18342,
+        "deltaTotalMs": 24267,
+        "busyFraction": 0.244158734083323,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 24452.792800000003,
+        "utcMs": 1791649891473,
+        "logicalCpus": 24,
+        "idleMs": 3416567413,
+        "totalMs": 4384770757,
+        "intervalMs": 1539.555400000001,
+        "deltaIdleMs": 27612,
+        "deltaTotalMs": 37249,
+        "busyFraction": 0.2587183548551639,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 25585.6738,
+        "utcMs": 1791649892606,
+        "logicalCpus": 24,
+        "idleMs": 3416587363,
+        "totalMs": 4384797804,
+        "intervalMs": 1132.8809999999976,
+        "deltaIdleMs": 19950,
+        "deltaTotalMs": 27047,
+        "busyFraction": 0.26239509002846895,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 26587.5148,
+        "utcMs": 1791649893608,
+        "logicalCpus": 24,
+        "idleMs": 3416606799,
+        "totalMs": 4384822347,
+        "intervalMs": 1001.8410000000003,
+        "deltaIdleMs": 19436,
+        "deltaTotalMs": 24543,
+        "busyFraction": 0.20808377134009692,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 27603.851700000003,
+        "utcMs": 1791649894624,
+        "logicalCpus": 24,
+        "idleMs": 3416626098,
+        "totalMs": 4384846382,
+        "intervalMs": 1016.3369000000021,
+        "deltaIdleMs": 19299,
+        "deltaTotalMs": 24035,
+        "busyFraction": 0.19704597462034534,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 28616.080100000003,
+        "utcMs": 1791649895636,
+        "logicalCpus": 24,
+        "idleMs": 3416645258,
+        "totalMs": 4384871279,
+        "intervalMs": 1012.2284,
+        "deltaIdleMs": 19160,
+        "deltaTotalMs": 24897,
+        "busyFraction": 0.2304293690002811,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "final",
+        "atMs": 28867.791400000002,
+        "utcMs": 1791649895888,
+        "logicalCpus": 24,
+        "idleMs": 3416650318,
+        "totalMs": 4384877821,
+        "intervalMs": 251.71129999999903,
+        "deltaIdleMs": 5060,
+        "deltaTotalMs": 6542,
+        "busyFraction": 0.2265362274533782,
+        "counterDiscontinuity": false
+      }
+    ],
+    "processSamples": [
+      {
+        "receivedAtMs": 316.4271,
+        "receivedUtcMs": 1791649867336,
+        "sourceUtcMs": 1791649867239,
+        "sourceDurationMs": 61.4101,
+        "matchingCount": 34,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            30896,
+            "node",
+            0.171875
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            212.21875
+          ],
+          [
+            41372,
+            "node",
+            7.90625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            56776,
+            "node",
+            0.359375
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63068,
+            "node",
+            2.96875
+          ],
+          [
+            63432,
+            "node",
+            6.09375
+          ],
+          [
+            64968,
+            "node",
+            0.875
+          ],
+          [
+            64972,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            390.421875
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            23580,
+            "python",
+            0.9375
+          ],
+          [
+            29628,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.390625
+          ],
+          [
+            38784,
+            "python",
+            33.609375
+          ],
+          [
+            48904,
+            "python",
+            105.171875
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ],
+          [
+            56684,
+            "python",
+            0.140625
+          ],
+          [
+            57552,
+            "python",
+            0.125
+          ]
+        ]
+      },
+      {
+        "receivedAtMs": 5451.2425,
+        "receivedUtcMs": 1791649872471,
+        "sourceUtcMs": 1791649872386,
+        "sourceDurationMs": 83.5724,
+        "matchingCount": 34,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            30896,
+            "node",
+            0.203125
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            212.21875
+          ],
+          [
+            41372,
+            "node",
+            7.90625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            56776,
+            "node",
+            0.359375
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63068,
+            "node",
+            3.15625
+          ],
+          [
+            63432,
+            "node",
+            6.09375
+          ],
+          [
+            64968,
+            "node",
+            0.875
+          ],
+          [
+            64972,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            390.421875
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            23580,
+            "python",
+            1.046875
+          ],
+          [
+            29628,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.390625
+          ],
+          [
+            38784,
+            "python",
+            33.609375
+          ],
+          [
+            48904,
+            "python",
+            105.171875
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ],
+          [
+            56684,
+            "python",
+            0.140625
+          ],
+          [
+            57552,
+            "python",
+            0.125
+          ]
+        ]
+      },
+      {
+        "receivedAtMs": 10623.4794,
+        "receivedUtcMs": 1791649877644,
+        "sourceUtcMs": 1791649877499,
+        "sourceDurationMs": 140.73350000000002,
+        "matchingCount": 34,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            30896,
+            "node",
+            0.34375
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            212.21875
+          ],
+          [
+            41372,
+            "node",
+            7.90625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            56776,
+            "node",
+            0.359375
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63068,
+            "node",
+            3.328125
+          ],
+          [
+            63432,
+            "node",
+            6.09375
+          ],
+          [
+            64968,
+            "node",
+            0.875
+          ],
+          [
+            64972,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            390.46875
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            23580,
+            "python",
+            1.21875
+          ],
+          [
+            29628,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.390625
+          ],
+          [
+            38784,
+            "python",
+            33.609375
+          ],
+          [
+            48904,
+            "python",
+            105.203125
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ],
+          [
+            56684,
+            "python",
+            0.140625
+          ],
+          [
+            57552,
+            "python",
+            0.125
+          ]
+        ]
+      },
+      {
+        "receivedAtMs": 15740.7399,
+        "receivedUtcMs": 1791649882761,
+        "sourceUtcMs": 1791649882685,
+        "sourceDurationMs": 74.1152,
+        "matchingCount": 34,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            30896,
+            "node",
+            0.34375
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            212.21875
+          ],
+          [
+            41372,
+            "node",
+            7.90625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            56776,
+            "node",
+            0.359375
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63068,
+            "node",
+            3.4375
+          ],
+          [
+            63432,
+            "node",
+            6.09375
+          ],
+          [
+            64968,
+            "node",
+            0.875
+          ],
+          [
+            64972,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            390.53125
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            23580,
+            "python",
+            1.359375
+          ],
+          [
+            29628,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.390625
+          ],
+          [
+            38784,
+            "python",
+            33.609375
+          ],
+          [
+            48904,
+            "python",
+            105.265625
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ],
+          [
+            56684,
+            "python",
+            0.140625
+          ],
+          [
+            57552,
+            "python",
+            0.125
+          ]
+        ]
+      },
+      {
+        "receivedAtMs": 20861.4945,
+        "receivedUtcMs": 1791649887882,
+        "sourceUtcMs": 1791649887796,
+        "sourceDurationMs": 65.7288,
+        "matchingCount": 34,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            30896,
+            "node",
+            0.34375
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            212.21875
+          ],
+          [
+            41372,
+            "node",
+            7.90625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            56776,
+            "node",
+            0.359375
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63068,
+            "node",
+            3.640625
+          ],
+          [
+            63432,
+            "node",
+            6.09375
+          ],
+          [
+            64968,
+            "node",
+            0.875
+          ],
+          [
+            64972,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            390.53125
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            23580,
+            "python",
+            1.640625
+          ],
+          [
+            29628,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.390625
+          ],
+          [
+            38784,
+            "python",
+            33.609375
+          ],
+          [
+            48904,
+            "python",
+            105.34375
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ],
+          [
+            56684,
+            "python",
+            0.140625
+          ],
+          [
+            57552,
+            "python",
+            0.125
+          ]
+        ]
+      },
+      {
+        "receivedAtMs": 25991.9068,
+        "receivedUtcMs": 1791649893012,
+        "sourceUtcMs": 1791649892903,
+        "sourceDurationMs": 107.26050000000001,
+        "matchingCount": 34,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            30896,
+            "node",
+            0.390625
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            212.21875
+          ],
+          [
+            41372,
+            "node",
+            7.90625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            56776,
+            "node",
+            0.359375
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63068,
+            "node",
+            3.765625
+          ],
+          [
+            63432,
+            "node",
+            6.09375
+          ],
+          [
+            64968,
+            "node",
+            0.875
+          ],
+          [
+            64972,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            390.625
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            23580,
+            "python",
+            1.65625
+          ],
+          [
+            29628,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.390625
+          ],
+          [
+            38784,
+            "python",
+            33.609375
+          ],
+          [
+            48904,
+            "python",
+            105.359375
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ],
+          [
+            56684,
+            "python",
+            0.140625
+          ],
+          [
+            57552,
+            "python",
+            0.125
+          ]
+        ]
+      }
+    ],
+    "knownProcesses": [
+      {
+        "pid": 53320,
+        "role": "harness-node",
+        "registeredAtMs": 0.056199999999989814,
+        "registeredUtcMs": 1791649867020
+      },
+      {
+        "pid": 67724,
+        "role": "host-load-sampler",
+        "registeredAtMs": 5.192300000000046,
+        "registeredUtcMs": 1791649867025
+      },
+      {
+        "pid": 30896,
+        "role": "transport-health-relay",
+        "registeredAtMs": 17.15980000000002,
+        "registeredUtcMs": 1791649867037
+      }
+    ],
+    "marks": [
+      {
+        "atMs": 0.07650000000001,
+        "utcMs": 1791649867020,
+        "label": "probe-start"
+      },
+      {
+        "atMs": 5.384300000000053,
+        "utcMs": 1791649867025,
+        "label": "health-start"
+      },
+      {
+        "atMs": 136.11350000000004,
+        "utcMs": 1791649867156,
+        "label": "relay-ready"
+      },
+      {
+        "atMs": 3470.8176,
+        "utcMs": 1791649870491,
+        "label": "routes-ready"
+      },
+      {
+        "atMs": 3475.127,
+        "utcMs": 1791649870495,
+        "label": "schedule-armed"
+      },
+      {
+        "atMs": 17039.514900000002,
+        "utcMs": 1791649884060,
+        "label": "schedule-complete"
+      },
+      {
+        "atMs": 25307.307200000003,
+        "utcMs": 1791649892327,
+        "label": "browser-drain-stopped"
+      },
+      {
+        "atMs": 25313.832700000003,
+        "utcMs": 1791649892334,
+        "label": "relay-trace-stopped"
+      },
+      {
+        "atMs": 28865.466600000003,
+        "utcMs": 1791649895885,
+        "label": "owned-processes-stopped"
+      },
+      {
+        "atMs": 28867.8227,
+        "utcMs": 1791649895888,
+        "label": "probe-stop"
+      }
+    ],
+    "errors": []
+  },
+  "hostDuringConstructor": [
+    {
+      "kind": "periodic",
+      "atMs": 1008.4389,
+      "utcMs": 1791649868028,
+      "logicalCpus": 24,
+      "idleMs": 3416161225,
+      "totalMs": 4384202204,
+      "intervalMs": 1007.8924999999999,
+      "deltaIdleMs": 17705,
+      "deltaTotalMs": 24203,
+      "busyFraction": 0.26847911415940173,
+      "counterDiscontinuity": false
+    },
+    {
+      "kind": "periodic",
+      "atMs": 2022.8071,
+      "utcMs": 1791649869043,
+      "logicalCpus": 24,
+      "idleMs": 3416178065,
+      "totalMs": 4384226907,
+      "intervalMs": 1014.3682,
+      "deltaIdleMs": 16840,
+      "deltaTotalMs": 24703,
+      "busyFraction": 0.3183014208800551,
+      "counterDiscontinuity": false
+    },
+    {
+      "kind": "periodic",
+      "atMs": 3018.8721,
+      "utcMs": 1791649870039,
+      "logicalCpus": 24,
+      "idleMs": 3416195536,
+      "totalMs": 4384250895,
+      "intervalMs": 996.065,
+      "deltaIdleMs": 17471,
+      "deltaTotalMs": 23988,
+      "busyFraction": 0.2716775054193764,
+      "counterDiscontinuity": false
+    },
+    {
+      "kind": "periodic",
+      "atMs": 4034.2811,
+      "utcMs": 1791649871054,
+      "logicalCpus": 24,
+      "idleMs": 3416211584,
+      "totalMs": 4384275506,
+      "intervalMs": 1015.4090000000001,
+      "deltaIdleMs": 16048,
+      "deltaTotalMs": 24611,
+      "busyFraction": 0.347933850717159,
+      "counterDiscontinuity": false
+    },
+    {
+      "kind": "periodic",
+      "atMs": 5045.5751,
+      "utcMs": 1791649872066,
+      "logicalCpus": 24,
+      "idleMs": 3416230117,
+      "totalMs": 4384299901,
+      "intervalMs": 1011.2939999999999,
+      "deltaIdleMs": 18533,
+      "deltaTotalMs": 24395,
+      "busyFraction": 0.24029514244722283,
+      "counterDiscontinuity": false
+    }
+  ],
+  "limitations": [
+    "The observed synchronous captured NativePC constructor includes any preinstalled browser/page wrapper. No internal browser/GPU/audio/security-service attribution is measured.",
+    "The 1440-packet schedule begins after route readiness. Complete scheduled delivery does not mean RTC startup was fast.",
+    "All original non-resource failures remain failures; a connected host/host final path does not overwrite an earlier or periodic strict pair-state violation.",
+    "External resource requests are counted, with their URLs and queries intentionally omitted. Their presence does not prove they caused the constructor interval.",
+    "Host process samples are spaced about five seconds and cover candidate names; they cannot rule out short exited tasks, unlisted processes, single-core saturation or clock changes.",
+    "This is local real RTC between two separate headless browser processes, no WASM/game/audio/draw. It is not public-network or production performance acceptance."
+  ]
+}

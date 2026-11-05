@@ -1,0 +1,128 @@
+[
+  {
+    "name": "th08_01.wav",
+    "offset": 16,
+    "loop": 989888,
+    "length": 12715264
+  },
+  {
+    "name": "th08_00.wav",
+    "offset": 12715280,
+    "loop": 699904,
+    "length": 23128832
+  },
+  {
+    "name": "th08_03.wav",
+    "offset": 35844112,
+    "loop": 2785280,
+    "length": 13762560
+  },
+  {
+    "name": "th08_04.wav",
+    "offset": 49606672,
+    "loop": 487168,
+    "length": 26398720
+  },
+  {
+    "name": "th08_05.wav",
+    "offset": 76005392,
+    "loop": 4511360,
+    "length": 16978176
+  },
+  {
+    "name": "th08_06.wav",
+    "offset": 92983568,
+    "loop": 2740736,
+    "length": 16285696
+  },
+  {
+    "name": "th08_07.wav",
+    "offset": 109269264,
+    "loop": 4761088,
+    "length": 20195840
+  },
+  {
+    "name": "th08_08.wav",
+    "offset": 129465104,
+    "loop": 1460992,
+    "length": 16809984
+  },
+  {
+    "name": "th08_09.wav",
+    "offset": 146275088,
+    "loop": 2337536,
+    "length": 28934144
+  },
+  {
+    "name": "th08_10.wav",
+    "offset": 175209232,
+    "loop": 1813504,
+    "length": 22355968
+  },
+  {
+    "name": "th08_11.wav",
+    "offset": 197565200,
+    "loop": 1178368,
+    "length": 30779648
+  },
+  {
+    "name": "th08_12.wav",
+    "offset": 228344848,
+    "loop": 534144,
+    "length": 21200384
+  },
+  {
+    "name": "th08_13.wav",
+    "offset": 249545232,
+    "loop": 1665728,
+    "length": 15250592
+  },
+  {
+    "name": "th08_14.wav",
+    "offset": 264795824,
+    "loop": 1235712,
+    "length": 31425536
+  },
+  {
+    "name": "th08_13b.wav",
+    "offset": 296221360,
+    "loop": 12362624,
+    "length": 14449664
+  },
+  {
+    "name": "th08_15.wav",
+    "offset": 310671024,
+    "loop": 6678272,
+    "length": 31748096
+  },
+  {
+    "name": "th08_16.wav",
+    "offset": 342419120,
+    "loop": 3086848,
+    "length": 15827456
+  },
+  {
+    "name": "th08_17.wav",
+    "offset": 358246576,
+    "loop": 3434880,
+    "length": 18601216
+  },
+  {
+    "name": "th08_18.wav",
+    "offset": 376847792,
+    "loop": 881280,
+    "length": 28015744
+  },
+  {
+    "name": "th08_19.wav",
+    "offset": 404863536,
+    "loop": 1334816,
+    "length": 31184784
+  },
+  {
+    "name": "th08_20.wav",
+    "offset": 436048320,
+    "loop": 1104896,
+    "length": 13912704
+  }
+]

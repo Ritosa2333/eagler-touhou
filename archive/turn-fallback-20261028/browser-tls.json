@@ -1,0 +1,53 @@
+{
+  "status": 200,
+  "http": [
+    {
+      "path": "/site-manifest.json",
+      "status": 200,
+      "type": "application/json"
+    },
+    {
+      "path": "/runtime-manifest.json",
+      "status": 200,
+      "type": "application/json"
+    },
+    {
+      "path": "/app-shell-sw.js",
+      "status": 200,
+      "type": "application/javascript"
+    },
+    {
+      "path": "/site.webmanifest",
+      "status": 200,
+      "type": "application/manifest+json"
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "type": "text/plain"
+    },
+    {
+      "path": "/nonexistent-hk-probe-20261028",
+      "status": 404,
+      "type": "text/html"
+    }
+  ],
+  "rtc": {
+    "echoes": 10,
+    "local": "relay",
+    "remote": "relay",
+    "protocol": "udp",
+    "relayProtocol": "tls",
+    "address": "39.106.121.158",
+    "route": [
+      "rtc"
+    ],
+    "iceUrls": [
+      "stun:111.231.108.96:3478",
+      "turn:39.106.121.158:3478?transport=udp",
+      "turn:39.106.121.158:3478?transport=tcp",
+      "turns:relay.touhouonline.com:8443?transport=tcp"
+    ]
+  },
+  "errors": []
+}

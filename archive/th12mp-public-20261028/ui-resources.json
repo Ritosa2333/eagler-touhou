@@ -1,0 +1,40 @@
+{
+  "normal": {
+    "title": "東方星蓮船",
+    "frameLimit": true,
+    "languages": [
+      {
+        "value": "ja",
+        "text": "日本語(原版)"
+      },
+      {
+        "value": "lang_zh-hans",
+        "text": "中文（简体）"
+      },
+      {
+        "value": "lang_en",
+        "text": "English"
+      }
+    ]
+  },
+  "multiplayer": {
+    "title": "東方星蓮船",
+    "frameLimit": true,
+    "languages": [
+      {
+        "value": "ja",
+        "text": "日本語(原版)"
+      },
+      {
+        "value": "lang_zh-hans",
+        "text": "中文（简体）"
+      },
+      {
+        "value": "lang_en",
+        "text": "English"
+      }
+    ]
+  },
+  "errors": [],
+  "failures": []
+}

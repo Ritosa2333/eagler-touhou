@@ -1,0 +1,57 @@
+{
+  "origin": "https://touhou.vip",
+  "server": "cloudflare",
+  "normal": {
+    "highRefresh": true,
+    "languages": [
+      "ja",
+      "lang_zh-hans",
+      "lang_en"
+    ]
+  },
+  "multiplayer": {
+    "highRefresh": true,
+    "languages": [
+      "ja",
+      "lang_zh-hans",
+      "lang_en"
+    ]
+  },
+  "release": {
+    "releaseId": "sha256-8129ad135b8996c3544eb32462a1b00b3965783b51dd12a03b0a34ae9483fdb4",
+    "cacheNames": [
+      "eagler-touhou-app-shell-%2F-40e3f728a149fc6bcd4a"
+    ]
+  },
+  "offline": {
+    "controlled": true,
+    "th12mpPresent": true,
+    "covers": [
+      {
+        "loaded": true
+      },
+      {
+        "loaded": true
+      },
+      {
+        "loaded": true
+      },
+      {
+        "loaded": true
+      },
+      {
+        "loaded": true
+      },
+      {
+        "loaded": true
+      },
+      {
+        "loaded": true
+      },
+      {
+        "loaded": true
+      }
+    ]
+  },
+  "errors": []
+}

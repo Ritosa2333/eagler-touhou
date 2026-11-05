@@ -1,0 +1,247 @@
+#include <eagler/netplay/NetplaySession.hpp>
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplayProtocol.hpp>
+#include <eagler/netplay/WebSocketTransport.hpp>
+
+#include <cassert>
+#include <cstdint>
+#include <iostream>
+#include <vector>
+
+using namespace Netplay;
+
+namespace
+{
+void TestProtocolCapability()
+{
+    InputPacket packet;
+    packet.sessionId = 0x1234;
+    packet.senderPlayer = 0;
+    packet.playerCount = 2;
+    packet.latestFrame = 0;
+    packet.firstInputFrame = 0;
+    packet.inputCount = 1;
+    packet.inputs[0].analogMode = AnalogMode::DirectTouch;
+    packet.inputs[0].x = 1.5f;
+    packet.inputs[0].y = -2.0f;
+
+    std::vector<std::uint8_t> wire;
+    assert(EncodeInputPacket(packet, &wire));
+    assert(wire.size() >= 4 && wire[0] == 'E' && wire[1] == 'T' &&
+           wire[2] == 'N' && wire[3] == 'P');
+    InputPacket decoded;
+    assert(DecodeInputPacket(wire.data(), wire.size(), &decoded));
+    assert(decoded.inputs[0] == packet.inputs[0]);
+
+    packet.inputs[0].analogMode = AnalogMode::DirectTouchDelta;
+    assert(EncodeInputPacket(packet, &wire));
+    assert(DecodeInputPacket(wire.data(), wire.size(), &decoded));
+    assert(decoded.inputs[0] == packet.inputs[0]);
+    packet.inputs[0].analogMode = AnalogMode::DirectTouchBegin;
+    assert(EncodeInputPacket(packet, &wire));
+    assert(DecodeInputPacket(wire.data(), wire.size(), &decoded));
+    assert(decoded.inputs[0] == packet.inputs[0]);
+
+    packet.inputs[0].analogMode = static_cast<AnalogMode>(5);
+    assert(!EncodeInputPacket(packet, &wire));
+}
+
+void TestCoreBehavior()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.sessionId = 77;
+    config.playerCount = 2;
+    config.localPlayer = 0;
+    config.inputDelay = 2;
+    config.maxRollbackFrames = 8;
+    assert(core.Reset(config));
+    assert(core.ScheduleLocalInput(0, FrameInput(0x10)));
+
+    assert(core.SubmitRemoteInput(1, 0, FrameInput(0x20)) ==
+           RemoteInputResult::Accepted);
+    auto frame0 = core.PrepareFrame(0);
+    assert(frame0.canAdvance);
+    assert(core.MarkSimulated(0, frame0));
+}
+
+void TestAbsoluteTargetPrediction()
+{
+    for (bool absolute : {false, true})
+    {
+        RollbackCore core;
+        CoreConfig config{};
+        config.sessionId = 0x123456;
+        config.localPlayer = 0;
+        config.maxRollbackFrames = 12;
+        config.predictableButtons = 1;
+        config.directTouchIsAbsolute = absolute;
+        assert(core.Reset(config));
+        FrameInput target(3);
+        target.analogMode = AnalogMode::DirectTouch;
+        target.x = 8300; target.y = 36500;
+        target.unlimited = target.touchUsed = target.touchBomb = true;
+        assert(core.SubmitRemoteInput(1, 0, target) == RemoteInputResult::Accepted);
+        for (std::uint32_t frame = 0; frame <= 10; ++frame)
+        {
+            assert(core.ScheduleLocalInput(frame, FrameInput{}));
+            const auto decision = core.PrepareFrame(frame);
+            assert(decision.canAdvance);
+            const auto& predicted = decision.inputs[1];
+            assert(predicted.analogMode == AnalogMode::DirectTouch);
+            assert(predicted.x == ((absolute || frame <= 1) ? target.x : 0));
+            assert(predicted.y == ((absolute || frame <= 1) ? target.y : 0));
+            assert(frame == 0 || (!predicted.touchBomb && predicted.buttons == 1));
+            assert(core.MarkSimulated(frame, decision));
+        }
+        assert(core.SubmitRemoteInput(1, 5, FrameInput{}) == RemoteInputResult::RollbackRequired);
+        assert(core.RollbackFrame() == 5);
+    }
+}
+
+void TestEquivalentPredictionConfirmationDoesNotRollback()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.sessionId = 88;
+    config.playerCount = 2;
+    config.localPlayer = 0;
+    config.maxRollbackFrames = 8;
+    assert(core.Reset(config));
+
+    assert(core.ScheduleLocalInput(0, FrameInput(1)));
+    assert(core.SubmitRemoteInput(1, 0, FrameInput(2)) == RemoteInputResult::Accepted);
+    const auto frame0 = core.PrepareFrame(0);
+    assert(frame0.canAdvance && core.MarkSimulated(0, frame0));
+
+    assert(core.ScheduleLocalInput(1, FrameInput(1)));
+    const auto predicted = core.PrepareFrame(1);
+    assert(predicted.canAdvance && (predicted.predictedMask & (1u << 1)) != 0);
+    assert(core.MarkSimulated(1, predicted));
+    assert(!core.InputPresent(1, 1));
+
+    FrameInput used{};
+    bool wasPredicted = false;
+    assert(core.UsedInput(1, 1, &used, &wasPredicted));
+    assert(wasPredicted && used.buttons == 2);
+
+    assert(core.SubmitEquivalentRemoteInput(1, 2, FrameInput(3)) ==
+           EquivalentRemoteInputResult::NotPredicted);
+    assert(core.SubmitEquivalentRemoteInput(0, 1, FrameInput(3)) ==
+           EquivalentRemoteInputResult::InvalidPlayer);
+    assert(core.SubmitEquivalentRemoteInput(1, 1, FrameInput(3)) ==
+           EquivalentRemoteInputResult::Confirmed);
+    assert(!core.HasRollbackRequest());
+    assert(core.InputPresent(1, 1));
+    assert(core.ConfirmedThrough(1) == 1);
+    const auto authoritative = core.PrepareFrame(1);
+    assert(authoritative.canAdvance && authoritative.predictedMask == 0 &&
+           authoritative.inputs[1].buttons == 3);
+
+    assert(core.SubmitEquivalentRemoteInput(1, 1, FrameInput(3)) ==
+           EquivalentRemoteInputResult::Duplicate);
+    assert(core.SubmitEquivalentRemoteInput(1, 1, FrameInput(4)) ==
+           EquivalentRemoteInputResult::ConflictingConfirmedInput);
+}
+
+void TestAggregateConfirmedRemoteFrontier()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.sessionId = 99;
+    config.playerCount = 3;
+    config.localPlayer = 0;
+    config.maxRollbackFrames = 8;
+    assert(core.Reset(config));
+
+    assert(core.ConfirmedThroughAllRemotes() == INVALID_FRAME);
+    assert(core.SubmitRemoteInput(1, 0, FrameInput(1)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == INVALID_FRAME);
+    assert(core.SubmitRemoteInput(2, 0, FrameInput(2)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == 0);
+
+    assert(core.SubmitRemoteInput(1, 1, FrameInput(1)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == 0);
+    assert(core.SubmitRemoteInput(2, 1, FrameInput(2)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == 1);
+}
+
+SessionPacket PeerPacket(const SessionConfig &config, std::uint8_t player, SessionPhase phase)
+{
+    SessionPacket packet;
+    packet.sessionId = config.sessionId;
+    packet.seed = config.seed;
+    packet.gameplayAbi = config.gameplayAbi;
+    packet.gameId = config.gameId;
+    packet.senderPlayer = player;
+    packet.playerCount = config.playerCount;
+    packet.phase = phase;
+    return packet;
+}
+
+void TestSessionGate()
+{
+    SessionConfig config;
+    config.sessionId = 0x12345678u;
+    config.seed = 0xabcdefu;
+    config.gameplayAbi = 5;
+    config.gameId = 7;
+    config.playerCount = 3;
+    config.localPlayer = 0;
+
+    SessionGate gate;
+    assert(gate.Reset(config));
+    assert(!gate.CanSendReady());
+    assert(!gate.CanStart());
+
+    assert(gate.Apply(PeerPacket(config, 1, SessionPhase::Ready)) ==
+           SessionPacketResult::ReadyBeforeHello);
+    assert(gate.Apply(PeerPacket(config, 1, SessionPhase::Hello)) ==
+           SessionPacketResult::Accepted);
+    assert(gate.Apply(PeerPacket(config, 2, SessionPhase::Hello)) ==
+           SessionPacketResult::Accepted);
+    assert(gate.CanSendReady());
+
+    gate.MarkLocalReady();
+    assert(gate.LocalReady());
+    assert(gate.Apply(PeerPacket(config, 1, SessionPhase::Ready)) ==
+           SessionPacketResult::Accepted);
+    assert(gate.Apply(PeerPacket(config, 2, SessionPhase::Ready)) ==
+           SessionPacketResult::Accepted);
+    assert(gate.CanStart());
+
+    SessionPacket mismatch = PeerPacket(config, 1, SessionPhase::Hello);
+    mismatch.gameplayAbi++;
+    assert(gate.Apply(mismatch) == SessionPacketResult::ContractMismatch);
+}
+
+void TestNativeWebSocketStub()
+{
+#ifndef __EMSCRIPTEN__
+    WebSocketTransport transport;
+    assert(!transport.Connect("ws://127.0.0.1/unused"));
+    assert(transport.Failed());
+    assert(!transport.IsOpen());
+    assert(transport.LastError() == "WebSocket transport is only implemented for Web/Emscripten");
+
+    const std::uint8_t byte = 1;
+    assert(!transport.Send(&byte, 1));
+    std::vector<std::uint8_t> packet;
+    assert(!transport.Poll(&packet));
+    assert(transport.BufferedAmount() == 0);
+#endif
+}
+} // namespace
+
+int main()
+{
+    TestProtocolCapability();
+    TestCoreBehavior();
+    TestAbsoluteTargetPrediction();
+    TestEquivalentPredictionConfirmationDoesNotRollback();
+    TestAggregateConfirmedRemoteFrontier();
+    TestSessionGate();
+    TestNativeWebSocketStub();
+    std::cout << "eagler-common netplay base: PASS\n";
+    return 0;
+}

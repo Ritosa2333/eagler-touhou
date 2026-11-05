@@ -1,0 +1,14 @@
+[
+  {
+    "origin": "https://online-preview.ritosa.cyou/",
+    "error": "Error: page.evaluate: Error: site-manifest.json HTTP 403\n    at json (eval at evaluate (:311:30), <anonymous>:2:89)\n    at async eval (eval at evaluate (:311:30), <anonymous>:3:16)\n    at async <anonymous>:337:30",
+    "errors": [],
+    "valid": false
+  },
+  {
+    "origin": "https://eagler-edge.ritosa.cyou/",
+    "error": "Error: page.evaluate: Error: site-manifest.json HTTP 403\n    at json (eval at evaluate (:311:30), <anonymous>:2:89)\n    at async eval (eval at evaluate (:311:30), <anonymous>:3:16)\n    at async <anonymous>:337:30",
+    "errors": [],
+    "valid": false
+  }
+]

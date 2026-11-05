@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><style>
+    html{background:#111210}
+    #lobbyPreload{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#111210;color:#f4eee8;font:15px/1.6 system-ui,sans-serif;transition:opacity .18s ease-out}
+    #lobbyPreload.is-done{opacity:0;pointer-events:none}
+    .lobby-preload-card{display:grid;justify-items:center;gap:18px;padding:32px;border-radius:26px;background:#20211e}
+    .lobby-preload-spinner{width:28px;height:28px;box-sizing:border-box;border:2px solid #fce5ec30;border-top-color:#fce5ec;border-radius:50%;animation:lobby-preload-spin .7s linear infinite}
+    .lobby-preload-failure{display:none;text-align:center}.lobby-preload-failure p{margin:0 0 16px}.lobby-preload-failure a{color:#fce5ec;margin:0 12px}
+    html[data-lobby-boot] .lobby-main{visibility:hidden}
+    html[data-lobby-boot="failed"] .lobby-preload-spinner{display:none}
+    html[data-lobby-boot="failed"] .lobby-preload-failure{display:block}
+    @keyframes lobby-preload-spin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){#lobbyPreload{transition:none}.lobby-preload-spinner{animation:none}}
+    .less-motion #lobbyPreload{transition:none}.less-motion .lobby-preload-spinner{animation:none}
+  </style></head><body><div id="lobbyPreload" role="status" aria-label="正在加载联机大厅" data-i18n-aria-label="lobby.loading"><div class="lobby-preload-card"><i class="lobby-preload-spinner" aria-hidden="true"></i><div class="lobby-preload-failure"><p data-i18n="lobby.loadFailed">大厅暂时未能加载。</p><a href="" data-i18n="lobby.reload">重新加载</a><a href="./" data-i18n="lobby.back">返回启动器</a></div></div></div><script>
+    (function () {
+      function fail() {
+        if (document.documentElement.dataset.lobbyBoot === 'loading') document.documentElement.dataset.lobbyBoot = 'failed';
+      }
+      document.getElementById('lobbyModule').addEventListener('error', fail);
+      setTimeout(fail, 25000);
+    })();
+  </script></body></html>

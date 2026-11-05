@@ -1,0 +1,724 @@
+#include "Stage.hpp"
+#include "AnmIdx.hpp"
+#include "AnmManager.hpp"
+#include "Chain.hpp"
+#include "ChainPriorities.hpp"
+#include "FileSystem.hpp"
+#include "GameManager.hpp"
+#include "GameWindow.hpp"
+#include "Gui.hpp"
+#include "ScreenEffect.hpp"
+#include "Supervisor.hpp"
+#include "ZunColor.hpp"
+#include "ZunMemory.hpp"
+#include "utils.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PurpleRuntime.hpp"
+#endif
+// #include <d3d8.h>
+
+static ChainElem g_StageCalcChain;
+static ChainElem g_StageOnDrawHighPrioChain;
+static ChainElem g_StageOnDrawLowPrioChain;
+
+static const StageFile g_StageFiles[8] = {
+    {"dummy", "dummy"},
+    {"data/stg1bg.anm", "data/stage1.std"},
+    {"data/stg2bg.anm", "data/stage2.std"},
+    {"data/stg3bg.anm", "data/stage3.std"},
+    {"data/stg4bg.anm", "data/stage4.std"},
+    {"data/stg5bg.anm", "data/stage5.std"},
+    {"data/stg6bg.anm", "data/stage6.std"},
+    {"data/stg7bg.anm", "data/stage7.std"},
+};
+Stage g_Stage;
+
+static f32 LerpFloat(f32 from, f32 to, f32 amount)
+{
+    return from + (to - from) * amount;
+}
+
+static ZunColor LerpColor(ZunColor from, ZunColor to, f32 amount)
+{
+    ZunColor result = 0;
+    for (i32 component = 0; component < 4; component++)
+    {
+        const f32 value = LerpFloat((f32)COLOR_GET_COMPONENT(from, component),
+                                   (f32)COLOR_GET_COMPONENT(to, component), amount);
+        COLOR_SET_COMPONENT(result, component, (u8)value);
+    }
+    return result;
+}
+
+Stage::Stage()
+{
+}
+
+ZunVec3 Stage::GetDrawCameraFacingDir() const
+{
+    return this->prevCameraFacingDir.Lerp(g_GameManager.stageCameraFacingDir, g_RenderAlpha);
+}
+
+#define StdVec3Arg (*(ZunVec3Raw *)curInsn->args)
+#define StdF32Arg(index) (*(LE<f32> *)&curInsn->args[index])
+#define StdU32Arg(index) (*(LE<u32> *)&curInsn->args[index])
+#define StdI32Arg(index) (*(LE<i32> *)&curInsn->args[index])
+
+ChainCallbackResult Stage::OnUpdate(Stage *stage)
+{
+    f32 posInterpRatio;
+    f32 facingDirInterpRatio;
+    ZunVec3 pos;
+    i32 idx;
+    f32 skyFogInterpRatio;
+    const RawStageInstr *curInsn;
+
+    for (i32 i = 0; i < stage->quadCount; i++)
+    {
+        stage->quadVms[i].UpdatePrev();
+    }
+    stage->spellcardBackground.UpdatePrev();
+    stage->unk2.UpdatePrev();
+    stage->prevPosition = stage->position;
+    stage->prevCameraFacingDir = g_GameManager.stageCameraFacingDir;
+    stage->prevSkyFog = stage->skyFog;
+
+    if (stage->stdData == NULL)
+    {
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
+    if (g_GameManager.isTimeStopped)
+    {
+        // When Sakuya uses her time stop ability, we want to darken her
+        // spellcard background a bit, to give a visual indication of what's
+        // going on.
+        COLOR_SET_COMPONENT(stage->spellcardBackground.color, COLOR_ALPHA_BYTE_IDX, 0x60);
+        COLOR_SET_COMPONENT(stage->spellcardBackground.color, COLOR_BLUE_BYTE_IDX, 0x80);
+        COLOR_SET_COMPONENT(stage->spellcardBackground.color, COLOR_GREEN_BYTE_IDX, 0x30);
+        COLOR_SET_COMPONENT(stage->spellcardBackground.color, COLOR_RED_BYTE_IDX, 0x30);
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
+    for (;;)
+    {
+        curInsn = stage->beginningOfScript + stage->instructionIndex;
+        switch (curInsn->opcode)
+        {
+        case STDOP_CAMERA_POSITION_KEY:
+            if (curInsn->frame == -1)
+            {
+                stage->positionInterpInitial = StdVec3Arg;
+                stage->position.x = stage->positionInterpInitial.x;
+                stage->position.y = stage->positionInterpInitial.y;
+                stage->position.z = stage->positionInterpInitial.z;
+            }
+            else if (stage->scriptTime.current >= curInsn->frame)
+            {
+                pos = StdVec3Arg;
+                stage->position.x = pos.x;
+                stage->position.y = pos.y;
+                stage->position.z = pos.z;
+                stage->positionInterpInitial = pos;
+                stage->positionInterpStartTime = curInsn->frame;
+                stage->instructionIndex++;
+                curInsn++;
+                while (curInsn->opcode != 0)
+                {
+                    curInsn++;
+                }
+                stage->positionInterpEndTime = curInsn->frame;
+                stage->positionInterpFinal = StdVec3Arg;
+            }
+            break;
+        case STDOP_FOG:
+            if (stage->scriptTime.current >= curInsn->frame)
+            {
+                stage->skyFog.color = StdU32Arg(0);
+#ifdef TH_ENABLE_THPRAC
+                // Purple TH06BgFix at 0x4039e5: the STD fog color assignment.
+                if (PracticeRuntime::Purple::BackgroundFix()) stage->skyFog.color = 0;
+#endif
+                stage->skyFog.nearPlane = StdF32Arg(1);
+                stage->skyFog.farPlane = StdF32Arg(2);
+                if (stage->skyFogInterpDuration == 0)
+                {
+                    //                    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGCOLOR, stage->skyFog.color);
+                    //                    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGSTART, *(u32
+                    //                    *)&stage->skyFog.nearPlane);
+                    //                    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGEND, *(u32
+                    //                    *)&stage->skyFog.farPlane);
+
+                    g_AnmManager->SetFogColor(stage->skyFog.color);
+                    g_AnmManager->SetFogRange(stage->skyFog.nearPlane, stage->skyFog.farPlane);
+                }
+                stage->instructionIndex++;
+                stage->skyFogInterpFinal = stage->skyFog;
+                continue;
+            }
+            break;
+        case STDOP_FOG_INTERP:
+            if (stage->scriptTime.current >= curInsn->frame)
+            {
+                stage->skyFogInterpInitial = stage->skyFog;
+                stage->skyFogInterpDuration = StdI32Arg(0);
+                stage->skyFogInterpTimer.InitializeForPopup();
+                stage->instructionIndex++;
+                continue;
+            }
+            break;
+        case STDOP_CAMERA_FACING:
+            if (stage->scriptTime.current >= curInsn->frame)
+            {
+                stage->facingDirInterpInitial = stage->facingDirInterpFinal;
+                stage->facingDirInterpFinal = StdVec3Arg;
+                stage->instructionIndex++;
+                continue;
+            }
+            break;
+        case STDOP_CAMERA_FACING_INTERP_LINEAR:
+            if (stage->scriptTime.current >= curInsn->frame)
+            {
+                stage->facingDirInterpDuration = StdI32Arg(0);
+                stage->facingDirInterpTimer.InitializeForPopup();
+                stage->instructionIndex++;
+                continue;
+            }
+            break;
+        case STDOP_PAUSE:
+            if (stage->unpauseFlag)
+            {
+                stage->instructionIndex++;
+                stage->unpauseFlag = '\0';
+                continue;
+            }
+            break;
+        }
+        if (curInsn->frame != -1)
+        {
+            posInterpRatio = (stage->scriptTime.AsFramesFloat() - stage->positionInterpStartTime) /
+                             (stage->positionInterpEndTime - stage->positionInterpStartTime);
+            pos = stage->positionInterpFinal;
+            stage->position.x =
+                (pos.x - stage->positionInterpInitial.x) * posInterpRatio + stage->positionInterpInitial.x;
+            stage->position.y =
+                (pos.y - stage->positionInterpInitial.y) * posInterpRatio + stage->positionInterpInitial.y;
+            stage->position.z =
+                (pos.z - stage->positionInterpInitial.z) * posInterpRatio + stage->positionInterpInitial.z;
+        }
+        if (stage->facingDirInterpDuration != 0)
+        {
+            if (stage->facingDirInterpTimer.current < stage->facingDirInterpDuration)
+            {
+                stage->facingDirInterpTimer.Tick();
+            }
+            else
+            {
+                stage->facingDirInterpTimer.SetCurrent(stage->facingDirInterpDuration);
+            }
+            pos = stage->facingDirInterpFinal - stage->facingDirInterpInitial;
+            facingDirInterpRatio = stage->facingDirInterpTimer.AsFramesFloat() / stage->facingDirInterpDuration;
+            g_GameManager.stageCameraFacingDir.x = pos.x * facingDirInterpRatio + stage->facingDirInterpInitial.x;
+            g_GameManager.stageCameraFacingDir.y = pos.y * facingDirInterpRatio + stage->facingDirInterpInitial.y;
+            g_GameManager.stageCameraFacingDir.z = pos.z * facingDirInterpRatio + stage->facingDirInterpInitial.z;
+        }
+        if (stage->skyFogInterpDuration != 0)
+        {
+            stage->skyFogInterpTimer.Tick();
+            skyFogInterpRatio = stage->skyFogInterpTimer.AsFramesFloat() / stage->skyFogInterpDuration;
+            if (skyFogInterpRatio >= 1.0f)
+            {
+                skyFogInterpRatio = 1.0;
+            }
+            for (idx = 0; idx < 4; idx++)
+            {
+                COLOR_SET_COMPONENT(stage->skyFog.color, idx,
+                                    (u8)(((f32)COLOR_GET_COMPONENT(stage->skyFogInterpFinal.color, idx) -
+                                          (f32)COLOR_GET_COMPONENT(stage->skyFogInterpInitial.color, idx)) *
+                                             skyFogInterpRatio +
+                                         (f32)COLOR_GET_COMPONENT(stage->skyFogInterpInitial.color, idx)));
+            }
+            stage->skyFog.nearPlane =
+                (stage->skyFogInterpFinal.nearPlane - stage->skyFogInterpInitial.nearPlane) * skyFogInterpRatio +
+                stage->skyFogInterpInitial.nearPlane;
+            stage->skyFog.farPlane =
+                (stage->skyFogInterpFinal.farPlane - stage->skyFogInterpInitial.farPlane) * skyFogInterpRatio +
+                stage->skyFogInterpInitial.farPlane;
+
+            g_AnmManager->SetFogColor(stage->skyFog.color);
+            g_AnmManager->SetFogRange(stage->skyFog.nearPlane, stage->skyFog.farPlane);
+
+            //            g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGCOLOR, stage->skyFog.color);
+            //            g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGSTART, *(u32 *)&stage->skyFog.nearPlane);
+            //            g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGEND, *(u32 *)&stage->skyFog.farPlane);
+            if (stage->skyFogInterpTimer.current >= stage->skyFogInterpDuration)
+            {
+                stage->skyFogInterpDuration = 0;
+            }
+        }
+        if (curInsn->opcode != STDOP_PAUSE)
+        {
+            stage->scriptTime.Tick();
+        }
+        stage->UpdateObjects();
+        if (stage->spellcardState >= RUNNING)
+        {
+            if (stage->ticksSinceSpellcardStarted == 60)
+            {
+                stage->spellcardState = static_cast<SpellcardState>(stage->spellcardState + 1);
+            }
+            stage->ticksSinceSpellcardStarted = stage->ticksSinceSpellcardStarted + 1;
+            g_AnmManager->ExecuteScript(&stage->spellcardBackground);
+        }
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
+}
+
+#undef StdVec3Arg
+#undef StdF32Arg
+#undef StdU32Arg
+#undef StdI32Arg
+
+ChainCallbackResult Stage::OnDrawHighPrio(Stage *stage)
+{
+    //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGSTART, *(u32 *)&stage->skyFog.nearPlane);
+    //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGEND, *(u32 *)&stage->skyFog.farPlane);
+
+    const StageCameraSky drawFog = {
+        LerpFloat(stage->prevSkyFog.nearPlane, stage->skyFog.nearPlane, g_RenderAlpha),
+        LerpFloat(stage->prevSkyFog.farPlane, stage->skyFog.farPlane, g_RenderAlpha),
+        LerpColor(stage->prevSkyFog.color, stage->skyFog.color, g_RenderAlpha),
+    };
+    g_AnmManager->SetFogColor(drawFog.color);
+    g_AnmManager->SetFogRange(drawFog.nearPlane, drawFog.farPlane);
+
+    if (stage->spellcardState <= RUNNING)
+    {
+        if (!g_Gui.IsStageFinished())
+        {
+            stage->RenderObjects(0);
+            stage->RenderObjects(1);
+        }
+    }
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ChainCallbackResult Stage::OnDrawLowPrio(Stage *stage)
+{
+    i32 stageToSpellcardBackgroundAlpha;
+    ZunRect gameRegion;
+
+    if (stage->spellcardState <= RUNNING)
+    {
+        if (!g_Gui.IsStageFinished())
+        {
+            stage->RenderObjects(2);
+            stage->RenderObjects(3);
+            if (stage->spellcardState == RUNNING)
+            {
+                gameRegion.left = GAME_REGION_LEFT;
+                gameRegion.top = GAME_REGION_TOP;
+                gameRegion.right = GAME_REGION_LEFT + GAME_REGION_WIDTH;
+                gameRegion.bottom = GAME_REGION_TOP + GAME_REGION_HEIGHT;
+                stageToSpellcardBackgroundAlpha = (stage->ticksSinceSpellcardStarted * 255) / 60;
+                ScreenEffect::DrawSquare(&gameRegion, stageToSpellcardBackgroundAlpha << 24);
+            }
+        }
+    }
+    if (RUNNING <= stage->spellcardState)
+    {
+        // The spellcard background renders clear of the stage fog in the
+        // original (see Supervisor::DisableFog); the range-based fog would
+        // over-fog this large flat quad with a visible fog-color gradient.
+        // Respect GCOS_DONT_USE_FOG: if the user disabled fog, leave it off.
+        if (((g_Supervisor.cfg.opts >> GCOS_DONT_USE_FOG) & 1) == 0)
+        {
+            g_Supervisor.DisableFog();
+            g_AnmManager->Draw(&stage->spellcardBackground);
+            g_Supervisor.EnableFog();
+        }
+        else
+        {
+            g_AnmManager->Draw(&stage->spellcardBackground);
+        }
+    }
+    g_AnmManager->FlushVertexBuffer();
+    g_Supervisor.viewport.minZ = 0.0;
+    g_Supervisor.viewport.maxZ = 0.5;
+    GameManager::SetupCameraStageBackground(0);
+    g_Supervisor.viewport.Set();
+    g_AnmManager->SetFogRange(1'000.0f, 2'000.0f);
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ZunResult Stage::AddedCallback(Stage *stage)
+{
+    ZunTimer *facingDirTimer;
+    ZunTimer *scriptTimer;
+
+    ZunVec3 interpFinal;
+    ZunVec3 interpInitial;
+
+    scriptTimer = &stage->scriptTime;
+    scriptTimer->InitializeForPopup();
+
+    stage->instructionIndex = 0;
+    stage->position.x = 0.0;
+    stage->position.y = 0.0;
+    stage->position.z = 0.0;
+    stage->prevPosition = stage->position;
+    stage->prevCameraFacingDir = g_GameManager.stageCameraFacingDir;
+    stage->spellcardState = NOT_RUNNING;
+    stage->skyFogInterpDuration = 0;
+
+    if (stage->LoadStageData(g_StageFiles[g_GameManager.currentStage].anmFile,
+                             g_StageFiles[g_GameManager.currentStage].stdFile) != ZUN_SUCCESS)
+    {
+        return ZUN_ERROR;
+    }
+    stage->skyFog.color = COLOR_BLACK;
+    stage->skyFog.nearPlane = 200.0;
+    stage->skyFog.farPlane = 500.0;
+    stage->prevSkyFog = stage->skyFog;
+    interpFinal.x = 0;
+    interpFinal.y = 0;
+    interpFinal.z = 1.0;
+    stage->facingDirInterpFinal = interpFinal;
+
+    interpInitial.x = 0;
+    interpInitial.y = 0;
+    interpInitial.z = 1.0;
+    stage->facingDirInterpInitial = interpInitial;
+
+    stage->facingDirInterpDuration = 1;
+    facingDirTimer = &stage->facingDirInterpTimer;
+    facingDirTimer->InitializeForPopup();
+    stage->unpauseFlag = 0;
+
+    //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGCOLOR, stage->skyFog.color);
+    //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGSTART, *(DWORD *)&stage->skyFog.nearPlane);
+    //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGEND, *(DWORD *)&stage->skyFog.farPlane);
+
+    g_AnmManager->SetFogColor(stage->skyFog.color);
+    g_AnmManager->SetFogRange(stage->skyFog.nearPlane, stage->skyFog.farPlane);
+
+    return ZUN_SUCCESS;
+}
+
+ZunResult Stage::RegisterChain(u32 stage)
+{
+
+    Stage *stg = &g_Stage;
+    ZunTimer *timer;
+
+    memset(stg, 0, sizeof(Stage));
+    stg->stdData = NULL;
+    stg->objects = NULL;
+
+    timer = &stg->timer;
+    timer->InitializeForPopup();
+
+    stg->stage = stage;
+    g_StageCalcChain.callback = (ChainCallback)Stage::OnUpdate;
+    g_StageCalcChain.addedCallback = NULL;
+    g_StageCalcChain.deletedCallback = NULL;
+    g_StageCalcChain.addedCallback = (ChainAddedCallback)Stage::AddedCallback;
+    g_StageCalcChain.deletedCallback = (ChainDeletedCallback)Stage::DeletedCallback;
+    g_StageCalcChain.arg = stg;
+
+    if (g_Chain.AddToCalcChain(&g_StageCalcChain, TH_CHAIN_PRIO_CALC_STAGE))
+    {
+        return ZUN_ERROR;
+    }
+    g_StageOnDrawHighPrioChain.callback = (ChainCallback)OnDrawHighPrio;
+    g_StageOnDrawHighPrioChain.addedCallback = NULL;
+    g_StageOnDrawHighPrioChain.deletedCallback = NULL;
+    g_StageOnDrawHighPrioChain.arg = stg;
+    g_Chain.AddToDrawChain(&g_StageOnDrawHighPrioChain, TH_CHAIN_PRIO_DRAW_HIGH_PRIO_STAGE);
+    g_StageOnDrawLowPrioChain.callback = (ChainCallback)OnDrawLowPrio;
+    g_StageOnDrawLowPrioChain.addedCallback = NULL;
+    g_StageOnDrawLowPrioChain.deletedCallback = NULL;
+    g_StageOnDrawLowPrioChain.arg = stg;
+    g_Chain.AddToDrawChain(&g_StageOnDrawLowPrioChain, TH_CHAIN_PRIO_DRAW_LOW_PRIO_STAGE);
+
+    return ZUN_SUCCESS;
+}
+
+ZunResult Stage::DeletedCallback(Stage *s)
+{
+    g_AnmManager->ReleaseAnm(ANM_FILE_STAGEBG);
+    if (s->quadVms != NULL)
+    {
+        void *quadVms = s->quadVms;
+        free(quadVms);
+        s->quadVms = NULL;
+    }
+    if (s->stdData != NULL)
+    {
+        const void *stdData = s->stdData;
+        free((void *)stdData);
+        s->stdData = NULL;
+    }
+
+    free(s->objects);
+    s->objects = NULL;
+
+    return ZUN_SUCCESS;
+}
+
+void Stage::CutChain()
+{
+    g_Chain.Cut(&g_StageCalcChain);
+    g_Chain.Cut(&g_StageOnDrawHighPrioChain);
+    g_Chain.Cut(&g_StageOnDrawLowPrioChain);
+}
+
+ZunResult Stage::LoadStageData(const char *anmpath, const char *stdpath)
+{
+    RawStageObject *curObj;
+    RawStageQuadBasic *curQuad;
+    i32 idx;
+    i32 vmIdx;
+    u32 sizeVmArr;
+
+    if (g_AnmManager->LoadAnm(ANM_FILE_STAGEBG, anmpath, ANM_OFFSET_STAGEBG) != ZUN_SUCCESS)
+    {
+        return ZUN_ERROR;
+    }
+    this->stdData = (RawStageHeader *)FileSystem::OpenPath(stdpath, false);
+    if (this->stdData == NULL)
+    {
+        g_GameErrorContext.Log(TH_ERR_STAGE_DATA_CORRUPTED);
+        return ZUN_ERROR;
+    }
+    this->objectsCount = this->stdData->nbObjects;
+    this->quadCount = this->stdData->nbFaces;
+    this->objectInstances = (RawStageObjectInstance *)(this->stdData->facesOffset + ((u8 *)this->stdData));
+    this->beginningOfScript = (RawStageInstr *)(this->stdData->scriptOffset + ((u8 *)this->stdData));
+    const LE<u32> *objectOffsets = (LE<u32> *)(this->stdData + 1);
+
+    this->objects = (RawStageObject **)malloc(sizeof(RawStageObject *) * this->objectsCount);
+
+    for (idx = 0; idx < this->objectsCount; idx++)
+    {
+        this->objects[idx] = (RawStageObject *)(((u8 *)this->stdData) + objectOffsets[idx]);
+    }
+
+    sizeVmArr = this->quadCount * sizeof(AnmVm);
+    this->quadVms = (AnmVm *)malloc(sizeVmArr);
+    for (idx = 0, vmIdx = 0; idx < this->objectsCount; idx++)
+    {
+        curObj = this->objects[idx];
+        curObj->flags = 1;
+        curQuad = &curObj->firstQuad;
+        while (0 <= curQuad->type)
+        {
+            g_AnmManager->ExecuteAnmIdx(&this->quadVms[vmIdx], curQuad->anmScript + ANM_OFFSET_STAGEBG);
+            curQuad->vmIdx = vmIdx++;
+            curQuad = (RawStageQuadBasic *)((u8 *)curQuad + curQuad->byteSize);
+        }
+    }
+    return ZUN_SUCCESS;
+}
+
+ZunResult Stage::UpdateObjects()
+{
+    AnmVm *vm;
+    const RawStageQuadBasic *objQuad;
+    const RawStageQuadBasic *objQuadType1;
+    i32 objIdx;
+    i32 vmsNotFinished;
+    RawStageObject *obj;
+
+    for (objIdx = 0; objIdx < this->objectsCount; objIdx++)
+    {
+        obj = this->objects[objIdx];
+        if ((obj->flags & 1) != 0)
+        {
+            vmsNotFinished = 0;
+            objQuad = &obj->firstQuad;
+            while (0 <= objQuad->type)
+            {
+                vm = &this->quadVms[objQuad->vmIdx];
+                switch (objQuad->type)
+                {
+                case 0:
+                    g_AnmManager->ExecuteScript(vm);
+                    break;
+                case 1:
+                    // I assume this casts it, but this is all dead code
+                    // as the engine doesn't contain any other reference
+                    // to type 1 quads.
+                    objQuadType1 = objQuad;
+                    g_AnmManager->ExecuteScript(vm);
+                    break;
+                }
+                if (vm->currentInstruction != NULL)
+                {
+                    vmsNotFinished++;
+                }
+                objQuad = (RawStageQuadBasic *)(((i8 *)&objQuad->type) + objQuad->byteSize);
+            }
+            if (vmsNotFinished == 0)
+            {
+                obj->flags = obj->flags & ~1;
+            }
+        }
+    }
+    return ZUN_SUCCESS;
+}
+
+ZunResult Stage::RenderObjects(i32 zLevel)
+{
+    f32 quadWidth;
+    ZunVec3 projectSrc;
+    bool didDraw;
+    const RawStageQuadBasic *curQuad;
+    ZunVec3 quadPos;
+    ZunVec3 quadScaledPos;
+    RawStageObject *obj;
+    ZunMatrix worldMatrix;
+    const RawStageObjectInstance *instance;
+    i32 instancesDrawn;
+    AnmVm *curQuadVm;
+    i32 unk8;
+
+    instance = &this->objectInstances[0];
+    instancesDrawn = 0;
+    didDraw = false;
+    projectSrc.x = 0.0;
+    projectSrc.y = 0.0;
+    projectSrc.z = 0.0;
+    //    D3DXMatrixIdentity(&worldMatrix);
+    worldMatrix.Identity();
+
+    const ZunVec3 drawPosition = this->prevPosition.Lerp(this->position, g_RenderAlpha);
+
+    while (instance->id >= 0)
+    {
+        obj = this->objects[instance->id];
+        if (obj->zLevel == zLevel)
+        {
+            curQuad = &obj->firstQuad;
+            unk8 = 0;
+
+            //  Say hello to helper cube:
+            //
+            //    ^
+            //    |           A------B.
+            //  y |           |`.    | `.
+            //    |           |  `C--+---D
+            //    |  x        |   |  |   |
+            //    o----->     E---+--F.  |
+            //     `.          `. |    `.|
+            //    z  `_          `G------H
+            //
+            //   It's beautiful, I know. E is at point 0, 0, 0 here.
+            //
+            // During this process, zun will project the world matrix to each of
+            // the 8 corner of the kube that reprents this object, and check if
+            // any of them is visible on the viewport.
+            //
+            // It will check them in the following order: C, G, E, A, D, H, F, B.
+
+            f32 projectedMinY = 1000000.0f;
+            f32 projectedMaxY = -1000000.0f;
+            for (i32 xCorner = 0; xCorner < 2; xCorner++)
+            {
+                for (i32 yCorner = 0; yCorner < 2; yCorner++)
+                {
+                    for (i32 zCorner = 0; zCorner < 2; zCorner++)
+                    {
+                        worldMatrix.m[3][0] = obj->position.x + instance->position.x - drawPosition.x +
+                                              obj->size.x * xCorner;
+                        worldMatrix.m[3][1] = -(obj->position.y + instance->position.y - drawPosition.y) -
+                                              obj->size.y * yCorner;
+                        worldMatrix.m[3][2] = obj->position.z + instance->position.z - drawPosition.z +
+                                              obj->size.z * zCorner;
+                        projectVec3(quadPos, projectSrc, g_Supervisor.viewport,
+                                    g_Supervisor.projectionMatrix, g_Supervisor.viewMatrix, worldMatrix);
+                        projectedMinY = ZUN_MIN(projectedMinY, quadPos.y);
+                        projectedMaxY = ZUN_MAX(projectedMaxY, quadPos.y);
+                    }
+                }
+            }
+            // TH06's original corner-only visibility test drops large stage tiles
+            // that enclose the viewport. TH07 replaced it with camera-volume
+            // culling; until that camera model is fully ported, drawing the small
+            // stage instance list is both correct and deterministic.
+
+        render:
+            didDraw = true;
+            while (0 <= curQuad->type)
+            {
+                curQuadVm = this->quadVms + curQuad->vmIdx;
+                switch (curQuad->type)
+                {
+                case 0:
+                {
+                    const ZunVec3 savedPos = curQuadVm->pos;
+                    const ZunVec3 savedPrevPos = curQuadVm->prevPos;
+                    const f32 savedScaleX = curQuadVm->scaleX;
+                    const f32 savedScaleY = curQuadVm->scaleY;
+                    const f32 savedPrevScaleX = curQuadVm->prevScaleX;
+                    const f32 savedPrevScaleY = curQuadVm->prevScaleY;
+                    curQuadVm->pos.x = curQuad->position.x + instance->position.x - drawPosition.x;
+                    curQuadVm->pos.y = curQuad->position.y + instance->position.y - drawPosition.y;
+                    curQuadVm->pos.z = curQuad->position.z + instance->position.z - drawPosition.z;
+                    if (curQuad->size.x != 0.0f)
+                    {
+                        curQuadVm->scaleX = curQuad->size.x / curQuadVm->sprite->widthPx;
+                    }
+                    if (curQuad->size.y != 0.0f)
+                    {
+                        curQuadVm->scaleY = curQuad->size.y / curQuadVm->sprite->heightPx;
+                    }
+                    if (curQuadVm->autoRotate == 2)
+                    {
+                        if (curQuad->size.x != 0.0f)
+                        {
+                            quadWidth = curQuad->size.x;
+                        }
+                        else
+                        {
+                            quadWidth = curQuadVm->sprite->widthPx;
+                        }
+                        worldMatrix.m[3][0] = curQuadVm->pos.x;
+                        worldMatrix.m[3][1] = -curQuadVm->pos.y;
+                        worldMatrix.m[3][2] = curQuadVm->pos.z;
+                        projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
+                                    g_Supervisor.viewMatrix, worldMatrix);
+                        worldMatrix.m[3][0] = quadWidth * curQuadVm->scaleX + worldMatrix.m[3][0];
+                        projectVec3(quadScaledPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
+                                    g_Supervisor.viewMatrix, worldMatrix);
+                        curQuadVm->scaleX = (quadScaledPos.x - quadPos.x) / quadWidth;
+                        curQuadVm->scaleY = curQuadVm->scaleX;
+                        curQuadVm->pos = quadPos;
+                        curQuadVm->prevPos = curQuadVm->pos;
+                        curQuadVm->prevScaleX = curQuadVm->scaleX;
+                        curQuadVm->prevScaleY = curQuadVm->scaleY;
+                        g_AnmManager->DrawFacingCamera(curQuadVm);
+                    }
+                    else
+                    {
+                        curQuadVm->prevPos = curQuadVm->pos;
+                        curQuadVm->prevScaleX = curQuadVm->scaleX;
+                        curQuadVm->prevScaleY = curQuadVm->scaleY;
+                        g_AnmManager->Draw3(curQuadVm);
+                    }
+                    curQuadVm->pos = savedPos;
+                    curQuadVm->prevPos = savedPrevPos;
+                    curQuadVm->scaleX = savedScaleX;
+                    curQuadVm->scaleY = savedScaleY;
+                    curQuadVm->prevScaleX = savedPrevScaleX;
+                    curQuadVm->prevScaleY = savedPrevScaleY;
+                    break;
+                }
+                }
+                curQuad = (RawStageQuadBasic *)(((u8 *)&curQuad->type) + curQuad->byteSize);
+            }
+            instancesDrawn++;
+        }
+    skip:
+        instance++;
+    }
+    return ZUN_SUCCESS;
+}

@@ -1,0 +1,708 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "game": "th06",
+      "multiplayer": false,
+      "generation": "8a86d3ff70409929893b1d7d2b351bc4bd5a21523cf6831068e090c7bef34bfd",
+      "passed": true,
+      "errors": [],
+      "ready": true,
+      "runtimeEvents": [
+        {
+          "event": "ready"
+        },
+        {
+          "event": "first-frame"
+        },
+        {
+          "event": "runtime-info",
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+        }
+      ],
+      "tail": [
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th06",
+          "epoch": 1,
+          "event": "ready",
+          "saveRoot": "/savesth06",
+          "roomPreview": false,
+          "roomReturn": false
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th06",
+          "epoch": 1,
+          "request": "probe-1",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th06",
+          "epoch": 1,
+          "request": "probe-2",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th06",
+          "epoch": 1,
+          "event": "first-frame",
+          "launchSerial": 1
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th06",
+          "epoch": 1,
+          "event": "runtime-info",
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+        }
+      ]
+    },
+    {
+      "game": "th07",
+      "multiplayer": false,
+      "generation": "6b272551679e0abb45792e9a888923579da4967587aeb170b83b124ecc604955",
+      "passed": true,
+      "errors": [],
+      "ready": true,
+      "runtimeEvents": [
+        {
+          "event": "ready"
+        },
+        {
+          "event": "first-frame"
+        },
+        {
+          "event": "runtime-info",
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+        }
+      ],
+      "tail": [
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th07",
+          "epoch": 1,
+          "event": "ready",
+          "saveRoot": "/savesth07",
+          "roomPreview": false,
+          "roomReturn": false
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th07",
+          "epoch": 1,
+          "request": "probe-1",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th07",
+          "epoch": 1,
+          "request": "probe-2",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th07",
+          "epoch": 1,
+          "event": "first-frame",
+          "launchSerial": 1
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th07",
+          "epoch": 1,
+          "event": "runtime-info",
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+        }
+      ]
+    },
+    {
+      "game": "th08",
+      "multiplayer": false,
+      "generation": "3544f32f8edb6f163c7d2ed24f4645bb1caa67db8568f8df7d151abac58c0a81",
+      "passed": true,
+      "errors": [],
+      "ready": true,
+      "native": {
+        "app": 1601152,
+        "status": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "runtimeEvents": [
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "ready"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++"
+        }
+      ],
+      "tail": [
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 131072,
+          "total": 131072,
+          "path": "/fonts/blend.bin"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 131072,
+          "total": 131072,
+          "path": "/fonts/cp932.bin"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "ready"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 8990160,
+          "total": 8990160,
+          "path": "/msgothic.ttc"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 5105508,
+          "total": 5105508,
+          "path": "/unifont.otf"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "request": "probe-1",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++",
+          "architecture": "eagler-touhou/1",
+          "version": "3.4.1-sdl3"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "request": "probe-2",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "game": "th08",
+      "multiplayer": true,
+      "generation": "e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b",
+      "passed": true,
+      "errors": [],
+      "ready": true,
+      "native": {
+        "app": 1669248,
+        "status": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          51
+        ]
+      },
+      "runtimeEvents": [
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "ready"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "first-frame"
+        },
+        {
+          "event": "frame-health"
+        },
+        {
+          "event": "audio-health"
+        },
+        {
+          "event": "frame-health"
+        },
+        {
+          "event": "audio-health"
+        }
+      ],
+      "tail": [
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 5105508,
+          "total": 5105508,
+          "path": "/unifont.otf"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "request": "probe-1",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "first-frame",
+          "launchSerial": 0
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "frame-health",
+          "fps": 0.03736529810041482,
+          "maxGapMs": 0,
+          "frameMs": 0.5
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "audio-health",
+          "queuedMs": 69.65986394557824,
+          "minQueuedMs": 0,
+          "backend": "script",
+          "underruns": 0,
+          "robust": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "request": "probe-2",
+          "ok": true,
+          "presented": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "frame-health",
+          "fps": 37.51604304339848,
+          "maxGapMs": 90.69999998807907,
+          "frameMs": 0
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th08",
+          "epoch": 1,
+          "event": "audio-health",
+          "queuedMs": 69.65986394557824,
+          "minQueuedMs": 0,
+          "backend": "script",
+          "underruns": 0,
+          "robust": true
+        }
+      ]
+    },
+    {
+      "game": "th10",
+      "multiplayer": false,
+      "generation": "cf05230c84601e98f15817ed866e0a51e96de4d7c47a338dfa43b809a8cb7c11",
+      "passed": true,
+      "errors": [],
+      "ready": true,
+      "native": {
+        "app": 20670256,
+        "status": [
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "runtimeEvents": [
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "ready"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++"
+        },
+        {
+          "event": "first-frame"
+        },
+        {
+          "event": "frame-health"
+        },
+        {
+          "event": "audio-health"
+        }
+      ],
+      "tail": [
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 8990160,
+          "total": 8990160,
+          "path": "/msgothic.ttc"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 5105508,
+          "total": 5105508,
+          "path": "/unifont.otf"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "request": "probe-1",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++",
+          "architecture": "eagler-touhou/1",
+          "version": "3.5.1-sdl3"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "request": "probe-2",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "event": "first-frame"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "event": "frame-health",
+          "fps": 41.37523396612505,
+          "maxGapMs": 68.60000002384186,
+          "frameMs": 0.3999999761581421
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th10",
+          "epoch": 1,
+          "event": "audio-health",
+          "queuedMs": 69.65986394557824,
+          "minQueuedMs": 0,
+          "backend": "script",
+          "underruns": 0,
+          "robust": true
+        }
+      ]
+    },
+    {
+      "game": "th11",
+      "multiplayer": false,
+      "generation": "783182f24d2221012ed18365136f8ae67efdf86e20be7fbb7c579d5adf8082f5",
+      "passed": true,
+      "errors": [],
+      "ready": true,
+      "native": null,
+      "runtimeEvents": [
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "ready"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++"
+        },
+        {
+          "event": "thprac-menu"
+        },
+        {
+          "event": "first-frame"
+        },
+        {
+          "event": "frame-health"
+        },
+        {
+          "event": "audio-health"
+        }
+      ],
+      "tail": [
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 5105508,
+          "total": 5105508,
+          "path": "/unifont.otf"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "request": "probe-1",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++",
+          "architecture": "eagler-touhou/1",
+          "version": "1.0.0-sdl3"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "request": "probe-2",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "event": "thprac-menu",
+          "open": false
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "event": "first-frame"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "event": "frame-health",
+          "fps": 57.63688760738638,
+          "maxGapMs": 0.19999998807907104
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th11",
+          "epoch": 1,
+          "event": "audio-health",
+          "queuedMs": 69.65986394557824,
+          "minQueuedMs": 0,
+          "backend": "script",
+          "underruns": 0
+        }
+      ]
+    },
+    {
+      "game": "th15",
+      "multiplayer": false,
+      "generation": "24065eee08767aff00a6c26cb7226813b5b35d554456955b9811acf726390717",
+      "passed": true,
+      "errors": [],
+      "ready": true,
+      "runtimeEvents": [
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "ready"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "transfer"
+        },
+        {
+          "event": "thprac-menu"
+        },
+        {
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++"
+        },
+        {
+          "event": "first-frame"
+        },
+        {
+          "event": "audio-health"
+        },
+        {
+          "event": "frame-health"
+        }
+      ],
+      "tail": [
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "event": "transfer",
+          "mode": "runtime",
+          "loaded": 5105508,
+          "total": 5105508,
+          "path": "/unifont.otf"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "request": "probe-1",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "event": "thprac-menu",
+          "open": false
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "event": "runtime-info",
+          "renderer": "SDL3 / WebGL2 / C++",
+          "architecture": "eagler-touhou/1",
+          "version": "1.0.3-eagler-3822ac322680",
+          "completeGame": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "request": "probe-2",
+          "ok": true
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "event": "first-frame"
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "event": "audio-health",
+          "ready": true,
+          "callbacks": 53,
+          "renderedFrames": 50112,
+          "errorCode": 0,
+          "queuedFrames": 3072,
+          "queuedMs": 69.65986394557824,
+          "backend": "SDL3",
+          "track": 4294967295,
+          "cursor": 0,
+          "musicEnabled": false
+        },
+        {
+          "protocol": "eagler-touhou/1",
+          "game": "th15",
+          "epoch": 1,
+          "event": "frame-health",
+          "fps": 49.45598417408507,
+          "simulationFps": 61.32542037586548,
+          "maxGapMs": 0.699999988079071
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1123 @@
+{
+  "schema": "th09-managed-touch-entry-diagnostics/v1",
+  "createdAt": "2026-10-11T06:36:20.848Z",
+  "scope": "Exact retained entry events and cleanup; no gameplay, no attribution of unplanned events",
+  "rows": [
+    {
+      "input": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-android-touch-c2-report.json",
+        "bytes": 122461,
+        "sha256": "bed6cd3939d02784c5c33231aae11ed70252ecfa21786326ea1a29047877dfed"
+      },
+      "run": "managed-touch-android-touch-c2",
+      "passed": false,
+      "failure": {
+        "message": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(debuggerUrl.pathname.startsWith('/devtools/browser/'))\n",
+        "stack": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(debuggerUrl.pathname.startsWith('/devtools/browser/'))\n\n    at file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:237:51\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
+        "cause": null
+      },
+      "sourceStable": true,
+      "settingActivation": "cdp-touch",
+      "cleanup": {
+        "errors": [],
+        "serverClean": true,
+        "android": {
+          "forwardRemoved": true,
+          "reverseRemoved": true,
+          "commandsSucceeded": true
+        },
+        "mappings": {
+          "forward": "",
+          "reverse": ""
+        },
+        "deviceCommandsSucceeded": true
+      },
+      "stages": [
+        {
+          "name": "host-preflight",
+          "nodeAt": 940.7353,
+          "profile": "web-development",
+          "engineRebuilt": false
+        },
+        {
+          "name": "android-chromium-foreground",
+          "nodeAt": 2655.3719,
+          "model": "TYH212U",
+          "activity": "org.chromium.chrome/com.google.android.apps.chrome.Main"
+        },
+        {
+          "name": "android-owned-mappings-ready",
+          "nodeAt": 2735.5453,
+          "forwardPort": 63867,
+          "reversePort": 57342
+        },
+        {
+          "name": "retained-failure",
+          "nodeAt": 2745.824,
+          "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(debuggerUrl.pathname.startsWith('/devtools/browser/'))\n"
+        }
+      ],
+      "plannedInjections": [],
+      "audit": [],
+      "stable": true
+    },
+    {
+      "input": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-android-touch-c3-report.json",
+        "bytes": 122781,
+        "sha256": "eb48099ea1d8ebc7856212be226d4c164263a5376bf63d5af6f8a9244a5f1f07"
+      },
+      "run": "managed-touch-android-touch-c3",
+      "passed": false,
+      "failure": {
+        "message": "TimeoutError: browserType.connectOverCDP: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\u001b[2m  - <ws connected> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n",
+        "stack": "browserType.connectOverCDP: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\u001b[2m  - <ws connected> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\n    at D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\tests\\multiplayer\\managed-touch-launcher-browser.mjs:240:26",
+        "cause": null
+      },
+      "sourceStable": true,
+      "settingActivation": "cdp-touch",
+      "cleanup": {
+        "errors": [],
+        "serverClean": true,
+        "android": {
+          "forwardRemoved": true,
+          "reverseRemoved": true,
+          "commandsSucceeded": true
+        },
+        "mappings": {
+          "forward": "",
+          "reverse": ""
+        },
+        "deviceCommandsSucceeded": true
+      },
+      "stages": [
+        {
+          "name": "host-preflight",
+          "nodeAt": 875.5031,
+          "profile": "web-development",
+          "engineRebuilt": false
+        },
+        {
+          "name": "android-chromium-foreground",
+          "nodeAt": 1899.0358,
+          "model": "TYH212U",
+          "activity": "org.chromium.chrome/com.google.android.apps.chrome.Main"
+        },
+        {
+          "name": "android-owned-mappings-ready",
+          "nodeAt": 1985.7256,
+          "forwardPort": 59433,
+          "reversePort": 59396
+        },
+        {
+          "name": "android-devtools-version-ready",
+          "nodeAt": 1994.8518,
+          "browser": "Chrome/157.0.8097.0"
+        },
+        {
+          "name": "retained-failure",
+          "nodeAt": 32022.337,
+          "error": "TimeoutError: browserType.connectOverCDP: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n\u001b[2m  - <ws connected> ws://127.0.0.1:59433/devtools/browser\u001b[22m\n"
+        }
+      ],
+      "plannedInjections": [],
+      "audit": [],
+      "stable": true
+    },
+    {
+      "input": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-managed-touch-4x\\web\\artifacts\\multiplayer-tests\\managed-touch-desktop-touch-c7-report.json",
+        "bytes": 226772,
+        "sha256": "7d8a86e60a7ed4ee066a2d91f0d2fed51a57bc676df93315d36076e146767e79"
+      },
+      "run": "managed-touch-desktop-touch-c7",
+      "passed": false,
+      "failure": {
+        "message": "Error: Timed out: real touch switch enabled",
+        "stack": "Error: Timed out: real touch switch enabled\n    at until (file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:66:8)\n    at async file:///D:/workspace/eagler/worktrees/th09-managed-touch-4x/web/tests/multiplayer/managed-touch-launcher-browser.mjs:324:2",
+        "cause": null
+      },
+      "sourceStable": true,
+      "settingActivation": "keyboard-space",
+      "cleanup": {
+        "errors": [],
+        "serverClean": true,
+        "deviceCommandsSucceeded": true
+      },
+      "stages": [
+        {
+          "name": "host-preflight",
+          "nodeAt": 1396.1214,
+          "profile": "web-development",
+          "engineRebuilt": false
+        },
+        {
+          "name": "retained-failure",
+          "nodeAt": 15539.9686,
+          "error": "Error: Timed out: real touch switch enabled"
+        }
+      ],
+      "plannedInjections": [],
+      "mainFrameNavigations": [
+        {
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nodeAt": 2280.5106
+        },
+        {
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nodeAt": 3145.9829
+        },
+        {
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nodeAt": 9868.6093
+        },
+        {
+          "url": "http://127.0.0.1:58014/play/th08?uiLocale=en",
+          "nodeAt": 11257.8218
+        },
+        {
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nodeAt": 12063.4887
+        },
+        {
+          "url": "http://127.0.0.1:58014/play/th06?uiLocale=en",
+          "nodeAt": 14869.29
+        },
+        {
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nodeAt": 15699.7742
+        }
+      ],
+      "initialSwitch": {
+        "id": "_r_1d_-touch",
+        "type": "checkbox",
+        "checked": false,
+        "disabled": false,
+        "matchingIdCount": 1,
+        "preferences": [
+          {
+            "id": "_r_1d_-language",
+            "value": "ja",
+            "disabled": true
+          },
+          {
+            "id": "_r_1d_-music",
+            "value": "none",
+            "disabled": true
+          }
+        ],
+        "viewport": {
+          "width": 412,
+          "height": 844,
+          "scale": 1,
+          "offsetLeft": 0,
+          "offsetTop": 0
+        },
+        "labels": [
+          {
+            "for": "_r_1d_-touch",
+            "text": "Enable touch controls"
+          }
+        ],
+        "ancestry": [
+          {
+            "tag": "INPUT",
+            "id": "_r_1d_-touch",
+            "className": "",
+            "href": null
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "className": "game-settings-option-label",
+            "href": null
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "className": "game-settings-option",
+            "href": null
+          },
+          {
+            "tag": "FIELDSET",
+            "id": "",
+            "className": "game-settings-fields game-settings-touch-fields",
+            "href": null
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "className": "game-settings-group-content",
+            "href": null
+          },
+          {
+            "tag": "DETAILS",
+            "id": "",
+            "className": "game-settings-group game-settings-touch",
+            "href": null
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "className": "game-settings-form grid text-sm",
+            "href": null
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "className": "library-panel-scroll",
+            "href": null
+          },
+          {
+            "tag": "DIV",
+            "id": "radix-_r_7_",
+            "className": "library-panel",
+            "href": null
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "className": "min-h-svh bg-background text-paper",
+            "href": null
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "className": "",
+            "href": null
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "className": "",
+            "href": null
+          }
+        ]
+      },
+      "failureUrl": "http://127.0.0.1:58014/play/th06?uiLocale=en",
+      "audit": [
+        {
+          "type": "keydown",
+          "at": 3137.699999988079,
+          "trusted": true,
+          "target": "INPUT",
+          "id": "_r_1d_-touch",
+          "inputType": "checkbox",
+          "checked": false,
+          "key": " ",
+          "code": "Space",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 3211.699999988079,
+            "defaultPrevented": false,
+            "checked": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "keyup",
+          "at": 3143.800000011921,
+          "trusted": true,
+          "target": "INPUT",
+          "id": "_r_1d_-touch",
+          "inputType": "checkbox",
+          "checked": false,
+          "key": " ",
+          "code": "Space",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 3211.800000011921,
+            "defaultPrevented": false,
+            "checked": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 3170,
+          "trusted": true,
+          "target": "INPUT",
+          "id": "_r_1d_-touch",
+          "inputType": "checkbox",
+          "checked": false,
+          "x": 0,
+          "y": 0,
+          "pointerType": "",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 3215,
+            "defaultPrevented": false,
+            "checked": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "input",
+          "at": 3170.9000000059605,
+          "trusted": true,
+          "target": "INPUT",
+          "id": "_r_1d_-touch",
+          "inputType": "checkbox",
+          "checked": false,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 3215.0999999940395,
+            "defaultPrevented": false,
+            "checked": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "change",
+          "at": 3195.5,
+          "trusted": true,
+          "target": "INPUT",
+          "id": "_r_1d_-touch",
+          "inputType": "checkbox",
+          "checked": false,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 3215.0999999940395,
+            "defaultPrevented": false,
+            "checked": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerdown",
+          "at": 7354.5999999940395,
+          "trusted": true,
+          "target": "svg",
+          "id": "",
+          "x": 42.606510162353516,
+          "y": 59.36590576171875,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 7367,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mousedown",
+          "at": 7356.9000000059605,
+          "trusted": true,
+          "target": "svg",
+          "id": "",
+          "x": 42,
+          "y": 59,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 7367.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerup",
+          "at": 7423.5,
+          "trusted": true,
+          "target": "svg",
+          "id": "",
+          "x": 42.606510162353516,
+          "y": 59.36590576171875,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 7565.800000011921,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mouseup",
+          "at": 7438.5,
+          "trusted": true,
+          "target": "svg",
+          "id": "",
+          "x": 42,
+          "y": 59,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 7566.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 7452.199999988079,
+          "trusted": true,
+          "target": "svg",
+          "id": "",
+          "x": 42,
+          "y": 59,
+          "pointerType": "mouse",
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/play/th09?uiLocale=en",
+          "nextTask": {
+            "at": 7566.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th09?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerdown",
+          "at": 8457.40000000596,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 176.94235229492188,
+          "y": 339.0651550292969,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 8468.5,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mousedown",
+          "at": 8461.09999999404,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 176,
+          "y": 339,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 8468.59999999404,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerup",
+          "at": 8522.800000011921,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 176.94235229492188,
+          "y": 339.0651550292969,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 8572.40000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mouseup",
+          "at": 8531.40000000596,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 176,
+          "y": 339,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 8572.59999999404,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 8538.5,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 176,
+          "y": 339,
+          "pointerType": "mouse",
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 8572.59999999404,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerdown",
+          "at": 8816.40000000596,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 170.9273223876953,
+          "y": 339.56640625,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 8831.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mousedown",
+          "at": 8820,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 170,
+          "y": 339,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 8831.40000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerup",
+          "at": 8874.199999988079,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 170.9273223876953,
+          "y": 339.56640625,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 9024.5,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th08?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mouseup",
+          "at": 8882.09999999404,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 170,
+          "y": 339,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 9029.800000011921,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th08?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 8887.5,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 170,
+          "y": 339,
+          "pointerType": "mouse",
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 9030.09999999404,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th08?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 8890.300000011921,
+          "trusted": false,
+          "target": "A",
+          "id": "",
+          "inputType": "",
+          "x": 0,
+          "y": 0,
+          "pointerType": "",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 9030.09999999404,
+            "defaultPrevented": true,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th08?uiLocale=en"
+          },
+          "links": [
+            "/play/th08?uiLocale=en"
+          ]
+        },
+        {
+          "type": "pointerdown",
+          "at": 9686.699999988079,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 23.05764389038086,
+          "y": 72.39849090576172,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/play/th08?uiLocale=en",
+          "nextTask": {
+            "at": 9692.90000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th08?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mousedown",
+          "at": 9687.90000000596,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 23,
+          "y": 72,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/play/th08?uiLocale=en",
+          "nextTask": {
+            "at": 9692.90000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th08?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerup",
+          "at": 9765.59999999404,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 24.060150146484375,
+          "y": 72.39849090576172,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/play/th08?uiLocale=en",
+          "nextTask": {
+            "at": 9869.40000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mouseup",
+          "at": 9781.09999999404,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 24,
+          "y": 72,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/play/th08?uiLocale=en",
+          "nextTask": {
+            "at": 9874.800000011921,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 9794,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 24,
+          "y": 72,
+          "pointerType": "mouse",
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/play/th08?uiLocale=en",
+          "nextTask": {
+            "at": 9874.90000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerdown",
+          "at": 11850.199999988079,
+          "trusted": true,
+          "target": "DIV",
+          "id": "singleplayer-rail",
+          "x": 114.28571319580078,
+          "y": 321.52130126953125,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 11855,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mousedown",
+          "at": 11851.300000011921,
+          "trusted": true,
+          "target": "DIV",
+          "id": "singleplayer-rail",
+          "x": 114,
+          "y": 321,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 11855.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerup",
+          "at": 11892,
+          "trusted": true,
+          "target": "DIV",
+          "id": "singleplayer-rail",
+          "x": 105.76441192626953,
+          "y": 323.0250549316406,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 11913.90000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mouseup",
+          "at": 11898.800000011921,
+          "trusted": true,
+          "target": "DIV",
+          "id": "singleplayer-rail",
+          "x": 105,
+          "y": 323,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 11914.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 11909.59999999404,
+          "trusted": true,
+          "target": "DIV",
+          "id": "singleplayer-rail",
+          "x": 105,
+          "y": 323,
+          "pointerType": "mouse",
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 11914.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerdown",
+          "at": 12065.90000000596,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91.72932434082031,
+          "y": 336.0576477050781,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12073.40000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mousedown",
+          "at": 12068.09999999404,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91,
+          "y": 336,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12073.40000000596,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerup",
+          "at": 12170.5,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91.72932434082031,
+          "y": 336.0576477050781,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12197.59999999404,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mouseup",
+          "at": 12177.40000000596,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91,
+          "y": 336,
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12197.800000011921,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 12181.300000011921,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91,
+          "y": 336,
+          "pointerType": "mouse",
+          "detail": 1,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12197.800000011921,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerdown",
+          "at": 12466.09999999404,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91.72932434082031,
+          "y": 336.0576477050781,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12479,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mousedown",
+          "at": 12468.699999988079,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91,
+          "y": 336,
+          "detail": 2,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12479.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "pointerup",
+          "at": 12509.09999999404,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91.72932434082031,
+          "y": 336.0576477050781,
+          "pointerType": "mouse",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12632.199999988079,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th06?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "mouseup",
+          "at": 12518.199999988079,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91,
+          "y": 336,
+          "detail": 2,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12637.5,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th06?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 12523.40000000596,
+          "trusted": true,
+          "target": "BUTTON",
+          "id": "",
+          "inputType": "button",
+          "x": 91,
+          "y": 336,
+          "pointerType": "mouse",
+          "detail": 2,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12637.5,
+            "defaultPrevented": false,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th06?uiLocale=en"
+          },
+          "links": []
+        },
+        {
+          "type": "click",
+          "at": 12526,
+          "trusted": false,
+          "target": "A",
+          "id": "",
+          "inputType": "",
+          "x": 0,
+          "y": 0,
+          "pointerType": "",
+          "detail": 0,
+          "url": "http://127.0.0.1:58014/?uiLocale=en",
+          "nextTask": {
+            "at": 12637.59999999404,
+            "defaultPrevented": true,
+            "isConnected": true,
+            "url": "http://127.0.0.1:58014/play/th06?uiLocale=en"
+          },
+          "links": [
+            "/play/th06?uiLocale=en"
+          ]
+        }
+      ],
+      "stable": true
+    }
+  ]
+}

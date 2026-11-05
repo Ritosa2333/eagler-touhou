@@ -1,0 +1,73 @@
+{
+  "exeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "scope": "Original42a328..42a360 circle predicate, controlled stack/FPU context and inputs; no instruction or result replacement",
+  "x87ControlWord": "0x007f",
+  "wholeGameOracle": false,
+  "rows": [
+    {
+      "point": [
+        43.16087341308594,
+        89.25546264648438
+      ],
+      "origin": [
+        0,
+        128
+      ],
+      "radius": 58,
+      "nativeDistanceSquared": 3364.0,
+      "nativeCancelled": true
+    },
+    {
+      "point": [
+        43.1608772277832,
+        89.25546264648438
+      ],
+      "origin": [
+        0,
+        128
+      ],
+      "radius": 58,
+      "nativeDistanceSquared": 3364.00048828125,
+      "nativeCancelled": false
+    },
+    {
+      "point": [
+        43.16086959838867,
+        89.25546264648438
+      ],
+      "origin": [
+        0,
+        128
+      ],
+      "radius": 58,
+      "nativeDistanceSquared": 3364.0,
+      "nativeCancelled": true
+    },
+    {
+      "point": [
+        3,
+        132
+      ],
+      "origin": [
+        0,
+        128
+      ],
+      "radius": 5,
+      "nativeDistanceSquared": 25.0,
+      "nativeCancelled": true
+    },
+    {
+      "point": [
+        0,
+        128
+      ],
+      "origin": [
+        0,
+        128
+      ],
+      "radius": 0,
+      "nativeDistanceSquared": 0.0,
+      "nativeCancelled": true
+    }
+  ]
+}

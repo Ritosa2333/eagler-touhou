@@ -1,0 +1,1 @@
+import test from 'node:test';import {verifyPlayerShots} from './player-shot-oracle.mjs';test('TH15 dynamic option angles and scatter preserve original spawn arithmetic',()=>verifyPlayerShots(false,false,false,true));

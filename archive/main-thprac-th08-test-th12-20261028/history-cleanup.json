@@ -1,0 +1,30 @@
+{
+  "base": "9ed28346d54b6a99da740637aa04f7db546a2263",
+  "oldHead": "a309bcb8633803ffa51bb9ea7f45e02013b0d028",
+  "rebuiltSourceHead": "964b5b5683994de4d30cd3c8dfd3ded019a92ab2",
+  "touchFixCommit": "404b20815a4bfa94f5bb87827f1233949c3d8879",
+  "endingTestCommit": "964b5b5683994de4d30cd3c8dfd3ded019a92ab2",
+  "unchangedSourceTrees": {
+    "common": "f3fe6bd61cd4d2f8399f0ba76d576468b08ac643",
+    "ports/th06": "de05618ec825b0c22c1d8fe311e1d500b105644c",
+    "ports/th07": "894d43a18ac774cd7b833fefc77d4ce345c04a5b",
+    "ports/th08": "05367dc7d378e48a97cc2c6fb412e4c9c8369c17",
+    "ports/th08-mp": "04acee4251850ae9ee4522efe89fc9f9fa69fd85",
+    "ports/th10": "c4f04a24495406c1a7260326272ebcd9052a4340",
+    "ports/th10-mp": "38bdc21bce3e0fbe9f98e4056e74c45450ed5d27",
+    "ports/th11": "dc25e418ee06e22c97d3a468d80efa2a15eed4cf",
+    "ports/th15": "503b8371c87e64a3efe63ceb6fa78470e27c3c28",
+    "ports/th15-mp": "ef469663d9cca199120a690de70d7ac154dd3340"
+  },
+  "removedTh11PresentationSync": "a5a58e5d481ffd7c54fd235792a1914bab35237e",
+  "removedTh11PatchMatches": true,
+  "newMergeCommits": 0,
+  "migrationAndSyncConnectionRecordsUnchanged": true,
+  "localBackupRef": "backup/thprac-touch-before-history-cleanup-20261028",
+  "verification": {
+    "actualPlatformTouchAdaptersPassed": 8,
+    "pointerOwnershipPassed": true,
+    "actualImGuiPanelTestPassed": true,
+    "docsCheckPassed": true
+  }
+}

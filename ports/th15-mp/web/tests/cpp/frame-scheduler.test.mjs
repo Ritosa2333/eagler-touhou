@@ -1,0 +1,29 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {core,oracle,memory,report} from './helpers.mjs';
+test('TH15 named frame callbacks preserve native priorities, live mutation, return actions and shutdown',async()=>{
+ const c=await core(),m=await oracle(),scheduler=m.allocate(0x58),fake=m.allocate(0x58),callbacks=Array.from({length:16},()=>m.allocate(40)),owners=Array.from({length:16},()=>m.allocate(64)),raw=m.allocate(16),init=m.allocate(16),cleanup=m.allocate(16);let codePool=0,entries=[],events=[],cases=0,passes=0,checks=0;
+ m.u32(0x4e9a54,scheduler);m.view(0x503d86,1)[0]=0;
+ m.replace(raw,'scripted callback body',()=>{const p=m.reg('ECX'),id=m.u32(p),e=entries[id],calls=m.i32(p+4)+1;m.i32(p+4,calls);events.push(1,id);const result=calls===1?e.first:e.later;m.i32(p+24,result);return result;});
+ m.replace(init,'scripted callback initialization',()=>{const id=m.u32(m.reg('ECX'));events.push(2,id);return entries[id].aux;});m.replace(cleanup,'scripted callback cleanup',()=>{events.push(3,m.u32(m.reg('ECX')));return 0;});
+ const wrapper=(id,e)=>{const base=codePool+id*256;let bytes=[],fixups=[];const put=(...b)=>bytes.push(...b),word=v=>put(v&255,v>>>8&255,v>>>16&255,v>>>24&255),push=v=>{put(0x68);word(v);},ecx=v=>{put(0xb9);word(v);},store=(at,v)=>{put(0xc7,0x05);word(at);word(v);},call=at=>{put(0xe8);word(at-(base+bytes.length+4));};
+  put(0x56,0x8b,0xf1);call(raw);put(0x83,0x7e,4,1,0x0f,0x85);const skip=bytes.length;word(0);const target=callbacks[e.target];
+  switch(e.op){case 1:push(e.priority);push(target);call(e.pass?0x401440:0x401390);break;case 2:push(target);ecx(scheduler);call(0x4018a0);break;case 3:store(target+4,e.aux?2:0);break;case 4:store(scheduler+0x54,e.aux);break;case 5:if(e.pass){put(0xa1);word(scheduler+0x40);put(0xa3);word(fake+0x18);push(fake);}else push(scheduler);ecx(scheduler);call(0x401730);break;case 6:store(target+8,0);break;}
+  const end=bytes.length;put(0x8b,0x46,24,0x5e,0xc3);const out=Buffer.from(bytes);out.writeInt32LE(end-(skip+4),skip);m.write(base,out);return base;};
+ const baseEntry=(id,pass=0)=>({first:1,later:1,op:0,target:0,priority:id,pass,aux:0,flags:15});
+ const run=(list,initial,sequence,closing=0)=>{entries=list;events=[];codePool=m.allocate(16*256);m.view(scheduler,0x58).fill(0);m.call(0x401310,{ecx:scheduler});m.u32(scheduler+0x54,closing);const f=c.frame_scheduler_create();c.frame_scheduler_closing(f,closing);
+  try{for(let id=0;id<16;id++){const e=entries[id];m.view(callbacks[id],40).fill(0);m.view(owners[id],64).fill(0);m.u32(owners[id],id);m.u32(callbacks[id]+0x14,callbacks[id]);m.u32(callbacks[id]+4,e.flags&8?2:0);m.u32(callbacks[id]+8,e.flags&1?wrapper(id,e):0);m.u32(callbacks[id]+12,e.flags&2?init:0);m.u32(callbacks[id]+16,e.flags&4?cleanup:0);m.u32(callbacks[id]+36,owners[id]);c.frame_scheduler_configure(f,id,e.first,e.later,e.op,e.target,e.priority,e.pass,e.aux,e.flags);}
+   const compare=label=>{const n=c.frame_scheduler_event_count(f),actual=Array.from(new Uint32Array(c.memory.buffer,c.frame_scheduler_events(f),n*2));assert.deepEqual(actual,events,label+' call order');for(let id=0;id<16;id++){const p=callbacks[id],state=Number(m.u32(p+0x1c)!==0)|(Number(m.u32(p+8)!==0)<<1)|(Number(m.u32(p+12)!==0)<<2)|((m.u32(p+4)&2)?8:0);assert.equal(c.frame_scheduler_state(f,id),state,label+' callback '+id);checks++;}};
+   for(const id of initial){const e=entries[id];const original=m.call(e.pass?0x401440:0x401390,{args:[callbacks[id],e.priority]});assert.equal(c.frame_scheduler_add(f,id,e.pass,e.priority),original|0,'initialize return');compare(cases+'/add/'+id);}
+   for(const pass of sequence){events=[];c.frame_scheduler_event_reset(f);const expected=m.call(pass?0x401620:0x4014f0,{ecx:scheduler});assert.equal(c.frame_scheduler_execute(f,pass),expected|0,cases+'/'+passes+' return');compare(cases+'/'+passes);passes++;}cases++;
+  }finally{c.frame_scheduler_delete(f);}
+ };
+ try{
+  // Equal priorities insert before existing callbacks, separately for both passes.
+  for(let sample=0;sample<512;sample++){const es=Array.from({length:16},(_,id)=>({...baseEntry(id,id&1),priority:((sample*17+id*11)%7)-3,flags:(sample+id*3)%16,aux:(sample*7-id)|0})),order=Array.from({length:16},(_,id)=>(id*5+sample)%16);run(es,order,[0,1,1,0],sample%13===0?1:0);}
+  for(let pass=0;pass<2;pass++)for(let action=0;action<12;action++)for(let position=0;position<8;position++){const es=Array.from({length:16},(_,id)=>baseEntry(id,pass));es[position].first=action;run(es,Array.from({length:8},(_,i)=>i),[pass,pass]);}
+  // Removing the saved next callback, adding between future nodes, disabling,
+  // clearing live lists and changing shutdown during repeated execution.
+  for(let pass=0;pass<2;pass++)for(let op=1;op<=6;op++)for(let target=0;target<9;target++)for(let placement=0;placement<3;placement++){const es=Array.from({length:16},(_,id)=>baseEntry(id,pass));Object.assign(es[2],{op,target:op===1?8:target,priority:placement===0?-10:placement===1?3:20,aux:placement&1});run(es,[0,1,2,3,4,5,6,7],[pass,pass]);}
+  for(let pass=0;pass<2;pass++){let es=Array.from({length:16},(_,id)=>baseEntry(id,pass));Object.assign(es[3],{first:2,op:3,target:3,aux:0});run(es,[0,1,2,3,4],[pass,pass]);}
+  report('frame-scheduler',{passed:true,cases,passes,checks,originalFunctions:['0x401310','0x401390','0x401440','0x4014f0','0x401620','0x401730','0x4018a0'],scope:'Unchanged native registration, update/draw traversal and removal. Scripted callback bodies are service boundaries; live registration/removal executes native instructions, never a nested oracle call. Equal priorities, disabled/null functions, initialization, all return actions, repetition/restart, cleanup and shutdown, and next-node deletion compare order, state and results. Full GameWorld not yet connected.'});
+ }finally{m.close();}
+});

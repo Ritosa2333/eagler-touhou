@@ -1,0 +1,24 @@
+{
+  "schema": "th09-mobile-run-corrections/1",
+  "originalPlan": "rollback-mobile-validation-plan.json",
+  "attempts": [
+    {
+      "label": "mobile-rollback-direct120-c1",
+      "command": "VCbQXfzB6sl9IuBDpCX1DK2s",
+      "status": 1,
+      "stage": "Top-level harness preflight; before browser/relay launch",
+      "elapsedMs": 404.4935,
+      "reason": "RELAY_TRACE=1 was inherited from relay controls; harness correctly rejects relay gameplay trace without --relay. RTC uses signaling only.",
+      "retained": [
+        "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-invocation.json",
+        "web/artifacts/multiplayer-tests/mobile-rollback-direct120-c1-process.log"
+      ],
+      "rerun": {
+        "label": "mobile-rollback-direct120-c2",
+        "change": "RELAY_TRACE=0",
+        "otherParameters": "Same frozen candidate release, native touch120, D0, CPU [1,4],900F, no impairment, EXPECT_RTC_PATH=direct",
+        "sourceChanges": false
+      }
+    }
+  ]
+}

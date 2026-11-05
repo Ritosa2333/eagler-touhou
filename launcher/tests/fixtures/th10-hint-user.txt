@@ -1,0 +1,15 @@
+Version = 0.0
+
+Stage : 1
+Tips
+Text : "Hint upload acceptance"
+Pos : -25, 124
+Count : 0
+Base : start
+Align : center
+Time : 5000
+Alpha : 255
+Color : 81, 184, 135
+Scale : 1.0
+End
+StageEnd

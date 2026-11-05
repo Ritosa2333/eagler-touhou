@@ -1,0 +1,865 @@
+{
+  "sourceHead": "d0df7ec533eac2201aa7ea41384f68d2109d4ec2",
+  "sites": {
+    "main": {
+      "domain": "touhou.vip",
+      "releaseName": "thprac-touch-th08-ending-20261028-26d741f53a69",
+      "baselineRoot": "/var/www/eagler-touhou/releases/relay-entry-cn-20261027",
+      "baselineDeploymentSha256": "11250c3ede3f4f176ee963c3231753ac6aeb8c88405c1532575ec2a43f1714eb",
+      "variants": [
+        {
+          "game": "th06",
+          "multiplayer": false,
+          "root": "runtime/th06/",
+          "oldGeneration": "1136fab33ef4e46421cb42eebaa57aeb57b15a84dcc20ad0920b3dbcdf3b8ab5",
+          "generation": "8a86d3ff70409929893b1d7d2b351bc4bd5a21523cf6831068e090c7bef34bfd",
+          "entry": "th06.html",
+          "modified": [
+            "th06.js",
+            "th06.wasm"
+          ],
+          "files": [
+            {
+              "path": "th06.html",
+              "bytes": 52031,
+              "sha256": "eb986a3478f1ef6e0b534dd5441ae54d702e40a43ffe18085e23799cc8169fb0"
+            },
+            {
+              "path": "th06.js",
+              "bytes": 254102,
+              "sha256": "85430ce2aff183818efdc3db8a8a3086bfbb6a92ed22c9703ce859d45ed2615c"
+            },
+            {
+              "path": "th06.wasm",
+              "bytes": 2598561,
+              "sha256": "4967d3c40323c1413f2919a4faf270e3985253b1ce29c2a52e1f3643279d71aa"
+            }
+          ]
+        },
+        {
+          "game": "th07",
+          "multiplayer": false,
+          "root": "runtime/th07/",
+          "oldGeneration": "644cee59f183397953d3a55f6be9aab7cbde562aad2a88f06a0c66f6140f9f33",
+          "generation": "6b272551679e0abb45792e9a888923579da4967587aeb170b83b124ecc604955",
+          "entry": "th07.html",
+          "modified": [
+            "th07.js",
+            "th07.wasm"
+          ],
+          "files": [
+            {
+              "path": "th07.html",
+              "bytes": 60423,
+              "sha256": "36cef9ebeb59bbbb46aa7c5f94cba7b64e92afe9703c92f5a8f5fae0909e7d28"
+            },
+            {
+              "path": "th07.js",
+              "bytes": 252517,
+              "sha256": "769e7842807cf6cf2b9c693d0b2badff3c7100450a1ee3c67d7be642261a8a25"
+            },
+            {
+              "path": "th07.wasm",
+              "bytes": 2856663,
+              "sha256": "225aa0a67291cc54984513dd29f86ed8dcd4042530d1dc08ce9f00300cef793e"
+            }
+          ]
+        },
+        {
+          "game": "th08",
+          "multiplayer": false,
+          "root": "runtime/th08/",
+          "oldGeneration": "e66b5e3d5b9cb79bb8dc62b1d49e3b5f76908ccc90eba0b39a35f3ea903ff47e",
+          "generation": "3544f32f8edb6f163c7d2ed24f4645bb1caa67db8568f8df7d151abac58c0a81",
+          "entry": "th08.html",
+          "modified": [
+            "manifest.json",
+            "th08-sdl.mjs",
+            "th08-sdl.wasm"
+          ],
+          "files": [
+            {
+              "path": "directory-keyboard.mjs",
+              "bytes": 11783,
+              "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+            },
+            {
+              "path": "eagler-host.mjs",
+              "bytes": 9007,
+              "sha256": "e776c561e57450c32aee08055037436833d64bc35402a4290c7d2947145dd9a7"
+            },
+            {
+              "path": "fonts/blend.bin",
+              "bytes": 131072,
+              "sha256": "c24db3025b9c40b898464f3fcbc0bd4c2da6d98f7cf9d869802f5269ab87ae94"
+            },
+            {
+              "path": "fonts/cp932.bin",
+              "bytes": 131072,
+              "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919"
+            },
+            {
+              "path": "manifest.json",
+              "bytes": 1003,
+              "sha256": "1b0d712eb996a852b4823153e89039d416e92a01e42b737a7d681e02d6218e51"
+            },
+            {
+              "path": "motion-replay.mjs",
+              "bytes": 2515,
+              "sha256": "170c4368cc3b2a09b5b57b8e1431648d00f456ce675ae05f7539a67da94456ad"
+            },
+            {
+              "path": "practice-config.mjs",
+              "bytes": 1685,
+              "sha256": "1fc33f3c2474d7acfa158c9b6376e2d7ef4755ef1c85326d9fcf4204c1268fad"
+            },
+            {
+              "path": "practice-sections.mjs",
+              "bytes": 92975,
+              "sha256": "bc9c91bedaa234d63a62cd39fbf61ad36940121545fdbbe503f99e0a92a222e7"
+            },
+            {
+              "path": "practice.mjs",
+              "bytes": 2097,
+              "sha256": "323d990d55d20f9163f1fe2bf758d7ff57848d624fe543c49a79c833a1672e2f"
+            },
+            {
+              "path": "resources.json",
+              "bytes": 286,
+              "sha256": "45227daba580ed72535c4b049a5de2ee4478ea5aa7ad905dc0fb5a715e67cffc"
+            },
+            {
+              "path": "shell.mjs",
+              "bytes": 29716,
+              "sha256": "47b148c52ff9964aadbfb024cd5b0675f234356ad4a3e5dbd90388520146dc50"
+            },
+            {
+              "path": "startup-branding.mjs",
+              "bytes": 6654,
+              "sha256": "aaceeec628a1e666905a0eeb2f0c0510f1b1e5462ee801c9453ade8b0fbccd8a"
+            },
+            {
+              "path": "th08-sdl.mjs",
+              "bytes": 236300,
+              "sha256": "8c692e30bd5cbbb96d465b6801534647192c7393ee76306ba94a2fb484c5149e"
+            },
+            {
+              "path": "th08-sdl.wasm",
+              "bytes": 3465670,
+              "sha256": "9e751d40a1ea82ce2d536741f5090ab89ba83f7be30071f275068fdac04ca720"
+            },
+            {
+              "path": "th08.html",
+              "bytes": 878,
+              "sha256": "c2a2d32f4fb808b081f112cde74e696d3a6d2d555e4a8d344e660b17b120bc17"
+            }
+          ]
+        },
+        {
+          "game": "th08",
+          "multiplayer": true,
+          "root": "runtime/th08/multiplayer/",
+          "oldGeneration": "230a933e8064d1b848a3b652e1c5901e350f992c4219bd0bdf8f3fe4bbd30daa",
+          "generation": "e992b671cb4d2c4f9cdc42a32f2c954ee085274ded16fc45423a32850dd5068b",
+          "entry": "th08.html",
+          "modified": [
+            "manifest.json",
+            "th08-sdl.mjs",
+            "th08-sdl.wasm"
+          ],
+          "files": [
+            {
+              "path": "adonis-calibration.mjs",
+              "bytes": 4062,
+              "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+            },
+            {
+              "path": "directory-keyboard.mjs",
+              "bytes": 11783,
+              "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+            },
+            {
+              "path": "eagler-host.mjs",
+              "bytes": 9007,
+              "sha256": "e776c561e57450c32aee08055037436833d64bc35402a4290c7d2947145dd9a7"
+            },
+            {
+              "path": "fonts/blend.bin",
+              "bytes": 131072,
+              "sha256": "c24db3025b9c40b898464f3fcbc0bd4c2da6d98f7cf9d869802f5269ab87ae94"
+            },
+            {
+              "path": "fonts/cp932.bin",
+              "bytes": 131072,
+              "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919"
+            },
+            {
+              "path": "manifest.json",
+              "bytes": 1068,
+              "sha256": "851956e2c540f3c5e5fff5e6398a66a2d562f8381664015dbb45fed7ded93467"
+            },
+            {
+              "path": "motion-replay.mjs",
+              "bytes": 2515,
+              "sha256": "170c4368cc3b2a09b5b57b8e1431648d00f456ce675ae05f7539a67da94456ad"
+            },
+            {
+              "path": "multiplayer-host.mjs",
+              "bytes": 7337,
+              "sha256": "83b75fc29c5dd40e7e481987d9b809274df7b5115f53ea5cc539f290d3d0251f"
+            },
+            {
+              "path": "practice-config.mjs",
+              "bytes": 1685,
+              "sha256": "1fc33f3c2474d7acfa158c9b6376e2d7ef4755ef1c85326d9fcf4204c1268fad"
+            },
+            {
+              "path": "practice-sections.mjs",
+              "bytes": 92975,
+              "sha256": "bc9c91bedaa234d63a62cd39fbf61ad36940121545fdbbe503f99e0a92a222e7"
+            },
+            {
+              "path": "practice.mjs",
+              "bytes": 2097,
+              "sha256": "323d990d55d20f9163f1fe2bf758d7ff57848d624fe543c49a79c833a1672e2f"
+            },
+            {
+              "path": "resources.json",
+              "bytes": 286,
+              "sha256": "45227daba580ed72535c4b049a5de2ee4478ea5aa7ad905dc0fb5a715e67cffc"
+            },
+            {
+              "path": "save-storage.mjs",
+              "bytes": 4518,
+              "sha256": "146ae09e53fbf76e9d0d97eb6ccdce47150c15cedc2a55ee385d5616247c636b"
+            },
+            {
+              "path": "shell.mjs",
+              "bytes": 51325,
+              "sha256": "e030a39343f571ff52c93ec88712be28d1022c3dfa29a41198b7a1a46a176658"
+            },
+            {
+              "path": "startup-branding.mjs",
+              "bytes": 6654,
+              "sha256": "aaceeec628a1e666905a0eeb2f0c0510f1b1e5462ee801c9453ade8b0fbccd8a"
+            },
+            {
+              "path": "th08-sdl.mjs",
+              "bytes": 295759,
+              "sha256": "4a74ef27eed4d079db7152fed8c68089fcf5ce885ce53263fec3572d36b53ea4"
+            },
+            {
+              "path": "th08-sdl.wasm",
+              "bytes": 3778992,
+              "sha256": "e02e44fcb6aa3bd66548fd79d8a37f1cba7bc7f24c0e012a5e3a4e97be95a74a"
+            },
+            {
+              "path": "th08.html",
+              "bytes": 878,
+              "sha256": "c2a2d32f4fb808b081f112cde74e696d3a6d2d555e4a8d344e660b17b120bc17"
+            }
+          ]
+        },
+        {
+          "game": "th10",
+          "multiplayer": false,
+          "root": "runtime/th10/",
+          "oldGeneration": "2cb9dc50c5f37324443d6b960d3d457bf2b6a95ab5b87d7a65d647b135ba564c",
+          "generation": "cf05230c84601e98f15817ed866e0a51e96de4d7c47a338dfa43b809a8cb7c11",
+          "entry": "th10.html",
+          "modified": [
+            "manifest.json",
+            "th10-sdl.mjs",
+            "th10-sdl.wasm"
+          ],
+          "files": [
+            {
+              "path": "directory-keyboard.mjs",
+              "bytes": 11783,
+              "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+            },
+            {
+              "path": "eagler-host.mjs",
+              "bytes": 9135,
+              "sha256": "af6f65d76bb108611a04831487c05f1cd4b93d1715f3e5e02398cab438e1482c"
+            },
+            {
+              "path": "fonts/blend.bin",
+              "bytes": 131072,
+              "sha256": "c24db3025b9c40b898464f3fcbc0bd4c2da6d98f7cf9d869802f5269ab87ae94"
+            },
+            {
+              "path": "fonts/codepages.bin",
+              "bytes": 262144,
+              "sha256": "37bac4b17c210cc62858f8d88b6b94a7adc217d23d3bec9d8e54ced0ccba45c5"
+            },
+            {
+              "path": "manifest.json",
+              "bytes": 991,
+              "sha256": "f6f1b705080f42b9d7f72af95339794ad4d4ea7fe1ec565ff1c5ce469b602e14"
+            },
+            {
+              "path": "motion-replay.mjs",
+              "bytes": 2515,
+              "sha256": "170c4368cc3b2a09b5b57b8e1431648d00f456ce675ae05f7539a67da94456ad"
+            },
+            {
+              "path": "practice-config.mjs",
+              "bytes": 1350,
+              "sha256": "df0178ec8e72c30dde711a59c8b82ffd0e296f4a15e2a291471fe75dfffc52ea"
+            },
+            {
+              "path": "practice-sections.mjs",
+              "bytes": 51321,
+              "sha256": "c4283bbdcf7b72f80dc91d05e69b57f5dfb647994656e89f23876a5d57350231"
+            },
+            {
+              "path": "practice.mjs",
+              "bytes": 2102,
+              "sha256": "5101aae9aadb45945a60a78657387a64299ff9cadc8827f7365dadbbcffa3382"
+            },
+            {
+              "path": "resources.json",
+              "bytes": 294,
+              "sha256": "9116187fcf4ddaaa2142c335dfaac154fc6bafca20ef2ecae08b660cf79b0182"
+            },
+            {
+              "path": "shell.mjs",
+              "bytes": 27935,
+              "sha256": "da87990061dc86416f3528e8b83f49cd300821bc40a76dccba4335fa59c01f11"
+            },
+            {
+              "path": "startup-branding.mjs",
+              "bytes": 38161,
+              "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+            },
+            {
+              "path": "th10-sdl.mjs",
+              "bytes": 250556,
+              "sha256": "a2a3f00de5bcb367376c69b0956d3b2aa6a834ea86eea267a6a9255a5169fd1e"
+            },
+            {
+              "path": "th10-sdl.wasm",
+              "bytes": 3357249,
+              "sha256": "8ef204a09b84fed21f4433304b6596b483c39977c1270d483e121273129f4a3d"
+            },
+            {
+              "path": "th10.html",
+              "bytes": 811,
+              "sha256": "eee0a97d488e5e3b82e78d8370472caf1cf262c572e1b4440560a52a66fa3e88"
+            }
+          ]
+        },
+        {
+          "game": "th11",
+          "multiplayer": false,
+          "root": "runtime/th11/",
+          "oldGeneration": "4fef8fd78bbb377df5a71cff28b06bda96d91acfd581a3031d696f9491ab6dc4",
+          "generation": "783182f24d2221012ed18365136f8ae67efdf86e20be7fbb7c579d5adf8082f5",
+          "entry": "th11.html",
+          "modified": [
+            "manifest.json",
+            "th11-sdl.mjs",
+            "th11-sdl.wasm"
+          ],
+          "files": [
+            {
+              "path": "directory-keyboard.mjs",
+              "bytes": 11783,
+              "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+            },
+            {
+              "path": "eagler-host.mjs",
+              "bytes": 9245,
+              "sha256": "5840b73e8967ca604e740a1247331363c2ae32c90796ae32f205d9d7f183e7f4"
+            },
+            {
+              "path": "fonts/cp932.bin",
+              "bytes": 131072,
+              "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+            },
+            {
+              "path": "keyboard.mjs",
+              "bytes": 1298,
+              "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+            },
+            {
+              "path": "managed.css",
+              "bytes": 733,
+              "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+            },
+            {
+              "path": "manifest.json",
+              "bytes": 1022,
+              "sha256": "0912350ea1402bdfff640c1e545a36963d774914de7da8253e1c40f41cc3ab6a"
+            },
+            {
+              "path": "motion-replay.mjs",
+              "bytes": 828,
+              "sha256": "96ea92fc9b5491c71a9c590deb5f202cc4121a46887bd2bc7d0ac7cde41db66f"
+            },
+            {
+              "path": "resources.json",
+              "bytes": 183,
+              "sha256": "a7614b785eaff6361bb085e692aefeb07ca87935d04f4df987028e3680d03c38"
+            },
+            {
+              "path": "shell.mjs",
+              "bytes": 26491,
+              "sha256": "0fb7630774dafc02ed448ee8f6e7c9e00b940754725dcbd36947ad2aa85d4ff4"
+            },
+            {
+              "path": "startup-branding.mjs",
+              "bytes": 38161,
+              "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+            },
+            {
+              "path": "th11-sdl.mjs",
+              "bytes": 232956,
+              "sha256": "bf238a9a4fd43b5073de20a9c4b7ec43410162fed4c1e6ec7ae6bce45a0ed376"
+            },
+            {
+              "path": "th11-sdl.wasm",
+              "bytes": 3081789,
+              "sha256": "3dc54a76913e0fe785f4b4527f1a5c8a669041cab0f17ef16772d1e1b11847ad"
+            },
+            {
+              "path": "th11.html",
+              "bytes": 507,
+              "sha256": "668113e1a64bf8d2a072c9b6385997a16d50fc57140a64cb0480219913e5082b"
+            }
+          ]
+        },
+        {
+          "game": "th15",
+          "multiplayer": false,
+          "root": "runtime/th15/",
+          "oldGeneration": "448d2559160f80aaf40f28f0c4920e24b75a4d2f5d668ac8417df182f49a5d52",
+          "generation": "24065eee08767aff00a6c26cb7226813b5b35d554456955b9811acf726390717",
+          "entry": "th15.html",
+          "modified": [
+            "manifest.json",
+            "th15.mjs",
+            "th15.wasm"
+          ],
+          "files": [
+            {
+              "path": "directory-keyboard.mjs",
+              "bytes": 11600,
+              "sha256": "72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d"
+            },
+            {
+              "path": "fonts/cp932.bin",
+              "bytes": 131072,
+              "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+            },
+            {
+              "path": "keyboard.mjs",
+              "bytes": 1298,
+              "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+            },
+            {
+              "path": "managed.css",
+              "bytes": 733,
+              "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+            },
+            {
+              "path": "manifest.json",
+              "bytes": 1354,
+              "sha256": "59cf01eb9957876db5d7b61fc566b0f69d0c1bdc09e3866aa8f432556b3d9439"
+            },
+            {
+              "path": "resources.json",
+              "bytes": 183,
+              "sha256": "2943b9bf5ed453125b17a42ec4afb7ee8dba26c8527280f3209bd1850ed10467"
+            },
+            {
+              "path": "shell.mjs",
+              "bytes": 26949,
+              "sha256": "684428c3cfe62910b5bbeabf5363498275a3409cc258fa192c1f5f60e9e35a12"
+            },
+            {
+              "path": "startup-branding.mjs",
+              "bytes": 38126,
+              "sha256": "e81c5fafebec1eb2aca77c9b103b156caddec493d745a1c2e72322b3081b502c"
+            },
+            {
+              "path": "th15.html",
+              "bytes": 506,
+              "sha256": "56b84e98f47077ab6be064327855671755ba24cb76ababfa94e6da108c74254b"
+            },
+            {
+              "path": "th15.mjs",
+              "bytes": 232108,
+              "sha256": "1ab8214182130747e5a60ba36e8371af50aa18ae7d3a54b553d7f8f8fd3c6d64"
+            },
+            {
+              "path": "th15.wasm",
+              "bytes": 3620141,
+              "sha256": "9fbd2350739a5b436cb1d467c215e1377065cb9b5d6da0a6f4dab6bc6cca5874"
+            }
+          ]
+        }
+      ]
+    },
+    "test": {
+      "domain": "test.touhou.vip",
+      "releaseName": "th12-story-clear-20261028-e7433209a462",
+      "baselineRoot": "/var/www/eagler-touhou-test/releases/th12-th15-crash-detail-20261027-6c46dc8472c9",
+      "baselineDeploymentSha256": "6c46dc8472c94ba088e4a78a2752fd9992a066a8e231c31529c4d8c0c1a583e5",
+      "variants": [
+        {
+          "game": "th12",
+          "multiplayer": true,
+          "root": "runtime/th12/multiplayer/",
+          "oldGeneration": "80442c1f15be40c08953f582b0ec672356a3d3c2df471acfb3d4ce02f38077db",
+          "generation": "62669af64dc7c92d58694accec7f81e5dfacd42ba52ae431772e3849b140a6e9",
+          "entry": "th12.html",
+          "modified": [
+            "title-scenes.mjs"
+          ],
+          "files": [
+            {
+              "path": "adonis-calibration.mjs",
+              "bytes": 4062,
+              "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+            },
+            {
+              "path": "animation.mjs",
+              "bytes": 17121,
+              "sha256": "ecbbb47330c445742cb8512abe93c5b7ceb22d0aa60ed37be077873e28f14b44"
+            },
+            {
+              "path": "ascii-presentation.mjs",
+              "bytes": 2073,
+              "sha256": "11dd22a1f91ef5dfbb1dbc3a54d895d596642404c3678a61e1ac775f77718571"
+            },
+            {
+              "path": "bridge.mjs",
+              "bytes": 5656,
+              "sha256": "a363d50846d72c7a95575736fd929e26011ad991e6fdca3e9d350ff88bf4d97a"
+            },
+            {
+              "path": "core.mjs",
+              "bytes": 110376,
+              "sha256": "5951b3f2ed1fcf784825c7291feedbeb34462cabfa3305b34b6338a5e64584f5"
+            },
+            {
+              "path": "core.wasm",
+              "bytes": 810536,
+              "sha256": "3d8fba06520400af09835e8dd2db9d10857d70a166184bdb70e43ac427450bbd"
+            },
+            {
+              "path": "crash-code-identities.json",
+              "bytes": 458,
+              "sha256": "c6b3e8437b109504490cfef9ce2d05e16babb27d764294bc8197e09f41f0557b"
+            },
+            {
+              "path": "damage-sources.mjs",
+              "bytes": 5197,
+              "sha256": "dd045d77cedef3983fe11a0579426b84487a87b7d9862fef3b354ad158e0c5a7"
+            },
+            {
+              "path": "draw-scheduler.mjs",
+              "bytes": 2920,
+              "sha256": "ce5b8d912559f04946d163f60b0a11def36b8238c12508ddc9f26ba5c9c3e71d"
+            },
+            {
+              "path": "easing.mjs",
+              "bytes": 491,
+              "sha256": "225c528d28d39890ac178f151401392363e6bda8f257456f9748a96ee39547d0"
+            },
+            {
+              "path": "ending-timeline.mjs",
+              "bytes": 5456,
+              "sha256": "b3e33c76bc5d5db2c930d69d8090ae775c1f705f58edb837c96bc03f22dc94b7"
+            },
+            {
+              "path": "fps-presentation.mjs",
+              "bytes": 2995,
+              "sha256": "7f50719d0b56c7e2d662ef9dae05e5c656d13fe6672f5937b29f9f0986068a1a"
+            },
+            {
+              "path": "game-profile.mjs",
+              "bytes": 20844,
+              "sha256": "7154d5284f984b1e3cb93f2247e1683ec99158a962c690967e1b94dcee747f9b"
+            },
+            {
+              "path": "game.css",
+              "bytes": 1395,
+              "sha256": "daef392a0e650fe522d9710c6b0365f14958c290bea2cd4d19221ac3507cb5b8"
+            },
+            {
+              "path": "game.mjs",
+              "bytes": 66130,
+              "sha256": "4e8381833989a2f8702ae1d538f7fbef9248c00fd1d6372687d3c43e89f12f62"
+            },
+            {
+              "path": "imgui-renderer.mjs",
+              "bytes": 4894,
+              "sha256": "cc5492f2cc7ce7be1b36a3c74d8564e7972bc20a3b498dc8e286c21ff85fe223"
+            },
+            {
+              "path": "layout.mjs",
+              "bytes": 1770,
+              "sha256": "44e4bfe6d70b949331b9fb5f87bb4380f3528c3f462374a7dbb0986c10aafb4b"
+            },
+            {
+              "path": "loader.mjs",
+              "bytes": 21945,
+              "sha256": "e01c5faa1271d5cc471845426deedfb7f1e4cc53c9b79618e979a42f2b16802d"
+            },
+            {
+              "path": "loading-presentation.mjs",
+              "bytes": 3638,
+              "sha256": "8ae9cdf9a34e5415b3a8b25c1cdfc41795daba4c0b41050d06764db7347fcc32"
+            },
+            {
+              "path": "managed-data.mjs",
+              "bytes": 7866,
+              "sha256": "1627a252a4cc46f9a20f8e88f33577a0658b0065d8e6fb465d64d89de3ef5251"
+            },
+            {
+              "path": "managed-input.mjs",
+              "bytes": 3077,
+              "sha256": "bc20ecd233bcb9f2426edbb3a7d4cf71fd20ae0760896af9c0f47639685ced5e"
+            },
+            {
+              "path": "managed-shell.mjs",
+              "bytes": 10862,
+              "sha256": "bb04ef4586cb225478b593cc615c6b86ddba77aac82bd674ce92a48055b7aae3"
+            },
+            {
+              "path": "manifest.json",
+              "bytes": 651,
+              "sha256": "d701dbd96dd1f4fe074f35b6aaf12af68a2a741eae3460500c76ea24566efc8c"
+            },
+            {
+              "path": "menu-resources.mjs",
+              "bytes": 6364,
+              "sha256": "19fb853f35eb0cd593bba8752ad53a5eafb5def850fee9a28ae854c6df6ab82a"
+            },
+            {
+              "path": "menu.mjs",
+              "bytes": 7324,
+              "sha256": "3d82a3eec9d06059cc154ca1b9b693588b7e9342a980a658ff860776f2468be3"
+            },
+            {
+              "path": "mesh-vertices.mjs",
+              "bytes": 2318,
+              "sha256": "6743fd217754ffeae31829adcf1836c27816f262d11f03946d2586d8b7bbe7ba"
+            },
+            {
+              "path": "message-presentation.mjs",
+              "bytes": 3956,
+              "sha256": "4068cd687530a74665765c384984bd555d4b090f72aec1f217c21b78583f64c7"
+            },
+            {
+              "path": "multiplayer-presentation.mjs",
+              "bytes": 1635,
+              "sha256": "38d16cd5526e95460801b5a27724d00573b561331d19ac3f65b15879bcb4f90b"
+            },
+            {
+              "path": "multiplayer-replay.mjs",
+              "bytes": 2297,
+              "sha256": "36400acb4ece3c23faa50750159e3003892b92ea1087bb15ca78a418db0809a9"
+            },
+            {
+              "path": "multiplayer.mjs",
+              "bytes": 16313,
+              "sha256": "cc63327a53de5aa135876d885db2caca473cf19146b77de0344959495e7ef3ee"
+            },
+            {
+              "path": "music.mjs",
+              "bytes": 4948,
+              "sha256": "eeae00d7013d92e9d45cf28e8f6b90cb9fe3de0f794267798d71772101793b4d"
+            },
+            {
+              "path": "native-data-presentation.mjs",
+              "bytes": 9357,
+              "sha256": "a4f55bb0af720c1bd0106b777887bad9662017b30be702b95b15ed228be96174"
+            },
+            {
+              "path": "native-profile.mjs",
+              "bytes": 21393,
+              "sha256": "bdfc1c5e802cbc90c947c99160ed80abd0f7beef37662af8daebda5978243422"
+            },
+            {
+              "path": "native-replay-presentation.mjs",
+              "bytes": 12288,
+              "sha256": "0fc8817058d55a25a934c83a58c278b5c82d28a801b83b5526897874073e2772"
+            },
+            {
+              "path": "overlay.mjs",
+              "bytes": 7394,
+              "sha256": "fb7d46382a38709a9b56fcee0723eeb02b7800123a3dfc6a24aca1ddcdd729f3"
+            },
+            {
+              "path": "practice-music.mjs",
+              "bytes": 2149,
+              "sha256": "14b7770e21e3e9fdfafb872afd60bf09f868d673498dab2ba1e4bdccef01d00b"
+            },
+            {
+              "path": "presentation-cadence.mjs",
+              "bytes": 1155,
+              "sha256": "21813d05085e7d48676a7e02b69a9ed70d9fe7cf3d77a050cb3de12848e7e957"
+            },
+            {
+              "path": "presentation-interpolation.mjs",
+              "bytes": 20443,
+              "sha256": "8b415db7c47a05a398e7aa2cbee8f1c7074e3c529cc9cb8d8e7909204e654520"
+            },
+            {
+              "path": "renderer.mjs",
+              "bytes": 62744,
+              "sha256": "f9256c2cacab907d35fd86335b40a84e95281c3ee8c25548f6a2038524e3bd35"
+            },
+            {
+              "path": "replay-motion.mjs",
+              "bytes": 3421,
+              "sha256": "1d6714f9b08e79757e0e817d4ac7b484545d6af7cdd6b04c416d3e8b8d63cc15"
+            },
+            {
+              "path": "replay-recorder.mjs",
+              "bytes": 12440,
+              "sha256": "96ffa8cd653189e932ea2f3db233676abfcfe0183ada448c0cbb78005e6d1715"
+            },
+            {
+              "path": "replay-session.mjs",
+              "bytes": 2156,
+              "sha256": "520cfbcf23144a16b11967a69fc4e1358126eac2642b3944c7385f6491c81eee"
+            },
+            {
+              "path": "replay-workspace.mjs",
+              "bytes": 7263,
+              "sha256": "5eddb753b2deac1db33cf5fd2a1df44a689d2d745b33692725218ac15107c0fc"
+            },
+            {
+              "path": "replay.mjs",
+              "bytes": 5475,
+              "sha256": "cd543763ed2a915a450da7a524f8dd92b636d9e1d36cd81f6387fb8e772de192"
+            },
+            {
+              "path": "runtime-crash-reporter.js",
+              "bytes": 26769,
+              "sha256": "c296a8871078ae5634bbd01177201dd8d3dba48339323ad48eed5037dc3ebc8d"
+            },
+            {
+              "path": "runtime-fonts.mjs",
+              "bytes": 4169,
+              "sha256": "e83cd13e25574fa62e291798e5e7f39c9dcc04f69f259ff15e0783083f17dc41"
+            },
+            {
+              "path": "sections.mjs",
+              "bytes": 49037,
+              "sha256": "88fc5d060a8c309638c101b73eed1d2257c6aa08a53bfb25fccc8a9aa841f8f2"
+            },
+            {
+              "path": "sound-events.mjs",
+              "bytes": 861,
+              "sha256": "5b49787659795d3e9955e1f42c2dc6e873d6c17219e45cb90c40f92ec8487827"
+            },
+            {
+              "path": "sound-player.mjs",
+              "bytes": 7141,
+              "sha256": "2c5849dda0964efd029640c85a8f868621af5b714f29971f91b4c2580d97ec32"
+            },
+            {
+              "path": "spectator-playback.mjs",
+              "bytes": 4479,
+              "sha256": "3b537c70b32bb8b3e19eabd6dba346461a5615e59257049fefc44b208cb4497e"
+            },
+            {
+              "path": "spell-presentation.mjs",
+              "bytes": 6709,
+              "sha256": "ef85b26af44b2113b88837dd38f614f341f3860da42446fead1f25b10e71d6a3"
+            },
+            {
+              "path": "spell-wall-clock.mjs",
+              "bytes": 1249,
+              "sha256": "9a98a82c9da5331e93d66c813ff972610245ea4a49ce4aa76f16c56da584cce8"
+            },
+            {
+              "path": "stage-background.mjs",
+              "bytes": 9490,
+              "sha256": "5e4482ddc148974ed3e88b0f2ebf1c2a73b2ce9c44d9651639b216cdc38cd581"
+            },
+            {
+              "path": "stage-clear-presentation.mjs",
+              "bytes": 1399,
+              "sha256": "5842d620b34982bfb74b98539a20a2c4a3b7901ee3e7d3add3a8528508518cea"
+            },
+            {
+              "path": "stage-loader.mjs",
+              "bytes": 2547,
+              "sha256": "38db890e4071992d0b72e6a78c3f5b35f3b682e68604ba6dc4ff2cb5d026b92e"
+            },
+            {
+              "path": "storage.mjs",
+              "bytes": 8436,
+              "sha256": "81292b29d0c30d6d0686a4c3b9bd29f763167aa4df7fbc8fdd181329118e2331"
+            },
+            {
+              "path": "streaming-music.mjs",
+              "bytes": 12836,
+              "sha256": "5f56d0b3f2221e59970276f0a79fd5b31c8e6be0a04d90506c3ce81c1cd9cab5"
+            },
+            {
+              "path": "th12.html",
+              "bytes": 1109,
+              "sha256": "c6208df32c9f3522d2ce1d2942a81fd9f6241ebf0428646c384cb50c08fce7a5"
+            },
+            {
+              "path": "title-presentation.mjs",
+              "bytes": 22602,
+              "sha256": "783f593fee4ee472ea60e414966d66723b6113ea23b0b5e135470b88dc43a2ec"
+            },
+            {
+              "path": "title-scenes.mjs",
+              "bytes": 31631,
+              "sha256": "b8c90500d94493b282c238186f1b852872836db6d1758453fc41a7c601169be5"
+            },
+            {
+              "path": "touch-input.mjs",
+              "bytes": 7897,
+              "sha256": "d6d8a59e008e5ac015d1d71a82396b6a775854647bb7d7fe4612d093f95aaf7d"
+            },
+            {
+              "path": "ufo-presentation.mjs",
+              "bytes": 3506,
+              "sha256": "4a19cb6a0255ec546c57bbe2bb57e247d262ac2516bed2ada33265e10382c3ed"
+            },
+            {
+              "path": "vertex-batch.mjs",
+              "bytes": 1246,
+              "sha256": "9cefb457dc6464e88f5185fbadf652a609e1100dfbef02c426104ea6b2877e49"
+            },
+            {
+              "path": "vorbis-decoder.mjs",
+              "bytes": 3290,
+              "sha256": "41fbb223aaaae7ea4a281124f7318d393f7671bfc7213924744a0d27057d59d3"
+            },
+            {
+              "path": "vorbis.mjs",
+              "bytes": 31472,
+              "sha256": "fea98903a28869474d258c9bf4641cbd67036f87f18838b745be46dcf3232715"
+            },
+            {
+              "path": "vorbis.wasm",
+              "bytes": 70837,
+              "sha256": "17f97f1cb1605645d526e7405870e309f5030ae8971585fdc6e13f296e3ca901"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "resourcePackagesUnchanged": true,
+  "otherRuntimeGroupsUnchanged": true,
+  "relayUnchanged": true,
+  "frontendArtifactUnchanged": true,
+  "mainRuntimeBoots": 7,
+  "publicPayloadHashes": 51,
+  "testEndingChecksPassed": 7,
+  "sourceHistoryRecord": "history-cleanup.json"
+}

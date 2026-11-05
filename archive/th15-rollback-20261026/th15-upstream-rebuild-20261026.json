@@ -1,0 +1,149 @@
+{
+  "branch": "experiment/th15-rollback-20261026",
+  "upstreamRemote": "https://github.com/YomotsuHisami/eagler-touhou",
+  "upstreamBranch": "main",
+  "upstreamCommit": "3375779bf293c492a1e5aa1eeb5d2afcf047af8a",
+  "previousLocalHead": "ae6aab22a6cc903a44d07e2ce4d518fa0d824d17",
+  "previousOriginHead": "9494ff7c95698c33d24be7f297be2df0299a50bc",
+  "featureHead": "ab3639fd59208318e8656d00a82b94d84ac074d5",
+  "sourceConnection": "f008e9c848af4a7c9c4bb5f5c131ac325b0e5894",
+  "sourceSplit": "e02e0266c453054d53d055d29d141eb83d736fdf",
+  "normalProjection": "8d01b6e1886e53c240a56777574f74a617294c5d",
+  "retainedMultiplayerSourceBaseline": "8affd9a3adb80fec10c109be608872de42aec7aa",
+  "replayed": [
+    {
+      "kind": "history-tools",
+      "old": [
+        "90b2ca073",
+        "ae1eaca8f",
+        "438efe444"
+      ],
+      "new": "8421f493457ace8fe6ebc2b62fadb5524349e34f"
+    },
+    {
+      "kind": "feature",
+      "old": "725aa2ac4bbab5e99e676c1d27a27555f6c3d0b5",
+      "new": "6186fcf23e6b3d82cc36642a0b752f7983129559"
+    },
+    {
+      "kind": "feature",
+      "old": "ecef33228b9b1a3f13c196e03c74dc6ba7f69d43",
+      "new": "4df537c391660eb23a60e97157085447268b4dc7"
+    },
+    {
+      "kind": "feature",
+      "old": "8779f60f9125ecbd63838572beaeb62e858a954b",
+      "new": "382946f4add56eec9a560a35e3d5a031f4b8d887"
+    },
+    {
+      "kind": "feature",
+      "old": "f4479cd53e4ef6897dedfb55ea4ac20865522566",
+      "new": "c54e2a38d5ee20ef809c56fa4b782d93ee125d03"
+    },
+    {
+      "kind": "feature",
+      "old": "9494ff7c95698c33d24be7f297be2df0299a50bc",
+      "new": "12746374d79d67c9d024288e73fcd4ba67c917f7"
+    },
+    {
+      "kind": "feature",
+      "old": "243604c44a535c6255aa266b4f3c0ee7be742626",
+      "new": "62fa0dcdb5fec169a6faea5546b56f574a4f4867"
+    },
+    {
+      "kind": "feature",
+      "old": "3381ea9091986cd55d1f8dd0196ee5f99e3fe986",
+      "new": "c89d3095d42d54e3772c4ccd4a433522e0778427"
+    },
+    {
+      "kind": "feature",
+      "old": "552a24312a7b5d3a08eeda854d258108df6fdd9f",
+      "new": "1bb69520d0b141a1ef5d775f2d6eff9bf1babd03"
+    },
+    {
+      "kind": "feature",
+      "old": "0ffc2cd6af5b3f1b7d2366e0a02db16d2631e711",
+      "new": "c68f2bae514e766a7b1d6879783432b022fa477b"
+    },
+    {
+      "kind": "feature",
+      "old": "ae6aab22a6cc903a44d07e2ce4d518fa0d824d17",
+      "new": "ab3639fd59208318e8656d00a82b94d84ac074d5"
+    }
+  ],
+  "validation": {
+    "candidate": "f008e9c848af4a7c9c4bb5f5c131ac325b0e5894",
+    "upstream": "3375779bf293c492a1e5aa1eeb5d2afcf047af8a",
+    "allOtherPortsEqualUpstream": true,
+    "multiplayerTreeEqualOldHead": true,
+    "exports": {
+      "th12": {
+        "split": "2d4119f25e20e04ffbccc8bb27acfbf220a7d017",
+        "tree": "704f667b44642515fe579606cda3fe2e8266de5c",
+        "checkedAncestors": [
+          "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd"
+        ]
+      },
+      "th15-mp": {
+        "split": "e02e0266c453054d53d055d29d141eb83d736fdf",
+        "tree": "f90359167c52418aa6c657e8e39cdeb2e7d9f15c",
+        "checkedAncestors": [
+          "8affd9a3adb80fec10c109be608872de42aec7aa",
+          "8d01b6e1886e53c240a56777574f74a617294c5d",
+          "e02e0266c453054d53d055d29d141eb83d736fdf",
+          "a5cc4652d59d55f2559622da28e21cbbf52b75d3"
+        ]
+      }
+    },
+    "windowsExecution": "Installed Git subtree algorithm, unchanged; temporary native Windows shell copy with 256 MiB stack reserve, no WSL, replacements, grafts or shallow history"
+  },
+  "scope": {
+    "runtime": "ports/th15-mp",
+    "sharedDependencies": [
+      "common/browser/runtime-crash-reporter.js",
+      "common/tests/runtime-crash-reporter.test.mjs",
+      "common/contracts/product-catalog.mjs",
+      "common/contracts/product-catalog.d.mts",
+      "common/include/eagler/netplay/AdonisSpectatorTiming.hpp",
+      "common/tests/adonis-startup-test.cpp",
+      "launcher/src/launcher/multiplayer-runtime-options.mts",
+      "launcher/tests/test-th15-multiplayer-policy.mjs",
+      "services/relay/src/netplay-relay.mjs",
+      "services/relay/src/spectator-frame.mjs",
+      "tools/ports/th15-multiplayer-stress.mjs",
+      "docs/history/th15-"
+    ],
+    "historyTools": [
+      "project-history.py",
+      "check-history.py",
+      "test_project_history.py",
+      "test_check_history.py"
+    ],
+    "allOtherPorts": "identical to upstream/main",
+    "ordinaryCommitTrailers": "no inherited git-subtree-* or old source mappings",
+    "sourceTrailers": "one independent verified source connection"
+  },
+  "checks": {
+    "historyTools": {
+      "run": 19,
+      "passed": 18,
+      "skipped": 1,
+      "skipReason": "POSIX Bash execution fixture on native Windows"
+    },
+    "nodePolicyAndReporter": {
+      "passed": 6
+    },
+    "relay": {
+      "passed": 82
+    },
+    "native": {
+      "passed": 10,
+      "binaryReuse": "TH15 MP source, common/include and common/src trees match the previously built and deployed version"
+    }
+  },
+  "recovery": {
+    "localBackupRef": "refs/backup/th15-rebuild-20261026/before-ae6aab22a6",
+    "originBackupRef": "refs/backup/th15-rebuild-20261026/origin-9494ff7c95",
+    "bundle": "artifacts/th15-upstream-rebuild-20261026/before-rebuild.bundle"
+  }
+}

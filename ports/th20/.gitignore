@@ -1,0 +1,25 @@
+# Toolchains, private content and generated outputs.
+/tools/emsdk/
+/assets/
+/assets-ogg/
+/build-eagler/
+/artifacts/
+/web/artifacts/
+/.cache/
+/temp/
+/dist/
+/build*/
+/cmake-build*/
+CMakeFiles/
+CMakeCache.txt
+Testing/
+__pycache__/
+*.pyc
+*.log
+*.rpy
+*.dmp
+*.exe
+*.dll
+*.obj
+*.o
+*.wasm

@@ -1,0 +1,241 @@
+import {uiContractAttributes} from './mounted-dom-environment.mjs';
+import {installNativeTimeline} from './native-animation-environment.mjs';
+import {synchronizedMainAuthority} from './source-text.mjs';
+import {runInNewContext} from 'node:vm';
+/** Independent mounted synthetic-DOM regression. No browser/CSS/native top-layer claim. */
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
+import assert from 'node:assert/strict';
+import {readFileSync, existsSync} from 'node:fs';
+import {mkdtemp, rm} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {dirname, resolve} from 'node:path';
+import {pathToFileURL, fileURLToPath} from 'node:url';
+const here=dirname(fileURLToPath(import.meta.url));
+const project=resolve(here,'../..');
+let buildDirectory;
+const require=createRequire(resolve(project,'package.json'));
+const {build,transform}=require('esbuild');
+const {installMountedDom}=await import(pathToFileURL(resolve(project,'tests/react-main/mounted-dom-environment.mjs')));
+const pinnedMain='edee9633e5e3ee79cd2e1aa334f84f6caf755090';
+const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
+let env,React,createRoot,owners,baselineHTML,reduce=true,originalWindowSetTimeout,originalWindowClearTimeout;
+const alive=new Set();
+const motions=[];
+const originalSetTimeout=globalThis.setTimeout,originalClearTimeout=globalThis.clearTimeout;
+before(async()=>{
+ env=installMountedDom();originalWindowSetTimeout=env.window.setTimeout;originalWindowClearTimeout=env.window.clearTimeout;env.window.AnimationEvent=class extends env.window.Event{};
+ installNativeTimeline(env.window,motions);
+ globalThis.matchMedia=env.window.matchMedia=query=>({matches:reduce,media:query,addEventListener(){},removeEventListener(){}});
+ React=await import(pathToFileURL(require.resolve('react')));
+ ({createRoot}=await import(pathToFileURL(require.resolve('react-dom/client'))));
+ // Replay format/storage evolves in its own contract tests. This carrier pins
+ // original visible messages without rejecting unrelated additive catalog keys.
+ const messages=runInNewContext('('+pinned('src/launcher/i18n.mts').match(/const entries = (\[[\s\S]*?\]) as const/)[1]+')');
+ baselineHTML=pinned('public/index.html');
+ // Keep the bundled import.meta.url under the project root so compiled
+ // contract resolution sees the real Launcher project, not tests/assets.
+ buildDirectory=await mkdtemp(resolve(project,'.cache/replay-carrier-build-'));
+ await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
+ export * from './app/components/notices/ReplayDialog.tsx';
+ export * from './app/components/launcher/LobbyOptionsHost.tsx';
+ export * from './app/components/notices/use-main-dialog.ts';
+ export * from './app/models/replays.ts';
+ export * from './app/i18n.tsx';
+ export {encodeRoomInvite,ROOM_INVITE_KEY} from './src/launcher/room-invite.mts';
+ export {SurfaceNavigationProvider,useSurfaceNavigation} from './app/navigation/surface-navigation.tsx';
+ export {SurfaceLayersContext,useSurfaceLayerState} from './app/navigation/surface-layer.tsx';
+ `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'actual-bundle.mjs'),logLevel:'silent',plugins:[{name:'existing-deps',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:args.path,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
+ owners=await import(pathToFileURL(resolve(buildDirectory,'actual-bundle.mjs')));
+ for(const [key,zh,en]of messages)if(/^replay\.|^status\.(?:readingReplay|replayReadFailed|noReplay)$|^action\.(?:close|download|rename|delete)$/.test(key)){
+   assert.equal(owners.translate('zh-CN',key),zh,`legacy Replay copy ${key} zh-CN stays pinned`);
+   assert.equal(owners.translate('en',key),en,`legacy Replay copy ${key} en stays pinned`);
+ }
+});
+afterEach(async()=>{globalThis.setTimeout=originalSetTimeout;globalThis.clearTimeout=originalClearTimeout;env.window.setTimeout=originalWindowSetTimeout;env.window.clearTimeout=originalWindowClearTimeout;for(const m of alive)await React.act(async()=>m.root.unmount());alive.clear();motions.length=0;env.document.body.replaceChildren();reduce=true;assert.deepEqual(env.errors.splice(0),[],'No unexpected React/DOM errors');});
+after(async()=>{
+ try {env?.close();} finally {
+  if(buildDirectory)await rm(buildDirectory,{recursive:true,force:true});
+ }
+});
+function n(selector,scope=env.document){const v=scope.querySelector(selector);assert.ok(v,`missing ${selector}`);return v;}
+function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
+async function flush(){await React.act(async()=>{for(let i=0;i<12;i++)await Promise.resolve();});}
+async function mount(Component,initial={}, {strict=false,locale='zh-CN'}={}){let props={open:false,onCloseRequest(){},...initial};const container=env.document.createElement('div');env.document.body.append(container);const root=createRoot(container);const m={root,container,props,async update(p){props={...props,...p};m.props=props;await render();},async setLocale(next){locale=next;await render();},async unmount(){await React.act(async()=>root.unmount());alive.delete(m);}};async function render(){let element=React.createElement(owners.LocaleProvider,{locale},React.createElement(Component,props));if(strict)element=React.createElement(React.StrictMode,null,element);await React.act(async()=>root.render(element));}alive.add(m);await render();return m;}
+function fakeClock(){let now=0,serial=0;const timers=new Map();globalThis.setTimeout=env.window.setTimeout=(fn,delay)=>{timers.set(++serial,{at:now+delay,fn});return serial;};globalThis.clearTimeout=env.window.clearTimeout=id=>timers.delete(id);return {timers,async advance(ms){now+=ms;await React.act(async()=>{for(const [id,t]of [...timers])if(t.at<=now){timers.delete(id);t.fn();}});}};}
+async function click(selector){await React.act(async()=>n(selector).click());}
+async function cancel(selector){const e=new env.window.Event('cancel',{cancelable:true});await React.act(async()=>n(selector).dispatchEvent(e));assert.equal(e.defaultPrevented,true);}
+async function animation(name,target='#replayDialog'){const event=new env.window.Event('animationend',{bubbles:true});Object.defineProperty(event,'animationName',{value:name});await React.act(async()=>n(target).dispatchEvent(event));}
+function normalize(el){if(el.nodeType===3)return el.textContent.replace(/\s+/g,' ').trim()||null;if(el.nodeType!==1)return null;const attrs=uiContractAttributes(el).filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [el.localName,attrs,[...el.childNodes].map(normalize).filter(Boolean)];}
+function normalizedActualReplay(){
+ const actual=n('#replayDialog').cloneNode(true);
+ // Keep the original accessible close command while accepting its shared icon.
+ const close=actual.querySelector('[data-replay-close]'),icon=close.querySelector('svg');
+ assert.equal(icon?.getAttribute('aria-hidden'),'true');
+ assert.ok(close.getAttribute('aria-label'));
+ close.replaceChildren('×');
+ // Explicit replacement for the old iframe document boundary; other controls
+ // and copy still match the pinned main markup.
+ assert.equal(actual.getAttribute('data-launcher-document'),'');
+ actual.removeAttribute('data-launcher-document');
+ for(const row of actual.querySelectorAll('[data-replay-file]'))row.removeAttribute('data-replay-file');
+ return normalize(actual);
+}
+const t=(locale,key,params)=>owners.translate(locale,key,params);
+function baselineReplay(locale,phase,rows=[],animate=false){const doc=new env.window.DOMParser().parseFromString(baselineHTML,'text/html'),el=n('#replayDialog',doc);for(const e of el.querySelectorAll('[data-i18n]'))e.textContent=t(locale,e.dataset.i18n);for(const e of el.querySelectorAll('[data-i18n-aria-label]'))e.setAttribute('aria-label',t(locale,e.getAttribute('data-i18n-aria-label')));const list=n('#replayList',el),summary=n('#replaySummary',el);if(phase==='loading'){const loading=doc.createElement('div');loading.className='replay-loading';const i=doc.createElement('i');i.setAttribute('aria-hidden','true');const span=doc.createElement('span');span.textContent=t(locale,'replay.loading');loading.append(i,span);list.append(loading);summary.textContent=t(locale,'status.readingReplay');}else if(phase==='error'){const failed=doc.createElement('div');failed.className='replay-empty replay-load-error';failed.textContent=t(locale,'status.replayReadFailed');list.append(failed);summary.textContent=t(locale,'status.replayReadFailed');}else{summary.textContent=t(locale,'replay.fileCount',{count:rows.length});if(!rows.length){const empty=doc.createElement('div');empty.className='replay-empty';empty.textContent=t(locale,'status.noReplay');list.append(empty);}for(const [index,file]of rows.entries()){const row=doc.createElement('div');row.className='replay-row';if(animate){row.classList.add('replay-row-enter');row.style.setProperty('--replay-row-delay',`${Math.min(index,8)*16}ms`);}const name=file.path.split('/').pop()||file.path;const label=doc.createElement('span');label.className='replay-name';label.textContent=name;label.title=name;const size=doc.createElement('span');size.className='replay-size';size.textContent=file.size<1024*1024?`${(file.size/1024).toFixed(1)} KiB`:`${(file.size/1024/1024).toFixed(2)} MiB`;const actions=doc.createElement('span');actions.className='replay-row-actions';for(const action of ['download','rename','delete']){const button=doc.createElement('button');button.type='button';button.textContent=t(locale,'action.'+action);if(action==='delete')button.className='replay-delete';actions.append(button);}row.append(label,size,actions);list.append(row);}}return el;}
+function fixture({locale='zh-CN',cold=false,paintGate=null,broken=false,empty=false,many=false}={}){const files=new Map(empty?[]:[['replay/th6_02.rpy',[2]],['replay/th6_01.rpy',[1,1]],['score.dat',[9]]]);if(many)for(let i=3;i<13;i++)files.set(`replay/th6_${String(i).padStart(2,'0')}.rpy`,[i]);const events=[],downloads=[],prompts=[],confirms=[],toasts=[],sessions=[];let answer=null,confirmed=true;const state={ready:!cold,epoch:cold?null:1,launched:false,game:'th06'};const model=owners.createReplayModel({runtime:{getSnapshot:()=>state,async withFileSession(game,op,options){sessions.push({game,options});events.push('lock');try{return await op({epoch:state.epoch,async sync(){events.push('sync');},async send(command,payload){events.push(`${command}:${payload.path??''}`);if(broken)throw Error('fixture failure');if(command==='list')return {files:[...files].map(([path,bytes])=>({path,size:bytes.length}))};if(command==='read')return {bytes:files.get(payload.path)};if(command==='write')files.set(payload.path,payload.bytes);if(command==='remove')files.delete(payload.path);return {};}});}finally{events.push('unlock');}}},async prepareFiles(){events.push('prepare');state.ready=true;state.epoch??=1;},async releasePrepared(product,epoch){events.push(`release:${product}:${epoch}`);state.ready=false;state.epoch=null;},translate:(key,params)=>t(locale,key,params),prompt(message,name){prompts.push([message,name]);return answer;},async confirm(decision){confirms.push(decision);return confirmed;},download(name,bytes,mime){downloads.push({name,bytes:[...new Uint8Array(bytes)],mime});},toast(message){toasts.push(message);},async afterPaint(){events.push('paint');if(paintGate)await paintGate.promise;},afterClose(){events.push('afterClose');}});let closeCalls=0;const close=model.close;model.close=()=>{closeCalls++;close();};return {model,files,events,downloads,prompts,confirms,toasts,sessions,state,get closeCalls(){return closeCalls;},answer(v){answer=v;},confirm(v){confirmed=v;},fail(v){broken=v;}};}
+const replayProps=f=>({model:f.model,onImportRequest(){},async onDropFile(){},onImportError(){}});
+async function openReplay(f,extra={},options={}){await f.model.open('th06');return mount(owners.ReplayDialog,{...replayProps(f),open:true,...extra},options);}
+for(const locale of ['zh-CN','en'])for(const phase of ['loading','error','empty','rows'])test(`Replay original DOM/copy ${locale} ${phase}`,async()=>{const gate=phase==='loading'?deferred():null,f=fixture({locale,paintGate:gate,broken:phase==='error',empty:phase==='empty',many:phase==='rows'});const opening=f.model.open('th06');if(phase!=='loading')await opening.catch(()=>{});await mount(owners.ReplayDialog,{...replayProps(f),open:true},{locale});assert.deepEqual(normalizedActualReplay(),normalize(baselineReplay(locale,phase,f.model.getSnapshot().rows,phase==='rows')));if(gate){await React.act(async()=>{gate.resolve();await opening;});}});
+test('Replay byte formatting exact around KiB/MiB boundaries and first-load stagger cap',async()=>{assert.deepEqual([0,1,512,1024,1048575,1048576,1572864,1073741824].map(owners.formatReplayBytes),['0.0 KiB','0.0 KiB','0.5 KiB','1.0 KiB','1024.0 KiB','1.00 MiB','1.50 MiB','1024.00 MiB']);const f=fixture({many:true});await openReplay(f);assert.deepEqual([...env.document.querySelectorAll('.replay-row')].map(n=>n.style.getPropertyValue('--replay-row-delay')),['0ms','16ms','32ms','48ms','64ms','80ms','96ms','112ms','128ms','128ms','128ms','128ms']);await React.act(async()=>f.model.refresh());assert.equal(env.document.querySelectorAll('.replay-row-enter').length,0);assert.ok([...env.document.querySelectorAll('.replay-row')].every(n=>!n.getAttribute('style')));});
+test('Replay live locale updates copy and retained row nodes',async()=>{const f=fixture();const m=await openReplay(f);const row=n('.replay-row');await m.setLocale('en');assert.equal(n('.replay-row'),row);assert.deepEqual(normalizedActualReplay(),normalize(baselineReplay('en','rows',f.model.getSnapshot().rows,true)));});
+test('Replay native prompt action/cancel stays model-owned and download uses actual bytes',async()=>{const f=fixture({locale:'en'});await openReplay(f,{}, {locale:'en'});await click('.replay-row button:nth-child(1)');await flush();assert.deepEqual(f.downloads,[{name:'th6_01.rpy',bytes:[1,1],mime:'application/octet-stream'}]);f.events.length=0;await click('.replay-row button:nth-child(2)');assert.deepEqual(f.prompts,[[t('en','replay.renamePrompt'),'th6_01.rpy']]);assert.equal(f.events.length,0);assert.equal(env.document.querySelectorAll('input').length,0);});
+test('Replay rename actual port writes before removes and refreshes without entry animation',async()=>{const f=fixture();await openReplay(f);f.events.length=0;f.answer(' th6_03.rpy ');await click('.replay-row button:nth-child(2)');await flush();assert.deepEqual(f.files.get('replay/th6_03.rpy'),[1,1]);assert.equal(f.files.has('replay/th6_01.rpy'),false);assert.ok(f.events.indexOf('write:replay/th6_03.rpy')<f.events.indexOf('remove:replay/th6_01.rpy'));assert.deepEqual([...env.document.querySelectorAll('.replay-name')].map(n=>n.textContent),['th6_02.rpy','th6_03.rpy']);assert.equal(env.document.querySelectorAll('.replay-row-enter').length,0);assert.ok(f.sessions.some(s=>s.options.replayMutation===true&&s.options.readOnly===false));});
+for(const value of [' ','evil.rpy','th6_02.rpy','TH6_01.RPY'])test(`Replay rename validation/noop via real model: ${JSON.stringify(value)}`,async()=>{const f=fixture();await openReplay(f);f.events.length=0;f.answer(value);await click('.replay-row button:nth-child(2)');await flush();assert.equal(f.events.some(e=>e.startsWith('write:')||e.startsWith('remove:')),false);assert.equal(f.toasts.length,value==='TH6_01.RPY'?0:1);});
+test('Replay deletion canonical danger decision cancellation and acceptance stay model-owned',async()=>{const f=fixture({locale:'en'});await openReplay(f,{}, {locale:'en'});f.confirm(false);f.events.length=0;await click('.replay-row .replay-delete');assert.deepEqual(f.confirms,[{message:t('en','replay.deleteConfirm',{name:'th6_01.rpy'}),confirmText:t('en','action.delete'),tone:'danger'}]);assert.equal(f.events.length,0);f.confirm(true);await click('.replay-row .replay-delete');await flush();assert.equal(f.files.has('replay/th6_01.rpy'),false);assert.equal(env.document.querySelectorAll('.replay-row').length,1);});
+test('Replay import trigger delegates once to provided port',async()=>{const f=fixture();let calls=0;await openReplay(f,{onImportRequest(){calls++;}});await click('[data-action=import-replay]');assert.equal(calls,1);assert.equal(f.closeCalls,0);});
+async function drag(type,transfer){const event=new env.window.Event(type,{bubbles:true,cancelable:true});if(transfer!==undefined)Object.defineProperty(event,'dataTransfer',{value:transfer});await React.act(async()=>n('.replay-window').dispatchEvent(event));return event;}
+test('Replay Files drag depth/dropEffect and non-file drag behavior match main',async()=>{const f=fixture();await openReplay(f);let event=await drag('dragenter',{types:['text/plain'],files:[]});assert.equal(event.defaultPrevented,false);assert.equal(n('.replay-window').classList.contains('dragging'),false);const data={types:['Files'],files:[]};await drag('dragenter',data);await drag('dragenter',data);assert.equal(n('.replay-window').classList.contains('dragging'),true);event=await drag('dragover',data);assert.equal(event.defaultPrevented,true);assert.equal(data.dropEffect,'copy');await drag('dragleave',data);assert.equal(n('.replay-window').classList.contains('dragging'),true);await drag('dragleave',data);await drag('dragleave',data);assert.equal(n('.replay-window').classList.contains('dragging'),false);});
+for(const locale of ['zh-CN','en'])test(`Replay exact drop cardinality/type/import failure ports ${locale}`,async()=>{const f=fixture({locale}),dropped=[],errors=[];const failure=Error('actual importer failure');await openReplay(f,{async onDropFile(file){dropped.push(file);if(file.name==='broken.RPY')throw failure;},onImportError(error){errors.push(error);}},{locale});const file=name=>new env.window.File(['x'],name);for(const files of [[],[file('a.rpy'),file('b.rpy')],[file('a.txt')]]){await drag('dragenter',{types:['Files'],files});const event=await drag('drop',{types:['Files'],files});assert.equal(event.defaultPrevented,true);assert.equal(n('.replay-window').classList.contains('dragging'),false);}assert.deepEqual(errors.map(e=>e.message),[t(locale,'replay.dropSingle'),t(locale,'replay.dropSingle'),t(locale,'replay.dropType')]);for(const name of ['a.rpy','a.RPYX','a.ZIP','broken.RPY'])await drag('drop',{types:['Files'],files:[file(name)]});assert.deepEqual(dropped.map(f=>f.name),['a.rpy','a.RPYX','a.ZIP','broken.RPY']);assert.equal(errors[3],failure);});
+test('Replay missing dataTransfer matches main fallback and error port',async()=>{const f=fixture(),errors=[];await openReplay(f,{onImportError(error){errors.push(error);}});await drag('dragenter',undefined);await drag('dragover',undefined);await drag('drop',undefined);const thrown=env.errors.splice(0);assert.deepEqual(thrown,[],'Main ignores missing drag data and routes empty drop through replay.dropSingle');assert.equal(errors.length,1);assert.equal(errors[0].message,t('zh-CN','replay.dropSingle'));});
+test('Replay StrictMode effect replay preserves real model until actual close',async()=>{const f=fixture();await openReplay(f,{}, {strict:true});assert.equal(f.closeCalls,0);assert.equal(f.model.isOpen(),true);assert.equal(n('#replayDialog').open,true);assert.equal(f.events.includes('afterClose'),false);await click('[data-replay-close]');assert.equal(f.closeCalls,1);assert.equal(f.model.isOpen(),false);assert.equal(n('#replayDialog').open,false);});
+test('Replay close waits for motion completion, closes model once, native close value exact',async()=>{reduce=false;const f=fixture();let requests=0;await openReplay(f,{onCloseRequest(){requests++;}});const c=fakeClock();await click('[data-replay-close]');await cancel('#replayDialog');assert.equal(n('#replayDialog').open,true);assert.equal(f.model.isOpen(),true);assert.equal(f.closeCalls,0);assert.equal(c.timers.size,0);await c.advance(10000);assert.equal(f.closeCalls,0);await finishReplay();assert.equal(f.closeCalls,1);assert.equal(f.model.isOpen(),false);assert.equal(n('#replayDialog').returnValue,'close');assert.equal(requests,1);await animation('replay-window-out');await c.advance(500);assert.equal(f.closeCalls,1);});
+test('Replay CSS animation events cannot retire the native motion or duplicate model/history calls',async()=>{reduce=false;const f=fixture();let requests=0;await openReplay(f,{onCloseRequest(){requests++;}});const c=fakeClock();await click('[data-replay-close]');await animation('unrelated');assert.equal(f.closeCalls,0);await animation('replay-window-out','.replay-window');assert.equal(f.closeCalls,0);await finishReplay();assert.equal(f.closeCalls,1);assert.equal(requests,1);assert.equal(c.timers.size,0);});
+test('Replay controlled Router close after pending user intent suppresses duplicate history request',async()=>{reduce=false;const f=fixture();let requests=0;const m=await openReplay(f,{onCloseRequest(){requests++;}});const c=fakeClock();await click('[data-replay-close]');await m.update({open:false});await c.advance(10000);assert.equal(f.closeCalls,0);await finishReplay();assert.equal(f.closeCalls,1);assert.equal(requests,0);});
+test('Replay controlled close alone retains model through exit, never asks Router again',async()=>{reduce=false;const f=fixture();let requests=0;const m=await openReplay(f,{onCloseRequest(){requests++;}});const c=fakeClock();await m.update({open:false});assert.equal(f.closeCalls,0);await c.advance(10000);assert.equal(f.closeCalls,0);await finishReplay();assert.equal(f.closeCalls,1);assert.equal(requests,0);});
+test('Replay reopening while closing invalidates prior motion without closing model',async()=>{reduce=false;const f=fixture();const m=await openReplay(f);const c=fakeClock();await m.update({open:false});await m.update({open:true});await c.advance(220);assert.equal(n('#replayDialog').open,true);assert.equal(f.closeCalls,0);assert.equal(c.timers.size,0);});
+test('Replay disposal cancels pending close, does not masquerade as domain close',async()=>{reduce=false;const f=fixture();const m=await openReplay(f);const c=fakeClock();await click('[data-replay-close]');await m.unmount();await c.advance(220);assert.equal(f.closeCalls,0);assert.equal(c.timers.size,0);});
+test('Replay form submit closes; backdrop click keeps original no-dismiss behavior',async()=>{const f=fixture();await openReplay(f);await click('#replayDialog');assert.equal(n('#replayDialog').open,true);const event=new env.window.Event('submit',{bubbles:true,cancelable:true});await React.act(async()=>n('.replay-window').dispatchEvent(event));assert.equal(event.defaultPrevented,true);assert.equal(f.closeCalls,1);});
+async function finishReplay(){const dialog=n('#replayDialog');const active=motions.filter(m=>m.node===dialog&&!m.settled&&!m.cancelled);assert.ok(active.length);await React.act(async()=>{for(const m of active)m.finish();});}
+function settingsFixture(){let mounts=0,unmounts=0;function Settings(){React.useEffect(()=>{mounts++;return()=>unmounts++;},[]);return React.createElement('section',{id:'tools',className:'tools open'},React.createElement('button',{id:'settingsFocus'},'setting'),React.createElement('input',{id:'settingsInput',defaultValue:'retained'}),React.createElement('dialog',{id:'settingsChild'},React.createElement('button',null,'child')));}return {Settings,get mounts(){return mounts;},get unmounts(){return unmounts;}};}
+async function lobby(extra={},options={}){const settings=settingsFixture();let requests=0;const m=await mount(owners.LobbyOptionsHost,{open:true,onCloseRequest(){requests++;},children:React.createElement(settings.Settings),...extra},options);return {m,settings,get requests(){return requests;}};}
+test('Lobby preserves original native dialog identity/classes and fixed main settings tree EN/ZH',async()=>{const f=await lobby();const carrier=n('#lobbyOptionsDialog'),main=n('.lobby-options-document > .main.library-layout'),tools=n('#tools');assert.equal(carrier.localName,'dialog');assert.equal(carrier.className,'lobby-options-host');assert.equal(carrier.getAttribute('aria-label'),t('zh-CN','lobby.gameOptions'));assert.equal(tools.parentNode,main);await f.m.setLocale('en');assert.equal(n('#lobbyOptionsDialog'),carrier);assert.equal(n('#tools'),tools);assert.equal(carrier.getAttribute('aria-label'),t('en','lobby.gameOptions'));});
+test('Lobby foreground suspension closes native modal immediately, keeps route/domain/DOM/iframe identity and restores focus',async()=>{reduce=false;const f=await lobby();const rootFrame=env.document.createElement('iframe');rootFrame.id='runtimeFrame';env.document.body.append(rootFrame);const frameWindow=rootFrame.contentWindow,carrier=n('#lobbyOptionsDialog'),tools=n('#tools'),input=n('#settingsInput');input.value='edited';input.focus();assert.equal(env.document.activeElement,input);const c=fakeClock();await f.m.update({foregroundActive:true});assert.equal(carrier.open,false);assert.equal(f.m.props.open,true);assert.equal(f.requests,0);assert.equal(f.settings.mounts,1);assert.equal(f.settings.unmounts,0);assert.equal(n('#tools'),tools);assert.equal(n('#settingsInput'),input);assert.equal(input.value,'edited');assert.equal(n('#runtimeFrame'),rootFrame);assert.equal(rootFrame.contentWindow,frameWindow);assert.equal(c.timers.size,0);const foreground=env.document.createElement('button');env.document.body.append(foreground);foreground.focus();await f.m.update({foregroundActive:false});assert.equal(carrier.open,true);assert.equal(env.document.activeElement,input);assert.equal(n('#tools'),tools);assert.equal(f.requests,0);assert.equal(rootFrame.contentWindow,frameWindow);});
+test('Lobby suspension never moves externally focused control into settings on restore',async()=>{const f=await lobby();const external=env.document.createElement('button');env.document.body.append(external);external.focus();await f.m.update({foregroundActive:true});await f.m.update({foregroundActive:false});assert.equal(env.document.activeElement,external);});
+test('Lobby removed saved focus target is not focused on resume',async()=>{const f=await lobby();n('#settingsInput').focus();await f.m.update({foregroundActive:true});const removed=n('#settingsInput');removed.remove();await f.m.update({foregroundActive:false});assert.notEqual(env.document.activeElement,removed);});
+test('Lobby route closes while suspended without reopening or extra route/domain action',async()=>{reduce=false;const f=await lobby();const carrier=n('#lobbyOptionsDialog'),tools=n('#tools');n('#settingsInput').focus();await f.m.update({foregroundActive:true});await f.m.update({open:false});await f.m.update({foregroundActive:false});assert.equal(carrier.open,false);assert.equal(n('#tools'),tools);assert.equal(f.requests,0);});
+test('Lobby retains child native dialog and settings identity through parent suspend/resume',async()=>{const f=await lobby();const child=n('#settingsChild'),tools=n('#tools');child.showModal();await f.m.update({foregroundActive:true});assert.equal(child.open,true);await f.m.update({foregroundActive:false});assert.equal(child.open,true);assert.equal(n('#settingsChild'),child);assert.equal(n('#tools'),tools);assert.equal(f.requests,0);});
+test('Lobby carrier retires immediately when the shared visual owner finishes, retaining settings',async()=>{reduce=false;const f=await lobby();const carrier=n('#lobbyOptionsDialog'),tools=n('#tools');tools.style.transitionDuration='1s';const c=fakeClock();await f.m.update({open:false});assert.equal(carrier.open,false);assert.equal(n('#tools'),tools);assert.equal(f.settings.unmounts,0);assert.equal(f.requests,0);assert.equal(c.timers.size,0);});
+test('Lobby reduced-motion zero transition closes immediately as main child report does',async()=>{reduce=true;const f=await lobby();n('#tools').style.transitionDuration='0s';const c=fakeClock();await f.m.update({open:false});assert.equal(n('#lobbyOptionsDialog').open,false);assert.equal(c.timers.size,0);assert.equal(f.requests,0);});
+test('Lobby cancel/backdrop issue close intent immediately; shared controlled owner supplies the visual lifetime',async()=>{reduce=false;const f=await lobby();await click('#settingsFocus');assert.equal(f.requests,0);await cancel('#lobbyOptionsDialog');assert.equal(f.requests,1);assert.equal(n('#lobbyOptionsDialog').open,true);await click('#lobbyOptionsDialog');assert.equal(f.requests,2);await click('#libraryBackdrop');assert.equal(f.requests,3);});
+test('Lobby StrictMode effect replay leaves settings/iframe node identities intact during suspension',async()=>{const f=await lobby({}, {strict:true});assert.equal(n('#lobbyOptionsDialog').open,true);const tools=n('#tools');const before={mounts:f.settings.mounts,unmounts:f.settings.unmounts};await f.m.update({foregroundActive:true});await f.m.update({foregroundActive:false});assert.equal(n('#tools'),tools);assert.deepEqual({mounts:f.settings.mounts,unmounts:f.settings.unmounts},before);assert.equal(f.requests,0);});
+
+for(const [action,key] of [['download','replay.downloadFailed'],['rename','replay.operationFailed'],['delete','replay.deleteFailed']])test(`Replay ${action} failure remains real localized model feedback`,async()=>{const f=fixture({locale:'en'});await openReplay(f,{}, {locale:'en'});f.fail(true);f.answer('th6_03.rpy');await click('.replay-row button:nth-child('+({download:1,rename:2,delete:3}[action])+')');await flush();assert.deepEqual(f.toasts,[t('en',key,{reason:'fixture failure'})]);assert.equal(n('#replayDialog').open,true);assert.equal(f.closeCalls,0);});
+test('Replay cold owned runtime stays alive through animation and committed queue then releases once',async()=>{reduce=false;const f=fixture({cold:true});await openReplay(f);const blocker=deferred();const queued=f.model.mutations.run(()=>blocker.promise);f.answer('th6_03.rpy');await click('.replay-row button:nth-child(2)');const c=fakeClock();await click('[data-replay-close]');await c.advance(219);assert.equal(f.closeCalls,0);assert.equal(f.events.some(e=>e.startsWith('release:')),false);await c.advance(10000);assert.equal(f.closeCalls,0);await finishReplay();assert.equal(f.closeCalls,1);assert.equal(f.events.some(e=>e.startsWith('release:')),false);await React.act(async()=>{blocker.resolve();await queued;await f.model.mutations.idle();});await flush();assert.deepEqual(f.files.get('replay/th6_03.rpy'),[1,1]);assert.equal(f.files.has('replay/th6_01.rpy'),false);assert.deepEqual(f.events.filter(e=>e.startsWith('release:')),['release:th06:1']);assert.equal(f.events.filter(e=>e==='afterClose').length,1);});
+async function transition(target,propertyName){const event=new env.window.Event('transitionend',{bubbles:true});Object.defineProperty(event,'propertyName',{value:propertyName});await React.act(async()=>n(target).dispatchEvent(event));}
+test('Lobby carrier does not interpret transition events as a second visual owner',async()=>{reduce=false;const f=await lobby();const tools=n('#tools');tools.style.transitionDuration='0.6s';const c=fakeClock();await f.m.update({open:false});assert.equal(n('#lobbyOptionsDialog').open,false);await f.m.update({open:true});await transition('#settingsFocus','transform');await transition('#tools','opacity');await transition('#tools','transform');assert.equal(n('#lobbyOptionsDialog').open,true);assert.equal(c.timers.size,0);assert.equal(f.requests,0);});
+test('Lobby carrier ignores CSS duration guesses and has no fallback dismissal timer',async()=>{reduce=false;const f=await lobby();const tools=n('#tools'),c=fakeClock();for(const duration of ['50ms, 0.12s, 80ms','1s','0s']){await f.m.update({open:true});tools.style.transitionDuration=duration;await f.m.update({open:false});assert.equal(n('#lobbyOptionsDialog').open,false);assert.equal(c.timers.size,0);assert.equal(n('#tools'),tools);}assert.equal(f.requests,0);});
+test('Lobby computed zero duration immediately settles even without reduced-motion preference',async()=>{reduce=false;const f=await lobby();n('#tools').style.transitionDuration='0s';const c=fakeClock();await f.m.update({open:false});assert.equal(n('#lobbyOptionsDialog').open,false);assert.equal(c.timers.size,0);});
+test('Lobby cancel intent waits for the shared controlled owner, without a private timer',async()=>{reduce=false;const f=await lobby();n('#tools').style.transitionDuration='1s';const c=fakeClock();await cancel('#lobbyOptionsDialog');assert.equal(f.requests,1);await c.advance(1000);assert.equal(n('#lobbyOptionsDialog').open,true);assert.equal(c.timers.size,0);await f.m.update({open:false});assert.equal(n('#lobbyOptionsDialog').open,false);assert.equal(f.requests,1);});
+test('Lobby reopening cancels transition settlement and fallback, preserves settings state',async()=>{reduce=false;const f=await lobby();n('#tools').style.transitionDuration='100ms';const tools=n('#tools');const c=fakeClock();await f.m.update({open:false});await f.m.update({open:true});await transition('#tools','transform');await c.advance(1000);assert.equal(n('#lobbyOptionsDialog').open,true);assert.equal(n('#tools'),tools);assert.equal(c.timers.size,0);assert.equal(f.requests,0);});
+test('Lobby suspension during pending close immediately hides carrier and cancels both timers',async()=>{reduce=false;const f=await lobby();n('#tools').style.transitionDuration='500ms';const c=fakeClock();await f.m.update({open:false});await f.m.update({open:true,foregroundActive:true});assert.equal(n('#lobbyOptionsDialog').open,false);assert.equal(c.timers.size,0);await f.m.update({foregroundActive:false});await c.advance(1000);assert.equal(n('#lobbyOptionsDialog').open,true);assert.equal(f.requests,0);});
+
+test('Replay temporary suspension preserves model, resumes without domain-close callback',async()=>{reduce=false;const f=fixture();const m=await openReplay(f);const row=n('.replay-row');await m.update({suspended:true});assert.equal(n('#replayDialog').open,false);assert.equal(f.model.isOpen(),true);assert.equal(f.closeCalls,0);await m.update({suspended:false});assert.equal(n('#replayDialog').open,true);assert.equal(n('.replay-row'),row);assert.equal(f.closeCalls,0);});
+test('Replay controlled route closure while suspended performs domain cleanup once',async()=>{reduce=false;const f=fixture();let requests=0;const m=await openReplay(f,{onCloseRequest(){requests++;}});await m.update({suspended:true});await m.update({open:false});assert.equal(f.model.isOpen(),false);assert.equal(f.closeCalls,1);assert.equal(requests,0);await m.update({suspended:false});assert.equal(n('#replayDialog').open,false);assert.equal(f.closeCalls,1);});
+
+for (const context of ['library','room']) test(`Replay real Router ${context}: Forward revives cached row actions without a fresh listing`,async()=>{
+ const {createMemoryRouter,RouterProvider}=await import('react-router');
+ const f=fixture();let navigation;
+ function Surface(){navigation=owners.useSurfaceNavigation();return React.createElement(owners.ReplayDialog,{...replayProps(f),open:navigation.infoDialogOpen('replayDialog'),onCloseRequest:()=>navigation.closeInfoDialog('replayDialog')});}
+ function Root(){return React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.SurfaceNavigationProvider,{dirty:false,isEditing:false,onDiscard(){}},React.createElement(Surface)));}
+ const initial=context==='library'?'/?game=th06':'/?'+owners.ROOM_INVITE_KEY+'='+owners.encodeRoomInvite({g:'th06mp',r:'4079'});
+ const router=createMemoryRouter([{path:'*',element:React.createElement(Root)}],{initialEntries:[initial]});
+ const host=env.document.createElement('div');env.document.body.append(host);const root=createRoot(host),tracked={root};alive.add(tracked);
+ try {
+  await React.act(async()=>root.render(React.createElement(RouterProvider,{router})));
+  const parentKey=router.state.location.key;
+  await React.act(async()=>{navigation.openInfoDialog('replayDialog');await f.model.open('th06');});
+  const row=n('.replay-row');await click('[data-replay-close]');await flush();
+  assert.equal(router.state.location.key,parentKey);assert.equal(f.model.isOpen(),false);
+  const listCount=f.events.filter(e=>e==='list:').length;
+  await React.act(async()=>router.navigate(1));await flush();
+  assert.equal(n('#replayDialog').open,true);assert.equal(n('.replay-row'),row,'Forward keeps main cached row DOM');
+  assert.equal(f.events.filter(e=>e==='list:').length,listCount,'Forward itself does not reread files');
+  await click('.replay-row button:nth-child(2)');await flush();
+  assert.equal(f.prompts.length,1,'visible rename action must still open the original prompt after Forward');
+  await click('.replay-row button:nth-child(1)');await flush();assert.equal(f.downloads.length,1);
+  f.confirm(false);await click('.replay-row .replay-delete');await flush();assert.equal(f.confirms.length,1);
+  f.answer('th6_03.rpy');await click('.replay-row button:nth-child(2)');await flush();assert.ok(f.files.has('replay/th6_03.rpy'));
+  f.confirm(true);await click('.replay-row .replay-delete');await flush();assert.equal(n('#replayList').querySelectorAll('.replay-row').length,1);
+  await React.act(async()=>router.navigate(-1));await flush();assert.equal(n('#replayDialog').open,false);assert.equal(router.state.location.key,parentKey);
+ }finally{router.dispose();}
+});
+
+test('Surface layer setter stays stable and resolves functional updates from the latest value',async()=>{
+ const seen=[];
+ function Probe({revision=0}){
+  const [value,setValue]=owners.useSurfaceLayerState('probe','base');seen.push(setValue);
+  return React.createElement('button',{type:'button','data-layer-value':value,'data-revision':revision,onClick:()=>setValue(current=>`${current}!`)},value);
+ }
+ const local=await mount(Probe);const localSetter=seen.at(-1);await local.update({revision:1});
+ assert.equal(seen.at(-1),localSetter,'local fallback setter identity survives rerender');
+ await React.act(async()=>local.container.querySelector('[data-layer-value="base"]').click());
+ assert.equal(local.container.querySelector('[data-revision]').getAttribute('data-layer-value'),'base!');
+
+ function ContextHarness({revision=0}){
+  const [values,setValues]=React.useState({});
+  const layers=React.useMemo(()=>({values,set(id,value){setValues(current=>{const next={...current};if(value===null)delete next[id];else next[id]={value,parentPosition:0};return next;});}}),[values]);
+  return React.createElement(owners.SurfaceLayersContext.Provider,{value:layers},React.createElement(Probe,{revision}));
+ }
+ seen.length=0;const routed=await mount(ContextHarness);const routedSetter=seen.at(-1);await routed.update({revision:1});
+ assert.equal(seen.at(-1),routedSetter,'route-backed setter identity survives provider updates');
+ await React.act(async()=>routed.container.querySelector('[data-layer-value="base"]').click());
+ assert.equal(routed.container.querySelector('[data-revision]').getAttribute('data-layer-value'),'base!');
+ await React.act(async()=>routed.container.querySelector('[data-layer-value="base!"]').click());
+ assert.equal(routed.container.querySelector('[data-revision]').getAttribute('data-layer-value'),'base!!','functional update reads the latest committed route value');
+});
+
+test('Replay folder and move child routes survive rerenders and restore through Back/Forward',async()=>{
+ const {createMemoryRouter,RouterProvider}=await import('react-router');
+ const f=fixture({empty:true});f.files.set('replay/set/a.rpy',[1]);f.files.set('replay/set/b.rpy',[2]);
+ let navigation,rerender;
+ function Surface(){const [,setRevision]=React.useState(0);rerender=()=>setRevision(value=>value+1);navigation=owners.useSurfaceNavigation();return React.createElement(owners.ReplayDialog,{...replayProps(f),open:navigation.infoDialogOpen('replayDialog'),onCloseRequest:()=>navigation.closeInfoDialog('replayDialog')});}
+ function Root(){return React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.SurfaceNavigationProvider,{dirty:false,isEditing:false,onDiscard(){}},React.createElement(Surface)));}
+ const router=createMemoryRouter([{path:'*',element:React.createElement(Root)}],{initialEntries:['/?game=th09']});
+ const host=env.document.createElement('div');env.document.body.append(host);const root=createRoot(host),tracked={root};alive.add(tracked);
+ try{
+  await React.act(async()=>root.render(React.createElement(RouterProvider,{router})));
+  await React.act(async()=>{navigation.openInfoDialog('replayDialog');await f.model.open('th09');});await flush();
+  assert.ok(n('[data-replay-folder="replay/set"]'));
+  await click('[data-replay-folder="replay/set"]');await flush();assert.equal(n('.replay-path strong').textContent,'set');
+  await React.act(async()=>rerender());await flush();assert.equal(n('.replay-path strong').textContent,'set','an unrelated parent rerender preserves the folder layer');
+  await click('[data-replay-move="replay/set/a.rpy"]');await flush();assert.ok(n('.replay-move'));
+  await React.act(async()=>rerender());await flush();assert.ok(n('.replay-move'),'an unrelated parent rerender preserves the move layer');
+  await React.act(async()=>router.navigate(-1));await flush();assert.equal(env.document.querySelector('.replay-move'),null);assert.equal(n('.replay-path strong').textContent,'set');
+  await React.act(async()=>router.navigate(-1));await flush();assert.equal(env.document.querySelector('.replay-path'),null);assert.ok(n('[data-replay-folder="replay/set"]'));
+  await React.act(async()=>router.navigate(1));await flush();assert.equal(n('.replay-path strong').textContent,'set');
+  await React.act(async()=>router.navigate(1));await flush();assert.ok(n('.replay-move'),'Forward restores the nested move layer');
+ }finally{router.dispose();}
+});
+
+test('executed pinned Replay and dialog-navigation: Forward retains rows and invokes rename/download/delete controls',async()=>{
+ const {JSDOM}=require('jsdom');const dom=new JSDOM('<dialog id="replayDialog"><div id="replayList"></div><span id="replaySummary"></span></dialog>',{url:'https://launcher.test/?game=th06'});
+ const {window}=dom,document=window.document,dialog=document.querySelector('dialog');
+ dialog.showModal=()=>dialog.setAttribute('open','');dialog.close=()=>{dialog.removeAttribute('open');dialog.dispatchEvent(new window.Event('close'));};
+ const entries=[{}];let index=0;const history={get state(){return entries[index]},pushState(value){entries.splice(++index);entries[index]=value;},replaceState(value){entries[index]=value;},back(){index--;window.dispatchEvent(new window.PopStateEvent('popstate',{state:entries[index]}));}};
+ const navigation=(await transform(pinned('src/launcher/dialog-navigation.mts').replace('export function','function'),{loader:'ts',target:'es2022'})).code;
+ new Function('window','document','history','HTMLDialogElement','MutationObserver','Event',navigation+';installDialogNavigation();')(window,document,history,window.HTMLDialogElement,window.MutationObserver,window.Event);
+ const source=pinned('src/launcher/app.mts'),start=source.indexOf('async function refreshReplayManager('),end=source.indexOf('async function manageReplays()',start);
+ const refreshCode=(await transform(source.slice(start,end),{loader:'ts',target:'es2022'})).code;
+ const calls={prompt:0,download:0,confirm:0,list:0};
+ const names=['document','$','loadReplayFeature','getReplayMutationQueue','listReplayStorageFiles','t','formatBytes','send','download','copyBytesToArrayBuffer','runtimeResponseBytes','prompt','replayPrefix','askConfirmation','showToast','errorMessage'];
+ const args=[document,s=>document.querySelector(s),async()=>({isReplayFilePath:()=>true}),async()=>({run:fn=>fn()}),async()=>{calls.list++;return [{path:'replay/th6_01.rpy',size:2}]},key=>key,owners.formatReplayBytes,async()=>({bytes:[1,2]}),()=>{calls.download++},bytes=>bytes.buffer,result=>result.bytes,()=>{calls.prompt++;return null},()=> 'th6',async()=>{calls.confirm++;return false},()=>{},String];
+ const refresh=new Function(...names,refreshCode+';return refreshReplayManager;')(...args);
+ try{
+  await refresh();dialog.showModal();await new Promise(resolve=>setImmediate(resolve));const row=document.querySelector('.replay-row');assert.equal(index,1);
+  history.back();await new Promise(resolve=>setImmediate(resolve));assert.equal(dialog.open,false);
+  index++;window.dispatchEvent(new window.PopStateEvent('popstate',{state:entries[index]}));await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(dialog.open,true);assert.equal(document.querySelector('.replay-row'),row);assert.equal(calls.list,1);
+  const buttons=row.querySelectorAll('button');await buttons[1].onclick();await buttons[0].onclick();await buttons[2].onclick();
+  assert.deepEqual(calls,{prompt:1,download:1,confirm:1,list:1});
+ }finally{dom.window.close();}
+});
+
+test('Replay close before initial paint then retained reopen performs its first listing once',async()=>{
+ const gate=deferred(),f=fixture({paintGate:gate});const opening=f.model.open('th06');
+ const m=await mount(owners.ReplayDialog,{...replayProps(f),open:true});
+ await m.update({open:false});assert.equal(f.model.isOpen(),false);assert.equal(f.events.includes('prepare'),false);
+ await m.update({open:true});await flush();assert.equal(f.model.getSnapshot().phase,'ready');
+ await React.act(async()=>{gate.resolve();await opening;});
+ assert.equal(f.events.filter(e=>e==='list:').length,1);assert.equal(f.model.isOpen(),true);
+});

@@ -1,0 +1,89 @@
+{
+  "schema": "th09-managed-touch-hosted-integration-addendum/v1",
+  "declaredDate": "2026-10-11",
+  "extends": "rollback-managed-touch-validation-plan.json",
+  "reason": "The ordinary product has a validated hosted web-development Runtime lane. Exercise that real React / Package Store / RuntimeService / single-frame owner first without modifying the dirty canonical repository or manufacturing an immutable publication.",
+  "acceptanceLane": "validated-web-development-host-integration",
+  "publicationAcceptance": "pending, separate; do not invoke or weaken tests that require immutable publication metadata",
+  "productionCandidate": {
+    "root": "D:/workspace/eagler/worktrees/th09-managed-touch-4x",
+    "managedSha256": "830f521ffa13c3be443c8bb277da510734c9625efcb224b1d1ed6ae3e7eee4f4",
+    "releaseWasmSha256": "037c9cd52e70e2c8e8ee516cf15b6aee7f0de5951f88d519b2311cc1c5def373",
+    "engineRebuild": false
+  },
+  "ui": {
+    "artifactRoot": "D:/workspace/eagler/eagler-touhou/.cache/build/ui-main/client",
+    "requireReadUiArtifact": true,
+    "reportActualArtifactIdentity": true,
+    "doNotClaimFreshDirtySourceBuild": true,
+    "canonicalReadOnly": true
+  },
+  "factory": {
+    "preserveOriginalDevelopmentHostFactory": true,
+    "copyExactAuthoredHelpersToIsolatedArtifact": true,
+    "copyExactExistingCompiledContracts": true,
+    "freezeSourceAndCopyBytesAndSha256": true,
+    "forbidImplicitBuildImports": true,
+    "explicitSourceRootAndOnlyTh09": true
+  },
+  "server": {
+    "exactAllowlist": true,
+    "unknownResourceStatus": 404,
+    "publication": false,
+    "realDataAndFonts": true,
+    "noAlternateProvider": true,
+    "noBlobRuntimeCarrier": true,
+    "noNetworkDeployment": true,
+    "recordRequestsAndErrors": true
+  },
+  "scenarios": [
+    {
+      "name": "ordinary-launch",
+      "scope": "Real UI preparation, real Package Store, real DATA owner, exact current frame document and epoch, actual first-frame and native Runtime"
+    },
+    {
+      "name": "host-touch",
+      "scope": "Actual parent overlay pointer path; continuous direct drag with turns, free joystick when enabled, independent fire/focus/sensitivity, cancel and fresh DOWN"
+    },
+    {
+      "name": "managed-resource-queue-probe",
+      "scope": "After successful launch, an explicitly labeled existing-protocol resources command fetches an allowlisted alias of a real font; the response is held with a bounded deadline while ordinary overlay input runs. This is a controlled receiver-queue experiment, not a claim about normal Launcher resource installation."
+    },
+    {
+      "name": "android-device",
+      "scope": "Use existing connected Android Chrome DevTools endpoint only through nig; record model, Android/browser versions, screen/viewport, orientation, power state, actual owner and device input injection method. Create and remove only task-owned ADB mappings and tab."
+    }
+  ],
+  "timing": {
+    "separate": [
+      "injected source event",
+      "host input submission",
+      "receiver native-call entry",
+      "native call exit",
+      "sampled new game frame"
+    ],
+    "wallAndMonotonicClocksNotInterchangeable": true,
+    "noPhysicalTouchLatencyClaimFromSyntheticDeviceInjection": true,
+    "desktopCPU4NotEquivalentToAndroidCPU4": true,
+    "vmFakeClockNotPerformance": true
+  },
+  "audio": {
+    "initialIntegrationMayUseDocumentedNoBgmChoice": true,
+    "mustRecordActualConfiguration": true,
+    "notFullAudioPerformanceAcceptanceUnlessMeasured": true
+  },
+  "failurePolicy": {
+    "retainEveryInvokedRun": true,
+    "noOverwrite": true,
+    "sourceBeforeAfter": true,
+    "noTestsDuringOtherRootLoads": true,
+    "doNotDeleteUnrelatedDeviceData": true
+  },
+  "remainingGoals": [
+    "Actual continuous mobile movement in full prediction / rollback at D0",
+    "New-game-state cadence and longest gaps under CPU4 and network jitter",
+    "True relay/direct route and shared-host interference attribution",
+    "Immutable publication ownership and offline generation acceptance"
+  ]
+}
+

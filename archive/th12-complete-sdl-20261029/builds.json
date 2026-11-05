@@ -1,0 +1,157 @@
+{
+  "schema": "th12-complete-sdl/1",
+  "basePR": "https://github.com/Ritosa2333/eagler-touhou/pull/161",
+  "baseRevision": "50f8c031673d7ffb57976366a2e860aeee885aaa",
+  "toolchain": {
+    "web": "Emscripten 6.0.9-git",
+    "desktop": "MSVC 19.51 / Windows x64"
+  },
+  "builds": [
+    {
+      "variant": "normal",
+      "platform": "web",
+      "sourceSha256": "75a136f16f9bced4c3d3277148bd0e4059a5dd70b5cc8956b97fec81546914ce",
+      "artifacts": {
+        "touhou12.mjs": {
+          "bytes": 225323,
+          "sha256": "c69221ad406fe17049a7b2c36dbb9f2df0d193512e1772756a045913eb806a72"
+        },
+        "touhou12.wasm": {
+          "bytes": 3238003,
+          "sha256": "2d3e05c1ad1cbce38192fde63144c58c86d249383245d4de2a835354c799e7eb"
+        }
+      },
+      "manifest": {
+        "game": "th12",
+        "protocol": "eagler-touhou/1",
+        "adapter": "cpp-sdl3-gles",
+        "version": "0.5.0-sdl",
+        "profile": "normal",
+        "completeAdapter": true,
+        "features": {
+          "thprac": true,
+          "languages": true,
+          "focusHitbox": false
+        },
+        "music": [
+          "ogg-stream",
+          "ogg-full",
+          "none"
+        ],
+        "touchReplay": true,
+        "sourceSha256": "75a136f16f9bced4c3d3277148bd0e4059a5dd70b5cc8956b97fec81546914ce"
+      },
+      "fileNames": [
+        "bridge.mjs",
+        "core.mjs",
+        "core.wasm",
+        "damage-sources.mjs",
+        "game.css",
+        "game.mjs",
+        "loader.mjs",
+        "managed-data.mjs",
+        "managed-input.mjs",
+        "managed-shell.mjs",
+        "manifest.json",
+        "native-profile.mjs",
+        "replay-motion.mjs",
+        "replay.mjs",
+        "runtime-crash-reporter.js",
+        "sdl-content.mjs",
+        "sections.mjs",
+        "storage.mjs",
+        "th12.html",
+        "touch-input.mjs"
+      ]
+    },
+    {
+      "variant": "multiplayer",
+      "platform": "web",
+      "sourceSha256": "4a817dfaecd13ee8a57d58d94c727e3608e5e7bbf567502d9b4c1e4a5bf81e90",
+      "artifacts": {
+        "touhou12.mjs": {
+          "bytes": 279137,
+          "sha256": "1a1ef48196cdf76e9ab7894f886a7f47c1d63860f36164f8d8b12ffe89d096b1"
+        },
+        "touhou12.wasm": {
+          "bytes": 3211171,
+          "sha256": "3ff40705fe12f90468754e72b34e685b49f229b419455efeecb8604793b275a5"
+        }
+      },
+      "manifest": {
+        "game": "th12",
+        "protocol": "eagler-touhou/1",
+        "adapter": "cpp-sdl3-gles",
+        "version": "0.5.0-sdl",
+        "product": "th12mp",
+        "variant": "multiplayer",
+        "profile": "multiplayer",
+        "completeAdapter": true,
+        "execution": {
+          "sha256": "9be6b53b5bdfcbd3fb9313a6e82b9bfef3d4b85755b676064d06d2faa0ecdcf5"
+        },
+        "features": {
+          "multiplayer": true,
+          "thprac": false,
+          "languages": true,
+          "focusHitbox": false
+        },
+        "music": [
+          "ogg-stream",
+          "ogg-full",
+          "none"
+        ],
+        "touchReplay": true,
+        "sourceSha256": "4a817dfaecd13ee8a57d58d94c727e3608e5e7bbf567502d9b4c1e4a5bf81e90"
+      },
+      "fileNames": [
+        "adonis-calibration.mjs",
+        "core.mjs",
+        "core.wasm",
+        "game.css",
+        "game.mjs",
+        "loader.mjs",
+        "managed-data.mjs",
+        "managed-input.mjs",
+        "managed-shell.mjs",
+        "manifest.json",
+        "message-presentation.mjs",
+        "multiplayer-replay.mjs",
+        "multiplayer.mjs",
+        "native-profile.mjs",
+        "runtime-crash-reporter.js",
+        "sdl-content.mjs",
+        "spectator-playback.mjs",
+        "storage.mjs",
+        "th12.html",
+        "touch-input.mjs"
+      ]
+    },
+    {
+      "variant": "normal",
+      "platform": "windows",
+      "bytes": 5345792,
+      "sha256": "17d31881b59eaddd79a5cf2b8d4a8bf700fca6359e963bb9df22131b69f1d4c5",
+      "applicationExecuted": false
+    },
+    {
+      "variant": "multiplayer",
+      "platform": "windows",
+      "bytes": 5140480,
+      "sha256": "bcdfa448b7f14759bd32eadaf210ba7891c9f0b438c3a868ff61be9ecfbc06a2",
+      "applicationExecuted": false
+    }
+  ],
+  "validation": {
+    "unitTests": {
+      "passed": 36,
+      "failed": 0
+    },
+    "sourceGates": {
+      "normal": "8/8",
+      "multiplayer": "7/7"
+    },
+    "realRtcSendLatencyMs": 25,
+    "nativeAssets": "six loadouts, Normal/Extra, rollback, all six stage transitions and released Shift after carry"
+  }
+}

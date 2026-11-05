@@ -1,0 +1,13 @@
+{
+    namespace hud=th20::source::hud;namespace tx=th20::source::text;namespace pe=th20::source::program_entry;namespace pl=th20::source::player_entity;
+    auto storage=std::make_unique<std::uint8_t[]>(sizeof(tx::Renderer));auto& renderer=*reinterpret_cast<tx::Renderer*>(storage.get());auto* saved_renderer=tx::renderer;tx::renderer=&renderer;auto* original_renderer=*reinterpret_cast<void**>(mapped_image_base+0x1c0698);*reinterpret_cast<void**>(mapped_image_base+0x1c0698)=&renderer;
+    auto* lock=reinterpret_cast<std::uint32_t*>(mapped_image_base+0x1c0240+18*0x30);std::array<std::uint8_t,0x30> saved_lock;std::memcpy(saved_lock.data(),lock,0x30);std::memset(lock,0,0x30);lock[0]=0x101;lock[10]=GetCurrentThreadId();lock[11]=1;
+    const auto old_scale=pe::window_state.scale,old_native_scale=*reinterpret_cast<float*>(mapped_image_base+0x1b8818);
+    for(unsigned test=0;test<8192;++test){diagnostic_case=test;diagnostic_phase="PlayerFeedback complete text queue and timer state";pl::Feedback feedback;for(auto& word:*reinterpret_cast<std::array<std::uint32_t,sizeof(feedback)/4>*>(&feedback))word=rng();
+        feedback.timers[0].current=int(test%17)-4;feedback.timers[1].current=int(test%253)-125;feedback.enabled=test%3;feedback.fields_30[0]=test%13?test%511:rng();feedback.fields_30[1]=test%7?test%257:rng();
+        std::memset(&renderer,test,sizeof(renderer));renderer.line_count=test%17?int(test%311):318+test%4;renderer.scale_x=.75f;renderer.scale_y=1.25f;renderer.rotation=0;renderer.color=rng();renderer.shadow_color=rng();for(auto& value:renderer.fields_1a1d4)value=rng();pe::window_state.scale=*reinterpret_cast<float*>(mapped_image_base+0x1b8818)=.5f+float(test%5)*.5f;
+        const auto before=feedback;const auto initial=std::vector<std::uint8_t>(storage.get(),storage.get()+sizeof(renderer));FloatingEnvironment::prepare();cpu<void>(0x4f8840,&feedback);const auto expected=feedback;const auto expected_renderer=std::vector<std::uint8_t>(storage.get(),storage.get()+sizeof(renderer));feedback=before;std::memcpy(&renderer,initial.data(),sizeof(renderer));FloatingEnvironment::prepare();hud::draw_feedback(feedback);check("hud_feedback_state",&expected,&feedback,sizeof(feedback));check("hud_feedback_renderer",expected_renderer.data(),&renderer,sizeof(renderer));
+    }
+    #include "feedback_wrapper_cpu_cases.inc"
+    pe::window_state.scale=old_scale;*reinterpret_cast<float*>(mapped_image_base+0x1b8818)=old_native_scale;std::memcpy(lock,saved_lock.data(),0x30);tx::renderer=saved_renderer;*reinterpret_cast<void**>(mapped_image_base+0x1c0698)=original_renderer;
+}

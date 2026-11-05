@@ -1,0 +1,20 @@
+// Extract immutable game data, not executable code. Runtime never reads a PE.
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+import {resolve} from 'node:path';
+const root=fileURLToPath(new URL('../../',import.meta.url)),target=JSON.parse(readFileSync(resolve(root,'target.json'),'utf8'));
+const bytes=readFileSync(resolve(root,target.executable));
+if(createHash('sha256').update(bytes).digest('hex')!==target.sha256)throw Error('Target executable changed');
+const data=a=>0x9e200+a-0x4a0000,word=a=>bytes.readUInt32LE(data(a));
+const route=address=>{const rows=[];for(let n=0;n<128;++n){const row=Array.from({length:8},(_,j)=>bytes.readInt16LE(data(address+n*16+j*2)));if(row[0]<0)return rows;rows.push(row);}throw Error('Unterminated route');};
+const tables=Array.from({length:14},(_,i)=>route(word(0x4a14c8+i*4))),versus=route(0x4a13b8),policies=Array.from({length:5},(_,d)=>Array.from({length:9},(_,s)=>Array.from({length:5},(_,n)=>word(0x4a1500+((d*9+s)*5+n)*4)))),versusPolicies=Array.from({length:5},(_,i)=>word(0x4a1884+i*4));
+const source=['// Immutable TH09 1.50a route and CPU-policy data. See extract-stage-data.mjs.'];
+tables.forEach((rows,i)=>source.push(`constexpr StageRoute route${i}[]={\n${rows.map(r=>'    {'+r.join(',')+'},').join('\n')}\n};`));
+source.push('constexpr RouteTable routes[]={'+tables.map((t,i)=>`{route${i},${t.length}}`).join(',')+'};');
+source.push('constexpr StageRoute versusRoutes[]={\n'+versus.map(r=>'    {'+r.join(',')+'},').join('\n')+'\n};');
+source.push('constexpr i32 cpuPolicies[5][9][5]='+JSON.stringify(policies).replaceAll('[','{').replaceAll(']','}')+';');
+source.push('constexpr i32 versusPolicies[]={'+versusPolicies.join(',')+'};');
+writeFileSync(resolve(root,'cpp/game/StageData.inc'),source.join('\n')+'\n');
+writeFileSync(resolve(root,'reference/stage-data.json'),JSON.stringify({sha256:target.sha256,tables,versus,policies,versusPolicies},null,2)+'\n');
+console.log(JSON.stringify({routes:tables.reduce((n,t)=>n+t.length,0),versus:versus.length,policies:225}));

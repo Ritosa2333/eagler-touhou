@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+build/
+build-thprac/
+cmake-build-*/
+/artifacts/

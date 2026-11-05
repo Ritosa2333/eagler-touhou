@@ -1,0 +1,567 @@
+{
+  "schema": "th12-original-bullet-cancel-lifecycle/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "boundary": "Explicit synthetic BulletManager pool with one bullet; original40c8b0,40d560,40a020,4099e0 execute.455630 embedded ANM tail returns0. No miss/collision/RNG branch is reached. Cancel effect is explicitly-1.",
+  "rows": [
+    {
+      "case": "ufo-clear-live-age81",
+      "initial": {
+        "phase": 1,
+        "position": [
+          40.18768310546875,
+          117.093017578125
+        ],
+        "velocity": [
+          -1.3763198852539062,
+          2.0870418548583984
+        ],
+        "age": 81,
+        "timerFlags": 1
+      },
+      "cancelResult": 1,
+      "cancelled": {
+        "phase": 3,
+        "flags": 2,
+        "position": [
+          40.18768310546875,
+          117.093017578125
+        ],
+        "timer": [
+          -1,
+          0,
+          0.0
+        ],
+        "timerFlags": 1,
+        "word4": 9,
+        "interrupt": 1
+      },
+      "passes": [
+        {
+          "visit": 1,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            39.4995231628418,
+            118.13653564453125
+          ],
+          "timer": [
+            0,
+            1,
+            1.0
+          ],
+          "timerFlags": 1,
+          "word4": 8,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 2,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            38.811363220214844,
+            119.1800537109375
+          ],
+          "timer": [
+            1,
+            2,
+            2.0
+          ],
+          "timerFlags": 1,
+          "word4": 7,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 3,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            38.12320327758789,
+            120.22357177734375
+          ],
+          "timer": [
+            2,
+            3,
+            3.0
+          ],
+          "timerFlags": 1,
+          "word4": 6,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "ufo-clear-spawning-age14",
+      "initial": {
+        "phase": 2,
+        "position": [
+          -40,
+          120
+        ],
+        "velocity": [
+          4,
+          -2
+        ],
+        "age": 14,
+        "timerFlags": 1
+      },
+      "cancelResult": 1,
+      "cancelled": {
+        "phase": 3,
+        "flags": 2,
+        "position": [
+          -40.0,
+          120.0
+        ],
+        "timer": [
+          -1,
+          0,
+          0.0
+        ],
+        "timerFlags": 1,
+        "word4": 9,
+        "interrupt": 1
+      },
+      "passes": [
+        {
+          "visit": 1,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            -38.0,
+            119.0
+          ],
+          "timer": [
+            0,
+            1,
+            1.0
+          ],
+          "timerFlags": 1,
+          "word4": 8,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 2,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            -36.0,
+            118.0
+          ],
+          "timer": [
+            1,
+            2,
+            2.0
+          ],
+          "timerFlags": 1,
+          "word4": 7,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 3,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            -34.0,
+            117.0
+          ],
+          "timer": [
+            2,
+            3,
+            3.0
+          ],
+          "timerFlags": 1,
+          "word4": 6,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "cancel-constructs-uninitialized-timer",
+      "initial": {
+        "phase": 1,
+        "position": [
+          0,
+          120
+        ],
+        "velocity": [
+          4,
+          2
+        ],
+        "age": 100,
+        "timerFlags": 0
+      },
+      "cancelResult": 1,
+      "cancelled": {
+        "phase": 3,
+        "flags": 2,
+        "position": [
+          0.0,
+          120.0
+        ],
+        "timer": [
+          -1,
+          0,
+          0.0
+        ],
+        "timerFlags": 1,
+        "word4": 9,
+        "interrupt": 1
+      },
+      "passes": [
+        {
+          "visit": 1,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            2.0,
+            121.0
+          ],
+          "timer": [
+            0,
+            1,
+            1.0
+          ],
+          "timerFlags": 1,
+          "word4": 8,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 2,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            4.0,
+            122.0
+          ],
+          "timer": [
+            1,
+            2,
+            2.0
+          ],
+          "timerFlags": 1,
+          "word4": 7,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 3,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            6.0,
+            123.0
+          ],
+          "timer": [
+            2,
+            3,
+            3.0
+          ],
+          "timerFlags": 1,
+          "word4": 6,
+          "interrupt": 1,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "already-cancelling-is-unchanged",
+      "initial": {
+        "phase": 3,
+        "position": [
+          0,
+          120
+        ],
+        "velocity": [
+          4,
+          2
+        ],
+        "age": 81,
+        "timerFlags": 1
+      },
+      "cancelResult": 0,
+      "cancelled": {
+        "phase": 3,
+        "flags": 2,
+        "position": [
+          0.0,
+          120.0
+        ],
+        "timer": [
+          80,
+          81,
+          81.0
+        ],
+        "timerFlags": 1,
+        "word4": 9,
+        "interrupt": 0
+      },
+      "passes": [
+        {
+          "visit": 1,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            2.0,
+            121.0
+          ],
+          "timer": [
+            81,
+            82,
+            82.0
+          ],
+          "timerFlags": 1,
+          "word4": 8,
+          "interrupt": 0,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 2,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            4.0,
+            122.0
+          ],
+          "timer": [
+            82,
+            83,
+            83.0
+          ],
+          "timerFlags": 1,
+          "word4": 7,
+          "interrupt": 0,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        },
+        {
+          "visit": 3,
+          "phase": 3,
+          "flags": 2,
+          "position": [
+            6.0,
+            123.0
+          ],
+          "timer": [
+            83,
+            84,
+            84.0
+          ],
+          "timerFlags": 1,
+          "word4": 6,
+          "interrupt": 0,
+          "events": [
+            "embedded-animation-tail"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "outside-right-retires-on-next-visit",
+      "initial": {
+        "phase": 1,
+        "position": [
+          200,
+          120
+        ],
+        "velocity": [
+          4,
+          2
+        ],
+        "age": 81,
+        "timerFlags": 1
+      },
+      "cancelResult": 1,
+      "cancelled": {
+        "phase": 3,
+        "flags": 10,
+        "position": [
+          200.0,
+          120.0
+        ],
+        "timer": [
+          80,
+          81,
+          81.0
+        ],
+        "timerFlags": 1,
+        "word4": 9,
+        "interrupt": 1
+      },
+      "passes": [
+        {
+          "visit": 1,
+          "phase": 0,
+          "flags": 10,
+          "position": [
+            200.0,
+            120.0
+          ],
+          "timer": [
+            -1,
+            0,
+            0.0
+          ],
+          "timerFlags": 1,
+          "word4": 9,
+          "interrupt": 1,
+          "events": []
+        },
+        {
+          "visit": 2,
+          "phase": 0,
+          "flags": 10,
+          "position": [
+            200.0,
+            120.0
+          ],
+          "timer": [
+            -1,
+            0,
+            0.0
+          ],
+          "timerFlags": 1,
+          "word4": 9,
+          "interrupt": 1,
+          "events": []
+        },
+        {
+          "visit": 3,
+          "phase": 0,
+          "flags": 10,
+          "position": [
+            200.0,
+            120.0
+          ],
+          "timer": [
+            -1,
+            0,
+            0.0
+          ],
+          "timerFlags": 1,
+          "word4": 9,
+          "interrupt": 1,
+          "events": []
+        }
+      ]
+    },
+    {
+      "case": "outside-top-retires-on-next-visit",
+      "initial": {
+        "phase": 2,
+        "position": [
+          0,
+          -8
+        ],
+        "velocity": [
+          4,
+          2
+        ],
+        "age": 14,
+        "timerFlags": 1
+      },
+      "cancelResult": 1,
+      "cancelled": {
+        "phase": 3,
+        "flags": 10,
+        "position": [
+          0.0,
+          -8.0
+        ],
+        "timer": [
+          13,
+          14,
+          14.0
+        ],
+        "timerFlags": 1,
+        "word4": 9,
+        "interrupt": 1
+      },
+      "passes": [
+        {
+          "visit": 1,
+          "phase": 0,
+          "flags": 10,
+          "position": [
+            0.0,
+            -8.0
+          ],
+          "timer": [
+            -1,
+            0,
+            0.0
+          ],
+          "timerFlags": 1,
+          "word4": 9,
+          "interrupt": 1,
+          "events": []
+        },
+        {
+          "visit": 2,
+          "phase": 0,
+          "flags": 10,
+          "position": [
+            0.0,
+            -8.0
+          ],
+          "timer": [
+            -1,
+            0,
+            0.0
+          ],
+          "timerFlags": 1,
+          "word4": 9,
+          "interrupt": 1,
+          "events": []
+        },
+        {
+          "visit": 3,
+          "phase": 0,
+          "flags": 10,
+          "position": [
+            0.0,
+            -8.0
+          ],
+          "timer": [
+            -1,
+            0,
+            0.0
+          ],
+          "timerFlags": 1,
+          "word4": 9,
+          "interrupt": 1,
+          "events": []
+        }
+      ]
+    }
+  ]
+}

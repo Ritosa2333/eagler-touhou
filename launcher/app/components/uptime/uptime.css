@@ -1,0 +1,38 @@
+.standalone-page-shell{min-height:100dvh;background:var(--kit-background);color:var(--kit-foreground);font-family:var(--kit-font)}
+.uptime-page{width:min(1160px,100%);margin:0 auto;padding:32px 24px max(48px,var(--ui-safe-bottom))}
+.uptime-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.uptime-heading h1{margin:0;font-size:28px;line-height:1.25;font-weight:600;letter-spacing:-.025em}
+.uptime-ranges{flex:none;min-width:280px}
+.uptime-message{min-height:24px;margin:12px 0;color:var(--kit-muted-foreground);font-size:13px;line-height:24px}
+.uptime-message[role=alert]{color:var(--kit-destructive)}
+.uptime-list{min-height:100px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card);overflow:hidden}
+.uptime-list[data-empty-failure]{border-color:transparent;background:transparent}
+.uptime-columns,.uptime-row{display:grid;grid-template-columns:80px minmax(130px,1fr) minmax(180px,1.4fr) 90px 100px;gap:16px;align-items:center;padding:16px 20px}
+.uptime-columns{color:var(--kit-muted-foreground);font-size:12px}
+.uptime-group h2{margin:0;padding:10px 20px;border-top:1px solid var(--kit-border);background:var(--kit-muted);font-size:13px;line-height:1.5;font-weight:600}
+.uptime-row{min-height:72px;border-top:1px solid var(--kit-border);font-size:14px}
+.uptime-service{font-weight:500;overflow-wrap:anywhere}
+.uptime-status{color:var(--kit-success);font-size:13px}
+.uptime-row[data-status=outage] .uptime-status{color:var(--kit-destructive)}
+.uptime-row:is([data-status=unknown],[data-status=stale]) .uptime-status{color:var(--kit-muted-foreground)}
+.uptime-history{display:flex;gap:3px;height:24px;min-width:0}
+.uptime-history i{flex:1;min-width:0;border-radius:2px;background:var(--kit-border)}
+.uptime-history i[data-state=up]{background:var(--kit-success)}
+.uptime-history i[data-state=partial]{background:var(--kit-warning)}
+.uptime-history i[data-state=down]{background:var(--kit-destructive)}
+.uptime-latency,.uptime-availability{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.uptime-columns>:nth-last-child(-n+2){text-align:right}
+.uptime-empty{margin:24px;color:var(--kit-muted-foreground);font-size:14px}
+@media(max-width:780px){
+ .uptime-page{padding:24px 16px max(36px,var(--ui-safe-bottom))}
+ .uptime-heading{align-items:flex-start;flex-direction:column;gap:16px}
+ .uptime-heading h1{font-size:24px}
+ .uptime-ranges{align-self:stretch;min-width:0;max-width:360px}
+ .uptime-columns{display:none}
+ .uptime-group h2{padding:10px 14px}
+ .uptime-row{grid-template-columns:44px minmax(0,1fr) 64px 68px;gap:8px;padding:14px;font-size:13px;min-height:84px}
+ .uptime-history{grid-column:1/-1;grid-row:2;height:14px;margin-top:3px}
+ .uptime-status{font-size:12px}
+ .uptime-latency{grid-column:3;grid-row:1}
+ .uptime-availability{grid-column:4;grid-row:1}
+}

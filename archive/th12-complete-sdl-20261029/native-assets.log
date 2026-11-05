@@ -1,0 +1,14 @@
+multiplayer-assets.cpp
+retail stage=1 seats=3 first=0 frames=780 hash=16347a3f ANM=243
+retail stage=1 seats=2 first=1 frames=780 hash=dabf0693 ANM=182
+retail stage=1 seats=3 first=2 frames=780 hash=d088fff7 ANM=251
+retail stage=1 seats=2 first=3 frames=780 hash=6f2bbb5a ANM=206
+retail stage=1 seats=3 first=4 frames=780 hash=ed046bb6 ANM=246
+retail stage=1 seats=2 first=5 frames=780 hash=e392f42e ANM=198
+retail stage=7 seats=3 first=0 frames=780 hash=a6b5f7a6 ANM=684
+retail stage=7 seats=2 first=1 frames=780 hash=72e3cfbb ANM=616
+retail stage=7 seats=3 first=2 frames=780 hash=9414b92b ANM=679
+retail stage=7 seats=2 first=3 frames=780 hash=427dc1dc ANM=630
+retail stage=7 seats=3 first=4 frames=780 hash=3832d199 ANM=677
+retail stage=7 seats=2 first=5 frames=780 hash=e6f3def8 ANM=707
+TH12 multiplayer retail assets: six loadouts, Normal/Extra, rollback and all stage transitions passed

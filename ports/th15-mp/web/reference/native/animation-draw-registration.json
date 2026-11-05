@@ -1,0 +1,154 @@
+[
+  {
+    "callback": "0x4871a0",
+    "priority": 5
+  },
+  {
+    "callback": "0x4871b0",
+    "priority": 7
+  },
+  {
+    "callback": "0x4871c0",
+    "priority": 9
+  },
+  {
+    "callback": "0x4871d0",
+    "priority": 11
+  },
+  {
+    "callback": "0x4871e0",
+    "priority": 10
+  },
+  {
+    "callback": "0x487270",
+    "priority": 13
+  },
+  {
+    "callback": "0x487280",
+    "priority": 16
+  },
+  {
+    "callback": "0x487290",
+    "priority": 18
+  },
+  {
+    "callback": "0x4872a0",
+    "priority": 19
+  },
+  {
+    "callback": "0x4872b0",
+    "priority": 20
+  },
+  {
+    "callback": "0x4872c0",
+    "priority": 21
+  },
+  {
+    "callback": "0x4872d0",
+    "priority": 23
+  },
+  {
+    "callback": "0x487340",
+    "priority": 26
+  },
+  {
+    "callback": "0x4872e0",
+    "priority": 27
+  },
+  {
+    "callback": "0x4872f0",
+    "priority": 30
+  },
+  {
+    "callback": "0x487300",
+    "priority": 31
+  },
+  {
+    "callback": "0x487310",
+    "priority": 33
+  },
+  {
+    "callback": "0x487320",
+    "priority": 35
+  },
+  {
+    "callback": "0x487330",
+    "priority": 38
+  },
+  {
+    "callback": "0x487350",
+    "priority": 40
+  },
+  {
+    "callback": "0x487430",
+    "priority": 43
+  },
+  {
+    "callback": "0x487360",
+    "priority": 44
+  },
+  {
+    "callback": "0x487370",
+    "priority": 50
+  },
+  {
+    "callback": "0x487380",
+    "priority": 52
+  },
+  {
+    "callback": "0x4873c0",
+    "priority": 59
+  },
+  {
+    "callback": "0x4873b0",
+    "priority": 74
+  },
+  {
+    "callback": "0x487390",
+    "priority": 76
+  },
+  {
+    "callback": "0x4873a0",
+    "priority": 79
+  },
+  {
+    "callback": "0x4873d0",
+    "priority": 57
+  },
+  {
+    "callback": "0x4874d0",
+    "priority": 56
+  },
+  {
+    "callback": "0x487580",
+    "priority": 61
+  },
+  {
+    "callback": "0x487610",
+    "priority": 53
+  },
+  {
+    "callback": "0x4873e0",
+    "priority": 58
+  },
+  {
+    "callback": "0x4873f0",
+    "priority": 60
+  },
+  {
+    "callback": "0x4876b0",
+    "priority": 62
+  },
+  {
+    "callback": "0x487400",
+    "priority": 75
+  },
+  {
+    "callback": "0x487410",
+    "priority": 77
+  },
+  {
+    "callback": "0x487420",
+    "priority": 80
+  }
+]

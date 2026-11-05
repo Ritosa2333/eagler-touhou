@@ -1,0 +1,345 @@
+#include "ScreenEffect.hpp"
+#include "AnmManager.hpp"
+#include "ChainPriorities.hpp"
+#include "GameWindow.hpp"
+#include "Rng.hpp"
+#include "Supervisor.hpp"
+
+#include <SDL3/SDL.h>
+#include <cstring>
+
+namespace
+{
+int g_ActiveShakeEffects = 0;
+bool g_CancelNextShakeForRestart = false;
+}
+
+void ScreenEffect::Clear(ZunColor color)
+{
+    f32 a = (color >> 24) / 255.0f;
+    f32 r = ((color >> 16) & 0xFF) / 255.0f;
+    f32 g = ((color >> 8) & 0xFF) / 255.0f;
+    f32 b = (color & 0xFF) / 255.0f;
+
+    g_GfxBackend->SetClearColor(r, g, b, a);
+
+    // D3D version clears and presents twice (probably to clear both draw buffers?)
+    // For now let's copy that behaviour
+
+    g_GfxBackend->Clear(CLEAR_COLOR_BUFFER | CLEAR_DEPTH_BUFFER);
+    g_GfxBackend->SwapBuffers();
+    g_GfxBackend->Clear(CLEAR_COLOR_BUFFER | CLEAR_DEPTH_BUFFER);
+    g_GfxBackend->SwapBuffers();
+
+    return;
+}
+
+// Why is this not in GameWindow.cpp? Don't ask me...
+void ScreenEffect::SetViewport(ZunColor color)
+{
+    g_Supervisor.viewport.x = 0;
+    g_Supervisor.viewport.y = 0;
+    g_Supervisor.viewport.width = GAME_WINDOW_WIDTH;
+    g_Supervisor.viewport.height = GAME_WINDOW_HEIGHT;
+    g_Supervisor.viewport.minZ = 0.0;
+    g_Supervisor.viewport.maxZ = 1.0;
+    g_Supervisor.viewport.Set();
+    ScreenEffect::Clear(color);
+}
+
+ChainCallbackResult ScreenEffect::CalcFadeIn(ScreenEffect *effect)
+{
+    effect->prevFadeAlpha = effect->fadeAlpha;
+    if (effect->effectLength != 0)
+    {
+        effect->fadeAlpha = 255.0f - ((effect->timer.AsFramesFloat() * 255.0f) / effect->effectLength);
+        if (effect->fadeAlpha < 0)
+        {
+            effect->fadeAlpha = 0;
+        }
+    }
+
+    if (effect->timer >= effect->effectLength)
+    {
+        return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+    }
+
+    effect->timer.Tick();
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+static void DrawSquareWithBlend(const ZunRect *rect, ZunColor rectColor, BlendMode blendMode)
+{
+    VertexDiffuseXyzrhw vertices[4];
+
+    if (g_AnmManager->currentTextureHandle == 0)
+    {
+        g_AnmManager->SetCurrentTexture(g_AnmManager->dummyTextureHandle);
+    }
+
+    vertices[0].position = ZunVec4(rect->left, rect->top, 0.0f, 1.0f);
+    vertices[1].position = ZunVec4(rect->right, rect->top, 0.0f, 1.0f);
+    vertices[2].position = ZunVec4(rect->left, rect->bottom, 0.0f, 1.0f);
+    vertices[3].position = ZunVec4(rect->right, rect->bottom, 0.0f, 1.0f);
+
+    vertices[0].diffuse = vertices[1].diffuse = vertices[2].diffuse = vertices[3].diffuse = ColorData(rectColor);
+
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
+
+    g_AnmManager->SetVertexAttributes(VERTEX_ATTR_DIFFUSE);
+
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_POSITION, sizeof(*vertices), &vertices[0].position);
+    g_AnmManager->SetAttributePointer(VERTEX_ARRAY_DIFFUSE, sizeof(*vertices), &vertices[0].diffuse);
+
+    g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_REPLACE);
+    g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_REPLACE);
+
+    g_AnmManager->SetDepthMask(false);
+    g_AnmManager->SetDepthFunc(DEPTH_FUNC_ALWAYS);
+
+    g_GfxBackend->SetBlendMode(blendMode);
+
+    g_AnmManager->BackendDrawCall();
+
+    g_AnmManager->SetCurrentSprite(NULL);
+    g_AnmManager->SetCurrentTexture(0);
+    g_AnmManager->SetCurrentBlendMode(0xff);
+
+    g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_MODULATE);
+    g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_MODULATE);
+
+    g_AnmManager->SetDepthFunc(DEPTH_FUNC_LEQUAL);
+}
+
+void ScreenEffect::DrawSquare(const ZunRect *rect, ZunColor rectColor)
+{
+    DrawSquareWithBlend(rect, rectColor, BLEND_INV_SRC_ALPHA);
+}
+
+
+ChainCallbackResult ScreenEffect::CalcFadeOut(ScreenEffect *effect)
+{
+    effect->prevFadeAlpha = effect->fadeAlpha;
+    if (effect->effectLength != 0)
+    {
+        effect->fadeAlpha = (effect->timer.AsFramesFloat() * 255.0f) / effect->effectLength;
+        if (effect->fadeAlpha < 0)
+        {
+            effect->fadeAlpha = 0;
+        }
+    }
+
+    if (effect->timer >= effect->effectLength)
+    {
+        return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+    }
+
+    effect->timer.Tick();
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ScreenEffect *ScreenEffect::RegisterChain(i32 effect, u32 ticks, u32 effectParam1, u32 effectParam2,
+                                          u32 unusedEffectParam)
+{
+    ChainElem *calcChainElem;
+    ScreenEffect *createdEffect;
+    ChainElem *drawChainElem;
+
+    calcChainElem = NULL;
+    drawChainElem = NULL;
+
+    createdEffect = new ScreenEffect;
+
+    if (createdEffect == NULL)
+    {
+        return NULL;
+    }
+
+    std::memset(createdEffect, 0, sizeof(*createdEffect));
+
+    switch (effect)
+    {
+    case SCREEN_EFFECT_FADE_IN:
+        calcChainElem = g_Chain.CreateElem((ChainCallback)ScreenEffect::CalcFadeIn);
+        drawChainElem = g_Chain.CreateElem((ChainCallback)ScreenEffect::DrawFadeIn);
+        break;
+    case SCREEN_EFFECT_SHAKE:
+        calcChainElem = g_Chain.CreateElem((ChainCallback)ScreenEffect::ShakeScreen);
+        break;
+    case SCREEN_EFFECT_FADE_OUT:
+        calcChainElem = g_Chain.CreateElem((ChainCallback)ScreenEffect::CalcFadeOut);
+        drawChainElem = g_Chain.CreateElem((ChainCallback)ScreenEffect::DrawFadeOut);
+    }
+
+    calcChainElem->addedCallback = (ChainAddedCallback)ScreenEffect::AddedCallback;
+    calcChainElem->deletedCallback = (ChainAddedCallback)ScreenEffect::DeletedCallback;
+    calcChainElem->arg = createdEffect;
+    createdEffect->usedEffect = (ScreenEffects)effect;
+    createdEffect->effectLength = ticks;
+    createdEffect->genericParam = effectParam1;
+    createdEffect->shakinessParam = effectParam2;
+    createdEffect->unusedParam = unusedEffectParam;
+
+    if (effect == SCREEN_EFFECT_FADE_IN)
+    {
+        // A presentation frame can occur before this effect's first 60 Hz
+        // calc callback. Fade-in is defined to start fully opaque; leaving the
+        // memset value of zero visible for that frame exposes the black frame
+        // clear between the startup logo and the white title transition.
+        createdEffect->fadeAlpha = 255;
+        createdEffect->prevFadeAlpha = 255;
+    }
+
+    if (g_Chain.AddToCalcChain(calcChainElem, TH_CHAIN_PRIO_CALC_SCREENEFFECT) != 0)
+    {
+        return NULL;
+    }
+
+    if (drawChainElem != NULL)
+    {
+        drawChainElem->arg = createdEffect;
+        g_Chain.AddToDrawChain(drawChainElem, TH_CHAIN_PRIO_DRAW_SCREENEFFECT);
+    }
+
+    createdEffect->calcChainElement = calcChainElem;
+    createdEffect->drawChainElement = drawChainElem;
+    return createdEffect;
+}
+
+ChainCallbackResult ScreenEffect::DrawFadeIn(ScreenEffect *effect)
+{
+    ZunRect fadeRect;
+
+    fadeRect.left = 0.0f;
+    fadeRect.top = 0.0f;
+    fadeRect.right = GAME_WINDOW_WIDTH;
+    fadeRect.bottom = GAME_WINDOW_HEIGHT;
+    g_Supervisor.viewport.x = 0;
+    g_Supervisor.viewport.y = 0;
+    g_Supervisor.viewport.width = GAME_WINDOW_WIDTH;
+    g_Supervisor.viewport.height = GAME_WINDOW_HEIGHT;
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
+    g_Supervisor.viewport.Set();
+    const i32 drawAlpha = static_cast<i32>(
+        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha);
+    ScreenEffect::DrawSquare(&fadeRect, (drawAlpha << 24) | effect->genericParam);
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ChainCallbackResult ScreenEffect::DrawFadeOut(ScreenEffect *effect)
+{
+    ZunRect fadeRect;
+
+    fadeRect.left = 32.0f;
+    fadeRect.top = 16.0f;
+    fadeRect.right = 416.0f;
+    fadeRect.bottom = 464.0f;
+    const i32 drawAlpha = static_cast<i32>(
+        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha);
+    ScreenEffect::DrawSquare(&fadeRect, (drawAlpha << 24) | effect->genericParam);
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ChainCallbackResult ScreenEffect::ShakeScreen(ScreenEffect *effect)
+{
+    f32 screenOffset;
+
+    if (g_GameManager.isTimeStopped)
+    {
+        g_GameManager.arcadeRegionTopLeftPos.x = 32.0f;
+        g_GameManager.arcadeRegionTopLeftPos.y = 16.0f;
+        g_GameManager.arcadeRegionSize.x = 384.0f;
+        g_GameManager.arcadeRegionSize.y = 448.0f;
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
+
+    effect->timer.Tick();
+    // Upstream DisableShakeScreenEffect() arms a one-shot hook at 0x430042,
+    // after the timer tick/comparison setup but before either shake RNG call.
+    // Forcing the cleanup branch here preserves that restart/desync boundary.
+    if (g_CancelNextShakeForRestart)
+    {
+        g_CancelNextShakeForRestart = false;
+        g_GameManager.arcadeRegionTopLeftPos.x = 32.0f;
+        g_GameManager.arcadeRegionTopLeftPos.y = 16.0f;
+        g_GameManager.arcadeRegionSize.x = 384.0f;
+        g_GameManager.arcadeRegionSize.y = 448.0f;
+        return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+    }
+    if (effect->timer >= effect->effectLength)
+    {
+        g_GameManager.arcadeRegionTopLeftPos.x = 32.0f;
+        g_GameManager.arcadeRegionTopLeftPos.y = 16.0f;
+        g_GameManager.arcadeRegionSize.x = 384.0f;
+        g_GameManager.arcadeRegionSize.y = 448.0f;
+        return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+    }
+
+    screenOffset =
+        ((effect->timer.AsFramesFloat() * (effect->shakinessParam - effect->genericParam)) / effect->effectLength) +
+        effect->genericParam;
+
+    switch (g_Rng.GetRandomU32InRange(3))
+    {
+    case 0:
+        g_GameManager.arcadeRegionTopLeftPos.x = 32.0f;
+        g_GameManager.arcadeRegionSize.x = 384.0f;
+        break;
+    case 1:
+        g_GameManager.arcadeRegionTopLeftPos.x = 32.0f + screenOffset;
+        g_GameManager.arcadeRegionSize.x = 384.0f - screenOffset;
+        break;
+    case 2:
+        g_GameManager.arcadeRegionTopLeftPos.x = 32.0f;
+        g_GameManager.arcadeRegionSize.x = 384.0f - screenOffset;
+        break;
+    }
+
+    switch (g_Rng.GetRandomU32InRange(3))
+    {
+    case 0:
+        g_GameManager.arcadeRegionTopLeftPos.y = 16.0f;
+        g_GameManager.arcadeRegionSize.y = 448.0f;
+        break;
+    case 1:
+        g_GameManager.arcadeRegionTopLeftPos.y = 16.0f + screenOffset;
+        g_GameManager.arcadeRegionSize.y = 448.0f - screenOffset;
+        break;
+    case 2:
+        g_GameManager.arcadeRegionTopLeftPos.y = 16.0f;
+        g_GameManager.arcadeRegionSize.y = 448.0f - screenOffset;
+        break;
+    }
+
+    return CHAIN_CALLBACK_RESULT_CONTINUE;
+}
+
+ZunResult ScreenEffect::AddedCallback(ScreenEffect *effect)
+{
+    effect->timer.InitializeForPopup();
+    if (effect->usedEffect == SCREEN_EFFECT_SHAKE)
+        ++g_ActiveShakeEffects;
+    return ZUN_SUCCESS;
+}
+
+void ScreenEffect::RequestShakeCancelForRestart()
+{
+    // The original helper scans the calc chain and only enables the one-shot
+    // patch when a ShakeScreen job is actually present. Never leave a request
+    // armed for a future unrelated shake.
+    if (g_ActiveShakeEffects > 0)
+        g_CancelNextShakeForRestart = true;
+}
+
+ZunResult ScreenEffect::DeletedCallback(ScreenEffect *effect)
+{
+    if (effect->usedEffect == SCREEN_EFFECT_SHAKE && g_ActiveShakeEffects > 0)
+        --g_ActiveShakeEffects;
+    effect->calcChainElement->deletedCallback = NULL;
+    g_Chain.Cut(effect->drawChainElement);
+    effect->drawChainElement = NULL;
+    delete effect;
+    effect = NULL;
+
+    return ZUN_SUCCESS;
+}

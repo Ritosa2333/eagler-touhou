@@ -1,0 +1,40 @@
+{
+  "scope": "Local diagnostic native Ending, physical local result input and multiplayer Replay serialization; no live-site deployment",
+  "build": {
+    "game": "th08",
+    "variant": "multiplayer-fixtures",
+    "sha256": "ef8fd333355d701501e088b3b313ae24f92944206cccb4a18ba0e04638ddd2cb",
+    "bytes": 4008154
+  },
+  "passed": true,
+  "errors": [],
+  "cases": [
+    {
+      "players": 2,
+      "endingKind": 0,
+      "passed": true
+    },
+    {
+      "players": 2,
+      "endingKind": 1,
+      "passed": true
+    },
+    {
+      "players": 2,
+      "endingKind": 2,
+      "passed": true,
+      "savedReplays": [
+        {
+          "name": "th8_01.rpyx",
+          "size": 4552,
+          "valid": true
+        }
+      ]
+    },
+    {
+      "players": 3,
+      "endingKind": 2,
+      "passed": true
+    }
+  ]
+}

@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-
-
-# please do not attack ¨r(¨s¨Œ¨t)¨q

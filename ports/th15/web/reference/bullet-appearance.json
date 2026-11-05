@@ -1,0 +1,4627 @@
+{
+  "targetSha256": "67a642357c8777089f468aab9c7a0ae346ebdb62849d842a7b7b18d1e6910364",
+  "originalTable": "0x004e0f60",
+  "entryBytes": 276,
+  "presets": [
+    {
+      "script": 35,
+      "colors": [
+        {
+          "sprite": 0,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 153
+        },
+        {
+          "sprite": 1,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 156
+        },
+        {
+          "sprite": 2,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 159
+        },
+        {
+          "sprite": 3,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 162
+        },
+        {
+          "sprite": 4,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 165
+        },
+        {
+          "sprite": 5,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 168
+        },
+        {
+          "sprite": 6,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 171
+        },
+        {
+          "sprite": 7,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 174
+        },
+        {
+          "sprite": 8,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 177
+        },
+        {
+          "sprite": 9,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 180
+        },
+        {
+          "sprite": 10,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 183
+        },
+        {
+          "sprite": 11,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 186
+        },
+        {
+          "sprite": 12,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 189
+        },
+        {
+          "sprite": 13,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 192
+        },
+        {
+          "sprite": 14,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 195
+        },
+        {
+          "sprite": 15,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 198
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 5,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 36,
+      "colors": [
+        {
+          "sprite": 0,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 153
+        },
+        {
+          "sprite": 1,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 156
+        },
+        {
+          "sprite": 2,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 159
+        },
+        {
+          "sprite": 3,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 162
+        },
+        {
+          "sprite": 4,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 165
+        },
+        {
+          "sprite": 5,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 168
+        },
+        {
+          "sprite": 6,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 171
+        },
+        {
+          "sprite": 7,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 174
+        },
+        {
+          "sprite": 8,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 177
+        },
+        {
+          "sprite": 9,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 180
+        },
+        {
+          "sprite": 10,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 183
+        },
+        {
+          "sprite": 11,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 186
+        },
+        {
+          "sprite": 12,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 189
+        },
+        {
+          "sprite": 13,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 192
+        },
+        {
+          "sprite": 14,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 195
+        },
+        {
+          "sprite": 15,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 198
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 5,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 37,
+      "colors": [
+        {
+          "sprite": 16,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 17,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 18,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 19,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 20,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 21,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 22,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 23,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 24,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 25,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 26,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 27,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 28,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 29,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 30,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 31,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 5,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 38,
+      "colors": [
+        {
+          "sprite": 48,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 49,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 50,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 51,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 52,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 53,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 54,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 55,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 56,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 57,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 58,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 59,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 60,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 61,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 62,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 63,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2,
+      "item": 5,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 39,
+      "colors": [
+        {
+          "sprite": 64,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 65,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 66,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 67,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 68,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 69,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 70,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 71,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 72,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 73,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 74,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 75,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 76,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 77,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 78,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 79,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 40,
+      "colors": [
+        {
+          "sprite": 80,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 81,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 82,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 83,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 84,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 85,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 86,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 87,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 88,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 89,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 90,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 91,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 92,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 93,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 94,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 95,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 41,
+      "colors": [
+        {
+          "sprite": 96,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 97,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 98,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 99,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 100,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 101,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 102,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 103,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 104,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 105,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 106,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 107,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 108,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 109,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 110,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 111,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 42,
+      "colors": [
+        {
+          "sprite": 112,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 113,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 114,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 115,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 116,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 117,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 118,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 119,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 120,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 121,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 122,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 123,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 124,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 125,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 126,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 127,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 43,
+      "colors": [
+        {
+          "sprite": 128,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 129,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 130,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 131,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 132,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 133,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 134,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 135,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 136,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 137,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 138,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 139,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 140,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 141,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 142,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 143,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 44,
+      "colors": [
+        {
+          "sprite": 160,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 161,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 162,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 163,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 164,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 165,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 166,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 167,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 168,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 169,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 170,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 171,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 172,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 173,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 174,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 175,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 45,
+      "colors": [
+        {
+          "sprite": 176,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 177,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 178,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 179,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 180,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 181,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 182,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 183,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 184,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 185,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 186,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 187,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 188,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 189,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 190,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 191,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 46,
+      "colors": [
+        {
+          "sprite": 208,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 209,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 210,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 211,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 212,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 213,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 214,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 215,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 216,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 217,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 218,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 219,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 220,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 221,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 222,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 223,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.799999952316284,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 47,
+      "colors": [
+        {
+          "sprite": 224,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 225,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 226,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 227,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 228,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 229,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 230,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 231,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 232,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 233,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 234,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 235,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 236,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 237,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 238,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 239,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 48,
+      "colors": [
+        {
+          "sprite": 240,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 241,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 242,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 243,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 244,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 245,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 246,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 247,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 248,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 249,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 250,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 251,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 252,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 253,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 254,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 255,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 49,
+      "colors": [
+        {
+          "sprite": 256,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 257,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 258,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 259,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 260,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 261,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 262,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 263,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 264,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 265,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 266,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 267,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 268,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 269,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 270,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 271,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 50,
+      "colors": [
+        {
+          "sprite": 272,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 273,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 274,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 275,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 276,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 277,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 278,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 279,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 280,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 281,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 282,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 283,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 284,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 285,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 286,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 287,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 51,
+      "colors": [
+        {
+          "sprite": 288,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 289,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 290,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 291,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 292,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 293,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 294,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 295,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 296,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 297,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 298,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 299,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 300,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 301,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 302,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 303,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 52,
+      "colors": [
+        {
+          "sprite": 320,
+          "hit": 329,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 321,
+          "hit": 330,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 322,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 0,
+      "overlay": 0
+    },
+    {
+      "script": 72,
+      "colors": [
+        {
+          "sprite": 368,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 369,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 370,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 371,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 372,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 373,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 374,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 375,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 8.5,
+      "item": 1,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 73,
+      "colors": [
+        {
+          "sprite": 376,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 377,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 378,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 379,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 380,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 381,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 382,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 383,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 8.5,
+      "item": 1,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 74,
+      "colors": [
+        {
+          "sprite": 392,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 393,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 394,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 395,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 396,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 397,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 398,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 399,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 7,
+      "item": 2,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 75,
+      "colors": [
+        {
+          "sprite": 400,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 401,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 402,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 403,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 404,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 405,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 406,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 407,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 6,
+      "item": 2,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 76,
+      "colors": [
+        {
+          "sprite": 408,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 409,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 410,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 411,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 412,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 413,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 414,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 415,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 7,
+      "item": 2,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 77,
+      "colors": [
+        {
+          "sprite": 416,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 417,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 418,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 419,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 420,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 421,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 422,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 423,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 7,
+      "item": 1,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 78,
+      "colors": [
+        {
+          "sprite": 424,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 425,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 426,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 427,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 428,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 429,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 430,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 431,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 7,
+      "item": 1,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 108,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 6,
+      "item": 2,
+      "cancel_kind": 7,
+      "overlay": 0
+    },
+    {
+      "script": 109,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 6,
+      "item": 2,
+      "cancel_kind": 8,
+      "overlay": 0
+    },
+    {
+      "script": 110,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 2,
+      "cancel_kind": 9,
+      "overlay": 0
+    },
+    {
+      "script": 111,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 2,
+      "cancel_kind": 10,
+      "overlay": 0
+    },
+    {
+      "script": 81,
+      "colors": [
+        {
+          "sprite": 444,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 445,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 446,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 447,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 448,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 449,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 450,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 451,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 10,
+      "item": 1,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 79,
+      "colors": [
+        {
+          "sprite": 384,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 385,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 386,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 387,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 388,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 389,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 390,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 391,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 7,
+      "item": 1,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 82,
+      "colors": [
+        {
+          "sprite": 452,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 453,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 454,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 455,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 456,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 457,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 458,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 459,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 80,
+      "colors": [
+        {
+          "sprite": 432,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 273
+        },
+        {
+          "sprite": 433,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 276
+        },
+        {
+          "sprite": 434,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 279
+        },
+        {
+          "sprite": 435,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 282
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 14,
+      "item": 0,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 307,
+      "colors": [
+        {
+          "sprite": 547,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 548,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 549,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 550,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 551,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 552,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 553,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 554,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 12,
+      "item": 2,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 107,
+      "colors": [
+        {
+          "sprite": 468,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 469,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 470,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 471,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 472,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 473,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 474,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 475,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 476,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 477,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 478,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 479,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 480,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 481,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 482,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 483,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 2.4000000953674316,
+      "item": 5,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 53,
+      "colors": [
+        {
+          "sprite": 144,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 145,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 146,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 147,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 148,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 149,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 150,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 151,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 152,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 153,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 154,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 155,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 156,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 157,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 158,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 159,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 3.200000047683716,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 54,
+      "colors": [
+        {
+          "sprite": 192,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 193,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 194,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 195,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 196,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 197,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 198,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 199,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 200,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 201,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 202,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 203,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 204,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 205,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 206,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 207,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 3.200000047683716,
+      "item": 4,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 55,
+      "colors": [
+        {
+          "sprite": 304,
+          "hit": 323,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 305,
+          "hit": 324,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 306,
+          "hit": 324,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 307,
+          "hit": 325,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 308,
+          "hit": 325,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 309,
+          "hit": 326,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 310,
+          "hit": 326,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 311,
+          "hit": 327,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 312,
+          "hit": 327,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 313,
+          "hit": 328,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 314,
+          "hit": 328,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 315,
+          "hit": 328,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 316,
+          "hit": 329,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 317,
+          "hit": 329,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 318,
+          "hit": 329,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 319,
+          "hit": 330,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 150,
+      "colors": [
+        {
+          "sprite": 352,
+          "hit": -1,
+          "spawn": 336,
+          "cancel": 201
+        },
+        {
+          "sprite": 353,
+          "hit": -1,
+          "spawn": 337,
+          "cancel": 204
+        },
+        {
+          "sprite": 354,
+          "hit": -1,
+          "spawn": 338,
+          "cancel": 207
+        },
+        {
+          "sprite": 355,
+          "hit": -1,
+          "spawn": 339,
+          "cancel": 210
+        },
+        {
+          "sprite": 356,
+          "hit": -1,
+          "spawn": 340,
+          "cancel": 213
+        },
+        {
+          "sprite": 357,
+          "hit": -1,
+          "spawn": 341,
+          "cancel": 216
+        },
+        {
+          "sprite": 358,
+          "hit": -1,
+          "spawn": 342,
+          "cancel": 219
+        },
+        {
+          "sprite": 359,
+          "hit": -1,
+          "spawn": 343,
+          "cancel": 222
+        },
+        {
+          "sprite": 360,
+          "hit": -1,
+          "spawn": 344,
+          "cancel": 225
+        },
+        {
+          "sprite": 361,
+          "hit": -1,
+          "spawn": 345,
+          "cancel": 228
+        },
+        {
+          "sprite": 362,
+          "hit": -1,
+          "spawn": 346,
+          "cancel": 231
+        },
+        {
+          "sprite": 363,
+          "hit": -1,
+          "spawn": 347,
+          "cancel": 234
+        },
+        {
+          "sprite": 364,
+          "hit": -1,
+          "spawn": 348,
+          "cancel": 237
+        },
+        {
+          "sprite": 365,
+          "hit": -1,
+          "spawn": 349,
+          "cancel": 240
+        },
+        {
+          "sprite": 366,
+          "hit": -1,
+          "spawn": 350,
+          "cancel": 243
+        },
+        {
+          "sprite": 367,
+          "hit": -1,
+          "spawn": 351,
+          "cancel": 246
+        }
+      ],
+      "radius": 4,
+      "item": 2,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 309,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 310,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 311,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 312,
+      "colors": [
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        },
+        {
+          "sprite": -1,
+          "hit": -1,
+          "spawn": -1,
+          "cancel": 0
+        }
+      ],
+      "radius": 4,
+      "item": 3,
+      "cancel_kind": 6,
+      "overlay": 0
+    },
+    {
+      "script": 313,
+      "colors": [
+        {
+          "sprite": 567,
+          "hit": 323,
+          "spawn": 0,
+          "cancel": 249
+        },
+        {
+          "sprite": 568,
+          "hit": 324,
+          "spawn": 0,
+          "cancel": 252
+        },
+        {
+          "sprite": 569,
+          "hit": 325,
+          "spawn": 0,
+          "cancel": 255
+        },
+        {
+          "sprite": 570,
+          "hit": 326,
+          "spawn": 0,
+          "cancel": 258
+        },
+        {
+          "sprite": 571,
+          "hit": 327,
+          "spawn": 0,
+          "cancel": 261
+        },
+        {
+          "sprite": 572,
+          "hit": 328,
+          "spawn": 0,
+          "cancel": 264
+        },
+        {
+          "sprite": 573,
+          "hit": 329,
+          "spawn": 0,
+          "cancel": 267
+        },
+        {
+          "sprite": 574,
+          "hit": 330,
+          "spawn": 0,
+          "cancel": 270
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        },
+        {
+          "sprite": 0,
+          "hit": 0,
+          "spawn": 0,
+          "cancel": 0
+        }
+      ],
+      "radius": 5,
+      "item": 2,
+      "cancel_kind": 6,
+      "overlay": 0
+    }
+  ]
+}

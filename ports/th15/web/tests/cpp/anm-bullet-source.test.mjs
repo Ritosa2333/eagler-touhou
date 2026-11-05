@@ -1,0 +1,23 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';
+import {core,oracle,memory,string,root,report} from './helpers.mjs';
+function ins(op,args=[],time=0){const b=Buffer.alloc(8+args.length*4);b.writeInt16LE(op);b.writeUInt16LE(b.length,2);b.writeInt16LE(time,4);args.forEach((a,i)=>b.writeInt32LE(a,8+i*4));return b;}
+test('TH15 bullet sprite parameters and live colour changes match original ANM callbacks',async()=>{
+ const c=await core(),m=await oracle(),vm=c.anm_vm_create(),rng=c.rng_create(),sourceFixture=c.bullet_sprite_source_create(),bank=m.allocate(0x13c),native=m.allocate(0x608),bullet=m.allocate(0x1500),manager=m.allocate(0x187f600),source=m.allocate(1024),path=m.allocate(64),vtable=m.allocate(0x60),texture=m.allocate(16);let width,height,checks=0,frames=0;
+ const data=readFileSync(resolve(root,'reference/assets/bullet.anm')),p=c.allocate(data.length),resource=c.anm_create();memory(c,p,data.length).set(data);assert.equal(c.anm_open(resource,p,data.length),1);m.u32(texture,vtable);
+ m.replace(0x490cf2,'fixture format path',()=>0);m.replace(0x402db0,'original ANM resource bytes',()=>{const out=m.allocate(data.length);m.write(out,data);if(m.reg('EDX'))m.u32(m.reg('EDX'),data.length);return out;},1);
+ const desc=m.registerImport({dll:'fixture',name:'texture dimensions',argc:3,handler:()=>{const out=m.u32(m.reg('ESP')+12);m.view(out,32).fill(0);m.u32(out+24,width);m.u32(out+28,height);return 0;}});m.u32(vtable+0x44,desc);
+ for(const a of [0x485a60,0x485c30,0x485c80,0x485820])m.replace(a,'dimension preserving texture allocation',()=>{m.u32(m.u32(m.reg('ESP')+4),texture);return 0;});m.f32(0x51bc04,2);m.u32(0x51bbfc,640);m.u32(0x51bc00,480);m.write(path,Buffer.from('bullet.anm\0'));m.call(0x485d20,{ecx:bank,args:[path]});
+ let at=0,chunk=0,ns=0,nc=0;do{width=data.readUInt16LE(at+10);height=data.readUInt16LE(at+12);m.call(0x486300,{args:[bank,chunk,ns,nc,m.u32(bank+0x108)+at]});ns+=data.readUInt16LE(at+4);nc+=data.readUInt16LE(at+6);chunk++;const next=data.readUInt32LE(at+36);if(!next)break;at+=next;}while(at<data.length);
+ m.u32(0x503c18,manager);m.u32(manager+0x187f4d8,bank);m.u32(0x4ca620,0x4e73e8);m.f32(0x4e73e8,1);
+ const script=Buffer.concat([ins(300,[0]),ins(301,[0,1],1),ins(300,[0],2),ins(3,[],3),ins(-1)]),sp=c.allocate(script.length);memory(c,sp,script.length).set(script);const fixture=c.anm_fixture_create(sp,script.length);m.write(source,script);m.u32(m.u32(bank+0x120),source);
+ try{for(let type=0;type<44;type++)for(let color=0;color<16;color++){
+  // Both fixtures reuse an object with a previously selected layer. Bind must
+  // retain the layer and reset the matrices and callback before a new source.
+  new DataView(c.memory.buffer,c.anm_vm_visual(vm)+8,4).setInt32(0,(type+color)%44,true);m.u32(native+0x24,(type+color)%44);m.call(0x4773e0,{ecx:bank,args:[native,0]});assert.equal(c.anm_vm_bind(vm,fixture,0),1);c.anm_vm_resource(vm,resource);
+  assert.deepEqual(Buffer.from(memory(c,c.anm_vm_visual(vm)+8,4)),Buffer.from(m.bytes(native+0x24,4)));assert.deepEqual(Buffer.from(memory(c,c.anm_vm_sprite_values(vm)+40,192)),Buffer.from(m.bytes(native+0x3dc,192)));checks+=2;
+  c.anm_vm_sprite_source(vm,sourceFixture);m.u32(native+0x5e8,1);m.u32(native+0x5f8,bullet);const seed=(type*327+color*197+3)&65535;new DataView(c.memory.buffer,rng,8).setUint32(0,seed,true);new DataView(c.memory.buffer,rng,8).setUint32(4,0,true);m.u32(0x4e9a40,seed);m.u32(0x4e9a44,0);
+  for(let frame=0;frame<3;frame++){const nextColor=(color+frame)%16;c.bullet_sprite_source_set(sourceFixture,type,nextColor);m.u32(bullet+0x1490,type|(nextColor<<16));assert.equal(c.anm_vm_tick(vm,rng,1),0,string(c,c.anm_vm_error(vm)));m.call(0x477e10,{ecx:native,limit:10000000});const actual=c.anm_vm_sprite_values(vm),expected=Buffer.concat([Buffer.from(m.bytes(native+0x3b4,32)),Buffer.from(m.bytes(native+0x7c,8)),Buffer.from(m.bytes(native+0x3dc,192))]);assert.deepEqual(Buffer.from(memory(c,actual,expected.length)),expected,JSON.stringify({type,color,frame}));assert.deepEqual(Buffer.from(memory(c,rng,8)),Buffer.from(m.bytes(0x4e9a40,8)));frames++;checks+=2;}
+ }report('anm-bullet-source',{passed:true,checks,frames,types:44,colours:16,originalFunctions:['0x4773e0','0x477e10','0x41efd0'],scope:'Sprite parameter callbacks, live colour replacement, preserved layer and reset sprite/transform/UV matrices; GPU drawing is not covered.'});}
+ finally{c.anm_vm_delete(vm);c.bullet_sprite_source_delete(sourceFixture);c.rng_delete(rng);c.anm_delete(fixture);c.anm_delete(resource);c.release(sp);c.release(p);m.close();}
+});
+

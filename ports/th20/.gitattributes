@@ -1,0 +1,9 @@
+# Validation reports identify exact source bytes. Disable newline conversion
+# so checkout preserves CRLF/LF and hashes on every developer's machine.
+* -text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary

@@ -1,0 +1,301 @@
+{
+  "table": "0x4a0b14",
+  "entries": [
+    {
+      "index": 0,
+      "address": "0x0040c3c0",
+      "scriptReferences": [
+        {
+          "resource": "pl00.ecl",
+          "subroutine": 5,
+          "offset": 2736,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "address": "0x0040c3f0",
+      "scriptReferences": [
+        {
+          "resource": "pl02.ecl",
+          "subroutine": 0,
+          "offset": 440,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl02.ecl",
+          "subroutine": 0,
+          "offset": 1296,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl02.ecl",
+          "subroutine": 1,
+          "offset": 1692,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl02.ecl",
+          "subroutine": 1,
+          "offset": 2324,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "address": "0x0040c530",
+      "scriptReferences": [
+        {
+          "resource": "pl05.ecl",
+          "subroutine": 0,
+          "offset": 448,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl05.ecl",
+          "subroutine": 1,
+          "offset": 812,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "address": "0x0040c440",
+      "scriptReferences": [
+        {
+          "resource": "pl07.ecl",
+          "subroutine": 0,
+          "offset": 392,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "address": "0x0040c4a0",
+      "scriptReferences": [
+        {
+          "resource": "pl07.ecl",
+          "subroutine": 1,
+          "offset": 788,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "address": "0x0040c470",
+      "scriptReferences": [
+        {
+          "resource": "pl07.ecl",
+          "subroutine": 1,
+          "offset": 808,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "address": "0x0040c770",
+      "scriptReferences": [
+        {
+          "resource": "pl05.ecl",
+          "subroutine": 4,
+          "offset": 2140,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl05.ecl",
+          "subroutine": 5,
+          "offset": 2424,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "address": "0x0040c7c0",
+      "scriptReferences": [
+        {
+          "resource": "pl07.ecl",
+          "subroutine": 3,
+          "offset": 1732,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl07.ecl",
+          "subroutine": 4,
+          "offset": 2284,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl07.ecl",
+          "subroutine": 5,
+          "offset": 2880,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "address": "0x0040c810",
+      "scriptReferences": [
+        {
+          "resource": "pl07.ecl",
+          "subroutine": 6,
+          "offset": 3128,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "address": "0x0040c860",
+      "scriptReferences": [
+        {
+          "resource": "pl04.ecl",
+          "subroutine": 5,
+          "offset": 3036,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "address": "0x0040c4d0",
+      "scriptReferences": [
+        {
+          "resource": "pl08.ecl",
+          "subroutine": 5,
+          "offset": 3216,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "address": "0x0040c500",
+      "scriptReferences": [
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2516,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2552,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2648,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2684,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2720,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2816,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2852,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2888,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2924,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 2980,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 3016,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 3052,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 3088,
+          "opcode": 136,
+          "variableMask": 0
+        },
+        {
+          "resource": "pl10.ecl",
+          "subroutine": 4,
+          "offset": 3124,
+          "opcode": 136,
+          "variableMask": 0
+        }
+      ]
+    }
+  ]
+}

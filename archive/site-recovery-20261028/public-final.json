@@ -1,0 +1,102 @@
+[
+  {
+    "base": "https://touhouonline.com",
+    "files": {
+      "site-network.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 153,
+        "sha256": "ed98d861671081e21f989fc12b9556deff7714d63158aeddaf38ae2d58617b81"
+      },
+      "app-shell-sw.js": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 151057,
+        "sha256": "478f7d54b126560cfdc67f9a30ec652e1fd1be2f076a59dbd2852f49b4711125"
+      },
+      "release-manifest.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 1713900,
+        "sha256": "954df41842acad88dc9a1ac3d9a37c55f8585c9de8ee244d822587ec46f486db"
+      }
+    },
+    "releaseId": "sha256-6a99ff46e58a102a3fee39751397c95d588546279f89925e535b68ea91f43afc",
+    "ownedFiles": 6251
+  },
+  {
+    "base": "https://jp-site.touhouonline.com",
+    "files": {
+      "site-network.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 153,
+        "sha256": "ed98d861671081e21f989fc12b9556deff7714d63158aeddaf38ae2d58617b81"
+      },
+      "app-shell-sw.js": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 151057,
+        "sha256": "478f7d54b126560cfdc67f9a30ec652e1fd1be2f076a59dbd2852f49b4711125"
+      },
+      "release-manifest.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 1713900,
+        "sha256": "954df41842acad88dc9a1ac3d9a37c55f8585c9de8ee244d822587ec46f486db"
+      }
+    },
+    "releaseId": "sha256-6a99ff46e58a102a3fee39751397c95d588546279f89925e535b68ea91f43afc",
+    "ownedFiles": 6251
+  },
+  {
+    "base": "https://cn-site.touhouonline.com:8443",
+    "files": {
+      "site-network.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 153,
+        "sha256": "ed98d861671081e21f989fc12b9556deff7714d63158aeddaf38ae2d58617b81"
+      },
+      "app-shell-sw.js": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 151057,
+        "sha256": "478f7d54b126560cfdc67f9a30ec652e1fd1be2f076a59dbd2852f49b4711125"
+      },
+      "release-manifest.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 1713900,
+        "sha256": "954df41842acad88dc9a1ac3d9a37c55f8585c9de8ee244d822587ec46f486db"
+      }
+    },
+    "releaseId": "sha256-6a99ff46e58a102a3fee39751397c95d588546279f89925e535b68ea91f43afc",
+    "ownedFiles": 6251
+  },
+  {
+    "base": "https://ritosa.cyou",
+    "files": {
+      "site-network.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 153,
+        "sha256": "ed98d861671081e21f989fc12b9556deff7714d63158aeddaf38ae2d58617b81"
+      },
+      "app-shell-sw.js": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 151057,
+        "sha256": "478f7d54b126560cfdc67f9a30ec652e1fd1be2f076a59dbd2852f49b4711125"
+      },
+      "release-manifest.json": {
+        "status": "200",
+        "exit": 0,
+        "bytes": 1713900,
+        "sha256": "954df41842acad88dc9a1ac3d9a37c55f8585c9de8ee244d822587ec46f486db"
+      }
+    },
+    "releaseId": "sha256-6a99ff46e58a102a3fee39751397c95d588546279f89925e535b68ea91f43afc",
+    "ownedFiles": 6251
+  }
+]

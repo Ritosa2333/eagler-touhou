@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TH07 ordinary Stage visual smoke</title>
+<iframe id="runtime" style="width:640px;height:480px;border:0"></iframe>
+<pre id="status">boot</pre>
+<script>
+(() => {
+  "use strict";
+  const protocol = "eagler-touhou/1", game = "th07", epoch = 1;
+  const runtime = document.getElementById("runtime"), status = document.getElementById("status");
+  const pending = new Map(); let serial = 0;
+  globalThis.__ordinaryStageHealth = [];
+  function send(command, body = {}) {
+    const request = `ordinary-stage-${++serial}`;
+    return new Promise((resolve, reject) => {
+      pending.set(request, {resolve, reject});
+      runtime.contentWindow.postMessage({protocol, game, epoch, command, request, ...body}, location.origin);
+      setTimeout(() => { const waiter = pending.get(request); if (waiter) { pending.delete(request); reject(new Error(`${command} timeout`)); } }, 15000);
+    });
+  }
+  addEventListener("message", async event => {
+    if (event.source !== runtime.contentWindow || event.origin !== location.origin) return;
+    const message = event.data || {};
+    if (message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
+    if (message.request && pending.has(message.request)) {
+      const waiter = pending.get(message.request); pending.delete(message.request);
+      (message.ok ? waiter.resolve : waiter.reject)(message.ok ? message : new Error(message.error || "request failed"));
+      return;
+    }
+    if (message.event === "frame-health") globalThis.__ordinaryStageHealth.push({fps:message.fps,gap:message.maxGapMs});
+    if (message.event !== "ready") return;
+    try {
+      await send("configure", { music:"none", resources:[],
+        sharedResources:[
+          {url:"/assets/msgothic.ttc", path:"/msgothic.ttc"},
+          {url:"/__unifont.otf", path:"/unifont.otf"}
+        ], thpracCatalog:[], options:{debugHarness:"stage4-visual", limitPresentationTo60:false} });
+      await send("launch"); status.textContent = "launched";
+    } catch (error) { globalThis.__ordinaryStageFailure = String(error?.message || error); status.textContent = globalThis.__ordinaryStageFailure; }
+  });
+  runtime.src = `/build-web-eagler-thprac/th07.html?hosted=1&runtimeVariant=ordinary&runtimeEpoch=${epoch}`;
+})();
+</script>

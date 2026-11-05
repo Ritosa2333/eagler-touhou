@@ -1,0 +1,105 @@
+{
+  "online": {
+    "title": "东方Project 原作 STG ~ EAGLER TOUHOU",
+    "controlled": true
+  },
+  "offline": {
+    "title": "东方Project 原作 STG ~ EAGLER TOUHOU",
+    "controlled": true,
+    "body": 756,
+    "images": [
+      {
+        "src": "https://touhouonline.com/assets/room-caret-right.svg",
+        "complete": true,
+        "width": 150
+      },
+      {
+        "src": "https://touhouonline.com/assets/room-caret-right.svg",
+        "complete": true,
+        "width": 150
+      },
+      {
+        "src": "https://touhouonline.com/assets/th06-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th07-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th08-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th09-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th10-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th11-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th15-card.webp",
+        "complete": true,
+        "width": 1280
+      },
+      {
+        "src": "https://touhouonline.com/assets/room-users.svg",
+        "complete": true,
+        "width": 150
+      },
+      {
+        "src": "https://touhouonline.com/assets/th06-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th07-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th08-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th09-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th10-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th11-card.webp",
+        "complete": true,
+        "width": 640
+      },
+      {
+        "src": "https://touhouonline.com/assets/th15-card.webp",
+        "complete": true,
+        "width": 1280
+      },
+      {
+        "src": "https://touhouonline.com/assets/th06-card.webp",
+        "complete": true,
+        "width": 640
+      }
+    ]
+  },
+  "httpStatus": 200,
+  "passed": true
+}

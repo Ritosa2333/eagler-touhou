@@ -1,0 +1,3209 @@
+{
+  "schema": "th12-native-replay-ufo-milestones/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "replay": "th12_14.rpy",
+  "replaySha256": "c92747c90ceacc9907440dd03b00afd88ef206bc76abfe1e64b7bc1de24ab516",
+  "creationGuardPrimed": false,
+  "wholeGameOracle": false,
+  "partial": true,
+  "gpuExecuted": false,
+  "scope": "Actual selected original Enemy/ECL/Player/Bullet/Item/UFO/Bonus/HUD/ANM functions, including40fbe0 effect callbacks. Records explicitly marked nativeLaserUpdateExecuted also execute the original registered Laser manager and objects. Excludes STD, whole application scheduler, draw/GPU and full replay acceptance.",
+  "inputAddresses": {
+    "held": "0x4d49d0",
+    "previousHeld": "0x4d49d4",
+    "pressed": "0x4d49dc",
+    "released": "0x4d49e0"
+  },
+  "hostBoundaries": {
+    "allocator": 308,
+    "host_anm_resource_loader": 3,
+    "host_file_loader": 2,
+    "0x453e20": 1397,
+    "host_free": 260,
+    "0x43e250": 10,
+    "0x453d90": 1,
+    "sound_buffer_set_pan": 372
+  },
+  "excludedEnemyRoutines": [
+    "Logo",
+    "LogoEnemy",
+    "MapleEnemy",
+    "ShipShadow",
+    "ShipShadowEnemy",
+    "main"
+  ],
+  "records": [
+    {
+      "inputTick": 1126,
+      "rng": {
+        "seed": 61416,
+        "calls": 5350
+      },
+      "player": {
+        "position": [
+          -112.609375,
+          198.0
+        ],
+        "fixedPosition": [
+          -14414,
+          25344
+        ],
+        "state": 1,
+        "stateAge": 1127
+      },
+      "economy": {
+        "scoreStored": 16221,
+        "power": 124,
+        "pivStored": 2001000,
+        "maxPivStored": 40000000,
+        "rank": 18,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 1127,
+        "ufoKind": 0,
+        "ufoEnemy": 0,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "RGirl02",
+          "occurrence": 8,
+          "birthInputTick": 1111,
+          "life": 42,
+          "position": [
+            115.08999633789062,
+            13.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1127,
+      "rng": {
+        "seed": 56499,
+        "calls": 5380
+      },
+      "player": {
+        "position": [
+          -112.609375,
+          193.5
+        ],
+        "fixedPosition": [
+          -14414,
+          24768
+        ],
+        "state": 1,
+        "stateAge": 1128
+      },
+      "economy": {
+        "scoreStored": 16221,
+        "power": 124,
+        "pivStored": 2001000,
+        "maxPivStored": 40000000,
+        "rank": 18,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 1,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "RGirl02",
+          "occurrence": 8,
+          "birthInputTick": 1111,
+          "life": 42,
+          "position": [
+            115.08999633789062,
+            16.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1900,
+          "position": [
+            0.0,
+            128.0
+          ],
+          "hpImmunity": 1
+        }
+      ]
+    },
+    {
+      "inputTick": 1128,
+      "rng": {
+        "seed": 28199,
+        "calls": 5400
+      },
+      "player": {
+        "position": [
+          -112.609375,
+          189.0
+        ],
+        "fixedPosition": [
+          -14414,
+          24192
+        ],
+        "state": 1,
+        "stateAge": 1129
+      },
+      "economy": {
+        "scoreStored": 16221,
+        "power": 124,
+        "pivStored": 2001000,
+        "maxPivStored": 40000000,
+        "rank": 18,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 2,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "RGirl02",
+          "occurrence": 8,
+          "birthInputTick": 1111,
+          "life": 42,
+          "position": [
+            115.08999633789062,
+            19.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1900,
+          "position": [
+            0.0,
+            128.0
+          ],
+          "hpImmunity": 1
+        }
+      ]
+    },
+    {
+      "inputTick": 1131,
+      "rng": {
+        "seed": 17173,
+        "calls": 5530
+      },
+      "player": {
+        "position": [
+          -112.609375,
+          189.0
+        ],
+        "fixedPosition": [
+          -14414,
+          24192
+        ],
+        "state": 1,
+        "stateAge": 1132
+      },
+      "economy": {
+        "scoreStored": 16223,
+        "power": 124,
+        "pivStored": 2001000,
+        "maxPivStored": 40000000,
+        "rank": 18,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 5,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "RGirl02",
+          "occurrence": 8,
+          "birthInputTick": 1111,
+          "life": 19,
+          "position": [
+            115.08999633789062,
+            28.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1900,
+          "position": [
+            0.0,
+            128.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl02",
+          "occurrence": 9,
+          "birthInputTick": 1131,
+          "life": 50,
+          "position": [
+            127.94000244140625,
+            -32.0
+          ],
+          "hpImmunity": 1
+        }
+      ]
+    },
+    {
+      "inputTick": 1132,
+      "rng": {
+        "seed": 40183,
+        "calls": 5586
+      },
+      "player": {
+        "position": [
+          -112.609375,
+          189.0
+        ],
+        "fixedPosition": [
+          -14414,
+          24192
+        ],
+        "state": 1,
+        "stateAge": 1133
+      },
+      "economy": {
+        "scoreStored": 16223,
+        "power": 124,
+        "pivStored": 2001000,
+        "maxPivStored": 40000000,
+        "rank": 18,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 6,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "RGirl02",
+          "occurrence": 8,
+          "birthInputTick": 1111,
+          "life": 19,
+          "position": [
+            115.08999633789062,
+            31.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1900,
+          "position": [
+            0.0,
+            128.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl02",
+          "occurrence": 9,
+          "birthInputTick": 1131,
+          "life": 50,
+          "position": [
+            127.94000244140625,
+            -29.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1177,
+      "rng": {
+        "seed": 56563,
+        "calls": 11316
+      },
+      "player": {
+        "position": [
+          11.5859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          1483,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1178
+      },
+      "economy": {
+        "scoreStored": 16239,
+        "power": 124,
+        "pivStored": 2001030,
+        "maxPivStored": 40000000,
+        "rank": 19,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 51,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1900,
+          "position": [
+            0.0,
+            128.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1178,
+      "rng": {
+        "seed": 49620,
+        "calls": 11438
+      },
+      "player": {
+        "position": [
+          11.5859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          1483,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1179
+      },
+      "economy": {
+        "scoreStored": 16239,
+        "power": 124,
+        "pivStored": 2001030,
+        "maxPivStored": 40000000,
+        "rank": 19,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 52,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1900,
+          "position": [
+            0.0,
+            128.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1193,
+      "rng": {
+        "seed": 60899,
+        "calls": 12158
+      },
+      "player": {
+        "position": [
+          47.5859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          6091,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1194
+      },
+      "economy": {
+        "scoreStored": 16245,
+        "power": 124,
+        "pivStored": 2001070,
+        "maxPivStored": 40000000,
+        "rank": 19,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 67,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1870,
+          "position": [
+            -1.25,
+            128.47999572753906
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1194,
+      "rng": {
+        "seed": 39797,
+        "calls": 12160
+      },
+      "player": {
+        "position": [
+          52.0859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          6667,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1195
+      },
+      "economy": {
+        "scoreStored": 16246,
+        "power": 124,
+        "pivStored": 2001070,
+        "maxPivStored": 40000000,
+        "rank": 19,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 68,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1855,
+          "position": [
+            -1.5099999904632568,
+            128.5
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1204,
+      "rng": {
+        "seed": 39938,
+        "calls": 12214
+      },
+      "player": {
+        "position": [
+          97.0859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          12427,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1205
+      },
+      "economy": {
+        "scoreStored": 16246,
+        "power": 124,
+        "pivStored": 2001070,
+        "maxPivStored": 40000000,
+        "rank": 20,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 78,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1855,
+          "position": [
+            -4.269999980926514,
+            127.91999816894531
+          ],
+          "absolute": [
+            0.0,
+            127.97999572753906
+          ],
+          "relative": [
+            -4.269999980926514,
+            -0.05999999865889549
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1205,
+      "rng": {
+        "seed": 35657,
+        "calls": 12232
+      },
+      "player": {
+        "position": [
+          101.5859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          13003,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1206
+      },
+      "economy": {
+        "scoreStored": 16246,
+        "power": 124,
+        "pivStored": 2001070,
+        "maxPivStored": 40000000,
+        "rank": 20,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 79,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1855,
+          "position": [
+            -4.539999961853027,
+            127.76000213623047
+          ],
+          "absolute": [
+            -0.009999752044677734,
+            127.9800033569336
+          ],
+          "relative": [
+            -4.53000020980835,
+            -0.2199999988079071
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1206,
+      "rng": {
+        "seed": 35657,
+        "calls": 12232
+      },
+      "player": {
+        "position": [
+          106.0859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          13579,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1207
+      },
+      "economy": {
+        "scoreStored": 16246,
+        "power": 124,
+        "pivStored": 2001070,
+        "maxPivStored": 40000000,
+        "rank": 20,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 80,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1855,
+          "position": [
+            -4.809999942779541,
+            127.58000183105469
+          ],
+          "absolute": [
+            -0.019999980926513672,
+            127.9800033569336
+          ],
+          "relative": [
+            -4.789999961853027,
+            -0.4000000059604645
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1207,
+      "rng": {
+        "seed": 35657,
+        "calls": 12232
+      },
+      "player": {
+        "position": [
+          110.5859375,
+          236.6953125
+        ],
+        "fixedPosition": [
+          14155,
+          30297
+        ],
+        "state": 1,
+        "stateAge": 1208
+      },
+      "economy": {
+        "scoreStored": 16246,
+        "power": 124,
+        "pivStored": 2001070,
+        "maxPivStored": 40000000,
+        "rank": 20,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 81,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.0,
+        "ufoBuckets": [
+          0,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1855,
+          "position": [
+            -5.059999942779541,
+            127.38999938964844
+          ],
+          "absolute": [
+            -0.019999980926513672,
+            127.97999572753906
+          ],
+          "relative": [
+            -5.039999961853027,
+            -0.5899999737739563
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1499,
+      "rng": {
+        "seed": 20525,
+        "calls": 14914
+      },
+      "player": {
+        "position": [
+          -79.9921875,
+          373.5546875
+        ],
+        "fixedPosition": [
+          -10239,
+          47815
+        ],
+        "state": 1,
+        "stateAge": 1500
+      },
+      "economy": {
+        "scoreStored": 17340,
+        "power": 125,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 25,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 373,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.5100000500679016,
+        "ufoBuckets": [
+          14,
+          3
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1174,
+          "position": [
+            84.2699966430664,
+            158.9499969482422
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "BGirl05",
+          "occurrence": 0,
+          "birthInputTick": 1461,
+          "life": 30,
+          "position": [
+            -110.0,
+            320.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl05",
+          "occurrence": 1,
+          "birthInputTick": 1471,
+          "life": 30,
+          "position": [
+            -140.0,
+            320.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl02",
+          "occurrence": 11,
+          "birthInputTick": 1471,
+          "life": 3,
+          "position": [
+            -112.61000061035156,
+            52.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "BGirl05",
+          "occurrence": 1,
+          "birthInputTick": 1481,
+          "life": 30,
+          "position": [
+            -170.0,
+            320.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl05",
+          "occurrence": 2,
+          "birthInputTick": 1491,
+          "life": 30,
+          "position": [
+            -200.0,
+            320.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl02",
+          "occurrence": 12,
+          "birthInputTick": 1491,
+          "life": 28,
+          "position": [
+            -140.5500030517578,
+            -8.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1322,
+      "rng": {
+        "seed": 31279,
+        "calls": 13364
+      },
+      "player": {
+        "position": [
+          184.0,
+          388.1875
+        ],
+        "fixedPosition": [
+          23552,
+          49688
+        ],
+        "state": 1,
+        "stateAge": 1323
+      },
+      "economy": {
+        "scoreStored": 16305,
+        "power": 124,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 22,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 196,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.30000001192092896,
+        "ufoBuckets": [
+          10,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1653,
+          "position": [
+            8.529999732971191,
+            141.33999633789062
+          ],
+          "absolute": [
+            -0.25,
+            127.97999572753906
+          ],
+          "relative": [
+            8.779999732971191,
+            13.359999656677246
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1311,
+          "life": 26,
+          "position": [
+            160.0,
+            447.0
+          ],
+          "absolute": [
+            160.0,
+            447.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "BGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1321,
+          "life": 30,
+          "position": [
+            160.0,
+            477.0
+          ],
+          "absolute": [
+            160.0,
+            477.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1323,
+      "rng": {
+        "seed": 31279,
+        "calls": 13364
+      },
+      "player": {
+        "position": [
+          184.0,
+          388.1875
+        ],
+        "fixedPosition": [
+          23552,
+          49688
+        ],
+        "state": 1,
+        "stateAge": 1324
+      },
+      "economy": {
+        "scoreStored": 16305,
+        "power": 124,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 22,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 197,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.30000001192092896,
+        "ufoBuckets": [
+          10,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1653,
+          "position": [
+            8.0600004196167,
+            141.63999938964844
+          ],
+          "absolute": [
+            -0.25,
+            127.97999572753906
+          ],
+          "relative": [
+            8.3100004196167,
+            13.65999984741211
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1311,
+          "life": 26,
+          "position": [
+            160.0,
+            444.0
+          ],
+          "absolute": [
+            160.0,
+            444.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "BGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1321,
+          "life": 30,
+          "position": [
+            160.0,
+            474.0
+          ],
+          "absolute": [
+            160.0,
+            474.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1327,
+      "rng": {
+        "seed": 34348,
+        "calls": 13382
+      },
+      "player": {
+        "position": [
+          184.0,
+          388.1875
+        ],
+        "fixedPosition": [
+          23552,
+          49688
+        ],
+        "state": 1,
+        "stateAge": 1328
+      },
+      "economy": {
+        "scoreStored": 16310,
+        "power": 124,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 22,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 201,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.30000001192092896,
+        "ufoBuckets": [
+          10,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1639,
+          "position": [
+            6.079999923706055,
+            142.6699981689453
+          ],
+          "absolute": [
+            -0.25,
+            127.97999572753906
+          ],
+          "relative": [
+            6.329999923706055,
+            14.6899995803833
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1311,
+          "life": 14,
+          "position": [
+            160.0,
+            432.0
+          ],
+          "absolute": [
+            160.0,
+            432.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "BGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1321,
+          "life": 30,
+          "position": [
+            160.0,
+            462.0
+          ],
+          "absolute": [
+            160.0,
+            462.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1328,
+      "rng": {
+        "seed": 31966,
+        "calls": 13400
+      },
+      "player": {
+        "position": [
+          184.0,
+          388.1875
+        ],
+        "fixedPosition": [
+          23552,
+          49688
+        ],
+        "state": 1,
+        "stateAge": 1329
+      },
+      "economy": {
+        "scoreStored": 16312,
+        "power": 124,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 22,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 202,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.30000001192092896,
+        "ufoBuckets": [
+          10,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1639,
+          "position": [
+            5.559999942779541,
+            142.8800048828125
+          ],
+          "absolute": [
+            -0.25,
+            127.9800033569336
+          ],
+          "relative": [
+            5.809999942779541,
+            14.899999618530273
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "RGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1311,
+          "life": 2,
+          "position": [
+            160.0,
+            429.0
+          ],
+          "absolute": [
+            160.0,
+            429.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "BGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1321,
+          "life": 26,
+          "position": [
+            160.0,
+            459.0
+          ],
+          "absolute": [
+            160.0,
+            459.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1329,
+      "rng": {
+        "seed": 33917,
+        "calls": 13460
+      },
+      "player": {
+        "position": [
+          184.0,
+          388.1875
+        ],
+        "fixedPosition": [
+          23552,
+          49688
+        ],
+        "state": 1,
+        "stateAge": 1330
+      },
+      "economy": {
+        "scoreStored": 16314,
+        "power": 124,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 22,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 203,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 0.30000001192092896,
+        "ufoBuckets": [
+          10,
+          0
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 1639,
+          "position": [
+            5.039999961853027,
+            143.07000732421875
+          ],
+          "absolute": [
+            -0.25,
+            127.98001098632812
+          ],
+          "relative": [
+            5.289999961853027,
+            15.09000015258789
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "BGirl04",
+          "occurrence": 3,
+          "birthInputTick": 1321,
+          "life": 22,
+          "position": [
+            160.0,
+            456.0
+          ],
+          "absolute": [
+            160.0,
+            456.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1727,
+      "rng": {
+        "seed": 32380,
+        "calls": 17852
+      },
+      "player": {
+        "position": [
+          13.484375,
+          109.9921875
+        ],
+        "fixedPosition": [
+          1726,
+          14079
+        ],
+        "state": 1,
+        "stateAge": 1728
+      },
+      "economy": {
+        "scoreStored": 17548,
+        "power": 125,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 28,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          1
+        ],
+        "ufoCountState": [
+          3,
+          3
+        ],
+        "ufoAge": 601,
+        "ufoKind": 1,
+        "ufoEnemy": 48,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_Red",
+          "occurrence": 0,
+          "birthInputTick": 1127,
+          "life": 2,
+          "position": [
+            -6.03000020980835,
+            80.26000213623047
+          ],
+          "absolute": [
+            7.340000152587891,
+            71.4800033569336
+          ],
+          "relative": [
+            -13.369999885559082,
+            8.779999732971191
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 1728,
+      "rng": {
+        "seed": 6215,
+        "calls": 17976
+      },
+      "player": {
+        "position": [
+          10.3046875,
+          106.8125
+        ],
+        "fixedPosition": [
+          1319,
+          13672
+        ],
+        "state": 1,
+        "stateAge": 1729
+      },
+      "economy": {
+        "scoreStored": 17549,
+        "power": 125,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 28,
+        "lifeBombCounters": [
+          2,
+          0,
+          2,
+          0
+        ],
+        "ufoColors": [
+          0,
+          0,
+          0
+        ],
+        "ufoCountState": [
+          0,
+          0
+        ],
+        "ufoAge": 602,
+        "ufoKind": 1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_EtBreak2",
+          "occurrence": 0,
+          "birthInputTick": 1728,
+          "life": 3000,
+          "position": [
+            -7.079999923706055,
+            78.94000244140625
+          ],
+          "absolute": [
+            -7.079999923706055,
+            78.94000244140625
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 1
+        }
+      ]
+    },
+    {
+      "inputTick": 1729,
+      "rng": {
+        "seed": 14401,
+        "calls": 18016
+      },
+      "player": {
+        "position": [
+          7.125,
+          103.6328125
+        ],
+        "fixedPosition": [
+          912,
+          13265
+        ],
+        "state": 1,
+        "stateAge": 1730
+      },
+      "economy": {
+        "scoreStored": 17549,
+        "power": 125,
+        "pivStored": 2001370,
+        "maxPivStored": 40000000,
+        "rank": 284,
+        "lifeBombCounters": [
+          2,
+          2,
+          2,
+          0
+        ],
+        "ufoColors": [
+          0,
+          0,
+          0
+        ],
+        "ufoCountState": [
+          0,
+          0
+        ],
+        "ufoAge": 603,
+        "ufoKind": 1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "UFO_EtBreak2",
+          "occurrence": 0,
+          "birthInputTick": 1728,
+          "life": 3000,
+          "position": [
+            -7.079999923706055,
+            78.94000244140625
+          ],
+          "absolute": [
+            -7.079999923706055,
+            78.94000244140625
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 1
+        }
+      ]
+    },
+    {
+      "inputTick": 2845,
+      "rng": {
+        "seed": 10060,
+        "calls": 36172
+      },
+      "player": {
+        "position": [
+          -41.7890625,
+          385.4375
+        ],
+        "fixedPosition": [
+          -5349,
+          49336
+        ],
+        "state": 1,
+        "stateAge": 2846
+      },
+      "economy": {
+        "scoreStored": 111721,
+        "power": 168,
+        "pivStored": 2003450,
+        "maxPivStored": 40000000,
+        "rank": 559,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          0,
+          0,
+          0
+        ],
+        "ufoCountState": [
+          0,
+          0
+        ],
+        "ufoAge": 408,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "Girl08",
+          "occurrence": 0,
+          "birthInputTick": 2731,
+          "life": 807,
+          "position": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "absolute": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_EtBreak2",
+          "occurrence": 1,
+          "birthInputTick": 2840,
+          "life": 3000,
+          "position": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "absolute": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ],
+      "cancelItemSlotRange": [
+        715,
+        722
+      ],
+      "cancelItems": []
+    },
+    {
+      "inputTick": 2846,
+      "rng": {
+        "seed": 30894,
+        "calls": 36336
+      },
+      "player": {
+        "position": [
+          -41.7890625,
+          385.4375
+        ],
+        "fixedPosition": [
+          -5349,
+          49336
+        ],
+        "state": 1,
+        "stateAge": 2847
+      },
+      "economy": {
+        "scoreStored": 111722,
+        "power": 168,
+        "pivStored": 2003450,
+        "maxPivStored": 40000000,
+        "rank": 559,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          0,
+          0,
+          0
+        ],
+        "ufoCountState": [
+          0,
+          0
+        ],
+        "ufoAge": 409,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "Girl08",
+          "occurrence": 0,
+          "birthInputTick": 2731,
+          "life": 792,
+          "position": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "absolute": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_EtBreak2",
+          "occurrence": 1,
+          "birthInputTick": 2840,
+          "life": 3000,
+          "position": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "absolute": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ],
+      "cancelItemSlotRange": [
+        715,
+        722
+      ],
+      "cancelItems": [
+        {
+          "slot": 715,
+          "type": 9,
+          "state": 5,
+          "position": [
+            -58.94406509399414,
+            -1.9409205913543701
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 2
+        },
+        {
+          "slot": 716,
+          "type": 9,
+          "state": 2,
+          "position": [
+            56.58076858520508,
+            181.64768981933594
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": -1
+        },
+        {
+          "slot": 717,
+          "type": 9,
+          "state": 5,
+          "position": [
+            66.06869506835938,
+            20.220603942871094
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 0
+        },
+        {
+          "slot": 718,
+          "type": 9,
+          "state": 5,
+          "position": [
+            87.34636688232422,
+            43.61204528808594
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 1
+        },
+        {
+          "slot": 719,
+          "type": 9,
+          "state": 5,
+          "position": [
+            101.61380004882812,
+            71.04031372070312
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 2
+        },
+        {
+          "slot": 720,
+          "type": 9,
+          "state": 2,
+          "position": [
+            108.22584533691406,
+            100.4586181640625
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": -1
+        },
+        {
+          "slot": 721,
+          "type": 9,
+          "state": 5,
+          "position": [
+            -47.34564971923828,
+            195.4948272705078
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 0
+        },
+        {
+          "slot": 722,
+          "type": 9,
+          "state": 5,
+          "position": [
+            -61.57023239135742,
+            179.2028350830078
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 1
+        }
+      ]
+    },
+    {
+      "inputTick": 2847,
+      "rng": {
+        "seed": 39313,
+        "calls": 36560
+      },
+      "player": {
+        "position": [
+          -41.7890625,
+          385.4375
+        ],
+        "fixedPosition": [
+          -5349,
+          49336
+        ],
+        "state": 1,
+        "stateAge": 2848
+      },
+      "economy": {
+        "scoreStored": 111723,
+        "power": 168,
+        "pivStored": 2003450,
+        "maxPivStored": 40000000,
+        "rank": 559,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          0,
+          0,
+          0
+        ],
+        "ufoCountState": [
+          0,
+          0
+        ],
+        "ufoAge": 410,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "Girl08",
+          "occurrence": 0,
+          "birthInputTick": 2731,
+          "life": 788,
+          "position": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "absolute": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_EtBreak2",
+          "occurrence": 1,
+          "birthInputTick": 2840,
+          "life": 3000,
+          "position": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "absolute": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ],
+      "cancelItemSlotRange": [
+        715,
+        722
+      ],
+      "cancelItems": [
+        {
+          "slot": 715,
+          "type": 9,
+          "state": 5,
+          "position": [
+            -58.94406509399414,
+            -1.9409205913543701
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 1
+        },
+        {
+          "slot": 716,
+          "type": 9,
+          "state": 2,
+          "position": [
+            56.58076858520508,
+            181.0476837158203
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5700000524520874
+          ],
+          "age": 1,
+          "delay": -1
+        },
+        {
+          "slot": 717,
+          "type": 9,
+          "state": 2,
+          "position": [
+            66.06869506835938,
+            20.220603942871094
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": -1
+        },
+        {
+          "slot": 718,
+          "type": 9,
+          "state": 5,
+          "position": [
+            87.34636688232422,
+            43.61204528808594
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 0
+        },
+        {
+          "slot": 719,
+          "type": 9,
+          "state": 5,
+          "position": [
+            101.61380004882812,
+            71.04031372070312
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 1
+        },
+        {
+          "slot": 720,
+          "type": 9,
+          "state": 2,
+          "position": [
+            108.22584533691406,
+            99.8586196899414
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5700000524520874
+          ],
+          "age": 1,
+          "delay": -1
+        },
+        {
+          "slot": 721,
+          "type": 9,
+          "state": 2,
+          "position": [
+            -47.34564971923828,
+            195.4948272705078
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": -1
+        },
+        {
+          "slot": 722,
+          "type": 9,
+          "state": 5,
+          "position": [
+            -61.57023239135742,
+            179.2028350830078
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 2848,
+      "rng": {
+        "seed": 31547,
+        "calls": 36672
+      },
+      "player": {
+        "position": [
+          -41.7890625,
+          385.4375
+        ],
+        "fixedPosition": [
+          -5349,
+          49336
+        ],
+        "state": 1,
+        "stateAge": 2849
+      },
+      "economy": {
+        "scoreStored": 111724,
+        "power": 168,
+        "pivStored": 2003450,
+        "maxPivStored": 40000000,
+        "rank": 559,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          0,
+          0,
+          0
+        ],
+        "ufoCountState": [
+          0,
+          0
+        ],
+        "ufoAge": 411,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "Girl08",
+          "occurrence": 0,
+          "birthInputTick": 2731,
+          "life": 784,
+          "position": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "absolute": [
+            -0.6499999761581421,
+            125.97000122070312
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "UFO_EtBreak2",
+          "occurrence": 1,
+          "birthInputTick": 2840,
+          "life": 3000,
+          "position": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "absolute": [
+            -4.900000095367432,
+            93.29000091552734
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ],
+      "cancelItemSlotRange": [
+        715,
+        722
+      ],
+      "cancelItems": [
+        {
+          "slot": 715,
+          "type": 9,
+          "state": 5,
+          "position": [
+            -58.94406509399414,
+            -1.9409205913543701
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 0
+        },
+        {
+          "slot": 716,
+          "type": 9,
+          "state": 2,
+          "position": [
+            56.58076858520508,
+            180.47767639160156
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5400000810623169
+          ],
+          "age": 2,
+          "delay": -1
+        },
+        {
+          "slot": 717,
+          "type": 9,
+          "state": 2,
+          "position": [
+            66.06869506835938,
+            19.620603561401367
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5700000524520874
+          ],
+          "age": 1,
+          "delay": -1
+        },
+        {
+          "slot": 718,
+          "type": 9,
+          "state": 2,
+          "position": [
+            87.34636688232422,
+            43.61204528808594
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": -1
+        },
+        {
+          "slot": 719,
+          "type": 9,
+          "state": 5,
+          "position": [
+            101.61380004882812,
+            71.04031372070312
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": 0
+        },
+        {
+          "slot": 720,
+          "type": 9,
+          "state": 2,
+          "position": [
+            108.22584533691406,
+            99.28861999511719
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5400000810623169
+          ],
+          "age": 2,
+          "delay": -1
+        },
+        {
+          "slot": 721,
+          "type": 9,
+          "state": 2,
+          "position": [
+            -47.34564971923828,
+            194.8948211669922
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5700000524520874
+          ],
+          "age": 1,
+          "delay": -1
+        },
+        {
+          "slot": 722,
+          "type": 9,
+          "state": 2,
+          "position": [
+            -61.57023239135742,
+            179.2028350830078
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": -1
+        }
+      ]
+    },
+    {
+      "inputTick": 3501,
+      "rng": {
+        "seed": 6820,
+        "calls": 42994
+      },
+      "player": {
+        "position": [
+          80.9140625,
+          281.34375
+        ],
+        "fixedPosition": [
+          10357,
+          36012
+        ],
+        "state": 1,
+        "stateAge": 3502
+      },
+      "economy": {
+        "scoreStored": 194949,
+        "power": 201,
+        "pivStored": 2006610,
+        "maxPivStored": 40000000,
+        "rank": 582,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          0
+        ],
+        "ufoCountState": [
+          2,
+          2
+        ],
+        "ufoAge": 1064,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "MBoss",
+          "occurrence": 0,
+          "birthInputTick": 2970,
+          "life": 5300,
+          "position": [
+            95.0199966430664,
+            128.0
+          ],
+          "absolute": [
+            95.0199966430664,
+            128.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 59
+        },
+        {
+          "routine": "ShipShadow2",
+          "occurrence": 0,
+          "birthInputTick": 3321,
+          "life": 1200,
+          "position": [
+            0.0,
+            3200.0
+          ],
+          "absolute": [
+            0.0,
+            3200.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ],
+      "cancelItemSlotRange": [
+        780,
+        780
+      ],
+      "cancelItems": [
+        {
+          "slot": 780,
+          "type": 9,
+          "state": 2,
+          "position": [
+            142.6232452392578,
+            120.11627197265625
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "delay": -1
+        }
+      ]
+    },
+    {
+      "inputTick": 3542,
+      "rng": {
+        "seed": 57366,
+        "calls": 43374
+      },
+      "player": {
+        "position": [
+          39.3359375,
+          322.921875
+        ],
+        "fixedPosition": [
+          5035,
+          41334
+        ],
+        "state": 1,
+        "stateAge": 3543
+      },
+      "economy": {
+        "scoreStored": 194985,
+        "power": 201,
+        "pivStored": 2006650,
+        "maxPivStored": 40000000,
+        "rank": 583,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          0
+        ],
+        "ufoCountState": [
+          2,
+          2
+        ],
+        "ufoAge": 1105,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          0,
+          0
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "MBoss",
+          "occurrence": 0,
+          "birthInputTick": 2970,
+          "life": 5300,
+          "position": [
+            9.520000457763672,
+            142.38999938964844
+          ],
+          "absolute": [
+            9.520000457763672,
+            142.38999938964844
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 18
+        },
+        {
+          "routine": "ShipShadow2",
+          "occurrence": 0,
+          "birthInputTick": 3321,
+          "life": 1200,
+          "position": [
+            0.0,
+            3200.0
+          ],
+          "absolute": [
+            0.0,
+            3200.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ],
+      "cancelItemSlotRange": [
+        780,
+        780
+      ],
+      "cancelItems": [
+        {
+          "slot": 780,
+          "type": 9,
+          "state": 3,
+          "position": [
+            74.72420501708984,
+            266.92889404296875
+          ],
+          "velocity": [
+            -5.342545986175537,
+            8.453231811523438
+          ],
+          "age": 41,
+          "delay": -1
+        }
+      ]
+    },
+    {
+      "inputTick": 4114,
+      "nativeLaserUpdateExecuted": true,
+      "rng": {
+        "seed": 8677,
+        "calls": 50079
+      },
+      "player": {
+        "position": [
+          18.7265625,
+          177.984375
+        ],
+        "fixedPosition": [
+          2397,
+          22782
+        ],
+        "state": 1,
+        "stateAge": 4115
+      },
+      "economy": {
+        "scoreStored": 205501,
+        "power": 207,
+        "pivStored": 2009040,
+        "maxPivStored": 40000000,
+        "rank": 592,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          0
+        ],
+        "ufoCountState": [
+          2,
+          2
+        ],
+        "ufoAge": 1677,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          3,
+          8000000
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "MBoss",
+          "occurrence": 0,
+          "birthInputTick": 2970,
+          "life": 1020,
+          "position": [
+            22.399999618530273,
+            144.0
+          ],
+          "absolute": [
+            22.399999618530273,
+            144.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "ShipShadow2",
+          "occurrence": 0,
+          "birthInputTick": 3321,
+          "life": 1200,
+          "position": [
+            0.0,
+            3200.0
+          ],
+          "absolute": [
+            0.0,
+            3200.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    },
+    {
+      "inputTick": 4115,
+      "nativeLaserUpdateExecuted": true,
+      "rng": {
+        "seed": 61027,
+        "calls": 50121
+      },
+      "player": {
+        "position": [
+          14.2265625,
+          177.984375
+        ],
+        "fixedPosition": [
+          1821,
+          22782
+        ],
+        "state": 1,
+        "stateAge": 4116
+      },
+      "economy": {
+        "scoreStored": 205502,
+        "power": 207,
+        "pivStored": 2009140,
+        "maxPivStored": 40000000,
+        "rank": 592,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          0
+        ],
+        "ufoCountState": [
+          2,
+          2
+        ],
+        "ufoAge": 1678,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          3,
+          8000000
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "MBoss",
+          "occurrence": 0,
+          "birthInputTick": 2970,
+          "life": 1015,
+          "position": [
+            20.790000915527344,
+            144.0
+          ],
+          "absolute": [
+            20.790000915527344,
+            144.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "ShipShadow2",
+          "occurrence": 0,
+          "birthInputTick": 3321,
+          "life": 1200,
+          "position": [
+            0.0,
+            3200.0
+          ],
+          "absolute": [
+            0.0,
+            3200.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ],
+      "nativeGrazeAward": {
+        "frame": 4115,
+        "kind": "nativeGrazeAward",
+        "entry": "0x4391c0",
+        "caller": "0x42b089",
+        "position": [
+          14.2265625,
+          177.984375,
+          0.0
+        ],
+        "grazeBefore": 65,
+        "pivBefore": 2009040
+      }
+    },
+    {
+      "inputTick": 4116,
+      "nativeLaserUpdateExecuted": true,
+      "rng": {
+        "seed": 1851,
+        "calls": 50133
+      },
+      "player": {
+        "position": [
+          14.2265625,
+          177.984375
+        ],
+        "fixedPosition": [
+          1821,
+          22782
+        ],
+        "state": 1,
+        "stateAge": 4117
+      },
+      "economy": {
+        "scoreStored": 205503,
+        "power": 207,
+        "pivStored": 2009140,
+        "maxPivStored": 40000000,
+        "rank": 592,
+        "lifeBombCounters": [
+          2,
+          3,
+          2,
+          0
+        ],
+        "ufoColors": [
+          1,
+          1,
+          0
+        ],
+        "ufoCountState": [
+          2,
+          2
+        ],
+        "ufoAge": 1679,
+        "ufoKind": -1,
+        "ufoEnemy": 0,
+        "ufoFill": 1.0,
+        "ufoBuckets": [
+          29,
+          10
+        ],
+        "spellFlagsBonus": [
+          3,
+          8000000
+        ],
+        "bombState": 0
+      },
+      "combatEnemies": [
+        {
+          "routine": "MBoss",
+          "occurrence": 0,
+          "birthInputTick": 2970,
+          "life": 1014,
+          "position": [
+            19.190000534057617,
+            144.0
+          ],
+          "absolute": [
+            19.190000534057617,
+            144.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        },
+        {
+          "routine": "ShipShadow2",
+          "occurrence": 0,
+          "birthInputTick": 3321,
+          "life": 1200,
+          "position": [
+            0.0,
+            3200.0
+          ],
+          "absolute": [
+            0.0,
+            3200.0
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "hpImmunity": 0
+        }
+      ]
+    }
+  ],
+  "laserRecordScope": {
+    "inputTicks": [
+      4114,
+      4115,
+      4116
+    ],
+    "constructor": "0x4281c0",
+    "registrar": "0x427fd0",
+    "managerUpdate": "0x428270",
+    "priority": 20,
+    "scope": "Actual unpaused CPU manager updates. Earlier unchanged milestones precede the first laser in this replay; the old no-laser capture cannot serve as evidence against later laser graze."
+  }
+}

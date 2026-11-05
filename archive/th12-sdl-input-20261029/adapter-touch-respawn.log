@@ -1,0 +1,47 @@
+✔ room preview animates for minutes without entering or loading a demo (10.5379ms)
+✔ managed protocol: authenticates navigation, serializes resources and configures before launch (1.9666ms)
+✔ managed touch: accepts shared sensitivity bounds and rejects invalid values (0.3095ms)
+✔ room Start cannot announce gameplay while its native launch is still pending (1.3778ms)
+✔ managed gamepad: maps every semantic action and rejects retired owners (0.3286ms)
+✔ managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and 144 Hz (25.2359ms)
+✔ a saturated catch-up budget still publishes a fresh game picture on every browser frame (8.2009ms)
+✔ toggle focus survives repeated player respawns without another host snapshot (2.2507ms)
+✔ respawn clears stale drag targets and Bomb pulses while retaining toggle focus (0.8612ms)
+✔ entering menu still clears toggled focus (0.1619ms)
+✔ entering replay still clears toggled focus (0.1254ms)
+✔ explicit cancellation and disabling touch still release toggled focus (0.1149ms)
+✔ pause and confirmation retain the toggle but release contacts, Bomb and axes (0.1682ms)
+✔ leaving a pause for title or another run releases toggle focus (0.1365ms)
+✔ hold-button releases on pause even when preserving toggle focus (0.113ms)
+✔ two-finger releases on pause even when preserving toggle focus (0.0875ms)
+✔ hold-button does not acquire a persistent focus latch on respawn (0.2147ms)
+✔ two-finger does not acquire a persistent focus latch on respawn (0.0762ms)
+✔ touch: held contacts survive local death and rebase at respawn (1.0646ms)
+✔ touch-unlimited: held contacts survive local death and rebase at respawn (0.1263ms)
+✔ rollback across local death rebases the existing pointer without acquiring a new contact (0.1417ms)
+✔ actual shell keeps gameplay gestures continuous through other deaths and spell boundaries (1.4816ms)
+✔ reconfiguration preserves the local display limit when omitted (1.6094ms)
+✔ managed protocol: authenticates navigation, serializes resources and configures before launch (1.3397ms)
+✔ managed touch: accepts shared sensitivity bounds and rejects invalid values (0.3445ms)
+✔ managed gamepad: maps every semantic action and rejects retired owners (0.2395ms)
+✔ managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and 144 Hz (44.9844ms)
+✔ a saturated catch-up budget still publishes a fresh game picture on every browser frame (5.2345ms)
+✔ toggle focus survives repeated player respawns without another host snapshot (3.183ms)
+✔ respawn clears stale drag targets and Bomb pulses while retaining toggle focus (0.7846ms)
+✔ entering menu still clears toggled focus (0.1455ms)
+✔ entering replay still clears toggled focus (0.1094ms)
+✔ explicit cancellation and disabling touch still release toggled focus (0.1126ms)
+✔ pause and confirmation retain the toggle but release contacts, Bomb and axes (0.1982ms)
+✔ leaving a pause for title or another run releases toggle focus (0.1376ms)
+✔ hold-button releases on pause even when preserving toggle focus (0.0959ms)
+✔ two-finger releases on pause even when preserving toggle focus (0.0996ms)
+✔ hold-button does not acquire a persistent focus latch on respawn (0.1423ms)
+✔ two-finger does not acquire a persistent focus latch on respawn (0.0717ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 224.0608

@@ -1,0 +1,89 @@
+{
+  "schema": "th12-original-player-item-bounds/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "scope": "original435d53..435dd8 init and4371ef..4372cd current-frame rectangle arithmetic; no candidate inputs",
+  "rows": [
+    {
+      "character": 0,
+      "initializedHitHalfExtents": [
+        1.0,
+        1.0
+      ],
+      "initializedPickupDimensions": [
+        30.0,
+        30.0
+      ],
+      "currentPickupRectangle": [
+        85.0,
+        185.0,
+        -2.5,
+        115.0,
+        215.0,
+        2.5
+      ],
+      "currentPickupHalfExtents": [
+        15.0,
+        15.0
+      ],
+      "nearHalfExtents": [
+        50.0,
+        50.0
+      ]
+    },
+    {
+      "character": 1,
+      "initializedHitHalfExtents": [
+        1.75,
+        1.75
+      ],
+      "initializedPickupDimensions": [
+        35.0,
+        35.0
+      ],
+      "currentPickupRectangle": [
+        82.5,
+        182.5,
+        -2.5,
+        117.5,
+        217.5,
+        2.5
+      ],
+      "currentPickupHalfExtents": [
+        17.5,
+        17.5
+      ],
+      "nearHalfExtents": [
+        59.0,
+        59.0
+      ]
+    },
+    {
+      "character": 2,
+      "initializedHitHalfExtents": [
+        1.5,
+        1.5
+      ],
+      "initializedPickupDimensions": [
+        30.0,
+        30.0
+      ],
+      "currentPickupRectangle": [
+        85.0,
+        185.0,
+        -2.5,
+        115.0,
+        215.0,
+        2.5
+      ],
+      "currentPickupHalfExtents": [
+        15.0,
+        15.0
+      ],
+      "nearHalfExtents": [
+        50.0,
+        50.0
+      ]
+    }
+  ]
+}

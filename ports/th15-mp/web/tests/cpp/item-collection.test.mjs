@@ -1,0 +1,23 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {core,oracle,memory,string,report} from './helpers.mjs';
+test('TH15 item awards preserve original power, scoring, chapter collection, life and bomb pieces',async()=>{
+ const c=await core(),m=await oracle(),owner=m.allocate(0x2c100),item=m.allocate(0xc88),hud=m.allocate(0x200),value=m.allocate(4),wrapper=m.allocate(32);m.u32(0x4e9bb8,owner);m.u32(0x4e9a8c,hud);let events=[],cases=0,checks=0;
+ const event=(kind,a=0,b=0,p=0)=>events.push(kind,a>>>0,b>>>0,p?m.u32(p):0,p?m.u32(p+4):0,p?m.u32(p+8):0),sp=()=>m.reg('ESP');
+ m.replace(0x4567b0,'observe item option update',()=>{event(0);return 0;});m.replace(0x439d60,'observe item notice',()=>{assert.equal(m.i32(sp()+4),0);event(1,m.i32(sp()+8));return 0;},2);
+ m.replace(0x476400,'observe immediate item audio',()=>{event(2,m.i32(sp()+4));return 0;},1);m.replace(0x476360,'observe queued item audio',()=>{event(3,m.i32(sp()+4));return 0;},2);
+ m.replace(0x45ef60,'observe item score popup',()=>{event(4,m.i32(sp()+8),m.i32(sp()+12),m.u32(sp()+4));return 0;},3);
+ for(const [at,id]of [[0x43a850,5],[0x43a960,6]])m.replace(at,'observe item HUD '+id,()=>{event(id,m.i32(sp()+4),m.i32(sp()+8));return 0;},2);
+ const code=Buffer.from([0xf3,0x0f,0x10,0x0d,0,0,0,0,0xe9,0,0,0,0]);code.writeUInt32LE(value,4);code.writeInt32LE(0x43b200-wrapper-code.length,9);m.write(wrapper,code);
+ const playerOffsets=[0x4e7450,0x4e7454,0x4e742c,0,0,0,0x4e7794,0x4e7440,0x4e7448,0x4e745c,0x4e7460,0],scoreOffsets=[0x4e740c,0x4e7434,0x4e743c,0x4e7430,0x4e7464,0x4e746c,0x4e7470,0x4e7474,0x4e7478,0x4e747c,0x4e7458,0x4e7410,0x4e741c,0x4e7420,0x4e7444],kinds=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],functions=[0,0x4401d0,0x4405c0,0x440420,0x44fa60,0x44fa20,0x44fbc0,0x44fb80,0x440330];
+ try{for(let character=0;character<4;character++){const f=c.item_collection_create(character);try{for(const kind of kinds)for(let s=0;s<80;s++){
+  const pp=c.item_collection_field(f,0),ss=c.item_collection_field(f,1),pos=c.item_collection_field(f,2),ip=c.item_collection_field(f,3);let dv=new DataView(c.memory.buffer);m.i32(0x4e7404,character);
+  const powers=[0,99,100,199,299,399,400,401],scores=[0,1771,999999998,999999999],ys=[-16,127.999,128,128.001,147.999,148,148.001,320.75,449.875,472.25],pvs=[0,999,1000,1000000,1000450,1000999,9999000,9999999];
+  const playerValues=[[-1,0,2,7,8,9][s%6],[0,1,2,3,4,5,10][s%7],0,0,0,0,0,powers[s%8],100,[0,2,7,8,9][s%5],[0,1,3,4,5][s%5],0];
+  const scoreValues=[scores[s%4],pvs[s%8],10000000,s,13,s*5,8,0,0,0,s%6,s%3?0:4,[0,99999997,99999999][s%3],[0,99999997,99999999][s%3],400];
+  for(let i=0;i<playerValues.length;i++){dv.setInt32(pp+i*4,playerValues[i],true);if(playerOffsets[i])m.i32(playerOffsets[i],playerValues[i]);}for(let i=0;i<scoreValues.length;i++){dv.setInt32(ss+i*4,scoreValues[i],true);m.i32(scoreOffsets[i],scoreValues[i]);}
+  const p=[Math.fround((s%9-4)*17.125),Math.fround(ys[s%ys.length]),Math.fround(s%3*.25)],it=[Math.fround(s*1.25),Math.fround(300-s*.125),Math.fround(-s*.0625)];for(let i=0;i<3;i++){dv.setFloat32(pos+i*4,p[i],true);m.f32(owner+0x618+i*4,p[i]);dv.setFloat32(ip+i*4,it[i],true);m.f32(item+0xc20+i*4,it[i]);}dv.setInt32(ip+68,s%2?3:1,true);m.i32(item+0xc64,s%2?3:1);events=[];
+  if(kind<=8)m.call(functions[kind],{ecx:item});else if(kind>=9&&kind<=11){m.f32(value,kind===11?20:2);m.call(wrapper);m.call(0x420f50,{args:[10]});}else if(kind>=13){m.call(0x440eb0,{args:[kind===13?5:kind===14?10:25]});m.call(0x420f50,{args:[kind===13?10:kind===14?50:100]});}
+  assert.equal(c.item_collection_award(f,kind),1,string(c,c.item_collection_error(f)));dv=new DataView(c.memory.buffer);const label=character+'/'+kind+'/'+s;
+  for(let i=0;i<playerOffsets.length;i++)if(playerOffsets[i])assert.equal(dv.getInt32(pp+i*4,true),m.i32(playerOffsets[i]),label+' player '+i);for(let i=0;i<scoreOffsets.length;i++)assert.equal(dv.getInt32(ss+i*4,true),m.i32(scoreOffsets[i]),label+' score '+i);
+  assert.deepEqual(Array.from(new Uint32Array(c.memory.buffer,c.item_collection_events(f),c.item_collection_event_count(f))),events,label+' requests');cases++;checks+=24;
+ }}finally{c.item_collection_delete(f);}}report('item-collection-awards',{passed:true,cases,characters:4,kinds:kinds.length,checks,originalFunctions:functions.slice(1).map(x=>'0x'+x.toString(16)).concat(['0x43b200','0x440eb0','0x420f50']),scope:'Unmodified original item award functions: power thresholds/options, score caps, position-dependent point value, chapter counters, life/bomb caps and fragment conversion. Popup, HUD and audio observed at service boundaries; actual pool movement/collection integration remains separate.'});}finally{m.close();}
+});

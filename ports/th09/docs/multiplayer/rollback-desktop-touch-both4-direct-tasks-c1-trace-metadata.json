@@ -1,0 +1,1361 @@
+{
+  "schema": "th09-browser-scheduler-metadata/v1",
+  "raw": {
+    "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-report.json",
+    "bytes": 29685068,
+    "sha256": "c19307e11c86183f3d6816078814a7da6cc091874ec77990cdd16bfdc42adb54"
+  },
+  "scope": "Identity and collection/clock qualification only; task wall spans do not establish CPU busy or causality; no events is not idle evidence.",
+  "traces": [
+    {
+      "side": 0,
+      "artifact": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P1-scheduler-trace.json",
+        "bytes": 37130407,
+        "sha256": "7e6d167c0aca1249b948d0cf0f4e12c7e4a0313154302a4a35f6f23de205452e"
+      },
+      "status": "stopped",
+      "collectionValid": true,
+      "availability": {
+        "available": true,
+        "reason": "ready",
+        "missingCategories": [],
+        "product": "Chrome/153.0.8010.12"
+      },
+      "counts": {
+        "batches": 1884,
+        "rawEvents": 232755,
+        "retainedEvents": 232696,
+        "droppedEvents": 59,
+        "droppedFields": 232696,
+        "malformedEvents": 0,
+        "retainedDataJsonBytes": 66701525,
+        "unknownEventNames": 133609,
+        "errors": 0
+      },
+      "overflow": {
+        "events": 0,
+        "bytes": 0,
+        "bufferUsage": 0,
+        "marks": 0,
+        "errors": 0,
+        "names": 0,
+        "threads": 0,
+        "firstAt": null,
+        "firstTraceTs": null
+      },
+      "errors": [],
+      "clock": {
+        "traceTimestampUnit": "microseconds",
+        "pageTimestampUnit": "milliseconds",
+        "mapping": "traceTs/1000 = pagePerformanceNow + offsetMs",
+        "timeOriginIsNotTraceOrigin": true,
+        "quantizationAllowanceMs": 0.1,
+        "matches": [
+          {
+            "stage": "armed",
+            "name": "th09-sched-armed",
+            "before": 7646.199999988079,
+            "after": 7646.584999978542,
+            "timeOrigin": 1791715973059.775,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 67660,
+              "tid": 59936,
+              "ts": 274893169736
+            },
+            "offsetMs": [
+              274885523.051,
+              274885523.63600004
+            ]
+          },
+          {
+            "stage": "first-active",
+            "name": "th09-sched-first-active",
+            "before": 10312.659999966621,
+            "after": 10312.870000004768,
+            "timeOrigin": 1791715973059.775,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 67660,
+              "tid": 59936,
+              "ts": 274895836037
+            },
+            "offsetMs": [
+              274885523.067,
+              274885523.47700006
+            ]
+          },
+          {
+            "stage": "capture-stop",
+            "name": "th09-sched-capture-stop",
+            "before": 30653.855000019073,
+            "after": 30654.264999985695,
+            "timeOrigin": 1791715973059.775,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 67660,
+              "tid": 59936,
+              "ts": 274916177231
+            },
+            "offsetMs": [
+              274885522.866,
+              274885523.476
+            ]
+          }
+        ],
+        "matchedMarks": 3,
+        "sameThread": true,
+        "samePageTimeOrigin": true,
+        "clockMapped": true,
+        "offsetIntersectionMs": [
+          274885523.067,
+          274885523.476
+        ],
+        "maximumBracketWidthMs": 0.4099999666213989,
+        "distinctMarkSpanMs": 23007.27000004053,
+        "renderer": {
+          "pid": 67660,
+          "tid": 59936
+        }
+      },
+      "capture": {
+        "nodeStartedAt": 10470.0748,
+        "nodeStopRequestedAt": 33478.0758,
+        "nodeEndRequestedAt": 33484.3105,
+        "nodeCompletedAt": 42564.9774,
+        "nodeStoppedAt": 42567.082,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "bufferHighWater": false,
+        "bufferHighWaterThreshold": 0.8,
+        "firstBufferHighWater": null,
+        "censored": false,
+        "tracingCompleteReceived": true,
+        "dataLossOccurred": false,
+        "endRequests": 1
+      },
+      "coverage": {
+        "clockMapped": true,
+        "allThreeMarks": true,
+        "marksOrdered": true,
+        "requestedCategories": [
+          "toplevel",
+          "renderer.scheduler",
+          "blink.user_timing"
+        ],
+        "activeWindowCovered": true,
+        "categories": {
+          "toplevel": 207678,
+          "renderer.scheduler": 24893,
+          "blink.user_timing": 3
+        },
+        "schedulerObserved": true,
+        "compositorObserved": null,
+        "gpuObserved": null,
+        "renderer": {
+          "pid": 67660,
+          "tid": 59936
+        },
+        "limitation": "No events is not evidence of idle. Match the retained complete time window to existing rAF requests; a non-reproduced stall is not a repair.",
+        "threadCount": 122,
+        "unknownNameCount": 38
+      },
+      "sourceIdentity": {
+        "before": {
+          "helper": {
+            "bytes": 25600,
+            "sha256": "b7d8d236ab7699d3b97c66f957a86da68aae334fdf9f7e1b0e37a38d3fd0eaec"
+          },
+          "harness": {
+            "bytes": 70664,
+            "sha256": "46b7e954f03c5cc2d6f9ccf9b35db29187d3fa9529dac7c541393c21c14ec7c5"
+          }
+        },
+        "after": {
+          "helper": {
+            "bytes": 25600,
+            "sha256": "b7d8d236ab7699d3b97c66f957a86da68aae334fdf9f7e1b0e37a38d3fd0eaec"
+          },
+          "harness": {
+            "bytes": 70664,
+            "sha256": "46b7e954f03c5cc2d6f9ccf9b35db29187d3fa9529dac7c541393c21c14ec7c5"
+          }
+        },
+        "stable": true
+      },
+      "phaseCounts": {
+        "M": 122,
+        "X": 213806,
+        "I": 8769,
+        "B": 29,
+        "b": 4986,
+        "e": 4984
+      },
+      "namedCounts": [
+        [
+          "ThreadControllerImpl::RunTask",
+          92924
+        ],
+        [
+          "ThreadPool_RunTask",
+          6038
+        ],
+        [
+          "thread_name",
+          110
+        ],
+        [
+          "process_name",
+          12
+        ],
+        [
+          "th09-sched-armed",
+          1
+        ],
+        [
+          "th09-sched-first-active",
+          1
+        ],
+        [
+          "th09-sched-capture-stop",
+          1
+        ]
+      ],
+      "mainEventCount": 54588,
+      "mainX": [
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893624234,
+          "pid": 67660,
+          "tid": 59936,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 1538452,
+          "tts": 945525,
+          "tdur": 1905
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893624235,
+          "pid": 67660,
+          "tid": 59936,
+          "nameHash": "4c9aa1fc9dd6474e7b28f7495dbb95c9873f5869017b2be68e792a0a02727e63",
+          "dur": 1538451,
+          "tts": 945526,
+          "tdur": 1904
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893624239,
+          "pid": 67660,
+          "tid": 59936,
+          "nameHash": "fc422c648fab206689813dddb4ebe197968ef8cacae8c38231a1bc8d6d8e70a7",
+          "dur": 1538434,
+          "tts": 945529,
+          "tdur": 1899
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274895226320,
+          "pid": 67660,
+          "tid": 59936,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 550655,
+          "tts": 954269,
+          "tdur": 113790
+        }
+      ],
+      "sampleEvents": [
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893161690,
+          "pid": 21172,
+          "tid": 50480,
+          "nameHash": "d03d517c5aeecf4707c6a0bdeec167d3a4577f1f9f7cba0f6d1e7b5860f92870",
+          "dur": 67
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893161697,
+          "pid": 21172,
+          "tid": 33468,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 48
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893161708,
+          "pid": 21172,
+          "tid": 33468,
+          "nameHash": "fc422c648fab206689813dddb4ebe197968ef8cacae8c38231a1bc8d6d8e70a7",
+          "dur": 35
+        }
+      ],
+      "metadata": [
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 31588,
+          "name": "thread_name",
+          "args": {
+            "name": "Chrome_ChildIOThread"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 43556,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "67865a8e427631e7286ae93e9ab8e7fc326d1a00c501a1ac4f2df55d42fd849f"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 49080,
+          "tid": 20560,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 59936,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 22560,
+          "tid": 16788,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 23356,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 20592,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolServiceThread"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 63372,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolBackgroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 54412,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 32760,
+          "name": "thread_name",
+          "args": {
+            "name": "Compositor"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 35684,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "3e0efeb034cb5d60c481b6559dde2568a5c813139552ad8133ce5617782f1ca3"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 25236,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "a3ed455aa2da8d60b9fb1c66ad2d70a3e1dc8f740cbde0cb74944248f1370a92"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 12908,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "d357175cfe8978d39b0f86552dcd9404973493e2816101d9ff6c05ee248ef6bd"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 51764,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 35932,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 24452,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 61056,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 49968,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 25304,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 47288,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 18404,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 32212,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 11960,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 34860,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 9132,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 44148,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 11320,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 20660,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 54580,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 65008,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 31040,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 29076,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 31360,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 64528,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 67660,
+          "tid": 0,
+          "name": "process_name",
+          "args": {
+            "name": "Renderer"
+          }
+        }
+      ]
+    },
+    {
+      "side": 1,
+      "artifact": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-tasks-c1-P2-scheduler-trace.json",
+        "bytes": 36020016,
+        "sha256": "eb48934a32ae80fd70a63b53d0aebdf880b6c51c4926cda4b4b2712f84da58b7"
+      },
+      "status": "stopped",
+      "collectionValid": true,
+      "availability": {
+        "available": true,
+        "reason": "ready",
+        "missingCategories": [],
+        "product": "Chrome/153.0.8010.12"
+      },
+      "counts": {
+        "batches": 1821,
+        "rawEvents": 226594,
+        "retainedEvents": 226538,
+        "droppedEvents": 56,
+        "droppedFields": 226538,
+        "malformedEvents": 0,
+        "retainedDataJsonBytes": 64803521,
+        "unknownEventNames": 133012,
+        "errors": 0
+      },
+      "overflow": {
+        "events": 0,
+        "bytes": 0,
+        "bufferUsage": 0,
+        "marks": 0,
+        "errors": 0,
+        "names": 0,
+        "threads": 0,
+        "firstAt": null,
+        "firstTraceTs": null
+      },
+      "errors": [],
+      "clock": {
+        "traceTimestampUnit": "microseconds",
+        "pageTimestampUnit": "milliseconds",
+        "mapping": "traceTs/1000 = pagePerformanceNow + offsetMs",
+        "timeOriginIsNotTraceOrigin": true,
+        "quantizationAllowanceMs": 0.1,
+        "matches": [
+          {
+            "stage": "armed",
+            "name": "th09-sched-armed",
+            "before": 2977.1650000214577,
+            "after": 2977.564999997616,
+            "timeOrigin": 1791715977727.345,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 54204,
+              "tid": 49448,
+              "ts": 274893168116
+            },
+            "offsetMs": [
+              274890190.451,
+              274890191.051
+            ]
+          },
+          {
+            "stage": "first-active",
+            "name": "th09-sched-first-active",
+            "before": 5653.574999988079,
+            "after": 5653.764999985695,
+            "timeOrigin": 1791715977727.345,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 54204,
+              "tid": 49448,
+              "ts": 274895844518
+            },
+            "offsetMs": [
+              274890190.653,
+              274890191.04300004
+            ]
+          },
+          {
+            "stage": "capture-stop",
+            "name": "th09-sched-capture-stop",
+            "before": 25985.94999998808,
+            "after": 25986.144999980927,
+            "timeOrigin": 1791715977727.345,
+            "candidateCount": 1,
+            "uniqueCandidateCount": 1,
+            "trace": {
+              "pid": 54204,
+              "tid": 49448,
+              "ts": 274916176897
+            },
+            "offsetMs": [
+              274890190.652,
+              274890191.04700005
+            ]
+          }
+        ],
+        "matchedMarks": 3,
+        "sameThread": true,
+        "samePageTimeOrigin": true,
+        "clockMapped": true,
+        "offsetIntersectionMs": [
+          274890190.653,
+          274890191.04300004
+        ],
+        "maximumBracketWidthMs": 0.3999999761581421,
+        "distinctMarkSpanMs": 23008.384999990463,
+        "renderer": {
+          "pid": 54204,
+          "tid": 49448
+        }
+      },
+      "capture": {
+        "nodeStartedAt": 10468.3052,
+        "nodeStopRequestedAt": 33478.1193,
+        "nodeEndRequestedAt": 33481.9944,
+        "nodeCompletedAt": 41880.7111,
+        "nodeStoppedAt": 42444.5559,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "bufferHighWater": false,
+        "bufferHighWaterThreshold": 0.8,
+        "firstBufferHighWater": null,
+        "censored": false,
+        "tracingCompleteReceived": true,
+        "dataLossOccurred": false,
+        "endRequests": 1
+      },
+      "coverage": {
+        "clockMapped": true,
+        "allThreeMarks": true,
+        "marksOrdered": true,
+        "requestedCategories": [
+          "toplevel",
+          "renderer.scheduler",
+          "blink.user_timing"
+        ],
+        "activeWindowCovered": true,
+        "categories": {
+          "toplevel": 200831,
+          "renderer.scheduler": 25622,
+          "blink.user_timing": 3
+        },
+        "schedulerObserved": true,
+        "compositorObserved": null,
+        "gpuObserved": null,
+        "renderer": {
+          "pid": 54204,
+          "tid": 49448
+        },
+        "limitation": "No events is not evidence of idle. Match the retained complete time window to existing rAF requests; a non-reproduced stall is not a repair.",
+        "threadCount": 82,
+        "unknownNameCount": 34
+      },
+      "sourceIdentity": {
+        "before": {
+          "helper": {
+            "bytes": 25600,
+            "sha256": "b7d8d236ab7699d3b97c66f957a86da68aae334fdf9f7e1b0e37a38d3fd0eaec"
+          },
+          "harness": {
+            "bytes": 70664,
+            "sha256": "46b7e954f03c5cc2d6f9ccf9b35db29187d3fa9529dac7c541393c21c14ec7c5"
+          }
+        },
+        "after": {
+          "helper": {
+            "bytes": 25600,
+            "sha256": "b7d8d236ab7699d3b97c66f957a86da68aae334fdf9f7e1b0e37a38d3fd0eaec"
+          },
+          "harness": {
+            "bytes": 70664,
+            "sha256": "46b7e954f03c5cc2d6f9ccf9b35db29187d3fa9529dac7c541393c21c14ec7c5"
+          }
+        },
+        "stable": true
+      },
+      "phaseCounts": {
+        "M": 82,
+        "X": 204608,
+        "I": 11268,
+        "B": 30,
+        "b": 5276,
+        "e": 5274
+      },
+      "namedCounts": [
+        [
+          "ThreadControllerImpl::RunTask",
+          91353
+        ],
+        [
+          "ThreadPool_RunTask",
+          2088
+        ],
+        [
+          "thread_name",
+          73
+        ],
+        [
+          "process_name",
+          9
+        ],
+        [
+          "th09-sched-armed",
+          1
+        ],
+        [
+          "th09-sched-first-active",
+          1
+        ],
+        [
+          "th09-sched-capture-stop",
+          1
+        ]
+      ],
+      "mainEventCount": 55771,
+      "mainX": [
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893624695,
+          "pid": 54204,
+          "tid": 49448,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 1209388,
+          "tts": 986183,
+          "tdur": 1051
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893624696,
+          "pid": 54204,
+          "tid": 49448,
+          "nameHash": "4c9aa1fc9dd6474e7b28f7495dbb95c9873f5869017b2be68e792a0a02727e63",
+          "dur": 1209386,
+          "tts": 986183,
+          "tdur": 1051
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893624698,
+          "pid": 54204,
+          "tid": 49448,
+          "nameHash": "fc422c648fab206689813dddb4ebe197968ef8cacae8c38231a1bc8d6d8e70a7",
+          "dur": 1209203,
+          "tts": 986184,
+          "tdur": 1046
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274895217292,
+          "pid": 54204,
+          "tid": 49448,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 342150,
+          "tts": 1001288,
+          "tdur": 78449
+        }
+      ],
+      "sampleEvents": [
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893161124,
+          "pid": 22416,
+          "tid": 29552,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 53,
+          "tts": 682280,
+          "tdur": 29
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893161139,
+          "pid": 22416,
+          "tid": 23132,
+          "nameHash": "d03d517c5aeecf4707c6a0bdeec167d3a4577f1f9f7cba0f6d1e7b5860f92870",
+          "dur": 30,
+          "tts": 179842,
+          "tdur": 12
+        },
+        {
+          "cat": "toplevel",
+          "ph": "X",
+          "ts": 274893161180,
+          "pid": 22416,
+          "tid": 29552,
+          "name": "ThreadControllerImpl::RunTask",
+          "dur": 8,
+          "tts": 682311,
+          "tdur": 8
+        }
+      ],
+      "metadata": [
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 32392,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "67865a8e427631e7286ae93e9ab8e7fc326d1a00c501a1ac4f2df55d42fd849f"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 49448,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 27896,
+          "name": "thread_name",
+          "args": {
+            "name": "Chrome_ChildIOThread"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 33824,
+          "tid": 62660,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 52904,
+          "tid": 21592,
+          "name": "thread_name",
+          "args": {
+            "name": "CrRendererMain"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 49308,
+          "name": "thread_name",
+          "args": {
+            "name": "Compositor"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 53084,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 60024,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 19580,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "3e0efeb034cb5d60c481b6559dde2568a5c813139552ad8133ce5617782f1ca3"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 60280,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "a3ed455aa2da8d60b9fb1c66ad2d70a3e1dc8f740cbde0cb74944248f1370a92"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 57328,
+          "name": "thread_name",
+          "args": {
+            "nameHash": "d357175cfe8978d39b0f86552dcd9404973493e2816101d9ff6c05ee248ef6bd"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 65424,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolServiceThread"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 41824,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 64780,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 61808,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 53512,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 38520,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 64308,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 46884,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 17520,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 8464,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 19096,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 44012,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 54352,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 59364,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 21780,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 57180,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 27052,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 23264,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 31672,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 13904,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolForegroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 50380,
+          "name": "thread_name",
+          "args": {
+            "name": "ThreadPoolBackgroundWorker"
+          }
+        },
+        {
+          "cat": "__metadata",
+          "ph": "M",
+          "ts": 0,
+          "pid": 54204,
+          "tid": 0,
+          "name": "process_name",
+          "args": {
+            "name": "Renderer"
+          }
+        }
+      ]
+    }
+  ]
+}

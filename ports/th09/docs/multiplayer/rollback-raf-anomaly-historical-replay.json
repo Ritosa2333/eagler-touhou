@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "kind": "th09-raf-anomaly-frozen-history-vm-replay",
+  "recordedDateUtc": "2026-10-11",
+  "purpose": "Check the new probe against actual retained request/frame/control/lifecycle field shapes, with future observations removed before each modeled poll. This is a read-only replay of old evidence, not a new reproduction of the stall.",
+  "execution": {
+    "nigCommandId": "Cqrr6altSeB9nw1Egm_-pPW5",
+    "exitCode": 0,
+    "invocation": "node -e <prepared inline replay source>",
+    "workdir": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+    "inlineSourceBytes": 9192,
+    "inlineSourceSha256": "cb81653f65ce736afbc5a5c3f64f836bc7ce1449b48619bb8a8952739fa27c19",
+    "authorization": "Root explicitly permitted one short offline Node replay after component03 completed and before starting the diagnostic build.",
+    "observations": "No browser, CDP session, timer, game call, transport processing, build or file write was performed by the replay.",
+    "runtimeTiming": "No script wall-time benchmark was collected; tool yield intervals are not reported as probe CPU cost."
+  },
+  "savedRunner": {
+    "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/tests/multiplayer/raf-anomaly-historical-replay.mjs",
+    "bytes": 9794,
+    "sha256": "97333d8582346b320f86d2faf8317335d9ebaf0e4af6d02fa5e2bdfcd31cc4ea",
+    "usage": "node web/tests/multiplayer/raf-anomaly-historical-replay.mjs [frozen-relay39-report.json] [raf-anomaly-probe.mjs]",
+    "inputPolicy": "Raw input is locked to SHA 92a6711ebc768d6da8249100d85afabe3187a52bb327715af066f0e3f448fb20. Optional paths relocate that same raw and choose the helper source under examination. The script prints the helper identity and writes no files.",
+    "relationshipToExecutedCommand": "The executed inline source was converted to .mjs imports and positional path arguments, with a two-argument usage guard. The replay/reconstruction/assertion body is text-identical after removing only that CLI argument guard.",
+    "replayBodyTextEquivalentToExecutedInline": true,
+    "rerunAfterSaving": false,
+    "identityCommandId": "rD2olDupgKCXGZgPauhARvyv",
+    "identityCheckScope": "Read-only file/string SHA calculation, not an additional test."
+  },
+  "clippingRules": [
+    "At each chosen virtual performance.now time, include only requests whose requestedAt is at or before that time; preserve their original contiguous array index, parentIndex and callbackId.",
+    "Clear request enteredAt, rafTimestamp, pauseAtEntry and frameHookAtEntry until entry is historically observed. Clear exitedAt, pauseAtExit, frameHookAtExit and future callbackThrew until historical exit. Clear cancelledAt until its recorded time.",
+    "Include only frames whose enteredAt is already observed. Clear future frame exit, sampleAfter, activeAfter and endedAfter; clear future playEnteredAt/playExitedAt/sampleAt/afterSampleAt. Reconstruct each request's frameCalls/firstFrameIndex/lastFrameIndex from those observed frames.",
+    "Include only control rows entered by the virtual time and clear future control exits. Preserve the historical control names, arguments and order so loop epoch, pause, stop and restart judgment uses the existing fields.",
+    "Include only lifecycle rows and game samples whose historical page times are at or before the virtual observation. Derive callback game membership from already observed game frames.",
+    "Keep the modeled probe, play, measure and core object owners stable across polls. Modeled play.active comes from the most recent completed historical frame; measure started/ended are visible only once their recorded times are reached.",
+    "Derive pending request indices from the clipped requests and expose at most four to the helper. Do not supply fabricated native-polled stats or transport queues. Counts without actual historical poll observations remain absent.",
+    "Virtual Date.now is floor(page timeOrigin + virtual performance.now). It is explicitly a synthetic model value and is not used as new RTC, packet or wall-clock evidence."
+  ],
+  "pollSequences": {
+    "pendingThenReturn": [
+      "Poll at max(requestedAt + 10 ms, parent.exitedAt + 1 ms); the target's future entry/exit/frameCalls must still be cleared and no episode may exist.",
+      "Poll at requestedAt + 300 ms, before the actual retained entry; assert the named request is eligible, latched in the observed loop epoch, still pending, and has at least 250 ms eligible dispatch wait.",
+      "Poll at actual request.exitedAt + 1 ms; assert natural entered settlement, exact historical wait and censored=false."
+    ],
+    "returnedBeforeNextPoll": [
+      "Use a fresh modeled probe and poll only at the same pre-threshold time.",
+      "Jump directly to the same post-return time; the new-request cursor has already passed the target, so the target must be recovered through last.pending identity and recorded as completed-before-poll."
+    ],
+    "samplingScope": "These are chosen offline observation times, not historical Node/CDP poll timestamps and not a measurement of the probe's real-world polling success rate."
+  },
+  "checks": [
+    "Frozen relay39 raw SHA and helper SHA are unchanged before and after execution.",
+    "Both real parent frames expose activeAfter=true, endedAfter=false and positive sampleAfter with the field names required by compactRequest.",
+    "Both named requests latch at +300 ms in loop epoch 1 and settle naturally on the retained enteredAt, without cancellation or censoring.",
+    "Both long waits are also found when request entry occurs before the next modeled poll.",
+    "Limited replay starts near the named request; older requests are skipped and coverageComplete=false is retained rather than promoted to full-run coverage.",
+    "No claim of a current stall reproduction, a root cause, new network progress, physical scanout, or measured probe overhead follows from the replay."
+  ],
+  "completeObservedResult": {
+    "kind": "offline-historical-request-shape-replay",
+    "passed": true,
+    "raw": {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-chain-release-input-batch-headed-relay39-01-report.json",
+      "bytes": 20697024,
+      "sha256": "92a6711ebc768d6da8249100d85afabe3187a52bb327715af066f0e3f448fb20"
+    },
+    "helper": {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/tests/multiplayer/raf-anomaly-probe.mjs",
+      "bytes": 16988,
+      "sha256": "f33bf25b07b99dc2e8ae5485138f31c21eed2a54ee564899847907f891eab5f4"
+    },
+    "scope": "Read-only VM replay of already-frozen relay39 request/frame/control/lifecycle fields. Historical request fields are clipped at each modeled observation time; future entries/exits/frameCalls are cleared. This is NOT a fresh browser/CDP sample or a reproduction in the current environment.",
+    "modelLimits": [
+      "Three chosen virtual times (or two for completed-before-poll), not observed historical Node status-poll times.",
+      "Current play active state is modeled from the most recent completed historical frame; no historical live play object snapshot was recorded.",
+      "Date.now is synthetic floor(timeOrigin+virtual performance.now), not a recorded historical wall clock.",
+      "Polled native stats and transport queues are omitted; no packet, heartbeat, host-load or CPU causal evidence is inferred.",
+      "Snapshot reconstruction work is a test fixture, not measurement of probe overhead or browser scheduling."
+    ],
+    "cases": [
+      {
+        "side": 0,
+        "requestIndex": 704,
+        "parentIndex": 703,
+        "parentFrameIndex": 647,
+        "parentActiveAfter": true,
+        "parentEndedAfter": false,
+        "parentSampleAfter": 648,
+        "originalRequest": {
+          "requestedAt": 15470.27500000596,
+          "enteredAt": 16900.210000008345,
+          "exitedAt": 16902.985000014305,
+          "parentExitedAt": 15470.285000026226,
+          "cancelledAt": null
+        },
+        "observations": {
+          "preAt": 15480.27500000596,
+          "duringAt": 15770.27500000596,
+          "afterAt": 16903.985000014305
+        },
+        "pendingAt300": {
+          "kind": "observed-pending",
+          "epoch": 1,
+          "eligible": true,
+          "requestAgeMs": 300,
+          "eligibleWaitMs": 299.9899999797344
+        },
+        "naturalSettlement": {
+          "outcome": "entered",
+          "waitMs": 1429.9350000023842,
+          "eligibleWaitMs": 1429.9249999821186,
+          "censored": false
+        },
+        "completedBeforeNextPoll": {
+          "kind": "completed-before-poll",
+          "outcome": "entered",
+          "waitMs": 1429.9350000023842
+        },
+        "limitedReplayCoverage": {
+          "valid": true,
+          "coverageComplete": false,
+          "requestsSkipped": 641,
+          "reason": "Replay starts shortly after the named request; earlier request history is not replayed as prior polls."
+        }
+      },
+      {
+        "side": 1,
+        "requestIndex": 632,
+        "parentIndex": 631,
+        "parentFrameIndex": 618,
+        "parentActiveAfter": true,
+        "parentEndedAfter": false,
+        "parentSampleAfter": 619,
+        "originalRequest": {
+          "requestedAt": 10301.144999980927,
+          "enteredAt": 11710.924999982119,
+          "exitedAt": 11721.799999982119,
+          "parentExitedAt": 10301.155000001192,
+          "cancelledAt": null
+        },
+        "observations": {
+          "preAt": 10311.144999980927,
+          "duringAt": 10601.144999980927,
+          "afterAt": 11722.799999982119
+        },
+        "pendingAt300": {
+          "kind": "observed-pending",
+          "epoch": 1,
+          "eligible": true,
+          "requestAgeMs": 300,
+          "eligibleWaitMs": 299.9899999797344
+        },
+        "naturalSettlement": {
+          "outcome": "entered",
+          "waitMs": 1409.780000001192,
+          "eligibleWaitMs": 1409.7699999809265,
+          "censored": false
+        },
+        "completedBeforeNextPoll": {
+          "kind": "completed-before-poll",
+          "outcome": "entered",
+          "waitMs": 1409.780000001192
+        },
+        "limitedReplayCoverage": {
+          "valid": true,
+          "coverageComplete": false,
+          "requestsSkipped": 569,
+          "reason": "Replay starts shortly after the named request; earlier request history is not replayed as prior polls."
+        }
+      }
+    ],
+    "sourceBytesUnchanged": true
+  }
+}

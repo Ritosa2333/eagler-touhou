@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {core,oracle,memory,report} from './helpers.mjs';
+test('TH15 animation local register reads, writes and random scaling match original',async()=>{
+ const c=await core(),m=await oracle(),vars=c.variables_create(),rng=c.rng_create(),native=m.allocate(0x608),arg=m.allocate(4),carg=c.allocate(4),wrapper=m.allocate(32);let checks=0;
+ const code=Buffer.alloc(23);code[0]=0xa1;code.writeUInt32LE(arg,1);code.set([0x66,0x0f,0x6e,0xc8,0xe8],5);code.writeInt32LE(0x477750-wrapper-14,10);code.set([0x66,0x0f,0x7e,0xc0,0xc3],14);m.write(wrapper,code);
+ const fields=[[0,0x4ac,4,'i'],[16,0x4bc,4,'f'],[32,0x4cc,3,'f'],[44,0x4d8,2,'i'],[52,0x4e0,2,'f'],[60,0x4e8,1,'u'],[64,0x38,3,'f'],[76,0x44,3,'f']];
+ const intIds=[...Array.from({length:10},(_,i)=>10000+i),10022,10027,10028,10029,10033,10034,10035,-999,9999,10036];
+ const floatIds=[...intIds.filter(n=>n>=10000&&n<=10009),10010,10011,10012,10013,10014,10015,10022,10023,10024,10025,10027,10028,10029,10033,10034,10035,-1.25,9999.125,10036.5];
+ try{for(let sample=0;sample<256;sample++){const view=new DataView(c.memory.buffer,vars,88);m.view(native,0x608).fill(0);for(const [co,no,count,type] of fields)for(let i=0;i<count;i++){const value=type==='f'?(sample-83)*.125+i*.75:type==='u'?sample*193:((sample*0x17593+i*0x3715)|0);if(type==='f'){view.setFloat32(co+i*4,value,true);m.f32(native+no+i*4,value);}else{view.setUint32(co+i*4,value>>>0,true);m.u32(native+no+i*4,value);}}
+ const reset=()=>{const seed=(sample*1531+19)&65535;new DataView(c.memory.buffer,rng,8).setUint32(0,seed,true);new DataView(c.memory.buffer,rng,8).setUint32(4,0,true);m.u32(0x4e9a40,seed);m.u32(0x4e9a44,0);};
+ for(const id of intIds){reset();assert.equal(c.variables_integer(vars,rng,id)|0,m.call(0x477aa0,{ecx:native,args:[id]})|0,'integer '+id);assert.deepEqual(Buffer.from(memory(c,rng,8)),Buffer.from(m.bytes(0x4e9a40,8)));checks++;}
+ for(const id of floatIds){reset();const b=Buffer.alloc(4);b.writeFloatLE(id);m.write(arg,b);assert.equal(c.variables_float(vars,rng,id)>>>0,m.call(wrapper,{ecx:native})>>>0,'float '+id+' sample '+sample);assert.deepEqual(Buffer.from(memory(c,rng,8)),Buffer.from(m.bytes(0x4e9a40,8)));checks++;}
+ for(const floating of [0,1])for(const id of floating?floatIds:intIds){const b=Buffer.alloc(4);floating?b.writeFloatLE(id):b.writeInt32LE(id);m.write(arg,b);memory(c,carg,4).set(b);const expected=m.call(floating?0x477c10:0x477d20,{ecx:native,args:[arg]}),actual=c.variables_destination(vars,carg,floating);if(expected===arg)assert.equal(actual,carg);else{const mapping=fields.find(([,offset,count])=>expected>=native+offset&&expected<native+offset+count*4);assert.ok(mapping);assert.equal(actual-vars,mapping[0]+expected-native-mapping[1]);}checks++;}
+ }report('anm-variables',{passed:true,checks,samples:256,functions:['0x477aa0','0x477750','0x477c10','0x477d20'],scope:'Local register, local position and game RNG variables; external player/camera and visual RNG bindings remain integration work.'});}finally{c.variables_delete(vars);c.rng_delete(rng);c.release(carg);m.close();}
+});

@@ -1,0 +1,20 @@
+{
+  "schema":"th15/authoritative-selected-state/v1",
+  "nativeWords":[
+    {"index":0,"field":"stage-clock","type":"uint32-bits"},
+    {"index":1,"field":"effective-replay-input","type":"uint32-bits"},
+    {"index":2,"field":"player-x","type":"float32-bits"},
+    {"index":3,"field":"player-y","type":"float32-bits"},
+    {"index":4,"field":"player-life-state","type":"uint32-bits"},
+    {"index":5,"field":"score-units-of-ten","type":"int32-bits"},
+    {"index":6,"field":"deaths","type":"int32-bits"},
+    {"index":7,"field":"life-stock","type":"int32-bits"},
+    {"index":8,"field":"power","type":"int32-bits"},
+    {"index":9,"field":"bomb-stock","type":"int32-bits"},
+    {"index":10,"field":"game-rng-seed","type":"uint32-bits"},
+    {"index":11,"field":"game-rng-calls","type":"uint32-bits"},
+    {"index":12,"field":"active-enemy-count","type":"uint32-bits"}
+  ],
+  "diagnosticOnly":["visible-bullet-count","visual-rng","raw-shot-and-damage-pool-slots"],
+  "scope":"Current WASI core with production RunCompletion bound for daily cases. Fresh original Replay stage headers define stage-entry state. Frontend cross-stage loading and full entity/ANM coverage remain separate."
+}

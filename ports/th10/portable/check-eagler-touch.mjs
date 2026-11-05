@@ -1,0 +1,16 @@
+import {execFileSync} from 'node:child_process';
+import {readFileSync,mkdirSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {WASI} from 'node:wasi';
+const root=resolve(import.meta.dirname,'..'),game='th10';
+const sdk=process.env.EMSDK??resolve(root,'tools/emsdk');
+const emcc=['install','upstream'].map(layout=>resolve(sdk,layout,'emscripten/emcc.py')).find(existsSync);
+if(!emcc)throw Error('Set EMSDK to an installed Emscripten SDK');
+const out=resolve(root,'web/artifacts/touch');mkdirSync(out,{recursive:true});
+const file=resolve(out,'eagler-touch-check.wasm');
+const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk};
+execFileSync(process.env.TH_PYTHON??'python',[emcc,'-I'+resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'include'),'-O2','-std=c++17',resolve(root,'portable/eagler-touch-check.cpp'),'-sDEFAULT_TO_CXX=1','-sSTANDALONE_WASM=1','-sSTACK_SIZE=1048576','-o',file],{env,windowsHide:true,stdio:'inherit'});
+const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
+const module=await WebAssembly.compile(readFileSync(file));
+const instance=await WebAssembly.instantiate(module,{wasi_snapshot_preview1:wasi.wasiImport});
+const code=wasi.start(instance);if(code)throw Error('Touch lifecycle check failed: '+code);

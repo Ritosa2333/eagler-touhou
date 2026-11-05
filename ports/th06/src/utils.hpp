@@ -1,0 +1,44 @@
+#pragma once
+#include "GameErrorContext.hpp"
+#include "ZunMath.hpp"
+#include "ZunResult.hpp"
+#include "inttypes.hpp"
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+#define ARRAY_SIZE_SIGNED(x) ((i32)sizeof(x) / (i32)sizeof(x[0]))
+
+#define ZUN_BIT(a) (1 << (a))
+#define ZUN_MASK(a) (ZUN_BIT(a) - 1)
+#define ZUN_RANGE(a, count) (ZUN_MASK((a) + (count)) & ~ZUN_MASK(a))
+#define ZUN_CLEAR_BITS(a, keep_mask) (a & ~keep_mask)
+
+#define IS_PRESSED(key) (g_CurFrameInput & (key))
+#define WAS_PRESSED(key) (((g_CurFrameInput & (key)) != 0) && (g_CurFrameInput & (key)) != (g_LastFrameInput & (key)))
+#define WAS_PRESSED_PERIODIC(key)                                                                                      \
+    (WAS_PRESSED(key) || (((g_CurFrameInput & (key)) != 0) && (g_IsEigthFrameOfHeldInput != 0)))
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#define IS_PRESSED_GAME(key) (g_CurFrameGameInputs[0] & (key))
+#define WAS_PRESSED_GAME(key)                                                                                       \
+    (((g_CurFrameGameInputs[0] & (key)) != 0) &&                                                                  \
+     ((g_CurFrameGameInputs[0] & (key)) != (g_LastFrameGameInputs[0] & (key))))
+#define IS_PRESSED_PLAYER(player, key) (g_CurFrameGameInputs[(player)->initParam] & (key))
+#define WAS_PRESSED_PLAYER(player, key)                                                                            \
+    (((g_CurFrameGameInputs[(player)->initParam] & (key)) != 0) &&                                                \
+     ((g_CurFrameGameInputs[(player)->initParam] & (key)) !=                                                       \
+      (g_LastFrameGameInputs[(player)->initParam] & (key))))
+#else
+#define IS_PRESSED_GAME(key) IS_PRESSED(key)
+#define WAS_PRESSED_GAME(key) WAS_PRESSED(key)
+#define IS_PRESSED_PLAYER(player, key) IS_PRESSED(key)
+#define WAS_PRESSED_PLAYER(player, key) WAS_PRESSED(key)
+#endif
+
+namespace utils
+{
+void DebugPrint(const char *fmt, ...);
+void DebugPrint2(const char *fmt, ...);
+
+f32 AddNormalizeAngle(f32 a, f32 b);
+f32 LerpAngle(f32 from, f32 to, f32 amount);
+void Rotate(ZunVec3 *outVector, const ZunVec3 *point, f32 angle);
+}; // namespace utils

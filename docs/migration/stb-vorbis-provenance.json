@@ -1,0 +1,15 @@
+{
+  "package": "stb-vorbis@0.0.6",
+  "registry": "https://registry.npmjs.org/stb-vorbis/0.0.6",
+  "repository": "git+https://github.com/spessasus/stb-vorbis.git",
+  "tarball": "https://registry.npmjs.org/stb-vorbis/-/stb-vorbis-0.0.6.tgz",
+  "integrity": "sha512-CyvjJEGROIdnuZknwFvdOfMIO1ssUxO2OawsXCR3IlbJ8z2IMBjDe8FDxFJqBfLgf1ZOdqvoHAYx3Xk8q9rbbg==",
+  "tarballSha256": "c9b539e71303f17bfb2fbcfd546fa905d1e25b045a3bd15454e6caf072f52659",
+  "upstreamGitHead": "2c5f11f028192b5580650ffd79d49ca3019a32fb",
+  "file": "package/dist/index.js",
+  "upstreamSha256": "f2c9612be9718c3e93cbee86a5b7c25a901b786ba5542e82e9cb8dad3b11637b",
+  "workingFileSha256": "a15b8dcd82ff2be79322ae975850dd5a4c1e4dceedb46241c584fbda9dbf38b5",
+  "transform": "Git checkout LF to CRLF only",
+  "license": "Apache-2.0",
+  "licenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+}

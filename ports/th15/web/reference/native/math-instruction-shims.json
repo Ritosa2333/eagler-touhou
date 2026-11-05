@@ -1,0 +1,104 @@
+[
+  {
+    "address": 4959441,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x3",
+    "bytes": "660fc5c003"
+  },
+  {
+    "address": 4958993,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x3",
+    "bytes": "660fc5c003"
+  },
+  {
+    "address": 4959328,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x3",
+    "bytes": "660fc5c003"
+  },
+  {
+    "address": 4959337,
+    "instruction": "PINSRW",
+    "operands": "XMM0,EAX,0x3",
+    "bytes": "660fc4c003"
+  },
+  {
+    "address": 4960161,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x3",
+    "bytes": "660fc5c003"
+  },
+  {
+    "address": 4956952,
+    "instruction": "PINSRW",
+    "operands": "XMM5,ECX,0x2",
+    "bytes": "660fc4e902"
+  },
+  {
+    "address": 4957280,
+    "instruction": "PEXTRW",
+    "operands": "EDX,XMM3,0x3",
+    "bytes": "660fc5d303"
+  },
+  {
+    "address": 4957445,
+    "instruction": "PINSRW",
+    "operands": "XMM6,EAX,0x3",
+    "bytes": "660fc4f003"
+  },
+  {
+    "address": 4957718,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x3",
+    "bytes": "660fc5c003"
+  },
+  {
+    "address": 4957845,
+    "instruction": "PINSRW",
+    "operands": "XMM6,EAX,0x3",
+    "bytes": "660fc4f003"
+  },
+  {
+    "address": 4957983,
+    "instruction": "PINSRW",
+    "operands": "XMM1,EDX,0x3",
+    "bytes": "660fc4ca03"
+  },
+  {
+    "address": 4958044,
+    "instruction": "PEXTRW",
+    "operands": "EDX,XMM7,0x1",
+    "bytes": "660fc5d701"
+  },
+  {
+    "address": 4959903,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x3",
+    "bytes": "660fc5c003"
+  },
+  {
+    "address": 4959958,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x2",
+    "bytes": "660fc5c002"
+  },
+  {
+    "address": 4959977,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x2",
+    "bytes": "660fc5c002"
+  },
+  {
+    "address": 4959989,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x1",
+    "bytes": "660fc5c001"
+  },
+  {
+    "address": 4960001,
+    "instruction": "PEXTRW",
+    "operands": "EAX,XMM0,0x0",
+    "bytes": "660fc5c000"
+  }
+]

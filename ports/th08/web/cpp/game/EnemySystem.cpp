@@ -1,0 +1,62 @@
+#include "EnemySystem.hpp"
+#include "Presentation.hpp"
+namespace th08 {
+EnemySystem::EnemySystem(EclProgram& program,EclExecutor& executor,const FrameTiming& timing,Rng& random,GameGlobals& numbers,GameValues& values,GameRank& rank,GameGauge& gauge,PlayerSimulation& player,EffectSystem& effects,ItemSystem& items,BulletManagerState& bullets,AsciiManager& ascii,AsciiContext& ascii_context,AnmRenderer& renderer,EnemySystemActions& actions)
+    :population(executor,program),globals(executor.game_state()),numbers(numbers),values(values),player(player),effects(effects),items(items),projectiles(bullets),ascii(ascii),ascii_context(ascii_context),actions(actions),simulation(state,input,population,program,executor,timing,random,numbers,values,rank,gauge,player.status().shots.regions,player.status().frame,*this),drawing(renderer){globals.values=&numbers;globals.ascii=&ascii.state;globals.scene_actions=this;}
+void EnemySystem::read_player(){
+    auto& p=player.status();globals.player=p.motion.movement.position;globals.player_state=p.life.state;globals.player_state_timer=p.life.timer;
+    globals.paused=p.context.pause!=0;globals.game_flags=p.context.game_flags;globals.youkai=p.motion.form.youkai;globals.shot=p.context.character;
+    input.focused=p.motion.form.focused;input.familiar={p.motion.form.transition,p.motion.gauge.idle,p.item_gauge_lock,p.context.character,u8(p.bomb.active!=0),0,u8(globals.spell_flags&1)};
+    input.spell_bomb_damage=(globals.spell_flags&128)!=0;population.replay_flags|=p.context.replay_flags;
+}
+void EnemySystem::reset(){
+    population.reset(time_item_threshold);state=EnemySimulationState{};input=EnemySimulationInput{};failed=false;
+    for(auto& boss:globals.boss_slots)boss=nullptr;for(auto& signal:globals.timeline_signals)signal=-1;
+    globals.stop_spawn=0;globals.gui_blocks_spawn=false;globals.stage_completion=0;globals.frame_count=0;simulation.bind();
+}
+void EnemySystem::publish_player(){
+    if(native_scene)native_scene->animations.timing=native_scene->timing;
+    auto& p=player.status();p.life.state=globals.player_state;p.life.timer=globals.player_state_timer;
+    if(globals.gui)std::memcpy(&p.context.hud_flags,&globals.gui->flags,4);
+    p.context.pause=globals.paused;p.context.game_flags=globals.game_flags;p.context.time_spell=u8(globals.spell_flags&1);
+    p.motion.form.transition=input.familiar.form_transition;p.motion.gauge.idle=input.familiar.gauge_idle;p.item_gauge_lock=input.familiar.item_gauge_lock;
+    const auto* target=static_cast<const EclVm*>(p.frame.target_reference);p.input.enemy_present=target!=nullptr;
+    if(target){p.input.enemy=target->resolved_position;p.enemy_origin=target->position;}
+    p.context.gauge=numbers.gauge;p.context.power=Scalar::truncate(numbers.power);p.context.bombs=Scalar::truncate(numbers.bombs);p.context.lives=Scalar::truncate(numbers.lives);p.context.time_orbs=numbers.time_orbs;p.context.last_spell_requirement=numbers.last_spell_requirement;
+    population.replay_flags|=p.context.replay_flags;p.context.replay_flags=population.replay_flags;
+}
+void EnemySystem::effect(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();effects.spawn(kind,p,count,color);failed|=effects.invalid;}
+void EnemySystem::parameter_effect(i32 kind,const Vec3& p,const Vec3& parameters,i32 count,u32 color){publish_player();effects.spawn(kind,p,count,color,&parameters);failed|=effects.invalid;}
+EffectState* EnemySystem::attached_effect(i32 kind,const Vec3& p,i32 count,u32 color,bool overlay){publish_player();auto* effect=overlay?effects.overlay(kind,p,count,color):effects.spawn(kind,p,count,color);failed|=effects.invalid;return effect;}
+bool EnemySystem::clear_projectiles(i32 mode){publish_player();PlayerCollision::BarrierBatch barriers(&player.collision());failed|=!th08::cancel_projectiles(projectiles,mode,player.status().cancel_item,this);return !failed;}
+void EnemySystem::clear_projectiles_near(const Vec3& p,float radius){th08::cancel_projectiles_near(projectiles,p,radius,*this);}
+void EnemySystem::item(const Vec3& p,i32 kind,i32 mode){publish_player();items.spawn(p,kind,mode);failed|=items.invalid();}
+AnmVm* EnemySystem::overlay(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();auto* result=effects.overlay(kind,p,count,color);failed|=effects.invalid;return result;}
+i32 EnemySystem::graze(const Vec3& p,const Vec3& size){publish_player();const i32 result=player.collision().graze(p,size);read_collision();return result;}
+i32 EnemySystem::hit(const Vec3& p,const Vec3& size){publish_player();const i32 result=player.collision().bullet(p,size,false);read_collision();return result;}
+i32 EnemySystem::damage(const Vec3& p,const Vec3& size,i32& count,i32& bomb){publish_player();const i32 result=player.damage(p,size,count,&bomb);read_collision();failed|=player.invalid();return result;}
+i32 EnemySystem::barrier(BulletState& b){publish_player();const i32 result=player.collision().barrier({b.position.x,b.position.y});read_collision();return result;}
+bool EnemySystem::cancel_projectiles(i32 maximum,bool reward,i32& score){publish_player();PlayerCollision::BarrierBatch barriers(&player.collision());const bool result=cancel_projectiles_for_score(projectiles,maximum,reward,player.status().cancel_item,*this,score);failed|=!result;return result&&!failed;}
+EnemySpawnResult EnemySystem::spawn(const TimelineSpawn& request){read_player();population.initial_time_items=time_item_threshold;auto* enemy=population.spawn(request);publish_player();failed|=enemy->invalid;return {enemy,population.spawn_failed};}
+JobResult EnemySystem::update(){
+    if(failed)return JobResult::Error;drawing.snapshot(state.layers);read_player();population.initial_time_items=time_item_threshold;
+    const auto result=simulation.update();publish_player();return failed?JobResult::Error:result;
+}
+bool EnemySystem::draw(i32 first,i32 last){const bool ok=drawing.draw(state.layers,first,last,ascii_context.arcade_origin);if(!presentation::render_only)failed|=!ok;return presentation::render_only?true:!failed;}
+void EnemySystem::screen(i32 type,i32 duration,i32 a,i32 b,i32 c,i32 priority){
+    if(!native_scene){failed=true;return;}publish_player();native_scene->screen.context.timing=native_scene->timing;native_scene->screen.create(ScreenEffectType(type),duration,a,b,c,priority);
+}
+bool EnemySystem::spell_background(i32 variant,const Vec3& p){
+    if(!native_scene){failed=true;return false;}publish_player();if(variant<0)native_scene->spell_background.end();else failed|=!native_scene->spell_background.begin(u32(variant),p);return !failed;
+}
+void EnemySystem::background_interrupt(i16 interrupt){if(!native_scene){failed=true;return;}for(i32 i=0;i<2;i++)native_scene->background.spell_vms[i].pendingInterrupt=interrupt;}
+void EnemySystem::tint(u32 color){
+    if(!native_scene){failed=true;return;}auto& current=native_scene->background.tint_color;
+    if(!current.a){current.d3dColor=i32(color);return;}u32 blended=0;for(u32 shift=0;shift<32;shift+=8)blended|=((((color>>shift)&255)+((u32(current.d3dColor)>>shift)&255))/2)<<shift;current.d3dColor=i32(blended);
+}
+void EnemySystem::laser(const Vec2& center,const Vec2& size,const Vec3& origin,float angle,bool graze){publish_player();player.collision().laser(center,size,origin,angle,graze);read_collision();failed|=player.invalid();}
+bool EnemySystem::spell_announcement(i32 portrait,const char* name,i32 style){
+    if(!native_scene){failed=true;return false;}publish_player();auto& p=native_scene->spell_presentation;p.context.game_flags=globals.game_flags;p.context.current_spell=globals.current_spell;p.context.hud_redraw=native_scene->hud_redraw;
+    failed|=!p.enemy(portrait,name,style);native_scene->hud_redraw=p.context.hud_redraw;return !failed;
+}
+}

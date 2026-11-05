@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {mkdirSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+test('Presentation UV sampling and whole-camera discontinuity boundaries',()=>{
+ const root=resolve(import.meta.dirname,'../..'),sdk=process.env.TH15_EMSDK;
+ assert(sdk,'Set TH15_EMSDK');
+ const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);assert(compiler);
+ const out=resolve(root,'artifacts/presentation-uv');mkdirSync(out,{recursive:true});
+ const js=resolve(out,'test.cjs');
+ const obj=resolve(out,'test.o');
+ const options={env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten')},encoding:'utf8',windowsHide:true};
+ const compile=spawnSync('python',[compiler,resolve(root,'tests/cpp/presentation-uv.cpp'),'-std=c++17','-sDEFAULT_TO_CXX','-c','-o',obj],options);
+ assert.equal(compile.status,0,compile.stdout+compile.stderr);
+ const link=spawnSync('python',[compiler,obj,'-sENVIRONMENT=node','-o',js],options);
+ assert.equal(link.status,0,link.stdout+link.stderr);
+ const run=spawnSync(process.execPath,[js],{encoding:'utf8',windowsHide:true});
+ assert.equal(run.status,0,run.stdout+run.stderr);
+});

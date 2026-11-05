@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>地灵殿 ANM 渲染验证</title>
+<style>body{margin:20px;background:#17191d;color:#e5e7eb;font:15px system-ui}main{max-width:900px;margin:auto}canvas{display:block;width:min(100%,640px);height:auto;background:#202020}label,button{margin-right:12px}input{width:80px}select,button,input{font:inherit}pre{white-space:pre-wrap}p{line-height:1.5}</style>
+<main><h1>地灵殿动画渲染验证</h1><p>开发测试工具：原版 ANM 资源 → C++ 动画系统 → 共用 SDL3/WebGL2 渲染器。此页面尚不包含关卡和可游玩游戏。</p>
+<p><label>资源 <select id="asset"></select></label><label>脚本 <input id="script" type="number" value="0" min="0"></label><button id="load" disabled>加载</button><button id="pause" disabled>暂停</button><button id="step" disabled>单帧</button></p>
+<canvas id="canvas" width="640" height="480" tabindex="0"></canvas><pre id="status" role="status">正在初始化渲染器…</pre></main>
+<script type="module" src="./viewer.js"></script></html>

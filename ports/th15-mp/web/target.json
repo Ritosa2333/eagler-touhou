@@ -1,0 +1,10 @@
+{
+  "game": "th15",
+  "version": "1.00b",
+  "language": "Japanese",
+  "executable": "../[th15] 东方绀珠传 (汉化版+日文版)/th15.exe",
+  "sha256": "67a642357c8777089f468aab9c7a0ae346ebdb62849d842a7b7b18d1e6910364",
+  "imageBase": "0x00400000",
+  "completeGame": true,
+  "acceptance": "reference/release-acceptance.json"
+}

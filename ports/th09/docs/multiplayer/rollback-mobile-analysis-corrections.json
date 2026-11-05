@@ -1,0 +1,41 @@
+{
+  "schema": "th09-mobile-analysis-corrections/v1",
+  "createdAt": "2026-10-11T04:49:53.092Z",
+  "original": {
+    "path": "docs/multiplayer/rollback-mobile-deep-evidence.json",
+    "bytes": 660556,
+    "sha256": "0e4426788deeef66695b18ce049f0f35c282b95c9d03231c888ac890fbbef357"
+  },
+  "corrected": {
+    "path": "docs/multiplayer/rollback-mobile-deep-corrected-evidence.json",
+    "bytes": 662160,
+    "sha256": "17635af61b2aedad65bb5c8729525cb02dee152c89789fcd5d941f68ac52c001"
+  },
+  "originalAnalyzer": {
+    "path": "web/artifacts/multiplayer-tests/mobile-evidence-summary-v1.mjs",
+    "sha256": "5f1e59e9a69377f98b19c9160b4a42d02970e810746404c5a385fe71a77a9155"
+  },
+  "currentAnalyzer": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-mobile-rollback-4x\\web\\tests\\multiplayer\\mobile-evidence-summary.mjs",
+    "sha256": "94571220d176f65b3fe1f160cf9f05445d1c72668f42542e34391980641d6825"
+  },
+  "correctionInvocation": "web/artifacts/multiplayer-tests/mobile-rollback-three-world-summary-02-invocation.json",
+  "allPriorQuantitiesExactlyPreservedAfterSemanticRenames": true,
+  "renamedKeys": {
+    "nativeWaitCounter": "channelRepairsSent",
+    "restoredDepth": "reconstructedCursorRestoreDistance",
+    "atLastSimulatedFrame": "atExitLastSimulatedPrefixFrame",
+    "recoveryReconstruction0": "recoveryFormulaConsistency0",
+    "recoveryReconstruction1": "recoveryFormulaConsistency1"
+  },
+  "authoritativeSource": "web/cpp/sdl/Application.cpp:437-440; common SessionChannel.hpp:81; SessionChannel.cpp:205-208,274-277,393-403; BrowserPeerTransport.cpp:638-654",
+  "meaning": "stats[5] is Channel RepairsSent, not native wait. It counts SendRepairTo returning true; browser RTC send API acceptance is not receipt or successful recovery, browser relay returns false. Manual tests use simulated transport.",
+  "furtherClarifications": [
+    "Cursor restore distance is source-derived, not necessarily total prediction-frontier replay debt.",
+    "Correction rows recheck the same harness formula algebraically; this is not an independent observed restore-point oracle.",
+    "Return code 2 includes not ready, blocked Prepare, resource exit barrier and partial recovery; retained partialRecoveryCalls counts only afterNext below beforeNext.",
+    "12B checks compare encoded and decoded retained fields, not every title ValidInput rule."
+  ],
+  "changedGameOrRuntimeSource": false,
+  "changedRawReports": false
+}

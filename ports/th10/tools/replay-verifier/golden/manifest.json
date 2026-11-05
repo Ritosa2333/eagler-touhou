@@ -1,0 +1,22 @@
+{
+  "schema": "eagler/replay-golden-set/v1",
+  "game": "th10",
+  "profile": "jp-1.00a/original-jit-present-v1",
+  "identity": {
+    "executableSha256": "2f14760b6fbbf57549541583283badb9a19a4222b90f0a146d5aa17f01dc9040",
+    "resourceSha256": "1fb1d0ffe34115f563f5feb43755c0feee2315b0ac2b32e2f9e84c81e9433bea"
+  },
+  "policy": {
+    "candidateMayUpdateGolden": false,
+    "gameplayMutation": "forbidden"
+  },
+  "suites": {
+    "quick": ["demo1", "demo2", "demo3", "demo0"],
+    "daily": ["lunatic", "extra"]
+  },
+  "assets": {
+    "demos": {"kind":"demo-suite","path":"demos.json.gz","sha256":"3ae198997faf823115990535dbd6324f0797edd402d1ebb8c2ecce45a8e68dc2","rawTicks":12000},
+    "lunatic": {"kind":"lunatic","path":"lunatic.rows.jsonl.gz","sha256":"7aaa0fcda8cf3e09a5c5d9a9382513f4534d3614b08bb5a5f053dc3af89b1234","replaySha256":"67f1951dcb50d5c12eb218c2f7380b91657eabb72111ddef80f413f0b64ad4fe","rawTicks":85080,"comparedTicks":84797,"stages":[1,2,3,4,5,6],"finalScore":1288193400},
+    "extra": {"kind":"extra","path":"extra.rows.jsonl.gz","sha256":"e1c0bb25b13b94672c87cc27cc35b2537cd4b7efcb94255c448c2638ba34eb8f","replaySha256":"f4878460427772d6245571484a15f22d1e9105fc9cee5aa74b4a17c892ace58b","rawTicks":39111,"comparedTicks":39111,"stages":[7],"finalScore":864641590}
+  }
+}

@@ -1,0 +1,2 @@
+#include "YukariState.hpp"
+namespace th075 {void reset_yukari(FighterActor& a,YukariState& s,FighterCoreEvents& events){s.impactX=0;s.impactY=0;s.emissionIndex=0;s.emissionDelay=0;s.effectLoops=0;s.guardEffectSent=0;s.portalTimer=0;s.portalX=0;s.portalY=0;s.orbitAngle=0;s.portalCount=0;s.portalAngle=0;s.lastPortalX=0;s.lastPortalY=0;s.particleDelay=s.farRangeFrames=0;s.introWait=s.captionWait=0;a.knockdownTime=0;a.commandTimers.fill(0);a.reset_round(events);}}

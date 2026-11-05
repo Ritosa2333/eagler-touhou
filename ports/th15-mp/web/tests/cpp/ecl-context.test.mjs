@@ -1,0 +1,19 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {core,oracle,memory,string,report} from './helpers.mjs';
+test('TH15 ECL local and typed-expression reads reproduce native integer/float conversion',async()=>{
+ const c=await core(),m=await oracle(),context=c.ecl_context_create(),native=m.allocate(0x1024),owner=m.allocate(0x120c),program=m.allocate(0x90),table=m.allocate(8),source=m.allocate(128),instruction=m.allocate(80),p=c.allocate(80),token=m.allocate(4),argument=m.allocate(4),wrapper=m.allocate(64);let checks=0;
+ m.u32(native+0x1018,owner);m.u32(native+4,0);m.u32(native+8,0);m.u32(owner+0x11f8,program);m.u32(program+0x8c,table);m.u32(table+4,source);m.u32(instruction,0);
+ const code=Buffer.from([0xf3,0x0f,0x10,0x15,0,0,0,0,0xff,0x35,0,0,0,0,0xe8,0,0,0,0,0x66,0x0f,0x7e,0xc0,0xc3]);code.writeUInt32LE(token,4);code.writeUInt32LE(argument,10);code.writeInt32LE(0x48ed10-wrapper-19,15);m.write(wrapper,code);
+ const bits=value=>{const b=Buffer.alloc(4);b.writeFloatLE(value);return b.readUInt32LE();};
+ try{for(let sample=0;sample<128;sample++){
+ const stack=Buffer.alloc(4096);for(let i=0;i<512;i++){stack.writeUInt32LE((0xb6382900|((sample+i)&1?0x69:0x66))>>>0,i*8);if((sample+i)&1)stack.writeInt32LE((sample-73)*1957+i*311,i*8+4);else stack.writeFloatLE((sample-57)*.375+i*1.625,i*8+4);}
+ for(const index of [0,1,7,15])for(const references of [0,1<<index])for(const literal of [-100,-37,-2,-1,0,4,8,36,60,120,244])for(const pop of [0,1])for(const floating of [0,1]){
+ const bytes=Buffer.alloc(80);bytes.writeUInt16LE(80,6);bytes.writeUInt16LE(references,8);bytes[10]=255;bytes[11]=16;for(let i=0;i<16;i++)floating?bytes.writeFloatLE(literal,16+i*4):bytes.writeInt32LE(literal,16+i*4);memory(c,p,80).set(bytes);m.write(source+16,bytes);memory(c,c.ecl_context_stack(context),4096).set(stack);m.write(native+12,stack);m.u32(native+0x100c,1024);m.u32(native+0x1010,8);c.ecl_context_bind(context,p,1024,8);
+ let expected,actual;if(floating){actual=c.ecl_context_float(context,index,literal,pop)>>>0;if(pop){m.f32(token,literal);m.u32(argument,index);expected=m.call(wrapper,{ecx:native});}else{m.call(0x48e810,{ecx:native,args:[index]});const capture=m.allocate(16);m.write(capture,Buffer.from([0x66,0x0f,0x7e,0xc0,0xc3]));expected=m.call(capture);}}
+ else{actual=c.ecl_context_integer(context,index,literal,pop)|0;expected=m.call(pop?0x48ec50:0x48e750,{ecx:native,args:pop?[index,literal]:[index]})|0;}
+ const label=JSON.stringify({sample,index,references,literal,pop,floating});assert.equal(string(c,c.ecl_context_error(context)),'',label);assert.equal(actual,expected,label);assert.equal(c.ecl_context_field(context,0),m.i32(native+0x100c),label+' stack cursor');assert.deepEqual(Buffer.from(memory(c,c.ecl_context_stack(context),4096)),Buffer.from(m.bytes(native+12,4096)),label+' stack');checks+=3;
+ }
+ }report('ecl-context',{passed:true,checks,samples:128,originalFunctions:['0x48e750','0x48e810','0x48ec50','0x48ed10'],scope:'Local variables and expression stack; enemy/global variable callbacks are not covered.'});
+ }finally{c.ecl_context_delete(context);c.release(p);m.close();}
+});
+test('TH15 ECL expression overflow and unbound globals fail explicitly',async()=>{const c=await core(),context=c.ecl_context_create(),p=c.allocate(20),bytes=Buffer.alloc(20);bytes.writeUInt16LE(20,6);bytes.writeUInt16LE(1,8);memory(c,p,20).set(bytes);c.ecl_context_bind(context,p,4092,0);assert.equal(c.ecl_context_push(context,10,0),0);assert.equal(string(c,c.ecl_context_error(context)),'ECL expression stack overflow');c.ecl_context_bind(context,p,0,0);c.ecl_context_integer(context,0,-10000,0);assert.equal(string(c,c.ecl_context_error(context)),'ECL integer global not bound');c.ecl_context_bind(context,p,0,0);c.ecl_context_integer(context,0,-1,1);assert.equal(string(c,c.ecl_context_error(context)),'ECL expression stack underflow');c.ecl_context_delete(context);c.release(p);});

@@ -1,0 +1,779 @@
+{
+  "schema": "th09-scheduler-incomplete-collection-context/v1",
+  "traces": [
+    {
+      "side": 0,
+      "artifact": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P1-scheduler-trace.json",
+        "bytes": 25668050,
+        "sha256": "ad1a333b617b145ac8c501e83b3ec25de1696aac74d985a9facd48a3e6adf296"
+      },
+      "bufferUsage": [
+        {
+          "at": 10686.745,
+          "percentFull": 0.0050871968269348145,
+          "eventCount": 0,
+          "value": 0.0050871968269348145
+        },
+        {
+          "at": 11690.5281,
+          "percentFull": 0.015140503644943237,
+          "eventCount": 0,
+          "value": 0.015140503644943237
+        },
+        {
+          "at": 12698.2088,
+          "percentFull": 0.02785852551460266,
+          "eventCount": 0,
+          "value": 0.02785852551460266
+        },
+        {
+          "at": 13707.782,
+          "percentFull": 0.05753389000892639,
+          "eventCount": 0,
+          "value": 0.05753389000892639
+        },
+        {
+          "at": 14712.3336,
+          "percentFull": 0.1080426275730133,
+          "eventCount": 0,
+          "value": 0.1080426275730133
+        },
+        {
+          "at": 15721.7632,
+          "percentFull": 0.16000482439994812,
+          "eventCount": 0,
+          "value": 0.16000482439994812
+        },
+        {
+          "at": 16724.3475,
+          "percentFull": 0.21039244532585144,
+          "eventCount": 0,
+          "value": 0.21039244532585144
+        },
+        {
+          "at": 17728.4281,
+          "percentFull": 0.26211240887641907,
+          "eventCount": 0,
+          "value": 0.26211240887641907
+        },
+        {
+          "at": 18736.8626,
+          "percentFull": 0.3138323724269867,
+          "eventCount": 0,
+          "value": 0.3138323724269867
+        },
+        {
+          "at": 19743.4399,
+          "percentFull": 0.36506783962249756,
+          "eventCount": 0,
+          "value": 0.36506783962249756
+        },
+        {
+          "at": 20744.3089,
+          "percentFull": 0.41618216037750244,
+          "eventCount": 0,
+          "value": 0.41618216037750244
+        },
+        {
+          "at": 21750.6028,
+          "percentFull": 0.4672965109348297,
+          "eventCount": 0,
+          "value": 0.4672965109348297
+        },
+        {
+          "at": 22756.6108,
+          "percentFull": 0.517562985420227,
+          "eventCount": 0,
+          "value": 0.517562985420227
+        },
+        {
+          "at": 23758.6038,
+          "percentFull": 0.5686773061752319,
+          "eventCount": 0,
+          "value": 0.5686773061752319
+        },
+        {
+          "at": 24768.8877,
+          "percentFull": 0.6200339198112488,
+          "eventCount": 0,
+          "value": 0.6200339198112488
+        },
+        {
+          "at": 25776.982,
+          "percentFull": 0.6722383499145508,
+          "eventCount": 0,
+          "value": 0.6722383499145508
+        },
+        {
+          "at": 26783.7267,
+          "percentFull": 0.7217780947685242,
+          "eventCount": 0,
+          "value": 0.7217780947685242
+        },
+        {
+          "at": 27782.3384,
+          "percentFull": 0.7721657156944275,
+          "eventCount": 0,
+          "value": 0.7721657156944275
+        },
+        {
+          "at": 28784.6324,
+          "percentFull": 0.8243701457977295,
+          "eventCount": 0,
+          "value": 0.8243701457977295
+        },
+        {
+          "at": 29794.5874,
+          "percentFull": 0.8758478760719299,
+          "eventCount": 0,
+          "value": 0.8758478760719299
+        },
+        {
+          "at": 30809.7004,
+          "percentFull": 0.9276889562606812,
+          "eventCount": 0,
+          "value": 0.9276889562606812
+        },
+        {
+          "at": 31810.0806,
+          "percentFull": 0.9756540656089783,
+          "eventCount": 0,
+          "value": 0.9756540656089783
+        },
+        {
+          "at": 32816.1462,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 33817.7736,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 34827.6459,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 35830.5686,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 36845.6198,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 37849.205,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 38864.3742,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 39878.5648,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 40884.3094,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 41889.3352,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 42893.9209,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 43897.2797,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 44899.8989,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 45904.386,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 52753.5359,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 52753.5949,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.2877,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.3362,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.368,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.3954,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.4209,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.4459,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.471,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.7917,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.2792,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.2862,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.2936,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.3007,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        }
+      ],
+      "eventTimestampRangeUs": [
+        274021153668,
+        274029062374
+      ],
+      "eventEndRangeUs": [
+        274021153684,
+        274029063722
+      ],
+      "traceSpanMs": 7910.054,
+      "allMarkMatches": [
+        {
+          "stage": "armed",
+          "name": "th09-sched-armed",
+          "before": 7404.3949999809265,
+          "after": 7405.424999952316,
+          "timeOrigin": 1791715101292.56,
+          "candidateCount": 1,
+          "uniqueCandidateCount": 1,
+          "trace": {
+            "pid": 60208,
+            "tid": 42408,
+            "ts": 274021160575
+          },
+          "offsetMs": [
+            274013755.05,
+            274013756.28000003
+          ]
+        },
+        {
+          "stage": "first-active",
+          "name": "th09-sched-first-active",
+          "before": 10190.469999969006,
+          "after": 10190.649999976158,
+          "timeOrigin": 1791715101292.56,
+          "candidateCount": 1,
+          "uniqueCandidateCount": 1,
+          "trace": {
+            "pid": 60208,
+            "tid": 42408,
+            "ts": 274023946632
+          },
+          "offsetMs": [
+            274013755.882,
+            274013756.2620001
+          ]
+        },
+        {
+          "stage": "capture-stop",
+          "name": "th09-sched-capture-stop",
+          "before": 58439.50999999046,
+          "after": 58439.939999997616,
+          "timeOrigin": 1791715101292.56,
+          "candidateCount": 0,
+          "uniqueCandidateCount": 0,
+          "trace": null,
+          "offsetMs": null
+        }
+      ],
+      "capture": {
+        "nodeStartedAt": 9682.46,
+        "nodeStopRequestedAt": 60696.3839,
+        "nodeEndRequestedAt": 60724.7696,
+        "nodeCompletedAt": null,
+        "nodeStoppedAt": 96048.1941,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "tracingCompleteReceived": false,
+        "dataLossOccurred": null,
+        "endRequests": 1
+      },
+      "pageMeasurement": {
+        "startedAt": 10189.40499997139,
+        "firstSample": 0,
+        "lastSample": 30219.884999990463
+      },
+      "conclusion": "Collection and terminal clock mark incomplete. Timestamp range is descriptive only, not qualified complete coverage or a RAF causality mapping."
+    },
+    {
+      "side": 1,
+      "artifact": {
+        "path": "web/artifacts/multiplayer-tests/desktop-touch-both4-direct-sched-c1-P2-scheduler-trace.json",
+        "bytes": 26982597,
+        "sha256": "1ae09a3f2e1079a4a5b364609979e98d363d5286a14a631ace630c21c84fe7ab"
+      },
+      "bufferUsage": [
+        {
+          "at": 10686.615,
+          "percentFull": 0.004844933748245239,
+          "eventCount": 0,
+          "value": 0.004844933748245239
+        },
+        {
+          "at": 11690.6003,
+          "percentFull": 0.017926335334777832,
+          "eventCount": 0,
+          "value": 0.017926335334777832
+        },
+        {
+          "at": 12698.4632,
+          "percentFull": 0.03730618953704834,
+          "eventCount": 0,
+          "value": 0.03730618953704834
+        },
+        {
+          "at": 13707.8238,
+          "percentFull": 0.07873061299324036,
+          "eventCount": 0,
+          "value": 0.07873061299324036
+        },
+        {
+          "at": 14712.2645,
+          "percentFull": 0.13008719682693481,
+          "eventCount": 0,
+          "value": 0.13008719682693481
+        },
+        {
+          "at": 15721.8856,
+          "percentFull": 0.18132266402244568,
+          "eventCount": 0,
+          "value": 0.18132266402244568
+        },
+        {
+          "at": 16724.2154,
+          "percentFull": 0.23243701457977295,
+          "eventCount": 0,
+          "value": 0.23243701457977295
+        },
+        {
+          "at": 17728.5666,
+          "percentFull": 0.284035861492157,
+          "eventCount": 0,
+          "value": 0.284035861492157
+        },
+        {
+          "at": 18736.9102,
+          "percentFull": 0.33406007289886475,
+          "eventCount": 0,
+          "value": 0.33406007289886475
+        },
+        {
+          "at": 19743.3885,
+          "percentFull": 0.3838420510292053,
+          "eventCount": 0,
+          "value": 0.3838420510292053
+        },
+        {
+          "at": 20744.4119,
+          "percentFull": 0.43531978130340576,
+          "eventCount": 0,
+          "value": 0.43531978130340576
+        },
+        {
+          "at": 21750.5447,
+          "percentFull": 0.48631298542022705,
+          "eventCount": 0,
+          "value": 0.48631298542022705
+        },
+        {
+          "at": 22756.5346,
+          "percentFull": 0.536821722984314,
+          "eventCount": 0,
+          "value": 0.536821722984314
+        },
+        {
+          "at": 23758.7226,
+          "percentFull": 0.5868459343910217,
+          "eventCount": 0,
+          "value": 0.5868459343910217
+        },
+        {
+          "at": 24768.9691,
+          "percentFull": 0.6379602551460266,
+          "eventCount": 0,
+          "value": 0.6379602551460266
+        },
+        {
+          "at": 25776.9376,
+          "percentFull": 0.6896802186965942,
+          "eventCount": 0,
+          "value": 0.6896802186965942
+        },
+        {
+          "at": 26783.8347,
+          "percentFull": 0.7405523061752319,
+          "eventCount": 0,
+          "value": 0.7405523061752319
+        },
+        {
+          "at": 27782.3957,
+          "percentFull": 0.791545569896698,
+          "eventCount": 0,
+          "value": 0.791545569896698
+        },
+        {
+          "at": 28784.6046,
+          "percentFull": 0.8426598906517029,
+          "eventCount": 0,
+          "value": 0.8426598906517029
+        },
+        {
+          "at": 29794.6428,
+          "percentFull": 0.8935319781303406,
+          "eventCount": 0,
+          "value": 0.8935319781303406
+        },
+        {
+          "at": 30795.2873,
+          "percentFull": 0.945009708404541,
+          "eventCount": 0,
+          "value": 0.945009708404541
+        },
+        {
+          "at": 31800.3124,
+          "percentFull": 0.9921269416809082,
+          "eventCount": 0,
+          "value": 0.9921269416809082
+        },
+        {
+          "at": 32816.2091,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 33817.8224,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 34827.571,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 35828.5342,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 36830.6885,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 37839.8826,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 38848.8848,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 39849.3313,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 40855.2275,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 41859.4688,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 42862.7824,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 43864.9761,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 44868.84,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 45873.7706,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 52753.3886,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 52753.4371,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 52753.4581,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60697.3131,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60697.3415,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60697.3517,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.8535,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.8713,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.8831,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60713.8907,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.2387,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.2557,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.2639,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        },
+        {
+          "at": 60715.2714,
+          "percentFull": 0.9962451457977295,
+          "eventCount": 0,
+          "value": 0.9962451457977295
+        }
+      ],
+      "eventTimestampRangeUs": [
+        274021152603,
+        274029334247
+      ],
+      "eventEndRangeUs": [
+        274021152619,
+        274029336544
+      ],
+      "traceSpanMs": 8183.941,
+      "allMarkMatches": [
+        {
+          "stage": "armed",
+          "name": "th09-sched-armed",
+          "before": 2720.014999985695,
+          "after": 2720.425000011921,
+          "timeOrigin": 1791715105975.97,
+          "candidateCount": 1,
+          "uniqueCandidateCount": 1,
+          "trace": {
+            "pid": 30240,
+            "tid": 22096,
+            "ts": 274021159592
+          },
+          "offsetMs": [
+            274018439.067,
+            274018439.67700005
+          ]
+        },
+        {
+          "stage": "first-active",
+          "name": "th09-sched-first-active",
+          "before": 5496.514999985695,
+          "after": 5496.694999992847,
+          "timeOrigin": 1791715105975.97,
+          "candidateCount": 1,
+          "uniqueCandidateCount": 1,
+          "trace": {
+            "pid": 30240,
+            "tid": 22096,
+            "ts": 274023936077
+          },
+          "offsetMs": [
+            274018439.282,
+            274018439.66200006
+          ]
+        },
+        {
+          "stage": "capture-stop",
+          "name": "th09-sched-capture-stop",
+          "before": 53761.07999998331,
+          "after": 53764.939999997616,
+          "timeOrigin": 1791715105975.97,
+          "candidateCount": 0,
+          "uniqueCandidateCount": 0,
+          "trace": null,
+          "offsetMs": null
+        }
+      ],
+      "capture": {
+        "nodeStartedAt": 9680.7262,
+        "nodeStopRequestedAt": 60696.455,
+        "nodeEndRequestedAt": 60733.9686,
+        "nodeCompletedAt": null,
+        "nodeStoppedAt": 96550.8876,
+        "reason": "capture-stop",
+        "deadlineFired": false,
+        "chromeBufferFull": false,
+        "tracingCompleteReceived": false,
+        "dataLossOccurred": null,
+        "endRequests": 1
+      },
+      "pageMeasurement": {
+        "startedAt": 5495.295000016689,
+        "firstSample": 0,
+        "lastSample": 30208.214999973774
+      },
+      "conclusion": "Collection and terminal clock mark incomplete. Timestamp range is descriptive only, not qualified complete coverage or a RAF causality mapping."
+    }
+  ]
+}

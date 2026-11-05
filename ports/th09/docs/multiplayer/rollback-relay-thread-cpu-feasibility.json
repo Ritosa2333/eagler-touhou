@@ -1,0 +1,215 @@
+{
+  "schema": "th09-relay-thread-cpu-feasibility-v1",
+  "startedAt": "2026-10-11T03:01:40.072Z",
+  "completedAt": "2026-10-11T03:01:40.295Z",
+  "runtime": {
+    "node": "v24.13.0",
+    "platform": "win32",
+    "arch": "x64",
+    "executable": "C:\\Program Files\\nodejs\\node.exe"
+  },
+  "source": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\relay-thread-cpu-feasibility.mjs",
+    "bytes": 5123,
+    "sha256": "2b7cbf3cae29c72149b04a882e6871cf55392e18b4ede593f51c98b272c6a5b9",
+    "stable": true
+  },
+  "measurement": {
+    "api": "process.threadCpuUsage",
+    "cpuUnit": "microseconds reported by Node",
+    "wallClock": "performance.now in this one process",
+    "bracket": "wallStart, cpuStart, controlled step, cpuEnd, wallEnd; measured elapsed includes meter reads"
+  },
+  "plan": {
+    "purpose": "Check whether thread CPU counters distinguish controlled busy work from a blocked wait, and retain aggregate meter-loop cost.",
+    "steps": [
+      {
+        "kind": "meter-pairs",
+        "pairs": 1000
+      },
+      {
+        "kind": "blocked-wait",
+        "requestedMs": 50
+      },
+      {
+        "kind": "busy-loop",
+        "requestedMs": 50
+      },
+      {
+        "kind": "blocked-wait",
+        "requestedMs": 50
+      },
+      {
+        "kind": "busy-loop",
+        "requestedMs": 50
+      }
+    ],
+    "omission": "No warmup, trial selection, removal of adverse observations, or adaptive repetition.",
+    "limits": [
+      "This is one Node process in the current shared host, not a real relay or game performance measurement.",
+      "Thread CPU time excludes time spent descheduled or blocked; low CPU alone cannot distinguish those causes.",
+      "Counter resolution and meter overhead are observed only for these finite intervals; submillisecond attribution is not promised.",
+      "Busy-loop wall time can include host scheduling; no stable production speedup follows from this calibration."
+    ]
+  },
+  "available": true,
+  "checksPassed": true,
+  "errors": [],
+  "observations": [
+    {
+      "step": {
+        "kind": "meter-pairs",
+        "pairs": 1000
+      },
+      "wallStartMs": 27.2722,
+      "wallEndMs": 28.1068,
+      "wallElapsedMs": 0.8345999999999982,
+      "cpuStart": {
+        "user": 31000,
+        "system": 15000
+      },
+      "cpuEnd": {
+        "user": 31000,
+        "system": 15000
+      },
+      "threadCpuDeltaMicroseconds": {
+        "user": 0,
+        "system": 0,
+        "total": 0
+      },
+      "threadCpuDeltaMs": 0,
+      "cpuFractionOfMeasuredWall": 0,
+      "meterLoopMeanMsPerCounterReadIncludingLoop": 0.00041729999999999914,
+      "detail": {
+        "pairs": 1000,
+        "measuredCounterReads": 2000,
+        "last": {
+          "before": {
+            "user": 31000,
+            "system": 15000
+          },
+          "after": {
+            "user": 31000,
+            "system": 15000
+          }
+        }
+      }
+    },
+    {
+      "step": {
+        "kind": "blocked-wait",
+        "requestedMs": 50
+      },
+      "wallStartMs": 28.1498,
+      "wallEndMs": 86.3145,
+      "wallElapsedMs": 58.164699999999996,
+      "cpuStart": {
+        "user": 31000,
+        "system": 15000
+      },
+      "cpuEnd": {
+        "user": 31000,
+        "system": 15000
+      },
+      "threadCpuDeltaMicroseconds": {
+        "user": 0,
+        "system": 0,
+        "total": 0
+      },
+      "threadCpuDeltaMs": 0,
+      "cpuFractionOfMeasuredWall": 0,
+      "meterLoopMeanMsPerCounterReadIncludingLoop": null,
+      "detail": {
+        "waitResult": "timed-out"
+      }
+    },
+    {
+      "step": {
+        "kind": "busy-loop",
+        "requestedMs": 50
+      },
+      "wallStartMs": 86.3462,
+      "wallEndMs": 136.4236,
+      "wallElapsedMs": 50.0774,
+      "cpuStart": {
+        "user": 31000,
+        "system": 15000
+      },
+      "cpuEnd": {
+        "user": 78000,
+        "system": 31000
+      },
+      "threadCpuDeltaMicroseconds": {
+        "user": 47000,
+        "system": 16000,
+        "total": 63000
+      },
+      "threadCpuDeltaMs": 63,
+      "cpuFractionOfMeasuredWall": 1.2580525346763212,
+      "meterLoopMeanMsPerCounterReadIncludingLoop": null,
+      "detail": {
+        "iterations": 40790016,
+        "accumulator": -1490055167
+      }
+    },
+    {
+      "step": {
+        "kind": "blocked-wait",
+        "requestedMs": 50
+      },
+      "wallStartMs": 136.4343,
+      "wallEndMs": 195.9102,
+      "wallElapsedMs": 59.475899999999996,
+      "cpuStart": {
+        "user": 78000,
+        "system": 31000
+      },
+      "cpuEnd": {
+        "user": 78000,
+        "system": 31000
+      },
+      "threadCpuDeltaMicroseconds": {
+        "user": 0,
+        "system": 0,
+        "total": 0
+      },
+      "threadCpuDeltaMs": 0,
+      "cpuFractionOfMeasuredWall": 0,
+      "meterLoopMeanMsPerCounterReadIncludingLoop": null,
+      "detail": {
+        "waitResult": "timed-out"
+      }
+    },
+    {
+      "step": {
+        "kind": "busy-loop",
+        "requestedMs": 50
+      },
+      "wallStartMs": 195.9186,
+      "wallEndMs": 245.94,
+      "wallElapsedMs": 50.0214,
+      "cpuStart": {
+        "user": 78000,
+        "system": 31000
+      },
+      "cpuEnd": {
+        "user": 140000,
+        "system": 31000
+      },
+      "threadCpuDeltaMicroseconds": {
+        "user": 62000,
+        "system": 0,
+        "total": 62000
+      },
+      "threadCpuDeltaMs": 62,
+      "cpuFractionOfMeasuredWall": 1.2394695070509822,
+      "meterLoopMeanMsPerCounterReadIncludingLoop": null,
+      "detail": {
+        "iterations": 32660992,
+        "accumulator": 1167215617
+      }
+    }
+  ],
+  "deployedToRelay": false,
+  "productionCodeChanged": false
+}

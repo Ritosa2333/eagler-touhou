@@ -1,0 +1,388 @@
+{
+  "schema": "th12-original-ecl-message-wait/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Actual Enemy constructor/Enemy18, ECL418/419, MSG41fbe0/41f900/41fcc0, 412720 and HUD25(41e020). Synthetic literal SCPT/MSG; constructed full selected-manager startup and resource/heap/audio host boundaries. No Player/Bomb/ANM scheduler update or GPU execution.",
+  "records": [
+    {
+      "name": "no-message",
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000005761697450726f626500000045434c4800000000000000000000000000000000a301100000003f0000000000000000009f01140000003f01000000004d00000000000000a301100000003f0000000000000000009f01140000003f010000000058000000000000005300140000003f0100000000a0860100000000000a00100000003f0000000000",
+      "syntheticMsgHex": "010000000c0000000001000000000a010001000b040400000007000000",
+      "frames": [
+        {
+          "inputTick": -1,
+          "eclByteOffset": 92,
+          "eclTime": -99999.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 0,
+          "eclByteOffset": 92,
+          "eclTime": -99999.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 1,
+          "eclByteOffset": 92,
+          "eclTime": -99998.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 2,
+          "eclByteOffset": 92,
+          "eclTime": -99997.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 3,
+          "eclByteOffset": 92,
+          "eclTime": -99996.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 4,
+          "eclByteOffset": 92,
+          "eclTime": -99995.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 5,
+          "eclByteOffset": 92,
+          "eclTime": -99994.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 6,
+          "eclByteOffset": 92,
+          "eclTime": -99993.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 7,
+          "eclByteOffset": 92,
+          "eclTime": -99992.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 8,
+          "eclByteOffset": 92,
+          "eclTime": -99991.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 9,
+          "eclByteOffset": 92,
+          "eclTime": -99990.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 10,
+          "eclByteOffset": 92,
+          "eclTime": -99989.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 11,
+          "eclByteOffset": 92,
+          "eclTime": -99988.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 12,
+          "eclByteOffset": 92,
+          "eclTime": -99987.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 13,
+          "eclByteOffset": 92,
+          "eclTime": -99986.0,
+          "messageActive": false
+        }
+      ]
+    },
+    {
+      "name": "active-message-pulse",
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000005761697450726f626500000045434c4800000000000000000000000000000000a201140000003f01000000000000000000000000a301100000003f0000000000000000009f01140000003f01000000004d00000000000000a301100000003f0000000000000000009f01140000003f010000000058000000000000005300140000003f0100000000a0860100000000000a00100000003f0000000000",
+      "syntheticMsgHex": "010000000c0000000001000000000a010001000c0002000b040400000007000000",
+      "frames": [
+        {
+          "inputTick": -1,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 0,
+          "messageWait": 0,
+          "messageByteOffset": 12,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 0,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 1,
+          "messageWait": 0,
+          "messageByteOffset": 17,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 1,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 2,
+          "messageWait": 0,
+          "messageByteOffset": 21,
+          "gate8c": 1
+        },
+        {
+          "inputTick": 2,
+          "eclByteOffset": 112,
+          "eclTime": -99999.0,
+          "messageActive": true,
+          "messageClock": 2,
+          "messageWait": 3,
+          "messageByteOffset": 21,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 3,
+          "eclByteOffset": 112,
+          "eclTime": -99998.0,
+          "messageActive": true,
+          "messageClock": 2,
+          "messageWait": 2,
+          "messageByteOffset": 21,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 4,
+          "eclByteOffset": 112,
+          "eclTime": -99997.0,
+          "messageActive": true,
+          "messageClock": 2,
+          "messageWait": 1,
+          "messageByteOffset": 21,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 5,
+          "eclByteOffset": 112,
+          "eclTime": -99996.0,
+          "messageActive": true,
+          "messageClock": 3,
+          "messageWait": 0,
+          "messageByteOffset": 29,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 6,
+          "eclByteOffset": 112,
+          "eclTime": -99995.0,
+          "messageActive": true,
+          "messageClock": 4,
+          "messageWait": 0,
+          "messageByteOffset": 29,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 7,
+          "eclByteOffset": 112,
+          "eclTime": -99994.0,
+          "messageActive": true,
+          "messageClock": 5,
+          "messageWait": 0,
+          "messageByteOffset": 29,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 8,
+          "eclByteOffset": 112,
+          "eclTime": -99993.0,
+          "messageActive": true,
+          "messageClock": 6,
+          "messageWait": 0,
+          "messageByteOffset": 29,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 9,
+          "eclByteOffset": 112,
+          "eclTime": -99992.0,
+          "messageActive": true,
+          "messageClock": 7,
+          "messageWait": 0,
+          "messageByteOffset": 29,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 10,
+          "eclByteOffset": 112,
+          "eclTime": -99991.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 11,
+          "eclByteOffset": 112,
+          "eclTime": -99990.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 12,
+          "eclByteOffset": 112,
+          "eclTime": -99989.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 13,
+          "eclByteOffset": 112,
+          "eclTime": -99988.0,
+          "messageActive": false
+        }
+      ]
+    },
+    {
+      "name": "message-completes-without-pulse",
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000005761697450726f626500000045434c4800000000000000000000000000000000a201140000003f01000000000000000000000000a301100000003f0000000000000000009f01140000003f01000000004d00000000000000a301100000003f0000000000000000009f01140000003f010000000058000000000000005300140000003f0100000000a0860100000000000a00100000003f0000000000",
+      "syntheticMsgHex": "010000000c0000000001000000000a010001000b040400000007000000",
+      "frames": [
+        {
+          "inputTick": -1,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 0,
+          "messageWait": 0,
+          "messageByteOffset": 12,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 0,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 1,
+          "messageWait": 0,
+          "messageByteOffset": 17,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 1,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 1,
+          "messageWait": 3,
+          "messageByteOffset": 17,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 2,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 1,
+          "messageWait": 2,
+          "messageByteOffset": 17,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 3,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 1,
+          "messageWait": 1,
+          "messageByteOffset": 17,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 4,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 2,
+          "messageWait": 0,
+          "messageByteOffset": 25,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 5,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 3,
+          "messageWait": 0,
+          "messageByteOffset": 25,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 6,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 4,
+          "messageWait": 0,
+          "messageByteOffset": 25,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 7,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 5,
+          "messageWait": 0,
+          "messageByteOffset": 25,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 8,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 6,
+          "messageWait": 0,
+          "messageByteOffset": 25,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 9,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": true,
+          "messageClock": 7,
+          "messageWait": 0,
+          "messageByteOffset": 25,
+          "gate8c": 0
+        },
+        {
+          "inputTick": 10,
+          "eclByteOffset": 20,
+          "eclTime": 0.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 11,
+          "eclByteOffset": 112,
+          "eclTime": -99999.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 12,
+          "eclByteOffset": 112,
+          "eclTime": -99998.0,
+          "messageActive": false
+        },
+        {
+          "inputTick": 13,
+          "eclByteOffset": 112,
+          "eclTime": -99997.0,
+          "messageActive": false
+        }
+      ]
+    }
+  ]
+}

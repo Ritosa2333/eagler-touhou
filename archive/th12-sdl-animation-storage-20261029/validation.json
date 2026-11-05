@@ -1,0 +1,99 @@
+{
+  "baseline": "5dedae93683af160e8c8abba935c9eebec23cfbc",
+  "builds": {
+    "normal": {
+      "sourceSha256": "88fbc85cd94a43e306cf0d9852fe842a70c58dc3d5f54fcd8217f1847df415cf",
+      "artifacts": {
+        "touhou12.mjs": {
+          "bytes": 224966,
+          "sha256": "78c114bc3f05fee018acaa0f7ad8bfbd102faa65ce0127c2956e969da2cd3e4e"
+        },
+        "touhou12.wasm": {
+          "bytes": 3241858,
+          "sha256": "748882440ecbb0a96daa6f7ca60aadbe25b27f23d80cb9fdf26e1f5dc18b6722"
+        }
+      }
+    },
+    "multiplayer": {
+      "sourceSha256": "962d1734ae5ddfede06dd0c07e64c788709177cedf349c441327070ea220bd81",
+      "artifacts": {
+        "touhou12.mjs": {
+          "bytes": 280051,
+          "sha256": "df50273a547f2ab2ec52a4a03445a85cd6a1b8adbacbcf28bae1eed4cbe5e1a4"
+        },
+        "touhou12.wasm": {
+          "bytes": 3214908,
+          "sha256": "e70749e1a9bc0df06f7700e26df182a50ddcc29eca0b453e0830bc7724b0387a"
+        }
+      }
+    },
+    "desktop": "both compiled; application not executed"
+  },
+  "nativeChecks": 6,
+  "boundaryChecks": 19,
+  "single": {
+    "scene": "playing",
+    "pausedReplayFps": 0,
+    "replay": {
+      "name": "",
+      "character": 0,
+      "shot": 0,
+      "difficulty": 1,
+      "timestamp": 1793287397,
+      "score": 0,
+      "slowdown": 100,
+      "lastStage": 1,
+      "mode": "story",
+      "stages": [
+        {
+          "id": 1,
+          "label": "Stage 1",
+          "score": 0,
+          "frames": 228
+        }
+      ]
+    },
+    "fullscreenTransitions": 2,
+    "errors": []
+  },
+  "multiplayer": [
+    {
+      "count": 2,
+      "mode": 0,
+      "delay": 0,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        19,
+        20
+      ],
+      "slowPresentation": false,
+      "frames": 424,
+      "exactMatches": 0,
+      "hash": -1407472165,
+      "spectatorVerified": true
+    },
+    {
+      "count": 3,
+      "mode": 0,
+      "delay": 0,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        20,
+        20,
+        32
+      ],
+      "slowPresentation": false,
+      "frames": 415,
+      "exactMatches": 0,
+      "hash": 1567314264,
+      "spectatorVerified": false
+    }
+  ],
+  "sourceCommit": "48d941d5e2db5f87291bd485e02bd38a701147d7",
+  "adaptationChecks": {
+    "normal": 8,
+    "multiplayer": 7
+  }
+}

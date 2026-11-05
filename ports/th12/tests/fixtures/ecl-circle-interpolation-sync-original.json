@@ -1,0 +1,2188 @@
+{
+  "schema": "th12-original-ecl-circle-interpolation-sync/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "scope": "Actual309/311 parameter dispatch416e03..41962b,464eb0 geometry and413700/465320 combine. Controlled current Motion structures and literals, FPCW037f/MXCSR1f80. No Player, full Enemy tick, ANM, GPU or replay acceptance.",
+  "records": [
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.5,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.009999990463256836,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.5,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.009999990463256836,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -2.5199999809265137,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.5,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            5.029999732971191,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -2.5199999809265137,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.5,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            5.029999732971191,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -4.53000020980835,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            -4.539999961853027,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -4.539999961853027,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -0.009999752044677734,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -4.53000020980835,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            -4.539999961853027,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -4.539999961853027,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -0.009999752044677734,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            2.8299999237060547,
+            128.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.8299999237060547,
+            128.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            2.8299999237060547,
+            0.970001220703125,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            2.8299999237060547,
+            128.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.8299999237060547,
+            128.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            2.8299999237060547,
+            0.970001220703125,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            100.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -100.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": false,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            100.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -100.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            2.5,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            2.509999990463257,
+            143.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.009999990463256836,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            2.5,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            2.509999990463257,
+            143.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            2.509999990463257,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.009999990463256836,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -2.5199999809265137,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            2.509999990463257,
+            143.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            2.5,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            5.029999732971191,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            -2.5199999809265137,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            2.509999990463257,
+            143.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 1.5533431768417358,
+          "radius": 144.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            2.5,
+            271.9700012207031,
+            0.0
+          ],
+          "velocityOrCenter": [
+            5.029999732971191,
+            143.97000122070312,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            -4.53000020980835,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            -4.539999961853027,
+            -0.009999999776482582,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            -4.539999961853027,
+            127.98999786376953,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -0.009999752044677734,
+            -0.01000213623046875,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            -4.53000020980835,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            -4.539999961853027,
+            -0.009999999776482582,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 3.1415927410125732,
+          "radius": 4.53000020980835,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            -4.539999961853027,
+            127.98999786376953,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -0.009999752044677734,
+            -0.01000213623046875,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            2.8299999237060547,
+            0.9700000286102295,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            2.8299999237060547,
+            128.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            2.8299999237060547,
+            0.970001220703125,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            2.8299999237060547,
+            0.9700000286102295,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.33000001311302185,
+          "radius": 3.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            2.8299999237060547,
+            128.97000122070312,
+            0.0
+          ],
+          "velocityOrCenter": [
+            2.8299999237060547,
+            0.970001220703125,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "combined": {
+          "position": [
+            100.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -100.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    },
+    {
+      "relative": true,
+      "before": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            100.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      },
+      "after": {
+        "absolute": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        },
+        "relative": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.03490658476948738,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 1
+        },
+        "combined": {
+          "position": [
+            0.0,
+            128.0,
+            0.0
+          ],
+          "velocityOrCenter": [
+            -100.0,
+            0.0,
+            0.0
+          ],
+          "speed": 0.0,
+          "angle": 0.0,
+          "radius": 0.0,
+          "radiusDelta": 0.0,
+          "flags": 0
+        }
+      }
+    }
+  ]
+}

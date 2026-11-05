@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "kind": "th09-enemy-first-write-index-source-and-components",
+  "scope": "Title-owned first-write metadata and WASI component correctness only; no browser, real transport, CPU4, frame-cadence, audio, physical-device or performance acceptance.",
+  "workspace": "D:/workspace/eagler/worktrees/th09-rollback-4x",
+  "sourceHeadAtComponentRuns": "5d4b7f0a1cc047143e3f5da5ed3749ad5af9b897",
+  "isolatedCommonHead": "512353cab9eaa4f6744f867b0eb07c61ee7f2b0e",
+  "changes": {
+    "productionFiles": [
+      "web/cpp/multiplayer/WorldState.cpp",
+      "web/cpp/multiplayer/WorldState.hpp"
+    ],
+    "algorithm": "Register both fixed enemy pools before capturing either side; replace known-owner pointer-list duplicate scans with a 260-bit first-write index; keep the old linear fallback for unregistered/unknown owners.",
+    "identityMap": [
+      {
+        "pool": 0,
+        "prototype": 0,
+        "slots": "1..129 (pool indices 0..128, including sentinel)"
+      },
+      {
+        "pool": 1,
+        "prototype": 130,
+        "slots": "131..259 (pool indices 0..128, including sentinel)"
+      }
+    ],
+    "preserved": [
+      "EnemyState::Save/Restore owning-copy code and complete named POD bytes",
+      "Enemy capture insertion order, hash order, restore order and first-write timing",
+      "Asynchronous context ownership and values.locals/active rebinding",
+      "Existing Save failure/duplicate behavior and unknown-owner fallback",
+      "Input capture, D0, prediction/history limits, network pacing, recovery budgets, rendering and confirmed audio"
+    ],
+    "structuralWorkOnly": {
+      "firstCaptureOldComparisonsAt260KnownOwners": 33670,
+      "maximumKnownOwnerRangeChecks": 2,
+      "qualification": "Operation counts, not timings; normal-scene enemy density and whole-game benefit remain unmeasured here."
+    },
+    "notChanged": [
+      "Checkpoint spans or cross-record coalesced Restore",
+      "Owning-container allocation policy, including the retained >260-owner relocation defect",
+      "EnemyState move/rebinding behavior",
+      "Generic common infrastructure"
+    ]
+  },
+  "sourceAudit": [
+    {
+      "path": "web/cpp/game/EnemyManager.hpp",
+      "lines": "10..14",
+      "finding": "A manager has one prototype and std::array<EclVm,129>; two versus fields give 260 known owners."
+    },
+    {
+      "path": "web/cpp/game/EnemyManager.cpp",
+      "lines": "25..26,42..46",
+      "finding": "run_script and create call BeforeEnemy before execution or destructive prototype replacement."
+    },
+    {
+      "path": "web/cpp/game/EnemyFrame.cpp",
+      "lines": "22..28",
+      "finding": "remove calls BeforeEnemy before clearing asynchronous contexts."
+    },
+    {
+      "path": "web/cpp/multiplayer/WorldState.cpp",
+      "lines": "18..42,142..159",
+      "finding": "Reset runs before any Save capture; both pools are registered before the first Enemy walk. Cross-pool boss aliases therefore cannot first enter fallback then be captured again as a new known owner."
+    },
+    {
+      "path": "web/cpp/multiplayer/WorldState.hpp",
+      "lines": "74..82",
+      "finding": "Only first-write metadata is added; Reset clears saved prefix identity with the bitmap. Unknown ownership does not become a new failure."
+    },
+    {
+      "path": "web/cpp/sdl/GraphicsDevice.cpp",
+      "lines": "89..90",
+      "finding": "The sole external AfterRestore registration changes a texture revision only; it does not call BeforeEnemy."
+    },
+    {
+      "path": "web/cpp/multiplayer/WorldState.cpp",
+      "lines": "212..235",
+      "finding": "Restore unbinds mutation observers, restores journal/VM/undo/owning records in the original order, and retains enemy metadata until next Save, matching retained old duplicate semantics."
+    },
+    {
+      "path": "web/cpp/multiplayer/DynamicState.cpp",
+      "lines": "21..50",
+      "finding": "The owning EnemyState copy is unchanged. It validates internal active/locals identities and rebinds them to the destination."
+    },
+    {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-input-batch-common/include/eagler/netplay/SparsePoolCapture.hpp",
+      "lines": "16..44",
+      "finding": "This helper groups contiguous POD byte touches. It cannot be applied mechanically to EclVm, which owns asynchronous contexts and requires title-owned copying."
+    }
+  ],
+  "sourceIdentities": {
+    "current": [
+      {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/cpp/game/EnemyManager.hpp",
+        "bytes": 1640,
+        "sha256": "0ddc8ec0f9c3ae3ed5105ae104f0b067dbefc06d6efa0d601f351fcbaac2f2e6"
+      },
+      {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/cpp/game/EnemyManager.cpp",
+        "bytes": 4595,
+        "sha256": "62752d58c5f82420e740f16262f9ce242511571a0c12f6d14adb3d210aad0a74"
+      },
+      {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/cpp/game/EnemyFrame.cpp",
+        "bytes": 10967,
+        "sha256": "bb611278c2f8dc1d54ba7fb35cbdf1d4d0129da37cf1c849d3ee69853419d858"
+      },
+      {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/cpp/sdl/GraphicsDevice.cpp",
+        "bytes": 7294,
+        "sha256": "d254ac40fbaba5e96d031fafb1c46e0de118b1e114439c5b1d7853239ddfbcb1"
+      }
+    ],
+    "baseline": [
+      {
+        "gitObject": "5d4b7f0:web/cpp/multiplayer/WorldState.cpp",
+        "bytes": 18390,
+        "sha256": "17469aa4e0375c535957ab0bf0ba891e9da4ff323da3cd72f684f8bd7821d4eb"
+      },
+      {
+        "gitObject": "5d4b7f0:web/cpp/multiplayer/WorldState.hpp",
+        "bytes": 6747,
+        "sha256": "83a524cee77efebea43dd18bc89c9c7c1d5c95918a0353813c7e46946185f7e8"
+      }
+    ],
+    "baselineQualification": "The baseline git-object hashes are canonical Git blob bytes (LF). The release comparison below uses the frozen build manifest's actual source/header hashes; do not conflate them with checkout newline conversion.",
+    "currentQualification": "Production WorldState, test and runner identities are retained per component invocation; unchanged DynamicState is retained under componentToolchain. This list records additional read-only caller audit inputs."
+  },
+  "components": [
+    {
+      "label": "rollback4x-enemy-index-components-01",
+      "status": "FAIL",
+      "startedAt": "2026-10-11T01:37:33.201Z",
+      "endedAt": "2026-10-11T01:37:47.257Z",
+      "elapsedMs": 14055.2664,
+      "exitCode": 1,
+      "sourceBeforeAfterStable": true,
+      "runnerSha256": "924aa6f5daa0f9e8246ee273f55e39d71ffa7bde69ee95ea6250f2654a207591",
+      "sourceSha256": {
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/tests/multiplayer/enemy-capture.cpp": "15686bcdf3984dfa53bdf14ecfebfc487ef0f4008e7e352fdf4d35b300dd0cd8"
+      },
+      "invocation": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-01-invocation.json",
+        "bytes": 1803,
+        "sha256": "8ae2c80259b83ca6ebcd407d9223ba9b07e0e3b2356d63b31af4a46d89064edd"
+      },
+      "log": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-01-process.log",
+        "bytes": 985,
+        "sha256": "9e354783f8cae9770c41943765e40f0987679ab0c684926f6c8d4c4d8ab80b89"
+      },
+      "wasm": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-01/enemy-capture.wasm",
+        "bytes": 2750954,
+        "sha256": "1b5987b4ff8177146e2a07499331003e5b92136773e41b4524025cffca41c645"
+      },
+      "report": null,
+      "notes": "First fixture fails at state.Restore(); original failure remains retained."
+    },
+    {
+      "label": "rollback4x-enemy-index-components-02",
+      "status": "PASS",
+      "startedAt": "2026-10-11T01:40:21.021Z",
+      "endedAt": "2026-10-11T01:40:39.994Z",
+      "elapsedMs": 18972.361,
+      "exitCode": 0,
+      "sourceBeforeAfterStable": true,
+      "runnerSha256": "924aa6f5daa0f9e8246ee273f55e39d71ffa7bde69ee95ea6250f2654a207591",
+      "sourceSha256": {
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/tests/multiplayer/enemy-capture.cpp": "73666d861c97202090a62cb4b520408bd021baa916948e24e57c1d7900c55d05"
+      },
+      "invocation": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-02-invocation.json",
+        "bytes": 1875,
+        "sha256": "72eba6ec4d6c6d59247d148e729c3826bcd86ab9b5f25bc584a4a04112576ac9"
+      },
+      "log": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-02-process.log",
+        "bytes": 555,
+        "sha256": "b505dcc6dd4799625983cbeeb6b74f79af7d77d17f1c90f4b47bbd6d8da95d6b"
+      },
+      "wasm": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-02/enemy-capture.wasm",
+        "bytes": 2777656,
+        "sha256": "cfa616d4bdd4ad8db9600965fe8ff9b88997cbec3c8d061b11974fe5eb10a20e"
+      },
+      "report": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-02/enemy-capture-report.json",
+        "bytes": 25520,
+        "sha256": "492c2fc3e73af5454a7ebd263f45805e7ba0420b2184bd105ac2bf874d3d88bf"
+      },
+      "notes": "Complete bytes/order/restore gate passes with a mixed-owner hash-coverage gap."
+    },
+    {
+      "label": "rollback4x-enemy-index-components-03",
+      "status": "PASS",
+      "startedAt": "2026-10-11T01:43:59.765Z",
+      "endedAt": "2026-10-11T01:44:18.190Z",
+      "elapsedMs": 18425.0364,
+      "exitCode": 0,
+      "sourceBeforeAfterStable": true,
+      "runnerSha256": "924aa6f5daa0f9e8246ee273f55e39d71ffa7bde69ee95ea6250f2654a207591",
+      "sourceSha256": {
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/tests/multiplayer/enemy-capture.cpp": "85fa2aad02f58308331bd4a105869b32df42be539e6df180d1a4aec5cb5c4fb1"
+      },
+      "invocation": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-03-invocation.json",
+        "bytes": 2002,
+        "sha256": "71f3edec4f1b2c15d3171783f5ebe6e42384c28cf7ccc841895cf88f671a5650"
+      },
+      "log": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-03-process.log",
+        "bytes": 555,
+        "sha256": "3a90b15222dc0081e55e8ea1a2439ced44e2847898d80cd487ac5a41b12caa29"
+      },
+      "wasm": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-03/enemy-capture.wasm",
+        "bytes": 2777668,
+        "sha256": "a6dcd1eed949a03c32b8d435194a8616c74bd787c25d3ec6f27cbe75345b1e15"
+      },
+      "report": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-components-03/enemy-capture-report.json",
+        "bytes": 25520,
+        "sha256": "84d2fb49334fe7b7b4a0a6da77155f8a64844082ac58d7a06fba63bf75dc8173"
+      },
+      "notes": "PASS with mixed 8-known + 5-fallback owners also exercising hash=true; production source is unchanged from 01 and 02."
+    }
+  ],
+  "testSemantics": {
+    "normalCases": "Each successful full restore compares all named POD bytes including padding, complete owned EclContexts, normalized owned pointer identity, external pointers, original first-write order, recorded bytes and the unchanged hash when enabled.",
+    "oldOracle": "Retained old linear pointer-list duplicate rule followed by unchanged EnemyState owning copy; its backing Entry vector is pre-reserved to avoid relocating captured self references.",
+    "initialFailure": {
+      "run": "rollback4x-enemy-index-components-01",
+      "assertion": "enemy-capture.cpp:126 state.Restore()",
+      "outcome": "exit 1 / RuntimeError: unreachable",
+      "retention": "Original invocation, process log and Wasm are retained; there is no fabricated PASS report.",
+      "diagnosis": "The first fixture combined all 260 normal owners with 5 extra unknown owners, moving WorldState's EnemyState vector beyond its original reserve. Its independent oracle also initially lacked stable pre-reserved entry storage. These fixture lifetime problems were corrected without changing the production indexing patch."
+    },
+    "component02": {
+      "positiveAndBoundaryCaseCount": 118,
+      "completeRestoreCases": 24,
+      "ringCases": {
+        "total": 90,
+        "completeRestore": 60,
+        "sealAndRetireWithoutRestore": 30
+      },
+      "invalidContextExpectedFailureCases": 2,
+      "legacyRelocationExpectedFailureCases": 2,
+      "normalInventory": "18 dense 260-known cases; 6 mixed 8-known + 5-unknown cases",
+      "oldLinearComparisonsInNamedDenseFixture": 67615,
+      "hashCoverageLimitation": "Mixed cases in 02 had hash disabled by the original selector. Complete bytes/order/Restore passed; known+one-external ring cases checked hashes. This specific gap is closed by the retained component03 run."
+    },
+    "retainedLegacyBoundary": {
+      "normalKnownInventory": 260,
+      "diagnosticInventory": 265,
+      "status": "Pre-existing failure preserved, not fixed or declared successful restore.",
+      "proof": "Fresh WorldState instances restore their first saved owner through count 260 while storage is stable. At count 265 the vector storage moves and that same owning snapshot fails to restore. The experiment reproduces with entirely unregistered ranges (the unchanged old linear fallback) and with the new registered bitmap.",
+      "cause": "Default move of EnemyState relocates its EclVm while internal pointers may still name the old primary context. DynamicState::Copy rejects those stale self references.",
+      "qualification": "Each passing total of 118 includes 24 complete restore cases, 60 ring restore cases, 30 ring Seal/retirement cases, 2 expected invalid-context failures and 2 expected >260-owner relocation failures. It does not mean 118 successful restores, nor that 265 owners are supported."
+    },
+    "component03": {
+      "sameCaseStructureAs": "component02",
+      "totalCases": 118,
+      "hashCoverage": "Hash selector changed only from round%2!=0 to round%3!=0. Mixed rounds 4/8/16/20 exercise all 5 unknown owners with hash enabled; dense cases and existing ring hash coverage remain.",
+      "unchangedProductionSource": true
+    }
+  },
+  "nextGates": [
+    "Root-owned diagnostic build and serialized whole-game recovery/production-path checks",
+    "CPU4 paired deep-recovery cost with actual enemy density; no speedup accepted by this component/build record",
+    "Release relay/direct new-state cadence and input-response checks; existing seconds-long rAF stalls remain independent unresolved acceptance work"
+  ],
+  "recordedThrough": "2026-10-11T01:44:18.190Z",
+  "componentToolchain": {
+    "command": [
+      "node",
+      "web/tests/multiplayer/run-tests.mjs",
+      "enemy-capture"
+    ],
+    "compiler": "clang version 23.1.0-rc3 (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)\nTarget: wasm32-unknown-wasip1\nThread model: posix\nInstalledDir: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\nConfiguration file: D:\\workspace\\eagler\\toolchains\\wasi-sdk-34.0-x86_64-windows\\bin\\clang++.cfg",
+    "flags": [
+      "-std=c++17",
+      "-O2",
+      "-g",
+      "-ffp-contract=off",
+      "-fno-exceptions",
+      "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+      "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer"
+    ],
+    "linkAdditions": [
+      "-Wl,-z,stack-size=1048576"
+    ],
+    "component01CompilerEvidence": {
+      "kind": "Wasm producers custom section",
+      "processedBy": [
+        {
+          "name": "clang",
+          "version": "23.1.0-rc3 (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)"
+        }
+      ],
+      "qualification": "01 did not reach report writing. This producer evidence is bound to its retained Wasm SHA, not a fabricated compiler report."
+    },
+    "component02CompilerSameAs03": true,
+    "unchangedRelevantHeaders": {
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer\\DynamicState.hpp": "4f2fcb66a63921b05cd0dabc3b78d99f1bc6e3941d5388a3fcd3c3b4f879f37a",
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer\\WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\EclVm.hpp": "4f271ef6dd740ba4bd0729979f8fbe2526bf05f0699553afa27598df47117728",
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\EnemyManager.hpp": "0ddc8ec0f9c3ae3ed5105ae104f0b067dbefc06d6efa0d601f351fcbaac2f2e6",
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\PoolCheckpoint.hpp": "bd5b6fb5cccfbc2cf055ad72789fbbf7e1f91046a2628df1264b557c73146c4f",
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include\\eagler\\netplay\\RollbackJournal.hpp": "32bbe8f62225e312ef7292dfc186f09d3cf21cebed44c4ae0a5a79c66ab705e8",
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include\\eagler\\netplay\\SparsePoolCapture.hpp": "4ad3d0dc78cd82176193507ac8c443dc1a7b4eafc3c72a5f1b6729cc7bda85af"
+    },
+    "unchangedOwningAndCommonSources": {
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer\\DynamicState.cpp": "ff407840ff35059f0f2babed108090131bbbeea1e473a731fd59ee101a1a2c0a",
+      "D:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\src\\netplay\\RollbackJournal.cpp": "119318f9b7b52d0ecbda37c3d2bc2b96e47d9dee4acc151e5bd92cb754b20b35"
+    }
+  },
+  "releaseBuildComparison": {
+    "result": "Only the two WorldState source/header inputs differ from frozen B scalar; no runtime performance conclusion.",
+    "artifacts": [
+      {
+        "name": "rollback4x-chain-input-batch-release",
+        "manifest": {
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-chain-input-batch-release/build.json",
+          "bytes": 87045,
+          "sha256": "20eb7b45a3eb6bcd1fc6c726a96e9ece972a82736b85ae379529edfcae0928fd"
+        },
+        "wasm": {
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-chain-input-batch-release/th09.wasm",
+          "bytes": 2827629,
+          "sha256": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97"
+        },
+        "loader": {
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-chain-input-batch-release/th09.mjs",
+          "bytes": 257184,
+          "sha256": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8"
+        }
+      },
+      {
+        "name": "rollback4x-enemy-index-release",
+        "manifest": {
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-release/build.json",
+          "bytes": 87045,
+          "sha256": "ad19bc3a5f0c4e2bb39a9051d7fa8337a5f4b31748f327de85407829f72b61e9"
+        },
+        "wasm": {
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-release/th09.wasm",
+          "bytes": 2827974,
+          "sha256": "766dc277b15d86a97d4bc3b38e2a08a9b52a5786d74c817763bc185216673577"
+        },
+        "loader": {
+          "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/rollback4x-enemy-index-release/th09.mjs",
+          "bytes": 257184,
+          "sha256": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8"
+        }
+      }
+    ],
+    "sourceCount": [
+      275,
+      275
+    ],
+    "unchangedSourceCount": 273,
+    "sourceDifferences": [
+      {
+        "path": "web/cpp/multiplayer/WorldState.cpp",
+        "baseline": "e3a73ec3a4f3d68b90639d7515368c28d9fee0beabd99bbfb2d99f3ddde73ebe",
+        "candidate": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c"
+      },
+      {
+        "path": "web/cpp/multiplayer/WorldState.hpp",
+        "baseline": "691a2d3cb25fb943e80811bd4d8240526bb4dd241f66fe950c694e14ca572c0e",
+        "candidate": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6"
+      }
+    ],
+    "compilerFlags": {
+      "same": true,
+      "value": [
+        "-O2",
+        "-g0",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fno-strict-aliasing",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-input-batch-common\\include",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\sdl",
+        "-ID:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\multiplayer",
+        "-DTH_NATIVE_PLATFORM=1",
+        "-DTH_ENABLE_THCRAP=1",
+        "-DTH09_DEVELOPMENT_HARNESS=0",
+        "--use-port=sdl3",
+        "--use-port=sdl3_ttf"
+      ]
+    },
+    "sourceCompilerFlags": {
+      "same": true,
+      "value": {}
+    },
+    "imports": {
+      "same": true,
+      "count": 450
+    },
+    "exports": {
+      "same": true,
+      "count": 101
+    },
+    "audioSimd": [
+      false,
+      false
+    ],
+    "kind": [
+      "th09-native-web-release-candidate",
+      "th09-native-web-release-candidate"
+    ],
+    "completeGame": [
+      false,
+      false
+    ],
+    "loaderSame": true,
+    "wasmByteDifference": 345,
+    "invocation": {
+      "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-build-release-01-invocation.json",
+      "bytes": 2502,
+      "sha256": "a9fa4d9a8af582ba87f9c21a3b7e81c2ab7c11cfdcd55e48f1c56af8dacc23a9",
+      "startedAt": "2026-10-11T01:42:05.110Z",
+      "endedAt": "2026-10-11T01:43:15.050Z",
+      "elapsedMs": 69939.10710000001,
+      "exitCode": 0,
+      "args": [
+        "web/scripts/build-sdl.mjs",
+        "--release"
+      ],
+      "runnerSha256": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054",
+      "sourceSha256": {
+        "web/cpp/multiplayer/WorldState.cpp": "772d9f9b29c3a1fdf89e08516f8fb18dc72578af74b8aab4b8652aa50210d77c",
+        "web/cpp/multiplayer/WorldState.hpp": "f87dc52b5955ec3e25cfc2e8657a4d6b42cf7e5fa8f1b64332e1f051a8f90ec6",
+        "web/cpp/multiplayer/DynamicState.cpp": "ff407840ff35059f0f2babed108090131bbbeea1e473a731fd59ee101a1a2c0a",
+        "web/cpp/sdl/Application.cpp": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d",
+        "web/cpp/sdl/AudioDevice.cpp": "471ac3614ea7907417f7f9d728464b1864de8a35ace75b13fdd4f36ef32400a9",
+        "web/scripts/build-sdl.mjs": "e7e8e962f75e1f4d417accb46e7366bb3351e0cea8a384fc4a09ac0f16161054"
+      },
+      "sourceBeforeAfterStable": true,
+      "log": {
+        "path": "D:/workspace/eagler/worktrees/th09-rollback-4x/web/artifacts/multiplayer-tests/rollback4x-enemy-index-build-release-01-process.log",
+        "bytes": 8292,
+        "sha256": "e7a721301acfc4aa87a78bf7ddddb9c7ea25cac3019b274a50099de3fa3972fb"
+      }
+    },
+    "limitation": "build.json is a native Web release candidate with completeGame=false. ABI/loader/source isolation and successful build are separate from whole-game correctness, browser scheduling and performance."
+  }
+}

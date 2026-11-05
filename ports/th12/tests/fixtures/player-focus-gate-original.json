@@ -1,0 +1,346 @@
+{
+  "schema": "th12-original-player-focus-gate/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "gpuExecuted": false,
+  "wholeGameOracle": false,
+  "provider": "Actual4364f0,454d10,4615a0 and original bullet/pl00 ANM; explicit no-option synthetic Player, fixed speeds and total age; no instruction hooks.",
+  "timerEvidence": "436100 initializes totalAge+a48;437475 common Player16 tail advances it; miss/respawn reset only stateAge+a34.",
+  "rows": [
+    {
+      "initial": {
+        "totalAge": 0,
+        "restoredFocus": 0,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 0,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 0,
+        "restoredFocus": 1,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 0,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 1,
+        "restoredFocus": 0,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 1,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 1,
+        "restoredFocus": 1,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 1,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 3,
+        "restoredFocus": 0,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 3,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 3,
+        "restoredFocus": 1,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 3,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 4,
+        "restoredFocus": 0,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 1,
+        "positionFixed": [
+          256,
+          51200
+        ],
+        "totalAge": 4,
+        "markerLinked": true,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 4,
+        "restoredFocus": 1,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 1,
+        "positionFixed": [
+          256,
+          51200
+        ],
+        "totalAge": 4,
+        "markerLinked": true,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 10,
+        "restoredFocus": 0,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 1,
+        "positionFixed": [
+          256,
+          51200
+        ],
+        "totalAge": 10,
+        "markerLinked": true,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 10,
+        "restoredFocus": 1,
+        "liveEnemyCount": 1,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 1,
+        "positionFixed": [
+          256,
+          51200
+        ],
+        "totalAge": 10,
+        "markerLinked": true,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 4,
+        "restoredFocus": 1,
+        "liveEnemyCount": 0,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 4,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    },
+    {
+      "initial": {
+        "totalAge": 10,
+        "restoredFocus": 1,
+        "liveEnemyCount": 0,
+        "held": 136,
+        "speedsFixed": [
+          512,
+          256,
+          362,
+          181
+        ],
+        "positionFixed": [
+          0,
+          51200
+        ]
+      },
+      "after": {
+        "focused": 0,
+        "positionFixed": [
+          512,
+          51200
+        ],
+        "totalAge": 10,
+        "markerLinked": false,
+        "rngUnchanged": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,5014 @@
+{
+  "schema": "th09/desktop-gpu-vsync-series-decision/1",
+  "createdAt": "2026-10-11T13:11:10.912Z",
+  "comparison": {
+    "path": "docs/multiplayer/rollback-desktop-gpu-vsync-comparison-c1.json",
+    "bytes": 115833,
+    "sha256": "07de0d47711f58848f9e57e098dbc7b1620b7f0ea011d6fb51e32aeafb0a9ca9"
+  },
+  "timeline": {
+    "path": "docs/multiplayer/rollback-desktop-gpu-vsync-joint-timeline-c1.json",
+    "bytes": 829386,
+    "sha256": "cd547d95986043945451a4a45e8c80b9173dd82b911b744846e9093bed4ef1e9"
+  },
+  "scope": "Completed predeclared A0/B1/A0 using the same original release, same frozen driver, both owned headed CPUs throttled4, synthetic continuous Page-clock joystick, ordinary relay39±5 and identical graphics trace configuration. Twelve qualified desktop run bodies now retained across this series and the earlier nine-run comparison; qualification is not smoothness acceptance.",
+  "decision": {
+    "performanceFixEstablished": false,
+    "adoptGpuVsyncFlag": false,
+    "reason": "A1 was poor, B1 improved, and A2 also improved after the flag was removed. Reversible benefit of this single flag was not established.",
+    "notConcluded": [
+      "GPU/compositor excluded",
+      "All native wall time was CPU execution",
+      "Background compilation caused the adverse A1",
+      "Earlier recovery-tail or fixed earlier network-brake candidates validated",
+      "Steady60Hz or physical input-to-photon guarantee achieved"
+    ],
+    "qualifierErratum": "A1 uses evidence-v2: the original root post-analysis treated a zero-count overflow object as a boolean. The original evidence and raw are preserved and metrics unchanged.",
+    "teardown": "All three pre-drain endpoints and trace windows qualified; all three later closed during/after the prolonged trace export and have teardownClean=false.",
+    "progress": "No additional browser run or production game change made during this offline decision analysis."
+  },
+  "results": [
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-a1",
+      "mode": "0",
+      "measurementQualified": true,
+      "teardownClean": false,
+      "wholeRunMeanHostBusyFraction": 0.3123267205444531,
+      "windows": [
+        {
+          "side": 0,
+          "stage": "setup-complete",
+          "observedAt": 1791723016077,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 1,
+          "stage": "setup-complete",
+          "observedAt": 1791723024760,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 0,
+          "stage": "measurement-complete",
+          "observedAt": 1791723135436,
+          "windowState": "minimized",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 1,
+          "stage": "measurement-complete",
+          "observedAt": 1791723135437,
+          "windowState": "minimized",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        }
+      ],
+      "peers": [
+        {
+          "side": 0,
+          "newStateHz": 33.97710051289243,
+          "rafGapMs": {
+            "count": 1008,
+            "total": 29667.039999999997,
+            "p50": 18.205000000001746,
+            "p95": 84.8550000000032,
+            "p99": 163.5,
+            "max": 254.51000000000204,
+            "over25ms": 248,
+            "over50ms": 124,
+            "over100ms": 31,
+            "over250ms": 1
+          },
+          "pageGapMs": {
+            "count": 1008,
+            "total": 29641.27000004053,
+            "p50": 20.76500004529953,
+            "p95": 81.35999995470047,
+            "p99": 153.75,
+            "max": 246.48500001430511,
+            "over25ms": 376,
+            "over50ms": 131,
+            "over100ms": 32,
+            "over250ms": 0
+          },
+          "maximumRegisteredWaitMs": 86.91499996185303,
+          "maximumNativeCallbackWallMs": 68.22000002861023,
+          "ordinaryAllMedianWallMs": 6.280000030994415,
+          "ordinarySave1Maximum": 60.394999980926514,
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723009026.9,
+              "startedAt": 19004.969999969006,
+              "endedAt": 58514.00499999523
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 0,
+              "startMs": 2500,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "7de9a4f639601d70048d0077210093d727bf7fabb5da2d62d0ffe5f3da18ccf2",
+            "counts": {
+              "plannedEvents": 14301,
+              "dueEvents": 4505,
+              "futureCensoredEvents": 9796,
+              "plannedNativeEvents": 14301,
+              "dueNativeEvents": 4505,
+              "submittedEvents": 1589,
+              "rawNativeCalls": 1589,
+              "coalescedMoves": 2915,
+              "notSubmitted": 1,
+              "attributedCaptures": 1048,
+              "renderProgressObservedEvents": 1048,
+              "submittedWithoutAttributableChangedWire": 541,
+              "packets": 2253,
+              "duplicates": 7796,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1205,
+              "analogActiveFrames": 1173,
+              "targetChanges": 1061,
+              "newFrontierCallbacks": 1187,
+              "newPresentedCallbacks": 1187,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1186
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 541,
+              "coalesced-before-submit": 2915,
+              "render-progress-after-conditional-wire": 1048,
+              "not-submitted": 1
+            },
+            "submissionLatenessMs": {
+              "count": 1589,
+              "total": 7916.006709734593,
+              "p50": 4.055000007152557,
+              "p95": 8.198333342868864,
+              "p99": 48.189999997615814,
+              "max": 77.93999999761581,
+              "over50ms": 14,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1048,
+              "plannedToRenderProgressMs": {
+                "count": 1048,
+                "total": 31426.565027654175,
+                "p50": 20.7033333381014,
+                "p95": 91.65166668097118,
+                "p99": 159.9983333547898,
+                "max": 242.7816666762037,
+                "over50ms": 138,
+                "over100ms": 41
+              },
+              "submitToFirstWireMs": {
+                "count": 1048,
+                "total": 7590.279999136925,
+                "p50": 5.639999985694885,
+                "p95": 18.74500000476837,
+                "p99": 43.08499997854233,
+                "max": 94.66000002622604,
+                "over50ms": 7,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1048,
+                "total": 19892.550000071526,
+                "p50": 10.604999959468842,
+                "p95": 68.16500002145767,
+                "p99": 133.0349999666214,
+                "max": 205.25999999046326,
+                "over50ms": 88,
+                "over100ms": 21
+              },
+              "submitToRenderProgressMs": {
+                "count": 1048,
+                "total": 27482.82999920845,
+                "p50": 16.774999976158142,
+                "p95": 86.5799999833107,
+                "p99": 158.64999997615814,
+                "max": 236.84499996900558,
+                "over50ms": 118,
+                "over100ms": 35
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 939,
+              "plannedToRenderProgressMs": {
+                "count": 939,
+                "total": 25994.956691245236,
+                "p50": 19.77000004053116,
+                "p95": 84.10500001907349,
+                "p99": 152.9650000333786,
+                "max": 213.40666667620462,
+                "over50ms": 103,
+                "over100ms": 29
+              },
+              "submitToFirstWireMs": {
+                "count": 939,
+                "total": 6513.224999368191,
+                "p50": 5.605000019073486,
+                "p95": 17.19999998807907,
+                "p99": 42.910000026226044,
+                "max": 94.66000002622604,
+                "over50ms": 6,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 939,
+                "total": 15991.894999802113,
+                "p50": 9.524999976158142,
+                "p95": 62.41500002145767,
+                "p99": 109.84500002861023,
+                "max": 205.25999999046326,
+                "over50ms": 63,
+                "over100ms": 15
+              },
+              "submitToRenderProgressMs": {
+                "count": 939,
+                "total": 22505.119999170303,
+                "p50": 15.754999995231628,
+                "p95": 78.61500000953674,
+                "p99": 148.67500001192093,
+                "max": 206.45999997854233,
+                "over50ms": 88,
+                "over100ms": 24
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 311,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5033.333333333333,
+                "submittedAtMs": 5039.270000040531,
+                "firstWireAtMs": 5096.115000009537,
+                "presentationObservedAtMs": 5276.115000009537,
+                "captureFrame": 84,
+                "presentationFrontier": 85,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 236.84499996900558
+              },
+              {
+                "sequence": 2603,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 23883.333333333332,
+                "submittedAtMs": 23884.885000050068,
+                "firstWireAtMs": 23886.085000038147,
+                "presentationObservedAtMs": 24091.34500002861,
+                "captureFrame": 425,
+                "presentationFrontier": 426,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 206.45999997854233
+              },
+              {
+                "sequence": 2460,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 22708.333333333332,
+                "submittedAtMs": 22715.439999997616,
+                "firstWireAtMs": 22723.135000050068,
+                "presentationObservedAtMs": 22921.740000009537,
+                "captureFrame": 404,
+                "presentationFrontier": 405,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 206.30000001192093
+              },
+              {
+                "sequence": 1199,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 12333.333333333334,
+                "submittedAtMs": 12334.8900000453,
+                "firstWireAtMs": 12340.660000026226,
+                "presentationObservedAtMs": 12521.745000004768,
+                "captureFrame": 231,
+                "presentationFrontier": 232,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 186.85499995946884
+              },
+              {
+                "sequence": 2534,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 23308.333333333332,
+                "submittedAtMs": 23311.439999997616,
+                "firstWireAtMs": 23320.5,
+                "presentationObservedAtMs": 23495.585000038147,
+                "captureFrame": 415,
+                "presentationFrontier": 416,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 184.14500004053116
+              }
+            ]
+          },
+          "maximumPageGapCallbacks": {
+            "scope": "Exactly (fromSample,toSample] from the strict linked timing evidence; includes the ending callback and excludes the completed starting callback. This differs from the timeline's half-open [start,end) post-sample context. Summed whole wall durations are not CPU self time.",
+            "pair": {
+              "fromSample": 415,
+              "toSample": 422,
+              "rafTimestampMs": 254.51000000000204,
+              "sampledAtMs": 246.48500001430511,
+              "frontierDelta": 1,
+              "nextDelta": 1,
+              "rendererSubmissions": 1,
+              "fromSessionPhase": 1,
+              "toSessionPhase": 1
+            },
+            "callbackCount": 7,
+            "cppWholeWallSumMs": 114.81499993801117,
+            "maxCppWholeWallMs": 22.310000002384186,
+            "corrections": 3,
+            "resimulated": 6,
+            "newInputCaptures": 1,
+            "worldSaves": 2,
+            "maxMissing": 2,
+            "maxNetworkScale": 1,
+            "rows": [
+              {
+                "sampleIndex": 416,
+                "timings": {
+                  "timestampAgeAtDispatch": 34.37499998808198,
+                  "registeredWait": 37.314999997615814,
+                  "rafDispatchToFrameEntry": 21.259999990463257,
+                  "cppWallMs": 21.039999961853027,
+                  "beforePlay": 0.21500003337860107,
+                  "play": 0.4049999713897705,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.42500001192092896,
+                  "frameTail": 0.009999990463256836,
+                  "wholeJsFrame": 1.0550000071525574,
+                  "afterFrameToRafExit": 0.42000001668930054,
+                  "wholeRafCallback": 22.735000014305115
+                },
+                "counters": {
+                  "next": -3,
+                  "corr": 1,
+                  "resim": 1,
+                  "captures": 1,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  416,
+                  1,
+                  2,
+                  1000,
+                  998,
+                  258,
+                  256
+                ]
+              },
+              {
+                "sampleIndex": 417,
+                "timings": {
+                  "timestampAgeAtDispatch": 19.455000007154013,
+                  "registeredWait": 16.99500000476837,
+                  "rafDispatchToFrameEntry": 18.2049999833107,
+                  "cppWallMs": 18.00499999523163,
+                  "beforePlay": 0.014999985694885254,
+                  "play": 0.4050000309944153,
+                  "playExitToSample": 0.004999995231628418,
+                  "sampleWork": 0.4350000023841858,
+                  "frameTail": 0.19999998807907104,
+                  "wholeJsFrame": 1.0600000023841858,
+                  "afterFrameToRafExit": 0.23500001430511475,
+                  "wholeRafCallback": 19.5
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 0,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  417,
+                  1,
+                  2,
+                  1000,
+                  998,
+                  258,
+                  256
+                ]
+              },
+              {
+                "sampleIndex": 418,
+                "timings": {
+                  "timestampAgeAtDispatch": 10.47499998092826,
+                  "registeredWait": 7.714999973773956,
+                  "rafDispatchToFrameEntry": 18.75,
+                  "cppWallMs": 18.55000001192093,
+                  "beforePlay": 0.0350000262260437,
+                  "play": 3.0699999928474426,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.8999999761581421,
+                  "frameTail": 0.21500003337860107,
+                  "wholeJsFrame": 4.2200000286102295,
+                  "afterFrameToRafExit": 0.06999999284744263,
+                  "wholeRafCallback": 23.040000021457672
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 0,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 0
+                },
+                "pacing": [
+                  418,
+                  1,
+                  2,
+                  1000,
+                  998,
+                  258,
+                  256
+                ]
+              },
+              {
+                "sampleIndex": 419,
+                "timings": {
+                  "timestampAgeAtDispatch": 18.709999978542328,
+                  "registeredWait": 15.774999976158142,
+                  "rafDispatchToFrameEntry": 14.395000040531158,
+                  "cppWallMs": 14.365000009536743,
+                  "beforePlay": 0.009999990463256836,
+                  "play": 0.014999985694885254,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.4300000071525574,
+                  "frameTail": 0.019999980926513672,
+                  "wholeJsFrame": 0.47499996423721313,
+                  "afterFrameToRafExit": 0.4150000214576721,
+                  "wholeRafCallback": 15.285000026226044
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 1,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  419,
+                  1,
+                  1,
+                  1000,
+                  998,
+                  258,
+                  257
+                ]
+              },
+              {
+                "sampleIndex": 420,
+                "timings": {
+                  "timestampAgeAtDispatch": 13.019999980926514,
+                  "registeredWait": 9.024999976158142,
+                  "rafDispatchToFrameEntry": 9.189999997615814,
+                  "cppWallMs": 8.764999985694885,
+                  "beforePlay": 0.19999998807907104,
+                  "play": 0.21000003814697266,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.41499996185302734,
+                  "frameTail": 0.010000050067901611,
+                  "wholeJsFrame": 0.8350000381469727,
+                  "afterFrameToRafExit": 0.6299999952316284,
+                  "wholeRafCallback": 10.655000030994415
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 0,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 0
+                },
+                "pacing": [
+                  420,
+                  1,
+                  1,
+                  1000,
+                  998,
+                  258,
+                  257
+                ]
+              },
+              {
+                "sampleIndex": 421,
+                "timings": {
+                  "timestampAgeAtDispatch": 6.3699999809250585,
+                  "registeredWait": 6.969999969005585,
+                  "rafDispatchToFrameEntry": 11.810000002384186,
+                  "cppWallMs": 11.77999997138977,
+                  "beforePlay": 0.014999985694885254,
+                  "play": 0.030000030994415283,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.050000011920928955,
+                  "frameTail": 0.004999995231628418,
+                  "wholeJsFrame": 0.10000002384185791,
+                  "afterFrameToRafExit": 0.07999998331069946,
+                  "wholeRafCallback": 11.990000009536743
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 1,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  421,
+                  1,
+                  0,
+                  1000,
+                  998,
+                  258,
+                  258
+                ]
+              },
+              {
+                "sampleIndex": 422,
+                "timings": {
+                  "timestampAgeAtDispatch": 22.74499996900704,
+                  "registeredWait": 22.584999978542328,
+                  "rafDispatchToFrameEntry": 24.37000000476837,
+                  "cppWallMs": 22.310000002384186,
+                  "beforePlay": 0.25,
+                  "play": 0.04000002145767212,
+                  "playExitToSample": 0.004999995231628418,
+                  "sampleWork": 0.08499997854232788,
+                  "frameTail": 0.005000054836273193,
+                  "wholeJsFrame": 0.3850000500679016,
+                  "afterFrameToRafExit": 0.26499998569488525,
+                  "wholeRafCallback": 25.02000004053116
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 1
+                },
+                "pacing": [
+                  422,
+                  1,
+                  0,
+                  1000,
+                  998,
+                  259,
+                  259
+                ]
+              }
+            ]
+          },
+          "selectedGraphics": [
+            {
+              "kind": "maximum-eligible-registered-raf-wait",
+              "knownCompleteXTop": [
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.647,
+                  "reportedThreadDurationMs": 0.594,
+                  "overlapRangeMs": [
+                    0.6470000147819519,
+                    0.6470000147819519
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.641,
+                  "reportedThreadDurationMs": 0.59,
+                  "overlapRangeMs": [
+                    0.6410000324249268,
+                    0.6410000324249268
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.637,
+                  "reportedThreadDurationMs": 0.587,
+                  "overlapRangeMs": [
+                    0.6369999647140503,
+                    0.6369999647140503
+                  ]
+                },
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.584,
+                  "reportedThreadDurationMs": 0.571,
+                  "overlapRangeMs": [
+                    0.5839999914169312,
+                    0.5839999914169312
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.245,
+                  "reportedThreadDurationMs": 0.234,
+                  "overlapRangeMs": [
+                    0.24500000476837158,
+                    0.24500000476837158
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.2,
+                  "reportedThreadDurationMs": 0.171,
+                  "overlapRangeMs": [
+                    0.19999998807907104,
+                    0.19999998807907104
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.184,
+                  "reportedThreadDurationMs": 0.163,
+                  "overlapRangeMs": [
+                    0.18400001525878906,
+                    0.18400001525878906
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.16,
+                  "reportedThreadDurationMs": 0.15,
+                  "overlapRangeMs": [
+                    0.15999996662139893,
+                    0.15999996662139893
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.229,
+                  "reportedThreadDurationMs": 1.203,
+                  "overlapRangeMs": [
+                    1.2289999723434448,
+                    1.2289999723434448
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.003,
+                  "reportedThreadDurationMs": 0.963,
+                  "overlapRangeMs": [
+                    1.003000020980835,
+                    1.003000020980835
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.984,
+                  "reportedThreadDurationMs": 0.949,
+                  "overlapRangeMs": [
+                    0.9839999675750732,
+                    0.9839999675750732
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-new-state-page-gap",
+              "knownCompleteXTop": [
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.652,
+                  "reportedThreadDurationMs": 0.584,
+                  "overlapRangeMs": [
+                    0.6520000100135803,
+                    0.6520000100135803
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.625,
+                  "reportedThreadDurationMs": 0.579,
+                  "overlapRangeMs": [
+                    0.625,
+                    0.625
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.62,
+                  "reportedThreadDurationMs": 0.576,
+                  "overlapRangeMs": [
+                    0.6200000047683716,
+                    0.6200000047683716
+                  ]
+                },
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.473,
+                  "reportedThreadDurationMs": 0.463,
+                  "overlapRangeMs": [
+                    0.4729999899864197,
+                    0.4729999899864197
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.314,
+                  "reportedThreadDurationMs": 0.16,
+                  "overlapRangeMs": [
+                    0.3140000104904175,
+                    0.3140000104904175
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.25,
+                  "reportedThreadDurationMs": 0.108,
+                  "overlapRangeMs": [
+                    0.25,
+                    0.25
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.236,
+                  "reportedThreadDurationMs": 0.225,
+                  "overlapRangeMs": [
+                    0.23600000143051147,
+                    0.23600000143051147
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.175,
+                  "reportedThreadDurationMs": 0.157,
+                  "overlapRangeMs": [
+                    0.17500001192092896,
+                    0.17500001192092896
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.273,
+                  "reportedThreadDurationMs": 1.248,
+                  "overlapRangeMs": [
+                    1.1239999532699585,
+                    1.2730000019073486
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.248,
+                  "reportedThreadDurationMs": 1.227,
+                  "overlapRangeMs": [
+                    1.10999995470047,
+                    1.2479999661445618
+                  ]
+                },
+                {
+                  "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.206,
+                  "reportedThreadDurationMs": 1.187,
+                  "overlapRangeMs": [
+                    1.1059999465942383,
+                    1.2059999704360962
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-ordinary-save1-callback",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.174,
+                  "reportedThreadDurationMs": 0.117,
+                  "overlapRangeMs": [
+                    0.17400002479553223,
+                    0.17400002479553223
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.147,
+                  "reportedThreadDurationMs": 0.137,
+                  "overlapRangeMs": [
+                    0.1470000147819519,
+                    0.1470000147819519
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.131,
+                  "reportedThreadDurationMs": 0.107,
+                  "overlapRangeMs": [
+                    0.13100004196166992,
+                    0.13100004196166992
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.126,
+                  "reportedThreadDurationMs": 0.116,
+                  "overlapRangeMs": [
+                    0.1260000467300415,
+                    0.1260000467300415
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.118,
+                  "reportedThreadDurationMs": 0.11,
+                  "overlapRangeMs": [
+                    0.11799997091293335,
+                    0.11799997091293335
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.111,
+                  "reportedThreadDurationMs": 0.103,
+                  "overlapRangeMs": [
+                    0.11100000143051147,
+                    0.11100000143051147
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.104,
+                  "reportedThreadDurationMs": 0.095,
+                  "overlapRangeMs": [
+                    0.10399997234344482,
+                    0.10399997234344482
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.098,
+                  "reportedThreadDurationMs": 0.09,
+                  "overlapRangeMs": [
+                    0.09799998998641968,
+                    0.09799998998641968
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.962,
+                  "reportedThreadDurationMs": 0.941,
+                  "overlapRangeMs": [
+                    0.9619999527931213,
+                    0.9619999527931213
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.943,
+                  "reportedThreadDurationMs": 0.93,
+                  "overlapRangeMs": [
+                    0.9430000185966492,
+                    0.9430000185966492
+                  ]
+                },
+                {
+                  "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.89,
+                  "reportedThreadDurationMs": 0.879,
+                  "overlapRangeMs": [
+                    0.89000004529953,
+                    0.89000004529953
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "side": 1,
+          "newStateHz": 34.14556866023305,
+          "rafGapMs": {
+            "count": 1013,
+            "total": 29667.100000000002,
+            "p50": 18.205000000001746,
+            "p95": 84.75999999999476,
+            "p99": 151.52500000000146,
+            "max": 290.5249999999978,
+            "over25ms": 258,
+            "over50ms": 117,
+            "over100ms": 35,
+            "over250ms": 1
+          },
+          "pageGapMs": {
+            "count": 1013,
+            "total": 29664.19999998808,
+            "p50": 20.22000002861023,
+            "p95": 79.81000000238419,
+            "p99": 150.9350000023842,
+            "max": 263,
+            "over25ms": 371,
+            "over50ms": 132,
+            "over100ms": 32,
+            "over250ms": 1
+          },
+          "maximumRegisteredWaitMs": 56.389999985694885,
+          "maximumNativeCallbackWallMs": 57,
+          "ordinaryAllMedianWallMs": 6.915000021457672,
+          "ordinarySave1Maximum": 57,
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723017856.49,
+              "startedAt": 10187.030000030994,
+              "endedAt": 49667.785000026226
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 1,
+              "startMs": 2637,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "ee681df0a8390f364111c4d06da79d560a078137b316eaf936bb69e8d4a431ac",
+            "counts": {
+              "plannedEvents": 14382,
+              "dueEvents": 4515,
+              "futureCensoredEvents": 9867,
+              "plannedNativeEvents": 14382,
+              "dueNativeEvents": 4515,
+              "submittedEvents": 1602,
+              "rawNativeCalls": 1602,
+              "coalescedMoves": 2911,
+              "notSubmitted": 2,
+              "attributedCaptures": 1037,
+              "renderProgressObservedEvents": 1037,
+              "submittedWithoutAttributableChangedWire": 565,
+              "packets": 2259,
+              "duplicates": 7833,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1205,
+              "analogActiveFrames": 1167,
+              "targetChanges": 1050,
+              "newFrontierCallbacks": 1188,
+              "newPresentedCallbacks": 1188,
+              "forwardFrames": 1202,
+              "positionChangedObservations": 1181
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 565,
+              "coalesced-before-submit": 2911,
+              "render-progress-after-conditional-wire": 1037,
+              "not-submitted": 2
+            },
+            "submissionLatenessMs": {
+              "count": 1602,
+              "total": 7831.251651148012,
+              "p50": 3.9200000166893005,
+              "p95": 8.268333335719944,
+              "p99": 38.77999997138977,
+              "max": 65.08999997377396,
+              "over50ms": 11,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1037,
+              "plannedToRenderProgressMs": {
+                "count": 1037,
+                "total": 30720.294990301085,
+                "p50": 20.07499998807907,
+                "p95": 84.98500001430511,
+                "p99": 151.1783333023377,
+                "max": 261.08999997377396,
+                "over50ms": 132,
+                "over100ms": 39
+              },
+              "submitToFirstWireMs": {
+                "count": 1037,
+                "total": 7595.639999389648,
+                "p50": 5.644999980926514,
+                "p95": 23.69999998807907,
+                "p99": 45.97000002861023,
+                "max": 70.08499997854233,
+                "over50ms": 10,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1037,
+                "total": 19311.27500075102,
+                "p50": 10.495000004768372,
+                "p95": 57.22999995946884,
+                "p99": 124.26999998092651,
+                "max": 245.11500000953674,
+                "over50ms": 63,
+                "over100ms": 24
+              },
+              "submitToRenderProgressMs": {
+                "count": 1037,
+                "total": 26906.915000140667,
+                "p50": 16.709999978542328,
+                "p95": 81.23000001907349,
+                "p99": 146.0250000357628,
+                "max": 253.14999997615814,
+                "over50ms": 114,
+                "over100ms": 33
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 933,
+              "plannedToRenderProgressMs": {
+                "count": 933,
+                "total": 25124.054991006844,
+                "p50": 19.089999973773956,
+                "p95": 74.93333329756933,
+                "p99": 139.33333333333212,
+                "max": 261.08999997377396,
+                "over50ms": 93,
+                "over100ms": 26
+              },
+              "submitToFirstWireMs": {
+                "count": 933,
+                "total": 6367.874999523163,
+                "p50": 5.619999945163727,
+                "p95": 17.035000026226044,
+                "p99": 42.814999997615814,
+                "max": 70.08499997854233,
+                "over50ms": 6,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 933,
+                "total": 15433.825000345707,
+                "p50": 9.504999995231628,
+                "p95": 49.360000014305115,
+                "p99": 122.58499997854233,
+                "max": 245.11500000953674,
+                "over50ms": 44,
+                "over100ms": 15
+              },
+              "submitToRenderProgressMs": {
+                "count": 933,
+                "total": 21801.69999986887,
+                "p50": 15.665000021457672,
+                "p95": 68.07500004768372,
+                "p99": 134.9350000023842,
+                "max": 253.14999997615814,
+                "over50ms": 79,
+                "over100ms": 21
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 1139,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 11925,
+                "submittedAtMs": 11932.939999997616,
+                "firstWireAtMs": 11940.974999964237,
+                "presentationObservedAtMs": 12186.089999973774,
+                "captureFrame": 225,
+                "presentationFrontier": 226,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 253.14999997615814
+              },
+              {
+                "sequence": 154,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 3866.6666666666665,
+                "submittedAtMs": 3877.6800000071526,
+                "firstWireAtMs": 3934.4449999928474,
+                "presentationObservedAtMs": 4093.9549999833107,
+                "captureFrame": 61,
+                "presentationFrontier": 62,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 216.27499997615814
+              },
+              {
+                "sequence": 2090,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 19675,
+                "submittedAtMs": 19682.730000019073,
+                "firstWireAtMs": 19684.07499998808,
+                "presentationObservedAtMs": 19886.94999998808,
+                "captureFrame": 353,
+                "presentationFrontier": 354,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 204.21999996900558
+              },
+              {
+                "sequence": 1225,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 12616.666666666666,
+                "submittedAtMs": 12624.514999985695,
+                "firstWireAtMs": 12646.110000014305,
+                "presentationObservedAtMs": 12806.089999973774,
+                "captureFrame": 236,
+                "presentationFrontier": 237,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 181.57499998807907
+              },
+              {
+                "sequence": 25,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 2816.6666666666665,
+                "submittedAtMs": 2822.1200000047684,
+                "firstWireAtMs": 2830.974999964237,
+                "presentationObservedAtMs": 3000.7549999952316,
+                "captureFrame": 38,
+                "presentationFrontier": 39,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 178.63499999046326
+              }
+            ]
+          },
+          "maximumPageGapCallbacks": {
+            "scope": "Exactly (fromSample,toSample] from the strict linked timing evidence; includes the ending callback and excludes the completed starting callback. This differs from the timeline's half-open [start,end) post-sample context. Summed whole wall durations are not CPU self time.",
+            "pair": {
+              "fromSample": 367,
+              "toSample": 374,
+              "rafTimestampMs": 290.5249999999978,
+              "sampledAtMs": 263,
+              "frontierDelta": 1,
+              "nextDelta": 1,
+              "rendererSubmissions": 1,
+              "fromSessionPhase": 1,
+              "toSessionPhase": 1
+            },
+            "callbackCount": 7,
+            "cppWholeWallSumMs": 124.72000002861023,
+            "maxCppWholeWallMs": 27.030000030994415,
+            "corrections": 3,
+            "resimulated": 7,
+            "newInputCaptures": 1,
+            "worldSaves": 3,
+            "maxMissing": 3,
+            "maxNetworkScale": 1,
+            "rows": [
+              {
+                "sampleIndex": 368,
+                "timings": {
+                  "timestampAgeAtDispatch": 11.5700000047691,
+                  "registeredWait": 13.769999980926514,
+                  "rafDispatchToFrameEntry": 17.09500002861023,
+                  "cppWallMs": 17.060000002384186,
+                  "beforePlay": 0.20499998331069946,
+                  "play": 0.42500001192092896,
+                  "playExitToSample": 0.004999995231628418,
+                  "sampleWork": 0.5099999904632568,
+                  "frameTail": 0.009999990463256836,
+                  "wholeJsFrame": 1.1549999713897705,
+                  "afterFrameToRafExit": 0.050000011920928955,
+                  "wholeRafCallback": 18.30000001192093
+                },
+                "counters": {
+                  "next": -3,
+                  "corr": 1,
+                  "resim": 1,
+                  "captures": 1,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  368,
+                  1,
+                  3,
+                  1000,
+                  1000,
+                  225,
+                  222
+                ]
+              },
+              {
+                "sampleIndex": 369,
+                "timings": {
+                  "timestampAgeAtDispatch": 14.780000004768226,
+                  "registeredWait": 15.199999988079071,
+                  "rafDispatchToFrameEntry": 28.57499998807907,
+                  "cppWallMs": 27.030000030994415,
+                  "beforePlay": 0.025000035762786865,
+                  "play": 0.42500001192092896,
+                  "playExitToSample": 0.004999995231628418,
+                  "sampleWork": 1.074999988079071,
+                  "frameTail": 0.02499997615814209,
+                  "wholeJsFrame": 1.5550000071525574,
+                  "afterFrameToRafExit": 1.26500004529953,
+                  "wholeRafCallback": 31.39500004053116
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 0,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 0
+                },
+                "pacing": [
+                  369,
+                  1,
+                  3,
+                  1000,
+                  1000,
+                  225,
+                  222
+                ]
+              },
+              {
+                "sampleIndex": 370,
+                "timings": {
+                  "timestampAgeAtDispatch": 13.065000038146536,
+                  "registeredWait": 9.444999992847443,
+                  "rafDispatchToFrameEntry": 14.370000004768372,
+                  "cppWallMs": 13.944999992847443,
+                  "beforePlay": 0.21999996900558472,
+                  "play": 0.23500001430511475,
+                  "playExitToSample": 0.1850000023841858,
+                  "sampleWork": 0.4399999976158142,
+                  "frameTail": 0.009999990463256836,
+                  "wholeJsFrame": 1.0899999737739563,
+                  "afterFrameToRafExit": 0.6200000047683716,
+                  "wholeRafCallback": 16.0799999833107
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 0,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 0
+                },
+                "pacing": [
+                  370,
+                  1,
+                  3,
+                  1000,
+                  1000,
+                  225,
+                  222
+                ]
+              },
+              {
+                "sampleIndex": 371,
+                "timings": {
+                  "timestampAgeAtDispatch": 19.065000045298802,
+                  "registeredWait": 19.975000023841858,
+                  "rafDispatchToFrameEntry": 17.014999985694885,
+                  "cppWallMs": 16.980000019073486,
+                  "beforePlay": 0.19999998807907104,
+                  "play": 0.625,
+                  "playExitToSample": 0.004999995231628418,
+                  "sampleWork": 0.8949999809265137,
+                  "frameTail": 0.010000050067901611,
+                  "wholeJsFrame": 1.7350000143051147,
+                  "afterFrameToRafExit": 0.3349999785423279,
+                  "wholeRafCallback": 19.084999978542328
+                },
+                "counters": {
+                  "next": -1,
+                  "corr": 1,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  371,
+                  1,
+                  2,
+                  1000,
+                  1000,
+                  225,
+                  223
+                ]
+              },
+              {
+                "sampleIndex": 372,
+                "timings": {
+                  "timestampAgeAtDispatch": 18.910000021456653,
+                  "registeredWait": 17.189999997615814,
+                  "rafDispatchToFrameEntry": 14.600000023841858,
+                  "cppWallMs": 14.560000002384186,
+                  "beforePlay": 0.3999999761581421,
+                  "play": 0.2200000286102295,
+                  "playExitToSample": 0.004999995231628418,
+                  "sampleWork": 0.6499999761581421,
+                  "frameTail": 0.20499998331069946,
+                  "wholeJsFrame": 1.4799999594688416,
+                  "afterFrameToRafExit": 0.6349999904632568,
+                  "wholeRafCallback": 16.714999973773956
+                },
+                "counters": {
+                  "next": 2,
+                  "corr": 0,
+                  "resim": 2,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 0
+                },
+                "pacing": [
+                  372,
+                  1,
+                  1,
+                  1000,
+                  1000,
+                  225,
+                  224
+                ]
+              },
+              {
+                "sampleIndex": 373,
+                "timings": {
+                  "timestampAgeAtDispatch": 21.835000016690174,
+                  "registeredWait": 22.415000021457672,
+                  "rafDispatchToFrameEntry": 22.72000002861023,
+                  "cppWallMs": 22.305000007152557,
+                  "beforePlay": 0.02499997615814209,
+                  "play": 0.6399999856948853,
+                  "playExitToSample": 0,
+                  "sampleWork": 1.9050000309944153,
+                  "frameTail": 0.009999990463256836,
+                  "wholeJsFrame": 2.5799999833106995,
+                  "afterFrameToRafExit": 0.6299999952316284,
+                  "wholeRafCallback": 25.930000007152557
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 1,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  373,
+                  1,
+                  0,
+                  1000,
+                  1000,
+                  225,
+                  225
+                ]
+              },
+              {
+                "sampleIndex": 374,
+                "timings": {
+                  "timestampAgeAtDispatch": 19.730000050069066,
+                  "registeredWait": 20.410000026226044,
+                  "rafDispatchToFrameEntry": 13.274999976158142,
+                  "cppWallMs": 12.839999973773956,
+                  "beforePlay": 0.2849999666213989,
+                  "play": 0.050000011920928955,
+                  "playExitToSample": 0,
+                  "sampleWork": 1.9200000166893005,
+                  "frameTail": 0.23000001907348633,
+                  "wholeJsFrame": 2.4850000143051147,
+                  "afterFrameToRafExit": 1.784999966621399,
+                  "wholeRafCallback": 17.544999957084656
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 1
+                },
+                "pacing": [
+                  374,
+                  1,
+                  0,
+                  1000,
+                  1000,
+                  226,
+                  226
+                ]
+              }
+            ]
+          },
+          "selectedGraphics": [
+            {
+              "kind": "maximum-eligible-registered-raf-wait",
+              "knownCompleteXTop": [
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.62,
+                  "reportedThreadDurationMs": 0.605,
+                  "overlapRangeMs": [
+                    0.6199999451637268,
+                    0.6199999451637268
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.52,
+                  "reportedThreadDurationMs": 0.489,
+                  "overlapRangeMs": [
+                    0.5200000405311584,
+                    0.5200000405311584
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.515,
+                  "reportedThreadDurationMs": 0.486,
+                  "overlapRangeMs": [
+                    0.5149999856948853,
+                    0.5149999856948853
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.51,
+                  "reportedThreadDurationMs": 0.483,
+                  "overlapRangeMs": [
+                    0.5100000500679016,
+                    0.5100000500679016
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.195,
+                  "reportedThreadDurationMs": 0.184,
+                  "overlapRangeMs": [
+                    0.1950000524520874,
+                    0.1950000524520874
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.179,
+                  "reportedThreadDurationMs": 0.182,
+                  "overlapRangeMs": [
+                    0.17899996042251587,
+                    0.17899996042251587
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.133,
+                  "reportedThreadDurationMs": 0.124,
+                  "overlapRangeMs": [
+                    0.13300001621246338,
+                    0.13300001621246338
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.109,
+                  "reportedThreadDurationMs": 0.1,
+                  "overlapRangeMs": [
+                    0.10900002717971802,
+                    0.10900002717971802
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.893,
+                  "reportedThreadDurationMs": 1.864,
+                  "overlapRangeMs": [
+                    1.8930000066757202,
+                    1.8930000066757202
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.859,
+                  "reportedThreadDurationMs": 1.839,
+                  "overlapRangeMs": [
+                    1.859000027179718,
+                    1.859000027179718
+                  ]
+                },
+                {
+                  "nameHash": "aabea757b45a17f9720b3f2e2602a6510c455521f5ca10acbe072664deaac807",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.849,
+                  "reportedThreadDurationMs": 1.832,
+                  "overlapRangeMs": [
+                    1.8489999771118164,
+                    1.8489999771118164
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-new-state-page-gap",
+              "knownCompleteXTop": [
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.603,
+                  "reportedThreadDurationMs": 0.558,
+                  "overlapRangeMs": [
+                    0.6029999852180481,
+                    0.6029999852180481
+                  ]
+                },
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.601,
+                  "reportedThreadDurationMs": 0.59,
+                  "overlapRangeMs": [
+                    0.6010000109672546,
+                    0.6010000109672546
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.598,
+                  "reportedThreadDurationMs": 0.555,
+                  "overlapRangeMs": [
+                    0.5979999899864197,
+                    0.5979999899864197
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.595,
+                  "reportedThreadDurationMs": 0.552,
+                  "overlapRangeMs": [
+                    0.5949999690055847,
+                    0.5949999690055847
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.26,
+                  "reportedThreadDurationMs": 0.233,
+                  "overlapRangeMs": [
+                    0.2600000500679016,
+                    0.2600000500679016
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.215,
+                  "reportedThreadDurationMs": 0.195,
+                  "overlapRangeMs": [
+                    0.21500003337860107,
+                    0.21500003337860107
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.181,
+                  "reportedThreadDurationMs": 0.166,
+                  "overlapRangeMs": [
+                    0.18100005388259888,
+                    0.18100005388259888
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.16,
+                  "reportedThreadDurationMs": 0.152,
+                  "overlapRangeMs": [
+                    0.15999996662139893,
+                    0.15999996662139893
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "f5dcbc424cb72ed0558dd3b07b813b0edee69b83398e58f379aa700f63652db7",
+                  "thread": "CrRendererMain",
+                  "wallMs": 1.587,
+                  "reportedThreadDurationMs": 0.038,
+                  "overlapRangeMs": [
+                    1.5870000123977661,
+                    1.5870000123977661
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.233,
+                  "reportedThreadDurationMs": 1.217,
+                  "overlapRangeMs": [
+                    1.2329999804496765,
+                    1.2329999804496765
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.214,
+                  "reportedThreadDurationMs": 1.204,
+                  "overlapRangeMs": [
+                    1.2139999866485596,
+                    1.2139999866485596
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-ordinary-save1-callback",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.163,
+                  "reportedThreadDurationMs": 0.16,
+                  "overlapRangeMs": [
+                    0.1629999876022339,
+                    0.1629999876022339
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.133,
+                  "reportedThreadDurationMs": 0.122,
+                  "overlapRangeMs": [
+                    0.1329999566078186,
+                    0.1329999566078186
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.127,
+                  "reportedThreadDurationMs": 0.117,
+                  "overlapRangeMs": [
+                    0.12699997425079346,
+                    0.12699997425079346
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.106,
+                  "reportedThreadDurationMs": 0.097,
+                  "overlapRangeMs": [
+                    0.10600000619888306,
+                    0.10600000619888306
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.1,
+                  "reportedThreadDurationMs": 0.093,
+                  "overlapRangeMs": [
+                    0.09999996423721313,
+                    0.09999996423721313
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.098,
+                  "reportedThreadDurationMs": 0.088,
+                  "overlapRangeMs": [
+                    0.09799998998641968,
+                    0.09799998998641968
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.095,
+                  "reportedThreadDurationMs": 0.088,
+                  "overlapRangeMs": [
+                    0.09499996900558472,
+                    0.09499996900558472
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.095,
+                  "reportedThreadDurationMs": 0.087,
+                  "overlapRangeMs": [
+                    0.09499996900558472,
+                    0.09499996900558472
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.51,
+                  "reportedThreadDurationMs": 1.452,
+                  "overlapRangeMs": [
+                    1.5099999904632568,
+                    1.5099999904632568
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.479,
+                  "reportedThreadDurationMs": 1.428,
+                  "overlapRangeMs": [
+                    1.4790000319480896,
+                    1.4790000319480896
+                  ]
+                },
+                {
+                  "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+                  "thread": "CrGpuMain",
+                  "wallMs": 1.437,
+                  "reportedThreadDurationMs": 1.388,
+                  "overlapRangeMs": [
+                    1.4369999766349792,
+                    1.4369999766349792
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-b1",
+      "mode": "1",
+      "measurementQualified": true,
+      "teardownClean": false,
+      "wholeRunMeanHostBusyFraction": 0.29240562209911203,
+      "windows": [
+        {
+          "side": 0,
+          "stage": "setup-complete",
+          "observedAt": 1791723577779,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 1,
+          "stage": "setup-complete",
+          "observedAt": 1791723582047,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 0,
+          "stage": "measurement-complete",
+          "observedAt": 1791723665600,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 1,
+          "stage": "measurement-complete",
+          "observedAt": 1791723665601,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        }
+      ],
+      "peers": [
+        {
+          "side": 0,
+          "newStateHz": 56.54624000799085,
+          "rafGapMs": {
+            "count": 1019,
+            "total": 18020.649999999994,
+            "p50": 18.169999999998254,
+            "p95": 24.31500000000233,
+            "p99": 30.61999999999898,
+            "max": 45.05999999999949,
+            "over25ms": 45,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "pageGapMs": {
+            "count": 1019,
+            "total": 18026.790000021458,
+            "p50": 17.060000002384186,
+            "p95": 29.90499997138977,
+            "p99": 35.780000030994415,
+            "max": 53.7950000166893,
+            "over25ms": 128,
+            "over50ms": 1,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRegisteredWaitMs": 15.75,
+          "maximumNativeCallbackWallMs": 18.314999997615814,
+          "ordinaryAllMedianWallMs": 4.899999976158142,
+          "ordinarySave1Maximum": 12.754999995231628,
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723574872.27,
+              "startedAt": 8484.449999988079,
+              "endedAt": 29905.74500000477
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 0,
+              "startMs": 2500,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "46830845114e13d30a366165d54cee38bc691268bd5f9a52949f0b87791490fe",
+            "counts": {
+              "plannedEvents": 14301,
+              "dueEvents": 2304,
+              "futureCensoredEvents": 11997,
+              "plannedNativeEvents": 14301,
+              "dueNativeEvents": 2304,
+              "submittedEvents": 1444,
+              "rawNativeCalls": 1444,
+              "coalescedMoves": 860,
+              "notSubmitted": 0,
+              "attributedCaptures": 1014,
+              "renderProgressObservedEvents": 1014,
+              "submittedWithoutAttributableChangedWire": 430,
+              "packets": 2031,
+              "duplicates": 8412,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1209,
+              "analogActiveFrames": 1077,
+              "targetChanges": 1014,
+              "newFrontierCallbacks": 1201,
+              "newPresentedCallbacks": 1201,
+              "forwardFrames": 1202,
+              "positionChangedObservations": 1101
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 430,
+              "coalesced-before-submit": 860,
+              "render-progress-after-conditional-wire": 1014
+            },
+            "submissionLatenessMs": {
+              "count": 1444,
+              "total": 5694.664997458447,
+              "p50": 3.5783333381014018,
+              "p95": 7.896666685741366,
+              "p99": 11.699999988079071,
+              "max": 20.87000000476837,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1014,
+              "plannedToRenderProgressMs": {
+                "count": 1014,
+                "total": 17296.561664382647,
+                "p50": 16.21166668335718,
+                "p95": 28.5333333214121,
+                "p99": 34.83666668335536,
+                "max": 44.66666666666697,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 1014,
+                "total": 4775.784999728203,
+                "p50": 4.509999990463257,
+                "p95": 10.055000007152557,
+                "p99": 13.794999957084656,
+                "max": 18.344999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1014,
+                "total": 8948.139999985695,
+                "p50": 7.919999957084656,
+                "p95": 19.180000007152557,
+                "p99": 24.9099999666214,
+                "max": 27.82499998807907,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 1014,
+                "total": 13723.924999713898,
+                "p50": 12.625,
+                "p95": 25.0799999833107,
+                "p99": 30.25,
+                "max": 43.139999985694885,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 967,
+              "plannedToRenderProgressMs": {
+                "count": 967,
+                "total": 16530.913331051674,
+                "p50": 16.223333319028825,
+                "p95": 28.5333333214121,
+                "p99": 35.29333331187627,
+                "max": 44.66666666666697,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 967,
+                "total": 4614.949999690056,
+                "p50": 4.619999945163727,
+                "p95": 10.089999973773956,
+                "p99": 14.055000007152557,
+                "max": 18.344999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 967,
+                "total": 8527.534999907017,
+                "p50": 7.894999980926514,
+                "p95": 19.180000007152557,
+                "p99": 25.069999992847443,
+                "max": 27.82499998807907,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 967,
+                "total": 13142.484999597073,
+                "p50": 12.6700000166893,
+                "p95": 25.0799999833107,
+                "p99": 30.689999997615814,
+                "max": 43.139999985694885,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 308,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5008.333333333333,
+                "submittedAtMs": 5009.860000014305,
+                "firstWireAtMs": 5025.175000011921,
+                "presentationObservedAtMs": 5053,
+                "captureFrame": 270,
+                "presentationFrontier": 271,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 43.139999985694885
+              },
+              {
+                "sequence": 1955,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 18550,
+                "submittedAtMs": 18552.475000023842,
+                "firstWireAtMs": 18566.560000002384,
+                "presentationObservedAtMs": 18590.889999985695,
+                "captureFrame": 1039,
+                "presentationFrontier": 1040,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 38.41499996185303
+              },
+              {
+                "sequence": 1975,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 18716.666666666668,
+                "submittedAtMs": 18716.819999992847,
+                "firstWireAtMs": 18731.560000002384,
+                "presentationObservedAtMs": 18751.25499999523,
+                "captureFrame": 1048,
+                "presentationFrontier": 1049,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 34.435000002384186
+              },
+              {
+                "sequence": 1299,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13166.666666666666,
+                "submittedAtMs": 13167.939999997616,
+                "firstWireAtMs": 13179.040000021458,
+                "presentationObservedAtMs": 13201.959999978542,
+                "captureFrame": 734,
+                "presentationFrontier": 735,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 34.019999980926514
+              },
+              {
+                "sequence": 1070,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 11275,
+                "submittedAtMs": 11278.074999988079,
+                "firstWireAtMs": 11288.430000007153,
+                "presentationObservedAtMs": 11311.180000007153,
+                "captureFrame": 627,
+                "presentationFrontier": 628,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.105000019073486
+              }
+            ]
+          },
+          "maximumPageGapCallbacks": {
+            "scope": "Exactly (fromSample,toSample] from the strict linked timing evidence; includes the ending callback and excludes the completed starting callback. This differs from the timeline's half-open [start,end) post-sample context. Summed whole wall durations are not CPU self time.",
+            "pair": {
+              "fromSample": 608,
+              "toSample": 612,
+              "rafTimestampMs": 45.05999999999949,
+              "sampledAtMs": 53.7950000166893,
+              "frontierDelta": 1,
+              "nextDelta": 1,
+              "rendererSubmissions": 1,
+              "fromSessionPhase": 1,
+              "toSessionPhase": 1
+            },
+            "callbackCount": 4,
+            "cppWholeWallSumMs": 23.460000038146973,
+            "maxCppWholeWallMs": 14.389999985694885,
+            "corrections": 1,
+            "resimulated": 3,
+            "newInputCaptures": 1,
+            "worldSaves": 1,
+            "maxMissing": 2,
+            "maxNetworkScale": 1,
+            "rows": [
+              {
+                "sampleIndex": 609,
+                "timings": {
+                  "timestampAgeAtDispatch": 3.8549999833103357,
+                  "registeredWait": 3.850000023841858,
+                  "rafDispatchToFrameEntry": 0.17000001668930054,
+                  "cppWallMs": 0.1600000262260437,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.009999990463256836,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.014999985694885254,
+                  "afterFrameToRafExit": 0.009999990463256836,
+                  "wholeRafCallback": 0.19499999284744263
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  609,
+                  1,
+                  2,
+                  1000,
+                  997,
+                  270,
+                  268
+                ]
+              },
+              {
+                "sampleIndex": 610,
+                "timings": {
+                  "timestampAgeAtDispatch": 1.590000009537107,
+                  "registeredWait": 3.590000033378601,
+                  "rafDispatchToFrameEntry": 0.5949999690055847,
+                  "cppWallMs": 0.1850000023841858,
+                  "beforePlay": 0.014999985694885254,
+                  "play": 0.19499999284744263,
+                  "playExitToSample": 0.005000054836273193,
+                  "sampleWork": 0.3999999761581421,
+                  "frameTail": 0.1899999976158142,
+                  "wholeJsFrame": 0.8050000071525574,
+                  "afterFrameToRafExit": 0.19999998807907104,
+                  "wholeRafCallback": 1.5999999642372131
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  610,
+                  1,
+                  2,
+                  1000,
+                  997,
+                  270,
+                  268
+                ]
+              },
+              {
+                "sampleIndex": 611,
+                "timings": {
+                  "timestampAgeAtDispatch": 12.864999973773593,
+                  "registeredWait": 15.75,
+                  "rafDispatchToFrameEntry": 14.574999988079071,
+                  "cppWallMs": 14.389999985694885,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0.20500004291534424,
+                  "playExitToSample": 0.15999996662139893,
+                  "sampleWork": 0.025000035762786865,
+                  "frameTail": 0.004999995231628418,
+                  "wholeJsFrame": 0.40000003576278687,
+                  "afterFrameToRafExit": 0.17500001192092896,
+                  "wholeRafCallback": 15.150000035762787
+                },
+                "counters": {
+                  "next": -1,
+                  "corr": 1,
+                  "resim": 2,
+                  "captures": 1,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  611,
+                  1,
+                  1,
+                  1000,
+                  997,
+                  270,
+                  269
+                ]
+              },
+              {
+                "sampleIndex": 612,
+                "timings": {
+                  "timestampAgeAtDispatch": 5.864999983310554,
+                  "registeredWait": 4.714999973773956,
+                  "rafDispatchToFrameEntry": 8.730000019073486,
+                  "cppWallMs": 8.725000023841858,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.014999985694885254,
+                  "frameTail": 0.004999995231628418,
+                  "wholeJsFrame": 0.034999966621398926,
+                  "afterFrameToRafExit": 0.17500001192092896,
+                  "wholeRafCallback": 8.939999997615814
+                },
+                "counters": {
+                  "next": 2,
+                  "corr": 0,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 1
+                },
+                "pacing": [
+                  612,
+                  1,
+                  1,
+                  1000,
+                  997,
+                  271,
+                  270
+                ]
+              }
+            ]
+          },
+          "selectedGraphics": [
+            {
+              "kind": "maximum-eligible-registered-raf-wait",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.043,
+                  "reportedThreadDurationMs": 0.032,
+                  "overlapRangeMs": [
+                    0.042999982833862305,
+                    0.042999982833862305
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.023,
+                  "reportedThreadDurationMs": 0.018,
+                  "overlapRangeMs": [
+                    0.023000001907348633,
+                    0.023000001907348633
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.002,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0.0020000338554382324,
+                    0.0020000338554382324
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.002,
+                  "reportedThreadDurationMs": 0.002,
+                  "overlapRangeMs": [
+                    0.0020000338554382324,
+                    0.0020000338554382324
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.001,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0.0009999871253967285,
+                    0.0009999871253967285
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+                  "thread": "Compositor",
+                  "wallMs": 0.044,
+                  "reportedThreadDurationMs": 0.043,
+                  "overlapRangeMs": [
+                    0.04400002956390381,
+                    0.04400002956390381
+                  ]
+                },
+                {
+                  "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+                  "thread": "Compositor",
+                  "wallMs": 0.031,
+                  "reportedThreadDurationMs": 0.029,
+                  "overlapRangeMs": [
+                    0,
+                    0.03100001811981201
+                  ]
+                },
+                {
+                  "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+                  "thread": null,
+                  "wallMs": 0.025,
+                  "reportedThreadDurationMs": 0.024,
+                  "overlapRangeMs": [
+                    0.02499997615814209,
+                    0.02499997615814209
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-new-state-page-gap",
+              "knownCompleteXTop": [
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.182,
+                  "reportedThreadDurationMs": 0.171,
+                  "overlapRangeMs": [
+                    0.18199998140335083,
+                    0.18199998140335083
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.143,
+                  "reportedThreadDurationMs": 0.126,
+                  "overlapRangeMs": [
+                    0.14300000667572021,
+                    0.14300000667572021
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.142,
+                  "reportedThreadDurationMs": 0.126,
+                  "overlapRangeMs": [
+                    0.1420000195503235,
+                    0.1420000195503235
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.14,
+                  "reportedThreadDurationMs": 0.126,
+                  "overlapRangeMs": [
+                    0.14000004529953003,
+                    0.14000004529953003
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.067,
+                  "reportedThreadDurationMs": 0.061,
+                  "overlapRangeMs": [
+                    0.06700003147125244,
+                    0.06700003147125244
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.05,
+                  "reportedThreadDurationMs": 0.043,
+                  "overlapRangeMs": [
+                    0.04999995231628418,
+                    0.04999995231628418
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.045,
+                  "reportedThreadDurationMs": 0.041,
+                  "overlapRangeMs": [
+                    0.04499995708465576,
+                    0.04499995708465576
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.043,
+                  "reportedThreadDurationMs": 0.032,
+                  "overlapRangeMs": [
+                    0.042999982833862305,
+                    0.042999982833862305
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "c8af7bf085e9ca349db568d001044b2d54ad70a02771849aa42a2624b56d251c",
+                  "thread": "CrRendererMain",
+                  "wallMs": 0.418,
+                  "reportedThreadDurationMs": 0.085,
+                  "overlapRangeMs": [
+                    0.4180000424385071,
+                    0.4180000424385071
+                  ]
+                },
+                {
+                  "nameHash": "1edf4c2d66d05cd3d5c590077821f2ddb38c24d5248f1a781aaa56687da471e7",
+                  "thread": "CrRendererMain",
+                  "wallMs": 0.404,
+                  "reportedThreadDurationMs": 0.078,
+                  "overlapRangeMs": [
+                    0.4039999842643738,
+                    0.4039999842643738
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.354,
+                  "reportedThreadDurationMs": 0.339,
+                  "overlapRangeMs": [
+                    0.3539999723434448,
+                    0.3539999723434448
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-ordinary-save1-callback",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.075,
+                  "reportedThreadDurationMs": 0.061,
+                  "overlapRangeMs": [
+                    0.07499998807907104,
+                    0.07499998807907104
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.07,
+                  "reportedThreadDurationMs": 0.062,
+                  "overlapRangeMs": [
+                    0.06999999284744263,
+                    0.06999999284744263
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.022,
+                  "reportedThreadDurationMs": 0.022,
+                  "overlapRangeMs": [
+                    0.022000014781951904,
+                    0.022000014781951904
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.004,
+                  "reportedThreadDurationMs": 0.003,
+                  "overlapRangeMs": [
+                    0.0040000081062316895,
+                    0.0040000081062316895
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.002,
+                  "reportedThreadDurationMs": 0.002,
+                  "overlapRangeMs": [
+                    0.0020000338554382324,
+                    0.0020000338554382324
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "c8af7bf085e9ca349db568d001044b2d54ad70a02771849aa42a2624b56d251c",
+                  "thread": "CrRendererMain",
+                  "wallMs": 0.59,
+                  "reportedThreadDurationMs": 0.059,
+                  "overlapRangeMs": [
+                    0.5900000333786011,
+                    0.5900000333786011
+                  ]
+                },
+                {
+                  "nameHash": "1edf4c2d66d05cd3d5c590077821f2ddb38c24d5248f1a781aaa56687da471e7",
+                  "thread": "CrRendererMain",
+                  "wallMs": 0.581,
+                  "reportedThreadDurationMs": 0.056,
+                  "overlapRangeMs": [
+                    0.581000030040741,
+                    0.581000030040741
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.528,
+                  "reportedThreadDurationMs": 0.499,
+                  "overlapRangeMs": [
+                    0.527999997138977,
+                    0.527999997138977
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "side": 1,
+          "newStateHz": 56.527403447838765,
+          "rafGapMs": {
+            "count": 1019,
+            "total": 18026.655000000002,
+            "p50": 18.17000000000189,
+            "p95": 24.295000000000073,
+            "p99": 29.63000000000102,
+            "max": 45.659999999999854,
+            "over25ms": 33,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "pageGapMs": {
+            "count": 1019,
+            "total": 18020.37000000477,
+            "p50": 17.560000002384186,
+            "p95": 29.539999961853027,
+            "p99": 36.564999997615814,
+            "max": 47.580000042915344,
+            "over25ms": 135,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRegisteredWaitMs": 18.990000009536743,
+          "maximumNativeCallbackWallMs": 16.084999978542328,
+          "ordinaryAllMedianWallMs": 3.25,
+          "ordinarySave1Maximum": 6.444999992847443,
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723579439.565,
+              "startedAt": 3935.289999961853,
+              "endedAt": 25353.435000002384
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 1,
+              "startMs": 2637,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "8eab34b273269e35a3b0c5e28473115b7250c1754845377a7c70ec03a4806cc7",
+            "counts": {
+              "plannedEvents": 14382,
+              "dueEvents": 2303,
+              "futureCensoredEvents": 12079,
+              "plannedNativeEvents": 14382,
+              "dueNativeEvents": 2303,
+              "submittedEvents": 1613,
+              "rawNativeCalls": 1613,
+              "coalescedMoves": 688,
+              "notSubmitted": 2,
+              "attributedCaptures": 925,
+              "renderProgressObservedEvents": 925,
+              "submittedWithoutAttributableChangedWire": 688,
+              "packets": 2102,
+              "duplicates": 8756,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1209,
+              "analogActiveFrames": 932,
+              "targetChanges": 922,
+              "newFrontierCallbacks": 1203,
+              "newPresentedCallbacks": 1203,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1070
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 688,
+              "render-progress-after-conditional-wire": 925,
+              "coalesced-before-submit": 688,
+              "not-submitted": 2
+            },
+            "submissionLatenessMs": {
+              "count": 1613,
+              "total": 5948.828352709591,
+              "p50": 3.4033333261809275,
+              "p95": 7.748333354791612,
+              "p99": 9.850000023841858,
+              "max": 14.685000002384186,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 925,
+              "plannedToRenderProgressMs": {
+                "count": 925,
+                "total": 15442.598344286269,
+                "p50": 16.37833335002233,
+                "p95": 26.319999992847443,
+                "p99": 32.5316666762028,
+                "max": 41.285000026226044,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 925,
+                "total": 4846.6650005578995,
+                "p50": 5.2799999713897705,
+                "p95": 10.459999978542328,
+                "p99": 13.655000030994415,
+                "max": 15.614999949932098,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 925,
+                "total": 7618.200000107288,
+                "p50": 8.459999978542328,
+                "p95": 16.849999964237213,
+                "p99": 20.714999973773956,
+                "max": 32.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 925,
+                "total": 12464.865000665188,
+                "p50": 13.144999980926514,
+                "p95": 23.0349999666214,
+                "p99": 28.47000002861023,
+                "max": 38.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 886,
+              "plannedToRenderProgressMs": {
+                "count": 886,
+                "total": 14843.940010607226,
+                "p50": 16.40166668097163,
+                "p95": 26.41666666666606,
+                "p99": 33.27500003576279,
+                "max": 41.285000026226044,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 886,
+                "total": 4662.6200006604195,
+                "p50": 5.389999985694885,
+                "p95": 10.569999992847443,
+                "p99": 14.040000021457672,
+                "max": 15.614999949932098,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 886,
+                "total": 7331.850000143051,
+                "p50": 8.48499995470047,
+                "p95": 16.97000002861023,
+                "p99": 21.330000042915344,
+                "max": 32.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 886,
+                "total": 11994.47000080347,
+                "p50": 13.289999961853027,
+                "p95": 23.10999995470047,
+                "p99": 29.174999952316284,
+                "max": 38.75499999523163,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 242,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 4600,
+                "submittedAtMs": 4602.530000030994,
+                "firstWireAtMs": 4608.530000030994,
+                "presentationObservedAtMs": 4641.285000026226,
+                "captureFrame": 250,
+                "presentationFrontier": 251,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 38.75499999523163
+              },
+              {
+                "sequence": 1507,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 14916.666666666666,
+                "submittedAtMs": 14917.525000035763,
+                "firstWireAtMs": 14933.139999985695,
+                "presentationObservedAtMs": 14951.960000038147,
+                "captureFrame": 834,
+                "presentationFrontier": 835,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 34.435000002384186
+              },
+              {
+                "sequence": 474,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 6483.333333333333,
+                "submittedAtMs": 6483.985000014305,
+                "firstWireAtMs": 6499.129999995232,
+                "presentationObservedAtMs": 6517.954999983311,
+                "captureFrame": 356,
+                "presentationFrontier": 357,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.969999969005585
+              },
+              {
+                "sequence": 1337,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13525,
+                "submittedAtMs": 13527.235000014305,
+                "firstWireAtMs": 13541.275000035763,
+                "presentationObservedAtMs": 13560.004999995232,
+                "captureFrame": 755,
+                "presentationFrontier": 756,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 32.769999980926514
+              },
+              {
+                "sequence": 325,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5266.666666666667,
+                "submittedAtMs": 5270.460000038147,
+                "firstWireAtMs": 5277.910000026226,
+                "presentationObservedAtMs": 5301.939999997616,
+                "captureFrame": 286,
+                "presentationFrontier": 287,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 31.47999995946884
+              }
+            ]
+          },
+          "maximumPageGapCallbacks": {
+            "scope": "Exactly (fromSample,toSample] from the strict linked timing evidence; includes the ending callback and excludes the completed starting callback. This differs from the timeline's half-open [start,end) post-sample context. Summed whole wall durations are not CPU self time.",
+            "pair": {
+              "fromSample": 698,
+              "toSample": 703,
+              "rafTimestampMs": 45.659999999999854,
+              "sampledAtMs": 47.580000042915344,
+              "frontierDelta": 1,
+              "nextDelta": 1,
+              "rendererSubmissions": 1,
+              "fromSessionPhase": 1,
+              "toSessionPhase": 1
+            },
+            "callbackCount": 5,
+            "cppWholeWallSumMs": 29.8299999833107,
+            "maxCppWholeWallMs": 16.084999978542328,
+            "corrections": 2,
+            "resimulated": 9,
+            "newInputCaptures": 1,
+            "worldSaves": 8,
+            "maxMissing": 5,
+            "maxNetworkScale": 1.1,
+            "rows": [
+              {
+                "sampleIndex": 699,
+                "timings": {
+                  "timestampAgeAtDispatch": 0.21999997377315594,
+                  "registeredWait": 2.024999976158142,
+                  "rafDispatchToFrameEntry": 0.004999995231628418,
+                  "cppWallMs": 0,
+                  "beforePlay": 0.009999990463256836,
+                  "play": 0,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.18000000715255737,
+                  "frameTail": 0.004999995231628418,
+                  "wholeJsFrame": 0.19499999284744263,
+                  "afterFrameToRafExit": 0.009999990463256836,
+                  "wholeRafCallback": 0.20999997854232788
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  699,
+                  1,
+                  5,
+                  1100,
+                  1100,
+                  250,
+                  245
+                ]
+              },
+              {
+                "sampleIndex": 700,
+                "timings": {
+                  "timestampAgeAtDispatch": 0.16999994993238943,
+                  "registeredWait": 5.814999997615814,
+                  "rafDispatchToFrameEntry": 0.17000001668930054,
+                  "cppWallMs": 0.1600000262260437,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.004999995231628418,
+                  "frameTail": 0.005000054836273193,
+                  "wholeJsFrame": 0.025000035762786865,
+                  "afterFrameToRafExit": 0.009999990463256836,
+                  "wholeRafCallback": 0.20500004291534424
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  700,
+                  1,
+                  5,
+                  1100,
+                  1100,
+                  250,
+                  245
+                ]
+              },
+              {
+                "sampleIndex": 701,
+                "timings": {
+                  "timestampAgeAtDispatch": 0.289999997616178,
+                  "registeredWait": 5.995000004768372,
+                  "rafDispatchToFrameEntry": 9.10999995470047,
+                  "cppWallMs": 9.099999964237213,
+                  "beforePlay": 0.010000050067901611,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.16999995708465576,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.1899999976158142,
+                  "afterFrameToRafExit": 0.01500004529953003,
+                  "wholeRafCallback": 9.314999997615814
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 1,
+                  "resim": 5,
+                  "captures": 1,
+                  "worldSaves": 4,
+                  "presentations": 0
+                },
+                "pacing": [
+                  701,
+                  1,
+                  4,
+                  1013,
+                  1013,
+                  250,
+                  246
+                ]
+              },
+              {
+                "sampleIndex": 702,
+                "timings": {
+                  "timestampAgeAtDispatch": 5.404999978542037,
+                  "registeredWait": 1.8299999833106995,
+                  "rafDispatchToFrameEntry": 16.084999978542328,
+                  "cppWallMs": 16.084999978542328,
+                  "beforePlay": 0.009999990463256836,
+                  "play": 0.01500004529953003,
+                  "playExitToSample": 0.15999996662139893,
+                  "sampleWork": 0.020000040531158447,
+                  "frameTail": 0.004999995231628418,
+                  "wholeJsFrame": 0.21000003814697266,
+                  "afterFrameToRafExit": 0.17499995231628418,
+                  "wholeRafCallback": 16.469999969005585
+                },
+                "counters": {
+                  "next": -1,
+                  "corr": 1,
+                  "resim": 3,
+                  "captures": 0,
+                  "worldSaves": 2,
+                  "presentations": 0
+                },
+                "pacing": [
+                  702,
+                  1,
+                  3,
+                  1000,
+                  1003,
+                  250,
+                  247
+                ]
+              },
+              {
+                "sampleIndex": 703,
+                "timings": {
+                  "timestampAgeAtDispatch": 1.3199999666212534,
+                  "registeredWait": 0.8550000190734863,
+                  "rafDispatchToFrameEntry": 4.490000009536743,
+                  "cppWallMs": 4.485000014305115,
+                  "beforePlay": 0.16500002145767212,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.02499997615814209,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.19999998807907104,
+                  "afterFrameToRafExit": 0.17000001668930054,
+                  "wholeRafCallback": 4.860000014305115
+                },
+                "counters": {
+                  "next": 2,
+                  "corr": 0,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 2,
+                  "presentations": 1
+                },
+                "pacing": [
+                  703,
+                  1,
+                  4,
+                  1000,
+                  1003,
+                  251,
+                  247
+                ]
+              }
+            ]
+          },
+          "selectedGraphics": [
+            {
+              "kind": "maximum-eligible-registered-raf-wait",
+              "knownCompleteXTop": [
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.206,
+                  "reportedThreadDurationMs": 0.182,
+                  "overlapRangeMs": [
+                    0.2059999704360962,
+                    0.2059999704360962
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.158,
+                  "reportedThreadDurationMs": 0.138,
+                  "overlapRangeMs": [
+                    0,
+                    0.15800005197525024
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.15,
+                  "reportedThreadDurationMs": 0.131,
+                  "overlapRangeMs": [
+                    0,
+                    0.15000003576278687
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.148,
+                  "reportedThreadDurationMs": 0.131,
+                  "overlapRangeMs": [
+                    0,
+                    0.14800000190734863
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.07,
+                  "reportedThreadDurationMs": 0.064,
+                  "overlapRangeMs": [
+                    0,
+                    0.06999999284744263
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.069,
+                  "reportedThreadDurationMs": 0.059,
+                  "overlapRangeMs": [
+                    0.06899994611740112,
+                    0.06899994611740112
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.044,
+                  "reportedThreadDurationMs": 0.033,
+                  "overlapRangeMs": [
+                    0.04399996995925903,
+                    0.04399996995925903
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.02,
+                  "reportedThreadDurationMs": 0.015,
+                  "overlapRangeMs": [
+                    0.019999980926513672,
+                    0.019999980926513672
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.393,
+                  "reportedThreadDurationMs": 0.363,
+                  "overlapRangeMs": [
+                    0.3240000009536743,
+                    0.3930000066757202
+                  ]
+                },
+                {
+                  "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.191,
+                  "reportedThreadDurationMs": 0.17,
+                  "overlapRangeMs": [
+                    0.19099998474121094,
+                    0.19099998474121094
+                  ]
+                },
+                {
+                  "nameHash": "b2bcd9b68dff61bd5f023d1854657d3e4cc380937f513f47338dd3ab7073fab6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.17,
+                  "reportedThreadDurationMs": 0.168,
+                  "overlapRangeMs": [
+                    0.11400002241134644,
+                    0.17000001668930054
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-new-state-page-gap",
+              "knownCompleteXTop": [
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.184,
+                  "reportedThreadDurationMs": 0.174,
+                  "overlapRangeMs": [
+                    0.18400001525878906,
+                    0.18400001525878906
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.181,
+                  "reportedThreadDurationMs": 0.162,
+                  "overlapRangeMs": [
+                    0.1809999942779541,
+                    0.1809999942779541
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.179,
+                  "reportedThreadDurationMs": 0.162,
+                  "overlapRangeMs": [
+                    0.17900002002716064,
+                    0.17900002002716064
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.178,
+                  "reportedThreadDurationMs": 0.162,
+                  "overlapRangeMs": [
+                    0.17800003290176392,
+                    0.17800003290176392
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.077,
+                  "reportedThreadDurationMs": 0.072,
+                  "overlapRangeMs": [
+                    0.07700002193450928,
+                    0.07700002193450928
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.049,
+                  "reportedThreadDurationMs": 0.035,
+                  "overlapRangeMs": [
+                    0.04899996519088745,
+                    0.04899996519088745
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.042,
+                  "reportedThreadDurationMs": 0.033,
+                  "overlapRangeMs": [
+                    0.041999995708465576,
+                    0.041999995708465576
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.042,
+                  "reportedThreadDurationMs": 0.042,
+                  "overlapRangeMs": [
+                    0.041999995708465576,
+                    0.041999995708465576
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.371,
+                  "reportedThreadDurationMs": 0.355,
+                  "overlapRangeMs": [
+                    0.3709999918937683,
+                    0.3709999918937683
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.293,
+                  "reportedThreadDurationMs": 0.283,
+                  "overlapRangeMs": [
+                    0.07100003957748413,
+                    0.2929999828338623
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.284,
+                  "reportedThreadDurationMs": 0.279,
+                  "overlapRangeMs": [
+                    0.06800001859664917,
+                    0.2839999794960022
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-ordinary-save1-callback",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.035,
+                  "reportedThreadDurationMs": 0.027,
+                  "overlapRangeMs": [
+                    0.0350000262260437,
+                    0.0350000262260437
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.001,
+                  "reportedThreadDurationMs": null,
+                  "overlapRangeMs": [
+                    0.0009999871253967285,
+                    0.0009999871253967285
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.001,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0.0009999871253967285,
+                    0.0009999871253967285
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.256,
+                  "reportedThreadDurationMs": 0.247,
+                  "overlapRangeMs": [
+                    0.2019999623298645,
+                    0.2560000419616699
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.251,
+                  "reportedThreadDurationMs": 0.245,
+                  "overlapRangeMs": [
+                    0.19899994134902954,
+                    0.25099998712539673
+                  ]
+                },
+                {
+                  "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.244,
+                  "reportedThreadDurationMs": 0.239,
+                  "overlapRangeMs": [
+                    0.1929999589920044,
+                    0.24400001764297485
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "desktop-gpu-vsync-both4-relay39-a2",
+      "mode": "0",
+      "measurementQualified": true,
+      "teardownClean": false,
+      "wholeRunMeanHostBusyFraction": 0.27486907789070264,
+      "windows": [
+        {
+          "side": 0,
+          "stage": "setup-complete",
+          "observedAt": 1791723701285,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 1,
+          "stage": "setup-complete",
+          "observedAt": 1791723705045,
+          "windowState": "normal",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 0,
+          "stage": "measurement-complete",
+          "observedAt": 1791723784162,
+          "windowState": "minimized",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        },
+        {
+          "side": 1,
+          "stage": "measurement-complete",
+          "observedAt": 1791723784163,
+          "windowState": "minimized",
+          "pageVisibility": "visible",
+          "pageFocus": true
+        }
+      ],
+      "peers": [
+        {
+          "side": 0,
+          "newStateHz": 58.028290927313726,
+          "rafGapMs": {
+            "count": 1019,
+            "total": 17560.4,
+            "p50": 18.165000000000873,
+            "p95": 24.229999999999563,
+            "p99": 30.294999999998254,
+            "max": 42.42499999999927,
+            "over25ms": 16,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "pageGapMs": {
+            "count": 1019,
+            "total": 17559.605000019073,
+            "p50": 16.964999973773956,
+            "p95": 27.07499998807907,
+            "p99": 34.27999997138977,
+            "max": 45.62999999523163,
+            "over25ms": 74,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRegisteredWaitMs": 16.82499998807907,
+          "maximumNativeCallbackWallMs": 22.694999992847443,
+          "ordinaryAllMedianWallMs": 3.8350000381469727,
+          "ordinarySave1Maximum": 12.820000052452087,
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723698415.52,
+              "startedAt": 7678.935000002384,
+              "endedAt": 28700.764999985695
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 0,
+              "startMs": 2500,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "4aec32746befacea61496b2f94807b364e3a0745257ef11648d37e17e69e237f",
+            "counts": {
+              "plannedEvents": 14301,
+              "dueEvents": 2256,
+              "futureCensoredEvents": 12045,
+              "plannedNativeEvents": 14301,
+              "dueNativeEvents": 2256,
+              "submittedEvents": 1645,
+              "rawNativeCalls": 1645,
+              "coalescedMoves": 610,
+              "notSubmitted": 1,
+              "attributedCaptures": 1040,
+              "renderProgressObservedEvents": 1040,
+              "submittedWithoutAttributableChangedWire": 605,
+              "packets": 2029,
+              "duplicates": 8745,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1204,
+              "analogActiveFrames": 1074,
+              "targetChanges": 1042,
+              "newFrontierCallbacks": 1202,
+              "newPresentedCallbacks": 1202,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1100
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 605,
+              "render-progress-after-conditional-wire": 1040,
+              "coalesced-before-submit": 610,
+              "not-submitted": 1
+            },
+            "submissionLatenessMs": {
+              "count": 1645,
+              "total": 6281.834979295725,
+              "p50": 3.756666640440926,
+              "p95": 7.784999966621399,
+              "p99": 8.311666647593484,
+              "max": 42.11500000953674,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 1040,
+              "plannedToRenderProgressMs": {
+                "count": 1040,
+                "total": 16052.061652878938,
+                "p50": 14.881666640441836,
+                "p95": 25.430000007152557,
+                "p99": 31.803333302339524,
+                "max": 43.67666665712932,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 1040,
+                "total": 5329.610002398491,
+                "p50": 5.425000011920929,
+                "p95": 10.219999969005585,
+                "p99": 12.840000033378601,
+                "max": 18.27999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 1040,
+                "total": 7351.034997284412,
+                "p50": 6.094999969005585,
+                "p95": 16.305000007152557,
+                "p99": 23.164999961853027,
+                "max": 33.314999997615814,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 1040,
+                "total": 12680.644999682903,
+                "p50": 11.479999959468842,
+                "p95": 21.709999978542328,
+                "p99": 29.019999980926514,
+                "max": 42.69499999284744,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 990,
+              "plannedToRenderProgressMs": {
+                "count": 990,
+                "total": 15191.393320103505,
+                "p50": 14.823333342870683,
+                "p95": 25.269999980926514,
+                "p99": 31.803333302339524,
+                "max": 43.67666665712932,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 990,
+                "total": 5056.205002486706,
+                "p50": 5.4200000166893005,
+                "p95": 10.080000042915344,
+                "p99": 12.894999980926514,
+                "max": 18.27999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 990,
+                "total": 6921.824997186661,
+                "p50": 6.069999992847443,
+                "p95": 15.504999995231628,
+                "p99": 23.164999961853027,
+                "max": 33.314999997615814,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 990,
+                "total": 11978.029999673367,
+                "p50": 11.414999961853027,
+                "p95": 21.289999961853027,
+                "p99": 28.7049999833107,
+                "max": 42.69499999284744,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 1405,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 14033.333333333334,
+                "submittedAtMs": 14034.314999997616,
+                "firstWireAtMs": 14043.694999992847,
+                "presentationObservedAtMs": 14077.009999990463,
+                "captureFrame": 792,
+                "presentationFrontier": 793,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 42.69499999284744
+              },
+              {
+                "sequence": 1281,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13016.666666666666,
+                "submittedAtMs": 13016.824999988079,
+                "firstWireAtMs": 13022.245000004768,
+                "presentationObservedAtMs": 13053.560000002384,
+                "captureFrame": 735,
+                "presentationFrontier": 736,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 36.735000014305115
+              },
+              {
+                "sequence": 1871,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 17866.666666666668,
+                "submittedAtMs": 17867.54500001669,
+                "firstWireAtMs": 17876.25,
+                "presentationObservedAtMs": 17902.90499997139,
+                "captureFrame": 1017,
+                "presentationFrontier": 1018,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 35.35999995470047
+              },
+              {
+                "sequence": 2036,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 19225,
+                "submittedAtMs": 19228.769999980927,
+                "firstWireAtMs": 19233.12999999523,
+                "presentationObservedAtMs": 19262.365000009537,
+                "captureFrame": 1097,
+                "presentationFrontier": 1098,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.59500002861023
+              },
+              {
+                "sequence": 238,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 4441.666666666667,
+                "submittedAtMs": 4449.620000004768,
+                "firstWireAtMs": 4452.474999964237,
+                "presentationObservedAtMs": 4482.745000004768,
+                "captureFrame": 241,
+                "presentationFrontier": 242,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 33.125
+              }
+            ]
+          },
+          "maximumPageGapCallbacks": {
+            "scope": "Exactly (fromSample,toSample] from the strict linked timing evidence; includes the ending callback and excludes the completed starting callback. This differs from the timeline's half-open [start,end) post-sample context. Summed whole wall durations are not CPU self time.",
+            "pair": {
+              "fromSample": 1986,
+              "toSample": 1991,
+              "rafTimestampMs": 42.42499999999927,
+              "sampledAtMs": 45.62999999523163,
+              "frontierDelta": 1,
+              "nextDelta": 1,
+              "rendererSubmissions": 1,
+              "fromSessionPhase": 1,
+              "toSessionPhase": 1
+            },
+            "callbackCount": 5,
+            "cppWholeWallSumMs": 29.240000009536743,
+            "maxCppWholeWallMs": 13.665000021457672,
+            "corrections": 3,
+            "resimulated": 6,
+            "newInputCaptures": 1,
+            "worldSaves": 4,
+            "maxMissing": 3,
+            "maxNetworkScale": 1,
+            "rows": [
+              {
+                "sampleIndex": 1987,
+                "timings": {
+                  "timestampAgeAtDispatch": 5.619999961854774,
+                  "registeredWait": 1.449999988079071,
+                  "rafDispatchToFrameEntry": 0.010000050067901611,
+                  "cppWallMs": 0.004999995231628418,
+                  "beforePlay": 0,
+                  "play": 0.17499995231628418,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.005000054836273193,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.18000000715255737,
+                  "afterFrameToRafExit": 0.019999980926513672,
+                  "wholeRafCallback": 0.21000003814697266
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1987,
+                  1,
+                  3,
+                  1000,
+                  998,
+                  792,
+                  789
+                ]
+              },
+              {
+                "sampleIndex": 1988,
+                "timings": {
+                  "timestampAgeAtDispatch": 0.9849999713915167,
+                  "registeredWait": 1.2799999713897705,
+                  "rafDispatchToFrameEntry": 0.004999995231628418,
+                  "cppWallMs": 0,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0.005000054836273193,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.004999995231628418,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.01500004529953003,
+                  "afterFrameToRafExit": 0.17499995231628418,
+                  "wholeRafCallback": 0.19499999284744263
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1988,
+                  1,
+                  3,
+                  1000,
+                  998,
+                  792,
+                  789
+                ]
+              },
+              {
+                "sampleIndex": 1989,
+                "timings": {
+                  "timestampAgeAtDispatch": 3.3349999761594518,
+                  "registeredWait": 8.175000011920929,
+                  "rafDispatchToFrameEntry": 13.850000023841858,
+                  "cppWallMs": 13.665000021457672,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.004999995231628418,
+                  "frameTail": 0.17500001192092896,
+                  "wholeJsFrame": 0.19499999284744263,
+                  "afterFrameToRafExit": 0.029999971389770508,
+                  "wholeRafCallback": 14.074999988079071
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 1,
+                  "resim": 3,
+                  "captures": 1,
+                  "worldSaves": 2,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1989,
+                  1,
+                  2,
+                  1000,
+                  998,
+                  792,
+                  790
+                ]
+              },
+              {
+                "sampleIndex": 1990,
+                "timings": {
+                  "timestampAgeAtDispatch": 7.3050000095354335,
+                  "registeredWait": 2.01500004529953,
+                  "rafDispatchToFrameEntry": 8.439999997615814,
+                  "cppWallMs": 8.435000002384186,
+                  "beforePlay": 0.009999990463256836,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0.16500002145767212,
+                  "sampleWork": 0.014999985694885254,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.19999998807907104,
+                  "afterFrameToRafExit": 0.1899999976158142,
+                  "wholeRafCallback": 8.8299999833107
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 1,
+                  "resim": 2,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1990,
+                  1,
+                  1,
+                  1000,
+                  998,
+                  792,
+                  791
+                ]
+              },
+              {
+                "sampleIndex": 1991,
+                "timings": {
+                  "timestampAgeAtDispatch": 5.874999961852154,
+                  "registeredWait": 1.8449999690055847,
+                  "rafDispatchToFrameEntry": 7.14000004529953,
+                  "cppWallMs": 7.134999990463257,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.1850000023841858,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.19999998807907104,
+                  "afterFrameToRafExit": 0.02499997615814209,
+                  "wholeRafCallback": 7.365000009536743
+                },
+                "counters": {
+                  "next": 1,
+                  "corr": 1,
+                  "resim": 1,
+                  "captures": 0,
+                  "worldSaves": 1,
+                  "presentations": 1
+                },
+                "pacing": [
+                  1991,
+                  1,
+                  1,
+                  1000,
+                  998,
+                  793,
+                  792
+                ]
+              }
+            ]
+          },
+          "selectedGraphics": [
+            {
+              "kind": "maximum-eligible-registered-raf-wait",
+              "knownCompleteXTop": [
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.171,
+                  "reportedThreadDurationMs": 0.163,
+                  "overlapRangeMs": [
+                    0.17100000381469727,
+                    0.17100000381469727
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.165,
+                  "reportedThreadDurationMs": 0.137,
+                  "overlapRangeMs": [
+                    0.16500002145767212,
+                    0.16500002145767212
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.165,
+                  "reportedThreadDurationMs": 0.137,
+                  "overlapRangeMs": [
+                    0.16500002145767212,
+                    0.16500002145767212
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.164,
+                  "reportedThreadDurationMs": 0.137,
+                  "overlapRangeMs": [
+                    0.1640000343322754,
+                    0.1640000343322754
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.076,
+                  "reportedThreadDurationMs": 0.068,
+                  "overlapRangeMs": [
+                    0.07600003480911255,
+                    0.07600003480911255
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.033,
+                  "reportedThreadDurationMs": 0.027,
+                  "overlapRangeMs": [
+                    0.03299999237060547,
+                    0.03299999237060547
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.026,
+                  "reportedThreadDurationMs": 0.019,
+                  "overlapRangeMs": [
+                    0.026000022888183594,
+                    0.026000022888183594
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.022,
+                  "reportedThreadDurationMs": 0.018,
+                  "overlapRangeMs": [
+                    0.022000014781951904,
+                    0.022000014781951904
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+                  "thread": "Compositor",
+                  "wallMs": 17.273,
+                  "reportedThreadDurationMs": 0.068,
+                  "overlapRangeMs": [
+                    15.062999963760376,
+                    15.468000054359436
+                  ]
+                },
+                {
+                  "nameHash": "179a552cb23a6a20ed0ff44b8e2090499a9b4a94bae99a1b69866e6984a95aee",
+                  "thread": "Compositor",
+                  "wallMs": 17.215,
+                  "reportedThreadDurationMs": 0.014,
+                  "overlapRangeMs": [
+                    15.022999942302704,
+                    15.428000032901764
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.332,
+                  "reportedThreadDurationMs": 0.32,
+                  "overlapRangeMs": [
+                    0.3320000171661377,
+                    0.3320000171661377
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-new-state-page-gap",
+              "knownCompleteXTop": [
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.177,
+                  "reportedThreadDurationMs": 0.171,
+                  "overlapRangeMs": [
+                    0.1769999861717224,
+                    0.1769999861717224
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.155,
+                  "reportedThreadDurationMs": 0.134,
+                  "overlapRangeMs": [
+                    0.1549999713897705,
+                    0.1549999713897705
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.153,
+                  "reportedThreadDurationMs": 0.134,
+                  "overlapRangeMs": [
+                    0.15299999713897705,
+                    0.15299999713897705
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.152,
+                  "reportedThreadDurationMs": 0.134,
+                  "overlapRangeMs": [
+                    0.15200001001358032,
+                    0.15200001001358032
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.072,
+                  "reportedThreadDurationMs": 0.065,
+                  "overlapRangeMs": [
+                    0.07199996709823608,
+                    0.07199996709823608
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.061,
+                  "reportedThreadDurationMs": 0.051,
+                  "overlapRangeMs": [
+                    0.06099998950958252,
+                    0.06099998950958252
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.056,
+                  "reportedThreadDurationMs": 0.048,
+                  "overlapRangeMs": [
+                    0.0559999942779541,
+                    0.0559999942779541
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.038,
+                  "reportedThreadDurationMs": 0.032,
+                  "overlapRangeMs": [
+                    0.03800004720687866,
+                    0.03800004720687866
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.387,
+                  "reportedThreadDurationMs": 0.376,
+                  "overlapRangeMs": [
+                    0.38700002431869507,
+                    0.38700002431869507
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.523,
+                  "reportedThreadDurationMs": 0.512,
+                  "overlapRangeMs": [
+                    0,
+                    0.31000006198883057
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.517,
+                  "reportedThreadDurationMs": 0.508,
+                  "overlapRangeMs": [
+                    0,
+                    0.3070000410079956
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-ordinary-save1-callback",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.048,
+                  "reportedThreadDurationMs": 0.038,
+                  "overlapRangeMs": [
+                    0,
+                    0.04799997806549072
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.018,
+                  "reportedThreadDurationMs": 0.012,
+                  "overlapRangeMs": [
+                    0.018000006675720215,
+                    0.018000006675720215
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.015,
+                  "reportedThreadDurationMs": 0.011,
+                  "overlapRangeMs": [
+                    0.014999985694885254,
+                    0.014999985694885254
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.003,
+                  "reportedThreadDurationMs": 0.002,
+                  "overlapRangeMs": [
+                    0.0029999613761901855,
+                    0.0029999613761901855
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.002,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0,
+                    0.001999974250793457
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.002,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0,
+                    0.001999974250793457
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.001,
+                  "reportedThreadDurationMs": null,
+                  "overlapRangeMs": [
+                    0.0009999871253967285,
+                    0.0009999871253967285
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.001,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0.0009999871253967285,
+                    0.0009999871253967285
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.368,
+                  "reportedThreadDurationMs": 0.352,
+                  "overlapRangeMs": [
+                    0.3680000305175781,
+                    0.3680000305175781
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.362,
+                  "reportedThreadDurationMs": 0.35,
+                  "overlapRangeMs": [
+                    0.3619999885559082,
+                    0.3619999885559082
+                  ]
+                },
+                {
+                  "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.341,
+                  "reportedThreadDurationMs": 0.331,
+                  "overlapRangeMs": [
+                    0.3410000205039978,
+                    0.3410000205039978
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "side": 1,
+          "newStateHz": 57.93129507743336,
+          "rafGapMs": {
+            "count": 1018,
+            "total": 17572.539999999986,
+            "p50": 18.170000000000073,
+            "p95": 24.215000000000146,
+            "p99": 24.270000000000437,
+            "max": 34.44000000000051,
+            "over25ms": 7,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "pageGapMs": {
+            "count": 1018,
+            "total": 17567.985000014305,
+            "p50": 17.530000030994415,
+            "p95": 26.759999990463257,
+            "p99": 32.33500003814697,
+            "max": 37.86999994516373,
+            "over25ms": 75,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "maximumRegisteredWaitMs": 17.80000001192093,
+          "maximumNativeCallbackWallMs": 16.444999992847443,
+          "ordinaryAllMedianWallMs": 2.8350000381469727,
+          "ordinarySave1Maximum": 6.069999992847443,
+          "input": {
+            "valid": true,
+            "clock": {
+              "name": "Page performance.now",
+              "timeOrigin": 1791723702900.12,
+              "startedAt": 3205.835000038147,
+              "endedAt": 24202.3900000453
+            },
+            "configuration": {
+              "schema": "th09-touch-input-v1",
+              "profile": "joystick",
+              "sourceHz": 120,
+              "durationMs": 120000,
+              "side": 1,
+              "startMs": 2637,
+              "periodMs": 9600,
+              "sensitivity": 1.5,
+              "pattern": "continuous",
+              "cadence": "Absolute Page-clock grid throughout one held gesture; leg/control edges and terminal neutral retain their own deadlines."
+            },
+            "tapeSha256": "86253bf66816a00d688e2e8f2a9e2909778be3f0adda5045aab7c6014a2c1483",
+            "counts": {
+              "plannedEvents": 14382,
+              "dueEvents": 2252,
+              "futureCensoredEvents": 12130,
+              "plannedNativeEvents": 14382,
+              "dueNativeEvents": 2252,
+              "submittedEvents": 1640,
+              "rawNativeCalls": 1640,
+              "coalescedMoves": 611,
+              "notSubmitted": 1,
+              "attributedCaptures": 816,
+              "renderProgressObservedEvents": 816,
+              "submittedWithoutAttributableChangedWire": 824,
+              "packets": 2067,
+              "duplicates": 8932,
+              "changedHistory": 0,
+              "captureGaps": 0,
+              "actualInputFrames": 1204,
+              "analogActiveFrames": 821,
+              "targetChanges": 812,
+              "newFrontierCallbacks": 1200,
+              "newPresentedCallbacks": 1200,
+              "forwardFrames": 1203,
+              "positionChangedObservations": 1063
+            },
+            "statusCounts": {
+              "submitted-without-attributable-changed-wire": 824,
+              "render-progress-after-conditional-wire": 816,
+              "coalesced-before-submit": 611,
+              "not-submitted": 1
+            },
+            "submissionLatenessMs": {
+              "count": 1640,
+              "total": 5766.643306096414,
+              "p50": 3.240000009536743,
+              "p95": 7.8566666642818745,
+              "p99": 8.569999992847443,
+              "max": 16.810000002384186,
+              "over50ms": 0,
+              "over100ms": 0
+            },
+            "allObserved": {
+              "count": 816,
+              "plannedToRenderProgressMs": {
+                "count": 816,
+                "total": 12972.869986474525,
+                "p50": 15.936666647592574,
+                "p95": 24.044999957084656,
+                "p99": 28.58333333333303,
+                "max": 35.519999980926514,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 816,
+                "total": 4506.97999894619,
+                "p50": 5.635000050067902,
+                "p95": 10.410000026226044,
+                "p99": 11.840000033378601,
+                "max": 17.5799999833107,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 816,
+                "total": 5992.960000395775,
+                "p50": 7.694999992847443,
+                "p95": 12.944999992847443,
+                "p99": 18.930000007152557,
+                "max": 21.52999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 816,
+                "total": 10499.939999341965,
+                "p50": 12.469999969005585,
+                "p95": 20.4549999833107,
+                "p99": 26.74500000476837,
+                "max": 28.844999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "captureFrameSubset180To1200": {
+              "scope": "Only conditionally attributed presented events with capture frame in [180,1200); this is not a denominator of all events due during the performance body.",
+              "count": 772,
+              "plannedToRenderProgressMs": {
+                "count": 772,
+                "total": 12303.784987092033,
+                "p50": 15.936666647592574,
+                "p95": 24.176666657131136,
+                "p99": 28.63333334525487,
+                "max": 35.519999980926514,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToFirstWireMs": {
+                "count": 772,
+                "total": 4257.439998984337,
+                "p50": 5.634999990463257,
+                "p95": 10.410000026226044,
+                "p99": 11.840000033378601,
+                "max": 17.5799999833107,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "firstWireToRenderProgressMs": {
+                "count": 772,
+                "total": 5701.220000386238,
+                "p50": 7.759999990463257,
+                "p95": 12.985000014305115,
+                "p99": 19.094999969005585,
+                "max": 21.52999997138977,
+                "over50ms": 0,
+                "over100ms": 0
+              },
+              "submitToRenderProgressMs": {
+                "count": 772,
+                "total": 9958.659999370575,
+                "p50": 12.469999969005585,
+                "p95": 20.50499999523163,
+                "p99": 26.855000019073486,
+                "max": 28.844999969005585,
+                "over50ms": 0,
+                "over100ms": 0
+              }
+            },
+            "largestSubmitToRenderProgress": [
+              {
+                "sequence": 1345,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13591.666666666666,
+                "submittedAtMs": 13594.745000004768,
+                "firstWireAtMs": 13605.414999961853,
+                "presentationObservedAtMs": 13623.589999973774,
+                "captureFrame": 768,
+                "presentationFrontier": 769,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.844999969005585
+              },
+              {
+                "sequence": 236,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 4550,
+                "submittedAtMs": 4556.919999957085,
+                "firstWireAtMs": 4563.990000009537,
+                "presentationObservedAtMs": 4585.5199999809265,
+                "captureFrame": 248,
+                "presentationFrontier": 249,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.600000023841858
+              },
+              {
+                "sequence": 1309,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 13316.666666666666,
+                "submittedAtMs": 13316.95499998331,
+                "firstWireAtMs": 13325.974999964237,
+                "presentationObservedAtMs": 13345.300000011921,
+                "captureFrame": 754,
+                "presentationFrontier": 755,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.34500002861023
+              },
+              {
+                "sequence": 1413,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 14158.333333333334,
+                "submittedAtMs": 14158.379999995232,
+                "firstWireAtMs": 14168.169999957085,
+                "presentationObservedAtMs": 14186.629999995232,
+                "captureFrame": 800,
+                "presentationFrontier": 801,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.25
+              },
+              {
+                "sequence": 290,
+                "kind": "stick",
+                "status": "render-progress-after-conditional-wire",
+                "plannedAtMs": 5000,
+                "submittedAtMs": 5003.305000007153,
+                "firstWireAtMs": 5012.414999961853,
+                "presentationObservedAtMs": 5031.344999969006,
+                "captureFrame": 272,
+                "presentationFrontier": 273,
+                "association": {
+                  "method": "latest-submitted-movement-event-before-changed-native-wire",
+                  "readyGameplayAtSubmit": true,
+                  "controlsChangedSinceSubmit": false,
+                  "causalEffectVerified": false
+                },
+                "submitToRenderProgressMs": 28.039999961853027
+              }
+            ]
+          },
+          "maximumPageGapCallbacks": {
+            "scope": "Exactly (fromSample,toSample] from the strict linked timing evidence; includes the ending callback and excludes the completed starting callback. This differs from the timeline's half-open [start,end) post-sample context. Summed whole wall durations are not CPU self time.",
+            "pair": {
+              "fromSample": 1737,
+              "toSample": 1742,
+              "rafTimestampMs": 30.30000000000109,
+              "sampledAtMs": 37.86999994516373,
+              "frontierDelta": 1,
+              "nextDelta": 1,
+              "rendererSubmissions": 1,
+              "fromSessionPhase": 1,
+              "toSessionPhase": 1
+            },
+            "callbackCount": 5,
+            "cppWholeWallSumMs": 15.375,
+            "maxCppWholeWallMs": 8.495000004768372,
+            "corrections": 2,
+            "resimulated": 8,
+            "newInputCaptures": 1,
+            "worldSaves": 5,
+            "maxMissing": 6,
+            "maxNetworkScale": 1.413,
+            "rows": [
+              {
+                "sampleIndex": 1738,
+                "timings": {
+                  "timestampAgeAtDispatch": 0.3150000000005093,
+                  "registeredWait": 3.409999966621399,
+                  "rafDispatchToFrameEntry": 1.64000004529953,
+                  "cppWallMs": 1.64000004529953,
+                  "beforePlay": 0,
+                  "play": 0.17499995231628418,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.004999995231628418,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.1799999475479126,
+                  "afterFrameToRafExit": 0.01500004529953003,
+                  "wholeRafCallback": 1.8350000381469727
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1738,
+                  1,
+                  6,
+                  1413,
+                  1413,
+                  617,
+                  611
+                ]
+              },
+              {
+                "sampleIndex": 1739,
+                "timings": {
+                  "timestampAgeAtDispatch": 0.1900000166897371,
+                  "registeredWait": 4.209999978542328,
+                  "rafDispatchToFrameEntry": 0.004999995231628418,
+                  "cppWallMs": 0.004999995231628418,
+                  "beforePlay": 0,
+                  "play": 0,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.009999990463256836,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.009999990463256836,
+                  "afterFrameToRafExit": 0.8100000023841858,
+                  "wholeRafCallback": 0.824999988079071
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1739,
+                  1,
+                  6,
+                  1413,
+                  1413,
+                  617,
+                  611
+                ]
+              },
+              {
+                "sampleIndex": 1740,
+                "timings": {
+                  "timestampAgeAtDispatch": 0.7599999952308281,
+                  "registeredWait": 5.634999990463257,
+                  "rafDispatchToFrameEntry": 0.005000054836273193,
+                  "cppWallMs": 0,
+                  "beforePlay": 0.004999995231628418,
+                  "play": 0.004999995231628418,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.004999995231628418,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.014999985694885254,
+                  "afterFrameToRafExit": 0,
+                  "wholeRafCallback": 0.020000040531158447
+                },
+                "counters": {
+                  "next": 0,
+                  "corr": 0,
+                  "resim": 0,
+                  "captures": 0,
+                  "worldSaves": 0,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1740,
+                  1,
+                  6,
+                  1413,
+                  1413,
+                  617,
+                  611
+                ]
+              },
+              {
+                "sampleIndex": 1741,
+                "timings": {
+                  "timestampAgeAtDispatch": 1.9800000238410576,
+                  "registeredWait": 7.199999988079071,
+                  "rafDispatchToFrameEntry": 8.5,
+                  "cppWallMs": 8.495000004768372,
+                  "beforePlay": 0.1600000262260437,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.004999995231628418,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.17500001192092896,
+                  "afterFrameToRafExit": 0.009999990463256836,
+                  "wholeRafCallback": 8.685000002384186
+                },
+                "counters": {
+                  "next": -1,
+                  "corr": 1,
+                  "resim": 5,
+                  "captures": 1,
+                  "worldSaves": 2,
+                  "presentations": 0
+                },
+                "pacing": [
+                  1741,
+                  1,
+                  3,
+                  1267,
+                  1267,
+                  617,
+                  614
+                ]
+              },
+              {
+                "sampleIndex": 1742,
+                "timings": {
+                  "timestampAgeAtDispatch": 5.389999992847152,
+                  "registeredWait": 0.7849999666213989,
+                  "rafDispatchToFrameEntry": 5.240000009536743,
+                  "cppWallMs": 5.23499995470047,
+                  "beforePlay": 0,
+                  "play": 0.009999990463256836,
+                  "playExitToSample": 0,
+                  "sampleWork": 0.005000054836273193,
+                  "frameTail": 0,
+                  "wholeJsFrame": 0.01500004529953003,
+                  "afterFrameToRafExit": 0.009999990463256836,
+                  "wholeRafCallback": 5.26500004529953
+                },
+                "counters": {
+                  "next": 2,
+                  "corr": 1,
+                  "resim": 3,
+                  "captures": 0,
+                  "worldSaves": 3,
+                  "presentations": 1
+                },
+                "pacing": [
+                  1742,
+                  1,
+                  3,
+                  1207,
+                  1207,
+                  618,
+                  615
+                ]
+              }
+            ]
+          },
+          "selectedGraphics": [
+            {
+              "kind": "maximum-eligible-registered-raf-wait",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.04,
+                  "reportedThreadDurationMs": 0.031,
+                  "overlapRangeMs": [
+                    0.039999961853027344,
+                    0.039999961853027344
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.029,
+                  "reportedThreadDurationMs": 0.027,
+                  "overlapRangeMs": [
+                    0,
+                    0.02899998426437378
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.018,
+                  "reportedThreadDurationMs": 0.013,
+                  "overlapRangeMs": [
+                    0.018000006675720215,
+                    0.018000006675720215
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.003,
+                  "reportedThreadDurationMs": 0.003,
+                  "overlapRangeMs": [
+                    0.003000020980834961,
+                    0.003000020980834961
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.003,
+                  "reportedThreadDurationMs": 0.002,
+                  "overlapRangeMs": [
+                    0.003000020980834961,
+                    0.003000020980834961
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.002,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0.0020000338554382324,
+                    0.0020000338554382324
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+                  "thread": null,
+                  "wallMs": 0.028,
+                  "reportedThreadDurationMs": 0.025,
+                  "overlapRangeMs": [
+                    0.02799999713897705,
+                    0.02799999713897705
+                  ]
+                },
+                {
+                  "nameHash": "9cebf86025454e660ba64728d9a509823cff68315078009e4401b8283240f2da",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.027,
+                  "reportedThreadDurationMs": 0.025,
+                  "overlapRangeMs": [
+                    0,
+                    0.027000010013580322
+                  ]
+                },
+                {
+                  "nameHash": "6f05f86d557475f55ecf89825d375a8e26ecd5af58f95fd063a6e972eb680b8c",
+                  "thread": null,
+                  "wallMs": 0.026,
+                  "reportedThreadDurationMs": 0.024,
+                  "overlapRangeMs": [
+                    0,
+                    0.026000022888183594
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-new-state-page-gap",
+              "knownCompleteXTop": [
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.128,
+                  "reportedThreadDurationMs": 0.113,
+                  "overlapRangeMs": [
+                    0.12800002098083496,
+                    0.12800002098083496
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.128,
+                  "reportedThreadDurationMs": 0.113,
+                  "overlapRangeMs": [
+                    0.12800002098083496,
+                    0.12800002098083496
+                  ]
+                },
+                {
+                  "name": "Display::DrawAndSwap",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.126,
+                  "reportedThreadDurationMs": 0.113,
+                  "overlapRangeMs": [
+                    0.12599998712539673,
+                    0.12599998712539673
+                  ]
+                },
+                {
+                  "name": "SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.119,
+                  "reportedThreadDurationMs": 0.112,
+                  "overlapRangeMs": [
+                    0.11899995803833008,
+                    0.11899995803833008
+                  ]
+                },
+                {
+                  "name": "DirectRenderer::DrawFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.06,
+                  "reportedThreadDurationMs": 0.056,
+                  "overlapRangeMs": [
+                    0.06000000238418579,
+                    0.06000000238418579
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.035,
+                  "reportedThreadDurationMs": 0.029,
+                  "overlapRangeMs": [
+                    0.0350000262260437,
+                    0.0350000262260437
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.035,
+                  "reportedThreadDurationMs": 0.028,
+                  "overlapRangeMs": [
+                    0.034999966621398926,
+                    0.034999966621398926
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.031,
+                  "reportedThreadDurationMs": 0.023,
+                  "overlapRangeMs": [
+                    0.03100001811981201,
+                    0.03100001811981201
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.261,
+                  "reportedThreadDurationMs": 0.244,
+                  "overlapRangeMs": [
+                    0.26100003719329834,
+                    0.26100003719329834
+                  ]
+                },
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.238,
+                  "reportedThreadDurationMs": 0.232,
+                  "overlapRangeMs": [
+                    0.009999990463256836,
+                    0.2279999852180481
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.235,
+                  "reportedThreadDurationMs": 0.23,
+                  "overlapRangeMs": [
+                    0.007999956607818604,
+                    0.22599995136260986
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "maximum-ordinary-save1-callback",
+              "knownCompleteXTop": [
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.032,
+                  "reportedThreadDurationMs": 0.026,
+                  "overlapRangeMs": [
+                    0.03200000524520874,
+                    0.03200000524520874
+                  ]
+                },
+                {
+                  "name": "ExternalBeginFrameSource::OnBeginFrame",
+                  "thread": "Compositor",
+                  "wallMs": 0.007,
+                  "reportedThreadDurationMs": 0.006,
+                  "overlapRangeMs": [
+                    0.006999969482421875,
+                    0.006999969482421875
+                  ]
+                },
+                {
+                  "name": "DisplayScheduler::OnBeginFrameDeadline",
+                  "thread": "VizCompositorThread",
+                  "wallMs": 0.002,
+                  "reportedThreadDurationMs": 0.001,
+                  "overlapRangeMs": [
+                    0.001999974250793457,
+                    0.001999974250793457
+                  ]
+                }
+              ],
+              "unknownCompleteXTop": [
+                {
+                  "nameHash": "dbe879aafa7ccd95500714726f8ee6e5a4cf9dcca1ffaa45740e541ca9114ad6",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.286,
+                  "reportedThreadDurationMs": 0.278,
+                  "overlapRangeMs": [
+                    0.28600001335144043,
+                    0.28600001335144043
+                  ]
+                },
+                {
+                  "nameHash": "c62ce35a98cc32c7721bd3f79c9c1c27c69b4d6ddcf702e26b1ce70a6bf0beb5",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.282,
+                  "reportedThreadDurationMs": 0.276,
+                  "overlapRangeMs": [
+                    0.28199994564056396,
+                    0.28199994564056396
+                  ]
+                },
+                {
+                  "nameHash": "6654cc5402edad10bf186e086dfd8ffaba79dd511bc853c69af3413c8b0a94e0",
+                  "thread": "CrGpuMain",
+                  "wallMs": 0.272,
+                  "reportedThreadDurationMs": 0.267,
+                  "overlapRangeMs": [
+                    0.2720000147819519,
+                    0.2720000147819519
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

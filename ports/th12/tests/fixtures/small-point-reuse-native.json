@@ -1,0 +1,593 @@
+{
+  "schema": "th12-native-small-point-reuse/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "acceptedReplayGolden": false,
+  "gpuExecuted": false,
+  "boundary": "Actual4273f0/425c20 and movement/timer helpers. Explicit idle slot+9bc and synthetic Player/SHT/rectangle fields. ANM/sound/HUD calls intercepted; no visual/ANM RNG or fullgame claim. Memory writes identify actual attraction field stores.",
+  "records": [
+    {
+      "kind": 9,
+      "staleAttractionSpeed": 11.599994659423828,
+      "spawn": {
+        "position": [
+          -180,
+          100
+        ],
+        "angle": -1.5707963705062866,
+        "speed": 0.6000000238418579
+      },
+      "player": {
+        "position": [
+          150,
+          400
+        ],
+        "character": 0,
+        "state": 1,
+        "pickupHalfWidth": 30,
+        "nearHalfWidth": 30,
+        "attractionSpeed": 5
+      },
+      "birth": {
+        "state": 5,
+        "type": 9,
+        "position": [
+          -180.0,
+          100.0
+        ],
+        "velocity": [
+          -2.62268358142137e-08,
+          -0.6000000238418579
+        ],
+        "age": 0,
+        "attractionSpeed": 11.599994659423828,
+        "delay": 0
+      },
+      "birthWrites": [],
+      "frames": [
+        {
+          "tick": 0,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            100.0
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.6000000238418579
+          ],
+          "age": 0,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 1,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            99.4000015258789
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5700000524520874
+          ],
+          "age": 1,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 2,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            98.83000183105469
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5400000810623169
+          ],
+          "age": 2,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 3,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            98.29000091552734
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5100001096725464
+          ],
+          "age": 3,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 4,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            97.77999877929688
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.4800001084804535
+          ],
+          "age": 4,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 5,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            97.29999542236328
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.4500001072883606
+          ],
+          "age": 5,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 6,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            96.8499984741211
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.4200001060962677
+          ],
+          "age": 6,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 7,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            96.43000030517578
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.3900001049041748
+          ],
+          "age": 7,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 8,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            96.04000091552734
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.3600001037120819
+          ],
+          "age": 8,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 9,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            95.68000030517578
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.330000102519989
+          ],
+          "age": 9,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 10,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            95.3499984741211
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.3000001013278961
+          ],
+          "age": 10,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 11,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            95.04999542236328
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.2700001001358032
+          ],
+          "age": 11,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 12,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            94.77999877929688
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.24000009894371033
+          ],
+          "age": 12,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 13,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            94.54000091552734
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.21000009775161743
+          ],
+          "age": 13,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 14,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            94.33000183105469
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.18000009655952454
+          ],
+          "age": 14,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 15,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            94.1500015258789
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.15000009536743164
+          ],
+          "age": 15,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 16,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            94.0
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.12000009417533875
+          ],
+          "age": 16,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 17,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            93.87999725341797
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.09000009298324585
+          ],
+          "age": 17,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 18,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            93.79000091552734
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.060000091791152954
+          ],
+          "age": 18,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 19,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            93.7300033569336
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.030000092461705208
+          ],
+          "age": 19,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 20,
+          "state": 2,
+          "type": 9,
+          "position": [
+            -180.0,
+            93.70000457763672
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -9.313225746154785e-08
+          ],
+          "age": 20,
+          "attractionSpeed": 11.599994659423828,
+          "delay": -1
+        },
+        {
+          "tick": 21,
+          "state": 3,
+          "type": 9,
+          "position": [
+            -176.3353271484375,
+            97.10149383544922
+          ],
+          "velocity": [
+            3.6646792888641357,
+            3.4014885425567627
+          ],
+          "age": 21,
+          "attractionSpeed": 5.199999809265137,
+          "delay": -1
+        },
+        {
+          "tick": 22,
+          "state": 3,
+          "type": 9,
+          "position": [
+            -172.52406311035156,
+            100.6390380859375
+          ],
+          "velocity": [
+            3.8112664222717285,
+            3.537548065185547
+          ],
+          "age": 22,
+          "attractionSpeed": 5.399999618530273,
+          "delay": -1
+        },
+        {
+          "tick": 23,
+          "state": 3,
+          "type": 9,
+          "position": [
+            -168.5662078857422,
+            104.3126449584961
+          ],
+          "velocity": [
+            3.957853317260742,
+            3.673607587814331
+          ],
+          "age": 23,
+          "attractionSpeed": 5.59999942779541,
+          "delay": -1
+        },
+        {
+          "tick": 24,
+          "state": 3,
+          "type": 9,
+          "position": [
+            -164.46176147460938,
+            108.122314453125
+          ],
+          "velocity": [
+            4.104440689086914,
+            3.809666872024536
+          ],
+          "age": 24,
+          "attractionSpeed": 5.799999237060547,
+          "delay": -1
+        },
+        {
+          "tick": 25,
+          "state": 3,
+          "type": 9,
+          "position": [
+            -160.2107391357422,
+            112.06803894042969
+          ],
+          "velocity": [
+            4.251027584075928,
+            3.9457263946533203
+          ],
+          "age": 25,
+          "attractionSpeed": 5.999999046325684,
+          "delay": -1
+        }
+      ],
+      "attractionWrites": [
+        {
+          "tick": 21,
+          "pc": "0x425eab",
+          "word": 1084227584
+        },
+        {
+          "tick": 21,
+          "pc": "0x425fcb",
+          "word": 1084647014
+        },
+        {
+          "tick": 22,
+          "pc": "0x425fcb",
+          "word": 1085066444
+        },
+        {
+          "tick": 23,
+          "pc": "0x425fcb",
+          "word": 1085485874
+        },
+        {
+          "tick": 24,
+          "pc": "0x425fcb",
+          "word": 1085905304
+        },
+        {
+          "tick": 25,
+          "pc": "0x425fcb",
+          "word": 1086324734
+        }
+      ],
+      "intercepts": {
+        "0x402520": 1,
+        "0x454d10": 1
+      }
+    },
+    {
+      "kind": 1,
+      "staleAttractionSpeed": 11.599994659423828,
+      "spawn": {
+        "position": [
+          -180,
+          100
+        ],
+        "angle": -1.5707963705062866,
+        "speed": 0.6000000238418579
+      },
+      "player": {
+        "position": [
+          150,
+          400
+        ],
+        "character": 0,
+        "state": 1,
+        "pickupHalfWidth": 30,
+        "nearHalfWidth": 30,
+        "attractionSpeed": 5
+      },
+      "birth": {
+        "state": 1,
+        "type": 1,
+        "position": [
+          -180.0,
+          100.0
+        ],
+        "velocity": [
+          -2.62268358142137e-08,
+          -0.6000000238418579
+        ],
+        "age": 0,
+        "attractionSpeed": 0.0,
+        "delay": 0
+      },
+      "birthWrites": [
+        {
+          "tick": -1,
+          "pc": "0x427968",
+          "word": 0
+        }
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "state": 1,
+          "type": 1,
+          "position": [
+            -180.0,
+            99.4000015258789
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5700000524520874
+          ],
+          "age": 1,
+          "attractionSpeed": 0.0,
+          "delay": 0
+        },
+        {
+          "tick": 1,
+          "state": 1,
+          "type": 1,
+          "position": [
+            -180.0,
+            98.83000183105469
+          ],
+          "velocity": [
+            -2.62268358142137e-08,
+            -0.5400000810623169
+          ],
+          "age": 2,
+          "attractionSpeed": 0.0,
+          "delay": 0
+        }
+      ],
+      "attractionWrites": [
+        {
+          "tick": -1,
+          "pc": "0x427968",
+          "word": 0
+        }
+      ],
+      "intercepts": {
+        "0x402520": 2,
+        "0x454d10": 2
+      }
+    }
+  ]
+}

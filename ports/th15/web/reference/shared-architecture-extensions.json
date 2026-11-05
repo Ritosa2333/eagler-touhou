@@ -1,0 +1,53 @@
+{
+  "schema": "th15-shared-architecture-extensions/1",
+  "date": "2026-10-04",
+  "baseline": "architecture-baseline.json",
+  "changes": [
+    {
+      "path": "portable/sdl/Renderer.cpp",
+      "baselineSha256": "525b8ac0ed47a2f75b9f0c95d8edb9b66e65792baa4c96dfd077b92b29b3fae7",
+      "currentSha256": "b15c11caee6185c3cbe7997684639198f4a6b10a73cbcc833a2b7e9035d2e974",
+      "reason": "Shared SDL3/WebGL2 precision is preserved. Compile depth-free fragment variants only when depth test/write cannot affect pixels, and merge known CPU atlas edits for exact regional upload with full-image fallback. Original glBufferData streaming, fixed-layout caching and draw order remain. Isolated long strips/fans retain their native topology to avoid repeated vertices; a compatible join normalizes back to original triangles, preserving winding, order and batching.",
+      "previousSha256": "d9a76a12d9675b115431fea57206e73a421fd9dc1c3103840686c77632681940"
+    },
+    {
+      "path": "portable/sdl/GraphicsState.hpp",
+      "baselineSha256": "5f9c21e4f13385fe74bfc42d4a43ce9cd8af643cfdf589a99fb77912b83a9f64",
+      "currentSha256": "f9dee47bc9938ccaadcea8183c4023b597fd46fee3e2b07bfc3ceae6e2157f5b",
+      "reason": "Append A8/RGB332 pixel format without renumbering previous formats; explicit independent alpha factors/equation in semantic pipeline and batching compatibility."
+    },
+    {
+      "path": "portable/sdl/Renderer.hpp",
+      "baselineSha256": "c002c9b9fdfb43f33883c7b50cb222e0ab2291eb25c57bf284ba515fa0bf23c7",
+      "currentSha256": "4c82260993bd076fdfaf4eea82e5a07c7ad636b572ea764d3f8b204ba44637a2",
+      "reason": "Shared SDL3/WebGL2 precision is preserved. Compile depth-free fragment variants only when depth test/write cannot affect pixels, and merge known CPU atlas edits for exact regional upload with full-image fallback. Original glBufferData streaming, fixed-layout caching and draw order remain. Isolated long strips/fans retain their native topology to avoid repeated vertices; a compatible join normalizes back to original triangles, preserving winding, order and batching.",
+      "previousSha256": "05601c84d0bfcdddb3587c013e4a2178d5e2406d39924e0a0eed38bf177fda77"
+    },
+    {
+      "path": "portable/sdl/ResampleShader.hpp",
+      "baselineSha256": "58bc6eb3e3db44aebdf6f98ed2a9c95f77497b93f1b4657ddd865a87fc6b2a92",
+      "reason": "GPU captures and shader sampling support independently scaled physical render targets; original logical gameplay coordinates stay unchanged.",
+      "currentSha256": "93a0270dc680b8d095af700a36f1ea1dc7008a5c07fa471c20b9efd8164ea8a1"
+    }
+  ],
+  "evidence": {
+    "graphicsBuild": "artifacts/sdl-graphics/build.json",
+    "graphicsWasmSha256": "03429c6000817362be70103eb2b1af6bf769c1ed601edd8bb14acb04cefca810",
+    "checks": "artifacts/cpp/verification/sdl-webgl-pixels.json",
+    "applicationChecks": [
+      "artifacts/cpp/verification/sdl-extra-reentry-1x.json",
+      "artifacts/cpp/verification/sdl-extra-reentry-2x.json"
+    ],
+    "previousGraphicsWasmSha256": "d562d56408842f71f6b9ca5e4af5acafbdca5b55e5c9285021c9feb332ca32db",
+    "stage5Rendering": {
+      "checks": "artifacts/cpp/verification/sdl-stage5-render-optimization.json",
+      "fixtureSha256": "03429c6000817362be70103eb2b1af6bf769c1ed601edd8bb14acb04cefca810"
+    },
+    "topologyStreaming": {
+      "checks": "artifacts/cpp/verification/sdl-topology-streaming.json",
+      "fixtureSha256": "03429c6000817362be70103eb2b1af6bf769c1ed601edd8bb14acb04cefca810",
+      "cases": 36
+    }
+  },
+  "note": "Original final baseline is retained. Only these pinned shared additions are accepted; any other drift blocks packaging."
+}

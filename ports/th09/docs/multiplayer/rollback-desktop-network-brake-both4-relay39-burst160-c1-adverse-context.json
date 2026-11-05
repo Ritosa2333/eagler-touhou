@@ -1,0 +1,1272 @@
+{
+  "schema": "th09/desktop-adverse-context/1",
+  "raw": {
+    "path": "web/artifacts/multiplayer-tests/desktop-network-brake-both4-relay39-burst160-c1-report.json",
+    "bytes": 33516070,
+    "sha256": "e02f6dbb7414ccd713ab45658dd84e54412611d506fcb73cc250ad9d21e74969"
+  },
+  "timing": {
+    "path": "docs/multiplayer/rollback-desktop-network-brake-both4-relay39-burst160-c1-timing.json",
+    "bytes": 538578,
+    "sha256": "bf71529652a0c8384e29807d2292510d687b0e63f145cc74b09b1ddd2621fc5b"
+  },
+  "scope": "Complete retained candidate C adverse run, fixed native-frontier bins for diagnostic localization, not an exclusion/filter or matched workload/causality claim. Adjacent +1 next/0 correction/0 resim/+1 capture rows do not prove exactly one attempted tick; native callback wall is not CPU self time.",
+  "peers": [
+    {
+      "side": 0,
+      "bins": [
+        {
+          "frontierRange": [
+            180,
+            360
+          ],
+          "bodyRange": [
+            437,
+            877
+          ],
+          "logicHz": 53.22892578105943,
+          "newStateGapMs": {
+            "count": 179,
+            "total": 3357.0199999999986,
+            "p50": 18.18000000000029,
+            "p95": 30.30999999999949,
+            "p99": 30.340000000000146,
+            "max": 36.350000000000364,
+            "over25ms": 15,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 440,
+            "total": 1936.9350004792213,
+            "p50": 3.064999997615814,
+            "p95": 12.055000007152557,
+            "p99": 14.019999980926514,
+            "max": 20.790000021457672,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 43,
+            "p50": 6,
+            "p99": 15.030000030994415,
+            "max": 15.030000030994415
+          },
+          "bodyCorrections": 153,
+          "bodyResimulated": 335
+        },
+        {
+          "frontierRange": [
+            360,
+            540
+          ],
+          "bodyRange": [
+            877,
+            1443
+          ],
+          "logicHz": 45.966737957672294,
+          "newStateGapMs": {
+            "count": 178,
+            "total": 3890.2000000000007,
+            "p50": 18.19499999999971,
+            "p95": 42.405000000000655,
+            "p99": 54.595000000001164,
+            "max": 72.67499999999927,
+            "over25ms": 42,
+            "over50ms": 4,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 566,
+            "total": 1768.9300001263618,
+            "p50": 0.009999990463256836,
+            "p95": 10.939999997615814,
+            "p99": 14.469999969005585,
+            "max": 18.055000007152557,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 68,
+            "p50": 5.110000014305115,
+            "p99": 16.430000007152557,
+            "max": 16.430000007152557
+          },
+          "bodyCorrections": 125,
+          "bodyResimulated": 352
+        },
+        {
+          "frontierRange": [
+            540,
+            720
+          ],
+          "bodyRange": [
+            1443,
+            1912
+          ],
+          "logicHz": 53.95586410312505,
+          "newStateGapMs": {
+            "count": 179,
+            "total": 3314.529999999999,
+            "p50": 18.174999999999272,
+            "p95": 30.29500000000189,
+            "p99": 42.42000000000189,
+            "max": 48.29000000000087,
+            "over25ms": 11,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 469,
+            "total": 1758.8850002288818,
+            "p50": 0.1850000023841858,
+            "p95": 11.560000002384186,
+            "p99": 14.72000002861023,
+            "max": 20.305000007152557,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 47,
+            "p50": 5.064999997615814,
+            "p99": 14.925000011920929,
+            "max": 14.925000011920929
+          },
+          "bodyCorrections": 147,
+          "bodyResimulated": 339
+        },
+        {
+          "frontierRange": [
+            720,
+            900
+          ],
+          "bodyRange": [
+            1912,
+            2289
+          ],
+          "logicHz": 27.65444237874464,
+          "newStateGapMs": {
+            "count": 176,
+            "total": 6477.735000000001,
+            "p50": 24.235000000000582,
+            "p95": 103.01499999999942,
+            "p99": 139.5600000000013,
+            "max": 169.15999999999985,
+            "over25ms": 77,
+            "over50ms": 38,
+            "over100ms": 9,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 377,
+            "total": 4017.709999859333,
+            "p50": 9.534999966621399,
+            "p95": 29.5100000500679,
+            "p99": 40.72500002384186,
+            "max": 51.12999999523163,
+            "over25ms": 35,
+            "over50ms": 1,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 62,
+            "p50": 17.554999947547913,
+            "p99": 51.12999999523163,
+            "max": 51.12999999523163
+          },
+          "bodyCorrections": 129,
+          "bodyResimulated": 267
+        },
+        {
+          "frontierRange": [
+            900,
+            1080
+          ],
+          "bodyRange": [
+            2289,
+            2575
+          ],
+          "logicHz": 18.626608420632003,
+          "newStateGapMs": {
+            "count": 177,
+            "total": 9555.579999999998,
+            "p50": 42.470000000001164,
+            "p95": 133.40000000000146,
+            "p99": 157.66500000000087,
+            "max": 181.77500000000146,
+            "over25ms": 146,
+            "over50ms": 69,
+            "over100ms": 20,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 286,
+            "total": 6118.72000002861,
+            "p50": 19.969999969005585,
+            "p95": 37.264999985694885,
+            "p99": 43.70999997854233,
+            "max": 51.235000014305115,
+            "over25ms": 89,
+            "over50ms": 1,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 111,
+            "p50": 22.139999985694885,
+            "p99": 43.70999997854233,
+            "max": 51.235000014305115
+          },
+          "bodyCorrections": 79,
+          "bodyResimulated": 158
+        },
+        {
+          "frontierRange": [
+            1080,
+            1200
+          ],
+          "bodyRange": [
+            2575,
+            2778
+          ],
+          "logicHz": 20.186319731102028,
+          "newStateGapMs": {
+            "count": 117,
+            "total": 5926.159999999996,
+            "p50": 42.30500000000029,
+            "p95": 121.09500000000116,
+            "p99": 169.58000000000175,
+            "max": 169.64500000000407,
+            "over25ms": 94,
+            "over50ms": 41,
+            "over100ms": 11,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 203,
+            "total": 3828.2100000977516,
+            "p50": 17.944999992847443,
+            "p95": 32.49000000953674,
+            "p99": 40.91500002145767,
+            "max": 54.639999985694885,
+            "over25ms": 37,
+            "over50ms": 1,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 58,
+            "p50": 18.530000030994415,
+            "p99": 40.91500002145767,
+            "max": 40.91500002145767
+          },
+          "bodyCorrections": 71,
+          "bodyResimulated": 131
+        }
+      ],
+      "maximumGap": {
+        "pair": {
+          "fromSample": 2548,
+          "toSample": 2553,
+          "rafTimestampMs": 181.77500000000146,
+          "sampledAtMs": 180.6449999809265,
+          "frontierDelta": 1,
+          "nextDelta": 1,
+          "rendererSubmissions": 1,
+          "fromSessionPhase": 1,
+          "toSessionPhase": 1
+        },
+        "rows": [
+          {
+            "sample": 2548,
+            "timings": {
+              "timestampAgeAtDispatch": 14.535000021460291,
+              "registeredWait": 13.835000038146973,
+              "rafDispatchToFrameEntry": 20.7849999666214,
+              "cppWallMs": 20.584999978542328,
+              "beforePlay": 0.009999990463256836,
+              "play": 0.04000002145767212,
+              "playExitToSample": 0,
+              "sampleWork": 0.050000011920928955,
+              "frameTail": 0,
+              "wholeJsFrame": 0.10000002384185791,
+              "afterFrameToRafExit": 0.06000000238418579,
+              "wholeRafCallback": 20.944999992847443
+            },
+            "counterDelta": {
+              "next": 1,
+              "corr": 0,
+              "resim": 0,
+              "captures": 1,
+              "worldSaves": 1,
+              "presentations": 1
+            },
+            "nativePacing": [
+              2548,
+              1,
+              4,
+              1000,
+              1000,
+              1063,
+              1059
+            ],
+            "sampleData": [
+              29219.810000002384,
+              1,
+              20.584999978542328,
+              1063,
+              1059,
+              751,
+              1714,
+              1063,
+              0,
+              1,
+              1059,
+              1063,
+              1,
+              37287.13
+            ]
+          },
+          {
+            "sample": 2549,
+            "timings": {
+              "timestampAgeAtDispatch": 13.050000011920929,
+              "registeredWait": 7.939999997615814,
+              "rafDispatchToFrameEntry": 36.310000002384186,
+              "cppWallMs": 36.285000026226044,
+              "beforePlay": 0.009999990463256836,
+              "play": 0.38999998569488525,
+              "playExitToSample": 0.004999995231628418,
+              "sampleWork": 0.2250000238418579,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 0.6349999904632568,
+              "afterFrameToRafExit": 0.6150000095367432,
+              "wholeRafCallback": 37.560000002384186
+            },
+            "counterDelta": {
+              "next": -3,
+              "corr": 1,
+              "resim": 1,
+              "captures": 1,
+              "worldSaves": 0,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2549,
+              1,
+              3,
+              1000,
+              1000,
+              1063,
+              1060
+            ],
+            "sampleData": [
+              29264.57499998808,
+              2,
+              36.285000026226044,
+              1060,
+              1059,
+              752,
+              1715,
+              1064,
+              0,
+              1,
+              1059,
+              1063,
+              1,
+              37317.5
+            ]
+          },
+          {
+            "sample": 2550,
+            "timings": {
+              "timestampAgeAtDispatch": 18.809999976161635,
+              "registeredWait": 16.414999961853027,
+              "rafDispatchToFrameEntry": 21.880000054836273,
+              "cppWallMs": 21.85999995470047,
+              "beforePlay": 0.19999998807907104,
+              "play": 0.6100000143051147,
+              "playExitToSample": 0.004999995231628418,
+              "sampleWork": 0.21999996900558472,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 1.0399999618530273,
+              "afterFrameToRafExit": 2.2649999856948853,
+              "wholeRafCallback": 25.185000002384186
+            },
+            "counterDelta": {
+              "next": 1,
+              "corr": 0,
+              "resim": 1,
+              "captures": 0,
+              "worldSaves": 0,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2550,
+              1,
+              2,
+              1000,
+              1000,
+              1063,
+              1061
+            ],
+            "sampleData": [
+              29304.530000030994,
+              2,
+              21.85999995470047,
+              1061,
+              1059,
+              752,
+              1716,
+              1064,
+              0,
+              1,
+              1059,
+              1063,
+              1,
+              37365.715
+            ]
+          },
+          {
+            "sample": 2551,
+            "timings": {
+              "timestampAgeAtDispatch": 12.665000002387387,
+              "registeredWait": 11.600000023841858,
+              "rafDispatchToFrameEntry": 18.980000019073486,
+              "cppWallMs": 18.960000038146973,
+              "beforePlay": 0.009999990463256836,
+              "play": 0.21999996900558472,
+              "playExitToSample": 0.1899999976158142,
+              "sampleWork": 0.23500001430511475,
+              "frameTail": 0,
+              "wholeJsFrame": 0.6549999713897705,
+              "afterFrameToRafExit": 0.4350000023841858,
+              "wholeRafCallback": 20.069999992847443
+            },
+            "counterDelta": {
+              "next": 2,
+              "corr": 0,
+              "resim": 2,
+              "captures": 0,
+              "worldSaves": 1,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2551,
+              1,
+              1,
+              1000,
+              1000,
+              1063,
+              1062
+            ],
+            "sampleData": [
+              29338.019999980927,
+              2,
+              18.960000038146973,
+              1063,
+              1062,
+              752,
+              1718,
+              1064,
+              0,
+              1,
+              1062,
+              1063,
+              1,
+              37408.645
+            ]
+          },
+          {
+            "sample": 2552,
+            "timings": {
+              "timestampAgeAtDispatch": 17.399999978544656,
+              "registeredWait": 14.5799999833107,
+              "rafDispatchToFrameEntry": 11.350000023841858,
+              "cppWallMs": 11.3299999833107,
+              "beforePlay": 0.19499999284744263,
+              "play": 0.20499998331069946,
+              "playExitToSample": 0.005000054836273193,
+              "sampleWork": 0.20499998331069946,
+              "frameTail": 0.009999990463256836,
+              "wholeJsFrame": 0.6200000047683716,
+              "afterFrameToRafExit": 0.4049999713897705,
+              "wholeRafCallback": 12.375
+            },
+            "counterDelta": {
+              "next": 0,
+              "corr": 1,
+              "resim": 1,
+              "captures": 0,
+              "worldSaves": 0,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2552,
+              1,
+              0,
+              1000,
+              1000,
+              1063,
+              1063
+            ],
+            "sampleData": [
+              29365.025000035763,
+              2,
+              11.3299999833107,
+              1063,
+              1063,
+              753,
+              1719,
+              1064,
+              0,
+              1,
+              1063,
+              1063,
+              1,
+              37438.56
+            ]
+          },
+          {
+            "sample": 2553,
+            "timings": {
+              "timestampAgeAtDispatch": 8.28000000238535,
+              "registeredWait": 8.850000023841858,
+              "rafDispatchToFrameEntry": 25.769999980926514,
+              "cppWallMs": 25.75,
+              "beforePlay": 0.17000001668930054,
+              "play": 0.019999980926513672,
+              "playExitToSample": 0,
+              "sampleWork": 0.1950000524520874,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 0.39000004529953003,
+              "afterFrameToRafExit": 0.19499999284744263,
+              "wholeRafCallback": 26.355000019073486
+            },
+            "counterDelta": {
+              "next": 1,
+              "corr": 0,
+              "resim": 0,
+              "captures": 0,
+              "worldSaves": 0,
+              "presentations": 1
+            },
+            "nativePacing": [
+              2553,
+              1,
+              0,
+              1000,
+              1000,
+              1064,
+              1064
+            ],
+            "sampleData": [
+              29400.45499998331,
+              1,
+              25.75,
+              1064,
+              1064,
+              753,
+              1719,
+              1064,
+              0,
+              1,
+              1064,
+              1064,
+              1,
+              37468.905
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "side": 1,
+      "bins": [
+        {
+          "frontierRange": [
+            180,
+            360
+          ],
+          "bodyRange": [
+            530,
+            1070
+          ],
+          "logicHz": 53.35641492285703,
+          "newStateGapMs": {
+            "count": 178,
+            "total": 3350.91,
+            "p50": 18.1850000000004,
+            "p95": 24.290000000000873,
+            "p99": 30.30999999999949,
+            "max": 30.340000000000146,
+            "over25ms": 7,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 540,
+            "total": 1410.7799995541573,
+            "p50": 0.009999990463256836,
+            "p95": 9.355000019073486,
+            "p99": 10.810000002384186,
+            "max": 12.9200000166893,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 42,
+            "p50": 3.2450000047683716,
+            "p99": 5.685000002384186,
+            "max": 5.685000002384186
+          },
+          "bodyCorrections": 144,
+          "bodyResimulated": 532
+        },
+        {
+          "frontierRange": [
+            360,
+            540
+          ],
+          "bodyRange": [
+            1070,
+            1695
+          ],
+          "logicHz": 46.165446702217615,
+          "newStateGapMs": {
+            "count": 178,
+            "total": 3878.115,
+            "p50": 18.19499999999971,
+            "p95": 36.41500000000087,
+            "p99": 42.43000000000029,
+            "max": 48.44499999999971,
+            "over25ms": 38,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 625,
+            "total": 1470.0600008964539,
+            "p50": 0.005000054836273193,
+            "p95": 9.384999990463257,
+            "p99": 10.530000030994415,
+            "max": 11.805000007152557,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 50,
+            "p50": 3.040000021457672,
+            "p99": 5.889999985694885,
+            "max": 5.889999985694885
+          },
+          "bodyCorrections": 138,
+          "bodyResimulated": 562
+        },
+        {
+          "frontierRange": [
+            540,
+            720
+          ],
+          "bodyRange": [
+            1695,
+            2229
+          ],
+          "logicHz": 54.085482104504855,
+          "newStateGapMs": {
+            "count": 179,
+            "total": 3320.6450000000004,
+            "p50": 18.18000000000029,
+            "p95": 24.299999999999272,
+            "p99": 30.31499999999869,
+            "max": 36.44499999999971,
+            "over25ms": 5,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 534,
+            "total": 1523.4150005578995,
+            "p50": 0.005000054836273193,
+            "p95": 9.930000007152557,
+            "p99": 10.894999980926514,
+            "max": 12.564999997615814,
+            "over25ms": 0,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 44,
+            "p50": 3.2549999952316284,
+            "p99": 6.909999966621399,
+            "max": 6.909999966621399
+          },
+          "bodyCorrections": 146,
+          "bodyResimulated": 534
+        },
+        {
+          "frontierRange": [
+            720,
+            900
+          ],
+          "bodyRange": [
+            2229,
+            2642
+          ],
+          "logicHz": 27.279680782421877,
+          "newStateGapMs": {
+            "count": 176,
+            "total": 6580.755000000001,
+            "p50": 24.235000000000582,
+            "p95": 97.03499999999985,
+            "p99": 163.4350000000013,
+            "max": 224.04999999999927,
+            "over25ms": 74,
+            "over50ms": 35,
+            "over100ms": 8,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 413,
+            "total": 3915.629999935627,
+            "p50": 7.784999966621399,
+            "p95": 30.555000007152557,
+            "p99": 39.40499997138977,
+            "max": 42.39999997615814,
+            "over25ms": 49,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 70,
+            "p50": 17.939999997615814,
+            "p99": 42.39999997615814,
+            "max": 42.39999997615814
+          },
+          "bodyCorrections": 123,
+          "bodyResimulated": 344
+        },
+        {
+          "frontierRange": [
+            900,
+            1080
+          ],
+          "bodyRange": [
+            2642,
+            2935
+          ],
+          "logicHz": 18.780465797505205,
+          "newStateGapMs": {
+            "count": 175,
+            "total": 9470.880000000005,
+            "p50": 42.43000000000029,
+            "p95": 121.31999999999971,
+            "p99": 157.4900000000016,
+            "max": 169.5749999999971,
+            "over25ms": 140,
+            "over50ms": 71,
+            "over100ms": 20,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 293,
+            "total": 6153.970000267029,
+            "p50": 20.075000047683716,
+            "p95": 37.735000014305115,
+            "p99": 49.5799999833107,
+            "max": 55.66500002145767,
+            "over25ms": 90,
+            "over50ms": 2,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 99,
+            "p50": 22.089999973773956,
+            "p99": 55.66500002145767,
+            "max": 55.66500002145767
+          },
+          "bodyCorrections": 90,
+          "bodyResimulated": 164
+        },
+        {
+          "frontierRange": [
+            1080,
+            1200
+          ],
+          "bodyRange": [
+            2935,
+            3134
+          ],
+          "logicHz": 20.315430924239152,
+          "newStateGapMs": {
+            "count": 117,
+            "total": 5871.684999999998,
+            "p50": 42.375,
+            "p95": 121.25499999999738,
+            "p99": 139.5,
+            "max": 157.5,
+            "over25ms": 91,
+            "over50ms": 41,
+            "over100ms": 9,
+            "over250ms": 0
+          },
+          "callbackWholeWallMs": {
+            "count": 199,
+            "total": 3767.8750004172325,
+            "p50": 18.094999969005585,
+            "p95": 32.285000026226044,
+            "p99": 46.875,
+            "max": 48.139999985694885,
+            "over25ms": 39,
+            "over50ms": 0,
+            "over100ms": 0,
+            "over250ms": 0
+          },
+          "ordinaryObservedCallbackWallMs": {
+            "n": 59,
+            "p50": 21.459999978542328,
+            "p99": 48.139999985694885,
+            "max": 48.139999985694885
+          },
+          "bodyCorrections": 68,
+          "bodyResimulated": 121
+        }
+      ],
+      "maximumGap": {
+        "pair": {
+          "fromSample": 2537,
+          "toSample": 2544,
+          "rafTimestampMs": 224.04999999999927,
+          "sampledAtMs": 213.02499997615814,
+          "frontierDelta": 1,
+          "nextDelta": 1,
+          "rendererSubmissions": 1,
+          "fromSessionPhase": 1,
+          "toSessionPhase": 1
+        },
+        "rows": [
+          {
+            "sample": 2537,
+            "timings": {
+              "timestampAgeAtDispatch": 21.60999998092666,
+              "registeredWait": 21.17500001192093,
+              "rafDispatchToFrameEntry": 25.25,
+              "cppWallMs": 25.235000014305115,
+              "beforePlay": 0.18000000715255737,
+              "play": 0.02499997615814209,
+              "playExitToSample": 0.005000054836273193,
+              "sampleWork": 0.039999961853027344,
+              "frameTail": 0,
+              "wholeJsFrame": 0.25,
+              "afterFrameToRafExit": 0.23500001430511475,
+              "wholeRafCallback": 25.735000014305115
+            },
+            "counterDelta": {
+              "next": 1,
+              "corr": 0,
+              "resim": 0,
+              "captures": 1,
+              "worldSaves": 1,
+              "presentations": 1
+            },
+            "nativePacing": [
+              2537,
+              1,
+              4,
+              1000,
+              1000,
+              837,
+              833
+            ],
+            "sampleData": [
+              17128.650000035763,
+              1,
+              25.235000014305115,
+              837,
+              833,
+              635,
+              2367,
+              837,
+              0,
+              1,
+              833,
+              837,
+              1,
+              20608.16
+            ]
+          },
+          {
+            "sample": 2538,
+            "timings": {
+              "timestampAgeAtDispatch": 14.15499997615916,
+              "registeredWait": 15.269999980926514,
+              "rafDispatchToFrameEntry": 20.975000023841858,
+              "cppWallMs": 20.77000004053116,
+              "beforePlay": 0.21999996900558472,
+              "play": 0.4350000023841858,
+              "playExitToSample": 0.20000004768371582,
+              "sampleWork": 0.5149999856948853,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 1.375,
+              "afterFrameToRafExit": 0.12000000476837158,
+              "wholeRafCallback": 22.47000002861023
+            },
+            "counterDelta": {
+              "next": -3,
+              "corr": 1,
+              "resim": 1,
+              "captures": 1,
+              "worldSaves": 0,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2538,
+              1,
+              2,
+              1000,
+              1000,
+              837,
+              835
+            ],
+            "sampleData": [
+              17166.025000035763,
+              2,
+              20.77000004053116,
+              834,
+              833,
+              636,
+              2368,
+              838,
+              0,
+              1,
+              833,
+              837,
+              1,
+              20656.62
+            ]
+          },
+          {
+            "sample": 2539,
+            "timings": {
+              "timestampAgeAtDispatch": 5.3000000023857865,
+              "registeredWait": 5.189999997615814,
+              "rafDispatchToFrameEntry": 11.514999985694885,
+              "cppWallMs": 11.495000004768372,
+              "beforePlay": 0.20499998331069946,
+              "play": 0.25,
+              "playExitToSample": 0.004999995231628418,
+              "sampleWork": 0.21000003814697266,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 0.675000011920929,
+              "afterFrameToRafExit": 1.1399999856948853,
+              "wholeRafCallback": 13.3299999833107
+            },
+            "counterDelta": {
+              "next": 2,
+              "corr": 0,
+              "resim": 2,
+              "captures": 0,
+              "worldSaves": 1,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2539,
+              1,
+              2,
+              1000,
+              1000,
+              837,
+              835
+            ],
+            "sampleData": [
+              17183.82999998331,
+              2,
+              11.495000004768372,
+              836,
+              833,
+              636,
+              2370,
+              838,
+              0,
+              1,
+              833,
+              837,
+              1,
+              20693.135
+            ]
+          },
+          {
+            "sample": 2540,
+            "timings": {
+              "timestampAgeAtDispatch": 12.66000000238273,
+              "registeredWait": 12.0450000166893,
+              "rafDispatchToFrameEntry": 12.5799999833107,
+              "cppWallMs": 12.550000011920929,
+              "beforePlay": 0.004999995231628418,
+              "play": 0.21000003814697266,
+              "playExitToSample": 0.004999995231628418,
+              "sampleWork": 0.20999997854232788,
+              "frameTail": 0,
+              "wholeJsFrame": 0.4300000071525574,
+              "afterFrameToRafExit": 0.4049999713897705,
+              "wholeRafCallback": 13.414999961853027
+            },
+            "counterDelta": {
+              "next": 1,
+              "corr": 0,
+              "resim": 1,
+              "captures": 0,
+              "worldSaves": 1,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2540,
+              1,
+              2,
+              1000,
+              1000,
+              837,
+              835
+            ],
+            "sampleData": [
+              17210.030000030994,
+              2,
+              12.550000011920929,
+              837,
+              835,
+              636,
+              2371,
+              838,
+              0,
+              1,
+              835,
+              837,
+              1,
+              20711.15
+            ]
+          },
+          {
+            "sample": 2541,
+            "timings": {
+              "timestampAgeAtDispatch": 17.945000019073632,
+              "registeredWait": 16.005000054836273,
+              "rafDispatchToFrameEntry": 16.1149999499321,
+              "cppWallMs": 15.675000011920929,
+              "beforePlay": 0.010000050067901611,
+              "play": 0.2149999737739563,
+              "playExitToSample": 0.004999995231628418,
+              "sampleWork": 0.36500000953674316,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 0.6000000238418579,
+              "afterFrameToRafExit": 0.23000001907348633,
+              "wholeRafCallback": 16.944999992847443
+            },
+            "counterDelta": {
+              "next": -1,
+              "corr": 1,
+              "resim": 1,
+              "captures": 0,
+              "worldSaves": 0,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2541,
+              1,
+              1,
+              1000,
+              1000,
+              837,
+              836
+            ],
+            "sampleData": [
+              17242.99500000477,
+              2,
+              15.675000011920929,
+              836,
+              835,
+              637,
+              2372,
+              838,
+              0,
+              1,
+              835,
+              837,
+              1,
+              20735.285
+            ]
+          },
+          {
+            "sample": 2542,
+            "timings": {
+              "timestampAgeAtDispatch": 19.0150000095382,
+              "registeredWait": 14.439999997615814,
+              "rafDispatchToFrameEntry": 26.259999990463257,
+              "cppWallMs": 26.24500000476837,
+              "beforePlay": 0.20999997854232788,
+              "play": 0.21000003814697266,
+              "playExitToSample": 0.004999995231628418,
+              "sampleWork": 0.625,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 1.0550000071525574,
+              "afterFrameToRafExit": 0.4099999666213989,
+              "wholeRafCallback": 27.724999964237213
+            },
+            "counterDelta": {
+              "next": 1,
+              "corr": 0,
+              "resim": 1,
+              "captures": 0,
+              "worldSaves": 1,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2542,
+              1,
+              1,
+              1000,
+              1000,
+              837,
+              836
+            ],
+            "sampleData": [
+              17284.72000002861,
+              2,
+              26.24500000476837,
+              837,
+              836,
+              637,
+              2373,
+              838,
+              0,
+              1,
+              836,
+              837,
+              1,
+              20765.6
+            ]
+          },
+          {
+            "sample": 2543,
+            "timings": {
+              "timestampAgeAtDispatch": 6.6599999785430555,
+              "registeredWait": 8.620000004768372,
+              "rafDispatchToFrameEntry": 12.09500002861023,
+              "cppWallMs": 12.069999992847443,
+              "beforePlay": 0.26999998092651367,
+              "play": 0.0350000262260437,
+              "playExitToSample": 0,
+              "sampleWork": 0.20499998331069946,
+              "frameTail": 0.004999995231628418,
+              "wholeJsFrame": 0.5149999856948853,
+              "afterFrameToRafExit": 0.04000002145767212,
+              "wholeRafCallback": 12.650000035762787
+            },
+            "counterDelta": {
+              "next": 0,
+              "corr": 1,
+              "resim": 1,
+              "captures": 0,
+              "worldSaves": 0,
+              "presentations": 0
+            },
+            "nativePacing": [
+              2543,
+              1,
+              0,
+              1000,
+              1000,
+              837,
+              837
+            ],
+            "sampleData": [
+              17306.780000030994,
+              2,
+              12.069999992847443,
+              837,
+              837,
+              638,
+              2374,
+              838,
+              0,
+              1,
+              837,
+              837,
+              1,
+              20814.3
+            ]
+          },
+          {
+            "sample": 2544,
+            "timings": {
+              "timestampAgeAtDispatch": 11.960000016690174,
+              "registeredWait": 10.560000002384186,
+              "rafDispatchToFrameEntry": 23.62999999523163,
+              "cppWallMs": 23.610000014305115,
+              "beforePlay": 0.20499998331069946,
+              "play": 0.24500000476837158,
+              "playExitToSample": 0.004999995231628418,
+              "sampleWork": 0.25,
+              "frameTail": 0.009999990463256836,
+              "wholeJsFrame": 0.7149999737739563,
+              "afterFrameToRafExit": 0.050000011920928955,
+              "wholeRafCallback": 24.394999980926514
+            },
+            "counterDelta": {
+              "next": 1,
+              "corr": 0,
+              "resim": 0,
+              "captures": 0,
+              "worldSaves": 0,
+              "presentations": 1
+            },
+            "nativePacing": [
+              2544,
+              1,
+              0,
+              1000,
+              1000,
+              838,
+              838
+            ],
+            "sampleData": [
+              17341.67500001192,
+              1,
+              23.610000014305115,
+              838,
+              838,
+              638,
+              2374,
+              838,
+              0,
+              1,
+              838,
+              838,
+              1,
+              20832.21
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

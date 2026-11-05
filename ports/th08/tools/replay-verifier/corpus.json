@@ -1,0 +1,21 @@
+{
+  "schema": "eagler/replay-corpus/v1",
+  "game": "th08",
+  "policy": {"gameplayMutation":"forbidden"},
+  "demo": {"rotationOrder":["demo/demorpy0.rpy","demo/demorpy1.rpy","demo/demorpy2.rpy","demo/demorpy3.rpy"]},
+  "cases": [
+    {"id":"demo0","kind":"demo","source":"demo/demorpy0.rpy","status":"ready"},
+    {"id":"demo1","kind":"demo","source":"demo/demorpy1.rpy","status":"ready"},
+    {"id":"demo2","kind":"demo","source":"demo/demorpy2.rpy","status":"ready"},
+    {"id":"demo3","kind":"demo","source":"demo/demorpy3.rpy","status":"ready"},
+    {"id":"lunatic-second-character-second-config","kind":"lunatic","loadout":"magic-team","difficulty":"lunatic","route":"final-b","status":"ready","source":"tools/replay-verifier/fixtures/original/th8_ud2bec.rpy","sourceUrl":"https://maribelhearn.com/replays/royalflare/th08/th8_ud2bec.rpy","sourceArchive":"Royalflare","submitter":"Dean","replayVersion":"1.00d","replaySha256":"9f5bc5e7e7e32a6adc92e98a1219bbdac7acdb1475011242ba76493e2f658ed1","slowdownPercent":0.0,"recordedStages":[0,1,2,3,5,7],"clearState":2},
+    {"id":"extra-second-character-second-config","kind":"extra","loadout":"magic-team","difficulty":"extra","status":"ready","source":"tools/replay-verifier/fixtures/original/th8_ud2bf9.rpy","sourceUrl":"https://maribelhearn.com/replays/royalflare/th08/th8_ud2bf9.rpy","sourceArchive":"Royalflare","submitter":"1","replayVersion":"1.00d","replaySha256":"3338efac5946ab42502e4ca80f17f9b0eb6811ba87b69a79b100489cde622eb5","slowdownPercent":0.0,"recordedStages":[8],"clearState":2}
+  ],
+  "suite": "demo",
+  "fixtures": [
+    {"id":"demo0","replay":"reference/demorpy0.rpy","replaySha256":"6de76d9f5d0ef8d58887bc74087fd566c246c676b6429850ea4702776f2533d8","expectedTicks":10607},
+    {"id":"demo1","replay":"reference/demorpy1.rpy","replaySha256":"b13b50fb09e5a2a545e284a1c9b160f95f1f63072822fda7fdfdd0e1e3990092","expectedTicks":7658},
+    {"id":"demo2","replay":"reference/demorpy2.rpy","replaySha256":"d9fabd1d7c661909c6ecdfc83ae6caaea908ba4eae7b465fd1458bdc81a4efaa","expectedTicks":8468},
+    {"id":"demo3","replay":"reference/demorpy3.rpy","replaySha256":"cfad7206efdb23d5a3ee704f5367781115dfe814ae4d83ba94a6c5838bd75f97","expectedTicks":9241}
+  ]
+}

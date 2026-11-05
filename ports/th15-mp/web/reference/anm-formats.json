@@ -1,0 +1,3698 @@
+[
+  {
+    "name": "ascii.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "ascii_1280.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "ascii_960.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "bullet.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 64,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "e01.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "e02.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "e03.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "e04.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "e05.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "e06.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "e07.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "e08.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 3
+      }
+    ]
+  },
+  {
+    "name": "effect.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 64,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 64,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 64,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 16,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 32,
+        "h": 32,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "enemy.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 64,
+        "fmt": 6,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "front.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 32,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 32,
+        "h": 32,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "help.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 768,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 0,
+        "lowResScale": 1,
+        "pixelFormat": 0
+      }
+    ]
+  },
+  {
+    "name": "pl00.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "pl01.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "pl02.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "pl03.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "sig.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st01enm.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st01logo.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st01wl.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 6,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st02enm.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st02logo.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st02wl.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st03enm.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st03logo.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st03wl.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st04enm.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st04logo.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st04wl.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 32,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 64,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 6,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st05enm.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st05logo.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st05wl.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st06enm.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 2048,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 3,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 3
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st06logo.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st06wl.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st07enm.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st07enm2.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st07enm3.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 128,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 4,
+        "h": 4,
+        "fmt": 7,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 7
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 2048,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "st07logo.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "st07wl.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 1
+      }
+    ]
+  },
+  {
+    "name": "staff.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 2048,
+        "h": 4096,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 256,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 2048,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      }
+    ]
+  },
+  {
+    "name": "text.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 0,
+        "lowResScale": 0,
+        "pixelFormat": 0
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 3,
+        "embedded": 0,
+        "lowResScale": 0,
+        "pixelFormat": 0
+      },
+      {
+        "version": 8,
+        "w": 640,
+        "h": 480,
+        "fmt": 1,
+        "embedded": 0,
+        "lowResScale": 0,
+        "pixelFormat": 0
+      },
+      {
+        "version": 8,
+        "w": 640,
+        "h": 480,
+        "fmt": 1,
+        "embedded": 0,
+        "lowResScale": 0,
+        "pixelFormat": 0
+      }
+    ]
+  },
+  {
+    "name": "title.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 256,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 64,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 128,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 256,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 1024,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 512,
+        "fmt": 1,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 1
+      },
+      {
+        "version": 8,
+        "w": 512,
+        "h": 512,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 1,
+        "pixelFormat": 5
+      },
+      {
+        "version": 8,
+        "w": 1024,
+        "h": 1024,
+        "fmt": 5,
+        "embedded": 0,
+        "lowResScale": 0,
+        "pixelFormat": 0
+      }
+    ]
+  },
+  {
+    "name": "title_v.anm",
+    "chunks": [
+      {
+        "version": 8,
+        "w": 256,
+        "h": 32,
+        "fmt": 5,
+        "embedded": 1,
+        "lowResScale": 0,
+        "pixelFormat": 5
+      }
+    ]
+  }
+]

@@ -1,0 +1,2242 @@
+{
+  "schema": "th12-original-enemy-life/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "logicHooks": false,
+  "provider": "Actual418947..41962b,41897a..41962b and complete412050; explicit life inputs",
+  "records": [
+    {
+      "initial": 1500,
+      "threshold": 0,
+      "flags": 0,
+      "spell": true,
+      "birth": {
+        "life": 1500,
+        "raw": 10500,
+        "flags": 1
+      },
+      "frames": [
+        {
+          "damage": 15,
+          "life": 1497,
+          "raw": 10485,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1495,
+          "raw": 10470,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1493,
+          "raw": 10455,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1491,
+          "raw": 10440,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1489,
+          "raw": 10425,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1487,
+          "raw": 10410,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1485,
+          "raw": 10395,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1482,
+          "raw": 10380,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1480,
+          "raw": 10365,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1478,
+          "raw": 10350,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1476,
+          "raw": 10335,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1474,
+          "raw": 10320,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1472,
+          "raw": 10305,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1470,
+          "raw": 10290,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1467,
+          "raw": 10275,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1465,
+          "raw": 10260,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1463,
+          "raw": 10245,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1461,
+          "raw": 10230,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1459,
+          "raw": 10215,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1457,
+          "raw": 10200,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1455,
+          "raw": 10185,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1452,
+          "raw": 10170,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1450,
+          "raw": 10155,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1448,
+          "raw": 10140,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1446,
+          "raw": 10125,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1444,
+          "raw": 10110,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1442,
+          "raw": 10095,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1440,
+          "raw": 10080,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1437,
+          "raw": 10065,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1435,
+          "raw": 10050,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1433,
+          "raw": 10035,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1431,
+          "raw": 10020,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1429,
+          "raw": 10005,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1427,
+          "raw": 9990,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1425,
+          "raw": 9975,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1422,
+          "raw": 9960,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1420,
+          "raw": 9945,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1418,
+          "raw": 9930,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1416,
+          "raw": 9915,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1414,
+          "raw": 9900,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1412,
+          "raw": 9885,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1410,
+          "raw": 9870,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1407,
+          "raw": 9855,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1405,
+          "raw": 9840,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1403,
+          "raw": 9825,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1401,
+          "raw": 9810,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1399,
+          "raw": 9795,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1397,
+          "raw": 9780,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1395,
+          "raw": 9765,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1392,
+          "raw": 9750,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1390,
+          "raw": 9735,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1388,
+          "raw": 9720,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1386,
+          "raw": 9705,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1384,
+          "raw": 9690,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1382,
+          "raw": 9675,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1380,
+          "raw": 9660,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1377,
+          "raw": 9645,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1375,
+          "raw": 9630,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1373,
+          "raw": 9615,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1371,
+          "raw": 9600,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1369,
+          "raw": 9585,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1367,
+          "raw": 9570,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1365,
+          "raw": 9555,
+          "flags": 1
+        },
+        {
+          "damage": 15,
+          "life": 1362,
+          "raw": 9540,
+          "flags": 1
+        }
+      ],
+      "end": {
+        "life": 1362,
+        "raw": 9540,
+        "flags": 0
+      }
+    },
+    {
+      "initial": 1500,
+      "threshold": 0,
+      "flags": 2,
+      "spell": true,
+      "birth": {
+        "life": 1500,
+        "raw": 10500,
+        "flags": 3
+      },
+      "frames": [
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10499,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10498,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10497,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10496,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10495,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10494,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10493,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1498,
+          "raw": 10492,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1498,
+          "raw": 10491,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1498,
+          "raw": 10490,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1498,
+          "raw": 10489,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1498,
+          "raw": 10488,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1498,
+          "raw": 10487,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1498,
+          "raw": 10486,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1497,
+          "raw": 10485,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1497,
+          "raw": 10484,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1497,
+          "raw": 10483,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1497,
+          "raw": 10482,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1497,
+          "raw": 10481,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1497,
+          "raw": 10480,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1497,
+          "raw": 10479,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1496,
+          "raw": 10478,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1496,
+          "raw": 10477,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1496,
+          "raw": 10476,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1496,
+          "raw": 10475,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1496,
+          "raw": 10474,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1496,
+          "raw": 10473,
+          "flags": 3
+        },
+        {
+          "damage": 1,
+          "life": 1496,
+          "raw": 10472,
+          "flags": 3
+        }
+      ],
+      "end": {
+        "life": 1496,
+        "raw": 10472,
+        "flags": 2
+      }
+    },
+    {
+      "initial": 1500,
+      "threshold": 0,
+      "flags": 0,
+      "spell": true,
+      "birth": {
+        "life": 1500,
+        "raw": 10500,
+        "flags": 1
+      },
+      "frames": [
+        {
+          "damage": 80,
+          "life": 1488,
+          "raw": 10420,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1477,
+          "raw": 10340,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1465,
+          "raw": 10260,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1454,
+          "raw": 10180,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1442,
+          "raw": 10100,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1431,
+          "raw": 10020,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1420,
+          "raw": 9940,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1408,
+          "raw": 9860,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1397,
+          "raw": 9780,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1385,
+          "raw": 9700,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1374,
+          "raw": 9620,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1362,
+          "raw": 9540,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1351,
+          "raw": 9460,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1340,
+          "raw": 9380,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1328,
+          "raw": 9300,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1317,
+          "raw": 9220,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1305,
+          "raw": 9140,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1294,
+          "raw": 9060,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1282,
+          "raw": 8980,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1271,
+          "raw": 8900,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1260,
+          "raw": 8820,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1248,
+          "raw": 8740,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1237,
+          "raw": 8660,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1225,
+          "raw": 8580,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1214,
+          "raw": 8500,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1202,
+          "raw": 8420,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1191,
+          "raw": 8340,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1180,
+          "raw": 8260,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1168,
+          "raw": 8180,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1157,
+          "raw": 8100,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1145,
+          "raw": 8020,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1134,
+          "raw": 7940,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1122,
+          "raw": 7860,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1111,
+          "raw": 7780,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1100,
+          "raw": 7700,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1088,
+          "raw": 7620,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1077,
+          "raw": 7540,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1065,
+          "raw": 7460,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1054,
+          "raw": 7380,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1042,
+          "raw": 7300,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1031,
+          "raw": 7220,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1020,
+          "raw": 7140,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1008,
+          "raw": 7060,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 997,
+          "raw": 6980,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 985,
+          "raw": 6900,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 974,
+          "raw": 6820,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 962,
+          "raw": 6740,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 951,
+          "raw": 6660,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 940,
+          "raw": 6580,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 928,
+          "raw": 6500,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 917,
+          "raw": 6420,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 905,
+          "raw": 6340,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 894,
+          "raw": 6260,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 882,
+          "raw": 6180,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 871,
+          "raw": 6100,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 860,
+          "raw": 6020,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 848,
+          "raw": 5940,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 837,
+          "raw": 5860,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 825,
+          "raw": 5780,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 814,
+          "raw": 5700,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 802,
+          "raw": 5620,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 791,
+          "raw": 5540,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 780,
+          "raw": 5460,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 768,
+          "raw": 5380,
+          "flags": 1
+        }
+      ],
+      "end": {
+        "life": 768,
+        "raw": 5380,
+        "flags": 0
+      }
+    },
+    {
+      "initial": 1500,
+      "threshold": 1000,
+      "flags": 0,
+      "spell": true,
+      "birth": {
+        "life": 1500,
+        "raw": 10500,
+        "flags": 1
+      },
+      "frames": [
+        {
+          "damage": 1,
+          "life": 1499,
+          "raw": 10499,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1499,
+          "raw": 10493,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1498,
+          "raw": 10486,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1496,
+          "raw": 10478,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1485,
+          "raw": 10399,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1474,
+          "raw": 10319,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1474,
+          "raw": 10318,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1473,
+          "raw": 10312,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1472,
+          "raw": 10305,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1471,
+          "raw": 10297,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1459,
+          "raw": 10218,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1448,
+          "raw": 10138,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1448,
+          "raw": 10137,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1447,
+          "raw": 10131,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1446,
+          "raw": 10124,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1445,
+          "raw": 10116,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1433,
+          "raw": 10037,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1422,
+          "raw": 9957,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1422,
+          "raw": 9956,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1421,
+          "raw": 9950,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1420,
+          "raw": 9943,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1419,
+          "raw": 9935,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1408,
+          "raw": 9856,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1396,
+          "raw": 9776,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1396,
+          "raw": 9775,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1395,
+          "raw": 9769,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1394,
+          "raw": 9762,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1393,
+          "raw": 9754,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1382,
+          "raw": 9675,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1370,
+          "raw": 9595,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1370,
+          "raw": 9594,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1369,
+          "raw": 9588,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1368,
+          "raw": 9581,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1367,
+          "raw": 9573,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1356,
+          "raw": 9494,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1344,
+          "raw": 9414,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1344,
+          "raw": 9413,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1343,
+          "raw": 9407,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1342,
+          "raw": 9400,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1341,
+          "raw": 9392,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1330,
+          "raw": 9313,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1319,
+          "raw": 9233,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1318,
+          "raw": 9232,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1318,
+          "raw": 9226,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1317,
+          "raw": 9219,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1315,
+          "raw": 9211,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1304,
+          "raw": 9132,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1293,
+          "raw": 9052,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1293,
+          "raw": 9051,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1292,
+          "raw": 9045,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1291,
+          "raw": 9038,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1290,
+          "raw": 9030,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1278,
+          "raw": 8951,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1267,
+          "raw": 8871,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1267,
+          "raw": 8870,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1266,
+          "raw": 8864,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1265,
+          "raw": 8857,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1264,
+          "raw": 8849,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1252,
+          "raw": 8770,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1241,
+          "raw": 8690,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1241,
+          "raw": 8689,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1240,
+          "raw": 8683,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1239,
+          "raw": 8676,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1238,
+          "raw": 8668,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1227,
+          "raw": 8589,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1215,
+          "raw": 8509,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1215,
+          "raw": 8508,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1214,
+          "raw": 8502,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1213,
+          "raw": 8495,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1212,
+          "raw": 8487,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1201,
+          "raw": 8408,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1189,
+          "raw": 8328,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1189,
+          "raw": 8327,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1188,
+          "raw": 8321,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1187,
+          "raw": 8314,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1186,
+          "raw": 8306,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1175,
+          "raw": 8227,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1163,
+          "raw": 8147,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1163,
+          "raw": 8146,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1162,
+          "raw": 8140,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1161,
+          "raw": 8133,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1160,
+          "raw": 8125,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1149,
+          "raw": 8046,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1138,
+          "raw": 7966,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1137,
+          "raw": 7965,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1137,
+          "raw": 7959,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1136,
+          "raw": 7952,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1134,
+          "raw": 7944,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1123,
+          "raw": 7865,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1112,
+          "raw": 7785,
+          "flags": 1
+        },
+        {
+          "damage": 1,
+          "life": 1112,
+          "raw": 7784,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1111,
+          "raw": 7778,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1110,
+          "raw": 7771,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1109,
+          "raw": 7763,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 1097,
+          "raw": 7684,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 1086,
+          "raw": 7604,
+          "flags": 1
+        }
+      ],
+      "end": {
+        "life": 1086,
+        "raw": 7604,
+        "flags": 0
+      }
+    },
+    {
+      "initial": 3,
+      "threshold": 0,
+      "flags": 0,
+      "spell": true,
+      "birth": {
+        "life": 3,
+        "raw": 21,
+        "flags": 1
+      },
+      "frames": [
+        {
+          "damage": 1,
+          "life": 2,
+          "raw": 20,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 2,
+          "raw": 14,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1,
+          "raw": 7,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 0,
+          "raw": -1,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": -11,
+          "raw": -80,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": -22,
+          "raw": -160,
+          "flags": 1
+        }
+      ],
+      "end": {
+        "life": -22,
+        "raw": -160,
+        "flags": 0
+      }
+    },
+    {
+      "initial": 1007,
+      "threshold": 1000,
+      "flags": 0,
+      "spell": true,
+      "birth": {
+        "life": 1007,
+        "raw": 7049,
+        "flags": 1
+      },
+      "frames": [
+        {
+          "damage": 1,
+          "life": 1006,
+          "raw": 7048,
+          "flags": 1
+        },
+        {
+          "damage": 6,
+          "life": 1006,
+          "raw": 7042,
+          "flags": 1
+        },
+        {
+          "damage": 7,
+          "life": 1005,
+          "raw": 7035,
+          "flags": 1
+        },
+        {
+          "damage": 8,
+          "life": 1003,
+          "raw": 7027,
+          "flags": 1
+        },
+        {
+          "damage": 79,
+          "life": 993,
+          "raw": 6948,
+          "flags": 1
+        },
+        {
+          "damage": 80,
+          "life": 982,
+          "raw": 6868,
+          "flags": 1
+        }
+      ],
+      "end": {
+        "life": 982,
+        "raw": 6868,
+        "flags": 0
+      }
+    },
+    {
+      "initial": 1500,
+      "threshold": 0,
+      "flags": 0,
+      "spell": false,
+      "birth": {
+        "life": 1500,
+        "raw": 10500,
+        "flags": 0
+      },
+      "frames": [
+        {
+          "damage": 15,
+          "life": 1485,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1470,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1455,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1440,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1425,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1410,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1395,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1380,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1365,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1350,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1335,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1320,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1305,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1290,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1275,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1260,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1245,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1230,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1215,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1200,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1185,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1170,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1155,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1140,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1125,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1110,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1095,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1080,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1065,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1050,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1035,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1020,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 1005,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 990,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 975,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 960,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 945,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 930,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 915,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 900,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 885,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 870,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 855,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 840,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 825,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 810,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 795,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 780,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 765,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 750,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 735,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 720,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 705,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 690,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 675,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 660,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 645,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 630,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 615,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 600,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 585,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 570,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 555,
+          "raw": 10500,
+          "flags": 0
+        },
+        {
+          "damage": 15,
+          "life": 540,
+          "raw": 10500,
+          "flags": 0
+        }
+      ],
+      "end": {
+        "life": 540,
+        "raw": 10500,
+        "flags": 0
+      }
+    },
+    {
+      "initial": 1500,
+      "threshold": 0,
+      "flags": 2,
+      "spell": false,
+      "birth": {
+        "life": 1500,
+        "raw": 10500,
+        "flags": 2
+      },
+      "frames": [
+        {
+          "damage": 80,
+          "life": 1420,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 1340,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 1260,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 1180,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 1100,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 1020,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 940,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 860,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 780,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 700,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 620,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 540,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 460,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 380,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 300,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 220,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 140,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": 60,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": -20,
+          "raw": 10500,
+          "flags": 2
+        },
+        {
+          "damage": 80,
+          "life": -100,
+          "raw": 10500,
+          "flags": 2
+        }
+      ],
+      "end": {
+        "life": -100,
+        "raw": 10500,
+        "flags": 2
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+✔ cooperative story clear uses title ranking then multiplayer replay slots (2.677ms)
+✔ original 25-slot replay menu retains a separate multiplayer slot namespace (1.6217ms)
+✔ cooperative game over and Extra retain their native in-game result controls (0.4349ms)
+✔ portrait hosted drag uses the fitted canvas instead of the full viewport (0.7051ms)
+✔ THPrac mouse CSS pixels map exactly like a native canvas mouse (0.1359ms)
+✔ a normal room exit before a launched first frame is not a crash (0.7631ms)
+✔ native failures retain their actual reason and pre-teardown state (0.338ms)
+✔ unknown exits describe lifecycle status and keep logs as diagnostic data (1.6826ms)
+✔ portrait hosted drag uses the fitted canvas instead of the full viewport (0.6256ms)
+✔ THPrac mouse CSS pixels map exactly like a native canvas mouse (0.1147ms)
+✔ a normal room exit before a launched first frame is not a crash (0.671ms)
+✔ native failures retain their actual reason and pre-teardown state (0.4012ms)
+✔ unknown exits describe lifecycle status and keep logs as diagnostic data (1.4805ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 221.1757

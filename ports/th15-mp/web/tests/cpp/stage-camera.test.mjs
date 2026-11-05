@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {core,oracle,memory,report,enableNativeMath} from './helpers.mjs';import {nativeGraphics} from './rendering-oracle.mjs';
+test('TH15 C++ scene view and projection matrices match original camera mathematics',async()=>{
+ const c=await core(),m=await oracle();enableNativeMath(m);const gfx=nativeGraphics(m),input=c.allocate(0x120),out=c.allocate(140),vp=c.allocate(24),native=m.allocate(0x120),no=m.allocate(64),vectors=[m.allocate(12),m.allocate(12),m.allocate(12)],cout=c.allocate(64);let checks=0;const sources=[[0,0x3c],[0x18,0x24]];
+ try{for(let sample=0;sample<4096;sample++){
+  const data=Buffer.alloc(0x120);for(const off of [0,0x18,0x24,0x3c])for(let k=0;k<3;k++)data.writeFloatLE((sample%97-42+k*13+off)*.125,off+k*4);data.writeFloatLE(.3+(sample%100)*.01,0x54);const width=384+sample%127,height=448+sample%99;data.writeUInt32LE(width,0xe8);data.writeUInt32LE(height,0xec);const viewport=Buffer.alloc(24);viewport.writeUInt32LE(width,8);viewport.writeUInt32LE(height,12);viewport.writeFloatLE(1,20);memory(c,vp,24).set(viewport);memory(c,input,data.length).set(data);m.write(native,data);gfx.reset();m.call(0x44e120,{args:[native]});c.stage_camera_snapshot(input,vp,out);
+  assert.deepEqual(Buffer.from(memory(c,out,64)),Buffer.from(m.bytes(native+0x60,64)),'view '+sample);assert.deepEqual(Buffer.from(memory(c,out+64,64)),Buffer.from(m.bytes(native+0xa0,64)),'projection '+sample);assert.deepEqual(Buffer.from(memory(c,out+128,12)),Buffer.from(m.bytes(native+0x30,12)),'camera reference '+sample);checks+=3;
+ }
+ report('stage-camera',{passed:true,cases:4096,checks,originalFunctions:['0x44e120','D3DXMatrixLookAtLH','D3DXMatrixPerspectiveFovLH','D3DXVec3Normalize'],scope:'Camera eye offsets, view and projection matrices, width/height aspect and normalized reference vectors using standalone ordinary C++ math. Original D3DX math runs only in the isolated comparison oracle; GPU drawing is not included.'});
+ }finally{for(const p of [input,out,vp,cout])c.release(p);m.close();}
+});

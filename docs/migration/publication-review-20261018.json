@@ -1,0 +1,770 @@
+{
+  "schema": "eagler-touhou/source-publication-review/1",
+  "recordedAt": "2026-10-17T17:04:10.951Z",
+  "scope": "All tracked common/Runtime paths rejected by the original workspace assets/extension scan. This is a review snapshot, not a current audit result.",
+  "checkedFiles": 151,
+  "groups": [
+    {
+      "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
+      "bytes": 11560,
+      "name": "SpessaSynth.LICENSE",
+      "paths": [
+        "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+        "runtimes/th08/th08_web/assets/native/vendor/SpessaSynth.LICENSE"
+      ],
+      "classification": "third-party-license-notice",
+      "disposition": "reviewed-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+          "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5"
+        }
+      ],
+      "canonicalComparison": null
+    },
+    {
+      "sha256": "bda909b5f4abb8780b01d304ce9208a52e2f1b9042468256b23120ed420cb7b1",
+      "bytes": 653102,
+      "name": "spessasynth.mjs",
+      "paths": [
+        "runtimes/th08-mp/th08_web/assets/native/vendor/spessasynth.mjs",
+        "runtimes/th08/th08_web/assets/native/vendor/spessasynth.mjs"
+      ],
+      "classification": "vendored-midi-synthesizer",
+      "disposition": "reviewed-third-party",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/SpessaSynth.LICENSE",
+          "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5"
+        },
+        {
+          "path": "runtimes/th08-mp/portable/package-architecture.mjs",
+          "sha256": "a47e1f1d69759cd5d8551d7117e9f61d356c7b9c4af4ba5b125d4573313b3f16"
+        }
+      ],
+      "canonicalComparison": null
+    },
+    {
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "name": "stb-vorbis.LICENSE",
+      "paths": [
+        "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+        "runtimes/th08/th08_web/assets/native/vendor/stb-vorbis.LICENSE"
+      ],
+      "classification": "third-party-license-notice",
+      "disposition": "reviewed-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ],
+      "canonicalComparison": null
+    },
+    {
+      "sha256": "a15b8dcd82ff2be79322ae975850dd5a4c1e4dceedb46241c584fbda9dbf38b5",
+      "bytes": 112884,
+      "name": "stb-vorbis.mjs",
+      "paths": [
+        "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.mjs",
+        "runtimes/th08/th08_web/assets/native/vendor/stb-vorbis.mjs"
+      ],
+      "classification": "vendored-compiled-vorbis-decoder",
+      "disposition": "reviewed-third-party",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/native/vendor/stb-vorbis.LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "docs/migration/stb-vorbis-provenance.json",
+          "sha256": "1884e44b9d5546383d36e10b012559047a005cbc36493cb442230cd758f1354a"
+        },
+        {
+          "path": "runtimes/th08-mp/portable/package-architecture.mjs",
+          "sha256": "a47e1f1d69759cd5d8551d7117e9f61d356c7b9c4af4ba5b125d4573313b3f16"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Verified npm stb-vorbis@0.0.6 tarball SHA-512 integrity. Module equals package/dist/index.js after checkout LF/CRLF normalization. Wrapper is Apache-2.0; underlying stb source has its separate MIT/public-domain alternatives."
+    },
+    {
+      "sha256": "27ac0e51061f436ff053b0dbc0553287bee95a0165e169a95dcabd80c5a05a61",
+      "bytes": 2319,
+      "name": "music-layout.json",
+      "paths": [
+        "runtimes/th08-mp/th08_web/assets/sdl-native/music-layout.json",
+        "runtimes/th08/th08_web/assets/sdl-native/music-layout.json"
+      ],
+      "classification": "resource-provenance-metadata",
+      "disposition": "reviewed-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th08_web/assets/sdl-native/music-layout.json",
+          "sha256": "27ac0e51061f436ff053b0dbc0553287bee95a0165e169a95dcabd80c5a05a61"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Contains offsets, sizes, hashes or font parameters. Contains no music samples, game archive or rasterized font payload. Remains metadata, not a license for referenced resources."
+    },
+    {
+      "sha256": "85798bc7d695af05ed3023a59727b5ad9441e23358687ffa63cf24004cd12d26",
+      "bytes": 54544,
+      "name": "th10-rebuilt.LICENSE",
+      "paths": [
+        "runtimes/th08-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+        "runtimes/th08/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+        "runtimes/th10-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+        "runtimes/th10/th10_web/assets/vendor/th10-rebuilt.LICENSE"
+      ],
+      "classification": "third-party-license-notice",
+      "disposition": "reviewed-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/assets/vendor/th10-rebuilt.LICENSE",
+          "sha256": "85798bc7d695af05ed3023a59727b5ad9441e23358687ffa63cf24004cd12d26"
+        }
+      ],
+      "canonicalComparison": null
+    },
+    {
+      "sha256": "9a188aa140f360b1ac9e2be2e3cf5fa5710cc89b5712e7fcf12eee3718173d35",
+      "bytes": 4447,
+      "name": "OFL-ChillRoundGothic.txt",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt"
+      ],
+      "classification": "third-party-license-notice",
+      "disposition": "reviewed-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "sha256": "9a188aa140f360b1ac9e2be2e3cf5fa5710cc89b5712e7fcf12eee3718173d35"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+        "sha256": "c5ee995cc1ebc563bb9c9ba1ea9e421864d77484967f7197ac8ec7d199978259",
+        "sameBytes": false
+      }
+    },
+    {
+      "sha256": "787fdbf8834c8abfd12a92e1c611e7c53d60e19b08ae99562a763e05b452722d",
+      "bytes": 4688,
+      "name": "OFL-Unifont.txt",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/OFL-Unifont.txt"
+      ],
+      "classification": "third-party-license-notice",
+      "disposition": "reviewed-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "sha256": "787fdbf8834c8abfd12a92e1c611e7c53d60e19b08ae99562a763e05b452722d"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/OFL-Unifont.txt",
+        "sha256": "787fdbf8834c8abfd12a92e1c611e7c53d60e19b08ae99562a763e05b452722d",
+        "sameBytes": true
+      }
+    },
+    {
+      "sha256": "942d3ca0ed0582db74a824c67c1b0e4a0ae7d84f9d8f8ffbc1ebc39fd4d89f37",
+      "bytes": 4437,
+      "name": "OFL-YatraOne.txt",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/OFL-YatraOne.txt"
+      ],
+      "classification": "third-party-license-notice",
+      "disposition": "reviewed-notice",
+      "evidence": [
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "sha256": "942d3ca0ed0582db74a824c67c1b0e4a0ae7d84f9d8f8ffbc1ebc39fd4d89f37"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/OFL-YatraOne.txt",
+        "sha256": "71e5222c549d85a1403b6e709b4328b81d7b51ba021b8bd20df89550da80c087",
+        "sameBytes": false
+      }
+    },
+    {
+      "sha256": "ea808b8fb1a76e098d8931fd56fe1c0ad86ab128ba1c90845ea0e2ef75265508",
+      "bytes": 146352,
+      "name": "chill-round-gothic-site-bold.woff2",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2"
+      ],
+      "classification": "legacy-ui-font",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "sha256": "9a188aa140f360b1ac9e2be2e3cf5fa5710cc89b5712e7fcf12eee3718173d35"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/chill-round-gothic-site-bold.woff2",
+        "sha256": "86f00f3f16d5e9ac692ede91ffb7ed3ffb87bbaa8aa95695cc4f13c1440dd91d",
+        "sameBytes": false
+      },
+      "caveat": "Legacy subset bytes are retained with their own sibling notices. Current Launcher subsets are not substituted."
+    },
+    {
+      "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+      "bytes": 3912,
+      "name": "chill-round-gothic-site-heavy.woff2",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2"
+      ],
+      "classification": "legacy-ui-font",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "sha256": "9a188aa140f360b1ac9e2be2e3cf5fa5710cc89b5712e7fcf12eee3718173d35"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+        "sha256": "940be9d0b1c695773f100b2f1cfb60b090e99f3632f784054c78d45d3a789c80",
+        "sameBytes": true
+      },
+      "caveat": "Legacy subset bytes are retained with their own sibling notices. Current Launcher subsets are not substituted."
+    },
+    {
+      "sha256": "ad4b5d8c51a8b773be684acfdd4e556d7e20e890e83fafc122dc32bfd094d10d",
+      "bytes": 144388,
+      "name": "chill-round-gothic-site-medium.woff2",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2"
+      ],
+      "classification": "legacy-ui-font",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-ChillRoundGothic.txt",
+          "sha256": "9a188aa140f360b1ac9e2be2e3cf5fa5710cc89b5712e7fcf12eee3718173d35"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/chill-round-gothic-site-medium.woff2",
+        "sha256": "c61d9f75feba3b4bf1d584774e2debd8d0b9d011a5a0a1eec4f1b8212cae2ac0",
+        "sameBytes": false
+      },
+      "caveat": "Legacy subset bytes are retained with their own sibling notices. Current Launcher subsets are not substituted."
+    },
+    {
+      "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+      "bytes": 9416,
+      "name": "touhou98.woff2",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/touhou98.woff2",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/touhou98.woff2"
+      ],
+      "classification": "legacy-ui-font",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/touhou98.woff2",
+        "sha256": "fa0087199674045dfc6dd9fd161d93035478f9aa139a06f362a0e35547a68091",
+        "sameBytes": true
+      },
+      "caveat": "Legacy subset bytes are retained with their own sibling notices. Current Launcher subsets are not substituted."
+    },
+    {
+      "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+      "bytes": 23504,
+      "name": "unifont-site.woff2",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/unifont-site.woff2",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/unifont-site.woff2"
+      ],
+      "classification": "legacy-ui-font",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-Unifont.txt",
+          "sha256": "787fdbf8834c8abfd12a92e1c611e7c53d60e19b08ae99562a763e05b452722d"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/unifont-site.woff2",
+        "sha256": "4b44849d2424a813ae33e031304c21874ce1633aff0d51398fa1eda071ef9ee8",
+        "sameBytes": true
+      },
+      "caveat": "Legacy subset bytes are retained with their own sibling notices. Current Launcher subsets are not substituted."
+    },
+    {
+      "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+      "bytes": 18568,
+      "name": "yatra-one-latin.woff2",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th08/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th09/th09_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th10/th10_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th11/th11_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "runtimes/th15/th15_web/launcher/public/assets/fonts/yatra-one-latin.woff2"
+      ],
+      "classification": "legacy-ui-font",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        },
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "runtimes/th08-mp/th10_web/launcher/public/assets/fonts/OFL-YatraOne.txt",
+          "sha256": "942d3ca0ed0582db74a824c67c1b0e4a0ae7d84f9d8f8ffbc1ebc39fd4d89f37"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/fonts/yatra-one-latin.woff2",
+        "sha256": "efcdf4e36d87eb7d497afb6e4d66c49478dd6826b2cc9ae036d894a713eaa419",
+        "sameBytes": true
+      },
+      "caveat": "Legacy subset bytes are retained with their own sibling notices. Current Launcher subsets are not substituted."
+    },
+    {
+      "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+      "bytes": 1160,
+      "name": "notice-bilibili.svg",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th08/th10_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th09/th09_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th10/th10_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th11/th11_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/notice-bilibili.svg",
+        "runtimes/th15/th15_web/launcher/public/assets/notice-bilibili.svg"
+      ],
+      "classification": "legacy-ui-image",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/notice-bilibili.svg",
+        "sha256": "60260a7adaeac3ad79c25d519f05c15ee4c106831f0ee0e646fe3481ceb176b7",
+        "sameBytes": true
+      }
+    },
+    {
+      "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+      "bytes": 679,
+      "name": "notice-github.svg",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th08/th10_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th09/th09_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th10/th10_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th11/th11_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/notice-github.svg",
+        "runtimes/th15/th15_web/launcher/public/assets/notice-github.svg"
+      ],
+      "classification": "legacy-ui-image",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/notice-github.svg",
+        "sha256": "92f6b8becba062cb17aa30bd3685a08ecd03f1e313757df607d8d3fdcefcd1ca",
+        "sameBytes": true
+      }
+    },
+    {
+      "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+      "bytes": 508,
+      "name": "notice-qq.svg",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th08/th10_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th09/th09_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th10/th10_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th11/th11_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/notice-qq.svg",
+        "runtimes/th15/th15_web/launcher/public/assets/notice-qq.svg"
+      ],
+      "classification": "legacy-ui-image",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/notice-qq.svg",
+        "sha256": "20e68875646df1391654669f79ceceaabecfae8d3ff27786e11176b48e081829",
+        "sameBytes": true
+      }
+    },
+    {
+      "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+      "bytes": 23262,
+      "name": "notice-touhou-cloud.png",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th08/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th09/th09_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th10/th10_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th11/th11_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/notice-touhou-cloud.png",
+        "runtimes/th15/th15_web/launcher/public/assets/notice-touhou-cloud.png"
+      ],
+      "classification": "legacy-ui-image",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/notice-touhou-cloud.png",
+        "sha256": "8fa084c92d17a6943d1e5aaf54b18c2b546ce2708adca3407b41d347a9f3007d",
+        "sameBytes": true
+      }
+    },
+    {
+      "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+      "bytes": 141862,
+      "name": "touch-rotate-landscape.webp",
+      "paths": [
+        "runtimes/th08-mp/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th08/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th09/th09_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th10-mp/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th10/th10_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th11-mp/th11_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th11/th11_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th15-mp/th15_web/launcher/public/assets/touch-rotate-landscape.webp",
+        "runtimes/th15/th15_web/launcher/public/assets/touch-rotate-landscape.webp"
+      ],
+      "classification": "legacy-ui-image",
+      "disposition": "reviewed-source-asset",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/THIRD_PARTY.md",
+          "sha256": "bbabcdc88c171c5e6d356265773036d9f7732a6926cfab255ea91b919f3966f1"
+        }
+      ],
+      "canonicalComparison": {
+        "path": "launcher/public/assets/touch-rotate-landscape.webp",
+        "sha256": "1c3c108d68d3509b8ebd3c96843dd4e6afc8bf863911923cd2be6fda6a34f378",
+        "sameBytes": true
+      }
+    },
+    {
+      "sha256": "8a3072143148e399e9c7994c3a8b3db020a726da12c3aa8de42146d3c79711c2",
+      "bytes": 7046,
+      "name": "music-verification.json",
+      "paths": [
+        "runtimes/th09/th09_web/assets/sdl-native/music-verification.json"
+      ],
+      "classification": "resource-provenance-metadata",
+      "disposition": "reviewed-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th09/th09_web/assets/sdl-native/music-verification.json",
+          "sha256": "8a3072143148e399e9c7994c3a8b3db020a726da12c3aa8de42146d3c79711c2"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Contains offsets, sizes, hashes or font parameters. Contains no music samples, game archive or rasterized font payload. Remains metadata, not a license for referenced resources."
+    },
+    {
+      "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f",
+      "bytes": 954,
+      "name": "music-layout.json",
+      "paths": [
+        "runtimes/th10-mp/th10_web/assets/sdl-native/music-layout.json",
+        "runtimes/th10/th10_web/assets/sdl-native/music-layout.json"
+      ],
+      "classification": "resource-provenance-metadata",
+      "disposition": "reviewed-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th10-mp/th10_web/assets/sdl-native/music-layout.json",
+          "sha256": "b11235037bb8fd8117d27b0e21b9a56c1b99009f1ba6293a8f8dbe1a6ec64e3f"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Contains offsets, sizes, hashes or font parameters. Contains no music samples, game archive or rasterized font payload. Remains metadata, not a license for referenced resources."
+    },
+    {
+      "sha256": "57add9cc4fa6493cae196a1ecb5e277290a70af04cc4d226b88c8c6fc06e8b57",
+      "bytes": 571410,
+      "name": "th11-card.png",
+      "paths": [
+        "runtimes/th11-mp/th11_web/launcher/public/assets/th11-card.png",
+        "runtimes/th11/th11_web/launcher/public/assets/th11-card.png"
+      ],
+      "classification": "original-game-derived-artwork",
+      "disposition": "blocked",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/docs/DEVELOPMENT.md",
+          "sha256": "0d22acfae7754a0ada1309e2e3032f00a471b175afb68e3d9daa4800dc084d4e"
+        },
+        {
+          "path": "runtimes/th11-mp/th11_web/launcher/public/index.html",
+          "sha256": "8970328779ccf47371ae9194fc4b95fd5cf7a56441f711bbf69d646c6485e4b8"
+        },
+        {
+          "path": "runtimes/th11-mp/th11_web/scripts/extract-title-card.mjs",
+          "sha256": "12d98244dca051f1c35ab00754e9a20511c7ba3e1f83f59eb14d339b4f85ac03"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Retail title-screen pixels. Not a source-owned UI asset. Legacy HTML still references them. No deletion or history rewriting performed."
+    },
+    {
+      "sha256": "be34146475b8e1c46f82217641dd01217ff2f7a0f196bdeec936b43fc9ed556e",
+      "bytes": 8986,
+      "name": "manifest.json",
+      "paths": [
+        "runtimes/th15-mp/th15_web/assets/music/manifest.json",
+        "runtimes/th15/th15_web/assets/music/manifest.json"
+      ],
+      "classification": "resource-provenance-metadata",
+      "disposition": "reviewed-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th15-mp/th15_web/assets/music/manifest.json",
+          "sha256": "be34146475b8e1c46f82217641dd01217ff2f7a0f196bdeec936b43fc9ed556e"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Contains offsets, sizes, hashes or font parameters. Contains no music samples, game archive or rasterized font payload. Remains metadata, not a license for referenced resources."
+    },
+    {
+      "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80",
+      "bytes": 7186,
+      "name": "manifest.json",
+      "paths": [
+        "runtimes/th15-mp/th15_web/assets/sdl-native/fonts/manifest.json",
+        "runtimes/th15/th15_web/assets/sdl-native/fonts/manifest.json"
+      ],
+      "classification": "resource-provenance-metadata",
+      "disposition": "reviewed-metadata",
+      "evidence": [
+        {
+          "path": "runtimes/th15-mp/th15_web/assets/sdl-native/fonts/manifest.json",
+          "sha256": "3742200d5f67ca0c0f6d77007428e2e047bee96408af89d1f4c0d4ac77537e80"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Contains offsets, sizes, hashes or font parameters. Contains no music samples, game archive or rasterized font payload. Remains metadata, not a license for referenced resources."
+    },
+    {
+      "sha256": "ce75490519dc78cad9b80f697829f7094898e5f3a5a5f305a2cea418717f2432",
+      "bytes": 566200,
+      "name": "th15-card.png",
+      "paths": [
+        "runtimes/th15-mp/th15_web/launcher/public/assets/th15-card.png",
+        "runtimes/th15/th15_web/launcher/public/assets/th15-card.png"
+      ],
+      "classification": "original-game-derived-artwork",
+      "disposition": "blocked",
+      "evidence": [
+        {
+          "path": "launcher/ASSETS.md",
+          "sha256": "b4f2ba1e4d967679a9c2e00280515dad481b1d952461b1cef5ed976b6e6121dc"
+        },
+        {
+          "path": "launcher/docs/DEVELOPMENT.md",
+          "sha256": "0d22acfae7754a0ada1309e2e3032f00a471b175afb68e3d9daa4800dc084d4e"
+        },
+        {
+          "path": "runtimes/th15-mp/th15_web/launcher/public/index.html",
+          "sha256": "c177607198923674ec28155014e6e75013e10383533919cd8589204358ec308a"
+        }
+      ],
+      "canonicalComparison": null,
+      "caveat": "Retail title-screen pixels. Not a source-owned UI asset. Legacy HTML still references them. No deletion or history rewriting performed."
+    }
+  ],
+  "unresolved": [
+    {
+      "path": "runtimes/th11-mp/th11_web/launcher/public/assets/th11-card.png",
+      "sha256": "57add9cc4fa6493cae196a1ecb5e277290a70af04cc4d226b88c8c6fc06e8b57",
+      "disposition": "blocked",
+      "reason": "Retail title-screen pixels. Not a source-owned UI asset. Legacy HTML still references them. No deletion or history rewriting performed."
+    },
+    {
+      "path": "runtimes/th11/th11_web/launcher/public/assets/th11-card.png",
+      "sha256": "57add9cc4fa6493cae196a1ecb5e277290a70af04cc4d226b88c8c6fc06e8b57",
+      "disposition": "blocked",
+      "reason": "Retail title-screen pixels. Not a source-owned UI asset. Legacy HTML still references them. No deletion or history rewriting performed."
+    },
+    {
+      "path": "runtimes/th15-mp/th15_web/launcher/public/assets/th15-card.png",
+      "sha256": "ce75490519dc78cad9b80f697829f7094898e5f3a5a5f305a2cea418717f2432",
+      "disposition": "blocked",
+      "reason": "Retail title-screen pixels. Not a source-owned UI asset. Legacy HTML still references them. No deletion or history rewriting performed."
+    },
+    {
+      "path": "runtimes/th15/th15_web/launcher/public/assets/th15-card.png",
+      "sha256": "ce75490519dc78cad9b80f697829f7094898e5f3a5a5f305a2cea418717f2432",
+      "disposition": "blocked",
+      "reason": "Retail title-screen pixels. Not a source-owned UI asset. Legacy HTML still references them. No deletion or history rewriting performed."
+    }
+  ],
+  "policyChange": "Exact reviewed path/content/notice identities added. Retail files, covers and unknown or changed assets stay blocked.",
+  "filesDeleted": false,
+  "sourcePublicationPassedAtReview": false
+}

@@ -1,0 +1,12 @@
+{
+  "name": "eagler-netplay-telemetry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": {"node": ">=22.13"},
+  "scripts": {
+    "start": "node src/netplay-telemetry.mjs",
+    "test": "node --test"
+  }
+}

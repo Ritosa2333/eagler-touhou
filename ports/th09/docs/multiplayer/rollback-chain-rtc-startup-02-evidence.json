@@ -1,0 +1,3253 @@
+{
+  "version": 1,
+  "input": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-rtc-startup-02-failure.json",
+    "bytes": 80844304,
+    "sha256": "461a961e36f27b88f1db69333f223841abcea9b8238b889016977e4884396120"
+  },
+  "analyzer": {
+    "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\analyze-startup-transport.mjs",
+    "sha256": "16941bcc4e6645fc2c8f890b624a0e76247e62375f7dde170a903dfc0c85b37e"
+  },
+  "identity": {
+    "wasm": "7c8bdf579af8e18ace2208377d5a4f22a309eba9c1ec22f0248e252bd6f7deaa",
+    "harness": "3b45f968e063289869bda0b17f9141154ce89fceb6e2cec0c79e28809f6cc17f",
+    "loader": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a",
+    "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+    "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+    "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+    "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+    "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+    "callbackCostProbe": "95325df1973c510629770e401572a5a4422e2f68c160ae48d01716570831866c",
+    "startupTransportProbe": "c162be46e9ae8ef122cc457d3866226675fadb470fddd4fe3280b39b80b05d48",
+    "relayTransportProbe": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
+    "relayTransportFixture": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",
+    "relayTransportController": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870",
+    "relayStartupProbe": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a"
+  },
+  "parameters": {
+    "limit": 900,
+    "delay": 0,
+    "jitter": 0,
+    "slow": 4,
+    "dropEvery": 0,
+    "release": false,
+    "profile": false,
+    "fallback": false,
+    "inputMode": "tape",
+    "audioOutput": true,
+    "responsiveness": false,
+    "burstAt": 0,
+    "burstFor": 0,
+    "burstDelay": 0,
+    "rafDiagnostics": true,
+    "hostLoad": true,
+    "networkTrace": false,
+    "impairmentSite": "none",
+    "relayDiagnostics": true,
+    "expectedRtcPath": "direct",
+    "liveCost": true,
+    "clientSendMode": "synchronous",
+    "burstClock": "browser-active",
+    "cpuThrottle": {
+      "ratesBySide": [
+        1,
+        4
+      ],
+      "configuredAfter": "openProbe",
+      "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+    },
+    "startupTrace": true,
+    "relayInputDiagnostics": false
+  },
+  "originalError": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(results.every(r=>r.route===(fallback?'relay':'rtc')))\n\n    at file:///D:/workspace/eagler/worktrees/th09-rollback-4x/web/tests/multiplayer/smoothness-browser.mjs:397:39\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
+  "originalPageErrors": [],
+  "clock": {
+    "reference": "Relay performance.now in milliseconds",
+    "timeOrigin": 1791648064616.278,
+    "formula": "browser local performance.now + browser timeOrigin - relay timeOrigin; host UTC compared with relay timeOrigin + local time"
+  },
+  "decision": {
+    "firstRoute": {
+      "id": 9,
+      "phase": "send",
+      "socketId": 3,
+      "kind": "signal",
+      "socketPlayer": 0,
+      "enteredAt": 11948.3897,
+      "exitedAt": 11948.5284,
+      "causeReceiveId": null,
+      "type": "route",
+      "descriptionType": null,
+      "candidatePresent": false,
+      "from": null,
+      "to": null,
+      "player": null,
+      "peers": null,
+      "mode": "relay",
+      "errorName": null
+    },
+    "rtcTimeoutMs": 4500,
+    "lastObservedPlayerConnectionAt": 7430.2768,
+    "lastObservedSignalConnectionAt": 7452.4336,
+    "routeAfterObservedAllPlayersMs": 4518.1129,
+    "routeAfterObservedAllSignalsMs": 4495.956099999999,
+    "explicitRtcFailedBeforeRoute": [],
+    "rtcReadyBeforeRoute": [],
+    "signalCloseBeforeRoute": [],
+    "exactTimerFireObserved": false,
+    "classification": "deadline-consistent inference; no explicit failure/close observed"
+  },
+  "relay": {
+    "sourceIdentity": {
+      "relaySource": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\rollback4x-responsive-relay-fixture\\server\\netplay-relay.mjs",
+      "relaySha256": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+      "probeSha256": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
+      "fixtureSha256": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",
+      "startupProbeSha256": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a",
+      "rtcTimeout": {
+        "rtcTimeoutMs": 4500,
+        "configuredNames": []
+      },
+      "wsModule": "D:\\workspace\\eagler\\eagler-touhou\\node_modules\\ws\\index.js",
+      "wsSha256": "924564d5be26d59b9682c4263f68320e48dde7240bd2d1ad17ec305537429dd2"
+    },
+    "connections": [
+      {
+        "id": 0,
+        "kind": "lobby",
+        "player": null,
+        "openedAt": 6821.1299,
+        "closedAt": null
+      },
+      {
+        "id": 1,
+        "kind": "lobby",
+        "player": null,
+        "openedAt": 6864.0847,
+        "closedAt": null
+      },
+      {
+        "id": 2,
+        "kind": "player",
+        "player": 0,
+        "openedAt": 7198.0471,
+        "closedAt": 66670.0037
+      },
+      {
+        "id": 3,
+        "kind": "signal",
+        "player": 0,
+        "openedAt": 7224.1958,
+        "closedAt": 12081.1391
+      },
+      {
+        "id": 4,
+        "kind": "player",
+        "player": 1,
+        "openedAt": 7430.2768,
+        "closedAt": 66663.8669
+      },
+      {
+        "id": 5,
+        "kind": "signal",
+        "player": 1,
+        "openedAt": 7452.4336,
+        "closedAt": 12264.8974
+      }
+    ],
+    "startup": {
+      "version": 1,
+      "scope": "Existing relay JS text receive/send and connection/close boundaries. Connection observation precedes canonical admission; no SDP, candidate text, URLs, addresses, credentials or error messages retained. Route timer firing is not instrumented; deadline attribution requires explicit inference.",
+      "configuration": {
+        "rtcTimeoutMs": 4500
+      },
+      "clock": {
+        "unit": "milliseconds",
+        "started": {
+          "timeOrigin": 1791648064616.278,
+          "before": 46.9942,
+          "epochMs": 1791648064663,
+          "after": 46.9979
+        },
+        "snapshot": {
+          "timeOrigin": 1791648064616.278,
+          "before": 74010.7635,
+          "epochMs": 1791648138626,
+          "after": 74010.7682
+        },
+        "stopped": {
+          "timeOrigin": 1791648064616.278,
+          "before": 74010.8915,
+          "epochMs": 1791648138626,
+          "after": 74010.8955
+        }
+      },
+      "limit": 4096,
+      "valid": true,
+      "coverage": {
+        "exercised": true,
+        "exactTimerFire": false
+      },
+      "counts": {
+        "connections": 6,
+        "receive": 0,
+        "send": 7,
+        "close": 4,
+        "error": 0
+      },
+      "overflow": 0,
+      "observerErrors": 0,
+      "events": [
+        {
+          "id": 0,
+          "phase": "connection",
+          "socketId": 0,
+          "kind": "lobby",
+          "socketPlayer": null,
+          "enteredAt": 6821.5423,
+          "exitedAt": 6821.5772,
+          "causeReceiveId": null
+        },
+        {
+          "id": 1,
+          "phase": "connection",
+          "socketId": 1,
+          "kind": "lobby",
+          "socketPlayer": null,
+          "enteredAt": 6864.1246,
+          "exitedAt": 6864.1296,
+          "causeReceiveId": null
+        },
+        {
+          "id": 2,
+          "phase": "connection",
+          "socketId": 2,
+          "kind": "player",
+          "socketPlayer": 0,
+          "enteredAt": 7198.0873,
+          "exitedAt": 7198.0922,
+          "causeReceiveId": null
+        },
+        {
+          "id": 3,
+          "phase": "connection",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 7224.2337,
+          "exitedAt": 7224.2389,
+          "causeReceiveId": null
+        },
+        {
+          "id": 4,
+          "phase": "send",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 7226.3003,
+          "exitedAt": 7226.7072,
+          "causeReceiveId": null,
+          "type": "peers",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": [],
+          "mode": null,
+          "errorName": null
+        },
+        {
+          "id": 5,
+          "phase": "connection",
+          "socketId": 4,
+          "kind": "player",
+          "socketPlayer": 1,
+          "enteredAt": 7430.3102,
+          "exitedAt": 7430.3153,
+          "causeReceiveId": null
+        },
+        {
+          "id": 6,
+          "phase": "connection",
+          "socketId": 5,
+          "kind": "signal",
+          "socketPlayer": 1,
+          "enteredAt": 7452.4736,
+          "exitedAt": 7452.479,
+          "causeReceiveId": null
+        },
+        {
+          "id": 7,
+          "phase": "send",
+          "socketId": 5,
+          "kind": "signal",
+          "socketPlayer": 1,
+          "enteredAt": 7452.9497,
+          "exitedAt": 7453.1828,
+          "causeReceiveId": null,
+          "type": "peers",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": [
+            0
+          ],
+          "mode": null,
+          "errorName": null
+        },
+        {
+          "id": 8,
+          "phase": "send",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 7453.3014,
+          "exitedAt": 7453.4287,
+          "causeReceiveId": null,
+          "type": "peer-join",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": 1,
+          "peers": null,
+          "mode": null,
+          "errorName": null
+        },
+        {
+          "id": 9,
+          "phase": "send",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 11948.3897,
+          "exitedAt": 11948.5284,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        {
+          "id": 10,
+          "phase": "send",
+          "socketId": 5,
+          "kind": "signal",
+          "socketPlayer": 1,
+          "enteredAt": 11948.6193,
+          "exitedAt": 11948.7678,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        {
+          "id": 11,
+          "phase": "send",
+          "socketId": 2,
+          "kind": "player",
+          "socketPlayer": 0,
+          "enteredAt": 11948.8523,
+          "exitedAt": 11948.9551,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        {
+          "id": 12,
+          "phase": "send",
+          "socketId": 4,
+          "kind": "player",
+          "socketPlayer": 1,
+          "enteredAt": 11949.0248,
+          "exitedAt": 11949.1216,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        {
+          "id": 13,
+          "phase": "close",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 12080.4791,
+          "exitedAt": 12081.9323,
+          "causeReceiveId": null,
+          "code": 1000
+        },
+        {
+          "id": 14,
+          "phase": "close",
+          "socketId": 5,
+          "kind": "signal",
+          "socketPlayer": 1,
+          "enteredAt": 12264.8564,
+          "exitedAt": 12265.1239,
+          "causeReceiveId": null,
+          "code": 1000
+        },
+        {
+          "id": 15,
+          "phase": "close",
+          "socketId": 4,
+          "kind": "player",
+          "socketPlayer": 1,
+          "enteredAt": 66663.8113,
+          "exitedAt": 66664.8898,
+          "causeReceiveId": null,
+          "code": 1000
+        },
+        {
+          "id": 16,
+          "phase": "close",
+          "socketId": 2,
+          "kind": "player",
+          "socketPlayer": 0,
+          "enteredAt": 66669.9295,
+          "exitedAt": 66670.944,
+          "causeReceiveId": null,
+          "code": 1001
+        }
+      ]
+    },
+    "clockTicksDuringPeerInitialization": [
+      [
+        7536.7721,
+        7528.2619,
+        8.510199999999713,
+        108.51019999999971
+      ],
+      [
+        7644.7366,
+        7636.7721,
+        7.964500000000044,
+        107.96450000000004
+      ],
+      [
+        7754.7223,
+        7744.7366,
+        9.985700000000179,
+        109.98570000000018
+      ],
+      [
+        7862.7346,
+        7854.7223,
+        8.012299999999414,
+        108.01229999999941
+      ],
+      [
+        7972.7903,
+        7962.7346,
+        10.055699999999888,
+        110.05569999999989
+      ],
+      [
+        8082.4168,
+        8072.7903,
+        9.626500000000306,
+        109.6265000000003
+      ],
+      [
+        8190.189,
+        8182.4168,
+        7.772200000000339,
+        107.77220000000034
+      ],
+      [
+        8298.6301,
+        8290.189,
+        8.441100000000006,
+        108.4411
+      ],
+      [
+        8406.924,
+        8398.6301,
+        8.293900000000576,
+        108.29390000000058
+      ],
+      [
+        8517.5472,
+        8506.924,
+        10.623199999999997,
+        110.6232
+      ],
+      [
+        8626.2688,
+        8617.5472,
+        8.721599999998944,
+        108.72159999999894
+      ],
+      [
+        8734.8442,
+        8726.2688,
+        8.575399999999718,
+        108.57539999999972
+      ],
+      [
+        8845.9931,
+        8834.8442,
+        11.14890000000014,
+        111.14890000000014
+      ],
+      [
+        8955.0284,
+        8945.9931,
+        9.035299999999552,
+        109.03529999999955
+      ],
+      [
+        9065.2873,
+        9055.0284,
+        10.258900000000722,
+        110.25890000000072
+      ],
+      [
+        9175.7137,
+        9165.2873,
+        10.426400000000285,
+        110.42640000000029
+      ],
+      [
+        9283.792,
+        9275.7137,
+        8.078299999999217,
+        108.07829999999922
+      ],
+      [
+        9392.6524,
+        9383.792,
+        8.860400000001391,
+        108.86040000000139
+      ],
+      [
+        9502.3841,
+        9492.6524,
+        9.731699999998455,
+        109.73169999999845
+      ],
+      [
+        9609.2404,
+        9602.3841,
+        6.8563000000012835,
+        106.85630000000128
+      ],
+      [
+        9718.5956,
+        9709.2404,
+        9.355199999999968,
+        109.35519999999997
+      ],
+      [
+        9827.4446,
+        9818.5956,
+        8.84900000000016,
+        108.84900000000016
+      ],
+      [
+        9936.7758,
+        9927.4446,
+        9.331199999998717,
+        109.33119999999872
+      ],
+      [
+        10047.0621,
+        10036.7758,
+        10.286299999999756,
+        110.28629999999976
+      ],
+      [
+        10155.3654,
+        10147.0621,
+        8.3033000000014,
+        108.3033000000014
+      ],
+      [
+        10266.6439,
+        10255.3654,
+        11.27849999999853,
+        111.27849999999853
+      ],
+      [
+        10373.9917,
+        10366.6439,
+        7.347800000001371,
+        107.34780000000137
+      ],
+      [
+        10483.42,
+        10473.9917,
+        9.428299999999581,
+        109.42829999999958
+      ],
+      [
+        10592.8633,
+        10583.42,
+        9.443300000000818,
+        109.44330000000082
+      ],
+      [
+        10701.0992,
+        10692.8633,
+        8.235899999999674,
+        108.23589999999967
+      ],
+      [
+        10809.6884,
+        10801.0992,
+        8.589199999998527,
+        108.58919999999853
+      ],
+      [
+        10919.0182,
+        10909.6884,
+        9.329800000001342,
+        109.32980000000134
+      ],
+      [
+        11028.8485,
+        11019.0182,
+        9.830299999999625,
+        109.83029999999962
+      ],
+      [
+        11136.9942,
+        11128.8485,
+        8.145699999999124,
+        108.14569999999912
+      ],
+      [
+        11247.7791,
+        11236.9942,
+        10.784900000000562,
+        110.78490000000056
+      ],
+      [
+        11354.7648,
+        11347.7791,
+        6.9857000000010885,
+        106.98570000000109
+      ],
+      [
+        11463.514,
+        11454.7648,
+        8.749199999998382,
+        108.74919999999838
+      ],
+      [
+        11574.0866,
+        11563.514,
+        10.57260000000133,
+        110.57260000000133
+      ],
+      [
+        11682.2936,
+        11674.0866,
+        8.207000000000335,
+        108.20700000000033
+      ],
+      [
+        11792.2713,
+        11782.2936,
+        9.977699999999459,
+        109.97769999999946
+      ],
+      [
+        11899.7637,
+        11892.2713,
+        7.492399999999179,
+        107.49239999999918
+      ],
+      [
+        12010.0527,
+        11999.7637,
+        10.28900000000067,
+        110.28900000000067
+      ]
+    ],
+    "maximumClockGapDuringWindowMs": 111.27849999999853
+  },
+  "peers": [
+    {
+      "side": 0,
+      "stats": [
+        900,
+        900,
+        0,
+        0,
+        900,
+        0,
+        1,
+        900
+      ],
+      "route": "relay",
+      "routeEvidence": {
+        "route": "relay",
+        "declaredPath": "connecting",
+        "selectedPath": "relay",
+        "peers": [],
+        "scope": "Selected ICE candidate types and channel state after measurement; no IP/SDP recorded. RTC is not automatically direct."
+      },
+      "inputTapeLength": 0,
+      "observerIdentity": "c162be46e9ae8ef122cc457d3866226675fadb470fddd4fe3280b39b80b05d48",
+      "trace": {
+        "version": 1,
+        "scope": "JS startup API and event dispatch times; promise settlement includes async and dispatch waiting. No SDP, IP, URLs, credentials or error messages. No additional heartbeat, connectivity test or network call.",
+        "clock": {
+          "unit": "milliseconds",
+          "started": {
+            "timeOrigin": 1791648065480.965,
+            "before": 104.22999998927116,
+            "epochMs": 1791648065585,
+            "after": 104.23499998450279
+          },
+          "snapshot": {
+            "timeOrigin": 1791648065480.965,
+            "before": 50976.914999991655,
+            "epochMs": 1791648116457,
+            "after": 50976.914999991655
+          },
+          "stopped": {
+            "timeOrigin": 1791648065480.965,
+            "before": 50977.5,
+            "epochMs": 1791648116458,
+            "after": 50977.5
+          }
+        },
+        "side": 0,
+        "initialAvailability": {
+          "webSocket": true,
+          "rtcPeerConnection": true,
+          "rtcEnabled": true
+        },
+        "limits": {
+          "events": 4096,
+          "sockets": 32,
+          "pcs": 16,
+          "channels": 64,
+          "errors": 32
+        },
+        "valid": true,
+        "coverage": {
+          "signalingExercised": true,
+          "peerConnectionExercised": true,
+          "routeObserved": true
+        },
+        "identity": {
+          "webSocket": true,
+          "wsSend": true,
+          "rtcConstructor": true,
+          "methods": [
+            {
+              "name": "createOffer",
+              "current": true
+            },
+            {
+              "name": "createAnswer",
+              "current": true
+            },
+            {
+              "name": "setLocalDescription",
+              "current": true
+            },
+            {
+              "name": "setRemoteDescription",
+              "current": true
+            },
+            {
+              "name": "addIceCandidate",
+              "current": true
+            },
+            {
+              "name": "createDataChannel",
+              "current": true
+            },
+            {
+              "name": "close",
+              "current": true
+            }
+          ]
+        },
+        "counts": {
+          "wsSend": 0,
+          "wsMessage": 3,
+          "pcCalls": 4,
+          "pcSettled": 0,
+          "channelEvents": 2,
+          "ignoredSockets": 0
+        },
+        "overflow": {
+          "events": 0,
+          "sockets": 0,
+          "pcs": 0,
+          "channels": 0,
+          "errors": 0
+        },
+        "errors": [],
+        "sockets": [
+          {
+            "id": 0,
+            "kind": "lobby",
+            "player": null,
+            "createdAt": 5934.930000007153
+          },
+          {
+            "id": 1,
+            "kind": "lobby",
+            "player": null,
+            "createdAt": 5990.055000007153
+          },
+          {
+            "id": 2,
+            "kind": "player",
+            "player": 0,
+            "createdAt": 6317.204999983311
+          },
+          {
+            "id": 3,
+            "kind": "signal",
+            "player": 0,
+            "createdAt": 6318.375
+          }
+        ],
+        "pcs": [
+          {
+            "id": 0,
+            "createdAt": 11188.590000003576
+          }
+        ],
+        "channels": [
+          {
+            "id": 0,
+            "pc": 0,
+            "kind": "control",
+            "origin": "local-api",
+            "ordered": true,
+            "maxRetransmits": null
+          },
+          {
+            "id": 1,
+            "pc": 0,
+            "kind": "input",
+            "origin": "local-api",
+            "ordered": false,
+            "maxRetransmits": 0
+          }
+        ],
+        "events": [
+          {
+            "id": 0,
+            "at": 5935.159999996424,
+            "target": "ws",
+            "entity": 0,
+            "event": "created",
+            "route": null,
+            "readyState": 0
+          },
+          {
+            "id": 1,
+            "at": 5956.324999988079,
+            "target": "ws",
+            "entity": 0,
+            "event": "open",
+            "route": null,
+            "readyState": 1,
+            "code": null,
+            "errorName": null
+          },
+          {
+            "id": 2,
+            "at": 5990.085000008345,
+            "target": "ws",
+            "entity": 1,
+            "event": "created",
+            "route": null,
+            "readyState": 0
+          },
+          {
+            "id": 3,
+            "at": 6001.419999986887,
+            "target": "ws",
+            "entity": 1,
+            "event": "open",
+            "route": null,
+            "readyState": 1,
+            "code": null,
+            "errorName": null
+          },
+          {
+            "id": 4,
+            "at": 6298.960000008345,
+            "target": "harness",
+            "entity": null,
+            "event": "before-connect",
+            "route": null
+          },
+          {
+            "id": 5,
+            "at": 6317.229999989271,
+            "target": "ws",
+            "entity": 2,
+            "event": "created",
+            "route": null,
+            "readyState": 0
+          },
+          {
+            "id": 6,
+            "at": 6318.395000010729,
+            "target": "ws",
+            "entity": 3,
+            "event": "created",
+            "route": null,
+            "readyState": 0
+          },
+          {
+            "id": 7,
+            "at": 6320.2249999940395,
+            "target": "harness",
+            "entity": null,
+            "event": "after-connect",
+            "route": null
+          },
+          {
+            "id": 8,
+            "at": 6335.569999992847,
+            "target": "ws",
+            "entity": 2,
+            "event": "open",
+            "route": null,
+            "readyState": 1,
+            "code": null,
+            "errorName": null
+          },
+          {
+            "id": 9,
+            "at": 6363.129999995232,
+            "target": "ws",
+            "entity": 3,
+            "event": "open",
+            "route": null,
+            "readyState": 1,
+            "code": null,
+            "errorName": null
+          },
+          {
+            "id": 10,
+            "at": 6363.965000003576,
+            "target": "ws",
+            "entity": 3,
+            "event": "message",
+            "route": null,
+            "type": "peers",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": [],
+            "mode": null,
+            "errorName": null,
+            "readyState": 1
+          },
+          {
+            "id": 11,
+            "at": 6590.539999991655,
+            "target": "ws",
+            "entity": 3,
+            "event": "message",
+            "route": null,
+            "type": "peer-join",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": 1,
+            "peers": null,
+            "mode": null,
+            "errorName": null,
+            "readyState": 1
+          },
+          {
+            "id": 12,
+            "at": 11188.800000011921,
+            "target": "pc",
+            "entity": 0,
+            "event": "created",
+            "route": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 13,
+            "at": 11189.264999985695,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": null,
+            "call": 5,
+            "method": "createDataChannel",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 14,
+            "at": 11190.719999998808,
+            "target": "dc",
+            "entity": 0,
+            "event": "created",
+            "route": null,
+            "state": "connecting"
+          },
+          {
+            "id": 15,
+            "at": 11190.800000011921,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": null,
+            "call": 5,
+            "method": "createDataChannel",
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 16,
+            "at": 11190.840000003576,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": null,
+            "call": 6,
+            "method": "createDataChannel",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 17,
+            "at": 11191.270000010729,
+            "target": "dc",
+            "entity": 1,
+            "event": "created",
+            "route": null,
+            "state": "connecting"
+          },
+          {
+            "id": 18,
+            "at": 11191.310000002384,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": null,
+            "call": 6,
+            "method": "createDataChannel",
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 19,
+            "at": 11191.594999998808,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": null,
+            "call": 7,
+            "method": "createOffer",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 20,
+            "at": 11202.460000008345,
+            "target": "ws",
+            "entity": 2,
+            "event": "message",
+            "route": null,
+            "type": "route",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": null,
+            "mode": "relay",
+            "errorName": null,
+            "readyState": 1
+          },
+          {
+            "id": 21,
+            "at": 11203.484999984503,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": "relay",
+            "call": 8,
+            "method": "close",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 22,
+            "at": 11205,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": "relay",
+            "call": 8,
+            "method": "close",
+            "connection": "closed",
+            "ice": "closed",
+            "gathering": "new",
+            "signaling": "closed"
+          },
+          {
+            "id": 23,
+            "at": 11222.060000002384,
+            "target": "dc",
+            "entity": 0,
+            "event": "close",
+            "route": "relay",
+            "state": "closed",
+            "errorName": null
+          },
+          {
+            "id": 24,
+            "at": 11222.409999996424,
+            "target": "dc",
+            "entity": 1,
+            "event": "close",
+            "route": "relay",
+            "state": "closed",
+            "errorName": null
+          },
+          {
+            "id": 25,
+            "at": 11222.629999995232,
+            "target": "ws",
+            "entity": 3,
+            "event": "close",
+            "route": "relay",
+            "readyState": 3,
+            "code": 1000,
+            "errorName": null
+          },
+          {
+            "id": 26,
+            "at": 14878.59999999404,
+            "target": "harness",
+            "entity": null,
+            "event": "first-active",
+            "route": "relay"
+          }
+        ]
+      },
+      "offsetToRelayMs": 864.68701171875,
+      "firstActiveAt": 14878.555000007153,
+      "inviteToCreated": {
+        "start": 6590.539999991655,
+        "end": 11188.800000011921,
+        "durationMs": 4598.260000020266,
+        "relayStart": 7455.227011710405,
+        "relayEnd": 12053.487011730671
+      },
+      "constructorCalls": [],
+      "methods": [
+        {
+          "entry": {
+            "id": 13,
+            "at": 11189.264999985695,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": null,
+            "call": 5,
+            "method": "createDataChannel",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          "end": {
+            "id": 15,
+            "at": 11190.800000011921,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": null,
+            "call": 5,
+            "method": "createDataChannel",
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          "observedDurationMs": 1.5350000262260437
+        },
+        {
+          "entry": {
+            "id": 16,
+            "at": 11190.840000003576,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": null,
+            "call": 6,
+            "method": "createDataChannel",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          "end": {
+            "id": 18,
+            "at": 11191.310000002384,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": null,
+            "call": 6,
+            "method": "createDataChannel",
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          "observedDurationMs": 0.4699999988079071
+        },
+        {
+          "entry": {
+            "id": 19,
+            "at": 11191.594999998808,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": null,
+            "call": 7,
+            "method": "createOffer",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          "end": null,
+          "observedDurationMs": null
+        },
+        {
+          "entry": {
+            "id": 21,
+            "at": 11203.484999984503,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": "relay",
+            "call": 8,
+            "method": "close",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          "end": {
+            "id": 22,
+            "at": 11205,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": "relay",
+            "call": 8,
+            "method": "close",
+            "connection": "closed",
+            "ice": "closed",
+            "gathering": "new",
+            "signaling": "closed"
+          },
+          "observedDurationMs": 1.5150000154972076
+        }
+      ],
+      "withinWindow": {
+        "rafEntries": 0,
+        "gameFrameEntries": 0,
+        "startupEvents": []
+      },
+      "lifecycle": [
+        [
+          104.50999999046326,
+          "init",
+          "visible",
+          true
+        ],
+        [
+          128.84000000357628,
+          "pageshow",
+          "visible",
+          true
+        ]
+      ],
+      "controls": [
+        {
+          "name": "_th09_loop_start",
+          "enteredAt": 6297.715000003576,
+          "exitedAt": 6298.625,
+          "argument": null,
+          "rafIndex": null,
+          "active": false,
+          "finished": false,
+          "connected": false,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        {
+          "name": "_th09_loop_pause",
+          "enteredAt": 6298.634999990463,
+          "exitedAt": 6298.889999985695,
+          "argument": 1,
+          "rafIndex": null,
+          "active": false,
+          "finished": false,
+          "connected": false,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        {
+          "name": "_th09_loop_pause",
+          "enteredAt": 14869.370000004768,
+          "exitedAt": 14869.419999986887,
+          "argument": 0,
+          "rafIndex": null,
+          "active": true,
+          "finished": false,
+          "connected": true,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        {
+          "name": "_th09_loop_pause",
+          "enteredAt": 50975.46999999881,
+          "exitedAt": 50975.534999996424,
+          "argument": 1,
+          "rafIndex": null,
+          "active": true,
+          "finished": false,
+          "connected": true,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        }
+      ],
+      "allStartupRafIntervalsOver250Ms": [
+        {
+          "request": {
+            "index": 48,
+            "nativeId": 49,
+            "parentIndex": 47,
+            "callbackId": 0,
+            "requestedAt": 6585.770000010729,
+            "enteredAt": 11193.264999985695,
+            "exitedAt": 11193.335000008345,
+            "rafTimestamp": 6591.505,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          },
+          "previous": {
+            "index": 47,
+            "nativeId": 48,
+            "parentIndex": 46,
+            "callbackId": 0,
+            "requestedAt": 6579.439999997616,
+            "enteredAt": 6585.740000009537,
+            "exitedAt": 6585.814999997616,
+            "rafTimestamp": 6585.29,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          }
+        },
+        {
+          "request": {
+            "index": 50,
+            "nativeId": 51,
+            "parentIndex": 49,
+            "callbackId": 0,
+            "requestedAt": 11221.314999997616,
+            "enteredAt": 11556.090000003576,
+            "exitedAt": 11556.15000000596,
+            "rafTimestamp": 11220.655,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          },
+          "previous": {
+            "index": 49,
+            "nativeId": 50,
+            "parentIndex": 48,
+            "callbackId": 0,
+            "requestedAt": 11193.294999986887,
+            "enteredAt": 11221.289999991655,
+            "exitedAt": 11221.354999989271,
+            "rafTimestamp": 11190.51,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          }
+        }
+      ],
+      "liveMarks": [
+        {
+          "label": "before-open",
+          "observedAt": 180.7349999845028
+        },
+        {
+          "label": "after-open",
+          "observedAt": 2768.734999984503
+        },
+        {
+          "label": "cpu-throttle-configured",
+          "observedAt": 2779.439999997616
+        }
+      ],
+      "firstLiveFrame": {
+        "sampleIndex": 0,
+        "frame": 0,
+        "confirmed": 0,
+        "present": 0,
+        "phase": 1,
+        "callbackWorkMs": 1.969999998807907,
+        "measuredAt": 14878.555000007153,
+        "observedAt": 14879.254999995232,
+        "values": [
+          1,
+          1,
+          1,
+          32,
+          29,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1198.9800000190735,
+          1.719999998807907,
+          1,
+          838.2849999964237,
+          838.2849999964237,
+          1,
+          0.3400000035762787,
+          0.3400000035762787,
+          1,
+          149.62999999523163,
+          149.62999999523163,
+          1,
+          209.00500002503395,
+          209.00500002503395,
+          1,
+          1257.5999999940395,
+          47.49499997496605,
+          1,
+          323.8149999976158,
+          269.08999994397163,
+          560,
+          3.665000170469284,
+          2.085000157356262,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          178,
+          10.269999772310257,
+          10.269999772310257,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0.26500001549720764,
+          0.26500001549720764,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1.5800000131130219,
+          0.20500004291534424,
+          6,
+          0.9800000190734863,
+          0.9800000190734863,
+          6,
+          0.3949999511241913,
+          0.3949999511241913,
+          1,
+          0.004999995231628418,
+          0.004999995231628418,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          103,
+          47.665000051259995,
+          47.665000051259995,
+          2,
+          18.185000002384186,
+          18.185000002384186,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          6,
+          6144,
+          6144,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          103,
+          103,
+          54,
+          33,
+          0,
+          24317952,
+          0,
+          0,
+          6144,
+          6
+        ]
+      },
+      "interpretation": {
+        "allJsStoppedEstablished": false,
+        "constructorDurationAvailable": false,
+        "beforeActiveAudioCoverage": false,
+        "perPumpTimestampCoverage": false,
+        "nativeGameplayBeginsAfterRoute": "SharedNetplay.pump starts native begin only after state===1 and !routeReady; a paused startup RAF is not a native gameplay callback."
+      }
+    },
+    {
+      "side": 1,
+      "stats": [
+        900,
+        900,
+        0,
+        0,
+        900,
+        0,
+        1,
+        900
+      ],
+      "route": "relay",
+      "routeEvidence": {
+        "route": "relay",
+        "declaredPath": "connecting",
+        "selectedPath": "relay",
+        "peers": [],
+        "scope": "Selected ICE candidate types and channel state after measurement; no IP/SDP recorded. RTC is not automatically direct."
+      },
+      "inputTapeLength": 0,
+      "observerIdentity": "c162be46e9ae8ef122cc457d3866226675fadb470fddd4fe3280b39b80b05d48",
+      "trace": {
+        "version": 1,
+        "scope": "JS startup API and event dispatch times; promise settlement includes async and dispatch waiting. No SDP, IP, URLs, credentials or error messages. No additional heartbeat, connectivity test or network call.",
+        "clock": {
+          "unit": "milliseconds",
+          "started": {
+            "timeOrigin": 1791648068808.635,
+            "before": 208.72500002384186,
+            "epochMs": 1791648069017,
+            "after": 208.7300000190735
+          },
+          "snapshot": {
+            "timeOrigin": 1791648068808.635,
+            "before": 47687.15500000119,
+            "epochMs": 1791648116495,
+            "after": 47687.159999996424
+          },
+          "stopped": {
+            "timeOrigin": 1791648068808.635,
+            "before": 47691.60500001907,
+            "epochMs": 1791648116500,
+            "after": 47691.60500001907
+          }
+        },
+        "side": 1,
+        "initialAvailability": {
+          "webSocket": true,
+          "rtcPeerConnection": true,
+          "rtcEnabled": true
+        },
+        "limits": {
+          "events": 4096,
+          "sockets": 32,
+          "pcs": 16,
+          "channels": 64,
+          "errors": 32
+        },
+        "valid": true,
+        "coverage": {
+          "signalingExercised": true,
+          "peerConnectionExercised": true,
+          "routeObserved": true
+        },
+        "identity": {
+          "webSocket": true,
+          "wsSend": true,
+          "rtcConstructor": true,
+          "methods": [
+            {
+              "name": "createOffer",
+              "current": true
+            },
+            {
+              "name": "createAnswer",
+              "current": true
+            },
+            {
+              "name": "setLocalDescription",
+              "current": true
+            },
+            {
+              "name": "setRemoteDescription",
+              "current": true
+            },
+            {
+              "name": "addIceCandidate",
+              "current": true
+            },
+            {
+              "name": "createDataChannel",
+              "current": true
+            },
+            {
+              "name": "close",
+              "current": true
+            }
+          ]
+        },
+        "counts": {
+          "wsSend": 0,
+          "wsMessage": 2,
+          "pcCalls": 1,
+          "pcSettled": 0,
+          "channelEvents": 0,
+          "ignoredSockets": 0
+        },
+        "overflow": {
+          "events": 0,
+          "sockets": 0,
+          "pcs": 0,
+          "channels": 0,
+          "errors": 0
+        },
+        "errors": [],
+        "sockets": [
+          {
+            "id": 0,
+            "kind": "player",
+            "player": 1,
+            "createdAt": 3236.050000011921
+          },
+          {
+            "id": 1,
+            "kind": "signal",
+            "player": 1,
+            "createdAt": 3251.4150000214577
+          }
+        ],
+        "pcs": [
+          {
+            "id": 0,
+            "createdAt": 7912.180000007153
+          }
+        ],
+        "channels": [],
+        "events": [
+          {
+            "id": 0,
+            "at": 3094.344999998808,
+            "target": "harness",
+            "entity": null,
+            "event": "before-connect",
+            "route": null
+          },
+          {
+            "id": 1,
+            "at": 3236.685000002384,
+            "target": "ws",
+            "entity": 0,
+            "event": "created",
+            "route": null,
+            "readyState": 0
+          },
+          {
+            "id": 2,
+            "at": 3251.860000014305,
+            "target": "ws",
+            "entity": 1,
+            "event": "created",
+            "route": null,
+            "readyState": 0
+          },
+          {
+            "id": 3,
+            "at": 3283.2950000166893,
+            "target": "harness",
+            "entity": null,
+            "event": "after-connect",
+            "route": null
+          },
+          {
+            "id": 4,
+            "at": 3286.685000002384,
+            "target": "ws",
+            "entity": 0,
+            "event": "open",
+            "route": null,
+            "readyState": 1,
+            "code": null,
+            "errorName": null
+          },
+          {
+            "id": 5,
+            "at": 3289.814999997616,
+            "target": "ws",
+            "entity": 1,
+            "event": "open",
+            "route": null,
+            "readyState": 1,
+            "code": null,
+            "errorName": null
+          },
+          {
+            "id": 6,
+            "at": 3297.100000023842,
+            "target": "ws",
+            "entity": 1,
+            "event": "message",
+            "route": null,
+            "type": "peers",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": [
+              0
+            ],
+            "mode": null,
+            "errorName": null,
+            "readyState": 1
+          },
+          {
+            "id": 7,
+            "at": 7915.135000020266,
+            "target": "pc",
+            "entity": 0,
+            "event": "created",
+            "route": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 8,
+            "at": 8058.415000021458,
+            "target": "ws",
+            "entity": 0,
+            "event": "message",
+            "route": null,
+            "type": "route",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": null,
+            "mode": "relay",
+            "errorName": null,
+            "readyState": 1
+          },
+          {
+            "id": 9,
+            "at": 8067.120000004768,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": "relay",
+            "call": 0,
+            "method": "close",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          {
+            "id": 10,
+            "at": 8069.280000001192,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": "relay",
+            "call": 0,
+            "method": "close",
+            "connection": "closed",
+            "ice": "closed",
+            "gathering": "new",
+            "signaling": "closed"
+          },
+          {
+            "id": 11,
+            "at": 11304.130000025034,
+            "target": "ws",
+            "entity": 1,
+            "event": "close",
+            "route": "relay",
+            "readyState": 3,
+            "code": 1000,
+            "errorName": null
+          },
+          {
+            "id": 12,
+            "at": 11629.155000001192,
+            "target": "harness",
+            "entity": null,
+            "event": "first-active",
+            "route": "relay"
+          }
+        ]
+      },
+      "offsetToRelayMs": 4192.35693359375,
+      "firstActiveAt": 11629.110000014305,
+      "inviteToCreated": {
+        "start": 3297.100000023842,
+        "end": 7915.135000020266,
+        "durationMs": 4618.034999996424,
+        "relayStart": 7489.456933617592,
+        "relayEnd": 12107.491933614016
+      },
+      "constructorCalls": [],
+      "methods": [
+        {
+          "entry": {
+            "id": 9,
+            "at": 8067.120000004768,
+            "target": "pc",
+            "entity": 0,
+            "event": "call",
+            "route": "relay",
+            "call": 0,
+            "method": "close",
+            "descriptionType": null,
+            "candidatePresent": null,
+            "connection": "new",
+            "ice": "new",
+            "gathering": "new",
+            "signaling": "stable"
+          },
+          "end": {
+            "id": 10,
+            "at": 8069.280000001192,
+            "target": "pc",
+            "entity": 0,
+            "event": "returned",
+            "route": "relay",
+            "call": 0,
+            "method": "close",
+            "connection": "closed",
+            "ice": "closed",
+            "gathering": "new",
+            "signaling": "closed"
+          },
+          "observedDurationMs": 2.1599999964237213
+        }
+      ],
+      "withinWindow": {
+        "rafEntries": 0,
+        "gameFrameEntries": 0,
+        "startupEvents": []
+      },
+      "lifecycle": [
+        [
+          209.09000000357628,
+          "init",
+          "visible",
+          true
+        ],
+        [
+          285.8850000202656,
+          "pageshow",
+          "visible",
+          true
+        ]
+      ],
+      "controls": [
+        {
+          "name": "_th09_loop_start",
+          "enteredAt": 3074.5349999964237,
+          "exitedAt": 3086.4900000095367,
+          "argument": null,
+          "rafIndex": null,
+          "active": false,
+          "finished": false,
+          "connected": false,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        {
+          "name": "_th09_loop_pause",
+          "enteredAt": 3086.5100000202656,
+          "exitedAt": 3090.7150000035763,
+          "argument": 1,
+          "rafIndex": null,
+          "active": false,
+          "finished": false,
+          "connected": false,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        {
+          "name": "_th09_loop_pause",
+          "enteredAt": 11605.615000009537,
+          "exitedAt": 11607.335000008345,
+          "argument": 0,
+          "rafIndex": null,
+          "active": true,
+          "finished": false,
+          "connected": true,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        },
+        {
+          "name": "_th09_loop_pause",
+          "enteredAt": 47669.17500001192,
+          "exitedAt": 47669.79500001669,
+          "argument": 1,
+          "rafIndex": null,
+          "active": true,
+          "finished": false,
+          "connected": true,
+          "recovering": false,
+          "visibility": "visible",
+          "threw": false
+        }
+      ],
+      "allStartupRafIntervalsOver250Ms": [
+        {
+          "request": {
+            "index": 5,
+            "nativeId": 6,
+            "parentIndex": 4,
+            "callbackId": 0,
+            "requestedAt": 3284.675000011921,
+            "enteredAt": 7925.3550000190735,
+            "exitedAt": 7926.100000023842,
+            "rafTimestamp": 3294.005,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          },
+          "previous": {
+            "index": 4,
+            "nativeId": 5,
+            "parentIndex": 3,
+            "callbackId": 0,
+            "requestedAt": 3283.485000014305,
+            "enteredAt": 3284.640000015497,
+            "exitedAt": 3284.7300000190735,
+            "rafTimestamp": 3282.07,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          }
+        },
+        {
+          "request": {
+            "index": 7,
+            "nativeId": 8,
+            "parentIndex": 6,
+            "callbackId": 0,
+            "requestedAt": 8038.700000017881,
+            "enteredAt": 11259.105000019073,
+            "exitedAt": 11262.460000008345,
+            "rafTimestamp": 8038.425,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          },
+          "previous": {
+            "index": 6,
+            "nativeId": 7,
+            "parentIndex": 5,
+            "callbackId": 0,
+            "requestedAt": 7925.995000004768,
+            "enteredAt": 8037.784999996424,
+            "exitedAt": 8039.189999997616,
+            "rafTimestamp": 7929.42,
+            "cancelledAt": null,
+            "frameCalls": 0,
+            "firstFrameIndex": null,
+            "lastFrameIndex": null,
+            "frameHookAtEntry": true,
+            "frameHookAtExit": true,
+            "pauseAtEntry": 1,
+            "pauseAtExit": 1,
+            "requestThrew": false,
+            "callbackThrew": false
+          }
+        }
+      ],
+      "liveMarks": [
+        {
+          "label": "before-open",
+          "observedAt": 337.4850000143051
+        },
+        {
+          "label": "after-open",
+          "observedAt": 2588.5700000226498
+        },
+        {
+          "label": "cpu-throttle-configured",
+          "observedAt": 2599.4450000226498
+        }
+      ],
+      "firstLiveFrame": {
+        "sampleIndex": 0,
+        "frame": 0,
+        "confirmed": 0,
+        "present": 0,
+        "phase": 1,
+        "callbackWorkMs": 14.639999985694885,
+        "measuredAt": 11629.110000014305,
+        "observedAt": 11632.210000008345,
+        "values": [
+          1,
+          1,
+          1,
+          32,
+          29,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1092.5399999916553,
+          1.7849999964237213,
+          1,
+          818.0300000011921,
+          818.0300000011921,
+          1,
+          0.3799999952316284,
+          0.3799999952316284,
+          1,
+          195.46500000357628,
+          195.46500000357628,
+          1,
+          76.87999999523163,
+          76.87999999523163,
+          1,
+          1172.7750000059605,
+          64.93999993801117,
+          1,
+          3085.25,
+          2549.170000076294,
+          12,
+          14.885000079870224,
+          9.625000089406967,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3,
+          45.75000002980232,
+          45.75000002980232,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1.6949999928474426,
+          1.6949999928474426,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          5.259999990463257,
+          0.48499998450279236,
+          6,
+          4.370000004768372,
+          4.370000004768372,
+          6,
+          0.4050000011920929,
+          0.4050000011920929,
+          1,
+          0.19499999284744263,
+          0.19499999284744263,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          103,
+          371.6599999666214,
+          371.6599999666214,
+          2,
+          179.7150000333786,
+          179.7150000333786,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          6,
+          6144,
+          6144,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          103,
+          103,
+          54,
+          33,
+          0,
+          24317952,
+          0,
+          0,
+          6144,
+          6
+        ]
+      },
+      "interpretation": {
+        "allJsStoppedEstablished": false,
+        "constructorDurationAvailable": false,
+        "beforeActiveAudioCoverage": false,
+        "perPumpTimestampCoverage": false,
+        "nativeGameplayBeginsAfterRoute": "SharedNetplay.pump starts native begin only after state===1 and !routeReady; a paused startup RAF is not a native gameplay callback."
+      }
+    }
+  ],
+  "textDelivery": {
+    "matching": "FIFO occurrences by destination player, socket kind and complete retained redacted metadata; no payload fingerprint for private signaling.",
+    "links": [
+      {
+        "relay": {
+          "id": 4,
+          "phase": "send",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 7226.3003,
+          "exitedAt": 7226.7072,
+          "causeReceiveId": null,
+          "type": "peers",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": [],
+          "mode": null,
+          "errorName": null
+        },
+        "browser": {
+          "side": 0,
+          "event": {
+            "id": 10,
+            "at": 6363.965000003576,
+            "target": "ws",
+            "entity": 3,
+            "event": "message",
+            "route": null,
+            "type": "peers",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": [],
+            "mode": null,
+            "errorName": null,
+            "readyState": 1
+          },
+          "relayAt": 7228.652011722326
+        },
+        "relaySendToBrowserMessageMs": 2.3517117223263995,
+        "unmatchedReason": null
+      },
+      {
+        "relay": {
+          "id": 7,
+          "phase": "send",
+          "socketId": 5,
+          "kind": "signal",
+          "socketPlayer": 1,
+          "enteredAt": 7452.9497,
+          "exitedAt": 7453.1828,
+          "causeReceiveId": null,
+          "type": "peers",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": [
+            0
+          ],
+          "mode": null,
+          "errorName": null
+        },
+        "browser": {
+          "side": 1,
+          "event": {
+            "id": 6,
+            "at": 3297.100000023842,
+            "target": "ws",
+            "entity": 1,
+            "event": "message",
+            "route": null,
+            "type": "peers",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": [
+              0
+            ],
+            "mode": null,
+            "errorName": null,
+            "readyState": 1
+          },
+          "relayAt": 7489.456933617592
+        },
+        "relaySendToBrowserMessageMs": 36.50723361759174,
+        "unmatchedReason": null
+      },
+      {
+        "relay": {
+          "id": 8,
+          "phase": "send",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 7453.3014,
+          "exitedAt": 7453.4287,
+          "causeReceiveId": null,
+          "type": "peer-join",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": 1,
+          "peers": null,
+          "mode": null,
+          "errorName": null
+        },
+        "browser": {
+          "side": 0,
+          "event": {
+            "id": 11,
+            "at": 6590.539999991655,
+            "target": "ws",
+            "entity": 3,
+            "event": "message",
+            "route": null,
+            "type": "peer-join",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": 1,
+            "peers": null,
+            "mode": null,
+            "errorName": null,
+            "readyState": 1
+          },
+          "relayAt": 7455.227011710405
+        },
+        "relaySendToBrowserMessageMs": 1.9256117104050645,
+        "unmatchedReason": null
+      },
+      {
+        "relay": {
+          "id": 9,
+          "phase": "send",
+          "socketId": 3,
+          "kind": "signal",
+          "socketPlayer": 0,
+          "enteredAt": 11948.3897,
+          "exitedAt": 11948.5284,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        "browser": null,
+        "relaySendToBrowserMessageMs": null,
+        "unmatchedReason": "No browser message observation for this socket and redacted metadata occurrence. This is not proof of packet loss."
+      },
+      {
+        "relay": {
+          "id": 10,
+          "phase": "send",
+          "socketId": 5,
+          "kind": "signal",
+          "socketPlayer": 1,
+          "enteredAt": 11948.6193,
+          "exitedAt": 11948.7678,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        "browser": null,
+        "relaySendToBrowserMessageMs": null,
+        "unmatchedReason": "No browser message observation for this socket and redacted metadata occurrence. This is not proof of packet loss."
+      },
+      {
+        "relay": {
+          "id": 11,
+          "phase": "send",
+          "socketId": 2,
+          "kind": "player",
+          "socketPlayer": 0,
+          "enteredAt": 11948.8523,
+          "exitedAt": 11948.9551,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        "browser": {
+          "side": 0,
+          "event": {
+            "id": 20,
+            "at": 11202.460000008345,
+            "target": "ws",
+            "entity": 2,
+            "event": "message",
+            "route": null,
+            "type": "route",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": null,
+            "mode": "relay",
+            "errorName": null,
+            "readyState": 1
+          },
+          "relayAt": 12067.147011727095
+        },
+        "relaySendToBrowserMessageMs": 118.29471172709418,
+        "unmatchedReason": null
+      },
+      {
+        "relay": {
+          "id": 12,
+          "phase": "send",
+          "socketId": 4,
+          "kind": "player",
+          "socketPlayer": 1,
+          "enteredAt": 11949.0248,
+          "exitedAt": 11949.1216,
+          "causeReceiveId": null,
+          "type": "route",
+          "descriptionType": null,
+          "candidatePresent": false,
+          "from": null,
+          "to": null,
+          "player": null,
+          "peers": null,
+          "mode": "relay",
+          "errorName": null
+        },
+        "browser": {
+          "side": 1,
+          "event": {
+            "id": 8,
+            "at": 8058.415000021458,
+            "target": "ws",
+            "entity": 0,
+            "event": "message",
+            "route": null,
+            "type": "route",
+            "descriptionType": null,
+            "candidatePresent": false,
+            "from": null,
+            "to": null,
+            "player": null,
+            "peers": null,
+            "mode": "relay",
+            "errorName": null,
+            "readyState": 1
+          },
+          "relayAt": 12250.771933615208
+        },
+        "relaySendToBrowserMessageMs": 301.74713361520844,
+        "unmatchedReason": null
+      }
+    ],
+    "unmatchedBrowserMessages": []
+  },
+  "hostWindow": {
+    "valid": true,
+    "utcBounds": [
+      1791648072071.5051,
+      1791648076723.77
+    ],
+    "cpuSamples": [
+      {
+        "kind": "periodic",
+        "atMs": 7034.628900000001,
+        "utcMs": 1791648071620,
+        "logicalCpus": 24,
+        "idleMs": 3382955631,
+        "totalMs": 4340730363,
+        "intervalMs": 1005.3870999999999,
+        "deltaIdleMs": 14361,
+        "deltaTotalMs": 24261,
+        "busyFraction": 0.40806232224557937,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 8036.307700000001,
+        "utcMs": 1791648072622,
+        "logicalCpus": 24,
+        "idleMs": 3382971866,
+        "totalMs": 4340754787,
+        "intervalMs": 1001.6788000000006,
+        "deltaIdleMs": 16235,
+        "deltaTotalMs": 24424,
+        "busyFraction": 0.33528496560759913,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 9051.6258,
+        "utcMs": 1791648073637,
+        "logicalCpus": 24,
+        "idleMs": 3382986755,
+        "totalMs": 4340779239,
+        "intervalMs": 1015.3180999999986,
+        "deltaIdleMs": 14889,
+        "deltaTotalMs": 24452,
+        "busyFraction": 0.3910927531490267,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 10063.333,
+        "utcMs": 1791648074649,
+        "logicalCpus": 24,
+        "idleMs": 3383003489,
+        "totalMs": 4340803865,
+        "intervalMs": 1011.7072000000007,
+        "deltaIdleMs": 16734,
+        "deltaTotalMs": 24626,
+        "busyFraction": 0.3204742954600829,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 11076.5308,
+        "utcMs": 1791648075662,
+        "logicalCpus": 24,
+        "idleMs": 3383019443,
+        "totalMs": 4340828567,
+        "intervalMs": 1013.1977999999999,
+        "deltaIdleMs": 15954,
+        "deltaTotalMs": 24702,
+        "busyFraction": 0.35414136507165417,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 12089.3065,
+        "utcMs": 1791648076675,
+        "logicalCpus": 24,
+        "idleMs": 3383035019,
+        "totalMs": 4340853160,
+        "intervalMs": 1012.7757000000001,
+        "deltaIdleMs": 15576,
+        "deltaTotalMs": 24593,
+        "busyFraction": 0.36664904647663965,
+        "counterDiscontinuity": false
+      },
+      {
+        "kind": "periodic",
+        "atMs": 13100.814400000001,
+        "utcMs": 1791648077687,
+        "logicalCpus": 24,
+        "idleMs": 3383049426,
+        "totalMs": 4340877851,
+        "intervalMs": 1011.5079000000005,
+        "deltaIdleMs": 14407,
+        "deltaTotalMs": 24691,
+        "busyFraction": 0.41650803936657077,
+        "counterDiscontinuity": false
+      }
+    ],
+    "processSamples": [
+      {
+        "receivedAtMs": 5431.43,
+        "receivedUtcMs": 1791648070017,
+        "sourceUtcMs": 1791648069952,
+        "sourceDurationMs": 63.324200000000005,
+        "matchingCount": 29,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            39332,
+            "node",
+            0.15625
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            208.5625
+          ],
+          [
+            41372,
+            "node",
+            7.625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            60376,
+            "node",
+            0.09375
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63432,
+            "node",
+            5.8125
+          ],
+          [
+            65020,
+            "node",
+            0.46875
+          ],
+          [
+            67924,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            382.5
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.203125
+          ],
+          [
+            38784,
+            "python",
+            33.4375
+          ],
+          [
+            48904,
+            "python",
+            95.421875
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ]
+        ]
+      },
+      {
+        "receivedAtMs": 10581.4391,
+        "receivedUtcMs": 1791648075167,
+        "sourceUtcMs": 1791648075044,
+        "sourceDurationMs": 120.6294,
+        "matchingCount": 29,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            39332,
+            "node",
+            0.296875
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            208.671875
+          ],
+          [
+            41372,
+            "node",
+            7.625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            60376,
+            "node",
+            0.09375
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63432,
+            "node",
+            5.8125
+          ],
+          [
+            65020,
+            "node",
+            0.46875
+          ],
+          [
+            67924,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            382.5
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.203125
+          ],
+          [
+            38784,
+            "python",
+            33.4375
+          ],
+          [
+            48904,
+            "python",
+            95.453125
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ]
+        ]
+      },
+      {
+        "receivedAtMs": 15658.7368,
+        "receivedUtcMs": 1791648080244,
+        "sourceUtcMs": 1791648080190,
+        "sourceDurationMs": 52.3173,
+        "matchingCount": 29,
+        "sourceRowOverflow": false,
+        "retainedRowOverflow": false,
+        "failed": false,
+        "rows": [
+          [
+            3864,
+            "node",
+            0.484375
+          ],
+          [
+            6316,
+            "node",
+            0.171875
+          ],
+          [
+            15024,
+            "node",
+            0.640625
+          ],
+          [
+            15684,
+            "node",
+            0.21875
+          ],
+          [
+            21452,
+            "node",
+            0.5
+          ],
+          [
+            22004,
+            "node",
+            0.28125
+          ],
+          [
+            22784,
+            "node",
+            0.109375
+          ],
+          [
+            23744,
+            "node",
+            0.125
+          ],
+          [
+            39332,
+            "node",
+            0.359375
+          ],
+          [
+            40004,
+            "node",
+            0.875
+          ],
+          [
+            40148,
+            "node",
+            208.671875
+          ],
+          [
+            41372,
+            "node",
+            7.625
+          ],
+          [
+            46156,
+            "node",
+            0.125
+          ],
+          [
+            56248,
+            "node",
+            0.078125
+          ],
+          [
+            56744,
+            "node",
+            0.421875
+          ],
+          [
+            58692,
+            "node",
+            0.171875
+          ],
+          [
+            60376,
+            "node",
+            0.09375
+          ],
+          [
+            62408,
+            "node",
+            0.21875
+          ],
+          [
+            62528,
+            "node",
+            5.921875
+          ],
+          [
+            63432,
+            "node",
+            5.8125
+          ],
+          [
+            65020,
+            "node",
+            0.46875
+          ],
+          [
+            67924,
+            "node",
+            0.25
+          ],
+          [
+            4748,
+            "python",
+            382.53125
+          ],
+          [
+            15068,
+            "python",
+            0.03125
+          ],
+          [
+            29692,
+            "python",
+            0.03125
+          ],
+          [
+            35524,
+            "python",
+            7.203125
+          ],
+          [
+            38784,
+            "python",
+            33.4375
+          ],
+          [
+            48904,
+            "python",
+            95.46875
+          ],
+          [
+            56472,
+            "python",
+            0.015625
+          ]
+        ]
+      }
+    ],
+    "knownProcesses": [
+      {
+        "pid": 28292,
+        "role": "harness-node",
+        "registeredAtMs": 0.04929999999995971,
+        "registeredUtcMs": 1791648064586
+      },
+      {
+        "pid": 57660,
+        "role": "host-load-sampler",
+        "registeredAtMs": 5.7531999999999925,
+        "registeredUtcMs": 1791648064591
+      },
+      {
+        "pid": 39332,
+        "role": "netplay-relay",
+        "registeredAtMs": 9.951099999999997,
+        "registeredUtcMs": 1791648064596
+      }
+    ],
+    "limits": {
+      "cpuSamples": 4096,
+      "processSamples": 1024,
+      "processRows": 32768,
+      "rowsPerProcessSample": 512,
+      "stdoutChars": 262144,
+      "knownProcesses": 32,
+      "marks": 128,
+      "errors": 64
+    },
+    "errors": [],
+    "processDeltaBounds": [
+      1791648069952,
+      1791648080190
+    ],
+    "processCpuDeltas": [
+      {
+        "pid": 39332,
+        "name": "node",
+        "role": "netplay-relay",
+        "cpuSeconds": 0.203125
+      },
+      {
+        "pid": 40148,
+        "name": "node",
+        "role": "other-process-candidate",
+        "cpuSeconds": 0.109375
+      },
+      {
+        "pid": 4748,
+        "name": "python",
+        "role": "other-process-candidate",
+        "cpuSeconds": 0.03125
+      },
+      {
+        "pid": 48904,
+        "name": "python",
+        "role": "other-process-candidate",
+        "cpuSeconds": 0.046875
+      }
+    ],
+    "limitations": [
+      "Aggregate CPU occupancy does not establish single-core availability, CPU frequency, thermal state, GPU load, or a stable benchmark environment.",
+      "Process names are candidates for contention, not proof that a process is compiling. Known harness/relay/helper PIDs are labeled separately; other node processes remain unlabeled candidates.",
+      "Process CPU is cumulative lifetime CPU seconds. A first sighting is not CPU consumed during this run; PID reuse or counter reset can break a delta.",
+      "The 5 s process snapshots miss short tasks that start and exit between snapshots. Timer delays and source/receive times are retained.",
+      "This observer has overhead. Its own PowerShell helper is intentionally not a candidate process, but its work is included in aggregate CPU counters.",
+      "Overflow and sampling failures make this evidence incomplete; they are never a reason to silently remove a game result."
+    ]
+  },
+  "limitations": [
+    "Constructor entry was absent from the original v1 observer. Peer-message to PC-created includes original event handling and native/proxied constructor; it cannot alone isolate constructor CPU time.",
+    "No RAF/game-frame/startup event inside this window is observed. There is no independent per-pump or enabled audio trace before active, so cessation of all JavaScript is not established.",
+    "Relay connection observation precedes canonical admission and no route timer callback was wrapped. Deadline attribution remains an inference from complete signaling history, configuration and source.",
+    "Closed signaling sockets can leave relay route sends without browser message observations; retained unmatched entries are not automatically drops.",
+    "Both route and tape gates remain authoritative. A fallback run with an empty requested RTC input tape is not a direct-performance result.",
+    "Host aggregate CPU and periodic candidate process samples neither locate all contention nor identify injected browser code."
+  ]
+}

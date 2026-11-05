@@ -1,0 +1,208 @@
+{
+  "schema": "eagler-touhou/migration-refresh/1",
+  "recordedAt": "2026-10-17T16:42:15.550Z",
+  "previousCandidate": "410ba4578d1d4052a129a5cb532ae349c6edbcda",
+  "sourceWrites": false,
+  "launcherRef": "main",
+  "excludedLauncherBranch": "launcher-refactor",
+  "method": "Component-prefixed three-way committed tree deltas. Original and refreshed histories remain reachable. Removed common gitlinks stay removed.",
+  "sources": [
+    {
+      "target": "launcher",
+      "source": "D:\\workspace\\eagler\\worktrees\\launcher-th09-spectator-main",
+      "ref": "main",
+      "previousImport": "d43283b801c2e65a113facef51e3f2bb76801031",
+      "head": "c78ea059ead106a67d33548f0d71e2c4fc022ad5",
+      "sourceTree": "8f2f92b13217d99d9adc02f9bee038413d7fac54",
+      "previousImportIsAncestor": false,
+      "mergeBase": "f133d9c108ad7e123b2edf7fd3a2859e5001a362",
+      "uncommittedNotImported": "M app/components/player/SpectatorPlayback.tsx\n M app/models/gameplay-network.ts\n M app/services/game-preparation.ts\n M app/services/multiplayer-room.ts\n M app/services/preparation-network.ts\n M app/services/room-preparation.ts\n M app/services/runtime.ts\n M app/session/room-session.ts\n M docs/RELEASE.md\n M docs/SPECTATOR_PROTOCOL.md\n M docs/playbooks/multiplayer.md\n M docs/playbooks/runtime-launcher-package.md\n M lib/contracts/runtime-generations.mjs\n M scripts/serve.mjs\n M server/netplay-relay.mjs\n M src/app-shell-sw.js\n M src/contracts/runtime-generations.mts\n M src/launcher/app-types.mts\n M src/launcher/i18n.mts\n M src/launcher/multiplayer-lobby-snapshot.mts\n M src/launcher/multiplayer-relay-url.mts\n M src/launcher/network-activity.mts\n M src/launcher/runtime-launch.mts\n M src/runtime-cache-sw.js\n M src/runtime-program-sw.js\n M tests/browser/test-th09-spectator-panel.mjs\n M tests/react-main/browser-session-mounted.test.mjs\n M tests/react-main/development-server.test.mjs\n M tests/react-main/game-preparation.test.mjs\n M tests/react-main/gameplay-network.test.mjs\n M tests/react-main/multiplayer-services.test.mjs\n M tests/react-main/quick-chat-mounted.test.mjs\n M tests/react-main/runtime-service.test.mjs\n M tests/react-main/spectator-playback.test.mjs\n M tests/runtime-cache-cases.mjs\n M tests/support/playwright-loader.mjs\n M tests/test-network-activity.mjs\n M tests/test-plan.mjs\n M tests/test-runtime-launch.mjs\n M tests/test-runtime-offline-first-browser.mjs\n M tests/test-runtime-shared-font-upgrade-browser.mjs\n M tests/test-spectator-stage-relay.mjs\n M tests/test-th09-spectator-history-relay.mjs\n?? docs/history-session/2026-10-17-multiplayer-runtime-version.md\n?? tests/test-relay-runtime-version.mjs\n?? tests/test-runtime-download-browser.mjs\n?? tests/test-spectator-quick-chat-relay.mjs",
+      "excludedChanges": [],
+      "previousRefreshHead": "b612e5c389ff19fe1c93b8664b527cfc573f72bf"
+    },
+    {
+      "target": "common",
+      "source": "D:\\workspace\\eagler\\eagler-common",
+      "ref": "main",
+      "previousImport": "5c4e96f2f9f1838549d5d55179db9b6c9c749c76",
+      "head": "fd9d17fd9c6627cade23c19300bfb21d12e2c89d",
+      "sourceTree": "4f4c464c3d92909821b7931c4375f668c94ef4b1",
+      "previousImportIsAncestor": true,
+      "mergeBase": "5c4e96f2f9f1838549d5d55179db9b6c9c749c76",
+      "uncommittedNotImported": "M include/eagler/netplay/SpectatorStagePlayback.hpp\n M tests/spectator-stage-test.cpp",
+      "excludedChanges": []
+    },
+    {
+      "target": "runtimes/th06",
+      "source": "D:\\workspace\\eagler\\th06-eagler",
+      "ref": "eagler",
+      "previousImport": "0c21bea5024cee65fb252817b75146da6a9137cd",
+      "head": "4014a918cb603c684b0678155cc18f9b861c380e",
+      "sourceTree": "6734069ab400d462c715282f60dd8b41f4bb11ef",
+      "previousImportIsAncestor": true,
+      "mergeBase": "0c21bea5024cee65fb252817b75146da6a9137cd",
+      "uncommittedNotImported": "M src/netplay/Th06LanStageProbe.cpp\n m third_party/eagler-common",
+      "excludedChanges": [
+        "third_party/eagler-common"
+      ]
+    },
+    {
+      "target": "runtimes/th07",
+      "source": "D:\\workspace\\eagler\\th07-eagler",
+      "ref": "eagler",
+      "previousImport": "55fe46cc2409eb1220286a9bf37814f3156a93be",
+      "head": "581d926305b1eeb79baed6cbb14fa28df40b64f2",
+      "sourceTree": "99880bb63571b1e90d19bedb1e0baae385679476",
+      "previousImportIsAncestor": false,
+      "mergeBase": "f68f4ee759bee690c7e55fe8f371defbe3a02046",
+      "uncommittedNotImported": "M src/netplay/Th07LanStageProbe.cpp\n M tests/netplay-spectator-browser-host.html\n m third_party/eagler-common\n?? tests/netplay-spectator-lifecycle-browser.py",
+      "excludedChanges": [
+        "third_party/eagler-common"
+      ]
+    },
+    {
+      "target": "runtimes/th08",
+      "source": "D:\\workspace\\eagler\\th08-eagler",
+      "ref": "eagler",
+      "previousImport": "732b44fe49d15e95c2ac6c3f8f02ae497e4ba225",
+      "head": "f81d08c0fec870d58ece6e1fb6e03ad7ca0ca543",
+      "sourceTree": "ca5790f4522d55255d83d1f02360b93345e07cb3",
+      "previousImportIsAncestor": true,
+      "mergeBase": "732b44fe49d15e95c2ac6c3f8f02ae497e4ba225",
+      "uncommittedNotImported": "M portable/multiplayer/check-network.mjs\n M portable/multiplayer/check-spectator.py\n M portable/multiplayer/runtime-host.html\n M th08_web/cpp/multiplayer/NetworkConnection.cpp\n M th08_web/cpp/multiplayer/RollbackDriver.cpp\n m third_party/eagler-common",
+      "excludedChanges": [
+        "third_party/eagler-common"
+      ]
+    },
+    {
+      "target": "runtimes/th08-mp",
+      "source": "D:\\workspace\\eagler\\th08-eagler",
+      "ref": "eagler-mp",
+      "previousImport": "52cc4f148db155e84cbf4fab585a77f56e282609",
+      "head": "81c3d96f9ac913a32d9aa080d467545fd3b3c3fb",
+      "sourceTree": "a8372cd0d18f35f32078760b60487b8b967c7b84",
+      "previousImportIsAncestor": true,
+      "mergeBase": "52cc4f148db155e84cbf4fab585a77f56e282609",
+      "uncommittedNotImported": "M portable/multiplayer/check-network.mjs\n M portable/multiplayer/check-spectator.py\n M portable/multiplayer/runtime-host.html\n M th08_web/cpp/multiplayer/NetworkConnection.cpp\n M th08_web/cpp/multiplayer/RollbackDriver.cpp\n m third_party/eagler-common",
+      "excludedChanges": [
+        "third_party/eagler-common"
+      ]
+    },
+    {
+      "target": "runtimes/th09",
+      "source": "D:\\workspace\\eagler\\th09-eagler",
+      "ref": "eagler",
+      "previousImport": "8d5d8b099404c77131b0c208ce2c2d943aa95fd9",
+      "head": "6c99a0420121764d75d823240f6d503c57b1460d",
+      "sourceTree": "dbd6da3587f54361aa6e167964c82a7683722143",
+      "previousImportIsAncestor": true,
+      "mergeBase": "8d5d8b099404c77131b0c208ce2c2d943aa95fd9",
+      "uncommittedNotImported": "M th09_web/sdl-runtime/shared-netplay.mjs\n M th09_web/sdl-runtime/spectator-timeline.mjs\n M th09_web/tests/multiplayer/spectator-timeline-adapter.test.mjs\n M th09_web/tests/server/shared-netplay.test.mjs",
+      "excludedChanges": []
+    },
+    {
+      "target": "runtimes/th10",
+      "source": "D:\\workspace\\eagler\\th10-eagler",
+      "ref": "eagler",
+      "previousImport": "def5e0099d550b47de7ab3b0e7df697f307091c2",
+      "head": "abf87c4530d31b606a3b798695e6856e3f502d21",
+      "sourceTree": "0ace10a123ef0d7bd0c065635e76f530bc5705f4",
+      "previousImportIsAncestor": true,
+      "mergeBase": "def5e0099d550b47de7ab3b0e7df697f307091c2",
+      "uncommittedNotImported": "",
+      "excludedChanges": []
+    },
+    {
+      "target": "runtimes/th10-mp",
+      "source": "D:\\workspace\\eagler\\worktrees\\th10-multiplayer",
+      "ref": "eagler-mp",
+      "previousImport": "7efada3634433599f0a098c2773745b74aaaa98e",
+      "head": "75a0ac5760b579e2f0f41ac6f0c4b4f67ab0bcbe",
+      "sourceTree": "1d068fda40fbc472e0063eb46b26f9fc3f5ec1b9",
+      "previousImportIsAncestor": false,
+      "mergeBase": "0999524a95882552e63ed09477e4803693c00360",
+      "uncommittedNotImported": "M .github/workflows/performance-regressions.yml\n M portable/build.mjs\n M portable/check-menu-input.mjs\n M portable/multiplayer/check-spectator-stage.mjs\n M portable/multiplayer/check-spectator-stage.py\n M th10_web/cpp/multiplayer/NetplayRuntime.cpp\n M th10_web/cpp/platform/Application.cpp\n m third_party/eagler-common\n?? portable/multiplayer/spectator_lifecycle.py",
+      "excludedChanges": [
+        "third_party/eagler-common"
+      ]
+    },
+    {
+      "target": "runtimes/th11",
+      "source": "D:\\workspace\\eagler\\th11-eagler",
+      "ref": "eagler",
+      "previousImport": "e56c615b017da907f6b4d88335f49a12580ee129",
+      "head": "e56c615b017da907f6b4d88335f49a12580ee129",
+      "sourceTree": "730e1f9958487211a623f91314cce53c490a77f8",
+      "previousImportIsAncestor": true,
+      "mergeBase": "e56c615b017da907f6b4d88335f49a12580ee129",
+      "uncommittedNotImported": "",
+      "excludedChanges": []
+    },
+    {
+      "target": "runtimes/th11-mp",
+      "source": "D:\\workspace\\eagler\\worktrees\\th11-multiplayer",
+      "ref": "eagler-mp",
+      "previousImport": "8e252bdf6e9d0f304d15b52b4582de04fb268c97",
+      "head": "8afc0c85082013d0448869a87d318b50a9965dd9",
+      "sourceTree": "205c466de9705af273d5da93d3b92520203c4c72",
+      "previousImportIsAncestor": true,
+      "mergeBase": "8e252bdf6e9d0f304d15b52b4582de04fb268c97",
+      "uncommittedNotImported": "M portable/build.mjs\n M th11_web/cpp/multiplayer/NetplayRuntime.cpp\n M th11_web/cpp/sdl/Application.cpp\n M th11_web/scripts/build-sdl.mjs\n m third_party/eagler-common",
+      "excludedChanges": [
+        "third_party/eagler-common"
+      ]
+    },
+    {
+      "target": "runtimes/th15",
+      "source": "D:\\workspace\\eagler\\th15-eagler",
+      "ref": "eagler",
+      "previousImport": "e96fcf8d7734a76f56eeb9b4a54334fc3b4e1baf",
+      "head": "a9e4432818548356731c6983ec72ff009c26f300",
+      "sourceTree": "6dff0704a341eb52669ceb0f32cc5254efce598c",
+      "previousImportIsAncestor": true,
+      "mergeBase": "e96fcf8d7734a76f56eeb9b4a54334fc3b4e1baf",
+      "uncommittedNotImported": "M portable/multiplayer/build-spectator-stage.mjs\n M th15_web/cpp/multiplayer/NetplayRuntime.cpp\n M th15_web/cpp/sdl/BrowserRuntime.cpp\n m third_party/eagler-common-netplay",
+      "excludedChanges": [
+        "third_party/eagler-common"
+      ]
+    },
+    {
+      "target": "runtimes/th15-mp",
+      "source": "D:\\workspace\\eagler\\th15-eagler",
+      "ref": "eagler-mp",
+      "previousImport": "a5cc4652d59d55f2559622da28e21cbbf52b75d3",
+      "head": "b2553f7f53af135de7dc6cf37a3e1badce130469",
+      "sourceTree": "ef73e14818d0b500018a63a7c6b2218ad4b7ba7f",
+      "previousImportIsAncestor": true,
+      "mergeBase": "a5cc4652d59d55f2559622da28e21cbbf52b75d3",
+      "uncommittedNotImported": "M portable/multiplayer/build-spectator-stage.mjs\n M th15_web/cpp/multiplayer/NetplayRuntime.cpp\n M th15_web/cpp/sdl/BrowserRuntime.cpp\n m third_party/eagler-common-netplay",
+      "excludedChanges": [
+        "third_party/eagler-common-netplay"
+      ]
+    },
+    {
+      "target": "runtimes/th20",
+      "source": "D:\\workspace\\eagler\\th20-eagler",
+      "ref": "eagler",
+      "previousImport": "df556cff11ad24c81b36e7069daa5ffc3952586b",
+      "head": "27d34505a28d174c1d213feaf251a58482248fc1",
+      "sourceTree": "6604071198f57f5f85ed13f6551fc1c24c521c5a",
+      "previousImportIsAncestor": false,
+      "mergeBase": "048e6e2cc44f0926be5eb60d8172520699836e05",
+      "uncommittedNotImported": "",
+      "excludedChanges": []
+    }
+  ],
+  "resolutions": [
+    "TH08 builder retains root common path and adds upstream WebSfx input.",
+    "TH11 MP retains actual root common tree provenance instead of restoring a fixed source SHA.",
+    "TH15 normal builder retains root common path and adds upstream font/audio inputs."
+  ],
+  "evidence": "../../../refresh-20261018/tree-verification.json",
+  "followup": {
+    "recordedAt": "2026-10-17T17:36:45.614Z",
+    "from": "b612e5c389ff19fe1c93b8664b527cfc573f72bf",
+    "head": "c78ea059ead106a67d33548f0d71e2c4fc022ad5",
+    "reason": "Original Launcher main advanced during validation. Import only the committed main delta."
+  }
+}

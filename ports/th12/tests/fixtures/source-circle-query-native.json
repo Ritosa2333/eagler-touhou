@@ -1,0 +1,7817 @@
+{
+  "schema": "th12-native-source-circle-query/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "partial": true,
+  "acceptedReplayGolden": false,
+  "wholeGameOracle": false,
+  "provider": "Original439ed0 Source circle branch43a3a4..43a3cf, cadence/budget/cap/score; original query only",
+  "preparedInputs": [
+    "Inactive256 friendly projectile slots",
+    "Prepared1..2 active Source records, stride74 atPlayer+8988",
+    "Player+a30=0/a34=1 opens the query epoch gate",
+    "FPCW037f/MXCSR1f80/SSE2 available"
+  ],
+  "externalBoundaries": [
+    "406de0 separate Bomb subsystem damage returns0; no Source or geometry boundary replaced"
+  ],
+  "addresses": {
+    "epochGate": "0x439ef2",
+    "sourceActiveGate": "0x43a21f",
+    "cadence": "0x43a228..0x43a235",
+    "circleFlagDispatch": "0x43a23b",
+    "circleDistance": "0x43a3a4..0x43a3c0",
+    "comparison": "0x43a3c8..0x43a3cf",
+    "totalAdd": "0x43a3d4",
+    "accumulatedWrite": "0x43a3d8",
+    "limitCompare": "0x43a3de",
+    "damageZeroWrite": "0x43a3e3",
+    "damageCap80": "0x43a40b..0x43a418",
+    "scoreWrite": "0x43a452"
+  },
+  "sourceOffsets": {
+    "radius": "0x00",
+    "centerXYZ": "0x18",
+    "previousTicks": "0x4c",
+    "ticks": "0x50",
+    "damage": "0x60",
+    "accumulated": "0x64",
+    "limit": "0x68",
+    "cadence": "0x6c",
+    "flags": "0x70"
+  },
+  "cases": [
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            1.401298464324817e-45,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            1.401298464324817e-45,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            1.401298464324817e-45,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 0.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 0.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 25.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 25.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 25.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            5.000000476837158,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 25.0000057220459
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            5.000000476837158,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 25.0000057220459
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            5.000000476837158,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 25.0000057220459
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            4.999999523162842,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 24.999996185302734
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            4.999999523162842,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 24.999996185302734
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 5.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            4.999999523162842,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 5.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 24.999996185302734
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1024.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1024.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1024.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            32.000003814697266,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1024.000244140625
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            32.000003814697266,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1024.000244140625
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            32.000003814697266,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1024.000244140625
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            31.999998092651367,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1023.9998779296875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            31.999998092651367,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1023.9998779296875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 32.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            31.999998092651367,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 32.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 1023.9998779296875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3136.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3136.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3136.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            56.000003814697266,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3136.00048828125
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            56.000003814697266,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3136.00048828125
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            56.000003814697266,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3136.00048828125
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            55.999996185302734,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            0.0,
+            0.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3135.99951171875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            55.999996185302734,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3135.99951171875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "axis-radius-boundary",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56.0,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            55.999996185302734,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            1000.0,
+            1000.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3135.99951171875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 12,
+          "previousTicks": 11,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 11,
+                "ticks": 12,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 11,
+                "ticks": 12,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 12,
+          "previousTicks": 12,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 12,
+                "ticks": 12,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 12,
+                "ticks": 12,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 1,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 1,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 1,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 11,
+          "cadence": 1,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 11,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 1,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 11,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 1,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 0,
+          "previousTicks": 0,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 0,
+                "ticks": 0,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 0,
+                "ticks": 0,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": -4,
+          "previousTicks": -5,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": -5,
+                "ticks": -4,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": -5,
+                "ticks": -4,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": -3,
+          "previousTicks": -4,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": -4,
+                "ticks": -3,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": -4,
+                "ticks": -3,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "cadence-and-active-gate",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 2
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 2
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 2
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "repeated-query-and-budget",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 15,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 14,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 7,
+              "writtenBits": 14,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 14,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 21,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 3
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 14,
+              "writtenBits": 21,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 7,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 21,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 3
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 21,
+                "limit": 15,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 3
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 21,
+              "writtenBits": 21,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "repeated-query-and-budget",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 40,
+          "accumulated": 0,
+          "limit": 45,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        },
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 60,
+          "accumulated": 0,
+          "limit": 70,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 80,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 40,
+                "accumulated": 0,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 60,
+                "accumulated": 0,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 40,
+                "accumulated": 40,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 60,
+                "accumulated": 60,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            },
+            {
+              "slot": 1,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 40,
+              "size": 4
+            },
+            {
+              "slot": 1,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 60,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 80,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 40,
+                "accumulated": 40,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 60,
+                "accumulated": 60,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 80,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 120,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            },
+            {
+              "slot": 1,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 40,
+              "writtenBits": 80,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 40,
+              "writtenBits": 0,
+              "size": 4
+            },
+            {
+              "slot": 1,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 60,
+              "writtenBits": 120,
+              "size": 4
+            },
+            {
+              "slot": 1,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 60,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 80,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 120,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 80,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 120,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            },
+            {
+              "slot": 1,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 80,
+              "writtenBits": 80,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            },
+            {
+              "slot": 1,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 120,
+              "writtenBits": 120,
+              "size": 4
+            },
+            {
+              "slot": 1,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 80,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 120,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 80,
+                "limit": 45,
+                "cadence": 4,
+                "flags": 3
+              },
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 120,
+                "limit": 70,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            },
+            {
+              "slot": 1,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 80,
+              "writtenBits": 80,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            },
+            {
+              "slot": 1,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 120,
+              "writtenBits": 120,
+              "size": 4
+            },
+            {
+              "slot": 1,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "repeated-query-and-budget",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": -3,
+          "accumulated": 10,
+          "limit": 8,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": -3,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": 7,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 10,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": -3,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": 7,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": 4,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 7,
+              "writtenBits": 4,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": -3,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": 4,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 2
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": 1,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 3
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 4,
+              "writtenBits": 1,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": -3,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": 1,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 3
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": -3,
+                "accumulated": -2,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 4
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 1,
+              "writtenBits": 4294967294,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "repeated-query-and-budget",
+      "sources": [
+        {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 56,
+          "damage": 0,
+          "accumulated": 10,
+          "limit": 8,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "queries": [
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 10,
+              "writtenBits": 10,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 10,
+              "writtenBits": 10,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 10,
+              "writtenBits": 10,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        },
+        {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "centerBits": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 56.0,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 0,
+                "accumulated": 10,
+                "limit": 8,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 0.0
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 10,
+              "writtenBits": 10,
+              "size": 4
+            },
+            {
+              "slot": 0,
+              "offset": "0x60",
+              "instruction": "0x43a3e3",
+              "previousBits": 0,
+              "writtenBits": 0,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            192.4875946044922,
+            -170.4001922607422,
+            0
+          ],
+          "radius": 473.66790771484375,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 7,
+        "distanceSquared": 224361.28125
+      },
+      "queries": [
+        {
+          "position": [
+            -172.22219848632812,
+            131.83822631835938,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  192.4875946044922,
+                  -170.4001922607422,
+                  0.0
+                ],
+                "centerBits": [
+                  1128299731,
+                  3274335859,
+                  0
+                ],
+                "radius": 473.66790771484375,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  192.4875946044922,
+                  -170.4001922607422,
+                  0.0
+                ],
+                "centerBits": [
+                  1128299731,
+                  3274335859,
+                  0
+                ],
+                "radius": 473.66790771484375,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 224361.296875
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            13.788464546203613,
+            181.99388122558594,
+            0
+          ],
+          "radius": 148.7008819580078,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 22111.953125
+      },
+      "queries": [
+        {
+          "position": [
+            -127.60429382324219,
+            135.9499969482422,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  13.788464546203613,
+                  181.99388122558594,
+                  0.0
+                ],
+                "centerBits": [
+                  1096588685,
+                  1127612015,
+                  0
+                ],
+                "radius": 148.7008819580078,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  13.788464546203613,
+                  181.99388122558594,
+                  0.0
+                ],
+                "centerBits": [
+                  1096588685,
+                  1127612015,
+                  0
+                ],
+                "radius": 148.7008819580078,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 22111.951171875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            -145.37318420410156,
+            -156.88389587402344,
+            0
+          ],
+          "radius": 371.2506408691406,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 7,
+        "distanceSquared": 137827.03125
+      },
+      "queries": [
+        {
+          "position": [
+            189.8797607421875,
+            2.5918359756469727,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  -145.37318420410156,
+                  -156.88389587402344,
+                  0.0
+                ],
+                "centerBits": [
+                  3272695689,
+                  3273450055,
+                  0
+                ],
+                "radius": 371.2506408691406,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  -145.37318420410156,
+                  -156.88389587402344,
+                  0.0
+                ],
+                "centerBits": [
+                  3272695689,
+                  3273450055,
+                  0
+                ],
+                "radius": 371.2506408691406,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 137827.046875
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            125.93326568603516,
+            182.06134033203125,
+            0
+          ],
+          "radius": 396.00567626953125,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 156820.5
+      },
+      "queries": [
+        {
+          "position": [
+            -85.80036163330078,
+            -152.58677673339844,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  125.93326568603516,
+                  182.06134033203125,
+                  0.0
+                ],
+                "centerBits": [
+                  1123802581,
+                  1127616436,
+                  0
+                ],
+                "radius": 396.00567626953125,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  125.93326568603516,
+                  182.06134033203125,
+                  0.0
+                ],
+                "centerBits": [
+                  1123802581,
+                  1127616436,
+                  0
+                ],
+                "radius": 396.00567626953125,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 156820.484375
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            -187.5039825439453,
+            -93.61190795898438,
+            0
+          ],
+          "radius": 260.41357421875,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 67815.234375
+      },
+      "queries": [
+        {
+          "position": [
+            -182.5432891845703,
+            166.75440979003906,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  -187.5039825439453,
+                  -93.61190795898438,
+                  0.0
+                ],
+                "centerBits": [
+                  3275456773,
+                  3267049804,
+                  0
+                ],
+                "radius": 260.41357421875,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  -187.5039825439453,
+                  -93.61190795898438,
+                  0.0
+                ],
+                "centerBits": [
+                  3275456773,
+                  3267049804,
+                  0
+                ],
+                "radius": 260.41357421875,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 67815.2265625
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            -31.086496353149414,
+            -91.6331558227539,
+            0
+          ],
+          "radius": 59.71828842163086,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 3566.274169921875
+      },
+      "queries": [
+        {
+          "position": [
+            -90.62751770019531,
+            -87.0352554321289,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  -31.086496353149414,
+                  -91.6331558227539,
+                  0.0
+                ],
+                "centerBits": [
+                  3254300965,
+                  3266790445,
+                  0
+                ],
+                "radius": 59.71828842163086,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  -31.086496353149414,
+                  -91.6331558227539,
+                  0.0
+                ],
+                "centerBits": [
+                  3254300965,
+                  3266790445,
+                  0
+                ],
+                "radius": 59.71828842163086,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 3566.27392578125
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            191.50880432128906,
+            190.38970947265625,
+            0
+          ],
+          "radius": 157.09530639648438,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 7,
+        "distanceSquared": 24678.93359375
+      },
+      "queries": [
+        {
+          "position": [
+            109.13825988769531,
+            56.62114715576172,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  191.50880432128906,
+                  190.38970947265625,
+                  0.0
+                ],
+                "centerBits": [
+                  1128235585,
+                  1128162244,
+                  0
+                ],
+                "radius": 157.09530639648438,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  191.50880432128906,
+                  190.38970947265625,
+                  0.0
+                ],
+                "centerBits": [
+                  1128235585,
+                  1128162244,
+                  0
+                ],
+                "radius": 157.09530639648438,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 24678.935546875
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            -34.41699981689453,
+            158.75009155273438,
+            0
+          ],
+          "radius": 171.4319610595703,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 29388.91796875
+      },
+      "queries": [
+        {
+          "position": [
+            136.4672393798828,
+            145.05728149414062,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  -34.41699981689453,
+                  158.75009155273438,
+                  0.0
+                ],
+                "centerBits": [
+                  3255413506,
+                  1126088710,
+                  0
+                ],
+                "radius": 171.4319610595703,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  -34.41699981689453,
+                  158.75009155273438,
+                  0.0
+                ],
+                "centerBits": [
+                  3255413506,
+                  1126088710,
+                  0
+                ],
+                "radius": 171.4319610595703,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 29388.916015625
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            -30.87456703186035,
+            22.545732498168945,
+            0
+          ],
+          "radius": 128.70713806152344,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 7,
+        "distanceSquared": 16565.52734375
+      },
+      "queries": [
+        {
+          "position": [
+            44.69625473022461,
+            -81.63957977294922,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  -30.87456703186035,
+                  22.545732498168945,
+                  0.0
+                ],
+                "centerBits": [
+                  3254189853,
+                  1102339497,
+                  0
+                ],
+                "radius": 128.70713806152344,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  -30.87456703186035,
+                  22.545732498168945,
+                  0.0
+                ],
+                "centerBits": [
+                  3254189853,
+                  1102339497,
+                  0
+                ],
+                "radius": 128.70713806152344,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 16565.529296875
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            114.96160888671875,
+            130.1937713623047,
+            0
+          ],
+          "radius": 327.5807800292969,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 107309.171875
+      },
+      "queries": [
+        {
+          "position": [
+            -167.33245849609375,
+            -35.99656295776367,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  114.96160888671875,
+                  130.1937713623047,
+                  0.0
+                ],
+                "centerBits": [
+                  1122364504,
+                  1124217243,
+                  0
+                ],
+                "radius": 327.5807800292969,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  114.96160888671875,
+                  130.1937713623047,
+                  0.0
+                ],
+                "centerBits": [
+                  1122364504,
+                  1124217243,
+                  0
+                ],
+                "radius": 327.5807800292969,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 107309.1640625
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            -104.24895477294922,
+            -125.95360565185547,
+            0
+          ],
+          "radius": 250.87265014648438,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 7,
+        "distanceSquared": 62937.0859375
+      },
+      "queries": [
+        {
+          "position": [
+            -63.11045837402344,
+            121.52308654785156,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  -104.24895477294922,
+                  -125.95360565185547,
+                  0.0
+                ],
+                "centerBits": [
+                  3268444023,
+                  3271288895,
+                  0
+                ],
+                "radius": 250.87265014648438,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  -104.24895477294922,
+                  -125.95360565185547,
+                  0.0
+                ],
+                "centerBits": [
+                  3268444023,
+                  3271288895,
+                  0
+                ],
+                "radius": 250.87265014648438,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 62937.08984375
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            183.60934448242188,
+            133.93728637695312,
+            0
+          ],
+          "radius": 180.18812561035156,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 7,
+        "distanceSquared": 32467.759765625
+      },
+      "queries": [
+        {
+          "position": [
+            12.077832221984863,
+            189.11610412597656,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  183.60934448242188,
+                  133.93728637695312,
+                  0.0
+                ],
+                "centerBits": [
+                  1127717886,
+                  1124462578,
+                  0
+                ],
+                "radius": 180.18812561035156,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  183.60934448242188,
+                  133.93728637695312,
+                  0.0
+                ],
+                "centerBits": [
+                  1127717886,
+                  1124462578,
+                  0
+                ],
+                "radius": 180.18812561035156,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 32467.76171875
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            -101.43029022216797,
+            45.13426208496094,
+            0
+          ],
+          "radius": 90.06108093261719,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 8110.9990234375
+      },
+      "queries": [
+        {
+          "position": [
+            -31.121593475341797,
+            -11.147932052612305,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  -101.43029022216797,
+                  45.13426208496094,
+                  0.0
+                ],
+                "centerBits": [
+                  3268074575,
+                  1110739324,
+                  0
+                ],
+                "radius": 90.06108093261719,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  -101.43029022216797,
+                  45.13426208496094,
+                  0.0
+                ],
+                "centerBits": [
+                  3268074575,
+                  1110739324,
+                  0
+                ],
+                "radius": 90.06108093261719,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 8110.998046875
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            5.678462505340576,
+            -153.15390014648438,
+            0
+          ],
+          "radius": 238.14064025878906,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 56710.96484375
+      },
+      "queries": [
+        {
+          "position": [
+            -23.810834884643555,
+            83.1538314819336,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  5.678462505340576,
+                  -153.15390014648438,
+                  0.0
+                ],
+                "centerBits": [
+                  1085650423,
+                  3273205606,
+                  0
+                ],
+                "radius": 238.14064025878906,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  5.678462505340576,
+                  -153.15390014648438,
+                  0.0
+                ],
+                "centerBits": [
+                  1085650423,
+                  3273205606,
+                  0
+                ],
+                "radius": 238.14064025878906,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 56710.9609375
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            17.023014068603516,
+            -189.21484375,
+            0
+          ],
+          "radius": 287.5914306640625,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 0,
+        "distanceSquared": 82708.8359375
+      },
+      "queries": [
+        {
+          "position": [
+            -87.06270599365234,
+            78.8802719116211,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 7,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  17.023014068603516,
+                  -189.21484375,
+                  0.0
+                ],
+                "centerBits": [
+                  1099444002,
+                  3275568896,
+                  0
+                ],
+                "radius": 287.5914306640625,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  17.023014068603516,
+                  -189.21484375,
+                  0.0
+                ],
+                "centerBits": [
+                  1099444002,
+                  3275568896,
+                  0
+                ],
+                "radius": 287.5914306640625,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 7,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 1
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 82708.828125
+            }
+          ],
+          "writes": [
+            {
+              "slot": 0,
+              "offset": "0x64",
+              "instruction": "0x43a3d8",
+              "previousBits": 0,
+              "writtenBits": 7,
+              "size": 4
+            }
+          ],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    },
+    {
+      "name": "premature-delta-rounding",
+      "sources": [
+        {
+          "center": [
+            115.11666870117188,
+            61.441768646240234,
+            0
+          ],
+          "radius": 250.85906982421875,
+          "damage": 7,
+          "accumulated": 0,
+          "limit": 999999,
+          "ticks": 11,
+          "previousTicks": 10,
+          "cadence": 4,
+          "flags": 3
+        }
+      ],
+      "oldRoundedDeltaDiagnostic": {
+        "damage": 7,
+        "distanceSquared": 62930.26953125
+      },
+      "queries": [
+        {
+          "position": [
+            -82.60462951660156,
+            -92.94916534423828,
+            0.0
+          ],
+          "bbox": [
+            24.0,
+            24.0
+          ],
+          "nativeDamage": 0,
+          "before": {
+            "sources": [
+              {
+                "center": [
+                  115.11666870117188,
+                  61.441768646240234,
+                  0.0
+                ],
+                "centerBits": [
+                  1122384828,
+                  1115014239,
+                  0
+                ],
+                "radius": 250.85906982421875,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "after": {
+            "sources": [
+              {
+                "center": [
+                  115.11666870117188,
+                  61.441768646240234,
+                  0.0
+                ],
+                "centerBits": [
+                  1122384828,
+                  1115014239,
+                  0
+                ],
+                "radius": 250.85906982421875,
+                "previousTicks": 10,
+                "ticks": 11,
+                "damage": 7,
+                "accumulated": 0,
+                "limit": 999999,
+                "cadence": 4,
+                "flags": 3
+              }
+            ],
+            "scoreStored": 0
+          },
+          "distanceSamples": [
+            {
+              "slot": 0,
+              "distanceSquared": 62930.2734375
+            }
+          ],
+          "writes": [],
+          "floorCalls": 0,
+          "separateBombQueryCalls": 1
+        }
+      ]
+    }
+  ]
+}

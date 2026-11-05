@@ -1,0 +1,160 @@
+#pragma once
+
+#include "AnmVm.hpp"
+#include "ZunResult.hpp"
+#include "inttypes.hpp"
+
+struct EnemyBulletShooter;
+struct EnemyLaserShooter;
+
+enum BulletAimMode
+{
+    FAN_AIMED,
+    FAN,
+    CIRCLE_AIMED,
+    CIRCLE,
+    OFFSET_CIRCLE_AIMED,
+    OFFSET_CIRCLE,
+    RANDOM_ANGLE,
+    RANDOM_SPEED,
+    RANDOM,
+};
+
+struct BulletTypeSprites
+{
+    void UpdateLivePrev(u16 state);
+
+    void UpdatePrev()
+    {
+        spriteBullet.UpdatePrev();
+        spriteSpawnEffectFast.UpdatePrev();
+        spriteSpawnEffectNormal.UpdatePrev();
+        spriteSpawnEffectSlow.UpdatePrev();
+        spriteSpawnEffectDonut.UpdatePrev();
+    }
+    AnmVm spriteBullet;
+    AnmVm spriteSpawnEffectFast;
+    AnmVm spriteSpawnEffectNormal;
+    AnmVm spriteSpawnEffectSlow;
+    AnmVm spriteSpawnEffectDonut;
+
+    ZunVec3 grazeSize;
+    u8 unk_55c;
+    u8 bulletHeight;
+};
+
+enum BulletState
+{
+    BULLET_STATE_UNUSED,
+    BULLET_STATE_FIRED,
+    BULLET_STATE_SPAWNING_FAST,
+    BULLET_STATE_SPAWNING_NORMAL,
+    BULLET_STATE_SPAWNING_SLOW,
+    BULLET_STATE_DESPAWNING,
+};
+
+inline void BulletTypeSprites::UpdateLivePrev(u16 state)
+{
+    // Normal and despawn VMs may become visible later in this tick. A spawn
+    // slot initializes all five endpoints before first draw; after that only
+    // the selected spawn VM can be observed until the slot is reused.
+    spriteBullet.UpdatePrev();
+    spriteSpawnEffectDonut.UpdatePrev();
+    switch (state)
+    {
+    case BULLET_STATE_SPAWNING_FAST: spriteSpawnEffectFast.UpdatePrev(); break;
+    case BULLET_STATE_SPAWNING_NORMAL: spriteSpawnEffectNormal.UpdatePrev(); break;
+    case BULLET_STATE_SPAWNING_SLOW: spriteSpawnEffectSlow.UpdatePrev(); break;
+    default: break;
+    }
+}
+
+struct Bullet
+{
+    BulletTypeSprites sprites;
+    ZunVec3 pos;
+    ZunVec3 prevPos;
+    ZunVec3 velocity;
+    ZunVec3 ex4Acceleration;
+    f32 speed;
+    f32 ex5Float0;
+    f32 dirChangeSpeed;
+    f32 angle;
+    f32 prevAngle;
+    f32 ex5Float1;
+    f32 dirChangeRotation;
+    ZunTimer timer;
+    i32 ex5Int0;
+    i32 dirChangeInterval;
+    i32 dirChangeNumTimes;
+    i32 dirChangeMaxTimes;
+    u16 exFlags;
+    i16 spriteOffset;
+    u16 unk_5bc;
+    u16 state;
+    u16 unk_5c0;
+    u8 unk_5c2;
+    u8 isGrazed;
+};
+
+struct Laser
+{
+    AnmVm vm0;
+    AnmVm vm1;
+    ZunVec3 pos;
+    ZunVec3 prevPos;
+    f32 angle;
+    f32 prevAngle;
+    f32 startOffset;
+    f32 prevStartOffset;
+    f32 endOffset;
+    f32 prevEndOffset;
+    f32 startLength;
+    f32 width;
+    f32 speed;
+    i32 startTime;
+    i32 hitboxStartTime;
+    i32 duration;
+    i32 despawnDuration;
+    i32 hitboxEndDelay;
+    i32 inUse;
+    ZunTimer timer;
+    u16 flags;
+    i16 color;
+    u8 state;
+};
+
+struct BulletManager
+{
+    BulletManager();
+    static ZunResult RegisterChain(const char *bulletAnmPath);
+    static void CutChain();
+    static ZunResult AddedCallback(BulletManager *mgr);
+    static ZunResult DeletedCallback(BulletManager *mgr);
+    static void SyncRenderState(BulletManager *mgr);
+    static ChainCallbackResult OnUpdate(BulletManager *mgr);
+    static ChainCallbackResult OnDraw(BulletManager *mgr);
+
+    static void DrawBulletNoHwVertex(Bullet *bullet);
+    static void DrawBullet(Bullet *bullet);
+
+    void RemoveAllBullets(bool turnIntoItem);
+    void InitializeToZero();
+
+    void TurnAllBulletsIntoPoints();
+
+    i32 DespawnBullets(i32 maxBonusScore, bool awardPoints);
+    ZunResult SpawnBulletPattern(const EnemyBulletShooter *bulletProps);
+    Laser *SpawnLaserPattern(const EnemyLaserShooter *bulletProps);
+    u32 SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 bulletIdx1, i32 bulletIdx2, f32 angle);
+    BulletTypeSprites bulletTypeTemplates[16];
+    Bullet bullets[640];
+    Laser lasers[64];
+    i32 nextBulletIndex;
+    i32 bulletCount;
+    ZunTimer time;
+    const char *bulletAnmPath;
+};
+
+extern const u32 *g_EffectsColor;
+extern BulletManager g_BulletManager;

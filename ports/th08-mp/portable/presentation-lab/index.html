@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TH08 · 帧间显微镜</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="fullscreen.css"><style>#reportFrame{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}</style></head>
+<body>
+<header><div><span class="eyebrow">PRESENTATION LAB / TH08</span><h1>帧间显微镜 <span class="badge">隔离测试树</span></h1><p>观察真实绘制，不靠帧率数字猜测。游戏逻辑仍按原作 60 Hz 更新。</p></div><div id="build" class="build">读取构建标识…</div></header>
+<section class="setup"><button id="boot" class="primary">启动实验</button><label class="file">选择自己的 th08.dat<input id="data" type="file" accept=".dat"></label><label class="file">导入 Replay<input id="replay" type="file" accept=".rpy,.rpyx"></label><label class="file">打开诊断报告<input id="import" type="file" accept=".json"></label><span id="status" role="status">准备中…</span></section>
+<main>
+<section class="campaign panel" style="grid-column:1/-1">
+  <div class="section-head"><h2>完整通关录像 · 定点复查</h2><span>原始输入 / 原难度 / 非练习模式</span></div>
+  <div class="controls"><select id="campaignFixture" aria-label="通关录像"><option value="">正在读取本地录像列表…</option></select><select id="campaignStage" aria-label="关卡"></select><label>关卡内时间（秒） <input id="campaignSeconds" type="number" min="0" max="900" step="1" value="0" style="width:85px"></label><button id="campaignGo" disabled>载入并定位</button></div>
+  <p style="padding:0 18px 14px">定位会从原录像的关卡入口逐帧执行到指定位置，不修改输入或跳过游戏逻辑。到达后点击「继续游玩」看实际高刷；也可冻结、拖动 α 对照。</p>
+</section>
+<section class="viewer panel">
+ <div class="section-head"><h2>游戏画面</h2><span id="scene">尚未启动</span></div>
+ <div class="controls"><button id="play" disabled>继续游玩</button><button id="inspect" disabled class="primary">冻结并检查</button><button id="step" disabled>推进 1 帧</button><button id="step10" disabled>推进 10 帧</button><button id="stage1" disabled>测试进入一面</button></div>
+ <div class="viewport" id="gameViewport"><button id="fullscreen" class="fullscreen" type="button" aria-label="进入全屏" title="进入全屏（Alt+Enter）">⛶</button><div id="stage"><iframe id="runtime" title="TH08 diagnostic runtime" allow="autoplay; fullscreen" tabindex="0"></iframe><img id="reportFrame" alt="报告中保存的帧间采样画面" hidden><svg id="overlay" viewBox="0 0 640 480" aria-label="对象定位层" hidden></svg><div id="empty">启动后可正常操作游戏。<br>感觉不对时，点「冻结并检查」。</div></div></div>
+ <div class="slider"><label for="alpha">帧间进度 α <output id="alphaValue">1.00</output></label><input id="alpha" type="range" min="0" max="1" step="0.01" value="1" disabled><div class="ends"><span>上一逻辑帧 · 0</span><span>当前逻辑帧 · 1</span></div></div>
+ <div class="controls"><label>放大 <select id="zoom"><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><label><input type="checkbox" id="boxes" checked> 对象框</label><label><input type="checkbox" id="negative"> 负对照：让现有 lerp 保持当前值</label></div>
+ <div class="controls"><button id="scan" disabled>扫描接下来 180 个逻辑帧</button><button id="cancel" disabled>停止扫描</button><button id="export" disabled>导出报告</button><button id="frames" disabled>导出报告＋5 张帧间图</button></div>
+ <details><summary>怎么观察？</summary><p>冻结检查后，拖动 α。点击对象框或列表，右侧会显示具体属性和最终几何。框表示绘制提交区域，不保证对象没有被其他图层遮挡。</p><p>方向键、Z、X、Shift、Esc 仍由游戏处理。检查器冻结不是原作暂停。扫描会推进真实游戏逻辑，可能影响本局成绩；所有存档都在独立的测试页面中。</p><p>负对照只故意破坏诊断显示中的 lerp，用来检验检测器会不会报警；它不是修复方案。取消它即可恢复。</p></details>
+</section>
+<section class="results panel">
+ <div class="section-head"><h2>对象与证据</h2><span id="window">未采样</span></div>
+ <div class="metrics"><div><strong id="observed">—</strong><span>已观察对象</span></div><div><strong id="suspects">—</strong><span>问题组 · 合并同类实例</span></div><div><strong id="unknown">—</strong><span>未知 / 边界</span></div></div>
+ <div id="health" class="notice">静止、没出现、未接入的对象不会被算作“高刷通过”。</div>
+ <div class="filters"><select id="owner" aria-label="所属模块"><option value="">全部模块</option></select><select id="level" aria-label="问题等级"><option value="issues">疑似问题</option><option value="all">全部观察</option></select><input id="search" placeholder="筛选脚本号 / 对象号" aria-label="筛选对象"></div>
+ <div class="table-scroll"><table><thead><tr><th>对象 / 脚本</th><th>观测结论</th><th>属性</th></tr></thead><tbody id="rows"><tr><td colspan="3">等待冻结检查</td></tr></tbody></table></div>
+ <section id="detail"><h3>选择一个对象</h3><p>无需描述“那个大环”。报告保留所属模块、对象身份、脚本与具体属性。</p></section>
+ <details><summary>按模块查看覆盖范围</summary><pre id="coverage">尚无数据</pre></details>
+</section>
+</main>
+<footer>诊断结果只覆盖实际采样的场景和属性，不代表全游戏零遗漏或真实显示器呈现质量。未访问场景、未标记对象、抽样的大型几何均保留为未验证。</footer>
+<script type="module" src="app.mjs"></script></body></html>

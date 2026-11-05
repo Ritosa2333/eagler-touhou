@@ -1,0 +1,34 @@
+[
+  {
+    "source": "a",
+    "results": [
+      {
+        "id": "a1",
+        "accepted": true
+      },
+      {
+        "id": "a2",
+        "accepted": true
+      },
+      {
+        "id": "a3",
+        "accepted": false,
+        "code": 4008,
+        "reason": "room creation limit"
+      },
+      {
+        "id": "a4",
+        "accepted": true
+      }
+    ]
+  },
+  {
+    "source": "b",
+    "results": [
+      {
+        "id": "b1",
+        "accepted": true
+      }
+    ]
+  }
+]

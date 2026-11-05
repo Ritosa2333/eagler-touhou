@@ -1,0 +1,27 @@
+{
+  "game": "th15",
+  "baseline": "Japanese 1.00b",
+  "originalDirectory": "..\\[th15] 东方绀珠传 (汉化版+日文版)",
+  "files": [
+    {
+      "name": "th15.exe",
+      "size": 951808,
+      "sha256": "67a642357c8777089f468aab9c7a0ae346ebdb62849d842a7b7b18d1e6910364"
+    },
+    {
+      "name": "th15c.exe",
+      "size": 590336,
+      "sha256": "4825b2387ae4ec9e29fa85be59e83fe6a0e89721711ec670f483ade4df924bba"
+    },
+    {
+      "name": "th15.dat",
+      "size": 77453661,
+      "sha256": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7"
+    },
+    {
+      "name": "thbgm.dat",
+      "size": 490441728,
+      "sha256": "6bba47e9cb7534c5a3eabc16d3cd2b9cbbe445b2d1dc6e60379ec17c732480a4"
+    }
+  ]
+}

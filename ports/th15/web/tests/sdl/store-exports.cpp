@@ -1,0 +1,16 @@
+// Actual SDL player-file adapter and native codecs; a verification entry point.
+#include "../../cpp/sdl/FileStore.hpp"
+#include <memory>
+#include <algorithm>
+#include <ctime>
+using namespace th15;
+namespace {struct Store {sdl::FileStore files;Rng random;RecordStore records;GameConfig config;ReplayCatalog catalog;ReplayRecording recording;std::vector<u8> bytes;std::string error;std::array<i32,8> state{};explicit Store(const std::string& path):files(path){}bool fail(const std::string& v){error=v;return false;}bool initialize(){return files.initialize(records,config,random)||fail(files.error);}const i32* inspect(){state={records.characters[0].modes[1].plays,i32(records.music_mask()),config.music_volume(),config.sound_volume(),0,0,0,0};for(u32 i=0;i<100;i++)state[4]+=catalog.entry(i)!=nullptr;return state.data();}};std::unique_ptr<Store> app;}
+extern "C" {
+int store_initialize(const char* root){app=std::make_unique<Store>(root);return app->initialize();}void store_close(){app.reset();}const char* store_error(){return app?app->error.c_str():"No store";}
+int store_save(){return app->files.save(app->records,app->config)||app->fail(app->files.error);}const i32* store_state(){return app->inspect();}
+int store_mutate(){app->config.bytes[0x22]=42;app->config.bytes[0x23]=37;return app->records.count_play(0,true)&&app->records.unlock_music(15)&&app->records.add_play_time(0,true,12345);}
+int store_catalog(){return app->files.catalog(app->catalog)||app->fail(app->files.error);}const char* store_replay_name(u32 index){auto* row=app->catalog.entry(index);return row?row->filename.c_str():"";}
+int store_remove_checkpoint(i32 c,i32 d){return app->records.remove_checkpoint(c,d)||app->fail(app->files.error);}
+const u8* store_record_blocks(){const auto& f=app->records.export_blocks();app->bytes.clear();for(const auto& c:f.characters)app->bytes.insert(app->bytes.end(),c.begin(),c.end());app->bytes.insert(app->bytes.end(),f.settings.begin(),f.settings.end());return app->bytes.data();}u32 store_record_size(){return app->bytes.size();}
+int store_save_recording(i32 source,i32 destination,const char* name){std::shared_ptr<Replay> replay;if(!app->files.replay_slot(source,replay)||!replay)return app->fail(app->files.error);app->recording=ReplayRecording{};auto& metadata=app->recording.description();std::copy_n(replay->decoded().data(),metadata.size(),metadata.data());i32 last=0;for(u32 stage=1;stage<8;stage++)if(auto* description=replay->stage(stage)){last=stage;if(!app->recording.begin(replay->header(stage),0x238)||!replay->select(stage))return app->fail("Replay stage unavailable");app->recording.activate();for(u32 i=0;i<description->frames;i++){const auto input=replay->tick();if(input.end)break;if(!app->recording.tick(input,input.fps))return app->fail(app->recording.error());}}app->recording.finish(1790899200,last,false);std::array<char,9> title{};if(std::strlen(name)>8)return app->fail("Replay name too long");std::memcpy(title.data(),name,std::strlen(name));ReplayExportDetails details;details.score=1234567;details.elapsed=details.total=600;details.year=2026;details.month=10;details.day=2;return app->files.save_replay(destination,app->recording,title,details)||app->fail(app->files.error);}
+}

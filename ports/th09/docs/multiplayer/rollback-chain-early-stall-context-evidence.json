@@ -1,0 +1,2434 @@
+{
+  "version": 1,
+  "complete": true,
+  "records": [
+    {
+      "name": "rollback4x-chain-live-relay-none-02",
+      "raw": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-live-relay-none-02-report.json",
+        "bytes": 39268580,
+        "sha256": "63a1997798609a598d5256e77775eb6df58b042ff7a810ef59ba00241c2b58a7"
+      },
+      "identity": {
+        "wasm": "7c8bdf579af8e18ace2208377d5a4f22a309eba9c1ec22f0248e252bd6f7deaa",
+        "harness": "a3768e3a9f2a1c47e1a694d2d0755e09059885ac63ac35fc8bf049e72f30dac9",
+        "loader": "7f7080fa2d91486b07971b0054862554dd62c632a7320512ff0bd8d72a4f808a",
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+        "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+        "networkTransportProbe": "090fe224bf5642b3daf4aaf354b67287ba5ad0b39a9d4f336cc1abe6603578c3",
+        "callbackCostProbe": "95325df1973c510629770e401572a5a4422e2f68c160ae48d01716570831866c",
+        "relayTransportProbe": "0ba9dc2a35df9112b864695b5fa1308568a9134176a11eb3317196f35c7ab2fa",
+        "relayTransportFixture": "8ed969a5e1d19b3e315f50eb1b034005f7d41d3ee95efca07491db04f4ab0919",
+        "relayTransportController": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870"
+      },
+      "parameters": {
+        "limit": 900,
+        "delay": 0,
+        "jitter": 0,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": false,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "tape",
+        "audioOutput": true,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": true,
+        "impairmentSite": "none",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": true,
+        "clientSendMode": "synchronous",
+        "burstClock": "browser-active",
+        "cpuThrottle": {
+          "ratesBySide": [
+            1,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        }
+      },
+      "peers": [
+        {
+          "side": 0,
+          "tape": {
+            "total": 900,
+            "prefix900Sha256": "019d958bd687006eeab7446998f7ce323f5cc1292ad2564500da2bb3247f023f",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65
+            ],
+            "edges": [
+              [
+                263,
+                1
+              ],
+              [
+                264,
+                65
+              ],
+              [
+                285,
+                65
+              ],
+              [
+                286,
+                1
+              ],
+              [
+                287,
+                1
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 523,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 70,
+            "max": {
+              "indices": [
+                753,
+                1019
+              ],
+              "frontiers": [
+                291,
+                292
+              ],
+              "rafGapMs": 2068.5449999999983,
+              "sampleGapMs": 2068.435000002384,
+              "nativeAfterMs": 2.0399999916553497,
+              "correctionDelta": 0,
+              "resimDelta": 0,
+              "samples": [
+                [
+                  6145.799999982119,
+                  1,
+                  2.395000010728836,
+                  291,
+                  283,
+                  98,
+                  491,
+                  291,
+                  0,
+                  1,
+                  283,
+                  291,
+                  1,
+                  33116.455
+                ],
+                [
+                  8214.234999984503,
+                  1,
+                  2.0399999916553497,
+                  292,
+                  284,
+                  98,
+                  491,
+                  292,
+                  0,
+                  1,
+                  284,
+                  292,
+                  1,
+                  35185
+                ]
+              ]
+            },
+            "allOver250ms": [
+              {
+                "indices": [
+                  753,
+                  1019
+                ],
+                "frontiers": [
+                  291,
+                  292
+                ],
+                "rafGapMs": 2068.5449999999983,
+                "sampleGapMs": 2068.435000002384,
+                "nativeAfterMs": 2.0399999916553497,
+                "correctionDelta": 0,
+                "resimDelta": 0,
+                "samples": [
+                  [
+                    6145.799999982119,
+                    1,
+                    2.395000010728836,
+                    291,
+                    283,
+                    98,
+                    491,
+                    291,
+                    0,
+                    1,
+                    283,
+                    291,
+                    1,
+                    33116.455
+                  ],
+                  [
+                    8214.234999984503,
+                    1,
+                    2.0399999916553497,
+                    292,
+                    284,
+                    98,
+                    491,
+                    292,
+                    0,
+                    1,
+                    284,
+                    292,
+                    1,
+                    35185
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "side": 1,
+          "tape": {
+            "total": 900,
+            "prefix900Sha256": "ab038b889136a6d78c4df0f4377e4922866c704b8704a809cd353ecc9b2e9c16",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "edges": [
+              [
+                263,
+                65
+              ],
+              [
+                264,
+                1
+              ],
+              [
+                285,
+                1
+              ],
+              [
+                286,
+                129
+              ],
+              [
+                287,
+                129
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 79,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 63,
+            "max": {
+              "indices": [
+                356,
+                357
+              ],
+              "frontiers": [
+                283,
+                284
+              ],
+              "rafGapMs": 2186.7299999999996,
+              "sampleGapMs": 2240.5349999964237,
+              "nativeAfterMs": 61.46999999880791,
+              "correctionDelta": 0,
+              "resimDelta": 0,
+              "samples": [
+                [
+                  5986.579999983311,
+                  1,
+                  7.905000001192093,
+                  283,
+                  283,
+                  31,
+                  54,
+                  283,
+                  0,
+                  1,
+                  283,
+                  283,
+                  1,
+                  17076.31
+                ],
+                [
+                  8227.114999979734,
+                  1,
+                  61.46999999880791,
+                  284,
+                  284,
+                  31,
+                  54,
+                  284,
+                  0,
+                  1,
+                  284,
+                  284,
+                  1,
+                  19263.04
+                ]
+              ]
+            },
+            "allOver250ms": [
+              {
+                "indices": [
+                  356,
+                  357
+                ],
+                "frontiers": [
+                  283,
+                  284
+                ],
+                "rafGapMs": 2186.7299999999996,
+                "sampleGapMs": 2240.5349999964237,
+                "nativeAfterMs": 61.46999999880791,
+                "correctionDelta": 0,
+                "resimDelta": 0,
+                "samples": [
+                  [
+                    5986.579999983311,
+                    1,
+                    7.905000001192093,
+                    283,
+                    283,
+                    31,
+                    54,
+                    283,
+                    0,
+                    1,
+                    283,
+                    283,
+                    1,
+                    17076.31
+                  ],
+                  [
+                    8227.114999979734,
+                    1,
+                    61.46999999880791,
+                    284,
+                    284,
+                    31,
+                    54,
+                    284,
+                    0,
+                    1,
+                    284,
+                    284,
+                    1,
+                    19263.04
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "rollback4x-chain-release-input-batch-headed-relay39-01",
+      "raw": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-release-input-batch-headed-relay39-01-report.json",
+        "bytes": 20697024,
+        "sha256": "92a6711ebc768d6da8249100d85afabe3187a52bb327715af066f0e3f448fb20"
+      },
+      "identity": {
+        "wasm": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97",
+        "harness": "a0ce03e2e79efaeab2f605c2e14f94415bce543cfdcb57d0e83eee4be4f34fef",
+        "loader": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8",
+        "headedBrowserExecutable": {
+          "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+          "basename": "chrome.exe",
+          "bytes": 4508160,
+          "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+          "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+        },
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+        "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+        "relayTransportProbe": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
+        "relayTransportFixture": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",
+        "relayTransportController": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870",
+        "relayStartupProbe": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a"
+      },
+      "parameters": {
+        "limit": 1800,
+        "delay": 39,
+        "jitter": 5,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": true,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "tape",
+        "audioOutput": true,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": false,
+        "impairmentSite": "relay",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": false,
+        "clientSendMode": "synchronous",
+        "burstClock": "relay-first-nonempty-input-receive",
+        "cpuThrottle": {
+          "ratesBySide": [
+            1,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        },
+        "startupTrace": false,
+        "relayInputDiagnostics": true,
+        "headedControl": true,
+        "headedLaunch": {
+          "headless": false,
+          "explicitArgs": [
+            "--enable-gpu",
+            "--use-gl=angle",
+            "--use-angle=d3d11",
+            "--autoplay-policy=no-user-gesture-required",
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "preservedHeadlessAuxiliaryArgs": [
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "scope": "Window-mode environment control, not a production code change; proxy, input, audio/context, CPU setup, and native GPU arguments are unchanged."
+        }
+      },
+      "peers": [
+        {
+          "side": 0,
+          "tape": {
+            "total": 1806,
+            "prefix900Sha256": "019d958bd687006eeab7446998f7ce323f5cc1292ad2564500da2bb3247f023f",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65
+            ],
+            "edges": [
+              [
+                263,
+                1
+              ],
+              [
+                264,
+                65
+              ],
+              [
+                285,
+                65
+              ],
+              [
+                286,
+                1
+              ],
+              [
+                287,
+                1
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 157,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 66,
+            "max": {
+              "indices": [
+                646,
+                648
+              ],
+              "frontiers": [
+                282,
+                286
+              ],
+              "rafGapMs": 1430.6800000000003,
+              "sampleGapMs": 1439.580000013113,
+              "nativeAfterMs": 2.7100000083446503,
+              "correctionDelta": 0,
+              "resimDelta": 0,
+              "samples": [
+                [
+                  4990.289999991655,
+                  1,
+                  0.9399999976158142,
+                  282,
+                  278,
+                  118,
+                  547,
+                  282,
+                  0,
+                  1,
+                  278,
+                  282,
+                  1,
+                  15462.27
+                ],
+                [
+                  6429.870000004768,
+                  1,
+                  2.7100000083446503,
+                  286,
+                  283,
+                  118,
+                  547,
+                  286,
+                  0,
+                  1,
+                  283,
+                  286,
+                  1,
+                  16892.95
+                ]
+              ]
+            },
+            "allOver250ms": [
+              {
+                "indices": [
+                  646,
+                  648
+                ],
+                "frontiers": [
+                  282,
+                  286
+                ],
+                "rafGapMs": 1430.6800000000003,
+                "sampleGapMs": 1439.580000013113,
+                "nativeAfterMs": 2.7100000083446503,
+                "correctionDelta": 0,
+                "resimDelta": 0,
+                "samples": [
+                  [
+                    4990.289999991655,
+                    1,
+                    0.9399999976158142,
+                    282,
+                    278,
+                    118,
+                    547,
+                    282,
+                    0,
+                    1,
+                    278,
+                    282,
+                    1,
+                    15462.27
+                  ],
+                  [
+                    6429.870000004768,
+                    1,
+                    2.7100000083446503,
+                    286,
+                    283,
+                    118,
+                    547,
+                    286,
+                    0,
+                    1,
+                    283,
+                    286,
+                    1,
+                    16892.95
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "side": 1,
+          "tape": {
+            "total": 1805,
+            "prefix900Sha256": "ab038b889136a6d78c4df0f4377e4922866c704b8704a809cd353ecc9b2e9c16",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "edges": [
+              [
+                263,
+                65
+              ],
+              [
+                264,
+                1
+              ],
+              [
+                285,
+                1
+              ],
+              [
+                286,
+                129
+              ],
+              [
+                287,
+                129
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 156,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 69,
+            "max": {
+              "indices": [
+                618,
+                619
+              ],
+              "frontiers": [
+                283,
+                284
+              ],
+              "rafGapMs": 1407.1299999999992,
+              "sampleGapMs": 1420.280000001192,
+              "nativeAfterMs": 10.24499997496605,
+              "correctionDelta": 0,
+              "resimDelta": 0,
+              "samples": [
+                [
+                  5015.270000010729,
+                  1,
+                  3.270000010728836,
+                  283,
+                  280,
+                  118,
+                  327,
+                  283,
+                  0,
+                  1,
+                  280,
+                  283,
+                  1,
+                  10297.26
+                ],
+                [
+                  6435.550000011921,
+                  1,
+                  10.24499997496605,
+                  284,
+                  282,
+                  118,
+                  327,
+                  284,
+                  0,
+                  1,
+                  282,
+                  284,
+                  1,
+                  11704.39
+                ]
+              ]
+            },
+            "allOver250ms": [
+              {
+                "indices": [
+                  618,
+                  619
+                ],
+                "frontiers": [
+                  283,
+                  284
+                ],
+                "rafGapMs": 1407.1299999999992,
+                "sampleGapMs": 1420.280000001192,
+                "nativeAfterMs": 10.24499997496605,
+                "correctionDelta": 0,
+                "resimDelta": 0,
+                "samples": [
+                  [
+                    5015.270000010729,
+                    1,
+                    3.270000010728836,
+                    283,
+                    280,
+                    118,
+                    327,
+                    283,
+                    0,
+                    1,
+                    280,
+                    283,
+                    1,
+                    10297.26
+                  ],
+                  [
+                    6435.550000011921,
+                    1,
+                    10.24499997496605,
+                    284,
+                    282,
+                    118,
+                    327,
+                    284,
+                    0,
+                    1,
+                    282,
+                    284,
+                    1,
+                    11704.39
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "rollback4x-chain-release-relay-headed-02",
+      "raw": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-release-relay-headed-02-report.json",
+        "bytes": 11005847,
+        "sha256": "311e43a281836de611e614dbe7730675386c8d599327833ecd0f4dd0e7a048c5"
+      },
+      "identity": {
+        "wasm": "de1760ac76f3aaa8cd49c9f267f37f85e86c70d6bf251679a5c93fefacca9b68",
+        "harness": "a0ce03e2e79efaeab2f605c2e14f94415bce543cfdcb57d0e83eee4be4f34fef",
+        "loader": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8",
+        "headedBrowserExecutable": {
+          "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+          "basename": "chrome.exe",
+          "bytes": 4508160,
+          "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+          "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+        },
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+        "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+        "relayTransportProbe": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
+        "relayTransportFixture": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",
+        "relayTransportController": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870",
+        "relayStartupProbe": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a"
+      },
+      "parameters": {
+        "limit": 900,
+        "delay": 0,
+        "jitter": 0,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": true,
+        "profile": false,
+        "fallback": true,
+        "inputMode": "tape",
+        "audioOutput": true,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": false,
+        "impairmentSite": "none",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "any",
+        "liveCost": false,
+        "clientSendMode": "synchronous",
+        "burstClock": "browser-active",
+        "cpuThrottle": {
+          "ratesBySide": [
+            1,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        },
+        "startupTrace": false,
+        "relayInputDiagnostics": true,
+        "headedControl": true,
+        "headedLaunch": {
+          "headless": false,
+          "explicitArgs": [
+            "--enable-gpu",
+            "--use-gl=angle",
+            "--use-angle=d3d11",
+            "--autoplay-policy=no-user-gesture-required",
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "preservedHeadlessAuxiliaryArgs": [
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "scope": "Window-mode environment control, not a production code change; proxy, input, audio/context, CPU setup, and native GPU arguments are unchanged."
+        }
+      },
+      "peers": [
+        {
+          "side": 0,
+          "tape": {
+            "total": 906,
+            "prefix900Sha256": "019d958bd687006eeab7446998f7ce323f5cc1292ad2564500da2bb3247f023f",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65
+            ],
+            "edges": [
+              [
+                263,
+                1
+              ],
+              [
+                264,
+                65
+              ],
+              [
+                285,
+                65
+              ],
+              [
+                286,
+                1
+              ],
+              [
+                287,
+                1
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 156,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 70,
+            "max": {
+              "indices": [
+                673,
+                676
+              ],
+              "frontiers": [
+                305,
+                306
+              ],
+              "rafGapMs": 23.590000000000146,
+              "sampleGapMs": 23.645000010728836,
+              "nativeAfterMs": 1.320000022649765,
+              "correctionDelta": 0,
+              "resimDelta": 0,
+              "samples": [
+                [
+                  5239.314999997616,
+                  1,
+                  1.2650000154972076,
+                  305,
+                  303,
+                  130,
+                  456,
+                  305,
+                  0,
+                  1,
+                  303,
+                  305,
+                  1,
+                  15318.32
+                ],
+                [
+                  5262.960000008345,
+                  1,
+                  1.320000022649765,
+                  306,
+                  305,
+                  130,
+                  456,
+                  306,
+                  0,
+                  1,
+                  305,
+                  306,
+                  1,
+                  15341.91
+                ]
+              ]
+            },
+            "allOver250ms": []
+          }
+        },
+        {
+          "side": 1,
+          "tape": {
+            "total": 905,
+            "prefix900Sha256": "ab038b889136a6d78c4df0f4377e4922866c704b8704a809cd353ecc9b2e9c16",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "edges": [
+              [
+                263,
+                65
+              ],
+              [
+                264,
+                1
+              ],
+              [
+                285,
+                1
+              ],
+              [
+                286,
+                129
+              ],
+              [
+                287,
+                129
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 151,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 70,
+            "max": {
+              "indices": [
+                534,
+                537
+              ],
+              "frontiers": [
+                250,
+                251
+              ],
+              "rafGapMs": 23.69999999999891,
+              "sampleGapMs": 18.5,
+              "nativeAfterMs": 2.6449999809265137,
+              "correctionDelta": 0,
+              "resimDelta": 0,
+              "samples": [
+                [
+                  4333.950000017881,
+                  1,
+                  6.409999996423721,
+                  250,
+                  250,
+                  1,
+                  1,
+                  250,
+                  0,
+                  1,
+                  250,
+                  250,
+                  1,
+                  9737.12
+                ],
+                [
+                  4352.450000017881,
+                  1,
+                  2.6449999809265137,
+                  251,
+                  251,
+                  1,
+                  1,
+                  251,
+                  0,
+                  1,
+                  251,
+                  251,
+                  1,
+                  9760.82
+                ]
+              ]
+            },
+            "allOver250ms": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "rollback4x-chain-release-input-batch-headed-direct-01",
+      "raw": {
+        "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\artifacts\\multiplayer-tests\\rollback4x-chain-release-input-batch-headed-direct-01-report.json",
+        "bytes": 7527043,
+        "sha256": "c5451f031b17de2c0d52cc3edb46f96660916079547870c3bca1f36c28c1c3ee"
+      },
+      "identity": {
+        "wasm": "47367732b9bc4972d8adf2ffc49ace32cf9eca4a3868ff73c9c6494a0de4df97",
+        "harness": "a0ce03e2e79efaeab2f605c2e14f94415bce543cfdcb57d0e83eee4be4f34fef",
+        "loader": "4e53b06c7e2a99624bc4234ffde1682a9a18ce7c89be3d2a414b4f0cb3620ee8",
+        "headedBrowserExecutable": {
+          "selection": "playwright.chromium.executablePath; existing normal Windows chrome.exe",
+          "basename": "chrome.exe",
+          "bytes": 4508160,
+          "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+          "launcherSha256": "76174aa7d19ae02159fb7ac6b484c26bdd5832b69aaddf661e4a95c51313ffed"
+        },
+        "relay": "56c44ab7520381859b05d21130da40ad605722b42e49ed37c089d0ecf8bbe90c",
+        "shell": "719347be3c3bdbf9f793145ae0ea8806dcb25b7bb775cf853c4a792c451c9ec8",
+        "presentationHarness": "58a415b5a0da698b53010eddc80358ee7599f11c68b97f33176991b800a0d234",
+        "audioProbe": "c0ab0092b4f49c20e3d07125dcf1df39496ebfafacfbc34f9eff00942c46e5bf",
+        "hostLoadProbe": "35a08e970abddeba9f02b2ba0250013029a6eab8dc9f67cfe0c757a3b96e323b",
+        "startupTransportProbe": "b966f462f242bcac2a1306cf0d194b090ac2f885e9b6cd9e660f45c0cef8c4c8",
+        "relayTransportProbe": "927819e1bff60f06bf3bba9399957ee6ddf83811fbb3ebe3b6169c598c220826",
+        "relayTransportFixture": "6923bd0645c1c24b0904884360281583e8bb6d07a221596d7d15fc88931c4217",
+        "relayTransportController": "158df154b9064486d3a0b1100c60b4b25bcd6e09f5ffa0305de6a7ca60d00870",
+        "relayStartupProbe": "15dd23710b0007ca0f43a6068da4dba497146773932cd0f75d596b2a0a2bd86a"
+      },
+      "parameters": {
+        "limit": 900,
+        "delay": 0,
+        "jitter": 0,
+        "slow": 4,
+        "dropEvery": 0,
+        "release": true,
+        "profile": false,
+        "fallback": false,
+        "inputMode": "tape",
+        "audioOutput": true,
+        "responsiveness": false,
+        "burstAt": 0,
+        "burstFor": 0,
+        "burstDelay": 0,
+        "rafDiagnostics": true,
+        "hostLoad": true,
+        "networkTrace": false,
+        "impairmentSite": "none",
+        "relayDiagnostics": true,
+        "expectedRtcPath": "direct",
+        "liveCost": false,
+        "clientSendMode": "synchronous",
+        "burstClock": "browser-active",
+        "cpuThrottle": {
+          "ratesBySide": [
+            1,
+            4
+          ],
+          "configuredAfter": "openProbe",
+          "scope": "openProbe and after-open counters precede CPU throttling; subsequent netplay setup and first game callback use the configured per-side rates."
+        },
+        "startupTrace": true,
+        "relayInputDiagnostics": false,
+        "headedControl": true,
+        "headedLaunch": {
+          "headless": false,
+          "explicitArgs": [
+            "--enable-gpu",
+            "--use-gl=angle",
+            "--use-angle=d3d11",
+            "--autoplay-policy=no-user-gesture-required",
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "preservedHeadlessAuxiliaryArgs": [
+            "--hide-scrollbars",
+            "--mute-audio",
+            "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4"
+          ],
+          "scope": "Window-mode environment control, not a production code change; proxy, input, audio/context, CPU setup, and native GPU arguments are unchanged."
+        }
+      },
+      "peers": [
+        {
+          "side": 0,
+          "tape": {
+            "total": 906,
+            "prefix900Sha256": "019d958bd687006eeab7446998f7ce323f5cc1292ad2564500da2bb3247f023f",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65
+            ],
+            "edges": [
+              [
+                263,
+                1
+              ],
+              [
+                264,
+                65
+              ],
+              [
+                285,
+                65
+              ],
+              [
+                286,
+                1
+              ],
+              [
+                287,
+                1
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 155,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 70,
+            "max": {
+              "indices": [
+                589,
+                592
+              ],
+              "frontiers": [
+                265,
+                266
+              ],
+              "rafGapMs": 23.225000000000364,
+              "sampleGapMs": 23.615000009536743,
+              "nativeAfterMs": 0.8349999785423279,
+              "correctionDelta": 1,
+              "resimDelta": 1,
+              "samples": [
+                [
+                  4540.079999983311,
+                  1,
+                  0.5250000059604645,
+                  265,
+                  263,
+                  125,
+                  374,
+                  265,
+                  2,
+                  1,
+                  263,
+                  265,
+                  1,
+                  14802.115
+                ],
+                [
+                  4563.694999992847,
+                  1,
+                  0.8349999785423279,
+                  266,
+                  265,
+                  126,
+                  375,
+                  266,
+                  2,
+                  1,
+                  265,
+                  266,
+                  1,
+                  14825.34
+                ]
+              ]
+            },
+            "allOver250ms": []
+          }
+        },
+        {
+          "side": 1,
+          "tape": {
+            "total": 905,
+            "prefix900Sha256": "ab038b889136a6d78c4df0f4377e4922866c704b8704a809cd353ecc9b2e9c16",
+            "expectedExact": true,
+            "constantRange": [
+              264,
+              285
+            ],
+            "values": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "edges": [
+              [
+                263,
+                65
+              ],
+              [
+                264,
+                1
+              ],
+              [
+                285,
+                1
+              ],
+              [
+                286,
+                129
+              ],
+              [
+                287,
+                129
+              ]
+            ]
+          },
+          "sessionPhase": {
+            "range": [
+              250,
+              320
+            ],
+            "sampleCount": 155,
+            "observed": [
+              1
+            ]
+          },
+          "newStateGaps": {
+            "definition": "Consecutive new presentation AND increasing logical frontier; both endpoints in [250,320]. RAF timestamps are not scanout.",
+            "pairs": 70,
+            "max": {
+              "indices": [
+                560,
+                563
+              ],
+              "frontiers": [
+                261,
+                262
+              ],
+              "rafGapMs": 23.174999999999272,
+              "sampleGapMs": 23.275000005960464,
+              "nativeAfterMs": 2.1399999856948853,
+              "correctionDelta": 0,
+              "resimDelta": 0,
+              "samples": [
+                [
+                  4489.425000011921,
+                  1,
+                  1.6200000047683716,
+                  261,
+                  261,
+                  0,
+                  0,
+                  261,
+                  0,
+                  1,
+                  261,
+                  261,
+                  1,
+                  10203.41
+                ],
+                [
+                  4512.700000017881,
+                  1,
+                  2.1399999856948853,
+                  262,
+                  262,
+                  0,
+                  0,
+                  262,
+                  0,
+                  1,
+                  262,
+                  262,
+                  1,
+                  10226.585
+                ]
+              ]
+            },
+            "allOver250ms": []
+          }
+        }
+      ]
+    }
+  ],
+  "adverseRequestEpisodes": [
+    {
+      "source": "rollback4x-chain-live-relay-none-02",
+      "side": 1,
+      "request": {
+        "index": 366,
+        "nativeId": 367,
+        "parentIndex": 365,
+        "callbackId": 0,
+        "requestedAt": 17091.164999991655,
+        "enteredAt": 19268.460000008345,
+        "exitedAt": 19335.5,
+        "rafTimestamp": 19263.04,
+        "cancelledAt": null,
+        "frameCalls": 1,
+        "firstFrameIndex": 357,
+        "lastFrameIndex": 357,
+        "frameHookAtEntry": true,
+        "frameHookAtExit": true,
+        "pauseAtEntry": 0,
+        "pauseAtExit": 0,
+        "requestThrew": false,
+        "callbackThrew": false
+      },
+      "parent": {
+        "index": 365,
+        "nativeId": 366,
+        "parentIndex": 364,
+        "callbackId": 0,
+        "requestedAt": 17073.689999997616,
+        "enteredAt": 17080.34999999404,
+        "exitedAt": 17091.590000003576,
+        "rafTimestamp": 17076.31,
+        "cancelledAt": null,
+        "frameCalls": 1,
+        "firstFrameIndex": 356,
+        "lastFrameIndex": 356,
+        "frameHookAtEntry": true,
+        "frameHookAtExit": true,
+        "pauseAtEntry": 0,
+        "pauseAtExit": 0,
+        "requestThrew": false,
+        "callbackThrew": false
+      },
+      "entryFrame": {
+        "index": 357,
+        "rafIndex": 366,
+        "enteredAt": 19330.030000001192,
+        "exitedAt": 19334.65000000596,
+        "cppWorkMs": 61.46999999880791,
+        "ok": 1,
+        "playEnteredAt": 19330.25,
+        "playExitedAt": 19330.67499998212,
+        "sampleAt": 19330.859999984503,
+        "afterSampleAt": 19334.019999980927,
+        "sampleBefore": 357,
+        "sampleAfter": 358,
+        "activeBefore": true,
+        "activeAfter": true,
+        "endedBefore": false,
+        "endedAfter": false,
+        "threw": false
+      },
+      "measureStarted": 11103.745000004768,
+      "requestAgeMs": 5987.419999986887,
+      "pendingMs": 2177.2950000166893,
+      "sampleIndices": [
+        356,
+        357
+      ],
+      "samples": [
+        [
+          5986.579999983311,
+          1,
+          7.905000001192093,
+          283,
+          283,
+          31,
+          54,
+          283,
+          0,
+          1,
+          283,
+          283,
+          1,
+          17076.31
+        ],
+        [
+          8227.114999979734,
+          1,
+          61.46999999880791,
+          284,
+          284,
+          31,
+          54,
+          284,
+          0,
+          1,
+          284,
+          284,
+          1,
+          19263.04
+        ]
+      ]
+    },
+    {
+      "source": "rollback4x-chain-release-input-batch-headed-relay39-01",
+      "side": 0,
+      "request": {
+        "index": 704,
+        "nativeId": 705,
+        "parentIndex": 703,
+        "callbackId": 0,
+        "requestedAt": 15470.27500000596,
+        "enteredAt": 16900.210000008345,
+        "exitedAt": 16902.985000014305,
+        "rafTimestamp": 16892.95,
+        "cancelledAt": null,
+        "frameCalls": 1,
+        "firstFrameIndex": 648,
+        "lastFrameIndex": 648,
+        "frameHookAtEntry": true,
+        "frameHookAtExit": true,
+        "pauseAtEntry": 0,
+        "pauseAtExit": 0,
+        "requestThrew": false,
+        "callbackThrew": false
+      },
+      "parent": {
+        "index": 703,
+        "nativeId": 704,
+        "parentIndex": 702,
+        "callbackId": 0,
+        "requestedAt": 15463.385000020266,
+        "enteredAt": 15469.990000009537,
+        "exitedAt": 15470.285000026226,
+        "rafTimestamp": 15469.865,
+        "cancelledAt": null,
+        "frameCalls": 1,
+        "firstFrameIndex": 647,
+        "lastFrameIndex": 647,
+        "frameHookAtEntry": true,
+        "frameHookAtExit": true,
+        "pauseAtEntry": 0,
+        "pauseAtExit": 0,
+        "requestThrew": false,
+        "callbackThrew": false
+      },
+      "entryFrame": {
+        "index": 648,
+        "rafIndex": 704,
+        "enteredAt": 16902.930000007153,
+        "exitedAt": 16902.969999998808,
+        "cppWorkMs": 2.7100000083446503,
+        "ok": 1,
+        "playEnteredAt": 16902.935000002384,
+        "playExitedAt": 16902.95000001788,
+        "sampleAt": 16902.95000001788,
+        "afterSampleAt": 16902.965000003576,
+        "sampleBefore": 648,
+        "sampleAfter": 649,
+        "activeBefore": true,
+        "activeAfter": true,
+        "endedBefore": false,
+        "endedAfter": false,
+        "threw": false
+      },
+      "measureStarted": 10473.080000013113,
+      "requestAgeMs": 4997.194999992847,
+      "pendingMs": 1429.9350000023842,
+      "sampleIndices": [
+        647,
+        648
+      ],
+      "samples": [
+        [
+          4997.180000007153,
+          1,
+          0.25,
+          282,
+          278,
+          118,
+          547,
+          282,
+          0,
+          1,
+          278,
+          282,
+          1,
+          15469.865
+        ],
+        [
+          6429.870000004768,
+          1,
+          2.7100000083446503,
+          286,
+          283,
+          118,
+          547,
+          286,
+          0,
+          1,
+          283,
+          286,
+          1,
+          16892.95
+        ]
+      ]
+    },
+    {
+      "source": "rollback4x-chain-release-input-batch-headed-relay39-01",
+      "side": 1,
+      "request": {
+        "index": 632,
+        "nativeId": 633,
+        "parentIndex": 631,
+        "callbackId": 0,
+        "requestedAt": 10301.144999980927,
+        "enteredAt": 11710.924999982119,
+        "exitedAt": 11721.799999982119,
+        "rafTimestamp": 11704.39,
+        "cancelledAt": null,
+        "frameCalls": 1,
+        "firstFrameIndex": 619,
+        "lastFrameIndex": 619,
+        "frameHookAtEntry": true,
+        "frameHookAtExit": true,
+        "pauseAtEntry": 0,
+        "pauseAtExit": 0,
+        "requestThrew": false,
+        "callbackThrew": false
+      },
+      "parent": {
+        "index": 631,
+        "nativeId": 632,
+        "parentIndex": 630,
+        "callbackId": 0,
+        "requestedAt": 10290.069999992847,
+        "enteredAt": 10297.664999991655,
+        "exitedAt": 10301.155000001192,
+        "rafTimestamp": 10297.26,
+        "cancelledAt": null,
+        "frameCalls": 1,
+        "firstFrameIndex": 618,
+        "lastFrameIndex": 618,
+        "frameHookAtEntry": true,
+        "frameHookAtExit": true,
+        "pauseAtEntry": 0,
+        "pauseAtExit": 0,
+        "requestThrew": false,
+        "callbackThrew": false
+      },
+      "entryFrame": {
+        "index": 619,
+        "rafIndex": 632,
+        "enteredAt": 11721.185000002384,
+        "exitedAt": 11721.594999998808,
+        "cppWorkMs": 10.24499997496605,
+        "ok": 1,
+        "playEnteredAt": 11721.384999990463,
+        "playExitedAt": 11721.405000001192,
+        "sampleAt": 11721.409999996424,
+        "afterSampleAt": 11721.590000003576,
+        "sampleBefore": 619,
+        "sampleAfter": 620,
+        "activeBefore": true,
+        "activeAfter": true,
+        "endedBefore": false,
+        "endedAfter": false,
+        "threw": false
+      },
+      "measureStarted": 5285.859999984503,
+      "requestAgeMs": 5015.284999996424,
+      "pendingMs": 1409.780000001192,
+      "sampleIndices": [
+        618,
+        619
+      ],
+      "samples": [
+        [
+          5015.270000010729,
+          1,
+          3.270000010728836,
+          283,
+          280,
+          118,
+          327,
+          283,
+          0,
+          1,
+          280,
+          283,
+          1,
+          10297.26
+        ],
+        [
+          6435.550000011921,
+          1,
+          10.24499997496605,
+          284,
+          282,
+          118,
+          327,
+          284,
+          0,
+          1,
+          282,
+          284,
+          1,
+          11704.39
+        ]
+      ]
+    }
+  ],
+  "resourceObservations": [
+    {
+      "side": 0,
+      "epoch": 1,
+      "range": [
+        250,
+        320
+      ],
+      "snapshots": 523,
+      "counterRanges": {
+        "textureCreates": [
+          104,
+          104
+        ],
+        "textureUploads": [
+          105,
+          105
+        ],
+        "programCompiles": [
+          33,
+          33
+        ],
+        "musicDecoderOpens": [
+          1,
+          1
+        ],
+        "musicSameTrackRestarts": [
+          0,
+          0
+        ],
+        "sfxDecoderOpens": [
+          54,
+          54
+        ],
+        "readbacks": [
+          0,
+          0
+        ]
+      },
+      "phaseCallRanges": {
+        "startMatch": [
+          1,
+          1
+        ],
+        "musicSelect": [
+          2,
+          2
+        ],
+        "textRender": [
+          2,
+          2
+        ]
+      },
+      "selectedP2": [],
+      "densityWindow": [
+        [
+          251,
+          0,
+          0,
+          3,
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          265,
+          0,
+          0,
+          4,
+          4,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          278,
+          0,
+          0,
+          4,
+          4,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          289,
+          0,
+          0,
+          4,
+          4,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          291,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          292,
+          0,
+          0,
+          3,
+          4,
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          295,
+          0,
+          0,
+          3,
+          3,
+          3,
+          1,
+          1,
+          0
+        ],
+        [
+          305,
+          0,
+          0,
+          4,
+          4,
+          2,
+          1,
+          3,
+          0
+        ],
+        [
+          310,
+          0,
+          0,
+          3,
+          4,
+          1,
+          1,
+          3,
+          0
+        ],
+        [
+          314,
+          0,
+          0,
+          3,
+          3,
+          1,
+          2,
+          4,
+          0
+        ],
+        [
+          318,
+          0,
+          0,
+          2,
+          3,
+          2,
+          1,
+          4,
+          0
+        ]
+      ],
+      "firstSampledEnemy": [
+        214,
+        0,
+        0,
+        1,
+        1,
+        2,
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "side": 1,
+      "epoch": 1,
+      "range": [
+        250,
+        320
+      ],
+      "snapshots": 79,
+      "counterRanges": {
+        "textureCreates": [
+          104,
+          104
+        ],
+        "textureUploads": [
+          105,
+          105
+        ],
+        "programCompiles": [
+          33,
+          33
+        ],
+        "musicDecoderOpens": [
+          1,
+          1
+        ],
+        "musicSameTrackRestarts": [
+          0,
+          0
+        ],
+        "sfxDecoderOpens": [
+          54,
+          54
+        ],
+        "readbacks": [
+          0,
+          0
+        ]
+      },
+      "phaseCallRanges": {
+        "startMatch": [
+          1,
+          1
+        ],
+        "musicSelect": [
+          2,
+          2
+        ],
+        "textRender": [
+          2,
+          2
+        ]
+      },
+      "selectedP2": [
+        {
+          "sampleIndex": 354,
+          "frontier": 282,
+          "nativeMs": 8.875,
+          "priorSnapshot": 353,
+          "delta": {
+            "textureCreates": 0,
+            "textureUploads": 0,
+            "programCompiles": 0,
+            "musicDecoderOpens": 0,
+            "musicSameTrackRestarts": 0,
+            "sfxDecoderOpens": 0,
+            "readbacks": 0,
+            "pcmChunks": 0,
+            "forwardTicks": 1,
+            "replayTicks": 0
+          }
+        },
+        {
+          "sampleIndex": 356,
+          "frontier": 283,
+          "nativeMs": 7.905000001192093,
+          "priorSnapshot": 355,
+          "delta": {
+            "textureCreates": 0,
+            "textureUploads": 0,
+            "programCompiles": 0,
+            "musicDecoderOpens": 0,
+            "musicSameTrackRestarts": 0,
+            "sfxDecoderOpens": 0,
+            "readbacks": 0,
+            "pcmChunks": 0,
+            "forwardTicks": 1,
+            "replayTicks": 0
+          }
+        },
+        {
+          "sampleIndex": 357,
+          "frontier": 284,
+          "nativeMs": 61.46999999880791,
+          "priorSnapshot": 356,
+          "delta": {
+            "textureCreates": 0,
+            "textureUploads": 0,
+            "programCompiles": 0,
+            "musicDecoderOpens": 0,
+            "musicSameTrackRestarts": 0,
+            "sfxDecoderOpens": 0,
+            "readbacks": 0,
+            "pcmChunks": 6,
+            "forwardTicks": 1,
+            "replayTicks": 0
+          }
+        },
+        {
+          "sampleIndex": 358,
+          "frontier": 285,
+          "nativeMs": 49.150000005960464,
+          "priorSnapshot": 357,
+          "delta": {
+            "textureCreates": 0,
+            "textureUploads": 0,
+            "programCompiles": 0,
+            "musicDecoderOpens": 0,
+            "musicSameTrackRestarts": 0,
+            "sfxDecoderOpens": 0,
+            "readbacks": 0,
+            "pcmChunks": 4,
+            "forwardTicks": 1,
+            "replayTicks": 0
+          }
+        }
+      ],
+      "densityWindow": [
+        [
+          260,
+          0,
+          0,
+          3,
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          287,
+          0,
+          0,
+          4,
+          4,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          316,
+          0,
+          0,
+          2,
+          3,
+          2,
+          1,
+          4,
+          0
+        ]
+      ],
+      "firstSampledEnemy": [
+        215,
+        0,
+        0,
+        1,
+        1,
+        2,
+        2,
+        0,
+        0
+      ]
+    }
+  ],
+  "costSchema": {
+    "version": 1,
+    "header": [
+      "version",
+      "enabled",
+      "epoch",
+      "phaseCount",
+      "counterCount",
+      "gaugeCount"
+    ],
+    "phases": [
+      "gameOpen",
+      "prepareLoading",
+      "platformInit",
+      "graphicsInit",
+      "fontInit",
+      "fontWarm",
+      "audioInit",
+      "titleInit",
+      "startMatch",
+      "frameCallback",
+      "gameTick",
+      "rollbackTick",
+      "networkPump",
+      "inputCapture",
+      "checkpoint",
+      "restore",
+      "tickInputs",
+      "update",
+      "semanticDraw",
+      "present",
+      "warmResources",
+      "confirmedPublish",
+      "audioUpdate",
+      "audioPump",
+      "audioMix",
+      "audioPut",
+      "musicSelect",
+      "gpuSubmit",
+      "gpuDirect",
+      "gpuCommit",
+      "textureUpload",
+      "textRender"
+    ],
+    "counters": [
+      "forwardTicks",
+      "replayTicks",
+      "speculativeTicks",
+      "restoredCheckpoints",
+      "sealedCheckpoints",
+      "publishedFrames",
+      "publishedCommands",
+      "publishedSfx",
+      "publishedMusic",
+      "publishedOtherAudio",
+      "pumpReadyCalls",
+      "pumpRefillCalls",
+      "pcmChunks",
+      "pcmFramesRead",
+      "pcmFramesQueued",
+      "audioReadErrors",
+      "audioPutErrors",
+      "queueEmptyCalls",
+      "musicDecoderOpens",
+      "musicSameTrackRestarts",
+      "gpuQueuedBatches",
+      "gpuDirectBatches",
+      "textureCreates",
+      "textureUploads",
+      "sfxDecoderOpens",
+      "programCompiles",
+      "readbacks",
+      "textureUploadBytes",
+      "timingErrors"
+    ],
+    "gauges": [
+      "queueFramesBefore",
+      "queueFramesAfterEstimate",
+      "lastPumpChunks"
+    ],
+    "phaseFields": [
+      "calls",
+      "inclusiveMs",
+      "exclusiveMs"
+    ],
+    "units": "Cumulative completed-scope calls and elapsed milliseconds, not process CPU time or GPU execution time. Counters are cumulative; gauges describe the last pump attempt. Exclusive residue in [-1e-6,0) ms is clamped to zero; larger negative durations remain visible and increment timingErrors, as does invalid scope nesting.",
+    "scope": "Development only, disabled by default. Enable before open and reset between measurement epochs outside a running game call. Snapshot does not reset or mutate gameplay. Subtract snapshots with equal epoch. Parent exclusive time retains all uninstrumented work; inclusive phases overlap. Semantic Draw excludes present; submit and texture work may occur inside Draw, present or resource preparation. Frame callback ends before the JS onGameFrame notification; gameTick also covers manually driven live callbacks. Audio mix includes decode/resample/mixing, audioPut includes SDL enqueue, and queueFramesAfterEstimate uses the existing queue observation plus successful 1024-frame puts, with no extra device query. -1 queue gauges mean the last pump did not reach a ready stream. No audio, Draw, input or rollback work is skipped."
+  },
+  "scope": "Offline context for selecting an early-game scheduler trace window. Existing raw and modern authored sources only; no new run, gate, browser, build or production change.",
+  "fieldMapping": {
+    "samples": [
+      "sampleNowMinusMeasureStarted",
+      "ok",
+      "nativeCallbackMs",
+      "nextLogicalFrontier",
+      "confirmed",
+      "corrections",
+      "resimulations",
+      "localCaptures",
+      "repairs",
+      "ready",
+      "published",
+      "rendererPresentations",
+      "sessionPhase",
+      "rafTimestamp"
+    ],
+    "phase": "samples[12]=sessionStatus()[0]=SessionPhase, not MatchScene::phase. Only continued SessionPhase::match is directly observed.",
+    "density": [
+      "nextLogicalFrontier",
+      "leftBullets",
+      "rightBullets",
+      "leftEnemies",
+      "rightEnemies",
+      "leftEffects",
+      "rightEffects",
+      "crossEffects",
+      "queuedAttacks"
+    ],
+    "densitySampling": "Every30 callbacks in DEV, not every30 logical frames. A first positive sample is not the exact first appearance.",
+    "cost": "Cumulative same-epoch completed-scope counters from the raw costSchema; counter offset=header.length+phases.length*phaseFields.length; phase triples=calls,inclusiveMs,exclusiveMs."
+  },
+  "method": {
+    "inputs": "Independently recompute expected keys for every first900 actual wire input, compare same-side prefixes across all4 reports, retain22 values for264..285 and both direction boundaries.",
+    "gaps": "Original effective-presentation rule: new renderer presentation AND greater logical frontier. Retain pairs whose two frontiers are in[250,320], maximum and every>250ms. Keep RAF and post-play clocks distinct.",
+    "requests": "Locate explicit raw request IDs366(old P2),704/632(relay39 P1/P2). Retain parent/entry frame, adjacent samples, pending duration and age from that peer measure.started.",
+    "resources": "Use every DEV cost snapshot at frontier250..320, same epoch. Report min/max counters and phase call counts, plus exact adjacent P2 snapshots around the gap.",
+    "filtering": "No raw report or failure is removed. Window selection is explicit and does not constitute whole-run or causal performance acceptance."
+  },
+  "authoredSources": [
+    {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\tests\\multiplayer\\smoothness-browser.mjs",
+      "bytes": 55655,
+      "sha256": "8c94c92453556670e9e748d3aca9edaf6b09402254e9864e80320b1b461f2f51"
+    },
+    {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\GameWorld.cpp",
+      "bytes": 18442,
+      "sha256": "10b8704ca9852330535afdf1dcf96327c1c33045b6ad30a3a1f345fc9796e1d4"
+    },
+    {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\GameResources.cpp",
+      "bytes": 5082,
+      "sha256": "deebb736e576826f807bcdbb4660c9130aac43ace0bd94c04100707244297063"
+    },
+    {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\GameBattle.cpp",
+      "bytes": 16926,
+      "sha256": "60eccbf0926d8df7805138f9baa17c241015fdd8129cc7df0ca1bb1b186bc1fb"
+    },
+    {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\game\\MatchScene.cpp",
+      "bytes": 7229,
+      "sha256": "1a06cfdf54c249e094ba066f62a7c33951ee9380e05d9b821d68bae59842d58a"
+    },
+    {
+      "path": "D:\\workspace\\eagler\\worktrees\\th09-rollback-4x\\web\\cpp\\sdl\\Application.cpp",
+      "bytes": 87130,
+      "sha256": "d14f97f819e96a15bed9acbe4a685cdf571b6dfb785210ad93552f79bf2d294d"
+    }
+  ],
+  "sourceAnchors": {
+    "input": "smoothness-browser.mjs keys(frame), read at407-419:22-frame direction cycle and verification of actual wire values.",
+    "phase": "smoothness-browser.mjs sessionStatus()[0] sample; Application.cpp th09_session_status export.",
+    "resourceLoading": "GameWorld.cpp101 load_common/load_match during initialization. GameResources.cpp23-28 completes texture upload before activating entry; start() uses an existing ANM script.",
+    "enemyTiming": "GameBattle.cpp26-28 initializes timeline wait=200; cannot infer a specific event at283.",
+    "scene": "MatchScene.cpp13/20/23: reset/end/results phase changes; this internal phase is not recorded per frame here."
+  },
+  "findings": [
+    "四份报告每端前900实际输入逐值一致；264..285保持P1=65/P2=1，下一方向边沿286位于停住的前沿之后。",
+    "旧诊断两端250..320的textureCreates=104、textureUploads=105、programCompiles=33、musicDecoderOpens=1、sfxDecoderOpens=54、textRender calls=2恒定，没有该范围新加载纹理/程序/文字或decoder的计数证据。",
+    "旧P2到前沿283的native为7.905ms；61.47ms的前沿284回调及6块PCM补充发生在rAF恢复之后，不能解释空档起因。",
+    "敌人已在214/215被采样观察到，278/287附近各4个；附近效果数变化，但粗采样不能确认首次精灵/效果在283出现。",
+    "原P headed-none与B headed-direct通过同一输入区间，没有长gap。不同构建/传输/预测历史使它们不能成为完全受控的GPU状态A/B。",
+    "两次不利运行的request年龄分别约5.987秒与4.997/5.015秒。这里只有两次事件，不能据此认定固定帧触发或wall-clock计时器根因。"
+  ],
+  "limitations": [
+    "前沿是next-frame/count边界；旧事件的输入283在rAF恢复后才capture，不能把下一tick的工作归给此前等待。",
+    "SessionPhase=match不证明内部MatchScene每帧未变化；保留层级差别。",
+    "既有atlas新sprite、几何/GL状态首用、异步驱动/GPU工作和浏览器调度仍未排除。这里没有逐draw命令、逐帧像素或内部scene事件记录。",
+    "资源计数不增长不等于驱动内部没有延迟编译或首次使用成本。没有使用原EXE、decomp或oracle。",
+    "反例采用原harness的rAF时间戳间隔定义，不是物理scanout；与actual request/entry及post-play sample边界不能互相代替。",
+    "当前authored source身份与历史raw中的构建/harness身份分别保存，不声称是同一冻结版本。",
+    "本证据只支持选择275..290窗口及360帧有界观察；位置重合或一次未复现均不能证明原因或修复。"
+  ]
+}

@@ -1,0 +1,53 @@
+import {test} from 'vitest';
+import assert from "node:assert/strict";
+import { readFile, readdir } from "node:fs/promises";
+import { relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  FRONTEND_TEST_PATTERNS,
+  REPOSITORY_NODE_TESTS,
+  REPOSITORY_PYTHON_TESTS,
+  WORKSPACE_NODE_TESTS,
+  WORKSPACE_PYTHON_TESTS,
+} from "./test-plan.mjs";
+
+test("test ownership", async () => {
+/** L0/repository governance. Proves every executable test has exactly one
+ * discoverable lane: a default plan or an explicit package command. */
+
+
+
+
+
+
+
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const packageJson = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
+const explicit = new Set(Object.values(packageJson.scripts || {}).flatMap(command =>
+  [...String(command).matchAll(/(?:^|\s)(tests\/[A-Za-z0-9_./*-]+\.(?:mjs|py|ps1))(?=\s|$)/g)].map(match => match[1])
+));
+for (const pattern of Object.values(FRONTEND_TEST_PATTERNS).flat()) explicit.add(pattern);
+const planned = new Set([
+  ...REPOSITORY_NODE_TESTS, ...REPOSITORY_PYTHON_TESTS,
+  ...WORKSPACE_NODE_TESTS, ...WORKSPACE_PYTHON_TESTS,
+]);
+
+async function collect(directory) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await collect(path));
+    else if (/^(?:test.*|.*\.test)\.(?:mjs|py|ps1)$/i.test(entry.name)) files.push(relative(root, path).replaceAll("\\", "/"));
+  }
+  return files;
+}
+
+const exempt = new Set(["tests/test-plan.mjs"]);
+const executableTests = (await collect(resolve(root, "tests"))).filter(file => !exempt.has(file) && !file.startsWith("tests/fixtures/ui-history/"));
+const explicitPatterns = [...explicit].map(pattern => new RegExp('^' + pattern.split('*')
+  .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') + '$'));
+const unowned = executableTests.filter(file => !planned.has(file) && !explicitPatterns.some(pattern => pattern.test(file)));
+assert.deepEqual(unowned, [], `tests without a declared lane: ${unowned.join(", ")}`);
+
+console.log(JSON.stringify({ testOwnership: "PASS", executableTests: executableTests.length }));
+});

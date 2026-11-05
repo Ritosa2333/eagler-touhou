@@ -1,0 +1,264 @@
+import {TH05_INITIAL_STOCK,validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
+import {
+  validTh15ChapterThreshold,
+  defaultTh15ChapterThreshold,
+} from "./th15-chapter-reward.mjs";
+import {
+  multiplayerConfigForProduct,
+  multiplayerInputTimingPolicy,
+  type MultiplayerInputTimingConfig,
+} from '../contracts/product-catalog.mjs';
+
+export interface MultiplayerRuntimeLoadout {
+  character: number;
+  shot: number;
+}
+
+export interface MultiplayerRuntimeOptionConstraints {
+  playerCounts: readonly (2 | 3)[];
+  difficulties: readonly string[];
+  loadouts: readonly MultiplayerRuntimeLoadout[];
+  inputTiming?: Readonly<MultiplayerInputTimingConfig>;
+  inGameSelection?: boolean;
+}
+
+export interface MultiplayerRuntimeOptionInput {
+  initialSpares?: number;
+  initialBombs?: number;
+  url: string;
+  player: number | null;
+  playerCount: number;
+  seed: number;
+  difficulty: number;
+  inputDelay?: number;
+  inputDelayAuto?: boolean;
+  predictionReserve?: number;
+  adonisMode?: number;
+  predictionLimit?: number;
+  spectator: boolean;
+  spectatorId: string;
+  spectatorCount: number;
+  spectatorTimeline?: boolean;
+  replayAutoSave?: boolean;
+  replayNames?: string[];
+  challengeMode?: boolean;
+  disableLocalChargePriority?: boolean;
+  chapterThreshold?: number;
+  iceServers: unknown;
+  preferTurn?: boolean;
+  allowWebsocketFallback?: boolean;
+  loadouts: MultiplayerRuntimeLoadout[];
+}
+
+export interface MultiplayerRuntimeOptions {
+  netplayInitialSpares?: number;
+  netplayInitialBombs?: number;
+  netplayMode: 'lan';
+  netplayUrl: string;
+  netplayPlayer: number | null;
+  netplayPlayerCount: number;
+  netplaySeed: number;
+  netplayDifficulty: number;
+  netplayInputDelay?: number;
+  netplayInputDelayAuto?: boolean;
+  netplayPredictionReserve?: number;
+  netplayAdonisMode?: number;
+  netplayPredictionLimit?: number;
+  netplayInGameSelection?: boolean;
+  netplaySpectator: boolean;
+  netplaySpectatorId: string;
+  netplaySpectatorCount: number;
+  netplaySpectatorTimeline?: boolean;
+  netplayReplayAutoSave?: boolean;
+  netplayReplayNames?: string[];
+  netplayChallengeMode?: boolean;
+  netplayDisableLocalChargePriority?: boolean;
+  netplayChapterThreshold?: number;
+  netplayIceServers: unknown[];
+  netplayPreferTurn?: boolean;
+  netplayAllowWebsocketFallback?: boolean;
+  netplayLoadouts: MultiplayerRuntimeLoadout[];
+}
+
+export function buildMultiplayerRuntimeOptions(
+  input: MultiplayerRuntimeOptionInput,
+  constraints: MultiplayerRuntimeOptionConstraints,
+): MultiplayerRuntimeOptions {
+  let url: URL;
+  try {
+    url = new URL(input.url);
+  } catch {
+    throw new Error('Relay WebSocket URL 无效');
+  }
+  if (url.protocol !== 'ws:' && url.protocol !== 'wss:') {
+    throw new Error('Relay URL 必须使用 ws:// 或 wss://');
+  }
+
+  const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if(input.initialSpares!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialSpares(input.initialSpares))||input.initialBombs!==undefined&&(roomProduct!=='th05mp'||!validTh05InitialBombs(input.initialBombs)))throw new Error('TH05 initial stocks are invalid');
+  if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
+    throw new Error('WebSocket 回退开关必须为布尔值');
+  if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
+    throw new Error('TURN 偏好必须为布尔值');
+  const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
+  if (input.challengeMode !== undefined && typeof input.challengeMode !== 'boolean')
+    throw new Error('挑战模式参数无效');
+  if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
+    throw new Error('蓄力进度参数无效');
+  if (
+    input.chapterThreshold !== undefined &&
+    (roomProduct !== "th15mp" ||
+      !validTh15ChapterThreshold(input.chapterThreshold))
+  )
+    throw new Error("奖残所需得分无效");
+  const { player, playerCount, seed } = input;
+  const spectator = input.spectator === true;
+  if (
+    !constraints.playerCounts.includes(playerCount as 2 | 3) ||
+    (!spectator &&
+      (typeof player !== 'number' ||
+        !Number.isInteger(player) ||
+        player < 0 ||
+        player >= playerCount))
+  ) {
+    throw new Error('LAN 玩家槽位无效');
+  }
+  if (spectator && !/^[A-Za-z0-9_-]{8,64}$/.test(String(input.spectatorId || ''))) {
+    throw new Error('旁观者资格无效');
+  }
+  if (!Number.isInteger(seed) || seed < 0 || seed > 65535) {
+    throw new Error('LAN 同步种子必须在 0–65535 之间');
+  }
+
+  const difficultyMax = Math.max(0, constraints.difficulties.length - 1);
+  const difficulty = Number(input.difficulty);
+  if (!Number.isInteger(difficulty) || difficulty < 0 || difficulty > difficultyMax) {
+    throw new Error(`LAN 难度必须在 0–${difficultyMax} 之间`);
+  }
+
+  const allowedLoadouts = new Set(
+    constraints.loadouts.map(({ character, shot }) => `${character}:${shot}`),
+  );
+  if (!allowedLoadouts.size) throw new Error('LAN 机体配置表为空');
+  const loadouts = input.loadouts.slice(0, playerCount).map(({ character, shot }, index) => {
+    if (
+      !Number.isInteger(character) ||
+      character < 0 ||
+      !Number.isInteger(shot) ||
+      shot < 0 ||
+      !allowedLoadouts.has(`${character}:${shot}`)
+    ) {
+      throw new Error(`P${index + 1} 机体配置无效`);
+    }
+    return { character, shot };
+  });
+  if (loadouts.length !== playerCount) throw new Error('LAN 机体配置数量不足');
+
+  const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp');
+  const th075 = roomProduct === 'th075mp';
+  const th15 = roomProduct === 'th15mp';
+  const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || th075 || product.inputTiming?.rollbackDefault === false ? 1 : 0);
+  const timingPolicy = multiplayerInputTimingPolicy(product);
+  const rollback = timingPolicy.rollback && [0, 2].includes(requestedMode);
+  const adonisMode = rollback ? 0 : requestedMode;
+  const measuredTitle = timingPolicy.measuredStartup;
+  if (
+    (fixedRollbackTitle || roomProduct === "th15mp") &&
+    input.predictionLimit !== undefined &&
+    input.predictionLimit !== timingPolicy.predictionLimit &&
+    !(adonisMode === 1 && input.predictionLimit === 0)
+  )
+    throw new Error(`${roomProduct} 直接回滚固定使用 12 帧预测上限`);
+  if (
+    (input.inputDelayAuto !== undefined && typeof input.inputDelayAuto !== 'boolean') ||
+    (input.inputDelayAuto && (!measuredTitle || !requestedMode)) ||
+    (input.predictionReserve !== undefined &&
+      (!measuredTitle ||
+        !Number.isInteger(input.predictionReserve) ||
+        input.predictionReserve < 1 ||
+        input.predictionReserve > 2))
+  )
+    throw new Error('实测输入时序参数无效');
+  if (
+    !Number.isInteger(requestedMode) ||
+    requestedMode < 0 ||
+    requestedMode > 2 ||
+    (requestedMode !== 0 && !measuredTitle)
+  )
+    throw new Error('该多人 Runtime 不支持 Adonis 时序');
+  if (
+    !timingPolicy.rollback &&
+    (adonisMode !== 1 || (input.predictionLimit !== undefined && input.predictionLimit !== 0))
+  )
+    throw new Error('该多人 Runtime 仅支持纯延迟时序，不能启用预测或回滚');
+  if (
+    (requestedMode || input.inputDelay !== undefined) &&
+    (!Number.isInteger(input.inputDelay) ||
+      input.inputDelay! < 0 ||
+      input.inputDelay! > timingPolicy.manualDelayLimit)
+  )
+    throw new Error(`Adonis 输入延迟必须为 0–${timingPolicy.manualDelayLimit} 帧`);
+  return {
+    netplayMode: 'lan',
+    ...(roomProduct==='th05mp'?{netplayInitialSpares:input.initialSpares??TH05_INITIAL_STOCK.spares,netplayInitialBombs:input.initialBombs??TH05_INITIAL_STOCK.bombs}:{}),
+    ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
+    ...(roomProduct === "th15mp"
+      ? {
+          netplayChapterThreshold:
+            input.chapterThreshold ?? defaultTh15ChapterThreshold(playerCount),
+        } : {}),
+    ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
+    ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
+    netplayUrl: url.href,
+    netplayPlayer: player,
+    netplayPlayerCount: playerCount,
+    netplaySeed: seed,
+    netplayDifficulty: difficulty,
+    ...(rollback || input.inputDelay !== undefined
+      ? {
+          netplayInputDelay:
+            rollback || input.inputDelayAuto
+              ? 0
+              : typeof input.inputDelay === 'number' &&
+                  Number.isInteger(input.inputDelay) &&
+                  input.inputDelay >= 0 &&
+                  input.inputDelay <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
+                ? input.inputDelay
+                : 0,
+        }
+      : {}),
+    ...(input.adonisMode !== undefined || fixedRollbackTitle || th075 || th15 ? { netplayAdonisMode: adonisMode } : {}),
+    ...(((fixedRollbackTitle || th15) && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
+    ...(measuredTitle && adonisMode
+      ? {
+          netplayInputDelayAuto: input.inputDelayAuto ?? false,
+          netplayPredictionReserve: input.predictionReserve ?? 2,
+        }
+      : {}),
+    ...(!timingPolicy.rollback || input.predictionLimit !== undefined || fixedRollbackTitle || th075 || th15
+      ? {
+          netplayPredictionLimit:
+            !timingPolicy.rollback || ((fixedRollbackTitle || th075 || th15) && adonisMode === 1)
+              ? 0
+              : typeof input.predictionLimit === 'number' &&
+                  Number.isInteger(input.predictionLimit) &&
+                  input.predictionLimit >= 1 &&
+                  input.predictionLimit <= timingPolicy.predictionLimit
+                ? input.predictionLimit
+                : timingPolicy.predictionLimit,
+        }
+      : {}),
+    netplaySpectator: spectator,
+    netplaySpectatorId: spectator ? input.spectatorId : '',
+    netplaySpectatorCount: Math.max(0, Number(input.spectatorCount) || 0),
+    ...(input.spectatorTimeline === true ? { netplaySpectatorTimeline: true } : {}),
+    ...(roomProduct === 'th09mp' && !spectator ? {
+      netplayReplayAutoSave: input.replayAutoSave !== false,
+      netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
+    } : {}),
+    netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
+    ...(input.preferTurn === true ? { netplayPreferTurn: true } : {}),
+    ...(input.allowWebsocketFallback === true ? {netplayAllowWebsocketFallback: true} : {}),
+    netplayLoadouts: loadouts,
+  };
+}

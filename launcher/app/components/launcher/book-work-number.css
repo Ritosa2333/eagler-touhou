@@ -1,0 +1,3 @@
+@layer components {
+  .book-work-number {flex:none;color:var(--kit-muted-foreground);font:500 10px/1.2 var(--kit-font);font-variant-numeric:tabular-nums;letter-spacing:.02em;white-space:nowrap}
+}
