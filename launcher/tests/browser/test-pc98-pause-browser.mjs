@@ -14,7 +14,9 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
   </script>`;
   const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;if(path==='/'){res.setHeader('content-type','text/html');return res.end(html);}if(path==='/data')return res.end(data);
     const file=resolve(root,path.slice(9));if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');res.setHeader('content-type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
-    let bytes=await readFile(file);if(game==='th01'&&path==='/runtime/app.js')bytes=Buffer.concat([bytes,Buffer.from('\nwindow.testMenuInput=menuInput;\n')]);if(game==='th03'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet testPrevious;export function testState(){return emulator?.snapshot?.state;} export function testMark(){testPrevious=emulator;} export function testChanged(){return !!emulator&&emulator!==testPrevious;}\n')]);res.end(bytes);
+    let bytes=await readFile(file);if(game==='th01'&&path==='/runtime/app.js')bytes=Buffer.concat([bytes,Buffer.from('\nwindow.testMenuInput=menuInput;\n')]);if(game==='th03'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet testPrevious;export function testState(){return emulator?.snapshot?.state;} export function testMark(){testPrevious=emulator;} export function testChanged(){return !!emulator&&emulator!==testPrevious;}\n')]);
+    if(game==='th04'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nexport function testTurbo(){return emulator.call("testTurbo");}\n')]);
+    if(game==='th04'&&path==='/runtime/solo-worker.js')bytes=Buffer.from(bytes.toString().replace("if(method==='soloFault')","if(method==='testTurbo'){const d=emulator.practice.debug.d;return d<0?null:emulator.module.HEAPU8[d+0x53a0];}if(method==='soloFault')"));res.end(bytes);
   }catch{res.writeHead(404).end();}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
   try{
@@ -31,6 +33,10 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
       const menu=await frame.evaluate(()=>th01Native.core.th_get(50,0));
       if(menu===4)await frame.evaluate(()=>{let i=0;while(th01Native.core.th_get(51,0)!==1&&i++<8)testMenuInput(3);testMenuInput(4);});
       await frame.waitForFunction(()=>th01Native.core.th_get(50,0)===1,{timeout:10000}).catch(async error=>{console.log('TH01 menu after',await frame.evaluate(()=>[th01Native.core.th_get(50,0),th01Native.core.th_get(51,0)]));throw error;});
+    }else if(game==='th04'){
+      for(let i=0;i<20;i++){await frame.click('#canvas');await page.keyboard.press('KeyZ',{delay:120});await new Promise(r=>setTimeout(r,500));if((await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice))?.ready)break;}
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.ready,{timeout:90000});
+      assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testTurbo()),1,'normal game uses native Turbo mode');
     }else{
       // Start a single-player game through its own title menu.
       for(let i=0;i<15;i++){await frame.click('#canvas');await page.keyboard.press('KeyZ',{delay:120});await new Promise(r=>setTimeout(r,500));if(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1))break;}
@@ -41,6 +47,6 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
       await frame.waitForFunction(async()=>{const m=await import('./managed-solo.mjs');return m.testChanged()&&m.managedAPI.health().frames>0&&!document.querySelector('.pc98-pause-menu:not([hidden])');},{timeout:90000});
     }
     assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='exit'||e.event==='error')),[]);assert.deepEqual(errors,[]);
-    console.log('PASS',game,'pause quit returns to its own title');
+    console.log('PASS',game,game==='th04'?'normal play Turbo mode':'pause quit returns to its own title');
   }finally{await browser?.close();await new Promise(r=>server.close(r));}
 }
