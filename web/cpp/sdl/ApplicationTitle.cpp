@@ -30,7 +30,6 @@ bool ApplicationState::begin_transition(u32& handle){
 PracticeMenuResult ApplicationState::configure_practice(i32 stage,i32 spell,bool available){
  if(!practice.enabled||spell<-1||(spell>=0&&practice_phase_count(0,spell)==1))return PracticeMenuResult::Native;
  if(practice.confirmed){practice.confirmed=false;practice.accepted=true;return PracticeMenuResult::Confirm;}
- practice.standard_available=available;
  if(!available)practice.purple=true;
  auto& patch=practice.settings.patch;
  if(patch.stage!=stage||practice.spell!=spell){
@@ -45,11 +44,12 @@ bool ApplicationState::start_game(i32 stage){
  practice.active={};
  if(practice.accepted){
   practice.accepted=false;
-  if(practice.spell>=0||practice.purple){
-   practice.active=practice.settings.patch;
-   stage=practice.active.stage;
-   if(practice.spell<0)selection.spell_id=-1;
+  stage=selection.stage=practice.settings.patch.stage;
+  if(practice.spell<0){
+   selection.spell_id=-1;
+   if(stage<=6)choices.practice_stage=stage-1;
   }
+  if(practice.spell>=0||practice.purple)practice.active=practice.settings.patch;
  }
  progress.stage=progress.initial_stage=stage;progress.character=selection.character;progress.animal=selection.animal;progress.difficulty=stage==7?4:selection.difficulty;progress.spell_id=selection.spell_id;progress.scoring.mode_flags=selection.mode_flags;progress.practice_lives=selection.practice_checkpoint;progress.demo_slot=-1;selected_replay.reset();flow.title_return_reason=title?title->state.return_reason:1;flow.pending=AppScene::Game;return true;
 }

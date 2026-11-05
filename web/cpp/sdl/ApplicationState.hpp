@@ -26,7 +26,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<AnmDrawSchedule> global_layers;std::unique_ptr<AsciiDrawSchedule> global_letters;
  struct PracticeState {
   bool enabled=false, menu=false, confirmed=false, accepted=false, advanced=false, information=false;
-  bool purple=true,standard_available=true;
+  bool purple=true;
   i32 spell=-1;
   u32 tools=0;
   bool everlasting_bgm=false;

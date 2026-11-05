@@ -58,10 +58,29 @@ for (const [key, value] of entries) {
     catalog += Array.from({ length: 5 }, (_, rank) => names(value, rank)).join(", ") + "}},\n";
 }
 catalog += "};\ninline constexpr const char* practice_version = " + JSON.stringify(version) + ";\n";
-for (const key of ["TH17_GOAST_SELECT", "TH17_GOAST_SELECT_TOKENS", "TH_SPELL_PHASE2", "TH17_SPELL_5PHASE", "TH_WARP_SELECT", "IGI_DIFF"]) {
+for (const key of ["TH17_GOAST_SELECT", "TH17_GOAST_SELECT_TOKENS", "TH_SPELL_PHASE2", "TH17_SPELL_5PHASE", "TH_WARP_SELECT", "TH_MODE_SELECT", "TH_STAGE_SELECT", "IGI_DIFF", "IGI_PL_17"]) {
     if (!groups[key]) throw Error("Unknown practice group " + key);
     catalog += "inline constexpr const char* practice_" + key + "[][3] = {\n" +
         groups[key].map((label) => "    " + tuple(glossary[label] || label) + ",\n").join("") + "};\n";
+}
+const uiKeys = [
+    "TH_MENU", "TH_MODE", "TH_STAGE", "TH_WARP", "TH_PHASE", "TH_DLG", "TH_DROP_ITEMS",
+    "TH_CHAPTER", "TH_STAGE_PORTION_1", "TH_STAGE_PORTION_2", "TH_SPELL_PRAC",
+    "TH_LIFE", "TH_LIFE_FRAGMENT", "TH_BOMB", "TH_BOMB_FRAGMENT", "TH_POWER", "TH_VALUE", "TH_GRAZE", "TH_SCORE",
+    "TH17_GOAST_1", "TH17_GOAST_2", "TH17_GOAST_3", "TH17_GOAST_4", "TH17_GOAST_5",
+    "TH17_SHOW_ID_OPT", "TH17_ID_P2_OPT", "TH17_ID_P3_OPT", "TH17_ID_P4_OPT", "TH17_ID_TD_CFG", "TH17_ID_TD_CFG_HINT",
+    "TH_MUTEKI", "TH_INFLIVES2", "TH_INFBOMBS", "TH_INFPOWER", "TH_TIMELOCK", "TH_AUTOBOMB",
+    "TH17_INF_ROARING", "TH17_NO_HYPER", "TH_EL_BGM", "THPRAC_INGAMEINFO", "TH_ENEMY_MUTEKI",
+    "TH_ADV_OPT", "TH_GAME_SPEED", "TH_GAMEPLAY", "TH_FPS_ERR", "TH_FPS_UNSUPPORTED",
+    "TH_FPS_ADJ", "TH_FPS_FREE_ADJ", "TH_ADV_OPT_APPLY", "TH_FPS_LOWERING",
+    "TH_ADV_DISABLE_X_KEY", "TH_ADV_DISABLE_X_KEY_DESC", "TH_ADV_DISABLE_SHIFT_KEY", "TH_ADV_DISABLE_SHIFT_KEY_DESC",
+    "TH_ADV_DISABLE_Z_KEY", "TH_ADV_DISABLE_Z_KEY_DESC", "TH_ADV_DISABLE_C_KEY_SAMETIME", "TH_ADV_FORCE_SHIFT_KEY", "THPRAC_AUTO_SHOOT",
+    "TH_ABOUT_THPRAC", "TH_ABOUT_VERSION", "TH_ABOUT_AUTHOR", "TH_ABOUT_WEBSITE",
+    "TH_ABOUT_THANKS", "TH_ABOUT_HIDE_LICENCE", "TH_ABOUT_SHOW_LICENCE", "THPRAC_INGAMEINFO_MISS_COUNT",
+];
+for (const key of uiKeys) {
+    if (!glossary[key]) throw Error("Unknown TH17 UI label " + key);
+    catalog += "inline constexpr const char* practice_" + key + "[3] = " + tuple(glossary[key]) + ";\n";
 }
 catalog += "}\n";
 const license = read("LICENCE");
