@@ -6,6 +6,13 @@ namespace th15 {
 struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     BulletScene& scene;u32 index;BulletState& state;BulletVisual visual;bool cancelling=false;
     Slot(BulletScene& owner,u32 slot,BulletState& bullet):scene(owner),index(slot),state(bullet),visual(bullet,owner.visual_random){}
+    // Rollback frames own the images. The live slot only locates a version
+    // that another frame has already saved.
+    struct {
+        u64 body_content=0,body_program=0,overlay_content=0;
+        std::weak_ptr<AnmVmState> body;
+        std::weak_ptr<const AnmVm> overlay;
+    } rollback_images;
     void play(i32 id)override{scene.host.sound(id);}
     void hit()override{scene.host.hit();}
     bool interrupt(i32 id)override{return visual.interrupt(id);}

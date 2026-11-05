@@ -146,7 +146,9 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
         const auto& n=*selected[i];auto& image=s.nodes[i];
         image.borrowed=n.borrowed;image.external=n.borrowed!=nullptr;image.frozen=n.frozen_root;
         image.original=n.borrowed?n.borrowed:&n.vm;image.nested=nested.count(image.original)!=0;
-        image.vm=images.capture(n.borrowed?*n.borrowed:n.vm);
+        // The owning image already contains every embedded panel. Nested
+        // registry entries need the graph links, not a second VM copy.
+        image.vm=image.nested?nullptr:images.capture(*image.original);
         image.slot=n.slot;image.handle=n.handle;image.active=n.active;image.registered=n.registered;image.alternate=n.alternate;
         image.parent=indices.find(n.parent);
         if(n.parent&&image.parent==none){error="Rollback animation parent is missing";return false;}
