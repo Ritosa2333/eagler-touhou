@@ -1033,6 +1033,7 @@ export interface MultiplayerLoadoutConfig {
     shot: number;
 }
 export interface MultiplayerInputTimingConfig {
+    runtimeTiming?: boolean;
     rollbackDefault?: boolean;
     /** Zero permits confirmed input only: no prediction, rollback or hybrid mode. */
     rollbackLimit: number;

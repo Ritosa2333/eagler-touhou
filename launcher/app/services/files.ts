@@ -73,7 +73,8 @@ export function createFileActions(options: FileActionsOptions) {
   function sessionOptions(product: ProductId) {
     return {runtimeVariant: isMultiplayerProductId(product) ? 'multiplayer' as const : 'normal' as const};
   }
-  const saveAccept = (product: ProductId) => gameIdForProduct(product) === 'th15' ? '.dat,.zip' : '.dat';
+  const saveExtension = (product: ProductId) => '.' + PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile.split('.').at(-1)!.toLowerCase();
+  const saveAccept = (product: ProductId) => saveExtension(product) + (gameIdForProduct(product) === 'th15' ? ',.zip' : '');
   async function exportFiles(kind: 'save' | 'replay', product: ProductId): Promise<void> {
     const game = gameIdForProduct(product);
     const label = t(kind === 'save' ? 'file.kind.save' : 'file.kind.replay');
@@ -154,7 +155,7 @@ export function createFileActions(options: FileActionsOptions) {
       let access: RuntimeFileSession = initial;
       let files: {path: string; bytes: Uint8Array; replayMatch?: Th09ReplayMatch}[];
       const lowerName = file.name.toLowerCase();
-      if (kind === 'save' && lowerName.endsWith('.dat')) {
+      if (kind === 'save' && lowerName.endsWith(saveExtension(product))) {
         files = [{path: PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'save' && gameIdForProduct(product) === 'th15' && lowerName.endsWith('.zip')) {
         const zip = await import('fflate'), seen = new Set<string>();let expanded = 0;
@@ -172,7 +173,7 @@ export function createFileActions(options: FileActionsOptions) {
       } else if (kind === 'hint' && lowerName.endsWith('.txt') && hints(product).length) {
         if (file.size > 16 * 1024 * 1024) throw new Error(t('file.hintTooLarge'));
         files = [{path: hints(product)[0]!, bytes: new Uint8Array(await file.arrayBuffer())}];
-      } else if (kind === 'replay' && /\.rpyx?$/.test(lowerName)) {
+      } else if (kind === 'replay' && !lowerName.endsWith('.zip') && replay.isReplayImportFileName(lowerName)) {
         const existing = listing(await access.send('list', {})).map(item => item.path);
         const name = replay.allocateReplayName(prefix(product), existing, file.name, replayFilePolicy(product).sharedExtensionSlot);
         if (!name) throw new Error(t('file.replaySlotsExhausted'));

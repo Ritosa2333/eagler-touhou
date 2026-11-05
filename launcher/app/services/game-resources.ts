@@ -102,6 +102,7 @@ export function sharedResources({game, generation, host, language, thprac, baseU
 }
 export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteManifest | null, baseUrl: string, t: Translate) {
   if (!oggMusic(music)) return [];
+  if ('embeddedOgg' in PRODUCT_GAMES[game].musicRuntime && PRODUCT_GAMES[game].musicRuntime.embeddedOgg === true) return [];
   const pack = host?.games[game]?.music.ogg;
   if (!pack || !Array.isArray(pack.files)) throw new Error(t('music.manifestInvalid'));
   const mount = typeof pack.mount === 'string' ? pack.mount.replace(/\/$/, '') : '';
@@ -123,6 +124,8 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   completeSet?: boolean;
 }): Promise<{generation: InstalledPackageGeneration | null; music: MusicMode}> {
   if (!generation || !oggMusic(music)) return {generation, music};
+  const musicPolicy = PRODUCT_GAMES[generation.game].musicRuntime;
+  if ('embeddedOgg' in musicPolicy && musicPolicy.embeddedOgg === true) return {generation, music};
   const fallback: MusicMode = PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
   checkPreparationAbort(signal);
   const declared = componentFileIds(generation.descriptor, 'ogg');

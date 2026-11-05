@@ -152,6 +152,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
       }),
       musicAvailability: {
         audio: options.webAudioAvailable,
+        embeddedOgg: 'embeddedOgg' in PRODUCT_GAMES[gameId].musicRuntime && PRODUCT_GAMES[gameId].musicRuntime.embeddedOgg === true,
         midiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && music?.midi?.supported !== false,
         importServer: snapshot.siteManifest?.shared.resourceMode === 'import',
         publishedOggCapable: Boolean(music?.ogg || music?.wav),

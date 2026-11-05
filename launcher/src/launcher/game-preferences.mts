@@ -21,6 +21,7 @@ export function normalizeTh05MultiplayerDisplay(value: unknown): Readonly<Th05Mu
 
 export interface GameOptions {
   th05MultiplayerDisplay: Readonly<Th05MultiplayerDisplay>;
+  th02RapidFire: boolean;
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
@@ -46,6 +47,7 @@ export interface GameOptions {
 
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   th05MultiplayerDisplay: DEFAULT_TH05_MULTIPLAYER_DISPLAY,
+  th02RapidFire: true,
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
@@ -256,6 +258,7 @@ export function normalizeStoredGamePreferences(
 
   const options: GameOptions = {
     th05MultiplayerDisplay: normalizeTh05MultiplayerDisplay(rawOptions?.th05MultiplayerDisplay),
+    th02RapidFire: booleanOption(rawOptions, "th02RapidFire", DEFAULT_GAME_OPTIONS.th02RapidFire),
     thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", /^zh(?:-|$)/i.test(context.uiLocale || "") || DEFAULT_GAME_OPTIONS.thpracEnabled),
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),

@@ -27,6 +27,7 @@ export interface PlayerTouchOptions {
   getSettings(): SettingsSnapshot | null;
   fireState: TouchFireStatePort;
   editing(): boolean;
+  controlsBlocked?(): boolean;
   playerOpen(): boolean;
   iosWebKitTouch: boolean;
   refocus(): void;
@@ -74,7 +75,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     return disposed || muted || value.spectator ? {...value, launched: false, target: null} : value;
   };
   const settings = () => options.getSettings();
-  const allowed = () => !disposed && !options.editing() && options.playerOpen() && !!settings()?.options.touchEnabled && !!context().launched;
+  const allowed = () => !disposed && !options.editing() && !options.controlsBlocked?.() && options.playerOpen() && !!settings()?.options.touchEnabled && !!context().launched;
   const heldMode = () => {const game = settings()?.gameId; return !!game && PRODUCT_GAMES[game].touchFire.mode === 'held-key';};
   const key = (spec: Readonly<HostedKeySpec>, down: boolean) => postHostedKey(context(), spec, down);
   function syncControls() {

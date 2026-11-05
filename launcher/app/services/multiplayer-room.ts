@@ -778,7 +778,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.spectatorRequested = spectatorEntry || !!saved?.spectatorRequested;
     state.roomSettingsOpen = !!saved?.roomSettingsOpen;
     state.timingChoice = 'auto';
-    state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback;
+    state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback && config.inputTiming?.rollbackDefault !== false;
     ports.routes.restore({ product: restoredProduct, code, fromDirectory: state.fromDirectory });
     publish();
     connect();
@@ -795,7 +795,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     autoSeat = false;
     state.fromDirectory = false;
     state.timingChoice = 'auto';
-    state.rollbackEnabled = multiplayerInputTimingPolicy(policy()).rollback;
+    state.rollbackEnabled = multiplayerInputTimingPolicy(policy()).rollback && policy()?.inputTiming?.rollbackDefault !== false;
     room = {
       code,
       playerCount: policy()!.playerCounts[0],
@@ -1021,6 +1021,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     const config = policy()!;
+    if(patch.challengeMode === true && config.challengeMode === false)return;
     const chapterThreshold =
       product === "th15mp"
         ? (patch.chapterThreshold ??
@@ -1142,7 +1143,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           : timingRecommendation().inputDelay;
     send({
       type: 'start',
-      inputDelay,
+      inputDelay: timing.runtimeTiming ? 0 : inputDelay,
       adonisMode,
       ...(measured ? { inputDelayAuto: automatic, predictionReserve: 2 } : {}),
       ...(!timingPolicy.rollback || timing.sendPredictionLimit != null
@@ -1219,7 +1220,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         ...(product === 'th15mp' ? {
           chapterThreshold: room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount),
         } : {}),
-        ...(config.gameplay === 'cooperative'
+        ...(config.gameplay === 'cooperative' && config.challengeMode !== false
           ? { challengeMode: room.challengeMode === true }
           : {}),
         iceServers: ports.settings().iceServers,
