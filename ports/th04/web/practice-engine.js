@@ -117,6 +117,26 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     if(arrive())return;
     resources();w8(0x4662,2);w8(0x4669,0);w8(0x466a,0);
     if(type==='boss'){
+      // Stage 6 / Extra entrance and HP-fill states have no movement or loads.
+      // Keep frame zero (Mugetsu installs her callbacks there), then let the
+      // original update execute its terminal branch immediately. In particular,
+      // phase 3 installs Mugetsu's next attack callback and cannot be bypassed.
+      if(setup.stage>=5){
+        const deadline=phase===0?129:phase===1?64:setup.stage===6&&!gengetsu&&phase===3?64:setup.stage===6&&!gengetsu&&phase===5?128:0;
+        if(deadline&&u16(0x53da)>0&&u16(0x53da)<deadline-1)w16(0x53da,deadline-1);
+        if(gengetsu&&setup.phase>phase){
+          const frame=u16(0x53da);
+          // gengetsu_1F97A: frame one chooses the destination and computes
+          // integer velocity. Frames 2..63 only move by that velocity; frame
+          // 64 clears wave_amp and lets the native attack transition proceed.
+          if(phase>=2&&phase<=5&&u8(0x53dd)===255&&frame>=2&&frame<64){
+            w16(0x53ca,i16(0x53ca)+(64-frame)*i16(0x53d2));w16(0x53da,64);
+          }
+          // gengetsu_1F9C5 snaps both position and distortion at frame 128.
+          // Its hittest increments the clock before the movement callback.
+          if(phase===6&&frame>0&&frame<127)w16(0x53da,127);
+        }
+      }
       // Elly's prelude uses an absolute stage-frame deadline.
       if(setup.stage===2&&phase===1)w16(0x538a,9240);
       const attacks=phaseList({...setup,entry:'boss',branch:gengetsu?'gengetsu':'auto'});

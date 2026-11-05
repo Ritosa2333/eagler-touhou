@@ -38,6 +38,27 @@ function instance(mode='target',setup={},options={}){
   t.b(0x4664,16);t.engine.configure({lockPower:false});t.b(0x466a,20);t.signal(0x7fe3);assert.equal(t.engine.status.outcome,null);assert.equal(t.engine.status.power,16);checks++;
   t.h[r+50]=2;t.signal(0x7fe4);assert.equal(t.engine.status.bombsUsed,2);checks++;
 }
+// Skip only audited Extra entrance waits. Native frame-zero initialization and
+// the selected attack's first frame must still run with their original clocks.
+for(const [gengetsu,phase,deadline]of [[false,0,129],[false,1,64],[false,3,64],[false,5,128],[true,0,129],[true,1,64]]){
+  const t=instance('target',{stage:6,entry:'boss',branch:gengetsu?'gengetsu':'auto',phase:gengetsu?8:6});
+  t.signal(0x7fe0);t.w(0xbcd0,gengetsu?0xc7da:0x6013);t.b(0x53d9,phase);
+  t.signal(0x7fe1);assert.equal(t.engine.status.phaseFrame,0,'native initializer keeps frame zero');
+  t.w(0x53da,1);t.signal(0x7fe1);assert.equal(t.engine.status.phaseFrame,deadline-1);
+  assert.equal(t.engine.status.phase,phase,'original update performs the transition');checks++;
+}
+for(const phase of [0,1]){
+  const t=instance('target',{stage:5,entry:'boss',phase:16});
+  t.signal(0x7fe0);t.w(0xbcd0,0x6013);t.b(0x53d9,phase);t.w(0x53da,1);t.signal(0x7fe1);
+  assert.equal(t.engine.status.phaseFrame,phase===0?128:63);assert.equal(t.engine.status.phase,phase);checks++;
+}
+for(const frame of [2,20,63]){
+  const t=instance('target',{stage:6,entry:'boss',branch:'gengetsu',phase:8});
+  t.signal(0x7fe0);t.w(0xbcd0,0xc7da);t.b(0x53d9,3);t.b(0x53dd,255);
+  t.w(0x53ca,3000);t.w(0x53d2,-12);t.w(0x53da,frame);t.signal(0x7fe1);
+  assert.equal(t.v.getInt16(d+0x53ca,true),3000-(64-frame)*12);
+  assert.equal(t.engine.status.phaseFrame,64);assert.equal(t.engine.status.phase,3);checks++;
+}
 for(const power of [1,16,64,128]){
   const t=instance('target',{entry:'boss',phase:2,power});t.signal(0x7fe0);t.signal(0x7fe1);
   assert.equal(t.engine.status.ready,false);assert.equal(t.engine.status.power,power);assert.equal(t.engine.status.dream,0);

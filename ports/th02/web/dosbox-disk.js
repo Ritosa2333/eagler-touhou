@@ -29,7 +29,7 @@ export function extractGame(disk){
   }};
 }
 
-export function prepareFastBoot(extracted,{network=false,directLaunch=false}={}){
+export function prepareFastBoot(extracted,{network=false,directLaunch=false,practice=false}={}){
   const bat=extracted.files.find(f=>f.path==='game/HUMAROKU/GAME.BAT');
   if(!bat)throw Error('TH02 启动脚本缺失');
   let text=Array.from(bat.contents,c=>String.fromCharCode(c)).join('');
@@ -42,7 +42,7 @@ export function prepareFastBoot(extracted,{network=false,directLaunch=false}={})
   }
   let entries=0;
   const replacement=text.replace(/^(op|main)[ \t]*\r*$/gm,(_,command)=>{
-    entries++;return `z:\\system\\config.com -set "cpu cycles=${network?'30000':'max 100%'}"\r\n${directLaunch?'WEBSTART\r\nif errorlevel 1 goto fin\r\nmain':command}\r`;
+    entries++;return `z:\\system\\config.com -set "cpu cycles=${network?'30000':practice?'16000':'max 100%'}"\r\n${directLaunch?'WEBSTART\r\nif errorlevel 1 goto fin\r\nmain':command}\r`;
   });
   if(entries!==6)throw Error('TH02 启动入口与已校验版本不同');
   return {path:'game/HUMAROKU/FASTBOOT.BAT',contents:Uint8Array.from(replacement,c=>c.charCodeAt(0))};

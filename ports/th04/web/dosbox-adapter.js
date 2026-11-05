@@ -41,7 +41,7 @@ export class DOSBoxPC98 {
     if((this.config.externalReplay||this.config.practice)&&!net){
       const replay=this.config.externalReplay||{mode:'record',boundaryMode:'sleep'};
       if(this.config.practice){
-        this.practiceClock=createPracticeClock(this.config.practice.options.speed);
+        this.practiceClock=createPracticeClock(this.config.practice.mode==='target'?8:this.config.practice.options.speed);
         this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config:this.config.practice,clock:this.practiceClock});
         this.module.practiceSignal=(port,packed)=>this.practice.signal(port,packed);
         this.module.practicePreparing=()=>this.practice.status.preparing;
@@ -49,7 +49,7 @@ export class DOSBoxPC98 {
       const lifecycle=replay.lifecycle?createSoloReplayLifecycle(replay.lifecycle,()=>this.module.HEAPU8):null;
       this.externalHost=createExternalReplayHost({...replay,
         clock:this.practiceClock,shouldHold:()=>this.holdPreparedPractice(),
-        shouldFastForward:()=>!!this.practice?.status.preparing&&this.practice.debug.prepareFrames>0,
+        shouldFastForward:()=>!!this.practice?.status.preparing,
         onBoundary:()=>{this.practice?.observeBoundary();this.module.observeReplayBoundary?.();},
         observe:()=>{const p=this.practice?.status;if(p?.outcome)return {active:true,stage:p.stage,paused:true,finish:p.outcome==='clear'?'clear':'game-over'};return lifecycle?.();},
         applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module),
