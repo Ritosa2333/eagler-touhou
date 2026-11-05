@@ -2,6 +2,64 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {PeerSocket} from '../web/sdl-runtime/peer-socket.mjs';
 
+async function captureIceConfiguration({player=0,fallback=[],serverMessage={}}={}){
+ const OldSocket=globalThis.WebSocket,OldPeer=globalThis.RTCPeerConnection,sockets=[],configurations=[];
+ class Socket {static OPEN=1;constructor(url){this.url=String(url);this.readyState=1;this.sent=[];sockets.push(this);}send(value){this.sent.push(JSON.parse(value));}close(){this.readyState=3;}}
+ class Peer {
+  constructor(configuration){configurations.push(configuration);}
+  createDataChannel(){return {readyState:'connecting',close(){this.readyState='closed';}};}
+  async createOffer(){return {type:'offer',sdp:'local-offer'};}
+  async createAnswer(){return {type:'answer',sdp:'local-answer'};}
+  async setLocalDescription(value){this.localDescription=value;}
+  async setRemoteDescription(value){this.remoteDescription=value;}
+  async addIceCandidate(){}
+  close(){}
+ }
+ globalThis.WebSocket=Socket;globalThis.RTCPeerConnection=Peer;let socket;
+ try{
+  socket=new PeerSocket(`ws://127.0.0.1:18142/?room=th19mp-1234&player=${player}&players=2&run=1`,{netplayIceServers:fallback,netplayPreferTurn:true});
+  let createdBeforeJoin;
+  if(player===0)await socket.control({type:'peers',peers:[1],...serverMessage});
+  else{
+   await socket.control({type:'peers',peers:[],...serverMessage});createdBeforeJoin=configurations.length;
+   await socket.control({type:'peer-join',player:0});
+   await socket.control({type:'signal',from:0,description:{type:'offer',sdp:'remote-offer'}});
+  }
+  return {configuration:configurations[0],createdBeforeJoin,answerType:socket.pc?.localDescription?.type};
+ }finally{socket?.close();globalThis.WebSocket=OldSocket;globalThis.RTCPeerConnection=OldPeer;}
+}
+
+const launcherIceServers=[{urls:'stun:stun.cloudflare.com:3478'}];
+const relayIceServers=[
+ {urls:'stun:stun.relay.example:3478'},
+ {urls:['turn:turn.relay.example:3478?transport=udp','turns:turn.relay.example:5349?transport=tcp'],username:'room-user',credential:'room-secret',credentialType:'password'},
+];
+
+test('server ICE servers replace Launcher fallback for both offer and peer-join answer',async t=>{
+ for(const player of [0,1])await t.test(player===0?'offer side':'answer side waits for peer-join',async()=>{
+  const result=await captureIceConfiguration({player,fallback:launcherIceServers,serverMessage:{iceServers:relayIceServers}});
+  assert.deepEqual(result.configuration.iceServers,relayIceServers);
+  assert.equal(result.configuration.iceTransportPolicy,'relay');
+  if(player===1){assert.equal(result.createdBeforeJoin,0);assert.equal(result.answerType,'answer');}
+ });
+});
+
+test('an empty server ICE list overrides Launcher fallback',async()=>{
+ const result=await captureIceConfiguration({fallback:launcherIceServers,serverMessage:{iceServers:[]}});
+ assert.deepEqual(result.configuration.iceServers,[]);
+});
+
+test('missing or invalid server ICE data preserves Launcher fallback',async t=>{
+ for(const scenario of [
+  {name:'missing on offer side',player:0,serverMessage:{}},
+  {name:'invalid on peer-join answer side',player:1,serverMessage:{iceServers:{urls:'turn:invalid.example'}}},
+ ])await t.test(scenario.name,async()=>{
+  const result=await captureIceConfiguration({...scenario,fallback:launcherIceServers});
+  assert.deepEqual(result.configuration.iceServers,launcherIceServers);
+  if(scenario.player===1){assert.equal(result.createdBeforeJoin,0);assert.equal(result.answerType,'answer');}
+ });
+});
+
 test('RTC must pass the shared route barrier before delivering game input',async()=>{
  const OldSocket=globalThis.WebSocket,OldPeer=globalThis.RTCPeerConnection,sockets=[];
  class Socket {static OPEN=1;constructor(url){this.url=String(url);this.readyState=1;this.sent=[];sockets.push(this);}send(value){this.sent.push(JSON.parse(value));}close(){this.readyState=3;}}
