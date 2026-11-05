@@ -107,6 +107,7 @@ try{
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
     const start=await frames()[1].evaluate(playerFrame);
     await wait(async()=>await frames()[1].evaluate(playerFrame)>=start+300,'native marker keeps cooperative match synchronized',30000);
+    await (await frames()[1].frameElement()).screenshot({path:resolve(out,'native-marker.png')});
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:false}));
   }
   async function measure(label){const start=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame))),at=performance.now();await new Promise(r=>setTimeout(r,5000));const end=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));const seconds=(performance.now()-at)/1000;console.log('QA player rate',label,end.map((value,i)=>((value-start[i])/seconds).toFixed(1)));}
@@ -114,6 +115,8 @@ try{
   await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
+  if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1')
+    await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
   assert(await frames()[2].evaluate(game=>{const peer=globalThis['__'+game+'PeerTransport'];return peer?.relay?.readyState===WebSocket.OPEN&&peer.peers instanceof Map;},game),'launcher can observe the live spectator relay');
   await frames()[2].waitForFunction(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed');if(!c)return false;const context=c.getContext('2d'),pixels=context.getImageData(0,0,c.width,c.height).data;for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])return true;return false;},{timeout:90000});
   if(process.env.PC98_SPECTATOR_PERF==='1'){await measure('spectator active');console.log('QA spectator',JSON.stringify(await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback)));}
@@ -130,6 +133,11 @@ try{
   const target=await page.evaluate(()=>Math.floor(events.findLast(e=>e.epoch===3&&e.spectatorPlayback).spectatorPlayback.position/2));
   await control('seek',target);await page.waitForFunction(target=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.paused&&!s.seeking&&s.position===target;},{timeout:90000},target);
   await control('live');await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.following&&!s.paused&&!s.seeking;},{timeout:90000});
+  if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
+    const start=await frames()[1].evaluate(playerFrame);
+    await wait(async()=>await frames()[1].evaluate(playerFrame)>=start+300,'marker stays synchronized while spectating',30000);
+    await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:false}));
+  }
   if(game==='th02'||game==='th03'||game==='th04'){
     await page.click('#p0');await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
     await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='audio-health'&&e.effects>0&&e.effectsPeak>0.001),{timeout:20000});

@@ -25,7 +25,7 @@ await patch('practice-attempt.js',text=>replaceOnce(text,'if(!replay)await insta
       if(!replay&&globalThis.__eaglerPC98Files){const {Fat12}=await import('./solo-fat12.js');const fat=new Fat12(data);for(const [name,bytes]of globalThis.__eaglerPC98Files.memory)if(['HUUHI.DAT','HUUMA.CFG'].includes(name))fat.put('HUMAROKU/'+name,bytes);}`,'saved files'));
 await patch('netplay/runtime.js',text=>replaceOnce(text,'const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;',`const {installRapidFire}=await import('../managed-rapid-fire.mjs');installRapidFire(exe,patch,true);
  const {installBombBackgroundRepair}=await import('../managed-bomb-background.mjs');installBombBackgroundRepair(exe,patch);
- const {installGameOverTransition}=await import('../managed-gameover.mjs');installGameOverTransition(exe);
+ const {installGameOverTransition,installNativeMarker}=await import('../managed-gameover.mjs');installGameOverTransition(exe);installNativeMarker(exe,patch);
  const at=patch.headerSize+patch.codeSegment*16+patch.entries.run_config;`,'rapid fire native hook'));
 await patch('netplay/th02-state.js',text=>replaceOnce(text,'((value&256)>>1);','((value&256)>>1)|((value&1024)>>1);','rapid fire input flag'));
 await patch('netplay/rollback-queue.js',text=>replaceOnce(text,'const HELD=32|64|2048,DIRECTIONS=15;','const HELD=32|64|1024|2048,DIRECTIONS=15;','rapid fire prediction'));

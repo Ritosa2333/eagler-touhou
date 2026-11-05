@@ -5,3 +5,14 @@ export function installGameOverTransition(exe){
   if(!prefix.every((byte,i)=>exe[at+i]===byte)||!suffix.every((byte,i)=>exe[at+7+i]===byte))throw Error('TH04 Game Over 原程序不匹配');
   exe[at+1]=30;
 }
+
+export function installNativeMarker(exe){
+  const header=exe[8]*16+exe[9]*4096,cs=header+2735*16;
+  for(const [offset,expected] of [[0x890e,[0xe8,0x18,0x26]],[0xaf2e,[0xb8,0x01,0x00,0x89,0xe9]],[0xaf97,[0xb8,0x00,0xa8]]])if(!expected.every((byte,i)=>exe[cs+offset+i]===byte))throw Error('TH04 原生判定点补丁不匹配');
+  // Execute the same drawing path on every peer, masking only VRAM writes.
+  // Block interrupts while the local mask is in registers so saved CPU state stays identical.
+  exe.set([0xeb,0x33,0x2e,0x0f,0xa3,0x2e,0xd6,0xae,0x19,0xc0,0x21,0xc3,0xb8,0x00,0xa8,0xc3],cs+0xaf2e);
+  exe.set([0xe8,0x96,0xff],cs+0xaf97);
+  exe.set([0x9c,0xfa,0xe8,0xe4,0xff,0x9d,0xc3],cs+0xaf40);
+  exe.set([0xe8,0x2f,0x26],cs+0x890e);
+}

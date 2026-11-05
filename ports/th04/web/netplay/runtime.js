@@ -233,7 +233,7 @@ function stepInner(inputs){
   if(mailbox<0&&emulatedTicks%15===0)findMailbox();
   if(mailbox>=0){
     emulator.module.HEAPU8[mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset]=
-      0; // All peers disable native markers; browser preferences only affect final pixels.
+      workerHost?.replayOnly || !(pointPreferences.always || pointPreferences.focus && (touchInputs[localSlot]&64)) ? 0 : (1 << localSlot);
   }
   inputs=inputs.map(value=>(value&4095)&~2048);
   const wasPaused=pauseMenu.paused,result=mailbox>=0?pauseMenu.step(inputs):'play';
@@ -426,7 +426,9 @@ function checksum(){
   for(const value of [...pauseMenu.signature(),...blocked,emulatedTicks])h=Math.imul(h^value,0x01000193);
   if(guestMemoryBase<0)return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:0};
   const heap=emulator.module.HEAPU8,v=new DataView(heap.buffer),base=guestBase();
+  const markerAt=mailbox-patch.mailbox_cs_offset+patch.focus_visible_mask_cs_offset,marker=heap[markerAt];if(mailbox>=0)heap[markerAt]=0;
   for(let at=base;at<base+0xa0000;at++)h=Math.imul(h^heap[at],0x01000193);
+  if(mailbox>=0)heap[markerAt]=marker;
   return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:mailboxOwned(mailbox,guestMemoryBase,residentAddress)?v.getUint32(mailbox+16,true):0};
 }
 

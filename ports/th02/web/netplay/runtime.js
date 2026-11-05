@@ -7,7 +7,6 @@ import {runBoot} from './boot-runner.js';
 import {LocalSfx} from './local-sfx.js';
 import {assetBytes} from '../preload-cache.js';
 import {hashNativeMemory} from './native-hash.js';
-import {collisionPoints} from './collision-points.js';
 const workerHost=globalThis.th02WorkerHost;
 const PROTOCOL='th02-rollback/6',canvas=workerHost?.canvas??document.getElementById('canvas'),details=workerHost?{}:document.getElementById('details');
 const nativeCanvas=workerHost?.canvas??document.createElement('canvas');nativeCanvas.width=640;nativeCanvas.height=400;
@@ -138,7 +137,7 @@ async function boot(settings){
   onError:error=>notifyParent({protocol:PROTOCOL,event:'boot-error',message:error.message}),
   onExit:()=>notifyParent({protocol:PROTOCOL,event:'runtime-exit'})});
  emulator.module.playerArt.view(localSlot);
- if(workerHost)emulator.module.getHitPoints=hitPoints;
+
  if(closed){emulator.dispose();return;}
  if(emulator.audio.context.sampleRate!==44100)throw Error('浏览器未提供统一的 44100 Hz 音频，请使用新版 Chrome / Edge');
  sfx=workerHost?workerHost.sfx:new LocalSfx(emulator.audio.context);await sfx.load();
@@ -239,6 +238,7 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
    m.thDirtyMark?.(mailbox-patch.entries.mailbox+patch.entries.touch_state,2*patch.touch.stride+6);
   }
  writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config);
+ if(mailbox>=0)m.HEAPU8[mailbox+patch.focus.pointOffset]=workerHost?.replayOnly || !(points.always || points.focus && (inputs[localSlot]&64)) ? 0 : 1<<localSlot;
   // Before MAIN and inside native pause, P1 operates original menus. Every
   // seat can request pause/confirm; all key events carry the virtual timestamp.
   const mapped=inputs.map(nativeBits);
@@ -303,19 +303,15 @@ function checksum(){
  let h=0x811c9dc5;const hash=n=>{h=Math.imul(h^n,0x01000193);};
  hash(ticks);hash(emulatedTicks);hash(oldP1);previousInputs.forEach(n=>{hash(n%4294967296);hash(Math.floor(n/4294967296));});
  pendingNative.forEach(hash);consumedNative.forEach(hash);hash(musicSequence);hash(sfxSequence);for(const c of musicName)hash(c.charCodeAt(0));
- if(guestMemoryBase>=0)h=hashNativeMemory(emulator.module.nativeExports().memory,guestMemoryBase,guestMemoryBase+0xa0000,h);
+ if(guestMemoryBase>=0){const heap=emulator.module.HEAPU8,at=mailbox+patch.focus.pointOffset,value=heap[at];if(mailbox>=0)heap[at]=0;
+  h=hashNativeMemory(emulator.module.nativeExports().memory,guestMemoryBase,guestMemoryBase+0xa0000,h);if(mailbox>=0)heap[at]=value;}
  return {tick:ticks,hash:(h>>>0).toString(16).padStart(8,'0'),gameFrame:state()?.gameFrame||0};
-}
-function hitPoints(){
- return collisionPoints({state:state(),slot:localSlot,raw,paused:nativePaused(emulator.module.HEAPU8,mailbox,patch),preferences:points,inputs:previousInputs});
 }
 function present(){
  if(!enabled||!pending||!emulator.module.netPresent())return false;
  // Like TH05, the Worker transfers its rendered WebGL canvas directly.
  // The compatibility backend retains its page-owned 2D canvas.
- if(ctx){ctx.drawImage(nativeCanvas,0,0,640,400);for(const [x,y]of hitPoints()){
-  ctx.fillStyle='#000';ctx.fillRect(x-2,y-2,5,5);ctx.fillStyle='#fff';ctx.fillRect(x-1,y-1,3,3);
- }}
+ if(ctx)ctx.drawImage(nativeCanvas,0,0,640,400);
  pending=false;presentationCount++;return true;
 }
 function predictionBlockReason(){return !state()?'原版菜单或关卡加载':nativePaused(emulator.module.HEAPU8,mailbox,patch)?'原生暂停菜单':'';}
