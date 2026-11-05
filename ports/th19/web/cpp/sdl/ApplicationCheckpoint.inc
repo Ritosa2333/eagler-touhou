@@ -88,6 +88,8 @@ struct ApplicationCheckpoint {
  decltype(g_attacks) saved_g_attacks;
  decltype(g_player_projectiles) saved_g_player_projectiles;
  decltype(g_player_hit_effects) saved_g_player_hit_effects;
+ decltype(g_owned_cards) saved_g_owned_cards;
+ decltype(g_opponent_cards) saved_g_opponent_cards;
  decltype(g_card_options) saved_g_card_options;
  decltype(g_player_options) saved_g_player_options;
  decltype(g_player_power) saved_g_player_power;
@@ -263,6 +265,8 @@ struct ApplicationCheckpoint {
   rb_assign(saved_g_attacks,g_attacks);
   rb_assign(saved_g_player_projectiles,g_player_projectiles);
   rb_assign(saved_g_player_hit_effects,g_player_hit_effects);
+  rb_assign(saved_g_owned_cards,g_owned_cards);
+  rb_assign(saved_g_opponent_cards,g_opponent_cards);
   rb_assign(saved_g_card_options,g_card_options);
   rb_assign(saved_g_player_options,g_player_options);
   rb_assign(saved_g_player_power,g_player_power);
@@ -438,6 +442,8 @@ struct ApplicationCheckpoint {
   rb_assign(g_attacks,saved_g_attacks);
   rb_assign(g_player_projectiles,saved_g_player_projectiles);
   rb_assign(g_player_hit_effects,saved_g_player_hit_effects);
+  rb_assign(g_owned_cards,saved_g_owned_cards);
+  rb_assign(g_opponent_cards,saved_g_opponent_cards);
   rb_assign(g_card_options,saved_g_card_options);
   rb_assign(g_player_options,saved_g_player_options);
   rb_assign(g_player_power,saved_g_player_power);
