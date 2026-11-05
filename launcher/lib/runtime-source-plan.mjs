@@ -25,12 +25,27 @@ export async function planRuntimeSourceBuild(options = {}, context = {}) {
   const entry = config.games[game], definition = entry?.variants[variant];
   if (!definition) throw new Error(`unknown Runtime build: ${game}/${variant}`);
   const recipe = { ...entry.sourceBuild, ...definition.sourceBuild };
-  if (!["cmake", "node"].includes(recipe.kind)) throw new Error(`source build is not declared: ${game}/${variant}`);
+  if (!["cmake", "node", "managed-import"].includes(recipe.kind)) throw new Error(`source build is not declared: ${game}/${variant}`);
   const owner = definition.workspaceRepository ?? entry.workspaceRepository;
   const source = resolve(options.source ?? layout.path(owner));
   requireDirectoryInput(source, recipe.kind === "cmake" ? "CMakeLists.txt" : recipe.build[0], `${game}/${variant} source`);
   const jobs = Number(options.jobs ?? 4);
   if (!Number.isSafeInteger(jobs) || jobs < 1 || jobs > 64) throw new Error("jobs must be an integer from 1 to 64");
+  if (recipe.kind === "managed-import") {
+    for (const name of ["buildDirectory", "font", "imgui", "runtimeExtension", "ninja", "cmake"]) {
+      if (options[name] != null) throw new Error(`${name} is not supported by managed imports`);
+    }
+    const common = resolve(options.common ?? environment.EAGLER_COMMON_ROOT ?? layout.path("common"));
+    requireDirectoryInput(common, recipe.commonMarker, "common dependency");
+    const thcrap = feature(definition.features.thcrap, options.thcrap, `${game}/${variant} thcrap`);
+    const thprac = feature(definition.features.thprac, options.thprac, `${game}/${variant} thprac`);
+    const args = [resolve(source, recipe.build[0]), ...recipe.build.slice(1)];
+    if (options.assets) args.push(`--assets=${resolve(options.assets)}`);
+    return {game, variant, owner, source, common, features:{thcrap, thprac},
+      toolchain:{kind:'managed-import', nativeCore:'external-precompiled'},
+      environment:{EAGLER_COMMON_ROOT:common, EAGLER_COMMON_NETPLAY_ROOT:common},
+      steps:[{command:process.execPath, args, cwd:source}]};
+  }
   const requestedSdk = options.emsdk ?? environment[`TH${game.slice(2)}_EMSDK`] ?? environment.EMSDK;
   const sdk = requestedSdk && resolve(requestedSdk);
   if (!sdk || !compilerPath(sdk)) throw new Error(`Emscripten compiler not found; specify --emsdk for ${game}/${variant}`);
