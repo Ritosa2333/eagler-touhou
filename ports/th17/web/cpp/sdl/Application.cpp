@@ -3,18 +3,45 @@
 #include <algorithm>
 #include <ctime>
 namespace th17::sdl {
+namespace {
+void load_table(LocalizationTable& table,const char* name){
+ const std::string path=std::string("/thcrap/th17/localization/")+name;
+ size_t size=0;
+ auto* bytes=static_cast<u8*>(SDL_LoadFile(path.c_str(),&size));
+ if(bytes)table.open(bytes,size);
+ SDL_free(bytes);
+}
+}
 Application::Application():state(std::make_unique<ApplicationState>()){}Application::~Application()=default;
 bool Application::initialize(bool device){return state->initialize(device);}bool Application::step(u32 h,u32 p,u32 r,float fps,bool lost){return state->step(h,p,r,fps,lost);}const std::string& Application::error()const{return state->failure;}const i32* Application::projection()const{return state->projection();}
 bool ApplicationState::fail(const std::string& why){if(failure.empty())failure=why.empty()?"TH17 application operation failed":why;return false;}
+bool ApplicationState::localized_message(const std::string& name)const{
+ SDL_PathInfo info;
+ return has_language_pack&&SDL_GetPathInfo(("/thcrap/th17/"+name).c_str(),&info)&&info.type==SDL_PATHTYPE_FILE;
+}
 bool ApplicationState::read(const std::string& requested,std::vector<u8>& bytes){
  const auto slash=requested.find_last_of("/\\");const auto name=requested.substr(slash==std::string::npos?0:slash+1);if(name.empty()||name=="."||name==".."||name.find(char(0))!=std::string::npos)return fail("Invalid game asset name");
  const auto cached=resource_cache.find(name);if(cached!=resource_cache.end()){bytes=cached->second;return true;}
+ if(has_language_pack&&(name.size()>4&&(name.compare(name.size()-4,4,".msg")==0||name.compare(0,5,"help_")==0))){
+  size_t size=0;
+  auto* data=static_cast<u8*>(SDL_LoadFile(("/thcrap/th17/"+name).c_str(),&size));
+  if(data){
+   bytes.assign(data,data+size);
+   SDL_free(data);
+   resource_cache.emplace(name,bytes);
+   return true;
+  }
+ }
  if(!archive_bytes.empty()){const auto at=archive_names.find(name);if(at==archive_names.end()||!archive.read(at->second,bytes))return fail("Missing or invalid game archive entry: "+name);}
  else {size_t n=0;auto* data=static_cast<u8*>(SDL_LoadFile(("/assets/"+name).c_str(),&n));if(!data)return fail("Missing game asset: "+name);bytes.assign(data,data+n);SDL_free(data);}
  if(bytes.size()<=1024*1024&&name.size()>=4&&name.substr(name.size()-4)!=".wav"&&name.substr(name.size()-4)!=".anm")resource_cache.emplace(name,bytes);return true;
 }
 bool ApplicationState::initialize(bool device){
- if(initialized)return true;if(!graphics.initialize()||!fonts.initialize())return fail(graphics.error.empty()?fonts.error:graphics.error);graphics.backend.defer=true;
+ if(initialized)return true;
+ SDL_PathInfo language_path;
+ has_language_pack=SDL_GetPathInfo("/thcrap/th17/localization/options.json",&language_path);
+ graphics.language_pack=has_language_pack;
+ if(!graphics.initialize()||!fonts.initialize())return fail(graphics.error.empty()?fonts.error:graphics.error);graphics.backend.defer=true;
  size_t n=0;auto* packed=static_cast<u8*>(SDL_LoadFile("/th17.dat",&n));if(packed){archive_bytes.assign(packed,packed+n);SDL_free(packed);if(!archive.open(archive_bytes.data(),archive_bytes.size()))return fail("Invalid TH17 asset archive");for(u32 i=0;i<archive.entries.size();i++)archive_names.emplace(archive.entries[i].name,i);}
  if(!files.initialize(records,config,visual))return fail(files.error);std::memcpy(controller.values.data(),config.bytes.data()+4,20);volumes={config.music_volume(),config.sound_volume(),u8(config.auto_focus())};
  if(!audio_device.initialize(*this,device)||!volume(volumes.music_volume,volumes.sound_volume,0))return fail(audio_device.error);
@@ -35,7 +62,17 @@ bool ApplicationState::initialize(bool device){
   if(!graphics.preload(*animations.resource(bank.second),false,atlas))return fail(graphics.error);
  }
  if(!animations.sprite_fallback(0))return fail("ASCII fallback atlas unavailable");for(i32 style=0;style<23;style++)if(!fonts.preload(style))return fail(fonts.error);
- if(!read("musiccmt.txt",bytes)||!comments.open(bytes.data(),bytes.size()))return fail(comments.error);if(!read("trophy.txt",bytes)||!trophy_catalog.open(bytes.data(),bytes.size(),&visual))return fail(trophy_catalog.error);
+ if(!read("musiccmt.txt",bytes)||!comments.open(bytes.data(),bytes.size()))return fail(comments.error);
+ LocalizationTable themes,music_comments;
+ load_table(spell_names,"spells.etl");
+ load_table(themes,"themes.etl");
+ load_table(music_comments,"musiccmt.etl");
+ load_table(comments.warning_table(),"music-warning.etl");
+ comments.localize(themes,music_comments);
+ if(!read("trophy.txt",bytes)||!trophy_catalog.open(bytes.data(),bytes.size(),&visual))return fail(trophy_catalog.error);
+ LocalizationTable trophies;
+ load_table(trophies,"trophy.etl");
+ trophy_catalog.localize(trophies);
  scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);if(!captions.initialize(0))return fail(captions.error);
  global_layers=std::make_unique<AnmDrawSchedule>(scheduler,animations,renderer,graphics,views);global_letters=std::make_unique<AsciiDrawSchedule>(scheduler,captions,renderer,views);
  const FrameCallback::Function functions[]={[](void* p)->i32{auto& app=*static_cast<ApplicationState*>(p);return !app.title||app.title->update()?1:5;},[](void* p)->i32{return static_cast<ApplicationState*>(p)->animations.update(true)?1:5;},[](void* p)->i32{return static_cast<ApplicationState*>(p)->animations.update(false)?1:5;},[](void* p)->i32{auto& app=*static_cast<ApplicationState*>(p);return !app.title||app.title->draw()?1:5;}};constexpr i32 priorities[]={7,10,35,70};

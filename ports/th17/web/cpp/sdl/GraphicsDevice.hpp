@@ -11,13 +11,14 @@ class GraphicsDevice final:public ZunGraphics {
     const AnmResource* last_resource=nullptr;
     const std::vector<u32>* last_resource_handles=nullptr;
     u32 next_handle=3;
+    bool patch_texture(const AnmResource&,const AnmTexture&,u32,AnmTexture&);
     static touhou::sdl::Surface resolve(void*,u32);
 public:
     // Profile 10 selects shared float-alpha/D16 precision and world-quad
     // instancing. It is a precision profile, not a Windows graphics API.
     touhou::sdl::Renderer backend{10,resolve,this};
     static constexpr u32 screen=1,depth=2;
-    std::string error;u32 render_scale=1;
+    std::string error;u32 render_scale=1;bool language_pack=false;
     bool initialize();
     bool preload(AnmResource&,bool low_color=false,const AnmResource* detailed=nullptr);
     void unload(const AnmResource&);

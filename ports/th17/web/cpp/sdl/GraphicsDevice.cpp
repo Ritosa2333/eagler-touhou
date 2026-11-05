@@ -28,7 +28,10 @@ bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource*
     if(detailed)file.alpha_bounds.clear();
     std::vector<u32> handles;handles.reserve(file.textures.size());
     for(u32 index=0;index<file.textures.size();index++){const auto& source=detailed?detailed->textures[index]:file.textures[index];Texture texture;texture.resource=&file;texture.renderScale=source.kind==AnmTexture::Kind::RenderTarget?render_scale:1;
-        if(!texture.image.load(source,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
+        AnmTexture patched;
+        const bool translated=language_pack&&patch_texture(detailed?*detailed:file,source,index,patched);
+        if(translated)file.alpha_bounds.clear();
+        if(!texture.image.load(translated?patched:source,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
         const auto id=next_handle++;textures.emplace(id,std::move(texture));handles.push_back(id);backend.prepare(id);
     }
     resources.emplace(&file,std::move(handles));return true;

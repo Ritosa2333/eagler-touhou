@@ -7,7 +7,8 @@ bool ApplicationState::finish_practice(){return pause&&pause->open(PauseEntrance
 bool ApplicationState::record_play_time(){return pause&&pause->time.account(i32(flow.current))||fail(pause?pause->time.error:"Run play-time owner unavailable");}
 bool ApplicationState::return_to_title(){if(progress.practice_record)return replay_finished();flow.pending=AppScene::Title;return true;}
 bool ApplicationState::dialogue_text(AnmVm& vm,u32 color,u32 shadow,i32 style,i32 x,i32 spacing,const std::string& bytes){return fonts.dialogue(vm,color,shadow,style,x,spacing,bytes)||fail(fonts.error);}
-bool ApplicationState::spell_title(AnmVm& vm,const std::string& bytes){return fonts.spell_title(vm,bytes)||fail(fonts.error);}
+bool ApplicationState::spell_title(AnmVm& vm,const std::string& bytes){const auto* name=scene()?localized_spell(scene()->battle.spell.id):nullptr;
+ return fonts.spell_title(vm,name?*name:bytes,name!=nullptr)||fail(fonts.error);}
 bool ApplicationState::music_control(i32 operation,i32 value){return (operation==0?audio_device.music(value):audio_device.queue_music(operation,value))||fail(audio_device.error);}
 bool ApplicationState::music_fade(i32 duration){return audio_device.queue_music(5,duration)||fail(audio_device.error);}
 bool ApplicationState::unlock_music(i32 index){return records.unlock_music(index)||fail(records.error);}

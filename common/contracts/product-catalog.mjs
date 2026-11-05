@@ -590,7 +590,7 @@ export const PRODUCT_GAMES = Object.freeze({
         musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/eagler-touhou", adaptationNotice: "early-test"}),
-        runtimeFileLayout: "directory", requiredShared: Object.freeze([]),
+        runtimeFileLayout: "directory", requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
         runtimeAssets: Object.freeze(["th17.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs", "directory-keyboard.mjs", "gpu-timing.mjs", "th17.mjs", "th17.wasm", "resources.json",
             ...Array.from({length: 8}, (_, index) => `fonts/font${index}.bin`), "fonts/cp932.bin", "fonts/blend4444.bin"]),
         dataProvider: "retail-memory",
@@ -598,7 +598,7 @@ export const PRODUCT_GAMES = Object.freeze({
             rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
             musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th17"}),
-        features: Object.freeze({thprac: false, languages: false, focusHitbox: false}),
+        features: Object.freeze({thprac: false, languages: true, focusHitbox: false}),
     }),
     th19: Object.freeze({
         testOnly: true,

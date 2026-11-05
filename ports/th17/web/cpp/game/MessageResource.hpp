@@ -11,9 +11,8 @@ struct MessageScript {u32 offset=0,flags=0;std::vector<MessageInstruction> instr
 class MessageResource {
 public:
     std::vector<MessageScript> scripts;std::string error;
-    bool open(const u8*,u32,bool ending=false);
-    // Text stays in the original Shift-JIS byte encoding until the font owner
-    // rasterizes it. A trail byte 0x5f must never become an ASCII space.
-    static bool decode(const u8*,u32,std::string&);
+    bool open(const u8*,u32,bool ending=false,bool localized=false);
+    // Compiled patches can interleave UTF-8 replacements and original Shift-JIS.
+    static bool decode(const u8*,u32,std::string&,bool localized=false);
 };
 }

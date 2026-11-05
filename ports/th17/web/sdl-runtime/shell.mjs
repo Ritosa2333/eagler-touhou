@@ -24,18 +24,51 @@ function closeAudio(){
 async function stop(){if(stopping)return;stopping=true;try{core._th17_loop_stop();gpuMonitor?.close();gpuMonitor=null;await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth17\//,'').replace(/^\//,'');if(!/^(?:scoreth17\.dat|th17\.cfg|replay\/th17_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 function apply(){core._th17_always_hitbox(+(options.alwaysHitbox===true));core._th17_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th17_music_enabled(+music);}
+const sharedFonts=['/msgothic.ttc','/unifont.otf'];
 const fontNames=[...Array.from({length:8},(_,i)=>'font'+i+'.bin'),'cp932.bin','blend4444.bin'];
 async function resource(r){
- if(!r||(!/^\/music\/(?:th17_\d{2}|th128_08)\.ogg$/.test(r.path)&&!fontNames.some(n=>r.path==='/fonts/'+n)))throw Error('资源路径无效');
+ if(!r||(!/^\/music\/(?:th17_\d{2}|th128_08)\.ogg$/.test(r.path)&&!fontNames.some(n=>r.path==='/fonts/'+n)&&!sharedFonts.includes(r.path)))throw Error('资源路径无效');
  const u=new URL(r.url,location.href);if(u.origin!==location.origin||!['http:','https:','blob:'].includes(u.protocol))throw Error('资源来源无效');
  const response=await fetch(u);if(!response.ok)throw Error('资源读取失败');const bytes=new Uint8Array(await response.arrayBuffer());
  const expected=r.bytes??r.size;if(bytes.length>64*1024*1024||(expected!=null&&bytes.length!==expected))throw Error('资源大小错误');
- core.FS.mkdirTree(r.path.slice(0,r.path.lastIndexOf('/')));core.FS.writeFile(r.path,bytes,{canOwn:true});
+ core.FS.mkdirTree(r.path.slice(0,r.path.lastIndexOf('/'))||'/');core.FS.writeFile(r.path,bytes,{canOwn:true});
  emit('transfer',{mode:r.path.startsWith('/music/')?'ogg':'runtime',loaded:bytes.length,total:bytes.length,path:r.path});
+}
+let runtimePackFiles=[];
+function mountLanguagePack(pack,language){
+ if(language==='ja'&&!pack){
+  for(const path of runtimePackFiles)core.FS.unlink(path);
+  runtimePackFiles=[];
+  return;
+ }
+ const manifest=pack?.manifest;
+ if(typeof pack?.url!=='string'||!/^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(language)||pack.language!==language||
+    new URL(pack.url,location.href).origin!==location.origin||!Number.isSafeInteger(pack.bytes)||pack.bytes<=0||
+    manifest?.schema!=='eagler-touhou/thcrap-static-pack/1'||manifest.game!==game||manifest.language!==language||
+    typeof manifest.runtimeVersion!=='string'||!Array.isArray(manifest.files)||manifest.files.length>256||
+    !Array.isArray(pack.files)||pack.files.length!==manifest.files.length)throw Error('TH17 语言包清单无效');
+ const safe=path=>typeof path==='string'&&path.startsWith('/thcrap/th17/')&&path.length<=240&&
+  !path.includes('\\')&&!path.includes('\0')&&path.split('/').slice(1).every(part=>part&&part!=='.'&&part!=='..');
+ const expected=new Map();
+ for(const file of manifest.files){
+  if(!safe(file?.path)||expected.has(file.path)||!Number.isSafeInteger(file.bytes)||file.bytes<0||file.bytes>64*1024*1024)throw Error('TH17 语言包路径或大小无效');
+  expected.set(file.path,file.bytes);
+ }
+ for(const file of pack.files){
+  if(!(file?.bytes instanceof Uint8Array)||expected.get(file.path)!==file.bytes.length)throw Error('TH17 语言包文件与清单不符');
+  expected.delete(file.path);
+ }
+ for(const path of runtimePackFiles)core.FS.unlink(path);
+ runtimePackFiles=[];
+ for(const file of pack.files){
+  core.FS.mkdirTree(file.path.slice(0,file.path.lastIndexOf('/')));
+  core.FS.writeFile(file.path,file.bytes,{canOwn:true});
+  runtimePackFiles.push(file.path);
+ }
 }
 function openReplay(value){const name=path(value).replace(/^replay\//,'');if(!/\.rpyx?$/.test(name))throw Error('录像路径无效');const bytes=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=core._malloc(bytes.length);if(!ptr)throw Error('录像内存不足');try{core.HEAPU8.set(bytes,ptr);if(!core._th17_open_replay(ptr,0))throw Error('录像启动失败');}finally{core._free(ptr);}}
 async function command(m){switch(m.command){
-case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');if(m.language&&m.language!=='ja')throw Error('此构建使用日文原版');options=m.options||{};if(options.touchSensitivity!=null&&!(Number.isFinite(options.touchSensitivity)&&options.touchSensitivity>=100&&options.touchSensitivity<=300))throw Error('触控灵敏度无效');music=m.music!=='none';for(const r of [...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);apply();configured=true;return {};
+case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');configured=false;options=m.options||{};if(options.touchSensitivity!=null&&!(Number.isFinite(options.touchSensitivity)&&options.touchSensitivity>=100&&options.touchSensitivity<=300))throw Error('触控灵敏度无效');music=m.music!=='none';for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);mountLanguagePack(m.runtimePack,m.language||m.runtimePack?.language||'ja');apply();configured=true;return {};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
 case 'keyboard':if(typeof m.code!=='string'||typeof m.down!=='boolean')throw Error('键盘参数无效');if(launched)keyboard.event(m,m.down,'hosted');return {};
 case 'keyboard-clear':clearKeyboard();return {};
