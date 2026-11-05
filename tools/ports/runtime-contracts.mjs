@@ -17,7 +17,7 @@ export function runtimeSourceFiles(game, product) {
   // TH13 owns its Host protocol and shared keyboard/gamepad bridge in these two
   // modules; it does not ship the older eagler-host.mjs split.
   if (game === 'th13') return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/directory-keyboard.mjs'];
-  if (['th075', 'th15', 'th17'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
+  if (['th075', 'th15', 'th17', 'th19'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
   return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/eagler-host.mjs'];
 }
 
@@ -120,7 +120,7 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
       assert.match(source, /typeof value\.enabled\s*===\s*'function'/);
       execFileSync(process.execPath, ['--test', resolve(root, directory, 'tests/gamepad-bridge.test.mjs')],
         {cwd: resolve(root, directory), encoding: 'utf8', windowsHide: true});
-    } else if (['th11', 'th15', 'th17', 'th20'].includes(game)) {
+    } else if (['th11', 'th15', 'th17', 'th19', 'th20'].includes(game)) {
       assert.match(native, /BrowserGamepadState\(/, 'Compiled native source must sample the Launcher gamepad owner');
       assert.match(native, /ApplyGamepadVirtualKeys\(/, 'Compiled native source must deliver normalized gamepad actions');
     } else {

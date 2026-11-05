@@ -80,8 +80,6 @@ export interface SiteManifestShared {
   /** Additive schema-1 extension; absent only in legacy/development manifests. */
   runtimeManifest?: typeof RUNTIME_MANIFEST_FILE;
   testBuild?: boolean;
-  /** Beta runtimes mount their own native databases on the shared origin. */
-  saveChannel?:'beta';
   resourceMode: ResourceMode;
   vanillaFont?: string;
   unicodeFont?: string;
@@ -266,8 +264,6 @@ export function validateSiteManifest(value: unknown): SiteManifest {
   if (value.shared.testBuild !== undefined && typeof value.shared.testBuild !== "boolean") {
     throw new Error("invalid Site Manifest testBuild flag");
   }
-  if(value.shared.saveChannel!==undefined&&(value.shared.saveChannel!=='beta'||value.shared.testBuild!==true))
-    throw new Error('invalid Site Manifest save channel');
   const resourceMode = normalizeResourceMode(value.shared.resourceMode);
   if (!resourceMode) throw new Error("invalid Site Manifest resource mode");
   if (resourceMode === RESOURCE_MODE_HOSTED &&

@@ -38,6 +38,7 @@ const validInput = {
       th12: "original/th12",
       th15: "original/th15",
       th17: "original/th17",
+      th19: "original/th19",
       th20: "original/th20",
     },
     LanguagePackDirectories: {
@@ -78,7 +79,7 @@ const legacyInput = {
     Th10Directory: "original/th10",
     Th11Directory: "original/th11",
     Th20Directory: "original/th20",
-    GameDirectories: { th05: "original/th05", th075: "original/th075", th12: "original/th12", th15: "original/th15", th17: "original/th17" },
+    GameDirectories: { th05: "original/th05", th075: "original/th075", th12: "original/th12", th15: "original/th15", th17: "original/th17", th19: "original/th19" },
     Th06LanguagePacks: "languages/th06",
     Th07LanguagePacks: "languages/th07",
     Music: ["midi"],

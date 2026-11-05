@@ -1,0 +1,20 @@
+✔ shared port checks use their declared Vitest project or native Node runner (192.5978ms)
+✔ prebuilt-only TH05 stays out of source checks and explains explicit source requests (1.1558ms)
+✔ th20 compiler include precedence uses the same module order on every platform (1344.1143ms)
+✔ source identity normalizes line endings and preserves non-UTF-8 source bytes (6.4189ms)
+✔ regenerating source status preserves hand-written runtime acceptance records (1.2951ms)
+✔ single-game inspection is explicit and ordinary tests retain full coverage (0.4304ms)
+✔ failed evidence wins, partial checks cannot complete an acceptance item (0.4849ms)
+✔ executed build evidence survives regeneration and expires when its source changes (0.3158ms)
+✔ dependency pins and local edits invalidate evidence while clean checkout state stays portable (0.5742ms)
+✔ reports reject invented targets, duplicate gates and nonexistent acceptance items (0.8737ms)
+✔ th12 optional focus enhancement does not exempt required restart and always-hitbox behavior (0.1832ms)
+✔ th12 source identity includes the shipped SDL browser boundary in both variants (1716.1251ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3602.9044

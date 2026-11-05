@@ -889,6 +889,20 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th19: Readonly<{
+        testOnly: true;
+        number: "19"; title: "東方獣王園"; subtitle: "Unfinished Dream of All Living Ghost";
+        storage: Readonly<{saveRoot:"/savesth19";scoreFile:"scoreth19.dat";configFiles:readonly string[]}>;
+        runtime:"./runtime/th19/th19.html";runtimeFileLayout:"directory";dataProvider:"retail-memory";
+        requiredShared:readonly string[];runtimeAssets:readonly string[];
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:"runtime-selection"}>;
+        touchFire:Readonly<{mode:"toggle";labelKey:"touch.tapToggle"}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:"early-test"}>;
+        package:Readonly<{dataFileId:"game-data";dataTarget:"/th19.dat";rawDataImport:Readonly<{fileNames:readonly string[]}>;musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
+        replay:Readonly<{prefix:"th19"}>;multiplayerRuntime:"./runtime/th19/multiplayer/th19.html";
+        multiplayer:Readonly<MultiplayerProductConfig>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
+    }>;
     th20: Readonly<{
         testOnly: true;
         number: "20";
@@ -1826,7 +1840,7 @@ export declare function createLocalProductManifest(): {
                 title: string;
                 pack: null;
             }[];
-        } | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
+        } | (typeof PRODUCT_GAMES.th19 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
             music: {midi: {files: never[]; supported: boolean}};
             languageOptions: {id: string; title: string; pack: null}[];
         }) | (typeof PRODUCT_GAMES.th13 & {

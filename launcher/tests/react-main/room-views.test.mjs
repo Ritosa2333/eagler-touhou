@@ -472,8 +472,8 @@ test('Measured rollback button routes through real room owner without overwritin
   await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]}); assert.equal(n('#mpInputTiming').hidden, false); assert.equal(n('#mpRollbackToggle').disabled, true);
 });
 
-test('TH09 rollback discards a remembered one-frame delay at start and restores it only in pure delay mode', async () => {
-  const f=await fixture({product:'th09mp'}).live();
+for (const product of ['th09mp', 'th19mp']) test(`${product} rollback discards a remembered one-frame delay at start and restores it only in pure delay mode`, async () => {
+  const f=await fixture({product}).live();
   await f.report({status:'ready',stage:'runtime',percent:100});
   await act(()=>f.preparations[0].resolve());
   await act(()=>{void f.service.toggleReady();});
@@ -492,6 +492,9 @@ test('TH09 rollback discards a remembered one-frame delay at start and restores 
   await act(()=>f.service.start());
   assert.equal(f.socket.sent.at(-1).adonisMode,1);
   assert.equal(f.socket.sent.at(-1).inputDelay,1);
+  await f.receive({phase:'running',adonisMode:1,inputDelay:1});
+  assert.equal(f.service.runtimeOptions().netplayAdonisMode,1);
+  assert.equal(f.service.runtimeOptions().netplayInputDelay,1);
 });
 
 test('seated players may enter the spectator lounge before start, never during a live run', async () => {
@@ -646,11 +649,12 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
     assert.equal(all('#mpInputDelay').length,0);
     await click('#mpReplayViewer');await click('#mpGamePackageImport');assert.deepEqual(events,['replay','import']);
     await f.live();const h=await mountRoom(f,{panel:{kind:'game'}},{locale});
-    const config=owners.multiplayerConfigForProduct(product),policy=owners.multiplayerInputTimingPolicy(config),value=n('#mpInputDelay');
+    const config=owners.multiplayerConfigForProduct(product),policy=owners.multiplayerInputTimingPolicy(config),value=n('#mpInputDelay'),supportsRollback=!!config.inputTiming&&policy.rollback;
     assert.equal(n('#mpRoomSettings').contains(value),true);assert.equal(n('#mpInputTiming').contains(value),false);
     assert.equal(n('#mpRoomSettings').contains(n('#mpRollbackToggle')),true);
     assert.equal(all('#mpInputDelayHint').length,0);
-    assert.equal(n('#mpInputDelaySetting').hidden,!!config.inputTiming?.measuredStartup&&policy.rollback);
+    assert.equal(n('#mpRollbackToggle').hidden,!supportsRollback,product);
+    assert.equal(n('#mpInputDelaySetting').hidden,supportsRollback,product);
     assert.ok(n('#mpRollbackToggle').compareDocumentPosition(n('#mpInputDelaySetting')) & env.window.Node.DOCUMENT_POSITION_FOLLOWING);
     if(config.inputTiming){
       if(policy.rollback){await act(()=>f.service.setRollbackEnabled(false));assert.equal(n('#mpInputDelaySetting').hidden,false);assert.equal(all('#mpInputDelayHint').length,0);}
@@ -677,7 +681,7 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
         await f.receive({phase:'running',adonisMode:1,inputDelay:3,inputDelayAuto:true,timing});
         assert.equal(value.textContent,'3f');assert.equal(value.title,t(locale,'room.inputDelayMeasured',{frames:3}));
       }
-      if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,true);}
+      if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,true,product);}
       await act(()=>f.socket.close(1006));assert.equal(value.disabled,true);
     }else{
       assert.equal(n('#mpRollbackToggle').hidden,true);assert.equal(n('#mpInputDelaySetting').hidden,false);

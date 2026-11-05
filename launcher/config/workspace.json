@@ -29,6 +29,7 @@
     "th13": "ports/th13",
     "th17": "ports/th17",
     "th05": "ports/th05",
-    "th05mp": "ports/th05-mp"
+    "th05mp": "ports/th05-mp",
+    "th19": "ports/th19"
   }
 }

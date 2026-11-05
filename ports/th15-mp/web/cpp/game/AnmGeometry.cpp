@@ -5,7 +5,18 @@ namespace th15 {
 AnmGeometry::AnmGeometry()=default;AnmGeometry::~AnmGeometry()=default;
 AnmGeometry::AnmGeometry(AnmGeometry&&)noexcept=default;AnmGeometry& AnmGeometry::operator=(AnmGeometry&&)noexcept=default;
 AnmGeometry::AnmGeometry(const AnmGeometry& other){*this=other;}
-AnmGeometry& AnmGeometry::operator=(const AnmGeometry& other){if(this!=&other){screen_vertices=other.screen_vertices;world_vertices=other.world_vertices;allocation_bytes=other.allocation_bytes;distortion=other.distortion?std::make_unique<AnmDistortion>(*other.distortion):nullptr;trail=other.trail?std::make_unique<AnmTrail>(*other.trail):nullptr;gather=other.gather?std::make_unique<AnmGatherEffect>(*other.gather):nullptr;overlay=other.overlay?std::make_unique<AnmOverlay>(*other.overlay):nullptr;}return *this;}
+namespace {
+template<class T>void copy_payload(std::unique_ptr<T>& target,const std::unique_ptr<T>& source){
+ if(!source)target.reset();else if(target)*target=*source;else target=std::make_unique<T>(*source);
+}
+}
+AnmGeometry& AnmGeometry::operator=(const AnmGeometry& other){
+ if(this!=&other){
+  screen_vertices=other.screen_vertices;world_vertices=other.world_vertices;allocation_bytes=other.allocation_bytes;
+  copy_payload(distortion,other.distortion);copy_payload(trail,other.trail);copy_payload(gather,other.gather);copy_payload(overlay,other.overlay);
+ }
+ return *this;
+}
 namespace {Vec2 radial(float angle,float radius){return {float(std::cos(double(angle))*double(radius)),float(std::sin(double(angle))*double(radius))};}}
 bool AnmGeometry::allocate(i32 count,bool world){if(count<0||count>0x100000)return false;clear();allocation_bytes=u32(count)*(world?48:56);if(world)world_vertices.resize(u32(count)*2);else screen_vertices.resize(u32(count)*2);return true;}
 void AnmGeometry::clear(){screen_vertices.clear();world_vertices.clear();distortion.reset();trail.reset();gather.reset();overlay.reset();allocation_bytes=0;}

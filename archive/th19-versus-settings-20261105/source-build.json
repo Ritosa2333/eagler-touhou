@@ -1,0 +1,101 @@
+{
+  "schema": "eagler-touhou/source-build/1",
+  "game": "th19",
+  "variant": "normal",
+  "owner": "th19",
+  "source": "<workspace>\\ports\\th19",
+  "common": "<workspace>\\common",
+  "features": {
+    "thcrap": false,
+    "thprac": false
+  },
+  "toolchain": {
+    "root": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "compiler": "<home>\\Desktop\\th08-main\\tools\\emsdk\\install\\emscripten\\emcc.py",
+    "version": "6.0.9-git",
+    "metadata": {
+      "version": "6.0.9",
+      "url": "https://storage.googleapis.com/webassembly/emscripten-releases-builds/win/f04ea239d533260dd1db760dd2d668d5f9a88d6b/wasm-binaries.zip",
+      "size": 654169912,
+      "md5": "8cfb4f89c1349d4aed4acb91dde898e5"
+    }
+  },
+  "environment": {
+    "EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "TH09_EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "TH15_EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "EM_CONFIG": "<home>\\Desktop\\th08-main\\tools\\emsdk\\.emscripten",
+    "PYTHON": "python",
+    "TH_PYTHON": "python",
+    "EMCC_CORES": "4",
+    "TH_BUILD_JOBS": "4",
+    "EAGLER_COMMON_ROOT": "<workspace>\\common",
+    "EAGLER_COMMON_NETPLAY_ROOT": "<workspace>\\common",
+    "TH_ENABLE_THCRAP": "0",
+    "TH_ENABLE_THPRAC": "0"
+  },
+  "steps": [
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "<workspace>\\ports\\th19\\scripts\\build-eagler.mjs"
+      ],
+      "cwd": "<workspace>\\ports\\th19"
+    }
+  ],
+  "sources": {
+    "source": {
+      "revision": "baaeb4e133b3a09e322c7e47aed77fc519c46dcf",
+      "sourcePath": "ports/th19",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "641af88a808822da8d419d357a33cc9fa9a668aeabd832dacc7ca9d2f3b1dc77",
+      "untracked": [
+        {
+          "path": "tests/versus-settings-browser-smoke.mjs",
+          "sha256": "5bd98354a27a2132d22dbd1732edd787d993402952f91033b69f5583ff80ad6c"
+        }
+      ],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "3f1ba79a386a8b96876fa913734b51ad34c09809c19fe870c4e75930c1058efa"
+    },
+    "common": {
+      "revision": "baaeb4e133b3a09e322c7e47aed77fc519c46dcf",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "008c1a54bdbab58e172aeb504a005080863b0f5a25f18a210789e16344e93680",
+      "untracked": [
+        {
+          "path": "contracts/th19-versus-rules.d.mts",
+          "sha256": "43470f055044b1a3600a1d5cd1de9b844ed692fc87b96fd947df42d543072841"
+        },
+        {
+          "path": "contracts/th19-versus-rules.mjs",
+          "sha256": "58e4eb25a14359c03f8aa1eac02679de3f1b4ca216abfcb503a8dc6b0db62f4d"
+        }
+      ],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "e5730e0ebe56c3dd78203e6200675a411bb6981a89400abc19d040cccc275ae3"
+    },
+    "netplayCommon": {
+      "revision": "baaeb4e133b3a09e322c7e47aed77fc519c46dcf",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "008c1a54bdbab58e172aeb504a005080863b0f5a25f18a210789e16344e93680",
+      "untracked": [
+        {
+          "path": "contracts/th19-versus-rules.d.mts",
+          "sha256": "43470f055044b1a3600a1d5cd1de9b844ed692fc87b96fd947df42d543072841"
+        },
+        {
+          "path": "contracts/th19-versus-rules.mjs",
+          "sha256": "58e4eb25a14359c03f8aa1eac02679de3f1b4ca216abfcb503a8dc6b0db62f4d"
+        }
+      ],
+      "submodules": [],
+      "dirty": true,
+      "sha256": "e5730e0ebe56c3dd78203e6200675a411bb6981a89400abc19d040cccc275ae3"
+    }
+  }
+}
