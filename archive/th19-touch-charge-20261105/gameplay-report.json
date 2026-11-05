@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "check": "Launcher online DATA and OGG installation, configure and first frame",
+      "passed": true
+    },
+    {
+      "check": "Story difficulty, character selection, dialogue, battle and keyboard movement",
+      "passed": true,
+      "movement": {
+        "before": 0,
+        "after": 36000
+      }
+    },
+    {
+      "check": "Visible X charge and C Bomb buttons; trusted touch holds and releases native charge",
+      "passed": true,
+      "labels": {
+        "charge": "蓄力",
+        "chargeKey": "X",
+        "bombKey": "C",
+        "enabled": true
+      },
+      "hold": {
+        "charge": 500,
+        "held": 1
+      },
+      "release": {
+        "charge": 0,
+        "lastRelease": 1,
+        "held": 0
+      },
+      "bombsBefore": 3,
+      "bombsAfter": 2
+    },
+    {
+      "check": "Native pause menu",
+      "passed": true
+    }
+  ],
+  "diagnostics": {
+    "sfxVoices": 13,
+    "storageRevision": 0,
+    "title": [
+      1372,
+      11,
+      0,
+      4,
+      1,
+      0,
+      1,
+      1,
+      0,
+      210,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      25,
+      579,
+      0
+    ]
+  },
+  "errors": []
+}

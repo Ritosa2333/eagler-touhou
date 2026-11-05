@@ -290,6 +290,7 @@ function PlayerUtilities({
     <>
       <TouchHelp
         nativeControls={'touchActions' in PRODUCT_GAMES[settings.gameId]}
+        th19Charge={settings.gameId === 'th19'}
         open={state.touchHelpOpen && !spectating && !roomWorkspace}
         onCloseRequest={session.closeTouchHelp}
         touchEnabled={settings.options.touchEnabled}

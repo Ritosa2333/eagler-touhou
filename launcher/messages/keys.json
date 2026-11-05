@@ -8896,5 +8896,17 @@
   "th19.lives": {
     "id": "th19_lives",
     "params": []
+  },
+  "th19.touchChargeHint": {
+    "id": "th19_touchChargeHint",
+    "params": []
+  },
+  "th19.chargeCancel": {
+    "id": "th19_chargeCancel",
+    "params": []
+  },
+  "th19.charge": {
+    "id": "th19_charge",
+    "params": []
   }
 }

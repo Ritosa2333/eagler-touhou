@@ -2107,5 +2107,8 @@
   "th19_card": "Card #{number}",
   "th19_selfCard": "Character card {number}",
   "th19_input": "TH19 input profile",
-  "th19_lives": "Starting life (both players)"
+  "th19_lives": "Starting life (both players)",
+  "th19_touchChargeHint": "Hold X to charge; release to fire",
+  "th19_chargeCancel": "Charge / menu cancel",
+  "th19_charge": "Charge"
 }
