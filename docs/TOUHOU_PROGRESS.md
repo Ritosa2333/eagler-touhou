@@ -80,6 +80,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+2026-11-05 [首个资源阶段前的等待取消修复](https://github.com/AdingApkgg/thp/blob/0fae38ee57a2074b45c0d616e1686b9582d30c09/docs/porting/TH14_STAGE_WAIT_CANCEL_NOV05.md)：生产资源 owner 在零阶段掩码时也通知宿主取消，避免跳过 SDL 等待代次清理。实际 owner 方法／SDL 取消方法体及真实等待与上传队列组件 35 项检查通过，旧条件七项失败保留；生产 CPP 语法检查通过。记录设备单元未执行普通 Application／GPU，浏览器 Wasm 未替换；完整生命周期、独立交付、第四次全局复制和整作 1:1 继续，模式通过数不变。
+
 2026-11-05 [独立 RNG 交付组件](https://github.com/AdingApkgg/thp/blob/7ceed30e291f259da9b197efdfebf155262c8d49/docs/porting/TH14_INDEPENDENT_RNG_DELIVERY_NOV05.md)：真实 Worker 在单次同步 Wasm 内推进生产恢复 job 三个存储，三次运行及取消／旧任务控制通过；12 次捕获的合成 RNG 调用经原版算术、返回拼接和脚本存储指令组件复核，48 字一致，五个错侧读取控制均拒绝。同线程定时器在同步调用内交付零存储。未改正式玩法，普通 Application 接入、第四次录像全局复制、原版独立调度与整作 1:1 仍未验收，通过数不变。
 
 2026-11-05 [当前构建的新录像普通流程](https://github.com/AdingApkgg/thp/blob/a2fe6b5df4ea7ecb8a99cdd8f4ac1fbb26fd9efc/docs/porting/TH14_BROWSER_CURRENT_RECORDING_NOV05.md)：7396f28… 静音候选实际保存空 No.01 C（灵梦 B Normal），整页刷新后的普通回放自然结束，选定终局 4,320 分／擦弹 13 等 HUD 与现场一致；两次 Quit 后侧栏和管理器均直接正常。未选择时 8 次 Tab 排除隐藏侧栏。未取得导出文件，字节／原版解码／原版新录像回放均未验证；侧栏长运行控制、全部模式及整作 1:1 继续，正式玩法／通过数不变。
