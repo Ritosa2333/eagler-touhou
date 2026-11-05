@@ -1,15 +1,22 @@
 import {Fat12,sha256} from './solo-fat12.js';
 import {normalizePractice} from './practice-config.js';
-async function verified(item,gzip=false){
-  const r=await fetch(new URL(item.url,import.meta.url),{cache:'no-store'});if(!r.ok)throw Error('练习资源读取失败');
-  const bytes=new Uint8Array(await(gzip?new Response(r.body.pipeThrough(new DecompressionStream('gzip'))):r).arrayBuffer());
-  if(item.size!==undefined&&bytes.length!==item.size||await sha256(bytes)!==item.sha256)throw Error('练习资源校验失败');return bytes;
-}
-export async function loadPracticeResources(language){
-  const manifest=await fetch(new URL('practice-assets.json',import.meta.url),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('练习清单读取失败');return r.json();}),spec=manifest.languages[language];
-  if(!spec)throw Error('未知练习语言');
-  const core=await fetch(new URL('practice-core.json',import.meta.url),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('练习核心清单读取失败');return r.json();});
-  return {manifest,spec,exe:await verified(spec,true),wasmBinary:await verified(core)};
+import {assetBytes,freshJSON} from './preload-cache.js';
+const resourcesByLanguage=new Map();let manifests,core;
+function verified(item,gzip=false){return assetBytes(item.url,{hash:item.sha256,size:item.size,gzip});}
+export function loadPracticeResources(language){
+  // Runtime generations own these immutable resources; never cache a patched disk.
+  let task=resourcesByLanguage.get(language);
+  if(!task){
+    task=(async()=>{
+      const [manifest,coreManifest]=await (manifests??=Promise.all([freshJSON('practice-assets.json'),freshJSON('practice-core.json')]));
+      const spec=manifest.languages[language];if(!spec)throw Error('未知练习语言');
+      const [exe,wasmBinary]=await Promise.all([verified(spec,true),core??=verified(coreManifest)]);
+      return {manifest,spec,exe,wasmBinary};
+    })();
+    resourcesByLanguage.set(language,task);
+    task.catch(()=>{resourcesByLanguage.delete(language);manifests=core=undefined;});
+  }
+  return task;
 }
 export async function installPractice(data,resources,value){
   const config=normalizePractice(value),fat=new Fat12(data),{spec,manifest,exe}=resources;

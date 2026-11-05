@@ -84,7 +84,7 @@ function tick(now){
   loop=requestAnimationFrame(tick);
 }
 function discardRetry(){retrySlot?.stop();retrySlot=undefined;}
-function makeAttempt(target,practice,settings,replay=null,standby=false){return createSoloAttempt({canvas:target,practice,settings,replay,standby,sources,applyReplayInput:applyAssist,callbacks:{onError:report,onFile:blob=>void saveReplay(blob).catch(report),onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{replayResult=matches;if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
+function makeAttempt(target,practice,settings,replay=null,standby=false,effects=null){return createSoloAttempt({canvas:target,practice,settings,replay,standby,effects,sources,applyReplayInput:applyAssist,callbacks:{onError:report,onFile:blob=>void saveReplay(blob).catch(report),onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{replayResult=matches;if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
 function prepareRetry(ps){
   if(playback||lastPractice?.mode!=='target'||!practiceUI.options.preparedRetry){discardRetry();return;}
   if(retrySlot?.cancelled||retrySlot?.error){discardRetry();retryBlocked=true;}
@@ -92,23 +92,23 @@ function prepareRetry(ps){
   const slot=makeAttempt(canvas.cloneNode(false),{...lastPractice,options:practiceUI.options},currentSettings,null,true);retrySlot=slot;
   slot.task.catch(()=>{if(retrySlot===slot){retrySlot=undefined;retryBlocked=true;}});
 }
-async function launch(config,replay=null,cached=null){
+async function launch(config,replay=null,cached=null,effects=null){
   playback=!!replay;replayResult=null;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
   const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'main',recordEnabled:!playback,volume:musicMode==='none'?0:.7};
-  currentSettings=settings;attempt=cached||makeAttempt(canvas,lastPractice,settings,replay);
+  currentSettings=settings;attempt=cached||makeAttempt(canvas,lastPractice,settings,replay,false,effects);
   const started=performance.now(),cachedReady=!!cached?.ready;await attempt.task;if(cached)await attempt.core.activatePractice(practiceUI.options);
   if(cached){canvas.replaceWith(attempt.canvas);canvas=attempt.canvas;lastRetry={cached:true,cachedReady,milliseconds:Math.round(performance.now()-started)};}
   emulator=attempt.core;patch=attempt.patch;music=attempt.music;recorder=attempt.recorder;attempt.foreground=true;
   if(emulator.practice?.debug.csBase>=0)mailbox=emulator.practice.debug.csBase+patch.entries.mailbox;
   canvas.focus();managedPractice.start({readOnly:playback});loop=requestAnimationFrame(tick);
 }
-async function restart(config,retry=false){const cached=retry&&practiceUI.options.preparedRetry?retrySlot:undefined;if(cached)retrySlot=undefined;discardRetry();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;cursor=0;recordBlob=undefined;retryBlocked=false;await launch(config,null,cached);}
+async function restart(config,retry=false){const cached=retry&&practiceUI.options.preparedRetry?retrySlot:undefined;if(cached)retrySlot=undefined;discardRetry();release();cancelAnimationFrame(loop);const effects=!cached&&!playback?attempt?.takeEffects():null;attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;cursor=0;recordBlob=undefined;retryBlocked=false;await launch(config,null,cached,effects);}
 export const managedAPI={
   async start(value){options=value.options;language=value.language==='ja'?'jp':'cn';musicMode=value.music;let replay;
     if(options.replayPath){const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(options.replayPath));if(!bytes)throw Error('录像不存在');replay=await decodeExternalReplay(new Blob([bytes]),'02');}
     await launch(practiceUI.configuration(),replay);},
   health(){return {replayResult,gameFrame:readState()?.ticks,frames:emulator?.module.renderMetrics?.drawn??emulator?.module.framePresenter?.info().drawn??0,audio:{state:emulator?.audio.context.state,musicStatus:music?.player.status??null,effectsPeak:attempt?.sfx?.peak??0}};},
-  practiceState(){return {...managedPractice.state(),retry:{state:retrySlot?(retrySlot.ready?'ready':'preparing'):retryBlocked?'unavailable':'idle',last:lastRetry}};},
+  practiceState(){return {...managedPractice.state(),loading:attempt?.timings,retry:{state:retrySlot?(retrySlot.ready?'ready':'preparing'):retryBlocked?'unavailable':'idle',last:lastRetry}};},
   finishRecording(){recorder?.finish();},
   saveRecording(){return recordBlob?saveReplay(recordBlob):null;},
   async files(message){const store=globalThis.__eaglerPC98Files;if(message.command==='sync'){await syncFiles();return {};}
