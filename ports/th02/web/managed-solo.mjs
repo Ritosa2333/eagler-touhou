@@ -51,16 +51,21 @@ let replayResult=null;
 let pausePrevious=0;
 const pauseMenu=mountPauseMenu(host.querySelector('.solo-screen'),{
   resume(){pauseMenu.close();input.clear();pausePrevious=0;emulator?.run();music?.resume();void attempt?.sfx?.resume();canvas.focus();},
-  exit(){pauseMenu.close();void naturalExit().catch(report);},
-  save(){pauseMenu.close();void (async()=>{emulator?.run();recorder?.finish();const until=performance.now()+10000;while(recorder&&!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));await managedAPI.saveRecording();await naturalExit();})().catch(report);},
-  discard(){pauseMenu.close();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});},
-  restart(){pauseMenu.close();void restart({...lastPractice,options:practiceUI.options}).catch(report);},
+  exit(){void returnToTitle(false).catch(report);},
+  save(){void returnToTitle(true).catch(report);},
+  discard(){void returnToTitle(false).catch(report);},
+  restart(){pauseMenu.close();void restart({...lastPractice,options:practiceUI.options},lastPractice?.mode==='target').catch(report);},
 });
 const savedReplays=new WeakMap();
 async function saveReplay(blob){recordBlob=blob;if(savedReplays.has(blob))return savedReplays.get(blob);const task=(async()=>{const name=`replay/th02_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th02r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());return name;})();savedReplays.set(blob,task);return task;}
 async function saveRecording(){if(!recorder?.state.ready)return null;return saveReplay(await recorder.save());}
 async function syncFiles(){if(!emulator||playback)return;const fat=new Fat12(await emulator.getDiskImage('th02-solo.hdi'));
   for(const name of ['HUUHI.DAT','HUUMA.CFG']){const entry=fat.find('HUMAROKU/'+name,{optional:true});if(entry!==undefined)await globalThis.__eaglerPC98Files.write(name,fat.read(entry));}}
+async function returnToTitle(save){
+  pauseMenu.close();
+  if(save&&recorder){emulator.run();recorder.finish();const until=performance.now()+10000;while(!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(!recorder.state.ready)throw Error('录像未能完成');await saveRecording();}
+  await syncFiles();await restart(practiceUI.configuration());
+}
 async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
   onStart:value=>void restart(value).catch(report),onRetry:()=>void restart({...lastPractice,options:practiceUI.options},true).catch(report),onSave:()=>void saveRecording().catch(report),

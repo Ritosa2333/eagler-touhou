@@ -114,9 +114,12 @@ for(const game of games){
       assert.equal(await frame.evaluate(game=>[...__eaglerPC98Files.memory.keys()].filter(name=>name.endsWith('.'+game+'r')).length,game),0,'finishing does not save a file');
       await frame.$eval('canvas',n=>n.focus());await page.keyboard.press('Escape');
       await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:10000});
+      await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(button=>button.textContent==='退出游戏').click());
+      assert.equal(await frame.$eval('.pc98-pause-menu',n=>n.hidden),false,'exit presents a replay choice');
       await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(button=>button.textContent==='保存本次 REP').click());
       await frame.waitForFunction(game=>[...__eaglerPC98Files.memory.keys()].some(name=>name.endsWith('.'+game+'r')),{timeout:45000},game);
-      await page.waitForFunction(()=>events.some(e=>e.event==='exit'),{timeout:30000});
+      await frame.waitForFunction(async()=>{const api=(await import('./managed-solo.mjs')).managedAPI,s=api.practiceState();return !s.recordingReady&&api.health().frames>0&&s.native?.practice?.mode!=='target';},{timeout:60000});
+      assert.equal(await page.evaluate(()=>events.some(e=>e.event==='exit')),false,'returning to title keeps the game open');
       await frame.evaluate(async game=>{
         const {managedAPI}=await import('./managed-solo.mjs');
         const path=[...__eaglerPC98Files.memory.keys()].findLast(name=>name.endsWith('.'+game+'r'));

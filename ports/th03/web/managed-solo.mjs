@@ -38,9 +38,9 @@ function send(bits){
 const pauseMenu=mountPauseMenu(document.getElementById('screen'),{
   centered:true,
   resume(){pauseMenu.close();globalThis.__eaglerPC98Input.clear();pausePrevious=0;emulator?.run();soloMusic?.resume();void localSfx?.resume();canvas.focus();},
-  exit(){pauseMenu.close();void naturalExit().catch(report);},
-  save(){pauseMenu.close();void (async()=>{emulator?.run();recorder?.finish();const until=performance.now()+10000;while(recorder&&!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));await managedAPI.saveRecording();await naturalExit();})().catch(report);},
-  discard(){pauseMenu.close();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});},
+  exit(){void returnToTitle(false).catch(report);},
+  save(){void returnToTitle(true).catch(report);},
+  discard(){void returnToTitle(false).catch(report);},
   restart(){pauseMenu.close();const settings=launchSettings;managedAPI.stop();void start(settings).catch(report);},
 });
 function tick(now){
@@ -72,6 +72,11 @@ async function syncFiles(){
     const entry=fat.find('YUMEZIKU/'+name,{optional:true});
     if(entry!==undefined)await globalThis.__eaglerPC98Files.write(name,fat.read(entry));
   }
+}
+async function returnToTitle(save){
+  pauseMenu.close();
+  if(save&&recorder){emulator.run();recorder.finish();const until=performance.now()+10000;while(!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(!recorder.state.ready)throw Error('录像未能完成');await managedAPI.saveRecording();}
+  await syncFiles();const settings=launchSettings;managedAPI.stop();await start(settings);
 }
 async function naturalExit(){
   soloMusic?.reset();
