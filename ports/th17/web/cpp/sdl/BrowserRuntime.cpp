@@ -30,7 +30,7 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 touhou::input::TouchController gestures;
 eagler::thprac::PracticePointer practice_pointers;
 std::optional<int> imgui_touch;
-bool practice_fast=false,practice_slow=false;
+bool practice_fast=false,practice_slow=false,practice_debug=false;
 double previous_period=1./60.;
 // Submit the nearest 60 Hz tick, retaining signed phase error. A fixed 1 ms
 // epsilon still dropped one in six presentations when RAF phase jitter crossed
@@ -49,7 +49,7 @@ float measured_fps=60;
 double presentation_start=-1;u32 presentation_frames=0;float presentation_fps=60;
 void reset_presentation_clock(){presentation_start=-1;presentation_frames=0;presentation_fps=60;}
 void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystick(id);}
-void clear_inputs(){th17_browser_keyboard_reset();for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();practice_pointers.reset();imgui_touch.reset();ThpracUi::reset_input();practice_fast=practice_slow=false;controls={};if(app){app->keyboard_state={};app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
+void clear_inputs(){th17_browser_keyboard_reset();for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();practice_pointers.reset();imgui_touch.reset();ThpracUi::reset_input();practice_fast=practice_slow=practice_debug=false;controls={};if(app){app->keyboard_state={};app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->run_input)return value;
@@ -86,7 +86,7 @@ bool sample_and_tick(){
  u32 buttons=0;
  const u32 controller_keys=mappedPad<0?sample_controller(buttons):0;
  ThpracUi::update_input(*app,keys);
- practice_fast=keys[85];practice_slow=keys[16];
+ practice_fast=keys[85];practice_slow=keys[16];practice_debug=keys[32];
  u32 held=keyboard_keys(keys)|controller_keys;
  if(app->practice.enabled&&app->scene()&&!app->progress.practice_record){
   std::array<u8,256> virtual_keys{};
@@ -131,7 +131,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
  using namespace th17::sdl;if(running||!app||!app->initialized)return;running=true;suspended=false;previous_frame=-1;cadence.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-  if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const double period=app->practice.enabled&&app->scene()?app->practice.speed.interval(app->progress.practice_record,practice_fast,practice_slow,false):touhou::sdl::FrameCadence::interval;
+  if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const double period=app->practice.enabled&&app->scene()?app->practice.speed.interval(app->progress.practice_record,practice_fast,practice_slow,practice_debug):touhou::sdl::FrameCadence::interval;
   if(period!=previous_period){cadence.reset();previous_period=period;}
   const auto ticks=cadence.advance(delta,period);bool ok=true;app->graphics.backend.defer=true;
   if(ticks)th17_browser_frame_begin();unsigned completed=0;double predicted_tick=0;

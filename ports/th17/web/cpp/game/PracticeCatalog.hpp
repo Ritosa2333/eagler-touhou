@@ -268,6 +268,19 @@ inline constexpr const char* practice_TH_WARP_SELECT[][3] = {
     {"非符", "Non Spell", "通常"},
     {"符卡", "Spell Card", "スペカ"},
 };
+inline constexpr const char* practice_TH_MODE_SELECT[][3] = {
+    {"原版练习", "Original", "オリジナル"},
+    {"自定义练习", "Custom", "カスタム"},
+};
+inline constexpr const char* practice_TH_STAGE_SELECT[][3] = {
+    {"1", "1", "1"},
+    {"2", "2", "2"},
+    {"3", "3", "3"},
+    {"4", "4", "4"},
+    {"5", "5", "5"},
+    {"6", "6", "6"},
+    {"Extra", "Extra", "Extra"},
+};
 inline constexpr const char* practice_IGI_DIFF[][3] = {
     {"Easy", "Easy", "Easy"},
     {"Normal", "Normal", "Normal"},
@@ -278,4 +291,82 @@ inline constexpr const char* practice_IGI_DIFF[][3] = {
     {"Overdrive", "Overdrive", "Overdrive"},
     {"Lastword", "Lastword", "Lastword"},
 };
+inline constexpr const char* practice_IGI_PL_17[][3] = {
+    {"梦狼", "Reimu W", "Reimu W"},
+    {"梦獭", "Reimu O", "Reimu O"},
+    {"梦鹰", "Reimu E", "Reimu E"},
+    {"魔狼", "Marisa W", "Marisa W"},
+    {"魔獭", "Marisa O", "Marisa O"},
+    {"魔鹰", "Marisa E", "Marisa E"},
+    {"妖狼", "Youmu W", "Youmu W"},
+    {"妖獭", "Youmu O", "Youmu O"},
+    {"妖鹰", "Youmu E", "Youmu E"},
+};
+inline constexpr const char* practice_TH_MENU[3] = {"练习选项", "Option", "オプション"};
+inline constexpr const char* practice_TH_MODE[3] = {"模式", "Mode", "モード"};
+inline constexpr const char* practice_TH_STAGE[3] = {"关卡", "Stage", "ステージ"};
+inline constexpr const char* practice_TH_WARP[3] = {"传送", "Warp", "ワープ"};
+inline constexpr const char* practice_TH_PHASE[3] = {"阶段", "Phase", "段階"};
+inline constexpr const char* practice_TH_DLG[3] = {"对话", "Dialog", "ダイアログ"};
+inline constexpr const char* practice_TH_DROP_ITEMS[3] = {"掉落道具", "Drop items", "道具掉落"};
+inline constexpr const char* practice_TH_CHAPTER[3] = {"章节", "Chapter", "チャプター"};
+inline constexpr const char* practice_TH_STAGE_PORTION_1[3] = {"前半 #%d", "First Half #%d", "前半 #%d"};
+inline constexpr const char* practice_TH_STAGE_PORTION_2[3] = {"后半 #%d", "Second Half #%d", "後半 #%d"};
+inline constexpr const char* practice_TH_SPELL_PRAC[3] = {"符卡练习", "Spell Practice", "スペルプラクティス"};
+inline constexpr const char* practice_TH_LIFE[3] = {"残机", "Life", "残機"};
+inline constexpr const char* practice_TH_LIFE_FRAGMENT[3] = {"残机碎片", "Life Frag.", "残機の欠片"};
+inline constexpr const char* practice_TH_BOMB[3] = {"Bomb", "Bomb", "ボム"};
+inline constexpr const char* practice_TH_BOMB_FRAGMENT[3] = {"Bomb碎片", "Bomb Frag.", "ボムの欠片"};
+inline constexpr const char* practice_TH_POWER[3] = {"火力", "Power", "霊力"};
+inline constexpr const char* practice_TH_VALUE[3] = {"最大得点", "Value", "最大得点"};
+inline constexpr const char* practice_TH_GRAZE[3] = {"擦弹", "Graze", "グレイズ"};
+inline constexpr const char* practice_TH_SCORE[3] = {"分数", "Score", "スコア"};
+inline constexpr const char* practice_TH17_GOAST_1[3] = {"动物灵1", "Goast 1", "動物霊1"};
+inline constexpr const char* practice_TH17_GOAST_2[3] = {"动物灵2", "Goast 2", "動物霊2"};
+inline constexpr const char* practice_TH17_GOAST_3[3] = {"动物灵3", "Goast 3", "動物霊3"};
+inline constexpr const char* practice_TH17_GOAST_4[3] = {"动物灵4", "Goast 4", "動物霊4"};
+inline constexpr const char* practice_TH17_GOAST_5[3] = {"动物灵5", "Goast 5", "動物霊5"};
+inline constexpr const char* practice_TH17_SHOW_ID_OPT[3] = {"显示高级参数", "Show advanced params", "高度なパラメータを表示"};
+inline constexpr const char* practice_TH17_ID_P2_OPT[3] = {"P2 偏移量", "P2 Offset", "P2 オフセット"};
+inline constexpr const char* practice_TH17_ID_P3_OPT[3] = {"P3 偏移量", "P3 Offset", "P3 オフセット"};
+inline constexpr const char* practice_TH17_ID_P4_OPT[3] = {"P4 偏移量", "P4 Offset", "P4 オフセット"};
+inline constexpr const char* practice_TH17_ID_TD_CFG[3] = {"应用时间推进配置", "Apply timedown config", "耐久設定を適用"};
+inline constexpr const char* practice_TH17_ID_TD_CFG_HINT[3] = {"使偏移量与按时间自动推进阶段时的结果一致。", "Makes the offsets match what you'd get by waiting for phases to transition automatically.", "段階が自動で移行するのを待った場合と同じオフセットになります。"};
+inline constexpr const char* practice_TH_MUTEKI[3] = {"无敌", "Invincible", "無敵"};
+inline constexpr const char* practice_TH_INFLIVES2[3] = {"锁残/不疮", "Inf. Lives/No Continue", "残機減らない/No Continue"};
+inline constexpr const char* practice_TH_INFBOMBS[3] = {"锁Bomb", "Inf. Bombs", "ボム減らない"};
+inline constexpr const char* practice_TH_INFPOWER[3] = {"锁火力", "Inf. Power", "霊力減らない"};
+inline constexpr const char* practice_TH_TIMELOCK[3] = {"锁时", "Time Lock", "残り時間減らない"};
+inline constexpr const char* practice_TH_AUTOBOMB[3] = {"自动B", "Auto Bomb", "自動喰らいボム"};
+inline constexpr const char* practice_TH17_INF_ROARING[3] = {"无限咆哮", "Inf. Roaring", "無限のロアリング"};
+inline constexpr const char* practice_TH17_NO_HYPER[3] = {"禁用HYPER", "No Hyper", "ノーハイパー"};
+inline constexpr const char* practice_TH_EL_BGM[3] = {"永续BGM", "Everlasting BGM", "永遠に続くBGM"};
+inline constexpr const char* practice_THPRAC_INGAMEINFO[3] = {"更多游戏信息", "in game info", "in game info"};
+inline constexpr const char* practice_TH_ENEMY_MUTEKI[3] = {"敌人无敌", "Enemy Invincible", "敵無敵"};
+inline constexpr const char* practice_TH_ADV_OPT[3] = {"高级选项", "Advanced Options", "拡張オプション"};
+inline constexpr const char* practice_TH_GAME_SPEED[3] = {"游戏速度", "Game Speed", "ゲームの速度"};
+inline constexpr const char* practice_TH_GAMEPLAY[3] = {"游戏进行", "Gameplay", "ゲームプレイ"};
+inline constexpr const char* practice_TH_FPS_ERR[3] = {"FPS调整相关的功能已禁用，你必须满足以下条件之一以使用这些功能：\n1. 使用VsyncPatch，且在vpatch.ini中将”Vsync“一项的值设为0。\n2. 在游戏的custom.exe中将输入方式设置为”高速“。（仅限地灵殿及之后的游戏）", "FPS Adjustment related features has been disabled. To enable them, satisfy either of the following requirements:\n1. Use VsyncPatch, and make sure the \"Vsync\" value in vpatch.ini is set to 0.\n2. In the game's custom.exe, set the input method to \"Fast\". (Only applies to SA and after)", "FPS調整関連のオプションは無効になっています。 それらを有効にするには、次の要件のいずれかを満たします：\n\n1. VsyncPatchを使用し、vpatch.iniの「Vsync」値を0に設定します。\n2. ゲームのcustom.exeで、入力のレイテンシを「高速」に設定します。 （地霊殿以降のみに適用）"};
+inline constexpr const char* practice_TH_FPS_UNSUPPORTED[3] = {"不支持的VsyncPatch版本。", "Unsupported VsyncPatch version.", "このバージョンのVsyncPatchはサポートされていません。"};
+inline constexpr const char* practice_TH_FPS_ADJ[3] = {"FPS调整", "FPS Adjustment", "FPS調整"};
+inline constexpr const char* practice_TH_FPS_FREE_ADJ[3] = {"自由调整", "Adjust freely", "自由調整"};
+inline constexpr const char* practice_TH_ADV_OPT_APPLY[3] = {"应用", "Apply", "変更を適用"};
+inline constexpr const char* practice_TH_FPS_LOWERING[3] = {"使用VsyncPatch时降低FPS可能会导致游戏冻结一小段时间，请耐心等待。", "When using VsyncPatch, lowering FPS may freeze the game for a brief time. Please wait patiently.", "VsyncPatchを使用している場合、FPSを下げるとゲームが一時的にフリーズする可能性がありますので、しばらくお待ちください。"};
+inline constexpr const char* practice_TH_ADV_DISABLE_X_KEY[3] = {"禁用X键", "disable X key", "disable X key"};
+inline constexpr const char* practice_TH_ADV_DISABLE_X_KEY_DESC[3] = {"给打nb的人准备(快捷键 shift+D)", "for who want to play nb neta(hotkey shift+D)", "for who want to play nb neta(hotkey shift+D)"};
+inline constexpr const char* practice_TH_ADV_DISABLE_SHIFT_KEY[3] = {"禁用Shift键", "disable shift key", "disable shift key"};
+inline constexpr const char* practice_TH_ADV_DISABLE_SHIFT_KEY_DESC[3] = {"喜欢低封?(快捷键 shift+A)", "like NO FOCUS?(hotkey shift+A)", "like NO FOCUS?(hotkey shift+A)"};
+inline constexpr const char* practice_TH_ADV_DISABLE_Z_KEY[3] = {"禁用Z键", "disable Z key", "disable Z key"};
+inline constexpr const char* practice_TH_ADV_DISABLE_Z_KEY_DESC[3] = {"真假...(快捷键 shift+S)", "really?(hotkey shift+S)", "really?(hotkey shift+S)"};
+inline constexpr const char* practice_TH_ADV_DISABLE_C_KEY_SAMETIME[3] = {"禁用X同时禁用C键", "disable C key at the same time when disable X", "disable C key at the same time when disable X"};
+inline constexpr const char* practice_TH_ADV_FORCE_SHIFT_KEY[3] = {"始终按住Shift键", "force press shift key", "force press shift key"};
+inline constexpr const char* practice_THPRAC_AUTO_SHOOT[3] = {"自动射击", "auto shoot", "auto shoot"};
+inline constexpr const char* practice_TH_ABOUT_THPRAC[3] = {"关于thprac", "About thprac", "thpracのバージョン情報"};
+inline constexpr const char* practice_TH_ABOUT_VERSION[3] = {"thprac 版本 %s", "thprac version %s", "thprac ver.%s"};
+inline constexpr const char* practice_TH_ABOUT_AUTHOR[3] = {"作者：Ack", "Author: Ack", "作者：Ack"};
+inline constexpr const char* practice_TH_ABOUT_WEBSITE[3] = {"网站：https://github.com/RUEEE/thprac", "Website: https://github.com/RUEEE/thprac", "ウェブサイト：https://github.com/RUEEE/thprac"};
+inline constexpr const char* practice_TH_ABOUT_THANKS[3] = {"特别感谢：\n%s", "Special thanks: \n%s", "スペシャルサンクス：\n%s"};
+inline constexpr const char* practice_TH_ABOUT_HIDE_LICENCE[3] = {"隐藏许可信息", "Hide license info", "ライセンス情報を非表示"};
+inline constexpr const char* practice_TH_ABOUT_SHOW_LICENCE[3] = {"显示许可信息", "Show license info", "ライセンス情報を表示"};
+inline constexpr const char* practice_THPRAC_INGAMEINFO_MISS_COUNT[3] = {"miss:", "miss:", "miss:"};
 }
