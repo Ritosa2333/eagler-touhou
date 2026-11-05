@@ -22,6 +22,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   await patch('app.js',text=>{
     text="import {PmdPlayer} from './pmd-player.mjs';\nimport {extractOriginalPmd} from './pmd-archives.mjs';\nimport {OriginalSfx} from './original-sfx.mjs';\n"+text;
     text=replaceOnce(text,"&& /^[0-9]{4}$/.test(netQuery.get('room') || '')", "&& !!netQuery.get('room')",'main room identity');
+    text=replaceOnce(text,"if(online){const direct=button.cloneNode(true);", "if(online&&!roomHost){const direct=button.cloneNode(true);",'main launcher owns input settings');
     text=replaceOnce(text,"const response = await fetch(`/api/state?${query}`, {cache: 'no-store'});",'const response={ok:true,json:async()=>globalThis.th03RoomHost.state};','managed room settings');
     text=replaceOnce(text,'function report(error) {',"function report(error) {globalThis.__eaglerPC98Emit({event:'error',message:String(error.message||error)});",'managed error');
     text=replaceOnce(text,"if(netQuery.get('role')==='host')replayRecorder.connectNetwork",'if(false)replayRecorder.connectNetwork','standalone replay service');

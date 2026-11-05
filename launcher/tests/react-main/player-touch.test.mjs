@@ -187,6 +187,13 @@ for(const ios of [false,true])test('TH19 '+(ios?'iOS touch':'pointer')+' charge 
  if(ios)f.iosEvent('functionKey','touchend',[{identifier:10}]);else f.pointer('functionKey','pointerup',{pointerId:10});
  await wait(70);assert.deepEqual(events(),[['KeyX',true],['KeyX',false]]);assert.equal(f.touch.getSnapshot().functionDown,false);
 });
+for(const ios of [false,true])test('TH03 '+(ios?'iOS touch':'pointer')+' charge holds Shift until release',async()=>{
+ const f=fixture({game:'th03',ios});const events=()=>f.sent.filter(m=>m.command==='keyboard').map(m=>[m.code,m.down]);
+ if(ios)f.iosEvent('functionKey','touchstart',[{identifier:10}]);else f.pointer('functionKey','pointerdown',{pointerId:10});
+ await wait(70);assert.deepEqual(events(),[['ShiftLeft',true]]);
+ if(ios)f.iosEvent('functionKey','touchend',[{identifier:10}]);else f.pointer('functionKey','pointerup',{pointerId:10});
+ await wait(70);assert.deepEqual(events(),[['ShiftLeft',true],['ShiftLeft',false]]);
+});
 for(const reason of ['pointercancel','lostpointercapture','editing','cancel'])test('TH19 charge releases on '+reason,()=>{
  const f=fixture({game:'th19'});f.pointer('functionKey','pointerdown');
  if(reason==='editing')f.edit(true);else if(reason==='cancel')f.touch.cancelPointers();else f.pointer('functionKey',reason);

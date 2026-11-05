@@ -214,7 +214,7 @@ function GameplayControls({ session }: { session: BrowserSession }) {
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   const product = PRODUCT_GAMES[settings.gameId];
   const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
-  const hostDirect = !browserPractice && (
+  const hostDirect = (
     /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
   useLayoutEffect(() => {
