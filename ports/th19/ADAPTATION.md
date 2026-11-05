@@ -177,6 +177,8 @@
 - `multiplayer`：WebRTC 精确输入与回滚模式，分别完成至少 360 帧，两端 120 / 240 / 360 帧的确认状态哈希一致；原生标题预加载与返回房间保留同一核心。
 - 存储：配置写入、IndexedDB 重载恢复、越界路径拒绝；普通版与多人版各自拥有存档库。
 
-这些记录覆盖本次桌面 Edge、软件图形和本机 Relay 验收。触屏实机、跨公网 TURN、长流程全角色通关与多人 Replay 由相应专项验收记录管理。
-
 - 原生音效四次重复播放 PCM 验收：[修复与波形结果](../../archive/th19-audio-20261105/README.md)，每次从头播放并输出非零波形。
+- `normal` / `multiplayer`：独立 X 蓄力按钮通过 Android 触屏模拟，覆盖按住、释放与 C Bomb；单机蓄力达到 500，释放一级攻击，Bomb 库存由 3 减至 2。见[触屏输入验收](../../archive/th19-touch-charge-20261105/README.md)。
+- `multiplayer`：四档难度、双方统一生命、关闭计时和手动屏障规则完成原生与双端启动器验收。见[对局规则验收](../../archive/th19-match-policy-20261105/README.md)与[配置及能力卡验收](../../archive/th19-versus-settings-20261105/README.md)。
+
+这些记录覆盖桌面 Edge、软件图形、Android 触屏模拟和本机 Relay 验收。触屏实机、跨公网 TURN、长流程全角色通关与多人 Replay 由相应专项验收记录管理。
