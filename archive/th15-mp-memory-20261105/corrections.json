@@ -784,19 +784,13 @@
       "maxAnimationNodes": 340,
       "passed": true,
       "endpoint": {
-        "fingerprint": [
-          1928272070,
-          2462669080
-        ],
+        "fingerprint": [1928272070,2462669080],
         "replayInputs": "41118a13d61a1fa2051c468afc5283a818195be2185d2fafd0662a5e361a805a",
         "confirmedFrames": 873,
         "image": "20debe994e26c3a6a16ebb5dca53ca5bf4b19251aa0a910d32eafc380ce44942"
       },
       "oracle": {
-        "fingerprint": [
-          1928272070,
-          2462669080
-        ],
+        "fingerprint": [1928272070,2462669080],
         "replayInputs": "41118a13d61a1fa2051c468afc5283a818195be2185d2fafd0662a5e361a805a",
         "confirmedFrames": 873,
         "image": "20debe994e26c3a6a16ebb5dca53ca5bf4b19251aa0a910d32eafc380ce44942"
@@ -890,19 +884,13 @@
       "maxAnimationNodes": 372,
       "passed": true,
       "endpoint": {
-        "fingerprint": [
-          1772438721,
-          3772566112
-        ],
+        "fingerprint": [1772438721,3772566112],
         "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
         "confirmedFrames": 873,
         "image": "8c9f6f44fc38de06153939e93588542dc94fd2c4545f8bf4aaa7e4c8076def51"
       },
       "oracle": {
-        "fingerprint": [
-          1772438721,
-          3772566112
-        ],
+        "fingerprint": [1772438721,3772566112],
         "replayInputs": "7c935f08ff31bc4d6d0dda35cfa75342c4ecbf7aad6473938937ae5ce2e923da",
         "confirmedFrames": 873,
         "image": "8c9f6f44fc38de06153939e93588542dc94fd2c4545f8bf4aaa7e4c8076def51"

@@ -37,6 +37,12 @@ wasm32 动画图、帧回调、敌机、激光与战斗检查通过，战斗夹�
 
 同一正式包通过[双人](production-2p.json)和[三人](production-3p.json)本地 relay 浏览器回归，每组运行 600 帧并覆盖独立旁观、暂停、缺包停帧与恢复。
 
+作品适配检查按全部 22 个普通版／多人版目标核对，TH15 普通版为 10/10、多人版为 9/9。内存驱动随 MP 源码维护，适配状态更新对应的源码身份。
+
+## 来源历史
+
+在独立克隆执行 `project-history.py --game th15 --write-refs --track-normal`，刷新普通版与 MP 目录投影及其跟踪关系。[投影身份](history-projection.json)对应源码提交 `ae7ec27f4`，保留原仓库祖先与当前目录树。运行实现提交 `63c84738e` 的两组 CI [Source history 记录](source-history-ci.json)通过来源祖先与子树导出检查。
+
 ## 复现
 
 内存驱动为 [`ports/th15-mp/memory-browser.mjs`](../../ports/th15-mp/memory-browser.mjs)。以相同零售资源、共享字体和 Runtime shell 分别运行旧、新开发构建：
