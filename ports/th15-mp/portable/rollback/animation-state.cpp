@@ -214,6 +214,27 @@ void shared_snapshot_storage(){
     require(ring[0].capture(registry,{input[0]}),"reuse after releasing confirmed snapshots");
     roots[0].visual.translation.x=-1;require(ring[0].restore(registry)&&roots[0].visual.translation.x==0,"discard/reuse lost root identity");
 }
+void confirmed_image_reuse(){
+    AnmRegistry registry;
+    std::array<AnmVm,64> roots;
+    std::vector<AnmVm*> input;
+    for(auto& root:roots)input.push_back(&root);
+    AnimationState confirmed,pending;
+    require(confirmed.capture(registry,input),"capture first flat frame");
+    for(auto& root:roots)root.visual.translation.x=1;
+    require(pending.capture(registry,input),"retain next flat frame");
+    confirmed.discard();
+    for(auto& root:roots)root.visual.translation.x=2;
+    allocation_count=0;
+    count_allocations=true;
+    const bool captured=confirmed.capture(registry,input);
+    count_allocations=false;
+    require(captured&&allocation_count==0,"confirmed flat images must be reused without allocation");
+    require(pending.restore(registry),"restore the still-pending frame");
+    for(const auto& root:roots)require(root.visual.translation.x==1,"image reuse overwrote a retained frame");
+    require(confirmed.restore(registry),"restore the frame using recycled images");
+    for(const auto& root:roots)require(root.visual.translation.x==2,"recycled image retained stale state");
+}
 void geometry_copy_reuse(){
     AnmVm source,target;
     source.geometry.distortion=std::make_unique<AnmDistortion>();
@@ -274,4 +295,4 @@ void stopped_wait(){
 }
 
 }
-int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();shared_snapshot_storage();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}
+int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();shared_snapshot_storage();confirmed_image_reuse();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}

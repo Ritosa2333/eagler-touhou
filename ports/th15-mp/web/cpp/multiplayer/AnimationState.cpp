@@ -20,7 +20,7 @@ template<class T>class VmImages {
     size_t count=0;
 public:
     size_t size()const noexcept{return count;}
-    void resize(size_t size){while(pages.size()*page_size<size)pages.push_back(std::make_unique<T[]>(page_size));for(size_t i=size;i<count;++i)(*this)[i].vm.reset();count=size;}
+    void resize(size_t size){while(pages.size()*page_size<size)pages.push_back(std::make_unique<T[]>(page_size));count=size;}
     T& operator[](size_t index)noexcept{return pages[index/page_size][index%page_size];}
     const T& operator[](size_t index)const noexcept{return pages[index/page_size][index%page_size];}
     size_t retained_bytes()const noexcept{return pages.size()*page_size*sizeof(T)+pages.capacity()*sizeof(std::unique_ptr<T[]>);}
@@ -48,6 +48,11 @@ size_t dynamic_bytes(const AnmVm& vm){
 struct AnimationStateCache {
     struct Entry {std::shared_ptr<AnmVm> image;u64 seen=0;};
     std::unordered_map<const AnmVm*,Entry> entries;
+    // Reuse recently confirmed flat images. Bound the idle pool independently
+    // of the animation high water mark and leave dynamic geometry to its owner.
+    static constexpr size_t max_spare=512;
+    std::array<std::shared_ptr<AnmVm>,max_spare> spare;
+    size_t spare_count=0;
     // Capture is synchronous. All journals of this registry can reuse one
     // set of work buffers because restoration only reads the finished image.
     std::vector<const AnmRegistry::Node*> selected;
@@ -55,6 +60,16 @@ struct AnimationStateCache {
     FramePointerIndex<AnmVm> root_indices;
     std::vector<AnmVm*> unregistered;
     u64 epoch=0;
+    void release(std::shared_ptr<AnmVm>& image)noexcept{
+        if(image.unique()&&spare_count<spare.size()&&image->geometry.empty()&&image->error.empty()&&
+           !image->geometry.screen_vertices.capacity()&&!image->geometry.world_vertices.capacity()){
+            spare[spare_count++]=std::move(image);
+        }else image.reset();
+    }
+    std::shared_ptr<AnmVm> acquire(){
+        if(!spare_count)return std::make_shared<AnmVm>();
+        return std::move(spare[--spare_count]);
+    }
     void begin(){if(!++epoch){entries.clear();++epoch;}}
     std::shared_ptr<AnmVm> capture(const AnmVm& source){
         auto& entry=entries[&source];entry.seen=epoch;
@@ -62,12 +77,18 @@ struct AnimationStateCache {
             source.geometry.empty()&&entry.image->geometry.empty()&&
             std::memcmp(static_cast<const AnmVmState*>(&source),static_cast<const AnmVmState*>(entry.image.get()),sizeof(AnmVmState))==0;
         if(!same){
-            if(!entry.image||!entry.image.unique())entry.image=std::make_shared<AnmVm>();
+            if(!entry.image||!entry.image.unique())entry.image=acquire();
             frame_values::copy_vm(*entry.image,source);
         }
         return entry.image;
     }
-    void finish(){for(auto it=entries.begin();it!=entries.end();)if(it->second.seen!=epoch)it=entries.erase(it);else ++it;}
+    void finish(){
+        for(auto it=entries.begin();it!=entries.end();){
+            if(it->second.seen==epoch){++it;continue;}
+            release(it->second.image);
+            it=entries.erase(it);
+        }
+    }
 };
 struct AnimationState::Data {
     struct Image {
@@ -92,6 +113,7 @@ struct AnimationState::Data {
     // Top-level owners already have an original address in their frame image.
     // Record only embedded addresses, in the order of the owning trees.
     std::vector<const AnmVm*> panel_originals;
+    std::weak_ptr<AnimationStateCache> image_cache;
     u32 generation=0,active_count=0;
     u64 presentation_counter=0;
     std::string error;
@@ -102,7 +124,23 @@ AnimationState::~AnimationState()=default;
 AnimationState::AnimationState(AnimationState&&)noexcept=default;
 AnimationState& AnimationState::operator=(AnimationState&&)noexcept=default;
 bool AnimationState::ready()const noexcept{return saved_&&saved_->captured;}
-void AnimationState::discard()noexcept{if(saved_){auto& s=*saved_;s.nodes.resize(0);s.roots.resize(0);s.count=s.root_count=0;s.panel_originals.clear();s.captured=false;}}
+void AnimationState::discard()noexcept{
+    if(!saved_)return;
+    auto& s=*saved_;
+    auto cache=s.image_cache.lock();
+    const auto release=[&](auto& images){
+        for(size_t i=0;i<images.size();++i){
+            if(cache)cache->release(images[i].vm);
+            else images[i].vm.reset();
+        }
+        images.resize(0);
+    };
+    release(s.nodes);
+    release(s.roots);
+    s.count=s.root_count=0;
+    s.panel_originals.clear();
+    s.captured=false;
+}
 size_t AnimationState::instances()const noexcept{return ready()?saved_->count+saved_->root_count:0;}
 bool AnimationState::registered_tree(const AnmRegistry& registry,const AnmVm& vm){bool found=false;each_vm(vm,[&](const AnmVm& value){found|=registry.node(const_cast<AnmVm&>(value))!=nullptr;});return found;}
 bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm*>& owned_roots){
@@ -113,7 +151,7 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     if(!saved_)saved_=std::make_unique<Data>();
     if(!registry.frame_images)registry.frame_images=std::make_shared<AnimationStateCache>();
     auto& images=*registry.frame_images;images.begin();
-    discard();auto& s=*saved_;s.present.reset();
+    discard();auto& s=*saved_;s.image_cache=registry.frame_images;s.present.reset();
     auto& selected=images.selected;selected.clear();auto& indices=images.indices;
     indices.reset(registry.nodes.size()+registry.external.size());
     auto add=[&](const AnmRegistry::Node* n){if(n&&indices.insert(n,u32(selected.size())))selected.push_back(n);};
