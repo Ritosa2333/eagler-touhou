@@ -9,7 +9,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
   let base=-1,d=-1,csBase=-1,resident=-1,initialized=false,ready=false,preparing=targeted,waiting=false,outcome=null,error=null;
   let frames=0,elapsed=0,misses=0,bombsUsed=0,lastNativeBombs=0,lockedPower=null,warped=false,prepareFrames=0,seenBoss=false,selectedPhase=0,pendingHitCounted=false,seekFinalHp=0,idleBoundaries=0,observedFrames=-1;
   let effectiveKeys=0,effectiveFocus=0;
-  let entryCleanup=null,redrawFrames=0;
+  let entryCleanup=null,redrawFrames=0,fatal=false;
   const heap=()=>mod.HEAPU8,view=()=>new DataView(heap().buffer),u8=n=>heap()[d+n],u16=n=>view().getUint16(d+n,true),i16=n=>view().getInt16(d+n,true),w8=(n,x)=>{heap()[d+n]=x;},w16=(n,x)=>view().setUint16(d+n,x,true);
   const e=patch.practice.entries,flag=(name,value)=>{heap()[csBase+e[name]]=Number(!!value);};
   function locate(packed){
@@ -26,7 +26,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     }
     throw Error('TH04 练习运行实例身份校验失败');
   }
-  function stocks(){if(targeted){heap()[resident+11]=1;heap()[resident+13]=0;}}
+  function stocks(){if(targeted&&preparing){heap()[resident+11]=setup.lives+1;heap()[resident+13]=setup.bombs;}}
   function refreshResources(bits){heap()[csBase+e.resourceDirty]|=bits;}
   function setPower(value){if(u8(0x4664)!==value){w8(0x4664,value);refreshResources(1);}}
   function resources(){
@@ -96,7 +96,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     // Preserve the real final-survival HP carried through the preceding kill.
     if(type==='boss'&&setup.phase&&i16(0x53d6)<=0&&seekFinalHp>0)w16(0x53d6,seekFinalHp);
     if(setup.entry!=='stage')clearEntryProjectiles();
-    ready=true;preparing=false;waiting=true;selectedPhase=phase;resources();refreshResources(3);clearEntry();
+    resources();ready=true;preparing=false;waiting=true;selectedPhase=phase;refreshResources(3);clearEntry();
     if(setup.hp&&type){const at=type==='mid'?0x53c2:0x53d6,max=i16(at),min=type==='mid'?0:i16(0x53e0);w16(at,Math.max(min+1,Math.min(max,setup.hp)));}
     flag('entryPause',1);elapsed=misses=bombsUsed=0;lastNativeBombs=heap()[resident+50];clock?.setSpeed(options.speed);return true;
   }
@@ -201,7 +201,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
         pendingHitCounted=false;
         locks();
       }
-      if(port===0x7fe3){if(targeted&&ready&&!outcome&&u8(0x466a)&&!options.lockLives)finish('failed');locks();}
+      if(port===0x7fe3){locks();}
       if(port===0x7fe4){
         const bombs=heap()[resident+50];if(ready&&!outcome)bombsUsed+=(bombs-lastNativeBombs)&255;lastNativeBombs=bombs;locks();
         if(ready&&!outcome){
@@ -209,9 +209,9 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
           if(u8(0x4669)&&u8(0x4662)<=1&&!u8(0x466a)){
             misses++;pendingHitCounted=true;
             if(options.invincible){w8(0x4669,0);pendingHitCounted=false;}
-            else if(targeted&&!options.lockLives)finish('failed');
+
           }
-          if(targeted&&!outcome&&complete())finish('clear');
+          if(targeted&&!outcome){const miss=u8(0x466a),lives=heap()[resident+11];if(miss>0&&miss<=32&&lives<=1)fatal=true;if(lives>1)fatal=false;if(fatal&&!miss&&lives<=1)finish('failed');else if(!miss&&!u8(0x4669)&&complete())finish('clear');}
         }
       }
       // The state machine has changed phase, but the selected attack has not

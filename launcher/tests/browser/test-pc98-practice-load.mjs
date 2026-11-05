@@ -60,6 +60,7 @@ for(const game of games){
     await frame.select('[data-jump=character]',String(character));
     await frame.select('[data-jump=stage]',String(stage));
     await frame.select('[data-jump=entry]',entry);
+    for(const [name,value] of [['lives','2'],['bombs','3']])await frame.$eval(`[data-jump=${name}]`,(node,value)=>{node.value=value;},value);
     if(game==='th04'&&stage===6)await frame.select('[data-jump=branch]','gengetsu');
     const phase=process.env.PC98_PRACTICE_PHASE??await frame.$$eval('[data-jump=phase] option',nodes=>(nodes.filter(n=>n.value!=='0').at(-1)||nodes[0]).value);
     await frame.select('[data-jump=phase]',phase);
@@ -79,6 +80,7 @@ for(const game of games){
       assert(ready,'target must reach native arrival pause');
       assert.equal(ready.native.practice.setup.stage,stage);assert.equal(ready.native.practice.setup.phase,Number(phase));
       assert.equal(ready.native.practice.setup.character,character);assert.equal(ready.native.practice.setup.entry,entry);
+      assert.equal(ready.native.practice.lives,2);assert.equal(ready.native.practice.bombs,3);
       if(kind==='target')await frame.waitForFunction(async()=> (await import('./managed-solo.mjs')).managedAPI.practiceState().retry.state==='ready',{timeout:120000});
       const result={game,kind,stage,phase:Number(phase),loadMs:Math.round(performance.now()-started),loading:ready.loading,frames:ready.native.practice.frames,samples};results.push(result);
       console.log(JSON.stringify({...result,samples:undefined}));

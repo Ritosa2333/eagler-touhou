@@ -3,7 +3,7 @@ import {normalizePractice,validatePracticeOptions} from './practice-config.js';
 export function createPracticeEngine({mod,patch,config,clock}){
   const initial=normalizePractice(config),setup=initial.setup,targeted=initial.mode==='target';let options=initial.options;
   let base=-1,d=-1,csBase=-1,resident=-1,ready=false,preparing=targeted,waiting=false,outcome=null,error=null,warped=false;
-  let frames=0,elapsed=0,misses=0,bombsUsed=0,lastBombs=0,lockedPower=null,prepareFrames=0,selectedPhase=0,seenBoss=false,lastPort=0,entryRedraw=0;
+  let frames=0,elapsed=0,misses=0,bombsUsed=0,lastBombs=0,lockedPower=null,prepareFrames=0,selectedPhase=0,seenBoss=false,lastPort=0,entryRedraw=0,fatal=false;
   const heap=()=>mod.HEAPU8,view=()=>new DataView(heap().buffer),u8=n=>heap()[d+n],u16=n=>view().getUint16(d+n,true),i16=n=>view().getInt16(d+n,true),u32=n=>view().getUint32(d+n,true),w8=(n,x)=>{heap()[d+n]=x;},w16=(n,x)=>view().setUint16(d+n,x,true),w32=(n,x)=>view().setUint32(d+n,x,true);
   const e=patch.practice.entries,flag=(name,value)=>{heap()[csBase+e[name]]=Number(!!value);};
   function locate(packed){
@@ -25,7 +25,7 @@ export function createPracticeEngine({mod,patch,config,clock}){
   }
   function active(){return u8(0x19f6)===1&&u32(0x1a0c)===u32(0x1a10)?'boss':u8(0x2baa)?'mid':null;}
   function phase(){const s=u8(0x8f5);if(s===0)return u16(0x2bea)<700?1:u16(0x2bea)<1400?2:3;if(s===1)return u8(0x7886)+1;if(s===4)return u16(0x91f8);if(s===5)return u8(0x7b42);return 0;}
-  function stocks(){if(targeted){w8(0xb2c,0);w8(0xb2d,0);}}
+  function stocks(){if(targeted&&preparing){w8(0xb2c,setup.lives);w8(0xb2d,setup.bombs);}}
   function power(value){if(u8(0xaa6)!==value){w8(0xaa6,value);flag('powerDirty',1);}}
   function resources(){stocks();power(setup.power);w16(0x2802,Math.min(setup.difficulty===0?4:16,setup.rank));}
   function setHP(){
@@ -61,7 +61,7 @@ export function createPracticeEngine({mod,patch,config,clock}){
     if(type==='mid')reached=reached&&(s===0?u16(0x2be0)>=18:s===1?u16(0x2be0)>=320:s===2?u16(0x2be0)>=128:s===3?u16(0x2be0)>=2:u16(0x2be0)>=2);
     if(type==='boss')reached=reached&&!u8(0x2bfa)&&(setup.phase?p===setup.phase:s>=4?p%2===1:true);
     if(reached){
-      ready=true;preparing=false;waiting=true;selectedPhase=p;resources();setHP();clearEntry();flag('entryPause',1);elapsed=misses=bombsUsed=0;lastBombs=u8(0xbde);clock?.setSpeed(options.speed);return;
+      resources();ready=true;preparing=false;waiting=true;selectedPhase=p;setHP();clearEntry();flag('entryPause',1);elapsed=misses=bombsUsed=0;lastBombs=u8(0xbde);clock?.setSpeed(options.speed);return;
     }
     resources();w8(0x2b94,0);w8(0x2b95,2);
     if(type==='boss'&&setup.phase>p&&s===4&&p%2===0&&p<8)w16(0x2be0,100);
@@ -93,7 +93,7 @@ export function createPracticeEngine({mod,patch,config,clock}){
         let bits=u16(0x2538);if(preparing||outcome)bits=0;if(options.disableBomb)bits&=~32;if(options.disableShot)bits&=~16;w16(0x2538,bits);locks();
       }
       if(port===0x7fd2&&ready&&!outcome&&!u8(0x2b99)){
-        misses++;if(options.invincible)w8(0x2b94,0);else if(targeted&&!options.lockLives)finish('failed');
+        misses++;if(options.invincible)w8(0x2b94,0);
       }
       if(port===0x7fd5){
         // After native Boss generation but before entity collision/rendering:
@@ -119,7 +119,7 @@ export function createPracticeEngine({mod,patch,config,clock}){
         if(ready&&!outcome&&options.invincible&&u8(0x2b94)&&!u8(0x2b95)&&!u8(0x2b96)&&!u8(0xaa7)){misses++;w8(0x2b94,0);}
         // Bullets update after player death processing in TH02. Prioritize a
         // new collision over a simultaneous Boss completion.
-        if(targeted&&ready&&!outcome){if(u8(0x2b94)&&!u8(0x2b95)&&!u8(0x2b96)&&!u8(0xaa7)&&!options.invincible&&!options.lockLives){misses++;finish('failed');}else if(completed())finish('clear');}
+        if(targeted&&ready&&!outcome){const miss=u8(0xaa7),frame=u8(0x2b99),lives=u8(0xb2c);if(!miss||lives>0)fatal=false;if(miss&&lives===0&&frame>0&&frame<24)fatal=true;if(fatal&&miss&&lives===0&&frame===0)finish('failed');else if(!miss&&!u8(0x2b94)&&completed())finish('clear');}
       }
     },get status(){return {...status(),shotLevel:d>=0?u8(0x3e42):null};},get debug(){return {base,d,csBase,resident,prepareFrames,lastPort,hold:heap()[csBase+e.hold]};}};
 }

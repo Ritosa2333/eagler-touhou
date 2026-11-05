@@ -12,7 +12,7 @@ export function validatePracticeOptions(value,partial=false){
 }
 export function normalizePracticeSetup(value={}){
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('练习起点无效');
-  const ranges={stage:[0,6],character:[0,3],difficulty:[0,4],phase:[0,17],lives:[0,0],bombs:[0,0],power:[1,128],rank:[4,34],hp:[0,30000]};
+  const ranges={stage:[0,6],character:[0,3],difficulty:[0,4],phase:[0,17],lives:[0,8],bombs:[0,8],power:[1,128],rank:[4,34],hp:[0,30000]};
   for(const [k,v]of Object.entries(value)){
     if(!(k in PRACTICE_SETUP))throw Error('未知练习起点：'+k);
     if(k in ranges){const [a,b]=ranges[k];if(!Number.isInteger(v)||v<a||v>b)throw Error('练习参数超出范围：'+k);}

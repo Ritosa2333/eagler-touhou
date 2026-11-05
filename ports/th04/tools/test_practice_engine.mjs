@@ -69,10 +69,14 @@ for(const power of [1,16,64,128]){
   t.b(0x4664,Math.min(128,power+1));t.b(0x4676,1);t.w(0xbccc,100);t.signal(0x7fe4);
   assert.equal(t.engine.status.power,Math.min(128,power+1));assert.equal(t.engine.status.dream,1000,'Dream must grow naturally after entry');checks++;
 }
-for(const invincible of [false,true]){
-  const t=instance('target',{entry:'boss',phase:2},{invincible});t.signal(0x7fe0);t.w(0xbcd0,0x6013);t.b(0x53d9,2);t.w(0x53d6,3050);t.w(0x53e0,1950);t.signal(0x7fe1);t.signal(0x7fe2);
-  t.b(0x4669,1);t.b(0x53d9,3);t.signal(0x7fe4);
-  assert.equal(t.engine.status.outcome,invincible?'clear':'failed');assert.equal(t.engine.status.misses,1);assert.equal(t.h[cb+entries.hold],1);checks++;
+{
+  const t=instance('target',{entry:'boss',phase:2,lives:2,bombs:3});t.signal(0x7fe0);t.w(0xbcd0,0x6013);t.b(0x53d9,2);t.w(0x53d6,3050);t.w(0x53e0,1950);t.signal(0x7fe1);
+  assert.equal(t.h[r+11],3);assert.equal(t.h[r+13],3);
+  t.b(0x4669,1);t.signal(0x7fe4);assert.equal(t.engine.status.outcome,null,'contact cannot end the attempt');
+  t.b(0x4669,0);t.b(0x466a,40);t.signal(0x7fe4);assert.equal(t.engine.status.outcome,null,'deathbomb window remains open');
+  t.b(0x466a,0);t.signal(0x7fe4);assert.equal(t.engine.status.outcome,null,'successful deathbomb continues');
+  t.b(0x466a,25);t.signal(0x7fe4);t.h[r+11]=2;t.b(0x466a,0);t.signal(0x7fe4);assert.equal(t.engine.status.outcome,null,'spare lives allow a respawn');
+  t.h[r+11]=1;t.b(0x466a,25);t.signal(0x7fe4);assert.equal(t.engine.status.outcome,null);t.b(0x466a,0);t.signal(0x7fe4);assert.equal(t.engine.status.outcome,'failed','final death finishes after its animation');checks++;
 }
 // Fixed deadlines and actual native loop counters: attack frames continue.
 for(const [stage,phase,counter,limit,frameCap]of [[0,2,0xbced,16,0],[1,2,0x53df,11,0],[2,3,0x53df,8,0],[3,2,0x53df,52,0],[4,2,0x53df,4,0],[5,14,0x53df,18,0],[6,2,0x46ae,36,0],[0,3,0,0,1501],[6,4,0,0,192]]){
