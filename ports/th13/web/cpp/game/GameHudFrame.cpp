@@ -49,22 +49,27 @@ bool GameHud::update(const HudFrameContext& context, HudFrameServices& services)
             flags &= ~kTranceGaugeDimmed;
         }
     }
-    // Boss 面（0x4265a0 同序：门控/计时警告/比值平滑/星位/邻近/位标）。
-    if (context.boss) {
-        if (!boss_hud.update(*context.boss,
-                             [&services](i32 id) { return services.hud_sound(id); }) ||
-            !boss_hud.error.empty()) {
-            if (error.empty()) error = boss_hud.error.empty() ? "Boss HUD update failed"
-                                                              : boss_hud.error;
-            return false;
-        }
-    }
+    // Boss 面（0x4265a0）已拆出为 update_boss：原版它是独立的 Update 0x1c=28
+    // 任务（晚于道具 24/神霊 25），不随本聚合（RunScene 优先级 20）执行。
     // 开场签名幕不按战斗帧退休：原生 0x44c0d0 的卸载点在标题线程尾段
     // （TitleInf+0x5e4>=0xB4 或 DAT_004dcc5c&0x180），加速直入不跑标题线程，
     // sig 两半在原生 gate-01 全窗 battle-draws 每帧都在（0..3329，6660 条）。
     // 旧实现按 terra-udsr 5 帧短窗误读成「只画到 battle frame 3」并在
     // frame 4 退休，导致 boot-draw 窗口首差（frame 3 draw 118 sig 缺失）。
     frame_age.tick(&progress.rate);
+    return true;
+}
+
+bool GameHud::update_boss(BossFrameInput& view, HudFrameServices& services) {
+    // Boss 面独立推进（0x4265a0 同序：门控/计时警告/比值平滑/星位/邻近/位标）。
+    // 2026-11-05 从 update() 拆出：原版任务优先级 0x1c=28（0x424f46/0x424f4b）。
+    if (!boss_hud.update(view,
+                         [&services](i32 id) { return services.hud_sound(id); }) ||
+        !boss_hud.error.empty()) {
+        if (error.empty()) error = boss_hud.error.empty() ? "Boss HUD update failed"
+                                                          : boss_hud.error;
+        return false;
+    }
     return true;
 }
 

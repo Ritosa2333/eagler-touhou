@@ -143,6 +143,7 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     // max_point 加成帧内相位的决定序（S5 f2725 根因）。
     FrameCallback item_update{};
     FrameCallback spirit_update{};
+    FrameCallback boss_hud_update{};
     struct ShakeCallback {
         RunScene& scene;
         ScreenShake effect;
@@ -159,6 +160,8 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     bool update_lasers();
     bool update_items();
     bool update_spirits();
+    // Boss HUD 独立任务（原版 0x4265a0 @ Update 0x1c=28，0x424f46/0x424f4b）。
+    bool update_boss_hud();
     std::unique_ptr<SpellPresentation> spell_presentation;
     bool update_spell();
     bool draw_spell();
