@@ -28,6 +28,7 @@ npm run package -- /absolute/path/to/new-relay-package
 | `EAGLER_NETPLAY_RELAY_HOST` | `0.0.0.0` | 监听地址 |
 | `EAGLER_NETPLAY_RELAY_PORT` | `18142` | 监听端口 |
 | `EAGLER_NETPLAY_STATUS_PORT` | 未启用 | 可选房间统计 HTTP 端口，仅监听 `127.0.0.1` |
+| `EAGLER_NETPLAY_LISTEN_TOGETHER` | 未启用 | 设为 `1` 开启等待室一起听协议 |
 | `EAGLER_NETPLAY_TRUSTED_PROXIES` | 空 | 可信反向代理 IP，逗号分隔 |
 | `EAGLER_NETPLAY_STUN_URLS` | `stun:stun.cloudflare.com:3478` | 客户端 ICE STUN 地址 |
 | `EAGLER_NETPLAY_TURN_URLS` | 空 | 可选 TURN 地址；需配置共享密钥或静态凭据 |

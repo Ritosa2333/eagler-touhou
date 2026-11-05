@@ -1,3 +1,6 @@
+import {createRoomMusic} from '../services/room-music';
+import {createTuneWeaveProvider} from '../services/music-provider';
+import {testFeaturesEnabled} from '../../src/launcher/test-features.mts';
 import { createRoomNetwork } from '../../src/launcher/room-network.mts';
 import { createMultiplayerQuickChatModel } from '../../src/launcher/multiplayer-quick-chat-model.mts';
 import { playQuickChatVoice } from '../../src/launcher/quick-chat-voice.mts';
@@ -11,7 +14,7 @@ import type { RuntimeService } from '../services/runtime';
 
 export interface RoomSessionOptions extends Omit<
   MultiplayerRoomPorts,
-  'identity' | 'sessions' | 'preferences' | 'network' | 'quickChat' | 'online' | 'visible'
+  'identity' | 'sessions' | 'preferences' | 'network' | 'quickChat' | 'music' | 'online' | 'visible'
 > {
   identity: MultiplayerIdentityStore;
   sessions: MultiplayerRoomSessionStore;
@@ -44,12 +47,18 @@ export function createRoomSession(options: RoomSessionOptions) {
       for (const listener of listeners) listener();
     }
   };
+  const music = testFeaturesEnabled(window) ? createRoomMusic({
+    provider: createTuneWeaveProvider(import.meta.env?.VITE_MUSIC_API_URL || '/music-api'),
+    storage: options.storage, send: message => service.sendControl(message),
+    createAudio: () => document.createElement('audio'),
+  }) : null;
   const probes = createRoomNetwork({ send: (message) => service.sendControl(message), changed });
   const service = createMultiplayerRoom({
     ...options,
     preferences: createMultiplayerPreferenceStore({ storage: options.storage }),
     network: probes,
     quickChat: { receive: (message) => quickChat.receive(message) },
+    music: {receive: message => music?.receive(message)},
     online: () => window.navigator.onLine,
     visible: () => document.visibilityState === 'visible',
   });
@@ -73,6 +82,7 @@ export function createRoomSession(options: RoomSessionOptions) {
         room.phase === 'lobby' &&
         (!runtime?.launched || options.titleOverlayOpen()),
     });
+    music?.update(state);
     quickChat.update({
       visible: !!room && !options.replayViewer(),
       inRoom: !!room && (runtime?.launched !== true || options.titleOverlayOpen()),
@@ -134,8 +144,10 @@ export function createRoomSession(options: RoomSessionOptions) {
     },
     sync,
     quickChat,
+    music,
     dispose() {
       if (disposed) return;
+      music?.dispose();
       quickChat.dispose();
       disposed = true;
       unsubscribeRoom();

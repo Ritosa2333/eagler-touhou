@@ -1,3 +1,4 @@
+import type {RoomMusic} from '../../services/room-music';
 import type {
   ProbeLane,
   ProbeMetric,
@@ -7,7 +8,7 @@ import type { MultiplayerRoomService } from '../../services/multiplayer-room';
 import type { TouchMovementMode } from '../../../src/launcher/game-preferences.mts';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
 import type {ReactNode} from 'react';
-export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game';
+export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game' | 'music';
 export interface RoomNetworkPresentation {
   subscribe(listener: () => void): () => void;
   getSnapshot(): number;
@@ -28,6 +29,7 @@ export interface RoomViewContext {
   touchMovementMode: TouchMovementMode;
 }
 export interface RoomViewProps {
+  music?: RoomMusic | null;
   quickChat?: MultiplayerQuickChatModel;
   service: MultiplayerRoomService;
   network: RoomNetworkPresentation;

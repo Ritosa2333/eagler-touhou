@@ -8892,5 +8892,221 @@
   "th19.charge": {
     "id": "th19_charge",
     "params": []
+  },
+  "music.title": {
+    "id": "music_title",
+    "params": []
+  },
+  "music.join": {
+    "id": "music_join",
+    "params": []
+  },
+  "music.leave": {
+    "id": "music_leave",
+    "params": []
+  },
+  "music.waiting": {
+    "id": "music_waiting",
+    "params": []
+  },
+  "music.idle": {
+    "id": "music_idle",
+    "params": []
+  },
+  "music.loading": {
+    "id": "music_loading",
+    "params": []
+  },
+  "music.playing": {
+    "id": "music_playing",
+    "params": []
+  },
+  "music.ended": {
+    "id": "music_ended",
+    "params": []
+  },
+  "music.disabled": {
+    "id": "music_disabled",
+    "params": []
+  },
+  "music.seatedOnly": {
+    "id": "music_seatedOnly",
+    "params": []
+  },
+  "music.needPlayer": {
+    "id": "music_needPlayer",
+    "params": []
+  },
+  "music.volume": {
+    "id": "music_volume",
+    "params": []
+  },
+  "music.retry": {
+    "id": "music_retry",
+    "params": []
+  },
+  "music.last": {
+    "id": "music_last",
+    "params": []
+  },
+  "music.select": {
+    "id": "music_select",
+    "params": []
+  },
+  "music.platform": {
+    "id": "music_platform",
+    "params": []
+  },
+  "music.netease": {
+    "id": "music_netease",
+    "params": []
+  },
+  "music.qq": {
+    "id": "music_qq",
+    "params": []
+  },
+  "music.source": {
+    "id": "music_source",
+    "params": []
+  },
+  "music.search": {
+    "id": "music_search",
+    "params": []
+  },
+  "music.playlist": {
+    "id": "music_playlist",
+    "params": []
+  },
+  "music.keyword": {
+    "id": "music_keyword",
+    "params": []
+  },
+  "music.playlistInput": {
+    "id": "music_playlistInput",
+    "params": []
+  },
+  "music.empty": {
+    "id": "music_empty",
+    "params": []
+  },
+  "music.more": {
+    "id": "music_more",
+    "params": []
+  },
+  "music.unavailable": {
+    "id": "music_unavailable",
+    "params": []
+  },
+  "music.trial": {
+    "id": "music_trial",
+    "params": []
+  },
+  "music.blocked": {
+    "id": "music_blocked",
+    "params": []
+  },
+  "music.conflict": {
+    "id": "music_conflict",
+    "params": []
+  },
+  "music.rateLimited": {
+    "id": "music_rateLimited",
+    "params": []
+  },
+  "music.invalidPlaylist": {
+    "id": "music_invalidPlaylist",
+    "params": []
+  },
+  "music.play": {
+    "id": "music_play",
+    "params": []
+  },
+  "music.pause": {
+    "id": "music_pause",
+    "params": []
+  },
+  "music.paused": {
+    "id": "music_paused",
+    "params": []
+  },
+  "music.choose": {
+    "id": "music_choose",
+    "params": []
+  },
+  "music.queue": {
+    "id": "music_queue",
+    "params": []
+  },
+  "music.queueEmpty": {
+    "id": "music_queueEmpty",
+    "params": []
+  },
+  "music.options": {
+    "id": "music_options",
+    "params": []
+  },
+  "music.progress": {
+    "id": "music_progress",
+    "params": []
+  },
+  "music.previous": {
+    "id": "music_previous",
+    "params": []
+  },
+  "music.next": {
+    "id": "music_next",
+    "params": []
+  },
+  "music.shuffle": {
+    "id": "music_shuffle",
+    "params": []
+  },
+  "music.repeat.off": {
+    "id": "music_repeat_off",
+    "params": []
+  },
+  "music.repeat.all": {
+    "id": "music_repeat_all",
+    "params": []
+  },
+  "music.repeat.one": {
+    "id": "music_repeat_one",
+    "params": []
+  },
+  "music.addQueue": {
+    "id": "music_addQueue",
+    "params": []
+  },
+  "music.remove": {
+    "id": "music_remove",
+    "params": []
+  },
+  "music.playPlaylist": {
+    "id": "music_playPlaylist",
+    "params": []
+  },
+  "music.queueFull": {
+    "id": "music_queueFull",
+    "params": []
+  },
+  "music.browse": {
+    "id": "music_browse",
+    "params": []
+  },
+  "music.songs": {
+    "id": "music_songs",
+    "params": []
+  },
+  "music.queued": {
+    "id": "music_queued",
+    "params": []
+  },
+  "music.offer": {
+    "id": "music_offer",
+    "params": []
+  },
+  "music.cancelInvite": {
+    "id": "music_cancelInvite",
+    "params": []
   }
 }

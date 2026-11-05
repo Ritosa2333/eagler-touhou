@@ -286,6 +286,14 @@ const abuseConfig = relayAbuseConfig();
 const abuseGuard = createRelayAbuseGuard(abuseConfig);
 const targetedEnvelopeMarker = 0xe7;
 const sendBounded = createBoundedRelaySender();
+const listenTogether = process.env.EAGLER_NETPLAY_LISTEN_TOGETHER === '1'
+  ? (await import('./listen-together.mjs')).createListenTogether({
+      send(socket, message) {
+        if (socket?.readyState === WebSocket.OPEN)
+          sendBounded(socket, message);
+      },
+    })
+  : null;
 const lobbyBroadcaster = createRoomBroadcaster({
   snapshot: room => ({ type: 'state', room: lobbySnapshot(room) }),
   send: sendRoomMessage,
@@ -938,13 +946,14 @@ function broadcastLobby(room, payload = null) {
   lobbyBroadcaster.publish(room, payload);
 }
 
-function clearLobbySeat(room, clientId) {
+function clearLobbySeat(room, clientId, moving = false) {
   let changed = false;
   for (let index = 0; index < room.lobby.seats.length; index++) {
     if (room.lobby.seats[index]?.clientId !== clientId) continue;
     room.lobby.seats[index] = null;
     changed = true;
   }
+  if (changed && !moving) listenTogether?.reconcile(room);
   return changed;
 }
 
@@ -1058,8 +1067,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     type: 'state',
     room: lobbySnapshot(room),
     roomDirectory: { version: 1, controlModes: true, runtimeVersions: true },
+    ...(listenTogether ? { listenTogether: 2 } : {}),
     roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) },
   });
+  listenTogether?.sync(room, clientId);
   if (pendingDisconnect) broadcastLobby(room);
   let probeBudget = 0,
     probeWindow = Date.now();
@@ -1085,6 +1096,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     }
     if (!validRelayControlMessage(message)) {
       socket.close(1008, 'invalid lobby message');
+      return;
+    }
+    if (listenTogether && message.type === 'listen-together') {
+      listenTogether.handle(room, clientId, socket, message);
       return;
     }
     if (message.type === 'activity') {
@@ -1176,7 +1191,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         previousEntry?.ready === true &&
         previousEntry.readyVersion === room.lobby.settingsVersion;
       if (changesMatchConfig) invalidateLobbyReady(room);
-      clearLobbySeat(room, clientId);
+      clearLobbySeat(room, clientId, true);
       room.lobby.spectators.delete(clientId);
       const currentRun = room.runs.get(String(room.lobby.startSerial));
       if (currentRun && !currentRun.claimedSpectators.has(clientId))
@@ -1193,6 +1208,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         readyVersion: preserveReady ? room.lobby.settingsVersion : 0,
         resource: previousEntry?.resource || null,
       };
+      if (previousSeat < 0) listenTogether?.reconcile(room);
       broadcastLobby(room);
       return;
     }
@@ -1564,6 +1580,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.difficulty = difficulty;
         for (let index = playerCount; index < room.lobby.seats.length; index++)
           room.lobby.seats[index] = null;
+        listenTogether?.reconcile(room);
       }
       broadcastLobby(room);
       return;

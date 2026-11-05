@@ -52,6 +52,7 @@ export function RoomComposition({
       visible={workspaceVisible && !!navigation.productId && isMultiplayerProductId(navigation.productId)}
       service={session.room.service}
       quickChat={session.room.quickChat}
+      music={session.room.music}
       network={session.room.network}
       context={{
         transfer,

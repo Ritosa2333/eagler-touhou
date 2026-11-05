@@ -19,7 +19,7 @@ const newDialogSession = () => `${Date.now().toString(36)}-${++dialogSessionSequ
 
 export type Surface = 'library' | 'options' | 'touch' | 'room';
 export type SurfaceContext = 'library' | 'lobby';
-export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game';
+export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game' | 'music';
 export type DirectoryFormMode = 'create' | 'join';
 export const INFORMATION_DIALOG_IDS = ['mpGuideDialog', 'firstUseNoticeDialog', 'donationDialog', 'appleRefreshDialog', 'replayDialog', 'lobbyNetworkDialog'] as const;
 export type InformationDialogId = typeof INFORMATION_DIALOG_IDS[number];
@@ -245,7 +245,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const selectedRoomVisible = selectedRoomProduct !== null && isMultiplayerProductId(selectedRoomProduct);
   const validPanel = urlAddress.surface === 'room' && panelLifetime !== null && panelEntry.lifetime === panelLifetime &&
     panelEntry.session === dialogSession && panelEntry.href === href(location) &&
-    ['personal', 'network', 'spectators', 'game'].includes(String(panelEntry.kind));
+    ['personal', 'network', 'spectators', 'game', 'music'].includes(String(panelEntry.kind));
   const validSettings = urlAddress.surface === 'room' && settingsLifetime !== null && settingsEntry.lifetime === settingsLifetime &&
     settingsEntry.session === dialogSession && settingsEntry.href === href(location);
   const roomPanel = validPanel && selectedRoomVisible ? panelEntry.kind as RoomPanelKind : null;
