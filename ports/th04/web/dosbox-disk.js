@@ -22,7 +22,7 @@ export function prepareFastBoot(extracted,{network=false,practice=false}={}){
   let entries=0;
   const replacement=text.replace(/^(main|op)\r*$/gm,(_,command)=>{
     entries++;
-    return `z:\\system\\config.com -set "cpu cycles=${network?30000:practice?16000:'max 100%'}"\r\n${command}\r`;
+    return `z:\\system\\config.com -set "cpu cycles=${network||practice?30000:'max 100%'}"\r\n${command}\r`;
   });
   if(entries!==5)throw Error('TH04 启动入口与当前版本不匹配');
   return {path:'game/GENSO/FASTBOOT.BAT',contents:Uint8Array.from(replacement,c=>c.charCodeAt(0))};

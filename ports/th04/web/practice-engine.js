@@ -172,7 +172,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     signal(port,packed){
       locate(packed);if(error||heap()[resident+62])return;
       if(port===0x7fe0){
-        if(targeted){heap()[resident+17]=setup.stage;heap()[resident+19]=48+setup.stage;w8(0x5394,setup.stage);}
+        if(targeted){heap()[resident+17]=setup.stage;heap()[resident+19]=48+setup.stage;heap()[resident+73]=1;w8(0x5394,setup.stage);w8(0x53a0,1);}
         initialized=true;flag('targetPractice',targeted);stocks();return;
       }
       if(!initialized||u8(0x5392)>2)return;
