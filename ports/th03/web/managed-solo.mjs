@@ -39,6 +39,7 @@ const pauseMenu=mountPauseMenu(document.getElementById('screen'),{
   centered:true,
   resume(){pauseMenu.close();globalThis.__eaglerPC98Input.clear();pausePrevious=0;emulator?.run();soloMusic?.resume();void localSfx?.resume();canvas.focus();},
   exit(){pauseMenu.close();void naturalExit().catch(report);},
+  save(){pauseMenu.close();void (async()=>{emulator?.run();recorder?.finish();const until=performance.now()+10000;while(recorder&&!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));await managedAPI.saveRecording();await naturalExit();})().catch(report);},
   discard(){pauseMenu.close();managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});},
   restart(){pauseMenu.close();const settings=launchSettings;managedAPI.stop();void start(settings).catch(report);},
 });
@@ -73,9 +74,7 @@ async function syncFiles(){
   }
 }
 async function naturalExit(){
-  soloMusic?.reset();recorder?.finish();
-  const deadline=performance.now()+10000;
-  while(recorder?.state.ending&&!recorder.state.ready&&!recorder.state.failed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,50));
+  soloMusic?.reset();
   await Promise.allSettled([...writes]);
   try{await syncFiles();}finally{globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 }
@@ -117,7 +116,7 @@ async function start({language,music,options}){
       onEnd:value=>{emulator?.pauseReplay(true);if(value.memoryHash!==replay.header.result.memoryHash||value.memorySha256!==replay.header.result.memorySha256)report(Error('Replay 终态内存校验不一致'));},onError:report};
   }else{
     recorder=createBrowserSoloRecorder({game:'03',language:lang,runtime:'worker',identity:await fingerprint(replaySources),patch:assist.bridge.meta,
-      boundaryMode:'sleep',disk:disk.slice(),baseDisk:base,onStatus:()=>{},onFailure:()=>{},onFile:blob=>void saveReplay(blob).catch(report),onResult:()=>{}});
+      boundaryMode:'sleep',disk:disk.slice(),baseDisk:base,deferEncoding:true,onStatus:()=>{},onFailure:()=>{},onResult:()=>{}});
     externalReplay=recorder.config;
   }
   const config={canvas,wasmBinary:await loadLocalCore(),externalReplay,DIPswtch:[0x3e,0xf3,0x7b],ExMemory:7,Latencys:100,
@@ -144,6 +143,8 @@ export const managedAPI={
     if(message.command==='write'){await store.write(path,new Uint8Array(message.bytes));return {};}
     throw Error('用户文件操作无效');
   },
+  async saveRecording(){if(!recorder?.state.ready)return null;return saveReplay(await recorder.save());},
+  finishRecording(){recorder?.finish();},
   playback(message){if(emulator)throw Error('请先结束本局');return start({language:'ja',music:'ogg',options:{replayPath:message.path}});},
   stop(){pauseMenu.close();cancelAnimationFrame(loop);previous=0;pausePrevious=0;fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
     recorder=localSfx=soloMusic=undefined;const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;},

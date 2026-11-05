@@ -25,7 +25,7 @@ async function replayBase(data,resources,practice,audioMode,saves={}){
 
 // An attempt owns its canvas, DOS instance, clocks, recording and music.
 // A parked attempt retains the original JSPI continuation, never a RAM snapshot.
-export function createSoloAttempt({canvas,practice,settings,replay=null,standby=false,effects=null,sources,applyReplayInput,callbacks={}}){
+export function createSoloAttempt({canvas,practice,settings,replay=null,standby=false,effects=null,deferReplay=false,sources,applyReplayInput,callbacks={}}){
   const started=performance.now(),timings={};
   const mark=name=>{timings[name]=Math.round(performance.now()-started);};
   const emit=(name,...args)=>{if(attempt.foreground&&!attempt.cancelled)callbacks[name]?.(...args);};
@@ -73,7 +73,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
           const identity=await fingerprint(sources);
           if(attempt.cancelled)throw Error('练习已取消');
           attempt.recorder=createBrowserSoloRecorder({game:'04',language,runtime,identity,patch:attempt.patch,boundaryMode:'sleep',disk:data.slice(),baseDisk,practice,audioMode,savedFiles,diskBaseKind:'installed-practice/2',
-            onStatus:text=>{attempt.recordStatus=text;emit('onRecordingStatus',text);},onFailure:error=>emit('onFailure',error),
+            deferEncoding:deferReplay,onStatus:text=>{attempt.recordStatus=text;emit('onRecordingStatus',text);},onFailure:error=>emit('onFailure',error),
             onFile:(blob,result)=>{attempt.blob=blob;emit('onFile',blob,result,practice);},onResult:result=>emit('onResult',result,practice)});
           externalReplay=attempt.recorder.config;
         }catch(error){if(attempt.cancelled)throw error;attempt.recordingError=error.message;}

@@ -160,7 +160,7 @@ async function startGame(replay=null){
         const baseDisk=await loadVerifiedBytes(meta.url,meta.sha256,{gzip:true});
         recorder=createBrowserSoloRecorder({game:'03',language:lang,runtime:runtimeMode.value,identity,patch:assist.bridge.meta,boundaryMode:'sleep',disk:disk.slice(),baseDisk,
           onStatus:setReplayStatus,onFailure:()=>replayUI.closeSave(),onFile:(blob,value)=>{recordBlob=blob;$('record-save').disabled=false;$('record-discard').disabled=false;replayUI.offerSave(blob,value);},
-          onResult:()=>{$('record-finish').disabled=true;replayUI.prepareSave();}});
+          onResult:()=>{$('record-finish').disabled=true;$('record-save').disabled=false;$('record-discard').disabled=false;replayUI.prepareSave();}});
         externalReplay=recorder.config;$('record-finish').disabled=$('record-discard').disabled=false;
         setReplayStatus('等待本次首局；结束或通关时询问保存，首次续关前停止记录。');
       }catch(error){clearRecording();setReplayStatus('Replay 未能启动：'+error.message+'；游戏继续。');}
@@ -189,7 +189,7 @@ $('import').onchange=async event=>{try{const file=event.target.files[0];if(!file
   if(confirm('覆盖当前语言的原版单人进度？')){await storage(language,'readwrite',prepareSoloDisk(data));status('全解锁存档已导入，默认 Lunatic');}
 }catch(error){report(error);}finally{event.target.value='';}};
 $('record-finish').onclick=()=>recorder?.finish();
-$('record-save').onclick=()=>{if(!recordBlob)return;const url=URL.createObjectURL(recordBlob),a=document.createElement('a');a.href=url;a.download='th03-solo.th03r';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);replayUI.closeSave();setReplayStatus('Replay 已请求保存；重新启动游戏可录制新局。');};
+$('record-save').onclick=async()=>{if(!recordBlob&&recorder?.state.ready)recordBlob=await recorder.save();if(!recordBlob)return;const url=URL.createObjectURL(recordBlob),a=document.createElement('a');a.href=url;a.download='th03-solo.th03r';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);replayUI.closeSave();setReplayStatus('Replay 已请求保存；重新启动游戏可录制新局。');};
 $('record-discard').onclick=()=>{clearRecording();$('reset').disabled=false;setReplayStatus('Replay 已丢弃，游戏继续；重新启动游戏可录制新局。');};
 $('replay-file').onchange=async event=>{
   try{const file=event.target.files[0];if(!file)return;loadedReplay=await decodeExternalReplay(file,'03');

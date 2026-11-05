@@ -79,7 +79,7 @@ for(const game of games){
       assert(ready,'target must reach native arrival pause');
       assert.equal(ready.native.practice.setup.stage,stage);assert.equal(ready.native.practice.setup.phase,Number(phase));
       assert.equal(ready.native.practice.setup.character,character);assert.equal(ready.native.practice.setup.entry,entry);
-      assert.equal(ready.retry.state,'idle','no standby emulator');
+      if(kind==='target')await frame.waitForFunction(async()=> (await import('./managed-solo.mjs')).managedAPI.practiceState().retry.state==='ready',{timeout:120000});
       const result={game,kind,stage,phase:Number(phase),loadMs:Math.round(performance.now()-started),loading:ready.loading,frames:ready.native.practice.frames,samples};results.push(result);
       console.log(JSON.stringify({...result,samples:undefined}));
       await page.screenshot({path:resolve(output,`${label}-${game}-${kind}.png`)});
@@ -87,9 +87,12 @@ for(const game of games){
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.elapsed>0&&!p.waiting;},{timeout:15000}).catch(async error=>{console.error('Resume state',JSON.stringify(await state()));throw error;});
       await page.screenshot({path:resolve(output,`${label}-${game}-${kind}-running.png`)});
     }
-    assert.equal(await frame.evaluate(()=>practiceEffectsCreated),1,'restarts reuse the existing original effect driver');
+    assert((await frame.evaluate(()=>practiceEffectsCreated))>=2,'standby owns its own original effect driver');
     if(process.env.PC98_PRACTICE_REPLAY==='1'){
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.finishRecording());
+      await frame.waitForFunction(async()=> (await import('./managed-solo.mjs')).managedAPI.practiceState().recordingReady,{timeout:30000});
+      assert.equal(await frame.evaluate(game=>[...__eaglerPC98Files.memory.keys()].filter(name=>name.endsWith('.'+game+'r')).length,game),0,'finishing does not save a file');
+      await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.saveRecording());
       await frame.waitForFunction(game=>[...__eaglerPC98Files.memory.keys()].some(name=>name.endsWith('.'+game+'r')),{timeout:45000},game);
       await frame.evaluate(async game=>{
         const {managedAPI}=await import('./managed-solo.mjs');

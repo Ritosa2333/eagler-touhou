@@ -140,7 +140,7 @@ function tick(now){
   if(muted||emulator?.state!=='running')soloMusic?.suspend();else if(!document.hidden)soloMusic?.resume();
   if(ps?.outcome&&!playback){
     if(!practiceCompleted){practiceCompleted=true;release();if(!recorder)emulator.pauseReplay(true);}
-    practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recordBlob,failed:recorder?.state.failed});
+    practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});
   }
   if(emulator?.state==='running'){
     if(!emulator.isWorker)soloMusic?.poll(emulator.module.HEAPU8,now);
@@ -199,7 +199,7 @@ function makeAttempt(practice,standby=false,replay=null){
   return createSoloAttempt({canvas:target,practice,settings:retrySettings(),standby,replay,sources:replaySources,applyReplayInput:applySoloAssist,callbacks:{
     onStatus:text=>{$('status').textContent=text;player.note(text);player.diagnostics(text);},onRecordingStatus:setReplayStatus,onFailure:()=>replayUI.closeSave(),
     onFile:(blob,result,config)=>{recordBlob=blob;$('record-save').disabled=false;$('record-discard').disabled=false;if(config.mode!=='target')replayUI.offerSave(blob,result);},
-    onResult:(result,config)=>{$('record-finish').disabled=true;if(config.mode!=='target')replayUI.prepareSave();},
+    onResult:(result,config)=>{$('record-finish').disabled=true;$('record-save').disabled=false;$('record-discard').disabled=false;if(config.mode!=='target')replayUI.prepareSave();},
     onError:error=>{soloMusic?.suspend();player.setActive(false);const text='游戏停止：'+error.message;$('status').textContent=text;player.note(text);player.diagnostics(text);},
     onExit:()=>{soloMusic?.suspend();player.setActive(false);const text='游戏已退出，可重新启动。';$('status').textContent=text;player.note(text);player.diagnostics(text);},
     onPlaybackEnd:matches=>{const text=matches?'Replay 播放完成，终态内存校验一致。':'Replay 已停止：终态内存校验不一致。';$('status').textContent=text;player.note(text);player.diagnostics(text);emulator?.pauseReplay(true);$('replay-pause').disabled=true;replayUI.showEnd(matches);}
@@ -263,7 +263,7 @@ async function startGame(replay=null,practiceConfig=null,cached=null){
 }
 
 $('record-finish').onclick=()=>recorder?.finish();
-$('record-save').onclick=()=>{if(!recordBlob)return;const url=URL.createObjectURL(recordBlob),a=document.createElement('a');a.href=url;a.download='th04-solo.th04r';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);replayUI.closeSave();setReplayStatus('Replay 已请求保存；重新启动游戏可录制新局。');};
+$('record-save').onclick=async()=>{if(!recordBlob&&recorder?.state.ready)recordBlob=await recorder.save();if(!recordBlob)return;const url=URL.createObjectURL(recordBlob),a=document.createElement('a');a.href=url;a.download='th04-solo.th04r';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);replayUI.closeSave();setReplayStatus('Replay 已请求保存；重新启动游戏可录制新局。');};
 $('record-discard').onclick=()=>{clearRecording();setReplayStatus('Replay 已丢弃，游戏继续；重新启动游戏可录制新局。');};
 $('replay-file').onchange=async event=>{
   try{const file=event.target.files[0];if(!file)return;loadedReplay=await decodeExternalReplay(file,'04');
