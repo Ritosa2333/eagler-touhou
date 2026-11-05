@@ -20,6 +20,14 @@ SOURCES = {
     "th04": ("东方幻想乡", "f/fd", (2156, 1485), 5100288),
 }
 
+# Square framing preserves the illustrated subjects at library-card sizes.
+CROPS = {
+    "th01": (0, 100, 1499, 1599),
+    "th02": (0, 175, 1525, 1700),
+    "th03": (0, 0, 1522, 1522),
+    "th04": (180, 0, 1665, 1485),
+}
+
 
 def main():
     parser = ArgumentParser(description=__doc__)
@@ -58,12 +66,12 @@ def main():
                 "preparedAt": datetime.now(timezone.utc).isoformat(),
             }
             if not args.download_only:
-                card = ImageOps.exif_transpose(image).convert("RGB")
+                card = ImageOps.exif_transpose(image).convert("RGB").crop(CROPS[game])
                 card.thumbnail((960, 960), Image.Resampling.LANCZOS)
                 encoded = BytesIO()
                 card.save(encoded, "WEBP", quality=88, method=6)
                 card_bytes = encoded.getvalue()
-                record["card"] = {"file": f"{game}-card.webp", "width": card.width,
+                record["card"] = {"file": f"{game}-card.webp", "crop": CROPS[game], "width": card.width,
                                   "height": card.height, "sha256": sha256(card_bytes).hexdigest()}
                 (args.output / f"{game}-card.webp").write_bytes(card_bytes)
                 if game in SOURCES:
