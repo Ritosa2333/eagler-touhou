@@ -17,6 +17,7 @@ function instance(mode='target',setup={},options={}){
 }
 {
   const t=instance('full',{stage:5,power:128,rank:24});t.signal(0x7fe0);t.signal(0x7fe1);
+  assert.equal(t.h[r+73],0);assert.equal(t.h[d+0x53a0],0,'full play keeps the original Turbo setting');
   assert.equal(t.h[r+11],4);assert.equal(t.h[r+13],3);assert.equal(t.engine.status.power,1);assert.equal(t.engine.status.stage,0);checks++;
   assert.equal(t.engine.status.dream,12800);assert.equal(t.engine.status.dreamItems,7);assert.equal(t.h[cb+entries.resourceDirty],0);checks++;
   t.b(0x4669,1);t.signal(0x7fe4);assert.equal(t.engine.status.misses,1);t.signal(0x7fe2);assert.equal(t.engine.status.misses,1);checks++;
