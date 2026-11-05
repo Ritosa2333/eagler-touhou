@@ -15,10 +15,10 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
     const owner=replica;
     try{
       const now=performance.now(),tick=header.tickMs;budget=Math.min(8,budget+(now-last)/tick);last=now;
-      const catching=target!==null||following&&rows.length-owner.frame>12,limit=catching?32:Math.floor(budget);let count=0;
-      while(!closed&&owner===replica&&(!paused||target!==null)&&owner.frame<rows.length&&count<limit){
+      const delay=Math.round(600/tick),lag=rows.length-owner.frame,catching=target!==null||following&&lag>delay+30,limit=catching?32:Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.max(1,rows.length-delay):rows.length;let count=0;
+      while(!closed&&owner===replica&&(!paused||target!==null)&&owner.frame<edge&&count<limit){
         if(target!==null&&owner.frame>=target)break;
-        if(owner.advanceBatch){const end=Math.min(rows.length,owner.frame+limit-count,target??rows.length),batch=rows.slice(owner.frame,end);await owner.advanceBatch(batch);count+=batch.length;}
+        if(owner.advanceBatch){const end=Math.min(edge,owner.frame+limit-count,target??edge),batch=rows.slice(owner.frame,end);await owner.advanceBatch(batch);count+=batch.length;}
         else{await owner.advance(rows[owner.frame]);count++;}
       }
       if(!catching)budget=Math.max(0,budget-count);
@@ -53,7 +53,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       if(rows.length===available&&!replica&&channel.ready!==false)void boot();if(rows.length<available)pull();
     }catch(error){fail(error);}
   };
-  pullTimer=setInterval(pull,250);pull();
+  pullTimer=setInterval(pull,50);pull();
   return {stop,pause(value){paused=!!value;following=!paused;target=null;last=performance.now();},
     seek(frame){if(!Number.isInteger(frame)||frame<0||frame>rows.length)throw Error('观战位置无效');following=false;paused=true;target=frame;
       if(!replica||frame<replica.frame){generation++;replica?.stop();replica=null;void boot();}},

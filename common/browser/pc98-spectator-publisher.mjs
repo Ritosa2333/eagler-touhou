@@ -30,8 +30,8 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
       }
       if(!closed&&tape.end&&cursor===tape.length&&!pointBytes){ws.send(packet(3,header.players,cursor,0,new Uint8Array()));ended=true;}
     }catch(error){stop();onError(error);}
-    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,pointBytes?50:80);}
+    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,pointBytes?50:250);}
   }
-  void pump();return {kick(){if(tape.end){clearTimeout(timer);timer=null;void pump();}else if(!timer&&!busy)timer=setTimeout(()=>{timer=null;void pump();},80);},stop,get ended(){return ended;},
+  void pump();return {kick(){if(tape.end){clearTimeout(timer);timer=null;void pump();}else if(!timer&&!busy)timer=setTimeout(()=>{timer=null;void pump();},250);},stop,get ended(){return ended;},
     async seal(timeout=2000){const deadline=performance.now()+timeout;this.kick();while(!ended&&!closed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));return ended;}};
 }
