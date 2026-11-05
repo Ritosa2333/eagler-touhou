@@ -52,7 +52,7 @@ export class Netplay {
   this.rollbackEnabled=mode!==1;
   // The shared run serial gives each rematch a fresh, identical seed on both seats.
   const seed=((options.netplaySeed>>>0)^Math.imul(Number(url.searchParams.get('run')),0x9e3779b9))>>>0;
-  const rules=options.netplayTh19Rules??[4,1,1,1,1,1,1,0,0];const v=rules;if(!(Array.isArray(v)&&v.length===9&&v.every((n,i)=>Number.isInteger(n)&&n>=0&&n<([7,3,4,5,5,4,4,39,39][i]))&&(v[2]!==2||(v[7]<2&&v[8]<2))))throw Error("对战规则无效");
+  const rules=options.netplayTh19Rules??[0,1,1,4,4,1,1,0,0];const v=rules;if(!(Array.isArray(v)&&v.length===9&&v.every((n,i)=>Number.isInteger(n)&&n>=0&&n<([7,3,4,5,5,4,4,39,39][i]))&&v[0]===0&&v[3]===v[4]&&v[5]===1&&v[6]===1&&(v[2]!==2||(v[7]<2&&v[8]<2))))throw Error("对战规则无效");
   this.config={rules,protocol:1,build,seed:seed||1,difficulty,characters,delay,rollback:this.rollbackEnabled};
   this.core.eaglerOptions=options;
   this.side=side;this.core._th19_touch_side?.(side);this.delay=delay;this.direct=options.touchEnabled===true&&options.touchMovementMode==='touch-unlimited';

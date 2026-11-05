@@ -469,7 +469,7 @@ th19::ReflectionRng g_vs_scene_rng;
 int g_vs_scene_side=0;th19::VsScene g_vs_scene{1,1};
 bool g_vs_first_confirmed=false;bool g_vs_second_confirmed=false;int g_vs_match_confirm=-1;
 th19::VsMatch g_vs_match;bool g_battle_timeout=false;
-int g_vs_rules[7]={4,1,1,1,1,1,1};bool g_vs_rule_edit=false;int g_vs_rule_pending=0;
+int g_vs_rules[7]={0,1,1,4,4,1,1};bool g_vs_rule_edit=false;int g_vs_rule_pending=0;
 i32 g_vs_rule_time=5,g_vs_rule_round=1,g_vs_rule_card=0,g_vs_rule_p1life=5,g_vs_rule_p2life=5;
 i32 g_char_sel = 0;           // 角色选择页选中角色 0-18
 // 角色选择 19 角色 4 方向邻接表（原版 DAT_005a9c18，表序 [上,下,左,右]，位 0x10/0x20/0x40/0x80）
@@ -2453,11 +2453,13 @@ void draw_title_version(){
 }
 void draw_vs_rules(){
     for(int i=0;i<17;++i){const auto&r=VS_RULE_ROWS[i];const int sel=r.selection;
+        if(sel==0||sel==4||sel==5||sel==6)continue;
         const bool chosen=sel==g_sub_sel;
         const u32 color=sel<0?0xffffffff:chosen?0xffffff20:g_vs_rule_edit?0x80303030:0xff808080;
         const char*text=i>=10?VS_RULE_VALUES[sel][g_vs_rule_edit&&chosen?g_vs_rule_pending:g_vs_rules[sel]]:r.text;
-        // 519a60/519770: all 17 rows use native font4 (40px), including heading.
-        draw_text(text,40,640+r.x,r.y,color,35,0);
+        if(sel==3&&i<10)text="Both Players Life";
+        const float y=sel<0?40.f:sel==1?(i>=10?230.f:180.f):sel==2?(i>=10?350.f:300.f):sel==3?(i>=10?470.f:420.f):sel==7?620.f:720.f;
+        draw_text(text,40,640,y,color,35,0);
     }
 }
 void draw_sub_screen() {
@@ -3086,6 +3088,7 @@ void retry_story_stage(){
 
 // 517790: VS stage and music share a random choice of participating character.
 void start_vs_match(bool newMatch=true) {
+    g_vs_rules[0]=0;g_vs_rules[4]=g_vs_rules[3];g_vs_rules[5]=g_vs_rules[6]=1;
     g_story_challenge_run=false;
     if(newMatch){
         g_vs_match.begin(g_vs_rules[0],g_vs_rules[1]);
@@ -5326,7 +5329,7 @@ void frame() {
     // 5593b0 state3: after fourteen ticks enter native state8 (difficulty).
     if(g_vs_entry_transition>=0&&++g_vs_entry_transition>=14){
         g_vs_entry_transition=-1;
-        if(g_vs_entry==3){g_screen=SCR_VSRULES;g_sub_sel=0;g_vs_rule_edit=false;start_sub_screen(g_screen);}
+        if(g_vs_entry==3){g_screen=SCR_VSRULES;g_sub_sel=1;g_vs_rule_edit=false;start_sub_screen(g_screen);}
         else if(g_vs_entry==4){g_key_return_screen=SCR_VS;g_screen=SCR_KEYCONFIG;start_sub_screen(g_screen);}
         else {g_screen=SCR_STORY;g_sub_sel=1;g_story_cursor=1;
             start_sub_screen(SCR_STORY);}
@@ -5597,18 +5600,18 @@ void game_tick() {
             }
         } else if(g_screen==SCR_VSRULES){
             if(!g_vs_rule_edit){
-                if(up&&!rb_game_tick_prev_up){g_sub_sel=(g_sub_sel+8)%9;play_sfx(10);}
-                if(dn&&!rb_game_tick_prev_dn){g_sub_sel=(g_sub_sel+1)%9;play_sfx(10);}
-                if(g_sub_sel<3&&((left&&!rb_game_tick_prev_left)||(right&&!rb_game_tick_prev_right))){int&i=g_vs_rules[g_sub_sel];i=(i+(left?-1:1)+VS_RULE_COUNTS[g_sub_sel])%VS_RULE_COUNTS[g_sub_sel];play_sfx(10);}
+                if(up&&!rb_game_tick_prev_up){const int rows[]={1,2,3,7,8};int i=0;while(i<4&&rows[i]!=g_sub_sel)++i;g_sub_sel=rows[(i+4)%5];play_sfx(10);}
+                if(dn&&!rb_game_tick_prev_dn){const int rows[]={1,2,3,7,8};int i=0;while(i<4&&rows[i]!=g_sub_sel)++i;g_sub_sel=rows[(i+1)%5];play_sfx(10);}
+                if((g_sub_sel==1||g_sub_sel==2)&&((left&&!rb_game_tick_prev_left)||(right&&!rb_game_tick_prev_right))){int&i=g_vs_rules[g_sub_sel];i=(i+(left?-1:1)+VS_RULE_COUNTS[g_sub_sel])%VS_RULE_COUNTS[g_sub_sel];play_sfx(10);}
                 if(z&&!rb_game_tick_prev_z){play_sfx(7);
-                    if(g_sub_sel>=3&&g_sub_sel<=6){g_vs_rule_edit=true;g_vs_rule_pending=g_vs_rules[g_sub_sel];}
-                    else if(g_sub_sel==7){int defaults[]={4,1,1,1,1,1,1};std::copy(defaults,defaults+7,g_vs_rules);}
+                    if(g_sub_sel==3){g_vs_rule_edit=true;g_vs_rule_pending=g_vs_rules[g_sub_sel];}
+                    else if(g_sub_sel==7){int defaults[]={0,1,1,4,4,1,1};std::copy(defaults,defaults+7,g_vs_rules);}
                 }
                 if((x&&!rb_game_tick_prev_x)||(z&&!rb_game_tick_prev_z&&g_sub_sel==8)){g_screen=SCR_VS;g_sub_sel=3;start_sub_screen(g_screen);play_sfx(9);}
             }else{
                 if((left&&!rb_game_tick_prev_left)||(up&&!rb_game_tick_prev_up))g_vs_rule_pending=(g_vs_rule_pending+VS_RULE_COUNTS[g_sub_sel]-1)%VS_RULE_COUNTS[g_sub_sel];
                 if((right&&!rb_game_tick_prev_right)||(dn&&!rb_game_tick_prev_dn))g_vs_rule_pending=(g_vs_rule_pending+1)%VS_RULE_COUNTS[g_sub_sel];
-                if(z&&!rb_game_tick_prev_z){g_vs_rules[g_sub_sel]=g_vs_rule_pending;g_vs_rule_edit=false;play_sfx(7);}
+                if(z&&!rb_game_tick_prev_z){g_vs_rules[g_sub_sel]=g_vs_rule_pending;g_vs_rules[4]=g_vs_rules[3];g_vs_rule_edit=false;play_sfx(7);}
                 if(x&&!rb_game_tick_prev_x){g_vs_rule_edit=false;play_sfx(9);}
             }
         } else if (g_screen == SCR_KEYCONFIG) {
@@ -5917,11 +5920,11 @@ __attribute__((export_name("th19_checkpoint_release"))) void th19_checkpoint_rel
  rb_checkpoints.erase(it);
 }
 
-static i32 networkRules[9]={4,1,1,1,1,1,1,0,0};
+static i32 networkRules[9]={0,1,1,4,4,1,1,0,0};
 __attribute__((export_name("th19_network_set_rules"))) u32 th19_network_set_rules(i32 time,i32 rounds,i32 ability,i32 left,i32 right,i32 barrierLeft,i32 barrierRight,i32 cardLeft,i32 cardRight){
  const i32 values[]={time,rounds,ability,left,right,barrierLeft,barrierRight,cardLeft,cardRight};
  const int counts[]={7,3,4,5,5,4,4,39,39};
- if(g_network_active)return 0;
+ if(g_network_active||time!=0||left!=right||barrierLeft!=1||barrierRight!=1)return 0;
  for(int i=0;i<9;++i)if(values[i]<0||values[i]>=counts[i])return 0;
  if(ability==2&&(cardLeft>1||cardRight>1))return 0;
  std::copy(values,values+9,networkRules);return 1;

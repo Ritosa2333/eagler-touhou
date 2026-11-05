@@ -2106,5 +2106,6 @@
   "th19_minutes": "{count} 分钟",
   "th19_card": "能力卡 #{number}",
   "th19_selfCard": "专属卡 {number}",
-  "th19_input": "TH19 专属按键方案"
+  "th19_input": "TH19 专属按键方案",
+  "th19_lives": "双方初始生命"
 }
