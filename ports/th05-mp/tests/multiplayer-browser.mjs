@@ -34,7 +34,7 @@ try{
   const started=Date.now();
   await page.evaluate(()=>{
    const m=document.querySelector('iframe').contentWindow.Module;
-   for(const name of ['_th05_clear','_th05_shutdown','_th05_net_close','_th05_save'])m[name]=()=>{throw Error('crashed Wasm called again: '+name);};
+   for(const name of ['_th05_clear','_th05_shutdown','_th05_net_close','_th05_save','_th05_key','_th05_pointer','_th05_touch_motion'])m[name]=()=>{throw Error('crashed Wasm called again: '+name);};
    m.onAbort('Mismatching io.KeyCtrl/io.KeyShift vs io.KeyMods');
   });
   await page.waitForFunction(count=>events.filter(e=>e.event==='exit'&&e.status==='error').length===count,count,{timeout:5000});
@@ -42,6 +42,15 @@ try{
   report.notificationMs=Date.now()-started;
   for(const command of ['keyboard-clear','touch-cancel']){
    const result=await page.evaluate(command=>window.command(0,command),command);
+   assert.equal(result.ok,true,JSON.stringify(result));
+  }
+  for(const [command,payload] of [
+   ['keyboard',{code:'KeyZ',down:true}],
+   ['direct-touch',{type:'down',id:1,x:.5,y:.5}],
+   ['thprac-mouse',{type:'down',x:200,y:200}],
+   ['touch-controls',{fireEnabled:true,focusEnabled:true,joystickX:0,joystickY:0,bombSerial:1,escapeSerial:1}],
+  ]){
+   const result=await page.evaluate(({command,payload})=>window.command(0,command,payload),{command,payload});
    assert.equal(result.ok,true,JSON.stringify(result));
   }
   for(let seat=1;seat<count;seat++)assert(report.crash.some(e=>e.epoch===7+seat&&e.event==='error'&&/P1.*TH05.*KeyMods/.test(e.message)),JSON.stringify(report.crash));
