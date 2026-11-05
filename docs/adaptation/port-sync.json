@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "194f57e4a93025b3a215fb10407297acb9738ae7",
+      "base": "f4136acc296873ca51bc04b5f3b358be3aff0266",
       "history": [
         {
           "kind": "manual",
@@ -51,6 +51,21 @@
             "ports/th05-mp/Game/Stage/Chara/Chara.cpp"
           ],
           "note": "Merged the normal port's centered 2x2 display indicator through projected history; MP keeps its local-seat rendering and rollback ownership."
+        },
+        {
+          "kind": "manual",
+          "base": "194f57e4a93025b3a215fb10407297acb9738ae7",
+          "source": "f4136acc296873ca51bc04b5f3b358be3aff0266",
+          "targetHead": "415f1648f20f489b2ed2f396e5628b51d5a45b88",
+          "paths": [
+            "ports/th05-mp/portable/Platform.cpp",
+            "ports/th05-mp/portable/Platform.hpp",
+            "ports/th05-mp/portable/UI.cpp",
+            "ports/th05-mp/tests/pen-browser.mjs",
+            "ports/th05-mp/tests/presentation.mjs",
+            "ports/th05-mp/web/shell.mjs"
+          ],
+          "note": "普通版与多人版在 BeginUI 固定修饰键快照，游戏逻辑采样不再改写 ImGui IO；两侧补齐 Wasm abort 清理，多人增加认证中继错误通知。多人保留独立回滚、观战与房间流程，以原生三端测试替代普通版 pen 夹具；接收现有键位映射与 node:test presentation 适配。目录历史合并 eca74877ca3a12d179aac9d291fe32439535e3bf 已按多人验证树写回。"
         }
       ]
     },
