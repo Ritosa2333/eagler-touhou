@@ -9,7 +9,7 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
   let cursor=0,started=false,ended=false,closed=false,busy=false,timer,pointIndex=0,pointOffset=0,pointBytes,nextPointAt=0;
   function stop(){closed=true;clearTimeout(timer);}
   async function pump(){
-    if(closed||ended||busy)return;busy=true;
+    timer=null;if(closed||ended||busy)return;busy=true;
     try{
       const ws=socket();if(!ws||ws.readyState!==1||ws.bufferedAmount>262144)return;
       if(!started){const body=encoder.encode(JSON.stringify(header));if(body.length+16>LIMIT)throw Error('观战开局数据过大');ws.send(packet(1,header.players,0,0,body));started=true;}
@@ -30,8 +30,8 @@ export function createPc98SpectatorPublisher(header,tape,socket,onError=()=>{},g
       }
       if(!closed&&tape.end&&cursor===tape.length&&!pointBytes){ws.send(packet(3,header.players,cursor,0,new Uint8Array()));ended=true;}
     }catch(error){stop();onError(error);}
-    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,cursor<tape.length?20:pointBytes?50:250);}
+    finally{busy=false;if(!closed&&!ended)timer=setTimeout(pump,pointBytes?50:80);}
   }
-  void pump();return {kick(){clearTimeout(timer);void pump();},stop,get ended(){return ended;},
+  void pump();return {kick(){if(tape.end){clearTimeout(timer);timer=null;void pump();}else if(!timer&&!busy)timer=setTimeout(()=>{timer=null;void pump();},80);},stop,get ended(){return ended;},
     async seal(timeout=2000){const deadline=performance.now()+timeout;this.kick();while(!ended&&!closed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));return ended;}};
 }

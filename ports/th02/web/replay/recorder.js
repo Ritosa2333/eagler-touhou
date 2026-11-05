@@ -1,6 +1,5 @@
 import {ConfirmedTape,VERSION,encodeTape,fingerprint,randomId,stable} from './tape.js';
-import {GAME,SOURCE_PATHS,PORTABLE} from './profile.js';
-import {createBuilder} from './builder.js';
+import {GAME,SOURCE_PATHS} from './profile.js';
 import {publishNetwork} from './network.js';
 import {LOCAL_CHUNK,pointSize,pointIndex} from './local-points.js';
 // Every public operation isolates failures from the player's execution loop.
@@ -30,7 +29,7 @@ export function createRecorder(toolbar){
         localSolo=adapter==='native-local/1'&&players===1;
         open.hidden=!localSolo;
         watch.hidden=localSolo;
-        if(PORTABLE&&!localSolo)builder=createBuilder(tape.header,()=>tape,p=>{points.push(p);publisher?.kick();update();},e=>{pointError='定位点生成停止：'+e.message;update();});
+        // Confirmed input is sufficient for viewers; do not run an extra game on a player's device.
         if(!localSolo){
           channel=new BroadcastChannel('pc98-replay-'+id);
           const options=globalThis.__eaglerPC98Options?.(),url=options?.netplayUrl?new URL(options.netplayUrl):null;
