@@ -43,6 +43,8 @@ for(const game of games){
     if(process.env.PC98_PRACTICE_BASELINE==='1'&&path==='/runtime/practice-engine.js')contents=Buffer.from(contents.toString().replace('heap()[resident+73]=1;','').replace('w8(0x53a0,1);',''));
     if(process.env.PC98_PRACTICE_DEATH==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeHit(lives){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;h[d+0xb2c]=lives;h[d+0xb2d]=0;h[d+0x2b94]=1;}\n`:`\nexport function testPracticeHit(lives){return emulator.call('practiceTestHit',[lives]);}\n`)]);
     if(process.env.PC98_PRACTICE_DEATH==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;h[r+11]=args[0]+1;h[r+13]=0;h[d+0x4669]=1;return;}if(method==='soloFault')"));
+    if(process.env.PC98_PRACTICE_CLEAR==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeClear(){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x2bfa]=1;}\n`:`\nexport function testPracticeClear(){return emulator.call('practiceTestClear');}\n`)]);
+    if(process.env.PC98_PRACTICE_CLEAR==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestClear'){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x53d9]=254;return;}if(method==='soloFault')"));
     res.end(contents);
   }catch{res.writeHead(404).end();}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -114,6 +116,13 @@ for(const game of games){
       await page.screenshot({path:resolve(output,`${label}-${game}-${kind}.png`)});
       await frame.$eval('canvas',n=>n.focus());await page.keyboard.press('Enter',{delay:80});
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.elapsed>0&&!p.waiting;},{timeout:15000}).catch(async error=>{console.error('Resume state',JSON.stringify(await state()));throw error;});
+      if(kind==='target'&&process.env.PC98_PRACTICE_LAYER==='1'){
+        await page.keyboard.press('Escape');await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:10000});await page.keyboard.press('F12');
+        await frame.waitForSelector('.practice-panel.practice-full:not([hidden])',{visible:true});
+        assert(await frame.evaluate(()=>{const panel=document.querySelector('.practice-panel'),pause=document.querySelector('.pc98-pause-menu'),a=panel.getBoundingClientRect(),b=pause.getBoundingClientRect(),x=(Math.max(a.left,b.left)+Math.min(a.right,b.right))/2,y=(Math.max(a.top,b.top)+Math.min(a.bottom,b.bottom))/2;return panel.contains(document.elementFromPoint(x,y));}),'practice panel is above the pause menu and receives input');
+        await frame.focus('[data-jump=lives]');const before=await frame.$eval('[data-jump=lives]',n=>n.value);await page.keyboard.press('ArrowRight');assert.notEqual(await frame.$eval('[data-jump=lives]',n=>n.value),before,'practice settings remain interactive above pause');
+        await page.keyboard.press('F12');assert.equal(await frame.$eval('.pc98-pause-menu',n=>n.hidden),false);await page.keyboard.press('Escape');await frame.waitForSelector('.pc98-pause-menu[hidden]');
+      }
       if(kind==='target'&&process.env.PC98_PRACTICE_PERF==='1'){
         const sample=async()=>{await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testDense());const a=await state(),start=performance.now();await new Promise(r=>setTimeout(r,5000));const b=await state();console.log(game,'dense fixture',await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPerfProbe()));return (b.native.practice.frames-a.native.practice.frames)*1000/(performance.now()-start);};
         const parked=await sample();await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testDisableStandby());const without=await sample();
@@ -143,6 +152,15 @@ for(const game of games){
       assert(Math.abs(resultStyle.left-.05)<.01&&Math.abs(resultStyle.top-1/30)<.01&&Math.abs(resultStyle.width-.6)<.01&&Math.abs(resultStyle.height-14/15)<.01,'result uses pause menu geometry');
       assert.equal(resultStyle.background,'rgb(71, 122, 172)');assert(resultStyle.selected);
       console.log(game,'PASS native spare life and final game over');
+    }
+    if(process.env.PC98_PRACTICE_CLEAR==='1'){
+      await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeClear());
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice?.outcome==='clear',{timeout:15000});
+      await frame.waitForSelector('#practice-result-dialog[open]',{visible:true,timeout:5000});
+      assert.equal(await frame.$eval('#practice-result-title',n=>n.textContent),'练习成功');
+      await new Promise(r=>setTimeout(r,1500));assert.equal((await state()).native.practice.outcome,'clear');
+      assert.equal(await page.evaluate(()=>events.some(e=>e.event==='exit')),false,'clear stays in practice');
+      console.log(game,'PASS simulated Boss defeat displays practice success');
     }
     if(process.env.PC98_PRACTICE_REPLAY==='1'){
       assert.equal(await frame.evaluate(game=>[...__eaglerPC98Files.memory.keys()].filter(name=>name.endsWith('.'+game+'r')).length,game),0,'finishing does not save a file');
