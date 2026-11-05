@@ -75,6 +75,10 @@ Chromium 使用相同零售归档和脚本，按旧、新、新、旧顺序交�
 
 各组的状态、确认录像输入和画面均与完整输入执行一致。六面三人以 12 帧窗口推进 6000 帧，已分配峰值由 490.5 降至 487.7 MiB，两次线性内存峰值均为 550.7 MiB，终点指纹一致。[采样、构建身份与投影](animation-index-comparison.json)。
 
+## 主站正式发布
+
+2026-11-05，touhouonline.com 正式版的 TH15 多人运行包更新至 `1.0.3-eagler-5c72edaaa2f5`。发布前使用同一 WASM 完成双人、三人联机和旁观回归，正式发布候选通过 8846 个文件的整站验证。切换后，公网 Chromium 核对了全部 15 个运行文件的字节与哈希，启动并绘制多人房间预览。旧版运行路径仍可访问。[发布与浏览器记录](production-deployment.json)。
+
 ## 复现
 
 内存驱动为 [`ports/th15-mp/memory-browser.mjs`](../../ports/th15-mp/memory-browser.mjs)。以相同零售资源、共享字体和 Runtime shell 分别运行旧、新开发构建：
