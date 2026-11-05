@@ -80,6 +80,8 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+2026-11-05 [实际加载初始化独立交付候选](https://github.com/AdingApkgg/thp/blob/ff715ca3b5616990d97eef7daf75013aa3d0d259/docs/porting/TH14_STAGE_RESTORE_DELIVERY_NOV05.md)：GameSession／SDL 对三个真实 RNG 存储及第四次全局投影分别确认；GLES 候选全量重编 146 单元（141 玩法），未混用旧虚函数对象。真实 Worker 入口／client／protocol 与实际初始化 lambda、经济投影组件 12 例通过，四个成功生产者在清理前正常完成；旧接口六例继续通过且小夹具 Wasm 相同，五项语法和 31 HTTP 请求通过。新浏览器候选完成灵梦 B Normal 第一面、射击、自然 Game Over、标题／Quit 和空管理器，警告／错误为空、全程静音。未跨关，不计浏览器独立交付通过；ACK 成本、原版调度、完整回归及整作 1:1 继续，通过数不变。
+
 2026-11-05 [首个资源阶段前的等待取消修复](https://github.com/AdingApkgg/thp/blob/0fae38ee57a2074b45c0d616e1686b9582d30c09/docs/porting/TH14_STAGE_WAIT_CANCEL_NOV05.md)：生产资源 owner 在零阶段掩码时也通知宿主取消，避免跳过 SDL 等待代次清理。实际 owner 方法／SDL 取消方法体及真实等待与上传队列组件 35 项检查通过，旧条件七项失败保留；生产 CPP 语法检查通过。记录设备单元未执行普通 Application／GPU，浏览器 Wasm 未替换；完整生命周期、独立交付、第四次全局复制和整作 1:1 继续，模式通过数不变。
 
 2026-11-05 [独立 RNG 交付组件](https://github.com/AdingApkgg/thp/blob/7ceed30e291f259da9b197efdfebf155262c8d49/docs/porting/TH14_INDEPENDENT_RNG_DELIVERY_NOV05.md)：真实 Worker 在单次同步 Wasm 内推进生产恢复 job 三个存储，三次运行及取消／旧任务控制通过；12 次捕获的合成 RNG 调用经原版算术、返回拼接和脚本存储指令组件复核，48 字一致，五个错侧读取控制均拒绝。同线程定时器在同步调用内交付零存储。未改正式玩法，普通 Application 接入、第四次录像全局复制、原版独立调度与整作 1:1 仍未验收，通过数不变。
