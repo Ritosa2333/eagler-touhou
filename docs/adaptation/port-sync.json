@@ -4,7 +4,7 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "ceeec35a3981957a46d792518e3fa754cb76628b",
+      "base": "21385b86267abbe616c6c6193fe4f0d55f03c534",
       "history": [
         {
           "kind": "manual",
@@ -76,6 +76,16 @@
             "ports/th05-mp/web/shell.mjs"
           ],
           "note": "两侧 Runtime 拦截 native abort 后的按键、触控、暂停菜单与清理消息；MP 三端实测通知原因和退出状态，晚到输入不再访问 Wasm。普通版历史通过 bf8078f3f06f8fa4207428fd051033ca9d6653ff 合入 MP 验证树。"
+        },
+        {
+          "kind": "manual",
+          "base": "ceeec35a3981957a46d792518e3fa754cb76628b",
+          "source": "21385b86267abbe616c6c6193fe4f0d55f03c534",
+          "targetHead": "9454d94498b20bbfcc8678c283915e6acdb12704",
+          "paths": [
+            "ports/th05-mp/portable/Platform.cpp"
+          ],
+          "note": "两侧 SetKey 保留练习快捷键使用的即时 KeysDown 边沿；Shift/Ctrl 修饰标志继续只在 BeginUI 发布，避免帧内不一致。多人保留相同输入处理，目录合并 2993bfb84 已按验证树写回。"
         }
       ]
     },
