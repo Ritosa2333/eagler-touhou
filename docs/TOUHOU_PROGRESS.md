@@ -80,10 +80,13 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 
 ## [th14] 東方輝針城 v1.00b
 
+[启动输入、完成时刻与活动弹计数隔离](https://github.com/AdingApkgg/thp/blob/cb7c726afa58da39d4aa4c8bd19a08b8251a71d4/docs/porting/TH14_STARTUP_TIMING_SENSITIVITY_NOV05.md)：两份同 EXE／完整录像原版记录按关卡帧形成 34,429 个唯一配对，仅脚本 RNG 两字段和 9 个活动弹计数不同；启动输入及观察配置不同，未据此接受普通 GUI 非确定性。9 组各 35,000 回调的合成控制均完整核算选定状态，两个新采集器基线与既有轨迹逐字节相同。只交换启动时间/cookie 不改变弹数，只延后三面 Initialize 就绪会改变后续两处弹数，但与另一原版仍有 9 处差异，旧吻合伴随新差异，不能作为修复。正式玩法／fixture／严格门槛未改，旧负例和独立调度继续。另复核原始截图，将新录像说明中的最大得点误记更正为 10,010；整作 1:1 未完成。
+
+
 [自有 RAF 与 SDL 交换间隔时钟修复](https://github.com/AdingApkgg/thp/blob/965677620476c9b2417742bbb043cc98f28a9aee/docs/porting/TH14_RAF_OWNED_SWAP_NOV05.md)：定位 SDL 将交换间隔延迟到首轮事件轮询后设置不存在的 Emscripten main loop；仅 Emscripten TH14 跳过该请求，自有异步 RAF 不变。重编一个 Renderer、145 对象／141 玩法对象复用；五项共享分支编译、135 路由／28 HTTP及三份服务文件版本回读通过。实际 Normal 灵梦 A 开局、射击、暂停恢复／移动、返回标题／Quit、整页刷新再启动及再 Quit 通过，控制台 warning/error 为空。旧错误和管理窗口偶发失败仍保留，旧版持久化不自动转为新版本验收；全模式、离线、独立时序及整局原版像素／PCM继续，整作 1:1 未完成。
 
 
-[普通新录像保存、刷新与回放](https://github.com/AdingApkgg/thp/blob/0a89fc450a73657d4f597e6c613d9da3c8f4d105/docs/porting/TH14_BROWSER_NEW_RECORDING_NOV05.md)：实际灵梦 B Normal 经正常碰撞 Game Over、未续关，Save 写入原本为空的 No.02，姓名删除／输入 B／End 通过。整页刷新后的普通 Replay 自然结束，选定 HUD 与现场一致；1,240 字节文件完整原版解密／解压机器码组件校验通过，声明 1,294 帧未当实测回调数。旧五份和新一份界面导出共 420,661 字节均与基线相同。保留回放 Quit 后管理窗口首次未打开，刷新恢复及后续两次标题 Quit 成功不构成修复。正式源码未改，其他分支、离线、独立时序和整局原版像素／PCM继续，整作 1:1 未完成。
+[普通新录像保存、刷新与回放](https://github.com/AdingApkgg/thp/blob/cb7c726afa58da39d4aa4c8bd19a08b8251a71d4/docs/porting/TH14_BROWSER_NEW_RECORDING_NOV05.md)：实际灵梦 B Normal 经正常碰撞 Game Over、未续关，Save 写入原本为空的 No.02，姓名删除／输入 B／End 通过。整页刷新后的普通 Replay 自然结束，选定 HUD 与现场一致；1,240 字节文件完整原版解密／解压机器码组件校验通过，声明 1,294 帧未当实测回调数。旧五份和新一份界面导出共 420,661 字节均与基线相同。保留回放 Quit 后管理窗口首次未打开，刷新恢复及后续两次标题 Quit 成功不构成修复。正式源码未改，其他分支、离线、独立时序和整局原版像素／PCM继续，整作 1:1 未完成。
 
 
 [当前 GLES 浏览器六面回放、退出与持久化](https://github.com/AdingApkgg/thp/blob/6cbba66155041fb4e72611b91df212a2b8b6e7c9/docs/porting/TH14_BROWSER_LIFECYCLE_NOV05.md)：无探针候选经普通菜单选择同一灵梦 B Normal 完整录像，自带快进下连续一至六面均直接观察，自然结束后稳定显示 801,525,760／残机 8，与封存原版选定终局 HUD 字段一致。正常返回录像列表、Quit、整页刷新后五份录像再导出，419,421 字节全部与播放前相同；当前成绩导出的 149,076 字节解码与完整重编码通过原版机器码组件比较。正式玩法未改，原始录像／成绩／截图和二进制留本地；保留两次已有 SDL 时钟警告。未把录像声明帧数当浏览器实测回调数，未读取隐藏总分；全模式、普通新录像保存、离线、独立时序和整局原版像素／PCM继续，整作 1:1 未完成。
