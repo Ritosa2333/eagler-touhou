@@ -54,7 +54,7 @@ export class DOSBoxPC98 {
       const lifecycle=lifeConfig?createSoloReplayLifecycle(lifeConfig,()=>this.module.HEAPU8):null;let lifeState;
       this.externalHost=createExternalReplayHost({...replay,
         clock:this.practiceClock,shouldHold:()=>this.holdPreparedPractice(),
-        shouldFastForward:()=>!!this.practice?.status.preparing,onBoundary:()=>{if(replay.mode==='record'){lifeState=lifecycle?.();if(lifeState?.finish==='game-over')this.practice?.gameOver();}this.module.observeReplayBoundary?.();},
+        shouldFastForward:()=>!!this.practice?.status.preparing,onBoundary:()=>{if(replay.mode==='record'){lifeState=lifecycle?.();if(lifeState?.finish==='game-over')this.practice?.gameOver();else if(lifeState?.finish==='clear')this.practice?.clear();}this.module.observeReplayBoundary?.();},
         observe:()=>{const p=this.practice?.status;if(p?.outcome)return {active:true,stage:p.stage,paused:true,finish:p.outcome==='clear'?'clear':'game-over'};return lifeState;},
         applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module),
         onChunk:value=>replay.onChunk?.(value),onEnd:value=>replay.onEnd?.(value),

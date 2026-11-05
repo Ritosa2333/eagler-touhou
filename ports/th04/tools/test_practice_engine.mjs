@@ -15,6 +15,12 @@ function instance(mode='target',setup={},options={}){
   const engine=createPracticeEngine({mod,patch,config,clock}),signal=port=>engine.signal(port,ds<<16|cs),b=(at,n)=>{h[d+at]=n;},w=(at,n)=>v.setUint16(d+at,n&65535,true);
   return {mod,h,v,engine,signal,b,w,clock};
 }
+for(const stage of [5,6]){
+  const t=instance('target',{stage,entry:'stage'});t.signal(0x7fe0);t.signal(0x7fe1);t.signal(0x7fe2);
+  t.w(0xbcd0,0x6013);t.b(0x53d9,2);t.signal(0x7fe5);
+  if(stage===6){t.b(0x53d9,254);t.signal(0x7fe5);assert.equal(t.engine.status.outcome,null,'Mugetsu hands over to Gengetsu');t.w(0xbcd0,0xc7da);t.b(0x53d9,2);t.signal(0x7fe5);}
+  t.b(0x53d9,254);t.signal(0x7fe5);assert.equal(t.engine.status.outcome,'clear','final Boss defeat completes practice');checks++;
+}
 {
   const t=instance('full',{stage:5,power:128,rank:24});t.signal(0x7fe0);t.signal(0x7fe1);
   assert.equal(t.h[r+73],1);assert.equal(t.h[d+0x53a0],1,'full play uses native Turbo mode');

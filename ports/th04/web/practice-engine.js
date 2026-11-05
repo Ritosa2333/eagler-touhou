@@ -7,7 +7,7 @@ const loops=[{2:16},{2:11,4:11},{3:40},{2:52},{2:4,5:4,8:4,11:4,14:4},{2:10,4:10
 export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}}){
   const initial=normalizePractice(config),setup=initial.setup,targeted=initial.mode==='target';let options=initial.options;
   let base=-1,d=-1,csBase=-1,resident=-1,initialized=false,ready=false,preparing=targeted,waiting=false,outcome=null,error=null;
-  let frames=0,elapsed=0,misses=0,bombsUsed=0,lastNativeBombs=0,lockedPower=null,warped=false,prepareFrames=0,seenBoss=false,selectedPhase=0,pendingHitCounted=false,seekFinalHp=0,idleBoundaries=0,observedFrames=-1;
+  let frames=0,elapsed=0,misses=0,bombsUsed=0,lastNativeBombs=0,lockedPower=null,warped=false,prepareFrames=0,seenBoss=false,seenGengetsu=false,selectedPhase=0,pendingHitCounted=false,seekFinalHp=0,idleBoundaries=0,observedFrames=-1;
   let effectiveKeys=0,effectiveFocus=0;
   let entryCleanup=null,redrawFrames=0,fatal=false;
   const heap=()=>mod.HEAPU8,view=()=>new DataView(heap().buffer),u8=n=>heap()[d+n],u16=n=>view().getUint16(d+n,true),i16=n=>view().getInt16(d+n,true),w8=(n,x)=>{heap()[d+n]=x;},w16=(n,x)=>view().setUint16(d+n,x,true);
@@ -152,15 +152,17 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     const phase=u8(setup.entry==='mid'?0x53c5:0x53d9);
     if(setup.entry==='mid')return setup.phase?phase!==selectedPhase:phase>=254;
     const boss=active()==='boss';if(boss&&u8(0x53d9)>=2)seenBoss=true;
+    if(boss&&u16(0xbcd0)===0xc7da)seenGengetsu=true;
     // Extra whole stage/Boss includes both sisters; Mugetsu's first defeat
     // is a native handoff, not completion of the entire Extra boss range.
     if(setup.phase)return phase!==selectedPhase;
-    if(setup.stage===6&&setup.branch!=='gengetsu')return seenBoss&&u16(0xbcd0)===0xc7da&&phase>=254;
+    if(setup.stage===6&&setup.branch!=='gengetsu')return seenBoss&&seenGengetsu&&phase>=254;
     return seenBoss&&phase>=254;
   }
   function status(){return {mode:initial.mode,ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
   return {
     gameOver(){if(targeted&&ready&&!outcome)finish('failed');},
+    clear(){if(targeted&&ready&&!outcome)finish('clear');},
     observeBoundary(){
       if(!targeted||!initialized||!preparing||error)return;
       const program=mod._emGetRunningProgram&&mod.UTF8ToString?.(mod._emGetRunningProgram());
@@ -219,6 +221,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
       // The state machine has changed phase, but the selected attack has not
       // updated yet. Retire old emitters before gather/items/render run.
       if(port===0x7fe5&&preparing&&warped&&setup.entry!=='stage')arrive();
+      if(port===0x7fe5&&targeted&&ready&&!waiting&&!outcome&&!u8(0x466a)&&!u8(0x4669)&&complete())finish('clear');
     },
     get status(){return status();},get debug(){return {base,d,csBase,resident,prepareFrames,entryCleanup};}
   };

@@ -28,3 +28,14 @@ test('TH02 counts a final death after native deathbomb and respawn handling',asy
   write(0xb2c,0);write(0xaa7,1);write(0x2b99,10);signal(0x7fd4);assert.equal(engine.status.outcome,null);
   write(0x2b99,0);signal(0x7fd4);assert.equal(engine.status.outcome,'failed','last life ends after native death processing');
 });
+
+for(const stage of [4,5])test(`TH02 stage ${stage+1} practice completes when its Boss is defeated`,async()=>{
+  const manifest=JSON.parse(await readFile(new URL('../../ports/th02/web/practice-assets.json',import.meta.url)));
+  const patch=manifest.languages.jp.patch,base=0x10000,cs=0x3000,ds=0x5000,d=base+ds*16,cb=base+cs*16,resident=base+0x90000;
+  const h=new Uint8Array(0x120000),v=new DataView(h.buffer);h.set(new TextEncoder().encode(patch.signature),cb+patch.entries.mailbox);h.set(new TextEncoder().encode('MIKOConfig\0'),resident);
+  v.setUint16(d+0x27fe,0x9000,true);v.setUint16(d+0x27fc,0,true);h[d+0x8f5]=stage;
+  const engine=createPracticeEngine({mod:{HEAPU8:h},patch,config:{version:PRACTICE_VERSION,mode:'target',setup:{stage,entry:'stage'},options:PRACTICE_DEFAULTS},clock:{setSpeed(){}}});
+  const signal=port=>engine.signal(port,ds<<16|cs);signal(0x7fd0);signal(0x7fd1);signal(0x7fd1);
+  h[d+0x19f6]=1;signal(0x7fd4);assert.equal(engine.status.outcome,null);
+  h[d+0x2bfa]=1;signal(0x7fd4);assert.equal(engine.status.outcome,'clear');
+});

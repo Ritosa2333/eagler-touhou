@@ -69,7 +69,7 @@ async function returnToTitle(save){
 async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
   onStart:value=>void restart(value).catch(report),onRetry:()=>void restart({...lastPractice,options:practiceUI.options},true).catch(report),onSave:()=>void saveRecording().catch(report),
-  onPause:()=>{if(emulator){emulator.key('Escape',true);setTimeout(()=>emulator?.key('Escape',false),120);}}});
+  onPause:()=>{if(emulator&&!pauseMenu.visible){emulator.key('Escape',true);setTimeout(()=>emulator?.key('Escape',false),120);}}});
 const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.practice?.status})});
 function tick(now){
   if(!emulator)return;const frameState=readState(),sample=input.sample({play:!pauseMenu.visible&&frameState?.mode===1&&!frameState.hit}),edge=sample&~pausePrevious;pausePrevious=sample;
