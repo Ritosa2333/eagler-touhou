@@ -10,6 +10,7 @@ import { build } from 'esbuild';
 import { execFileSync } from 'node:child_process';
 import { authoredSourcesPlugin } from './authored-sources.mjs';
 import { installMountedDom } from './mounted-dom-environment.mjs';
+import { TEST_FEATURES_KEY } from '../../src/launcher/test-features.mts';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 let env, work, owner, ownerAccounts, React, createRoot, mounted;
 before(async () => {
@@ -885,6 +886,40 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
     assert.equal(query('#gameFrame'), frame);
   } finally {
     globalThis.Audio = previousAudio;
+  }
+});
+
+test('RoomSession gates listen-together on opt-in and routes a peer offer back through its room socket', async () => {
+  const previousOptIn = env.window.localStorage.getItem(TEST_FEATURES_KEY);
+  const media = env.window.HTMLMediaElement.prototype;
+  const mediaMethods = {play:media.play,pause:media.pause,load:media.load};
+  Object.assign(media, {play:()=>Promise.resolve(),pause(){},load(){}});
+  env.window.localStorage.setItem(TEST_FEATURES_KEY, '1');
+  const room = makeRoomSession(owner);
+  try {
+    assert.ok(room.session.music, 'test opt-in creates the RoomMusic owner');
+    await act(() => room.session.service.enterRoom('th06mp', '1234', true));
+    const socket = room.sockets[0];
+    await act(() => {
+      socket.open();
+      socket.message({type:'state',listenTogether:2,room:roomSnapshot(room.identity,{phase:'lobby'})});
+    });
+    assert.equal(room.session.service.getSnapshot().listenTogetherSupported, true);
+    assert.deepEqual(Object.fromEntries(['enabled','eligible','connected','canInvite'].map(key=>[key,room.session.music.getSnapshot()[key]])),
+      {enabled:true,eligible:true,connected:true,canInvite:true});
+
+    await act(() => socket.message({type:'listen-together',session:'peer-session',revision:1,
+      participants:['remote123456'],track:{platform:'netease',id:'song-1',name:'Song',artist:'Artist'},
+      startedAt:null,pausedAt:null,serverTime:room.clock.now}));
+    assert.equal(room.session.music.getSnapshot().syncState, 'offered');
+    room.session.music.requestSync();
+    assert.deepEqual(socket.sent.at(-1), {type:'listen-together',action:'join',session:'peer-session'});
+  } finally {
+    room.session.dispose();
+    room.decisions.dispose();
+    Object.assign(media, mediaMethods);
+    if (previousOptIn === null) env.window.localStorage.removeItem(TEST_FEATURES_KEY);
+    else env.window.localStorage.setItem(TEST_FEATURES_KEY, previousOptIn);
   }
 });
 
