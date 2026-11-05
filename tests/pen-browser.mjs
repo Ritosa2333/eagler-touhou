@@ -34,6 +34,21 @@ try{
  await press(90);await frame.evaluate(()=>{for(let i=0;i<90;i++)Module._th05_step();});await press(90);await frame.evaluate(()=>{for(let i=0;i<110;i++)Module._th05_step();});
  report.gameplay=await frame.evaluate(()=>({scene:Module._th05_scene(),x:Module._th05_player_x(),y:Module._th05_player_y(),ticks:Module._th05_ticks()}));assert.equal(report.gameplay.scene,4,JSON.stringify(report.gameplay));
  await frame.evaluate(()=>{for(let n=0;n<240;n++)Module._th05_step();});
+ // Launcher gamepad polling may synchronously reconcile key owners. A later
+ // gameplay poll in this same frame must not change ImGui's modifier snapshot.
+ const modifiers=await frame.evaluate(()=>{
+  const previous=globalThis.__eaglerGamepadInputBridge;let reads=0;
+  try {
+   for(let n=0;n<8;n++){
+    reads=0;Module._th05_clear();
+    globalThis.__eaglerGamepadInputBridge={sample:()=>{++reads;if(reads===2){Module._th05_key(162,1);return 256;}return 0;}};
+    if(!Module._th05_step())throw Error('modifier frame failed');
+    Module._th05_clear();
+   }
+   return Module._th05_alive();
+  } finally {globalThis.__eaglerGamepadInputBridge=previous;Module._th05_clear();}
+ });
+ assert.equal(modifiers,1,'modifier changes during gameplay polling keep the UI frame valid');
  // A key focused inside the Runtime must pass through the Launcher's mapper.
  const mappedMovement=await frame.evaluate(()=>{
   const bridge=window.__eaglerKeyboardInputBridge;
