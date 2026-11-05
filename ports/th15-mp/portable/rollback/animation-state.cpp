@@ -87,6 +87,22 @@ void overflow_and_wrap(){
     require(registry.count()==8193&&order(registry)==expected,"overflow and generation-wrap order retained");
     for(auto h:handles)require(registry.find(h)!=nullptr,"all exact wrapped handles resolve");
 }
+void restore_pool_growth(){
+    AnmRegistry registry;
+    auto* first=registry.allocate();
+    auto* recycled=registry.allocate();
+    auto* third=registry.allocate();
+    require(registry.slot(*first)==0&&registry.slot(*recycled)==1&&registry.slot(*third)==2,"initial animation slots");
+    require(registry.discard(*recycled),"recycle a slot below the allocation frontier");
+    AnimationState before,after;
+    require(before.capture(registry),"capture recycled slot and untouched suffix");
+    require(registry.slot(*registry.allocate())==1&&registry.slot(*registry.allocate())==3,"use recycled slot before growing");
+    require(after.capture(registry),"capture grown pool");
+    require(before.restore(registry),"restore smaller pool");
+    require(registry.slot(*registry.allocate())==1&&registry.slot(*registry.allocate())==3,"restore exact recycled and untouched order");
+    require(before.restore(registry)&&after.restore(registry),"restore a larger pool from a smaller one");
+    require(registry.count()==4&&registry.slot(*registry.allocate())==4,"grown pool keeps its next untouched slot");
+}
 void unregistered_overlay_owner(){
     AnmRegistry registry;AnmVm owner;owner.geometry.overlay=std::make_unique<AnmOverlay>();
     owner.geometry.overlay->panels[0]=std::make_unique<AnmVm>();auto* panel=owner.geometry.overlay->panels[0].get();
@@ -295,4 +311,4 @@ void stopped_wait(){
 }
 
 }
-int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();shared_snapshot_storage();confirmed_image_reuse();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}
+int main(){exact_graph();frozen_root();overflow_and_wrap();restore_pool_growth();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();shared_snapshot_storage();confirmed_image_reuse();geometry_copy_reuse();tracked_interpolation();stopped_wait();std::puts("TH15 animation rollback ownership checks passed");}

@@ -3,7 +3,6 @@
 #include "FramePointerIndex.hpp"
 #include "FrameValues.hpp"
 #include "../game/AnmOverlay.hpp"
-#include <bitset>
 #include <algorithm>
 #include <limits>
 #include <unordered_set>
@@ -60,6 +59,7 @@ struct AnimationStateCache {
     FramePointerIndex<AnmVm> root_indices;
     std::vector<AnmVm*> unregistered;
     u64 epoch=0;
+    size_t seen_count=0;
     void release(std::shared_ptr<AnmVm>& image)noexcept{
         if(image.unique()&&spare_count<spare.size()&&image->geometry.empty()&&image->error.empty()&&
            !image->geometry.screen_vertices.capacity()&&!image->geometry.world_vertices.capacity()){
@@ -70,10 +70,12 @@ struct AnimationStateCache {
         if(!spare_count)return std::make_shared<AnmVm>();
         return std::move(spare[--spare_count]);
     }
-    void begin(){if(!++epoch){entries.clear();++epoch;}}
+    void begin(){if(!++epoch){entries.clear();++epoch;}seen_count=0;}
     std::shared_ptr<AnmVm> capture(const AnmVm& source){
-        auto& entry=entries[&source];entry.seen=epoch;
-        const bool same=entry.image&&source.error.empty()&&entry.image->error.empty()&&
+        auto& entry=entries[&source];
+        if(entry.seen!=epoch){entry.seen=epoch;++seen_count;}
+        const bool same=entry.image&&source.timer.current==entry.image->timer.current&&
+            source.age.current==entry.image->age.current&&source.error.empty()&&entry.image->error.empty()&&
             source.geometry.empty()&&entry.image->geometry.empty()&&
             std::memcmp(static_cast<const AnmVmState*>(&source),static_cast<const AnmVmState*>(entry.image.get()),sizeof(AnmVmState))==0;
         if(!same){
@@ -83,6 +85,7 @@ struct AnimationStateCache {
         return entry.image;
     }
     void finish(){
+        if(seen_count==entries.size())return;
         for(auto it=entries.begin();it!=entries.end();){
             if(it->second.seen==epoch){++it;continue;}
             release(it->second.image);
@@ -106,8 +109,8 @@ struct AnimationState::Data {
     struct RootImage {std::shared_ptr<AnmVm> vm;AnmVm* original=nullptr;};
     VmImages<RootImage> roots;
     size_t root_count=0;
-    std::bitset<0x1fff> present;
-    std::vector<u32> free_slots,pending;
+    size_t allocated_slots=0;
+    std::vector<u32> recycled_slots,pending;
     std::array<std::vector<u32>,2> groups;
     std::array<std::vector<const AnmVm*>,42> layers;
     // Top-level owners already have an original address in their frame image.
@@ -151,14 +154,15 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     if(!saved_)saved_=std::make_unique<Data>();
     if(!registry.frame_images)registry.frame_images=std::make_shared<AnimationStateCache>();
     auto& images=*registry.frame_images;images.begin();
-    discard();auto& s=*saved_;s.image_cache=registry.frame_images;s.present.reset();
+    discard();auto& s=*saved_;s.image_cache=registry.frame_images;
     auto& selected=images.selected;selected.clear();auto& indices=images.indices;
     indices.reset(registry.nodes.size()+registry.external.size());
     auto add=[&](const AnmRegistry::Node* n){if(n&&indices.insert(n,u32(selected.size())))selected.push_back(n);};
-    for(size_t i=0;i<registry.pool.size();++i){
+    // First use allocates pool slots in increasing order. Recycling leaves
+    // the node allocated and stacks its index above the untouched suffix.
+    s.allocated_slots=registry.nodes.size()-registry.overflow.size();
+    for(size_t i=0;i<s.allocated_slots;++i){
         const auto* node=registry.pool[i].get();
-        if(!node)continue;
-        s.present.set(i);
         if(node->active){add(node);continue;}
         // A cold pool slot can still own a panel with registered children.
         bool nested_live=false;
@@ -217,11 +221,14 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     for(size_t group=0;group<s.groups.size();++group){s.groups[group].clear();for(auto* n:registry.groups[group]){const auto index=indices.find(n);if(index==none){error="Rollback animation group is missing";return false;}s.groups[group].push_back(index);}}
     for(size_t layer=0;layer<s.layers.size();++layer)s.layers[layer].assign(registry.layers[layer].begin(),registry.layers[layer].end());
     s.pending.clear();for(auto* n:registry.pending_deletion){const auto index=indices.find(n);if(index==none){error="Rollback pending animation is missing";return false;}s.pending.push_back(index);}
-    s.free_slots=registry.free_slots;s.generation=registry.generation;s.active_count=registry.active_count;s.presentation_counter=guard.value;s.error=registry.error;
+    const auto untouched=registry.pool.size()-s.allocated_slots;
+    s.recycled_slots.assign(registry.free_slots.begin()+untouched,registry.free_slots.end());
+    s.generation=registry.generation;s.active_count=registry.active_count;s.presentation_counter=guard.value;s.error=registry.error;
     images.finish();s.captured=true;return true;
 }
 bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,const SpriteResolver& sprites)const{
     if(!ready())return false;const auto& s=*saved_;
+    const auto allocated=registry.nodes.size()-registry.overflow.size();
     // Recycle list links from the discarded future; splice preserves iterator
     // validity while restoring the captured child and callback order exactly.
     std::list<AnmRegistry::Node*> links;
@@ -230,13 +237,18 @@ bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,con
     for(auto& entry:registry.overflow){registry.nodes.erase(&entry.first->vm);links.splice(links.end(),entry.first->children);}
     for(auto& entry:registry.external)links.splice(links.end(),entry.second->children);
     registry.overflow.clear();registry.external.clear();
-    for(size_t i=0;i<registry.pool.size();++i){auto& owned=registry.pool[i];
+    for(size_t i=0;i<std::max(allocated,s.allocated_slots);++i){auto& owned=registry.pool[i];
         if(owned)links.splice(links.end(),owned->children);
-        if(!s.present[i]){if(owned)registry.nodes.erase(&owned->vm);owned.reset();continue;}
+        if(i>=s.allocated_slots){registry.nodes.erase(&owned->vm);owned.reset();continue;}
         if(!owned){owned=std::make_unique<AnmRegistry::Node>();registry.nodes.emplace(&owned->vm,owned.get());}
         auto& node=*owned;node.slot=u32(i);node.handle=0;
         node.active=node.registered=false;node.parent=nullptr;
     }
+    const auto previous_untouched=registry.pool.size()-allocated;
+    const auto untouched=registry.pool.size()-s.allocated_slots;
+    registry.free_slots.resize(untouched);
+    for(size_t i=previous_untouched;i<untouched;++i)registry.free_slots[i]=u32(registry.pool.size()-1-i);
+    registry.free_slots.insert(registry.free_slots.end(),s.recycled_slots.begin(),s.recycled_slots.end());
     const auto append=[&](std::list<AnmRegistry::Node*>& target,AnmRegistry::Node* value){
         if(links.empty())return target.insert(target.end(),value);
         const auto at=links.begin();*at=value;target.splice(target.end(),links,at);return at;
@@ -289,10 +301,10 @@ bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,con
     for(size_t group=0;group<s.groups.size();++group)for(auto index:s.groups[group]){auto* node=nodes[index];node->position=append(registry.groups[group],node);}
     for(size_t layer=0;layer<s.layers.size();++layer)for(auto* old:s.layers[layer]){auto* found=originals.find(old);if(!found){registry.error="Rollback animation draw order is incomplete";return false;}registry.layers[layer].push_back(found);}
     for(auto index:s.pending)registry.pending_deletion.push_back(nodes[index]);
-    registry.free_slots=s.free_slots;registry.generation=s.generation;registry.active_count=s.active_count;registry.error=s.error;AnmVm::presentation_counter=s.presentation_counter;return true;
+    registry.generation=s.generation;registry.active_count=s.active_count;registry.error=s.error;AnmVm::presentation_counter=s.presentation_counter;return true;
 }
 size_t AnimationState::retained_bytes()const noexcept{
-    if(!saved_)return 0;const auto& s=*saved_;size_t bytes=sizeof(Data)+s.nodes.retained_bytes()+s.roots.retained_bytes()+s.free_slots.capacity()*sizeof(u32)+s.pending.capacity()*sizeof(u32);
+    if(!saved_)return 0;const auto& s=*saved_;size_t bytes=sizeof(Data)+s.nodes.retained_bytes()+s.roots.retained_bytes()+s.recycled_slots.capacity()*sizeof(u32)+s.pending.capacity()*sizeof(u32);
     for(size_t i=0;i<s.nodes.size();++i){const auto& image=s.nodes[i];if(image.vm)bytes+=sizeof(AnmVm)+dynamic_bytes(*image.vm);bytes+=image.children.capacity()*sizeof(u32);}
     for(size_t i=0;i<s.roots.size();++i)if(s.roots[i].vm)bytes+=sizeof(AnmVm)+dynamic_bytes(*s.roots[i].vm);
     for(const auto& group:s.groups)bytes+=group.capacity()*sizeof(u32);

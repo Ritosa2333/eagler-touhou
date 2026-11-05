@@ -3138,5 +3138,572 @@
       "visible": 9032,
       "mismatches": 0
     }
+  },
+  "animationPoolCompaction": {
+    "retainedGraphBytes": {
+      "baseline": 89276,
+      "candidate": 55616,
+      "instances": 33
+    },
+    "unchangedRootWindowAllocatedBytes": {
+      "baseline": 488064,
+      "candidate": 82608,
+      "roots": 512,
+      "frames": 13
+    },
+    "exactBattleResimulations": 432,
+    "forcedRollback": [
+      {
+        "variant": "baseline",
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 13,
+              "p95": 17.5,
+              "p99": 21.2
+            },
+            "captureMs": {
+              "total": {
+                "p50": 6.6,
+                "p95": 9.0
+              },
+              "animationAndRootCollection": {
+                "p50": 3.9,
+                "p95": 5.3
+              },
+              "bullets": {
+                "p50": 1.0,
+                "p95": 1.9
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 40.5,
+              "p95": 57.9,
+              "p99": 65.1
+            },
+            "captureMs": {
+              "total": {
+                "p50": 17.1,
+                "p95": 25.0
+              },
+              "animationAndRootCollection": {
+                "p50": 10.8,
+                "p95": 17.2
+              },
+              "bullets": {
+                "p50": 4.1,
+                "p95": 5.4
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      },
+      {
+        "variant": "candidate",
+        "wasm": "fe7e10708804f92fc099446e10e5dbbe4d5ee1bc96f0d75550cc76a9f7a28fb8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 12.9,
+              "p95": 17.8,
+              "p99": 21.4
+            },
+            "captureMs": {
+              "total": {
+                "p50": 6.4,
+                "p95": 9.5
+              },
+              "animationAndRootCollection": {
+                "p50": 3.6,
+                "p95": 5.3
+              },
+              "bullets": {
+                "p50": 1.1,
+                "p95": 3.2
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 39.3,
+              "p95": 52.4,
+              "p99": 71.2
+            },
+            "captureMs": {
+              "total": {
+                "p50": 16.8,
+                "p95": 22.8
+              },
+              "animationAndRootCollection": {
+                "p50": 10.2,
+                "p95": 15.2
+              },
+              "bullets": {
+                "p50": 4.1,
+                "p95": 5.4
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      },
+      {
+        "variant": "candidate",
+        "wasm": "fe7e10708804f92fc099446e10e5dbbe4d5ee1bc96f0d75550cc76a9f7a28fb8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 7.1,
+              "p95": 9.7,
+              "p99": 12.3
+            },
+            "captureMs": {
+              "total": {
+                "p50": 3.6,
+                "p95": 5.0
+              },
+              "animationAndRootCollection": {
+                "p50": 1.7,
+                "p95": 2.4
+              },
+              "bullets": {
+                "p50": 0.7,
+                "p95": 1.3
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 26.2,
+              "p95": 76.6,
+              "p99": 107.4
+            },
+            "captureMs": {
+              "total": {
+                "p50": 11.9,
+                "p95": 29.6
+              },
+              "animationAndRootCollection": {
+                "p50": 7.0,
+                "p95": 17.3
+              },
+              "bullets": {
+                "p50": 3.2,
+                "p95": 7.9
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      },
+      {
+        "variant": "baseline",
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "0aba73893275f20a32d1850996e592392f7cf46690ca32a5bf448e3908ee28bf",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "stage": 1,
+            "players": 2,
+            "frames": 360,
+            "dense": false,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 7.8,
+              "p95": 13.7,
+              "p99": 21.1
+            },
+            "captureMs": {
+              "total": {
+                "p50": 4.1,
+                "p95": 7.4
+              },
+              "animationAndRootCollection": {
+                "p50": 2.2,
+                "p95": 4
+              },
+              "bullets": {
+                "p50": 0.8,
+                "p95": 1.5
+              }
+            },
+            "fingerprint": [
+              2183279469,
+              1768337462
+            ],
+            "screenshotSha256": "a1131ba2c8b6ee5cd6f66b5db89fe59a0bd427411681632e93a7be175a0d721f"
+          },
+          {
+            "stage": 6,
+            "players": 2,
+            "frames": 360,
+            "dense": true,
+            "depth": 8,
+            "replayedFrames": 2816,
+            "callbackMs": {
+              "p50": 22.8,
+              "p95": 67.6,
+              "p99": 81.9
+            },
+            "captureMs": {
+              "total": {
+                "p50": 10.8,
+                "p95": 26.7
+              },
+              "animationAndRootCollection": {
+                "p50": 6.5,
+                "p95": 16.5
+              },
+              "bullets": {
+                "p50": 2.8,
+                "p95": 6.6
+              }
+            },
+            "fingerprint": [
+              1575169126,
+              3812513934
+            ],
+            "screenshotSha256": "3313123743d9e8d51e3f4d88c52903f063702204a4a5e47567be591a53d6bbb8"
+          }
+        ]
+      }
+    ],
+    "rtc": [
+      {
+        "label": "anim-frontier-rtc-0",
+        "variant": "baseline",
+        "sampleCompleted": true,
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 3,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.083,
+            "simulationFps": 20.03,
+            "presentationFpsMedian": 17.75,
+            "minimumFullSecondForwardFrames": 13,
+            "progressGapP99Ms": 144,
+            "callbackWorkP95Ms": 55.7,
+            "replayedFrames": 391
+          },
+          {
+            "seat": 1,
+            "seconds": 12.139,
+            "simulationFps": 19.94,
+            "presentationFpsMedian": 17.61,
+            "minimumFullSecondForwardFrames": 13,
+            "progressGapP99Ms": 173.0,
+            "callbackWorkP95Ms": 47.5,
+            "replayedFrames": 350
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-rtc-1",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 3,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.128,
+            "simulationFps": 15.42,
+            "presentationFpsMedian": 14.2,
+            "minimumFullSecondForwardFrames": 9,
+            "progressGapP99Ms": 233.7,
+            "callbackWorkP95Ms": 71.4,
+            "replayedFrames": 320
+          },
+          {
+            "seat": 1,
+            "seconds": 12.099,
+            "simulationFps": 15.46,
+            "presentationFpsMedian": 14.23,
+            "minimumFullSecondForwardFrames": 10,
+            "progressGapP99Ms": 220.3,
+            "callbackWorkP95Ms": 68,
+            "replayedFrames": 283
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-rtc-2",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 3,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.165,
+            "simulationFps": 16.44,
+            "presentationFpsMedian": 15.69,
+            "minimumFullSecondForwardFrames": 12,
+            "progressGapP99Ms": 178.0,
+            "callbackWorkP95Ms": 76.1,
+            "replayedFrames": 423
+          },
+          {
+            "seat": 1,
+            "seconds": 12.181,
+            "simulationFps": 16.5,
+            "presentationFpsMedian": 15.77,
+            "minimumFullSecondForwardFrames": 12,
+            "progressGapP99Ms": 161.1,
+            "callbackWorkP95Ms": 40.8,
+            "replayedFrames": 176
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-rtc-3",
+        "variant": "baseline",
+        "sampleCompleted": false
+      },
+      {
+        "label": "anim-frontier-normal-0",
+        "variant": "baseline",
+        "sampleCompleted": true,
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.007,
+            "simulationFps": 59.05,
+            "presentationFpsMedian": 59.58,
+            "minimumFullSecondForwardFrames": 52,
+            "progressGapP99Ms": 31.4,
+            "callbackWorkP95Ms": 7.8,
+            "replayedFrames": 393
+          },
+          {
+            "seat": 1,
+            "seconds": 12.149,
+            "simulationFps": 58.93,
+            "presentationFpsMedian": 60,
+            "minimumFullSecondForwardFrames": 52,
+            "progressGapP99Ms": 31.3,
+            "callbackWorkP95Ms": 6.9,
+            "replayedFrames": 400
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-normal-1",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.0,
+            "simulationFps": 60.0,
+            "presentationFpsMedian": 59.99,
+            "minimumFullSecondForwardFrames": 58,
+            "progressGapP99Ms": 37.6,
+            "callbackWorkP95Ms": 6.4,
+            "replayedFrames": 219
+          },
+          {
+            "seat": 1,
+            "seconds": 12.065,
+            "simulationFps": 59.93,
+            "presentationFpsMedian": 59.99,
+            "minimumFullSecondForwardFrames": 58,
+            "progressGapP99Ms": 39.0,
+            "callbackWorkP95Ms": 11.3,
+            "replayedFrames": 662
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-normal-2",
+        "variant": "candidate",
+        "sampleCompleted": true,
+        "wasm": "3e534e17c7297f4233d5b237a6bfe3094246053ef83c1f9f3b7412e1230082d7",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.032,
+            "simulationFps": 60.17,
+            "presentationFpsMedian": 59.96,
+            "minimumFullSecondForwardFrames": 59,
+            "progressGapP99Ms": 37.9,
+            "callbackWorkP95Ms": 11.5,
+            "replayedFrames": 501
+          },
+          {
+            "seat": 1,
+            "seconds": 12.054,
+            "simulationFps": 60.06,
+            "presentationFpsMedian": 59.97,
+            "minimumFullSecondForwardFrames": 59,
+            "progressGapP99Ms": 47.2,
+            "callbackWorkP95Ms": 9.6,
+            "replayedFrames": 369
+          }
+        ]
+      },
+      {
+        "label": "anim-frontier-normal-3",
+        "variant": "baseline",
+        "sampleCompleted": true,
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cpuThrottle": 1,
+        "renderScale": 2,
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "presentationCap": 60,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 12.094,
+            "simulationFps": 54.99,
+            "presentationFpsMedian": 59.57,
+            "minimumFullSecondForwardFrames": 35,
+            "progressGapP99Ms": 63.3,
+            "callbackWorkP95Ms": 14.7,
+            "replayedFrames": 432
+          },
+          {
+            "seat": 1,
+            "seconds": 12.44,
+            "simulationFps": 54.1,
+            "presentationFpsMedian": 59.59,
+            "minimumFullSecondForwardFrames": 35,
+            "progressGapP99Ms": 71.0,
+            "callbackWorkP95Ms": 15,
+            "replayedFrames": 513
+          }
+        ]
+      }
+    ]
   }
 }
