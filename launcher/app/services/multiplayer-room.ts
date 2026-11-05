@@ -1128,13 +1128,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     }
     const timingPolicy = multiplayerInputTimingPolicy(policy());
     const rollback = timingPolicy.rollback && state.rollbackEnabled;
-    const selected = Number(state.timingChoice);
-    const bufferedRollback = product === 'th15mp' && rollback && selected > 0;
-    const adonisMode = rollback ? (bufferedRollback ? 2 : 0) : 1;
-    const measured = timingPolicy.measuredStartup;
+    const measured = timingPolicy.measuredStartup,
+      adonisMode = rollback ? 0 : 1;
     const automatic = !rollback && measured && state.timingChoice === 'auto';
+    const selected = Number(state.timingChoice);
     const inputDelay =
-      adonisMode === 0 || automatic
+      rollback || automatic
         ? 0
         : Number.isInteger(selected) &&
             selected >= 0 &&

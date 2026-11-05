@@ -2711,5 +2711,432 @@
         }
       ]
     }
-  ]
+  ],
+  "zeroDelayFollowup": {
+    "forcedEightFrameReplay": [
+      {
+        "version": "baseline",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "c4d41add393c6f8a7d5c9b1c62532291734fe7f4df588bf4fd92d7505af8b47e",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.4,
+              "p95": 7.9,
+              "p99": 9.9
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 7.6,
+              "p95": 10.8,
+              "p99": 14.6
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 15.1,
+              "p95": 22.6,
+              "p99": 29.9
+            },
+            "overFrameBudget": 167,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      },
+      {
+        "version": "candidate",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 4.1,
+              "p95": 5.8,
+              "p99": 7.2
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.6,
+              "p95": 7.9,
+              "p99": 10.8
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 13.6,
+              "p95": 21.7,
+              "p99": 39.9
+            },
+            "overFrameBudget": 102,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      },
+      {
+        "version": "candidate",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "f0bf5d44b67971ab12de066395cd6e40da8c4af4dbc4c6b7bbb8558ac709a5b8",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 4.5,
+              "p95": 6.2,
+              "p99": 9
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 6.6,
+              "p95": 9.6,
+              "p99": 13.5
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 14.8,
+              "p95": 27.9,
+              "p99": 36.4
+            },
+            "overFrameBudget": 154,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      },
+      {
+        "version": "baseline",
+        "renderScale": 2,
+        "rollbackDepth": 8,
+        "wasm": "c4d41add393c6f8a7d5c9b1c62532291734fe7f4df588bf4fd92d7505af8b47e",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "4c472157c186c2ce813ed91b371113f667a096057e44975922f576474659a63d",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "cases": [
+          {
+            "players": 2,
+            "stage": 1,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.5,
+              "p95": 8.6,
+              "p99": 10.5
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              210974406,
+              831813639
+            ],
+            "screenshotSha256": "e4525d235fbf56d779fc106cc01410aacf5120b865159f919a35ba1a72b990bf"
+          },
+          {
+            "players": 3,
+            "stage": 4,
+            "dense": false,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 5.9,
+              "p95": 8.3,
+              "p99": 10.1
+            },
+            "overFrameBudget": 0,
+            "finalFingerprint": [
+              1465558283,
+              1927656942
+            ],
+            "screenshotSha256": "f002a3ba83c580fb720e9db0d5264f86e51e6d0818d0d6d63b13724d4ad98dcf"
+          },
+          {
+            "players": 2,
+            "stage": 6,
+            "dense": true,
+            "frames": 480,
+            "replayedFrames": 3776,
+            "callbackMs": {
+              "p50": 13.3,
+              "p95": 19.5,
+              "p99": 23.8
+            },
+            "overFrameBudget": 69,
+            "finalFingerprint": [
+              4001681481,
+              2986018508
+            ],
+            "screenshotSha256": "eb079634ffc56dbcd2b88e58bc2b479b78d172981b81717be3a8fd8caa0a5d87"
+          }
+        ]
+      }
+    ],
+    "rtc": [
+      {
+        "label": "zero-final-battle",
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "renderScale": 2,
+        "cpuThrottle": 3,
+        "presentationCap": 60,
+        "pause": false,
+        "resumeFrames": null,
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 18.013,
+            "simulationFps": 58.24,
+            "presentationFpsMedian": 59.58,
+            "callbackWorkP95Ms": 16.3,
+            "replayedFrames": 719,
+            "minimumFullSecondForwardFrames": 50,
+            "forwardProgressGapP99Ms": 44.1,
+            "maximumForwardProgressGapMs": 83.4,
+            "observedPhaseAndScreens": [
+              [
+                1,
+                0
+              ]
+            ]
+          },
+          {
+            "seat": 1,
+            "seconds": 17.992,
+            "simulationFps": 58.25,
+            "presentationFpsMedian": 59.58,
+            "callbackWorkP95Ms": 18.4,
+            "replayedFrames": 936,
+            "minimumFullSecondForwardFrames": 52,
+            "forwardProgressGapP99Ms": 53.1,
+            "maximumForwardProgressGapMs": 67.0,
+            "observedPhaseAndScreens": [
+              [
+                1,
+                0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "label": "zero-final-pause",
+        "wasm": "d5ec118f4bbb7717c129598d6aad16a5d1a441a3a0eea1f94af4af486f1ddb40",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "renderScale": 2,
+        "cpuThrottle": 3,
+        "presentationCap": 60,
+        "pause": true,
+        "resumeFrames": [
+          1405,
+          1408
+        ],
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 19.985,
+            "simulationFps": 57.94,
+            "presentationFpsMedian": 58,
+            "callbackWorkP95Ms": 3.5,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 53,
+            "forwardProgressGapP99Ms": 39.3,
+            "maximumForwardProgressGapMs": 79.1,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          },
+          {
+            "seat": 1,
+            "seconds": 19.978,
+            "simulationFps": 58.16,
+            "presentationFpsMedian": 58.57,
+            "callbackWorkP95Ms": 3.4,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 54,
+            "forwardProgressGapP99Ms": 36.5,
+            "maximumForwardProgressGapMs": 80.7,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "label": "zero-base-pause",
+        "wasm": "993fcd9ad480b186f30ff83d183e0a4c8d829e2e2d7059116ac3cc5551fa5fcf",
+        "browser": "Chrome/153.0.8010.12",
+        "driver": "58cd65f135ba1cb14713f3c4f404c940e15f2cfe93a5e2c45b00201f5fe1c0ef",
+        "archive": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+        "inputDelayFrames": 0,
+        "nominalRoundTripMs": 128,
+        "renderScale": 2,
+        "cpuThrottle": 3,
+        "presentationCap": 60,
+        "pause": true,
+        "resumeFrames": [
+          1366,
+          1371
+        ],
+        "peers": [
+          {
+            "seat": 0,
+            "seconds": 19.993,
+            "simulationFps": 56.52,
+            "presentationFpsMedian": 56.72,
+            "callbackWorkP95Ms": 3.9,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 52,
+            "forwardProgressGapP99Ms": 43.2,
+            "maximumForwardProgressGapMs": 79.2,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          },
+          {
+            "seat": 1,
+            "seconds": 19.942,
+            "simulationFps": 56.86,
+            "presentationFpsMedian": 56.62,
+            "callbackWorkP95Ms": 3.7,
+            "replayedFrames": 0,
+            "minimumFullSecondForwardFrames": 54,
+            "forwardProgressGapP99Ms": 42.5,
+            "maximumForwardProgressGapMs": 70.7,
+            "observedPhaseAndScreens": [
+              [
+                2,
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "wasm32Visibility": {
+      "checked": 32768,
+      "visible": 9032,
+      "mismatches": 0
+    }
+  }
 }

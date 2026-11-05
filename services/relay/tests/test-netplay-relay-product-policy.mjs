@@ -164,23 +164,7 @@ async function verifyModes(port, product) {
       await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
       await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);
     }
-    let timing = timingPolicy.rollback ? {} : {adonisMode:1,predictionLimit:0};
-    if (product === 'th15mp') {
-      const buffered = await sendAndMatch(host, {type:'timing-settings',rollbackEnabled:true,timingChoice:4},
-        r => r.room?.timingChoice === 4);
-      assert.equal(buffered.room.adonisMode, 2);
-      assert.equal(buffered.room.inputDelay, 4);
-      assert.equal(buffered.room.seats.every(seat => !seat?.ready), true);
-      await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
-      await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);
-      timing = {adonisMode:2,inputDelay:4};
-    }
-    const started = await sendAndMatch(host, {type:'start',...timing}, r => r.type==='start');
-    if (product === 'th15mp') {
-      assert.equal(started.room.adonisMode, 2);
-      assert.equal(started.room.inputDelay, 4);
-      assert.equal(started.room.predictionLimit, 12);
-    }
+    const started = await sendAndMatch(host, {type:'start', ...(!timingPolicy.rollback ? {adonisMode:1,predictionLimit:0} : {})}, r => r.type==='start');
     assert.equal(started.room.challengeMode, challengeSupported);
     await sendAndMatch(host, {type:'settings',challengeMode:false,prankMode:false}, r => r.type==='error');
     const locked = await sendAndMatch(host, {type:'start'}, r => r.type==='state');

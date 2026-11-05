@@ -654,16 +654,9 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
     assert.equal(n('#mpRoomSettings').contains(n('#mpRollbackToggle')),true);
     assert.equal(all('#mpInputDelayHint').length,0);
     assert.equal(n('#mpRollbackToggle').hidden,!supportsRollback,product);
-    assert.equal(n('#mpInputDelaySetting').hidden,supportsRollback&&product!=='th15mp',product);
+    assert.equal(n('#mpInputDelaySetting').hidden,supportsRollback,product);
     assert.ok(n('#mpRollbackToggle').compareDocumentPosition(n('#mpInputDelaySetting')) & env.window.Node.DOCUMENT_POSITION_FOLLOWING);
     if(config.inputTiming){
-      if(product==='th15mp'){
-        assert.equal(value.textContent,'0f');
-        await click('#mpInputDelayPlus');
-        assert.equal(value.textContent,'1f');
-        assert.equal(f.service.getSnapshot().rollbackEnabled,true);
-        assert.equal(all('#mpInputDelayAuto').length,0);
-      }
       if(policy.rollback){await act(()=>f.service.setRollbackEnabled(false));assert.equal(n('#mpInputDelaySetting').hidden,false);assert.equal(all('#mpInputDelayHint').length,0);}
       await act(()=>f.service.setTimingChoice(0));assert.equal(value.textContent,'0f');assert.equal(n('#mpInputDelayMinus').disabled,true);
       await click('#mpInputDelayPlus');assert.equal(f.service.getSnapshot().timingChoice,1);assert.equal(value.textContent,'1f');
@@ -688,7 +681,7 @@ for (const locale of ['zh-CN', 'en']) test(`compact room delay stepper retains h
         await f.receive({phase:'running',adonisMode:1,inputDelay:3,inputDelayAuto:true,timing});
         assert.equal(value.textContent,'3f');assert.equal(value.title,t(locale,'room.inputDelayMeasured',{frames:3}));
       }
-      if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,product!=='th15mp',product);}
+      if(policy.rollback){await f.receive({phase:'running',adonisMode:0});assert.equal(n('#mpInputDelaySetting').hidden,true,product);}
       await act(()=>f.socket.close(1006));assert.equal(value.disabled,true);
     }else{
       assert.equal(n('#mpRollbackToggle').hidden,true);assert.equal(n('#mpInputDelaySetting').hidden,false);

@@ -164,9 +164,7 @@ export function buildMultiplayerRuntimeOptions(
   const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || th075 || product.inputTiming?.rollbackDefault === false ? 1 : 0);
   const timingPolicy = multiplayerInputTimingPolicy(product);
   const rollback = timingPolicy.rollback && [0, 2].includes(requestedMode);
-  const bufferedRollback = th15 && rollback && requestedMode === 2;
-  const directRollback = rollback && !bufferedRollback;
-  const adonisMode = directRollback ? 0 : requestedMode;
+  const adonisMode = rollback ? 0 : requestedMode;
   const measuredTitle = timingPolicy.measuredStartup;
   if (
     (fixedRollbackTitle || roomProduct === "th15mp") &&
@@ -225,7 +223,7 @@ export function buildMultiplayerRuntimeOptions(
     ...(rollback || input.inputDelay !== undefined
       ? {
           netplayInputDelay:
-            directRollback || input.inputDelayAuto
+            rollback || input.inputDelayAuto
               ? 0
               : typeof input.inputDelay === 'number' &&
                   Number.isInteger(input.inputDelay) &&
@@ -236,7 +234,7 @@ export function buildMultiplayerRuntimeOptions(
         }
       : {}),
     ...(input.adonisMode !== undefined || fixedRollbackTitle || th075 || th15 ? { netplayAdonisMode: adonisMode } : {}),
-    ...(((fixedRollbackTitle || th15) && directRollback) || th075 ? { netplayInputDelayAuto: false } : {}),
+    ...(((fixedRollbackTitle || th15) && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
     ...(measuredTitle && adonisMode
       ? {
           netplayInputDelayAuto: input.inputDelayAuto ?? false,

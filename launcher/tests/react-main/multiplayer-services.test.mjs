@@ -417,44 +417,6 @@ test('rollback products default to D0 for both room creation and restored invite
     const restored=roomFixture();assert.equal(restored.service.restoreInvite('https://launcher.invalid/?j='+fOwnerInvite(product),product),true);assert.equal(restored.service.getSnapshot().rollbackEnabled,rollback,product+' restore');restored.service.dispose();
   }
 });
-test('TH15 keeps rollback enabled when the host adds input delay', async () => {
-  const product = 'th15mp';
-  const f = roomFixture();
-  f.service.enterRoom(product, '1234', true);
-  await flush();
-  const socket = f.sockets[0];
-  const id = f.identity.lobbyClientId(product);
-  socket.open();
-  const seats = [
-    {clientId:id, name:'Host', loadout:0, ready:true},
-    {clientId:'guest12345', name:'Guest', loadout:1, ready:true},
-  ];
-  socket.message({type:'state', room:roomState(id, {seats, predictionLimit:12})});
-  f.service.start();
-  const direct = socket.sent.findLast(m => m.type === 'start');
-  assert.equal(direct.adonisMode, 0);
-  assert.equal(direct.inputDelay, 0);
-  f.service.setTimingChoice(4);
-  assert.deepEqual(socket.sent.findLast(m => m.type === 'timing-settings'), {
-    type:'timing-settings', rollbackEnabled:true, timingChoice:4,
-  });
-  socket.message({type:'state', room:roomState(id, {
-    seats, predictionLimit:12, adonisMode:2, inputDelay:4, timingChoice:4,
-  })});
-  f.service.start();
-  const buffered = socket.sent.findLast(m => m.type === 'start');
-  assert.equal(buffered.adonisMode, 2);
-  assert.equal(buffered.inputDelay, 4);
-  socket.message({type:'state', room:roomState(id, {
-    seats, predictionLimit:12, phase:'running', adonisMode:2,
-    inputDelay:4, inputDelayAuto:false, timingChoice:4,
-  })});
-  const options = f.service.runtimeOptions();
-  assert.equal(options.netplayAdonisMode, 2);
-  assert.equal(options.netplayInputDelay, 4);
-  assert.equal(options.netplayPredictionLimit, 12);
-  f.service.dispose();
-});
 function fOwnerInvite(product) {
   return owner.encodeRoomInvite({ g: product, r: '1234', f: true, a: 'create' });
 }
