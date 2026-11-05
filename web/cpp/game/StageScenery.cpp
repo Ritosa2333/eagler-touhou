@@ -250,7 +250,8 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
             renderer.set_viewport(viewport);
             AnmCamera overlay_camera;
             const float fov = script.state.camera.fov;
-            const float distance = float(240.0 / std::tan(double(float(fov * .5f))));
+            // 0x43b900 同式：tan 结果先舍入 f32（0x43cf51 fstp dword）再除。
+            const float distance = float(240.0 / float(std::tan(double(float(fov * .5f)))));
             overlay_camera.eye = {320, 240, distance};
             overlay_camera.view = scene_look_at(overlay_camera.eye, {320, 240, 0}, {0, -1, 0});
             overlay_camera.projection = scene_perspective(fov, 1.3333333730697632f, 1.f, 10000.f);

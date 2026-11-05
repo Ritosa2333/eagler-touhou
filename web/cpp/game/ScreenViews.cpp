@@ -1,15 +1,8 @@
 #include "ScreenViews.hpp"
-#include "Probe.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-namespace th13::probe {
-bool enabled = false;
-unsigned budget = 0;
-}  // namespace th13::probe
 namespace th13 {
-static unsigned cam_budget = 0;  // 临时探针：相机行独立预算
-void probe::probe_cam_arm(unsigned n) { cam_budget = n; }
 ScreenView screen_view(const GraphicsViewport& viewport,float fov,Vec2 offset)noexcept{
  ScreenView out;out.viewport=viewport;out.offset=offset;
  // 原版每 tick 2D 屏幕相机 0x43b900（主循环 0x45d2f0/0x45cef0/0x45d570 帧首
@@ -29,8 +22,11 @@ ScreenView screen_view(const GraphicsViewport& viewport,float fov,Vec2 offset)no
  // 距离/宽高比），只对屏幕空间 quad 无害；layer21+ 的 world quad（ED staff
  // 条带/st01、选人牌 Y 翻转、loading 条）全部被投到屏幕外——KI-1/KI-2 根因。
  out.camera.projection=scene_perspective(fov,1.3333334f,1.f,10000.f);
- // 与 world_quad 的 overlay 相机同式（240*cot），保证与已对拍窗口逐位同源。
- const float distance=float(240.0*out.camera.projection.m[5]);
+ // 0x43b900：D = f32(240.0 / f32(tan(f32(fov·0.5))))——0x43cf51 的 tan 结果
+ // 先舍入 f32，fdivr qword[240.0]，单次 fstp（C2 取证：旧式 240·proj.m[5]
+ // 的 cot 链经 aspect 因子差 1 ulp，895.69213… vs 原版 895.69219…）。
+ const float tan_half = float(std::tan(double(fov * 0.5f)));
+ const float distance = float(240.0 / tan_half);
  out.camera.view=scene_look_at({320,240,distance},{320,240,0},{0,-1,0});
  return out;
 }
@@ -93,7 +89,5 @@ bool ScreenViews::camera_if_changed(DrawCamera index,bool refresh){
  return camera(index,false);
 }
 bool ScreenViews::camera(DrawCamera index,bool refresh){auto& view=views[u32(index)];if(refresh)view=screen_view(view.viewport,fov,view.offset);renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);const Vec2 shake=environment?environment->screen_shake_offset:Vec2{};renderer.offset={float(view.offset.x+shake.x),float(view.offset.y+shake.y)};
-// 临时探针：相机切换取证（-96px 排查）
-if(probe::enabled&&cam_budget){--cam_budget;std::printf("[probe-cam] idx=%d vp={%u,%u,%u,%u} view12=%.6g view13=%.6g proj0=%.9g proj5=%.9g\n",int(index),view.viewport.x,view.viewport.y,view.viewport.width,view.viewport.height,double(view.camera.view.m[12]),double(view.camera.view.m[13]),double(view.camera.projection.m[0]),double(view.camera.projection.m[5]));}
 return true;}
 }
