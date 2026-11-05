@@ -23,17 +23,17 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       }
       if(!catching)budget=Math.max(0,budget-count);
       if(owner===replica&&target!==null&&owner.frame>=target){target=null;paused=!following;}
-      if(count&&owner===replica){await owner.present();frames++;}
+      if(count&&owner===replica)await owner.present();
     }catch(error){if(!closed&&owner===replica)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,8);}
   }
   async function boot(){
     if(booting||replica||closed)return;booting=true;
     const own=generation;
-    try{const r=await createReplica(header,{onFrame,onEvent,signal:abort.signal});if(closed||own!==generation){r.stop();return;}replica=r;
+    try{const r=await createReplica(header,{onFrame:bitmap=>{onFrame(bitmap);frames++;},onEvent,signal:abort.signal});if(closed||own!==generation){r.stop();return;}replica=r;
       const destination=target??rows.length,point=points.filter(p=>p.frame>0&&p.frame<=destination).at(-1);
       if(point&&readLocalPoint){const base=points[0],baseBytes=await readLocalPoint(channel,viewer,base,abort.signal),bytes=await readLocalPoint(channel,viewer,point,abort.signal);
         const restored=await r.restore(bytes,baseBytes);if(restored.frame!==point.frame||restored.proof!==rows[point.frame-1].proof)throw Error('观战检查点与确认历史不一致');}
-      if(closed||own!==generation)return;last=performance.now();await replica.present();frames++;void pump();}
+      if(closed||own!==generation)return;last=performance.now();await replica.present();void pump();}
     catch(error){if(!closed&&own===generation)fail(error);}finally{booting=false;if(!closed&&!replica&&own!==generation)void boot();}
   }
   channel.onmessage=({data})=>{
@@ -59,5 +59,5 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       if(!replica||frame<replica.frame){generation++;replica?.stop();replica=null;void boot();}},
     live(){following=true;paused=false;target=rows.length;},
     get frame(){return replica?.frame??0;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},
-    get paused(){return paused;},get following(){return following;},get seeking(){return target!==null||!replica||following&&rows.length-replica.frame>12;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
+    get paused(){return paused;},get following(){return following;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
 }
