@@ -191,6 +191,8 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     MsgFile dialog_file;
     MsgPlayer dialog;
     bool dialog_ready = false;  // msg 资产缺失时降级为对话缺席（519 即过）
+    MsgAdvance dialogue_advance_{};  // Update 20 锁存同一有效输入，Update 28 消费。
+    bool dialogue_update_pending_ = false;
     i32 dialogue_rows_ = 0;     // 上一 update 已提交的正文行数（0 = 无文本）
     // 对话立绘/名牌 VM 面（0x428ae0 opcode 1/2/20/31 可视指令；见 MsgPresentation）。
     std::unique_ptr<MsgPresentation> msg_presentation;

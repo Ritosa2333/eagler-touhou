@@ -267,14 +267,13 @@ struct Scene {
             if (frame % 100 == 0) std::fprintf(stderr,"[portrait-debug] entry=%d frame=%d stage=%d\n", int(entry), frame, int(progress.stage));
             input.held = input.pressed = (frame % 30 == 0) ? 1u : 0u;
             input.duration[0] = input.held ? 1 : 0;
-            if (!scene->update()) {
-                if (!scene->error.empty()) {
-                    std::printf("stage %d entry %d update: %s\n", int(progress.stage),
-                                int(entry), scene->error.c_str());
-                    return false;
-                }
-                closed = true;
-                break;
+            // 0x4265a0 家族按优先级经调度器驱动（对话解释器在 Update 28，
+            // 0x424f46/0x424f4b）；只直调 update()（任务 20）对话永不步进。
+            // 与生产/run_scene 夹具同构：整帧 scheduler.update()。
+            if (scheduler.update() < 0 || !scene->error.empty()) {
+                std::printf("stage %d entry %d update: %s\n", int(progress.stage),
+                            int(entry), scene->error.c_str());
+                return false;
             }
             if (!animations.update()) return false;
             for (const auto& vm : observe(animations)) seen.push_back(vm);

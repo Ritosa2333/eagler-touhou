@@ -136,7 +136,8 @@ void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1,
             for(i32 dialog_frame=0;dialog_frame<900&&scene.dialog_active();++dialog_frame) {
                 input.held=input.pressed=(dialog_frame%30==0)?1:0;
                 input.duration[0]=input.held?1:0;
-                if(!scene.update()) {
+                // 对话解释器在 Update 28（0x424f46/0x424f4b）：整帧调度驱动。
+                if(scheduler.update()<0) {
                     std::printf("natural dialogue frame %d: %s\n",dialog_frame,scene.error.c_str());
                     CHECK(false);return;
                 }
@@ -198,12 +199,10 @@ void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1,
             for(int frame=0;frame<2400&&scene.dialog_active();++frame) {
                 input.held=input.pressed=frame%30==0?1:0;
                 input.duration[0]=input.held?1:0;
-                if(!scene.update()){
-                    if(!scene.error.empty()){
-                        std::printf("stage3 entry %d update: %s\n",entry,scene.error.c_str());
-                        CHECK(false);return;
-                    }
-                    break;
+                // 对话解释器在 Update 28（0x424f46/0x424f4b）：整帧调度驱动。
+                if(scheduler.update()<0){
+                    std::printf("stage3 entry %d update: %s\n",entry,scene.error.c_str());
+                    CHECK(false);return;
                 }
                 CHECK(animations.update());
                 scan();
@@ -254,7 +253,9 @@ void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1,
         auto* boss=scene.battle.sim.spawn_enemy("Boss",144,-16,40,nullptr,false);
         CHECK(boss);if(!boss)return;
         for(int frame=0;frame<180;++frame){
-            CHECK(scene.update());CHECK(animations.update());
+            // Boss HUD 面在 Update 28（0x4265a0，0x424f46/0x424f4b）：整帧
+            // 调度驱动，直调 update()（任务 20）HUD 永不装配。
+            CHECK(scheduler.update()>=0);CHECK(animations.update());
             if(!scene.error.empty()){std::printf("boss HUD: %s\n",scene.error.c_str());return;}
             for(u32 layer=0;layer<33;++layer)if(!renderer.draw_layer(animations.registry.layer(layer))){
                 CHECK(false);std::printf("boss draw layer%u: %s\n",layer,renderer.error.c_str());return;
@@ -338,7 +339,8 @@ void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1,
         for(int frame=0;frame<2400&&scene.dialog_active();++frame) {
             input.held=input.pressed=frame%30==0?1:0;
             input.duration[0]=input.held?1:0;
-            if(!scene.update()){CHECK(scene.error.empty());std::printf("update: %s\n",scene.error.c_str());return;}
+            // 对话解释器在 Update 28（0x424f46/0x424f4b）：整帧调度驱动。
+            if(scheduler.update()<0){CHECK(scene.error.empty());std::printf("update: %s\n",scene.error.c_str());return;}
             CHECK(animations.update());
             saw_ecl_release|=scene.dialog_wait_released();
             for(u32 layer=0;layer<33;++layer)for(auto* vm:animations.registry.layer(layer)) {
