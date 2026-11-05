@@ -160,6 +160,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
   }
   function status(){return {mode:initial.mode,ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
   return {
+    gameOver(){if(targeted&&ready&&!outcome)finish('failed');},
     observeBoundary(){
       if(!targeted||!initialized||!preparing||error)return;
       const program=mod._emGetRunningProgram&&mod.UTF8ToString?.(mod._emGetRunningProgram());
@@ -172,7 +173,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
       locate(packed);if(error||heap()[resident+62])return;
       if(port===0x7fe0){
         if(targeted){heap()[resident+17]=setup.stage;heap()[resident+19]=48+setup.stage;w8(0x5394,setup.stage);}
-        initialized=true;flag('targetPractice',targeted);return;
+        initialized=true;flag('targetPractice',targeted);stocks();return;
       }
       if(!initialized||u8(0x5392)>2)return;
       if(port===0x7fe1){

@@ -53,6 +53,23 @@ export function mountPractice({host,onChange=()=>{},onStart=()=>{},onRetry=()=>{
     if(!event.ctrlKey&&!event.metaKey&&!event.altKey&&event.code==='F12'){
       event.preventDefault();event.stopImmediatePropagation();if(event.repeat)return;if(result.open){resultDismissed=true;result.close();}show(true);return;
     }
+    if(!panel.hidden&&panel.classList.contains('practice-full')&&!event.ctrlKey&&!event.metaKey&&!event.altKey){
+      const control=document.activeElement,editable=control?.matches('select,input[type="number"],textarea,[contenteditable="true"]');
+      const controls=()=>[...panel.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')].filter(n=>n.getClientRects().length);
+      if(['F12','Escape','Tab','ArrowUp','ArrowDown'].includes(event.code)||!editable&&['Enter','Space','KeyZ','KeyX'].includes(event.code)){
+        event.preventDefault();event.stopImmediatePropagation();if(event.repeat)return;
+        if(['F12','Escape','KeyX'].includes(event.code)){onRelease();panel.hidden=true;onFocus();}
+        else if(['Tab','ArrowUp','ArrowDown'].includes(event.code)){const list=controls(),at=list.indexOf(control),step=event.code==='ArrowUp'||event.code==='Tab'&&event.shiftKey?-1:1;const next=list[(at+step+list.length)%list.length];next?.focus({preventScroll:true});next?.scrollIntoView({block:'nearest'});}
+        else if(panel.contains(control))control.click();return;
+      }
+      if(control?.matches('select')&&['ArrowLeft','ArrowRight'].includes(event.code)){
+        event.preventDefault();event.stopImmediatePropagation();const opts=[...control.options].filter(item=>!item.disabled),at=opts.indexOf(control.selectedOptions[0]),step=event.code==='ArrowLeft'?-1:1;
+        if(opts.length){control.value=opts[(at+step+opts.length)%opts.length].value;control.dispatchEvent(new Event('change',{bubbles:true}));}return;
+      }
+      // Native select/number editing stays with the form;
+      // the game's capture handler must never consume these navigation keys.
+      if(editable){event.stopImmediatePropagation();return;}
+    }
     if(event.ctrlKey||event.metaKey||event.altKey||event.target?.closest?.('input,select,textarea,[contenteditable="true"]'))return;
     if(!host.contains(document.activeElement)&&document.activeElement!==document.body)return;
     if(['Backspace','Tab','F12'].includes(event.code)){event.preventDefault();event.stopImmediatePropagation();if(event.repeat)return;if(event.code==='Tab')change('showInfo',!options.showInfo);else{if(event.code==='F12'&&result.open){resultDismissed=true;result.close();}show(event.code==='F12');}return;}

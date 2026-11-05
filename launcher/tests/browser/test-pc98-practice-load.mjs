@@ -31,7 +31,10 @@ for(const game of games){
     const file=resolve(root,path.slice('/runtime/'.length));
     if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');
     res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
-    res.end(await readFile(file));
+    let contents=await readFile(file);
+    if(process.env.PC98_PRACTICE_DEATH==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeHit(lives){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;h[d+0xb2c]=lives;h[d+0x2b94]=1;}\n`:`\nexport function testPracticeHit(lives){return emulator.call('practiceTestHit',[lives]);}\n`)]);
+    if(process.env.PC98_PRACTICE_DEATH==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;h[r+11]=args[0]+1;h[d+0x4669]=1;return;}if(method==='soloFault')"));
+    res.end(contents);
   }catch{res.writeHead(404).end();}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
   let browser,page;
@@ -57,10 +60,17 @@ for(const game of games){
     const stage=Number(process.env.PC98_PRACTICE_STAGE??(game==='th02'?5:6));
     const entry=process.env.PC98_PRACTICE_ENTRY||'boss',character=Number(process.env.PC98_PRACTICE_CHARACTER||0);
     await frame.click('.managed-practice-open');
+    await frame.focus('[data-jump=character]');await page.keyboard.press('ArrowDown');
+    assert.equal(await frame.evaluate(()=>document.activeElement?.dataset.jump),'difficulty','down moves to the next setting');
+    const beforeDifficulty=await frame.$eval('[data-jump=difficulty]',n=>n.value);
+    await page.keyboard.press('ArrowRight');
+    assert.notEqual(await frame.$eval('[data-jump=difficulty]',n=>n.value),beforeDifficulty,'right adjusts the selected setting');
+    await frame.select('[data-jump=difficulty]','1');
     await frame.select('[data-jump=character]',String(character));
     await frame.select('[data-jump=stage]',String(stage));
     await frame.select('[data-jump=entry]',entry);
-    for(const [name,value] of [['lives','2'],['bombs','3']])await frame.$eval(`[data-jump=${name}]`,(node,value)=>{node.value=value;},value);
+    const lives=Number(process.env.PC98_PRACTICE_LIVES??2),bombs=Number(process.env.PC98_PRACTICE_BOMBS??3);
+    for(const [name,value] of [['lives',lives],['bombs',bombs]])await frame.$eval(`[data-jump=${name}]`,(node,value)=>{node.value=String(value);},value);
     if(game==='th04'&&stage===6)await frame.select('[data-jump=branch]','gengetsu');
     const phase=process.env.PC98_PRACTICE_PHASE??await frame.$$eval('[data-jump=phase] option',nodes=>(nodes.filter(n=>n.value!=='0').at(-1)||nodes[0]).value);
     await frame.select('[data-jump=phase]',phase);
@@ -80,7 +90,7 @@ for(const game of games){
       assert(ready,'target must reach native arrival pause');
       assert.equal(ready.native.practice.setup.stage,stage);assert.equal(ready.native.practice.setup.phase,Number(phase));
       assert.equal(ready.native.practice.setup.character,character);assert.equal(ready.native.practice.setup.entry,entry);
-      assert.equal(ready.native.practice.lives,2);assert.equal(ready.native.practice.bombs,3);
+      assert.equal(ready.native.practice.lives,lives);assert.equal(ready.native.practice.bombs,bombs);
       if(kind==='target')await frame.waitForFunction(async()=> (await import('./managed-solo.mjs')).managedAPI.practiceState().retry.state==='ready',{timeout:120000});
       const result={game,kind,stage,phase:Number(phase),loadMs:Math.round(performance.now()-started),loading:ready.loading,frames:ready.native.practice.frames,samples};results.push(result);
       console.log(JSON.stringify({...result,samples:undefined}));
@@ -90,6 +100,16 @@ for(const game of games){
       await page.screenshot({path:resolve(output,`${label}-${game}-${kind}-running.png`)});
     }
     assert((await frame.evaluate(()=>practiceEffectsCreated))>=2,'standby owns its own original effect driver');
+    if(process.env.PC98_PRACTICE_DEATH==='1'){
+      await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeHit(1));
+      await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.missTimer>0;},{timeout:15000});
+      assert.equal((await state()).native.practice.outcome,null,'contact and death animation do not end the attempt');
+      await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.lives===0&&!p.missTimer&&p.invincibility===0;},{timeout:30000});
+      assert.equal((await state()).native.practice.outcome,null,'the last spare life respawns');
+      await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeHit(0));
+      await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.outcome==='failed';},{timeout:30000}).catch(async error=>{console.error('Final death',JSON.stringify(await state()));throw error;});
+      console.log(game,'PASS native spare life and final game over');
+    }
     if(process.env.PC98_PRACTICE_REPLAY==='1'){
       assert.equal(await frame.evaluate(game=>[...__eaglerPC98Files.memory.keys()].filter(name=>name.endsWith('.'+game+'r')).length,game),0,'finishing does not save a file');
       await frame.$eval('canvas',n=>n.focus());await page.keyboard.press('Escape');

@@ -52,11 +52,15 @@ export function mountPractice({host,onChange=()=>{},onStart=()=>{},onRetry=()=>{
     if(!panel.hidden&&panel.classList.contains('practice-full')&&!event.ctrlKey&&!event.metaKey&&!event.altKey){
       const control=document.activeElement,editable=control?.matches('select,input[type="number"],textarea,[contenteditable="true"]');
       const controls=()=>[...panel.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')].filter(n=>n.getClientRects().length);
-      if(['F12','Escape','Tab'].includes(event.code)||!editable&&['ArrowUp','ArrowDown','Enter','Space','KeyZ','KeyX'].includes(event.code)){
+      if(['F12','Escape','Tab','ArrowUp','ArrowDown'].includes(event.code)||!editable&&['Enter','Space','KeyZ','KeyX'].includes(event.code)){
         event.preventDefault();event.stopImmediatePropagation();if(event.repeat)return;
         if(['F12','Escape','KeyX'].includes(event.code)){onRelease();panel.hidden=true;onFocus();}
         else if(['Tab','ArrowUp','ArrowDown'].includes(event.code)){const list=controls(),at=list.indexOf(control),step=event.code==='ArrowUp'||event.code==='Tab'&&event.shiftKey?-1:1;const next=list[(at+step+list.length)%list.length];next?.focus({preventScroll:true});next?.scrollIntoView({block:'nearest'});}
         else if(panel.contains(control))control.click();return;
+      }
+      if(control?.matches('select')&&['ArrowLeft','ArrowRight'].includes(event.code)){
+        event.preventDefault();event.stopImmediatePropagation();const opts=[...control.options].filter(item=>!item.disabled),at=opts.indexOf(control.selectedOptions[0]),step=event.code==='ArrowLeft'?-1:1;
+        if(opts.length){control.value=opts[(at+step+opts.length)%opts.length].value;control.dispatchEvent(new Event('change',{bubbles:true}));}return;
       }
       // Native select/number editing stays with the form;
       // the game's capture handler must never consume these navigation keys.
