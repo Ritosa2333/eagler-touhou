@@ -4,9 +4,9 @@ import {spawn} from 'node:child_process';
 import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 
-test('PC98 room admits a late viewer and retains confirmed relay packets',async()=>{
+for (const route of ['rtc','relay']) test(`PC98 room admits a late viewer over ${route} and retains confirmed packets`,async()=>{
   const port=await new Promise(resolve=>{const server=net.createServer();server.listen(0,'127.0.0.1',()=>{const p=server.address().port;server.close(()=>resolve(p));});});
-  const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'24',EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE:'24',EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'480'},stdio:['ignore','pipe','pipe']});
+  const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'24',EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE:'24',EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'480'},stdio:['ignore','pipe','pipe']});
   const sockets=[];let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);
   async function wait(fn,label){const deadline=Date.now()+10000;while(!fn()){if(Date.now()>deadline)throw Error(label+' timeout\n'+log);await new Promise(resolve=>setTimeout(resolve,10));}}
   async function open(query){const ws=new WebSocket(`ws://127.0.0.1:${port}/?${query}`),client={ws,json:[],binary:[],closed:false};sockets.push(ws);ws.binaryType='arraybuffer';
@@ -26,7 +26,7 @@ test('PC98 room admits a late viewer and retains confirmed relay packets',async(
       send(a,{type:'start',adonisMode:game==='01'?1:0});await wait(()=>a.json.some(m=>m.type==='start'||m.type==='error'),'start');assert.equal(a.json.at(-1).type,'start',JSON.stringify(a.json.at(-1)));
       const p0=await open(base+`&player=0&member=member_host${game}`),p1=await open(base+`&player=1&member=member_guest${game}`);
       const s0=await open(base+`&player=0&signal=1&member=member_host${game}`),s1=await open(base+`&player=1&signal=1&member=member_guest${game}`);
-      send(s0,{type:'rtc-failed'});send(s1,{type:'rtc-failed'});await wait(()=>s0.json.some(m=>m.type==='route'),'route');
+      send(s0,{type:route==='rtc'?'rtc-ready':'rtc-failed'});send(s1,{type:route==='rtc'?'rtc-ready':'rtc-failed'});await wait(()=>s0.json.some(m=>m.type==='route'&&m.mode===route),'route');
       p0.ws.send(packet(1,0,0,[1]));p0.ws.send(packet(2,0,1,[2]));
       await wait(()=>room(a)?.spectatorTimeline===true,'spectator available');
       const lobby=await open(`room=${id}&lobby=viewer_client_${game}&member=member_viewer${game}`);send(lobby,{type:'spectate'});
@@ -36,7 +36,7 @@ test('PC98 room admits a late viewer and retains confirmed relay packets',async(
       p0.ws.send(packet(3,1,0,[]));await wait(()=>viewer.binary.some(p=>p[5]===3),'end');
       p0.ws.send(packet(2,0,1,[9]));await wait(()=>viewer.closed,'invalid spectator stream closes only the viewer');
       assert.equal(p0.closed,false);assert.equal(p1.closed,false);
-      p0.ws.send(new Uint8Array([0xe7,1,9,8,7]));await wait(()=>p1.binary.some(p=>p.at(-1)===7),'players continue');
+      if(route==='relay'){p0.ws.send(new Uint8Array([0xe7,1,9,8,7]));await wait(()=>p1.binary.some(p=>p.at(-1)===7),'players continue');}
       for(const socket of sockets.splice(0))socket.close();
     }
   }finally{for(const socket of sockets)socket.close();child.kill();}
