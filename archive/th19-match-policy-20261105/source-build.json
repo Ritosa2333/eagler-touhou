@@ -10,8 +10,8 @@
     "thprac": false
   },
   "toolchain": {
-    "root": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
-    "compiler": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk\\install\\emscripten\\emcc.py",
+    "root": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "compiler": "<home>\\Desktop\\th08-main\\tools\\emsdk\\install\\emscripten\\emcc.py",
     "version": "6.0.9-git",
     "metadata": {
       "version": "6.0.9",
@@ -21,10 +21,10 @@
     }
   },
   "environment": {
-    "EMSDK": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
-    "TH09_EMSDK": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
-    "TH15_EMSDK": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk",
-    "EM_CONFIG": "C:\\Users\\Administrator\\Desktop\\th08-main\\tools\\emsdk\\.emscripten",
+    "EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "TH09_EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "TH15_EMSDK": "<home>\\Desktop\\th08-main\\tools\\emsdk",
+    "EM_CONFIG": "<home>\\Desktop\\th08-main\\tools\\emsdk\\.emscripten",
     "PYTHON": "python",
     "TH_PYTHON": "python",
     "EMCC_CORES": "4",
