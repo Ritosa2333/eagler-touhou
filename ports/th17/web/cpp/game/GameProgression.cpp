@@ -11,6 +11,7 @@ bool GameProgression::next_stage(){
     if(player.bomb_state&&!check(host.stop_bomb(),"Stage bomb transition unavailable"))return false;
     if(mode){
         if(run.practice_record)return check(host.return_to_title(),"Practice return unavailable");
+        if(run.enhanced_practice)return check(host.finish_practice(),"Practice completion unavailable");
         if(mode==2){if(!check(u32(run.spell_id)<101,"Invalid spell practice record"))return false;auto& best=records.spell_best[loadout][run.spell_id];const i32 value=wrapping_mul(score.score/10,10);if(best<value)best=value;}
         else records.stage_cleared[loadout][run.difficulty][run.stage]=1;
         return check(host.finish_practice(),"Practice completion unavailable");

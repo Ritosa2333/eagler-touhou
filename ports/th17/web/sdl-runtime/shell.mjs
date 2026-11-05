@@ -23,7 +23,7 @@ function closeAudio(){
 }
 async function stop(){if(stopping)return;stopping=true;try{core._th17_loop_stop();gpuMonitor?.close();gpuMonitor=null;await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth17\//,'').replace(/^\//,'');if(!/^(?:scoreth17\.dat|th17\.cfg|replay\/th17_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
-function apply(){core._th17_always_hitbox(+(options.alwaysHitbox===true));core._th17_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th17_music_enabled(+music);}
+function apply(){core.eaglerOptions=options;core._th17_always_hitbox(+(options.alwaysHitbox===true));core._th17_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th17_music_enabled(+music);}
 const sharedFonts=['/msgothic.ttc','/unifont.otf'];
 const fontNames=[...Array.from({length:8},(_,i)=>'font'+i+'.bin'),'cp932.bin','blend4444.bin'];
 async function resource(r){
@@ -77,8 +77,14 @@ case 'resources':for(const r of m.resources||[])await resource(r);return {};
 case 'keyboard':if(typeof m.code!=='string'||typeof m.down!=='boolean')throw Error('键盘参数无效');if(launched)keyboard.event(m,m.down,'hosted');return {};
 case 'keyboard-clear':clearKeyboard();return {};
 case 'touch-cancel':core._th17_touch_cancel();return {};
-case 'direct-touch':{if(!['down','move','up'].includes(m.type)||!Number.isSafeInteger(m.id)||!Number.isFinite(m.x)||!Number.isFinite(m.y))throw Error('触点参数无效');const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th17_touch(({down:0,move:1,up:2})[m.type],m.id,(m.x*innerWidth-b.left)/b.width,(m.y*innerHeight-b.top)/b.height);return {};}
-case 'touch-controls':{const t=m.controls||m;if(t.touchSensitivity!=null){if(!(Number.isFinite(t.touchSensitivity)&&t.touchSensitivity>=100&&t.touchSensitivity<=300))throw Error('触控灵敏度无效');if(t.touchSensitivity!==options.touchSensitivity){options.touchSensitivity=t.touchSensitivity;apply();}}core._th17_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th17_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};}
+case 'direct-touch':{if(m.type==='cancel'){core._th17_touch_cancel();return {};}if(!['down','move','up'].includes(m.type)||!Number.isSafeInteger(m.id)||!Number.isFinite(m.x)||!Number.isFinite(m.y))throw Error('触点参数无效');const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th17_touch(({down:0,move:1,up:2})[m.type],m.id,(m.x*innerWidth-b.left)/b.width,(m.y*innerHeight-b.top)/b.height);return {};}
+case 'touch-controls':{const t=m.controls||m;core.eaglerControls=t;if(t.touchSensitivity!=null){if(!(Number.isFinite(t.touchSensitivity)&&t.touchSensitivity>=100&&t.touchSensitivity<=300))throw Error('触控灵敏度无效');if(t.touchSensitivity!==options.touchSensitivity){options.touchSensitivity=t.touchSensitivity;apply();}}core._th17_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th17_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};}
+case 'thprac-mouse':{
+ if(!options.thpracEnabled||!['down','move','up'].includes(m.type)||![m.x,m.y].every(Number.isFinite))return {};
+ const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);
+ if(scale>0)core._th17_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(m.x-r.left-(r.width-640*scale)/2)/scale,(m.y-r.top-(r.height-480*scale)/2)/scale);
+ return {};
+}
 case 'launch':if(!configured)throw Error('请先配置游戏');if(!launched){let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}const requested=Number(scaleOption);core._th17_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);if(!core._th17_initialize())throw Error(err());if(options.replayPath)openReplay(options.replayPath);launched=true;apply();first=false;$('#loading').textContent='';core._th17_loop_start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++ · WEB '+runtimeBuild.version.split('-sdl3-')[0],architecture:protocol,...runtimeBuild});}return {};
 case 'sync':await save();return {};
 case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of core.FS.readdir('/savesth17'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=core.FS.stat('/savesth17/'+n);if(core.FS.isFile(s.mode))files.push({path:n,size:s.size});}return {files};}
@@ -92,6 +98,7 @@ case 'write':{
 case 'remove':if(launched)throw Error('请先退出游戏');core.FS.unlink('/savesth17/'+path(m.path));await sync();return {};
 default:throw Error('不支持的操作');}}
 window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}}).catch(fatal);});
+window.addEventListener('eagler-thprac-menu',e=>emit('thprac-menu',{open:!!e.detail?.open}));
 document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th17_touch_cancel();core._th17_loop_pause(+document.hidden);if(document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}}});
 window.addEventListener('blur',()=>{clearKeyboard();core?._th17_touch_cancel();});
 // Keyboard events in the child realm do not bubble to the launcher. SDL's

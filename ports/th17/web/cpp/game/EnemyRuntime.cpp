@@ -1,4 +1,5 @@
 #include "EnemyRuntime.hpp"
+#include "Practice.hpp"
 #include <cmath>
 namespace th17 {
 EnemyRuntime::EnemyRuntime(EclProgram& program,EnemyWorldState& world,Rng& random,Rng& visual_random,EnemyRuntimeHost& host):world(world),host(host),variables(state,world,random),commands(state,world),scripts(program,&variables,&random){scripts.main.commands=&commands;commands.visuals.host=host.animations();}
@@ -20,7 +21,8 @@ int EnemyRuntime::update(float rate,const Vec3& background_delta){
     const auto movement=state.update_movement(rate,background_delta,host.animations());
     if(movement==EnemyMovementResult::outside)return -1;
     if(movement==EnemyMovementResult::animation_unavailable){error="Enemy movement animation unavailable";return -2;}
-    if(const int result=scripts.step(rate,rate)){if(result==-2){error=scripts.error;return -2;}return -1;}
+    const bool lock_stage_clock=(world.practice_tools&PracticeTimeLock)&&world.boss&&world.stage_number>=2&&world.stage_number<=6;
+    if(const int result=scripts.step(rate,rate,lock_stage_clock)){if(result==-2){error=scripts.error;return -2;}return -1;}
     if(const int result=host.after_script(*this,world.current_rate(rate))){if(result==-2&&error.empty())error="Enemy callback unavailable";return result==-2?-2:-1;}
     if(const int result=host.collide_and_damage(*this,world.current_rate(rate))){if(result==-2&&error.empty())error="Enemy damage integration failed";return result==-2?-2:-1;}
     if(!host.update_distortion(state,world.current_rate(rate))){error="Enemy distortion integration failed";return -2;}
@@ -36,6 +38,7 @@ int EnemyRuntime::update(float rate,const Vec3& background_delta){
     }
     rate=world.current_rate(rate);if(state.collision_timer.current>0)state.collision_timer.decrement(&rate);
     if(state.invulnerability_timer.current>0)state.invulnerability_timer.decrement(&rate);
-    state.lifetime_timer.tick(&rate);state.age_timer.tick(&rate);return 0;
+    state.lifetime_timer.tick(&rate);
+    if(!(world.practice_tools&PracticeTimeLock)||!(state.flags&0x800000))state.age_timer.tick(&rate);return 0;
 }
 }

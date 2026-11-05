@@ -598,7 +598,8 @@ export const PRODUCT_GAMES = Object.freeze({
             rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
             musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th17"}),
-        features: Object.freeze({thprac: false, languages: true, focusHitbox: false}),
+        thpracExtraFunctionKeys: Object.freeze(["U"]),
+        features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),
     th19: Object.freeze({
         testOnly: true,

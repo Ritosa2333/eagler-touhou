@@ -32,6 +32,6 @@ bool PlayerFrame::update(const PlayerFrameContext& frame,float& rate){
     shot_context.shoot_frame=shooting.shot.current;if(!shots.update()){error=shots.error;return false;}
     if(auto* vm=animations.registry.find(shooting.charge_handle))vm->visual.translation=motion.position;else shooting.charge_handle=0;
     motion.behavior_flags&=~0x40u;
-    collision.position={motion.position.x,motion.position.y};collision.hitbox_min={bounds.hit.minimum.x,bounds.hit.minimum.y};collision.hitbox_max={bounds.hit.maximum.x,bounds.hit.maximum.y};collision.state=life.state;collision.invulnerability=life.invulnerability.current;collision.enlarged=motion.behavior_flags&16;collision.size_multiplier=motion.enlargement;collision.bomb_active=context.hud_bomb_active;collision.laser_half_size={bounds.hit_half_size.x,bounds.hit_half_size.y};active_rate=nullptr;return true;
+    collision.position={motion.position.x,motion.position.y};collision.hitbox_min={bounds.hit.minimum.x,bounds.hit.minimum.y};collision.hitbox_max={bounds.hit.maximum.x,bounds.hit.maximum.y};collision.state=life.state;collision.invulnerability=(life.session_state().practice_tools&PracticeInvincible)?1:life.invulnerability.current;collision.enlarged=motion.behavior_flags&16;collision.size_multiplier=motion.enlargement;collision.bomb_active=context.hud_bomb_active;collision.laser_half_size={bounds.hit_half_size.x,bounds.hit_half_size.y};active_rate=nullptr;return true;
 }
 }

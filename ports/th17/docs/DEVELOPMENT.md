@@ -11,7 +11,7 @@
 ```sh
 node tools/workspace.mjs select th17 --variant=normal
 node launcher/scripts/build-runtime.mjs --game=th17 --variant=normal --emsdk=/path/to/emsdk
-node ports/th17/web/scripts/build-sdl-application.mjs --release --print-inputs
+node ports/th17/web/scripts/build-sdl-application.mjs --release --thprac --print-inputs
 ```
 
 直接构建可设置 `TH17_EMSDK` 或 `EMSDK`，Python 可由 `TH_PYTHON` 指定。产物位于 `web/artifacts/sdl-release/`。生产构建去除开发探针，保留游戏逻辑、文件格式验证与原生录像启动接口。
@@ -43,6 +43,21 @@ node launcher/scripts/prepare-th06-language-pack.mjs --game th17 --language lang
 ```
 
 `assets-ogg/th17.data` 也是可用的原版档案输入。英文使用 `lang_en`。标题、菜单、关卡标识、人物名牌和结局等 ANM 贴图按原图集的精灵区域覆盖。Music Room 按列表序号匹配曲名和评论，播放仍使用原作的曲目文件。符卡名在战斗、符卡练习和玩家资料中按当前难度显示，存档保存原版名称。
+
+## thprac 练习
+
+TH17 普通版 Runtime 使用 `--thprac` 编入练习面板。启动前启用 thprac，在原作的关卡练习菜单中确认关卡后，可以选整关、道中波次、道中 Boss、关底 Boss、非符或符卡。偶像恶魔和鬼畜生的所业在符卡练习中也有阶段选择。增强练习可配置残机、炸弹、火力、分数、擦弹和起始灵体，结果保存在练习录像里。
+
+桌面用 Backspace 打开作弊菜单、F12 打开高级设置、Tab 切换状态信息。手机启用 thprac 触控键后，通过触控栏打开可折叠的 ImGui 面板。触点从面板开始时交给面板处理，自机拖动沿用原来的触控轨迹。练习面板采用启动器语言和 Unifont。
+
+分段与阶段规则取自 [thprac purple](https://github.com/rueee/thprac/tree/master_2) 的 TH17 源码，运行时验证 1.00b ECL。更新生成文件时，在仓库根目录运行：
+
+```sh
+node ports/th17/portable/generate-thprac.mjs /path/to/thprac_purple
+node ports/th17/portable/generate-thprac.mjs /path/to/thprac_purple --check
+```
+
+练习录像保留原版 `t17r` 输入和阶段快照格式。Web 练习扩展记录起点、阶段、灵体和作弊键状态，导入时恢复这些设置。Runtime 也识别桌面 thprac 的 `USER/PRAC` 参数。
 
 ## 协议与存储
 

@@ -12,15 +12,25 @@ namespace {enum class Op:u16{
 // Executes TH17 bytecode in game-side C++. Unsupported game-specific commands
 // are reported rather than treated as NOPs. Thread/call and enemy commands are
 // separate integration work and must be installed before gameplay is enabled.
-int EclContext::step(float elapsed){
+int EclContext::step(float elapsed,bool lock_stage_clock){
     if(!code||routine<0||instruction_offset<0)return -1;
     auto fail=[&](const char* message){error=message;return -2;};
     auto finish=[&](){const auto* saved=instruction;for(u32 slot=0;slot<interpolators.size();slot++)if(interpolators[slot].duration){instruction=interpolation_targets[slot];if(!instruction)return fail("ECL interpolation target unavailable");auto* destination=float_destination(1);if(!destination)return -2;*destination=interpolators[slot].step(current_interpolation_rate())[0];}instruction=saved;return 0;};
     for(u32 steps=0;steps<100000;steps++){
-        if(code_size<16||instruction_offset<0||u32(instruction_offset)>code_size-16)return fail("ECL instruction outside routine");
-        instruction=reinterpret_cast<const EclInstruction*>(code+instruction_offset);
-        if(float(instruction->time)>time){time=float(time+elapsed);return finish();}
-        u32 length=instruction->length;if(length<16||length%4||length>code_size-u32(instruction_offset))return fail("Invalid ECL instruction length");
+        const u32 offset=u32(instruction_offset);
+        u32 available=offset<code_size?code_size-offset:0;
+        if(!available&&program){
+            const auto& sub=program->subroutine(routine);
+            if(offset>=sub.branch_offset&&offset-sub.branch_offset<sub.branch_size)
+                available=sub.branch_size-(offset-sub.branch_offset);
+        }
+        if(available<16)return fail("ECL instruction outside routine");
+        instruction=reinterpret_cast<const EclInstruction*>(code+offset);
+        if(float(instruction->time)>time){
+            if(!lock_stage_clock||!program||program->subroutine(routine).name!="MainLatter")time=float(time+elapsed);
+            return finish();
+        }
+        u32 length=instruction->length;if(length<16||length%4||length>available)return fail("Invalid ECL instruction length");
         const Op op=Op(instruction->opcode);const bool enabled=(instruction->difficulty&difficulty)!=0;
         bool ok=true,adjust=false;
         auto integer_arg=[&](u32 n,bool consume=false){i32 value=0;if(16+n*4+4>length){error="Truncated ECL arguments";ok=false;}else if(!integer(n,instruction->argument<i32>(n),value,consume))ok=false;return value;};

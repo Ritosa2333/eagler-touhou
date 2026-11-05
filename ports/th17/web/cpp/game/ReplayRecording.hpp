@@ -9,6 +9,7 @@ struct RecordedReplayStage {
  std::array<u8,0x158> snapshot{};
  std::vector<std::array<u16,3>> inputs;std::vector<u8> frame_rates;
  std::vector<ReplayTouch> touches;
+ std::vector<PracticeToolChange> practice_changes;
  bool present=false;
 };
 // File snapshots are encoded bytes, not executable guest memory. The recording
@@ -16,6 +17,7 @@ struct RecordedReplayStage {
 class ReplayRecording {
  std::array<u8,0xa0> metadata{};std::array<RecordedReplayStage,8> stages{};
  i32 current=0,clock=-1;bool sealed=false;u32 web_rules=0;std::vector<u8> file;std::string failure;
+ PracticePatch practice_patch;
  bool fail(const char*);bool serialize(const char*,const ReplayExportDetails&);
 public:
  std::array<u8,0xa0>& description(){return metadata;}
@@ -24,6 +26,7 @@ public:
  const std::string& error()const{return failure;}
  bool begin(const u8* snapshot,u32 size);
  bool spell_timing(u32 stage,u32 sequence,i32 value);
+ void use_practice(const PracticePatch& value){practice_patch=value;}
  void activate(){clock=0;}
  void use_current_web_rules()noexcept{web_rules=2;}
  bool tick(ReplayInput,float fps,bool suspended=false,PlayerTouch touch={});

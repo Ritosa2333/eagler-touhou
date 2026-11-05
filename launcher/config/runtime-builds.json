@@ -190,13 +190,14 @@
           "web/scripts/build-sdl-application.mjs",
           "--release"
         ],
-        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
+        "commonMarker": "include/eagler/input/BrowserGamepad.hpp",
+        "practiceFlag": "--thprac"
       },
       "variants": {
         "normal": {
           "features": {
-            "thcrap": false,
-            "thprac": false
+            "thcrap": true,
+            "thprac": true
           },
           "cache": {}
         }

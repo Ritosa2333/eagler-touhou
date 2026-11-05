@@ -3,6 +3,7 @@
 #include "HudDrawData.hpp"
 namespace th17 {
 struct GameRecords;
+enum class PracticeMenuResult { Native, Configure, Confirm };
 struct TitleGameStartServices {
     virtual ~TitleGameStartServices()=default;
     virtual bool sound(i32)=0;
@@ -10,6 +11,7 @@ struct TitleGameStartServices {
     virtual bool show_loading_indicator()=0;
     virtual bool begin_transition(u32& animation)=0;
     virtual bool start_game(i32 stage)=0;
+    virtual PracticeMenuResult configure_practice(i32,i32,bool=true){return PracticeMenuResult::Native;}
     virtual i32 checkpoint_key()const=0;
 };
 class TitleAnimalMenu {
