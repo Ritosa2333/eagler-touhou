@@ -57,7 +57,7 @@ function tick(){
     for(const [code,bit,number] of nativeKeys)if(!!(bits&bit)!==!!(lastKeys&bit))key(code,number,!!(bits&bit));lastKeys=bits;
     const motion=input.motion();emulator.setInput({address:state?.at,generation:state?.generation,points:(bits&64?1:0)|(options.alwaysHitbox||ps?.options.alwaysPoint?8:0),touch:playing&&motion.active?motion:null});
   }
-  if(music){if(document.hidden||emulator.state!=='running'||state?.mode===2||ps?.mode==='target'&&(!ps.ready||ps.waiting||ps.outcome))music.suspend();else music.resume();}
+  if(music){if(document.hidden||emulator.state!=='running'||state?.mode===2||lastPractice?.mode==='target'&&(!ps?.ready||ps.waiting||ps.outcome))music.suspend();else music.resume();}
   loop=requestAnimationFrame(tick);
 }
 function discardRetry(){retrySlot?.stop();retrySlot=undefined;}

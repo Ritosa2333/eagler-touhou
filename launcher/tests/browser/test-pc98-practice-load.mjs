@@ -53,6 +53,8 @@ for(const game of games){
       const command=OriginalSfx.prototype.command;globalThis.practiceEffectsCreated=0;globalThis.practiceLoadingEffects=0;
       OriginalSfx.create=async(...args)=>{practiceEffectsCreated++;return create.call(OriginalSfx,...args);};
       OriginalSfx.prototype.command=function(...args){if(!document.querySelector('.practice-preparing').hidden)practiceLoadingEffects++;return command.apply(this,args);};
+      const {SoloMusic}=await import('./solo-music.js'),resume=SoloMusic.prototype.resume;globalThis.practiceLoadingMusicResumes=0;
+      SoloMusic.prototype.resume=function(...args){if(!document.querySelector('.practice-preparing').hidden)practiceLoadingMusicResumes++;return resume.apply(this,args);};
     });
     await page.evaluate(()=>rpc('configure',{music:'none',options:{touchEnabled:false},resources:[],runtimeResources:[],sharedResources:[]}));
     await page.evaluate(()=>rpc('launch',{launchSerial:1}));
@@ -106,7 +108,7 @@ for(const game of games){
       await page.screenshot({path:resolve(output,`${label}-${game}-${kind}-running.png`)});
     }
     assert((await frame.evaluate(()=>practiceEffectsCreated))>=2,'standby owns its own original effect driver');
-    if(game==='th04')assert.equal(await frame.evaluate(()=>practiceLoadingEffects),0,'loading and standby must not play sound effects');
+    if(game==='th04'){assert.equal(await frame.evaluate(()=>practiceLoadingEffects),0,'loading and standby must not play sound effects');assert.equal(await frame.evaluate(()=>practiceLoadingMusicResumes),0,'loading must not resume music');}
     if(process.env.PC98_PRACTICE_DEATH==='1'){
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testPracticeHit(1));
       await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.missTimer>0;},{timeout:15000});
