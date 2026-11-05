@@ -3,6 +3,12 @@ import { accountsEnabled } from '../release-features';
 const backup = 'https://cn-site.touhouonline.com:8443';
 let chosen = '';
 const transientStatuses = new Set([502, 503, 504]);
+type RequestOptions = {signal?: AbortSignal; responseType?: 'json' | 'blob'; timeoutMs?: number};
+const activeRequests = new Set<AbortController>();
+
+export function cancelAccountRequests() {
+  for (const controller of activeRequests) controller.abort();
+}
 
 export class AccountRequestError extends Error {
   constructor(
@@ -23,8 +29,43 @@ function accountErrorCode(value: unknown) {
   return typeof code === 'string' && /^[A-Z0-9_]+$/.test(code) ? code : 'ACCOUNT_REQUEST_FAILED';
 }
 
+async function accountReady(entry: string, signal?: AbortSignal) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, {once: true});
+  if (signal?.aborted) controller.abort();
+  const timeout = setTimeout(abort, 3500);
+  try {
+    const response = await fetch(`${entry}/api/ready`, {
+      credentials: 'include', cache: 'no-store', signal: controller.signal,
+    });
+    return response.ok && (await response.json()).ready === true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener('abort', abort);
+  }
+}
+
 /** Writes are never replayed after dispatch; only idempotent reads can fail over on an uncertain response. */
-export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: {signal?:AbortSignal;responseType?:'json'|'blob';timeoutMs?:number} = {}): Promise<T> {
+export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: RequestOptions = {}): Promise<T> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  options.signal?.addEventListener('abort', abort, {once: true});
+  if (options.signal?.aborted) controller.abort();
+  activeRequests.add(controller);
+  try {
+    const result = await sendAccountRequest<T>(path, body, {...options, signal: controller.signal});
+    if (controller.signal.aborted) throw new DOMException('Request cancelled', 'AbortError');
+    return result;
+  } finally {
+    activeRequests.delete(controller);
+    options.signal?.removeEventListener('abort', abort);
+  }
+}
+
+async function sendAccountRequest<T>(path: string, body: Record<string, unknown> | FormData | undefined, options: RequestOptions): Promise<T> {
   if (!accountsEnabled) throw new AccountRequestError('ACCOUNT_FEATURE_DISABLED');
   const segments = path.split('/');
   if (
@@ -38,16 +79,9 @@ export async function accountRequest<T = unknown>(path: string, body?: Record<st
   let lastReadError: unknown;
   for (const entry of entries) {
     if(options.signal?.aborted)throw new DOMException('Request cancelled','AbortError');
-    try {
-      const probe = await fetch(`${entry}/api/ready`, {
-        credentials: 'include',
-        cache: 'no-store',
-        signal: AbortSignal.timeout(3500),
-      });
-      if (!probe.ok || !(await probe.json()).ready) continue;
-    } catch {
-      continue;
-    }
+    const ready = await accountReady(entry, options.signal);
+    if(options.signal?.aborted)throw new DOMException('Request cancelled','AbortError');
+    if (!ready) continue;
     const controller=new AbortController(),abort=()=>controller.abort();
     options.signal?.addEventListener('abort',abort,{once:true});
     if(options.signal?.aborted)controller.abort();

@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {createContext, useContext, useEffect, useState, type Dispatch, type ReactNode, type SetStateAction} from 'react';
 import {Link} from 'react-router';
 import {UserRound} from 'lucide-react';
 import {accountRequest} from '../../services/account-client';
@@ -18,8 +18,8 @@ function parseUser(value: unknown): SocialUser | null {
     ? {username: item.username, nickname: item.nickname} : null;
 }
 
-async function readSocial(username: string): Promise<SocialSnapshot> {
-  const value = await accountRequest('v1/profiles/' + encodeURIComponent(username) + '/social') as Record<string, unknown> | null;
+async function readSocial(username: string, signal: AbortSignal): Promise<SocialSnapshot> {
+  const value = await accountRequest('v1/profiles/' + encodeURIComponent(username) + '/social', undefined, {signal}) as Record<string, unknown> | null;
   if (!value || typeof value.visible !== 'boolean' || !(value.following === null || typeof value.following === 'boolean') ||
       !Array.isArray(value.friends) || !Array.isArray(value.followingUsers)) throw new Error('Invalid social response');
   return {visible: value.visible, following: value.following,
@@ -27,20 +27,33 @@ async function readSocial(username: string): Promise<SocialSnapshot> {
     followingUsers: value.followingUsers.map(parseUser).filter((user): user is SocialUser => !!user)};
 }
 
-function useSocial(username: string) {
-  const [state, setState] = useState<LoadState>({loading: true});
+type SocialContextValue = {username: string; state: LoadState; setState: Dispatch<SetStateAction<LoadState>>};
+const SocialContext = createContext<SocialContextValue | null>(null);
+export function SocialProvider({username,children}: {username: string;children: ReactNode}) {
+  const [state,setState] = useState<LoadState>({loading:true});
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      if (active) setState(current => ({...current, loading: true, error: undefined}));
-      try {const data = await readSocial(username); if (active) setState({loading: false, data});}
-      catch (cause) {if (active) setState({loading: false, error: String(cause instanceof Error ? cause.message : cause)});}
+    let active=true,revision=0;
+    let controller:AbortController|undefined;
+    const load=()=>{
+      controller?.abort();
+      const current=++revision,task=new AbortController();controller=task;
+      setState(value=>({...value,loading:true,error:undefined}));
+      void readSocial(username,task.signal).then(data=>{
+        if(active&&!task.signal.aborted&&revision===current)setState({loading:false,data});
+      }).catch(cause=>{
+        if(active&&!task.signal.aborted&&revision===current)setState({loading:false,error:String(cause instanceof Error?cause.message:cause)});
+      });
     };
-    const refresh = () => {void load();};
-    refresh(); window.addEventListener('account-social-change', refresh);
-    return () => {active = false; window.removeEventListener('account-social-change', refresh);};
-  }, [username]);
-  return [state, setState] as const;
+    load();window.addEventListener('account-social-change',load);
+    return()=>{active=false;revision++;controller?.abort();window.removeEventListener('account-social-change',load);};
+  },[username]);
+  return <SocialContext.Provider value={{username,state,setState}}>{children}</SocialContext.Provider>;
+}
+
+function useSocial(username: string) {
+  const value=useContext(SocialContext);
+  if(!value||value.username!==username)throw new Error('SocialProvider is required for profile social components');
+  return [value.state,value.setState] as const;
 }
 
 export function SocialSection({username}: {username: string}) {

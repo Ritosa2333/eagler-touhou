@@ -151,9 +151,14 @@ export function createMultiplayerQuickChatModel(ports: Ports) {
       const registered = message.registered === true && typeof message.authorId === 'string';
       const bannedUntil =
         typeof message.bannedUntil === 'number' && Number.isSafeInteger(message.bannedUntil) ? message.bannedUntil : 0;
+      if (!registered && sendTimer !== undefined) {
+        ports.timers.clearTimeout(sendTimer);
+        sendTimer = undefined;
+      }
       if (banTimer !== undefined) ports.timers.clearTimeout(banTimer);
       banTimer = undefined;
-      publish({ ...snapshot, registered, authorId: registered ? String(message.authorId) : '', bannedUntil });
+      publish({ ...snapshot, registered, authorId: registered ? String(message.authorId) : '', bannedUntil,
+        ...(!registered ? {sending: false} : {}) });
       if (bannedUntil > now())
         banTimer = ports.timers.setTimeout(
           () => {

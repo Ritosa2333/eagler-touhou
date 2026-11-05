@@ -1642,6 +1642,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         publish();
       }
     },
+    refreshAccount() {
+      if (!room || stopped || disposed) return;
+      ports.quickChat?.receive({type:'chat-status',registered:false});
+      // Replace only the lobby identity connection, using its existing seat recovery.
+      socketRoom = '';
+      connect(true);
+    },
     dispose() {
       if (disposed) return;
       // Document teardown must retain the room session for reload, like main's

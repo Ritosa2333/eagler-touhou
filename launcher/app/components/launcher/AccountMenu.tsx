@@ -17,13 +17,18 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
   const confirmDiscard = useConfirmDiscardChanges();
   const user = state.status === 'member' ? state.user : null;
   const [identity,setIdentity] = useState<{username:string; nickname:string; avatar:string}>(), [failed,setFailed] = useState(false), [busy,setBusy] = useState(false);
+  const [open,setOpen] = useState(false);
   useEffect(() => {
     if (!user) return;
-    let active=true;
-    const refresh = () => {void accountRequest<{nickname:string;details?:{avatar?:string}}>('v1/profiles/'+encodeURIComponent(user.username))
-      .then(profile => {if (active) setIdentity({username:user.username,nickname:profile.nickname,avatar:profile.details?.avatar || ''});}).catch(() => {});};
+    let current:AbortController|undefined;
+    const refresh = () => {
+      current?.abort();
+      const controller=new AbortController();current=controller;
+      void accountRequest<{nickname:string;details?:{avatar?:string}}>('v1/profiles/'+encodeURIComponent(user.username),undefined,{signal:controller.signal})
+        .then(profile => {if (!controller.signal.aborted) setIdentity({username:user.username,nickname:profile.nickname,avatar:profile.details?.avatar || ''});}).catch(() => {});
+    };
     refresh(); window.addEventListener('account-profile-change',refresh);
-    return () => {active=false;window.removeEventListener('account-profile-change',refresh);};
+    return () => {current?.abort();window.removeEventListener('account-profile-change',refresh);};
   },[user]);
   if (state.status==='loading') return <span className="masthead-action account-loading" aria-busy="true"><span className="account-avatar account-avatar-loading"/></span>;
   if (state.status==='error') return <button className="masthead-action" onClick={retry} aria-label={t('account.requestFailed')}><RotateCw aria-hidden="true"/></button>;
@@ -44,9 +49,9 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
     setFailed(false);setBusy(true);
     if (!await confirmDiscard()) {setBusy(false);return;}
     try {await accountRequest('auth/sign-out',{});notifyAccountChange();location.replace(new URL(localeHome(locale),location.origin+'/').href);}
-    catch {setFailed(true);setBusy(false);}
+    catch {setFailed(true);setBusy(false);setOpen(true);}
   }
-  return <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="masthead-account-entry" aria-label={t('account.actions')+' '+nickname}>
+  return <DropdownMenu.Root open={open} onOpenChange={setOpen}><DropdownMenu.Trigger asChild><button className="masthead-account-entry" aria-label={t('account.actions')+' '+nickname}>
     <AccountAvatar src={avatar}/><span className="account-handle">{nickname}</span>
   </button></DropdownMenu.Trigger><DropdownMenu.Portal container={uiPortalHost()}>
     <DropdownMenu.Content align="end" sideOffset={8} className="ui-menu account-menu-panel ui-dropdown-motion">

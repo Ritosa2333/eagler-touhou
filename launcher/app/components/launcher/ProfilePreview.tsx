@@ -1,4 +1,5 @@
 import {AccountRequestError, accountRequest} from '../../services/account-client';
+import {useAccountSession} from '../../services/account-session';
 
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import {AccountAvatar} from './AccountAvatar';
@@ -14,7 +15,7 @@ import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import './profile-preview.css';
 import {AccountSettings} from './AccountSettings';
 import {CountryFlag} from './CountryFlag';
-import {SocialFollowControl, SocialSection} from './SocialSection';
+import {SocialFollowControl, SocialProvider, SocialSection} from './SocialSection';
 import {getProfileStatistics, type ProfileStatistics} from '../../services/cloud-saves';
 import type {LocalSaveReader} from '../../services/local-save-storage';
 const ProfileGameData=lazy(()=>import('./ProfileGameData'));
@@ -23,7 +24,6 @@ export type Profile = {name: string; bio: string; avatar: string; cover: string;
 type DisplayKey = 'friends' | 'career' | 'records' | 'content';
 type OverviewKey = DisplayKey | 'favorites';
 export type ProfileDisplay = {visible: Record<DisplayKey, boolean>; order: OverviewKey[]};
-type AccountSession = {user?: {username?: string} | null};
 const displayLabels: Record<DisplayKey, UiMessageKey> = {friends:'profile.tab.friends',career:'profile.tab.career',records:'profile.tab.records',content:'profile.tab.content'};
 const tabLabels = {overview:'profile.tab.overview',career:'profile.tab.career',records:'profile.tab.records',content:'profile.tab.content',friends:'profile.tab.friends'} as const;
 type ProfileTab = keyof typeof tabLabels;
@@ -40,38 +40,47 @@ const safeUrl = (value: string) => {try {const url = new URL(value); return ['ht
 type RemoteProfile = {username: string; nickname: string; joinedAt: string; countryCode?:string | null; regionCode?:string | null; details: (Profile & {display:ProfileDisplay}) | null};
 export function ProfilePage({readLocalSaves}:{readLocalSaves?:LocalSaveReader}={}) {
   const {pathname} = useLocation();
-  return <AccountProfile key={pathname} pathname={pathname} readLocalSaves={readLocalSaves}/>;
+  const {state,retry} = useAccountSession();
+  const {t} = useLocale();
+  if (state.status === 'loading' || state.status === 'error') return <main className="player-profile"><div className="profile-wrap" aria-busy={state.status === 'loading'}>
+    {state.status === 'error' && <p role="alert">{t('account.requestFailed')} <Button variant="outline" onClick={retry}>{t('cloudSave.refresh')}</Button></p>}
+  </div></main>;
+  const viewer = state.status === 'member' ? state.user.username : '';
+  return <AccountProfile key={pathname+'|'+viewer} pathname={pathname} viewer={viewer} readLocalSaves={readLocalSaves}/>;
 }
-function AccountProfile({pathname,readLocalSaves}: {pathname:string;readLocalSaves?:LocalSaveReader}) {
+function AccountProfile({pathname,viewer,readLocalSaves}: {pathname:string;viewer:string;readLocalSaves?:LocalSaveReader}) {
   const {locale,t} = useLocale();
   const {hash,search} = useLocation();
   const navigate = useNavigate();
   const aliasSearch = pathname === '/profile.html' ? search : '';
   const aliasHash = pathname === '/profile.html' ? hash : '';
+  const signInHref = pathname === '/profile.html' ? withUiLanguage('/login.html?next='+encodeURIComponent(pathname+aliasSearch+aliasHash),locale) : '';
   const panel = ['#edit','#settings','#security','#game-settings'].includes(hash) ? hash : '';
   const [state,setState] = useState<{profile?:RemoteProfile; owner?:boolean; error?:UiMessageKey}>({});
+  const [attempt,setAttempt] = useState(0);
   useEffect(() => {
-    let current = true;
+    const controller = new AbortController();
+    setState({});
     async function load() {
-      const session = await accountRequest<AccountSession>('auth/get-session');
-      const name = pathname.startsWith('/u/') ? decodeURIComponent(pathname.slice(3).replace(/\/$/, '')) : session?.user?.username;
+      const name = pathname.startsWith('/u/') ? decodeURIComponent(pathname.slice(3).replace(/\/$/, '')) : viewer;
       if (!name) {
-        if (current) navigate(withUiLanguage('/login.html?next='+encodeURIComponent(pathname+aliasSearch+aliasHash),locale),{replace:true});
+        if (!signInHref) throw new AccountRequestError('PROFILE_NOT_FOUND',404);
+        if (!controller.signal.aborted) navigate(signInHref,{replace:true});
         return;
       }
       if (pathname === '/profile.html') {
-        if (current) navigate({pathname:'/u/'+encodeURIComponent(name),search:aliasSearch,hash:aliasHash},{replace:true});
+        if (!controller.signal.aborted) navigate({pathname:'/u/'+encodeURIComponent(name),search:aliasSearch,hash:aliasHash},{replace:true});
         return;
       }
-      const profile = await accountRequest<RemoteProfile>(`v1/profiles/${encodeURIComponent(name)}`);
-      if (current) setState({profile,owner:session?.user?.username === profile.username});
+      const profile = await accountRequest<RemoteProfile>(`v1/profiles/${encodeURIComponent(name)}`,undefined,{signal:controller.signal});
+      if (!controller.signal.aborted) setState({profile,owner:viewer === profile.username});
     }
-    load().catch(error => {if (current) setState({error:error instanceof AccountRequestError && error.status === 404 ? 'profile.notFound' : 'account.requestFailed'});});
-    return () => {current = false;};
-  }, [pathname,aliasSearch,aliasHash,locale,navigate]);
+    load().catch(error => {if (!controller.signal.aborted) setState({error:error instanceof AccountRequestError && error.status === 404 ? 'profile.notFound' : 'account.requestFailed'});});
+    return () => controller.abort();
+  }, [pathname,viewer,aliasSearch,aliasHash,signInHref,navigate,attempt]);
   if (state.profile) return <ProfileBody panel={panel} remote={state.profile} owner={!!state.owner} readLocalSaves={readLocalSaves}/>;
   return <main className="player-profile"><div className="profile-wrap" aria-busy={!state.error}>
-    {state.error && <p role="alert">{t(state.error)}</p>}
+    {state.error && <p role="alert">{t(state.error)} {state.error !== 'profile.notFound' && <Button variant="outline" onClick={()=>setAttempt(value=>value+1)}>{t('cloudSave.refresh')}</Button>}</p>}
   </div></main>;
 }
 function ProfileBody({remote,owner,panel,readLocalSaves}: {remote:RemoteProfile; owner:boolean; panel:string;readLocalSaves?:LocalSaveReader}) {
@@ -104,7 +113,7 @@ function ProfileBody({remote,owner,panel,readLocalSaves}: {remote:RemoteProfile;
   const navigation = visibleTabs.map(item => <Link key={item} to={sectionAddress(item)} aria-current={tab===item ? 'location' : undefined}>{t(tabLabels[item])}</Link>);
   if (settings) return <AccountSettings initialProfile={profile} initialDisplay={display} panel={panel} readLocalSaves={readLocalSaves}
     onSave={(next,visibility) => {setProfile(next);setDisplay(visibility);}}/>;
-  return <main className="player-profile profile-page" aria-labelledby="profile-name"><div className="profile-wrap">
+  return <SocialProvider key={remote.username} username={remote.username}><main className="player-profile profile-page" aria-labelledby="profile-name"><div className="profile-wrap">
       <section id="profile-overview" className="profile-hero profile-public-section">
         <div className="profile-cover"><img src={imageData(profile.cover) ? profile.cover : backgroundUrl} alt=""/></div>
         <div className="profile-identity"><UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')} disabled={visitor} onClick={editProfile}><AccountAvatar src={profile.avatar} alt={t('profile.avatar.alt')}/></UiButton>
@@ -118,7 +127,7 @@ function ProfileBody({remote,owner,panel,readLocalSaves}: {remote:RemoteProfile;
         {visible.friends && <SocialSection username={remote.username}/>}
         <div className="profile-end-actions"><BackToTop/></div>
         </div></div>
-  </div></main>;
+  </div></main></SocialProvider>;
 }
 
 function regionLabel(code:string,locale:string) {

@@ -1,35 +1,107 @@
-import {useEffect, useState} from 'react';
-import {accountRequest} from './account-client';
+import {useSyncExternalStore} from 'react';
+import {AccountRequestError, accountRequest, cancelAccountRequests} from './account-client';
 
 type Identity = {username: string; name: string};
-type State = {status:'loading'|'guest'|'error'} | {status:'member'; user:Identity};
+type State = {status: 'loading' | 'guest' | 'error'} | {status: 'member'; user: Identity};
+const loading: State = {status: 'loading'};
 const signalKey = 'account-session-changed';
-let pending: Promise<State> | undefined;
+const listeners = new Set<() => void>();
+const recheckAfter = 30_000;
+let state: State = loading;
+let checkedAt = 0;
+let generation = 0;
+let pending: {controller: AbortController; promise: Promise<void>} | undefined;
 
-function readSession() {
-  pending ??= accountRequest<{user?:Identity} | null>('auth/get-session')
-    .then((session):State => session?.user?.username ? {status:'member',user:session.user} : {status:'guest'})
-    .catch(():State => ({status:'error'})).finally(() => {pending = undefined;});
-  return pending;
+function publish(next: State) {
+  if (state.status === next.status && (state.status !== 'member' || next.status !== 'member' ||
+    state.user.username === next.user.username && state.user.name === next.user.name)) return;
+  const previousUser = state.status === 'member' ? state.user.username : null;
+  const nextUser = next.status === 'member' ? next.user.username : null;
+  if (previousUser !== nextUser && state.status !== 'loading' && next.status !== 'loading') cancelAccountRequests();
+  state = next;
+  for (const listener of listeners) listener();
 }
 
+function refresh() {
+  if (pending) return pending.promise;
+  const controller = new AbortController();
+  const requestGeneration = ++generation;
+  const promise = accountRequest<{user?: Identity} | null>('auth/get-session', undefined, {signal: controller.signal})
+    .then(session => {
+      if (controller.signal.aborted || generation !== requestGeneration) return;
+      checkedAt = Date.now();
+      publish(session?.user?.username ? {status: 'member', user: session.user} : {status: 'guest'});
+    })
+    .catch(error => {
+      if (controller.signal.aborted || generation !== requestGeneration) return;
+      if (error instanceof AccountRequestError && error.status === 401) publish({status: 'guest'});
+      // A failed background recheck must not discard an open profile draft.
+      else if (state.status === 'loading' || state.status === 'error') publish({status: 'error'});
+    })
+    .finally(() => {if (generation === requestGeneration) pending = undefined;});
+  pending = {controller, promise};
+  return promise;
+}
+
+function invalidate() {
+  generation++;
+  pending?.controller.abort();
+  pending = undefined;
+  cancelAccountRequests();
+  checkedAt = 0;
+  publish(loading);
+  if (listeners.size) void refresh();
+}
+
+function changed(event: StorageEvent) {
+  if (event.key === signalKey || event.key === null) invalidate();
+}
+
+function recheck() {
+  if (document.visibilityState !== 'hidden' && Date.now() - checkedAt >= recheckAfter) void refresh();
+}
+
+function restored(event: PageTransitionEvent) {
+  if (event.persisted) invalidate();
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  if (listeners.size === 1) {
+    window.addEventListener('storage', changed);
+    window.addEventListener('pageshow', restored);
+    window.addEventListener('focus', recheck);
+    document.addEventListener('visibilitychange', recheck);
+    void refresh();
+  }
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size) return;
+    window.removeEventListener('storage', changed);
+    window.removeEventListener('pageshow', restored);
+    window.removeEventListener('focus', recheck);
+    document.removeEventListener('visibilitychange', recheck);
+    generation++;
+    pending?.controller.abort();
+    pending = undefined;
+    state = loading;
+    checkedAt = 0;
+  };
+}
+
+const getSnapshot = () => state;
+const getServerSnapshot = () => loading;
+const inactiveSubscription = () => () => {};
+export const accountSession = {subscribe, getSnapshot};
+
 export function useAccountSession(interactive = true) {
-  const [state,setState] = useState<State>({status:'loading'});
-  const [attempt,setAttempt] = useState(0);
-  useEffect(() => {
-    if (!interactive) return;
-    let active = true;
-    const refresh = () => {void readSession().then(value => {if (active) setState(value);});};
-    const changed = (event:StorageEvent) => {if (event.key === signalKey) location.reload();};
-    const restored = (event:PageTransitionEvent) => {if (event.persisted) location.reload();};
-    refresh();
-    window.addEventListener('storage',changed); window.addEventListener('pageshow',restored);
-    return () => {active=false;window.removeEventListener('storage',changed);window.removeEventListener('pageshow',restored);};
-  },[interactive,attempt]);
-  return {state,retry:() => setAttempt(value => value+1)};
+  const snapshot = useSyncExternalStore(interactive ? subscribe : inactiveSubscription,
+    interactive ? getSnapshot : getServerSnapshot, getServerSnapshot);
+  return {state: snapshot, retry: invalidate};
 }
 
 export function notifyAccountChange() {
+  invalidate();
   try {localStorage.setItem(signalKey,crypto.randomUUID());} catch {}
 }
 

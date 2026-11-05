@@ -459,10 +459,13 @@ test('failed save keeps the profile dirty', async () => {
     return {};
   };
   await mount();
-  await setValue(input('#settings-bio'), 'Unsaved after failure');
+  const bio=input('#settings-bio');
+  await setValue(bio, 'Unsaved after failure');
   await click(input('form button[type="submit"]'));
   await settle();
   assert.ok(env.document.querySelector('[role="alert"]'));
+  assert.equal(input('#settings-bio'),bio,'the failed save keeps the same editing control mounted');
+  assert.equal(bio.value,'Unsaved after failure','the failed save keeps the user draft');
   await navigateAway();
   await expectPrompt();
 });

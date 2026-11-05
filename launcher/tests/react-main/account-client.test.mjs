@@ -108,3 +108,53 @@ it('does not replay a write after dispatch when the connection fails', async () 
   ]);
   expect(AccountRequestError).toBeTypeOf('function');
 });
+
+it('does not dispatch an account request when its readiness probe is cancelled', async () => {
+  let signal, rejectProbe;
+  const fetcher = vi.fn((input, init = {}) => {
+    const url = String(input);
+    if (url === '/api/ready') {
+      signal = init.signal;
+      return new Promise((resolve, reject) => {
+        rejectProbe = reject;
+        signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {once: true});
+      });
+    }
+    throw new Error(`The account request must not be dispatched: ${url}`);
+  });
+  const {accountRequest} = await loadAccountClient(fetcher);
+  const controller = new AbortController();
+  const pending = accountRequest('auth/get-session', undefined, {signal: controller.signal});
+  for (let attempt = 0; attempt < 20 && !rejectProbe; attempt++) await new Promise(resolve => setTimeout(resolve, 0));
+  expect(signal).toBeDefined();
+  controller.abort();
+  await expect(pending).rejects.toMatchObject({name: 'AbortError'});
+  expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual(['/api/ready']);
+});
+
+it('cancels a write during readiness and allows a new account request afterward', async () => {
+  let rejectFirstProbe, probes = 0;
+  const fetcher = vi.fn((input, init = {}) => {
+    const url = String(input);
+    if (url === '/api/ready') {
+      probes++;
+      if (probes === 1) return new Promise((resolve, reject) => {
+        rejectFirstProbe = reject;
+        init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {once: true});
+      });
+      return Promise.resolve(Response.json({ready: true}));
+    }
+    if (url === '/api/auth/get-session') return Promise.resolve(Response.json({user: {username: 'bob'}}));
+    throw new Error(`The cancelled write must not be dispatched: ${url}`);
+  });
+  const {accountRequest, cancelAccountRequests} = await loadAccountClient(fetcher);
+  const staleWrite = accountRequest('v1/me/profile', {name: 'Alice draft'});
+  for (let attempt = 0; attempt < 20 && !rejectFirstProbe; attempt++) await new Promise(resolve => setTimeout(resolve, 0));
+  expect(rejectFirstProbe).toBeTypeOf('function');
+  cancelAccountRequests();
+  await expect(staleWrite).rejects.toMatchObject({name: 'AbortError'});
+  await expect(accountRequest('auth/get-session')).resolves.toEqual({user: {username: 'bob'}});
+  expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+    '/api/ready', '/api/ready', '/api/auth/get-session',
+  ]);
+});

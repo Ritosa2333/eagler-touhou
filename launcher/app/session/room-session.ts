@@ -8,6 +8,8 @@ import { createMultiplayerRoom, type MultiplayerRoomPorts } from '../services/mu
 import type { GameSettingsModel } from '../models/game-settings';
 import type { SitePreferencesModel } from '../models/site-preferences';
 import type { RuntimeService } from '../services/runtime';
+import {accountSession} from '../services/account-session';
+import {accountsEnabled} from '../release-features';
 
 export interface RoomSessionOptions extends Omit<
   MultiplayerRoomPorts,
@@ -31,6 +33,8 @@ export function createRoomSession(options: RoomSessionOptions) {
     listeners = new Set<() => void>();
   let revision = 0,
     disposed = false;
+  let accountIdentity:string|null|undefined;
+  let accountInvalidated = false;
   const quickChat = createMultiplayerQuickChatModel({
     send: (message) => {
       service.sendControl(message);
@@ -54,7 +58,10 @@ export function createRoomSession(options: RoomSessionOptions) {
     ...options,
     preferences: createMultiplayerPreferenceStore({ storage: options.storage }),
     network: probes,
-    quickChat: { receive: (message) => quickChat.receive(message) },
+    quickChat: { receive: (message) => {
+      if (accountInvalidated && message.type === 'chat-status' && message.registered === true) return;
+      quickChat.receive(message);
+    } },
     online: () => window.navigator.onLine,
     visible: () => document.visibilityState === 'visible',
   });
@@ -109,6 +116,30 @@ export function createRoomSession(options: RoomSessionOptions) {
       sync();
     });
   const unsubscribePreferences = options.sitePreferences.subscribe(sync);
+  const accountChanged = () => {
+    const account = accountSession.getSnapshot();
+    if (account.status === 'loading' || account.status === 'error') {
+      if (accountIdentity !== undefined && !accountInvalidated) {
+        accountInvalidated = true;
+        quickChat.setDraft('');
+        quickChat.dismiss();
+        quickChat.receive({type:'chat-status',registered:false});
+      }
+      return;
+    }
+    const identity = account.status === 'member' ? account.user.username : null;
+    const refresh = accountIdentity !== undefined && (accountInvalidated || identity !== accountIdentity);
+    accountIdentity = identity;
+    accountInvalidated = false;
+    if (refresh) {
+      quickChat.setDraft('');
+      quickChat.dismiss();
+      quickChat.receive({type:'chat-status',registered:false});
+      service.refreshAccount();
+    }
+  };
+  const unsubscribeAccount = accountsEnabled ? accountSession.subscribe(accountChanged) : () => {};
+  if (accountsEnabled) accountChanged();
   const pageHide = () => service.pageHide(),
     pageShow = (event: PageTransitionEvent) => service.pageShow(event.persisted);
   const visible = () => {
@@ -146,6 +177,7 @@ export function createRoomSession(options: RoomSessionOptions) {
       unsubscribeRoom();
       unsubscribeSettings();
       unsubscribePreferences();
+      unsubscribeAccount();
       service.dispose();
       probes.reset();
       listeners.clear();

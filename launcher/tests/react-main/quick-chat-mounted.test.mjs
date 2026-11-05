@@ -11,7 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { authoredSourcesPlugin } from './authored-sources.mjs';
 import { installMountedDom } from './mounted-dom-environment.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
-let env, work, owner, React, createRoot, mounted;
+let env, work, owner, ownerAccounts, React, createRoot, mounted;
 before(async () => {
   env = installMountedDom();
   React = await import('react');
@@ -20,13 +20,7 @@ before(async () => {
     recursive: true,
   });
   work = await mkdtemp(resolve(project, '.cache/quick-chat-mounted-'));
-  const output = resolve(work, 'entry.mjs');
-  await build({
-    absWorkingDir: project,
-    stdin: {
-      resolveDir: project,
-      loader: 'ts',
-      contents: `
+  const contents = `
     export {MultiplayerQuickChat} from './app/components/player/MultiplayerQuickChat.tsx';
     export {RoomQuickChat} from './app/components/room/RoomQuickChat.tsx';
     export {PlayerSurface} from './app/components/player/PlayerSurface.tsx';
@@ -37,7 +31,16 @@ before(async () => {
     export {createMultiplayerRoomSessionStore} from './src/launcher/multiplayer-room-session.mts';
     export {createDecisionStore} from './app/models/decisions.ts';
     export {LocaleProvider, translate} from './app/i18n.tsx';
-  `,
+    export {accountSession, notifyAccountChange} from './app/services/account-session.ts';
+    export {accountsEnabled} from './app/release-features.ts';
+  `;
+  const output = resolve(work, 'entry.mjs');
+  await build({
+    absWorkingDir: project,
+    stdin: {
+      resolveDir: project,
+      loader: 'ts',
+      contents,
     },
     outfile: output,
     bundle: true,
@@ -49,6 +52,24 @@ before(async () => {
     logLevel: 'silent',
   });
   owner = await import(pathToFileURL(output).href);
+  const accountOutput=resolve(work,'entry-accounts.mjs');
+  await build({
+    absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents},outfile:accountOutput,
+    bundle:true,platform:'node',format:'esm',jsx:'automatic',packages:'external',
+    define:{'import.meta.env':JSON.stringify({VITE_ACCOUNTS_ENABLED:'true'})},
+    plugins:[{name:'account-request-fixture',setup(context){
+      context.onResolve({filter:/account-client/},()=>({path:'account-client-fixture',namespace:'fixture'}));
+      context.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
+        export class AccountRequestError extends Error {constructor(code,status){super(code);this.name='AccountRequestError';this.code=code;this.status=status;}}
+        export function cancelAccountRequests() {}
+        export async function accountRequest(path,body,options){
+          const request=globalThis.__roomAccountRequest;
+          if(!request)throw Error('room account API fixture is missing');
+          return request(path,body,options);
+        }
+      `}));
+    }},authoredSourcesPlugin(project)],logLevel:'silent'});
+  ownerAccounts=await import(pathToFileURL(accountOutput).href);
 });
 afterEach(async () => {
   if (mounted) {
@@ -602,6 +623,41 @@ class Socket {
     });
   }
 }
+function makeRoomSession(bundle, options = {}) {
+  const sockets = [], notifications = [], decisions = bundle.createDecisionStore(), clock = new Clock();
+  const identity = bundle.createMultiplayerIdentityStore({
+    persistentStorage: null,
+    sessionStorage: null,
+    randomWords: () => [1234567, 7654321],
+  });
+  let launched = true;
+  const settings = {language:'en',options:{touchEnabled:false,touchMovementMode:'joystick'}};
+  const subscriptions = {subscribe:()=>()=>{},getSnapshot:()=>settings};
+  const session = bundle.createRoomSession({
+    window:env.window,document:env.document,storage:null,identity,
+    sessions:bundle.createMultiplayerRoomSessionStore({storage:null}),
+    settingsModel:subscriptions,
+    sitePreferences:{subscribe:()=>()=>{},getSnapshot:()=>({lessMotion:true})},
+    runtime:()=>({getSnapshot:()=>({launched,runtimeVariant:'multiplayer'})}),
+    replayViewer:()=>false,titleOverlayOpen:()=>false,memberId:()=> 'member123456',
+    createSocket:()=>{const socket=new Socket();sockets.push(socket);return socket;},
+    relayUrl:()=> 'wss://relay.invalid/socket',
+    settings:()=>({touchEnabled:false,touchMovementMode:'joystick',mobileDevice:false,iceServers:[]}),
+    setMovementMode(){},decisions,translate:key=>key,notify:message=>notifications.push(message),
+    prepareResources:async()=>{},preparationFailed(){},beginManualImport(){},
+    launch:async()=>{options.onLaunch?.();},checkGame:async()=>{options.onCheck?.();},operationFailed(){},
+    isLaunched:()=>launched,routes:{restore(){},enter(){},settleInvite(){},leave(){}},
+    now:()=>clock.now,random:()=>0,setTimeout:clock.setTimeout,clearTimeout:clock.clearTimeout,
+  });
+  return {session,sockets,notifications,decisions,clock,identity,setLaunched:value=>{launched=value;}};
+}
+const flush = async () => {for(let index=0;index<30;index++) await Promise.resolve();};
+function deferred() {let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};}
+function roomSnapshot(identity, overrides = {}) {
+  return {code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,predictionLimit:8,startSerial:7,
+    seats:[{clientId:identity.lobbyClientId('th06mp'),name:'A',loadout:0,ready:true},
+      {clientId:'remote123456',name:'B',loadout:0,ready:true}],spectators:[],...overrides};
+}
 test('actual RoomSession routes valid socket chat into React and UI sends through the same service', async () => {
   const sockets = [],
     decisions = owner.createDecisionStore(),
@@ -829,6 +885,105 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
     assert.equal(query('#gameFrame'), frame);
   } finally {
     globalThis.Audio = previousAudio;
+  }
+});
+
+test('guest-only RoomSession makes no account request or identity subscription', async () => {
+  const originalSubscribe=owner.accountSession.subscribe, originalFetch=globalThis.fetch;
+  let subscriptions=0, requests=0;
+  owner.accountSession.subscribe=(...args)=>{subscriptions++;return originalSubscribe(...args);};
+  globalThis.fetch=async()=>{requests++;throw Error('guest-only room attempted an account request');};
+  const room=makeRoomSession(owner);
+  try {
+    assert.equal(owner.accountsEnabled,false);
+    await mount(room.session.quickChat,{room:true,dispose:()=>{room.session.dispose();room.decisions.dispose();}});
+    assert.equal(subscriptions,0);
+    assert.equal(requests,0);
+  } finally {
+    owner.accountSession.subscribe=originalSubscribe;
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test('account identity change replaces only the room socket and clears old chat state', async () => {
+  const authReplies=[], nicknameReplies=[], oldTicket=deferred(), originalSetTimeout=env.window.setTimeout,
+    originalClearTimeout=env.window.clearTimeout, timerCallbacks=new Map(), launchCalls=[], checkCalls=[];
+  let timerId=0;
+  globalThis.__roomAccountRequest=(path)=>{
+    if(path==='auth/get-session'){const reply=deferred();authReplies.push(reply);return reply.promise;}
+    if(path==='v1/me/room-nickname'){
+      nicknameReplies.push(path);
+      return nicknameReplies.length===1?oldTicket.promise:Promise.resolve({ticket:'bob-ticket'});
+    }
+    throw Error(`unexpected account request: ${path}`);
+  };
+  const room=makeRoomSession(ownerAccounts,{onLaunch:()=>launchCalls.push(true),onCheck:()=>checkCalls.push(true)});
+  try {
+    assert.equal(ownerAccounts.accountsEnabled,true);
+    await mount(room.session.quickChat,{room:true,dispose:()=>{room.session.dispose();room.decisions.dispose();}});
+    await flush();
+    assert.equal(authReplies.length,1);
+    await React.act(async()=>{authReplies[0].resolve({user:{username:'alice',name:'Alice'}});await flush();});
+    await act(()=>room.session.service.enterRoom('th06mp','1234',true));
+    const aliceSocket=room.sockets[0];
+    await act(()=>{
+      aliceSocket.open();
+      aliceSocket.message({type:'state',room:roomSnapshot(room.identity)});
+      aliceSocket.message({type:'chat-status',registered:true,authorId:'alice-id',bannedUntil:0});
+    });
+    assert.equal(room.session.quickChat.getSnapshot().registered,true);
+    const frame=query('#gameFrame');
+    await act(()=>{room.session.quickChat.openComposer();room.session.quickChat.setDraft('Alice private draft');});
+    env.window.setTimeout=(callback)=>{const id=++timerId;timerCallbacks.set(id,callback);return id;};
+    env.window.clearTimeout=id=>timerCallbacks.delete(id);
+    await act(()=>room.session.quickChat.sendText());
+    const sendTimer=[...timerCallbacks.keys()][0];
+    assert.ok(sendTimer,'free-chat send timeout started');
+    await act(()=>aliceSocket.message({type:'state',accountChallenge:'alice-challenge',room:roomSnapshot(room.identity)}));
+    assert.equal(nicknameReplies.length,1);
+
+    await act(()=>ownerAccounts.notifyAccountChange());
+    await flush();
+    assert.equal(authReplies.length,2);
+    assert.equal(room.session.quickChat.getSnapshot().registered,false);
+    assert.equal(room.session.quickChat.getSnapshot().draft,'');
+    assert.equal(room.session.quickChat.getSnapshot().pickerOpen,false);
+    assert.equal(room.session.quickChat.getSnapshot().sending,false);
+    assert.equal(timerCallbacks.has(sendTimer),false,'identity invalidation cancels the old account send timeout');
+    assert.equal(env.document.querySelector('#mpRoomChat input[aria-label="Message"]'),null);
+    await act(()=>aliceSocket.message({type:'chat-status',registered:true,authorId:'stale-alice-id',bannedUntil:0}));
+    assert.equal(room.session.quickChat.getSnapshot().registered,false,'the old socket cannot re-enable Alice chat');
+
+    await React.act(async()=>{authReplies[1].resolve({user:{username:'bob',name:'Bob'}});await flush();});
+    assert.equal(room.sockets.length,2,'the account refresh opens one successor socket');
+    const bobSocket=room.sockets[1];
+    assert.equal(aliceSocket.readyState,3);
+    assert.equal(room.session.service.getSnapshot().room.code,'1234');
+    assert.equal(room.session.service.getSnapshot().seat,0);
+    assert.equal(room.session.service.getSnapshot().ready,true);
+    assert.equal(query('#gameFrame'),frame,'room identity refresh leaves the active Runtime surface in place');
+    assert.deepEqual(launchCalls,[]);
+    assert.deepEqual(checkCalls,[]);
+    await act(()=>{
+      bobSocket.open();
+      bobSocket.message({type:'state',accountChallenge:'bob-challenge',room:roomSnapshot(room.identity)});
+    });
+    await flush();
+    assert.equal(nicknameReplies.length,2);
+    assert.ok(bobSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='bob-ticket'));
+    assert.equal(room.session.quickChat.getSnapshot().registered,false,'a new identity waits for fresh chat-status');
+    await act(()=>bobSocket.message({type:'chat-status',registered:true,authorId:'bob-id',bannedUntil:0}));
+    assert.equal(room.session.quickChat.getSnapshot().registered,true);
+    await React.act(async()=>{oldTicket.resolve({ticket:'alice-ticket'});await flush();});
+    assert.equal(bobSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='alice-ticket'),false,
+      'Alice ticket completion is never sent over Bob socket');
+    assert.equal(aliceSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='alice-ticket'),false,
+      'the superseded socket cannot receive the late ticket');
+    assert.equal(query('#gameFrame'),frame);
+  } finally {
+    env.window.setTimeout=originalSetTimeout;
+    env.window.clearTimeout=originalClearTimeout;
+    globalThis.__roomAccountRequest=undefined;
   }
 });
 
