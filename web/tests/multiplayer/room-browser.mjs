@@ -357,6 +357,8 @@ try{
      values.sort((a,b)=>a-b);
      return {count:values.length,p50:values[Math.floor(values.length*.5)],p95:values[Math.floor(values.length*.95)],max:values.at(-1)};
     };
+    const load=Module._th17_room_load?.()>>>2;
+    const liveHeapBytes=load?Module.HEAPU32[load+1]:null;
     const pointer=Module._th17_room_performance?.()>>>2;
     const [captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections]=pointer?Module.HEAPU32.subarray(pointer,pointer+7):[];
     const bossCosts=[];
@@ -386,7 +388,7 @@ try{
      releaseMs:summarize(longCallbacks.map(row=>row.costs[9]/1000)),
      remainingMs:summarize(longCallbacks.map(row=>Math.max(0,row.time-(row.costs[1]+row.costs[3]+row.costs[5]+row.costs[7]+row.costs[9])/1000))),
     }:undefined;
-    return {...diagnostics,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
+    return {...diagnostics,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
      presentIntervals:summarize(presentIntervals),
