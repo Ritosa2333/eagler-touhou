@@ -1,9 +1,10 @@
+import {createPc98MatchIndex} from './pc98-match-index.mjs';
 // A viewer owns its replica and only receives the host's confirmed prefix.
 export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,channelFactory=name=>new BroadcastChannel(name),onHeader=()=>{},onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
   const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
   if(!room||!run)throw Error('观战房间身份无效');
   const viewer=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
-  const channel=channelFactory(`pc98-room-${game}-${room}-${run}`),rows=[];
+  const channel=channelFactory(`pc98-room-${game}-${room}-${run}`),rows=[],matches=createPc98MatchIndex(game);
   const abort=new AbortController();
   let header,identity,replica,available=0,end=null,points=[],closed=false,busy=false,booting=false,paused=false,following=true,target=null,generation=0,timer=null,pullTimer=null,frames=0;
   let last=performance.now(),lastPresent=0,budget=0;
@@ -57,7 +58,7 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       if(end&&stable(end)!==stable(data.end))throw Error('观战结束边界改变');
       const index=validatePointIndex?validatePointIndex(data.points||[],data.available):[];
       for(let i=0;i<points.length;i++)if(stable(points[i])!==stable(index[i]))throw Error('已发布观战检查点改变');
-      if(!header){header=data.header;onHeader(header);}identity??=nextIdentity;rows.push(...data.rows);available=data.available;end=data.end||end;points=index;
+      if(!header){header=data.header;onHeader(header);}identity??=nextIdentity;matches.append(data.rows,data.first);rows.push(...data.rows);available=data.available;end=data.end||end;points=index;
       if(rows.length===available&&!replica&&channel.ready!==false)void boot();if(rows.length<available)pull();
     }catch(error){fail(error);}
   };
@@ -67,5 +68,5 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
       if(!replica||frame<replica.frame){generation++;replica?.stop();replica=null;void boot();}},
     live(){following=true;paused=false;target=rows.length;delayed=false;catchSince=0;catching=true;},
     get frame(){return replica?.frame??0;},get executed(){return replica?.executed??0;},get received(){return rows.length;},get frames(){return frames;},
-    get paused(){return paused;},get following(){return following;},get catching(){return catching;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
+    get nodes(){return matches.nodes;},get paused(){return paused;},get following(){return following;},get catching(){return catching;},get seeking(){return target!==null||!replica||!frames;},get target(){return target??(following?rows.length:this.frame);},get ended(){return !!end&&replica?.frame===end.frame;}};
 }

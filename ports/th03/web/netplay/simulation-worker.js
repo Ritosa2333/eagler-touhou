@@ -41,7 +41,7 @@ async function dispatch(method,args){
     if(options.hash){const at=performance.now();hash=simulation.hash();hashMs=performance.now()-at;}
     const proof=simulation.proof();
     if(options.prepareFrame&&!options.replay)present(true);
-    return {hash,captureMs,hashMs,simulateMs,proof};
+    return {hash,captureMs,hashMs,simulateMs,proof,scene:simulation.pause.selecting?2:simulation.state?.phase===1?1:0};
   }
   if(method==='replay-slice'){
     const [frame,plans,prepareFrame=false]=args;

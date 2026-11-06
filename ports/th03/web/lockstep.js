@@ -1,8 +1,8 @@
 import {FrameQueue,TICK_MS,DIRECTION_PREDICTION} from './frame-queue.js';
 export class Lockstep {
-  constructor({network,step,present,hash,onError,onState,capture,restore,confirm,recorder,proof,rollbackEnabled=false,directionPrediction=DIRECTION_PREDICTION,predictionLead=directionPrediction,inputDelay=0,snapshotStride=1}){
+  constructor({network,step,present,hash,onError,onState,capture,restore,confirm,recorder,proof,scene,rollbackEnabled=false,directionPrediction=DIRECTION_PREDICTION,predictionLead=directionPrediction,inputDelay=0,snapshotStride=1}){
     if(!Number.isInteger(snapshotStride)||snapshotStride<1||snapshotStride>2)throw Error('无效回滚检查点间隔');
-    Object.assign(this,{network,step,present,hash,onError,onState,capture,restore,confirm,recorder,proof,rollbackEnabled,snapshotStride});
+    Object.assign(this,{network,step,present,hash,onError,onState,capture,restore,confirm,recorder,proof,scene,rollbackEnabled,snapshotStride});
     this.checkpoints=new Set();this.lastConfirmation=null;
     this.queue=new FrameQueue(network.localSeat,{rollbackEnabled,directionPrediction,predictionLead,inputDelay});this.hashes=new Map();this.remoteHashes=new Map();this.pendingHashes=new Map();
     this.costs={simulate:0,steps:0,capture:0,captures:0,restore:0,restores:0,hash:0,confirm:0,confirmCallbacks:0,skippedConfirmations:0,replays:0};
@@ -111,7 +111,7 @@ export class Lockstep {
         this.applying=true;try{timed('simulate',()=>this.step(pair,frame,replay));}finally{this.applying=false;}
         this.queue.commit(pair);this.costs.steps++;
         if(this.queue.frame%120===0)this.pendingHashes.set(this.queue.frame,timed('hash',()=>this.hash()));
-        this.recorder?.stage(frame,{inputs:pair,offlineMask:0,proof:this.proof(),hash:(frame+1)%120===0?this.pendingHashes.get(frame+1):null});
+        this.recorder?.stage(frame,{inputs:pair,offlineMask:0,proof:this.proof(),hash:(frame+1)%120===0?this.pendingHashes.get(frame+1):null,...(this.scene?{scene:this.scene()}:{})});
         timed('confirm',()=>this.confirmFrames());this.queue.prune();
         steps++;this.lastProgress=performance.now();return true;
       };

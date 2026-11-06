@@ -29,6 +29,7 @@ export function validateRow(row,h,frame){
     if(!row||!Array.isArray(row.inputs)||row.inputs.length!==1||!validNativeCommand(row.inputs[0])||row.offlineMask!==0||typeof row.proof!=='string'||row.proof.length>8192||((frame+1)%120===0)!==(row.hash!==null))throw Error('原生命令录像输入无效');return;
   }
   if(!row||!Array.isArray(row.inputs)||row.inputs.length!==h.players||
+    (row.scene!==undefined&&(h.game!=='03'||![0,1,2].includes(row.scene)))||
     row.inputs.some(n=>h.game==='03'?!validBattleInput(n):!Number.isSafeInteger(n)||n<0||n>=2**45)||
     !Number.isInteger(row.offlineMask)||row.offlineMask<0||row.offlineMask>=2**h.players||
     (h.game==='03'?row.offlineMask!==0:row.inputs.some((n,i)=>(row.offlineMask&(1<<i))&&n!==0))||

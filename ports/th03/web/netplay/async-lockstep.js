@@ -62,7 +62,7 @@ export class AsyncLockstep extends Lockstep {
         if(capture){this.checkpoints.add(frame);this.costs.captures++;this.costs.capture+=result?.captureMs||0;}
         q.commit(pair);this.costs.steps++;this.reconcile();
         if(hash){this.pendingHashes.set(q.frame,result.hash);this.costs.hash+=result.hashMs||0;}
-        this.recorder?.stage(frame,{inputs:pair,offlineMask:0,proof:result.proof,hash:hash?result.hash:null});
+        this.recorder?.stage(frame,{inputs:pair,offlineMask:0,proof:result.proof,hash:hash?result.hash:null,scene:result.scene});
         steps++;this.lastProgress=performance.now();return true;
       };
       if(this.replayUntil!==null&&this.queue.frame<this.replayUntil&&this.budget>=TICK_MS)captureLocal(this.replayUntil);
@@ -91,7 +91,7 @@ export class AsyncLockstep extends Lockstep {
             if(plan.capture){this.checkpoints.add(plan.frame);this.costs.captures++;this.costs.capture+=record.captureMs||0;}
             this.queue.commit(plan.inputs);steps++;this.costs.steps++;this.costs.replays++;
             if(plan.hash){this.pendingHashes.set(plan.frame+1,record.hash);this.costs.hash+=record.hashMs||0;}
-            this.recorder?.stage(plan.frame,{inputs:plan.inputs,offlineMask:0,proof:record.proof,hash:plan.hash?record.hash:null});
+            this.recorder?.stage(plan.frame,{inputs:plan.inputs,offlineMask:0,proof:record.proof,hash:plan.hash?record.hash:null,scene:record.scene});
           }
           this.costs.simulate+=performance.now()-at;this.lastProgress=performance.now();this.reconcile();replayProgress=true;
           if(this.queue.dirty!==null||!await confirm()||!this.running)return;
