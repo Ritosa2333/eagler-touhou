@@ -48,7 +48,7 @@ struct Link final : Netplay::PeerTransport {
 struct World final : th17::multiplayer::World {
     struct State {
         std::array<int, 3> position{};
-        unsigned bombs = 0, updates = 0;
+        unsigned bombs = 0, updates = 0, skip_frames = 0;
     };
     State state;
     struct Snapshot {State world; th17::multiplayer::FrameState schedule;};
@@ -93,6 +93,7 @@ struct World final : th17::multiplayer::World {
             bombs += (buttons & 2) != 0;
         }
         state.bombs += bombs;
+        state.skip_frames += (decision.inputs[1].buttons & 0x200) != 0;
         if(speculative&&block_prediction){frame_blocked=true;return false;}
         if(logical_draw)++logical_steps;
         end_callback = frame == 1 && (decision.inputs[1].buttons & 0x80) != 0;
@@ -160,7 +161,7 @@ void scenario(unsigned seats, bool rollback) {
 
     require(sessions[0].tick(worlds[0]) == waiting, "gate holds before HELLO/READY");
     pump(24);
-    for (unsigned seat = 0; seat < seats; ++seat) capture(seat, seat == 1 ? 0x80 : 0);
+    for (unsigned seat = 0; seat < seats; ++seat) capture(seat, seat == 1 ? 0x280 : 0);
     pump(3);
     for (unsigned seat = 0; seat < seats; ++seat) {
         require(sessions[seat].tick(worlds[seat]) == advanced, "initial frame advanced");
@@ -168,10 +169,11 @@ void scenario(unsigned seats, bool rollback) {
     }
 
     links[1].mute_input = true;
-    for (unsigned seat = 0; seat < seats; ++seat) capture(seat, seat == 1 ? 0x42 : 0);
+    for (unsigned seat = 0; seat < seats; ++seat) capture(seat, seat == 1 ? 0x242 : 0);
     pump(3);
     require(sessions[0].tick(worlds[0]) == (rollback ? advanced : waiting), "late input policy");
     require(worlds[0].state.position[1] == (rollback ? 2 : 1), "only safe direction predicted");
+    require(worlds[0].state.skip_frames == (rollback ? 2 : 1), "held skip predicts across combat frames");
     require(worlds[0].bombs_committed == 0, "pending bomb not published");
     require(worlds[0].scheduler.contains(worlds[0].stage_callback) != rollback,
             "speculative update can remove a callback");
@@ -187,6 +189,7 @@ void scenario(unsigned seats, bool rollback) {
         const auto result = sessions[seat].tick(worlds[seat]);
         require(result == advanced, "corrected frame");
         require(worlds[seat].state.position[1] == 0, "corrected position converges");
+        require(worlds[seat].state.skip_frames == 2, "confirmed skip survives a correction");
         require(worlds[seat].scheduler.contains(worlds[seat].stage_callback), "rollback restores callback");
         require(worlds[seat].state.bombs == 1 && worlds[seat].bombs_committed == 1,
                 "confirmed bomb published exactly once");
