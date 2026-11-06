@@ -130,6 +130,7 @@ export function SettingsBody({
         <OptionRow
           className="mobile-option"
           label={t('settings.alwaysHitbox')}
+          hidden={state.gameId === 'th03' && !multiplayer}
           control={
             <OptionSwitch
               id={id('alwaysHitboxToggle')}
@@ -279,6 +280,18 @@ export function SettingsBody({
               onChange={switchOption('pixelPerfectEnabled')}
             />
           }
+        />
+        <OptionRow
+          className={item('option-focus-hitbox')}
+          hidden={state.gameId !== 'th03' || multiplayer}
+          label={t('settings.th03Focus')}
+          control={<OptionSwitch id={id('th03FocusToggle')} label={t('settings.th03Focus')} checked={options.th03FocusEnabled} onChange={()=>model.setOption('th03FocusEnabled', !options.th03FocusEnabled)}/>}
+        />
+        <OptionRow
+          className={item('option-focus-hitbox')}
+          hidden={state.gameId !== 'th03' || multiplayer}
+          label={t('settings.alwaysHitbox')}
+          control={<OptionSwitch id={id('th03AlwaysHitboxToggle')} label={t('settings.alwaysHitbox')} checked={options.alwaysHitbox} onChange={switchOption('alwaysHitbox')}/>}
         />
         <OptionRow
           className={item('option-focus-hitbox')}

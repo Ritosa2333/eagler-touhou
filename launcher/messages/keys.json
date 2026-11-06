@@ -8928,5 +8928,17 @@
   "settings.th02RapidFire": {
     "id": "settings_th02RapidFire",
     "params": []
+  },
+  "settings.th03Focus": {
+    "id": "settings_th03Focus",
+    "params": []
+  },
+  "room.th03DisableFocus": {
+    "id": "room_th03DisableFocus",
+    "params": []
+  },
+  "room.th03SpecialFocus": {
+    "id": "room_th03SpecialFocus",
+    "params": []
   }
 }

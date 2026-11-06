@@ -57,9 +57,9 @@ try{
     const preview=await page.evaluate(()=>rpc(0,'prepare-room'));assert.equal(preview.presented,true);console.log('MP title presented');await page.screenshot({path:resolve(out,'room.png')});
     for(let seat=0;seat<count;seat++)await lobbies[seat].send({type:'set-ready',ready:true,runtimeGeneration:generation},m=>m.room?.seats[seat]?.ready||m.type==='error');
     const start=await lobbies[0].send({type:'start',adonisMode:process.env.PC98_TEST_ROLLBACK==='1'?0:1},m=>m.type==='start'||m.type==='error');
-    await page.evaluate(async({count,room,relayPort,serial,generation,rollback})=>Promise.all(Array.from({length:count},async(_,s)=>{
-      await rpc(s,'configure',{music:'ogg',options:{netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'pc98-private-'+s,runtimeGeneration:generation}),netplayPlayer:s,netplayPlayerCount:count,netplayDifficulty:1,netplaySeed:1234,netplayAdonisMode:rollback?0:1,netplayLoadouts:Array.from({length:count},(_,i)=>({character:0,shot:0}))}});await rpc(s,'launch');
-    })),{count,room,relayPort,serial:start.serial,generation,rollback:process.env.PC98_TEST_ROLLBACK==='1'});console.log('MP launch acknowledged');
+    await page.evaluate(async({count,room,relayPort,serial,generation,rollback,disableFocus})=>Promise.all(Array.from({length:count},async(_,s)=>{
+      await rpc(s,'configure',{music:'ogg',options:{netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(serial),member:'pc98-private-'+s,runtimeGeneration:generation}),netplayPlayer:s,netplayPlayerCount:count,netplayDisableFocus:disableFocus,netplayDifficulty:1,netplaySeed:1234,netplayAdonisMode:rollback?0:1,netplayLoadouts:Array.from({length:count},(_,i)=>({character:0,shot:0}))}});await rpc(s,'launch');
+    })),{count,room,relayPort,serial:start.serial,generation,rollback:process.env.PC98_TEST_ROLLBACK==='1',disableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1'});console.log('MP launch acknowledged');
     const frames=()=>page.frames().filter(f=>/th03.html\?runtimeEpoch=/.test(f.url()));
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./managed-room.mjs');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
@@ -73,6 +73,10 @@ try{
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:false});});await new Promise(r=>setTimeout(r,500));
     }
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'battle phase',60000);
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Space',down:true}));await new Promise(r=>setTimeout(r,1200));
+    const focus=await Promise.all(frames().map(f=>f.evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.focused)));
+    assert(focus.every(x=>x===(process.env.PC98_TEST_DISABLE_FOCUS!=='1')),'room focus policy controls native player focus');
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Space',down:false}));await new Promise(r=>setTimeout(r,300));
     const send=async(seat,code)=>{await page.evaluate(({seat,code})=>rpc(seat,'keyboard',{code,down:true}),{seat,code});await new Promise(r=>setTimeout(r,160));await page.evaluate(({seat,code})=>rpc(seat,'keyboard',{code,down:false}),{seat,code});};
     await send(0,'Escape');await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.pauseSeat))===0,'left pause',30000);
     await new Promise(r=>setTimeout(r,1500));await page.screenshot({path:resolve(out,'native-left.png')});

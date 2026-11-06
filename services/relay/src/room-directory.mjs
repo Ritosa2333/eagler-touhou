@@ -83,6 +83,7 @@ export function createRoomDirectory({
       host: publicNames ? seats[0]?.name || '' : initial(seats[0]?.name),
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       challengeMode: room.lobby.challengeMode === true,
+      ...(match[1]==='th03mp'?{disableFocus:room.lobby.disableFocus===true}:{}),
       prankMode: room.lobby.prankMode === true,
       spectators,
       initials: seats.map((seat) => (seat ? initial(seat.name) : null)),

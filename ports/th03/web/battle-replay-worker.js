@@ -12,7 +12,7 @@ async function load(header){
   const s=header.settings,r=await bootBattleResources(s);
   emulator=await DOSBoxPC98.create({canvas,workerRuntime:true,lockstep:true,independentSfx:true,rollbackEnabled:s.rollback,wasmBinary:r.wasmBinary,lockstepEpoch:946684800000,
     DIPswtch:[0x3e,0xf3,0x7b],ExMemory:7,Latencys:40,SampleHz:44100,SNDboard:4,no_mouse:true,use_menu:false,fontfile:s.language==='cn'?'font_cn.bmp':'font.bmp'});
-  simulation=new NetworkSimulation(emulator,{patch:r.patch,music:r.music,focusEnabled:s.focusEnabled,touchUnlimitedAllowed:s.touchUnlimitedAllowed},event=>{if((event[0]>>>8)!==0x0c)replayMusic.observe(event);postMessage({type:'battle-audio',event});});
+  simulation=new NetworkSimulation(emulator,{patch:r.patch,music:r.music,language:s.language,focusEnabled:s.focusEnabled,touchUnlimitedAllowed:s.touchUnlimitedAllowed},event=>{if((event[0]>>>8)!==0x0c)replayMusic.observe(event);postMessage({type:'battle-audio',event});});
   emulator.addDiskImage('3-'+s.language+'.hdi',r.data);await emulator.setHdd(0,'3-'+s.language+'.hdi');
   await bootToSelection({emulator,pause:simulation.pause,music:simulation.music,progress:message=>postMessage({type:'notify',message:{message}})});
   return {...r.opening,boot:simulation.hash()};

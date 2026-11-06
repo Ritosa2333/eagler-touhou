@@ -389,6 +389,7 @@ function getRoom(id, socket) {
         visibility: 'public',
         disableCheatMovement: false,
         ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
+        ...(id.startsWith('th03mp-') ? {disableFocus:false} : {}),
         ...(id.startsWith("th15mp-")
           ? {
               chapterThreshold: defaultTh15ChapterThreshold(
@@ -883,6 +884,7 @@ function lobbySnapshot(room) {
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
+    ...(room.id.startsWith('th03mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
@@ -1034,6 +1036,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
+    if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
     room.lobby.prankMode = false;
@@ -1537,6 +1540,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         sendLobby(socket,{type:'error',error:'invalid local charge priority setting'});return;
       }
       const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
+      if(message.disableFocus!==undefined&&(!room.id.startsWith('th03mp-')||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
+      const disableFocus=message.disableFocus??room.lobby.disableFocus;
       const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
       const challengeMode =
         modesSupported &&
@@ -1552,6 +1557,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.difficulty !== difficulty ||
         room.lobby.disableCheatMovement !== disableCheatMovement ||
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
+        room.lobby.disableFocus !== disableFocus ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
@@ -1560,6 +1566,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...th19Rules];
         room.lobby.disableCheatMovement = disableCheatMovement;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
+        if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
@@ -1937,6 +1944,7 @@ server.on('connection', (socket, request) => {
       visibility: url.searchParams.get('visibility'),
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
       disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
+      disableFocus: url.searchParams.get('disableFocus') === '1',
       th19Rules: url.searchParams.has('th19Rules') ? (()=>{try{return JSON.parse(url.searchParams.get('th19Rules'));}catch{return null;}})() : undefined,
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))

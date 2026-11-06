@@ -150,6 +150,17 @@ test('TH09 local charge rule defaults on, restores native Replay by room agreeme
   assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
   assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
 });
+test('TH03 focus rule belongs to the host and reaches runtime options',async()=>{
+  const f=await fixture({product:'th03mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpTh03DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,false);
+  await click('#mpTh03DisableFocus');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableFocus,true);
+  await f.receive({disableFocus:true});assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'特殊玩法：禁用低速');
+  await f.receive({disableFocus:true,phase:'running'});assert.equal(toggle.disabled,true);
+  const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableFocus:false}));assert.equal(f.socket.sent.length,count);
+});
 test('TH09 auto-save preference reaches only player Runtime options and survives leaving', async () => {
   const f = await fixture({product:'th09mp'}).live();
   // Seat identity is owned by the fixture, not the rendered nickname.

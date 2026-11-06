@@ -45,6 +45,7 @@ export interface MultiplayerRuntimeOptionInput {
   replayNames?: string[];
   challengeMode?: boolean;
   disableLocalChargePriority?: boolean;
+  disableFocus?: boolean;
   chapterThreshold?: number;
   iceServers: unknown;
   preferTurn?: boolean;
@@ -76,6 +77,7 @@ export interface MultiplayerRuntimeOptions {
   netplayReplayNames?: string[];
   netplayChallengeMode?: boolean;
   netplayDisableLocalChargePriority?: boolean;
+  netplayDisableFocus?: boolean;
   netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
   netplayPreferTurn?: boolean;
@@ -109,6 +111,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error('挑战模式参数无效');
   if(input.disableLocalChargePriority !== undefined && (roomProduct !== 'th09mp' || typeof input.disableLocalChargePriority !== 'boolean'))
     throw new Error('蓄力进度参数无效');
+  if(input.disableFocus!==undefined&&(roomProduct!=='th03mp'||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
   if (
     input.chapterThreshold !== undefined &&
     (roomProduct !== "th15mp" ||
@@ -215,6 +218,7 @@ export function buildMultiplayerRuntimeOptions(
         } : {}),
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
+    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),
     netplayUrl: url.href,
     netplayPlayer: player,
     netplayPlayerCount: playerCount,

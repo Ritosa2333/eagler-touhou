@@ -26,6 +26,7 @@ export interface GameOptions {
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
   focusHitboxEnabled: boolean;
+  th03FocusEnabled: boolean;
   faithBarEnabled: boolean;
   frameLimit60Enabled: boolean;
   pixelPerfectEnabled: boolean;
@@ -52,6 +53,7 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
   focusHitboxEnabled: false,
+  th03FocusEnabled: true,
   faithBarEnabled: false,
   frameLimit60Enabled: true,
   pixelPerfectEnabled: false,
@@ -263,6 +265,7 @@ export function normalizeStoredGamePreferences(
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
+    th03FocusEnabled: booleanOption(rawOptions, "th03FocusEnabled", DEFAULT_GAME_OPTIONS.th03FocusEnabled),
     faithBarEnabled: booleanOption(rawOptions, "faithBarEnabled", DEFAULT_GAME_OPTIONS.faithBarEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
     pixelPerfectEnabled: booleanOption(rawOptions, "pixelPerfectEnabled", DEFAULT_GAME_OPTIONS.pixelPerfectEnabled),

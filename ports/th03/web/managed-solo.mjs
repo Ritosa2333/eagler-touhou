@@ -78,8 +78,9 @@ function tick(now){
       for(const code of new Set([...versusHeld,...next]))if(versusHeld.has(code)!==next.has(code))emulator.send('key',[{type:next.has(code)?'keydown':'keyup',code}]);
       versusHeld=next;
     }else send(bits);
+    const settings=globalThis.__eaglerPC98Options();if(settings.th03FocusEnabled===false)focus=0;
     emulator.setInput({generation:state?.generation,focus,
-      touch:[playing?packTouch(0,{...input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox}):0,0]});
+      touch:[playing||state?.phase===3?packTouch(0,{...(playing?input.motion():{}),alwaysPoint:!!settings.alwaysHitbox}):0,0]});
   }
   loop=requestAnimationFrame(tick);
 }

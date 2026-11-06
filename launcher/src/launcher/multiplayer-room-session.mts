@@ -15,6 +15,7 @@ export interface MultiplayerRoomSessionSnapshot {
     visibility?: "public" | "private";
     disableCheatMovement?: boolean;
     disableLocalChargePriority?: boolean;
+    disableFocus?: boolean;
     challengeMode?:boolean;
   chapterThreshold?: number;
     th19Rules?: number[];
@@ -69,6 +70,7 @@ export function createMultiplayerRoomSessionStore({
           visibility: snapshot.room.visibility,
           disableCheatMovement: snapshot.room.disableCheatMovement,
           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
+          disableFocus: snapshot.room.disableFocus,
           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,prankMode:snapshot.room.prankMode,
           th19Rules:product==='th19mp'?snapshot.room.th19Rules:undefined,
           initialSpares:snapshot.room.initialSpares,initialBombs:snapshot.room.initialBombs,
@@ -117,6 +119,7 @@ export function createMultiplayerRoomSessionStore({
         visibility: room.visibility === "private" ? "private" : "public",
         disableCheatMovement: room.disableCheatMovement === true,
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
+        ...(product === 'th03mp' ? {disableFocus:room.disableFocus===true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
         ...(product==='th05mp'&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),

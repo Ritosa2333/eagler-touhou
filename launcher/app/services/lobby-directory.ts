@@ -46,6 +46,7 @@ export interface DirectoryRoom {
   seats: readonly (DirectorySeat | null)[];
   disableCheatMovement: boolean;
   challengeMode: boolean;
+  disableFocus?: boolean;
 }
 export interface DirectoryMembership {
   product: MultiplayerProductId;
@@ -320,6 +321,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       seats: Object.freeze(seats),
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
+      disableFocus: row.product === 'th03mp' && row.disableFocus === true,
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),
       spectators: bounded(row.spectators, 999),

@@ -2115,5 +2115,8 @@
   "multiplayer_loadout_th02_fast": "Fast",
   "multiplayer_loadout_th02_balanced": "Balanced",
   "multiplayer_loadout_th02_slow": "Slow",
-  "settings_th02RapidFire": "Rapid fire"
+  "settings_th02RapidFire": "Rapid fire",
+  "settings_th03Focus": "Enable focus movement",
+  "room_th03DisableFocus": "Disable focus movement",
+  "room_th03SpecialFocus": "Special rule: focus disabled"
 }

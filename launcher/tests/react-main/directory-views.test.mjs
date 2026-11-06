@@ -759,6 +759,14 @@ test('Flower View keeps Japanese identity, score, shared facts and one contextua
   await m.unmount();
 });
 
+test('TH03 versus rooms use the duel layout and mark disabled focus as a special rule',async()=>{
+  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live([room({product:'th03mp',capacity:2,disableFocus:true,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
+  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-seats').dataset.duel,'true');
+  assert.equal(n('.book-room-score-value').textContent,'VS');
+  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','room.th03SpecialFocus'));
+});
+
 test('Directory gameplay flags use their own column and regular rooms name their rules', async () => {
   const f=await fixture({locale:'zh-CN'}).live([room({disableCheatMovement:true,challengeMode:true})]);
   const {m}=await mountLobby(f,{}, {locale:'zh-CN'});

@@ -6,7 +6,7 @@ export const managedAPI={
   if(!room||!Number.isSafeInteger(runId)||runId<1)throw Error('开局身份无效');
   if(!Number.isInteger(options.netplayDifficulty)||options.netplayDifficulty<0||options.netplayDifficulty>3)throw Error('难度无效');
   globalThis.th03RoomHost={params:new URLSearchParams({net:'rtc',role:options.netplayPlayer?'guest':'host',room,token:'launcher-owned',runId:String(runId),netWorker:'0'}),
-   state:{started:true,runId,mode:'rtc',settings:{language:'cn',difficulty:options.netplayDifficulty,clock:32,rollback:options.netplayAdonisMode===0,focusEnabled:true,touchUnlimitedAllowed:true,hostSeat:0}},
+   state:{started:true,runId,mode:'rtc',settings:{language:'cn',difficulty:options.netplayDifficulty,clock:32,rollback:options.netplayAdonisMode===0,focusEnabled:options.netplayDisableFocus!==true,touchUnlimitedAllowed:true,hostSeat:0}},
    notify(message){if(message.event==='room-menu')void api?.end();}};
   api=(await import('./app.js')).managedAPI;await api.start({music});
  },

@@ -54,6 +54,7 @@ async function command(message){
       if(message.runtimePack)throw Error('此入口使用已打包的 PC-98 语言资源');
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
       const next={...message.options};
+      for(const key of ['th03FocusEnabled','alwaysHitbox','netplayDisableFocus'])if(next[key]!==undefined&&typeof next[key]!=='boolean')throw Error('运行配置无效');
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
       if(next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();

@@ -179,10 +179,6 @@ render_hook:
     inc bp
     cmp bp,1
     jb .player
-    cmp byte [cs:phase],3
-    jne .done
-    cmp bp,2
-    jb .player
 .done:
     pop es
     popad

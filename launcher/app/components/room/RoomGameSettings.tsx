@@ -53,6 +53,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
       {state.product === 'th09mp' && <div className="room-rule-field"><div><strong>{t('room.disableLocalChargePriority')}</strong><p className="room-setting-description" id="mpLocalChargeReplayHint">{t('room.localChargeReplayHint')}</p></div>
         <OptionSwitch id="mpDisableLocalChargePriority" label={t('room.disableLocalChargePriority')} describedBy="mpLocalChargeReplayHint" checked={!!room.disableLocalChargePriority} disabled={disabled} onChange={()=>service.setRoomSettings({disableLocalChargePriority:!room.disableLocalChargePriority})}/>
       </div>}
+      {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('room.th03DisableFocus')}</strong></div><OptionSwitch id="mpTh03DisableFocus" label={t('room.th03DisableFocus')} checked={!!room.disableFocus} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:!room.disableFocus})}/></div>}
     </section>
     {!owner && <p className="room-setting-description" id="mpRoomSettingsHint">{t(!room.seats?.[0] ? 'room.hostAvailable' : 'multiplayer.ownerRemoteHint')}</p>}
     <UiButton id="mpTakeHostSeat" type="button" hidden={!!room.seats?.[0] || owner} disabled={!ready || room.phase !== 'lobby'} onClick={()=>{void service.takeSeat(0);}}>{t('room.takeHostSeat')}</UiButton>

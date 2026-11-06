@@ -2115,5 +2115,8 @@
   "multiplayer_loadout_th02_fast": "高速型",
   "multiplayer_loadout_th02_balanced": "平衡型",
   "multiplayer_loadout_th02_slow": "低速型",
-  "settings_th02RapidFire": "连射"
+  "settings_th02RapidFire": "连射",
+  "settings_th03Focus": "启用低速",
+  "room_th03DisableFocus": "禁用低速",
+  "room_th03SpecialFocus": "特殊玩法：禁用低速"
 }

@@ -113,10 +113,12 @@ export class NativePause {
   }
   setTouch(inputs) {
     const emulator=this.getEmulator(),heap=emulator?.module.HEAPU8,f=this.meta.fields;
-    if(!heap||!this.valid(heap,this.live)||heap[this.live+f.phase]!==1||f.touch===undefined)return;
+    if(!heap||!this.valid(heap,this.live)||f.touch===undefined)return;
+    const phase=heap[this.live+f.phase],localVersus=this.meta.signature==='TH03SOLOASSIST1!'&&phase===3;
+    if(phase!==1&&!localVersus)return;
     const view=new DataView(heap.buffer,heap.byteOffset,heap.byteLength),at=this.live;
     emulator.module.thDirtyMark?.(at,this.meta.mailboxSize);
-    const running=emulator.state==='running'&&heap[at+f.phase]===1;
+    const running=emulator.state==='running'&&phase===1;
     let points=0;
     for(let slot=0;slot<2;slot++){
       const value=inputs[slot]||0,touch=unpackTouch(value),base=at+f.touch+slot*6;

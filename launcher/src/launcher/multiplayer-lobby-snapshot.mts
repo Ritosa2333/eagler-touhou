@@ -52,6 +52,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   visibility: 'public' | 'private';
   disableCheatMovement: boolean;
   disableLocalChargePriority?: boolean;
+  disableFocus?: boolean;
   challengeMode?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;
@@ -101,6 +102,7 @@ export function normalizeMultiplayerLobbySnapshot(
   },
 ): NormalizedMultiplayerLobbySnapshot | null {
   const source = record(value);
+  if(source?.disableFocus!==undefined&&typeof source.disableFocus!=='boolean')return null;
   if(source?.th19Rules!==undefined&&!validTh19VersusRules(source.th19Rules))return null;
   if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
   if (!source ||
@@ -225,6 +227,7 @@ export function normalizeMultiplayerLobbySnapshot(
     disableCheatMovement: source.disableCheatMovement === true,
     ...(source.disableLocalChargePriority !== undefined ? {disableLocalChargePriority: source.disableLocalChargePriority === true} : {}),
     ...(source.challengeMode !== undefined ? { challengeMode: source.challengeMode === true } : {}),
+    ...(source.disableFocus !== undefined ? {disableFocus:source.disableFocus===true} : {}),
     ...(source.prankMode !== undefined ? { prankMode: false } : {}),
     difficulty,
     inputDelay,
