@@ -347,8 +347,13 @@ void recycled_item_rollback(){
     require(items->spawn(9,{0,120,0},0,1)==id&&items->falling(id),"reuse the original item slot");
     items->find(id)->body->variables.position.x=27;
     items->save_rollback(active);
+    const auto abandoned=items->spawn(9,{0,140,0},0,1);
+    require(abandoned&&abandoned<id&&items->falling(abandoned),"activate a new item slot in the discarded timeline");
+    require(view.next_used(0)==abandoned-1,"visit used item slots in storage order");
     require(before.restore()&&view.find(id)->body.get()==vm&&!view.find(id)->state.state&&vm->variables.position.x==11,
             "restore an idle item without replacing its VM address");
+    require(!view.find(abandoned)->state.state&&!view.find(abandoned)->body&&view.next_used(0)==id-1,
+            "discard a later item and remove it from sparse traversal");
     require(active.restore()&&view.find(id)->state.state==2&&vm->variables.position.x==27,
             "restore the same item after reuse");
     require(overlapping.restore()&&vm->variables.position.x==11,"overlapping idle snapshots remain immutable");

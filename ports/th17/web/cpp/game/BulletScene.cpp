@@ -116,7 +116,11 @@ bool BulletScene::cancel_slot(u32 index,i32 reward){error.clear();if(index>=slot
 void BulletScene::save_rollback(multiplayer::FrameImage& image){
     manager.save_rollback(image);
     image.save(cancellation_animations,error,drawing_disabled);
-    struct Active {Slot* slot;Slot::VisualImage image;};
+    struct Active {
+        Slot* slot;
+        Slot::VisualImage image;
+        explicit Active(Slot& s):slot(&s),image(s){}
+    };
     struct Idle {Slot* slot;std::shared_ptr<const Slot::VisualImage> image;};
     std::vector<Active> active;
     std::vector<Idle> idle;
@@ -138,7 +142,7 @@ void BulletScene::save_rollback(multiplayer::FrameImage& image){
         auto& slot=*slots[i];
         if(!shared.test(i)){
             slot.idle_image.reset();
-            active.push_back({&slot,Slot::VisualImage(slot)});
+            active.emplace_back(slot);
         }else{
             auto cached=slot.idle_image.lock();
             if(!cached){

@@ -24,6 +24,11 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         u32 handle;
         bool active,registered,alternate,frozen;
         std::vector<Node*> children;
+        explicit SavedNode(Node& n):owner(&n),borrowed(n.borrowed),value(borrowed?*borrowed:n.vm),
+            handle(n.handle),active(n.active),registered(n.registered),alternate(n.alternate),frozen(n.frozen_root){
+            children.reserve(n.children.size());
+            for(auto* child:n.children)children.push_back(child);
+        }
     };
     std::vector<Node*> selected;
     std::array<u32,(slot_mask+31)/32> seen_slots{};
@@ -50,12 +55,7 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     // built. Count those before allocating the large VM records.
     std::vector<SavedNode> saved;
     saved.reserve(selected.size());
-    for(auto* n:selected){
-        auto& row=saved.emplace_back(SavedNode{n,n->borrowed,n->borrowed?*n->borrowed:n->vm,n->handle,
-            n->active,n->registered,n->alternate,n->frozen_root,{}});
-        row.children.reserve(n->children.size());
-        for(auto* child:n->children)row.children.push_back(child);
-    }
+    for(auto* n:selected)saved.emplace_back(*n);
 #if TH17_ROOM_BENCHMARK
     image.payload[image.Animation]=u32(saved.capacity()*sizeof(SavedNode));
     image.unused_capacity+=u32((saved.capacity()-saved.size())*sizeof(SavedNode));

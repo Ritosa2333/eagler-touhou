@@ -9,9 +9,19 @@ ItemManager::ItemManager(AnmManager& a,EffectManager& e,i32 id):animations(a),ef
 ItemManager::~ItemManager(){for(auto& slot:slots){if(slot.body)animations.registry.destroy_tree(*slot.body);if(slot.arrow)animations.registry.destroy_tree(*slot.arrow);}}
 bool ItemManager::reset(){
     idle_visuals.reset();
+    used.fill(0);
     for(auto& slot:slots){if((slot.body&&!animations.registry.destroy_tree(*slot.body))||(slot.arrow&&!animations.registry.destroy_tree(*slot.arrow))){error=animations.registry.error;return false;}slot.state={};slot.body.reset();slot.arrow.reset();slot.arrow_ended=false;}
     for(auto& free:free_slots)free.clear();for(u32 i=0;i<pool_size;i++)free_slots[i>=ordinary_count].push_back(i);
     requests=cancel_stamp=0;motion_scale=1;return true;
+}
+u32 ItemManager::next_used(u32 start)const noexcept{
+    if(start>=pool_size)return pool_size;
+    u32 word=start/32,bits=used[word]&(~u32(0)<<(start%32));
+    while(!bits){
+        if(++word==used.size())return pool_size;
+        bits=used[word];
+    }
+    return word*32+u32(__builtin_ctz(bits));
 }
 bool ItemManager::appearance(Slot& slot,i32 kind){
     if(kind<1||kind>14){error="Item animation kind unavailable";return false;}if(!slot.body)slot.body=std::make_unique<AnmVm>();
@@ -40,7 +50,7 @@ u32 ItemManager::spawn(i32 kind,const Vec3& position,float angle,float speed,i32
         if(!context->spirit(kind-15,position,direction))error="Animal spirit creation failed";return 0;
     }
     if(kind<1||kind>15){error="Invalid item kind";return 0;}const bool cancel=kind>=9&&kind<=14;auto& free=free_slots[cancel];if(free.empty())return 0;
-    const u32 index=free.back();invalidate_idle(index);auto& slot=slots[index];auto& state=slot.state;
+    const u32 index=free.back();touch(index);auto& slot=slots[index];auto& state=slot.state;
     state.position=position;state.velocity={float(std::cos(double(angle))*double(speed)),float(std::sin(double(angle))*double(speed)),0};state.age.set(0);state.flags=0;state.sound=sound_id;
     if(cancel){state.speed=speed;state.angle=angle;state.stamp=cancel_stamp;const i32 divisor=cancel_density<256?4:cancel_density<512?8:cancel_density<1024?16:32,offset=cancel_density<256?0:cancel_density<512?4:cancel_density<1024?8:16;state.delay=wrapping_add(requests%divisor,offset);state.state=5;state.kind=state.appearance=kind;}
     else{state.state=1;state.position.x=state.position.x<=-192.f?-192.f:state.position.x>=192.f?192.f:state.position.x;state.speed=0;state.attraction_speed=0;state.delay=delay;state.kind=kind==15?6:kind;state.appearance=0;if((delay==0&&!birth_effect(state))||!appearance(slot,state.kind))return 0;slot.body->visual.color=0xffffffff;}
@@ -52,7 +62,7 @@ bool ItemManager::falling(u32 id){auto* slot=find(id);if(!slot){error="Item fall
     slot->arrow_ended=true;if(slot->arrow){slot->arrow->visual.flags&=~1u;slot->arrow->instruction_offset=-1;}return true;
 }
 bool ItemManager::draw(AnmRenderer& renderer){
-    for(auto& slot:slots){auto& s=slot.state;if(!s.state||!slot.body||!slot.body->visual.visible()||s.delay>0)continue;slot.body->visual.translation=s.position;if(slot.arrow)slot.arrow->visual.translation=s.position;
+    for(u32 i=next_used(0);i<pool_size;i=next_used(i+1)){auto& slot=slots[i];auto& s=slot.state;if(!s.state||!slot.body||!slot.body->visual.visible()||s.delay>0)continue;slot.body->visual.translation=s.position;if(slot.arrow)slot.arrow->visual.translation=s.position;
         if(slot.body->variables.position.y<-8.f){if(slot.arrow&&slot.arrow->visual.visible()){auto& arrow=*slot.arrow;const float y=float(arrow.variables.position.y+8.f);arrow.variables.position.y=8;const u32 alpha=y>=32.f?255u:u32(u8(truncate_int(float(float(y*.03125f)*255.f))));arrow.visual.color=(arrow.visual.color&0xffffffu)|(alpha<<24);if(renderer.draw(arrow)==-2){error=renderer.error;return false;}}s.appearance=1;}
         else{if(renderer.draw(*slot.body)==-2){error=renderer.error;return false;}s.appearance=0;}
     }return true;
