@@ -248,6 +248,29 @@ for (const kind of ['room', 'room-preload']) test(`${kind} program version polic
   assert.deepEqual(prepared.plan.multiplayerProgram,{generation:hash});
 });
 
+test('TH075 room uses the split index without installing DATA or preloading OGG', async () => {
+  const base = host(), sample = base.games.th06;
+  const assetPath = 'assets/th075mp/' + hash + '.json';
+  const hostValue = api.validateSiteManifest({...base, games: {th075: {
+    ...sample, runtime: './runtime/th075/th075.html', multiplayerRuntime: './runtime/th075mp/th075.html',
+    gameData: {...sample.gameData, path: 'th075.data'},
+    th075MultiplayerAssets: {path: assetPath, sha256: hash},
+  }}});
+  const f = acquisitionFixture({hostValue, current: null}), r = runtimeFixture();
+  const input = gameInput(f, settingsFixture({productId: 'th075mp', music: 'ogg-stream'}), {
+    productId: 'th075mp', runtime: r.service, multiplayer: {kind: 'room-preload'},
+  });
+  const prepared = await api.prepareGame(input);
+  const native = new URL(r.navigations[0]);
+  assert.equal(native.searchParams.get('th075Assets'), new URL(assetPath, baseUrl).href);
+  assert.equal(native.searchParams.get('th075AssetsHash'), hash);
+  assert(!native.searchParams.has('managedData'));
+  assert.equal(prepared.plan.configure.music, 'ogg');
+  assert.deepEqual(prepared.plan.configure.resources, []);
+  assert.deepEqual(r.retained, []);
+  assert.deepEqual(f.calls, []);
+});
+
 test('main 5890: local current is chosen without initializing or waiting for remote metadata', async () => {
   const f = acquisitionFixture({initialize: async () => {throw new Error('Must not be reached');}});
   const result = await f.acquisition.acquire({productId: 'th06', music: 'none', language: 'ja'});

@@ -68,9 +68,13 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
     context.signal.addEventListener('abort', finish, {once: true});
     try {
       const gameVersion = acquisition.getGameVersion(game);
-      let installed = await acquisition.readCurrent(game, {gameVersion});
+      if (context.product === 'th075mp' && !acquisition.getMetadata().siteManifest) {
+        try {await options.metadataReady();} catch {}
+      }
+      const split = context.product === 'th075mp' && !!acquisition.getMetadata().siteManifest?.games.th075?.th075MultiplayerAssets;
+      let installed = split ? null : await acquisition.readCurrent(game, {gameVersion});
       if (!context.isCurrent()) return;
-      if (!installed.generation) {
+      if (!split && !installed?.generation) {
         if (!acquisition.getMetadata().releaseCatalog) {try {await options.metadataReady();} catch {}}
         if (!context.isCurrent()) return;
         try {
@@ -92,7 +96,7 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
       }
       if (!context.isCurrent()) return;
       // Publication is a hint read; canonical committed generation stays authority.
-      void acquisition.refreshInstalled(game).catch(() => {});
+      if (!split) void acquisition.refreshInstalled(game).catch(() => {});
       stage = 'runtime';
       report({status: 'preparing', stage, percent: null, error: '', title: t('room.preparingRuntime')});
       if (!acquisition.getMetadata().siteManifest) {try {await options.metadataReady();} catch {}}
