@@ -39,5 +39,6 @@ public:
     void before_player()noexcept;
     void after_player()noexcept;
     bool end_roaring(bool death);
+    void save_rollback(multiplayer::FrameImage&);
 };
 }

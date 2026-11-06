@@ -1,6 +1,14 @@
 #include "LaserVisual.hpp"
 #include <cmath>
 namespace th17 {
+void LaserVisual::detach(){
+    if(!linked)return;
+    linked=false;
+    for(auto* vm:{&body,&head,&tip}){
+        if(retain_children_on_retire)animations.registry.preserve_embedded_children(*vm);
+        else animations.registry.destroy_tree(*vm);
+    }
+}
 bool LaserVisual::tick(AnmVm& vm){if(vm.tick(random,animations.rate)<0){error=vm.error;return false;}return true;}
 bool LaserVisual::body_initialize(){const auto* descriptor=bullet_appearance(type);auto* resource=animations.resource(resource_id);if(!descriptor||!resource||color<0||color>=16){error="Laser animation specification unavailable";return false;}
     if(!body.bind(*resource,u32(descriptor->script))){error="Laser body script unavailable";return false;}const auto* source=animations.script_template(resource_id,u32(descriptor->script));body.environment=source?source->environment:nullptr;body.object_host=&animations;body.sprite_source=this;

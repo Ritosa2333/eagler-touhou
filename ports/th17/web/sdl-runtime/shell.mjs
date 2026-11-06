@@ -75,14 +75,15 @@ function openReplay(value){const name=path(value).replace(/^replay\//,'');if(!/\
 async function openRoom(){
  const o=options,loadouts=o.netplayLoadouts,count=o.netplayPlayerCount,seat=o.netplayPlayer;
  const relay=new URL(o.netplayUrl),room=relay.searchParams.get('room'),run=relay.searchParams.get('run');
- const delay=o.netplayInputDelay??0;
- if(o.netplayMode!=='lan'||(o.netplayAdonisMode??1)!==1||o.netplayInputDelayAuto||o.netplaySpectator||
+ const delay=o.netplayInputDelay??0,mode=o.netplayAdonisMode??0;
+ if(o.netplayMode!=='lan'||![0,1].includes(mode)||o.netplayInputDelayAuto||o.netplaySpectator||
     o.replayPath||o.thpracEnabled||!['ws:','wss:'].includes(relay.protocol)||relay.username||relay.password||
     relay.hash||!room?.startsWith('th17mp-')||!/^[1-9]\d*$/.test(run??'')||
     ![2,3].includes(count)||!Number.isInteger(seat)||seat<0||seat>=count||
     !Number.isInteger(o.netplaySeed)||o.netplaySeed<0||o.netplaySeed>65535||
     !Number.isInteger(o.netplayDifficulty)||o.netplayDifficulty<0||o.netplayDifficulty>4||
-    !Number.isInteger(delay)||delay<0||delay>9||
+    !Number.isInteger(delay)||delay<0||delay>9||(mode===0&&delay!==0)||
+    (o.netplayPredictionLimit!==undefined&&o.netplayPredictionLimit!==(mode===0?12:0))||
     !Array.isArray(loadouts)||loadouts.length!==count||
     loadouts.some(p=>!p||![0,1,2].includes(p.character)||![0,1,2].includes(p.shot)))
   throw Error('TH17 房间配置无效');
@@ -91,9 +92,10 @@ async function openRoom(){
  if(manifest.product!=='th17mp'||manifest.features?.multiplayer!==true||!/^[a-f\d]{64}$/i.test(build??''))
   throw Error('TH17 多人运行包身份无效');
  const digest=new DataView(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('th17mp:'+room+':'+run)));
- const words=[1,count,seat,o.netplayDifficulty,o.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,delay];
+ const words=[2,count,seat,o.netplayDifficulty,o.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,delay];
  for(let i=0;i<3;i++)words.push(loadouts[i]?.character??0,loadouts[i]?.shot??0);
  for(let i=0;i<4;i++)words.push(parseInt(build.slice(i*8,i*8+8),16));
+ words.push(+(mode===0));
  const url=new TextEncoder().encode(relay.href+'\0'),params=core._malloc(words.length*4),address=core._malloc(url.length);
  try{
   if(!params||!address)throw Error('TH17 房间内存不足');

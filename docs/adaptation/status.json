@@ -3113,10 +3113,10 @@
       "game": "th17",
       "variant": "multiplayer",
       "directory": "ports/th17",
-      "sourceDigest": "6d379f4e76700e56d5423455d4120ae976a412c124e2829dcd47544c13839014",
+      "sourceDigest": "34f0563d96954c98e79b19aed5a21a3d4e6478bb22ee7b829bcb20c781d24a43",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 224,
+      "translationUnits": 229,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -3278,7 +3278,7 @@
       "game": "th17",
       "variant": "normal",
       "directory": "ports/th17",
-      "sourceDigest": "de7a924e6dda8a2d62bf70cee383e4c2b8406a7879dd0876abe286028565b387",
+      "sourceDigest": "42380a81160853a7028f2069728d625073fb9c8cbd817171d6b19b2188e7eb0f",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 221,

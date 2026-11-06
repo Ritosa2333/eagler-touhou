@@ -28,6 +28,7 @@ struct BattleFrame {
 // fixture may capture these boundaries, but an unavailable action is an error.
 struct BattleWorldServices {
     virtual ~BattleWorldServices()=default;
+    virtual bool rollback_boundary(){return true;}
     virtual bool audio(i32,float,PlayerShots::SoundAction,bool)=0;
     virtual bool life_hud(i32,i32)=0;virtual bool bomb_hud(i32,i32)=0;
     virtual bool game_over()=0;virtual bool notice(i32)=0;
@@ -97,6 +98,7 @@ public:
     Player& pilot(u32 seat) noexcept;
     i32 life_piece_tier(u32 seat) const noexcept;
     bool initialize_partner_hud();
+    void save_rollback(multiplayer::FrameImage&);
     bool reset_players();
     bool finish_player_options();
     bool stop_bombs();

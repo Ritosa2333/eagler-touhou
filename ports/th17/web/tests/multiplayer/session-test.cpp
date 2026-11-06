@@ -59,6 +59,7 @@ struct World final : th17::multiplayer::World {
     bool end_callback = false;
     unsigned restores = 0, bombs_committed = 0, frames_committed = 0;
     bool prediction_allowed = true;
+    bool speculative=false, block_prediction=false, frame_blocked=false;
 
     World() {
         stage_callback.owner = this;
@@ -72,12 +73,15 @@ struct World final : th17::multiplayer::World {
     }
 
     bool can_predict() const override { return prediction_allowed; }
+    void speculating(bool active) override { speculative=active; }
+    bool blocked() const override { return frame_blocked; }
     bool capture(std::uint32_t frame) override {
         auto [snapshot, fresh] = snapshots.try_emplace(frame);
         snapshot->second.world = state;
         return fresh && snapshot->second.schedule.capture(scheduler);
     }
     bool step(std::uint32_t frame, const Netplay::FrameDecision& decision) override {
+        frame_blocked=false;
         unsigned bombs = 0;
         for (unsigned seat = 0; seat < decision.inputs.size(); ++seat) {
             const auto buttons = decision.inputs[seat].buttons;
@@ -85,6 +89,7 @@ struct World final : th17::multiplayer::World {
             bombs += (buttons & 2) != 0;
         }
         state.bombs += bombs;
+        if(speculative&&block_prediction){frame_blocked=true;return false;}
         end_callback = frame == 1 && (decision.inputs[1].buttons & 0x80) != 0;
         return scheduler.update() >= 0 && outputs.emplace(frame, bombs).second;
     }
@@ -192,6 +197,20 @@ void scenario(unsigned seats, bool rollback) {
         require(worlds[seat].state.position[0] == 1, "captured input survives correction");
         require(worlds[seat].state.updates == 3, "scheduler replays the same logical updates");
         require(worlds[seat].bombs_committed == 1, "committed output is never replayed");
+    }
+    if(rollback){
+        worlds[0].prediction_allowed=true;
+        worlds[0].block_prediction=true;
+        links[1].mute_input=true;
+        for(unsigned seat=0;seat<seats;++seat)capture(seat,seat==0?0x82:0);
+        pump(3);
+        require(sessions[0].tick(worlds[0])==waiting,"a boundary discovered during simulation stalls the frame");
+        require(sessions[0].next_frame()==3&&worlds[0].state.position[0]==1&&worlds[0].state.bombs==1,
+                "aborted speculative side effects are restored");
+        links[1].mute_input=false;
+        pump(8);
+        require(sessions[0].tick(worlds[0])==advanced,"confirmed input crosses the boundary");
+        require(worlds[0].state.position[0]==2&&worlds[0].bombs_committed==2,"confirmed boundary publishes one action");
     }
 }
 

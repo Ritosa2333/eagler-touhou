@@ -16,6 +16,7 @@ struct HudBossGauge {
 };
 static_assert(sizeof(HudBossGauge)==0x54);
 class Hud {
+    friend class GameBattle;
     AnmManager& animations;EnemyWorldState& enemies;PlayerLifeSession& session;PlayerMotion& player;PlayerSpellStatus& spell;HudResources resources;
     bool check(bool,const char*);bool root_interrupt(u32,i32,bool=false);bool visible(u32,bool);AnmVm* find(u32&);
     struct PartnerStock {std::array<u32,8> life{},bomb{};};

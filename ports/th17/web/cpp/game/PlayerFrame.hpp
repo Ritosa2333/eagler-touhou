@@ -14,6 +14,7 @@ struct PlayerFrameHost:PlayerLifeServices {
     virtual bool refresh(PlayerFrameContext&)=0;
 };
 class PlayerFrame final:private PlayerLifecycleHost {
+    friend class GameBattle;
     PlayerMotion& motion;PlayerAnmHost& visuals;AnmManager& animations;PlayerLife& life;DamageSources& damage;PlayerShots& shots;PlayerShotContext& shot_context;PlayerFrameHost& world;
     i32 character,player_resource;PlayerFrameContext context;float* active_rate=nullptr;
     bool allow_bomb()override{return world.allow_bomb();}bool begin_bomb()override{return world.begin_bomb();}

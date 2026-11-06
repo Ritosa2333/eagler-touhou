@@ -8,6 +8,11 @@ import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 const repo=resolve(import.meta.dirname,'../../../../..');
 const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17/build-eagler-multiplayer'));
 const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-room'));
+const rollback=!process.argv.includes('--lockstep');
+const extended=process.argv.includes('--extended');
+const minimumSamples=Number(process.env.TH17_ROOM_SAMPLES||1050);
+const extendedTarget=Number(process.env.TH17_ROOM_TICKS||7200);
+const manifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
 const required=name=>{assert.ok(process.env[name],'Set '+name);return process.env[name];};
 const assets={
  '/game.dat':await readFile(required('EAGLER_TH17_DATA')),
@@ -79,7 +84,7 @@ try{
  const endpoint='ws://127.0.0.1:'+port+'/?';
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--disable-background-timer-throttling','--disable-renderer-backgrounding','--autoplay-policy=no-user-gesture-required']});
- for(const seats of [2,3]){
+ for(const seats of extended?[2]:[2,3]){
   const room='th17mp-room-test-'+seats,loadouts=Array.from({length:seats},(_,i)=>({character:i,shot:i}));
   const members=[];
   for(let seat=0;seat<seats;seat++){
@@ -91,13 +96,24 @@ try{
   }
   for(const [seat,socket] of members.entries())
    await lobby(socket,{type:'set-ready',ready:true},value=>value.room?.seats[seat]?.ready);
-  const start=await lobby(members[0],{type:'start',adonisMode:1,inputDelay:2,inputDelayAuto:false},value=>value.type==='start');
+  const timing={adonisMode:rollback?0:1,inputDelay:rollback?0:2,inputDelayAuto:false};
+  const start=await lobby(members[0],{type:'start',...timing},value=>value.type==='start');
   options=Array.from({length:seats},(_,seat)=>({
-   netplayMode:'lan',netplayAdonisMode:1,netplayInputDelay:2,netplayAllowWebsocketFallback:true,
+   netplayMode:'lan',netplayAdonisMode:timing.adonisMode,netplayInputDelay:timing.inputDelay,netplayAllowWebsocketFallback:true,
    netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:loadouts,
    renderScale:1,netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
   }));
   const context=await browser.newContext({viewport:{width:seats*640,height:480}});
+  if(rollback)await context.addInitScript(()=>{
+   const send=RTCDataChannel.prototype.send;
+   RTCDataChannel.prototype.send=function(payload){
+    if(!globalThis.delayInput||typeof payload==='string')return send.call(this,payload);
+    // Delay the guest's binary samples and repairs after the RTC handshake.
+    // Otherwise a repaired input can arrive before the delayed sample.
+    const copy=payload.slice();
+    setTimeout(()=>{if(this.readyState==='open')send.call(this,copy);},110);
+   };
+  });
   const page=await context.newPage(),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   try{
@@ -109,49 +125,86 @@ try{
    await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
    const frames=page.frames().filter(frame=>frame.url().includes('/runtime/'));
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(seat=>{
+    await frame.evaluate(({seat,rollback,extended})=>{
      const callback=Module.onGameFrame;
      globalThis.samples=new Map();
+     globalThis.diagnostics={corrections:0,resimulated:0,maxPrediction:0,combatCorrections:0};
+     let recorded=0;
      Module.onGameFrame=(ok,time,ticks)=>{
       callback(ok,time,ticks);
-      const p=Module._th17_room_status()>>>2,words=Array.from(Module.HEAPU32.subarray(p,p+24));
-      const n=words[0];words[2]=0;
-      if(n>120&&words[3]===1)samples.set(n,words);
-      Module._th17_key(203,+(seat===0&&n>=120&&n<170));
-      Module._th17_key(205,+(seat===1&&n>=120&&n<170));
+      const r=Module._th17_room_rollback()>>>2;
+      const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
+      diagnostics.corrections=corrections;diagnostics.resimulated=resimulated;
+      diagnostics.combatCorrections=combatCorrections;diagnostics.spellCorrections=spellCorrections;
+      diagnostics.maxPrediction=Math.max(diagnostics.maxPrediction,n-committed);
+      globalThis.delayInput=rollback&&seat===1&&n>=115;
+      for(let number=Math.max(recorded+1,committed-15);number<=committed;number++){
+       const p=Module._th17_room_confirmed(number)>>>2,words=Array.from(Module.HEAPU32.subarray(p,p+38));
+       words[2]=0;
+       if(words[0]===number&&number>120&&words[3]===1)samples.set(number,words);
+      }
+      recorded=committed;
+      diagnostics.lastConfirmed=committed;
+      const centerGuest=extended&&seat===1&&n>=900&&n<952;
+      const moveGuest=seat===1&&n>=600&&!centerGuest;
+      Module._th17_key(205,+(seat===1&&n>=120&&n<170||moveGuest&&n%96<12||extended&&seat===0&&n>=300&&n<350));
+      Module._th17_key(203,+(seat===0&&n>=120&&n<170||moveGuest&&n%96>=48&&n%96<60||centerGuest));
       Module._th17_key(200,+(seat===2&&n>=120&&n<150));
-      Module._th17_key(44,+(n>=140&&n<260));
-      Module._th17_key(45,+(seat===1&&n>=185&&n<193));
+      Module._th17_key(44,+(n>=140&&n<260||extended&&n>=900));
+      Module._th17_key(46,+(extended&&seat===0&&n>=1400&&n%120<100));
+      Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9));
      };
-    },seat);
+    },{seat,rollback,extended});
    }
+   let frontier=0,progressAt=Date.now();
    await wait(async()=>{
     assert.deepEqual(errors,[]);
     const failures=await page.evaluate(()=>events.filter(e=>e.event==='error'));
     assert.deepEqual(failures,[]);
-    return (await Promise.all(frames.map(frame=>frame.evaluate(()=>samples.size>=850)))).every(Boolean);
-   },'independent pilot motion through Stage 1');
+    const status=await Promise.all(frames.map(frame=>frame.evaluate(()=>({samples:samples.size,diagnostics}))));
+    const current=Math.min(...status.map(item=>item.diagnostics.lastConfirmed||0));
+    if(current>frontier){
+     if(extended&&Math.floor(current/1000)>Math.floor(frontier/1000))console.log('extended room confirmed through '+current);
+     frontier=current;progressAt=Date.now();
+    }else if(Date.now()-progressAt>20000)throw Error('Room stopped confirming input: '+JSON.stringify(status));
+    return status.every(item=>item.samples>=minimumSamples)&&(!extended||!rollback||
+     status.some(item=>item.diagnostics.spellCorrections>0)||current>=extendedTarget);
+   },'independent pilot motion through Stage 1',extended?220000:90000);
    const states=await Promise.all(frames.map(frame=>frame.evaluate(()=>Array.from(samples))));
    const first=new Map(states[0]),other=states.slice(1).map(state=>new Map(state));
    const agreed=[...first].filter(([frame])=>other.every(map=>map.has(frame)));
    assert.ok(agreed.length>100);
-   for(const [frame,value] of agreed)for(const peer of other)assert.deepEqual(peer.get(frame),value,'world at frame '+frame);
+   let difference;
+   for(const [frame,value] of agreed){
+    const peer=other.find(map=>map.get(frame).some((word,index)=>word!==value[index]));
+    if(peer){difference={frame,host:value,peer:peer.get(frame),previous:agreed.find(([n])=>n===frame-1)?.[1]};break;}
+   }
    const [,initial]=agreed[0];
    const [,last]=agreed.at(-1);
+   const diagnostics=await Promise.all(frames.map(frame=>frame.evaluate(()=>globalThis.diagnostics)));
    const maxEnemyBullets=Math.max(...agreed.map(([,state])=>state[10]));
+   const maxLasers=Math.max(...agreed.map(([,state])=>state[29]));
+   const activeSpellFrames=agreed.filter(([,state])=>state[30]&1).length;
+   const dialogueFrames=agreed.filter(([,state])=>state[33]).length;
+   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,diagnostics,last,difference});
+   if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
+   if(rollback){
+    assert.ok(diagnostics.some(item=>item.corrections>0&&item.resimulated>0),'late input triggers correction and replay');
+    assert.ok(diagnostics.some(item=>item.combatCorrections>0),'at least one correction happens while enemy projectiles are present');
+    assert.ok(diagnostics.every(item=>item.maxPrediction<=12));
+   }
    assert.ok(maxEnemyBullets>0,'fight includes enemy projectiles');
    assert.equal(initial[19],4,'Otter starts with four bombs');
    assert.ok(agreed.some(([,state])=>state[19]===3&&state[15]===initial[15]),'guest spends their own bomb');
-   const x=seat=>last[12+seat*4]|0;
-   assert.ok(x(0)<x(1),'left and right belong to different pilots');
-   if(seats===3)assert.ok(last[21]<last[13],'third pilot moved up independently');
+   assert.ok(agreed.some(([,state])=>(state[12]|0)<(state[16]|0)),'left and right belong to different pilots');
+   if(seats===3)assert.ok(agreed.some(([,state])=>state[21]<state[13]),'third pilot moved up independently');
    await page.screenshot({path:resolve(out,seats+'p.png')});
-   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,last});
-   console.log(seats+' players, '+agreed.length+' matching frames');
+   console.log(seats+' players, '+agreed.length+' matching confirmed frames, '+diagnostics.map(item=>item.corrections).join('/')+' corrections');
   }finally{await context.close();for(const socket of members)socket.close();}
  }
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
- await writeFile(resolve(out,'room-report.json'),JSON.stringify({reports},null,2)+'\n');
+ await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,version:manifest.version,wasm:manifest.execution.sha256,
+  injectedDelayMs:rollback?110:0,reports},null,2)+'\n');
  await writeFile(resolve(out,'relay.log'),log);
 }

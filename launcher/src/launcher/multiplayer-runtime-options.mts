@@ -158,7 +158,7 @@ export function buildMultiplayerRuntimeOptions(
   });
   if (loadouts.length !== playerCount) throw new Error('LAN 机体配置数量不足');
 
-  const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp');
+  const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp') || roomProduct === 'th17mp';
   const th075 = roomProduct === 'th075mp';
   const th15 = roomProduct === 'th15mp';
   const requestedMode = input.adonisMode ?? (roomProduct === 'th11mp' || th075 || product.inputTiming?.rollbackDefault === false ? 1 : 0);

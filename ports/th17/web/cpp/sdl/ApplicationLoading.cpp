@@ -49,7 +49,11 @@ bool ApplicationState::step_loading(){
  loading_visual=visual;loading_game=environment.game_rng;visual=cosmetic;environment.game_rng=game;
  if(!updated)return fail(animations.error);
  if(!draw_loading())return false;
- audio_device.update();audio_device.pump();if(!audio_device.error.empty())return fail(audio_device.error);
+#if TH17_MULTIPLAYER
+ if(!room_seats)
+#endif
+  audio_device.update();
+ audio_device.pump();if(!audio_device.error.empty())return fail(audio_device.error);
  ++frames;if(++loading_frames<loading_duration)return true;
  flow.pending=loading_destination;loading_destination=AppScene::Uninitialized;
  const i32 result=flow.update();

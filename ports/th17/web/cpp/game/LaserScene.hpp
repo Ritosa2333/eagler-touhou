@@ -54,5 +54,6 @@ public:
     LaserContact* curve_contact(u32 id)noexcept;
     CurveProgram* curve_program(u32 id)noexcept;
     MovingLaserMotion* segmented_motion(u32 id)noexcept;
+    void save_rollback(multiplayer::FrameImage&);
 };
 }

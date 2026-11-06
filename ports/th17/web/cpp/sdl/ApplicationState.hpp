@@ -56,10 +56,18 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;
  bool initialized=false,exiting=false,completed_recording=false,has_language_pack=false;std::array<i32,16> projected{};std::string failure;
 #if TH17_MULTIPLAYER
+ struct RoomSound {i32 id;float pan;PlayerShots::SoundAction action;bool queued;};
+ std::vector<RoomSound>* room_sounds=nullptr;
+ bool room_speculative=false,room_barrier=false;
  std::array<std::array<i32,2>,3> room_loadouts{};
  std::array<CoopPlayerInput,2> room_partners{};
  u32 room_seats=0;
  bool begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts);
+ bool can_rollback() const;
+ bool save_rollback(multiplayer::FrameImage&);
+ bool rollback_boundary() override;
+#else
+ bool rollback_boundary() override{return true;}
 #endif
  AppScene loading_destination=AppScene::Uninitialized;u32 loading_frames=0,loading_duration=0;Rng loading_visual,loading_game;
  void remember_title()noexcept;bool fail(const std::string&);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);const i32* projection();

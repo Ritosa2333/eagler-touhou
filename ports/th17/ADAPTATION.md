@@ -176,3 +176,4 @@
 
 - 2026-10-30，normal：[迁移与接入验证](../../archive/th17-development-20261030/migration-validation.md)。生产 Wasm 在桌面 Chromium 完成 OGG／无音乐、命令会话隔离、输入清除、原生退出、用户文件恢复及指定原版演示文件启动。随机数、演示输入解码与触控录像往返使用原生模块独立核对，范围与构建 SHA-256 见记录。
 - 2026-11-06，multiplayer：[双人和三人房间验证](../../archive/th17-multiplayer-room-20261106/room-validation.md)。生产 Wasm 使用本地 Relay 同步开局，对照确认输入模式的一面战斗状态及席位资源。
+- 2026-11-06，multiplayer：[战斗回滚验证](../../archive/th17-combat-rollback-20261106/room-validation.md)。生产 Wasm 在双人和三人 WebRTC 房间注入迟到输入，对照重演后的确认帧。

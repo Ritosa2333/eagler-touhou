@@ -607,7 +607,7 @@ export const PRODUCT_GAMES = Object.freeze({
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH17_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th17PeerTransport",
             spectator: false, titleRoomEntry: false,
-            inputTiming: Object.freeze({rollbackLimit: 0, rollbackDefault: false, manualDelayLimit: 9}),
+            inputTiming: Object.freeze({rollbackLimit: 12, sendPredictionLimit: 12, manualDelayLimit: 9}),
         }),
         thpracExtraFunctionKeys: Object.freeze(["U"]),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),

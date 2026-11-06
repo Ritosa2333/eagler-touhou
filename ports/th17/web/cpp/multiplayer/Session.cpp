@@ -49,6 +49,7 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     gate_.Clear();
     core_.Clear();
     next_capture_ = next_commit_ = replay_end_ = 0;
+    corrections_ = resimulated_ = 0;
     error_ = nullptr;
     if (!setup.valid()) return fail("Invalid TH17 room setup");
     setup_ = setup;
@@ -114,10 +115,15 @@ Session::Tick Session::simulate(World& world) {
         fail("TH17 could not capture the rollback state");
         return Tick::Failed;
     }
-    if (!world.step(frame, decision) || !core_.MarkSimulated(frame, decision)) {
+    world.speculating(speculative);
+    const bool stepped=world.step(frame, decision);
+    world.speculating(false);
+    if(!stepped&&speculative&&world.blocked()&&world.restore(frame))return Tick::Waiting;
+    if (!stepped || !core_.MarkSimulated(frame, decision)) {
         fail("TH17 could not simulate the agreed frame");
         return Tick::Failed;
     }
+    if(frame<replay_end_)++resimulated_;
     return Tick::Advanced;
 }
 
@@ -132,6 +138,7 @@ Session::Tick Session::tick(World& world) {
             fail("TH17 rollback checkpoint expired");
             return Tick::Failed;
         }
+        ++corrections_;
     }
 
     const bool correcting = replay_end_ != 0;

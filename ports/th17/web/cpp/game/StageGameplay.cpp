@@ -9,6 +9,7 @@ struct StageGameplay::Services final:BattleWorldServices,DialogueServices,GameFr
     bool life_hud(i32 count,i32 pieces)override{return !g.battle.hud||g.battle.hud->lives(count,pieces);}
     bool bomb_hud(i32 count,i32 pieces)override{return !g.battle.hud||g.battle.hud->bombs(count,pieces);}
     bool game_over()override{return g.platform.game_over();}
+    bool rollback_boundary()override{return g.platform.rollback_boundary();}
     bool notice(i32 kind)override{return g.battle.hud&&g.battle.hud->result(0,kind);}
     bool popup(const Vec3& p,i32 amount,u32 color)override{g.popups.number(p,amount,color);return g.platform.popup(p,amount,color);}
     bool trophy(i32 id)override{return g.platform.trophy(id);}

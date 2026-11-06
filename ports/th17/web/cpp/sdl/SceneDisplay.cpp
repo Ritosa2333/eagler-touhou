@@ -20,11 +20,13 @@ bool SceneDisplay::initialize(GameRun& run,GameRecords& records,SpellRecords& sp
     return scheduler.add(fps_callback,FramePass::Draw,72)>=0||fail("Frame-rate callback registration failed");
 }
 bool SceneDisplay::capture(u32& handle,bool results){return screenshots&&screenshots->capture(handle,results)||fail(screenshots?screenshots->error:"Screenshot outside an active playfield");}
-bool SceneDisplay::draw(){
+bool SceneDisplay::draw(double logical_seconds){
     if(!error.empty()||!compositor||!game)return false;if(!graphics.select_target(nullptr,0))return fail(graphics.error);
     if(!game->draw())return fail(game->error.empty()?game->background.error:game->error);
     if(outgoing_background&&!outgoing_background->error.empty())return fail(outgoing_background->error);
     if(!compositor->error.empty())return fail(compositor->error);if(!layers->error.empty())return fail(layers->error);if(!letters->error.empty())return fail(letters->error);
-    renderer.flush();if(!screenshots->finish_frame())return fail(screenshots->error);graphics.present();if(!scene.presented(double(SDL_GetPerformanceCounter())/double(SDL_GetPerformanceFrequency())))return fail(scene.error);return graphics.error.empty()||fail(graphics.error);
+    renderer.flush();if(!screenshots->finish_frame())return fail(screenshots->error);graphics.present();
+    const double seconds=logical_seconds>=0?logical_seconds:double(SDL_GetPerformanceCounter())/double(SDL_GetPerformanceFrequency());
+    if(!scene.presented(seconds))return fail(scene.error);return graphics.error.empty()||fail(graphics.error);
 }
 }

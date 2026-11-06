@@ -187,9 +187,18 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   if(!scene()->step(input))return fail(scene()->error.empty()?run_input->error:scene()->error);
   if(run->previous_scene()&&!run->update_previous(progress.rate))return fail(run->error);
  }else {if(scheduler.update()<0)return fail(title&&!title->error.empty()?title->error:ending&&!ending->error.empty()?ending->error:animations.error);}
- audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);
+#if TH17_MULTIPLAYER
+ if(room_speculative&&(flow.current!=flow.pending||(progress.screen!=0&&progress.screen!=7)))return rollback_boundary();
+ if(!room_seats)
+#endif
+  audio_device.update();
+ if(!audio_device.error.empty())return fail(audio_device.error);
  if(scene()){
-  if(!display->draw())return fail(display->error);if(recording){auto& clock=scene()->battle.spell_card->result_clock;
+  double clock_seconds=-1;
+#if TH17_MULTIPLAYER
+  if(room_seats)clock_seconds=double(frames)/60;
+#endif
+  if(!display->draw(clock_seconds))return fail(display->error);if(recording){auto& clock=scene()->battle.spell_card->result_clock;
    // Progression advances the run's stage before this final outgoing draw.
    // Its capture clock still belongs to the scene that produced the result.
    if(clock.completed&&!recording->spell_timing(u32(scene()->battle.stage),u32(clock.completed-1),clock.encoded_time))return fail(recording->error());}
