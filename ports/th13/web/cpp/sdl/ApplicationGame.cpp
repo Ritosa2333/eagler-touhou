@@ -14,10 +14,19 @@
 #include <emscripten.h>
 EM_JS(bool, th13_download_recorded_replay, (const unsigned char* bytes, int size, int slot), {
     try {
-        const blob = new Blob([HEAPU8.slice(bytes, bytes + size)], {type: 'application/octet-stream'});
+        const name = 'th13_' + String(slot).padStart(2, '0') + '.rpy';
+        const data = HEAPU8.slice(bytes, bytes + size);
+        // 持久化钩子（页面壳 th13.html / shell.mjs 注册 Module.onReplaySaved）：
+        // 录像保存除触发浏览器下载外，把同一份字节交壳落 localStorage（键
+        // th13.replays / th13.replay.<name>），页面刷新后由壳重导入 catalog。
+        // 钩子自吞异常——持久化失败不阻断下载，也不令 save_replay_slot 判失败
+        //（catalog 已由 save_replay_slot 先行 import_replay_bytes 入槽）。
+        try { Module.onReplaySaved?.(name, data); }
+        catch (error) { console.warn('[th13] onReplaySaved failed:', error); }
+        const blob = new Blob([data], {type: 'application/octet-stream'});
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a'); link.href = url;
-        link.download = 'th13_' + String(slot).padStart(2, '0') + '.rpy';
+        link.download = name;
         link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); return true;
     } catch (_) { return false; }
 });
@@ -58,6 +67,12 @@ void ApplicationState::update_spell_time(bool active) {
     SpellTimeClock::End end;
     if (!spell_time_clock.end(now, end)) return;
     spell_time_packed = encode_spell_elapsed_time(end.seconds);
+    // B' 注入缝（默认关闭 = 生产实时钟语义）：端到端以原 .rpy stage 头的
+    // 同槽 dword 置换本局实时钟值（0x412ee0 取 QPC 实时，属保存时刻实时量）。
+    if (spell_time_pin_enabled_ && progress.stage >= 1 && progress.stage <= 7 &&
+        end.index >= 0 && end.index < 21) {
+        spell_time_packed = spell_time_pin_[u32(progress.stage)][u32(end.index)];
+    }
     if (replay_active || pending_replay_stage) {
         const ReplayStage* stage = pending_replay_stage;
         if (!stage) {
@@ -378,10 +393,29 @@ bool ApplicationState::save_replay() {
 }
 
 bool ApplicationState::save_replay_slot(i32 slot, const std::string& name) {
+    return save_replay_slot(slot, name, nullptr);
+}
+
+bool ApplicationState::save_replay_slot(i32 slot, const std::string& name,
+                                        const ReplaySaveMeta* pinned) {
     if (slot < 1 || slot > 25) return fail("Invalid replay slot");
     std::vector<u8> bytes;
-    if (!recorder.encode(bytes, name, selection_score.score))
-        return fail("Replay recording unavailable");
+    if (pinned) {
+        // 端到端注入：0x4484d0 保存时刻的可变字段由调用方钉住（date/slow/
+        // stage_field/EOF/version），事件流与 stage 头仍来自生产录制路径。
+        if (!recorder.encode(bytes, name, selection_score.score, *pinned))
+            return fail("Replay recording unavailable");
+    } else {
+        // 生产默认（A 项）：+0x54 = fps 管理器实时计数（0x424990 +0x24/+0x2c，
+        // 0x42b990 关首清零）；date=0 → encode 时刻真实时钟（0x4549d0:84）。
+        // den==0（无有效采样窗，如极短局）时 encode 内部按原语义退回事件
+        // 字节流聚合，短局行为与既往一致。
+        ReplaySaveMeta meta;
+        meta.slow_numerator = slow_num_;
+        meta.slow_denominator = slow_den_;
+        if (!recorder.encode(bytes, name, selection_score.score, meta))
+            return fail("Replay recording unavailable");
+    }
     // 0x4484d0 写 replay/th13_NN.rpy 后，原版 0x4525b0 重扫目录即可在标题
     // Replay 菜单看到；网页版没有目录重扫，这里直接走既有 import_replay_bytes
     // 入 catalog（th13_NN.rpy → 编号槽 NN-1），标题 Replay 菜单立即可选。
@@ -448,6 +482,16 @@ bool ApplicationState::result_needs_name() const {
     const auto& ranking = files.ordinary_records[size_t(progress.character)].ranking[size_t(progress.difficulty)];
     for (const auto& entry : ranking) if (entry.score <= selection_score.score) return true;
     return false;
+}
+
+i32 ApplicationState::result_ranking(TitlePlayerDataScore rows[10]) const {
+    // 0x43f8f0：FUN_0043d6b0 当场插入新分（名字空白，END 才写名）并经
+    // 0x415030(rank) 把 0 基行写进覆盖层 +0x38。复用 result_screen_data 的
+    // 同构插入预览（不落档）。
+    TitleResultScreenData data;
+    if (!result_screen_data(data) || data.rank < 0) return -1;
+    for (size_t i = 0; i < data.records.size(); ++i) rows[i] = data.records[i];
+    return data.rank;
 }
 
 }  // namespace th13::sdl

@@ -380,6 +380,7 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
         score_state.score += value / 10;
         if (score_state.score > 999999999) score_state.score = 999999999;
         ++point_items_;  // 0x4be7d8
+        ++progress.point_items;  // 同一计数进会话态（跨关累计；stage 头 +0x34 快照源）
         events_.push_back({ItemEvent::Kind::ScorePopup, value, item.x, item.y,
                            (player.y > 128.0f && item.state != 3)
                                ? 0xffffffffu : 0xffffff00u});

@@ -46,6 +46,12 @@ tests/ui/build/
 # 录像单测本地构建产物
 tests/replay/build/
 
+# 端到端验收本地构建产物（native 二进制 + run 目录内导出的 th13_NN.rpy）
+tests/e2e/build/
+
+# 存档格式单测本地构建产物
+tests/score/build/
+
 # 战斗单测本地构建产物
 tests/combat/build/
 

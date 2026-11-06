@@ -153,7 +153,8 @@ try {
   // ---- [R3-M] Replay 菜单本地 .rpy 导入（文件选择 + 拖放；不碰音频段）----
   // 文件字节经堆指针传给 wasm（th13_replay_import → import_replay_bytes）：
   // 解码失败落 replay_import_error（菜单 Import 行显示），成功落 catalog 槽
-  // 并提示菜单选中。IndexedDB 持久化未做（本轮范围外，HANDOFF 登记）。
+  // 并提示菜单选中。可持久命名的录像同步落 localStorage（replayPersist），
+  // 启动序列末尾 replayRestore 按原文件名重导入——刷新后目录仍在。
   const importError = text => { note('replay-import', text); console.warn('[th13]', text); };
   // 导入失败原因优先取菜单同源 replay_import_error（空 = 无失败），应用级
   // last_error 仅兜底——解码失败不 fail() 应用（坏 .rpy 不中断会话）。
@@ -162,23 +163,122 @@ try {
       ? mod.UTF8ToString(mod._th13_replay_import_error()) : '';
     return specific || runtime_error();
   };
+  // ---- Replay localStorage 持久化（与 shell.mjs 同款键与护栏）----
+  // 键定死：索引 th13.replays = JSON 数组 [{name,size,ts}]，blob
+  // th13.replay.<name> = base64。name 必须匹配 sanitizePath 的 replay
+  // 命名空间（th13_(\d{2}|ud[a-z0-9]{4})\.rpyx?，统一小写存储）；其余文件名
+  // （如 my-run.rpy）只进本场 catalog，不持久化。护栏：单条 >1MiB 拒收；
+  // 索引总量（base64 账面）超 5MiB 先逐出最旧条目，配额溢出再逐出重试——
+  // 正在保存的条目绝不逐出，全部失败时 note 明示（不静默丢档）。
+  const REPLAY_INDEX_KEY = 'th13.replays', REPLAY_BLOB_PREFIX = 'th13.replay.';
+  const REPLAY_NAME_PATTERN = /^th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/;
+  const REPLAY_SINGLE_MAX = 1024 * 1024, REPLAY_TOTAL_MAX = 5 * 1024 * 1024;
+  const replayIndex = () => {
+    try {
+      const list = JSON.parse(localStorage.getItem(REPLAY_INDEX_KEY) || '[]');
+      return Array.isArray(list)
+        ? list.filter(e => e && typeof e.name === 'string' && REPLAY_NAME_PATTERN.test(e.name)) : [];
+    } catch { return []; }
+  };
+  const replayToBase64 = bytes => {
+    let binary = '';
+    for (let i = 0; i < bytes.length; ++i) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  };
+  const replayPersist = (name, bytes) => {
+    try {
+      const key = String(name).toLowerCase();
+      if (!REPLAY_NAME_PATTERN.test(key) || !bytes || !bytes.length || bytes.length > REPLAY_SINGLE_MAX) return false;
+      const list = replayIndex().filter(entry => entry.name !== key);
+      list.push({name: key, size: bytes.length, ts: Date.now()});
+      const weight = entry => Math.ceil((entry.size || 0) * 4 / 3);  // base64 账面
+      const dropOldest = () => {
+        let oldest = 0;
+        for (let i = 1; i < list.length; ++i) if ((list[i].ts ?? 0) < (list[oldest].ts ?? 0)) oldest = i;
+        const [gone] = list.splice(oldest, 1);
+        localStorage.removeItem(REPLAY_BLOB_PREFIX + gone.name);
+        return gone.name;
+      };
+      const save = () => {
+        localStorage.setItem(REPLAY_BLOB_PREFIX + key, replayToBase64(bytes));
+        localStorage.setItem(REPLAY_INDEX_KEY, JSON.stringify(list));
+      };
+      try {
+        // list 已含本次条目：超总量时逐最旧，绝不逐出正写入的条目（最新 ts，
+        // 且 list.length>1 兜底——单条 ≤1MiB 恒小于总量上限，理论到不了）。
+        while (list.reduce((sum, entry) => sum + weight(entry), 0) > REPLAY_TOTAL_MAX && list.length > 1)
+          note('replay-persist', '总量超限逐出最旧：' + dropOldest());
+        save();
+        return true;
+      } catch (quota) {
+        // 浏览器配额实现差异兜底：逐出最旧后重试，直至仅剩本次条目。
+        while (list.length > 1) {
+          try {
+            note('replay-persist', '配额逐出最旧：' + dropOldest());
+            save();
+            return true;
+          } catch { /* 继续逐出 */ }
+        }
+        note('replay-persist', '持久化失败（配额）：' + name);
+        return false;
+      }
+    } catch (e) {
+      note('replay-persist', '持久化异常：' + name + '：' + ((e && e.message) || e));
+      return false;
+    }
+  };
+  // 启动恢复：按索引逐个把 blob 重导入 catalog（th13_replay_import 同一
+  // 路径：th13_NN.rpy → 编号槽 NN-1 覆盖，其余 → 首个空闲用户槽）。晚于
+  // 内置清单执行，同名录像覆盖内置槽（用户文件优先）；索引缺 blob（被
+  // 配额逐出/手动清理）跳过不报错。
+  const replayRestore = async () => {
+    for (const entry of replayIndex()) {
+      try {
+        const b64 = localStorage.getItem(REPLAY_BLOB_PREFIX + entry.name);
+        if (!b64) continue;
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; ++i) bytes[i] = binary.charCodeAt(i);
+        const dataPtr = mod._malloc(bytes.length);
+        const namePtr = mod.allocateUTF8(entry.name);
+        try {
+          mod.HEAPU8.set(bytes, dataPtr);
+          if (!mod._th13_replay_import(dataPtr, bytes.length, namePtr))
+            note('replay-restore', '恢复失败：' + entry.name + '：' + replayImportError());
+        } finally {
+          mod._free(dataPtr);
+          mod._free(namePtr);
+        }
+      } catch (e) {
+        note('replay-restore', '恢复异常：' + entry.name + '：' + ((e && e.message) || e));
+      }
+    }
+  };
+  // 游戏内保存录像（save_replay_slot → 下载 EM_JS 钩子）：catalog 已由
+  // C++ 侧 import_replay_bytes 入槽，这里只补 localStorage 持久化。
+  mod.onReplaySaved = (name, bytes) => { replayPersist(name, bytes); };
   const importReplay = async file => {
     try {
-      if (!file || !/\.rpy$/i.test(file.name)) { importError('非 .rpy 文件：' + (file?.name ?? '')); return; }
+      if (!file || !/\.rpy$/i.test(file.name)) { importError('非 .rpy 文件：' + (file?.name ?? '')); return false; }
       const bytes = new Uint8Array(await file.arrayBuffer());
       const dataPtr = mod._malloc(bytes.length);
       const namePtr = mod.allocateUTF8(file.name);
-      if (!dataPtr || !namePtr) { importError('内存分配失败：' + file.name); return; }
+      if (!dataPtr || !namePtr) { importError('内存分配失败：' + file.name); return false; }
       try {
         mod.HEAPU8.set(bytes, dataPtr);
-        if (!mod._th13_replay_import(dataPtr, bytes.length, namePtr))
+        if (!mod._th13_replay_import(dataPtr, bytes.length, namePtr)) {
           importError('导入失败：' + file.name + '：' + replayImportError());
+          return false;
+        }
+        replayPersist(file.name, bytes);
+        return true;
       } finally {
         mod._free(dataPtr);
         mod._free(namePtr);
       }
     } catch (e) {
       importError('导入异常：' + ((e && (e.stack || e.message)) || String(e)));
+      return false;
     }
   };
   const replayInput = document.getElementById('replay-file');
@@ -224,6 +324,11 @@ try {
       note('replay-builtin', '内置录像跳过：' + name);
     }
   }
+  // 持久化恢复并入同一启动栅栏：恢复完成后才置 done（replay-import-error
+  // .lifetime 测试的稳定性断言依赖「全部导入序列结束」语义）。
+  window.__th13_replay_restore_done = false;
+  await replayRestore();
+  window.__th13_replay_restore_done = true;
   window.__th13_builtin_replays_done = true;
 
   // 帧泵看门狗：requestAnimationFrame 停摆的宿主（后台/嵌入式 webview）经
