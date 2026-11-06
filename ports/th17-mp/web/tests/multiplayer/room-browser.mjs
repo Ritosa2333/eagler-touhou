@@ -14,6 +14,7 @@ const extraFinale=process.argv.includes('--extra-finale');
 const launcherPreview=process.argv.includes('--launcher-preview');
 const verifyReplay=process.argv.includes('--replay');
 const checkPresentation=process.argv.includes('--check-presentation');
+const verifyTransfer=process.argv.includes('--life-transfer');
 const independent=process.argv.includes('--independent-pages');
 assert.ok(!independent||!verifyReplay,'Replay fixture uses the shared page');
 const requestedRenderScale=process.env.TH17_ROOM_RENDER_SCALE;
@@ -189,7 +190,7 @@ try{
    else await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
    const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,verifyTransfer})=>{
      const callback=Module.onGameFrame;
      const optimized=typeof Module._th17_room_trace==='function';
      Module._th17_room_trace?.(1);
@@ -293,6 +294,7 @@ try{
       diagnostics.lastConfirmed=committed;
       diagnostics.phase=phase;
       if(extraBoss)return;
+      if(verifyTransfer)Module._th17_key(42,+(seat===0&&n>=75&&n<105&&(n-75)%6<3));
       const centerGuest=extended&&seat===1&&n>=900&&n<952;
       const reserve=(throughStageTwo||denseExtra)&&seat===1&&n>=1500;
       const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve;
@@ -304,7 +306,7 @@ try{
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming:checkPresentation&&difficulty!==4});
+    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,verifyTransfer,storyTiming:checkPresentation&&difficulty!==4});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
@@ -348,6 +350,8 @@ try{
    assert.equal(initial[3],difficulty===4?7:1,'room starts the selected stage');
    if(checkPresentation)
     assert.deepEqual(initial.slice(24,24+seats),Array(seats).fill(difficulty===4?400:100),'all pilots start with the stage power');
+   const initialLives=Array.from({length:seats},(_,seat)=>initial[14+seat*4]);
+   if(verifyTransfer)assert.deepEqual(initialLives,seats===2?[1,3]:[1,3,2],'one life goes to P2 without changing P3');
    const diagnostics=await Promise.all(frames.map(frame=>frame.evaluate(extraBoss=>{
     const summarize=values=>{
      values.sort((a,b)=>a-b);
@@ -451,7 +455,7 @@ try{
    reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,denseWindows,
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
     ...(priorMemory?{matchedMemory:compareMemory(priorMemory.samples,finaleSamples),lateMatchedMemory:compareMemory(priorMemory.samples,finaleSamples,lateStart)}:{}),
-    settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,initialPower:initial.slice(24,24+seats),last,difference});
+    settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,initialPower:initial.slice(24,24+seats),initialLives,last,difference});
    if(coverageFailure)throw coverageFailure;
    if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
    if(rollback){
