@@ -1,4 +1,5 @@
 #include "FrameImage.hpp"
+#include "AnmCheckpoint.hpp"
 #include "../game/ItemSpirits.hpp"
 #include "../game/ScreenEffects.hpp"
 
@@ -6,17 +7,19 @@ namespace th17 {
 void ItemManager::save_rollback(multiplayer::FrameImage& image){
     struct Visual {
         AnmVm* owner;
-        AnmVm vm;
-        explicit Visual(AnmVm& value):owner(&value),vm(value){}
+        multiplayer::AnmCheckpoint vm;
+        Visual(AnmVm& value,multiplayer::AnmCheckpoint::Cache& cache,multiplayer::AnmCheckpoint::Curves& curves):
+            owner(&value),vm(value,cache,curves){}
     };
     struct Idle {AnmVm* owner;std::shared_ptr<const AnmVm> vm;};
     struct SavedSlot {u32 index;ItemState state;u8 flags;bool arrow_ended;};
     std::vector<SavedSlot> saved;
     std::vector<Visual> visuals;
     std::vector<Idle> idle;
+    multiplayer::AnmCheckpoint::Curves curves;
     std::array<u8,pool_size> flags{};
     if(!idle_visuals)idle_visuals=std::make_unique<std::array<IdleVisuals,pool_size>>();
-    size_t slot_count=0,visual_count=0,idle_count=0;
+    size_t slot_count=0,visual_count=0,idle_count=0,changing=0;
     const auto reusable=[&](const AnmVm& vm){
         return !vm.creation_parent&&!vm.rotation_parent&&(!vm.object_host||vm.object_host==&animations)&&
             !animations.registry.borrowed_root(vm);
@@ -30,17 +33,20 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
         flags[i]=u8(bool(s.body)|(bool(s.arrow)<<1)|(body_idle<<2)|(arrow_idle<<3));
         visual_count+=bool(s.body)+bool(s.arrow)-body_idle-arrow_idle;
         idle_count+=body_idle+arrow_idle;
+        changing+=s.body&&!body_idle&&multiplayer::AnmCheckpoint::changing(*s.body);
+        changing+=s.arrow&&!arrow_idle&&multiplayer::AnmCheckpoint::changing(*s.arrow);
     }
     saved.reserve(slot_count);
     visuals.reserve(visual_count);
     idle.reserve(idle_count);
-    const auto capture_visual=[&](AnmVm* vm,std::weak_ptr<const AnmVm>& cache,bool share){
+    curves.changing.reserve(changing);
+    const auto capture_visual=[&](AnmVm* vm,CachedVisual& cache,bool share){
         if(!vm)return;
-        if(!share){cache.reset();visuals.emplace_back(*vm);return;}
-        auto cached=cache.lock();
+        if(!share){cache.idle.reset();visuals.emplace_back(*vm,cache.curves,curves);return;}
+        auto cached=cache.idle.lock();
         if(!cached){
             cached=std::shared_ptr<const AnmVm>(new AnmVm(*vm));
-            cache=cached;
+            cache.idle=cached;
         }
         idle.push_back({vm,std::move(cached)});
     };
@@ -59,26 +65,26 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
 #endif
     }
 #if TH17_ROOM_BENCHMARK
-    image.payload[image.ItemVisual]=u32(saved.capacity()*sizeof(SavedSlot)+visuals.capacity()*sizeof(Visual)+idle.capacity()*sizeof(Idle));
+    image.payload[image.ItemVisual]=u32(saved.capacity()*sizeof(SavedSlot)+visuals.capacity()*sizeof(Visual)+idle.capacity()*sizeof(Idle)+curves.changing.capacity()*sizeof(AnmInterpolators));
 #endif
     image.save(free_slots,requests,cancel_density,cancel_stamp,active_count,motion_scale,error);
-    image.restore_with([this,saved=std::move(saved),visuals=std::move(visuals),idle=std::move(idle)]{
+    image.restore_with([this,saved=std::move(saved),visuals=std::move(visuals),idle=std::move(idle),curves=std::move(curves)]{
         if(!idle_visuals)return false;
         auto vm=visuals.begin();
         auto shared=idle.begin();
-        const auto restore_visual=[&](auto& owner,std::weak_ptr<const AnmVm>& cache,bool present,bool share){
-            if(!present){owner.reset();cache.reset();return true;}
+        const auto restore_visual=[&](auto& owner,CachedVisual& cache,bool present,bool share){
+            if(!present){owner.reset();cache={};return true;}
             if(share){
                 const auto& visual=*shared++;
                 if(owner.get()!=visual.owner)return false;
-                if(cache.lock()!=visual.vm)*owner=*visual.vm;
-                cache=visual.vm;
+                if(cache.idle.lock()!=visual.vm)*owner=*visual.vm;
+                cache.idle=visual.vm;
                 return true;
             }
             const auto& visual=*vm++;
             if(owner.get()!=visual.owner)return false;
-            cache.reset();
-            *owner=visual.vm;return true;
+            cache.idle.reset();
+            visual.vm.restore(*owner,cache.curves,curves);return true;
         };
         auto next=saved.begin();
         for(u32 i=next_used(0);i<pool_size;i=next_used(i+1)){

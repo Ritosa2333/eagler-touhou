@@ -2,14 +2,14 @@
 #include "BulletArea.hpp"
 #if TH17_MULTIPLAYER
 #include "../multiplayer/FrameImage.hpp"
+#include "../multiplayer/AnmCheckpoint.hpp"
 #include <bitset>
 #endif
 namespace th17 {
 struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     BulletScene& scene;u32 index;BulletState& state;BulletVisual visual;bool cancelling=false;
 #if TH17_MULTIPLAYER
-    struct VisualImage {
-        AnmVm body;
+    struct VisualFields {
         AnmResource* resource;
         AnmManager* manager;
         u32 overlay_handle;
@@ -17,16 +17,23 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
         std::string error;
         bool cancelling;
 
-        explicit VisualImage(const Slot& slot):body(slot.visual.body),resource(slot.visual.resource),
+        explicit VisualFields(const Slot& slot):resource(slot.visual.resource),
             manager(slot.visual.manager),overlay_handle(slot.visual.overlay_handle),rate(slot.visual.rate),
             error(slot.visual.error),cancelling(slot.cancelling){}
         void restore(Slot& slot)const{
             auto& v=slot.visual;
-            v.body=body;v.resource=resource;v.manager=manager;v.overlay_handle=overlay_handle;
+            v.resource=resource;v.manager=manager;v.overlay_handle=overlay_handle;
             v.rate=rate;v.error=error;slot.cancelling=cancelling;slot.visual_touched=true;
         }
     };
+    struct VisualImage {
+        AnmVm body;
+        VisualFields fields;
+        explicit VisualImage(const Slot& slot):body(slot.visual.body),fields(slot){}
+        void restore(Slot& slot)const{slot.visual.body=body;fields.restore(slot);}
+    };
     std::weak_ptr<const VisualImage> idle_image;
+    multiplayer::AnmCheckpoint::Cache rollback_curves;
     bool visual_touched=false;
 #endif
     void touch_visual(){
@@ -118,12 +125,16 @@ void BulletScene::save_rollback(multiplayer::FrameImage& image){
     image.save(cancellation_animations,error,drawing_disabled);
     struct Active {
         Slot* slot;
-        Slot::VisualImage image;
-        explicit Active(Slot& s):slot(&s),image(s){}
+        Slot::VisualFields fields;
+        multiplayer::AnmCheckpoint body;
+        Active(Slot& s,multiplayer::AnmCheckpoint::Curves& curves):
+            slot(&s),fields(s),body(s.visual.body,s.rollback_curves,curves){}
     };
     struct Idle {Slot* slot;std::shared_ptr<const Slot::VisualImage> image;};
     std::vector<Active> active;
     std::vector<Idle> idle;
+    multiplayer::AnmCheckpoint::Curves curves;
+    size_t changing=0;
     std::bitset<BulletManager::capacity> bound,shared;
     for(u32 i=0;i<slots.size();++i){
         auto& slot=*slots[i];auto& v=slot.visual;
@@ -134,15 +145,17 @@ void BulletScene::save_rollback(multiplayer::FrameImage& image){
         if(!manager.active(i)&&!v.body.creation_parent&&!v.body.rotation_parent&&
            (!v.body.object_host||v.body.object_host==v.manager)&&(!v.manager||!v.manager->registry.borrowed_root(v.body)))
             shared.set(i);
+        else changing+=multiplayer::AnmCheckpoint::changing(v.body);
     }
     active.reserve(bound.count()-shared.count());
     idle.reserve(shared.count());
+    curves.changing.reserve(changing);
     for(u32 i=0;i<slots.size();++i){
         if(!bound.test(i))continue;
         auto& slot=*slots[i];
         if(!shared.test(i)){
             slot.idle_image.reset();
-            active.emplace_back(slot);
+            active.emplace_back(slot,curves);
         }else{
             auto cached=slot.idle_image.lock();
             if(!cached){
@@ -155,13 +168,14 @@ void BulletScene::save_rollback(multiplayer::FrameImage& image){
         }
     }
 #if TH17_ROOM_BENCHMARK
-    image.payload[image.BulletVisual]=u32(active.capacity()*sizeof(Active)+idle.capacity()*sizeof(Idle));
+    image.payload[image.BulletVisual]=u32(active.capacity()*sizeof(Active)+idle.capacity()*sizeof(Idle)+curves.changing.capacity()*sizeof(AnmInterpolators));
     image.unused_capacity+=u32((active.capacity()-active.size())*sizeof(Active));
 #endif
-    image.restore_with([this,bound,active=std::move(active),idle=std::move(idle)]{
+    image.restore_with([this,bound,active=std::move(active),idle=std::move(idle),curves=std::move(curves)]{
         for(const auto& row:active){
             row.slot->idle_image.reset();
-            row.image.restore(*row.slot);
+            row.body.restore(row.slot->visual.body,row.slot->rollback_curves,curves);
+            row.fields.restore(*row.slot);
         }
         for(const auto& row:idle){
             if(row.slot->idle_image.lock()!=row.image)row.image->restore(*row.slot);
@@ -171,7 +185,7 @@ void BulletScene::save_rollback(multiplayer::FrameImage& image){
             if(bound.test(i)||!slots[i]->visual_touched)continue;
             auto& s=*slots[i];auto& v=s.visual;
             s.cancelling=false;v.body={};v.resource=nullptr;v.manager=nullptr;v.overlay_handle=0;v.rate=1;v.error.clear();
-            s.idle_image.reset();s.visual_touched=false;
+            s.idle_image.reset();s.rollback_curves.reset();s.visual_touched=false;
         }
         return true;
     });

@@ -70,7 +70,7 @@ struct RoomRuntime final : multiplayer::World {
  bool receive_spectator();
  bool advance_playback(bool advance);
  GameInput main_input;
- bool entered=false, trace=false;
+ bool entered=false, trace=false, discarded_images=false;
  double replay_deadline=0;
  std::uint64_t now_ms=0;
  u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
@@ -79,9 +79,21 @@ struct RoomRuntime final : multiplayer::World {
  u32 combat_corrections=0,spell_corrections=0;
 #if TH17_ROOM_BENCHMARK
  u32 benchmark_input_frame=0;
+ std::array<u32,4> benchmark_history{};
 #endif
 
  Frame& state(u32 frame){return history[frame%history.size()];}
+ void clear_image(Frame& frame){
+#if TH17_ROOM_BENCHMARK
+  if(trace&&!frame.image.empty()){
+   const auto begin=emscripten_get_now();
+   frame.image.clear();
+   ++benchmark_history[2];benchmark_history[3]+=u32((emscripten_get_now()-begin)*1000);
+   return;
+  }
+#endif
+  frame.image.clear();
+ }
  Status status(u32 number) const;
  bool can_predict() const override{return entered&&barrier!=session.next_frame()&&app->can_rollback();}
  void speculating(bool active) override{app->room_speculative=active;}
@@ -91,7 +103,7 @@ struct RoomRuntime final : multiplayer::World {
  }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
-  auto& saved=state(frame);saved.number=frame;saved.image.clear();saved.image.save(main_input);
+  auto& saved=state(frame);clear_image(saved);saved.number=frame;saved.image.save(main_input);
   const double begin=trace?emscripten_get_now():0;
   const bool ok=app->save_rollback(saved.image);
   if(trace){++capture_count;capture_us+=u32((emscripten_get_now()-begin)*1000);}
@@ -100,7 +112,8 @@ struct RoomRuntime final : multiplayer::World {
  bool restore(u32 frame) override{
   auto& saved=state(frame);
   if(saved.number!=frame)return false;
-  if(frame<session.next_frame()){
+  const bool rewinding=frame<session.next_frame();
+  if(rewinding){
    const auto& battle=app->scene()->battle;
    if(battle.bullet_scene->manager.visible_count||battle.laser_scene->manager.count())++combat_corrections;
    if(trace){
@@ -111,9 +124,19 @@ struct RoomRuntime final : multiplayer::World {
     if(phase==2)++spell_corrections;
    }else if(battle.spell.flags&1)++spell_corrections;
   }
+#if TH17_ROOM_BENCHMARK
+  const auto begin=trace?emscripten_get_now():0;
+#endif
   if(!saved.image.restore())return false;
+#if TH17_ROOM_BENCHMARK
+  if(trace){++benchmark_history[0];benchmark_history[1]+=u32((emscripten_get_now()-begin)*1000);}
+#endif
+  // A repair can span several refreshes. Invalidate the whole abandoned
+  // timeline now, but release each image when replay replaces its slot.
+  discarded_images|=rewinding;
   for(auto& future:history)if(future.number!=Netplay::INVALID_FRAME&&future.number>=frame){
-   future.image.clear();future.sounds.clear();future.number=Netplay::INVALID_FRAME;
+   if(!rewinding)clear_image(future);
+   future.sounds.clear();future.number=Netplay::INVALID_FRAME;
   }
   if(barrier!=Netplay::INVALID_FRAME&&barrier>frame)barrier=Netplay::INVALID_FRAME;
   return true;
@@ -139,7 +162,7 @@ struct RoomRuntime final : multiplayer::World {
    }
   }
   confirmed[(frame+1)%confirmed.size()]=saved.snapshot;
-  saved.image.clear();saved.sounds.clear();saved.number=Netplay::INVALID_FRAME;
+  clear_image(saved);saved.sounds.clear();saved.number=Netplay::INVALID_FRAME;
   return app->audio_device.error.empty()||app->fail(app->audio_device.error);
  }
  bool step(u32 number,const Netplay::FrameDecision& frame) override{
@@ -166,7 +189,7 @@ struct RoomRuntime final : multiplayer::World {
    app->room_partners[seat-1]={frame.inputs[seat].buttons,movement(frame.inputs[seat])};
   app->controller_buttons=0;app->keyboard_state={};
   auto& output=state(number);
-  if(!app->room_speculative)output.image.clear();
+  if(!app->room_speculative)clear_image(output);
   output.number=number;output.sounds.clear();app->room_sounds=&output.sounds;
   if(app->scene())current_stage=u32(app->scene()->battle.stage);
   if(!current_stage)current_stage=setup.difficulty==4?7u:1u;
@@ -246,6 +269,10 @@ struct RoomRuntime final : multiplayer::World {
   const auto result=terminal?multiplayer::Session::Tick::Waiting:session.tick(*this,advance);
   if(trace&&result==multiplayer::Session::Tick::Waiting&&session.repair_pending())++replay_slices;
   if(result==multiplayer::Session::Tick::Failed)return app->fail(session.error());
+  if(discarded_images&&!session.repair_pending()){
+   for(auto& frame:history)if(frame.number==Netplay::INVALID_FRAME)clear_image(frame);
+   discarded_images=false;
+  }
   // The opening loader keeps the outgoing title alive until it constructs Stage 1.
   const bool returned_to_title=app->title&&app->loading_destination==AppScene::Uninitialized;
   if(entered&&(returned_to_title||app->exiting)&&session.confirmed_frames()==session.next_frame()){
@@ -552,6 +579,10 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_load(){
 }
 #if TH17_ROOM_BENCHMARK
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_draw(){return th17::sdl::room_benchmark_draw.data();}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_history(){
+ static const std::array<unsigned,4> empty{};
+ return th17::sdl::room?th17::sdl::room->benchmark_history.data():empty.data();
+}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_memory(){
  using namespace th17::sdl;
  using Image=th17::multiplayer::FrameImage;

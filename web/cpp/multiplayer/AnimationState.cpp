@@ -1,4 +1,5 @@
 #include "FrameImage.hpp"
+#include "AnmCheckpoint.hpp"
 #include "../game/AnmManager.hpp"
 #include <algorithm>
 #include <unordered_set>
@@ -20,11 +21,12 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     struct SavedNode {
         Node* owner;
         AnmVm* borrowed;
-        AnmVm value;
+        multiplayer::AnmCheckpoint value;
         u32 handle;
         bool active,registered,alternate,frozen;
         std::vector<Node*> children;
-        explicit SavedNode(Node& n):owner(&n),borrowed(n.borrowed),value(borrowed?*borrowed:n.vm),
+        SavedNode(Node& n,multiplayer::AnmCheckpoint::Curves& curves):
+            owner(&n),borrowed(n.borrowed),value(borrowed?*borrowed:n.vm,n.rollback_curves,curves),
             handle(n.handle),active(n.active),registered(n.registered),alternate(n.alternate),frozen(n.frozen_root){
             children.reserve(n.children.size());
             for(auto* child:n.children)children.push_back(child);
@@ -54,14 +56,18 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     // Layers can still reference nodes retired after their draw list was
     // built. Count those before allocating the large VM records.
     std::vector<SavedNode> saved;
+    multiplayer::AnmCheckpoint::Curves curves;
     saved.reserve(selected.size());
-    for(auto* n:selected)saved.emplace_back(*n);
+    curves.changing.reserve(std::count_if(selected.begin(),selected.end(),[](const Node* n){
+        return multiplayer::AnmCheckpoint::changing(n->borrowed?*n->borrowed:n->vm);
+    }));
+    for(auto* n:selected)saved.emplace_back(*n,curves);
 #if TH17_ROOM_BENCHMARK
-    image.payload[image.Animation]=u32(saved.capacity()*sizeof(SavedNode));
+    image.payload[image.Animation]=u32(saved.capacity()*sizeof(SavedNode)+curves.changing.capacity()*sizeof(AnmInterpolators));
     image.unused_capacity+=u32((saved.capacity()-saved.size())*sizeof(SavedNode));
 #endif
     image.save(generation,active_count,next_slot,error);
-    image.restore_with([this,saved=std::move(saved),order=std::move(order),borrowed=external,
+    image.restore_with([this,saved=std::move(saved),curves=std::move(curves),order=std::move(order),borrowed=external,
                         free_slots=free_slots,free_overflow=free_overflow,layers=layers]{
         for(auto& group:groups){
             for(auto* n:group){n->children.clear();n->parent=nullptr;n->active=n->registered=false;n->handle=0;}
@@ -83,7 +89,7 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         for(const auto& row:saved){
             auto& n=*row.owner;
             n.borrowed=row.borrowed;
-            (n.borrowed?*n.borrowed:n.vm)=row.value;
+            row.value.restore(n.borrowed?*n.borrowed:n.vm,n.rollback_curves,curves);
             n.handle=row.handle;n.active=row.active;n.registered=row.registered;n.alternate=row.alternate;n.frozen_root=row.frozen;
             n.parent=nullptr;
         }

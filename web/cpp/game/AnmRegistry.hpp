@@ -38,6 +38,7 @@ private:
     };
     struct Node {
         AnmVm vm;AnmVm* borrowed=nullptr;u32 slot=slot_mask,handle=0;bool active=false,registered=false,alternate=false;
+        std::weak_ptr<const AnmInterpolators> rollback_curves;
         bool frozen_root=false;
         Node* parent=nullptr;NodeList children;
         Link group_link{this},child_link{this};

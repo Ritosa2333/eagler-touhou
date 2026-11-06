@@ -23,14 +23,13 @@ struct AnmObjectHost {
 };
 // Animation instruction execution. Drawing/spawning commands are integration
 // work; unsupported instructions stop explicitly and are never silently skipped.
-class AnmVm {
+class AnmVmState {
+    friend class AnmVm;
     friend class AnmFile;
     std::vector<u8>* script=nullptr;u32 saved_offset=0;Timer saved_timer{};
-    int execute_instructions(Rng&,float rate);
 public:
-    AnmVariables variables;AnmVisualState visual;AnmInterpolators interpolators;Timer timer,age;i32 instruction_offset=-1;bool visible=false;std::string error;
+    AnmVariables variables;AnmVisualState visual;Timer timer,age;i32 instruction_offset=-1;bool visible=false;std::string error;
     i32 pending_interrupt=0;
-    AnmGeometry geometry;
     float slowdown=0;
     AnmEnvironment* environment=nullptr;AnmVm* rotation_parent=nullptr;AnmVm* creation_parent=nullptr;
     AnmObjectHost* object_host=nullptr;
@@ -46,6 +45,12 @@ public:
     // Rendering-only memoization. The exact float angle is the key; parent
     // rotation normalization still runs on every call before this lookup.
     u32 quad_angle_bits=0;float quad_sine=0,quad_cosine=1;
+};
+class AnmVm:public AnmVmState {
+    int execute_instructions(Rng&,float rate);
+public:
+    AnmInterpolators interpolators;
+    AnmGeometry geometry;
     void copy_checkpoint(const AnmVm& source){*this=source;timer.set(source.timer.current);age.set(source.age.current);rotation_parent=creation_parent=nullptr;}
     bool bind(AnmScript&);int tick(Rng&,float rate=1);
     bool bind(AnmResource&,u32 script);bool select_sprite(i32 index)noexcept;
