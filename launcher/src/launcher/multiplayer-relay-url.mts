@@ -14,6 +14,7 @@ const relayRoleParams = Object.freeze([
   "disableCheatMovement",
   "disableLocalChargePriority",
   "disableFocus",
+  "ballCount",
   "challengeMode",
   "chapterThreshold",
   "th19Rules",
@@ -58,7 +59,7 @@ export function multiplayerTransportRoomId(product: string, roomCode: string): s
 
 export function buildMultiplayerLobbyRelayUrl(
   baseUrl: string,
-  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, disableLocalChargePriority, disableFocus, challengeMode, chapterThreshold, th19Rules, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; disableLocalChargePriority?: boolean; disableFocus?:boolean; challengeMode?:boolean; chapterThreshold?:number; th19Rules?:number[]; prankMode?:boolean; playerCount?: number; difficulty?: number },
+  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, disableLocalChargePriority, disableFocus, ballCount, challengeMode, chapterThreshold, th19Rules, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; disableLocalChargePriority?: boolean; disableFocus?:boolean; ballCount?:number; challengeMode?:boolean; chapterThreshold?:number; th19Rules?:number[]; prankMode?:boolean; playerCount?: number; difficulty?: number },
 ): MultiplayerLobbyRelayUrl {
   const url = relayUrl(baseUrl);
   clearRelayRole(url);
@@ -71,6 +72,7 @@ export function buildMultiplayerLobbyRelayUrl(
     url.searchParams.set("visibility", visibility === "private" ? "private" : "public");
     url.searchParams.set("disableCheatMovement", disableCheatMovement ? "1" : "0");
     if(product === 'th09mp')url.searchParams.set('disableLocalChargePriority',disableLocalChargePriority?'1':'0');
+    if(product === 'th01mp')url.searchParams.set('ballCount',String(ballCount ?? 2));
     if(product === 'th03mp')url.searchParams.set('disableFocus',disableFocus?'1':'0');
     if(challengeMode!==undefined)url.searchParams.set("challengeMode",challengeMode?"1":"0");
     if(product === "th15mp" && chapterThreshold !== undefined)url.searchParams.set("chapterThreshold",String(chapterThreshold));

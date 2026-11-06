@@ -8940,5 +8940,15 @@
   "room.th03SpecialFocus": {
     "id": "room_th03SpecialFocus",
     "params": []
+  },
+  "room.th01BallCount": {
+    "id": "room_th01BallCount",
+    "params": []
+  },
+  "room.th01SpecialBalls": {
+    "id": "room_th01SpecialBalls",
+    "params": [
+      "count"
+    ]
   }
 }

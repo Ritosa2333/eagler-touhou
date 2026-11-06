@@ -47,6 +47,7 @@ export interface DirectoryRoom {
   disableCheatMovement: boolean;
   challengeMode: boolean;
   disableFocus?: boolean;
+  ballCount?: number;
 }
 export interface DirectoryMembership {
   product: MultiplayerProductId;
@@ -322,6 +323,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
       disableFocus: row.product === 'th03mp' && row.disableFocus === true,
+      ...(row.product === 'th01mp' ? {ballCount:[1,2,3,4,6,8].includes(row.ballCount as number) ? row.ballCount as number : 2} : {}),
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),
       spectators: bounded(row.spectators, 999),

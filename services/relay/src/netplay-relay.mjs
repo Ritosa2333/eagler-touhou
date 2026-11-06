@@ -390,6 +390,7 @@ function getRoom(id, socket) {
         disableCheatMovement: false,
         ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
         ...(id.startsWith('th03mp-') ? {disableFocus:false} : {}),
+        ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
         ...(id.startsWith("th15mp-")
           ? {
               chapterThreshold: defaultTh15ChapterThreshold(
@@ -885,6 +886,7 @@ function lobbySnapshot(room) {
     disableCheatMovement: room.lobby.disableCheatMovement,
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
     ...(room.id.startsWith('th03mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
+    ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
@@ -1037,6 +1039,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
+    if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
     room.lobby.prankMode = false;
@@ -1542,6 +1545,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
       if(message.disableFocus!==undefined&&(!room.id.startsWith('th03mp-')||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
       const disableFocus=message.disableFocus??room.lobby.disableFocus;
+      if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
+      const ballCount=message.ballCount??room.lobby.ballCount;
       const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
       const challengeMode =
         modesSupported &&
@@ -1558,6 +1563,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.disableCheatMovement !== disableCheatMovement ||
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.disableFocus !== disableFocus ||
+        room.lobby.ballCount !== ballCount ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
@@ -1567,6 +1573,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.disableCheatMovement = disableCheatMovement;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=disableFocus;
+        if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
@@ -1945,6 +1952,7 @@ server.on('connection', (socket, request) => {
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
       disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
       disableFocus: url.searchParams.get('disableFocus') === '1',
+      ballCount: url.searchParams.has('ballCount') ? Number(url.searchParams.get('ballCount')) : undefined,
       th19Rules: url.searchParams.has('th19Rules') ? (()=>{try{return JSON.parse(url.searchParams.get('th19Rules'));}catch{return null;}})() : undefined,
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))

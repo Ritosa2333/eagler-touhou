@@ -28,6 +28,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
+      {state.product === 'th01mp' && <SettingsSelect id="mpTh01BallCount" label={t('room.th01BallCount')} value={room.ballCount ?? 2} disabled={disabled} onChange={event=>service.setRoomSettings({ballCount:Number(event.target.value)})}>{[1,2,3,4,6,8].map(value=><option key={value} value={value}>{value}</option>)}</SettingsSelect>}
       {state.product === 'th19mp' && <Th19VersusSettings rules={room.th19Rules} disabled={disabled} onChange={th19Rules=>service.setRoomSettings({th19Rules})}/>}
       {state.product === 'th05mp' && <>
         <fieldset className="room-basic-fields" aria-describedby="mpTh05InitialStockHint">

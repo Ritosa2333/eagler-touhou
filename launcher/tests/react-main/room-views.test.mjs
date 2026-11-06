@@ -150,6 +150,15 @@ test('TH09 local charge rule defaults on, restores native Replay by room agreeme
   assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
   assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
 });
+test('TH01 ball count is host controlled and reaches runtime options',async()=>{
+  const f=await fixture({product:'th01mp',locale:'zh-CN'}).live({adonisMode:1});await mountRoom(f,{panel:{kind:'game'}});
+  assert.equal(f.service.runtimeOptions().netplayBallCount,2);
+  await act(()=>f.service.setRoomSettings({ballCount:6}));assert.equal(f.socket.sent.findLast(m=>m.type==='settings').ballCount,6);
+  await f.receive({ballCount:6,adonisMode:1});assert.equal(f.service.runtimeOptions().netplayBallCount,6);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'特殊玩法：6 球');
+  await f.receive({ballCount:6,phase:'running',adonisMode:1});assert.equal(n('#mpTh01BallCount').disabled,true);
+  const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({ballCount:1}));assert.equal(f.socket.sent.length,count);
+});
 test('TH03 focus rule belongs to the host and reaches runtime options',async()=>{
   const f=await fixture({product:'th03mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
   const toggle=n('#mpTh03DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');

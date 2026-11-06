@@ -759,6 +759,12 @@ test('Flower View keeps Japanese identity, score, shared facts and one contextua
   await m.unmount();
 });
 
+test('TH01 directory marks ball counts other than two as special',async()=>{
+  const f=await fixture({selectedProduct:'th01mp',locale:'zh-CN',host:{games:['th01']}}).live([room({product:'th01mp',ballCount:6})]);
+  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-room-rules').textContent,'特殊玩法：6 球');
+});
+
 test('TH03 versus rooms use the duel layout and mark disabled focus as a special rule',async()=>{
   const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live([room({product:'th03mp',capacity:2,disableFocus:true,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
   await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});

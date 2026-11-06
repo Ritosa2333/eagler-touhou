@@ -2118,5 +2118,7 @@
   "settings_th02RapidFire": "連射",
   "settings_th03Focus": "低速移動を有効にする",
   "room_th03DisableFocus": "低速移動を禁止",
-  "room_th03SpecialFocus": "特殊ルール：低速移動禁止"
+  "room_th03SpecialFocus": "特殊ルール：低速移動禁止",
+  "room_th01BallCount": "玉の数",
+  "room_th01SpecialBalls": "特殊ルール：{count} 玉"
 }

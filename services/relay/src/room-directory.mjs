@@ -84,6 +84,7 @@ export function createRoomDirectory({
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       challengeMode: room.lobby.challengeMode === true,
       ...(match[1]==='th03mp'?{disableFocus:room.lobby.disableFocus===true}:{}),
+      ...(match[1]==='th01mp'?{ballCount:room.lobby.ballCount??2}:{}),
       prankMode: room.lobby.prankMode === true,
       spectators,
       initials: seats.map((seat) => (seat ? initial(seat.name) : null)),
