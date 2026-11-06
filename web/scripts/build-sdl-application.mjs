@@ -14,6 +14,7 @@ if(!emcc&&!printingRuntimeInputs)throw Error('Set TH17_EMSDK or EMSDK to an Emsc
 const release=process.argv.includes('--release');
 const thprac=process.argv.includes('--thprac');
 const multiplayer=process.argv.includes('--multiplayer');
+if(multiplayer)throw Error('Build TH17 multiplayer from ports/th17-mp');
 const roomBenchmark=process.argv.includes('--room-benchmark');
 if(multiplayer&&thprac)throw Error('TH17 multiplayer builds do not include thprac');
 if(roomBenchmark&&(!release||!multiplayer||!process.env.TH17_OUTPUT))throw Error('Room benchmark needs a dedicated release multiplayer output');
