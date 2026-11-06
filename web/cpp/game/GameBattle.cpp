@@ -288,9 +288,22 @@ bool GameBattle::add_coop_player(const ShtResource& shots,i32 character,i32 anim
     if(!initialized||partner_count>=partners.size()||u32(character)>=3||u32(animal)>=3||!animations.resource(bank))
         return fail("Invalid TH17 partner loadout");
     auto partner=std::make_unique<Partner>(*this,partner_count+1,shots,character,animal,bank);
+    if(stage==7)partner->session.power=score.max_power;
+    partner->player.shot_context.cooperative=true;
+    partner->player.visuals.presentation_seat=partner->player.shots.presentation_seat=u8(partner_count+2);
     if(!partner->player.initialize()||!partner->player.configure_options())return fail(partner->player.error);
     partners[partner_count++]=std::move(partner);
     if(partner_count==1){
+        player->shot_context.cooperative=true;
+        auto& visuals=player->visuals;
+        visuals.presentation_seat=player->shots.presentation_seat=1;
+        const auto tag_primary=[&](auto&& tag,AnmVm& vm)->void{
+            vm.pilot_draw_owner=1;
+            for(auto* child:animations.registry.children(vm))tag(tag,*child);
+        };
+        tag_primary(tag_primary,visuals.root);
+        for(const auto& pair:visuals.option_handles)for(auto handle:pair)
+            if(auto* vm=animations.registry.find(handle))tag_primary(tag_primary,*vm);
         enemy_world.multiplayer_target=[this](const Vec3& origin){return aim_target(origin);};
         bullet_scene->manager.context.multiplayer_target=&enemy_world.multiplayer_target;
     }
@@ -350,6 +363,17 @@ bool GameBattle::draw_players(AnmRenderer& renderer){
     for(u32 seat=0;seat<pilot_count();++seat)
         if(!pilot(seat).draw(renderer))return fail(pilot(seat).error);
     return true;
+}
+void GameBattle::prepare_player_presentation(AnmRenderer& renderer){
+    if(!partner_count)return;
+    const u32 local=renderer.hud_viewer-1;
+    if(local>=pilot_count())return;
+    const auto& origin=pilot(local).motion.position;
+    for(u32 seat=0;seat<pilot_count();++seat){
+        const auto& position=pilot(seat).motion.position;
+        const float dx=position.x-origin.x,dy=position.y-origin.y;
+        renderer.pilot_opacity[seat+1]=seat==local?255:dx*dx+dy*dy<2304?72:160;
+    }
 }
 bool GameBattle::replace_stage(StageAssets& next){
     if(!initialized||!error.empty()||next.character!=character||next.animal!=session.animal)return fail("Stage replacement differs from active run");
@@ -503,6 +527,11 @@ i32 GameBattle::update_spirits(){
         }
         for(u32 i=0;i<partner_count;++i)frame.held|=partners[i]->input.held;
         if(!items->update_spirits(frame,team)){fail(items->error);return 5;}
+        const auto& roaring=items->roaring.state;
+        for(u32 seat=0;seat<pilot_count();++seat){
+            auto& shots=pilot(seat).shots;
+            if(!shots.synchronize_roaring(roaring.flags,roaring.kind)){fail(shots.error);return 5;}
+        }
     }
     return refresh_world()?1:5;
 }

@@ -13,6 +13,7 @@ bool SceneDisplay::initialize(GameRun& run,GameRecords& records,SpellRecords& sp
     layers=std::make_unique<AnmDrawSchedule>(scheduler,animations,renderer,graphics,views);
     letters=std::make_unique<AsciiDrawSchedule>(scheduler,captions,renderer,views);
     compositor=std::make_unique<ScreenCompositor>(scheduler,animations,environment,renderer,graphics,views);
+    compositor->skip_opening_screen_clear=scene.battle.pilot_count()>1;
     if(previous)outgoing_background=std::make_unique<StageDrawFrame>(scheduler,previous->background,previous->background_draw,animations,renderer,graphics,views,host);
     game=std::make_unique<GameDraw>(scene,run,records,spells,animations,renderer,graphics,views,captions,host);
     targets=std::make_unique<ScreenTargets>(animations,environment,views,*compositor,text_bank);
@@ -36,6 +37,12 @@ bool SceneDisplay::draw(double logical_seconds){
     } logical{renderer};
     renderer.logical_only=graphics.logical_drawing;
     if(!error.empty()||!compositor||!game)return false;if(!graphics.select_target(nullptr,0))return fail(graphics.error);
+    if(outgoing_background&&scene.battle.pilot_count()>1){
+        const bool hold=scene.controller->waiting_for_stage_clear();
+        outgoing_background->hold_transition=hold;
+        game->background.hold_transition=hold;
+        game->background.retain_outgoing=true;
+    }
     if(!game->draw())return fail(game->error.empty()?game->background.error:game->error);
     if(outgoing_background&&!outgoing_background->error.empty())return fail(outgoing_background->error);
     if(!compositor->error.empty())return fail(compositor->error);if(!layers->error.empty())return fail(layers->error);if(!letters->error.empty())return fail(letters->error);

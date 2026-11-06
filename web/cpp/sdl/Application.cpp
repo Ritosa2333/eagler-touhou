@@ -225,6 +225,10 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   audio_device.update();
  if(!audio_device.error.empty())return fail(audio_device.error);
  if(scene()){
+#if TH17_MULTIPLAYER
+  // A tick can open a pause or cross a scene boundary during its update.
+  if(graphics.logical_drawing&&room_sounds&&!can_rollback())graphics.logical_drawing=false;
+#endif
   double clock_seconds=-1;
 #if TH17_MULTIPLAYER
   if(room_seats)clock_seconds=double(frames)/60;

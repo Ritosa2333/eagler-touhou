@@ -8,6 +8,7 @@ class StageDrawFrame {
     FrameScheduler& scheduler;StageScene& scene;StageDrawState& state;AnmManager& animations;AnmRenderer& renderer;ZunGraphics& graphics;ScreenViews& views;StageDrawServices& services;
     std::array<FrameCallback,2> callbacks;bool fail(const std::string&);void prepare_camera();void fog_parameters();bool layers(i32 first,i32 last);bool background();bool foreground();
 public:
+    bool retain_outgoing=false,hold_transition=false;
     GraphicsViewport viewport;Vec2 playfield_origin{32,16};float rate=1;std::string error;
     StageDrawFrame(FrameScheduler&,StageScene&,StageDrawState&,AnmManager&,AnmRenderer&,ZunGraphics&,ScreenViews&,StageDrawServices&);~StageDrawFrame();
     bool draw(u32 pass);

@@ -108,6 +108,7 @@ public:
     bool finish_player_options();
     bool stop_bombs();
     bool draw_players(AnmRenderer&);
+    void prepare_player_presentation(AnmRenderer&);
     const PlayerCollision& player_collision(u32 seat=0)noexcept;
     bool record_graze(const Vec3&,u32 seat=0);
     const BattleFrame& frame_state()const noexcept{return input;}

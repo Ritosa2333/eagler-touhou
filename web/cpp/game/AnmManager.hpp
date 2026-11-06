@@ -38,7 +38,7 @@ public:
     bool sprite_fallback(i32 id)noexcept{auto* bank=resource(id);if(!bank)return false;environment.fallback_sprite_resource=bank;return true;}
     AnmVm* script_template(i32 id,u32 script)const noexcept;
     bool bind_template(AnmVm&,i32 id,i32 script);
-    u32 create(i32 resource,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float rotation_z=0,u8 hud_viewer=0);
+    u32 create(i32 resource,i32 script,i32 layer=-1,u32 ordering=2,const Vec3& translation={},float rotation_z=0,u8 hud_viewer=0,u8 pilot_draw_owner=0);
     u32 create_overlay(i32 resource,i32 script,u8 hud_viewer=0);
     AnmVm* spawn_child(AnmVm&,i32 script,u32 ordering)override;
     AnmVm* spawn_detached(AnmVm&,i32 script)override;

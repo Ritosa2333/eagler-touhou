@@ -4,6 +4,7 @@
 #include "../../cpp/game/LaserScene.hpp"
 #include "../../cpp/game/Hud.hpp"
 #include "../../cpp/game/AnmCoordinates.hpp"
+#include "../../cpp/game/PlayerShots.hpp"
 #include "../../cpp/multiplayer/FrameImage.hpp"
 #include <algorithm>
 #include <array>
@@ -96,7 +97,7 @@ void stage_six_enemy_fade(const char* asset) {
     require((vm->visual.color>>24)>0&&vm->visual.scale.x>.5f,"Stage 6 orb becomes visible and grows");
 }
 
-void shared_fragments(unsigned seats) {
+void shared_fragments(unsigned seats, i32 difficulty) {
     AnmEnvironment env;
     Rng random;
     AnmManager animations(random, env);
@@ -104,6 +105,7 @@ void shared_fragments(unsigned seats) {
     EffectManager effects(animations, 30);
     Host host;
     ItemScoreState score;
+    score.difficulty=difficulty;
     std::array<PlayerMotion,3> motion{};
     std::array<PlayerBounds,3> bounds{};
     std::array<PlayerLifeSession,3> stocks{};
@@ -138,8 +140,10 @@ void shared_fragments(unsigned seats) {
     pickup(6);
     require(stocks[0].bomb_pieces==1&&stocks[1].bomb_pieces==1,"both pilots receive bomb fragment");
     if(seats==3)require(stocks[2].bomb_pieces==0,"full bomb stock discards its own fragment");
+    const i32 initial_power=difficulty==4?350:100;
+    for(auto& stock:stocks)stock.power=initial_power;
     pickup(1);
-    require(stocks[0].power==100&&stocks[1].power==100+i32(seats)&&stocks[2].power==100,
+    require(stocks[0].power==initial_power&&stocks[1].power==initial_power+i32(seats)&&stocks[2].power==initial_power,
             "small P increases only the collector by the seat count");
     stocks[1].power=400;
     stocks[2].power=400;
@@ -149,8 +153,62 @@ void shared_fragments(unsigned seats) {
             "forwarded Power stays on the field and homes to the recipient");
     for(unsigned frame=0;frame<120&&items->find(forwarded)->state.state;++frame)
         require(items->update(first,partners),"forwarded Power approaches the teammate");
-    require(!items->find(forwarded)->state.state&&stocks[0].power==100+i32(seats),
+    require(!items->find(forwarded)->state.state&&stocks[0].power==initial_power+i32(seats),
             "underpowered teammate receives the room-sized Power value");
+}
+
+void marisa_laser_modes(const char* asset){
+    if(!asset)return;
+    const auto directory=std::filesystem::path(asset).parent_path();
+    const auto read=[&](const char* name){
+        std::ifstream file(directory/name,std::ios::binary);
+        return std::vector<u8>{std::istreambuf_iterator<char>(file),{}};
+    };
+    AnmEnvironment env;
+    Rng random,visual;
+    AnmManager animations(visual,env);
+    load_bank(animations,asset);
+    const auto atlas=read("pl01.anm");
+    require(animations.load(10,atlas.data(),u32(atlas.size())),"load Marisa animations");
+    for(auto* name:{"pl01a.sht","pl01b.sht","pl01c.sht"}){
+        const auto data=read(name);
+        ShtResource resource;
+        require(resource.open(data.data(),u32(data.size())),"load Marisa shot table");
+        PlayerMotion motion;
+        motion.option_count=4;
+        PlayerShotContext context{motion};
+        context.power=400;
+        context.cooperative=true;
+        DamageSources damage;
+        PlayerShots shots(resource,context,damage,animations,random,visual,10,30);
+        const auto lasers=[&]{
+            return std::count_if(shots.shots.begin(),shots.shots.end(),[&](const auto& shot){
+                return shot.state&&shots.specification(shot.specification)->type==2;
+            });
+        };
+        const auto fire=[&]{
+            for(i32 frame=0;frame<15;++frame)require(shots.fire(frame,frame),"fire native shot group");
+        };
+        fire();
+        require(lasers()==4,"four ordinary beams at full power");
+        require(shots.synchronize_roaring(2,3)&&lasers()==0,"Eagle Roaring retires ordinary beams");
+        fire();
+        require(lasers()==5,"five Eagle beams use the released slots");
+        auto beam=std::find_if(shots.shots.begin(),shots.shots.end(),[&](const auto& shot){
+            return shot.state&&shots.specification(shot.specification)->type==2;
+        });
+        require(animations.retire(beam->animation)&&shots.update()&&lasers()==4,"lost animation releases its beam");
+        fire();
+        require(lasers()==5,"lost beam can respawn");
+        require(shots.synchronize_roaring(6,3)&&lasers()==0,"Roaring break clears Eagle beams");
+        fire();
+        require(lasers()==4,"ordinary beams return after Roaring break");
+        require(shots.synchronize_roaring(2,1)&&lasers()==0,"Wolf Roaring clears ordinary beams");
+        fire();
+        require(lasers()==0,"Wolf shots contain no lasers");
+        for(auto& shot:shots.shots)require(animations.retire(shot.animation),"retire fixture animation");
+        require(animations.update(false),"release fixture animations");
+    }
 }
 
 void shared_otter_barriers(const char* asset) {
@@ -341,13 +399,16 @@ void logical_animation_draw(){
     using namespace touhou::graphics;
     struct Device final:ZunGraphics {
         PipelineState state;
-        u32 submissions=0;
+        u32 submissions=0, first_color=0;
         PipelineState& pipeline()override{return state;}
         u32 texture(const AnmResource&,u32)override{return 1;}
         void bind_texture(u32)override{}
         void set_layout(VertexLayout)override{}
         void set_matrix(MatrixKind,const Matrix4&)override{}
-        void triangles(u32 count,const void*,u32)override{submissions+=count;}
+        void triangles(u32 count,const void* data,u32)override{
+            submissions+=count;
+            first_color=static_cast<const AnmGeometryVertex*>(data)->color;
+        }
         void primitives(Topology,u32 count,const void*,u32)override{submissions+=count;}
         bool select_target(const AnmResource*,u32)override{return true;}
         bool clear_target(u32,const GraphicsViewport*)override{return true;}
@@ -377,6 +438,19 @@ void logical_animation_draw(){
     require(device.submissions==2&&vm.visual.inherited_color==presented.visual.inherited_color&&
             vm.visual.quad[0].x==presented.visual.quad[0].x&&vm.visual.quad[3].y==presented.visual.quad[3].y,
             "logical pass preserves bounds and inherited colour");
+    presented.pilot_draw_owner=2;
+    renderer.pilot_opacity[2]=72;
+    require(renderer.draw(presented)==0,"draw nearby teammate");
+    renderer.flush();
+    require(device.first_color>>24==72&&presented.visual.inherited_color>>24==255,
+            "teammate fade changes submitted alpha without changing the VM");
+    presented.hud_viewer=2;
+    require(renderer.draw(presented)==-1,"teammate hitbox is hidden");
+    renderer.hud_viewer=2;
+    renderer.pilot_opacity[2]=255;
+    require(renderer.draw(presented)==0,"local hitbox stays visible");
+    renderer.flush();
+    require(device.first_color>>24==255,"local alpha is unchanged");
 }
 
 void laser_restore(const char* asset){
@@ -536,8 +610,8 @@ int main(int argc, char** argv) {
     stage_six_enemy_fade(asset);
     shared_inventory(asset);
     team_contact(asset);
-    shared_fragments(2);
-    shared_fragments(3);
+    for(i32 difficulty:{1,4})for(unsigned seats:{2u,3u})shared_fragments(seats,difficulty);
+    marisa_laser_modes(asset);
     shared_otter_barriers(asset);
     borrowed_animation_graph();
     animation_page_rollback();
