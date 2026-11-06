@@ -175,11 +175,11 @@ Session::Tick Session::tick(World& world, bool advance) {
     }
     replay_end_ = 0;
     if (!commit(world)) return Tick::Failed;
-    // A completed correction can be presented while the next logical frame
-    // waits for input. Leave that frame to the next ordinary tick.
-    if (correcting) return Tick::Advanced;
+    // Keep this tick when a small correction leaves room for the next update.
+    if (correcting && (!advance || !world.replay_budget(1))) return Tick::Advanced;
     if (!advance) return Tick::Waiting;
     const auto result = simulate(world);
+    if (correcting && result == Tick::Waiting) return Tick::Advanced;
     return result == Tick::Advanced && !commit(world) ? Tick::Failed : result;
 }
 }

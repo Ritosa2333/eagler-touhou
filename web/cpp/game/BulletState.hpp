@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "BulletFormation.hpp"
 #include "Timer.hpp"
 #include "Interpolation.hpp"
@@ -49,6 +50,8 @@ struct BulletContactHost:PlayerDamageHost,CancellationRewardHost {
 struct BulletFrameContext {
     float rate=1;Vec2 sprite_size{},reflection_bounds{};Vec3 player{};
     bool sprite_available=true;
+    const std::function<Vec3(const Vec3&)>* multiplayer_target=nullptr;
+    Vec3 target(const Vec3& origin)const{return multiplayer_target?(*multiplayer_target)(origin):player;}
 };
 struct BulletCancellationRewards {i32 count=0;bool spell_active=false;};
 void cancellation_reward(const Vec3&,i32 kind,Rng&,BulletCancellationRewards&,CancellationRewardHost&);

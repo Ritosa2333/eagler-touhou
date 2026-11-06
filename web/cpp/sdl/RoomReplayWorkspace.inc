@@ -55,11 +55,13 @@ EMSCRIPTEN_KEEPALIVE int eagler_replay_step(unsigned render){
  app->graphics.backend.defer=true;
  const bool ok=room->advance_playback(true);
  app->graphics.logical_drawing=false;app->room_silent=false;
+ if(render){app->graphics.backend.commit();app->graphics.backend.defer=false;}
  return ok;
 }
 EMSCRIPTEN_KEEPALIVE void eagler_replay_present(){
  using namespace th17::sdl;
  if(app){app->graphics.backend.commit();app->graphics.backend.defer=false;}
 }
+EMSCRIPTEN_KEEPALIVE void eagler_replay_audio_pump(){using namespace th17::sdl;if(app)app->audio_device.pump();}
 EMSCRIPTEN_KEEPALIVE const char* eagler_replay_error(){return th17_error();}
 }

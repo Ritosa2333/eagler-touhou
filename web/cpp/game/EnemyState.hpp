@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "MotionState.hpp"
 #include "PositionInterpolation.hpp"
 #include "Timer.hpp"
@@ -51,6 +52,8 @@ struct EnemyState {
     EnemyMovementResult update_movement(float rate,const Vec3& background_delta,EnemyAnimationHost* animations=nullptr);
 };
 struct EnemyWorldState {
+    std::function<Vec3(const Vec3&)> multiplayer_target;
+    Vec3 target(const Vec3& origin)const{return multiplayer_target?multiplayer_target(origin):player_position;}
     Vec3 player_position{};EnemyState* boss=nullptr;std::vector<EnemyState*> enemies;Rng* random=nullptr;
     std::array<u32,3> boss_ids{};u32 manager_flags=0;
     i32 rank=0,difficulty=0,mode=0,submode=0,enemy_count=0;

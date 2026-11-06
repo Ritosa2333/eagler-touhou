@@ -1,5 +1,6 @@
 #include "../../cpp/game/ItemSpirits.hpp"
 #include "../../cpp/game/EnemyCallbacks.hpp"
+#include "../../cpp/game/EnemyAnmHost.hpp"
 #include "../../cpp/game/LaserScene.hpp"
 #include "../../cpp/game/Hud.hpp"
 #include "../../cpp/game/AnmCoordinates.hpp"
@@ -62,6 +63,39 @@ void load_bank(AnmManager& animations, const char* asset) {
     require(animations.load(30, std::move(beast)), "load test animation bank");
 }
 
+void stage_six_enemy_fade(const char* asset) {
+    if(!asset)return;
+    const auto folder=std::filesystem::path(asset).parent_path();
+    const auto read=[&](const char* name){
+        std::ifstream file(folder/name,std::ios::binary);
+        return std::vector<u8>{std::istreambuf_iterator<char>(file),{}};
+    };
+    const auto atlas=read("enemyb.anm"),script=read("st06.ecl");
+    EclProgram ecl;
+    require(ecl.attach(script.data(),u32(script.size()),nullptr)>=0,"load retail Stage 6 ECL");
+    EclContext context;
+    require(context.bind(ecl,ecl.find_index("ECir00")),"find Stage 6 yin-yang orb");
+    AnmEnvironment env;
+    Rng rng;
+    AnmManager manager(rng,env);
+    require(manager.load(2,atlas.data(),u32(atlas.size())),"load retail orb atlas");
+    EnemyState enemy;
+    EnemyAnmHost host(manager);
+    EnemyVisualCommands commands(enemy);
+    commands.host=&host;
+    for(u32 offset=0;offset<context.code_size;offset+=context.instruction->length){
+        context.instruction=reinterpret_cast<const EclInstruction*>(context.code+offset);
+        const auto op=context.instruction->opcode;
+        if(op==23)break;
+        if(op>=302&&op<=336)require(commands.execute(context,op)==0,"execute retail orb animation setup");
+    }
+    auto* vm=manager.registry.find(enemy.animation_handles[0]);
+    require(vm&&vm->sprite&&vm->source_script==53&&!(vm->visual.color>>24),"orb starts with its native sprite and zero opacity");
+    require(manager.update(false),"advance cached retail orb curves");
+    require(manager.update(false),"advance retail orb fade a second frame");
+    require((vm->visual.color>>24)>0&&vm->visual.scale.x>.5f,"Stage 6 orb becomes visible and grows");
+}
+
 void shared_fragments(unsigned seats) {
     AnmEnvironment env;
     Rng random;
@@ -107,6 +141,49 @@ void shared_fragments(unsigned seats) {
     pickup(1);
     require(stocks[0].power==100&&stocks[1].power==100+i32(seats)&&stocks[2].power==100,
             "small P increases only the collector by the seat count");
+    stocks[1].power=400;
+    stocks[2].power=400;
+    const auto forwarded=items->spawn(1,motion[1].position,0,0);
+    require(forwarded!=0&&items->update(first,partners),"full pilot forwards Power");
+    require(items->find(forwarded)->state.state==3&&stocks[1].power==400,
+            "forwarded Power stays on the field and homes to the recipient");
+    for(unsigned frame=0;frame<120&&items->find(forwarded)->state.state;++frame)
+        require(items->update(first,partners),"forwarded Power approaches the teammate");
+    require(!items->find(forwarded)->state.state&&stocks[0].power==100+i32(seats),
+            "underpowered teammate receives the room-sized Power value");
+}
+
+void shared_otter_barriers(const char* asset) {
+    AnmEnvironment env;
+    Rng visual;
+    AnmManager animations(visual,env);
+    load_bank(animations,asset);
+    EffectManager effects(animations,30);
+    PlayerMotion motion;
+    PlayerBounds bounds;
+    PlayerLifeSession life;
+    PlayerSpellStatus spell;
+    DamageSources damage;
+    ItemScoreState score;
+    Host host;
+    auto spirits=std::make_unique<ItemSpirits>(animations,effects,env.game_rng,visual,motion,
+        bounds,life,motion.barrier_timer,spell,damage,score,host,0,30,30);
+    require(spirits->initialize(),"initialize otter HUD");
+    motion.position={-120,200,0};
+    AnimalSpiritTargets team{{{motion.position,true},{{0,200,0},true},{{120,200,0},true}}};
+    for(unsigned slot=0;slot<5;++slot)require(spirits->roaring.collect(2),"collect otter spirit");
+    require(spirits->update_spirits({},team),"run shared otter mode");
+    require(spirits->roaring.state.kind==2,"otter mode activated once");
+    for(unsigned seat=1;seat<3;++seat)for(auto handle:spirits->roaring.partner_orbs[seat-1]){
+        const auto* vm=animations.registry.find(handle);
+        require(vm&&vm->visual.translation.x==team[seat].position.x,"otter barrier tracks its teammate");
+    }
+    multiplayer::FrameImage image;
+    spirits->save_rollback(image);
+    require(animations.save_rollback(image),"capture team otter barriers");
+    require(spirits->end_roaring(false)&&!spirits->roaring.partner_orbs[0][0],"team barrier retires with shared mode");
+    require(image.restore()&&animations.registry.find(spirits->roaring.partner_orbs[0][0]),
+            "rollback restores teammate orb handles");
 }
 
 void shared_inventory(const char* asset) {
@@ -456,10 +533,12 @@ void room_hud(const char* asset) {
 
 int main(int argc, char** argv) {
     const char* asset = argc > 1 ? argv[1] : nullptr;
+    stage_six_enemy_fade(asset);
     shared_inventory(asset);
     team_contact(asset);
     shared_fragments(2);
     shared_fragments(3);
+    shared_otter_barriers(asset);
     borrowed_animation_graph();
     animation_page_rollback();
     recycled_item_rollback();
