@@ -26,4 +26,3 @@ for(const dir of includes)for(const name of await readdir(dir)){
  }
 }
 console.log(JSON.stringify({passed:true,sourceFiles,musicFiles:resources.music.ogg.files.length,runtimeFiles:Object.keys(runtime.files).length,wasm:runtime.files['th19.wasm'].sha256}));
-

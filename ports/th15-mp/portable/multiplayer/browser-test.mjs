@@ -57,7 +57,7 @@ function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{
 });}
 async function lobbySend(socket,message,predicate){const reply=nextJson(socket,predicate);socket.send(JSON.stringify(message));return reply;}
 try{
- browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--disable-extensions','--no-first-run','--autoplay-policy=no-user-gesture-required','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
+ browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--disable-features=WebRtcHideLocalIpsWithMdns','--disable-extensions','--no-first-run','--autoplay-policy=no-user-gesture-required','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
  for(const count of [2,3]){
   const watcher=count===2,room='th15mp-browser'+count,lobbies=[],members=[];
   for(let seat=0;seat<count+(watcher?1:0);++seat){
@@ -83,6 +83,8 @@ try{
   const observe=setInterval(async()=>{try{console.log(JSON.stringify(await Promise.all(Array.from({length:count},(_,s)=>frame(s).evaluate(()=>{const c=Module._th15_mp_calibration_status()>>>2,p=Module._th15_mp_status()>>>2,t=globalThis.__eaglerPeerTransport;return {status:Array.from(Module.HEAPU32.subarray(p,p+24)),calibration:Array.from(Module.HEAPU32.subarray(c,c+32)),phase:Module._th15_phase(),frames:Module._th15_frame(),route:t?.route,queued:t? t.received.length-t.receivedHead:0,error:document.querySelector('#error').textContent};})))));}catch{}},10000);
   try{await frame(0).waitForFunction(()=>globalThis.__eaglerNetplayLanFrame>=180||document.querySelector('#error').textContent,{timeout:60000});}finally{clearInterval(observe);}
   for(let seat=0;seat<count;++seat){assert.equal(await frame(seat).$eval('#error',e=>e.textContent),'');assert.ok((await status(frame(seat)))[3]>=170);assert.equal(await frame(seat).evaluate(()=>Module._th15_phase()),1);}
+  await frame(0).evaluate(()=>{if(typeof Module._th15_mp_wake!=='function')throw Error('Production packet wake export missing');const wake=Module._th15_mp_wake;globalThis.packetWakes=0;Module._th15_mp_wake=(...args)=>{++packetWakes;return wake(...args);};});
+  await frame(0).waitForFunction(()=>globalThis.packetWakes>0,{timeout:10000});
   if(watcher){await frame(count).waitForFunction(()=>__eaglerNetplayLanFrame>=170||document.querySelector('#error').textContent,{timeout:60000});assert.equal(await frame(count).$eval('#error',e=>e.textContent),'');assert.equal((await status(frame(count)))[10],1);}
   if(timingMode!==1){
    // Hold the real incoming input lane while physical inputs keep changing.

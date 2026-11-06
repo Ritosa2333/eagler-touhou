@@ -71,6 +71,9 @@ int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied
     std::copy(std::begin(p),std::end(p),vm.visual.quad.begin());float left=p[0].x,right=left,top=p[0].y,bottom=top;for(u32 i=1;i<4;i++){left=std::min(left,p[i].x);right=std::max(right,p[i].x);top=std::min(top,p[i].y);bottom=std::max(bottom,p[i].y);}
     if(right<float(viewport.x)||bottom<float(viewport.y)||left>float(viewport.x+viewport.width)||top>float(viewport.y+viewport.height))return 0;
     auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;u32 colors[4];if(supplied)std::copy(supplied,supplied+4,colors);else if(color_mode<2){u32 color=color_mode?v.secondary_color:v.color;if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);v.inherited_color=color;for(auto& c:colors)c=tint_color(color);}else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
+    // Historical Draw still updates quad geometry and inherited colour. The
+    // texture lookup, UV packing and vertex arena belong to the displayed frame.
+    if(graphics.logical_frame())return 0;
     if(!material(vm))return -2;Vec2 uv[4];uv[0]={float(v.uv_offset.x+v.uv[0].x),float(v.uv[0].y+v.uv_offset.y)};uv[1]={float(float(float(v.uv[1].x-v.uv[0].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[0].x,float(v.uv_offset.y+v.uv[1].y)};uv[2]={float(v.uv_offset.x+v.uv[2].x),float(float(float(v.uv[2].y-v.uv[0].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[0].y};uv[3]={float(float(float(v.uv[3].x-v.uv[2].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[2].x,float(float(float(v.uv[3].y-v.uv[1].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[1].y};
     graphics.presentation_offset(offset);graphics.presentation_range(vm,vertices.size(),6,presentation_instance);
     for(u32 index:{0u,1u,2u,1u,2u,3u})vertices.push_back({p[index],1,colors[index],uv[index]});if(vertices.size()>=6144)flush();return 0;

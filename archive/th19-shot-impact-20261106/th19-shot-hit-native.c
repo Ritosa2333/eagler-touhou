@@ -6,7 +6,7 @@ undefined4 __fastcall FUN_0054fba0(int param_1)
 {
   int iVar1;
   float fVar2;
-  
+
   if (*(char *)(param_1 + 0x114) == '\0') {
     iVar1 = FUN_004cb8b0(*(undefined4 *)(param_1 + 0x14));
     if (iVar1 == 0) {
@@ -64,7 +64,7 @@ undefined4 __fastcall FUN_0054df10(int param_1)
   float fStack_18;
   float fStack_14;
   uint local_c;
-  
+
   local_c = DAT_005c3d80 ^ (uint)auStack_48;
   uVar3 = *(uint *)(param_1 + 0xd8) & 0xff;
   fVar2 = *(float *)(*(int *)(*(int *)(*(int *)(param_1 + 0x124) + 4) + 0x2238) + 0xf0 +
@@ -235,7 +235,7 @@ FUN_0054cd70(int param_1,undefined8 *param_2,float *param_3,undefined4 param_4,f
   undefined4 local_50;
   undefined8 local_4c;
   undefined4 local_44;
-  
+
   uVar7 = *(uint *)(param_1 + 0xd8);
   local_68 = *(uint *)(*(int *)(*(int *)(*(int *)(param_1 + 0x124) + 4) + 0x2238) + 0xf0 +
                       ((int)uVar7 >> 8) * 4);
@@ -424,7 +424,7 @@ undefined4 __fastcall FUN_0054c2f0(int param_1)
   int iVar7;
   float fVar8;
   int local_8;
-  
+
   uVar5 = *(uint *)(param_1 + 0xd8) & 0xff;
   iVar7 = *(int *)(*(int *)(*(int *)(*(int *)(param_1 + 0x124) + 4) + 0x2238) + 0xf0 +
                   ((int)*(uint *)(param_1 + 0xd8) >> 8) * 4);
@@ -507,7 +507,7 @@ FUN_0054e960(int param_1,uint param_2,undefined4 param_3,undefined8 *param_4,und
   double dVar13;
   float local_10;
   undefined1 auStack_c [8];
-  
+
   *(int *)(param_1 + 0x11c) = param_6;
   *(undefined4 **)(param_1 + 0x124) = &DAT_005d1a60 + param_6 * 0xf;
   *(int *)(param_1 + 0x120) = (&DAT_005d1a64)[param_6 * 0xf] + 0x22f8;

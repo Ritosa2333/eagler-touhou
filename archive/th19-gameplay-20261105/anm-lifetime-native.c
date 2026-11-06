@@ -90,7 +90,7 @@ undefined4 __fastcall FUN_004bd660(int param_1)
   float fStack_18;
   float fStack_14;
   uint local_c;
-  
+
   local_c = DAT_005c3d80 ^ (uint)auStack_f8;
   local_cc = DAT_005c6418;
   if ((*(byte *)(param_1 + 0x4bc) & 0x10) != 0) {
@@ -2647,7 +2647,7 @@ void FUN_004cb830(undefined4 param_1,undefined4 param_2)
 {
   int *piVar1;
   int iVar2;
-  
+
   iVar2 = FUN_004cb8b0(param_1);
   if (iVar2 != 0) {
     if (*(int *)(iVar2 + 0x604) != 0) {

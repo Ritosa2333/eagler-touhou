@@ -16,7 +16,7 @@ undefined4 * __fastcall FUN_00516d60(undefined4 param_1)
   void *local_10;
   undefined1 *puStack_c;
   undefined4 local_8;
-  
+
   puStack_c = &LAB_005774b7;
   local_10 = ExceptionList;
   uVar1 = DAT_005c3d80 ^ (uint)&stack0xfffffffc;

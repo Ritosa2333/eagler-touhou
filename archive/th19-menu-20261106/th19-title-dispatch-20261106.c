@@ -49,7 +49,7 @@ undefined4 __fastcall FUN_0055ac60(undefined4 *param_1)
   void *local_10;
   undefined1 *puStack_c;
   int local_8;
-  
+
   local_8 = 0xffffffff;
   puStack_c = &LAB_005789ab;
   local_10 = ExceptionList;
@@ -402,7 +402,7 @@ undefined4 __fastcall FUN_00559b80(undefined4 param_1,uint param_2)
 
 {
   bool bVar1;
-  
+
   if (DAT_005d1c28 == 0) {
     if (DAT_005d19a8 == 0) {
       return 0;

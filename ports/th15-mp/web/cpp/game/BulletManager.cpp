@@ -1,6 +1,6 @@
 #include "BulletManager.hpp"
 namespace th15 {
-BulletManager::BulletManager(BulletManagerHost& h):slots(capacity),snapshot_versions(capacity),host(h){reset();}
+BulletManager::BulletManager(BulletManagerHost& h):slots(capacity),snapshot_versions(capacity),snapshot_runtime_versions(capacity),host(h){reset();}
 void BulletManager::reset(){
     free_head=active_head=none;error.clear();visible_count=0;minimum_distance_squared=0;cancellation_rewards.count=0;
     for(auto& group:draw_groups)group.clear();
@@ -44,6 +44,7 @@ bool BulletManager::update(){
     for(u32 index=active_head;index!=none;){
         auto& slot=slots[index];const u32 next=slot.active_next;auto& state=slot.state;auto& frame_host=host.bullet(index);
         if(!world_paused){
+            if(state.transform_flags||(state.transform_index>=0&&state.transform_index<18&&state.transforms[state.transform_index].type))runtime_changed(index);
             if((state.flags&256)&&(state.phase==1||(state.phase==2&&state.spawn.current>=8)))frame_host.contact(state,true);
             else{auto frame_context=context;host.prepare(index,frame_context);const auto result=state.update(frame_context,*random,frame_host,error);if(result==BulletFrameResult::error)return false;if(result==BulletFrameResult::recycled){index=next;continue;}}
         }

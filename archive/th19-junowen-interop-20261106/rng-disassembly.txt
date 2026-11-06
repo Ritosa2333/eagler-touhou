@@ -77,13 +77,13 @@ ADDRESS 0x402540
 00402612 pop ebx
 00402613 mov esp, ebp
 00402615 pop ebp
-00402616 ret 
+00402616 ret
 00402617 push 5
 00402619 call 0x4627e2
 0040261e push 6
 00402620 mov dword ptr [0x62af24], 0x7ffffffe
 0040262a call 0x4627e2
-0040262f int3 
+0040262f int3
 
 ADDRESS 0x402630
 00402630 push ebp
@@ -99,7 +99,7 @@ ADDRESS 0x402630
 00402649 xor eax, eax
 0040264b pop ebp
 0040264c ret 4
-0040264f int3 
+0040264f int3
 00402650 push ebp
 00402651 mov ebp, esp
 00402653 mov eax, dword ptr [ecx + 0x10]

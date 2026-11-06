@@ -20,7 +20,7 @@ int main(int argc,char**argv){
   const int rank=1+enhanced;const int expected=kind==2?800+rank*200:kind==3?500+rank*200:500+rank*300;
   std::cout<<kind<<" enhanced="<<enhanced<<" hp="<<e.life<<" expected="<<expected<<"\n";assert(e.life==expected);
  }
- 
+
  for(int kind=2;kind<=4;++kind)for(int enhanced=0;enhanced<2;++enhanced){
   GameWorld w;w.attach_program(p);assert(w.receive_spirit(spiritArrival(0,kind,0,0,enhanced,false),0,50));w.tick_wave();
   auto&e=w.enemies.front();e.sprite=0;const int hp=e.life;w.player_damage_cap=90;
@@ -33,4 +33,3 @@ int main(int argc,char**argv){
  }
  std::cout<<"native gameplay assertions PASS\n";
 }
-

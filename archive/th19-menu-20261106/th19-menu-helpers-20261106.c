@@ -10,7 +10,7 @@ undefined4 __fastcall FUN_005593b0(int param_1)
   undefined4 extraout_ECX;
   int iVar4;
   undefined4 *local_10 [3];
-  
+
   iVar4 = DAT_005d19a8;
   switch(*(undefined4 *)(param_1 + 0x20)) {
   case 0:
@@ -114,7 +114,7 @@ int __thiscall FUN_004d4fa0(int *param_1,int param_2)
   int iVar2;
   int iVar3;
   int *piVar4;
-  
+
   iVar1 = param_1[2];
   if (iVar1 < 1) {
     return *param_1;
@@ -277,7 +277,7 @@ void __fastcall FUN_004d5040(undefined4 *param_1)
 
 {
   int iVar1;
-  
+
   iVar1 = param_1[0x23];
   param_1[0x23] = iVar1 + -1;
   if (iVar1 + -1 < 0) {
@@ -381,7 +381,7 @@ undefined4 __fastcall FUN_00556340(int param_1)
   void *local_10;
   undefined1 *puStack_c;
   int local_8;
-  
+
   local_8 = 0xffffffff;
   puStack_c = &LAB_0057891a;
   local_10 = ExceptionList;

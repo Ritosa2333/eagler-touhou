@@ -31,15 +31,24 @@ export async function multiplayerSetupWords(options,buildWords,cryptoProvider=gl
  words.push(c.mode,+c.automatic,c.reserve,...buildWords,+!!options.netplayChallengeMode,c.chapterThreshold);return {config:c,words};
 }
 export function createMultiplayerBridge({core,getOptions,manifest,emit,onError,onExit,target=globalThis}){
- const buildWords=multiplayerBuildWords(manifest);let active=false,calibration=null;
+ const buildWords=multiplayerBuildWords(manifest);let active=false,calibration=null,receiveTransport=null,receiveHook=null,previousReceive=null;
  const error=()=>{const p=core._th15_mp_error();return new TextDecoder().decode(core.HEAPU8.subarray(p,core.HEAPU8.indexOf(0,p)));};
  const bytes=(value,call)=>{const p=core._malloc(value.length);if(!p)throw Error('多人内存不足');try{core.HEAPU8.set(value,p);return call(p,value.length);}finally{core._free(p);}};
  const string=(value,call)=>bytes(new TextEncoder().encode(value+'\0'),call);
- const fail=e=>{target.__eaglerNetplayFailed=true;target.__eaglerNetplayError=e?.message||String(e);calibration?.stop();core._th15_loop_stop();onError(e);};
+ function detachWake(){if(receiveTransport?.onReceive===receiveHook)receiveTransport.onReceive=previousReceive;receiveTransport=receiveHook=previousReceive=null;}
+ const fail=e=>{target.__eaglerNetplayFailed=true;target.__eaglerNetplayError=e?.message||String(e);detachWake();calibration?.stop();core._th15_loop_stop();onError(e);};
  const memory={get buffer(){return core.HEAPU8.buffer;}};
  function startCalibration(){
   calibration=createAdonisCalibration({core:{memory,multiplayer_calibration_status:()=>core._th15_mp_calibration_status(),multiplayer_network_poll:()=>core._th15_mp_pump()},getApp:()=>active?1:0,getOptions,emit,game:'th15',build:manifest.execution.sha256,onError:fail,pause:()=>{if(core._th15_phase()===0||getOptions().netplaySpectator)return;core._th15_loop_stop();onExit();},target});
   calibration.start();
+  if(!getOptions().netplaySpectator&&typeof core._th15_mp_wake==='function'){
+   detachWake();receiveTransport=target.__eaglerPeerTransport;
+   if(receiveTransport){
+    const transport=receiveTransport,previous=transport.onReceive;previousReceive=previous;
+    receiveHook=()=>{if(!active||receiveTransport!==transport)return;previous?.();if(active&&receiveTransport===transport)core._th15_mp_wake();};
+    transport.onReceive=receiveHook;
+   }
+  }
  }
  async function launch(){
   const options=getOptions(),checked=validateMultiplayerOptions(options);
@@ -53,7 +62,7 @@ export function createMultiplayerBridge({core,getOptions,manifest,emit,onError,o
  }
  function frame(){if(!active)return;if(core._th15_phase()===0)calibration?.stop();const s=Array.from(core.HEAPU32.subarray(core._th15_mp_status()>>>2,(core._th15_mp_status()>>>2)+24));target.__eaglerNetplayLanConfirmed=s[4];target.__eaglerNetplayLanFrame=s[3];if(core._th15_mp_rollback_status){const p=core._th15_mp_rollback_status()>>>2,r=Array.from(core.HEAPU32.subarray(p,p+9));target.__eaglerNetplayRollback={enabled:!!r[1],corrections:r[2],replayedFrames:r[3],lastDepth:r[4],peakDepth:r[5],pending:r[6]};target.__eaglerNetplayLanRollback=r[2];target.__eaglerNetplayLanResimulated=r[3];target.__eaglerNetplayPresentationFps=r[8]/100;target.__eaglerNetplayDiagnostics={frame:s[3],confirmed:s[4],inputDelay:s[7],prediction:s[8],generation:s[12],rollback:{restores:r[2],resimulated:r[3],peakDepth:r[5],pending:r[6],barrier:r[7]},sent:s[15],received:s[16],repairs:s[17],spectatorPublisherFailed:!!s[22]};}calibration?.pump();}
  function save(){if(active&&getOptions().replayViewer!==true&&!getOptions().netplaySpectator&&!core._th15_mp_replay_save())throw Error(error());}
- function close(){calibration?.stop();core._th15_mp_close();active=false;target.__eaglerNetplayLanActive=false;}
+ function close(){detachWake();calibration?.stop();core._th15_mp_close();active=false;target.__eaglerNetplayLanActive=false;}
  function openReplay(path,stage){
   close();core._th15_loop_stop();if(!core._th15_initialize())throw Error(error());
   if(!bytes(core.FS.readFile('/save/'+path),(p,n)=>bytes(new Uint8Array(new Uint32Array(buildWords).buffer),b=>core._th15_mp_replay_load(p,n,b)))||!core._th15_mp_start()||!core._eagler_replay_select_stage(stage))throw Error(error());

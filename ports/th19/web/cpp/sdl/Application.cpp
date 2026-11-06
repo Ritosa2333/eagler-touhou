@@ -2677,7 +2677,7 @@ int g_timer_audit[2][8]{};
 struct Timer {th19::AnmVm digits[2];u32 generation=0;int frame=-1,seconds=-1;bool shown=false,dim=false,spell=false;};
 Timer rb_draw_boss_timer_timers[2];
 void draw_boss_timer(int side,float cx){
-    
+
     static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
     if(scripts.empty())for(const auto&e:g_ascii)for(const auto&sc:e.scripts)
         scripts[sc.id]={g_ascii_bytes.data()+e.base+sc.offset,u32(g_ascii_bytes.size()-e.base-sc.offset),&e.scripts};
@@ -2759,8 +2759,8 @@ void draw_field_hud(float cx, i32 lives, i32 bombs, i32 charge, i32 fragments) {
 
     // 515200 -> front.anm17 interrupts: stock20/2, active7, fragments18/19, empty3.
     static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
-    
-    
+
+
     if(scripts.empty())for(const auto&e:g_front)for(const auto&sc:e.scripts)
         scripts[sc.id]={g_front_bytes.data()+e.base+sc.offset,u32(g_front_bytes.size()-e.base-sc.offset),&e.scripts};
     if(rb_draw_field_hud_generation!=g_ecl_generation){for(auto&row:rb_draw_field_hud_labels)for(auto&l:row)l=0;for(auto&row:rb_draw_field_hud_heart_labels)for(auto&l:row)l=0;rb_draw_field_hud_generation=g_ecl_generation;}
@@ -2807,8 +2807,8 @@ void draw_field_hud(float cx, i32 lives, i32 bombs, i32 charge, i32 fragments) {
 
     // 5142f0: front.anm18, left(32+32*i,16), right(1248-32*i,16).
     // Separate victory rb_draw_field_hud_stars from the bomb stock's front.anm17 instances.
-    
-    
+
+
     if(!g_vs_mode||g_vs_match.round<rb_draw_field_hud_matchRound||g_vs_match.wins[0]+g_vs_match.wins[1]==0){
         rb_draw_field_hud_counts[0]=rb_draw_field_hud_counts[1]=0;rb_draw_field_hud_matchRound=g_vs_match.round;
     }
@@ -3615,17 +3615,17 @@ u32 rb_draw_ecl_objects_generation=0;
 void draw_ecl_objects() {
     if (!g_ecl_ready) return;
 
-    
+
     static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
-    
-    
-    
-    
-    
+
+
+
+
+
     static std::unordered_map<i32,th19::AnmScriptLoc> spellAsciiScripts;
     struct AttackAsset {std::vector<u8> bytes;std::vector<th19::AnmEntry> entries;std::map<i32,TextureAllocation> textures;std::map<u32,std::pair<i32,i32>> sprites;std::unordered_map<i32,th19::AnmScriptLoc> scripts;bool attempted=false;};
     static std::map<std::string,AttackAsset> attackAssets;
-    
+
     if(rb_draw_ecl_objects_generation!=g_ecl_generation){rb_draw_ecl_objects_animations[0].clear();rb_draw_ecl_objects_animations[1].clear();rb_draw_ecl_objects_laserHeads[0].clear();rb_draw_ecl_objects_laserHeads[1].clear();rb_draw_ecl_objects_curveVisuals[0].clear();rb_draw_ecl_objects_curveVisuals[1].clear();rb_draw_ecl_objects_curveOrigins[0].clear();rb_draw_ecl_objects_curveOrigins[1].clear();rb_draw_ecl_objects_extraAnimations[0].clear();rb_draw_ecl_objects_extraAnimations[1].clear();rb_draw_ecl_objects_spellNames[0]={};rb_draw_ecl_objects_spellNames[1]={};rb_draw_ecl_objects_spellRings[0]={};rb_draw_ecl_objects_spellRings[1]={};rb_draw_ecl_objects_spellUnderlines[0]={};rb_draw_ecl_objects_spellUnderlines[1]={};rb_draw_ecl_objects_generation=g_ecl_generation;}
     if(spellAsciiScripts.empty())for(const auto&e:g_ascii)for(const auto&sc:e.scripts)
         spellAsciiScripts[sc.id]={g_ascii_bytes.data()+e.base+sc.offset,u32(g_ascii_bytes.size()-e.base-sc.offset),&e.scripts};
@@ -5036,9 +5036,9 @@ std::vector<ChainVisual> rb_draw_combat_items_chainVisuals;
 std::unordered_map<u32,Visual> rb_draw_combat_items_items[2];std::vector<Visual> rb_draw_combat_items_deaths,rb_draw_combat_items_cancels;
 u32 rb_draw_combat_items_generation=0;
 void draw_combat_items(){
-    
-    
-    
+
+
+
     static std::vector<u8> ghostBytes;static std::vector<th19::AnmEntry> ghostEntries;
     static std::unordered_map<i32,th19::AnmScriptLoc> ghostScripts;
     static std::map<i32,TextureAllocation> ghostTextures;
@@ -5064,9 +5064,9 @@ void draw_combat_items(){
     };
     for(auto&v:g_spirit_flights){if(!v.vm.stream){auto s=ghostScripts.find(v.state.script);if(s!=ghostScripts.end()){v.vm.bind_entry(s->second.stream,s->second.len,&ghostScripts);v.vm.tick();}}
         auto p=v.curve.position();drawSpirit(drawSpirit,v.vm,p.x,p.y,1,1);}
-    
+
     static std::unordered_map<i32,th19::AnmScriptLoc> itemScripts;
-    
+
     if(rb_draw_combat_items_generation!=g_ecl_generation){rb_draw_combat_items_items[0].clear();rb_draw_combat_items_items[1].clear();rb_draw_combat_items_deaths.clear();rb_draw_combat_items_cancels.clear();rb_draw_combat_items_chainVisuals.clear();rb_draw_combat_items_generation=g_ecl_generation;}
     if(itemScripts.empty())for(const auto&e:g_bullet)for(const auto&sc:e.scripts)itemScripts[sc.id]={g_bullet_bytes.data()+e.base+sc.offset,u32(g_bullet_bytes.size()-e.base-sc.offset),&e.scripts};
     auto draw=[&](auto&&self,const th19::AnmVm&v,float x,float y,int side,bool effect,float sx,float sy)->void{
@@ -5341,7 +5341,7 @@ void frame() {
     ++g_sfx_tick;
     const bool* pauseKeys=game_keyboard_state();
     auto pressed=[&](int code){return pauseKeys[code]||g_injected_keys[code];};
-    
+
     if(g_network_active&&g_network_frame==0)rb_frame_oldEsc=rb_frame_oldUp=rb_frame_oldDown=rb_frame_oldOk=rb_frame_oldCancel=false;
     bool esc=pressed(SDL_SCANCODE_ESCAPE),pu=pressed(SDL_SCANCODE_UP),pd=pressed(SDL_SCANCODE_DOWN);
     bool ok=pressed(SDL_SCANCODE_Z)||pressed(SDL_SCANCODE_RETURN),cancel=pressed(SDL_SCANCODE_X);
@@ -5356,7 +5356,7 @@ void frame() {
         if(esc&&!rb_frame_oldEsc){if(g_paused){if(g_pause_view==1&&g_help_mode==1){start_help_menu();}else if(g_pause_view==4)close_owned_card_menu();else if(g_pause_view)g_pause_view=0;else if(g_pause_animation.inputReady()){if(g_pause_confirm){g_pause_confirm=false;g_pause_animation.cancel();}else g_pause_animation.close(false);}}else{g_paused=true;g_pause_choice=0;g_pause_confirm=false;init_pause_animation();play_sfx(14);}}
         else if(g_paused){
             if(g_pause_view){
-                
+
                 bool left=pressed(SDL_SCANCODE_LEFT),right=pressed(SDL_SCANCODE_RIGHT);
                 if(cancel&&!rb_frame_oldCancel){if(g_pause_view==1&&g_help_mode==1){start_help_menu();}else if(g_pause_view==3)g_pause_view=2;else if(g_pause_view==4)close_owned_card_menu();else g_pause_view=0;play_sfx(9);}
                 else if(g_pause_view==1){
@@ -5633,8 +5633,8 @@ void game_tick() {
     }
     tick_trophy_popup();
     const bool* keys = game_keyboard_state();
-    
-    
+
+
     if(g_network_active&&g_network_frame==0)rb_game_tick_prev_up=rb_game_tick_prev_dn=rb_game_tick_prev_z=rb_game_tick_prev_x=rb_game_tick_prev_left=rb_game_tick_prev_right=rb_game_tick_prev_v=rb_game_tick_prev_c=false;
     const bool up = keys[SDL_SCANCODE_UP]    || g_injected_keys[SDL_SCANCODE_UP];
     const bool dn = keys[SDL_SCANCODE_DOWN]  || g_injected_keys[SDL_SCANCODE_DOWN];
@@ -5795,7 +5795,7 @@ void game_tick() {
         } else if (g_screen == SCR_CHARSEL && g_charsel_frame>=31) {
             // 556340: CPU entries share input, choosing side 1 then side 2.
             const bool second=g_vs_mode&&g_vs_first_confirmed;
-            
+
             auto key2=[&](int c){return keys[c]||g_injected_keys[c];};
             const u8 p2=(key2(SDL_SCANCODE_W)?1:0)|(key2(SDL_SCANCODE_S)?2:0)|(key2(SDL_SCANCODE_A)?4:0)|(key2(SDL_SCANCODE_D)?8:0)|(key2(SDL_SCANCODE_J)?16:0)|(key2(SDL_SCANCODE_K)?32:0);
             const u8 p2edge=p2&~rb_game_tick_previousP2;rb_game_tick_previousP2=p2;
@@ -6948,8 +6948,3 @@ __attribute__((export_name("th19_error"))) const char* th19_error() {
     return gfx.error();
 }
 }
-
-
-
-
-

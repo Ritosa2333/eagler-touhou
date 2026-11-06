@@ -5,7 +5,7 @@ void FUN_004c1760(void)
 
 {
   float in_XMM1_Da;
-  
+
   switch((int)in_XMM1_Da) {
   case 10000:
     return;
@@ -280,7 +280,7 @@ uint FUN_00402630(uint param_1)
 
 {
   uint uVar1;
-  
+
   if (param_1 != 0) {
     uVar1 = FUN_00402540();
     return uVar1 % param_1;

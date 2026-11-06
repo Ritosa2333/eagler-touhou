@@ -33,4 +33,3 @@ try{
  }
  writeFileSync(resolve(output,'report.json'),JSON.stringify({passed:true,results},null,2)+'\n');console.log(JSON.stringify({passed:true,results}));
 }finally{await browser.close();}
-

@@ -10,7 +10,7 @@ void __fastcall FUN_004026c0(int *param_1)
   int iVar2;
   undefined *puVar3;
   float fVar4;
-  
+
   if (param_1[3] != 0) {
     param_1[3] = 0;
   }
@@ -60,7 +60,7 @@ undefined4 __fastcall FUN_00515d80(int param_1)
   undefined4 *puStack_68;
   undefined4 *puStack_64;
   undefined1 auStack_60 [92];
-  
+
   uVar1 = *(uint *)(param_1 + 0x140);
   *(uint *)(param_1 + 0x140) = uVar1 | 0x4000000;
   if ((uVar1 & 8) != 0) {
@@ -237,5 +237,3 @@ LAB_005161da:
   FUN_004cb830(DAT_0062bd10,1);
   return 0;
 }
-
-

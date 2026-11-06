@@ -30,7 +30,7 @@ Float variable 10022: 004c18d1
 004c18e3 shr eax, 0x1f
 004c18e6 addsd xmm0, qword ptr [eax*8 + 0x5aa660]
 004c18ef cvtpd2ps xmm0, xmm0
-004c18f3 ret 
+004c18f3 ret
 Integer variable 10022: 004c16d5
 004c16d5 push dword ptr [ecx + 0x49c]
 004c16db mov ecx, 0x5c6638

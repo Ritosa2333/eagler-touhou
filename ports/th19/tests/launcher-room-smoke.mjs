@@ -104,4 +104,3 @@ try{
  assert.deepEqual(report.errors,[]);
  report.results.push({check:'Launcher create/join/seat/ready/start and native RTC state agreement',passed:true,hashes:common});report.passed=true;report.stage='complete';save();console.log(JSON.stringify(report));
 }catch(error){report.failure=error.stack;report.pages=await Promise.all(pages.map(async p=>({url:p.url(),body:await p.evaluate(()=>document.body.innerText).catch(()=>''),native:await p.evaluate(()=>{const r=document.querySelector('#gameFrame')?.contentWindow?.__th19Runtime;return r?{active:r.netplay?.active,frame:r.netplay?.frame,status:r.status()}:null;}).catch(()=>null)})));save();throw error;}finally{await browser.close();}
-

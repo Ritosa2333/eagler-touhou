@@ -15,7 +15,7 @@ undefined4 __fastcall FUN_0054dc40(int param_1)
   float local_50;
   undefined8 local_4c;
   undefined4 local_44;
-  
+
   if (*(int *)(param_1 + 0x9c) == 2) {
     return 0;
   }

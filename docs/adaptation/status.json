@@ -3298,7 +3298,7 @@
       "game": "th19",
       "variant": "multiplayer",
       "directory": "ports/th19",
-      "sourceDigest": "2c66ac823b372bbc0aacb56231ff300d75de485e2836724a137ba6cd8edf92d5",
+      "sourceDigest": "9b0e9d068534978c7b8fa914b817011da99c68cd0616648068d5ae9b97f2afa7",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -3373,7 +3373,8 @@
           "files": [
             "tools/ports/touch-continuity.test.mjs"
           ],
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see held-touch-continuity.log"
         },
         {
           "id": "immediate-sfx-routing",
@@ -3405,7 +3406,8 @@
             "launcher/tests/test-runtime-preparation.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see package-store.log"
         },
         {
           "id": "launcher-input-owners",
@@ -3424,7 +3426,8 @@
             "launcher/tests/react-main/gamepad-matrix.test.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see launcher-input-owners.log"
         },
         {
           "id": "shared-touch-controls",
@@ -3442,7 +3445,8 @@
             "launcher/tests/react-main/touch-editor-selects.test.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see shared-touch-controls.log"
         }
       ]
     },
@@ -3450,7 +3454,7 @@
       "game": "th19",
       "variant": "normal",
       "directory": "ports/th19",
-      "sourceDigest": "75afb282837dda3afc10857cc50f62b871ee68bcddc7bf52a5f4037ca571428a",
+      "sourceDigest": "459e6eeaca7cc6cf54d318f9247a85c6c5afaf56d5d0b630f5612c68286fa105",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 14,
@@ -3524,7 +3528,8 @@
           "files": [
             "tools/ports/touch-continuity.test.mjs"
           ],
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see held-touch-continuity.log"
         },
         {
           "id": "immediate-sfx-routing",
@@ -3556,7 +3561,8 @@
             "launcher/tests/test-runtime-preparation.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see package-store.log"
         },
         {
           "id": "launcher-input-owners",
@@ -3575,7 +3581,8 @@
             "launcher/tests/react-main/gamepad-matrix.test.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see launcher-input-owners.log"
         },
         {
           "id": "shared-touch-controls",
@@ -3593,7 +3600,8 @@
             "launcher/tests/react-main/touch-editor-selects.test.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see shared-touch-controls.log"
         },
         {
           "id": "normal-presentation",
@@ -3614,7 +3622,8 @@
             "launcher/tests/test-presentation-contract-coverage.mjs"
           ],
           "complete": true,
-          "status": "passed"
+          "status": "failed",
+          "error": "Executable checks failed; see normal-presentation.log"
         }
       ]
     },

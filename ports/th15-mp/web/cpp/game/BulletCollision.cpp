@@ -1,11 +1,15 @@
 #include "BulletState.hpp"
 #include <algorithm>
 namespace th15 {
-PlayerContact BulletState::collide(const PlayerCollision& player,bool graze_only,float rate,Rng& random,Rng& visual_random,BulletContactHost& host,std::string& error){
-    visual_flags&=0xfff9ffffu;visual_jitter={};if(!(flags&2))return PlayerContact::none;
+PlayerContact BulletState::contact(const PlayerCollision& player,bool graze_only,PlayerDamageHost* damage)const{
+    if(!(flags&2))return PlayerContact::none;
     Vec2 size=hitbox;if(flags&64){size.x=float(size.x*scale);size.y=float(size.y*scale);}
     const Vec2 position{motion.position.x,motion.position.y};
-    const auto contact=(flags&16)?player.circle(position,size.x,graze_only,&host):player.rectangle(position,size,graze_only,&host);
+    return (flags&16)?player.circle(position,size.x,graze_only,damage):player.rectangle(position,size,graze_only,damage);
+}
+PlayerContact BulletState::collide(const PlayerCollision& player,bool graze_only,float rate,Rng& random,Rng& visual_random,BulletContactHost& host,std::string& error){
+    visual_flags&=0xfff9ffffu;visual_jitter={};
+    const auto contact=this->contact(player,graze_only,&host);
     if(contact==PlayerContact::hit&&collision_delay==0){
         phase=3;if(!host.hit_animation()){error="Bullet hit animation callback unavailable";return contact;}hit_interrupt=1;
         if(overlay_active&&!host.overlay_interrupt(1)){error="Bullet overlay interrupt unavailable";return contact;}

@@ -9,7 +9,7 @@ undefined4 __fastcall FUN_00532cf0(int param_1)
   void *local_10;
   undefined1 *puStack_c;
   int local_8;
-  
+
   local_8 = 0xffffffff;
   puStack_c = &LAB_005779bd;
   local_10 = ExceptionList;
@@ -178,7 +178,7 @@ void __fastcall FUN_004ecd80(undefined4 *param_1)
   void *local_10;
   undefined1 *puStack_c;
   undefined4 local_8;
-  
+
   local_8 = 0xffffffff;
   puStack_c = &LAB_00576ec6;
   local_10 = ExceptionList;

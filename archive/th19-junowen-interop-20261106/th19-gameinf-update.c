@@ -28,7 +28,7 @@ undefined4 __fastcall FUN_00516450(undefined *param_1)
   void *local_1c;
   undefined1 *puStack_18;
   int local_14;
-  
+
   puStack_20 = &stack0xfffffffc;
   local_14 = 0xffffffff;
   puStack_18 = &LAB_0057748d;
@@ -360,5 +360,3 @@ LAB_0051685d:
   ExceptionList = local_1c;
   return 1;
 }
-
-

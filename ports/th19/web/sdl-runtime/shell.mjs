@@ -266,4 +266,3 @@ const initialized=(async()=>{
  immutableFiles.set('/th19.dat',new Uint8Array(buffer));core.FS.writeFile('/th19.dat',immutableFiles.get('/th19.dat'),{canOwn:true});
  emit('ready',{saveRoot,roomPreview:runtimeVariant==='multiplayer',roomReturn:runtimeVariant==='multiplayer'});if(query.get('standalone')==='1')await command({command:'launch'});
 })().catch(e=>{if(e?.name==='AbortError'&&e?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED')return false;fatal(e);return false;});
-

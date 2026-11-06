@@ -15,7 +15,7 @@ void __fastcall FUN_0054fd10(int param_1)
   undefined4 *puVar9;
   undefined4 *puVar10;
   int local_1c [6];
-  
+
   if (*(int *)(param_1 + 8) != 0) {
     puVar1 = (uint *)(*(int *)(param_1 + 8) + 4);
     *puVar1 = *puVar1 | 2;
@@ -123,7 +123,7 @@ undefined4 FUN_00551aa0(int param_1)
   undefined4 *puVar2;
   undefined4 *puVar3;
   undefined4 local_8;
-  
+
   iVar1 = DAT_005d1bfc;
   FUN_0047bd13(*(int *)(DAT_005d1bfc + 0x1c) + 0x10);
   if (param_1 != 0) {
@@ -152,7 +152,7 @@ void __fastcall FUN_00551b70(undefined4 *param_1)
 
 {
   int iVar1;
-  
+
   if (param_1 != (undefined4 *)0x0) {
     (**(code **)*param_1)(0);
     iVar1 = FUN_0046230c(&DAT_0062ad48);
@@ -184,7 +184,7 @@ undefined4 * FUN_004300b0(void)
   void *local_10;
   undefined1 *puStack_c;
   undefined4 local_8;
-  
+
   puStack_c = &LAB_0056ca7d;
   local_10 = ExceptionList;
   ExceptionList = &local_10;
@@ -246,7 +246,7 @@ void __thiscall FUN_005654e0(int param_1,undefined4 param_2)
   void *local_10;
   undefined1 *puStack_c;
   undefined4 local_8;
-  
+
   local_8 = 0xffffffff;
   puStack_c = &LAB_0057974d;
   local_10 = ExceptionList;
@@ -300,7 +300,7 @@ void FUN_005664d0(void)
   void *local_10;
   undefined1 *puStack_c;
   undefined4 local_8;
-  
+
   iVar2 = DAT_005d1c2c;
   local_8 = 0xffffffff;
   puStack_c = &LAB_00579b07;
@@ -400,5 +400,3 @@ void FUN_005664d0(void)
   ExceptionList = local_10;
   return;
 }
-
-

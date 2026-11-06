@@ -10,7 +10,7 @@ void __fastcall FUN_0054da60(int param_1)
   int iVar3;
   float fVar4;
   float local_8;
-  
+
   local_8 = (DAT_005aa2bc / DAT_005aa3d4) * DAT_005aa314;
   iVar2 = FUN_00402540();
   fVar4 = ((float)((double)iVar2 + (double)(&DAT_005aa660)[-(iVar2 >> 0x1f)]) /
@@ -84,7 +84,7 @@ void __fastcall FUN_0054bf50(int param_1)
   int iVar2;
   float fVar3;
   float local_8;
-  
+
   local_8 = (DAT_005aa2bc / DAT_005aa3d4) * DAT_005aa314;
   iVar1 = FUN_00402540();
   fVar3 = ((float)((double)iVar1 + (double)(&DAT_005aa660)[-(iVar1 >> 0x1f)]) /
@@ -130,7 +130,7 @@ void __fastcall FUN_0054bd90(int param_1)
   int iVar3;
   float fVar4;
   float local_18 [5];
-  
+
   local_18[0] = (DAT_005aa2bc / DAT_005aa3d4) * DAT_005aa314;
   iVar2 = FUN_00402540();
   fVar4 = ((float)((double)iVar2 + (double)(&DAT_005aa660)[-(iVar2 >> 0x1f)]) /
@@ -184,7 +184,7 @@ undefined4 __fastcall FUN_0054c7c0(int param_1)
 
 {
   int iVar1;
-  
+
   *(undefined4 *)(param_1 + 0xa4) = 1;
   if (*(int *)(param_1 + 0xa8) == 0) {
     FUN_004cb830(*(undefined4 *)(param_1 + 0x14),2);
@@ -218,7 +218,7 @@ undefined4 __fastcall FUN_0054a7b0(int param_1)
   int iVar8;
   float fVar9;
   int local_8;
-  
+
   local_8 = param_1;
   puVar6 = (undefined4 *)
            FUN_005200f0(&local_8,param_1 + 0x54,0x3f800000,0x10,

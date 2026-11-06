@@ -56,4 +56,3 @@ try{
  assert.deepEqual(cleaned,{old:false,current:true,kept:'keep'});report.checks.push('real IndexedDB old replay deleted; current recording and unrelated save retained');
  assert.deepEqual(report.errors,[]);report.passed=true;save();console.log(JSON.stringify(report));
 }catch(e){report.failure=e.stack;save();throw e;}finally{await browser.close();await new Promise(ok=>server.close(ok));}
-

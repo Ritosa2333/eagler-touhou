@@ -8,7 +8,7 @@ void __fastcall FUN_0040eb70(int param_1)
   int *piVar2;
   int *piVar3;
   int local_c [2];
-  
+
   piVar1 = (int *)(param_1 + 0x9c0);
   local_c[1] = 0;
   piVar3 = local_c + 1;
@@ -36,7 +36,7 @@ void __fastcall FUN_0040e4d0(int param_1)
   int *piVar2;
   int *piVar3;
   int local_c [2];
-  
+
   piVar1 = (int *)(param_1 + 400);
   local_c[1] = 0;
   piVar3 = local_c + 1;
@@ -77,7 +77,7 @@ void __fastcall FUN_0050e820(int param_1)
   int iVar3;
   int *piVar4;
   int local_c [2];
-  
+
   local_c[0] = 999;
   local_c[1] = 0;
   piVar4 = (int *)(*(int *)(*(int *)(param_1 + 0x1f8) + 0x2c) + 0x4c);
@@ -121,7 +121,7 @@ void __thiscall FUN_0050e6e0(int param_1,undefined4 param_2)
   int iVar3;
   int *piVar4;
   int local_c [2];
-  
+
   local_c[0] = 999;
   local_c[1] = 0;
   piVar4 = (int *)(*(int *)(*(int *)(param_1 + 0x1f8) + 0x2c) + 0x50);
@@ -274,7 +274,7 @@ void __fastcall FUN_00430340(int param_1)
   uint uVar2;
   uint uVar3;
   int iVar4;
-  
+
   uVar2 = 1;
   uVar3 = *(uint *)(param_1 + 0x29c);
   puVar1 = (uint *)(param_1 + 0x118);

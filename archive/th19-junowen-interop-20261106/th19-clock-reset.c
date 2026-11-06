@@ -16,7 +16,7 @@ undefined4 __fastcall FUN_00515a10(int param_1)
   undefined4 *puVar9;
   undefined4 *local_6c;
   undefined1 auStack_60 [92];
-  
+
   iVar1 = DAT_005d19bc;
   if ((*(uint *)(param_1 + 0x140) & 0x1000) != 0) {
     FUN_004cb550(*(undefined4 *)(DAT_005d19bc + 0x64c0868));
@@ -162,7 +162,7 @@ undefined4 __fastcall FUN_00515a10(int param_1)
   undefined4 *puVar9;
   undefined4 *local_6c;
   undefined1 auStack_60 [92];
-  
+
   iVar1 = DAT_005d19bc;
   if ((*(uint *)(param_1 + 0x140) & 0x1000) != 0) {
     FUN_004cb550(*(undefined4 *)(DAT_005d19bc + 0x64c0868));

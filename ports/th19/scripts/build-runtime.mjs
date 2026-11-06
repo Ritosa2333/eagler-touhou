@@ -62,4 +62,3 @@ if(args.includes('--print-inputs')){
  writeFileSync(resolve(output,'runtime-files.json'),JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game:'th19',variant,files},null,2)+'\n');
  console.log(JSON.stringify({output,variant,files:Object.keys(files),wasm:files['th19.wasm'].sha256}));
 }
-

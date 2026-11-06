@@ -48,7 +48,7 @@ bool AppFrameState::ready(const ApplicationState& a){
 void AppFrameState::discard()noexcept{if(saved_){saved_->stage.discard();for(auto& e:saved_->fades)e.owner.reset();for(auto& e:saved_->motion)e.owner.reset();saved_->ready=false;}}
 bool AppFrameState::capture(ApplicationState& a){
     fv::IdentityGuard guard;error.clear();if(!ready(a)){error="Application is outside the battle correction window";return false;}
-    if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;s.ready=false;s.owner=&a;s.session=a.session.get();s.pause=a.pause.get();s.values=fv::copy(fields(a));
+    if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;s.ready=false;s.owner=&a;s.session=a.session.get();s.pause=a.pause.get();s.values=fields(a);
     s.session_error=a.session->error;s.flow_error=a.flow?a.flow->error:std::string{};s.display_error=a.display->error;s.game_error=a.display->game->error;s.background_error=a.display->game->background.error;s.graphics_error=a.graphics.error;
     s.background=a.display->game->background.state;s.background_rate=a.display->game->background.rate;
     for(unsigned i=0;i<4;++i)s.view_offsets[i]=a.views.view(DrawCamera(i)).offset;
