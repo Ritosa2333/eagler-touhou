@@ -16,6 +16,9 @@ public:
 private:
     AnmManager& animations;EffectManager& effects;i32 resource;
     std::array<Slot,pool_size> slots;std::array<std::vector<u32>,2> free_slots;
+    struct IdleVisuals {std::weak_ptr<const AnmVm> body,arrow;};
+    std::unique_ptr<std::array<IdleVisuals,pool_size>> idle_visuals;
+    void invalidate_idle(u32 index){if(idle_visuals)(*idle_visuals)[index]={};}
     bool appearance(Slot&,i32 kind);bool birth_effect(const ItemState&);
 public:
     i32 requests=0,cancel_density=0,cancel_stamp=0,active_count=0;float motion_scale=1;std::string error;
@@ -24,7 +27,8 @@ public:
     ItemManager(AnmManager&,EffectManager&,i32 resource);
     ~ItemManager();
     bool reset();
-    Slot* find(u32 id){return id&&id<=pool_size?&slots[id-1]:nullptr;}
+    Slot* find(u32 id){if(!id||id>pool_size)return nullptr;invalidate_idle(id-1);return &slots[id-1];}
+    const Slot* find(u32 id)const{return id&&id<=pool_size?&slots[id-1]:nullptr;}
     u32 spawn(i32 kind,const Vec3&,float angle,float speed,i32 delay=0,i32 sound=-1,ItemSpawnContext* context=nullptr);
     bool release(u32 id);bool falling(u32 id);
     bool update(ItemFrameContext&,const std::array<ItemFrameContext*,2>& partners={});

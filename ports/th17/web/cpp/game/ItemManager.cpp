@@ -8,6 +8,7 @@ constexpr i32 scripts[][2]={{-1,-1},{112,134},{113,135},{114,136},{115,137},{116
 ItemManager::ItemManager(AnmManager& a,EffectManager& e,i32 id):animations(a),effects(e),resource(id){for(u32 i=0;i<pool_size;i++)free_slots[i>=ordinary_count].push_back(i);}
 ItemManager::~ItemManager(){for(auto& slot:slots){if(slot.body)animations.registry.destroy_tree(*slot.body);if(slot.arrow)animations.registry.destroy_tree(*slot.arrow);}}
 bool ItemManager::reset(){
+    idle_visuals.reset();
     for(auto& slot:slots){if((slot.body&&!animations.registry.destroy_tree(*slot.body))||(slot.arrow&&!animations.registry.destroy_tree(*slot.arrow))){error=animations.registry.error;return false;}slot.state={};slot.body.reset();slot.arrow.reset();slot.arrow_ended=false;}
     for(auto& free:free_slots)free.clear();for(u32 i=0;i<pool_size;i++)free_slots[i>=ordinary_count].push_back(i);
     requests=cancel_stamp=0;motion_scale=1;return true;
@@ -39,7 +40,7 @@ u32 ItemManager::spawn(i32 kind,const Vec3& position,float angle,float speed,i32
         if(!context->spirit(kind-15,position,direction))error="Animal spirit creation failed";return 0;
     }
     if(kind<1||kind>15){error="Invalid item kind";return 0;}const bool cancel=kind>=9&&kind<=14;auto& free=free_slots[cancel];if(free.empty())return 0;
-    const u32 index=free.back();auto& slot=slots[index];auto& state=slot.state;
+    const u32 index=free.back();invalidate_idle(index);auto& slot=slots[index];auto& state=slot.state;
     state.position=position;state.velocity={float(std::cos(double(angle))*double(speed)),float(std::sin(double(angle))*double(speed)),0};state.age.set(0);state.flags=0;state.sound=sound_id;
     if(cancel){state.speed=speed;state.angle=angle;state.stamp=cancel_stamp;const i32 divisor=cancel_density<256?4:cancel_density<512?8:cancel_density<1024?16:32,offset=cancel_density<256?0:cancel_density<512?4:cancel_density<1024?8:16;state.delay=wrapping_add(requests%divisor,offset);state.state=5;state.kind=state.appearance=kind;}
     else{state.state=1;state.position.x=state.position.x<=-192.f?-192.f:state.position.x>=192.f?192.f:state.position.x;state.speed=0;state.attraction_speed=0;state.delay=delay;state.kind=kind==15?6:kind;state.appearance=0;if((delay==0&&!birth_effect(state))||!appearance(slot,state.kind))return 0;slot.body->visual.color=0xffffffff;}

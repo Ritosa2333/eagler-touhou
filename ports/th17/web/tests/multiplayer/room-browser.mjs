@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
-import {resolve,extname,sep} from 'node:path';
+import {resolve,dirname,extname,sep} from 'node:path';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 
 const repo=resolve(import.meta.dirname,'../../../../..');
@@ -10,23 +10,43 @@ const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17/bu
 const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-room'));
 const rollback=!process.argv.includes('--lockstep');
 const throughStageTwo=process.argv.includes('--through-stage-two');
-const extraBoss=process.argv.includes('--extra-boss');
+const extraFinale=process.argv.includes('--extra-finale');
+const extraBoss=extraFinale||process.argv.includes('--extra-boss');
 const denseExtra=extraBoss||process.argv.includes('--dense-extra');
 const extended=throughStageTwo||process.argv.includes('--extended');
 const difficulty=Number(process.env.TH17_ROOM_DIFFICULTY??(denseExtra?4:throughStageTwo?0:1));
 assert.ok(Number.isInteger(difficulty)&&difficulty>=0&&difficulty<=4);
 assert.ok(!throughStageTwo||difficulty!==4);
 const minimumSamples=Number(process.env.TH17_ROOM_SAMPLES||(denseExtra?4200:1050));
-const extendedTarget=Number(process.env.TH17_ROOM_TICKS||(extraBoss?15000:12000));
+const extendedTarget=Number(process.env.TH17_ROOM_TICKS||(extraFinale?39000:extraBoss?15000:12000));
 const delayMs=Number(process.env.TH17_ROOM_DELAY_MS||110);
 const jitterMs=Number(process.env.TH17_ROOM_JITTER_MS||0);
 const cpuThrottle=Number(process.env.TH17_ROOM_CPU_THROTTLE||1);
 const manifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
 if(extraBoss)assert.ok(manifest.features.roomBenchmark&&rollback&&difficulty===4,'Extra boss profiling needs the dedicated Extra rollback benchmark build');
 const baseline=process.env.TH17_ROOM_BASELINE?JSON.parse(await readFile(process.env.TH17_ROOM_BASELINE,'utf8')):null;
+const priorMemory=extraFinale&&baseline?JSON.parse(await readFile(resolve(dirname(process.env.TH17_ROOM_BASELINE),'heap-samples.json'),'utf8')):null;
 const baselineBoss=baseline?.reports[0]?.bossPatterns?.find(pattern=>pattern.spell>=91)?.boss;
 const baselineBossStart=baseline?.reports[0]?.bossPatterns?.find(pattern=>pattern.boss===baselineBoss)?.first;
-const cpuWarmupThrough=extraBoss&&baselineBossStart?Math.max(0,baselineBossStart-1500):0;
+const fourthSpell=baseline?.reports[0]?.bossPatterns?.find(pattern=>pattern.boss===baselineBoss&&pattern.spell===94);
+const lateStart=fourthSpell?fourthSpell.last+1:15000;
+const cpuWarmupThrough=extraFinale?9000:extraBoss&&baselineBossStart?Math.max(0,baselineBossStart-1500):0;
+let finaleSamples;
+function compareMemory(previous,current,start=0){
+ const key=row=>[row[0],row[1],row[2],row[4],row[5]].join('/');
+ const samples=rows=>new Map(rows.filter(row=>row[0]>=start&&row[1]>=256).map(row=>[key(row),row]));
+ const before=samples(previous),after=samples(current);
+ const pairs=[...after].filter(([k])=>before.has(k)).map(([k,row])=>[before.get(k),row]);
+ const summarize=(values)=>{
+  values.sort((a,b)=>a-b);
+  return {median:values[Math.floor(values.length*.5)],p95:values[Math.floor(values.length*.95)],max:values.at(-1)};
+ };
+ const metrics={heap:3,unusedCapacity:6,bulletState:7,bulletVisual:8,itemVisual:9,idleItemVisual:10,animation:11};
+ return {start,matched:pairs.length,metrics:Object.fromEntries(Object.entries(metrics).map(([name,index])=>[name,{
+  before:summarize(pairs.map(pair=>pair[0][index])),after:summarize(pairs.map(pair=>pair[1][index])),
+  delta:summarize(pairs.map(pair=>pair[1][index]-pair[0][index])),
+ }]))};
+}
 const required=name=>{assert.ok(process.env[name],'Set '+name);return process.env[name];};
 const assets={
  '/game.dat':await readFile(required('EAGLER_TH17_DATA')),
@@ -148,13 +168,14 @@ try{
    await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
    const frames=page.frames().filter(frame=>frame.url().includes('/runtime/'));
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale})=>{
      const callback=Module.onGameFrame;
      const optimized=typeof Module._th17_room_trace==='function';
      Module._th17_room_trace?.(1);
      globalThis.samples=new Map();
      globalThis.diagnostics={corrections:0,resimulated:0,maxPrediction:0,combatCorrections:0};
      globalThis.frameCosts=[];
+     globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let previousCosts=Array(6).fill(0);
      Module.onGameFrame=(ok,time,ticks)=>{
@@ -176,6 +197,11 @@ try{
         entry.spell=confirmed?.[30]&1?confirmed[39]:-1;
        }
        frameCosts.push(entry);
+       if(extraFinale&&seat===0&&n>=9000&&n%4===0){
+        const p=Module._th17_room_benchmark_memory()>>>2;
+        const row=Array.from(Module.HEAPU32.subarray(p,p+12));
+        if(row[0]&&row[3]&&(row[1]>=256||row[2]<101)&&row[0]!==heapSamples.at(-1)?.[0])heapSamples.push(row);
+       }
        diagnostics.peakLinearMemory=Math.max(diagnostics.peakLinearMemory||0,Module.HEAPU8.buffer.byteLength);
        if(denseExtra&&++loadSample%12===0){
         const pointer=Module._th17_room_load?.()>>>2;
@@ -196,6 +222,12 @@ try{
        if(words[0]===number&&number>120&&words[3]){
         samples.set(number,words);
         if(words[3]===2)diagnostics.stageTwoFrames=(diagnostics.stageTwoFrames||0)+1;
+        if(extraFinale){
+         if((words[30]&1)&&words[39]===100){
+          diagnostics.finalFirst??=number;
+          diagnostics.finalLast=number;
+         }else if(diagnostics.finalLast)diagnostics.finalFinished??=number;
+        }
        }
       }
       recorded=committed;
@@ -213,9 +245,10 @@ try{
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss});
+    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
+   let cutoff=extendedTarget;
    try{await wait(async()=>{
     assert.deepEqual(errors,[]);
     const failures=await page.evaluate(()=>events.filter(e=>e.event==='error'));
@@ -232,14 +265,19 @@ try{
     if(throughStageTwo&&status.every(item=>item.diagnostics.phase===2))
      throw Error('The fixture reached the pause or game-over menu before Stage 2');
     if(throughStageTwo)return status.every(item=>item.diagnostics.stageTwoFrames>=240);
+    if(extraFinale&&status.every(item=>item.diagnostics.finalFinished)){
+     cutoff=Math.min(...status.map(item=>item.diagnostics.finalFinished));
+     return true;
+    }
     if(extraBoss)return current>=extendedTarget;
     return status.every(item=>item.samples>=minimumSamples)&&(!extended||!rollback||
      status.some(item=>item.diagnostics.spellCorrections>0)||current>=extendedTarget);
-   },throughStageTwo?'Stage 1 to Stage 2 transition':'confirmed room samples',extraBoss?900000:throughStageTwo?540000:extended||denseExtra?300000:90000);}
+   },throughStageTwo?'Stage 1 to Stage 2 transition':'confirmed room samples',extraFinale?1500000:extraBoss?900000:throughStageTwo?540000:extended||denseExtra?300000:90000);}
    catch(error){coverageFailure=error;}
    const states=await Promise.all(frames.map(frame=>frame.evaluate(()=>Array.from(samples))));
+   if(extraFinale)finaleSamples=await frames[0].evaluate(()=>heapSamples);
    const first=new Map(states[0]),other=states.slice(1).map(state=>new Map(state));
-   const agreed=[...first].filter(([frame])=>(!extraBoss||frame<=extendedTarget)&&other.every(map=>map.has(frame)));
+   const agreed=[...first].filter(([frame])=>(!extraBoss||frame<=cutoff)&&other.every(map=>map.has(frame)));
    assert.ok(agreed.length>100);
    let difference;
    for(const [frame,value] of agreed){
@@ -314,6 +352,7 @@ try{
    }
    reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,denseWindows,
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
+    ...(priorMemory?{matchedMemory:compareMemory(priorMemory.samples,finaleSamples),lateMatchedMemory:compareMemory(priorMemory.samples,finaleSamples,lateStart)}:{}),
     settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,last,difference});
    if(coverageFailure)throw coverageFailure;
    if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
@@ -338,6 +377,11 @@ try{
     assert.ok(main?.nonspell.repairs.count>0&&main?.spell.repairs.count>0,'final boss nonspells and spells both include late corrections');
     assert.ok(new Set(bossPatterns.filter(pattern=>pattern.boss===main.boss&&pattern.spell>=0).map(pattern=>pattern.spell)).size>=2,
      'final boss has multiple spell cards');
+    if(extraFinale){
+     assert.ok(diagnostics.every(item=>item.finalFinished===cutoff&&item.finalLast-item.finalFirst>=180),'all seats finish the last spell');
+     for(let spell=91;spell<=100;++spell)
+      assert.ok(bossPatterns.some(pattern=>pattern.spell===spell&&pattern.last-pattern.first>=30),'covered final boss spell '+spell);
+    }
     if(baseline){
      const prior=baseline.reports.find(report=>report.seats===seats);
      assert.deepEqual(last,prior.last,'fixed-input endpoint agrees with baseline');
@@ -355,6 +399,9 @@ try{
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,extraBoss,extraFinale,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+ if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
+  fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
+  samples:finaleSamples})+'\n');
  await writeFile(resolve(out,'relay.log'),log);
 }

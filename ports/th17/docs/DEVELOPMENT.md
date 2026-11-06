@@ -93,6 +93,8 @@ Windows 从 Visual Studio 开发者终端执行，可加 `-DCMAKE_LINKER_TYPE=SY
 
 Extra Boss 压测为构建和打包命令同时加 `--room-benchmark`，并为 `TH17_OUTPUT` 和 `EAGLER_RUNTIME_OUTPUT` 指定独立目录。用该包运行 `room-browser.mjs --extra-boss`，三席按物理采样编号发送固定输入，并使用碰撞保护持续经过原版非符和符卡。报告分开记录快照、逻辑绘制和实际绘制耗时。`TH17_ROOM_TICKS` 指定结束确认帧，`TH17_ROOM_BASELINE` 指向同一输入长度的旧版报告，以核对 Boss 段落和终点状态。复测在基线关底 Boss 开始前 1500 帧应用 CPU 限速。
 
+使用 `--extra-finale` 跑完关底最后一张符卡，并核对关底十张符卡的覆盖范围。此模式从第 9000 个确认帧应用 CPU 限速。房主样本记录在 `heap-samples.json`。基线与复测按同一模拟帧、弹量、激光数、符卡号和快照数配对，分别报告活跃 Wasm 堆与各类快照数组的容量。
+
 ## 检查
 
 ```sh

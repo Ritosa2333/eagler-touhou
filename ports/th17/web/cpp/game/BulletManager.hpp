@@ -12,7 +12,7 @@ private:
     friend class BulletCheckpoint;
     struct Slot {
         BulletState state;
-        std::shared_ptr<const BulletState> inactive_image;
+        std::weak_ptr<const BulletState> inactive_image;
         u32 free_next=UINT32_MAX,active_next=UINT32_MAX,active_previous=UINT32_MAX;
         bool active=false,pristine=true;
     };

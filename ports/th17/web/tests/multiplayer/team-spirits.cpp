@@ -189,6 +189,33 @@ void animation_page_rollback(){
     require(registry.submit(*vm)==handle,"restore generation across animation pages");
 }
 
+void recycled_item_rollback(){
+    AnmEnvironment env;
+    Rng random;
+    AnmManager animations(random,env);
+    load_bank(animations,nullptr);
+    EffectManager effects(animations,30);
+    auto items=std::make_unique<ItemManager>(animations,effects,30);
+    const ItemManager& view=*items;
+    const u32 id=items->spawn(9,{0,100,0},0,1);
+    require(id&&items->falling(id),"spawn cancellation item");
+    auto* const vm=items->find(id)->body.get();
+    vm->variables.position.x=11;
+    require(items->release(id),"recycle cancellation item");
+    multiplayer::FrameImage before,overlapping,active;
+    items->save_rollback(before);
+    items->save_rollback(overlapping);
+
+    require(items->spawn(9,{0,120,0},0,1)==id&&items->falling(id),"reuse the original item slot");
+    items->find(id)->body->variables.position.x=27;
+    items->save_rollback(active);
+    require(before.restore()&&view.find(id)->body.get()==vm&&!view.find(id)->state.state&&vm->variables.position.x==11,
+            "restore an idle item without replacing its VM address");
+    require(active.restore()&&view.find(id)->state.state==2&&vm->variables.position.x==27,
+            "restore the same item after reuse");
+    require(overlapping.restore()&&vm->variables.position.x==11,"overlapping idle snapshots remain immutable");
+}
+
 void immutable_bullet_program(){
     struct Host final:BulletManagerHost,BulletFrameHost {
         BulletFrameHost& bullet(u32)override{return *this;}
@@ -370,6 +397,7 @@ int main(int argc, char** argv) {
     shared_fragments(3);
     borrowed_animation_graph();
     animation_page_rollback();
+    recycled_item_rollback();
     immutable_bullet_program();
     logical_animation_draw();
     laser_restore(asset);

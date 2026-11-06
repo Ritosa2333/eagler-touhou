@@ -12,7 +12,9 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
     std::vector<Active> active;
     std::vector<Inactive> inactive;
     std::vector<u16> free;
-    active.reserve(visible_count);
+    size_t active_count=0;
+    for(u32 word:occupied)active_count+=__builtin_popcount(word);
+    active.reserve(active_count);
     free.reserve(capacity);
     for(u32 index=active_head;index!=none;index=slots[index].active_next)
         active.push_back({u16(index),slots[index].state});
@@ -22,9 +24,16 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
         if(slot.active||slot.pristine)continue;
         // Reused bullets inherit fields from their previous life. The image
         // stays immutable until this slot leaves the free list again.
-        if(!slot.inactive_image)slot.inactive_image=std::make_shared<const BulletState>(slot.state);
-        inactive.push_back({u16(index),slot.inactive_image});
+        auto cached=slot.inactive_image.lock();
+        if(!cached){
+            cached=std::shared_ptr<const BulletState>(new BulletState(slot.state));
+            slot.inactive_image=cached;
+        }
+        inactive.push_back({u16(index),std::move(cached)});
     }
+#if TH17_ROOM_BENCHMARK
+    image.payload[image.BulletState]=u32(active.capacity()*sizeof(Active)+inactive.capacity()*sizeof(Inactive)+free.capacity()*sizeof(u16));
+#endif
     image.restore_with([this,active=std::move(active),inactive=std::move(inactive),free=std::move(free)]{
         // Collision hosts keep permanent references into the slot array.
         u32 next=none;
@@ -40,7 +49,7 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
             if(occupied[index/32]&(u32(1)<<(index%32)))continue;
             auto& slot=slots[index];
             if(cached!=inactive.end()&&cached->index==index){
-                if(slot.inactive_image!=cached->state)slot.state=*cached->state;
+                if(slot.inactive_image.lock()!=cached->state)slot.state=*cached->state;
                 slot.inactive_image=cached->state;slot.pristine=false;
                 ++cached;
             }else if(!slot.pristine){

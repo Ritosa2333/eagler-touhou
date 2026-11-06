@@ -26,7 +26,7 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
             v.rate=rate;v.error=error;slot.cancelling=cancelling;slot.visual_touched=true;
         }
     };
-    std::shared_ptr<const VisualImage> idle_image;
+    std::weak_ptr<const VisualImage> idle_image;
     bool visual_touched=false;
 #endif
     void touch_visual(){
@@ -120,30 +120,47 @@ void BulletScene::save_rollback(multiplayer::FrameImage& image){
     struct Idle {Slot* slot;std::shared_ptr<const Slot::VisualImage> image;};
     std::vector<Active> active;
     std::vector<Idle> idle;
-    std::bitset<BulletManager::capacity> bound;
-    active.reserve(manager.visible_count);
+    std::bitset<BulletManager::capacity> bound,shared;
     for(u32 i=0;i<slots.size();++i){
         auto& slot=*slots[i];auto& v=slot.visual;
         if(!v.resource)continue;
         bound.set(i);
         // Embedded parents can be observed or updated through the ANM graph.
         // Keep those full checkpoints even when their bullet slot is idle.
-        if(manager.active(i)||v.body.creation_parent||v.body.rotation_parent||
-           (v.body.object_host&&v.body.object_host!=v.manager)||(v.manager&&v.manager->registry.borrowed_root(v.body))){
+        if(!manager.active(i)&&!v.body.creation_parent&&!v.body.rotation_parent&&
+           (!v.body.object_host||v.body.object_host==v.manager)&&(!v.manager||!v.manager->registry.borrowed_root(v.body)))
+            shared.set(i);
+    }
+    active.reserve(bound.count()-shared.count());
+    idle.reserve(shared.count());
+    for(u32 i=0;i<slots.size();++i){
+        if(!bound.test(i))continue;
+        auto& slot=*slots[i];
+        if(!shared.test(i)){
             slot.idle_image.reset();
             active.push_back({&slot,Slot::VisualImage(slot)});
         }else{
-            if(!slot.idle_image)slot.idle_image=std::make_shared<const Slot::VisualImage>(slot);
-            idle.push_back({&slot,slot.idle_image});
+            auto cached=slot.idle_image.lock();
+            if(!cached){
+                // Separate allocation lets the last frame release the VM
+                // storage even while the slot retains a weak lookup.
+                cached=std::shared_ptr<const Slot::VisualImage>(new Slot::VisualImage(slot));
+                slot.idle_image=cached;
+            }
+            idle.push_back({&slot,std::move(cached)});
         }
     }
+#if TH17_ROOM_BENCHMARK
+    image.payload[image.BulletVisual]=u32(active.capacity()*sizeof(Active)+idle.capacity()*sizeof(Idle));
+    image.unused_capacity+=u32((active.capacity()-active.size())*sizeof(Active));
+#endif
     image.restore_with([this,bound,active=std::move(active),idle=std::move(idle)]{
         for(const auto& row:active){
             row.slot->idle_image.reset();
             row.image.restore(*row.slot);
         }
         for(const auto& row:idle){
-            if(row.slot->idle_image!=row.image)row.image->restore(*row.slot);
+            if(row.slot->idle_image.lock()!=row.image)row.image->restore(*row.slot);
             row.slot->idle_image=row.image;
         }
         for(u32 i=0;i<slots.size();++i){
