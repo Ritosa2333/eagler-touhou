@@ -129,7 +129,8 @@ render_hook:
     ; TH03 uses 200 VRAM rows. Include PLAYFIELD_TOP=16 screen pixels.
     ; sprite16_put divides screen Y by two (native player top is y-16,
     ; sprite height is 64 screen pixels, so its center is y+16).
-    ; Two VRAM rows display as four screen pixels; use a 4x4 square.
+    ; Keep the white center on the collision origin in both axes. Each
+    ; VRAM row displays as two screen pixels.
     mov dx,[si+2]
     sar dx,5
     add dx,8-1
@@ -144,7 +145,7 @@ render_hook:
     and cx,7
     shr ax,3
     add di,ax
-    mov bx,0x00f0
+    mov bx,0x00f8
     ror bx,cl                  ; spans two bytes at every X alignment
     mov ax,0xa800
     mov es,ax
@@ -157,7 +158,8 @@ render_hook:
     out 0x7e,al
     mov [es:di],bx
     mov [es:di+80],bx
-    mov bx,0x0060
+    mov [es:di+160],bx
+    mov bx,0x0070
     ror bx,cl
     mov al,0xff
     out 0x7e,al

@@ -21,10 +21,11 @@ async function nativeMarkerInputs(){
   const bytes=Buffer.from(source), header=bytes.readUInt16LE(8)*16;
   const origin=header+meta.codeSegment*16+meta.hooks.find(h=>h.imageOffset===0x990b).target;
   const region=bytes.subarray(origin,origin+256);
-  for(const [before,after] of [['bbf800','bbf000'],['26899da000','9090909090'],['bb7000d3cbb0ff','bb6000d3cbb0ff']]){
+  // Preserve the native 5-by-3 marker: its white center is symmetric around
+  // the collision origin, including when the player crosses a byte edge.
+  for(const before of ['bbf800','26899da000','bb7000d3cbb0ff']){
     const old=Buffer.from(before,'hex'), at=region.indexOf(old);
     if(at<0||region.indexOf(old,at+1)!==-1)throw Error('TH03 native marker instruction changed');
-    Buffer.from(after,'hex').copy(region,at);
   }
   const sha=createHash('sha256').update(bytes).digest('hex');
   const soloMeta=JSON.parse(await readFile(resolve(web,'solo-assist.json'),'utf8'));
