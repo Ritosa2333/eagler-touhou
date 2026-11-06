@@ -6,7 +6,7 @@ import {resolve,dirname,extname,sep} from 'node:path';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 
 const repo=resolve(import.meta.dirname,'../../../../..');
-const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17/build-eagler-multiplayer'));
+const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17-mp/build-eagler-multiplayer'));
 const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-room'));
 const rollback=!process.argv.includes('--lockstep');
 const throughStageTwo=process.argv.includes('--through-stage-two');

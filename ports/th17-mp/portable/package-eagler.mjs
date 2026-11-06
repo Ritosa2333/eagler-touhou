@@ -3,7 +3,7 @@ import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync} from 'node:
 import {resolve,dirname,relative} from 'node:path';
 import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'..'),game='th17';
-const multiplayer=process.argv.includes('--multiplayer');
+const multiplayer=true;
 const roomBenchmark=process.argv.includes('--room-benchmark');
 if(roomBenchmark&&(!multiplayer||!process.env.EAGLER_RUNTIME_OUTPUT))throw Error('Room benchmark needs a dedicated multiplayer package output');
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,multiplayer?'build-eagler-multiplayer':'build-eagler');
