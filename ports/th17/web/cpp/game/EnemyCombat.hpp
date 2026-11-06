@@ -6,6 +6,7 @@ namespace th17 {
 struct EnemyCombatServices {
     virtual ~EnemyCombatServices()=default;
     virtual bool bomb_damage(const DamageQuery&,i32& amount)=0;
+    virtual bool partner_damage(const DamageQuery&,EnemyShotDamage&){return true;}
     virtual bool additional_damage(EnemyState&,i32 incoming,i32& amount)=0;
     virtual int enemy_death(EnemyRuntime&,float rate)=0;
     virtual bool contact_override(EnemyState&,AnmVm*,i32& result,bool& handled)=0;

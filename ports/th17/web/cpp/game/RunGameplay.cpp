@@ -12,6 +12,14 @@ bool RunGameplay::load(i32 stage,const StageCamera& camera,const ReplayStageStat
     objects=active.gameplay->take_run_objects();
     return active.gameplay->prepare(camera,replay)||fail(active.gameplay->error);
 }
+bool RunGameplay::add_coop_player(i32 character,i32 animal){
+    if(!common||!objects||!active.gameplay||active.gameplay->active()||run.practice_record)
+        return fail("TH17 partners require a new story run");
+    ShtResource shots;
+    i32 bank=-1;
+    if(!common->load_pilot(character,animal,shots,bank))return fail(common->error);
+    return objects->battle.add_coop_player(shots,character,animal,bank)||fail(objects->battle.error);
+}
 bool RunGameplay::next(i32 stage,const StageCamera& camera,const ReplayStageState* replay){
     if(!active.gameplay||!objects||!error.empty())return fail("Run unavailable at next stage");
     if(active.stage<1||active.stage>=6||stage!=active.stage+1)return fail("Requested stage is not the next original stage");

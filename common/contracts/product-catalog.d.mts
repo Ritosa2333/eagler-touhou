@@ -883,6 +883,8 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th17";
         }>;
+        multiplayerRuntime: "./runtime/th17/multiplayer/th17.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
         features: Readonly<{
             thprac: false;
             languages: false;

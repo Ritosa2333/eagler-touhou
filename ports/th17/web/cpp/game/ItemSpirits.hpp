@@ -33,7 +33,7 @@ public:
     bool initialize(){if(roaring.initialize_hud())return true;error=roaring.error;return false;}
     void set_practice(bool value)noexcept{practice=value;}
     bool spawn(i32 kind,const Vec3&,float angle,float speed,i32 delay=0,i32 sound=-1);
-    bool update_items(const ItemSpiritFrame&);
+    bool update_items(const ItemSpiritFrame&,const std::array<ItemFrameContext*,2>& partners={});
     bool update_spirits(const ItemSpiritFrame&);
     bool update_spirits(const ItemSpiritFrame&,const AnimalSpiritTargets&);
     void before_player()noexcept;

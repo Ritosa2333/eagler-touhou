@@ -41,6 +41,7 @@ public:
     AnmResource* resource=nullptr;const AnmSprite* sprite=nullptr;AnmResource* sprite_resource=nullptr;
     i32 source_script=-1;
     u32 ordering=0;
+    u8 hud_viewer=0; // zero is visible to every room seat
     // Rendering-only memoization. The exact float angle is the key; parent
     // rotation normalization still runs on every call before this lookup.
     u32 quad_angle_bits=0;float quad_sine=0,quad_cosine=1;

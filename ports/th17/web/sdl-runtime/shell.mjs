@@ -6,6 +6,7 @@ const runtimeBuild=/*TH17_BUILD_INFO*/{version:'development-incomplete',complete
 const game='th17',protocol='eagler-touhou/1',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas'),$=s=>document.querySelector(s);
 const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 let configured=false;
+let roomRuntime=false;
 let core,gpuMonitor,launched=false,first=false,stopping=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve();
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!stopping,reset:clearKeyboard},accept:code=>!!scanCodes[code],send:(code,down)=>core?._th17_key(scanCodes[code],+down)});
@@ -21,7 +22,7 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core._th17_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop(){if(stopping)return;stopping=true;try{core._th17_loop_stop();gpuMonitor?.close();gpuMonitor=null;await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;stopping=true;try{core._th17_loop_stop();core._th17_room_close?.();gpuMonitor?.close();gpuMonitor=null;await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth17\//,'').replace(/^\//,'');if(!/^(?:scoreth17\.dat|th17\.cfg|replay\/th17_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 function apply(){core.eaglerOptions=options;core._th17_always_hitbox(+(options.alwaysHitbox===true));core._th17_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th17_music_enabled(+music);}
 const sharedFonts=['/msgothic.ttc','/unifont.otf'];
@@ -71,6 +72,35 @@ function mountLanguagePack(pack,language){
  runtimePackFiles.push(runtimeLocalePath);
 }
 function openReplay(value){const name=path(value).replace(/^replay\//,'');if(!/\.rpyx?$/.test(name))throw Error('录像路径无效');const bytes=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=core._malloc(bytes.length);if(!ptr)throw Error('录像内存不足');try{core.HEAPU8.set(bytes,ptr);if(!core._th17_open_replay(ptr,0))throw Error('录像启动失败');}finally{core._free(ptr);}}
+async function openRoom(){
+ const o=options,loadouts=o.netplayLoadouts,count=o.netplayPlayerCount,seat=o.netplayPlayer;
+ const relay=new URL(o.netplayUrl),room=relay.searchParams.get('room'),run=relay.searchParams.get('run');
+ const delay=o.netplayInputDelay??0;
+ if(o.netplayMode!=='lan'||(o.netplayAdonisMode??1)!==1||o.netplayInputDelayAuto||o.netplaySpectator||
+    o.replayPath||o.thpracEnabled||!['ws:','wss:'].includes(relay.protocol)||relay.username||relay.password||
+    relay.hash||!room?.startsWith('th17mp-')||!/^[1-9]\d*$/.test(run??'')||
+    ![2,3].includes(count)||!Number.isInteger(seat)||seat<0||seat>=count||
+    !Number.isInteger(o.netplaySeed)||o.netplaySeed<0||o.netplaySeed>65535||
+    !Number.isInteger(o.netplayDifficulty)||o.netplayDifficulty<0||o.netplayDifficulty>4||
+    !Number.isInteger(delay)||delay<0||delay>9||
+    !Array.isArray(loadouts)||loadouts.length!==count||
+    loadouts.some(p=>!p||![0,1,2].includes(p.character)||![0,1,2].includes(p.shot)))
+  throw Error('TH17 房间配置无效');
+ const manifest=await(await fetch('./manifest.json')).json();
+ const build=manifest.execution?.sha256;
+ if(manifest.product!=='th17mp'||manifest.features?.multiplayer!==true||!/^[a-f\d]{64}$/i.test(build??''))
+  throw Error('TH17 多人运行包身份无效');
+ const digest=new DataView(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('th17mp:'+room+':'+run)));
+ const words=[1,count,seat,o.netplayDifficulty,o.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,delay];
+ for(let i=0;i<3;i++)words.push(loadouts[i]?.character??0,loadouts[i]?.shot??0);
+ for(let i=0;i<4;i++)words.push(parseInt(build.slice(i*8,i*8+8),16));
+ const url=new TextEncoder().encode(relay.href+'\0'),params=core._malloc(words.length*4),address=core._malloc(url.length);
+ try{
+  if(!params||!address)throw Error('TH17 房间内存不足');
+  core.HEAPU32.set(words,params>>>2);core.HEAPU8.set(url,address);
+  if(!core._th17_room_open(params,words.length,address))throw Error('TH17 房间连接失败');
+ }finally{core._free(address);core._free(params);}
+}
 async function command(m){switch(m.command){
 case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');configured=false;options=m.options||{};if(options.touchSensitivity!=null&&!(Number.isFinite(options.touchSensitivity)&&options.touchSensitivity>=100&&options.touchSensitivity<=300))throw Error('触控灵敏度无效');music=m.music!=='none';for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);mountLanguagePack(m.runtimePack,m.language||m.runtimePack?.language||'ja');apply();configured=true;return {};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
@@ -85,7 +115,7 @@ case 'thprac-mouse':{
  if(scale>0)core._th17_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(m.x-r.left-(r.width-640*scale)/2)/scale,(m.y-r.top-(r.height-480*scale)/2)/scale);
  return {};
 }
-case 'launch':if(!configured)throw Error('请先配置游戏');if(!launched){let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}const requested=Number(scaleOption);core._th17_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);if(!core._th17_initialize())throw Error(err());if(options.replayPath)openReplay(options.replayPath);launched=true;apply();first=false;$('#loading').textContent='';core._th17_loop_start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++ · WEB '+runtimeBuild.version.split('-sdl3-')[0],architecture:protocol,...runtimeBuild});}return {};
+case 'launch':if(!configured)throw Error('请先配置游戏');if(!launched){if(!roomRuntime&&options.netplayMode==='lan')throw Error('请使用 TH17 多人运行包');let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}const requested=Number(scaleOption);core._th17_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);if(!core._th17_initialize())throw Error(err());if(roomRuntime)await openRoom();else if(options.replayPath)openReplay(options.replayPath);launched=true;apply();first=false;$('#loading').textContent='';core._th17_loop_start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++ · WEB '+runtimeBuild.version.split('-sdl3-')[0],architecture:protocol,...runtimeBuild});}return {};
 case 'sync':await save();return {};
 case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of core.FS.readdir('/savesth17'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=core.FS.stat('/savesth17/'+n);if(core.FS.isFile(s.mode))files.push({path:n,size:s.size});}return {files};}
 case 'read':return {bytes:Array.from(core.FS.readFile('/savesth17/'+path(m.path)))};
@@ -109,16 +139,19 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
  if(!launched||!options.touchEnabled||e.pointerType==='mouse')return;e.preventDefault();if(e.type==='pointercancel'){core._th17_touch_cancel();return;}if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th17_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);
 });
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fatal(Error('图形环境失效，请退出后重新开始。'));});
-window.addEventListener('pagehide',()=>{if(launched){core._th17_loop_stop();try{void save().catch(fatal);}catch(e){fatal(e);}closeAudio();}});
+window.addEventListener('pagehide',()=>{if(launched){core._th17_loop_stop();core._th17_room_close?.();try{void save().catch(fatal);}catch(e){fatal(e);}closeAudio();}});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}},30000);
 const initialized=(async()=>{
  let last=performance.now(),ticks=0,presents=0,maxFrameMs=0;
- core=await createModule({canvas,printErr:console.error,onGameFrameStart(){gpuMonitor??=gpuTiming(canvas.getContext('webgl2'));gpuMonitor.begin();},onGameFrame(ok,ms,count){gpuMonitor?.end();if(!ok){fatal(Error(err()));return;}ticks+=count;presents++;maxFrameMs=Math.max(maxFrameMs,ms);if(!first){first=true;last=performance.now();ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){const p=core._th17_audio_statistics();if(p){const a=Array.from(core.HEAPU32.subarray(p>>>2,(p>>>2)+11));emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});}emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs,gpuMs:gpuMonitor?.value()??null});last=now;ticks=0;presents=0;maxFrameMs=0;}if(core._th17_phase()===4)void stop().catch(fatal);}});
+ core=await createModule({canvas,printErr:console.error,onGameFrameStart(){gpuMonitor??=gpuTiming(canvas.getContext('webgl2'));gpuMonitor.begin();},onGameFrame(ok,ms,count){gpuMonitor?.end();if(!ok){fatal(Error(err()));return;}if(!count)return;ticks+=count;presents++;maxFrameMs=Math.max(maxFrameMs,ms);if(!first){first=true;last=performance.now();ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){const p=core._th17_audio_statistics();if(p){const a=Array.from(core.HEAPU32.subarray(p>>>2,(p>>>2)+11));emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});}emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs,gpuMs:gpuMonitor?.value()??null});last=now;ticks=0;presents=0;maxFrameMs=0;}if(core._th17_phase()===4)void stop().catch(fatal);}});
  core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  window.Module=core;window.FS=core.FS;core.resetBrowserKeyboard=()=>keyboard.clear();
- core.FS.mkdirTree('/savesth17');core.FS.mount(core.IDBFS,{},'/savesth17');await sync(true);core.FS.mkdirTree('/savesth17/replay');core.FS.symlink('/savesth17','/save');
+ roomRuntime=typeof core._th17_room_open==='function';
+ core.FS.mkdirTree('/savesth17');
+ if(!roomRuntime){core.FS.mount(core.IDBFS,{},'/savesth17');await sync(true);}
+ core.FS.mkdirTree('/savesth17/replay');core.FS.symlink('/savesth17','/save');
  if(!validEpoch||query.get('managedData')!=='1'||parent===window||typeof parent.__eaglerPrepareManagedRuntimeDataV1!=='function')throw Error('请从 eagler-touhou 启动此运行时');
  const {buffer}=await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch});
  if(buffer.byteLength<16||buffer.byteLength>128*1024*1024)throw Error('游戏资源大小错误');

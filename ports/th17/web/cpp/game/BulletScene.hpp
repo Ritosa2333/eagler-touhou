@@ -6,6 +6,9 @@
 namespace th17 {
 struct BulletSceneHost:PlayerDamageHost {
     virtual const PlayerCollision& player_collision()const noexcept=0;
+    virtual u32 contact_players()const noexcept{return 1;}
+    virtual const PlayerCollision* select_contact(u32 seat)noexcept{return seat?nullptr:&player_collision();}
+    virtual void finish_contacts()noexcept{}
     virtual void sound(i32 id)=0;
     virtual void cancellation_effect(i32 script,const Vec3& position,const Vec3& velocity)=0;
     virtual void graze_spark(const Vec3& position)=0;

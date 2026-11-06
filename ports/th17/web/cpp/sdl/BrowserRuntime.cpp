@@ -13,6 +13,10 @@
 #include <cstdio>
 #include <ctime>
 #include <optional>
+#if TH17_MULTIPLAYER
+#include "../multiplayer/Session.hpp"
+#include <eagler/netplay/BrowserPeerTransport.hpp>
+#endif
 EM_JS(void, th17_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
 EM_JS(void, th17_browser_frame_begin, (), { Module["onGameFrameStart"]?.(); });
 EM_JS(int, th17_host_has_focus, (), {
@@ -25,6 +29,56 @@ namespace th17::sdl {
 namespace {
 std::unique_ptr<ApplicationState> app;
 std::string last_error;
+#if TH17_MULTIPLAYER
+struct RoomRuntime final : multiplayer::World {
+ Netplay::BrowserPeerTransport transport;
+ multiplayer::Session session{transport};
+ multiplayer::SessionSetup setup;
+ GameInput main_input;
+ bool entered=false;
+
+ bool can_predict() const override{return false;}
+ bool capture(u32) override{return false;}
+ bool restore(u32) override{return false;}
+ bool confirm(u32,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&) override{return true;}
+ bool step(u32,const Netplay::FrameDecision& frame) override{
+  if(!entered){
+   std::array<std::array<i32,2>,3> loadouts{};
+   for(u32 seat=0;seat<setup.seats;++seat)
+    loadouts[seat]={setup.loadouts[seat].character,setup.loadouts[seat].animal};
+   if(!app->begin_room(setup.seed,setup.difficulty,setup.seats,loadouts))return false;
+   app->renderer.hud_viewer=setup.local+1;
+   entered=true;
+  }
+  const auto movement=[](const Netplay::FrameInput& input)->PlayerTouch{
+   if(input.analogMode!=Netplay::AnalogMode::DirectTouch)return {};
+   return {input.unlimited?2:1,input.x,input.y};
+  };
+  main_input.update(frame.inputs[0].buttons);
+  app->touch=movement(frame.inputs[0]);
+  for(u32 seat=1;seat<setup.seats;++seat)
+   app->room_partners[seat-1]={frame.inputs[seat].buttons,movement(frame.inputs[seat])};
+  app->controller_buttons=0;app->keyboard_state={};
+  return app->step(main_input.held,main_input.pressed,main_input.repeated,60,false);
+ }
+ bool update(u32 held,const PlayerTouch& touch){
+  const auto now=std::uint64_t(emscripten_get_now());
+  if(!session.pump(now))return app->fail(session.error());
+  if(session.needs_input()){
+   Netplay::FrameInput sample(u16(held&0x3fbu));
+   if(touch.mode){
+    sample.analogMode=Netplay::AnalogMode::DirectTouch;
+    sample.x=touch.x;sample.y=touch.y;
+    sample.unlimited=touch.mode==2;
+   }
+   if(!session.capture_input(sample,now))return app->fail(session.error());
+  }
+  const auto result=session.tick(*this);
+  return result!=multiplayer::Session::Tick::Failed||app->fail(session.error());
+ }
+};
+std::unique_ptr<RoomRuntime> room;
+#endif
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
@@ -56,7 +110,11 @@ touhou::input::TouchState touch_state(){
  if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)return value;
  if(app->progress.practice_record){value.context=3;return value;}
  auto& stage=*app->scene();
- auto& player=*stage.battle.player;auto& motion=player.motion;
+ u32 seat=0;
+#if TH17_MULTIPLAYER
+ if(room)seat=room->setup.local;
+#endif
+ auto& player=stage.battle.pilot(seat);auto& motion=player.motion;
  value.context=stage.battle.dialogue_present()?2:1;
  value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
@@ -101,6 +159,9 @@ bool sample_and_tick(){
   held=keyboard_keys(keys)|(controller_keys&~0xbu);
  }
  if(ThpracUi::captures_game_input(*app)){held=buttons=0;app->touch={};}
+#if TH17_MULTIPLAYER
+ if(room)return room->update(held,app->touch);
+#endif
  controls.update(held);app->controller_buttons=buttons;
  if(app->display)app->display->presentation_fps=presentation_fps;
  const bool focus=lost_focus;lost_focus=false;
@@ -113,6 +174,58 @@ bool sample_and_tick(){
 }
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th17_initialize(){using namespace th17::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}ThpracUi::shutdown();app.reset();app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;if(!app->initialize(true)||!ThpracUi::initialize(*app)){last_error=app->failure;app.reset();return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}
+#if TH17_MULTIPLAYER
+EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,const char* url){
+ using namespace th17::sdl;
+ if(!app||!app->title||running||room||!words||count!=18||words[0]!=1||!url||
+    words[1]>3||words[2]>=words[1]||words[3]>4||words[4]>65535||words[7]>9)return 0;
+ auto candidate=std::make_unique<RoomRuntime>();
+ auto& setup=candidate->setup;
+ setup.seats=std::uint8_t(words[1]);setup.local=std::uint8_t(words[2]);
+ setup.difficulty=std::uint8_t(words[3]);setup.seed=th17::u16(words[4]);
+ setup.room=words[5]|(std::uint64_t(words[6])<<32);
+ setup.delay=std::uint8_t(words[7]);setup.rollback=false;
+ for(unsigned seat=0;seat<3;++seat){
+  if(words[8+seat*2]>2||words[9+seat*2]>2)return 0;
+  setup.loadouts[seat]={std::uint8_t(words[8+seat*2]),std::uint8_t(words[9+seat*2])};
+ }
+ for(unsigned i=0;i<4;++i)setup.build[i]=words[14+i];
+ if(!setup.valid()||!candidate->transport.Connect(url,setup.local,setup.seats)||
+    !candidate->session.begin(setup,std::uint64_t(emscripten_get_now())))return 0;
+ room=std::move(candidate);
+ return 1;
+}
+EMSCRIPTEN_KEEPALIVE void th17_room_close(){th17::sdl::room.reset();}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_status(){
+ using namespace th17::sdl;
+ static std::array<unsigned,24> value{};
+ value.fill(0);
+ if(!room||!app)return value.data();
+ value[0]=room->session.next_frame();
+ value[1]=room->setup.seats;
+ value[2]=room->setup.local;
+ if(const auto* scene=app->scene()){
+  auto& battle=app->scene()->battle;
+  value[3]=unsigned(battle.stage);
+  value[4]=unsigned(scene->controller->counters[0]);
+  value[5]=unsigned(battle.items->roaring.state.count);
+  value[6]=unsigned(battle.items->roaring.state.countdown.current);
+  value[7]=app->environment.game_rng.seed;
+  value[8]=app->environment.game_rng.calls;
+  value[9]=battle.enemies->count();
+  value[10]=battle.bullet_scene->manager.visible_count;
+  value[11]=unsigned(battle.score.score);
+  for(unsigned seat=0;seat<battle.pilot_count();++seat){
+   const auto& pilot=battle.pilot(seat);
+   value[12+seat*4]=unsigned(pilot.motion.position_fixed.x);
+   value[13+seat*4]=unsigned(pilot.motion.position_fixed.y);
+   value[14+seat*4]=unsigned(pilot.session.extra_lives);
+   value[15+seat*4]=unsigned(pilot.session.bombs);
+  }
+ }
+ return value.data();
+}
+#endif
 EMSCRIPTEN_KEEPALIVE void th17_always_hitbox(unsigned enabled){th17::presentation::always_hitbox=enabled!=0;}
 EMSCRIPTEN_KEEPALIVE void th17_render_scale(unsigned scale){if(!th17::sdl::running)th17::sdl::render_scale=scale>=2?2:1;}
 EMSCRIPTEN_KEEPALIVE const char* th17_error(){using namespace th17::sdl;return app?app->failure.c_str():last_error.c_str();}
@@ -139,7 +252,18 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   // RAF's timestamp and emscripten_get_now share the performance clock. Work
   // already done before this callback has consumed part of this refresh.
   const double deadline=begin+std::max(0.,1000./60.-std::max(0.,begin-time));
-  for(unsigned i=0;i<ticks&&ok;i++){const double tick_begin=emscripten_get_now();ok=sample_and_tick();++completed;const double tick_end=emscripten_get_now();predicted_tick=std::max(predicted_tick,tick_end-tick_begin);if(app->exiting)break;
+  for(unsigned i=0;i<ticks&&ok;i++){
+   const double tick_begin=emscripten_get_now();
+#if TH17_MULTIPLAYER
+   const auto previous_input_frame=room?room->session.next_frame():0;
+#endif
+   ok=sample_and_tick();
+#if TH17_MULTIPLAYER
+   if(!room||room->session.next_frame()!=previous_input_frame)++completed;
+#else
+   ++completed;
+#endif
+   const double tick_end=emscripten_get_now();predicted_tick=std::max(predicted_tick,tick_end-tick_begin);if(app->exiting)break;
    // Check whether the NEXT complete update/draw fits, rather than noticing
    // an overrun only after it happened. Keep unexecuted ticks as short debt.
    if(i+1<ticks&&tick_end+predicted_tick>=deadline){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);break;}
@@ -147,7 +271,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   if(ok&&completed)ok=ThpracUi::render(*app);
   app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
   if(ok&&completed)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
-  if(completed)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
+  if(ticks)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
  },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 EMSCRIPTEN_KEEPALIVE void th17_touch(unsigned type,int id,float x,float y){

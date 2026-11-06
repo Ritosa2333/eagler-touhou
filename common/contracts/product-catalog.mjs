@@ -58,6 +58,10 @@ const TH12_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, MARISA_A, MAR
     Object.freeze({ labelKey: "multiplayer.loadout.sanaeA", glyph: "早", character: 2, shot: 0 }),
     Object.freeze({ labelKey: "multiplayer.loadout.sanaeB", glyph: "早", character: 2, shot: 1 })]);
 const TH15_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu", "marisa", "sanae", "reisen"].map((name, character) => Object.freeze({ labelKey: `multiplayer.loadout.th15_${name}`, glyph: ["霊", "魔", "早", "鈴"][character], character, shot: 0 })));
+const TH17_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu","marisa","youmu"].flatMap((name,character)=>
+    ["wolf","otter","eagle"].map((animal,shot)=>Object.freeze({
+        labelKey:`multiplayer.loadout.th17_${name}_${animal}`, glyph:["霊","魔","妖"][character],character,shot,
+    }))));
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
 const TH09_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic"]);
@@ -597,6 +601,14 @@ export const PRODUCT_GAMES = Object.freeze({
             rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
             musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th17"}),
+        multiplayerRuntime: "./runtime/th17/multiplayer/th17.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.th17mp", gameplay: "cooperative",
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts: TH17_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th17PeerTransport",
+            spectator: false, titleRoomEntry: false,
+            inputTiming: Object.freeze({rollbackLimit: 0, rollbackDefault: false, manualDelayLimit: 9}),
+        }),
         thpracExtraFunctionKeys: Object.freeze(["U"]),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),

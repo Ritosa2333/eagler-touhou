@@ -69,11 +69,13 @@ TH17 普通版的产品能力表登记实际构建功能。逐项运行验收记
 
 当前生产构建的接入结果见[2026-10-30 验证记录](../../../archive/th17-development-20261030/migration-validation.md)，覆盖桌面 Chromium 的生产 Wasm、两种音乐模式、存档恢复与指定原版演示文件启动。
 
-## 多人分支的原生验证
+## 多人房间
 
-多人会话使用公共的 `SessionChannel` 和 `RollbackCore`。房间身份绑定关卡难度、各席位的角色与动物、种子、输入时序及运行包身份。回滚保留 12 帧，方向最多预测 2 帧。逻辑世界负责恢复目标帧开始前的状态，音效、存档、录像等输出由连续确认帧提交。
+测试版大厅提供双人和三人合作房。每个席位选择原版角色与动物组合，使用自己的自机、火力、残机、Bomb 和原版 HUD。房间身份绑定难度、各席位配置、种子、输入延迟与 Wasm 构建。浏览器房间按确认输入推进，可设置 0–9 帧延迟。
 
-动物灵池、五格库存和暴走计时归同一关卡。灵体由范围内最近的有效席位拾取，距离相同时按席位顺序处理，拾取动画继续追随该席位。原生测试覆盖会话、迟到输入纠正、确认输出，以及不同席位合力触发一次暴走。浏览器大厅和完整关卡快照属于后续接入范围。
+动物灵池、五格库存和暴走计时全队共享。有效席位中距离最近的玩家拾取灵体，距离相同按席位顺序处理。拾取残机碎片或 Bomb 碎片时，全队各得一份。满残玩家把自己的残机碎片转为 Bomb 碎片，其余席位按自己的库存结算。小 P 只给拾取者补充火力，双人房增加 `0.02`，三人房增加 `0.03`。
+
+原生会话测试覆盖迟到输入纠正和确认输出，关卡内的完整战斗快照待接入。资源测试覆盖多人合力触发暴走、碎片分发和独立溢出。
 
 ```sh
 cmake -S ports/th17/web/tests/multiplayer -B build/th17-multiplayer -G Ninja -DCMAKE_CXX_COMPILER=clang++
@@ -82,6 +84,8 @@ ctest --test-dir build/th17-multiplayer --output-on-failure
 ```
 
 Windows 从 Visual Studio 开发者终端执行，可加 `-DCMAKE_LINKER_TYPE=SYSTEM` 选用系统链接器。
+
+多人 Wasm 使用 `node ports/th17/web/scripts/build-sdl-application.mjs --release --multiplayer` 构建，再用 `node ports/th17/portable/package-eagler.mjs --multiplayer` 打包。`node ports/th17/web/tests/multiplayer/room-browser.mjs` 启动本地 Relay 和 Chromium，创建双人和三人房，逐帧比较各端的一面战斗状态。脚本读取 `EAGLER_TH17_BUILD`、`EAGLER_TH17_DATA`、`TH17_ROOM_GOTHIC` 和 `TH17_ROOM_UNIFONT`，把截图和 JSON 报告写入 `TH17_ROOM_EVIDENCE`。
 
 ## 检查
 

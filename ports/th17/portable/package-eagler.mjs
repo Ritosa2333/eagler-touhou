@@ -3,12 +3,14 @@ import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync} from 'node:
 import {resolve,dirname,relative} from 'node:path';
 import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'..'),game='th17';
-const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,'build-eagler');
-const buildRoot=resolve(root,'web',process.env.TH17_OUTPUT||'artifacts/sdl-release');
+const multiplayer=process.argv.includes('--multiplayer');
+const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,multiplayer?'build-eagler-multiplayer':'build-eagler');
+const buildRoot=resolve(root,'web',process.env.TH17_OUTPUT||(multiplayer?'artifacts/sdl-multiplayer':'artifacts/sdl-release'));
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));
 if(!Number.isFinite(Date.parse(build.builtAt)))throw Error('Rebuild Runtime with build timestamp');
 if(build.kind!=='th17-sdl3-application-release'||!build.completeGame)throw Error('A complete production TH17 build is required');
+if((build.features?.multiplayer===true)!==multiplayer)throw Error('TH17 Runtime variant mismatch');
 for(const [path,expected] of Object.entries({...build.sources,...build.headers})){
  if(hash(readFileSync(resolve(root,path)))!==expected)throw Error('Rebuild changed source: '+path);
 }
@@ -41,8 +43,8 @@ for(let code=0;code<65536;++code){
 put(mappingPath,mapping);
 const resources=[{path:'/'+mappingPath,url:'./'+mappingPath,bytes:mapping.length}];
 put('resources.json',JSON.stringify({schema:'eagler-sdl-resources/1',game,resources},null,2)+'\n');
-const features={thprac:build.features?.thprac===true,languages:build.features?.languages===true,focusHitbox:false};
-put('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:'production',builtAt:build.builtAt,version,features,music:['ogg-stream','ogg-full','none'],execution:{kind:build.kind,sha256:build.sha256,loaderSha256:hash(loader),architecture:build.architecture}},null,2)+'\n');
+const features={thprac:build.features?.thprac===true,languages:build.features?.languages===true,focusHitbox:false,...(multiplayer?{multiplayer:true}:{})};
+put('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:multiplayer?'multiplayer':'production',...(multiplayer?{product:'th17mp',variant:'multiplayer'}:{}),builtAt:build.builtAt,version,features,music:['ogg-stream','ogg-full','none'],execution:{kind:build.kind,sha256:build.sha256,loaderSha256:hash(loader),architecture:build.architecture}},null,2)+'\n');
 const files=Object.fromEntries(names.map(name=>{const bytes=readFileSync(resolve(out,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];}));
 put('runtime-files.json',JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game,files},null,2)+'\n');
 console.log(JSON.stringify({out,version,files:names.length,wasm:build.sha256}));

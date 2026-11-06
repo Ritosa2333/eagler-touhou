@@ -49,11 +49,58 @@ void load_bank(AnmManager& animations, const char* asset) {
     // A frozen script keeps the game VM and handle lifetime active without
     // requiring original artwork in the native test.
     AnmResource beast;
-    beast.scripts.resize(80);
+    beast.scripts.resize(150);
     for (auto& script : beast.scripts) {
         script.bytes = {2,0,8,0,0,0,0,0,255,255,8,0,0,0,0,0};
     }
     require(animations.load(30, std::move(beast)), "load test animation bank");
+}
+
+void shared_fragments(unsigned seats) {
+    AnmEnvironment env;
+    Rng random;
+    AnmManager animations(random, env);
+    load_bank(animations, nullptr);
+    EffectManager effects(animations, 30);
+    Host host;
+    ItemScoreState score;
+    std::array<PlayerMotion,3> motion{};
+    std::array<PlayerBounds,3> bounds{};
+    std::array<PlayerLifeSession,3> stocks{};
+    std::array<i32,3> tiers{};
+    auto items=std::make_unique<ItemManager>(animations,effects,30);
+    items->sound=items->immediate_sound=[](i32){return true;};
+    for(unsigned seat=0;seat<seats;++seat){
+        motion[seat].position={-120.f+120.f*seat,260,0};
+        const auto p=motion[seat].position;
+        bounds[seat].item_near={{p.x-8,p.y-8,0},{p.x+8,p.y+8,0}};
+    }
+    stocks[0].extra_lives=8;stocks[0].bomb_pieces=2;
+    stocks[1].life_pieces=2;
+    stocks[2].bombs=8;
+    ItemCollection one(stocks[0],score,motion[0],host,0,&tiers[0]);
+    ItemCollection two(stocks[1],score,motion[1],host,1,&tiers[1]);
+    ItemCollection three(stocks[2],score,motion[2],host,2,&tiers[2]);
+    ItemFrameContext first{motion[0],bounds[0],one,random,1,5,0,1};
+    ItemFrameContext second{motion[1],bounds[1],two,random,1,5,1,1};
+    ItemFrameContext third{motion[2],bounds[2],three,random,1,5,2,1};
+    const std::array<ItemFrameContext*,2> partners{&second,seats==3?&third:nullptr};
+    const auto pickup=[&](i32 kind){
+        const auto id=items->spawn(kind,motion[1].position,0,0);
+        require(id!=0,"spawn cooperative item");
+        if(!items->update(first,partners))require(false,items->error.c_str());
+        require(!items->find(id)->state.state,"cooperative item collected once");
+    };
+    pickup(4);
+    require(stocks[0].extra_lives==8&&stocks[0].bombs==4&&stocks[0].bomb_pieces==0,"full life overflow is local");
+    require(stocks[1].extra_lives==3&&stocks[1].life_pieces==0&&tiers[1]==1,"partner earns life independently");
+    if(seats==3)require(stocks[2].life_pieces==1&&stocks[2].bombs==8,"third pilot receives life fragment");
+    pickup(6);
+    require(stocks[0].bomb_pieces==1&&stocks[1].bomb_pieces==1,"both pilots receive bomb fragment");
+    if(seats==3)require(stocks[2].bomb_pieces==0,"full bomb stock discards its own fragment");
+    pickup(1);
+    require(stocks[0].power==100&&stocks[1].power==100+i32(seats)&&stocks[2].power==100,
+            "small P increases only the collector by the seat count");
 }
 
 void shared_inventory(const char* asset) {
@@ -129,5 +176,7 @@ int main(int argc, char** argv) {
     const char* asset = argc > 1 ? argv[1] : nullptr;
     shared_inventory(asset);
     team_contact(asset);
+    shared_fragments(2);
+    shared_fragments(3);
     std::cout << "TH17 shared spirit inventory, activation, countdown and tie-breaking passed\n";
 }

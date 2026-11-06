@@ -37,24 +37,24 @@ AnmVm* AnmManager::instantiate(AnmResource& resource,i32 script){
     error="Animation template unavailable";registry.discard(*vm);return nullptr;
 }
 bool AnmManager::initial_tick(AnmVm& vm){if(vm.tick(random,rate)<0){error=vm.error;registry.destroy_tree(vm);return false;}return true;}
-u32 AnmManager::create(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& translation,float rotation_z){
+u32 AnmManager::create(i32 id,i32 script,i32 layer,u32 ordering,const Vec3& translation,float rotation_z,u8 hud_viewer){
     auto* source=resource(id);if(!source){error="Animation resource unavailable";return 0;}auto* vm=instantiate(*source,script);if(!vm)return 0;
     vm->visual.render_flags|=0x400;if(layer>=0){vm->visual.layer=layer;if(layer<24)vm->visual.render_flags=(vm->visual.render_flags&~0x80000u)|0x40400;}
-    vm->visual.translation=translation;vm->variables.rotation.z=rotation_z;if(!initial_tick(*vm))return 0;vm->ordering=ordering;return registry.submit(*vm,ordering);
+    vm->hud_viewer=hud_viewer;vm->visual.translation=translation;vm->variables.rotation.z=rotation_z;if(!initial_tick(*vm))return 0;vm->ordering=ordering;return registry.submit(*vm,ordering);
 }
-u32 AnmManager::create_overlay(i32 resource,i32 script){
-    const u32 handle=create(resource,script,-1,4);if(auto* vm=registry.find(handle))vm->visual.render_flags&=~0xc000u;return handle;
+u32 AnmManager::create_overlay(i32 resource,i32 script,u8 hud_viewer){
+    const u32 handle=create(resource,script,-1,4,{},0,hud_viewer);if(auto* vm=registry.find(handle))vm->visual.render_flags&=~0xc000u;return handle;
 }
 AnmVm* AnmManager::spawn_child(AnmVm& source,i32 script,u32 ordering){
     if(!source.resource){error="Child animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,script);if(!vm)return nullptr;
-    vm->visual.translation={};vm->creation_parent=&source;vm->rotation_parent=source.rotation_parent?source.rotation_parent:&source;
+    vm->hud_viewer=source.hud_viewer;vm->visual.translation={};vm->creation_parent=&source;vm->rotation_parent=source.rotation_parent?source.rotation_parent:&source;
     vm->visual.render_flags^=(source.visual.render_flags^vm->visual.render_flags)&0x2000000;
     if(!initial_tick(*vm))return nullptr;vm->ordering=ordering;if(!registry.submit(*vm,ordering)||!registry.attach(*vm,source)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}return vm;
 }
 AnmVm* AnmManager::spawn_detached(AnmVm& source,i32 script){
     if(!source.resource){error="Detached animation source has no resource";return nullptr;}auto* vm=instantiate(*source.resource,script);if(!vm)return nullptr;
     vm->visual.render_flags|=0x400;vm->visual.layer=source.visual.layer;vm->visual.render_flags^=(source.visual.render_flags^vm->visual.render_flags)&0x2000000;
-    vm->visual.translation=source.visual.translation;vm->variables.rotation=source.variables.rotation;vm->visual.child_anchor=source.variables.position;
+    vm->hud_viewer=source.hud_viewer;vm->visual.translation=source.visual.translation;vm->variables.rotation=source.variables.rotation;vm->visual.child_anchor=source.variables.position;
     if(!initial_tick(*vm))return nullptr;vm->ordering=0;if(!registry.submit(*vm)){error=registry.error;registry.destroy_tree(*vm);return nullptr;}return vm;
 }
 bool AnmManager::spawn_effect(AnmVm& vm,i32 script){if(effect)return effect(vm,script);error="Scene effect manager not bound";return false;}
