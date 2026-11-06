@@ -1,7 +1,42 @@
 #include "RunPause.hpp"
 #include "GameHud.hpp"
 
+#include <cstdio>
+#include <ctime>
+
 namespace th13 {
+
+namespace {
+// 0x4bb944 关卡名表（TitleResultEntry kStageNames 同源，0x43de80 榜行 %s 用）。
+constexpr const char* kRankStageNames[10] = {"test   ", "Stage 1", "Stage 2", "Stage 3",
+                                             "Stage 4", "Stage 5", "Stage 6", "Extra  ",
+                                             "Clear  ", "ExClear"};
+
+// 0x43de80 case 0x13/0x1c 榜行短格式（0x4abaf0/0x4abad0）：timestamp 为 0 =
+// 从未玩过行。%9ld%d = 榜内 9 位分 + 个位（续关数位，0x43d6b0 写 be7c8）。
+// 待录入行名字 = 8 空格（0x43d6b0 写 0x20202020×2；font0 空格推进保对齐）。
+std::string rank_row_text(const TitlePlayerDataScore& row, i32 index) {
+    char text[128];
+    const char* name = row.name.empty() ? "        " : row.name.c_str();
+    if (row.timestamp == 0 || row.stage < 0 || row.stage >= 10) {
+        std::snprintf(text, sizeof text, "%2d %s %9d%d --/--/-- Stage -",
+                      index + 1, name, row.score, row.continues);
+        return text;
+    }
+    const std::time_t clock = std::time_t(row.timestamp);
+    const std::tm* date = std::localtime(&clock);
+    if (!date) {
+        std::snprintf(text, sizeof text, "%2d %s %9d%d --/--/-- Stage -",
+                      index + 1, name, row.score, row.continues);
+        return text;
+    }
+    std::snprintf(text, sizeof text, "%2d %s %9d%d %.2d/%.2d/%.2d %s",
+                  index + 1, name, row.score, row.continues,
+                  date->tm_year % 100, date->tm_mon + 1, date->tm_mday,
+                  kRankStageNames[row.stage]);
+    return text;
+}
+}  // namespace
 
 struct RunPause::Services final : PauseMenuServices {
     RunPause& owner;
@@ -37,17 +72,77 @@ bool RunPause::record_result_name(const std::string& name) {
 }
 
 bool RunPause::draw_overlay(HudDrawServices& sink) {
-    HudTextStyle style; style.font=4; style.color=0xffffffffu; style.shadow=true;
-    std::string text;
-    if (state.phase == 17) text="REPLAY SLOT  " + std::to_string(state.replay_slot) + " / 25";
-    else if (state.phase == 18) text="NAME  " + state.replay_name + "   [" +
-        (state.name_cursor == 90 ? std::string("END") : state.name_cursor == 89 ? std::string("DEL") :
-         state.name_cursor == 88 ? std::string("SPACE") : std::string(1,kResultNameCharacters[state.name_cursor])) + "]";
-    else if (state.phase == 19) text="OPTIONS  " + std::string(state.option_row ? "SE " : "BGM ") +
-        std::to_string(platform.pause_option_value(state.option_row));
-    else return true;
-    if (sink.hud_text({{150,180,0},style,text})) return true;
-    return fail("Pause overlay text failed");
+    if (state.screen == PauseScreen::Inactive) return true;
+    // 覆盖层文本面 = 原版 0x43de80 逐帧文本分发（AsciiInf 队列）：
+    // 全 pass shadow=1（入口 +0x19174=1），其余样式 = 0x4038a0 构造默认
+    // （font0 ch-32 全覆盖、左对齐、scale1、白色）。
+    HudTextStyle style;
+    style.shadow = true;
+    const auto put = [&](float x, float y, u32 color, const std::string& text) {
+        style.color = color;
+        return sink.hud_text({{x, y, 0}, style, text}) ||
+               fail("Pause overlay text failed");
+    };
+    if (state.phase == 18) {
+        TitlePlayerDataScore rows[10];
+        const i32 rank = platform.result_ranking(rows);
+        if (state.name_is_result) {
+            if (rank < 0) return fail("Result rank unavailable for name entry");
+            // 0x43de80 case 0x13：头部 (48,64) → 名字行 (75,rank*18)+黄 _ →
+            // 榜 10 行 (48,96+18i) 高亮=rank 黄 0xffffff00、余 0xff808180。
+            if (!put(48, 64, 0xffffffffu, "            Score Ranking!!")) return false;
+            for (i32 i = 0; i < 10; ++i)
+                if (!put(48, 96.f + 18.f * i,
+                         i == rank ? 0xffffff00u : 0xff808180u,
+                         rank_row_text(rows[i], i)))
+                    return false;
+            if (!put(75, 18.f * rank, 0xffffffffu, state.replay_name)) return false;
+            // 0x43dd10：黄 _ 紧随名字（字距 9px=font0 默认 spacing；8 字时 -9 回退）。
+            float underscore_x = 75.f + 9.f * float(state.replay_name.size());
+            if (state.replay_name.size() >= 8) underscore_x -= 9.f;
+            if (!put(underscore_x, 18.f * rank, 0xffffff00u, "_")) return false;
+        } else {
+            // 0x43de80 case 10/0x12/0x1b（回放保存名前录入）：名字行定格
+            // (102,224)（原版 age<10 自选中槽行 y=slot*15 滑入，属插值细节）。
+            if (!put(102, 224, 0xffffffffu, state.replay_name)) return false;
+            float underscore_x = 102.f + 9.f * float(state.replay_name.size());
+            if (state.replay_name.size() >= 8) underscore_x -= 9.f;
+            if (!put(underscore_x, 224, 0xffffff00u, "_")) return false;
+            // "No.%02d ..." 选中槽行（(48,224)）需要逐槽回放元数据，未接线，
+            // 保持省略（不占位伪造）。
+        }
+        // 91 字符网格 (112,320)，列步 18 行步 16；SPACE/DEL/END 槽画 font0
+        // 专用字形（原版推字符 0x81/0x7f/0x80 → sprite 95/96/97）；
+        // 光标字符黄 0xffffff00、余 0xff808180（0x43dd10 主循环）。
+        for (i32 i = 0; i < 91; ++i) {
+            const u8 ch = i < 0x58 ? u8(kResultNameCharacters[i])
+                        : i == 0x58 ? u8(0x81) : i == 0x59 ? u8(0x7f) : u8(0x80);
+            const float x = 112.f + 18.f * float(i % 13);
+            const float y = 320.f + 16.f * float(i / 13);
+            if (!put(x, y, i == state.name_cursor ? 0xffffff00u : 0xff808180u,
+                     std::string(1, char(ch))))
+                return false;
+        }
+        return true;
+    }
+    if (state.phase == 17) {
+        // 回放选槽：原版 = 25 行 "No.%02d ..." 榜单（0x43de80 case 9，
+        // (48,64+15i) 高亮黄）。逐槽回放元数据未接线，占位保持（font0）。
+        const std::string text =
+            "REPLAY SLOT  " + std::to_string(state.replay_slot) + " / 25";
+        return put(150, 180, 0xffffffffu, text);
+    }
+    if (state.phase == 19) {
+        const std::string text =
+            "OPTIONS  " + std::string(state.option_row ? "SE " : "BGM ") +
+            std::to_string(platform.pause_option_value(state.option_row));
+        return put(150, 180, 0xffffffffu, text);
+    }
+    // 0x43de80 case 0xf：GameOver 续关菜单 Credit 计数 (184,448)，白。
+    if (state.screen == PauseScreen::GameOver && state.phase == 6)
+        return put(184, 448, 0xffffffffu,
+                   "Credit " + std::to_string(progress.continue_stock));
+    return true;
 }
 
 bool RunPause::finish_selection(i32 entry) {
@@ -156,12 +251,17 @@ bool RunPause::open(PauseEntrance entrance) {
                        : entrance == PauseEntrance::BGameOver ? kResultsMenuScript
                        : entrance == PauseEntrance::PracticeEnd ? kPracticeEndMenuScript
                        : state.practice ? kPracticePauseMenuScript : kPauseMenuScript;
-    state.menu_animation = animations.create(front, script, -1, 4);
-    if (auto* vm = animations.registry.find(state.menu_animation))
-        vm->visual.render_flags &= ~0xc000u;
-    if (!state.menu_animation) {
-        rollback();
-        return fail(animations.error);
+    // 0x43fa90 态 0xe：GameOver 进榜（+0x1f8==0 → 态 0x13 名前录入）不建
+    // 菜单脚本 142；录入完成 END → LAB_00440520 才建 142 进态 0xf。未进榜
+    // 走原态 0xf 分支立即建。移植侧 phase18 END（PauseMenu case 18）补建。
+    if (!(entrance == PauseEntrance::GameOver && state.result_needs_name)) {
+        state.menu_animation = animations.create(front, script, -1, 4);
+        if (auto* vm = animations.registry.find(state.menu_animation))
+            vm->visual.render_flags &= ~0xc000u;
+        if (!state.menu_animation) {
+            rollback();
+            return fail(animations.error);
+        }
     }
     state.saved_rate = progress.rate;
     progress.rate = 1;
@@ -177,7 +277,8 @@ bool RunPause::open(PauseEntrance entrance) {
         rollback();
         return fail("Pause entry sound failed");
     }
-    if (!animations.interrupt(state.menu_animation, 3)) {
+    // 延迟建菜单（GameOver 进榜名前录入）时无菜单 VM 可中断。
+    if (state.menu_animation && !animations.interrupt(state.menu_animation, 3)) {
         rollback();
         return fail(animations.error);
     }
