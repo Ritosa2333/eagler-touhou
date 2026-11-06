@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { nativeTimerStep } from '../tools/replay/native-timer.mjs';
 import { nativeRandomStep } from '../tools/replay/junowen-format.mjs';
-const fixture = JSON.parse(readFileSync(new URL('../../../archive/th19-junowen-interop-20261106/native-primitives.json', import.meta.url), 'utf8'));
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/native-primitives.json', import.meta.url), 'utf8'));
 
 test('timer model matches 120 original x86 instruction results', () => {
   assert.equal(fixture.exeSha256, '8918fb39d511c9906ef769c6dd2761e7cb44ded5b7c4c1cd99c8992d12c078e9');
