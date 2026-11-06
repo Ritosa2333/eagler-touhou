@@ -9,9 +9,18 @@ bool AsciiText::draw_entry(const AsciiTextEntry& entry,AsciiGlyphServices& servi
  // font 1 = scale*7.0、行高 9.0；double 7.0 位于 0x4AED10（字节 00000000 00001c40）。
  // font 1 只有 FPS 叠加文本使用（Application.cpp，原版 0x424A90 '%2.1ffps'）；
  // native 小字形 x 步进 7px（587.5,594.5,...622.5），此前用 6 导致 6px。
- float advance=0,height=0;bool linear=false;switch(style.font){case 1:advance=float(style.scale.x*7.f);height=9;break;case 2:advance=float(style.scale.x*7.f);height=10;break;case 3:advance=float(style.scale.x*7.f);height=10;linear=true;break;case 4:advance=float(style.scale.x*12.f);height=16;break;case 5:advance=float(style.scale.x*12.f);height=16;linear=true;break;default:advance=float(float(spacing)*style.scale.x);height=14;linear=style.scale.x!=1;break;}if(linear)v.render_flags|=0x400;else v.render_flags&=~0x400u;
- const auto width=[&](u8 ch){return ((style.font==2||style.font==3)&&ch=='.')||((style.font==4||style.font==5)&&ch==',')?float(style.scale.x*4.f):advance;};
- if(style.alignment==0||style.alignment==2){const bool narrow=style.font>=2&&style.font<=5;const float factor=style.alignment==0?.5f:1.f;if(narrow){for(u8 ch:text.text){float offset=width(ch);if(style.alignment==0)offset=float(offset*.5f);offset=float(offset*resolution);p.x=float(p.x-offset);}}else{float offset=float(float(text.text.size())*advance);if(style.alignment==0)offset=float(offset*.5f);p.x=float(p.x-float(offset*resolution));}}
+ float advance=0,height=0;bool linear=false;switch(style.font){case 1:advance=float(style.scale.x*7.f);height=9;break;case 2:advance=float(style.scale.x*7.f);height=10;break;case 3:advance=float(style.scale.x*7.f);height=10;linear=true;break;case 4:advance=float(style.scale.x*12.f);height=16;break;case 5:advance=float(style.scale.x*12.f);height=16;linear=true;break;case 6:case 7:advance=float(style.scale.x*30.f);height=80;linear=style.font==7;break;default:advance=float(float(spacing)*style.scale.x);height=14;linear=style.scale.x!=1;break;}if(linear)v.render_flags|=0x400;else v.render_flags&=~0x400u;
+ // 004043a5/004043bf and 004045a2: large digits use proportional widths
+ // for alignment too, before the glyph loop. Default spacing (9) shifts
+ // the Trance countdown right even though its draw advances are correct.
+ const auto width=[&](u8 ch){
+  if(style.font==6||style.font==7){
+   if(ch=='.')return float(style.scale.x*10.f);
+   if(ch=='s')return float(style.scale.x*22.f);
+  }
+  return ((style.font==2||style.font==3)&&ch=='.')||((style.font==4||style.font==5)&&ch==',')?float(style.scale.x*4.f):advance;
+ };
+ if(style.alignment==0||style.alignment==2){const bool proportional=style.font>=2&&style.font<=7;if(proportional){for(u8 ch:text.text){float offset=width(ch);if(style.alignment==0)offset=float(offset*.5f);offset=float(offset*resolution);p.x=float(p.x-offset);}}else{float offset=float(float(text.text.size())*advance);if(style.alignment==0)offset=float(offset*.5f);p.x=float(p.x-float(offset*resolution));}}
  if(style.vertical_alignment==0)p.y=float(p.y-float(float(height*.5f)*resolution));else if(style.vertical_alignment==2)p.y=float(p.y-float(resolution*height));
  const auto select=[&](i32 index){if(glyph.select_sprite(index))return true;error="ASCII glyph sprite unavailable: "+std::to_string(index);return false;};
  for(u8 ch:text.text){if(ch==10){p.y=float(float(float(style.scale.y*height)*resolution)+p.y);p.x=text.position.x;continue;}if(ch!=' '){i32 index=v.sprite;if(style.font==0)index=i32(ch)-32;else if(style.font==1)index=i32(ch)+66;else if(style.font==2||style.font==3){advance=float(style.scale.x*7.f);if(ch>='a'&&ch<='z')index=i32(ch)+147;else switch(ch){case '/':index=237;break;case ':':index=238;break;case '-':index=239;break;case '*':index=240;break;case '%':index=241;break;case '$':index=300;break;case '.':index=242;advance=float(style.scale.x*4.f);break;case '+':index=243;break;default:index=i32(ch)+179;break;}}

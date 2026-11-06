@@ -10,12 +10,48 @@ namespace {
 struct Sink : AsciiGlyphServices {
     std::vector<Vec3> positions;
     std::vector<u32> flags;
+    std::vector<i32> sprites;
     bool ascii_glyph(AnmVm& vm) override {
         positions.push_back(vm.variables.position);
         flags.push_back(vm.visual.render_flags);
+        sprites.push_back(vm.visual.sprite);
         return true;
     }
 };
+}
+TEST(large_countdown_glyph_layout_matches_original_center_and_right_alignment) {
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager(random, environment);
+    CHECK(load_bank(manager, 2, synthetic_anm(302, trivial_scripts(1))));
+    // Unicorn executes original 004042a0 up to each glyph submission.
+    // For "3.63s": x = 163,193,203,233,263 at anchor224, font7, scale1.
+    const char* strings[] = {"3.63s", "10.00s", "0.02s"};
+    for (i32 font : {6, 7}) for (i32 alignment : {0, 2})
+    for (float scale : {1.f, .6f}) for (const char* value : strings) {
+        AsciiText text(manager, environment);
+        CHECK(text.initialize(2));
+        HudTextStyle style;
+        style.font = font;
+        style.alignment = alignment;
+        style.scale = {scale, scale};
+        CHECK(text.enqueue({{224,112,0},style,value}));
+        Sink sink;
+        CHECK(text.draw(0,sink));
+        const std::string str(value);
+        const float total = str.size() == 6 ? 152.f : 122.f;
+        const float start = 224.f - total * scale * (alignment == 0 ? .5f : 1.f);
+        float offset = 0;
+        CHECK_EQ(sink.positions.size(),str.size());
+        for (size_t i = 0; i < str.size(); ++i) {
+            CHECK_NEAR(sink.positions[i].x,start+offset*scale,1e-4);
+            CHECK_EQ(sink.positions[i].y,112.f);
+            CHECK_EQ(sink.flags[i]&0x400u,font==7?0x400u:0u);
+            const char ch = str[i];
+            CHECK_EQ(sink.sprites[i],ch=='.'?295:ch=='s'?296:i32(ch)+237);
+            offset += ch=='.'?10.f:ch=='s'?22.f:30.f;
+        }
+    }
 }
 TEST(ascii_pass_one_preserves_screen_coordinates_without_scene_origin) {
     GameRandom random;

@@ -6,6 +6,7 @@
 #include "game/GameHud.hpp"
 #include "game/HudDrawData.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/AsciiText.hpp"
 
 #include <string>
 #include <vector>
@@ -197,7 +198,7 @@ TEST(high_score_flag_updates_global_state_without_replacing_trance_or_mode_bits)
     CHECK_EQ(harness.progress.high_score_extra, 3);
 }
 
-TEST(trance_countdown_matches_original_format_position_and_warning_flash) {
+TEST(trance_countdown_keeps_decimal_on_playfield_centre_and_preserves_warning_flash) {
     HudHarness harness;
     struct Sink : HudDrawServices {
         std::vector<HudTextDraw> entries;
@@ -213,10 +214,22 @@ TEST(trance_countdown_matches_original_format_position_and_warning_flash) {
         CHECK(harness.hud.draw_trance_countdown(sink));
         const auto& text = sink.entries.back();
         CHECK_EQ(text.text, std::string(strings[i]));
-        CHECK_EQ(text.position.x,224.f); CHECK_EQ(text.position.y,112.f);
-        CHECK_EQ(text.style.font,7); CHECK_EQ(text.style.alignment,0);
+        CHECK_EQ(text.position.x,i==0?159.f:189.f); CHECK_EQ(text.position.y,112.f);
+        CHECK_EQ(text.style.font,7); CHECK_EQ(text.style.alignment,1);
         CHECK_EQ(text.style.vertical_alignment,1); CHECK_EQ(text.style.coordinate_space,0);
         CHECK_EQ(text.style.color,red[i]?0xffff0000u:0xffffffffu);
+        AsciiText ascii(harness.manager,harness.environment);
+        CHECK(ascii.initialize(2));
+        CHECK(ascii.hud_text(text));
+        struct GlyphSink : AsciiGlyphServices {
+            float decimal_x = -1;
+            bool ascii_glyph(AnmVm& vm) override {
+                if (vm.visual.sprite == 295) decimal_x = vm.variables.position.x;
+                return true;
+            }
+        } glyphs;
+        CHECK(ascii.draw(0,glyphs));
+        CHECK_EQ(glyphs.decimal_x+5.f,224.f);
     }
 }
 

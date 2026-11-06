@@ -64,6 +64,9 @@ public:
     bool consume(const SpellEvent&, const float boss_position[3],
                  const std::function<bool(i32)>& sound, i32 chapter);
     void sync(const SpellSnapshot&);
+    // 00412dfe..00412eb1: Update26 smooths the effect13 root toward boss slot0.
+    // State synchronization and draw callbacks never advance this position.
+    void update_background(const float boss_position[3]);
     // 00413080 draw callback: read selected character/mode counters from the
     // host's live FileStore; queue text before the Trance capture mutation.
     bool draw(HudDrawServices&, i32 captures, i32 attempts);
@@ -154,7 +157,7 @@ private:
     i32 bonus_base_ = 0, bonus_cap_ = 0;  // +0x80/+0x84
     i32 duration_ = 0;                    // +0x88
     u32 background_ = 0;                  // +0x20 背景枚 VM
-    float anchor_[3] = {0, 0, 0};         // +0xac.. 快照位
+    float anchor_[3] = {0, 0, 0};         // +0xac.. 符卡环平滑跟随位置
     SpellSnapshot snapshot_;
     u32 displays_[3] = {};
     u32 stage_background_ = 0, decoration_ = 0;
