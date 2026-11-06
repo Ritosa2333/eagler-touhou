@@ -25,11 +25,11 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         bool active,registered,alternate,frozen;
         std::vector<Node*> children;
     };
-    std::vector<SavedNode> saved;
+    std::vector<Node*> selected;
     std::array<u32,(slot_mask+31)/32> seen_slots{};
     std::unordered_set<Node*> seen_other;
     std::array<std::vector<Node*>,2> order;
-    saved.reserve(active_count+external.size());
+    selected.reserve(active_count+external.size());
     const auto remember=[&](Node* n){
         if(!n)return;
         if(n->slot<slot_mask){
@@ -38,9 +38,7 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
             if(word&bit)return;
             word|=bit;
         }else if(!seen_other.insert(n).second)return;
-        auto& row=saved.emplace_back(SavedNode{n,n->borrowed,n->borrowed?*n->borrowed:n->vm,n->handle,
-            n->active,n->registered,n->alternate,n->frozen_root,{}});
-        for(auto* child:n->children)row.children.push_back(child);
+        selected.push_back(n);
     };
     for(u32 group=0;group<groups.size();++group){
         order[group].reserve(groups[group].size());
@@ -48,6 +46,20 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     }
     for(const auto& entry:external)remember(entry.second.get());
     for(const auto& layer:layers)for(auto* vm:layer)remember(node(*vm));
+    // Layers can still reference nodes retired after their draw list was
+    // built. Count those before allocating the large VM records.
+    std::vector<SavedNode> saved;
+    saved.reserve(selected.size());
+    for(auto* n:selected){
+        auto& row=saved.emplace_back(SavedNode{n,n->borrowed,n->borrowed?*n->borrowed:n->vm,n->handle,
+            n->active,n->registered,n->alternate,n->frozen_root,{}});
+        row.children.reserve(n->children.size());
+        for(auto* child:n->children)row.children.push_back(child);
+    }
+#if TH17_ROOM_BENCHMARK
+    image.payload[image.Animation]=u32(saved.capacity()*sizeof(SavedNode));
+    image.unused_capacity+=u32((saved.capacity()-saved.size())*sizeof(SavedNode));
+#endif
     image.save(generation,active_count,next_slot,error);
     image.restore_with([this,saved=std::move(saved),order=std::move(order),borrowed=external,
                         free_slots=free_slots,free_overflow=free_overflow,layers=layers]{

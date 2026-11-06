@@ -229,8 +229,9 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
    const auto& b=*bullets.state(n);word(n);position(b.motion.position);word(b.flags);word(u32(b.phase));word(u32(b.transform_index));
   }
   battle.laser_scene->manager.each([&](const LaserObject& laser){word(laser.id);word(laser.flags);word(u32(laser.age.current));});
+  const auto& item_manager=battle.items->items;
   for(u32 n=1;n<=ItemManager::pool_size;++n){
-   const auto& item=battle.items->items.find(n)->state;
+   const auto& item=item_manager.find(n)->state;
    if(item.state){word(n);word(u32(item.kind));position(item.position);word(u32(item.age.current));}
   }
   for(u32 seat=0;seat<battle.pilot_count();++seat){
@@ -400,6 +401,27 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_load(){
 }
 #if TH17_ROOM_BENCHMARK
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_draw(){return th17::sdl::room_benchmark_draw.data();}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_memory(){
+ using namespace th17::sdl;
+ using Image=th17::multiplayer::FrameImage;
+ static std::array<unsigned,7+Image::PayloadCount> value{};
+ value.fill(0);
+ const auto* scene=app?app->scene():nullptr;
+ if(!room||!scene||!room->trace)return value.data();
+ const auto& battle=scene->battle;
+ value[0]=room->session.next_frame();
+ value[1]=battle.bullet_scene->manager.visible_count;
+ value[2]=battle.spell.flags&1?unsigned(battle.spell.id):UINT32_MAX;
+ value[3]=unsigned(mallinfo().uordblks);
+ value[4]=battle.laser_scene->manager.count();
+ for(const auto& frame:room->history){
+  if(frame.image.empty())continue;
+  ++value[5];
+  value[6]+=frame.image.unused_capacity;
+  for(unsigned i=0;i<Image::PayloadCount;++i)value[7+i]+=frame.image.payload[i];
+ }
+ return value.data();
+}
 #endif
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_rollback(){
  using namespace th17::sdl;
