@@ -1,0 +1,6720 @@
+[
+  {
+    "character": 0,
+    "file": "pl00.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 6,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -30
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 1,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 2,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 2,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 2,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 2,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 2,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 22,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 32,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 1,
+        "script": 7,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -29
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              64
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 402,
+            "time": -1,
+            "args": [
+              1045220557,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 0,
+            "args": [
+              8,
+              0,
+              1073741824,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 0,
+            "args": [
+              6,
+              0,
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 1,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 2,
+            "args": [
+              120,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 2,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 2,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 119,
+            "time": 2,
+            "args": [
+              1176260608,
+              1176266752,
+              1092616192
+            ],
+            "mask": 3
+          },
+          {
+            "op": 415,
+            "time": 2,
+            "args": [
+              0,
+              0,
+              1176260608
+            ],
+            "mask": 4
+          },
+          {
+            "op": 424,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 2,
+            "args": [
+              64
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 12,
+            "args": [
+              10,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 22,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 1,
+        "update": 1,
+        "hit": 0,
+        "script": 8,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -28
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": -1,
+            "args": [
+              34
+            ],
+            "mask": 0
+          },
+          {
+            "op": 0,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 1,
+            "args": [
+              11
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 2,
+            "args": [
+              80,
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 2,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 2,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 2,
+            "args": [
+              192
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 2,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 2,
+            "args": [
+              10,
+              0,
+              1073741824,
+              1073741824
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 2,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": 2,
+            "args": [
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 117,
+            "time": 2,
+            "args": [
+              1176260608,
+              1176266752,
+              1016003125
+            ],
+            "mask": 3
+          },
+          {
+            "op": 415,
+            "time": 2,
+            "args": [
+              1176260608,
+              0,
+              1176260608
+            ],
+            "mask": 5
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              35
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              36
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 12,
+            "args": [
+              20,
+              0,
+              1065353216,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 22,
+            "args": [
+              37
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 32,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 1,
+    "file": "pl01.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 6,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -42
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": -1,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 0,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 0,
+            "args": [
+              192
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 0,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 10,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 20,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 30,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 2,
+        "update": 2,
+        "hit": 2,
+        "script": 7,
+        "hit_script": 10,
+        "labels": [
+          2,
+          3,
+          1
+        ],
+        "descendants": [
+          -41
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 500,
+            "time": 0,
+            "args": [
+              9
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 0,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 421,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 402,
+            "time": 0,
+            "args": [
+              1065353216,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 0,
+            "args": [
+              4,
+              1,
+              1065353216,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 0,
+            "args": [
+              96
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 101,
+            "time": 0,
+            "args": [
+              1176260608,
+              1176267776
+            ],
+            "mask": 3
+          },
+          {
+            "op": 425,
+            "time": 0,
+            "args": [
+              1176260608
+            ],
+            "mask": 1
+          },
+          {
+            "op": 425,
+            "time": 1,
+            "args": [
+              -1119679439
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              2
+            ],
+            "mask": 0
+          },
+          {
+            "op": 408,
+            "time": 1,
+            "args": [
+              8,
+              0,
+              64,
+              64,
+              255
+            ],
+            "mask": 0
+          },
+          {
+            "op": 7,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              3
+            ],
+            "mask": 0
+          },
+          {
+            "op": 408,
+            "time": 1,
+            "args": [
+              2,
+              0,
+              255,
+              255,
+              255
+            ],
+            "mask": 0
+          },
+          {
+            "op": 7,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 1,
+            "args": [
+              8,
+              1,
+              1065353216,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 9,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 2,
+    "file": "pl02.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 6,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -15
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              120
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": -1,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 0,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 0,
+            "args": [
+              20,
+              0,
+              1073741824,
+              1073741824
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 5,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 10,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 15,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 20,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 4,
+        "update": 4,
+        "hit": 5,
+        "script": 7,
+        "hit_script": 0,
+        "labels": [
+          2,
+          1
+        ],
+        "descendants": [
+          -14
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": 0,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 421,
+            "time": 0,
+            "args": [
+              2
+            ],
+            "mask": 0
+          },
+          {
+            "op": 402,
+            "time": 0,
+            "args": [
+              0,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 0,
+            "args": [
+              4,
+              0,
+              1065353216,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              32
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              33
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 16,
+            "args": [
+              112,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 16,
+            "args": [
+              2
+            ],
+            "mask": 0
+          },
+          {
+            "op": 500,
+            "time": 16,
+            "args": [
+              8
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 16,
+            "args": [
+              4,
+              0,
+              1036831949,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 20,
+            "args": [
+              6,
+              0,
+              1065353216,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 7,
+            "time": 26,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 26,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 26,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 421,
+            "time": 26,
+            "args": [
+              2
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 26,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 26,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 26,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 26,
+            "args": [
+              20,
+              0,
+              0,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 46,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 3,
+    "file": "pl03.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -12
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 4,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 4,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 4,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 4,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 4,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 4,
+            "args": [
+              10008,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 7,
+            "args": [
+              10008,
+              204,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 6,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -11
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 4,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 4,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 4,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 4,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 4,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 4,
+            "args": [
+              10008,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 7,
+            "args": [
+              10008,
+              204,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 4,
+    "file": "pl04.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -11
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 8,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 8,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 8,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 8,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 16,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 24,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 32,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 40,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 6,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -10
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              32
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              33
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              34
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              35
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 8,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 8,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 8,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 8,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              36
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 16,
+            "args": [
+              37
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 24,
+            "args": [
+              38
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 32,
+            "args": [
+              39
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 40,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 5,
+    "file": "pl05.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -10
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 0,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 2,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 6,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 8,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 8,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 8,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 8,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 16,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 24,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 32,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 40,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 10,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -10
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 0,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 2,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 6,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 8,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 8,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 8,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 8,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 16,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 24,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 32,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 40,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 6,
+    "file": "pl06.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 3,
+        "hit": 3,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -11
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 0,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 2,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 4,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 4,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 4,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 4,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 4,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 4,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 6,
+            "args": [
+              10008,
+              228,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 7,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 7,
+    "file": "pl07.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -13
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 401,
+            "time": 0,
+            "args": [
+              1176266752,
+              0,
+              1176266752
+            ],
+            "mask": 5
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 1,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 2,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 3,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 3,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 5,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 6,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 7,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 8,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 9,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 9,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 10,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 11,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 12,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 13,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 14,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 15,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 15,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 16,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 17,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 18,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 18,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 19,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 20,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 21,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 21,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 22,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 23,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 24,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 24,
+            "args": [
+              80,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 24,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 24,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 24,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 24,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 24,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 24,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 24,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 24,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 24,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 26,
+            "args": [
+              10008,
+              584,
+              24
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 27,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 16,
+        "update": 10,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -13
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 401,
+            "time": 0,
+            "args": [
+              1176266752,
+              0,
+              1176266752
+            ],
+            "mask": 5
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 1,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 2,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 3,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 3,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 5,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 6,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 7,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 8,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 9,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 9,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 10,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 11,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 12,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 13,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 14,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 15,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 15,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 16,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 17,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 18,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 18,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 19,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 20,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 21,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 21,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 22,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 23,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 24,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 24,
+            "args": [
+              80,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 24,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 24,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 24,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 24,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 24,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 24,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 24,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 24,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 24,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 26,
+            "args": [
+              10008,
+              584,
+              24
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 27,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 8,
+    "file": "pl08.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -9
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 4,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 4,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 4,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 4,
+            "args": [
+              12,
+              0,
+              1073741824,
+              1073741824
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 7,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 10,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 13,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 16,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 9,
+    "file": "pl09.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -10
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 8,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 8,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 8,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 8,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 8,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 9,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 10,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 11,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 12,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 10,
+    "file": "pl10.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -13
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 10,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 12,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 12,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 12,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 12,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 12,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 12,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 12,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 12,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 401,
+            "time": 12,
+            "args": [
+              1176266752,
+              0,
+              1176266752
+            ],
+            "mask": 5
+          },
+          {
+            "op": 424,
+            "time": 12,
+            "args": [
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 402,
+            "time": 12,
+            "args": [
+              1069547520,
+              1069547520
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 12,
+            "args": [
+              12,
+              0,
+              1073741824,
+              1073741824
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 12,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 15,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 18,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 21,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 24,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 11,
+    "file": "pl11.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -14
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 8,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 8,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 8,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 8,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 8,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 9,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 10,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 11,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 12,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 18,
+        "update": 2,
+        "hit": 8,
+        "script": 7,
+        "hit_script": 10,
+        "labels": [
+          2,
+          3,
+          1
+        ],
+        "descendants": [
+          -12
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 500,
+            "time": 0,
+            "args": [
+              8
+            ],
+            "mask": 0
+          },
+          {
+            "op": 500,
+            "time": 0,
+            "args": [
+              9
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 0,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 421,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 402,
+            "time": 0,
+            "args": [
+              1065353216,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 0,
+            "args": [
+              4,
+              1,
+              1065353216,
+              1065353216
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 0,
+            "args": [
+              255
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": 0,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 101,
+            "time": 0,
+            "args": [
+              1176260608,
+              1176267776
+            ],
+            "mask": 3
+          },
+          {
+            "op": 425,
+            "time": 0,
+            "args": [
+              1176260608
+            ],
+            "mask": 1
+          },
+          {
+            "op": 425,
+            "time": 1,
+            "args": [
+              -1119679439
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              2
+            ],
+            "mask": 0
+          },
+          {
+            "op": 408,
+            "time": 1,
+            "args": [
+              8,
+              0,
+              64,
+              64,
+              255
+            ],
+            "mask": 0
+          },
+          {
+            "op": 7,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              3
+            ],
+            "mask": 0
+          },
+          {
+            "op": 408,
+            "time": 1,
+            "args": [
+              2,
+              0,
+              255,
+              255,
+              255
+            ],
+            "mask": 0
+          },
+          {
+            "op": 7,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 412,
+            "time": 1,
+            "args": [
+              8,
+              1,
+              1065353216,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 9,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 12,
+    "file": "pl12.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 12,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -15
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              255
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 3,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 6,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 9,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 15,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 18,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 18,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 18,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 18,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 18,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 18,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 18,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 18,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 18,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 18,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 19,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 20,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 21,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 22,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 23,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 24,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 25,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 26,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 27,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 28,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 29,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 30,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 13,
+    "file": "pl13.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -11
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 4,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 4,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 4,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 4,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 4,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 4,
+            "args": [
+              10008,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 6,
+            "args": [
+              10008,
+              204,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 7,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 14,
+    "file": "pl14.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 7,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -9
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 1,
+            "args": [
+              72,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 1,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 1,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 300,
+            "time": 1,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 7,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 10,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 13,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 20,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -11
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 401,
+            "time": 0,
+            "args": [
+              1176266752,
+              0,
+              1176266752
+            ],
+            "mask": 5
+          },
+          {
+            "op": 415,
+            "time": 0,
+            "args": [
+              1045854032,
+              0,
+              1045854032
+            ],
+            "mask": 0
+          },
+          {
+            "op": 319,
+            "time": 0,
+            "args": [
+              24,
+              27,
+              25,
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 1,
+            "args": [
+              88,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 1,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 1,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 300,
+            "time": 1,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 7,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 10,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 13,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 20,
+        "update": 0,
+        "hit": 0,
+        "script": 6,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -10
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 401,
+            "time": 0,
+            "args": [
+              1176266752,
+              0,
+              1176266752
+            ],
+            "mask": 5
+          },
+          {
+            "op": 415,
+            "time": 0,
+            "args": [
+              -1106314699,
+              0,
+              -1106314699
+            ],
+            "mask": 0
+          },
+          {
+            "op": 319,
+            "time": 0,
+            "args": [
+              24,
+              27,
+              25,
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 1,
+            "args": [
+              88,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 1,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 1,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 1,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 300,
+            "time": 1,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 7,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 10,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 13,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 15,
+    "file": "pl15.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -11
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 8,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 8,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 8,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 8,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 8,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 8,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 8,
+            "args": [
+              10008,
+              5
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 8,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 10,
+            "args": [
+              10008,
+              204,
+              8
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 11,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 16,
+    "file": "pl16.anm",
+    "shots": [
+      {
+        "init": 22,
+        "update": 14,
+        "hit": 9,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -10
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 2,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 4,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 4,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 4,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 4,
+            "args": [
+              10008,
+              15
+            ],
+            "mask": 1
+          },
+          {
+            "op": 300,
+            "time": 4,
+            "args": [
+              26
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              27
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 12,
+            "args": [
+              28
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 16,
+            "args": [
+              29
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 20,
+            "args": [
+              30
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 24,
+            "args": [
+              31
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 28,
+            "args": [
+              32
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 32,
+            "args": [
+              33
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 36,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 17,
+    "file": "pl17.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -12
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 16,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 16,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 16,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 16,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 16,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 16,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 16,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 16,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 16,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 18,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 20,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 22,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 24,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      },
+      {
+        "init": 5,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -12
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 8,
+            "args": [
+              25
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 16,
+            "args": [
+              60,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 16,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 16,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 16,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 16,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 16,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 16,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 16,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 16,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 18,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 20,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 22,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 1,
+            "time": 24,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "character": 18,
+    "file": "pl18.anm",
+    "shots": [
+      {
+        "init": 0,
+        "update": 0,
+        "hit": 0,
+        "script": 5,
+        "hit_script": 0,
+        "labels": [
+          1
+        ],
+        "descendants": [
+          -11
+        ],
+        "unsupportedOpcodes": [],
+        "ops": [
+          {
+            "op": 304,
+            "time": -1,
+            "args": [
+              13
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": -1,
+            "args": [
+              160
+            ],
+            "mask": 0
+          },
+          {
+            "op": 305,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 424,
+            "time": -1,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 300,
+            "time": 0,
+            "args": [
+              24
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 2,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 200,
+            "time": 4,
+            "args": [
+              72,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 3,
+            "time": 4,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 5,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 304,
+            "time": 4,
+            "args": [
+              15
+            ],
+            "mask": 0
+          },
+          {
+            "op": 403,
+            "time": 4,
+            "args": [
+              128
+            ],
+            "mask": 0
+          },
+          {
+            "op": 409,
+            "time": 4,
+            "args": [
+              30,
+              0,
+              0
+            ],
+            "mask": 0
+          },
+          {
+            "op": 303,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 302,
+            "time": 4,
+            "args": [
+              1
+            ],
+            "mask": 0
+          },
+          {
+            "op": 100,
+            "time": 4,
+            "args": [
+              10008,
+              10
+            ],
+            "mask": 1
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              6
+            ],
+            "mask": 0
+          },
+          {
+            "op": 504,
+            "time": 4,
+            "args": [
+              7
+            ],
+            "mask": 0
+          },
+          {
+            "op": 201,
+            "time": 5,
+            "args": [
+              10008,
+              216,
+              4
+            ],
+            "mask": 1
+          },
+          {
+            "op": 1,
+            "time": 6,
+            "args": [],
+            "mask": 0
+          },
+          {
+            "op": 65535,
+            "time": 0,
+            "args": [],
+            "mask": 0
+          }
+        ]
+      }
+    ]
+  }
+]

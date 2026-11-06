@@ -1,6 +1,8 @@
+import {ConfirmedTimeline,VersusReplayRunner} from './replay-session.mjs';
 import {PeerSocket} from './peer-socket.mjs';
 import {RollbackSession} from './rollback-session.mjs';
 import {nativeRollbackCore} from './native-adapter.mjs';
+import {th19StreamBegin,th19StreamFrame,th19StreamEnd,parseTh19StreamPacket,TH19_RECORDING_LIMITS} from './th19-recording.mjs';
 // The shared lobby supplies seats, characters and the authenticated relay URL.
 const magic=[0x54,0x31,0x39,0x4e,1];
 const packet=(type,length=6)=>{const bytes=new Uint8Array(length);bytes.set(magic);bytes[5]=type;return bytes;};
@@ -9,8 +11,10 @@ const keyBits={KeyZ:1,Enter:1,NumpadEnter:1,KeyX:2,KeyC:4,ShiftLeft:8,ShiftRight
 const neutral=()=>({keys:0,direct:0,x:0,y:0});
 
 export class Netplay {
- constructor(core,{onStatus,onClose,onResult}){
+ constructor(core,{onStatus=()=>{},onClose=()=>{},onResult=()=>{},onBegin=()=>{},onConfirmed=()=>{},onEnd=()=>{},onPlayback=()=>{}}={}){
   this.core=core;this.onStatus=onStatus;this.onClose=onClose;this.onResult=onResult;
+  this.onBegin=onBegin;this.onConfirmed=onConfirmed;this.onEnd=onEnd;this.confirmedFrames=0;this.replayFlush=Promise.resolve();
+  this.onPlayback=onPlayback;this.spectatorRevision=0;
   this.connected=false;this.active=false;this.finished=false;this.prepared=false;
   this.keys=new Set();this.motionX=0;this.motionY=0;this.direct=false;
   this.local=new Map();this.remote=new Map();this.hashes=new Map();this.remoteHashes=new Map();
@@ -33,11 +37,11 @@ export class Netplay {
  }
  async connect(options){
   if(this.connected)throw Error('已经连接房间');
-  const url=new URL(options.netplayUrl,location.href),side=Number(options.netplayPlayer);
+  const url=new URL(options.netplayUrl,location.href),side=Number(options.netplayPlayer),spectator=options.netplaySpectator===true;
   const characters=options.netplayLoadouts?.slice(0,2).map(loadout=>loadout.character);
-  if(!['ws:','wss:'].includes(url.protocol)||![0,1].includes(side)||options.netplaySpectator||
+  if(!['ws:','wss:'].includes(url.protocol)||!spectator&&![0,1].includes(side)||
    Number(options.netplayPlayerCount)!==2||!/^th19mp-\d{4}$/.test(url.searchParams.get('room')||'')||
-   Number(url.searchParams.get('player'))!==side||!/^\d+$/.test(url.searchParams.get('run')||'')||
+   (spectator?url.searchParams.has('player')||!/^[A-Za-z0-9_-]{8,64}$/.test(String(options.netplaySpectatorId||''))||url.searchParams.get('spectator')!==options.netplaySpectatorId:Number(url.searchParams.get('player'))!==side||url.searchParams.has('spectator'))||!/^\d+$/.test(url.searchParams.get('run')||'')||
    !characters||characters.length!==2||characters.some(ch=>!Number.isInteger(ch)||ch<0||ch>=19))
    throw Error('兽王园双人房间配置无效');
   const difficulty=Number(options.netplayDifficulty),delay=Number(options.netplayInputDelay||0);
@@ -54,7 +58,9 @@ export class Netplay {
   const rules=options.netplayTh19Rules??[0,1,1,4,4,1,1,0,0];const v=rules;if(!(Array.isArray(v)&&v.length===9&&v.every((n,i)=>Number.isInteger(n)&&n>=0&&n<([7,3,4,5,5,4,4,39,39][i]))&&v[0]===0&&v[3]===v[4]&&v[5]===1&&v[6]===1&&(v[2]!==2||(v[7]<2&&v[8]<2))))throw Error("对战规则无效");
   this.config={rules,protocol:1,build,seed:seed||1,difficulty,characters,delay,rollback:this.rollbackEnabled};
   this.core.eaglerOptions=options;
+  if(spectator){this.connectSpectator(url,options);return;}
   this.side=side;this.core._th19_touch_side?.(side);this.delay=delay;this.direct=options.touchEnabled===true&&options.touchMovementMode==='touch-unlimited';
+  globalThis.__eaglerNetplaySpectator=false;
   this.connected=true;this.lastReceived=performance.now();this.lastHello=0;this.lastPing=0;
   this.socket=new PeerSocket(url,options);this.socket.binaryType='arraybuffer';
   globalThis.__th19PeerTransport={relay:this.socket,peers:new Map(),failed:false};
@@ -142,6 +148,7 @@ export class Netplay {
   globalThis.__eaglerNetplayLanResimulated=0;
   globalThis.__eaglerNetplayInputDelayFrames=this.delay;
   globalThis.__eaglerNetplayPath=this.socket.route||'relay';
+  this.onBegin(this.config);this.publish(th19StreamBegin(this.config));
   this.onStatus(`对局开始 | 人间 vs 人间 | 输入延迟 ${this.delay} 帧 | 回滚${this.rollbackEnabled?'开启':'关闭'}`);
  }
  pump(){
@@ -188,6 +195,7 @@ export class Netplay {
    const present=count===steps-1;
    const result=this.core._th19_network_step(this.frame,left.keys,right.keys,left.x,left.y,right.x,right.y,left.direct,right.direct,+present);
    if(!result)throw Error('对局输入帧不连续');
+   this.confirm(this.frame,left,right,{result,played:!!this.core._th19_played_frames(),hash:(this.frame+1)%120===0?this.core._th19_network_hash()>>>0:null});
    this.local.delete(this.frame);this.remote.delete(this.frame);++this.frame;--this.budget;
    globalThis.__eaglerNetplayLanFrame=globalThis.__eaglerNetplayLanConfirmed=this.frame;
    if(this.frame%120===0){
@@ -206,6 +214,7 @@ export class Netplay {
   this.rollback=new RollbackSession(this.rollbackCore,{side:this.side,window:8,
    commit:(frame,effects)=>{
     this.rollbackCore.commit(effects);const confirmed=frame+1;
+    this.confirm(frame,effects.left,effects.right,effects);
     if(effects.hash!==null){
      this.hashes.set(confirmed,effects.hash);const bytes=packet(4,14),data=new DataView(bytes.buffer);
      data.setUint32(6,confirmed,true);data.setUint32(10,effects.hash,true);this.send(bytes);this.compare(confirmed);
@@ -220,6 +229,20 @@ export class Netplay {
  pumpRollback(now){
   const r=this.rollback,elapsed=(now-this.lastTick)*60/1000;this.lastTick=now;
   this.budget=Math.min(3,this.budget+elapsed);
+  // Pause/results/dialogue cannot speculate. Keep sending input while their
+  // confirmed frame waits for the peer, rather than paying RTT on every tick.
+  this.inputBudget=Math.min(8,this.inputBudget+elapsed);
+  const latestRtt=globalThis.__th19PeerTransport?.peers.get(1-this.side)?.rttMs??100;
+  const peerRtt=Math.min(latestRtt,(this.baselineRttMs??latestRtt)+100);
+  const maxInputLead=Math.min(60,Math.max(this.delay+2,Math.ceil(peerRtt*60/2000)+2));
+  while(this.inputBudget>=1&&this.nextInputFrame<r.frame+maxInputLead){
+   const sending=this.nextInputFrame++,input=this.sample();r.local.set(sending,input);
+   const bytes=packet(3,21),data=new DataView(bytes.buffer);
+   data.setUint32(6,sending,true);data.setUint16(10,input.keys,true);bytes[12]=input.direct;
+   data.setFloat32(13,input.x,true);data.setFloat32(17,input.y,true);this.send(bytes);
+   --this.inputBudget;
+  }
+  if(this.nextInputFrame>=r.frame+maxInputLead)this.inputBudget=0;
   // Receive input immediately, but combine corrections until the next 60 Hz
   // simulation tick. Replaying on every 8 ms transport poll repeatedly rebuilt
   // states that could not yet be presented, blocking the next input/render turn.
@@ -227,18 +250,12 @@ export class Netplay {
   const start=performance.now();r.reconcile();
   let advanced=0,presented=0;
   while(this.budget>=1&&!this.finished){
-   const sending=r.frame+this.delay;
-   if(!r.local.has(sending)){
-    const input=this.sample();r.local.set(sending,input);
-    const bytes=packet(3,21),data=new DataView(bytes.buffer);
-    data.setUint32(6,sending,true);data.setUint16(10,input.keys,true);bytes[12]=input.direct;
-    data.setFloat32(13,input.x,true);data.setFloat32(17,input.y,true);this.send(bytes);
-   }
+   if(!r.local.has(r.frame))break;
    // Catch-up ticks retain original simulation/ANM updates but only the
    // newest available tick needs to build and submit a visible frame.
    const next=r.frame+1;
    const safe=this.core._th19_rollback_can_predict((r.local.get(r.frame)?.keys||0)|(r.remote.get(r.frame)?.keys||0));
-   const canFollow=next<r.remoteEnd||(safe&&next-r.confirmed<r.window);
+   const canFollow=r.local.has(next)&&(next<r.remoteEnd||(safe&&next-r.confirmed<r.window));
    this.rollbackPresent=this.budget<2||!canFollow;
    if(!r.advance(r.local.get(r.frame))){this.budget=Math.min(this.budget,1);break;}
    --this.budget;++advanced;if(this.rollbackPresent)++presented;
@@ -249,6 +266,7 @@ export class Netplay {
   globalThis.__eaglerNetplayLanFrame=r.frame;globalThis.__eaglerNetplayLanConfirmed=r.confirmed;
   globalThis.__eaglerNetplayLanRollback=r.rollbacks;globalThis.__eaglerNetplayLanResimulated=r.resimulated;
   globalThis.__th19NetplayPerformance={rollback:true,predictedFrames:r.frame-r.confirmed,
+   queuedFrames:this.nextInputFrame-r.frame,maxInputLead,
    retainedSnapshots:r.snapshots.size,advancedFrames:advanced,presentedFrames:presented,pumpCostMs:performance.now()-start};
  }
  compare(frame){
@@ -256,9 +274,98 @@ export class Netplay {
   if(this.hashes.get(frame)!==this.remoteHashes.get(frame))throw Error(`对局校验不同步（第 ${frame} 帧），请重新开局`);
   this.remoteHashes.delete(frame);
  }
- complete(){if(this.finished&&this.peerFinished&&!this.completed){this.completed=true;this.onResult();}}
+ publish(bytes){
+  if(this.side!==0||this.spectator||this.uploadFailed)return;
+  try{this.socket?.sendSpectator(bytes);}catch{this.uploadFailed=true;this.onStatus('旁观上传已停止，对局继续');}
+ }
+ confirm(frame,left,right,effects){
+  if(frame!==this.confirmedFrames)throw Error('录像确认帧不连续');
+  ++this.confirmedFrames;
+  if(frame>=TH19_RECORDING_LIMITS.frames){this.finishRecording(true);return;}
+  const bytes=th19StreamFrame(frame,left,right,effects);
+  try{this.onConfirmed(bytes);}catch{this.onStatus('录像记录失败，对局继续');}
+  this.publish(bytes);
+  if(this.confirmedFrames===TH19_RECORDING_LIMITS.frames)this.finishRecording(true);
+ }
+ finishRecording(partial){
+  if(this.recordingEnded)return this.replayFlush;
+  this.recordingEnded=true;
+  const frames=Math.min(this.confirmedFrames,TH19_RECORDING_LIMITS.frames);
+  if(frames)this.publish(th19StreamEnd(frames));
+  this.replayFlush=Promise.resolve().then(()=>this.onEnd({partial,frames})).catch(()=>this.onStatus('录像保存失败，请检查存储空间'));
+  return this.replayFlush;
+ }
+ connectSpectator(url,options){
+  this.spectator=true;this.connected=true;this.side=-1;
+  this.spectatorRun=new URL(url).searchParams.get('run')||'1';this.spectatorTarget=null;this.spectatorPaused=false;this.spectatorFollowing=true;
+  this.socket=new WebSocket(url);this.socket.binaryType='arraybuffer';
+  globalThis.__th19PeerTransport={relay:this.socket,peers:new Map(),failed:false};
+  globalThis.__eaglerNetplaySpectator=true;globalThis.__eaglerNetplayTransport=globalThis.__eaglerNetplayPath='relay';
+  this.socket.onmessage=event=>{try{
+   if(!(event.data instanceof ArrayBuffer))throw Error('旁观消息无效');
+   const bytes=new Uint8Array(event.data),row=parseTh19StreamPacket(bytes);
+   if(row.kind==='begin'){
+    const c=row.config;
+    if(this.prepared||Object.keys(this.config).some(k=>JSON.stringify(c[k])!==JSON.stringify(this.config[k])))throw Error('旁观版本或对局设置不一致，请刷新');
+    this.spectatorTape=new ConfirmedTimeline(c);this.spectatorRunner=new VersusReplayRunner(this.core,this.spectatorTape);this.spectatorRunner.reset();
+    this.prepared=true;this.active=true;this.receivedFrames=0;this.lastTick=performance.now();this.budget=0;
+    this.onBegin(c);this.onStatus('正在旁观');globalThis.__eaglerNetplayLanActive=true;
+   }else{
+    if(!this.prepared||this.spectatorEnd)throw Error('旁观会话已结束');
+    if(row.kind==='end'){
+     this.spectatorTape.end(row.frame);this.spectatorEnd=row;
+     // Saving follows receipt of confirmed input, never the observer's seek cursor.
+     void this.finishRecording(false);
+    }else{
+     this.spectatorTape.append(bytes);this.receivedFrames=this.spectatorTape.length;
+     this.confirm(row.frame,row.left,row.right,row);
+    }
+   }
+  }catch(error){this.close(error.message);}};
+  this.socket.onerror=()=>this.onStatus('旁观连接中断，正在播放已接收部分');
+  this.socket.onclose=()=>{
+   if(!this.connected||this.spectatorEnd)return;
+   if(!this.prepared||!this.receivedFrames){this.close('旁观对局已断开');return;}
+   this.spectatorTape.end();this.spectatorEnd={frame:this.receivedFrames,partial:true};
+   void this.finishRecording(true);this.onStatus('旁观连接已断开，可观看已接收部分');
+  };
+  this.timer=setInterval(()=>{try{this.pumpSpectator();}catch(error){this.close(error.message);}},8);
+  this.onStatus('正在接收旁观历史…');
+ }
+ pumpSpectator(){
+  if(!this.connected||!this.active||this.finished)return;
+  const now=performance.now(),runner=this.spectatorRunner,queued=this.receivedFrames-runner.frame;
+  this.budget=Math.min(8,this.budget+(now-this.lastTick)*60/1000);this.lastTick=now;
+  const seeking=this.spectatorTarget!==null,end=seeking?this.spectatorTarget:this.receivedFrames;
+  const count=this.spectatorPaused&&!seeking?0:Math.min(end-runner.frame,seeking||this.spectatorFollowing&&queued>120?8:Math.floor(this.budget)),start=performance.now();
+  for(let n=0;n<count;n++){
+   runner.step(n===0||n===count-1||runner.frame+1===end,{silent:seeking||this.spectatorFollowing&&queued>120});this.frame=runner.frame;this.budget=Math.max(0,this.budget-1);
+   globalThis.__eaglerNetplayLanFrame=globalThis.__eaglerNetplayLanConfirmed=this.frame;
+   if(performance.now()-start>=8)break;
+  }
+  if(this.spectatorTarget!==null&&this.frame>=this.spectatorTarget)this.spectatorTarget=null;
+  if(now-(this.lastSpectatorReport||0)>=100){this.lastSpectatorReport=now;this.reportSpectator();}
+  if(this.spectatorEnd&&this.frame===this.spectatorEnd.frame){this.finished=this.peerFinished=true;this.complete();}
+ }
+ reportSpectator(){
+  const received=this.receivedFrames||0,seeking=this.spectatorTarget!==null||this.spectatorFollowing&&received-this.frame>120;
+  const state={version:1,run:this.spectatorRun,revision:++this.spectatorRevision,min:0,position:this.frame,received,edge:received,target:this.spectatorTarget??this.frame,paused:this.spectatorPaused,seeking,following:this.spectatorFollowing,ended:!!this.spectatorEnd,nodes:[]};
+  this.onPlayback(state);return state;
+ }
+ spectatorControl({run,action,frame}){
+  if(!this.spectator||!this.prepared||run!==this.spectatorRun)throw Error('旁观会话已变化');
+  if(action==='pause')this.spectatorPaused=true;
+  else if(action==='play'){this.spectatorPaused=false;this.spectatorFollowing=false;}
+  else if(action==='seek'||action==='live'){
+   const target=this.spectatorRunner.seek(action==='live'?this.receivedFrames:frame);this.frame=this.spectatorRunner.frame;
+   this.spectatorTarget=target===this.frame?null:target;this.spectatorFollowing=action==='live';if(action==='live')this.spectatorPaused=false;
+  }else throw Error('旁观操作无效');
+  this.lastTick=performance.now();this.budget=0;return this.reportSpectator();
+ }
+ complete(){if(this.finished&&this.peerFinished&&!this.completed){this.completed=true;void this.finishRecording(!!this.spectatorEnd?.partial).then(()=>this.onResult());}}
  close(reason=''){
   if(!this.connected)return;
+  this.finishRecording(true);
   this.connected=false;this.active=false;clearInterval(this.timer);this.timer=null;
   this.socket?.close();this.clear();
   this.rollback?.close();this.rollback=null;

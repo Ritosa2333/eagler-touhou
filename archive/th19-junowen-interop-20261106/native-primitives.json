@@ -1,0 +1,5322 @@
+{
+  "exeSha256": "8918fb39d511c9906ef769c6dd2761e7cb44ded5b7c4c1cd99c8992d12c078e9",
+  "unicornVersion": "2.1.4",
+  "gameLaunched": false,
+  "mutexCallsStubbed": true,
+  "timer": [
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": null,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": null,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 0,
+      "output": {
+        "previous": 0,
+        "frame": 0,
+        "fraction": 0.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 0,
+      "output": {
+        "previous": 0,
+        "frame": 0,
+        "fraction": 0.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 0,
+        "frame": 0,
+        "fraction": 0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 0,
+        "frame": 0,
+        "fraction": 0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 0,
+        "frame": 0,
+        "fraction": 0.9900000095367432,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 0,
+        "frame": 0,
+        "fraction": 0.9900000095367432,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 1,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 1,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0099999904632568,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.0099999904632568,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 0,
+        "frame": 1,
+        "fraction": 1.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 0
+      },
+      "speed": 2,
+      "output": {
+        "previous": 0,
+        "frame": 2,
+        "fraction": 2.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 0,
+        "selector": 7
+      },
+      "speed": 2,
+      "output": {
+        "previous": 0,
+        "frame": 2,
+        "fraction": 2.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": null,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": null,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 0,
+      "output": {
+        "previous": 30,
+        "frame": 30,
+        "fraction": 30.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 0,
+      "output": {
+        "previous": 30,
+        "frame": 30,
+        "fraction": 30.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 30,
+        "frame": 30,
+        "fraction": 30.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 30,
+        "frame": 30,
+        "fraction": 30.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 30,
+        "frame": 30,
+        "fraction": 30.989999771118164,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 30,
+        "frame": 30,
+        "fraction": 30.989999771118164,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 1,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 1,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.010000228881836,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.010000228881836,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 30,
+        "frame": 31,
+        "fraction": 31.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 0
+      },
+      "speed": 2,
+      "output": {
+        "previous": 30,
+        "frame": 32,
+        "fraction": 32.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 30,
+        "fraction": 30,
+        "selector": 7
+      },
+      "speed": 2,
+      "output": {
+        "previous": 30,
+        "frame": 32,
+        "fraction": 32.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": null,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": null,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 0,
+      "output": {
+        "previous": 1,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 0,
+      "output": {
+        "previous": 1,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.25,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.25,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.740000009536743,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.740000009536743,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 1,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 1,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.759999990463257,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 1,
+        "frame": 2,
+        "fraction": 2.759999990463257,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 1,
+        "frame": 3,
+        "fraction": 3.25,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 1,
+        "frame": 3,
+        "fraction": 3.25,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 0
+      },
+      "speed": 2,
+      "output": {
+        "previous": 1,
+        "frame": 3,
+        "fraction": 3.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 1,
+        "fraction": 1.75,
+        "selector": 7
+      },
+      "speed": 2,
+      "output": {
+        "previous": 1,
+        "frame": 3,
+        "fraction": 3.75,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": null,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": null,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 0,
+      "output": {
+        "previous": 4294967295,
+        "frame": 3,
+        "fraction": 3.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 0,
+      "output": {
+        "previous": 4294967295,
+        "frame": 3,
+        "fraction": 3.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 4294967295,
+        "frame": 3,
+        "fraction": 3.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 4294967295,
+        "frame": 3,
+        "fraction": 3.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 4294967295,
+        "frame": 3,
+        "fraction": 3.990000009536743,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 4294967295,
+        "frame": 3,
+        "fraction": 3.990000009536743,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 1,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 1,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 4294967295,
+        "frame": 0,
+        "fraction": 4.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 4294967295,
+        "frame": 4,
+        "fraction": 4.010000228881836,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 4294967295,
+        "frame": 4,
+        "fraction": 4.010000228881836,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 4294967295,
+        "frame": 4,
+        "fraction": 4.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 4294967295,
+        "frame": 4,
+        "fraction": 4.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 0
+      },
+      "speed": 2,
+      "output": {
+        "previous": 4294967295,
+        "frame": 5,
+        "fraction": 5.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 4294967295,
+        "fraction": 3,
+        "selector": 7
+      },
+      "speed": 2,
+      "output": {
+        "previous": 4294967295,
+        "frame": 5,
+        "fraction": 5.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": null,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": null,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 0,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 0,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 1,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 1,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483648,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 0
+      },
+      "speed": 2,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 2147483647,
+        "fraction": 2147483520,
+        "selector": 7
+      },
+      "speed": 2,
+      "output": {
+        "previous": 2147483647,
+        "frame": 2147483520,
+        "fraction": 2147483520.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": null,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": null,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 0,
+      "output": {
+        "previous": 20,
+        "frame": 4294967295,
+        "fraction": -1.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 0,
+      "output": {
+        "previous": 20,
+        "frame": 4294967295,
+        "fraction": -1.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 20,
+        "frame": 4294967295,
+        "fraction": -1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 0.5,
+      "output": {
+        "previous": 20,
+        "frame": 4294967295,
+        "fraction": -1.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": -0.5099999904632568,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 0.9900000095367432,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": -0.5099999904632568,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 0.995,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 1,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 1,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 1.005,
+      "output": {
+        "previous": 20,
+        "frame": 21,
+        "fraction": -0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": -0.49000000953674316,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 1.0099999904632568,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": -0.49000000953674316,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": 0.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 1.5,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": 0.0,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 0
+      },
+      "speed": 2,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": 0.5,
+        "selector": 0
+      }
+    },
+    {
+      "input": {
+        "previous": 4294967295,
+        "frame": 20,
+        "fraction": -1.5,
+        "selector": 7
+      },
+      "speed": 2,
+      "output": {
+        "previous": 20,
+        "frame": 0,
+        "fraction": 0.5,
+        "selector": 0
+      }
+    }
+  ],
+  "rng": [
+    {
+      "state": 0,
+      "range": 1,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 0,
+      "range": 256,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 0,
+      "range": 16776960,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 0,
+      "range": 4294967295,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 1,
+      "range": 1,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 0
+      }
+    },
+    {
+      "state": 1,
+      "range": 256,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 143
+      }
+    },
+    {
+      "state": 1,
+      "range": 16776960,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 48271
+      }
+    },
+    {
+      "state": 1,
+      "range": 4294967295,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 48271
+      }
+    },
+    {
+      "state": 48271,
+      "range": 1,
+      "output": {
+        "state": 182605794,
+        "shadow": 182605794,
+        "value": 0
+      }
+    },
+    {
+      "state": 48271,
+      "range": 256,
+      "output": {
+        "state": 182605794,
+        "shadow": 182605794,
+        "value": 226
+      }
+    },
+    {
+      "state": 48271,
+      "range": 16776960,
+      "output": {
+        "state": 182605794,
+        "shadow": 182605794,
+        "value": 14836194
+      }
+    },
+    {
+      "state": 48271,
+      "range": 4294967295,
+      "output": {
+        "state": 182605794,
+        "shadow": 182605794,
+        "value": 182605794
+      }
+    },
+    {
+      "state": 2147483646,
+      "range": 1,
+      "output": {
+        "state": 2147435376,
+        "shadow": 2147435376,
+        "value": 0
+      }
+    },
+    {
+      "state": 2147483646,
+      "range": 256,
+      "output": {
+        "state": 2147435376,
+        "shadow": 2147435376,
+        "value": 112
+      }
+    },
+    {
+      "state": 2147483646,
+      "range": 16776960,
+      "output": {
+        "state": 2147435376,
+        "shadow": 2147435376,
+        "value": 16761456
+      }
+    },
+    {
+      "state": 2147483646,
+      "range": 4294967295,
+      "output": {
+        "state": 2147435376,
+        "shadow": 2147435376,
+        "value": 2147435376
+      }
+    },
+    {
+      "state": 2147483647,
+      "range": 1,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "range": 256,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "range": 16776960,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "range": 4294967295,
+      "output": {
+        "state": 0,
+        "shadow": 0,
+        "value": 0
+      }
+    },
+    {
+      "state": 2147483648,
+      "range": 1,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 0
+      }
+    },
+    {
+      "state": 2147483648,
+      "range": 256,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 143
+      }
+    },
+    {
+      "state": 2147483648,
+      "range": 16776960,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 48271
+      }
+    },
+    {
+      "state": 2147483648,
+      "range": 4294967295,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "range": 1,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 0
+      }
+    },
+    {
+      "state": 4294967295,
+      "range": 256,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 143
+      }
+    },
+    {
+      "state": 4294967295,
+      "range": 16776960,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "range": 4294967295,
+      "output": {
+        "state": 48271,
+        "shadow": 48271,
+        "value": 48271
+      }
+    },
+    {
+      "state": 2692596050,
+      "range": 1,
+      "output": {
+        "state": 3678522,
+        "shadow": 3678522,
+        "value": 0
+      }
+    },
+    {
+      "state": 2692596050,
+      "range": 256,
+      "output": {
+        "state": 3678522,
+        "shadow": 3678522,
+        "value": 58
+      }
+    },
+    {
+      "state": 2692596050,
+      "range": 16776960,
+      "output": {
+        "state": 3678522,
+        "shadow": 3678522,
+        "value": 3678522
+      }
+    },
+    {
+      "state": 2692596050,
+      "range": 4294967295,
+      "output": {
+        "state": 3678522,
+        "shadow": 3678522,
+        "value": 3678522
+      }
+    },
+    {
+      "state": 2300166418,
+      "range": 1,
+      "output": {
+        "state": 2133646084,
+        "shadow": 2133646084,
+        "value": 0
+      }
+    },
+    {
+      "state": 2300166418,
+      "range": 256,
+      "output": {
+        "state": 2133646084,
+        "shadow": 2133646084,
+        "value": 4
+      }
+    },
+    {
+      "state": 2300166418,
+      "range": 16776960,
+      "output": {
+        "state": 2133646084,
+        "shadow": 2133646084,
+        "value": 2972164
+      }
+    },
+    {
+      "state": 2300166418,
+      "range": 4294967295,
+      "output": {
+        "state": 2133646084,
+        "shadow": 2133646084,
+        "value": 2133646084
+      }
+    },
+    {
+      "state": 4168518457,
+      "range": 1,
+      "output": {
+        "state": 1484197594,
+        "shadow": 1484197594,
+        "value": 0
+      }
+    },
+    {
+      "state": 4168518457,
+      "range": 256,
+      "output": {
+        "state": 1484197594,
+        "shadow": 1484197594,
+        "value": 218
+      }
+    },
+    {
+      "state": 4168518457,
+      "range": 16776960,
+      "output": {
+        "state": 1484197594,
+        "shadow": 1484197594,
+        "value": 7825114
+      }
+    },
+    {
+      "state": 4168518457,
+      "range": 4294967295,
+      "output": {
+        "state": 1484197594,
+        "shadow": 1484197594,
+        "value": 1484197594
+      }
+    },
+    {
+      "state": 1033220855,
+      "range": 1,
+      "output": {
+        "state": 1443673777,
+        "shadow": 1443673777,
+        "value": 0
+      }
+    },
+    {
+      "state": 1033220855,
+      "range": 256,
+      "output": {
+        "state": 1443673777,
+        "shadow": 1443673777,
+        "value": 177
+      }
+    },
+    {
+      "state": 1033220855,
+      "range": 16776960,
+      "output": {
+        "state": 1443673777,
+        "shadow": 1443673777,
+        "value": 855217
+      }
+    },
+    {
+      "state": 1033220855,
+      "range": 4294967295,
+      "output": {
+        "state": 1443673777,
+        "shadow": 1443673777,
+        "value": 1443673777
+      }
+    },
+    {
+      "state": 2129729748,
+      "range": 1,
+      "output": {
+        "state": 1995000171,
+        "shadow": 1995000171,
+        "value": 0
+      }
+    },
+    {
+      "state": 2129729748,
+      "range": 256,
+      "output": {
+        "state": 1995000171,
+        "shadow": 1995000171,
+        "value": 107
+      }
+    },
+    {
+      "state": 2129729748,
+      "range": 16776960,
+      "output": {
+        "state": 1995000171,
+        "shadow": 1995000171,
+        "value": 15318891
+      }
+    },
+    {
+      "state": 2129729748,
+      "range": 4294967295,
+      "output": {
+        "state": 1995000171,
+        "shadow": 1995000171,
+        "value": 1995000171
+      }
+    },
+    {
+      "state": 3420958778,
+      "range": 1,
+      "output": {
+        "state": 198653126,
+        "shadow": 198653126,
+        "value": 0
+      }
+    },
+    {
+      "state": 3420958778,
+      "range": 256,
+      "output": {
+        "state": 198653126,
+        "shadow": 198653126,
+        "value": 198
+      }
+    },
+    {
+      "state": 3420958778,
+      "range": 16776960,
+      "output": {
+        "state": 198653126,
+        "shadow": 198653126,
+        "value": 14106566
+      }
+    },
+    {
+      "state": 3420958778,
+      "range": 4294967295,
+      "output": {
+        "state": 198653126,
+        "shadow": 198653126,
+        "value": 198653126
+      }
+    },
+    {
+      "state": 2238863277,
+      "range": 1,
+      "output": {
+        "state": 54708792,
+        "shadow": 54708792,
+        "value": 0
+      }
+    },
+    {
+      "state": 2238863277,
+      "range": 256,
+      "output": {
+        "state": 54708792,
+        "shadow": 54708792,
+        "value": 56
+      }
+    },
+    {
+      "state": 2238863277,
+      "range": 16776960,
+      "output": {
+        "state": 54708792,
+        "shadow": 54708792,
+        "value": 4377912
+      }
+    },
+    {
+      "state": 2238863277,
+      "range": 4294967295,
+      "output": {
+        "state": 54708792,
+        "shadow": 54708792,
+        "value": 54708792
+      }
+    },
+    {
+      "state": 3388887961,
+      "range": 1,
+      "output": {
+        "state": 443955206,
+        "shadow": 443955206,
+        "value": 0
+      }
+    },
+    {
+      "state": 3388887961,
+      "range": 256,
+      "output": {
+        "state": 443955206,
+        "shadow": 443955206,
+        "value": 6
+      }
+    },
+    {
+      "state": 3388887961,
+      "range": 16776960,
+      "output": {
+        "state": 443955206,
+        "shadow": 443955206,
+        "value": 7754246
+      }
+    },
+    {
+      "state": 3388887961,
+      "range": 4294967295,
+      "output": {
+        "state": 443955206,
+        "shadow": 443955206,
+        "value": 443955206
+      }
+    },
+    {
+      "state": 604389665,
+      "range": 1,
+      "output": {
+        "state": 928174720,
+        "shadow": 928174720,
+        "value": 0
+      }
+    },
+    {
+      "state": 604389665,
+      "range": 256,
+      "output": {
+        "state": 928174720,
+        "shadow": 928174720,
+        "value": 128
+      }
+    },
+    {
+      "state": 604389665,
+      "range": 16776960,
+      "output": {
+        "state": 928174720,
+        "shadow": 928174720,
+        "value": 5441920
+      }
+    },
+    {
+      "state": 604389665,
+      "range": 4294967295,
+      "output": {
+        "state": 928174720,
+        "shadow": 928174720,
+        "value": 928174720
+      }
+    },
+    {
+      "state": 3619775465,
+      "range": 1,
+      "output": {
+        "state": 174532860,
+        "shadow": 174532860,
+        "value": 0
+      }
+    },
+    {
+      "state": 3619775465,
+      "range": 256,
+      "output": {
+        "state": 174532860,
+        "shadow": 174532860,
+        "value": 252
+      }
+    },
+    {
+      "state": 3619775465,
+      "range": 16776960,
+      "output": {
+        "state": 174532860,
+        "shadow": 174532860,
+        "value": 6763260
+      }
+    },
+    {
+      "state": 3619775465,
+      "range": 4294967295,
+      "output": {
+        "state": 174532860,
+        "shadow": 174532860,
+        "value": 174532860
+      }
+    },
+    {
+      "state": 3646251910,
+      "range": 1,
+      "output": {
+        "state": 466239490,
+        "shadow": 466239490,
+        "value": 0
+      }
+    },
+    {
+      "state": 3646251910,
+      "range": 256,
+      "output": {
+        "state": 466239490,
+        "shadow": 466239490,
+        "value": 2
+      }
+    },
+    {
+      "state": 3646251910,
+      "range": 16776960,
+      "output": {
+        "state": 466239490,
+        "shadow": 466239490,
+        "value": 13261570
+      }
+    },
+    {
+      "state": 3646251910,
+      "range": 4294967295,
+      "output": {
+        "state": 466239490,
+        "shadow": 466239490,
+        "value": 466239490
+      }
+    },
+    {
+      "state": 3473562651,
+      "range": 1,
+      "output": {
+        "state": 1114535955,
+        "shadow": 1114535955,
+        "value": 0
+      }
+    },
+    {
+      "state": 3473562651,
+      "range": 256,
+      "output": {
+        "state": 1114535955,
+        "shadow": 1114535955,
+        "value": 19
+      }
+    },
+    {
+      "state": 3473562651,
+      "range": 16776960,
+      "output": {
+        "state": 1114535955,
+        "shadow": 1114535955,
+        "value": 7256595
+      }
+    },
+    {
+      "state": 3473562651,
+      "range": 4294967295,
+      "output": {
+        "state": 1114535955,
+        "shadow": 1114535955,
+        "value": 1114535955
+      }
+    },
+    {
+      "state": 709481139,
+      "range": 1,
+      "output": {
+        "state": 1442341960,
+        "shadow": 1442341960,
+        "value": 0
+      }
+    },
+    {
+      "state": 709481139,
+      "range": 256,
+      "output": {
+        "state": 1442341960,
+        "shadow": 1442341960,
+        "value": 72
+      }
+    },
+    {
+      "state": 709481139,
+      "range": 16776960,
+      "output": {
+        "state": 1442341960,
+        "shadow": 1442341960,
+        "value": 16300360
+      }
+    },
+    {
+      "state": 709481139,
+      "range": 4294967295,
+      "output": {
+        "state": 1442341960,
+        "shadow": 1442341960,
+        "value": 1442341960
+      }
+    },
+    {
+      "state": 189900125,
+      "range": 1,
+      "output": {
+        "state": 1208728479,
+        "shadow": 1208728479,
+        "value": 0
+      }
+    },
+    {
+      "state": 189900125,
+      "range": 256,
+      "output": {
+        "state": 1208728479,
+        "shadow": 1208728479,
+        "value": 159
+      }
+    },
+    {
+      "state": 189900125,
+      "range": 16776960,
+      "output": {
+        "state": 1208728479,
+        "shadow": 1208728479,
+        "value": 787359
+      }
+    },
+    {
+      "state": 189900125,
+      "range": 4294967295,
+      "output": {
+        "state": 1208728479,
+        "shadow": 1208728479,
+        "value": 1208728479
+      }
+    },
+    {
+      "state": 962676491,
+      "range": 1,
+      "output": {
+        "state": 2105743275,
+        "shadow": 2105743275,
+        "value": 0
+      }
+    },
+    {
+      "state": 962676491,
+      "range": 256,
+      "output": {
+        "state": 2105743275,
+        "shadow": 2105743275,
+        "value": 171
+      }
+    },
+    {
+      "state": 962676491,
+      "range": 16776960,
+      "output": {
+        "state": 2105743275,
+        "shadow": 2105743275,
+        "value": 8623275
+      }
+    },
+    {
+      "state": 962676491,
+      "range": 4294967295,
+      "output": {
+        "state": 2105743275,
+        "shadow": 2105743275,
+        "value": 2105743275
+      }
+    },
+    {
+      "state": 3364405314,
+      "range": 1,
+      "output": {
+        "state": 1905591366,
+        "shadow": 1905591366,
+        "value": 0
+      }
+    },
+    {
+      "state": 3364405314,
+      "range": 256,
+      "output": {
+        "state": 1905591366,
+        "shadow": 1905591366,
+        "value": 70
+      }
+    },
+    {
+      "state": 3364405314,
+      "range": 16776960,
+      "output": {
+        "state": 1905591366,
+        "shadow": 1905591366,
+        "value": 9794886
+      }
+    },
+    {
+      "state": 3364405314,
+      "range": 4294967295,
+      "output": {
+        "state": 1905591366,
+        "shadow": 1905591366,
+        "value": 1905591366
+      }
+    },
+    {
+      "state": 729462484,
+      "range": 1,
+      "output": {
+        "state": 1741688952,
+        "shadow": 1741688952,
+        "value": 0
+      }
+    },
+    {
+      "state": 729462484,
+      "range": 256,
+      "output": {
+        "state": 1741688952,
+        "shadow": 1741688952,
+        "value": 120
+      }
+    },
+    {
+      "state": 729462484,
+      "range": 16776960,
+      "output": {
+        "state": 1741688952,
+        "shadow": 1741688952,
+        "value": 13662072
+      }
+    },
+    {
+      "state": 729462484,
+      "range": 4294967295,
+      "output": {
+        "state": 1741688952,
+        "shadow": 1741688952,
+        "value": 1741688952
+      }
+    },
+    {
+      "state": 1483926826,
+      "range": 1,
+      "output": {
+        "state": 1314772161,
+        "shadow": 1314772161,
+        "value": 0
+      }
+    },
+    {
+      "state": 1483926826,
+      "range": 256,
+      "output": {
+        "state": 1314772161,
+        "shadow": 1314772161,
+        "value": 193
+      }
+    },
+    {
+      "state": 1483926826,
+      "range": 16776960,
+      "output": {
+        "state": 1314772161,
+        "shadow": 1314772161,
+        "value": 6169281
+      }
+    },
+    {
+      "state": 1483926826,
+      "range": 4294967295,
+      "output": {
+        "state": 1314772161,
+        "shadow": 1314772161,
+        "value": 1314772161
+      }
+    },
+    {
+      "state": 1824288442,
+      "range": 1,
+      "output": {
+        "state": 512954900,
+        "shadow": 512954900,
+        "value": 0
+      }
+    },
+    {
+      "state": 1824288442,
+      "range": 256,
+      "output": {
+        "state": 512954900,
+        "shadow": 512954900,
+        "value": 20
+      }
+    },
+    {
+      "state": 1824288442,
+      "range": 16776960,
+      "output": {
+        "state": 512954900,
+        "shadow": 512954900,
+        "value": 9646100
+      }
+    },
+    {
+      "state": 1824288442,
+      "range": 4294967295,
+      "output": {
+        "state": 512954900,
+        "shadow": 512954900,
+        "value": 512954900
+      }
+    },
+    {
+      "state": 3840118887,
+      "range": 1,
+      "output": {
+        "state": 2032836278,
+        "shadow": 2032836278,
+        "value": 0
+      }
+    },
+    {
+      "state": 3840118887,
+      "range": 256,
+      "output": {
+        "state": 2032836278,
+        "shadow": 2032836278,
+        "value": 182
+      }
+    },
+    {
+      "state": 3840118887,
+      "range": 16776960,
+      "output": {
+        "state": 2032836278,
+        "shadow": 2032836278,
+        "value": 2824118
+      }
+    },
+    {
+      "state": 3840118887,
+      "range": 4294967295,
+      "output": {
+        "state": 2032836278,
+        "shadow": 2032836278,
+        "value": 2032836278
+      }
+    },
+    {
+      "state": 1650882320,
+      "range": 1,
+      "output": {
+        "state": 917295844,
+        "shadow": 917295844,
+        "value": 0
+      }
+    },
+    {
+      "state": 1650882320,
+      "range": 256,
+      "output": {
+        "state": 917295844,
+        "shadow": 917295844,
+        "value": 228
+      }
+    },
+    {
+      "state": 1650882320,
+      "range": 16776960,
+      "output": {
+        "state": 917295844,
+        "shadow": 917295844,
+        "value": 11340004
+      }
+    },
+    {
+      "state": 1650882320,
+      "range": 4294967295,
+      "output": {
+        "state": 917295844,
+        "shadow": 917295844,
+        "value": 917295844
+      }
+    },
+    {
+      "state": 3240675715,
+      "range": 1,
+      "output": {
+        "state": 1506140344,
+        "shadow": 1506140344,
+        "value": 0
+      }
+    },
+    {
+      "state": 3240675715,
+      "range": 256,
+      "output": {
+        "state": 1506140344,
+        "shadow": 1506140344,
+        "value": 184
+      }
+    },
+    {
+      "state": 3240675715,
+      "range": 16776960,
+      "output": {
+        "state": 1506140344,
+        "shadow": 1506140344,
+        "value": 12990904
+      }
+    },
+    {
+      "state": 3240675715,
+      "range": 4294967295,
+      "output": {
+        "state": 1506140344,
+        "shadow": 1506140344,
+        "value": 1506140344
+      }
+    },
+    {
+      "state": 219598587,
+      "range": 1,
+      "output": {
+        "state": 264111485,
+        "shadow": 264111485,
+        "value": 0
+      }
+    },
+    {
+      "state": 219598587,
+      "range": 256,
+      "output": {
+        "state": 264111485,
+        "shadow": 264111485,
+        "value": 125
+      }
+    },
+    {
+      "state": 219598587,
+      "range": 16776960,
+      "output": {
+        "state": 264111485,
+        "shadow": 264111485,
+        "value": 12457085
+      }
+    },
+    {
+      "state": 219598587,
+      "range": 4294967295,
+      "output": {
+        "state": 264111485,
+        "shadow": 264111485,
+        "value": 264111485
+      }
+    },
+    {
+      "state": 1893148807,
+      "range": 1,
+      "output": {
+        "state": 166948259,
+        "shadow": 166948259,
+        "value": 0
+      }
+    },
+    {
+      "state": 1893148807,
+      "range": 256,
+      "output": {
+        "state": 166948259,
+        "shadow": 166948259,
+        "value": 163
+      }
+    },
+    {
+      "state": 1893148807,
+      "range": 16776960,
+      "output": {
+        "state": 166948259,
+        "shadow": 166948259,
+        "value": 15955619
+      }
+    },
+    {
+      "state": 1893148807,
+      "range": 4294967295,
+      "output": {
+        "state": 166948259,
+        "shadow": 166948259,
+        "value": 166948259
+      }
+    },
+    {
+      "state": 2536887901,
+      "range": 1,
+      "output": {
+        "state": 8382643,
+        "shadow": 8382643,
+        "value": 0
+      }
+    },
+    {
+      "state": 2536887901,
+      "range": 256,
+      "output": {
+        "state": 8382643,
+        "shadow": 8382643,
+        "value": 179
+      }
+    },
+    {
+      "state": 2536887901,
+      "range": 16776960,
+      "output": {
+        "state": 8382643,
+        "shadow": 8382643,
+        "value": 8382643
+      }
+    },
+    {
+      "state": 2536887901,
+      "range": 4294967295,
+      "output": {
+        "state": 8382643,
+        "shadow": 8382643,
+        "value": 8382643
+      }
+    },
+    {
+      "state": 1296677858,
+      "range": 1,
+      "output": {
+        "state": 1378508056,
+        "shadow": 1378508056,
+        "value": 0
+      }
+    },
+    {
+      "state": 1296677858,
+      "range": 256,
+      "output": {
+        "state": 1378508056,
+        "shadow": 1378508056,
+        "value": 24
+      }
+    },
+    {
+      "state": 1296677858,
+      "range": 16776960,
+      "output": {
+        "state": 1378508056,
+        "shadow": 1378508056,
+        "value": 2797336
+      }
+    },
+    {
+      "state": 1296677858,
+      "range": 4294967295,
+      "output": {
+        "state": 1378508056,
+        "shadow": 1378508056,
+        "value": 1378508056
+      }
+    },
+    {
+      "state": 2220974087,
+      "range": 1,
+      "output": {
+        "state": 1961528043,
+        "shadow": 1961528043,
+        "value": 0
+      }
+    },
+    {
+      "state": 2220974087,
+      "range": 256,
+      "output": {
+        "state": 1961528043,
+        "shadow": 1961528043,
+        "value": 235
+      }
+    },
+    {
+      "state": 2220974087,
+      "range": 16776960,
+      "output": {
+        "state": 1961528043,
+        "shadow": 1961528043,
+        "value": 15400683
+      }
+    },
+    {
+      "state": 2220974087,
+      "range": 4294967295,
+      "output": {
+        "state": 1961528043,
+        "shadow": 1961528043,
+        "value": 1961528043
+      }
+    },
+    {
+      "state": 4176091374,
+      "range": 1,
+      "output": {
+        "state": 1964254111,
+        "shadow": 1964254111,
+        "value": 0
+      }
+    },
+    {
+      "state": 4176091374,
+      "range": 256,
+      "output": {
+        "state": 1964254111,
+        "shadow": 1964254111,
+        "value": 159
+      }
+    },
+    {
+      "state": 4176091374,
+      "range": 16776960,
+      "output": {
+        "state": 1964254111,
+        "shadow": 1964254111,
+        "value": 1349791
+      }
+    },
+    {
+      "state": 4176091374,
+      "range": 4294967295,
+      "output": {
+        "state": 1964254111,
+        "shadow": 1964254111,
+        "value": 1964254111
+      }
+    },
+    {
+      "state": 1269500976,
+      "range": 1,
+      "output": {
+        "state": 1635745351,
+        "shadow": 1635745351,
+        "value": 0
+      }
+    },
+    {
+      "state": 1269500976,
+      "range": 256,
+      "output": {
+        "state": 1635745351,
+        "shadow": 1635745351,
+        "value": 71
+      }
+    },
+    {
+      "state": 1269500976,
+      "range": 16776960,
+      "output": {
+        "state": 1635745351,
+        "shadow": 1635745351,
+        "value": 8380231
+      }
+    },
+    {
+      "state": 1269500976,
+      "range": 4294967295,
+      "output": {
+        "state": 1635745351,
+        "shadow": 1635745351,
+        "value": 1635745351
+      }
+    },
+    {
+      "state": 2417846445,
+      "range": 1,
+      "output": {
+        "state": 424499439,
+        "shadow": 424499439,
+        "value": 0
+      }
+    },
+    {
+      "state": 2417846445,
+      "range": 256,
+      "output": {
+        "state": 424499439,
+        "shadow": 424499439,
+        "value": 239
+      }
+    },
+    {
+      "state": 2417846445,
+      "range": 16776960,
+      "output": {
+        "state": 424499439,
+        "shadow": 424499439,
+        "value": 5075439
+      }
+    },
+    {
+      "state": 2417846445,
+      "range": 4294967295,
+      "output": {
+        "state": 424499439,
+        "shadow": 424499439,
+        "value": 424499439
+      }
+    },
+    {
+      "state": 502950590,
+      "range": 1,
+      "output": {
+        "state": 625300555,
+        "shadow": 625300555,
+        "value": 0
+      }
+    },
+    {
+      "state": 502950590,
+      "range": 256,
+      "output": {
+        "state": 625300555,
+        "shadow": 625300555,
+        "value": 75
+      }
+    },
+    {
+      "state": 502950590,
+      "range": 16776960,
+      "output": {
+        "state": 625300555,
+        "shadow": 625300555,
+        "value": 4553035
+      }
+    },
+    {
+      "state": 502950590,
+      "range": 4294967295,
+      "output": {
+        "state": 625300555,
+        "shadow": 625300555,
+        "value": 625300555
+      }
+    },
+    {
+      "state": 3413290354,
+      "range": 1,
+      "output": {
+        "state": 1550829153,
+        "shadow": 1550829153,
+        "value": 0
+      }
+    },
+    {
+      "state": 3413290354,
+      "range": 256,
+      "output": {
+        "state": 1550829153,
+        "shadow": 1550829153,
+        "value": 97
+      }
+    },
+    {
+      "state": 3413290354,
+      "range": 16776960,
+      "output": {
+        "state": 1550829153,
+        "shadow": 1550829153,
+        "value": 7348833
+      }
+    },
+    {
+      "state": 3413290354,
+      "range": 4294967295,
+      "output": {
+        "state": 1550829153,
+        "shadow": 1550829153,
+        "value": 1550829153
+      }
+    }
+  ],
+  "randomFloats": [
+    {
+      "state": 0,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 0,
+        "state": 0
+      }
+    },
+    {
+      "state": 0,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3212836864,
+        "state": 0
+      }
+    },
+    {
+      "state": 0,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 0,
+        "state": 0
+      }
+    },
+    {
+      "state": 0,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3226013659,
+        "state": 0
+      }
+    },
+    {
+      "state": 0,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 0,
+        "state": 0
+      }
+    },
+    {
+      "state": 0,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3230138368,
+        "state": 0
+      }
+    },
+    {
+      "state": 1,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 993824701,
+        "state": 48271
+      }
+    },
+    {
+      "state": 1,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3212740321,
+        "state": 48271
+      }
+    },
+    {
+      "state": 1,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1007949961,
+        "state": 48271
+      }
+    },
+    {
+      "state": 1,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3225937834,
+        "state": 48271
+      }
+    },
+    {
+      "state": 1,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1011374265,
+        "state": 48271
+      }
+    },
+    {
+      "state": 1,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3230087080,
+        "state": 48271
+      }
+    },
+    {
+      "state": 48271,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1063412421,
+        "state": 182605794
+      }
+    },
+    {
+      "state": 48271,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1061471628,
+        "state": 182605794
+      }
+    },
+    {
+      "state": 48271,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1077005714,
+        "state": 182605794
+      }
+    },
+    {
+      "state": 48271,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1075481419,
+        "state": 182605794
+      }
+    },
+    {
+      "state": 48271,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1081116913,
+        "state": 182605794
+      }
+    },
+    {
+      "state": 48271,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1079054821,
+        "state": 182605794
+      }
+    },
+    {
+      "state": 2147483646,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1065337713,
+        "state": 2147435376
+      }
+    },
+    {
+      "state": 2147483646,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1065322212,
+        "state": 2147435376
+      }
+    },
+    {
+      "state": 2147483646,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1078517835,
+        "state": 2147435376
+      }
+    },
+    {
+      "state": 2147483646,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1078505661,
+        "state": 2147435376
+      }
+    },
+    {
+      "state": 2147483646,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1082646484,
+        "state": 2147435376
+      }
+    },
+    {
+      "state": 2147483646,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1082638249,
+        "state": 2147435376
+      }
+    },
+    {
+      "state": 2147483647,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 0,
+        "state": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3212836864,
+        "state": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 0,
+        "state": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3226013659,
+        "state": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 0,
+        "state": 0
+      }
+    },
+    {
+      "state": 2147483647,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3230138368,
+        "state": 0
+      }
+    },
+    {
+      "state": 2147483648,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 993824701,
+        "state": 48271
+      }
+    },
+    {
+      "state": 2147483648,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3212740321,
+        "state": 48271
+      }
+    },
+    {
+      "state": 2147483648,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1007949961,
+        "state": 48271
+      }
+    },
+    {
+      "state": 2147483648,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3225937834,
+        "state": 48271
+      }
+    },
+    {
+      "state": 2147483648,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1011374265,
+        "state": 48271
+      }
+    },
+    {
+      "state": 2147483648,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3230087080,
+        "state": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 993824701,
+        "state": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3212740321,
+        "state": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1007949961,
+        "state": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3225937834,
+        "state": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1011374265,
+        "state": 48271
+      }
+    },
+    {
+      "state": 4294967295,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3230087080,
+        "state": 48271
+      }
+    },
+    {
+      "state": 2692596050,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1046513097,
+        "state": 3678522
+      }
+    },
+    {
+      "state": 2692596050,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3205479707,
+        "state": 3678522
+      }
+    },
+    {
+      "state": 2692596050,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1060132595,
+        "state": 3678522
+      }
+    },
+    {
+      "state": 2692596050,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3219245250,
+        "state": 3678522
+      }
+    },
+    {
+      "state": 2692596050,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1064209958,
+        "state": 3678522
+      }
+    },
+    {
+      "state": 2692596050,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3222845677,
+        "state": 3678522
+      }
+    },
+    {
+      "state": 2300166418,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1043687622,
+        "state": 2133646084
+      }
+    },
+    {
+      "state": 2300166418,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3206892444,
+        "state": 2133646084
+      }
+    },
+    {
+      "state": 2300166418,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1057913472,
+        "state": 2133646084
+      }
+    },
+    {
+      "state": 2300166418,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3221344922,
+        "state": 2133646084
+      }
+    },
+    {
+      "state": 2300166418,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1061207890,
+        "state": 2133646084
+      }
+    },
+    {
+      "state": 2300166418,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3224346710,
+        "state": 2133646084
+      }
+    },
+    {
+      "state": 4168518457,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1055837860,
+        "state": 1484197594
+      }
+    },
+    {
+      "state": 4168518457,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3179907800,
+        "state": 1484197594
+      }
+    },
+    {
+      "state": 4168518457,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1069256457,
+        "state": 1484197594
+      }
+    },
+    {
+      "state": 4168518457,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3193441553,
+        "state": 1484197594
+      }
+    },
+    {
+      "state": 4168518457,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1073593230,
+        "state": 1484197594
+      }
+    },
+    {
+      "state": 4168518457,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3197248390,
+        "state": 1484197594
+      }
+    },
+    {
+      "state": 1033220855,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1028705250,
+        "state": 1443673777
+      }
+    },
+    {
+      "state": 1033220855,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3211126404,
+        "state": 1443673777
+      }
+    },
+    {
+      "state": 1033220855,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1042545923,
+        "state": 1443673777
+      }
+    },
+    {
+      "state": 1033220855,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3224670267,
+        "state": 1443673777
+      }
+    },
+    {
+      "state": 1033220855,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1046337696,
+        "state": 1443673777
+      }
+    },
+    {
+      "state": 1033220855,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3228845292,
+        "state": 1443673777
+      }
+    },
+    {
+      "state": 2129729748,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1063895126,
+        "state": 1995000171
+      }
+    },
+    {
+      "state": 2129729748,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1062437038,
+        "state": 1995000171
+      }
+    },
+    {
+      "state": 2129729748,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1077384830,
+        "state": 1995000171
+      }
+    },
+    {
+      "state": 2129729748,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1076239650,
+        "state": 1995000171
+      }
+    },
+    {
+      "state": 2129729748,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1081629787,
+        "state": 1995000171
+      }
+    },
+    {
+      "state": 2129729748,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1080080569,
+        "state": 1995000171
+      }
+    },
+    {
+      "state": 3420958778,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1062682782,
+        "state": 198653126
+      }
+    },
+    {
+      "state": 3420958778,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1060012350,
+        "state": 198653126
+      }
+    },
+    {
+      "state": 3420958778,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1076432657,
+        "state": 198653126
+      }
+    },
+    {
+      "state": 3420958778,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1074335305,
+        "state": 198653126
+      }
+    },
+    {
+      "state": 3420958778,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1080341672,
+        "state": 198653126
+      }
+    },
+    {
+      "state": 3420958778,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1077504338,
+        "state": 198653126
+      }
+    },
+    {
+      "state": 2238863277,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1048943350,
+        "state": 54708792
+      }
+    },
+    {
+      "state": 2238863277,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3203713554,
+        "state": 54708792
+      }
+    },
+    {
+      "state": 2238863277,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1062329827,
+        "state": 54708792
+      }
+    },
+    {
+      "state": 2238863277,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3217048017,
+        "state": 54708792
+      }
+    },
+    {
+      "state": 2238863277,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1066267813,
+        "state": 54708792
+      }
+    },
+    {
+      "state": 2238863277,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3221359450,
+        "state": 54708792
+      }
+    },
+    {
+      "state": 3388887961,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1055696122,
+        "state": 443955206
+      }
+    },
+    {
+      "state": 3388887961,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3181041712,
+        "state": 443955206
+      }
+    },
+    {
+      "state": 3388887961,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1069145136,
+        "state": 443955206
+      }
+    },
+    {
+      "state": 3388887961,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3195222698,
+        "state": 443955206
+      }
+    },
+    {
+      "state": 3388887961,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1073442634,
+        "state": 443955206
+      }
+    },
+    {
+      "state": 3388887961,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3198453171,
+        "state": 443955206
+      }
+    },
+    {
+      "state": 604389665,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1051071399,
+        "state": 928174720
+      }
+    },
+    {
+      "state": 604389665,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3199457458,
+        "state": 928174720
+      }
+    },
+    {
+      "state": 604389665,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1065512887,
+        "state": 928174720
+      }
+    },
+    {
+      "state": 604389665,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3213705287,
+        "state": 928174720
+      }
+    },
+    {
+      "state": 604389665,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1068528865,
+        "state": 928174720
+      }
+    },
+    {
+      "state": 604389665,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3216971325,
+        "state": 928174720
+      }
+    },
+    {
+      "state": 3619775465,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1053714119,
+        "state": 174532860
+      }
+    },
+    {
+      "state": 3619775465,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3192284384,
+        "state": 174532860
+      }
+    },
+    {
+      "state": 3619775465,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1067588475,
+        "state": 174532860
+      }
+    },
+    {
+      "state": 3619775465,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3206271358,
+        "state": 174532860
+      }
+    },
+    {
+      "state": 3619775465,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1071336755,
+        "state": 174532860
+      }
+    },
+    {
+      "state": 3619775465,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3209874222,
+        "state": 174532860
+      }
+    },
+    {
+      "state": 3646251910,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1061837773,
+        "state": 466239490
+      }
+    },
+    {
+      "state": 3646251910,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1058322332,
+        "state": 466239490
+      }
+    },
+    {
+      "state": 3646251910,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1075768988,
+        "state": 466239490
+      }
+    },
+    {
+      "state": 3646251910,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1072274111,
+        "state": 466239490
+      }
+    },
+    {
+      "state": 3646251910,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1079443850,
+        "state": 466239490
+      }
+    },
+    {
+      "state": 3646251910,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1075708694,
+        "state": 466239490
+      }
+    },
+    {
+      "state": 3473562651,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1054700804,
+        "state": 1114535955
+      }
+    },
+    {
+      "state": 3473562651,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3188337644,
+        "state": 1114535955
+      }
+    },
+    {
+      "state": 3473562651,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1068363415,
+        "state": 1114535955
+      }
+    },
+    {
+      "state": 3473562651,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3201894934,
+        "state": 1114535955
+      }
+    },
+    {
+      "state": 3473562651,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1072385108,
+        "state": 1114535955
+      }
+    },
+    {
+      "state": 3473562651,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3205680811,
+        "state": 1114535955
+      }
+    },
+    {
+      "state": 709481139,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1064876610,
+        "state": 1442341960
+      }
+    },
+    {
+      "state": 709481139,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1064400006,
+        "state": 1442341960
+      }
+    },
+    {
+      "state": 709481139,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1078155686,
+        "state": 1442341960
+      }
+    },
+    {
+      "state": 709481139,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1077781362,
+        "state": 1442341960
+      }
+    },
+    {
+      "state": 709481139,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1082401523,
+        "state": 1442341960
+      }
+    },
+    {
+      "state": 709481139,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1082148327,
+        "state": 1442341960
+      }
+    },
+    {
+      "state": 189900125,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1027619505,
+        "state": 1208728479
+      }
+    },
+    {
+      "state": 189900125,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3211262122,
+        "state": 1208728479
+      }
+    },
+    {
+      "state": 189900125,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1041693181,
+        "state": 1208728479
+      }
+    },
+    {
+      "state": 189900125,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3224776859,
+        "state": 1208728479
+      }
+    },
+    {
+      "state": 189900125,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1045184092,
+        "state": 1208728479
+      }
+    },
+    {
+      "state": 189900125,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3228989493,
+        "state": 1208728479
+      }
+    },
+    {
+      "state": 962676491,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1057199407,
+        "state": 2105743275
+      }
+    },
+    {
+      "state": 962676491,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1021660160,
+        "state": 2105743275
+      }
+    },
+    {
+      "state": 962676491,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1070510224,
+        "state": 2105743275
+      }
+    },
+    {
+      "state": 962676491,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1035212512,
+        "state": 2105743275
+      }
+    },
+    {
+      "state": 962676491,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1074515586,
+        "state": 2105743275
+      }
+    },
+    {
+      "state": 962676491,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1039376576,
+        "state": 2105743275
+      }
+    },
+    {
+      "state": 3364405314,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1058371036,
+        "state": 1905591366
+      }
+    },
+    {
+      "state": 3364405314,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1043050216,
+        "state": 1905591366
+      }
+    },
+    {
+      "state": 3364405314,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1072350615,
+        "state": 1905591366
+      }
+    },
+    {
+      "state": 3364405314,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1057412854,
+        "state": 1905591366
+      }
+    },
+    {
+      "state": 3364405314,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1075760442,
+        "state": 1905591366
+      }
+    },
+    {
+      "state": 3364405314,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1060530646,
+        "state": 1905591366
+      }
+    },
+    {
+      "state": 729462484,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1062238281,
+        "state": 1741688952
+      }
+    },
+    {
+      "state": 729462484,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1059123348,
+        "state": 1741688952
+      }
+    },
+    {
+      "state": 729462484,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1076083547,
+        "state": 1741688952
+      }
+    },
+    {
+      "state": 729462484,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1073532344,
+        "state": 1741688952
+      }
+    },
+    {
+      "state": 729462484,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1079869390,
+        "state": 1741688952
+      }
+    },
+    {
+      "state": 729462484,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1076559773,
+        "state": 1741688952
+      }
+    },
+    {
+      "state": 1483926826,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1052526143,
+        "state": 1314772161
+      }
+    },
+    {
+      "state": 1483926826,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3196547968,
+        "state": 1314772161
+      }
+    },
+    {
+      "state": 1483926826,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1066655441,
+        "state": 1314772161
+      }
+    },
+    {
+      "state": 1483926826,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3210003494,
+        "state": 1314772161
+      }
+    },
+    {
+      "state": 1483926826,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1070074531,
+        "state": 1314772161
+      }
+    },
+    {
+      "state": 1483926826,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3213879992,
+        "state": 1314772161
+      }
+    },
+    {
+      "state": 1824288442,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1058222248,
+        "state": 512954900
+      }
+    },
+    {
+      "state": 1824288442,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1041859904,
+        "state": 512954900
+      }
+    },
+    {
+      "state": 1824288442,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1072116899,
+        "state": 512954900
+      }
+    },
+    {
+      "state": 1824288442,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1055991363,
+        "state": 512954900
+      }
+    },
+    {
+      "state": 1824288442,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1075602354,
+        "state": 512954900
+      }
+    },
+    {
+      "state": 1824288442,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1059265940,
+        "state": 512954900
+      }
+    },
+    {
+      "state": 3840118887,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1043095429,
+        "state": 2032836278
+      }
+    },
+    {
+      "state": 3840118887,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3207188541,
+        "state": 2032836278
+      }
+    },
+    {
+      "state": 3840118887,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1057448364,
+        "state": 2032836278
+      }
+    },
+    {
+      "state": 3840118887,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3221577476,
+        "state": 2032836278
+      }
+    },
+    {
+      "state": 3840118887,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1060578685,
+        "state": 2032836278
+      }
+    },
+    {
+      "state": 3840118887,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3224661313,
+        "state": 2032836278
+      }
+    },
+    {
+      "state": 1650882320,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1059916178,
+        "state": 917295844
+      }
+    },
+    {
+      "state": 1650882320,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1051993672,
+        "state": 917295844
+      }
+    },
+    {
+      "state": 1650882320,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1074259771,
+        "state": 917295844
+      }
+    },
+    {
+      "state": 1650882320,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1066237239,
+        "state": 917295844
+      }
+    },
+    {
+      "state": 1650882320,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1077402155,
+        "state": 917295844
+      }
+    },
+    {
+      "state": 1650882320,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1069508780,
+        "state": 917295844
+      }
+    },
+    {
+      "state": 3240675715,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1061567103,
+        "state": 1506140344
+      }
+    },
+    {
+      "state": 3240675715,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1057780992,
+        "state": 1506140344
+      }
+    },
+    {
+      "state": 3240675715,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1075556405,
+        "state": 1506140344
+      }
+    },
+    {
+      "state": 3240675715,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1071423776,
+        "state": 1506140344
+      }
+    },
+    {
+      "state": 3240675715,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1079156263,
+        "state": 1506140344
+      }
+    },
+    {
+      "state": 3240675715,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1075133520,
+        "state": 1506140344
+      }
+    },
+    {
+      "state": 219598587,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1061033276,
+        "state": 264111485
+      }
+    },
+    {
+      "state": 219598587,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1056462068,
+        "state": 264111485
+      }
+    },
+    {
+      "state": 219598587,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1075137138,
+        "state": 264111485
+      }
+    },
+    {
+      "state": 219598587,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1069746709,
+        "state": 264111485
+      }
+    },
+    {
+      "state": 219598587,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1078589072,
+        "state": 264111485
+      }
+    },
+    {
+      "state": 219598587,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1073999138,
+        "state": 264111485
+      }
+    },
+    {
+      "state": 1893148807,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1064531863,
+        "state": 166948259
+      }
+    },
+    {
+      "state": 1893148807,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1063710512,
+        "state": 166948259
+      }
+    },
+    {
+      "state": 1893148807,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1077884922,
+        "state": 166948259
+      }
+    },
+    {
+      "state": 1893148807,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1077239834,
+        "state": 166948259
+      }
+    },
+    {
+      "state": 1893148807,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1082218376,
+        "state": 166948259
+      }
+    },
+    {
+      "state": 1893148807,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1081433635,
+        "state": 166948259
+      }
+    },
+    {
+      "state": 2536887901,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1056952935,
+        "state": 8382643
+      }
+    },
+    {
+      "state": 2536887901,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3124125696,
+        "state": 8382643
+      }
+    },
+    {
+      "state": 2536887901,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1070132235,
+        "state": 8382643
+      }
+    },
+    {
+      "state": 2536887901,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3138337964,
+        "state": 8382643
+      }
+    },
+    {
+      "state": 2536887901,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1074259911,
+        "state": 8382643
+      }
+    },
+    {
+      "state": 2536887901,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3141649920,
+        "state": 8382643
+      }
+    },
+    {
+      "state": 1296677858,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1042988299,
+        "state": 1378508056
+      }
+    },
+    {
+      "state": 1296677858,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3207242106,
+        "state": 1378508056
+      }
+    },
+    {
+      "state": 1296677858,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1057364225,
+        "state": 1378508056
+      }
+    },
+    {
+      "state": 1296677858,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3221619546,
+        "state": 1378508056
+      }
+    },
+    {
+      "state": 1296677858,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1060464860,
+        "state": 1378508056
+      }
+    },
+    {
+      "state": 1296677858,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3224718226,
+        "state": 1378508056
+      }
+    },
+    {
+      "state": 2220974087,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1063976919,
+        "state": 1961528043
+      }
+    },
+    {
+      "state": 2220974087,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 1062600624,
+        "state": 1961528043
+      }
+    },
+    {
+      "state": 2220974087,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1077449070,
+        "state": 1961528043
+      }
+    },
+    {
+      "state": 2220974087,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 1076368130,
+        "state": 1961528043
+      }
+    },
+    {
+      "state": 2220974087,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1081716692,
+        "state": 1961528043
+      }
+    },
+    {
+      "state": 2220974087,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 1080254379,
+        "state": 1961528043
+      }
+    },
+    {
+      "state": 4176091374,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1034208669,
+        "state": 1964254111
+      }
+    },
+    {
+      "state": 4176091374,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3210137240,
+        "state": 1964254111
+      }
+    },
+    {
+      "state": 4176091374,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1048668509,
+        "state": 1964254111
+      }
+    },
+    {
+      "state": 4176091374,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3223893379,
+        "state": 1964254111
+      }
+    },
+    {
+      "state": 4176091374,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1051660791,
+        "state": 1964254111
+      }
+    },
+    {
+      "state": 4176091374,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3227794306,
+        "state": 1964254111
+      }
+    },
+    {
+      "state": 1269500976,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1056948111,
+        "state": 1635745351
+      }
+    },
+    {
+      "state": 1269500976,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3129008128,
+        "state": 1635745351
+      }
+    },
+    {
+      "state": 1269500976,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1070128446,
+        "state": 1635745351
+      }
+    },
+    {
+      "state": 1269500976,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3142217655,
+        "state": 1635745351
+      }
+    },
+    {
+      "state": 1269500976,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1074257348,
+        "state": 1635745351
+      }
+    },
+    {
+      "state": 1269500976,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3146313216,
+        "state": 1635745351
+      }
+    },
+    {
+      "state": 2417846445,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1050338425,
+        "state": 424499439
+      }
+    },
+    {
+      "state": 2417846445,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3200923404,
+        "state": 424499439
+      }
+    },
+    {
+      "state": 2417846445,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1064521206,
+        "state": 424499439
+      }
+    },
+    {
+      "state": 2417846445,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3214856639,
+        "state": 424499439
+      }
+    },
+    {
+      "state": 2417846445,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1067750081,
+        "state": 424499439
+      }
+    },
+    {
+      "state": 2417846445,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3218528893,
+        "state": 424499439
+      }
+    },
+    {
+      "state": 502950590,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1049293601,
+        "state": 625300555
+      }
+    },
+    {
+      "state": 502950590,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3203013052,
+        "state": 625300555
+      }
+    },
+    {
+      "state": 502950590,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1062880000,
+        "state": 625300555
+      }
+    },
+    {
+      "state": 502950590,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3216497844,
+        "state": 625300555
+      }
+    },
+    {
+      "state": 502950590,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1066639955,
+        "state": 625300555
+      }
+    },
+    {
+      "state": 502950590,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3220749144,
+        "state": 625300555
+      }
+    },
+    {
+      "state": 3413290354,
+      "scale": 1,
+      "signed": false,
+      "output": {
+        "bits": 1054885283,
+        "state": 1550829153
+      }
+    },
+    {
+      "state": 3413290354,
+      "scale": 1,
+      "signed": true,
+      "output": {
+        "bits": 3187528416,
+        "state": 1550829153
+      }
+    },
+    {
+      "state": 3413290354,
+      "scale": 3.1415927410125732,
+      "signed": false,
+      "output": {
+        "bits": 1068508305,
+        "state": 1550829153
+      }
+    },
+    {
+      "state": 3413290354,
+      "scale": 3.1415927410125732,
+      "signed": true,
+      "output": {
+        "bits": 3200735818,
+        "state": 1550829153
+      }
+    },
+    {
+      "state": 3413290354,
+      "scale": 4.25,
+      "signed": false,
+      "output": {
+        "bits": 1072581117,
+        "state": 1550829153
+      }
+    },
+    {
+      "state": 3413290354,
+      "scale": 4.25,
+      "signed": true,
+      "output": {
+        "bits": 3204896775,
+        "state": 1550829153
+      }
+    }
+  ]
+}

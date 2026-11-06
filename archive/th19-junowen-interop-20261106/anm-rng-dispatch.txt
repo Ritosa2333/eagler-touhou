@@ -1,0 +1,63 @@
+Float variable 10010: 004c1824
+004c1824 movss xmm1, dword ptr [ecx + 0x498]
+004c182c mov ecx, 0x5c6638
+004c1831 jmp 0x404bd0
+Integer variable 10010: 004c16e9
+004c16e9 mov eax, edx
+004c16eb pop ebp
+004c16ec ret 4
+Float variable 10011: 004c1800
+004c1800 movss xmm1, dword ptr [ecx + 0x494]
+004c1808 mov ecx, 0x5c6638
+004c180d jmp 0x404c90
+Integer variable 10011: 004c16e9
+004c16e9 mov eax, edx
+004c16eb pop ebp
+004c16ec ret 4
+Float variable 10012: 004c1812
+004c1812 movss xmm1, dword ptr [ecx + 0x494]
+004c181a mov ecx, 0x5c6638
+004c181f jmp 0x404bd0
+Integer variable 10012: 004c16e9
+004c16e9 mov eax, edx
+004c16eb pop ebp
+004c16ec ret 4
+Float variable 10022: 004c18d1
+004c18d1 mov ecx, 0x5c6638
+004c18d6 call 0x402540
+004c18db movd xmm0, eax
+004c18df cvtdq2pd xmm0, xmm0
+004c18e3 shr eax, 0x1f
+004c18e6 addsd xmm0, qword ptr [eax*8 + 0x5aa660]
+004c18ef cvtpd2ps xmm0, xmm0
+004c18f3 ret 
+Integer variable 10022: 004c16d5
+004c16d5 push dword ptr [ecx + 0x49c]
+004c16db mov ecx, 0x5c6638
+004c16e0 call 0x402630
+004c16e5 pop ebp
+004c16e6 ret 4
+Float variable 10030: 004c1918
+004c1918 movss xmm1, dword ptr [ecx + 0x498]
+004c1920 mov ecx, 0x5c6620
+004c1925 jmp 0x404bd0
+Integer variable 10030: 004c16e9
+004c16e9 mov eax, edx
+004c16eb pop ebp
+004c16ec ret 4
+Float variable 10031: 004c18f4
+004c18f4 movss xmm1, dword ptr [ecx + 0x494]
+004c18fc mov ecx, 0x5c6620
+004c1901 jmp 0x404c90
+Integer variable 10031: 004c16e9
+004c16e9 mov eax, edx
+004c16eb pop ebp
+004c16ec ret 4
+Float variable 10032: 004c1906
+004c1906 movss xmm1, dword ptr [ecx + 0x494]
+004c190e mov ecx, 0x5c6620
+004c1913 jmp 0x404bd0
+Integer variable 10032: 004c16e9
+004c16e9 mov eax, edx
+004c16eb pop ebp
+004c16ec ret 4
