@@ -125,7 +125,7 @@ bool StageGameplay::activate_world(){
     if(replay_entry){replay_entry->restore_player(battle.player->motion);if(!battle.player->configure_options())return fail(battle.player->options.error);}
     if(!platform.stage_input_ready(*this))return fail("Stage input activation failed");
     EnemySpawnRequest main;main.routine="main";if(!battle.spawn(main))return fail(battle.error);
-    if(!battle.hud->initialize(hud_context()))return fail(battle.hud->error);
+    if(!battle.hud->initialize(hud_context(),battle.pilot_count()))return fail(battle.hud->error);
     if(!battle.initialize_partner_hud())return fail(battle.error);
     if(!battle.player->configure_options())return fail(battle.player->options.error);
     if(!battle.items->roaring.enter_stage())return fail(battle.items->roaring.error);started=true;battle.world_active(true);return true;

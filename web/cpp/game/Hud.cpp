@@ -1,6 +1,14 @@
 #include "Hud.hpp"
 #include "AnmVisualState.hpp"
 namespace th17 {
+namespace {
+void move_row(AnmVm& vm,float delta){
+    // Front ANM sprites use a mix of logical and double-resolution coordinates.
+    const u32 mode=vm.visual.render_flags>>20&7;
+    const float resolution=vm.environment->resolution_scale;
+    vm.visual.translation.y+=delta*(mode==2||mode==4?2.f:mode==1||mode==3?1.f:resolution);
+}
+}
 bool Hud::check(bool ok,const char* message){if(!ok&&error.empty())error=message;return ok;}
 AnmVm* Hud::find(u32& handle){auto* vm=animations.registry.find(handle);if(!vm)handle=0;return vm;}
 bool Hud::root_interrupt(u32 handle,i32 label,bool immediate){auto* vm=animations.registry.find(handle);if(!vm)return true;if(!animations.interrupt_effect(*vm,label,animations.rate))return check(false,"HUD animation callback failed");vm->pending_interrupt=label;return !immediate||check(animations.tick_instance(*vm)>=0,"HUD animation update failed");}
@@ -8,6 +16,38 @@ bool Hud::visible(u32 handle,bool value){if(auto* vm=animations.registry.find(ha
 std::array<u32,8>& Hud::stock_handles(u32 seat,bool bomb) noexcept{
     if(!seat)return bomb?bomb_handles:life_handles;
     auto& stock=partner_stock[seat-1];return bomb?stock.bomb:stock.life;
+}
+float Hud::life_row(u32 seat)const noexcept{return seats==1?96.f:92.f+seat*(seats==3?58.f:86.f);}
+float Hud::bomb_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?18.f:seats==2?33.f:38.f);}
+float Hud::power_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?36.f:seats==2?64.f:86.f);}
+bool Hud::layout_stock(AnmVm& root,u32 seat){
+    struct Row {i32 script;float original,target;};
+    const float life=life_row(seat),bomb=bomb_row(seat),power=power_row(seat);
+    const Row rows[]={{8,96,life},{9,112,life+13},{10,134,bomb},{11,150,bomb+13},{12,182,power},
+        {20,128,bomb-2},{21,128,bomb-2},{22,166,power-2},{23,166,power-2},{24,198,power+16},{25,198,power+16}};
+    for(const auto& row:rows){
+        const bool compact_fragment=seats==3&&(row.script==9||row.script==11);
+        if(seat&&compact_fragment)continue;
+        auto* vm=seat?animations.spawn_child(root,row.script,4):animations.registry.find_child_script(root,row.script,0);
+        if(!check(vm!=nullptr,"HUD stock label unavailable"))return false;
+        if(compact_fragment){auto handle=animations.registry.handle(*vm);if(!check(animations.retire(handle),"HUD fragment label retirement failed"))return false;}
+        else move_row(*vm,row.target-row.original);
+    }
+    return true;
+}
+bool Hud::layout_team(AnmVm& root){
+    for(i32 script:{13,26,27,28,29}){
+        auto* vm=animations.registry.find_child_script(root,script,0);
+        if(!check(vm!=nullptr,"HUD team label unavailable"))return false;
+        // The original TH17 frame has the title art directly below this panel.
+        move_row(*vm,script==13||script==26||script==27?room_point_row-204.f:room_graze_row-226.f);
+    }
+    // The retail graze label sprite is blank. The room uses the ASCII label.
+    if(auto* vm=animations.registry.find_child_script(root,14,0)){
+        auto handle=animations.registry.handle(*vm);
+        if(!check(animations.retire(handle),"HUD graze label retirement failed"))return false;
+    }
+    return true;
 }
 bool Hud::stock(u32 seat,i32 count,i32 pieces,bool bomb){
     auto& handles=stock_handles(seat,bomb);
@@ -20,9 +60,16 @@ bool Hud::stock(u32 seat,i32 count,i32 pieces,bool bomb){
     for(i32 i=count+1;i<8;i++)if(!root_interrupt(handles[i],3))return false;return true;
 }
 bool Hud::create_stock(u32 seat){
-    auto& life=stock_handles(seat,false);auto& bomb=stock_handles(seat,true);
-    for(i32 i=0;i<8;++i){life[i]=animations.create_overlay(resources.front,30+i,u8(seat+1));if(!check(life[i]!=0,"HUD life icon creation failed"))return false;}
-    for(i32 i=0;i<8;++i){bomb[i]=animations.create_overlay(resources.front,38+i,u8(seat+1));if(!check(bomb[i]!=0,"HUD bomb icon creation failed"))return false;}
+    for(bool bomb:{false,true}){
+        auto& handles=stock_handles(seat,bomb);
+        const float delta=bomb?bomb_row(seat)-134.f:life_row(seat)-96.f;
+        for(i32 i=0;i<8;++i){
+            handles[i]=animations.create_overlay(resources.front,(bomb?38:30)+i,seats==1?1:0);
+            auto* vm=animations.registry.find(handles[i]);
+            if(!check(vm!=nullptr,"HUD stock icon creation failed"))return false;
+            if(seats>1)move_row(*vm,delta);
+        }
+    }
     return true;
 }
 bool Hud::initialize_partner(u32 seat,i32 character,const PlayerLifeSession& pilot){
@@ -30,8 +77,19 @@ bool Hud::initialize_partner(u32 seat,i32 character,const PlayerLifeSession& pil
     return check(label!=0,"HUD partner loadout creation failed")&&(stock_handles(seat,false)[0]||create_stock(seat))&&
         lives(pilot.extra_lives,pilot.life_pieces,seat)&&bombs(pilot.bombs,pilot.bomb_pieces,seat);
 }
-bool Hud::initialize(const HudStartContext& context){
-    if(!base){base=animations.create_overlay(resources.front,0);if(!check(base!=0,"HUD frame creation failed"))return false;}
+bool Hud::initialize(const HudStartContext& context,u32 seat_count){
+    if(!check(seat_count>=1&&seat_count<=partner_stock.size()+1,"HUD seat count outside TH17 range"))return false;
+    if(!check(!base||seats==seat_count,"HUD seat count changed during the run"))return false;
+    seats=seat_count;
+    if(!base){
+        base=animations.create_overlay(resources.front,0);
+        auto* frame=animations.registry.find(base);
+        if(!check(frame!=nullptr,"HUD frame creation failed"))return false;
+        if(seats>1){
+            if(!layout_team(*frame))return false;
+            for(u32 seat=0;seat<seats;++seat)if(!layout_stock(*frame,seat))return false;
+        }
+    }
     if(!life_handles[0]){
         if(!create_stock(0))return false;
         for(i32 i=0;i<2;i++){clock_handles[i]=animations.create(resources.ascii,2+i,-1,0);auto* vm=find(clock_handles[i]);if(!check(vm!=nullptr,"HUD clock creation failed")||!visible(clock_handles[i],false))return false;vm->visual.render_flags&=~0xc0000u;}
