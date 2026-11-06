@@ -709,7 +709,7 @@ EMSCRIPTEN_KEEPALIVE void th17_touch(unsigned type,int id,float x,float y){
  gestures.pointer(type,id,x,y,now,state,false);
 }
 EMSCRIPTEN_KEEPALIVE void th17_thprac_mouse(int type,float x,float y){th17::sdl::ThpracUi::mouse(type,x,y);}
-EMSCRIPTEN_KEEPALIVE void th17_touch_cancel(){using namespace th17::sdl;practice_pointers.reset();imgui_touch.reset();gestures.cancel();ThpracUi::cancel_pointer();if(app){app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
+EMSCRIPTEN_KEEPALIVE void th17_touch_cancel(){using namespace th17::sdl;practice_pointers.reset();imgui_touch.reset();gestures.reset();ThpracUi::cancel_pointer();if(app){app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
 EMSCRIPTEN_KEEPALIVE void th17_touch_options(unsigned enabled,unsigned mode,float sensitivity,unsigned two_finger,unsigned double_tap){using namespace th17::sdl;gestures.enabled=enabled!=0;gestures.mode=mode<=3?int(mode):0;gestures.unlimited=mode==1;gestures.sensitivity=std::isfinite(sensitivity)?std::clamp(sensitivity,.25f,4.f):1;gestures.two_finger=two_finger!=0;gestures.double_tap=double_tap!=0;gestures.cancel();}
 EMSCRIPTEN_KEEPALIVE void th17_touch_controls(unsigned enabled,unsigned fire,unsigned focus,unsigned bomb,unsigned escape){using namespace th17::sdl;gestures.enabled=enabled!=0;gestures.controls(fire!=0,focus!=0,bomb,escape,0,0);}
 EMSCRIPTEN_KEEPALIVE void th17_touch_stick(float x,float y){using namespace th17::sdl;gestures.stick_x=std::isfinite(x)?std::clamp(x/32767.f,-1.f,1.f):0;gestures.stick_y=std::isfinite(y)?std::clamp(y/32767.f,-1.f,1.f):0;}

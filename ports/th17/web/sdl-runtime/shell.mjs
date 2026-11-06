@@ -247,8 +247,8 @@ case 'remove':if(launched&&!options.replayViewer)throw Error('请先退出游戏
 default:throw Error('不支持的操作');}}
 window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}}).catch(fatal);});
 window.addEventListener('eagler-thprac-menu',e=>emit('thprac-menu',{open:!!e.detail?.open}));
-document.addEventListener('visibilitychange',()=>{if(launched||roomPreview){clearKeyboard();core._th17_touch_cancel();core._th17_loop_pause(+document.hidden);if(document.hidden&&launched)try{void save().catch(fatal);}catch(e){fatal(e);}}});
-window.addEventListener('blur',()=>{clearKeyboard();core?._th17_touch_cancel();});
+document.addEventListener('visibilitychange',()=>{if(launched||roomPreview){clearKeyboard();cancelCanvasPointers();core._th17_loop_pause(+document.hidden);if(document.hidden&&launched)try{void save().catch(fatal);}catch(e){fatal(e);}}});
+window.addEventListener('blur',()=>{clearKeyboard();cancelCanvasPointers();});
 // Keyboard events in the child realm do not bubble to the launcher. SDL's
 // canvas listener alone misses keys when the child BODY owns focus.
 for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!inputActive()||e.altKey||e.metaKey)return;if(keyboard.mapNative(e,event==='keydown')){e.preventDefault();e.stopImmediatePropagation();return;}if(keyboard.event(e,event==='keydown')){e.preventDefault();e.stopPropagation();}},{capture:true});
@@ -278,8 +278,6 @@ for(const [name,type] of [['pointermove',1],['pointerup',2]])window.addEventList
 for(const event of ['pointercancel','lostpointercapture'])window.addEventListener(event,e=>{
  if(canvasPointers.has(e.pointerId))cancelCanvasPointers();
 }, {capture:true});
-window.addEventListener('blur',cancelCanvasPointers);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelCanvasPointers();});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fatal(Error('图形环境失效，请退出后重新开始。'));});
 window.addEventListener('pagehide',()=>{if(launched||roomPreview){core._th17_loop_stop();if(launched)try{void save().catch(fatal);}catch(e){fatal(e);}core._th17_room_close?.();closeAudio();}});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
