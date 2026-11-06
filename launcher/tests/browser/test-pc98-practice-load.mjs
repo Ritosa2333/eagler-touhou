@@ -45,6 +45,9 @@ for(const game of games){
     if(process.env.PC98_PRACTICE_DEATH==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;h[r+11]=args[0]+1;h[r+13]=0;h[d+0x4669]=1;return;}if(method==='soloFault')"));
     if(process.env.PC98_PRACTICE_CLEAR==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeClear(){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x2bfa]=1;}\n`:`\nexport function testPracticeClear(){return emulator.call('practiceTestClear');}\n`)]);
     if(process.env.PC98_PRACTICE_CLEAR==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestClear'){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x53d9]=254;return;}if(method==='soloFault')"));
+    if(process.env.PC98_PRACTICE_REPLAY==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?"\nexport function testProgram(){const m=emulator.module,r=emulator.practice?.debug.resident;return globalThis.titleOpened?'OP':r>=0&&m.HEAPU8[r+39]?'DEMO':m.UTF8ToString(m._emGetRunningProgram());} export function armTitle(){const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){if(/(?:^|[\\\\/])OP(?:\\.EXE)?$/i.test(String(path)))globalThis.titleOpened=true;return open.call(this,path,...args);};}\n":"\nexport function testProgram(){return emulator.call('testProgram');} export function armTitle(){return emulator.call('armTitle');}\n")]);
+    if(process.env.PC98_PRACTICE_REPLAY==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')","if(method==='armTitle'){const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){if(/(?:^|[\\\\/])OP(?:\\.EXE)?$/i.test(String(path)))globalThis.titleOpened=true;return open.call(this,path,...args);};return;}if(method==='testProgram'){const m=emulator.module,r=emulator.practice?.debug.resident;return globalThis.titleOpened?'OP':r>=0&&m.HEAPU8[r+62]?'DEMO':m.UTF8ToString(m._emGetRunningProgram());}if(method==='soloFault')"));
+    if(process.env.PC98_PAUSE_RESTART==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nlet original;export function testMark(){original=emulator;}export function testSame(){return emulator===original;}\n')]);
     res.end(contents);
   }catch{res.writeHead(404).end();}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -67,7 +70,7 @@ for(const game of games){
       const {SoloMusic}=await import('./solo-music.js'),resume=SoloMusic.prototype.resume;globalThis.practiceLoadingMusicResumes=0;
       SoloMusic.prototype.resume=function(...args){if(!document.querySelector('.practice-preparing').hidden)practiceLoadingMusicResumes++;return resume.apply(this,args);};
     });
-    await page.evaluate(()=>rpc('configure',{music:'none',options:{touchEnabled:false},resources:[],runtimeResources:[],sharedResources:[]}));
+    await page.evaluate(language=>rpc('configure',{music:'none',language,options:{touchEnabled:false},resources:[],runtimeResources:[],sharedResources:[]}),process.env.PC98_LANGUAGE||'ja');
     await page.evaluate(()=>rpc('launch',{launchSerial:1}));
     const state=()=>frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState());
     await frame.waitForSelector('.managed-practice-open:not([hidden])',{timeout:120000});
@@ -131,6 +134,17 @@ for(const game of games){
       }
       await page.screenshot({path:resolve(output,`${label}-${game}-${kind}-running.png`)});
     }
+    if(process.env.PC98_PAUSE_RESTART==='1'){
+      await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testMark());
+      await frame.$eval('canvas',n=>n.focus());await page.keyboard.press('Escape');await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:10000});
+      await new Promise(r=>setTimeout(r,1000));await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(b=>b.textContent==='重新开始').click());
+      await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.preparing;},{timeout:15000});
+      await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.ready&&p.waiting&&p.elapsed===0;},{timeout:120000});
+      assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testSame()),true,'restart retains the emulator');
+      const again=await state();assert.equal(again.native.practice.setup.stage,stage);assert.equal(again.native.practice.setup.phase,Number(phase));
+      await frame.$eval('canvas',n=>n.focus());await page.keyboard.press('Enter',{delay:80});await frame.waitForFunction(async()=>{const p=(await import('./managed-solo.mjs')).managedAPI.practiceState().native?.practice;return p?.elapsed>0&&!p.waiting;},{timeout:15000});
+      console.log(game,'PASS native pause restart');
+    }
     assert((await frame.evaluate(()=>practiceEffectsCreated))>=2,'standby owns its own original effect driver');
     if(game==='th04'){assert.equal(await frame.evaluate(()=>practiceLoadingEffects),0,'loading and standby must not play sound effects');assert.equal(await frame.evaluate(()=>practiceLoadingMusicResumes),0,'loading must not resume music');}
     if(process.env.PC98_PRACTICE_DEATH==='1'){
@@ -168,8 +182,11 @@ for(const game of games){
       await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:10000});
       await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(button=>button.textContent==='退出游戏').click());
       assert.equal(await frame.$eval('.pc98-pause-menu',n=>n.hidden),false,'exit presents a replay choice');
+      await frame.evaluate(async()=>{await(await import('./managed-solo.mjs')).armTitle();});
+      await frame.evaluate(()=>{globalThis.titleSeen=false;globalThis.programsSeen=[];const scan=async()=>{try{const program=await(await import('./managed-solo.mjs')).testProgram();if(!globalThis.programsSeen.includes(program))globalThis.programsSeen.push(program);if(/^(?:OP(?:\.EXE)?|DEMO)$/i.test(program))globalThis.titleSeen=true;}finally{if(!globalThis.titleSeen)setTimeout(scan,20);}};void scan();});
       await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(button=>button.textContent==='保存本次 REP').click());
       await frame.waitForFunction(game=>[...__eaglerPC98Files.memory.keys()].some(name=>name.endsWith('.'+game+'r')),{timeout:45000},game);
+      await frame.waitForFunction(()=>globalThis.titleSeen,{timeout:60000}).catch(async error=>{console.error('Programs observed',await frame.evaluate(()=>globalThis.programsSeen));throw error;});
       await frame.waitForFunction(async()=>{const api=(await import('./managed-solo.mjs')).managedAPI,s=api.practiceState();return !s.recordingReady&&api.health().frames>0&&s.native?.practice?.mode!=='target';},{timeout:60000});
       assert.equal(await page.evaluate(()=>events.some(e=>e.event==='exit')),false,'returning to title keeps the game open');
       await frame.evaluate(async game=>{
@@ -177,7 +194,7 @@ for(const game of games){
         const path=[...__eaglerPC98Files.memory.keys()].findLast(name=>name.endsWith('.'+game+'r'));
         managedAPI.stop();await managedAPI.playback({action:'open',path});
       },game);
-      await frame.waitForFunction(async()=>{const value=(await import('./managed-solo.mjs')).managedAPI.health().replayResult;return value!==null;},{timeout:120000});
+      await frame.waitForFunction(async()=>{const value=(await import('./managed-solo.mjs')).managedAPI.health().replayResult;return value!==null||parent.events.some(e=>e.event==='error');},{timeout:120000}).catch(async error=>{console.error('Replay state',await state(),await page.evaluate(()=>events.filter(e=>e.event==='error')));throw error;});
       assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().replayResult),true,'practice replay reproduces the complete native memory');
       console.log(game,'PASS practice replay memory');
     }

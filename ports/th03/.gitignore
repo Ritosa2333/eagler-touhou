@@ -7,6 +7,7 @@
 !/README-PUBLIC.md
 !/MIGRATION.md
 !/web/
+!/patches/
 !/server.py
 !/lan_server.py
 !/replay_history.py
@@ -29,7 +30,9 @@
 
 # Development-only material is not part of the downloadable package.
 /tools/
-/patches/
+/patches/*
+!/patches/solo-pause.inc
+!/patches/solo-pause-font.inc
 /reports/
 /build/
 /vendor-source/

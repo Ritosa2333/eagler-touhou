@@ -15,6 +15,7 @@ export function managedInput({game, epoch, active, options}) {
     },
     pointer(message) {
       if (!['down','move','up'].includes(message.type) || !Number.isSafeInteger(message.id) || !Number.isFinite(message.x) || !Number.isFinite(message.y)) throw Error('触控坐标无效');
+      if (input.menuPointer?.(message)) return;
       if (message.type === 'down' && point) { secondary.add(message.id); point.menuMoved=true; return; }
       if (message.type === 'up' && secondary.delete(message.id)) { menuPulse = 128; menuUntil = performance.now()+120; return; }
       if (message.type === 'down') { point = {...message, startX:message.x, startY:message.y, menuMoved:false}; motion = {x:0,y:0,active:true,begin:true}; }

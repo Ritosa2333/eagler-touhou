@@ -29,7 +29,7 @@ export class PmdPlayer {
     return {
       connect(target){node.connect(target);},
       disconnect(){node.disconnect();},
-      start(){},
+      start(){node.port.postMessage({type:'start'});},
       stop(at){const delay=Math.max(0,(at-node.context.currentTime)*1000);setTimeout(()=>{node.port.postMessage({type:'stop'});node.disconnect();onended?.();},delay);},
       set onended(callback){onended=callback;node.onprocessorerror=callback;},
     };

@@ -1,7 +1,7 @@
 import {normalizePractice,validatePracticeOptions} from './practice-config.js';
 // Every mutation runs synchronously inside TH02's audited OUT boundary.
 export function createPracticeEngine({mod,patch,config,clock}){
-  const initial=normalizePractice(config),setup=initial.setup,targeted=initial.mode==='target';let options=initial.options;
+  const initial=normalizePractice(config),setup=initial.setup;let targeted=initial.mode==='target',options=initial.options;
   let base=-1,d=-1,csBase=-1,resident=-1,ready=false,preparing=targeted,waiting=false,outcome=null,error=null,warped=false;
   let frames=0,elapsed=0,misses=0,bombsUsed=0,lastBombs=0,lockedPower=null,prepareFrames=0,selectedPhase=0,seenBoss=false,lastPort=0,entryRedraw=0,fatal=false;
   const heap=()=>mod.HEAPU8,view=()=>new DataView(heap().buffer),u8=n=>heap()[d+n],u16=n=>view().getUint16(d+n,true),i16=n=>view().getInt16(d+n,true),u32=n=>view().getUint32(d+n,true),w8=(n,x)=>{heap()[d+n]=x;},w16=(n,x)=>view().setUint16(d+n,x,true),w32=(n,x)=>view().setUint32(d+n,x,true);
@@ -78,8 +78,8 @@ export function createPracticeEngine({mod,patch,config,clock}){
     if(setup.phase)return phase()!==selectedPhase;
     return seenBoss&&u8(0x2bfa)!==0;
   }
-  function status(){return {mode:initial.mode,ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x8f5),phase:phase(),active:active(),phaseFrame:u16(0x2be0),damage:u16(0x2bea),power:u8(0xaa6),rank:i16(0x2802),keys:u16(0x2538),lives:u8(0xb2c),bombs:u8(0xb2d),invincibility:u8(0x2b95),missTimer:u8(0x2b99),playerHit:u8(0x2b94),bombActive:!!u8(0x3e44)}:{})};}
-  return {gameOver(){if(targeted&&ready&&!outcome)finish('failed');},clear(){if(targeted&&ready&&!outcome)finish('clear');},configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0xaa6):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
+  function status(){return {mode:targeted?'target':'full',ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x8f5),phase:phase(),active:active(),phaseFrame:u16(0x2be0),damage:u16(0x2bea),power:u8(0xaa6),rank:i16(0x2802),keys:u16(0x2538),lives:u8(0xb2c),bombs:u8(0xb2d),invincibility:u8(0x2b95),missTimer:u8(0x2b99),playerHit:u8(0x2b94),bombActive:!!u8(0x3e44)}:{})};}
+  return {exitPractice(){targeted=false;preparing=false;waiting=false;outcome=null;flag('targetPractice',0);flag('entryPause',0);flag('hold',0);clock?.setSpeed(options.speed);},gameOver(){if(targeted&&ready&&!outcome)finish('failed');},clear(){if(targeted&&ready&&!outcome)finish('clear');},configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0xaa6):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
     signal(port,packed){
       lastPort=port;
       locate(packed);if(heap()[resident+39])return;

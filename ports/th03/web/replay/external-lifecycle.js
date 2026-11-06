@@ -65,11 +65,11 @@ export function createSoloReplayLifecycle({game,patch},memory){
     }else{
       if(h[resident+0x39]||h[resident+0x0e]||!h[resident+0x0f]||![1,0x80].includes(h[resident+0x28]))return null;
       const story=h[resident+0x28]===1,defeat=h[data+0x38dc],quit=h[data+0x65a0];
-      stage=h[resident+0x33];active=mode===1;
+      stage=h[resident+0x33];active=mode===1||mode===2;
       // The existing pause hook publishes phase=0 without changing generation.
       // Round initialization changes generation; death/round results have
       // their own original flags. phase=0 alone does not mean paused.
-      paused=started&&mode===0&&gen===generation&&!defeat&&!quit&&!h[data+0x65a6+0x1f]&&!h[data+0x65a6+0x80+0x1f];
+      paused=mode===2||started&&mode===0&&gen===generation&&!defeat&&!quit&&!h[data+0x65a6+0x1f]&&!h[data+0x65a6+0x80+0x1f];
       if(started&&quit)finish='quit';
       if(started&&defeat===2){
         if(story){
@@ -82,6 +82,6 @@ export function createSoloReplayLifecycle({game,patch},memory){
     if(active&&!started)started=true;
     if(active)generation=gen;
     lastStage=stage;
-    return {active:started,paused,finish,stage};
+    return {active:started,currentActive:active,paused,finish,stage};
   };
 }

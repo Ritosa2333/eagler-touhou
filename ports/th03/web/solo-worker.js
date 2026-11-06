@@ -12,6 +12,28 @@ function applyAssist(value){
   const h=emulator.module.HEAPU8;
   const at=Number.isInteger(value.address)?value.address:bridge.live;
   if(!bridge.valid(h,at)||new DataView(h.buffer).getUint16(at+patch.fields.generation,true)!==value.generation)return;
+  if(value.quit||value.restart){
+    const ds=new DataView(h.buffer).getUint16(at+patch.fields.ds,true),cs=ds-patch.dataSegment+patch.codeSegment;
+    const ram=at-patch.mailboxCsOffset-cs*16,quit=ram+ds*16+0x65a0;
+    if(cs>0&&ram>=0&&ram+0x100000<=h.length&&quit>=ram&&quit<ram+0xa0000&&[1,2].includes(h[at+patch.fields.phase])){
+      if(value.restart){
+        // Route the native round exit through MAINL with the first stage and
+        // the current character, instead of returning to OP's title screen.
+        const data=ram+ds*16,view=new DataView(h.buffer),resident=ram+view.getUint16(data+0x1d90,true)+view.getUint16(data+0x1d92,true)*16,branch=ram+cs*16+0x7c;
+        // GameExecl normally hides graphics before loading MAINL. MAINL's
+        // first-stage path assumes graphics are already visible, so retain
+        // them for this restart just as OP does when starting a fresh game.
+        const hide=ram+cs*16+0x1d8a;
+        if(resident<ram||resident+58>ram+0xa0000||h[branch]!==0x75||h[branch+1]!==6||h[hide]!==0x9a||view.getUint16(hide+1,true)!==0x1590)return;
+        h.fill(0x90,hide,hide+5);
+        h[branch]=0xeb;h[resident+0x17]=0;h.fill(0,resident+0x18,resident+0x28);h[resident+0x33]=255;h[resident+0x34]=2;h[resident+0x35]=0;h[resident+0x36]=3;h[resident+0x38]=70+h[resident+0x0b]*25;
+        if(h[resident+0x28]===1)h[resident+0x0d]=h[resident+0x29];
+      }
+      h[quit]=1;
+      if(h[at+patch.fields.phase]===2)h[at+patch.fields.ack]=1;
+    }
+    return;
+  }
   const previous=bridge.live;bridge.live=at;
   try{bridge.setFocus(value.focus,0);bridge.setTouch(value.touch||[0,0]);}finally{bridge.live=previous;}
 }
@@ -45,7 +67,7 @@ async function dispatch({method,args=[]}){
     environment=workerEnvironment(setup.canvas,setup.sampleRate);
     const {DOSBoxPC98}=await import('./dosbox-adapter.js');
     const externalReplay=setup.config.externalReplay;
-    emulator=await DOSBoxPC98.create({...setup.config,canvas:setup.canvas,workerRuntime:true,applyReplayInput:applyAssist,
+    emulator=await DOSBoxPC98.create({...setup.config,canvas:setup.canvas,workerRuntime:true,replayPatch:patch,applyReplayInput:applyAssist,
       ...(externalReplay?{externalReplay:{...externalReplay,onChunk:value=>postReplay('chunk',value),onEnd:value=>postReplay('end',value),onError:error=>postReplay('error',error),onRecordingError:error=>postReplay('error',error)}}:{}),
       onDiskChange:name=>postMessage({type:'diskChange',name}),onExit:()=>{clear();postMessage({type:'exit'});}});
     const {NativePause}=await import('./native-pause.js');bridge=new NativePause(()=>emulator,patch);
@@ -74,6 +96,23 @@ async function dispatch({method,args=[]}){
     if(!state||state.generation!==args[2])return false;
     return bridge.request(args[0],args[1]);
   }
+  if(method==='soloQuit'){
+    const h=emulator.module.HEAPU8,at=args[2],view=new DataView(h.buffer);
+    if(game!=='03'||!bridge.valid(h,at)||h[at+patch.fields.phase]!==2||view.getUint16(at+patch.fields.generation,true)!==args[0])return false;
+    if(args[1]){const code=at-patch.mailboxCsOffset,branch=code+0x7c,hide=code+0x1d8a;if(h[branch]!==0x75||h[branch+1]!==6||h[hide]!==0x9a||view.getUint16(hide+1,true)!==0x1590)return false;}
+    applyAssist({address:at,generation:args[0],focus:0,touch:[0,0],...(args[1]?{restart:true}:{quit:true})});
+    return true;
+  }
+  if(method==='soloPauseCancel'){
+    const h=emulator.module.HEAPU8,at=args[1],view=new DataView(h.buffer);
+    if(game!=='03'||!bridge.valid(h,at)||h[at+patch.fields.phase]!==2||view.getUint16(at+patch.fields.generation,true)!==args[0])return false;
+    h[at+patch.fields.ack]=2;return true;
+  }
+  if(method==='soloPauseSelect'){
+    const h=emulator.module.HEAPU8,at=args[1],view=new DataView(h.buffer),choice=args[2];
+    if(game!=='03'||!bridge.valid(h,at)||h[at+patch.fields.phase]!==2||view.getUint16(at+patch.fields.generation,true)!==args[0]||!Number.isInteger(choice)||choice<0||choice>3)return false;
+    h[at+patch.fields.seat]=0x80|choice;return true;
+  }
   if(method==='nativeReset'){bridge.reset();pendingResults=[];return;}
   if(method==='clear'){clear();return;}
   if(method==='pause'){clear();emulator.pause();return;}
@@ -82,6 +121,7 @@ async function dispatch({method,args=[]}){
   }
   if(method==='run'){lastInput=performance.now();emulator.run();return;}
   if(method==='externalReplayFinish'){emulator?.finishReplay();return;}
+  if(method==='externalReplayRearm'){emulator?.rearmBrowserRecording();return;}
   if(method==='externalReplayFast'){emulator?.fastForwardReplay(args[0]);return;}
   if(method==='externalReplayDisable'){emulator?.stopBrowserRecording();return;}
   if(method==='externalReplayPause'){const paused=!!args[0];if(paused)emulator?.pause();else emulator?.run();return;}

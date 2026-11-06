@@ -5,8 +5,22 @@ export const CLOCK_BYTES=9,CLOCK_CHUNK=4096;
 const RealDate=Date,realPerformance=globalThis.performance;
 const realNow=()=>realPerformance.now();
 
-export async function inspectExternalMemory(module){
-  const bytes=module.HEAPU8.slice();let hash=2166136261;
+export async function inspectExternalMemory(module,{scope,patch}={}){
+  let bytes=module.HEAPU8;
+  if(scope==='pc98-guest-ram/1'){
+    const sig=new TextEncoder().encode(patch.signature),view=new DataView(bytes.buffer),matches=[],active=[];
+    const mailbox=patch.entries?.mailbox??patch.mailbox_cs_offset,csSegment=patch.codeSegment??patch.code_segment,dsSegment=patch.dataSegment??patch.data_segment;
+    const residentName=new TextEncoder().encode(patch.signature.startsWith('TH02')?'MIKOConfig\0':'HUMAConfig\0'),residentOffset=patch.signature.startsWith('TH02')?0x27fc:0xba86;
+    for(let at=bytes.indexOf(sig[0]);at>=0;at=bytes.indexOf(sig[0],at+1)){
+      if(at+36>bytes.length||!sig.every((v,i)=>bytes[at+i]===v))continue;
+      const ds=view.getUint16(at+20,true),cs=ds-dsSegment+csSegment,base=at-mailbox-cs*16,data=base+ds*16;
+      if(cs<=0||base<0||base+0x100000>bytes.length||data<base||data+residentOffset+4>base+0xa0000)continue;
+      const ptr=base+view.getUint16(data+residentOffset,true)+view.getUint16(data+residentOffset+2,true)*16;
+      if(ptr>=base&&ptr+residentName.length<base+0xa0000&&residentName.every((v,i)=>bytes[ptr+i]===v)){matches.push(base);if(bytes[at+22]===1)active.push(base);}
+    }
+    const candidates=active.length===1?active:matches;if(candidates.length!==1)throw Error('Replay 游戏内存定位失败');bytes=bytes.subarray(candidates[0],candidates[0]+0x100000);
+  }
+  bytes=bytes.slice();let hash=2166136261;
   // Snapshot first, then yield between chunks so the result menu can paint
   // while the exact final-state checksum is being calculated.
   for(let start=0;start<bytes.length;start+=1024*1024){
@@ -15,7 +29,7 @@ export async function inspectExternalMemory(module){
     for(let i=start;i<end;i++)hash=Math.imul(hash^bytes[i],16777619);
   }
   const memorySha256=await sha256(bytes);
-  return {memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length};
+  return {memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length,...(scope?{memoryScope:scope}:{})};
 }
 
 export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endReason='sleep',endPhase='after-input',timeline,boundaryMode='sleep',onChunk=()=>{},onEnd=()=>{},onError=()=>{},
@@ -23,7 +37,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   if(!['record','playback'].includes(mode)||!['sleep','clock'].includes(boundaryMode))throw Error('无效的单人 Replay 主机配置');
   let module=null,boundary=0,count=0,eventCursor=0,queued=[],buffer=new Uint8Array(CLOCK_BYTES*CLOCK_CHUNK),used=0;
   let stopped=false,ending=false,held=false,wake=null,timer=null,lastWake=0,recording=mode==='record',finished=false,extraClockReads=0,detached=false;
-  let runStart=null,runStage=0,runReason='manual',pauseStart=null,skipCursor=0,fastYield=realNow(),sealedHold=false,manualFast=false;
+  let runStart=null,runStage=0,runReason='manual',pauseStart=null,skipCursor=0,fastYield=realNow(),sealedHold=false,manualFast=false,waitForInactive=false;
   const skipRanges=[];
   const source=clocks?new DataView(clocks.buffer,clocks.byteOffset,clocks.byteLength):null;
   const started=realNow();
@@ -99,8 +113,8 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   }
   function observeRun(){
     if(!recording||!observe)return false;
-    const state=observe();if(!state)return false;
-    if(state.active&&runStart===null){runStart=boundary;if(boundary>1)skipRanges.push({from:1,to:boundary});}
+    const state=observe();if(waitForInactive){if(!(state?.currentActive??state?.active))waitForInactive=false;return false;}if(!state)return false;
+    if((state.currentActive??state.active)&&runStart===null){runStart=boundary;if(boundary>1)skipRanges.push({from:1,to:boundary});}
     if(runStart===null)return false;
     runStage=state.stage??runStage;
     if(state.paused&&pauseStart===null)pauseStart=boundary;
@@ -185,6 +199,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       if(boundaryMode==='clock')finish();
       else if(wake)resume();
     },
+    rearm(){if(mode!=='record'||stopped||!finished)throw Error('Replay 尚未结束');finished=false;recording=true;ending=false;runStart=null;runStage=0;runReason='manual';pauseStart=null;skipRanges.length=0;waitForInactive=true;releaseSeal();},
     disable(){recording=false;ending=false;used=0;releaseSeal();},
     // Let the ordinary exit request finish even if playback held its last
     // JSPI continuation. No tape or proof work survives disposal.

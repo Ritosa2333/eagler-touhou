@@ -39,6 +39,25 @@ function readState(){
 function applyAssist(value){
   if(!emulator)return;const at=value.address,heap=emulator.module.HEAPU8;if(!valid(heap,at))return;
   const view=new DataView(heap.buffer),base=at-patch.entries.mailbox;if(value.generation!==view.getUint16(at+24,true))return;
+  if(value.quit||value.restart){
+    const data=base+(patch.dataSegment-patch.codeSegment)*16,ds=view.getUint16(at+20,true),ram=data-ds*16;
+    if(ram<0||ram+0x100000>heap.length||data<ram||data+0x2800>ram+0xa0000)return;
+    if(value.restart){
+      // Let MAIN perform its normal cleanup, then load a fresh MAIN.EXE in
+      // the same DOS session instead of reusing the current stage's objects.
+      const resident=ram+view.getUint16(data+0x27fc,true)+view.getUint16(data+0x27fe,true)*16,branch=base+0x10e;
+      if(resident<ram||resident+48>ram+0xa0000||!residentSignature.every((b,i)=>heap[resident+i]===b)||heap[branch]!==0xe8||heap[branch+1]!==0xae||heap[branch+2]!==0x10||heap[base+0x13b]!==0x1e||heap[base+0x13c]!==0x68||view.getUint16(base+0x13d,true)!==0x2da)return;
+      const config=emulator.config.practice,stage=config?.mode==='target'?config.setup.stage:heap[resident+22]===4?5:0;
+      heap[resident+11]=stage;heap[data+0x8f5]=stage;heap.fill(0,resident+14,resident+20);heap[resident+20]=heap[resident+25];heap[resident+21]=heap[resident+26];
+      emulator.restartPractice();heap.set([0xe9,0x09,0x00,0x6d,0x61,0x69,0x6e,0],branch);heap[base+0x13b]=0x0e;view.setUint16(base+0x13d,0x111,true);
+    }else{
+      // Skip MAIN's game-over/continue prompt and let it execute OP directly.
+      const branch=base+0x10e;
+      if(heap[branch]!==0xe8||heap[branch+1]!==0xae||heap[branch+2]!==0x10)return;
+      heap.set([0xe9,0x09,0x00],branch);emulator.practice?.exitPractice();
+    }
+    heap[data+0x2b97]=1;return;
+  }
   view.setUint16(base+patch.entries.currentInput,value.currentInput,true);heap[at+100]=50;heap[at+102]=value.focusEnabled?1:0;heap[at+103]=value.points;
   const touch=base+patch.entries.touch;
   if(value.touchAction==='add'){
@@ -51,20 +70,25 @@ let replayResult=null;
 let pausePrevious=0;
 const pauseMenu=mountPauseMenu(host.querySelector('.solo-screen'),{
   resume(){pauseMenu.close();input.clear();pausePrevious=0;emulator?.run();music?.resume();void attempt?.sfx?.resume();canvas.focus();},
-  exit(){void returnToTitle(false).catch(report);},
-  save(){void returnToTitle(true).catch(report);},
-  discard(){void returnToTitle(false).catch(report);},
-  restart(){pauseMenu.close();void restart({...lastPractice,options:practiceUI.options},lastPractice?.mode==='target').catch(report);},
+  exit(){transition(false);},
+  save(){transition(true);},
+  discard(){transition(false);},
+  restart(){transition(false,true);},
 });
+function transition(save,restarting=false){const current=emulator;void returnToTitle(save,restarting,current).catch(error=>{if(emulator===current){pauseMenu.open();report(error);}});}
 const savedReplays=new WeakMap();
 async function saveReplay(blob){recordBlob=blob;if(savedReplays.has(blob))return savedReplays.get(blob);const task=(async()=>{const name=`replay/th02_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th02r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());return name;})();savedReplays.set(blob,task);return task;}
 async function saveRecording(){if(!recorder?.state.ready)return null;return saveReplay(await recorder.save());}
 async function syncFiles(){if(!emulator||playback)return;const fat=new Fat12(await emulator.getDiskImage('th02-solo.hdi'));
   for(const name of ['HUUHI.DAT','HUUMA.CFG']){const entry=fat.find('HUMAROKU/'+name,{optional:true});if(entry!==undefined)await globalThis.__eaglerPC98Files.write(name,fat.read(entry));}}
-async function returnToTitle(save){
+async function returnToTitle(save,restarting=false,current=emulator){
   pauseMenu.close();
-  if(save&&recorder){emulator.run();recorder.finish();const until=performance.now()+10000;while(!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(!recorder.state.ready)throw Error('录像未能完成');await saveRecording();}
-  await syncFiles();await restart(practiceUI.configuration());
+  const recording=recorder;if(recording?.state.failed&&!save){recording.dispose();recorder=undefined;if(attempt)attempt.recorder=null;}else if(recording){recording.finish();const until=performance.now()+10000;while(emulator===current&&!recording.state.ready&&!recording.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(emulator!==current)return;if(!recording.state.ready)throw Error('录像未能完成');if(save)await saveRecording();if(emulator!==current)return;await recording.rearm();}
+  if(emulator!==current)return;const state=readState();if(!state||state.mode!==1||!valid(emulator.module.HEAPU8,mailbox))throw Error('当前对局无法退出');
+  const branch=mailbox-patch.entries.mailbox+0x10e,expected=[0xe8,0xae,0x10];
+  if(!expected.every((b,i)=>emulator.module.HEAPU8[branch+i]===b))throw Error('当前对局无法退出');
+  discardRetry();if(!restarting){practiceUI.setRunning(false);lastPractice=normalizePractice(practiceUI.configuration());}
+  await syncFiles();if(emulator!==current)return;emulator.assist({address:mailbox,generation:state.generation,...(restarting?{restart:true}:{quit:true})});input.clear();pausePrevious=0;emulator.run();music?.resume();void attempt?.sfx?.resume().catch(()=>{});canvas.focus();
 }
 async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
@@ -101,7 +125,7 @@ function prepareRetry(ps){
 }
 async function launch(config,replay=null,cached=null,effects=null){
   playback=!!replay;replayResult=null;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
-  const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'main',recordEnabled:!playback,volume:musicMode==='none'?0:.7};
+  const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'main',memoryScope:'pc98-guest-ram/1',exitOnGameQuit:true,recordEnabled:!playback,volume:musicMode==='none'?0:.7};
   currentSettings=settings;attempt=cached||makeAttempt(canvas,lastPractice,settings,replay,false,effects);
   const started=performance.now(),cachedReady=!!cached?.ready;await attempt.task;if(cached)await attempt.core.activatePractice(practiceUI.options);
   if(cached){canvas.replaceWith(attempt.canvas);canvas=attempt.canvas;lastRetry={cached:true,cachedReady,milliseconds:Math.round(performance.now()-started)};}

@@ -66,13 +66,13 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       if(replay){
         const identity=await fingerprint(sources);
         if(identity!==replay.header.identity||replay.header.runtime!==runtime||replay.header.boundaryMode!=='sleep')throw Error('Replay 与当前游戏或模拟器版本不一致');
-        externalReplay={mode:'playback',boundaryMode:'sleep',clocks:replay.clocks,events:replay.events,endBoundary:replay.header.endBoundary,endReason:replay.header.result.endReason,endPhase:replay.header.result.endPhase,timeline:replay.header.result.timeline,
+        externalReplay={mode:'playback',boundaryMode:'sleep',clocks:replay.clocks,events:replay.events,endBoundary:replay.header.endBoundary,endReason:replay.header.result.endReason,endPhase:replay.header.result.endPhase,timeline:replay.header.result.timeline,memoryScope:replay.header.result.memoryScope,
           onEnd:value=>{const matches=value.memoryHash===replay.header.result.memoryHash&&value.memorySha256===replay.header.result.memorySha256;emit('onPlaybackEnd',matches);},onError:fail};
       }else if(recordEnabled){
         try{
           const identity=await fingerprint(sources);
           if(attempt.cancelled)throw Error('练习已取消');
-          attempt.recorder=createBrowserSoloRecorder({game:'04',language,runtime,identity,patch:attempt.patch,boundaryMode:'sleep',disk:data.slice(),baseDisk,practice,audioMode,savedFiles,diskBaseKind:'installed-practice/2',
+          attempt.recorder=createBrowserSoloRecorder({game:'04',language,runtime,identity,patch:attempt.patch,boundaryMode:'sleep',disk:data.slice(),baseDisk,practice,audioMode,savedFiles,memoryScope:settings.memoryScope,reuse:!!settings.memoryScope,diskBaseKind:'installed-practice/2',
             deferEncoding:deferReplay,onStatus:text=>{attempt.recordStatus=text;emit('onRecordingStatus',text);},onFailure:error=>emit('onFailure',error),
             onFile:(blob,result)=>{attempt.blob=blob;emit('onFile',blob,result,practice);},onResult:result=>emit('onResult',result,practice)});
           externalReplay=attempt.recorder.config;
@@ -80,7 +80,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       }
       if(attempt.cancelled)throw Error('练习已取消');
       mark('recording');
-      const config={canvas,externalReplay,practice,practiceStandby:standby,practicePatch:attempt.patch,wasmBinary:resources.wasmBinary,applyReplayInput,externalEffects:!!attempt.sfx,
+      const config={canvas,exitOnGameQuit:!!settings.exitOnGameQuit,externalReplay,practice,practiceStandby:standby,practicePatch:attempt.patch,wasmBinary:resources.wasmBinary,applyReplayInput,externalEffects:!!attempt.sfx,
         onError:fail,onExit:()=>{if(attempt.cancelled)return;if(attempt.foreground){attempt.recorder?.finish();emit('onExit');}else{attempt.error=Error('预备练习意外退出');attempt.stop();}}};
       Object.assign(config,{ExMemory:7,Latencys:100,SampleHz:44100,SNDboard:4,nativeSoloAudio:!externalReplay&&audioMode!=='original',no_mouse:true,use_menu:false,fontfile:'font.bmp'});
       attempt.core=runtime==='worker'?await WorkerNP21.create(config,{game:'04',patch:attempt.patch,music:attempt.music?.reader.patch,onError:fail}):await NP21.create(config);

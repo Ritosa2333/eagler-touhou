@@ -24,8 +24,15 @@ function extract02(data){
     const kind=view.getUint16(at,true);if(!kind)break;
     const name=nameOf(data.subarray(at+3,at+16).map(value=>value===0?0:value^255));
     if(!/\.(m|efc)$/.test(name))continue;
-    const packed=view.getUint32(at+16,true),size=view.getUint32(at+20,true),offset=view.getUint32(at+24,true);
+    const packed=view.getUint32(at+16,true),declaredSize=view.getUint32(at+20,true),offset=view.getUint32(at+24,true);
     const bytes=data.subarray(offset,offset+packed).map(value=>value^0x12);
+    // The Chinese TH02 disk labels the unchanged original effect bank one
+    // byte too long. Verify the packed bank before correcting its size.
+    let size=declaredSize;
+    if(name==='huuma.efc'&&kind===0x9595&&packed===964&&size===1128){
+      let hash=2166136261;for(const byte of bytes)hash=Math.imul(hash^(byte^0x12),16777619)>>>0;
+      if(hash===0x7c2b4ce1)size=1127;
+    }
     tracks.push([name,unpack(bytes,kind===0x9595,size)]);
   }
   return tracks;

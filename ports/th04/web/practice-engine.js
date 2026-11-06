@@ -5,7 +5,7 @@ const limits=PRACTICE_RANK_LIMITS;
 const fixed=[{3:1501,4:601},{3:2001,5:700},{},{},{4:500,7:500,10:500,13:288,16:288,17:1000},{16:2500},{4:192,6:4000}];
 const loops=[{2:16},{2:11,4:11},{3:40},{2:52},{2:4,5:4,8:4,11:4,14:4},{2:10,4:10,8:10,12:10,14:18},{2:36}];
 export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}}){
-  const initial=normalizePractice(config),setup=initial.setup,targeted=initial.mode==='target';let options=initial.options;
+  const initial=normalizePractice(config),setup=initial.setup;let targeted=initial.mode==='target',options=initial.options;
   let base=-1,d=-1,csBase=-1,resident=-1,initialized=false,ready=false,preparing=targeted,waiting=false,outcome=null,error=null;
   let frames=0,elapsed=0,misses=0,bombsUsed=0,lastNativeBombs=0,lockedPower=null,warped=false,prepareFrames=0,seenBoss=false,seenGengetsu=false,selectedPhase=0,pendingHitCounted=false,seekFinalHp=0,idleBoundaries=0,observedFrames=-1;
   let effectiveKeys=0,effectiveFocus=0;
@@ -159,8 +159,9 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     if(setup.stage===6&&setup.branch!=='gengetsu')return seenBoss&&seenGengetsu&&phase>=254;
     return seenBoss&&phase>=254;
   }
-  function status(){return {mode:initial.mode,ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
+  function status(){return {mode:targeted?'target':'full',ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
   return {
+    exitPractice(){targeted=false;preparing=false;waiting=false;outcome=null;flag('targetPractice',0);flag('entryPause',0);flag('hold',0);clock?.setSpeed(options.speed);},
     gameOver(){if(targeted&&ready&&!outcome)finish('failed');},
     clear(){if(targeted&&ready&&!outcome)finish('clear');},
     observeBoundary(){

@@ -29,7 +29,7 @@ export function extractGame(disk){
   }};
 }
 
-export function prepareFastBoot(extracted,{network=false,directLaunch=false,practice=false}={}){
+export function prepareFastBoot(extracted,{network=false,directLaunch=false,practice=false,returnAfterPractice=false}={}){
   const bat=extracted.files.find(f=>f.path==='game/HUMAROKU/GAME.BAT');
   if(!bat)throw Error('TH02 启动脚本缺失');
   let text=Array.from(bat.contents,c=>String.fromCharCode(c)).join('');
@@ -42,12 +42,12 @@ export function prepareFastBoot(extracted,{network=false,directLaunch=false,prac
   }
   let entries=0;
   const replacement=text.replace(/^(op|main)[ \t]*\r*$/gm,(_,command)=>{
-    entries++;return `z:\\system\\config.com -set "cpu cycles=${network||practice?'30000':'max 100%'}"\r\n${directLaunch?'WEBSTART\r\nif errorlevel 1 goto fin\r\nmain':command}\r`;
+    entries++;return `z:\\system\\config.com -set "cpu cycles=${network||practice?'30000':'max 100%'}"\r\n${directLaunch?'WEBSTART\r\nif errorlevel 1 goto fin\r\nmain':command}${returnAfterPractice&&command==='main'?'\r\nop':''}\r`;
   });
   if(entries!==6)throw Error('TH02 启动入口与已校验版本不同');
   return {path:'game/HUMAROKU/FASTBOOT.BAT',contents:Uint8Array.from(replacement,c=>c.charCodeAt(0))};
 }
 
-export function dosboxConfig({network=false,fastBoot=false}={}){
-  return `[dosbox]\nmachine=pc98\nfastbioslogo=${fastBoot}\nmemsize=16\n[cpu]\ncore=simple\ncputype=386\ncycles=${fastBoot?1000:network?30000:'max 100%'}\n[render]\nframeskip=0\nscaler=none\naspect=false\n[sblaster]\nsbtype=none\n[pc98]\npc-98 fm board=board86\n[mixer]\nrate=44100\nblocksize=512\nprebuffer=20\n[autoexec]\n@echo off\nmount a /home/web_user/game\na:\npath a:\\HUMAROKU;a:\\\ncd HUMAROKU\n${fastBoot?'FASTBOOT.BAT':'GAME.BAT'}\n`;
+export function dosboxConfig({network=false,fastBoot=false,exitOnGameQuit=false}={}){
+  return `[dosbox]\nmachine=pc98\nfastbioslogo=${fastBoot}\nmemsize=16\n[cpu]\ncore=simple\ncputype=386\ncycles=${fastBoot?1000:network?30000:'max 100%'}\n[render]\nframeskip=0\nscaler=none\naspect=false\n[sblaster]\nsbtype=none\n[pc98]\npc-98 fm board=board86\n[mixer]\nrate=44100\nblocksize=512\nprebuffer=20\n[autoexec]\n@echo off\nmount a /home/web_user/game\na:\npath a:\\HUMAROKU;a:\\\ncd HUMAROKU\n${fastBoot?'FASTBOOT.BAT':'GAME.BAT'}\n${exitOnGameQuit?'echo finished > A:\\EGLQUIT.TXT\n':''}`;
 }

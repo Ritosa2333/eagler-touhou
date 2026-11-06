@@ -69,16 +69,22 @@ frame_hook:
     popf
     ret
 
-; Preserve the original Escape / Q pause routine and its return registers.
+; Use the native single-player menu only during an eligible solo round.
 pause_hook:
+    cmp byte [cs:phase],1
+    jne .original
     mov byte [cs:phase],0
     mov byte [cs:focus_active],0
     mov dword [cs:touch_state],0
     mov dword [cs:touch_state+4],0
     mov dword [cs:touch_state+8],0
+    call solo_pause
+    ret
+.original:
     call ORIGINAL(0xc7a5)
     ret
 
+%include "patches/solo-pause.inc"
 %include "patches/movement.inc"
 
 ; Called after 2P's final glow/charge rendering, with EGC already disabled.

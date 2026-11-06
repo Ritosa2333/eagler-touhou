@@ -5,10 +5,24 @@ export const CLOCK_BYTES=9,CLOCK_CHUNK=4096;
 const RealDate=Date,realPerformance=globalThis.performance;
 const realNow=()=>realPerformance.now();
 
-export function inspectExternalMemory(module){
-  const bytes=module.HEAPU8.slice();let hash=2166136261;
+export function inspectExternalMemory(module,{guest=false,patch}={}){
+  let bytes=module.HEAPU8;
+  if(guest){
+    const sig=new TextEncoder().encode(patch.signature),resident=new TextEncoder().encode('YUMEConfig\0'),view=new DataView(bytes.buffer),matches=[],active=[];
+    for(let at=bytes.indexOf(sig[0]);at>=0;at=bytes.indexOf(sig[0],at+1)){
+      if(at+patch.mailboxSize>bytes.length||!sig.every((v,i)=>bytes[at+i]===v))continue;
+      const ds=view.getUint16(at+patch.fields.ds,true),cs=ds-patch.dataSegment+patch.codeSegment,base=at-patch.mailboxCsOffset-cs*16,data=base+ds*16;
+      if(cs<=0||base<0||base+0x100000>bytes.length||data<base||data+0x1d94>base+0xa0000)continue;
+      const ptr=base+view.getUint16(data+0x1d90,true)+view.getUint16(data+0x1d92,true)*16;
+      if(ptr>=base&&ptr+resident.length<base+0xa0000&&resident.every((v,i)=>bytes[ptr+i]===v)){matches.push(base);if([1,2].includes(bytes[at+patch.fields.phase]))active.push(base);}
+    }
+    const candidates=active.length===1?active:matches;
+    if(candidates.length!==1)throw Error('Replay 游戏内存定位失败');
+    bytes=bytes.subarray(candidates[0],candidates[0]+0x100000);
+  }
+  bytes=bytes.slice();let hash=2166136261;
   for(const value of bytes)hash=Math.imul(hash^value,16777619);
-  return sha256(bytes).then(memorySha256=>({memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length}));
+  return sha256(bytes).then(memorySha256=>({memoryHash:(hash>>>0).toString(16).padStart(8,'0'),memorySha256,memoryBytes:bytes.length,...(guest?{memoryScope:'pc98-guest-ram/1'}:{})}));
 }
 
 export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endReason='sleep',endPhase='after-input',timeline,boundaryMode='sleep',onChunk=()=>{},onEnd=()=>{},onError=()=>{},
@@ -16,7 +30,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   if(!['record','playback'].includes(mode)||!['sleep','clock'].includes(boundaryMode))throw Error('无效的单人 Replay 主机配置');
   let module=null,boundary=0,count=0,eventCursor=0,queued=[],buffer=new Uint8Array(CLOCK_BYTES*CLOCK_CHUNK),used=0;
   let stopped=false,ending=false,held=false,wake=null,timer=null,lastWake=0,recording=mode==='record',finished=false,extraClockReads=0,detached=false;
-  let runStart=null,runStage=0,runReason='manual',pauseStart=null,skipCursor=0,fastYield=realNow(),sealedHold=false,manualFast=false;
+  let runStart=null,runStage=0,runReason='manual',pauseStart=null,skipCursor=0,fastYield=realNow(),sealedHold=false,manualFast=false,waitForInactive=false;
   const skipRanges=[];
   const source=clocks?new DataView(clocks.buffer,clocks.byteOffset,clocks.byteLength):null;
   const started=realNow();
@@ -91,8 +105,10 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
   }
   function observeRun(){
     if(!recording||!observe)return false;
-    const state=observe();if(!state)return false;
-    if(state.active&&runStart===null){runStart=boundary;if(boundary>1)skipRanges.push({from:1,to:boundary});}
+    const state=observe();
+    if(waitForInactive){if(!(state?.currentActive??state?.active))waitForInactive=false;return false;}
+    if(!state)return false;
+    if((state.currentActive??state.active)&&runStart===null){runStart=boundary;if(boundary>1)skipRanges.push({from:1,to:boundary});}
     if(runStart===null)return false;
     runStage=state.stage??runStage;
     if(state.paused&&pauseStart===null)pauseStart=boundary;
@@ -173,6 +189,11 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       ending=true;
       if(boundaryMode==='clock')finish();
       else if(wake)resume();
+    },
+    rearm(){
+      if(mode!=='record'||stopped||!finished)throw Error('Replay 尚未结束');
+      finished=false;recording=true;ending=false;runStart=null;runStage=0;runReason='manual';pauseStart=null;skipRanges.length=0;waitForInactive=true;
+      releaseSeal();
     },
     disable(){recording=false;ending=false;used=0;releaseSeal();},
     // Let the ordinary exit request finish even if playback held its last

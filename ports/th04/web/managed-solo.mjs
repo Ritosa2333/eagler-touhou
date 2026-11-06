@@ -21,23 +21,26 @@ const readState=()=>emulator?.snapshot.state??null;
 function key(code,number,down){emulator.send('key',[{type:down?'keydown':'keyup',code,key:code==='KeyZ'?'z':code==='KeyX'?'x':code,keyCode:number,which:number}]);}
 function release(){input.releaseGameplay();if(emulator)for(const [code,bit,number] of nativeKeys)if(lastKeys&bit)key(code,number,false);lastKeys=0;emulator?.clearInput();}
 let replayResult=null;
-let pausePrevious=0;
+let pausePrevious=0,pauseState=null;
 const pauseMenu=mountPauseMenu(host.querySelector('.solo-screen'),{
   resume(){pauseMenu.close();input.clear();pausePrevious=0;emulator?.run();music?.resume();void attempt?.sfx?.resume();canvas.focus();},
-  exit(){void returnToTitle(false).catch(report);},
-  save(){void returnToTitle(true).catch(report);},
-  discard(){void returnToTitle(false).catch(report);},
-  restart(){pauseMenu.close();void restart({...lastPractice,options:practiceUI.options},lastPractice?.mode==='target').catch(report);},
+  exit(){transition(false);},
+  save(){transition(true);},
+  discard(){transition(false);},
+  restart(){transition(false,true);},
 });
+function transition(save,restarting=false){const current=emulator;void returnToTitle(save,restarting,current).catch(error=>{if(emulator===current){pauseMenu.open();report(error);}});}
 const savedReplays=new WeakMap();
 async function saveReplay(blob){recordBlob=blob;if(savedReplays.has(blob))return savedReplays.get(blob);const task=(async()=>{const name=`replay/th04_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th04r`;await globalThis.__eaglerPC98Files.write(name,await blob.arrayBuffer());return name;})();savedReplays.set(blob,task);return task;}
 async function saveRecording(){if(!recorder?.state.ready)return null;return saveReplay(await recorder.save());}
 async function syncFiles(){if(!emulator||playback)return;const fat=new Fat12(await emulator.getDiskImage('th04-solo.hdi'));
   for(const name of ['GENSOU.SCR','MIKO.CFG']){const entry=fat.find('GENSO/'+name,{optional:true});if(entry!==undefined)await globalThis.__eaglerPC98Files.write(name,fat.read(entry));}}
-async function returnToTitle(save){
+async function returnToTitle(save,restarting=false,current=emulator){
   pauseMenu.close();
-  if(save&&recorder){emulator.run();recorder.finish();const until=performance.now()+10000;while(!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(!recorder.state.ready)throw Error('录像未能完成');await saveRecording();}
-  await syncFiles();await restart(practiceUI.configuration());
+  const recording=recorder;if(recording?.state.failed&&!save){recording.dispose();recorder=undefined;if(attempt)attempt.recorder=null;}else if(recording){recording.finish();const until=performance.now()+10000;while(emulator===current&&!recording.state.ready&&!recording.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(emulator!==current)return;if(!recording.state.ready)throw Error('录像未能完成');if(save)await saveRecording();if(emulator!==current)return;await recording.rearm();}
+  if(emulator!==current)return;await syncFiles();if(emulator!==current)return;if(!await emulator.call('soloQuit',[pauseState?.generation,restarting,pauseState?.at]))throw Error('当前对局无法退出');if(emulator!==current)return;
+  discardRetry();if(!restarting){practiceUI.setRunning(false);lastPractice=normalizePractice(practiceUI.configuration());}
+  input.clear();pausePrevious=0;emulator.run();music?.resume();void attempt?.sfx?.resume().catch(()=>{});canvas.focus();
 }
 async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
@@ -49,7 +52,7 @@ function tick(){
   if(pauseMenu.visible){if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);if(edge&(32|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();loop=requestAnimationFrame(tick);return;}
   const state=frameState,ps=emulator.snapshot.practice;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});prepareRetry(ps);
   if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});
-  if((edge&128)&&state?.mode===1&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
+  if((edge&128)&&state?.mode===1&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){pauseState=state;release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
   if(emulator.state==='running'&&!playback){
     const playing=state?.mode===1&&!state.flags;let bits=sample;
     if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;
@@ -71,7 +74,7 @@ function prepareRetry(ps){
 }
 async function launch(config,replay=null,cached=null,effects=null){
   playback=!!replay;replayResult=null;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
-  const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'worker',recordEnabled:!playback,volume:musicMode==='none'?0:.7};
+  const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'worker',memoryScope:'pc98-guest-ram/1',exitOnGameQuit:true,recordEnabled:!playback,volume:musicMode==='none'?0:.7};
   currentSettings=settings;attempt=cached||makeAttempt(canvas,lastPractice,settings,replay,false,effects);
   const started=performance.now(),cachedReady=!!cached?.ready;await attempt.task;if(cached)await attempt.core.activatePractice(practiceUI.options);
   if(cached){canvas.replaceWith(attempt.canvas);canvas=attempt.canvas;lastRetry={cached:true,cachedReady,milliseconds:Math.round(performance.now()-started)};}

@@ -14,7 +14,7 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
   </script>`;
   const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;if(path==='/'){res.setHeader('content-type','text/html');return res.end(html);}if(path==='/data')return res.end(data);
     const file=resolve(root,path.slice(9));if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');res.setHeader('content-type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
-    let bytes=await readFile(file);if(game==='th01'&&path==='/runtime/app.js')bytes=Buffer.concat([bytes,Buffer.from('\nwindow.testMenuInput=menuInput;\n')]);if(game==='th03'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet testPrevious;export function testState(){return emulator?.snapshot?.state;} export function testMarkers(){return emulator?.snapshot?.markers;} export function testMark(){testPrevious=emulator;} export function testChanged(){return !!emulator&&emulator!==testPrevious;}\n')]);
+    let bytes=await readFile(file);if(game==='th01'&&path==='/runtime/app.js')bytes=Buffer.concat([bytes,Buffer.from('\nwindow.testMenuInput=menuInput;\n')]);if(game==='th03'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet testPrevious;export function testState(){return emulator?.snapshot?.state;} export function testMarkers(){return emulator?.snapshot?.markers;} export function testMark(){testPrevious=emulator;} export function testChanged(){return !!emulator&&emulator!==testPrevious;} export function testPlaybackEnded(){return playback&&emulator?.state==="paused";}\n')]);
     if(game==='th04'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nexport function testTurbo(){return emulator.call("testTurbo");}\n')]);
     if(game==='th04'&&path==='/runtime/solo-worker.js')bytes=Buffer.from(bytes.toString().replace("if(method==='soloFault')","if(method==='testTurbo'){const d=emulator.practice.debug.d;return d<0?null:emulator.module.HEAPU8[d+0x53a0];}if(method==='soloFault')"));res.end(bytes);
   }catch{res.writeHead(404).end();}});
@@ -23,7 +23,7 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
     browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
     const page=await browser.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.setViewport({width:1000,height:700});await page.goto('http://127.0.0.1:'+server.address().port);
     await page.waitForFunction(()=>events.some(e=>['ready','error'].includes(e.event)),{timeout:120000});assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
-    await page.evaluate(()=>rpc('configure',{music:'none',options:{touchEnabled:false},resources:[],runtimeResources:[],sharedResources:[]}));await page.evaluate(()=>rpc('launch',{launchSerial:1}));
+    await page.evaluate(language=>rpc('configure',{music:'none',language,options:{touchEnabled:false},resources:[],runtimeResources:[],sharedResources:[]}),process.env.PC98_LANGUAGE||'ja');await page.evaluate(()=>rpc('launch',{launchSerial:1}));
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch=1'));await page.waitForFunction(()=>events.some(e=>e.event==='first-frame'),{timeout:120000});
     if(game==='th01'){
       await frame.waitForFunction(()=>th01Native.core.th_get(50,0)===1,{timeout:30000});
@@ -57,8 +57,25 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th01','th
       }
       await frame.click('#canvas');await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:true}));await new Promise(r=>setTimeout(r,150));await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:false}));await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:15000}).catch(async error=>{console.log('TH03 pause state',await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()));throw error;});
       await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testMark());
+      await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(n=>n.textContent==='重新开始').click());
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testState()?.phase!==1,{timeout:30000});
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1,{timeout:90000});
+      assert.equal(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testChanged()),false,'restart keeps the emulator');
+      await frame.click('#canvas');await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:true}));await new Promise(r=>setTimeout(r,150));await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:false}));await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:15000});
       await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(n=>n.textContent==='不存 REP 退出游戏').click());
-      await frame.waitForFunction(async()=>{const m=await import('./managed-solo.mjs');return m.testChanged()&&m.managedAPI.health().frames>0&&!document.querySelector('.pc98-pause-menu:not([hidden])');},{timeout:90000});
+      await frame.waitForFunction(async()=>{const m=await import('./managed-solo.mjs');return !m.testChanged()&&m.managedAPI.health().audio.music==='op-m26'&&!document.querySelector('.pc98-pause-menu:not([hidden])');},{timeout:90000});
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testState()?.phase!==1,{timeout:30000});
+      for(let i=0;i<30;i++){
+        await frame.click('#canvas');await page.keyboard.press('KeyZ',{delay:120});await new Promise(r=>setTimeout(r,500));
+        if(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1))break;
+      }
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1,{timeout:90000});
+      await frame.click('#canvas');await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:true}));await new Promise(r=>setTimeout(r,150));await page.evaluate(()=>rpc('keyboard',{code:'Escape',key:'Escape',keyCode:27,location:0,down:false}));await frame.waitForSelector('.pc98-pause-menu:not([hidden])',{visible:true,timeout:15000});
+      await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(n=>n.textContent==='退出游戏').click());
+      await frame.$$eval('.pc98-pause-menu button',buttons=>buttons.find(n=>n.textContent==='保存本次 REP').click());
+      await frame.waitForFunction(()=>[...__eaglerPC98Files.memory.keys()].some(k=>k.endsWith('.th03r')),{timeout:60000});
+      await frame.evaluate(async()=>{const api=(await import('./managed-solo.mjs')).managedAPI,path=[...__eaglerPC98Files.memory.keys()].find(k=>k.endsWith('.th03r'));api.stop();await api.playback({action:'open',path});});
+      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testPlaybackEnded(),{timeout:120000});
     }
     assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='exit'||e.event==='error')),[]);assert.deepEqual(errors,[]);
     console.log('PASS',game,game==='th04'?'normal play Turbo mode':'pause quit returns to its own title');

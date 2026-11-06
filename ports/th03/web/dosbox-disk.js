@@ -69,6 +69,6 @@ export function prepareFastBoot(extracted, {network = false} = {}) {
   return {path: 'game/' + folder + '/FASTBOOT.BAT', contents: Uint8Array.from(replacement, c => c.charCodeAt(0))};
 }
 
-export function dosboxConfig({network = false, fastBoot = false} = {}) {
-  return `[dosbox]\nmachine=pc98\nmemsize=16\n[cpu]\ncore=simple\ncputype=386\ncycles=${fastBoot ? 1000 : network ? NETWORK_CYCLES : 'max 100%'}\n[render]\nframeskip=0\nscaler=none\naspect=false\n[sblaster]\nsbtype=none\n[pc98]\npc-98 fm board=board86\n[mixer]\nrate=44100\nblocksize=512\nprebuffer=20\n[autoexec]\n@echo off\nmount a /home/web_user/game\na:\npath a:\\${folder};a:\\\ncd ${folder}\n${fastBoot ? 'FASTBOOT.BAT' : 'GAME.BAT'}\n`;
+export function dosboxConfig({network = false, fastBoot = false, exitOnGameQuit = false} = {}) {
+  return `[dosbox]\nmachine=pc98\nmemsize=16\n[cpu]\ncore=simple\ncputype=386\ncycles=${fastBoot ? 1000 : network ? NETWORK_CYCLES : 'max 100%'}\n[render]\nframeskip=0\nscaler=none\naspect=false\n[sblaster]\nsbtype=none\n[pc98]\npc-98 fm board=board86\n[mixer]\nrate=44100\nblocksize=512\nprebuffer=20\n[autoexec]\n@echo off\nmount a /home/web_user/game\na:\npath a:\\${folder};a:\\\ncd ${folder}\n${fastBoot ? 'FASTBOOT.BAT' : 'GAME.BAT'}\n${exitOnGameQuit ? 'echo finished > A:\\EGLQUIT.TXT\n' : ''}`;
 }

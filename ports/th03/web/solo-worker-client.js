@@ -32,7 +32,7 @@ export class WorkerNP21 {
     if(!supportsSoloWorker())throw Error('浏览器不支持独立线程模式，请选择兼容模式');
     const {canvas,onDiskChange,onExit,onError:configOnError,applyReplayInput,...config}=this.config;
     const replay=config.externalReplay;this.externalReplayCallbacks=replay||null;
-    if(replay)config.externalReplay={mode:replay.mode,boundaryMode:replay.boundaryMode,endReason:replay.endReason,endPhase:replay.endPhase,timeline:replay.timeline,lifecycle:replay.lifecycle,
+    if(replay)config.externalReplay={mode:replay.mode,boundaryMode:replay.boundaryMode,endReason:replay.endReason,endPhase:replay.endPhase,timeline:replay.timeline,lifecycle:replay.lifecycle,memoryScope:replay.memoryScope,
       ...(replay.clocks?{clocks:replay.clocks.slice()}:{}),...(replay.events?{events:replay.events}:{}),...(replay.endBoundary!==undefined?{endBoundary:replay.endBoundary}:{})};
     const offscreen=canvas.transferControlToOffscreen();
     const {onError,...setup}=this.setup;

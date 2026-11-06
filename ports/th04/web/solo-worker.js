@@ -22,6 +22,20 @@ function applyAssist(value){
   const h=emulator.module.HEAPU8,v=new DataView(h.buffer);
   if(at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b))return;
   if(value.generation!==v.getUint16(at+24,true))return;
+  if(value.quit||value.restart){
+    const data=at-patch.mailbox_cs_offset+(patch.data_segment-patch.code_segment)*16,ds=v.getUint16(at+20,true),base=data-ds*16;
+    if(base<0||base+0x100000>h.length||data<base||data+0xba8a>base+0xa0000)return;
+    if(value.restart){
+      const resident=base+v.getUint16(data+0xba86,true)+v.getUint16(data+0xba88,true)*16;
+      if(resident<base||resident+80>base+0xa0000||new TextDecoder().decode(h.subarray(resident,resident+11))!=='HUMAConfig\0')return;
+      const config=emulator.config.practice,stage=config?.mode==='target'?config.setup.stage:h[resident+15]===4?6:0;
+      const code=at-patch.mailbox_cs_offset;
+      if(h[code+0x86]!==0x75||h[code+0x87]!==5||h[code+0x8d]!==0x1e||h[code+0x8e]!==0x68||v.getUint16(code+0x8f,true)!==0xcd)return;
+      h[resident+17]=stage;h[resident+19]=48+stage;emulator.restartPractice();
+      h.set([0x6d,0x61,0x69,0x6e,0],code+0x88);h[code+0x8d]=0x0e;v.setUint16(code+0x8f,0x88,true);h[data+0x5392]=1;
+    }else{emulator.practice?.exitPractice();h[data+0x5392]=1;}
+    return;
+  }
   h[at+26]=value.points||0;
   const t=value.touch;
   if(emulator.state==='running'&&h[at+22]===1&&!h[at+23]&&t?.active){
@@ -125,10 +139,16 @@ async function dispatch(message){
     if(game!=='04')throw Error('测试工具仅用于 TH04 独立单机。');
     writeSoloTestCommand(emulator.module.HEAPU8,mailbox,patch,args[0]);return;
   }
+  if(method==='soloQuit'){
+    const h=emulator.module.HEAPU8,at=args[2],v=new DataView(h.buffer);
+    if(game!=='04'||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||h[at+22]!==1||v.getUint16(at+24,true)!==args[0])return false;
+    emulator.assist({address:at,generation:args[0],...(args[1]?{restart:true}:{quit:true})});return true;
+  }
   if(method==='pause'){clear();emulator.pause();return;}
   if(method==='reset'){pendingMusic=[];clear();bridge?.reset();music?.reset();seen.clear();mailbox=-1;cursor=0;await emulator.reset();costs=[];drawTimes=[];lastRenderPublish=-Infinity;observeFrames();return;}
   if(method==='run'){lastInput=performance.now();emulator.run();return;}
   if(method==='externalReplayFinish'){emulator?.finishReplay();return;}
+  if(method==='externalReplayRearm'){emulator?.rearmBrowserRecording();return;}
   if(method==='externalReplayFast'){emulator?.fastForwardReplay(args[0]);return;}
   if(method==='externalReplayDisable'){emulator?.stopBrowserRecording();return;}
   if(method==='externalReplayPause'){const paused=!!args[0];if(paused)emulator?.pause();else emulator?.run();return;}

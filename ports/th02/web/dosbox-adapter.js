@@ -56,7 +56,7 @@ export class DOSBoxPC98 {
         clock:this.practiceClock,shouldHold:()=>this.holdPreparedPractice(),
         shouldFastForward:()=>!!this.practice?.status.preparing,onBoundary:()=>{if(replay.mode==='record'){lifeState=lifecycle?.();if(lifeState?.finish==='game-over')this.practice?.gameOver();else if(lifeState?.finish==='clear')this.practice?.clear();}this.module.observeReplayBoundary?.();},
         observe:()=>{const p=this.practice?.status;if(p?.outcome)return {active:true,stage:p.stage,paused:true,finish:p.outcome==='clear'?'clear':'game-over'};return lifeState;},
-        applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module),
+        applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module,{scope:replay.memoryScope,patch:this.config.practicePatch}),
         onChunk:value=>replay.onChunk?.(value),onEnd:value=>replay.onEnd?.(value),
         onError:error=>{if(replay.onError)replay.onError(error);else this.config.onError?.(error);},
         onRecordingError:error=>replay.onRecordingError?.(error),
@@ -72,6 +72,19 @@ export class DOSBoxPC98 {
     await factory(this.module);
     if(art)this.module.playerArt=installPlayerArt(this.module,this.config.artPatch,art);
     this.module.callMain([this.transport.sessionId]);
+    // The DOS batch returns only when Quit is selected at the title.
+    // Signal the host at that boundary while the mounted save files remain available.
+    if(this.config.exitOnGameQuit){
+      const fs=this.module.FS,open=fs.open,owner=this;
+      fs.open=function(path,...args){
+        const result=open.call(this,path,...args);
+        if(typeof path==='string'&&/(?:^|\/)EGLQUIT\.TXT$/i.test(path)&&!owner.gameQuitSignalled){
+          owner.gameQuitSignalled=true;setTimeout(()=>{if(!owner.disposed&&!owner.resetting)owner.config.onExit?.();},0);
+        }
+        return result;
+      };
+    }
+
     if(net&&this.config.rollbackEnabled!==false)this.module.memoryDiff=await makeMemoryDiff(this.module);
     this.onSleep=({data})=>{if(!net&&data?.name==='ws-sync-sleep'&&data.props.sessionId===this.transport.sessionId)globalThis.postMessage({name:'wc-sync-sleep',props:data.props},'*');};
     if(!net&&typeof window!=='undefined'&&window.postMessage)window.addEventListener('message',this.onSleep);
@@ -91,7 +104,7 @@ export class DOSBoxPC98 {
     m.netFlushAudio=()=>this.audio.flush();m.netInfo=()=>({tick:this.tick,...this.audio.info()});
     m.netPresent=()=>m.framePresenter?.flush({redraw:true})||false;
   }
-  key(code,down){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'key',code,down});return;}this.applyKey(code,down);}
+  key(code,down){if(code==='F12')return;if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'key',code,down});return;}this.applyKey(code,down);}
   applyKey(code,down){const number=codes[code];if(number===undefined)return;if(down)this.keys.add(code);else this.keys.delete(code);if(this.config.lockstep)this.ci?.addKey(number,down,this.module.virtualNow);else if(this.externalHost)this.ci?.addKey(number,down,this.externalHost.keyTime());else this.ci?.sendKeyEvent(number,down);}
   applyReplayInput(command){if(command.type==='key')this.applyKey(command.code,command.down);else if(command.type==='assist')this.config.applyReplayInput?.(command.input);else if(command.type==='practice-options'&&this.practice)this.practice.configure(command.options);else throw Error('单人 Replay 输入类型无效');}
   holdPreparedPractice(){
@@ -108,8 +121,10 @@ export class DOSBoxPC98 {
     this.practiceOptions(options);this.practiceStandby=false;this.practiceParked=false;this.practiceClock.setPaused(false);this.run();
   }
   practiceOptions(options){if(!this.practice||this.externalHost?.status.mode==='playback')return;if(this.config.externalReplay&&this.externalHost.status.recording)this.externalHost.queue({type:'practice-options',options});else this.practice.configure(options);}
+  restartPractice(){if(!this.practice)return;const config={...this.config.practice,options:this.practice.status.options};this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock});}
   assist(input){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'assist',input});}else this.config.applyReplayInput?.(input);}
   finishReplay(){this.externalHost?.finish();}
+  rearmBrowserRecording(){if(!this.externalHost)throw Error('录像不可用');this.externalHost.rearm();}
   fastForwardReplay(value){this.externalHost?.fastForward(value);}
   stopBrowserRecording(){this.externalHost?.disable();}
   pauseReplay(value){if(value)this.pause();else this.run();}
@@ -117,8 +132,8 @@ export class DOSBoxPC98 {
   async setHdd(drive,name){
     if(drive!==0||!this.disks.has(name))throw Error('无效游戏磁盘');this.diskName=name;
     this.extracted=extractGame(this.disks.get(name));
-    const network=!!this.config.lockstep,directLaunch=!!this.config.launchFiles?.some(file=>file.path==='game/HUMAROKU/WEBSTART.COM'),launcher=prepareFastBoot(this.extracted,{network,directLaunch,practice:this.config.practice?.mode==='target'});
-    const init=[...this.extracted.files,...(this.config.launchFiles||[]),launcher,{dosboxConf:dosboxConfig({network,fastBoot:true}),jsdosConf:{version:'8'}}];
+    const network=!!this.config.lockstep,directLaunch=!!this.config.launchFiles?.some(file=>file.path==='game/HUMAROKU/WEBSTART.COM'),launcher=prepareFastBoot(this.extracted,{network,directLaunch,practice:this.config.practice?.mode==='target',returnAfterPractice:this.config.practice?.mode==='target'});
+    const init=[...this.extracted.files,...(this.config.launchFiles||[]),launcher,{dosboxConf:dosboxConfig({network,fastBoot:true,exitOnGameQuit:!!this.config.exitOnGameQuit}),jsdosConf:{version:'8'}}];
     this.ci=await globalThis.emulators.backend(init,this.transport,{});
     this.ci.events().onSoundPush(samples=>{this.module.audioPackets=(this.module.audioPackets||0)+1;const p=this.practice?.status;if(this.practiceStandby||this.externalHost?.status.fastForward||this.module.warmingBoot||this.config.independentEffects||p&&(p.preparing||p.waiting||p.outcome))return;if(this.config.workerRuntime){this.audioChunks.push(samples.slice());return;}if(this.frame!==null)this.outputs.get(this.frame)?.push(samples.slice());else this.audio.push([samples]);});
     this.logs=[];this.ci.events().onMessage((type,...messages)=>{this.logs.push([type,...messages]);this.logs=this.logs.slice(-40);if(type==='error'&&messages.some(s=>String(s).includes('[panic]'))){this.state='failed';this.config.onError?.(Error(messages.join(' ')));}});

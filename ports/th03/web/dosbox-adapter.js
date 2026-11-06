@@ -45,7 +45,7 @@ export class DOSBoxPC98 {
       const replay=this.config.externalReplay;
       this.externalHost=createExternalReplayHost({...replay,
         observe:replay.lifecycle?createSoloReplayLifecycle(replay.lifecycle,()=>this.module.HEAPU8):null,
-        applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module),
+        applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module,{guest:replay.memoryScope==='pc98-guest-ram/1',patch:replay.lifecycle?.patch||this.config.replayPatch}),
         onChunk:value=>replay.onChunk?.(value),onEnd:value=>replay.onEnd?.(value),
         onError:error=>{if(replay.onError)replay.onError(error);else this.config.onError?.(error);},
         onRecordingError:error=>replay.onRecordingError?.(error),
@@ -61,6 +61,19 @@ export class DOSBoxPC98 {
       await replayFactory(this.module);
     }else await factory(this.module);
     this.module.callMain([this.transport.sessionId]);
+    // The DOS batch returns only when Quit is selected at the title.
+    // Signal the host at that boundary while the mounted save files remain available.
+    if(this.config.exitOnGameQuit){
+      const fs=this.module.FS,open=fs.open,owner=this;
+      fs.open=function(path,...args){
+        const result=open.call(this,path,...args);
+        if(typeof path==='string'&&/(?:^|\/)EGLQUIT\.TXT$/i.test(path)&&!owner.gameQuitSignalled){
+          owner.gameQuitSignalled=true;setTimeout(()=>{if(!owner.disposed&&!owner.resetting)owner.config.onExit?.();},0);
+        }
+        return result;
+      };
+    }
+
     this.installDiskNotifications();
     if(net&&this.config.rollbackEnabled!==false)this.module.memoryDiff=await makeMemoryDiff(this.module);
     this.onSleep=({data})=>{if(!net&&data?.name==='ws-sync-sleep'&&data.props.sessionId===this.transport.sessionId)globalThis.postMessage({name:'wc-sync-sleep',props:data.props},'*');};
@@ -80,11 +93,12 @@ export class DOSBoxPC98 {
     m.netHash=(start,end)=>hashNativeMemory(m.nativeExports().memory,start,end);
     m.netPresent=()=>m.framePresenter?.flush({redraw:true})||false;
   }
-  key(code,down){if(this.module.warmingBoot)return;if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'key',code,down});return;}this.applyKey(code,down);}
-  applyKey(code,down){const number=dosboxKeyCode(code);if(number===undefined)return;if(down)this.keys.add(code);else this.keys.delete(code);if(this.config.lockstep)this.ci?.addKey(number,down,this.module.virtualNow);else if(this.externalHost)this.ci?.addKey(number,down,this.externalHost.keyTime());else this.ci?.sendKeyEvent(number,down);}
+  key(code,down){if(code==='F12')return;if(this.module.warmingBoot)return;if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'key',code,down});return;}this.applyKey(code,down);}
+  applyKey(code,down){if(code==='F12')return;const number=dosboxKeyCode(code);if(number===undefined)return;if(down)this.keys.add(code);else this.keys.delete(code);if(this.config.lockstep)this.ci?.addKey(number,down,this.module.virtualNow);else if(this.externalHost)this.ci?.addKey(number,down,this.externalHost.keyTime());else this.ci?.sendKeyEvent(number,down);}
   applyReplayInput(command){if(command.type==='key')this.applyKey(command.code,command.down);else if(command.type==='assist')this.config.applyReplayInput?.(command.input);else throw Error('单人 Replay 输入类型无效');}
   assist(input){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'assist',input});}else this.config.applyReplayInput?.(input);}
   finishReplay(){this.externalHost?.finish();}
+  rearmBrowserRecording(){if(!this.externalHost)throw Error('录像不可用');this.externalHost.rearm();}
   fastForwardReplay(value){this.externalHost?.fastForward(value);}
   stopBrowserRecording(){this.externalHost?.disable();}
   pauseReplay(value){if(value)this.pause();else this.run();}
@@ -112,7 +126,7 @@ export class DOSBoxPC98 {
     if(drive!==0||!this.disks.has(name))throw Error('无效游戏磁盘');this.diskName=name;
     this.extracted=extractGame(this.disks.get(name));
     const network=!!this.config.lockstep,launcher=prepareFastBoot(this.extracted,{network});
-    const init=[...this.extracted.files,launcher,{dosboxConf:dosboxConfig({network,fastBoot:true}),jsdosConf:{version:'8'}}];
+    const init=[...this.extracted.files,launcher,{dosboxConf:dosboxConfig({network,fastBoot:true,exitOnGameQuit:!!this.config.exitOnGameQuit}),jsdosConf:{version:'8'}}];
     this.installingDisk=true;
     try{this.ci=await globalThis.emulators.backend(init,this.transport,{});}finally{this.installingDisk=false;}
     this.ci.events().onSoundPush(samples=>{this.module.audioPackets=(this.module.audioPackets||0)+1;if(this.externalHost?.status.fastForward||this.module.warmingBoot||this.config.independentSfx)return;if(this.config.workerRuntime){this.audioChunks.push(samples.slice());return;}if(this.frame!==null){if(this.frame>=this.confirmedAudio)this.outputs.get(this.frame)?.push(samples.slice());}else this.audio.push([samples]);});

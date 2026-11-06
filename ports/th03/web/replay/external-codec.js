@@ -57,7 +57,7 @@ function validAssist(game,input){
   if(game==='02')return integer(input.currentInput,0,256)&&!(input.currentInput&255)&&typeof input.focusEnabled==='boolean'&&
     integer(input.points,0,15)&&['add','keep','clear'].includes(input.touchAction)&&typeof input.unlimited==='boolean'&&
     Number.isSafeInteger(input.x)&&Number.isSafeInteger(input.y);
-  if(game==='03')return integer(input.focus,0,3)&&Array.isArray(input.touch)&&input.touch.length===2&&
+  if(game==='03')return (input.quit===undefined||input.quit===true)&&(input.restart===undefined||input.restart===true)&&!(input.quit&&input.restart)&&integer(input.focus,0,3)&&Array.isArray(input.touch)&&input.touch.length===2&&
     input.touch.every(value=>integer(value,0,2**45-1));
   const touch=input.touch;
   return integer(input.points,0,15)&&(touch==null||typeof touch==='object'&&!Array.isArray(touch)&&
@@ -71,6 +71,7 @@ function validate(header,clockBytes,diskBytes,eventBytes,events){
     !/^[a-f0-9]{64}$/.test(header.identity)||!/^([a-f0-9]{64})$/.test(header.diskSha256)||
     !/^[a-f0-9]{8}$/.test(header.result?.memoryHash)||!/^[a-f0-9]{64}$/.test(header.result?.memorySha256)||
     !Number.isSafeInteger(header.result?.memoryBytes)||header.result.memoryBytes<1||header.result.memoryBytes>1024*1024*1024||
+    header.result.memoryScope!==undefined&&(header.result.memoryScope!=='pc98-guest-ram/1'||header.result.memoryBytes!==0x100000)||
     header.result.boundary!==header.endBoundary||header.result.clockCount!==header.clockCount||header.result.extraClockReads!==0||
     !['sleep','clock','exit'].includes(header.result.endReason)||
     header.result.endPhase!==undefined&&!['before-input','after-input'].includes(header.result.endPhase)||
