@@ -312,12 +312,22 @@ void SpellPresentation::sync(const SpellSnapshot& state) {
         if (!animations_.retire(background_))
             fail("Spell hidden background retire failed: " + animations_.error);
     }
-    // 0x413270:180-194 在符卡开始时把 BOSS 槽对象 +0x1230 的位置一次性写入
-    // 符卡背景根的 translation(+0x574)；0x413080（spell draw）与 0x413a60
-    //（spell end）都不再更新该字段——原版没有逐帧追随。此前这里按 5% 向
-    // boss 位置追赶，使卡面随 Boss 漂移而名字文字（text.anm 74，静止于
-    // (524,16)）固定，两者相对位置逐帧变化（用户实测“符卡名歪”）。位置只
-    // 在 consume() 开始时写一次。
+}
+
+void SpellPresentation::update_background(const float boss_position[3]) {
+    if (!production_ || !active() || !error.empty() || !boss_position) return;
+    // 00412dfe..00412e7e reads boss slot0 +0x1230 and updates manager +0xac.
+    // The original stores delta, weighted step and sum separately as f32;
+    // qword[004aeda8] is double(float(0.05)), not the double literal 0.05.
+    for (i32 i = 0; i < 3; ++i) {
+        const float delta = float(boss_position[i] - anchor_[i]);
+        const float movement = float(double(delta) * double(0.05f));
+        anchor_[i] = float(anchor_[i] + movement);
+    }
+    // 00412e84..00412eb1 writes only manager+0x20 (effect13), not the
+    // separate stage card-art root or any of the spell-name display VMs.
+    if (auto* vm = animations_.registry.find(background_))
+        vm->visual.translation = {anchor_[0], anchor_[1], anchor_[2]};
 }
 
 bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attempts) {
@@ -425,16 +435,13 @@ bool SpellPresentation::rasterize_name(DialogueTextureSink& sink,
     if (!error.empty()) return false;
     auto* vm = animations_.registry.find(displays_[1]);
     if (!production_ || !vm) return fail("Spell name display sprite unavailable");
-    // 004135c3 calls 0046e970 (0x46e9c5-0x46ea03). Its x argument is
-    // sprite_width - (17-1)*strlen/2 = 320 - 8*len in the 662-wide GDI
-    // scratch space (0x46e810 -> 0x45aef0 param_4); D3DX squeezes that
-    // scratch onto the 320x17 sprite, so the ink origin is
-    // (320-8*len)*320/662. The port's centre form draws at offset*2 =
-    // 320-8*len scratch columns with source_width 662 -> bit-identical to
-    // 0046e970. Keep Center; BUG10 (if any) is in the VM screen placement /
-    // scale / anchor, not this texture-local x formula.
+    // 004135c3 calls the right-aligned 0046e970, not centered 0046ea30.
+    // 0046e9c5..0046ea03 computes width - (nominal-1)*strlen/2;
+    // 0046e810 passes that layout x to 0045aef0, which doubles it for
+    // TextOutA. For width320 / 16 CP932 bytes: layout192 -> scratch384.
+    // Center would halve this to scratch192 and shift the name left.
     return rasterize_anm_text(*vm, sink, rasterize, 0xffffffu, snapshot_.name,
-                              AnmTextAlignment::Center, 17, &error);
+                              AnmTextAlignment::Right, 17, &error);
 }
 bool SpellPresentation::begin(i32 spell_id, const std::string& name, i32 duration_frames,
                               i32 stage_number, i32 difficulty, const float boss_position[3],

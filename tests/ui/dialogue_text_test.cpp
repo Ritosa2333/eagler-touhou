@@ -418,6 +418,71 @@ TEST(dialogue_text_real_front_bubble_and_side_position) {
     CHECK_EQ(manager.registry.count(), 0u);
 }
 
+TEST(dialogue_text_downsampling_preserves_subpixel_strokes_and_argb_channels) {
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager{random, environment};
+    const auto bytes = synthetic_text_anm();
+    CHECK(manager.load(0, bytes.data(), u32(bytes.size())));
+    FakeSink sink;
+    DialogueText text;
+    MsgLine line;
+    line.text_cp932 = "stroke";
+    std::string error;
+    const auto stroke = [](TextureImage& image, i32, i32, bool, u32,
+                           const std::string&) {
+        // An odd source column disappears entirely with the former point
+        // sampler. Keep all rows opaque to isolate horizontal filtering.
+        for (u32 row = 0; row < 44; ++row) {
+            const u16 pixel = 0xF987;
+            std::memcpy(image.pixels.data() + size_t(row) * image.pitch + 2, &pixel, 2);
+        }
+        return true;
+    };
+    CHECK(text.submit(manager, sink, 0, line, 112.f, 288.f, stroke, error));
+    const auto pixel = [&](u32 x, u32 y) {
+        u16 value = 0;
+        std::memcpy(&value, sink.image.pixels.data() + size_t(y) * sink.image.pitch + x * 2, 2);
+        return value;
+    };
+    // At destination x0 the triangle gives source x1 weight 3/8.
+    // The channel values 15/9/8/7 become 6/3/3/3 after ARGB4444 rounding.
+    CHECK_EQ(pixel(0, 6), u16(0x6333));
+    CHECK_EQ(pixel(1, 6), u16(0x2111));
+    CHECK_EQ(pixel(2, 6), u16(0));
+    CHECK_EQ(pixel(0, 24), u16(0)); // the other dialogue row is untouched
+}
+
+TEST(dialogue_text_triangle_wraps_original_source_rect_edges) {
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager{random, environment};
+    const auto bytes = synthetic_text_anm();
+    CHECK(manager.load(0, bytes.data(), u32(bytes.size())));
+    FakeSink sink;
+    DialogueText text;
+    MsgLine line;
+    line.text_cp932 = "edge";
+    std::string error;
+    const auto stroke = [](TextureImage& image, i32, i32, bool, u32,
+                           const std::string&) {
+        for (u32 row = 0; row < 44; ++row) {
+            const u16 pixel = 0xF000; // black dialogue ink with full coverage
+            std::memcpy(image.pixels.data() + size_t(row) * image.pitch + 1023 * 2, &pixel, 2);
+        }
+        return true;
+    };
+    CHECK(text.submit(manager, sink, 0, line, 112.f, 288.f, stroke, error));
+    const auto pixel = [&](u32 x) {
+        u16 value = 0;
+        std::memcpy(&value, sink.image.pixels.data() + 6 * sink.image.pitch + x * 2, 2);
+        return value;
+    };
+    CHECK_EQ(pixel(0), u16(0x2000)); // wrapped -1 sample, weight 1/8
+    CHECK_EQ(pixel(511), u16(0x6000)); // edge stroke survives at weight 3/8
+    CHECK_EQ(pixel(1), u16(0));
+}
+
 TEST(dialogue_text_negative_controls) {
     GameRandom random;
     AnmEnvironment environment;

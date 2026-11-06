@@ -86,14 +86,50 @@ TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     CHECK_EQ(fixture.manager.registry.find(fixture.presentation.decoration_handle())->source_script, 157);
     for (i32 i = 0; i < 301; ++i) CHECK(fixture.state.step(false));
     fixture.boss[0] = 100;
-    // 0x413270:180-194：背景 translation 开符写一次，sync 不携带 boss 位置。
+    // State synchronization alone does not advance the Update26 follower.
     fixture.presentation.sync(fixture.state.state());
     CHECK_EQ(fixture.presentation.bonus_base(), 999720);
     CHECK_EQ(fixture.presentation.snapshot().current_bonus, fixture.state.state().current_bonus);
-    // 写一次语义回归：boss 移动后背景不追随（0x413080/0x413a60 不更新
-    // +0x574；旧 5% 平滑已删，与下方 320 帧回归断言同源）。
     CHECK(background->visual.translation.x == 0.0f);
+    fixture.presentation.update_background(fixture.boss);
+    CHECK_EQ(background->visual.translation.x, 5.0f);
     CHECK_EQ(event.state.current_bonus, 1000000); // value event is not live state
+}
+
+TEST(spell_ring_follow_matches_original_update26_rounding_and_turns) {
+    Fixture fixture;
+    CHECK(fixture.consume(fixture.state.begin(0, "synthetic", 3000, 1, 0)));
+    const auto* ring = fixture.manager.registry.find(fixture.presentation.background_handle());
+    const auto* card = fixture.manager.registry.find(fixture.presentation.stage_background_handle());
+    const auto* name = fixture.manager.registry.find(fixture.presentation.display_handle(1));
+    CHECK(ring && card && name);
+    const Vec3 card_start = card->visual.translation, name_start = name->visual.translation;
+    // Independent executions of retail 00412dfe..00412eb1, initial(0,128,0).
+    const u32 expected[][3] = {
+        {0x40a00000,0x42f9999a,0x3ecccccd}, {0x411c0000,0x42f3851f,0x3f47ae14},
+        {0x41643334,0x42edbe77,0x3f920c4a}, {0x4194651f,0x42e841be,0x3fbdf213},
+        {0x41b4f9aa,0x42e30b41,0x3fe7a5f8}, {0x41d3ed2e,0x42de177e,0x4007a209},
+        {0x41f15485,0x42d9631e,0x401a7389}, {0x4206a1bf,0x42d4eaf6,0x402c5429},
+        {0x4213e675,0x42d0ac03,0x403d4ff4}, {0x42208156,0x42cca369,0x404d725b},
+        {0x42087ade,0x42d6680a,0x40365fd6}, {0x41e34fd9,0x42dfafa3,0x402074a5},
+    };
+    for (i32 frame = 0; frame < 12; ++frame) {
+        const float target[3] = {frame < 10 ? 100.f : -80.f,
+                                 frame < 10 ? 64.f : 200.f, frame < 10 ? 8.f : -4.f};
+        fixture.presentation.update_background(target);
+        const float position[] = {ring->visual.translation.x,ring->visual.translation.y,ring->visual.translation.z};
+        for (i32 axis = 0; axis < 3; ++axis) CHECK_EQ(float_to_bits(position[axis]),expected[frame][axis]);
+        fixture.presentation.sync(fixture.state.state());
+        CHECK_EQ(float_to_bits(ring->visual.translation.x),expected[frame][0]);
+    }
+    CHECK_EQ(card->visual.translation.x,card_start.x);
+    CHECK_EQ(card->visual.translation.y,card_start.y);
+    CHECK_EQ(name->visual.translation.x,name_start.x);
+    CHECK_EQ(name->visual.translation.y,name_start.y);
+    CHECK(fixture.consume(fixture.state.end()));
+    fixture.presentation.update_background(fixture.boss);
+    CHECK(fixture.presentation.error.empty());
+    CHECK_EQ(fixture.presentation.background_handle(),0u);
 }
 
 TEST(spell_presentation_end_interrupts_displays_and_timeout_sound_is_independent) {
@@ -210,8 +246,7 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
     const float position[3] = {0, 128, 0};
     CHECK(presentation.consume(state.begin(0, "synthetic", 3000, 1, 0), position, {}, 6));
     CHECK_EQ(manager.registry.count(), 26u);
-    // 0x413270:180-194：符卡背景 translation 只在开始时写一次；逐帧 sync
-    //（即使 boss 位置变化）不得改写——回归断言（用户实测“符卡名歪”）。
+    // The separate stage card-art root stays fixed while effect13 follows.
     const auto* background0 = manager.registry.find(presentation.stage_background_handle());
     CHECK(background0 != nullptr);
     const Vec3 anchor0 = background0->visual.translation;
@@ -219,6 +254,8 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
         CHECK(manager.update());
         CHECK(state.step(false));
         presentation.sync(state.state());
+        const float moving_boss[] = {float(n),128.f,0.f};
+        presentation.update_background(moving_boss);
         const auto* background = manager.registry.find(presentation.stage_background_handle());
         if (background) {
             CHECK_NEAR(background->visual.translation.x, anchor0.x, 0.0001f);

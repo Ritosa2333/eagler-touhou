@@ -1,0 +1,604 @@
+{
+  "productionWasm": "b779867d56d5f44fbe2197afee47c916f4d047b66ab599a108ea28993bd88205",
+  "hardware": "NVIDIA RTX 4060 Laptop / Chrome / ANGLE D3D11",
+  "method": {
+    "seed": 7319,
+    "difficulty": "Lunatic",
+    "renderScales": [
+      1,
+      2
+    ],
+    "replay": "Synthetic fixed strafe and firing input",
+    "diagnosticLifeRefill": "Restore eight extra lives before each 300-frame timing window; not a retail replay validation",
+    "introSignatureVmCount": 0,
+    "shaderCandidate": "Additional prewarm comparison keys, no alpha-state change",
+    "gpuMeasurement": "EXT_disjoint_timer_query_webgl2 elapsed interval; includes command-stream gaps",
+    "cadenceCandidate": "Diagnostic cap of one catch-up tick; drops owed work and is not suitable as a production fix"
+  },
+  "six": [
+    {
+      "variant": "base",
+      "scale": 1,
+      "frameRange": [
+        3600,
+        5100
+      ],
+      "windowFrames": 1500,
+      "cpuMeanMs": 1.5486666666716338,
+      "gpuIntervalMeanMs": 1.0077989546666664,
+      "peakMeanBatchesPerFrame": 740.11,
+      "heapBytes": [
+        115998720,
+        115998720
+      ],
+      "gpuReadBytes": 0,
+      "lateUploadBytes": [
+        0,
+        0,
+        0,
+        0,
+        91136
+      ],
+      "genericBatches": 982275,
+      "batches": 982275,
+      "taskMeanMs": {}
+    },
+    {
+      "variant": "special",
+      "scale": 1,
+      "frameRange": [
+        3600,
+        5100
+      ],
+      "windowFrames": 1500,
+      "cpuMeanMs": 1.5647333333256344,
+      "gpuIntervalMeanMs": 0.9962584746666667,
+      "peakMeanBatchesPerFrame": 740.11,
+      "heapBytes": [
+        115998720,
+        115998720
+      ],
+      "gpuReadBytes": 0,
+      "lateUploadBytes": [
+        0,
+        0,
+        0,
+        0,
+        91136
+      ],
+      "genericBatches": 0,
+      "batches": 982275,
+      "taskMeanMs": {}
+    },
+    {
+      "variant": "profile",
+      "scale": 1,
+      "frameRange": [
+        3600,
+        5100
+      ],
+      "windowFrames": 1500,
+      "cpuMeanMs": 1.6082666666557395,
+      "gpuIntervalMeanMs": 1.0699325440000003,
+      "peakMeanBatchesPerFrame": 740.11,
+      "heapBytes": [
+        115998720,
+        115998720
+      ],
+      "gpuReadBytes": 0,
+      "lateUploadBytes": [
+        0,
+        0,
+        0,
+        0,
+        91136
+      ],
+      "genericBatches": 982275,
+      "batches": 982275,
+      "taskMeanMs": {
+        "draw:16": 0.5474000000233451,
+        "draw:2": 0.2917333333392938,
+        "draw:33": 0.12519999999801318,
+        "update:34": 0.1284666666612029,
+        "update:20": 0.06959999996423721,
+        "draw:31": 0.05173333333184322,
+        "draw:20": 0.021333333337058624,
+        "update:24": 0.02306666666393479,
+        "draw:9": 0.02259999999900659,
+        "draw:11": 0.01653333332017064,
+        "draw:32": 0.013999999985098838,
+        "update:25": 0.019666666676600775,
+        "draw:1": 0.011133333329111338,
+        "draw:57": 0.010333333334575097,
+        "draw:78": 0.010266666658222675,
+        "draw:46": 0.008466666672378779,
+        "draw:23": 0.005666666666666667,
+        "draw:38": 0.0068666666684051355,
+        "draw:55": 0.0076666666654249035,
+        "draw:27": 0.0037999999995032945,
+        "draw:19": 0.0032666666693985462,
+        "draw:45": 0.005000000001241764,
+        "draw:12": 0.005200000002980232,
+        "draw:35": 0.005733333333084981,
+        "update:13": 0.004133333335320155,
+        "draw:18": 0.0038000000057121118,
+        "draw:77": 0.00266666666790843,
+        "draw:52": 0.0029333333348234496,
+        "draw:5": 0.0024666666612029077,
+        "draw:14": 0.0030666666651765506,
+        "draw:54": 0.0014666666686534882,
+        "update:1": 0.0019333333348234495,
+        "draw:40": 0.00233333333209157,
+        "update:28": 0.010666666664183139,
+        "draw:44": 0.0008666666684051355,
+        "draw:41": 0.002066666666418314,
+        "draw:53": 0.0019999999987582364,
+        "draw:42": 0.0017999999970197678,
+        "draw:10": 0.0013999999985098838,
+        "update:4": 0.0006000000014901161,
+        "draw:30": 0.002000000002483527,
+        "draw:56": 0.0008666666671633721,
+        "update:9": 0.0008666666646798452,
+        "update:22": 0.0004000000022351742,
+        "draw:21": 0.0003999999997516473,
+        "draw:71": 0.0003333333358168602,
+        "draw:24": 0.000933333333581686,
+        "draw:29": 0.0004666666674117247,
+        "draw:51": 0.0003333333320915699,
+        "draw:72": 0.00026666666691501934,
+        "update:11": 0.00026666666691501934,
+        "draw:13": 0.0005333333325882753,
+        "draw:47": 0.0005333333350718021,
+        "draw:61": 0.0016666666666666668,
+        "draw:69": 0.0004000000009934107,
+        "draw:70": 0.0004666666661699613,
+        "draw:26": 0.0006666666666666666,
+        "update:26": 0.00046666666492819786,
+        "draw:63": 0.0002666666656732559,
+        "draw:43": 0.00020000000049670536,
+        "draw:74": 0.0002666666656732559,
+        "draw:68": 0.00026666666691501934,
+        "draw:39": 6.666666641831398E-05
+      }
+    },
+    {
+      "variant": "base",
+      "scale": 2,
+      "frameRange": [
+        3600,
+        5100
+      ],
+      "windowFrames": 1500,
+      "cpuMeanMs": 1.5417333333368102,
+      "gpuIntervalMeanMs": 1.0711367253333335,
+      "peakMeanBatchesPerFrame": 746.11,
+      "heapBytes": [
+        115998720,
+        115998720
+      ],
+      "gpuReadBytes": 0,
+      "lateUploadBytes": [
+        0,
+        0,
+        0,
+        0,
+        91136
+      ],
+      "genericBatches": 991281,
+      "batches": 991281,
+      "taskMeanMs": {}
+    },
+    {
+      "variant": "special",
+      "scale": 2,
+      "frameRange": [
+        3600,
+        5100
+      ],
+      "windowFrames": 1500,
+      "cpuMeanMs": 1.5667333333219091,
+      "gpuIntervalMeanMs": 1.030304426666667,
+      "peakMeanBatchesPerFrame": 746.11,
+      "heapBytes": [
+        115998720,
+        115998720
+      ],
+      "gpuReadBytes": 0,
+      "lateUploadBytes": [
+        0,
+        0,
+        0,
+        0,
+        91136
+      ],
+      "genericBatches": 0,
+      "batches": 991281,
+      "taskMeanMs": {}
+    },
+    {
+      "variant": "profile",
+      "scale": 2,
+      "frameRange": [
+        3600,
+        5100
+      ],
+      "windowFrames": 1500,
+      "cpuMeanMs": 1.579399999987334,
+      "gpuIntervalMeanMs": 1.0759436586666666,
+      "peakMeanBatchesPerFrame": 746.11,
+      "heapBytes": [
+        115998720,
+        115998720
+      ],
+      "gpuReadBytes": 0,
+      "lateUploadBytes": [
+        0,
+        0,
+        0,
+        0,
+        91136
+      ],
+      "genericBatches": 991281,
+      "batches": 991281,
+      "taskMeanMs": {
+        "draw:16": 0.5317333333591621,
+        "draw:2": 0.2961333333378037,
+        "draw:33": 0.12373333330700795,
+        "update:34": 0.12533333335568508,
+        "update:20": 0.06520000000670552,
+        "draw:31": 0.04833333336065213,
+        "draw:20": 0.019399999979883432,
+        "draw:11": 0.01753333332637946,
+        "draw:32": 0.013866666655987502,
+        "update:25": 0.018266666673123835,
+        "draw:78": 0.019000000004967054,
+        "update:24": 0.021133333336561918,
+        "draw:9": 0.019399999983608723,
+        "draw:57": 0.010999999995032947,
+        "draw:1": 0.009133333329111338,
+        "draw:46": 0.008333333346992731,
+        "draw:23": 0.0056000000002483525,
+        "draw:55": 0.007266666665673256,
+        "update:13": 0.0052666666669150194,
+        "draw:12": 0.0046666666728754835,
+        "draw:38": 0.005533333336313565,
+        "draw:35": 0.0062000000017384685,
+        "draw:45": 0.004733333333084981,
+        "draw:27": 0.0033999999997516473,
+        "draw:40": 0.002866666660954555,
+        "draw:18": 0.005199999999254942,
+        "draw:19": 0.0037999999945362408,
+        "draw:30": 0.002400000002235174,
+        "draw:52": 0.0019333333385487398,
+        "update:1": 0.0013999999985098838,
+        "draw:5": 0.001866666667163372,
+        "draw:14": 0.003133333330353101,
+        "draw:41": 0.0017999999982615312,
+        "draw:42": 0.0021333333353201547,
+        "draw:77": 0.0014666666661699614,
+        "draw:61": 0.0015333333325882753,
+        "draw:24": 0.0006000000014901161,
+        "draw:53": 0.0022666666644314925,
+        "draw:54": 0.0013999999985098838,
+        "update:28": 0.012133333331594864,
+        "draw:47": 0.0006000000014901161,
+        "draw:63": 0.0007333333330849807,
+        "draw:70": 0.0007333333318432173,
+        "draw:44": 0.0003999999997516473,
+        "draw:39": 0.00013333333283662796,
+        "draw:56": 0.0005333333325882753,
+        "draw:10": 0.0007333333343267441,
+        "update:4": 0.0005333333313465118,
+        "update:9": 0.00026666666815678276,
+        "draw:7": 6.666666641831398E-05,
+        "draw:13": 0.00020000000049670536,
+        "draw:29": 0.00019999999925494194,
+        "draw:43": 0.0002666666656732559,
+        "draw:51": 0.00013333333283662796,
+        "draw:69": 0.0003999999997516473,
+        "draw:71": 0.0003999999997516473,
+        "draw:72": 0.0002666666656732559,
+        "draw:26": 0.0013333333308498064,
+        "update:26": 0.00020000000049670536,
+        "draw:21": 0.00020000000049670536,
+        "update:22": 0.00020000000049670536,
+        "draw:74": 0.00013333333283662796,
+        "update:11": 0.00019999999925494194,
+        "draw:68": 6.666666641831398E-05
+      }
+    }
+  ],
+  "pairEquality": [
+    {
+      "scale": 1,
+      "coreEqual": true,
+      "vmCountEqual": true
+    },
+    {
+      "scale": 2,
+      "coreEqual": true,
+      "vmCountEqual": true
+    }
+  ],
+  "cadence": [
+    {
+      "variant": "base",
+      "cpuThrottle": 6,
+      "displayFps": 23.258660790794465,
+      "logicFps": 51.903537764720284,
+      "tickHistogram": {
+        "0": 18,
+        "1": 44,
+        "2": 15,
+        "3": 6,
+        "4": 30
+      },
+      "callbackMs": {
+        "mean": 33.797345132822485,
+        "p50": 18.90000000037253,
+        "p95": 91.5,
+        "max": 110.60000000149012
+      },
+      "renderedFrames": 212,
+      "presentations": 95
+    },
+    {
+      "variant": "cap1",
+      "cpuThrottle": 6,
+      "displayFps": 54.239649681538715,
+      "logicFps": 54.239649681538715,
+      "tickHistogram": {
+        "0": 67,
+        "1": 218
+      },
+      "callbackMs": {
+        "mean": 12.148421052679943,
+        "p50": 13.300000000745058,
+        "p95": 21.699999999254942,
+        "max": 26.40000000037253
+      },
+      "renderedFrames": 218,
+      "presentations": 218
+    },
+    {
+      "variant": "cap1",
+      "cpuThrottle": 6,
+      "displayFps": 54.90939949084522,
+      "logicFps": 54.90939949084522,
+      "tickHistogram": {
+        "0": 77,
+        "1": 220
+      },
+      "callbackMs": {
+        "mean": 11.532323232278078,
+        "p50": 13,
+        "p95": 22.600000001490116,
+        "max": 34.899999998509884
+      },
+      "renderedFrames": 220,
+      "presentations": 220
+    },
+    {
+      "variant": "base",
+      "cpuThrottle": 6,
+      "displayFps": 46.909903201787046,
+      "logicFps": 59.56813104988831,
+      "tickHistogram": {
+        "0": 107,
+        "1": 149,
+        "2": 32,
+        "3": 5,
+        "4": 3
+      },
+      "callbackMs": {
+        "mean": 11.541216216295505,
+        "p50": 11.300000000745058,
+        "p95": 35.30000000074506,
+        "max": 66.59999999962747
+      },
+      "renderedFrames": 240,
+      "presentations": 189
+    },
+    {
+      "variant": "base",
+      "cpuThrottle": 12,
+      "displayFps": 4.600768328311222,
+      "logicFps": 17.712958063998204,
+      "tickHistogram": {
+        "0": 3,
+        "1": 1,
+        "4": 19
+      },
+      "callbackMs": {
+        "mean": 182.60869565233588,
+        "p50": 171.5,
+        "p95": 332.7000000011176,
+        "max": 337.30000000074506
+      },
+      "renderedFrames": 77,
+      "presentations": 20
+    },
+    {
+      "variant": "cap1",
+      "cpuThrottle": 12,
+      "displayFps": 15.497011290676815,
+      "logicFps": 15.497011290676815,
+      "tickHistogram": {
+        "0": 3,
+        "1": 63
+      },
+      "callbackMs": {
+        "mean": 55.889393939269766,
+        "p50": 56.30000000074506,
+        "p95": 87.69999999925494,
+        "max": 108
+      },
+      "renderedFrames": 63,
+      "presentations": 63
+    },
+    {
+      "variant": "cap1",
+      "cpuThrottle": 12,
+      "displayFps": 15.592642221951516,
+      "logicFps": 15.592642221951516,
+      "tickHistogram": {
+        "0": 3,
+        "1": 64
+      },
+      "callbackMs": {
+        "mean": 55.56417910437753,
+        "p50": 54.80000000074506,
+        "p95": 83.19999999925494,
+        "max": 118.90000000037253
+      },
+      "renderedFrames": 64,
+      "presentations": 64
+    },
+    {
+      "variant": "base",
+      "cpuThrottle": 12,
+      "displayFps": 4.29524132474285,
+      "logicFps": 16.502769300327795,
+      "tickHistogram": {
+        "0": 3,
+        "1": 1,
+        "4": 18
+      },
+      "callbackMs": {
+        "mean": 194.69545454540375,
+        "p50": 198.80000000074506,
+        "p95": 361.1000000014901,
+        "max": 375.19999999925494
+      },
+      "renderedFrames": 73,
+      "presentations": 19
+    }
+  ],
+  "normalLoop": [
+    {
+      "variant": "base",
+      "cpuThrottle": 1,
+      "displayFps": 59.726109556155286,
+      "logicFps": 59.726109556155286,
+      "tickHistogram": {
+        "0": 422,
+        "1": 239
+      },
+      "callbackMs": {
+        "mean": 0.7161875945542701,
+        "p50": 0,
+        "p95": 2.300000000745058,
+        "max": 6
+      },
+      "renderedFrames": 239,
+      "presentations": 239
+    },
+    {
+      "variant": "special",
+      "cpuThrottle": 1,
+      "displayFps": 59.6634879424723,
+      "logicFps": 59.6634879424723,
+      "tickHistogram": {
+        "0": 421,
+        "1": 239
+      },
+      "callbackMs": {
+        "mean": 0.7018181818142307,
+        "p50": 0,
+        "p95": 2.300000000745058,
+        "max": 5.700000001117587
+      },
+      "renderedFrames": 239,
+      "presentations": 239
+    },
+    {
+      "variant": "base",
+      "cpuThrottle": 6,
+      "displayFps": 32.72283272283272,
+      "logicFps": 54.7008547008547,
+      "tickHistogram": {
+        "0": 39,
+        "1": 91,
+        "2": 15,
+        "3": 9,
+        "4": 19
+      },
+      "callbackMs": {
+        "mean": 21.675144508653293,
+        "p50": 13.800000000745058,
+        "p95": 80.79999999888241,
+        "max": 125.19999999925494
+      },
+      "renderedFrames": 224,
+      "presentations": 134
+    },
+    {
+      "variant": "special",
+      "cpuThrottle": 6,
+      "displayFps": 45.45114002446523,
+      "logicFps": 59.18637464724319,
+      "tickHistogram": {
+        "0": 77,
+        "1": 149,
+        "2": 19,
+        "3": 6,
+        "4": 8
+      },
+      "callbackMs": {
+        "mean": 13.52432432428405,
+        "p50": 12.399999998509884,
+        "p95": 40.29999999888241,
+        "max": 103.09999999962747
+      },
+      "renderedFrames": 237,
+      "presentations": 182
+    },
+    {
+      "variant": "base",
+      "cpuThrottle": 12,
+      "displayFps": 3.9651070578902186,
+      "logicFps": 15.160703456639071,
+      "tickHistogram": {
+        "0": 3,
+        "1": 1,
+        "4": 16
+      },
+      "callbackMs": {
+        "mean": 207.41499999947845,
+        "p50": 195.69999999925494,
+        "p95": 551.9000000003725,
+        "max": 551.9000000003725
+      },
+      "renderedFrames": 65,
+      "presentations": 17
+    },
+    {
+      "variant": "special",
+      "cpuThrottle": 12,
+      "displayFps": 5.148969035973468,
+      "logicFps": 19.89374400262476,
+      "tickHistogram": {
+        "0": 3,
+        "1": 1,
+        "4": 21
+      },
+      "callbackMs": {
+        "mean": 165.31599999986588,
+        "p50": 162.2000000011176,
+        "p95": 298.19999999925494,
+        "max": 311.69999999925494
+      },
+      "renderedFrames": 85,
+      "presentations": 22
+    }
+  ],
+  "schema": "th13-performance-investigation-v1",
+  "builds": {
+    "production": "b779867d56d5f44fbe2197afee47c916f4d047b66ab599a108ea28993bd88205",
+    "timedBaseline": "67d291235a31da3b041f291fa9ed38147dbf1801b2fb055b08cce198c0237d4e",
+    "timedShaderPrewarm": "7cd858dc605d132169f1a7d10e43add35b3999b6e5dcafb85b1b4639c1746729",
+    "timedSchedulerProfile": "0200b26c3519947cbc38177cf848f6c9c127d947051263831417d89611bdfe5c",
+    "timedOneTickDiagnostic": "8daa91d0da6b63089f421c2380c5079247cf830d511a1f05d8b9bc4d73933948"
+  },
+  "replayInputSha256": "58e104389b93b4a14f250a6fdbfc3b70db74ba87e1015b4f3a946ca45c4faa5f"
+}

@@ -1,6 +1,7 @@
 #include "DialogueText.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 namespace th13 {
@@ -154,16 +155,41 @@ bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region,
     }
     // 0x45aef0 的 D3DX 缩放：1024 宽暂存 → 512 宽 sprite，源高 44
     // （0x4282b0 的 +0x51c=0x15 → 0x45aef0 param_5*2+2）→ 20 像素条带。
-    // dot sampling 先接线；滤镜/字形资格待独立认证。
+    // 0045b39d / 0045b14e: both plain and outlined TextOut paths pass
+    // D3DX_FILTER_TRIANGLE (4) to D3DXLoadSurfaceFromMemory. Use the same
+    // pixel-center triangle kernel as ANM menu and ending text; point sampling
+    // drops narrow strokes between source pixels during the 2x reduction.
+    const float scale_x = float(scratch_.width) / float(region.width);
+    const float scale_y = float(kScratchRows) / float(region.height);
+    const float radius_x = std::max(1.f, scale_x);
+    const float radius_y = std::max(1.f, scale_y);
     for (i32 y = 0; y < region.height; y++) {
-        const u32 source_y = u32(y) * kScratchRows / u32(region.height);
-        if (source_y >= scratch_.height) return false;
-        const u8* source = scratch_.pixels.data() + size_t(source_y) * scratch_.pitch;
+        const float center_y = (float(y) + .5f) * scale_y - .5f;
         auto* target = image->pixels.data() + size_t(region.y + y) * image->pitch +
                        size_t(region.x) * 2;
         for (i32 x = 0; x < region.width; x++) {
-            const u32 source_x = u32(x) * scratch_.width / u32(region.width);
-            std::memcpy(target + size_t(x) * 2, source + size_t(source_x) * 2, 2);
+            const float center_x = (float(x) + .5f) * scale_x - .5f;
+            float sum[4] = {}, total = 0;
+            for (i32 sy = i32(std::ceil(center_y - radius_y));
+                 sy <= i32(std::floor(center_y + radius_y)); ++sy) {
+                const float wy = std::max(0.f, 1.f - std::fabs(float(sy) - center_y) / radius_y);
+                for (i32 sx = i32(std::ceil(center_x - radius_x));
+                     sx <= i32(std::floor(center_x + radius_x)); ++sx) {
+                    const float weight = wy * std::max(0.f, 1.f - std::fabs(float(sx) - center_x) / radius_x);
+                    total += weight;
+                    // Filter 4 has no MIRROR flags: D3DX wraps samples at
+                    // the source RECT edges, including the filter footprint.
+                    const u32 sample_x = u32((sx % i32(scratch_.width) + i32(scratch_.width)) % i32(scratch_.width));
+                    const u32 sample_y = u32((sy % i32(kScratchRows) + i32(kScratchRows)) % i32(kScratchRows));
+                    u16 sample = 0;
+                    std::memcpy(&sample, scratch_.pixels.data() + size_t(sample_y) * scratch_.pitch + size_t(sample_x) * 2, 2);
+                    for (u32 c = 0; c < 4; ++c) sum[c] += float((sample >> (12 - c * 4)) & 15u) * weight;
+                }
+            }
+            u16 pixel = 0;
+            for (float component : sum)
+                pixel = u16((pixel << 4) | u16(std::clamp(i32(std::floor(component / total + .5f)), 0, 15)));
+            std::memcpy(target + size_t(x) * 2, &pixel, 2);
         }
     }
     sink.changed(texture_, {u32(region.x), u32(region.y),

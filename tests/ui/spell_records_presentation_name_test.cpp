@@ -83,12 +83,9 @@ TEST(spell_name_raster_writes_real_text74_sprite_region_and_uploads_once) {
             ++calls;
             CHECK_EQ(image.width, 1024u); CHECK_EQ(image.height, 40u);
             CHECK_EQ(image.pitch, 2048u);
-            // 004135c3 调 0046e970(0xffffff,0,0,名字)，其基址为精灵静态域
-            // [rec+0x38]；原版 original-spell-ms f0008 墨列（294..418，320/662
-            // 挤压 32px 步进）把有效落点钉在 0046ea30 中心式
-            // param_4 = 精灵宽320/2 − (17−1)×len/4，15 字名 = 160−60 = 100；
-            // 0045aef0 正文 TextOutA(param_4*2, 2) → 栅格坐标 x=200。
-            CHECK_EQ(x, 200); CHECK_EQ(y, 2);
+            // 004135c3 -> 0046e970 (right): width320 - 8*15 = 200
+            // layout pixels; 0045afcf doubles that to TextOutA x400.
+            CHECK_EQ(x, 400); CHECK_EQ(y, 2);
             CHECK_EQ(color, 0xffffffffu);
             CHECK(text == "synthetic CP932");
             mask(image, 8, 60);
@@ -110,6 +107,27 @@ TEST(spell_name_raster_writes_real_text74_sprite_region_and_uploads_once) {
     CHECK(foreground > 0);
     CHECK(outline > 0); // black border coverage survives the ARGB4444 path
     CHECK_EQ(fixture.sink.pixel(319,108), u16(0));
+}
+
+TEST(spell_name_production_alignment_matches_original_right_aligned_entry) {
+    Fixture fixture;
+    // Independent 0046e970 executions, nominal17 and sprite width320.
+    const std::pair<i32, i32> cases[] = {{12,448},{14,416},{16,384},{20,320},{32,128}};
+    for (const auto& item : cases) {
+        auto snapshot = fixture.presentation.snapshot();
+        snapshot.name.assign(size_t(item.first), '\x81');
+        fixture.presentation.sync(snapshot);
+        i32 calls = 0;
+        CHECK(fixture.presentation.rasterize_name(fixture.sink,
+            [&](TextureImage&, i32 x, i32 y, u32, const std::string& name) {
+                ++calls;
+                CHECK_EQ(x, item.second);
+                CHECK_EQ(y, 2);
+                CHECK_EQ(name.size(), size_t(item.first));
+                return true;
+            }));
+        CHECK_EQ(calls, 1);
+    }
 }
 
 TEST(spell_name_replacement_clears_previous_long_name_without_touching_other_text) {
