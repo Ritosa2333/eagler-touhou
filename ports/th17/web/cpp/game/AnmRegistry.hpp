@@ -80,6 +80,7 @@ public:
     bool interrupt(AnmVm&,i32 label,Rng&,float rate,bool immediate);
     const std::vector<AnmVm*>& layer(u32 index)const noexcept{return layers[index];}
     u32 count()const noexcept{return active_count;}
+    bool borrowed_root(const AnmVm& vm)const noexcept{return external.count(const_cast<AnmVm*>(&vm))!=0;}
     u32 handle(const AnmVm&)const noexcept;
     u32 slot(const AnmVm&)const noexcept;
     u32 ordered_handle(bool alternate,u32 index)const noexcept;

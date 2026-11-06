@@ -73,7 +73,19 @@ int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied
     for(auto& point:p){point.x=float(point.x+offset.x);point.y=float(point.y+offset.y);}if(pixel){p[0].x=float(float(std::nearbyint(p[0].x))-.5f);p[1].x=float(float(std::nearbyint(p[1].x))-.5f);p[0].y=float(float(std::nearbyint(p[0].y))-.5f);p[2].y=float(float(std::nearbyint(p[2].y))-.5f);p[1].y=p[0].y;p[2].x=p[0].x;p[3].x=p[1].x;p[3].y=p[2].y;}
     std::copy(std::begin(p),std::end(p),vm.visual.quad.begin());float left=p[0].x,right=left,top=p[0].y,bottom=top;for(u32 i=1;i<4;i++){left=std::min(left,p[i].x);right=std::max(right,p[i].x);top=std::min(top,p[i].y);bottom=std::max(bottom,p[i].y);}
     if(right<float(viewport.x)||bottom<float(viewport.y)||left>float(viewport.x+viewport.width)||top>float(viewport.y+viewport.height))return 0;
-    auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;u32 colors[4];if(supplied)std::copy(supplied,supplied+4,colors);else if(color_mode<2){u32 color=color_mode?v.secondary_color:v.color;if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);v.inherited_color=color;for(auto& c:colors)c=tint_color(color);}else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
+    auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;
+    if(!supplied&&color_mode<2){
+        u32 color=color_mode?v.secondary_color:v.color;
+        if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);
+        v.inherited_color=color;
+    }
+    // Draw still updates the VM's bounds and inherited colour for subsequent
+    // callbacks. UVs and packed vertices only feed presentation.
+    if(logical_only)return material(vm)?0:-2;
+    u32 colors[4];
+    if(supplied)std::copy(supplied,supplied+4,colors);
+    else if(color_mode<2)std::fill(std::begin(colors),std::end(colors),tint_color(v.inherited_color));
+    else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
     if(!material(vm))return -2;Vec2 uv[4];uv[0]={float(v.uv_offset.x+v.uv[0].x),float(v.uv[0].y+v.uv_offset.y)};uv[1]={float(float(float(v.uv[1].x-v.uv[0].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[0].x,float(v.uv_offset.y+v.uv[1].y)};uv[2]={float(v.uv_offset.x+v.uv[2].x),float(float(float(v.uv[2].y-v.uv[0].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[0].y};uv[3]={float(float(float(v.uv[3].x-v.uv[2].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[2].x,float(float(float(v.uv[3].y-v.uv[1].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[1].y};
     // Trim only proven transparent atlas padding. Keep the original VM quad,
     // colour inheritance and material transitions above, and never crop copy,
@@ -145,7 +157,8 @@ int AnmRenderer::draw(AnmVm& vm){
 }
 bool AnmRenderer::draw_layer(const std::vector<AnmVm*>& layer){for(auto* vm:layer)if(draw(*vm)==-2)return false;return true;}
 int AnmRenderer::draw_screen_strip(AnmVm& vm,const AnmGeometryVertex* data,u32 count){
-    if((vm.visual.flags&3)!=3||!vm.sprite)return -1;if(count<3)return 0;if(!data||count>0x200000){error="Screen strip vertex range invalid";return -2;}if(!material(vm))return -2;
+    if((vm.visual.flags&3)!=3||!vm.sprite)return -1;if(count<3)return 0;if((!data&&!logical_only)||count>0x200000){error="Screen strip vertex range invalid";return -2;}if(!material(vm))return -2;
+    if(logical_only)return 0;
     if(count<18){if(quad_batch)flush();quad_batch=false;for(u32 i=0;i+2<count;i++){const u32 order[3]={i+(i&1),i+((i&1)^1u),i+2};for(u32 j:order)vertices[vertex_count++]=data[j];if(vertex_count>=6144)flush();}return 0;}
     // Curved lasers already own their complete strip. Submit it to the shared
     // renderer, which copies/joins it safely, instead of expanding it into

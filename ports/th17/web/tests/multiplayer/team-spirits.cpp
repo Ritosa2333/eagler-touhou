@@ -230,6 +230,48 @@ void immutable_bullet_program(){
             "editing the shooter preserves existing bullets and payloads");
 }
 
+void logical_animation_draw(){
+    using namespace touhou::graphics;
+    struct Device final:ZunGraphics {
+        PipelineState state;
+        u32 submissions=0;
+        PipelineState& pipeline()override{return state;}
+        u32 texture(const AnmResource&,u32)override{return 1;}
+        void bind_texture(u32)override{}
+        void set_layout(VertexLayout)override{}
+        void set_matrix(MatrixKind,const Matrix4&)override{}
+        void triangles(u32 count,const void*,u32)override{submissions+=count;}
+        void primitives(Topology,u32 count,const void*,u32)override{submissions+=count;}
+        bool select_target(const AnmResource*,u32)override{return true;}
+        bool clear_target(u32,const GraphicsViewport*)override{return true;}
+        bool clear_depth(const GraphicsViewport*)override{return true;}
+        void set_viewport(const GraphicsViewport&)override{}
+    } device;
+    AnmRenderer renderer(device);
+    AnmResource resource;
+    resource.sprites.emplace_back();
+    AnmVm parent,vm;
+    parent.visual.inherited_color=0xff404040;
+    vm.creation_parent=&parent;
+    vm.resource=&resource;
+    vm.sprite=&resource.sprites[0];
+    vm.visual.flags=3;
+    vm.visual.render_flags|=0x2000000;
+    vm.visual.sprite_size={32,32};
+    vm.variables.position={100,100,0};
+    auto presented=vm;
+    renderer.logical_only=true;
+    require(renderer.draw(vm)==0&&renderer.draw_screen_strip(vm,nullptr,6)==0,"logical animation and strip pass");
+    renderer.flush();
+    require(device.submissions==0,"logical draw does not pack vertices");
+    renderer.logical_only=false;
+    require(renderer.draw(presented)==0,"physical animation pass");
+    renderer.flush();
+    require(device.submissions==2&&vm.visual.inherited_color==presented.visual.inherited_color&&
+            vm.visual.quad[0].x==presented.visual.quad[0].x&&vm.visual.quad[3].y==presented.visual.quad[3].y,
+            "logical pass preserves bounds and inherited colour");
+}
+
 void laser_restore(const char* asset){
     struct Host final:LaserSceneHost {
         PlayerCollision player;
@@ -329,6 +371,7 @@ int main(int argc, char** argv) {
     borrowed_animation_graph();
     animation_page_rollback();
     immutable_bullet_program();
+    logical_animation_draw();
     laser_restore(asset);
     std::cout << "TH17 spirit inventory, countdown, fragments and laser rollback passed\n";
 }
