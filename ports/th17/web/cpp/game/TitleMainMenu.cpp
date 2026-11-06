@@ -46,6 +46,7 @@ bool TitleMainMenu::update(u32 pressed,u32 repeated,bool extra_available){
         if((pressed&0x102)&&!state.room_preview){
             if(state.menu.selected==9){if(!sound(9))return false;state.change_substate(4);return true;}
             if(!sound(9))return false;state.menu.select(9);if(!select_animation(extra_available))return false;
+            break;
         }
         if((pressed&0x80001)&&(!state.room_preview||state.menu.selected==7)){
             if(!interrupt(0,6,false))return false;
