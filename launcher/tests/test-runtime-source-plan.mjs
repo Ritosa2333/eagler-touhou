@@ -75,7 +75,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 22);
+  assert.equal(plans.length, 23);
   const th19 = plans.filter(plan => plan.game === "th19");
   assert.deepEqual(th19.map(plan => plan.variant), ["normal", "multiplayer"]);
   assert(th19.every(plan => plan.source === layout.path("th19")));
@@ -125,5 +125,5 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (22 variants, shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (23 variants, shared dependencies, explicit tools, invalid inputs)");
 });
