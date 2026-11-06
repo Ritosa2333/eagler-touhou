@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "8619b754e288c7f38b71eb2f5879222091dca927",
+      "base": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
       "history": [
         {
           "kind": "manual",
@@ -1192,6 +1192,20 @@
             "ports/th17-mp/ADAPTATION.md"
           ],
           "note": "两侧适配表分别接收普通版 11 项、MP 10 项检查结果，保留各自模式与验证范围；已合并普通版投影并保留双父链写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "8619b754e288c7f38b71eb2f5879222091dca927",
+          "source": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
+          "targetHead": "dc68e9c3ea7c7c23fc449841427db19fd84f6b10",
+          "paths": [
+            "ports/th17-mp/portable/input/TouchController.hpp",
+            "ports/th17-mp/web/cpp/game/TitleMainMenu.cpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/sdl-runtime/shell.mjs",
+            "ports/th17-mp/web/tests/adapter-browser.test.mjs"
+          ],
+          "note": "同步标题点按、捕获取消与确认脉冲的处理，保留多人房间标题流程并接收浏览器回归。"
         }
       ]
     }
