@@ -6,6 +6,7 @@
 #include "PauseFrame.hpp"
 #include "SessionState.hpp"
 #include "AnmManager.hpp"
+#include "TitlePlayerDataMenu.hpp"
 
 namespace th13 {
 struct HudDrawServices;
@@ -30,6 +31,10 @@ struct RunPausePlatform {
     virtual i32 pause_option_value(i32) const { return 0; }
     virtual bool record_result_name(const std::string&) { return false; }
     virtual bool result_needs_name() const { return false; }
+    // 0x43f8f0 排名门（mode0）：合格 = FUN_0043d6b0 把新分当场插入榜块并经
+    // 0x415030(rank) 把 0 基入榜行写进覆盖层 +0x38；不合格 -1。返回行号并把
+    // 插入后的 10 行榜拷进 rows（新行名字为空——END 才写名，0x43d6b0 写 8 空格）。
+    virtual i32 result_ranking(TitlePlayerDataScore rows[10]) const { return -1; }
     virtual bool can_save_replay() const { return false; }
     // 0x43e3f0:0x43e588-0x43e592：Esc 暂停激活末尾对活动对话对象调
     // 0x429d00（9 槽 VM+0x18 清 bit1，不销毁）；0x43e700:0x43e749 恢复时
