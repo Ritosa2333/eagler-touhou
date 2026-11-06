@@ -1,0 +1,14 @@
+[
+  {
+    "character": 6,
+    "hp": 96760,
+    "maxDamage": 32,
+    "maxCircles": 5
+  },
+  {
+    "character": 16,
+    "hp": 96720,
+    "maxDamage": 40,
+    "maxCircles": 5
+  }
+]

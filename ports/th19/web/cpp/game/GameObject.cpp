@@ -129,6 +129,7 @@ bool EclVm::game_object(const EclInstruction& ins){
         }
         case 505: // 0x500fcb: disable bounding rectangle.
             if(has_host)for(auto&e:world_->enemies)if(e.id==host_id){e.status_flags&=~2u;break;}return true;
+        case 615: // Native dispatch table 0x505560 maps both 615 and 616 to 0x503d9e.
         case 616: { // 0x503d9e: 4ee880 ignores bullet lock; laser call uses respect-lock=1.
             const float radius=param_f32(ins,0);if(radius<0)return false;
             if(has_host)for(const auto&e:world_->enemies)if(e.id==host_id){

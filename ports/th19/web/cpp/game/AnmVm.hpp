@@ -44,6 +44,7 @@ struct AnmVm {
     float effect_w=128.0f, effect_h=96.0f;
     bool visible=true;
     bool halted=false;             // stop / stop2 (pause instruction stream; interp continues)
+    bool deleted=false;            // terminal script state; children retain their own lifetime
     // angle velocity (opcode 415): rot += angleVel each frame
     float angle_vel_x=0, angle_vel_y=0, angle_vel_z=0;
     // ANM variable store (opcodes 100-121): float vars 10000+n, int vars 10000+n.
@@ -74,7 +75,7 @@ struct AnmVm {
 
     u32 return_ip=0; i32 return_time=0; bool return_halted=false,has_return=false;
     void tick(const AnmVm* parent=nullptr);
-    void bind(const u8* s,u32 len){stream=s;stream_len=len;ip=0;time=0;}
+    void bind(const u8* s,u32 len){stream=s;stream_len=len;ip=0;time=0;deleted=false;}
     void bind_entry(const u8* s,u32 len,const std::unordered_map<i32,AnmScriptLoc>* table){
         bind(s,len);global_scripts=table;
     }
@@ -88,9 +89,10 @@ struct AnmVm {
     i32   read_var_i(i32 id) const;
     void  write_var_i(i32 id, i32 v);
     static float rand_unit();
+    static u32 rand_integer();
     static void seed_random(u32 seed);
-    static u32 random_checkpoint();
-    static void restore_random(u32 state);
+    static u32 random_checkpoint(bool primary=false);
+    static void restore_random(u32 state,bool primary=false);
 private:
     const AnmVm* execution_parent_=nullptr; // valid only while tick() executes; never retained across moves
     bool creation_registers_=false;

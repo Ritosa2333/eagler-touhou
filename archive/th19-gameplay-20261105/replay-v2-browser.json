@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": [
+    "spectator pause, rewind and return-live use retained confirmed input",
+    "late spectator catches up and saves a finalized v2 .rpy",
+    "observer saves versus recording; playback and rewind match all native hashes"
+  ],
+  "frames": 1200,
+  "difficulty": 3
+}
