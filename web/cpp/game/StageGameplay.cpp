@@ -45,8 +45,8 @@ struct StageGameplay::Services final:BattleWorldServices,DialogueServices,GameFr
     bool flush_audio()override{return g.platform.flush_audio();}
     bool resume_environment(double seconds)override{return g.platform.resume_environment(seconds);}
     bool advance_scene_animations()override{for(auto* vm:g.scene_animations)if(vm&&g.animations.tick_instance(*vm)<0)return g.fail(g.animations.error);return true;}
-    bool finish_player_options()override{return g.battle.player->finish_stage_options();}
-    bool stop_bomb()override{return g.battle.bomb&&g.battle.bomb->stop();}
+    bool finish_player_options()override{return g.battle.finish_player_options();}
+    bool stop_bomb()override{return g.battle.stop_bombs();}
     bool record_play_time()override{return g.platform.record_play_time();}
     bool finish_practice()override{return g.platform.finish_practice();}
     bool begin_deformation(i32 mode,i32)override{return g.deformation.begin(mode)||g.fail(g.deformation.error);}
@@ -114,7 +114,7 @@ ReplayRunState StageGameplay::capture_run()const noexcept{
 bool StageGameplay::reset_world(){
     const Vec2 previous_bounds=battle.bullet_scene->manager.context.reflection_bounds;
     battle.bullet_scene->reset();if(run.historical_web_replay)battle.bullet_scene->manager.context.reflection_bounds=previous_bounds;
-    if(!battle.player->reset_for_stage())return fail(battle.player->error);
+    if(!battle.reset_players())return fail(battle.error);
     if(!battle.items->items.reset())return fail(battle.items->items.error);
     if(!battle.enemies->clear()||!battle.laser_scene->manager.clear())return fail("Stage pool reset failed");
     controller->counters={};return true;
@@ -125,6 +125,7 @@ bool StageGameplay::activate_world(){
     if(!platform.stage_input_ready(*this))return fail("Stage input activation failed");
     EnemySpawnRequest main;main.routine="main";if(!battle.spawn(main))return fail(battle.error);
     if(!battle.hud->initialize(hud_context()))return fail(battle.hud->error);
+    if(!battle.initialize_partner_hud())return fail(battle.error);
     if(!battle.player->configure_options())return fail(battle.player->options.error);
     if(!battle.items->roaring.enter_stage())return fail(battle.items->roaring.error);started=true;battle.world_active(true);return true;
 }

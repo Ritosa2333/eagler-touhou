@@ -19,7 +19,21 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     bool create_laser(const MovingLaserRequest& request)override{return scene.host.create_laser(request);}
     bool create_laser(const StationaryLaserRequest& request)override{return scene.host.create_laser(request);}
     bool cancel_bullet(i32 kind)override{cancelling=true;const bool result=state.cancel(kind,scene.manager.context.rate,scene.game_random,scene.manager.cancellation_rewards,*this,*this,scene.error);cancelling=false;return result&&scene.error.empty();}
-    i32 contact(BulletState& bullet,bool graze_only)override{return i32(bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error));}
+    i32 contact(BulletState& bullet,bool graze_only)override{
+        if(scene.host.contact_players()==1)
+            return i32(bullet.collide(scene.host.player_collision(),graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error));
+        auto result=PlayerContact::none;
+        for(u32 seat=0;seat<scene.host.contact_players();++seat){
+            const auto* player=scene.host.select_contact(seat);
+            if(!player)continue;
+            const auto contact=bullet.collide(*player,graze_only,scene.manager.context.rate,scene.game_random,scene.visual_random,*this,scene.error);
+            if(contact==PlayerContact::hit){result=contact;break;}
+            if(contact==PlayerContact::graze)result=contact;
+            if(!scene.error.empty())break;
+        }
+        scene.host.finish_contacts();
+        return i32(result);
+    }
     bool sprite_dimensions(Vec2& out)const noexcept override{const auto* sprite=visual.body.sprite;if(!sprite)return false;out={sprite->width,sprite->height};return true;}
     bool animation_finished(bool overlay)override{const i32 result=visual.tick(overlay);if(result<0)scene.error=visual.error;return result>0;}
     void cancellation_effect(i32 script,const Vec3& position,const Vec3& velocity)override{

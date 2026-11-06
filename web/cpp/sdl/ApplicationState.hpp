@@ -55,6 +55,12 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  std::vector<u8> pending_png,pending_animation;i32 pending_page=-1,pending_bank=-1,frame_skip=0,preview_index=-1;
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;
  bool initialized=false,exiting=false,completed_recording=false,has_language_pack=false;std::array<i32,16> projected{};std::string failure;
+#if TH17_MULTIPLAYER
+ std::array<std::array<i32,2>,3> room_loadouts{};
+ std::array<CoopPlayerInput,2> room_partners{};
+ u32 room_seats=0;
+ bool begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts);
+#endif
  AppScene loading_destination=AppScene::Uninitialized;u32 loading_frames=0,loading_duration=0;Rng loading_visual,loading_game;
  void remember_title()noexcept;bool fail(const std::string&);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);const i32* projection();
  FrameScheduler& active_scheduler()noexcept{return scene()?scene()->frame_scheduler():scheduler;}

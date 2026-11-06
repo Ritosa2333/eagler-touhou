@@ -16,6 +16,7 @@ public:
     RunGameplay(AssetSource&,AnmManager&,AnmEnvironment&,Rng&,Rng&,GameRun&,GameRecords&,SpellRecords&,StageGameplayServices&,const std::unordered_map<std::string,i32>* shared=nullptr);
     ~RunGameplay();
     bool load(i32 stage,const StageCamera&,const ReplayStageState* replay=nullptr,const PracticePatch& practice={});
+    bool add_coop_player(i32 character,i32 animal);
     bool next(i32 stage,const StageCamera&,const ReplayStageState* replay=nullptr);
     bool update_previous(float rate);bool release_previous();
     StageGameplay* scene()const noexcept{return active.gameplay.get();}

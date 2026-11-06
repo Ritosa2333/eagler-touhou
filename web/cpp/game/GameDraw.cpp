@@ -11,13 +11,19 @@ bool GameDraw::pass(u32 index){
     if(!error.empty())return false;auto& b=scene.battle;
     switch(index){
     case 0:return b.spell_card&&draw_spell_card(*b.spell_card,animations,spells,run.character,run.animal,run.scoring.mode_flags,text,error);
-    case 1:return b.player&&b.player->draw(renderer)||fail(b.player?b.player->error:"Player draw owner unavailable");
+    case 1:return b.draw_players(renderer)||fail(b.error);
     case 2:if(run.scene_flags&4)return true;return b.items&&b.items->items.draw(renderer)||fail(b.items?b.items->items.error:"Item draw owner unavailable");
     case 3:return b.laser_scene&&b.laser_scene->draw(renderer)||fail(b.laser_scene?b.laser_scene->error:"Laser draw owner unavailable");
     case 4:if(run.scene_flags&4)return true;return b.bullet_scene&&b.bullet_scene->draw(renderer)||fail(b.bullet_scene?b.bullet_scene->error:"Bullet draw owner unavailable");
     case 5:return b.bomb&&b.bomb->score_popup.draw(text,b.player->motion.position,background.rate,error);
     case 6:return b.player&&scene.popups.draw(*this,b.player->motion.position)||fail(scene.popups.error);
-    case 7:{if(!b.hud||!b.hud->life_handles[0])return true;const auto* card=b.spell_card.get();HudDrawContext context{b.score,run.scoring,b.graze_total,bool(card),card?card->result_clock.displayed_frames:0,card?card->result_clock.encoded_time:0};return b.hud->draw(context,text)||fail(b.hud->error);}
+    case 7:{
+        if(!b.hud||!b.hud->life_handles[0])return true;
+        const u32 seat=renderer.hud_viewer-1;
+        const auto* card=b.spell_card.get();
+        HudDrawContext context{b.score,run.scoring,b.graze_total,bool(card),card?card->result_clock.displayed_frames:0,card?card->result_clock.encoded_time:0};
+        return b.hud->draw(context,text,seat,b.pilot(seat).session,b.life_piece_tier(seat))||fail(b.hud->error);
+    }
     case 8:return !pause||(dates&&pause->draw(text,*dates,replay_header,captured))||fail(pause->error.empty()?"Pause calendar service unavailable":pause->error);
     default:return fail("Game draw pass outside schedule");
     }

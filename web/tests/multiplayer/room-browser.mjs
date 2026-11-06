@@ -1,0 +1,157 @@
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {createServer} from 'node:http';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
+import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
+
+const repo=resolve(import.meta.dirname,'../../../../..');
+const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17/build-eagler-multiplayer'));
+const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-room'));
+const required=name=>{assert.ok(process.env[name],'Set '+name);return process.env[name];};
+const assets={
+ '/game.dat':await readFile(required('EAGLER_TH17_DATA')),
+ '/msgothic.ttc':await readFile(required('TH17_ROOM_GOTHIC')),
+ '/unifont.otf':await readFile(required('TH17_ROOM_UNIFONT')),
+};
+const relay=spawn(process.execPath,[resolve(repo,'services/relay/src/netplay-relay.mjs')],{
+ cwd:repo,windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',
+  EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe'],
+});
+let log='',options=[],browser;
+relay.stdout.on('data',data=>log+=data);
+relay.stderr.on('data',data=>log+=data);
+const wait=async(predicate,description,ms=90000)=>{
+ const end=Date.now()+ms;
+ while(Date.now()<end){if(await predicate())return;await new Promise(r=>setTimeout(r,50));}
+ throw Error(description+' timed out');
+};
+const lobby=(socket,message,match)=>new Promise((resolveLobby,reject)=>{
+ const timeout=setTimeout(()=>done(Error('Lobby request timed out: '+JSON.stringify(message))),10000);
+ const close=event=>done(Error('Lobby closed: '+event.code+' '+event.reason));
+ function done(error,result){
+  clearTimeout(timeout);socket.removeEventListener('message',receive);socket.removeEventListener('close',close);
+  if(error)reject(error);else resolveLobby(result);
+ }
+ function receive(event){
+  const value=JSON.parse(event.data);
+  if(value.type==='error')done(Error(value.error));else if(match(value))done(null,value);
+ }
+ socket.addEventListener('message',receive);socket.addEventListener('close',close);
+ if(message)socket.send(JSON.stringify(message));
+});
+const html=`<!doctype html><style>body{display:flex;margin:0}iframe{width:640px;height:480px;border:0}</style><script>
+window.events=[];window.ready=new Set();window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/game.dat')).arrayBuffer()});
+addEventListener('message',e=>{if(e.origin!==location.origin||e.data?.protocol!=='eagler-touhou/1')return;events.push(e.data);if(e.data.event==='ready')ready.add(e.data.epoch);});
+window.addRuntime=seat=>{const frame=document.createElement('iframe');frame.id='p'+seat;frame.src='/runtime/th17.html?hosted=1&managedData=1&runtimeEpoch='+(seat+1);document.body.append(frame);};
+window.rpc=(seat,command,fields={})=>new Promise((resolve,reject)=>{
+ const frame=document.getElementById('p'+seat),request=crypto.randomUUID(),timer=setTimeout(()=>{removeEventListener('message',receive);reject(Error(command+' timeout'));},30000);
+ function receive(e){if(e.source===frame.contentWindow&&e.data?.request===request){clearTimeout(timer);removeEventListener('message',receive);e.data.ok?resolve(e.data):reject(Error(e.data.error));}}
+ addEventListener('message',receive);
+ frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th17',epoch:seat+1,command,request,...fields},location.origin);
+});
+window.startRuntime=async seat=>{
+ const options=(await(await fetch('/options')).json())[seat];
+ await rpc(seat,'configure',{music:'none',language:'ja',sharedResources:['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path})),options});
+ await rpc(seat,'launch');
+};
+</script>`;
+const server=createServer(async(req,res)=>{
+ try{
+  const path=new URL(req.url,'http://localhost').pathname;
+  res.setHeader('Cross-Origin-Opener-Policy','same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy','require-corp');
+  if(path==='/'){res.setHeader('Content-Type','text/html');return res.end(html);}
+  if(path==='/options'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(options));}
+  if(assets[path])return res.end(assets[path]);
+  assert.ok(path.startsWith('/runtime/'));
+  const file=resolve(runtime,path.slice(9));
+  assert.ok(file.startsWith(runtime+sep));
+  res.setHeader('Content-Type',({'.mjs':'text/javascript','.wasm':'application/wasm','.html':'text/html','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');
+  res.end(await readFile(file));
+ }catch{res.writeHead(404).end();}
+});
+const sockets=[],reports=[];
+await mkdir(out,{recursive:true});
+try{
+ await wait(()=>/listening ws:\/\/127\.0\.0\.1:(\d+)/.test(log),'relay start',30000);
+ const port=Number(/listening ws:\/\/127\.0\.0\.1:(\d+)/.exec(log)[1]);
+ const endpoint='ws://127.0.0.1:'+port+'/?';
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--disable-background-timer-throttling','--disable-renderer-backgrounding','--autoplay-policy=no-user-gesture-required']});
+ for(const seats of [2,3]){
+  const room='th17mp-room-test-'+seats,loadouts=Array.from({length:seats},(_,i)=>({character:i,shot:i}));
+  const members=[];
+  for(let seat=0;seat<seats;seat++){
+   const member=room+'-private-'+seat;
+   const socket=new WebSocket(endpoint+new URLSearchParams({room,lobby:room+'-'+seat,member,intent:seat?'join':'create',players:String(seats),difficulty:'1'}));
+   sockets.push(socket);members.push(socket);
+   await lobby(socket,null,value=>!!value.room);
+   await lobby(socket,{type:'take-seat',seat,loadout:seat*3+seat},value=>!!value.room?.seats[seat]);
+  }
+  for(const [seat,socket] of members.entries())
+   await lobby(socket,{type:'set-ready',ready:true},value=>value.room?.seats[seat]?.ready);
+  const start=await lobby(members[0],{type:'start',adonisMode:1,inputDelay:2,inputDelayAuto:false},value=>value.type==='start');
+  options=Array.from({length:seats},(_,seat)=>({
+   netplayMode:'lan',netplayAdonisMode:1,netplayInputDelay:2,netplayAllowWebsocketFallback:true,
+   netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:loadouts,
+   renderScale:1,netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
+  }));
+  const context=await browser.newContext({viewport:{width:seats*640,height:480}});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  try{
+   await page.goto('http://127.0.0.1:'+server.address().port);
+   for(let seat=0;seat<seats;seat++){
+    await page.evaluate(seat=>addRuntime(seat),seat);
+    await page.waitForFunction(epoch=>ready.has(epoch),seat+1,{timeout:45000});
+   }
+   await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
+   const frames=page.frames().filter(frame=>frame.url().includes('/runtime/'));
+   for(const [seat,frame] of frames.entries()){
+    await frame.evaluate(seat=>{
+     const callback=Module.onGameFrame;
+     globalThis.samples=new Map();
+     Module.onGameFrame=(ok,time,ticks)=>{
+      callback(ok,time,ticks);
+      const p=Module._th17_room_status()>>>2,words=Array.from(Module.HEAPU32.subarray(p,p+24));
+      const n=words[0];words[2]=0;
+      if(n>120&&words[3]===1)samples.set(n,words);
+      Module._th17_key(203,+(seat===0&&n>=120&&n<170));
+      Module._th17_key(205,+(seat===1&&n>=120&&n<170));
+      Module._th17_key(200,+(seat===2&&n>=120&&n<150));
+      Module._th17_key(44,+(n>=140&&n<260));
+      Module._th17_key(45,+(seat===1&&n>=185&&n<193));
+     };
+    },seat);
+   }
+   await wait(async()=>{
+    assert.deepEqual(errors,[]);
+    const failures=await page.evaluate(()=>events.filter(e=>e.event==='error'));
+    assert.deepEqual(failures,[]);
+    return (await Promise.all(frames.map(frame=>frame.evaluate(()=>samples.size>=850)))).every(Boolean);
+   },'independent pilot motion through Stage 1');
+   const states=await Promise.all(frames.map(frame=>frame.evaluate(()=>Array.from(samples))));
+   const first=new Map(states[0]),other=states.slice(1).map(state=>new Map(state));
+   const agreed=[...first].filter(([frame])=>other.every(map=>map.has(frame)));
+   assert.ok(agreed.length>100);
+   for(const [frame,value] of agreed)for(const peer of other)assert.deepEqual(peer.get(frame),value,'world at frame '+frame);
+   const [,initial]=agreed[0];
+   const [,last]=agreed.at(-1);
+   const maxEnemyBullets=Math.max(...agreed.map(([,state])=>state[10]));
+   assert.ok(maxEnemyBullets>0,'fight includes enemy projectiles');
+   assert.equal(initial[19],4,'Otter starts with four bombs');
+   assert.ok(agreed.some(([,state])=>state[19]===3&&state[15]===initial[15]),'guest spends their own bomb');
+   const x=seat=>last[12+seat*4]|0;
+   assert.ok(x(0)<x(1),'left and right belong to different pilots');
+   if(seats===3)assert.ok(last[21]<last[13],'third pilot moved up independently');
+   await page.screenshot({path:resolve(out,seats+'p.png')});
+   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,last});
+   console.log(seats+' players, '+agreed.length+' matching frames');
+  }finally{await context.close();for(const socket of members)socket.close();}
+ }
+}finally{
+ await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
+ await writeFile(resolve(out,'room-report.json'),JSON.stringify({reports},null,2)+'\n');
+ await writeFile(resolve(out,'relay.log'),log);
+}

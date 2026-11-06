@@ -83,6 +83,9 @@ bool ApplicationState::initialize(bool device){
 ApplicationState::~ApplicationState(){exiting=true;title.reset();ending.reset();release_game();fades.clear();for(auto& callback:global_callbacks)scheduler.remove(callback);global_letters.reset();global_layers.reset();scene_effects.reset();animations.resource_release=nullptr;}
 void ApplicationState::remember_title()noexcept{if(title){title_demo_idle=title->frame.demo_idle;title_demo_index=title->frame.demo_index;title_saved_difficulty=title->frame.saved_difficulty;title_saved_replay_selection=title->saved_replay_selection;}}
 bool ApplicationState::save_settings(){
+#if TH17_MULTIPLAYER
+ if(room_seats)return true;
+#endif
  // Title choices are session globals in 1.00b. Bytes 0x1c..0x21 belong to
  // display settings; writing a selected difficulty there corrupts th17.cfg.
  config.bytes[0x22]=u8(volumes.music_volume);config.bytes[0x23]=u8(volumes.sound_volume);config.bytes[0x29]=(config.bytes[0x29]&~2u)|(volumes.controller_option?2u:0u);std::memcpy(config.bytes.data()+4,controller.values.data(),20);return files.save(records,config)||fail(files.error);
@@ -126,6 +129,13 @@ bool ApplicationState::begin_game(bool playback){
  if(flow.fresh){run.reset();run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,records.game,records.spells,*this,&shared);
   if(!playback){recording=std::make_unique<ReplayRecording>();auto& description=recording->description();std::memcpy(description.data()+0x88,&progress.character,4);std::memcpy(description.data()+0x8c,&progress.animal,4);std::memcpy(description.data()+0x90,&progress.difficulty,4);std::memcpy(description.data()+0x98,&progress.scoring.continues,4);std::memcpy(description.data()+0x9c,&progress.spell_id,4);description[10]=u8((progress.scoring.mode_flags>>4&1)|((progress.scoring.mode_flags&0x30)==0x20?2:0));}
   else recording.reset();completed_recording=false;if(!run->load(progress.stage,camera,initial,practice.active))return fail(run->error);
+#if TH17_MULTIPLAYER
+  if(room_seats){
+   recording.reset();
+   for(u32 seat=1;seat<room_seats;++seat)
+    if(!run->add_coop_player(room_loadouts[seat][0],room_loadouts[seat][1]))return fail(run->error);
+  }
+#endif
   if(practice.active){
    if(recording)recording->use_practice(practice.active);
    const auto* parameters=playback?selected_replay->native_practice_settings():&practice.settings;
@@ -141,6 +151,9 @@ bool ApplicationState::begin_game(bool playback){
   }
  }else if(!run||!run->next(progress.stage,camera,initial))return fail(run?run->error:"Retained run unavailable");
  if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,practice.active&&!practice.active.dialogue&&practice_bgm(practice.active.section)?assets()->definition->boss_music:assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();
+#if TH17_MULTIPLAYER
+ if(room_seats)run_input->auto_focus=false;
+#endif
  if(!flow.fresh)run_input->input=retained_input;
  if(recording){recording->use_current_web_rules();live_description=recording->description();}else if(selected_replay)std::copy_n(selected_replay->decoded().begin(),live_description.size(),live_description.begin());
  if(!bind_display(run->previous_scene())||!retire_loading())return false;
@@ -168,6 +181,9 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   ThpracUi::record_keys(*this,held);
   if(scene()->battle.spell_card)scene()->battle.spell_card->hide_master=practice.hide_master;
   if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,practice.active&&!progress.practice_record?practice.active_tools(progress.scoring.continues):0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
+#if TH17_MULTIPLAYER
+  input.battle.partners=room_partners;
+#endif
   if(!scene()->step(input))return fail(scene()->error.empty()?run_input->error:scene()->error);
   if(run->previous_scene()&&!run->update_previous(progress.rate))return fail(run->error);
  }else {if(scheduler.update()<0)return fail(title&&!title->error.empty()?title->error:ending&&!ending->error.empty()?ending->error:animations.error);}

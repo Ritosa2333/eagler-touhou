@@ -8,7 +8,7 @@
 #include <functional>
 namespace th17 {
 struct ItemSpawnContext {Rng& game_random;Vec3 player{};std::function<bool(i32,const Vec3&,float)> spirit;};
-struct ItemFrameContext {PlayerMotion& player;PlayerBounds& bounds;ItemCollection& collection;Rng& visual_random;float rate=1,attraction_speed=5;i32 character=0,player_state=0,bomb_state=0,bomb_frame=0;u32 held=0;bool hud_collect=false;};
+struct ItemFrameContext {PlayerMotion& player;PlayerBounds& bounds;ItemCollection& collection;Rng& visual_random;float rate=1,attraction_speed=5;i32 character=0,player_state=0,bomb_state=0,bomb_frame=0;u32 held=0;bool hud_collect=false,active=true;};
 class ItemManager {
 public:
     struct Slot {ItemState state;std::unique_ptr<AnmVm> body,arrow;bool arrow_ended=false;};
@@ -27,7 +27,7 @@ public:
     Slot* find(u32 id){return id&&id<=pool_size?&slots[id-1]:nullptr;}
     u32 spawn(i32 kind,const Vec3&,float angle,float speed,i32 delay=0,i32 sound=-1,ItemSpawnContext* context=nullptr);
     bool release(u32 id);bool falling(u32 id);
-    bool update(ItemFrameContext&);
+    bool update(ItemFrameContext&,const std::array<ItemFrameContext*,2>& partners={});
     bool draw(AnmRenderer&);
     u32 free_head(bool cancel)const noexcept{return free_slots[cancel].empty()?0:free_slots[cancel].back()+1;}
 };

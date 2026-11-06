@@ -130,6 +130,7 @@ int AnmRenderer::trail(AnmVm& vm){
     flush();if(!material(vm,false))return -2;graphics.set_depth_mask(false);auto& state=render_state;state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,data.colors[u32(i)]});graphics.set_layout(VertexLayout::ScreenColor);graphics.primitives(Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
 }
 int AnmRenderer::draw(AnmVm& vm){
+    if(vm.hud_viewer&&vm.hud_viewer!=hud_viewer)return -1;
 #if TH17_DEVELOPMENT_HARNESS
  ++render_modes[vm.visual.draw_mode()&31];
 #endif
