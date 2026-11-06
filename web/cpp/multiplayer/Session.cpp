@@ -21,7 +21,7 @@ std::uint32_t SessionSetup::gameplay_abi() const {
         }
     };
     word(0x54483137u);
-    word(1);
+    word(2);
     word(seats);
     word(difficulty);
     word(delay);
@@ -105,6 +105,14 @@ bool Session::capture_input(const Netplay::FrameInput& input, std::uint64_t now_
     if (!Netplay::IsValidFrameInput(input) || !core_.ScheduleLocalInput(next_capture_, input)) return fail("Invalid TH17 physical input");
     capture_clock_.Captured(capture_now_us_);
     return channel_.LocalCaptured(core_, next_capture_++, now_ms);
+}
+
+bool Session::retire(std::uint64_t now_ms) {
+    const auto frame=core_.LastSimulatedFrame();
+    if(frame==Netplay::INVALID_FRAME||next_commit_!=frame+1)return false;
+    if(!channel_.FlushRetirementFence(core_,frame,now_ms))return fail("TH17 terminal input flush failed");
+    if(!channel_.CanRetire(core_,frame))return false;
+    return channel_.Retire(core_,frame,now_ms)||fail("TH17 session retirement failed");
 }
 
 bool Session::commit(World& world) {

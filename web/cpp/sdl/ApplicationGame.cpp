@@ -2,6 +2,7 @@
 namespace th17::sdl {
 bool ApplicationState::audio(i32 id,float pan,PlayerShots::SoundAction action,bool queued){
 #if TH17_MULTIPLAYER
+ if(room_silent)return true;
  if(room_sounds){room_sounds->push_back({id,pan,action,queued});return true;}
 #endif
  if(action==PlayerShots::SoundAction::stop)return audio_device.effects.stop(id);if(action==PlayerShots::SoundAction::pan){audio_device.sound_pan(u32(id),truncate_int(float(float(pan*1000.f)/192.f)));return true;}return (queued?audio_device.effects.enqueue(id,truncate_int(float(float(pan*1000.f)/192.f))):audio_device.effects.positioned(id,pan))||fail(audio_device.effects.error);}

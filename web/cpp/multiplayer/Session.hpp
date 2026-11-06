@@ -50,6 +50,7 @@ public:
     void capture_phase(bool confirmed, std::uint64_t now_us);
     bool needs_input() const;
     bool capture_input(const Netplay::FrameInput&, std::uint64_t now_ms);
+    bool retire(std::uint64_t now_ms);
     Tick tick(World&, bool advance = true);
     bool repair_pending() const { return replay_end_ != 0 || core_.HasRollbackRequest(); }
     std::uint32_t next_frame() const;

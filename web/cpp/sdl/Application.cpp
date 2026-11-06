@@ -112,7 +112,12 @@ bool ApplicationState::begin_title(){
  practice.active={};practice.menu=practice.confirmed=practice.cancelled=practice.accepted=false;
  reset_graphics();if(!scene_effects)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);
  title=std::make_unique<TitleScene>(progress,selection,selection_player,selection_score,records,choices,volumes,controller,comments,trophy_catalog,spell_memory,animations,*this,scheduler);
- title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();return title->error.empty()||fail(title->error);
+ title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();
+#if TH17_MULTIPLAYER
+ title->state.room_preview=room_preview;
+ if(room_description)title->live=room_description.get();
+#endif
+ return title->error.empty()||fail(title->error);
 }
 bool ApplicationState::preload_run(){
  if(!assets())return fail("Run resources unavailable");
@@ -145,6 +150,9 @@ bool ApplicationState::begin_game(bool playback){
   initial=&entry;stage_seed=entry.seed;
  }
  else {stage_seed=environment.game_rng.seed;if(!flow.fresh)visual.seed=stage_seed;environment.game_rng.calls=0;}
+#if TH17_MULTIPLAYER
+ if(room_seats){room_stage_game=environment.game_rng;room_stage_visual=visual;}
+#endif
  if(flow.fresh){run.reset();run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,records.game,records.spells,*this,&shared);
   if(!playback){recording=std::make_unique<ReplayRecording>();auto& description=recording->description();std::memcpy(description.data()+0x88,&progress.character,4);std::memcpy(description.data()+0x8c,&progress.animal,4);std::memcpy(description.data()+0x90,&progress.difficulty,4);std::memcpy(description.data()+0x98,&progress.scoring.continues,4);std::memcpy(description.data()+0x9c,&progress.spell_id,4);description[10]=u8((progress.scoring.mode_flags>>4&1)|((progress.scoring.mode_flags&0x30)==0x20?2:0));}
   else recording.reset();completed_recording=false;if(!run->load(progress.stage,camera,initial,practice.active))return fail(run->error);
@@ -181,7 +189,11 @@ bool ApplicationState::begin_game(bool playback){
   if(!vm||(vm->visual.render_flags&0x60)){u32 handle=0;if(!begin_transition(handle)||!animations.interrupt(handle,7))return false;}
   if(!animations.interrupt(transition_overlay,1))return fail(animations.error);
  }
- performance.reset_result();progress.scoring.mode_flags&=~0xbu;scene()->battle.enemy_world.mode_flags=progress.scoring.mode_flags;return true;
+ performance.reset_result();progress.scoring.mode_flags&=~0xbu;scene()->battle.enemy_world.mode_flags=progress.scoring.mode_flags;
+#if TH17_MULTIPLAYER
+ if(room_seats)++room_stage_generation;
+#endif
+ return true;
 }
 bool ApplicationState::begin_ending(){ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,6);const i32 index=preview_index;preview_index=-1;return ending->initialize(progress,index)||fail(ending->error);}
 bool ApplicationState::draw_global(){

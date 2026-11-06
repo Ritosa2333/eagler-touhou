@@ -38,7 +38,7 @@ const run=args=>{
 };
 const files=dir=>readdirSync(resolve(root,dir),{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(dir+'/'+e.name):e.name.endsWith('.cpp')?[resolve(root,dir,e.name)]:[]);
 const source=[...files('cpp/game'),...files('cpp/sdl'),...(release?[]:[resolve(root,'tests/sdl/application-exports.cpp')]),resolve(workspace,'portable/sdl/Renderer.cpp'),...(thprac?['imgui','imgui_draw','imgui_widgets','imgui_tables','imgui_freetype'].map(name=>resolve(imguiRoot,name+'.cpp')):[])];
-if(multiplayer)source.push(...files('cpp/multiplayer'),...['BrowserPeerTransport','NetplayCore','NetplayProtocol','NetplaySession','SessionChannel','WebSocketTransport'].map(name=>resolve(commonRoot,'src/netplay',name+'.cpp')));
+if(multiplayer)source.push(...files('cpp/multiplayer'),...['BrowserPeerTransport','NetplayCore','NetplayProtocol','NetplaySession','SessionChannel','WebSocketTransport','InputReplay'].map(name=>resolve(commonRoot,'src/netplay',name+'.cpp')));
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
 const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...headerInputs(resolve(commonRoot,'include/eagler/input'),resolve(commonRoot,'include/eagler/audio'),resolve(commonRoot,'browser'),resolve(commonRoot,'include/eagler/text'),resolve(commonRoot,'include/eagler/thprac')),...(thprac?headerFiles(imguiRoot):[])].sort();
 if(multiplayer)headers.push(...headerInputs(resolve(commonRoot,'include/eagler/netplay')));
