@@ -345,6 +345,18 @@ bool sample_and_tick(){
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th17_initialize(){using namespace th17::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}ThpracUi::shutdown();app.reset();app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;if(!app->initialize(true)||!ThpracUi::initialize(*app)){last_error=app->failure;app.reset();return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}
 #if TH17_MULTIPLAYER
+EMSCRIPTEN_KEEPALIVE int th17_room_preview(){
+ using namespace th17::sdl;
+ if(running||room||!app||!app->title)return 0;
+ // Finish the title entrance without leaving a simulation loop running in the lobby.
+ app->graphics.backend.defer=true;
+ bool ok=true;
+ for(unsigned frame=0;frame<120&&ok;++frame)
+  ok=app->title&&app->step(0,0,0,60,false);
+ const bool presented=app->graphics.backend.commit();
+ app->graphics.backend.defer=false;
+ return ok&&presented&&app->title;
+}
 EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,const char* url){
  using namespace th17::sdl;
  if(!app||!app->title||running||room||!words||count!=19||words[0]!=2||!url||

@@ -864,7 +864,7 @@ export declare const PRODUCT_GAMES: Readonly<{
             adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
-        requiredShared: readonly never[];
+        requiredShared: readonly ["/msgothic.ttc", "/unifont.otf"];
         runtimeAssets: readonly string[];
         dataProvider: "retail-memory";
         package: Readonly<{
@@ -885,9 +885,10 @@ export declare const PRODUCT_GAMES: Readonly<{
         }>;
         multiplayerRuntime: "./runtime/th17/multiplayer/th17.html";
         multiplayer: Readonly<MultiplayerProductConfig>;
+        thpracExtraFunctionKeys: readonly ["U"];
         features: Readonly<{
-            thprac: false;
-            languages: false;
+            thprac: true;
+            languages: true;
             focusHitbox: false;
         }>;
     }>;

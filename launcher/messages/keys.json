@@ -2254,6 +2254,46 @@
     "id": "multiplayer_loadout_th15_reisen",
     "params": []
   },
+  "game.title.th17mp": {
+    "id": "game_title_th17mp",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_wolf": {
+    "id": "multiplayer_loadout_th17_reimu_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_otter": {
+    "id": "multiplayer_loadout_th17_reimu_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_reimu_eagle": {
+    "id": "multiplayer_loadout_th17_reimu_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_wolf": {
+    "id": "multiplayer_loadout_th17_marisa_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_otter": {
+    "id": "multiplayer_loadout_th17_marisa_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_marisa_eagle": {
+    "id": "multiplayer_loadout_th17_marisa_eagle",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_wolf": {
+    "id": "multiplayer_loadout_th17_youmu_wolf",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_otter": {
+    "id": "multiplayer_loadout_th17_youmu_otter",
+    "params": []
+  },
+  "multiplayer.loadout.th17_youmu_eagle": {
+    "id": "multiplayer_loadout_th17_youmu_eagle",
+    "params": []
+  },
   "game.title.th12mp": {
     "id": "game_title_th12mp",
     "params": []

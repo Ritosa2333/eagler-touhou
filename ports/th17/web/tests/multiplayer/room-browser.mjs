@@ -11,6 +11,7 @@ const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-r
 const rollback=!process.argv.includes('--lockstep');
 const throughStageTwo=process.argv.includes('--through-stage-two');
 const extraFinale=process.argv.includes('--extra-finale');
+const launcherPreview=process.argv.includes('--launcher-preview');
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
 const denseExtra=extraBoss||process.argv.includes('--dense-extra');
 const extended=throughStageTwo||process.argv.includes('--extended');
@@ -91,7 +92,14 @@ window.rpc=(seat,command,fields={})=>new Promise((resolve,reject)=>{
 });
 window.startRuntime=async seat=>{
  const options=(await(await fetch('/options')).json())[seat];
- await rpc(seat,'configure',{music:'none',language:'ja',sharedResources:['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path})),options});
+ const configure={music:'none',language:'ja'};
+ await rpc(seat,'configure',{...configure,sharedResources:['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path})),options:${launcherPreview}?{}:options});
+ if(${launcherPreview}){
+  const result=await rpc(seat,'prepare-room');
+  const runtime=document.getElementById('p'+seat).contentWindow.Module;
+  if(!result.presented||runtime._th17_phase()!==0||runtime._th17_frame()===0)throw Error('room title was not presented');
+  await rpc(seat,'configure',{...configure,options});
+ }
  await rpc(seat,'launch');
 };
 </script>`;
