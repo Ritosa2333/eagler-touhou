@@ -42,7 +42,11 @@ export function managedInput({game, epoch, active, options}) {
     },
     motion() { const value = {...motion, unlimited:options().touchMovementMode === 'touch-unlimited'}; motion.x = motion.y = 0; motion.begin = false; return value; },
   };
-  for (const type of ['keydown','keyup']) addEventListener(type, event => { if (event.__eaglerPC98Synthetic) return; if (keyboard.mapNative(event, type === 'keydown')) { event.preventDefault(); event.stopImmediatePropagation(); } }, true);
+  for (const type of ['keydown','keyup']) addEventListener(type, event => {
+    if (event.__eaglerPC98Synthetic) return;
+    const down=type==='keydown',handled=keyboard.mapped()?keyboard.mapNative(event,down):keyboard.event(event,down);
+    if (handled) { event.preventDefault(); event.stopImmediatePropagation(); }
+  }, true);
   addEventListener('blur', () => input.clear());
   return input;
 }

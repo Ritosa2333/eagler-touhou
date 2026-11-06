@@ -21,7 +21,7 @@ export class WorkerNP21 {
       this.send('key',[{type:event.type,code:event.code,key:event.key,keyCode:event.keyCode,which:event.which,
         charCode:event.charCode,repeat:event.repeat,location:event.location,ctrlKey:event.ctrlKey,altKey:event.altKey,shiftKey:event.shiftKey,metaKey:event.metaKey}]);
     };
-    for(const type of ['keydown','keyup','keypress'])config.canvas.addEventListener(type,this.onKey);
+    if(!config.managedKeyboard)for(const type of ['keydown','keyup','keypress'])config.canvas.addEventListener(type,this.onKey);
     this.onVisibility=()=>{if(document.hidden)this.flushAudio();};
     document.addEventListener('visibilitychange',this.onVisibility);
     this.onPageHide=event=>{if(!event.persisted)this.dispose();};
