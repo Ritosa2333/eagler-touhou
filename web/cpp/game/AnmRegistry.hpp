@@ -48,6 +48,8 @@ private:
     static constexpr u32 page_size=128;
     std::array<std::unique_ptr<Node[]>,(slot_mask+page_size-1)/page_size> pages;
     u32 next_slot=0,page_count=0;
+    std::vector<Node*> address_pages;
+    mutable Node* recent_page=nullptr;
     std::unordered_map<AnmVm*,Node*> nodes;
     std::unordered_map<Node*,std::unique_ptr<Node>> overflow;
     std::vector<Node*> free_overflow;

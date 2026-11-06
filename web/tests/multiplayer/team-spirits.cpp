@@ -3,6 +3,7 @@
 #include "../../cpp/game/EnemyAnmHost.hpp"
 #include "../../cpp/game/LaserScene.hpp"
 #include "../../cpp/game/Hud.hpp"
+#include "../../cpp/game/SpellRecords.hpp"
 #include "../../cpp/game/AnmCoordinates.hpp"
 #include "../../cpp/game/PlayerShots.hpp"
 #include "../../cpp/multiplayer/FrameImage.hpp"
@@ -416,6 +417,60 @@ void recycled_item_rollback(){
     require(overlapping.restore()&&vm->variables.position.x==11,"overlapping idle snapshots remain immutable");
 }
 
+void animation_page_order(){
+    AnmRegistry registry;
+    std::array<AnmVm*,270> nodes{};
+    std::array<u32,270> handles{};
+    std::array<std::vector<u32>,2> order;
+    for(u32 i=0;i<nodes.size();++i){
+        nodes[i]=registry.allocate();
+        require(nodes[i]&&registry.slot(*nodes[i])==i,"lookup newly allocated pages");
+        const bool alternate=i&1,prepend=i%5==0;
+        handles[i]=registry.submit(*nodes[i],u32(alternate)*4+u32(prepend)*2);
+        require(handles[i]!=0,"register multiple pages");
+        auto& group=order[alternate];
+        group.insert(prepend?group.begin():group.end(),handles[i]);
+    }
+    multiplayer::FrameImage image;
+    require(registry.save_rollback(image),"capture both animation queues");
+    for(u32 i=0;i<nodes.size();i+=3)require(registry.discard(*nodes[i]),"discard animations across pages");
+    for(u32 i=0;i<90;++i)require(registry.submit(*registry.allocate(),i&1?4:0)!=0,"reuse pages in another order");
+    require(image.restore(),"restore both animation queues");
+    for(u32 i=0;i<nodes.size();++i)
+        require(registry.slot(*nodes[i])==i&&registry.find(handles[i])==nodes[i],"resolve pages after rollback and reuse");
+    for(u32 group=0;group<order.size();++group)
+        for(u32 i=0;i<order[group].size();++i)
+            require(registry.ordered_handle(group,i)==order[group][i],"restore exact prepend and append order");
+}
+
+void spell_record_rollback(){
+    SpellRecords records;
+    require(records.begin(0,0,false,"First spell"),"start the first spell record");
+    multiplayer::FrameImage first,overlapping,second,branch;
+    records.save_rollback(first);
+    records.save_rollback(overlapping);
+    bool all=false;
+    require(records.capture(0,0,false,all),"capture before rolling back");
+    require(records.begin(100,8,true,"A different loadout"),"write a later spell record");
+    records.save_rollback(second);
+    require(first.restore()&&records.loadouts[0][0].captures[0]==0&&
+            records.aggregate[100].name.empty()&&records.loadouts[8][100].attempts[1]==0,
+            "restore both personal and aggregate histories across loadouts");
+    require(records.begin(0,0,false,"Replacement branch"),"start an alternate spell timeline");
+    records.save_rollback(branch);
+    require(overlapping.restore()&&records.aggregate[0].name=="First spell"&&
+            records.loadouts[0][0].attempts[0]==1,"overlapping snapshots stay immutable");
+    require(second.restore()&&records.loadouts[0][0].captures[0]==1&&
+            records.aggregate[100].name=="A different loadout","restore the later snapshot again");
+    require(branch.restore()&&records.aggregate[0].name=="Replacement branch"&&
+            records.aggregate[100].name.empty(),"restore an independent branch");
+    first.clear();overlapping.clear();second.clear();branch.clear();
+    multiplayer::FrameImage fresh;
+    records.save_rollback(fresh);
+    require(records.capture(0,0,false,all)&&fresh.restore()&&
+            records.loadouts[0][0].captures[0]==0,"capture after old snapshots are released");
+}
+
 void immutable_bullet_program(){
     struct Host final:BulletManagerHost,BulletFrameHost {
         BulletFrameHost& bullet(u32)override{return *this;}
@@ -695,6 +750,8 @@ int main(int argc, char** argv) {
     animation_page_rollback();
     animation_curve_rollback();
     recycled_item_rollback();
+    animation_page_order();
+    spell_record_rollback();
     immutable_bullet_program();
     logical_animation_draw();
     laser_restore(asset);
