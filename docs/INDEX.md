@@ -1,6 +1,6 @@
 # 文档总表
 
-共 438 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 446 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -47,6 +47,7 @@
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
+| 作品入口 | [ports/th17-mp/README.md](../ports/th17-mp/README.md) | TH17 MP · 东方鬼形兽联机版 |
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th19/README.md](../ports/th19/README.md) | 东方兽王园 TH19 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
@@ -65,6 +66,7 @@
 | 作品适配表 | [ports/th12/ADAPTATION.md](../ports/th12/ADAPTATION.md) | th12 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
+| 作品适配表 | [ports/th17-mp/ADAPTATION.md](../ports/th17-mp/ADAPTATION.md) | th17 MP 适配检查 |
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th19/ADAPTATION.md](../ports/th19/ADAPTATION.md) | th19 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
@@ -134,6 +136,7 @@
 | 作品源码文档 | [ports/th12/tools/replay-verifier/README.md](../ports/th12/tools/replay-verifier/README.md) | TH12 Replay verification |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
+| 作品源码文档 | [ports/th17-mp/docs/DEVELOPMENT.md](../ports/th17-mp/docs/DEVELOPMENT.md) | TH17 MP 开发指南 |
 | 作品源码文档 | [ports/th17/docs/DEVELOPMENT.md](../ports/th17/docs/DEVELOPMENT.md) | TH17 开发指南 |
 | 作品源码文档 | [ports/th19/docs/DEVELOPMENT.md](../ports/th19/docs/DEVELOPMENT.md) | TH19 开发与构建 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
@@ -206,6 +209,7 @@
 | 迁移记录 | [docs/migration/README.md](migration/README.md) | Monorepo 迁移记录 |
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
 | 迁移记录 | [docs/migration/th12-subtree-20261024.md](migration/th12-subtree-20261024.md) | th12 子树继承 ｜ 上游同源历史 |
+| 迁移记录 | [docs/migration/th17-subtree-20261106.md](migration/th17-subtree-20261106.md) | TH17 普通版与多人版目录历史 |
 | 历史记录 | [archive/README.md](../archive/README.md) | 历史记录 |
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
@@ -297,6 +301,7 @@
 | 历史记录 | [archive/th17-development-20261030/docs/当前开发状态.md](../archive/th17-development-20261030/docs/当前开发状态.md) | 鬼形兽 C++ 重建状态 |
 | 历史记录 | [archive/th17-development-20261030/docs/验收计划.md](../archive/th17-development-20261030/docs/验收计划.md) | 鬼形兽还原与发布验收 |
 | 历史记录 | [archive/th17-development-20261030/migration-validation.md](../archive/th17-development-20261030/migration-validation.md) | TH17 共用启动器接入验证 · 2026-10-30 |
+| 历史记录 | [archive/th17-directory-split-20261106/README.md](../archive/th17-directory-split-20261106/README.md) | TH17 独立普通版与多人版 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-boss-20261106/README.md](../archive/th17-extra-boss-20261106/README.md) | TH17 Extra Boss 三人回滚压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-dense-20261106/README.md](../archive/th17-extra-dense-20261106/README.md) | TH17 Extra 密集弹幕压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-finale-20261106/README.md](../archive/th17-extra-finale-20261106/README.md) | TH17 Extra 关底全程回滚压测 · 2026-11-06 |
@@ -430,6 +435,9 @@
 | 许可证与声明 | [ports/th15/portable/browser/LICENSE.eagler-common](../ports/th15/portable/browser/LICENSE.eagler-common) | LICENSE |
 | 许可证与声明 | [ports/th15/portable/sdl/third_party/miniaudio.LICENSE](../ports/th15/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15/web/cpp/game/THPRAC-LICENSE.txt](../ports/th15/web/cpp/game/THPRAC-LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/th17-mp/LICENSE-launcher.txt](../ports/th17-mp/LICENSE-launcher.txt) | GNU GENERAL PUBLIC LICENSE |
+| 许可证与声明 | [ports/th17-mp/THIRD-PARTY-NOTICES.txt](../ports/th17-mp/THIRD-PARTY-NOTICES.txt) | Original game and assets: Team Shanghai Alice / ZUN. |
+| 许可证与声明 | [ports/th17-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th17-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th17/LICENSE-launcher.txt](../ports/th17/LICENSE-launcher.txt) | GNU GENERAL PUBLIC LICENSE |
 | 许可证与声明 | [ports/th17/THIRD-PARTY-NOTICES.txt](../ports/th17/THIRD-PARTY-NOTICES.txt) | Original game and assets: Team Shanghai Alice / ZUN. |
 | 许可证与声明 | [ports/th17/portable/sdl/third_party/miniaudio.LICENSE](../ports/th17/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |

@@ -13,4 +13,4 @@
 
 纯延迟模式使用 2 帧输入延迟，双人和三人分别比对 1053 和 1055 帧。两组房间的回滚计数均为 0。[纯延迟房间数据](lockstep-rooms.json)
 
-运行包版本为 `1.0.14-eagler-c6c513b40444`，Wasm SHA-256 为 `c6c513b40444912f3127db276ab5fe9810a88d1f4de2b4df64a617d685daf805`。[房间数据](rollback-rooms.json) · [执行脚本](../../ports/th17/web/tests/multiplayer/room-browser.mjs)
+运行包版本为 `1.0.14-eagler-c6c513b40444`，Wasm SHA-256 为 `c6c513b40444912f3127db276ab5fe9810a88d1f4de2b4df64a617d685daf805`。[房间数据](rollback-rooms.json) · [执行脚本](../../ports/th17-mp/web/tests/multiplayer/room-browser.mjs)

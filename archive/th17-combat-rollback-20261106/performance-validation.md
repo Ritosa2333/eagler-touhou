@@ -17,4 +17,4 @@ Normal 双人房使用同样的输入延迟，比对了 7963 个确认帧，包�
 
 纯延迟模式使用 2 帧输入延迟，双人和三人分别比对 1055 和 1053 个确认帧。两组房间的回滚计数均为 0。[纯延迟房间数据](bounded-replay-lockstep.json)
 
-优化版运行包版本为 `1.0.14-eagler-380218a92daf`，Wasm SHA-256 为 `380218a92dafa472ba186101b4707d4304d9d1bc363e3751cedba34a1467e352`。[执行脚本](../../ports/th17/web/tests/multiplayer/room-browser.mjs)
+优化版运行包版本为 `1.0.14-eagler-380218a92daf`，Wasm SHA-256 为 `380218a92dafa472ba186101b4707d4304d9d1bc363e3751cedba34a1467e352`。[执行脚本](../../ports/th17-mp/web/tests/multiplayer/room-browser.mjs)

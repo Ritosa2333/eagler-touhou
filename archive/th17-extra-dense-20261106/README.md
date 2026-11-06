@@ -11,4 +11,4 @@
 
 运行时按条目读取原版 DATA，启动索引读取 3269 字节。流式读取和内存读取的 256 个条目逐字节一致。ANM 贴图上传后释放源像素，动画槽按页分配并保留稳定句柄。每轮发射共享一份变换程序，敌机改写单颗弹幕的变换时生成独立程序。动画快照记录回收槽，道具快照按实际存在的 VM 打包。
 
-优化版运行包为 `1.0.14-eagler-158a502cba91`。[开房脚本](../../ports/th17/web/tests/multiplayer/room-browser.mjs)
+优化版运行包为 `1.0.14-eagler-158a502cba91`。[开房脚本](../../ports/th17-mp/web/tests/multiplayer/room-browser.mjs)
