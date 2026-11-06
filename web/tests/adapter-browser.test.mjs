@@ -6,7 +6,7 @@ import {resolve,extname} from 'node:path';
 import {launchBrowser} from '../../../../tools/browser/launch.mjs';
 
 const repository=resolve(import.meta.dirname,'../../../..');
-const build=resolve(process.env.EAGLER_TH17_BUILD||resolve(repository,'ports/th17/build-eagler'));
+const build=resolve(process.env.EAGLER_TH17_BUILD||resolve(repository,'ports/th17-mp/build-eagler-multiplayer'));
 const data=resolve(process.env.EAGLER_TH17_DATA||resolve(repository,'games/th17/original/th17.dat'));
 const shared=resolve(process.env.EAGLER_TH17_SHARED||resolve(repository,'shared'));
 const sharedResources=['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path}));
