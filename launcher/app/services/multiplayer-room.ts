@@ -1615,7 +1615,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptMeasuredTiming,
     acceptTh09Match(value: unknown) {
       if (
-        product !== 'th09mp' ||
+        !['th03mp','th09mp'].includes(product ?? '') ||
         state.seat !== 0 ||
         state.spectatorRequested ||
         !state.connected ||

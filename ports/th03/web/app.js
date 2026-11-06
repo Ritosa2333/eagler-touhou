@@ -1,3 +1,4 @@
+import {ConfirmedMatchResults} from './match-results.js';
 import {DOSBoxPC98} from './dosbox-adapter.js';
 import {createRecorder} from './replay/recorder.js';
 import {battleProof} from './replay/battle-proof.js';
@@ -46,6 +47,7 @@ if (embedded) {
 }
 let emulator, manifest, database, activeLang, starting = false, dirty = 0, saved = 0, saveTask, saveTimer, netplay;
 let visibilityPaused = false, storageWarning = '';
+let matchResults;
 let nativePause, nativeState, pauseSeat = null, pauseSelection = 0, localBgm, nativeMusic, confirmedMusic;
 let localSfx, networkAudio;
 let replayRecorder;
@@ -481,6 +483,7 @@ function stepSynchronized(inputs,frame,replay=false){
       emulator.run();emulator.step();
       confirmedMusic?.stage(frame,nativeMusic.read(emulator.module.HEAPU8));
       nativeState=nativePause.update(nativeNow(),nativeMusic.dosRange(emulator.module.HEAPU8));
+      matchResults?.stage(frame,nativePause.matchResult(),nativePause.selecting);
       if(pauseSeat!==null&&nativeState?.menuState===2)pauseSelection=nativeState.menuChoice;
       if(pauseSeat!==null&&nativeState?.menuState===3){const result=nativeState.menuResult,seat=pauseSeat;nativePause.menuClear();if(result>1)nativePause.request(result-1,seat,nativeNow());pauseSeat=null;}
       nativePause.result(nativeNow());
@@ -502,14 +505,14 @@ function restoreSynchronized(frame){
   const saved=syncSnapshots.get(frame);if(!saved)throw Error(`同步快照已过期：${frame}`);
   emulator.module.netRestore(frame);lastUpload=-1;const state=saved.app;
   pauseSeat=state.pauseSeat;pauseSelection=state.pauseSelection;hiddenSeats.clear();for(const seat of state.hidden)hiddenSeats.add(seat);
-  visibilityPaused=state.visibilityPaused;nativePause.restore(state.nativePause);nativeMusic.restore(state.music);confirmedMusic.rewind(frame);controls.restore(state.controls);
+  visibilityPaused=state.visibilityPaused;nativePause.restore(state.nativePause);nativeMusic.restore(state.music);confirmedMusic.rewind(frame);matchResults?.rewind(frame);controls.restore(state.controls);
   $('pause-menu').hidden=$('pause-shade').hidden=true;
   if(hiddenSeats.size)emulator.pause();else emulator.run();
   for(const key of [...syncSnapshots.keys()])if(key>=frame)syncSnapshots.delete(key);
   return frame;
 }
 function confirmSynchronized(prefix,retainFrom=prefix){
-  confirmedMusic?.confirm(prefix);
+  confirmedMusic?.confirm(prefix);matchResults?.confirm(prefix);
   emulator.module.netConfirm?.(prefix,retainFrom);
   for(const key of [...syncSnapshots.keys()])if(key<retainFrom)syncSnapshots.delete(key);
 }
@@ -616,6 +619,9 @@ $('start').addEventListener('click', async () => {
     confirmedMusic = new ConfirmedMusic({command:(ax,hash)=>{
       if((ax>>>8)===0x0c)localSfx?.command(ax);else localBgm.command(ax,hash);
     }});
+    const reportMatch=match=>{if(online&&netQuery.get('role')==='host')globalThis.__eaglerPC98Emit?.({event:'runtime-info',th03Match:match});};
+    matchResults=new ConfirmedMatchResults(reportMatch);
+    if(emulator.isNetworkWorker)emulator.onMatch=reportMatch;
     if(emulator.isNetworkWorker)emulator.onAudio=(ax,hash)=>{if((ax>>>8)===0x0c)localSfx?.command(ax);else localBgm?.command(ax,hash);};
     else if(emulator.isWorker)emulator.onMusic=(ax,hash)=>localBgm?.command(ax,hash);
     // The device decodes music asynchronously; downloads cannot stall game start.

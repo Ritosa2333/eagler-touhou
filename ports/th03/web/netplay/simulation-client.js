@@ -49,6 +49,7 @@ export class WorkerNetworkSimulation {
     if(data.type==='fatal'||data.type==='error'){this.fail(Error(data.message));return;}
     if(data.type==='progress'){this.onProgress?.(data.message);return;}
     if(data.type==='exit'){this.state='exited';this.config.onExit?.();this.onExit?.();return;}
+    if(data.type==='confirmed-match'){this.onMatch?.(data.match);return;}
     if(data.type==='confirmed-audio'){for(const event of data.events||[])this.onAudio?.(...event);return;}
     if(data.type!=='reply')return;
     const pending=this.pending.get(data.id);if(!pending)return;

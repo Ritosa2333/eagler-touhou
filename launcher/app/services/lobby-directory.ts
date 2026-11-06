@@ -291,7 +291,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         initial,
         ...(Number.isInteger(seat?.loadout) && Number(seat?.loadout) >= 0 && Number(seat?.loadout) < policy.loadouts.length ? {loadout: Number(seat?.loadout)} : {}),
         ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
-        ...(row.product === 'th09mp'
+        ...((row.product === 'th03mp' || row.product === 'th09mp')
           ? {
               machineSign:
                 typeof seat?.machineSign === 'string'

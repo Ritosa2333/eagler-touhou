@@ -1,3 +1,4 @@
+import {ConfirmedMatchResults} from '../match-results.js';
 import {NativePause} from '../native-pause.js';
 import {battleProof} from '../replay/battle-proof.js';
 import {NativeMusic,ConfirmedMusic} from '../native-music.js';
@@ -5,10 +6,11 @@ import {createFrameControls} from './frame-controls.js';
 import {readNativeCoreDiagnostics} from '../network-performance.js';
 // All mutable guest/bridge/control state stays on the simulation thread.
 export class NetworkSimulation {
-  constructor(emulator,{patch,music,focusEnabled,touchUnlimitedAllowed,language='cn',fullHash=false},onAudio=()=>{}){
+  constructor(emulator,{patch,music,focusEnabled,touchUnlimitedAllowed,language='cn',fullHash=false},onAudio=()=>{},onMatch=()=>{}){
     this.emulator=emulator;this.language=language;this.pause=new NativePause(()=>emulator,patch);this.music=new NativeMusic(music);
     this.controls=createFrameControls(emulator,this.pause,{focusEnabled,touchUnlimitedAllowed});
     this.audio=new ConfirmedMusic({command:(...event)=>onAudio(event)});
+    this.matches=new ConfirmedMatchResults(onMatch);
     this.snapshots=new Map();this.hidden=new Set();this.pauseSeat=null;this.selection=0;this.state=null;this.fullHash=fullHash;this.renderEpoch=0;
   }
   now(){return this.emulator.module.virtualNow;}
@@ -42,7 +44,7 @@ export class NetworkSimulation {
       const paused=this.pauseSeat!==null||this.hidden.size>0;
       this.controls.applyFrame(paused?inputs.map(input=>({...input,actions:[],touch:0})):inputs);
       if(!this.hidden.size){
-        e.run();e.step();this.audio.stage(frame,this.music.read(m.HEAPU8));this.update();
+        e.run();e.step();this.audio.stage(frame,this.music.read(m.HEAPU8));this.update();this.matches.stage(frame,this.pause.matchResult(),this.pause.selecting);
         if(this.pauseSeat!==null&&this.state?.menuState===2)this.selection=this.state.menuChoice;
         if(this.pauseSeat!==null&&this.state?.menuState===3){
           const result=this.state.menuResult,seat=this.pauseSeat;this.pause.menuClear();
@@ -61,11 +63,11 @@ export class NetworkSimulation {
   restore(frame){
     const saved=this.snapshots.get(frame);if(!saved)throw Error('同步快照已过期：'+frame);
     this.emulator.module.netRestore(frame);this.renderEpoch++;this.pauseSeat=saved.pauseSeat;this.selection=saved.selection;this.hidden=new Set(saved.hidden);
-    this.pause.restore(saved.pause);this.music.restore(saved.music);this.controls.restore(saved.controls);this.audio.rewind(frame);
+    this.pause.restore(saved.pause);this.music.restore(saved.music);this.controls.restore(saved.controls);this.audio.rewind(frame);this.matches.rewind(frame);
     if(this.pauseSeat===null)this.emulator.run();else this.emulator.pause();
     this.state=saved.state&&{...saved.state};for(const at of this.snapshots.keys())if(at>=frame)this.snapshots.delete(at);return frame;
   }
-  confirm(prefix,retainFrom){this.audio.confirm(prefix);this.emulator.module.netConfirm(prefix,retainFrom);for(const at of this.snapshots.keys())if(at<retainFrom)this.snapshots.delete(at);}
+  confirm(prefix,retainFrom){this.audio.confirm(prefix);this.matches.confirm(prefix);this.emulator.module.netConfirm(prefix,retainFrom);for(const at of this.snapshots.keys())if(at<retainFrom)this.snapshots.delete(at);}
   proof(){return battleProof(this.emulator,this.pause,this.controls,this.music,this.pauseSeat,this.selection,this.hidden);}
   hash(){
     const m=this.emulator.module,heap=m.HEAPU8,range=this.music.dosRange(heap);

@@ -607,7 +607,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (ownsPresentation && message.event === 'first-frame' && runtime?.getSnapshot().firstFrame) {reportGameLoaded(); transfer.launchAcknowledged();}
       if (message.event === 'network-request') titleNetwork.open();
       if (message.event === 'runtime-info' && message.netplayTiming) {calibration.record(message.netplayTiming, runtime!.getSnapshot().epoch ?? 0); roomSession?.service.acceptMeasuredTiming(message.netplayTiming);}
-      if (message.event === 'runtime-info' && message.th09Match) roomSession?.service.acceptTh09Match(message.th09Match);
+      if (message.event === 'runtime-info' && (message.th09Match || message.th03Match)) roomSession?.service.acceptTh09Match(message.th09Match || message.th03Match);
       if (message.event === 'notice' && typeof message.message === 'string' && message.message) feedback.toast(message.message);
       if (message.event === 'room-menu' && runtime?.getSnapshot().roomPreview && !runtime.getSnapshot().launched) {
         void nativeTouch.exitPlayerFullscreen().catch(reportError);

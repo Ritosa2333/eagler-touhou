@@ -766,10 +766,10 @@ test('TH01 directory marks ball counts other than two as special',async()=>{
 });
 
 test('TH03 versus rooms use the duel layout and mark disabled focus as a special rule',async()=>{
-  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live([room({product:'th03mp',capacity:2,disableFocus:true,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
+  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live([room({product:'th03mp',capacity:2,disableFocus:true,seats:[{initial:'A',online:true,stats:{wins:2,losses:1,minutes:0}},{initial:'B',online:true,stats:{wins:1,losses:2,minutes:0}}]})]);
   await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
   assert.equal(n('.lobby-seats').dataset.duel,'true');
-  assert.equal(n('.book-room-score-value').textContent,'VS');
+  assert.equal(n('.book-room-score-value').textContent,'2 : 1');
   assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','room.th03SpecialFocus'));
 });
 

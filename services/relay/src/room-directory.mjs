@@ -94,7 +94,7 @@ export function createRoomDirectory({
               initial: initial(seat.name),
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
-              ...(match[1] === 'th09mp'
+              ...(['th03mp','th09mp'].includes(match[1])
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
                       ? {

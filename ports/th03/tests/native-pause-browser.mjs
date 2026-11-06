@@ -88,7 +88,9 @@ try{
     await send(0,'Escape');await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.pauseSeat))===0,'round menu',30000);await new Promise(r=>setTimeout(r,500));await send(0,'ArrowDown');await new Promise(r=>setTimeout(r,400));await send(0,'KeyZ');
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===2,'round surrender',30000);
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'next round',60000);console.log('PASS native round surrender');
-    await send(1,'Escape');await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.pauseSeat))===1,'match menu',30000);await new Promise(r=>setTimeout(r,500));await send(1,'ArrowUp');await new Promise(r=>setTimeout(r,400));await send(1,'KeyZ');
+    assert.equal((await page.evaluate(()=>events.filter(e=>e.th03Match))).length,0,'one round is not a match win');
+    const roundDecides=process.env.PC98_TEST_ROUND_DECIDES==='1',loser=roundDecides?0:1;
+    await send(loser,'Escape');await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.pauseSeat))===loser,'match menu',30000);await new Promise(r=>setTimeout(r,500));await send(loser,roundDecides?'ArrowDown':'ArrowUp');await new Promise(r=>setTimeout(r,400));await send(loser,'KeyZ');
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===2,'match surrender',30000);
     for(let i=0;i<40;i++){
       const active=await Promise.all(frames().map(f=>f.evaluate(()=>window.th03SyncState?.selecting)));
@@ -96,6 +98,12 @@ try{
       await send(0,'KeyZ');await new Promise(r=>setTimeout(r,600));
     }
     await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>window.th03SyncState?.selecting)))).every(Boolean),'match returns to selection',60000);
+    await wait(()=>page.evaluate(()=>events.filter(e=>e.th03Match).length===1),'confirmed match outcome',10000);
+    assert.equal((await page.evaluate(()=>events.filter(e=>e.th03Match)))[0].th03Match.winner,roundDecides?1:0);
+    const match=(await page.evaluate(()=>events.find(e=>e.th03Match))).th03Match;
+    const score=await lobbies[0].send({type:'th09-match',serial:start.serial,...match},m=>m.room?.seats?.[match.winner]?.stats?.wins===1);
+    assert.equal(score.room.seats[match.winner].stats.wins,1);assert.equal(score.room.seats[match.winner^1].stats.losses,1);
+    await lobbies[1].wait(m=>m.room?.seats?.[match.winner]?.stats?.wins===1);
     console.log('PASS native match surrender');
     const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';

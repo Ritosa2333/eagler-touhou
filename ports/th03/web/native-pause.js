@@ -134,6 +134,16 @@ export class NativePause {
     }
     heap[at+f.alwaysPoint]=this.meta.signature==='TH03SOLOASSIST1!' ? points & 1 : 0;
   }
+  matchResult() {
+    const heap=this.getEmulator()?.module.HEAPU8,at=this.live,f=this.meta.fields;
+    if(!heap||this.meta.signature!=='TH03LOCALPAUSE1!'||!this.valid(heap,at)||heap[at+f.phase]!==2)return null;
+    const data=at-this.meta.mailboxCsOffset+(this.meta.dataSegment-this.meta.codeSegment)*16;
+    const loser=heap[data+0x38dd];
+    if(heap[data+0x38dc]!==2||loser>1)return null;
+    const winner=loser^1;
+    if(heap[data+0x65a6+winner*0x80+0x6c]<2)return null;
+    return {generation:new DataView(heap.buffer,heap.byteOffset,heap.byteLength).getUint16(at+f.generation,true),winner};
+  }
   markers() {
     const heap=this.getEmulator()?.module.HEAPU8,at=this.live,f=this.meta.fields;
     if(!heap||!this.valid(heap,at)||(heap[at+f.phase]!==1&&!(this.meta.signature==='TH03SOLOASSIST1!'&&heap[at+f.phase]===3)))return [];

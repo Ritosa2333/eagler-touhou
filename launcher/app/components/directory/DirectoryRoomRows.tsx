@@ -79,7 +79,7 @@ function RoomRow({
   const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
   const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
-  const duel = policy.gameplay === 'versus', hasScore=room.product==='th09mp';
+  const duel = policy.gameplay === 'versus', hasScore=room.product==='th09mp'||room.product==='th03mp';
   const score = hasScore&&room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS';
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
@@ -122,7 +122,7 @@ function RoomRow({
             </span>
             {room.phase !== 'lobby' && (hasScore || !!room.startedAt) && <>
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={hasScore?undefined:room.startedAt} elapsedMinutes={hasScore?minutes:undefined}/>
+              <RoomElapsed phase={room.phase} startedAt={room.product==='th09mp'?undefined:room.startedAt} elapsedMinutes={room.product==='th09mp'?minutes:undefined}/>
             </>}
           </div>
         </div>

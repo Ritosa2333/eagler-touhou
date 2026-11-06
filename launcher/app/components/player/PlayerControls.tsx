@@ -75,7 +75,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
     state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
   const mode = session.getPlayerMode(), spectating = mode === 'spectator';
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
-  const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
+  const th09Information = state.runtime?.launched === true && (room.product === 'th09mp' || room.product === 'th03mp') && !state.replayViewer;
   const cooperativeSpectator = state.runtime?.launched === true && state.runtime.spectator === true &&
     state.runtime.game !== 'th09' && !state.replayViewer;
   const informationColumn = th09Information || cooperativeSpectator;
@@ -86,7 +86,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
       {network && (
         <NetplayConnectionWindow
           network={network}
-          calibration={session.calibration}          onReturn={() => {
+          calibration={session.calibration}
+          onReturn={() => {
             if (room.room && network.connection?.ended) {
               void session.requestRuntimeClose().then(closed => closed ? navigation.closeRoomFullscreen() : undefined).catch(session.reportError);
             } else if (room.room) void session.exitRoomPlayerFullscreen().then(navigation.closeRoomFullscreen).catch(session.reportError);
@@ -95,8 +96,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         />
       )}
       <PlayerInformationColumn enabled={informationColumn} className={th09Information ? 'th09-player-information' : undefined}>
-      {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} />}
-      {th09Information && !roomWorkspace && (spectatorTimeline ? <SpectatorMatchScore wins={wins} minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
+      {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} score={room.product==='th03mp'?wins:undefined} />}
+      {th09Information && !roomWorkspace && (spectatorTimeline && room.product === 'th09mp' ? <SpectatorMatchScore wins={wins} minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
         names={[room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? '']}/>
         : !room.spectatorRequested && room.seat != null ? <Th09MatchStats wins={wins}
           minutes={Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
@@ -108,7 +109,8 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
           playbackControls={!!spectatorTimeline}
         >
           <NetplayCalibrationReport
-            model={session.calibration}            currentNetwork={() =>
+            model={session.calibration}
+            currentNetwork={() =>
               gameplay?.getSnapshot().diagnostics.runtimeNetplayQualityDiag ?? ''
             }
           />

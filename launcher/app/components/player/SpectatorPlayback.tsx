@@ -9,7 +9,7 @@ const presentations = new WeakMap<BrowserSession, {epoch: number | null; expande
 
 /** Cooperative reports/actions adapt to the same view used by TH09's native
  * timeline. The view owns controls, pointer handling and all timeline markup. */
-export function SpectatorPlayback({session}: {session: BrowserSession}) {
+export function SpectatorPlayback({session, score}: {session: BrowserSession; score?: readonly [number,number]}) {
   const state = useSyncExternalStore(session.spectatorPlayback.subscribe,
     session.spectatorPlayback.getSnapshot, session.spectatorPlayback.getSnapshot);
   const {t} = useLocale();
@@ -66,13 +66,13 @@ export function SpectatorPlayback({session}: {session: BrowserSession}) {
       received: state.received, target: state.target, paused, seeking: state.seeking,
       following: state.following, ended: state.ended, timeOrigin: state.min,
       liveDisabled: state.following && !state.paused && !state.seeking && position >= state.edge,
-      summaryText: currentNode ? labelFor(currentNode) : t('spectator.controls'),
+      summaryText: score ? `<${score[0]} : ${score[1]}>` : currentNode ? labelFor(currentNode) : t('spectator.controls'),
       durationText: `${clock(Math.max(0, position - state.min))} / ${clock(state.edge - state.min)}`,
       statusText: t(statusKey), lagText: t('spectator.lag', {seconds: Math.ceil(Math.max(0, state.received - position) / 60)}),
       marks: state.nodes.map(node => ({id: String(node.id), frame: node.frame, kind: node.kind,
         label: labelFor(node), current: node.id === currentNode?.id})),
     });
-  }, [session, state, t, retireView]);
+  }, [session, state, t, retireView, score?.[0], score?.[1]]);
 
   return state ? <div ref={host} className="spectator-playback-host"/> : null;
 }

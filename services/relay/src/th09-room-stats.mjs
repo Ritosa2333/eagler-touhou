@@ -1,14 +1,14 @@
 // Room-scoped panel statistics. The host reports confirmed match boundaries;
 // no gameplay packets, state snapshots or per-frame server work are involved.
 export function th09PlayerStats(room, clientId) {
-  if (!room.id.startsWith('th09mp-')) return undefined;
+  if (!/^th(?:03|09)mp-/.test(room.id)) return undefined;
   const value = room.th09Stats?.get(clientId);
   const frames = value?.frames || 0;
   return {wins:value?.wins || 0, losses:value?.losses || 0, minutes:Math.floor(frames/3600)};
 }
 
 export function acceptTh09MatchStats(room, run, clientId, message) {
-  if (!room.id.startsWith('th09mp-') || !run || run.ended ||
+  if (!/^th(?:03|09)mp-/.test(room.id) || !run || run.ended ||
       run.lobbyClientIds?.[0] !== clientId || run.lobbyClientIds.length !== 2 ||
       message.serial !== room.lobby.startSerial) return false;
   const {start, frames, winner} = message;

@@ -916,7 +916,7 @@ function lobbySnapshot(room) {
         ? {
             clientId: seat.clientId,
             name: seat.name || '',
-            ...(room.id.startsWith('th09mp-')
+            ...(/^th(?:03|09)mp-/.test(room.id)
               ? { stats: th09PlayerStats(room, seat.clientId) }
               : {}),
             loadout: seat.loadout,
@@ -1329,7 +1329,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       return;
     }
-    if (message.type === 'th09-match') {
+    if (message.type === 'th09-match' && /^th(?:03|09)mp-/.test(room.id)) {
       if (
         seat === 0 &&
         room.lobby.phase === 'running' &&

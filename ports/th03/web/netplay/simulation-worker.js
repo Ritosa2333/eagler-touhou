@@ -22,7 +22,7 @@ async function dispatch(method,args){
     const {DOSBoxPC98}=await import('../dosbox-adapter.js');
     emulator=await DOSBoxPC98.create({...setup.config,canvas,workerRuntime:true,lockstep:true,independentSfx:true,
       onError:error=>{failed=true;send({type:'fatal',message:error.message});},onExit:()=>send({type:'exit'})});
-    simulation=new NetworkSimulation(emulator,setup.bridge,event=>events.push(event));
+    simulation=new NetworkSimulation(emulator,setup.bridge,event=>events.push(event),match=>send({type:'confirmed-match',match}));
     return {runtime:emulator.module.mobileRuntime};
   }
   if(!simulation)throw Error('联机模拟线程尚未初始化');
