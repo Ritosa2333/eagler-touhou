@@ -2118,7 +2118,7 @@
   "settings_th02RapidFire": "Rapid fire",
   "settings_th03Focus": "Enable focus movement",
   "room_th03DisableFocus": "Disable focus movement",
-  "room_th03SpecialFocus": "Special rule: focus disabled",
+  "room_th03SpecialFocus": "Focus disabled",
   "room_th01BallCount": "Number of balls",
-  "room_th01SpecialBalls": "Special rule: {count} balls"
+  "room_th01SpecialBalls": "{count} balls"
 }

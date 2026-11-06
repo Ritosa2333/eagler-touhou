@@ -155,7 +155,7 @@ test('TH01 ball count is host controlled and reaches runtime options',async()=>{
   assert.equal(f.service.runtimeOptions().netplayBallCount,2);
   await act(()=>f.service.setRoomSettings({ballCount:6}));assert.equal(f.socket.sent.findLast(m=>m.type==='settings').ballCount,6);
   await f.receive({ballCount:6,adonisMode:1});assert.equal(f.service.runtimeOptions().netplayBallCount,6);
-  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'特殊玩法：6 球');
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'6 球');
   await f.receive({ballCount:6,phase:'running',adonisMode:1});assert.equal(n('#mpTh01BallCount').disabled,true);
   const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({ballCount:1}));assert.equal(f.socket.sent.length,count);
 });
@@ -166,7 +166,7 @@ test('TH03 focus rule belongs to the host and reaches runtime options',async()=>
   await click('#mpTh03DisableFocus');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableFocus,true);
   await f.receive({disableFocus:true});assert.equal(toggle.getAttribute('aria-checked'),'true');
   assert.equal(f.service.runtimeOptions().netplayDisableFocus,true);
-  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'特殊玩法：禁用低速');
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'禁用低速');
   await f.receive({disableFocus:true,phase:'running'});assert.equal(toggle.disabled,true);
   const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableFocus:false}));assert.equal(f.socket.sent.length,count);
 });
