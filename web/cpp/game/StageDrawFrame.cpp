@@ -8,7 +8,7 @@ StageDrawFrame::~StageDrawFrame(){for(auto& c:callbacks)scheduler.remove(c);}
 bool StageDrawFrame::fail(const std::string& message){if(error.empty())error=message;return false;}
 void StageDrawFrame::prepare_camera(){renderer.flush();auto camera=scene.script.state.camera;camera.direction=scene.camera_direction();auto& v=views.view(DrawCamera::Playfield);v.viewport=viewport;v.camera=stage_camera(camera,viewport);renderer.set_viewport(v.viewport);renderer.set_camera(v.camera);renderer.offset=v.offset;}
 void StageDrawFrame::fog_parameters(){const auto& fog=scene.script.state.camera.fog;graphics.set_fog_color(fog.color);graphics.set_fog_range(fog.near_distance,fog.far_distance);}
-bool StageDrawFrame::layers(i32 first,i32 last){for(i32 layer=first;layer<=last;layer++)if(!scene.draw(renderer,graphics,layer,viewport,playfield_origin))return fail(scene.error);renderer.flush();return true;}
+bool StageDrawFrame::layers(i32 first,i32 last){if(!scene.draw_layers(renderer,graphics,first,last,viewport,playfield_origin))return fail(scene.error);renderer.flush();return true;}
 bool StageDrawFrame::background(){
     if(retain_outgoing&&(state.flags&4)&&state.transition.current>=30)return true;
     if(!(state.flags&4)||state.transition.current<60){prepare_camera();graphics.set_depth_mask(true);renderer.flush();graphics.set_depth_compare(Compare::LessEqual);fog_parameters();const u32 color=(state.flags&4)&&signed_bits(scene.frames)<34?0:scene.script.state.camera.fog.color;if(!graphics.clear_target(color,&viewport)||!graphics.clear_depth(&viewport))return fail("Background region clear failed");}
