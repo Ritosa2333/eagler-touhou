@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
+      "base": "235ab562c539e81f43b94d109b44527d3a7a6573",
       "history": [
         {
           "kind": "manual",
@@ -1206,6 +1206,17 @@
             "ports/th17-mp/web/tests/adapter-browser.test.mjs"
           ],
           "note": "同步标题点按、捕获取消与确认脉冲的处理，保留多人房间标题流程并接收浏览器回归。"
+        },
+        {
+          "kind": "manual",
+          "base": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
+          "source": "235ab562c539e81f43b94d109b44527d3a7a6573",
+          "targetHead": "bf79550822cb6e18563d88ea6228a2d718a9c97c",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/AnmRegistry.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRegistry.hpp"
+          ],
+          "note": "两侧接收有序页地址查找和最近页缓存，多人回滚保持地址索引有效并恢复原动画队列顺序。"
         }
       ]
     }
