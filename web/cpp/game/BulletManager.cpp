@@ -12,10 +12,14 @@ void BulletManager::reset(){
         s.boost=s.acceleration.timer=s.approach.timer=s.angular.timer=s.drift.timer=s.position_curve.timer=s.turn.timer=s.homing.timer=s.wait=s.invulnerability=s.freeze=s.lifetime=s.spawn=s.graze_flash=s.graze_duration=zero;
         s.reflection.bounds={};s.transform_sound=0;s.phase=0;s.scale=0;s.cancellation_script=0;s.graze_interval=0;
         slot.free_next=free_head;slot.active_next=slot.active_previous=none;slot.active=false;free_head=i;
+        slot.inactive_image.reset();slot.pristine=true;
     }
+    pristine_state=slots.front().state;
 }
 u32 BulletManager::acquire()noexcept{
-    if(free_head==none)return none;const u32 index=free_head;auto& slot=slots[index];free_head=slot.free_next;slot.free_next=none;slot.active=true;occupied[index/32]|=u32(1)<<(index%32);slot.active_previous=none;slot.active_next=active_head;if(active_head!=none)slots[active_head].active_previous=index;active_head=index;return index;
+    if(free_head==none)return none;const u32 index=free_head;auto& slot=slots[index];free_head=slot.free_next;slot.free_next=none;slot.active=true;occupied[index/32]|=u32(1)<<(index%32);slot.active_previous=none;slot.active_next=active_head;if(active_head!=none)slots[active_head].active_previous=index;active_head=index;
+    slot.inactive_image.reset();slot.pristine=false;
+    return index;
 }
 void BulletManager::recycle(u32 index)noexcept{
     if(index>=capacity)return;auto& slot=slots[index];auto& state=slot.state;if(!state.phase)return;

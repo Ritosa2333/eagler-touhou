@@ -48,6 +48,9 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     channel_.Clear();
     gate_.Clear();
     core_.Clear();
+    capture_clock_.Reset();
+    capture_now_us_ = 0;
+    confirmed_phase_ = false;
     next_capture_ = next_commit_ = replay_end_ = 0;
     corrections_ = resimulated_ = 0;
     error_ = nullptr;
@@ -84,14 +87,23 @@ bool Session::pump(std::uint64_t now_ms) {
     return !error_ && channel_.Pump(gate_, core_, now_ms, next_capture_ != 0);
 }
 
+void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
+    confirmed = setup_.rollback && confirmed;
+    if (confirmed && !confirmed_phase_) capture_clock_.BeginPhase(now_us);
+    confirmed_phase_ = confirmed;
+    capture_now_us_ = now_us;
+}
+
 bool Session::needs_input() const {
     return !error_ && channel_.Active() && channel_.Error() == Netplay::SessionChannel::Failure::None &&
-        gate_.CanStart() && next_capture_ <= std::max(next_frame(), replay_end_);
+        gate_.CanStart() && capture_clock_.CanCapture(next_capture_, std::max(next_frame(), replay_end_),
+            confirmed_phase_, capture_now_us_);
 }
 
 bool Session::capture_input(const Netplay::FrameInput& input, std::uint64_t now_ms) {
     if (!needs_input()) return false;
     if (!Netplay::IsValidFrameInput(input) || !core_.ScheduleLocalInput(next_capture_, input)) return fail("Invalid TH17 physical input");
+    capture_clock_.Captured(capture_now_us_);
     return channel_.LocalCaptured(core_, next_capture_++, now_ms);
 }
 
@@ -127,7 +139,7 @@ Session::Tick Session::simulate(World& world) {
     return Tick::Advanced;
 }
 
-Session::Tick Session::tick(World& world) {
+Session::Tick Session::tick(World& world, bool advance) {
     if (error_ || channel_.Error() != Netplay::SessionChannel::Failure::None) return Tick::Failed;
     if (!channel_.Active() || !gate_.CanStart()) return Tick::Waiting;
 
@@ -142,15 +154,23 @@ Session::Tick Session::tick(World& world) {
     }
 
     const bool correcting = replay_end_ != 0;
-    while (next_frame() < replay_end_) {
+    for (unsigned replayed = 0; next_frame() < replay_end_; ++replayed) {
+        if (replayed && !world.replay_budget(replayed)) {
+            return commit(world) ? Tick::Waiting : Tick::Failed;
+        }
+        world.replaying(next_frame() + 1 < replay_end_);
         const auto result = simulate(world);
-        if (result != Tick::Advanced) return result;
+        world.replaying(false);
+        if (result != Tick::Advanced) {
+            return result == Tick::Waiting && !commit(world) ? Tick::Failed : result;
+        }
     }
     replay_end_ = 0;
     if (!commit(world)) return Tick::Failed;
     // A completed correction can be presented while the next logical frame
     // waits for input. Leave that frame to the next ordinary tick.
     if (correcting) return Tick::Advanced;
+    if (!advance) return Tick::Waiting;
     const auto result = simulate(world);
     return result == Tick::Advanced && !commit(world) ? Tick::Failed : result;
 }

@@ -25,7 +25,7 @@ bool SceneDisplay::draw(double logical_seconds){
     if(!game->draw())return fail(game->error.empty()?game->background.error:game->error);
     if(outgoing_background&&!outgoing_background->error.empty())return fail(outgoing_background->error);
     if(!compositor->error.empty())return fail(compositor->error);if(!layers->error.empty())return fail(layers->error);if(!letters->error.empty())return fail(letters->error);
-    renderer.flush();if(!screenshots->finish_frame())return fail(screenshots->error);graphics.present();
+    renderer.flush();if(!graphics.logical_drawing&&!screenshots->finish_frame())return fail(screenshots->error);graphics.present();
     const double seconds=logical_seconds>=0?logical_seconds:double(SDL_GetPerformanceCounter())/double(SDL_GetPerformanceFrequency());
     if(!scene.presented(seconds))return fail(scene.error);return graphics.error.empty()||fail(graphics.error);
 }

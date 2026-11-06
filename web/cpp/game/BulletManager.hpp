@@ -1,5 +1,6 @@
 #pragma once
 #include "BulletState.hpp"
+#include <memory>
 #include <vector>
 namespace th17 {
 namespace multiplayer { class FrameImage; }
@@ -9,8 +10,14 @@ public:
     static constexpr u32 capacity=2000,none=UINT32_MAX;
 private:
     friend class BulletCheckpoint;
-    struct Slot {BulletState state;u32 free_next=UINT32_MAX,active_next=UINT32_MAX,active_previous=UINT32_MAX;bool active=false;};
+    struct Slot {
+        BulletState state;
+        std::shared_ptr<const BulletState> inactive_image;
+        u32 free_next=UINT32_MAX,active_next=UINT32_MAX,active_previous=UINT32_MAX;
+        bool active=false,pristine=true;
+    };
     std::vector<Slot> slots;u32 free_head=UINT32_MAX,active_head=UINT32_MAX;
+    BulletState pristine_state;
     std::array<u32,(capacity+31)/32> occupied{};
     BulletManagerHost& host;
     u32 acquire()noexcept;

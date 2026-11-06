@@ -32,7 +32,7 @@ std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH17_MULTIPLAYER
 struct RoomRuntime final : multiplayer::World {
- using Status=std::array<u32,38>;
+ using Status=std::array<u32,39>;
  struct Frame {
   u32 number=Netplay::INVALID_FRAME;
   multiplayer::FrameImage image;
@@ -45,7 +45,11 @@ struct RoomRuntime final : multiplayer::World {
  multiplayer::Session session{transport};
  multiplayer::SessionSetup setup;
  GameInput main_input;
- bool entered=false;
+ bool entered=false, trace=false;
+ double replay_deadline=0;
+ std::uint64_t now_ms=0;
+ u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
+ std::array<u32,3> phase_corrections{};
  u32 barrier=Netplay::INVALID_FRAME;
  u32 combat_corrections=0,spell_corrections=0;
 
@@ -53,10 +57,17 @@ struct RoomRuntime final : multiplayer::World {
  Status status(u32 number) const;
  bool can_predict() const override{return entered&&barrier!=session.next_frame()&&app->can_rollback();}
  void speculating(bool active) override{app->room_speculative=active;}
+ void replaying(bool intermediate) override{app->graphics.logical_drawing=intermediate&&app->can_rollback();}
+ bool replay_budget(unsigned replayed) const override{
+  return replayed<4&&emscripten_get_now()<replay_deadline;
+ }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
   auto& saved=state(frame);saved.number=frame;saved.image.clear();saved.image.save(main_input);
-  return app->save_rollback(saved.image);
+  const double begin=trace?emscripten_get_now():0;
+  const bool ok=app->save_rollback(saved.image);
+  if(trace){++capture_count;capture_us+=u32((emscripten_get_now()-begin)*1000);}
+  return ok;
  }
  bool restore(u32 frame) override{
   auto& saved=state(frame);
@@ -64,7 +75,13 @@ struct RoomRuntime final : multiplayer::World {
   if(frame<session.next_frame()){
    const auto& battle=app->scene()->battle;
    if(battle.bullet_scene->manager.visible_count||battle.laser_scene->manager.count())++combat_corrections;
-   if(battle.spell.flags&1)++spell_corrections;
+   if(trace){
+    // Classify the frame that will be corrected, not the current prediction head.
+    const auto& before=frame?state(frame-1).snapshot:Status{};
+    const unsigned phase=(before[30]&1)?2:before[38]?1:0;
+    ++phase_corrections[phase];
+    if(phase==2)++spell_corrections;
+   }else if(battle.spell.flags&1)++spell_corrections;
   }
   if(!saved.image.restore())return false;
   for(auto& future:history)if(future.number!=Netplay::INVALID_FRAME&&future.number>=frame){
@@ -109,22 +126,31 @@ struct RoomRuntime final : multiplayer::World {
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
   if(barrier==number)barrier=Netplay::INVALID_FRAME;
-  output.snapshot=status(number+1);
+  if(trace){
+   output.snapshot=status(number+1);
+   if(app->graphics.logical_drawing)++logical_draws;
+  }
   return true;
  }
- bool update(u32 held,const PlayerTouch& touch){
-  const auto now=std::uint64_t(emscripten_get_now());
-  if(!session.pump(now))return app->fail(session.error());
-  if(session.needs_input()){
-   Netplay::FrameInput sample(u16(held&0x3fbu));
-   if(touch.mode){
-    sample.analogMode=Netplay::AnalogMode::DirectTouch;
-    sample.x=touch.x;sample.y=touch.y;
-    sample.unlimited=touch.mode==2;
-   }
-   if(!session.capture_input(sample,now))return app->fail(session.error());
+ bool poll(){
+  const double now=emscripten_get_now();
+  now_ms=std::uint64_t(now);
+  session.capture_phase(entered&&!can_predict(),std::uint64_t(now*1000));
+  replay_deadline=now+8;
+  return session.pump(now_ms)||app->fail(session.error());
+ }
+ bool capture_physical(u32 held,const PlayerTouch& touch){
+  Netplay::FrameInput sample(u16(held&0x3fbu));
+  if(touch.mode){
+   sample.analogMode=Netplay::AnalogMode::DirectTouch;
+   sample.x=touch.x;sample.y=touch.y;
+   sample.unlimited=touch.mode==2;
   }
-  const auto result=session.tick(*this);
+  return session.capture_input(sample,now_ms)||app->fail(session.error());
+ }
+ bool update(bool advance=true){
+  const auto result=session.tick(*this,advance);
+  if(trace&&result==multiplayer::Session::Tick::Waiting&&session.repair_pending())++replay_slices;
   return result!=multiplayer::Session::Tick::Failed||app->fail(session.error());
  }
 };
@@ -146,8 +172,12 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
   }
   result[27]=battle.items->items.active_count;result[28]=battle.items->spirits.count();
   result[29]=battle.laser_scene->manager.count();result[30]=battle.spell.flags;result[31]=app->visual.calls;
-  // Hash semantic fields in execution order so diagnostics expose changes to
-  // movement and script state even when entity counts happen to match.
+  result[33]=battle.dialogue_present();result[34]=battle.items->roaring.state.flags;
+  result[35]=u32(battle.items->roaring.visuals.hit_delay);
+  result[36]=float_to_bits(battle.frame_state().rate);result[37]=app->visual.seed;
+  result[38]=battle.enemy_world.boss_at(0)||battle.enemy_world.boss_at(1)||battle.enemy_world.boss_at(2);
+  if(!trace)return result;
+  // The room fixture compares entity and script state on each confirmed frame.
   u32 hash=2166136261u;
   const auto word=[&](u32 value){hash=(hash^value)*16777619u;};
   const auto position=[&](const Vec3& p){word(float_to_bits(p.x));word(float_to_bits(p.y));word(float_to_bits(p.z));};
@@ -172,9 +202,6 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
    for(const auto& shot:p.shots.shots)if(shot.state){word(u32(shot.index));position(shot.motion.position);word(u32(shot.state));}
   }
   result[32]=hash;
-  result[33]=battle.dialogue_present();result[34]=battle.items->roaring.state.flags;
-  result[35]=u32(battle.items->roaring.visuals.hit_delay);
-  result[36]=float_to_bits(battle.frame_state().rate);result[37]=app->visual.seed;
  }
  return result;
 }
@@ -236,6 +263,12 @@ bool sample_and_tick(){
   else if(event.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(event.jdevice.which);
   else if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&controller&&SDL_GetJoystickID(controller)==event.jdevice.which){SDL_CloseJoystick(controller);controller=nullptr;int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
  }
+#if TH17_MULTIPLAYER
+ if(room){
+  if(!room->poll())return false;
+  if(!room->session.needs_input())return room->update();
+ }
+#endif
  bool keys[256]{};const auto* physical=SDL_GetKeyboardState(nullptr);const bool browser_keyboard=th17_browser_keyboard_owned();
  for(const auto& key:keyboard_map)if(key.hosted||(!browser_keyboard&&key.native!=SDL_SCANCODE_UNKNOWN&&physical[key.native])){if(key.vk<256)keys[key.vk]=true;if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;if(key.scan==28||key.scan==156)keys[13]=true;}
  const int mappedPad=eagler::input::BrowserGamepadState();eagler::input::ApplyGamepadVirtualKeys(keys,mappedPad);
@@ -260,7 +293,7 @@ bool sample_and_tick(){
  }
  if(ThpracUi::captures_game_input(*app)){held=buttons=0;app->touch={};}
 #if TH17_MULTIPLAYER
- if(room)return room->update(held,app->touch);
+ if(room)return room->capture_physical(held,app->touch)&&room->update();
 #endif
  controls.update(held);app->controller_buttons=buttons;
  if(app->display)app->display->presentation_fps=presentation_fps;
@@ -311,6 +344,16 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_confirmed(unsigned number){
  const auto& value=room->confirmed[number%room->confirmed.size()];
  return value[0]==number?value.data():empty.data();
 }
+EMSCRIPTEN_KEEPALIVE void th17_room_trace(unsigned enabled){
+ if(th17::sdl::room)th17::sdl::room->trace=enabled!=0;
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_performance(){
+ using namespace th17::sdl;
+ static std::array<unsigned,7> value{};
+ value=room?std::array<unsigned,7>{room->capture_count,room->capture_us,room->replay_slices,room->logical_draws,
+  room->phase_corrections[0],room->phase_corrections[1],room->phase_corrections[2]}:std::array<unsigned,7>{};
+ return value.data();
+}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_rollback(){
  using namespace th17::sdl;
  static std::array<unsigned,6> value{};
@@ -340,7 +383,11 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const double period=app->practice.enabled&&app->scene()?app->practice.speed.interval(app->progress.practice_record,practice_fast,practice_slow,practice_debug):touhou::sdl::FrameCadence::interval;
   if(period!=previous_period){cadence.reset();previous_period=period;}
   const auto ticks=cadence.advance(delta,period);bool ok=true;app->graphics.backend.defer=true;
-  if(ticks)th17_browser_frame_begin();unsigned completed=0;double predicted_tick=0;
+  bool work=ticks!=0;
+#if TH17_MULTIPLAYER
+  work=work||(room&&room->session.repair_pending());
+#endif
+  if(work)th17_browser_frame_begin();unsigned completed=0;double predicted_tick=0;
   // RAF's timestamp and emscripten_get_now share the performance clock. Work
   // already done before this callback has consumed part of this refresh.
   const double deadline=begin+std::max(0.,1000./60.-std::max(0.,begin-time));
@@ -351,7 +398,8 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
 #endif
    ok=sample_and_tick();
 #if TH17_MULTIPLAYER
-   if(!room||room->session.next_frame()!=previous_input_frame)++completed;
+   if(!room||(!room->session.repair_pending()&&room->session.next_frame()!=previous_input_frame))++completed;
+   if(room&&room->session.repair_pending())break;
 #else
    ++completed;
 #endif
@@ -360,10 +408,13 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
    // an overrun only after it happened. Keep unexecuted ticks as short debt.
    if(i+1<ticks&&tick_end+predicted_tick>=deadline){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);break;}
   }
+#if TH17_MULTIPLAYER
+  if(!ticks&&work)ok=room->poll()&&room->update(false);
+#endif
   if(ok&&completed)ok=ThpracUi::render(*app);
-  app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
-  if(ok&&completed)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
-  if(ticks)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
+  const bool presented=app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
+  if(ok&&presented)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
+  if(work)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
  },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 EMSCRIPTEN_KEEPALIVE void th17_touch(unsigned type,int id,float x,float y){
