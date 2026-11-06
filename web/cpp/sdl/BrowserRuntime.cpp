@@ -307,9 +307,9 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
   }
   battle.laser_scene->manager.each([&](const LaserObject& laser){word(laser.id);word(laser.flags);word(u32(laser.age.current));});
   const auto& item_manager=battle.items->items;
-  for(u32 n=1;n<=ItemManager::pool_size;++n){
-   const auto& item=item_manager.find(n)->state;
-   if(item.state){word(n);word(u32(item.kind));position(item.position);word(u32(item.age.current));}
+  for(u32 i=item_manager.next_used(0);i<ItemManager::pool_size;i=item_manager.next_used(i+1)){
+   const auto& item=item_manager.find(i+1)->state;
+   if(item.state){word(i+1);word(u32(item.kind));position(item.position);word(u32(item.age.current));}
   }
   for(u32 seat=0;seat<battle.pilot_count();++seat){
    const auto& p=battle.pilot(seat);word(u32(p.session.life_pieces));word(u32(p.session.bomb_pieces));word(u32(p.life.state));

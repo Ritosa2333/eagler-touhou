@@ -4,7 +4,11 @@
 
 namespace th17 {
 void ItemManager::save_rollback(multiplayer::FrameImage& image){
-    struct Visual {AnmVm* owner;AnmVm vm;};
+    struct Visual {
+        AnmVm* owner;
+        AnmVm vm;
+        explicit Visual(AnmVm& value):owner(&value),vm(value){}
+    };
     struct Idle {AnmVm* owner;std::shared_ptr<const AnmVm> vm;};
     struct SavedSlot {u32 index;ItemState state;u8 flags;bool arrow_ended;};
     std::vector<SavedSlot> saved;
@@ -17,7 +21,7 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
         return !vm.creation_parent&&!vm.rotation_parent&&(!vm.object_host||vm.object_host==&animations)&&
             !animations.registry.borrowed_root(vm);
     };
-    for(u32 i=0;i<slots.size();++i){
+    for(u32 i=next_used(0);i<pool_size;i=next_used(i+1)){
         const auto& s=slots[i];
         if(!(s.state.state||s.body||s.arrow))continue;
         ++slot_count;
@@ -32,7 +36,7 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
     idle.reserve(idle_count);
     const auto capture_visual=[&](AnmVm* vm,std::weak_ptr<const AnmVm>& cache,bool share){
         if(!vm)return;
-        if(!share){cache.reset();visuals.push_back({vm,*vm});return;}
+        if(!share){cache.reset();visuals.emplace_back(*vm);return;}
         auto cached=cache.lock();
         if(!cached){
             cached=std::shared_ptr<const AnmVm>(new AnmVm(*vm));
@@ -40,7 +44,7 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
         }
         idle.push_back({vm,std::move(cached)});
     };
-    for(u32 i=0;i<slots.size();++i){
+    for(u32 i=next_used(0);i<pool_size;i=next_used(i+1)){
         const auto& s=slots[i];
         const u8 mode=flags[i];
         if(!mode&&!s.state.state)continue;
@@ -77,11 +81,18 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
             *owner=visual.vm;return true;
         };
         auto next=saved.begin();
-        for(u32 i=0;i<slots.size();++i){
+        for(u32 i=next_used(0);i<pool_size;i=next_used(i+1)){
+            while(next!=saved.end()&&next->index<i)++next;
+            if(next!=saved.end()&&next->index==i)continue;
+            slots[i]={};
+            (*idle_visuals)[i]={};
+        }
+        used.fill(0);
+        for(const auto& s:saved){
+            const auto i=s.index;
+            used[i/32]|=u32(1)<<(i%32);
             auto& slot=slots[i];
             auto& cache=(*idle_visuals)[i];
-            if(next==saved.end()||next->index!=i){slot={};cache={};continue;}
-            const auto& s=*next++;
             slot.state=s.state;slot.arrow_ended=s.arrow_ended;
             if(!restore_visual(slot.body,cache.body,s.flags&1,s.flags&4)||
                !restore_visual(slot.arrow,cache.arrow,s.flags&2,s.flags&8))return false;

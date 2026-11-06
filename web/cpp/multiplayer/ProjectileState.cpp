@@ -7,7 +7,11 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
     image.save(free_head,active_head,occupied,context,minimum_distance_squared,world_paused,
         cancellation_rewards,graze_history,error,visible_count,draw_groups);
     static_assert(capacity <= UINT16_MAX);
-    struct Active {u16 index;BulletState state;};
+    struct Active {
+        u16 index;
+        BulletState state;
+        Active(u16 i,const BulletState& value):index(i),state(value){}
+    };
     struct Inactive {u16 index;std::shared_ptr<const BulletState> state;};
     std::vector<Active> active;
     std::vector<Inactive> inactive;
@@ -17,7 +21,7 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
     active.reserve(active_count);
     free.reserve(capacity);
     for(u32 index=active_head;index!=none;index=slots[index].active_next)
-        active.push_back({u16(index),slots[index].state});
+        active.emplace_back(u16(index),slots[index].state);
     for(u32 index=free_head;index!=none;index=slots[index].free_next)free.push_back(u16(index));
     for(u32 index=0;index<capacity;++index){
         auto& slot=slots[index];

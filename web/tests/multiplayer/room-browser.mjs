@@ -14,6 +14,8 @@ const extraFinale=process.argv.includes('--extra-finale');
 const launcherPreview=process.argv.includes('--launcher-preview');
 const verifyReplay=process.argv.includes('--replay');
 const checkPresentation=process.argv.includes('--check-presentation');
+const independent=process.argv.includes('--independent-pages');
+assert.ok(!independent||!verifyReplay,'Replay fixture uses the shared page');
 const renderScale=Number(process.env.TH17_ROOM_RENDER_SCALE??1);
 assert.ok(renderScale===1||renderScale===2);
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
@@ -129,7 +131,9 @@ try{
  const port=Number(/listening ws:\/\/127\.0\.0\.1:(\d+)/.exec(log)[1]);
  const endpoint='ws://127.0.0.1:'+port+'/?';
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
- browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--disable-background-timer-throttling','--disable-renderer-backgrounding','--autoplay-policy=no-user-gesture-required']});
+ const hardware=process.env.NATIVE_GPU==='1'||process.env.PIXEL_GPU==='1';
+ const gpuFlags=hardware?(process.platform==='win32'?['--enable-gpu','--use-gl=angle','--use-angle=d3d11']:['--enable-gpu']):['--use-angle=swiftshader','--enable-unsafe-swiftshader'];
+ browser=await launchBrowser({args:[...gpuFlags,'--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows','--autoplay-policy=no-user-gesture-required']});
  for(const seats of extraBoss?[3]:extended?[2]:[2,3]){
   const room='th17mp-room-test-'+seats,loadouts=Array.from({length:seats},(_,i)=>({character:i,shot:i}));
   const members=[];
@@ -149,8 +153,8 @@ try{
    netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:difficulty,netplayLoadouts:loadouts,
    renderScale,netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
   }));
-  const context=await browser.newContext({viewport:{width:seats*640,height:480}});
-  if(rollback)await context.addInitScript(({delayMs,jitterMs})=>{
+  const contexts=await Promise.all(Array.from({length:independent?seats:1},()=>browser.newContext({viewport:{width:independent?640:seats*640,height:480}})));
+  if(rollback)await Promise.all(contexts.map(context=>context.addInitScript(({delayMs,jitterMs})=>{
    const send=RTCDataChannel.prototype.send;
    let sequence=0;
    RTCDataChannel.prototype.send=function(payload){
@@ -161,24 +165,26 @@ try{
     globalThis.delayedPackets=(globalThis.delayedPackets||0)+1;
     setTimeout(()=>{if(this.readyState==='open')send.call(this,copy);},delayMs+(++sequence%5)*jitterMs/4);
    };
-  },{delayMs,jitterMs});
-  const page=await context.newPage(),errors=[];
+  },{delayMs,jitterMs})));
+  const pages=await Promise.all(contexts.map(context=>context.newPage())),page=pages[0],errors=[];
+  const pageFor=seat=>pages[independent?seat:0];
   let enableCpuThrottle;
   if(cpuThrottle>1){
-   const cdp=await context.newCDPSession(page);
-   const throttle=()=>cdp.send('Emulation.setCPUThrottlingRate',{rate:cpuThrottle});
+   const sessions=await Promise.all(contexts.map((context,index)=>context.newCDPSession(pages[index])));
+   const throttle=()=>Promise.all(sessions.map(cdp=>cdp.send('Emulation.setCPUThrottlingRate',{rate:cpuThrottle})));
    if(cpuWarmupThrough)enableCpuThrottle=throttle;
    else await throttle();
   }
-  page.on('pageerror',error=>errors.push(error.message));
+  for(const current of pages)current.on('pageerror',error=>errors.push(error.message));
   try{
-   await page.goto('http://127.0.0.1:'+server.address().port);
+   await Promise.all(pages.map(current=>current.goto('http://127.0.0.1:'+server.address().port)));
    for(let seat=0;seat<seats;seat++){
-    await page.evaluate(seat=>addRuntime(seat),seat);
-    await page.waitForFunction(epoch=>ready.has(epoch),seat+1,{timeout:45000});
+    await pageFor(seat).evaluate(seat=>addRuntime(seat),seat);
+    await pageFor(seat).waitForFunction(epoch=>ready.has(epoch),seat+1,{timeout:45000});
    }
-   await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
-   const frames=page.frames().filter(frame=>frame.url().includes('/runtime/'));
+   if(independent)await Promise.all(pages.map((current,seat)=>current.evaluate(seat=>startRuntime(seat),seat)));
+   else await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
+   const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
    for(const [seat,frame] of frames.entries()){
     await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale})=>{
      const callback=Module.onGameFrame;
@@ -187,6 +193,8 @@ try{
      globalThis.samples=new Map();
      globalThis.diagnostics={corrections:0,resimulated:0,maxPrediction:0,combatCorrections:0};
      globalThis.frameCosts=[];
+     globalThis.presentIntervals=[];
+     globalThis.densePresentIntervals=[];
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let previousCosts=Array(6).fill(0);
@@ -207,6 +215,14 @@ try{
        diagnostics.presentationStart??=now;
        diagnostics.presentationEnd=now;
        diagnostics.actualPresentations=(diagnostics.actualPresentations||0)+presented;
+       if(presented){
+        if(diagnostics.lastPresent){
+         const gap=now-diagnostics.lastPresent;
+         presentIntervals.push(gap);
+         if(bullets>=256&&phase===1)densePresentIntervals.push(gap);
+        }
+        diagnostics.lastPresent=now;
+       }
       }
       if(n>120&&(ticks||resimulated>diagnostics.resimulated)&&(!denseExtra||phase===1)){
        const confirmed=samples.get(recorded);
@@ -276,7 +292,7 @@ try{
    let cutoff=extendedTarget;
    try{await wait(async()=>{
     assert.deepEqual(errors,[]);
-    const failures=await page.evaluate(()=>events.filter(e=>e.event==='error'));
+    const failures=(await Promise.all(pages.map(current=>current.evaluate(()=>events.filter(e=>e.event==='error'))))).flat();
     assert.deepEqual(failures,[]);
     const status=await Promise.all(frames.map(frame=>frame.evaluate(()=>({samples:samples.size,diagnostics}))));
     const current=Math.min(...status.map(item=>item.diagnostics.lastConfirmed||0));
@@ -333,9 +349,12 @@ try{
      bossCosts.push({boss,nonspell:aggregate(rows.filter(entry=>entry.spell<0)),spell:aggregate(rows.filter(entry=>entry.spell>=0)),
       dense:aggregate(rows.filter(entry=>entry.bullets>=256))});
     }
-    const canvas=Module.canvas;
+    const canvas=Module.canvas,gl=canvas.getContext('webgl2'),info=gl?.getExtension('WEBGL_debug_renderer_info');
     return {...diagnostics,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
-     canvas:[canvas.width,canvas.height],
+     canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
+     presentIntervals:summarize(presentIntervals),
+     densePresentIntervals:{...summarize(densePresentIntervals),fps:densePresentIntervals.length?
+      densePresentIntervals.length*1000/densePresentIntervals.reduce((a,b)=>a+b):null},
      delayedPackets:globalThis.delayedPackets,
      updates:summarize(frameCosts.filter(entry=>!entry.repair).map(entry=>entry.time)),
      repairs:summarize(frameCosts.filter(entry=>entry.repair).map(entry=>entry.time)),
@@ -347,11 +366,13 @@ try{
      assert.deepEqual(lane.canvas,[640*renderScale,480*renderScale],'room uses the requested output resolution');
      assert.ok(lane.actualPresentations>0&&lane.presentationEnd>lane.presentationStart,'window commits are counted');
     }
-    const health=await page.evaluate(()=>events.filter(event=>event.event==='frame-health'));
+    const health=(await Promise.all(pages.map(current=>current.evaluate(()=>events.filter(event=>event.event==='frame-health'))))).flat();
     for(let seat=0;seat<seats;seat++){
      const samples=health.filter(event=>event.epoch===seat+1).slice(-5);
      assert.ok(samples.length>0&&samples.every(event=>Number.isFinite(event.fps)&&event.fps>=0),'frame health reports window commits');
-     if(cpuThrottle>1)assert.ok(samples.some(event=>event.fps<59),'frame health reports missed presentations');
+     const lane=diagnostics[seat];
+     const measured=lane.actualPresentations*1000/(lane.presentationEnd-lane.presentationStart);
+     if(measured<57)assert.ok(samples.some(event=>event.fps<59),'frame health reports missed presentations');
     }
    }
    const maxEnemyBullets=Math.max(...agreed.map(([,state])=>state[10]));
@@ -433,7 +454,8 @@ try{
    assert.ok(agreed.some(([,state])=>state[19]===3&&state[15]===initial[15]),'guest spends their own bomb');
    assert.ok(agreed.some(([,state])=>(state[12]|0)<(state[16]|0)),'left and right belong to different pilots');
    if(seats===3)assert.ok(agreed.some(([,state])=>state[21]<state[13]),'third pilot moved up independently');
-   await page.screenshot({path:resolve(out,seats+'p.png')});
+   if(independent)await Promise.all(pages.map((current,seat)=>current.screenshot({path:resolve(out,seats+'p-seat'+(seat+1)+'.png')})));
+   else await page.screenshot({path:resolve(out,seats+'p.png')});
    console.log(seats+' players, '+agreed.length+' matching confirmed frames, '+diagnostics.map(item=>item.corrections).join('/')+' corrections');
    if(verifyReplay){
     const replay=await frames[0].evaluate(()=>{
@@ -472,12 +494,12 @@ try{
     reports.at(-1).replay={playedThrough:240,seekTarget:150,canvasAdvanced:true};
     console.log(seats+' players, saved Replay plays, presents and seeks');
    }
-  }finally{await context.close();for(const socket of members)socket.close();}
+  }finally{await Promise.all(contexts.map(context=>context.close()));for(const socket of members)socket.close();}
  }
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,renderScale,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,extraBoss,extraFinale,independent,renderScale,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
   fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
   samples:finaleSamples})+'\n');

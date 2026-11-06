@@ -60,7 +60,7 @@ ItemFrameContext& select_player(ItemFrameContext& main,const std::array<ItemFram
 bool ItemManager::update(ItemFrameContext& primary,const std::array<ItemFrameContext*,2>& partners){
     error.clear();if(primary.character<0||primary.character>2){error="Invalid item frame character";return false;}animations.rate=primary.rate;cancel_density=0;active_count=0;
     const i32 seats=1+(partners[0]!=nullptr)+(partners[1]!=nullptr);
-    for(u32 index=0;index<pool_size;index++){
+    for(u32 index=next_used(0);index<pool_size;index=next_used(index+1)){
         auto& slot=slots[index];auto& s=slot.state;if(!s.state)continue;
         if(s.state==5){s.delay=wrapping_sub(s.delay,1);if(s.delay<0&&!falling(index+1))return false;continue;}
         auto& c=select_player(primary,partners,s);
