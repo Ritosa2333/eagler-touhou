@@ -15,6 +15,7 @@ class SceneDisplay {
     std::unique_ptr<ScreenCompositor> compositor;std::unique_ptr<GameDraw> game;std::unique_ptr<ScreenTargets> targets;
     std::unique_ptr<StageDrawFrame> outgoing_background;
     FrameCallback fps_callback;
+    bool story_coop=false;
     bool fail(const std::string&);
 public:
     std::string error;float presentation_fps=60;

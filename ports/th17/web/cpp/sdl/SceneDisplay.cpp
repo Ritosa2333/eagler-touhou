@@ -14,6 +14,7 @@ bool SceneDisplay::initialize(GameRun& run,GameRecords& records,SpellRecords& sp
     letters=std::make_unique<AsciiDrawSchedule>(scheduler,captions,renderer,views);
     compositor=std::make_unique<ScreenCompositor>(scheduler,animations,environment,renderer,graphics,views);
     compositor->skip_opening_screen_clear=scene.battle.pilot_count()>1;
+    story_coop=compositor->skip_opening_screen_clear&&run.stage>=1&&run.stage<=6;
     if(previous)outgoing_background=std::make_unique<StageDrawFrame>(scheduler,previous->background,previous->background_draw,animations,renderer,graphics,views,host);
     game=std::make_unique<GameDraw>(scene,run,records,spells,animations,renderer,graphics,views,captions,host);
     targets=std::make_unique<ScreenTargets>(animations,environment,views,*compositor,text_bank);
@@ -43,6 +44,13 @@ bool SceneDisplay::draw(double logical_seconds){
         game->background.hold_transition=hold;
         game->background.retain_outgoing=true;
     }
+    const auto& region=views.view(DrawCamera::Playfield).viewport;
+    const auto& background=game->background.viewport;
+    // The stage pass is the first draw after target selection. In steady
+    // story play it clears the same region before submitting any geometry.
+    compositor->skip_initial_playfield_clear=story_coop&&!outgoing_background&&
+        scene.background.ready()&&!(scene.background_flags&14)&&
+        region.x==background.x&&region.y==background.y&&region.width==background.width&&region.height==background.height;
     if(!game->draw())return fail(game->error.empty()?game->background.error:game->error);
     if(outgoing_background&&!outgoing_background->error.empty())return fail(outgoing_background->error);
     if(!compositor->error.empty())return fail(compositor->error);if(!layers->error.empty())return fail(layers->error);if(!letters->error.empty())return fail(letters->error);

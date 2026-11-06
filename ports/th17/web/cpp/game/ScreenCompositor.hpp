@@ -14,6 +14,7 @@ class ScreenCompositor {
 public:
  static constexpr std::array<i32,10> priorities{1,14,15,25,26,44,45,57,58,86};
  ScreenSurface main,alternate;std::array<AnmVm*,4> captures{};bool active=false,skip_opening_screen_clear=false;
+ bool skip_initial_playfield_clear=false;
  u32 clear_color=0xff000000;Vec2 playfield_size{384,448};std::array<std::function<bool()>,2> replacement;
  std::string error;
  ScreenCompositor(FrameScheduler&,AnmManager&,AnmEnvironment&,AnmRenderer&,ZunGraphics&,ScreenViews&);

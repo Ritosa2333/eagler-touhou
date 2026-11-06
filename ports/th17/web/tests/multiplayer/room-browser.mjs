@@ -21,6 +21,8 @@ assert.ok(renderScale===1||renderScale===2);
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
 const denseExtra=extraBoss||process.argv.includes('--dense-extra');
 const extended=throughStageTwo||process.argv.includes('--extended');
+const extendedSeats=Number(process.env.TH17_ROOM_SEATS??2);
+assert.ok(extendedSeats===2||extendedSeats===3);
 const difficulty=Number(process.env.TH17_ROOM_DIFFICULTY??(denseExtra?4:throughStageTwo?0:1));
 assert.ok(Number.isInteger(difficulty)&&difficulty>=0&&difficulty<=4);
 assert.ok(!throughStageTwo||difficulty!==4);
@@ -134,7 +136,7 @@ try{
  const hardware=process.env.NATIVE_GPU==='1'||process.env.PIXEL_GPU==='1';
  const gpuFlags=hardware?(process.platform==='win32'?['--enable-gpu','--use-gl=angle','--use-angle=d3d11']:['--enable-gpu']):['--use-angle=swiftshader','--enable-unsafe-swiftshader'];
  browser=await launchBrowser({args:[...gpuFlags,'--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows','--autoplay-policy=no-user-gesture-required']});
- for(const seats of extraBoss?[3]:extended?[2]:[2,3]){
+ for(const seats of extraBoss?[3]:extended?[extendedSeats]:[2,3]){
   const room='th17mp-room-test-'+seats,loadouts=Array.from({length:seats},(_,i)=>({character:i,shot:i}));
   const members=[];
   for(let seat=0;seat<seats;seat++){
@@ -186,7 +188,7 @@ try{
    else await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
    const frames=pages.flatMap(current=>current.frames().filter(frame=>frame.url().includes('/runtime/')));
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming})=>{
      const callback=Module.onGameFrame;
      const optimized=typeof Module._th17_room_trace==='function';
      Module._th17_room_trace?.(1);
@@ -195,6 +197,7 @@ try{
      globalThis.frameCosts=[];
      globalThis.presentIntervals=[];
      globalThis.densePresentIntervals=[];
+     globalThis.storyPresentIntervals=new Map();
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let previousCosts=Array(10).fill(0);
@@ -229,6 +232,14 @@ try{
          const gap=now-diagnostics.lastPresent;
          presentIntervals.push(gap);
          if(bullets>=256&&phase===1)densePresentIntervals.push(gap);
+         const state=storyTiming&&samples.get(recorded);
+         if(state){
+          const segment=state[3]>1&&state[4]<90?'entry':state[33]?'dialogue':
+           state[30]&1?'spell':state[38]?'nonspell':'route';
+          const key=`${state[3]}/${segment}`;
+          if(!storyPresentIntervals.has(key))storyPresentIntervals.set(key,[]);
+          storyPresentIntervals.get(key).push(gap);
+         }
         }
         diagnostics.lastPresent=now;
        }
@@ -292,7 +303,7 @@ try{
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale});
+    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming:checkPresentation&&difficulty!==4});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
@@ -374,6 +385,9 @@ try{
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
      presentIntervals:summarize(presentIntervals),
+     storyPresentIntervals:Object.fromEntries([...storyPresentIntervals].map(([segment,gaps])=>[segment,{
+      ...summarize(gaps),fps:gaps.length*1000/gaps.reduce((sum,gap)=>sum+gap,0),
+     }])),
      densePresentIntervals:{...summarize(densePresentIntervals),fps:densePresentIntervals.length?
       densePresentIntervals.length*1000/densePresentIntervals.reduce((a,b)=>a+b):null},
      delayedPackets:globalThis.delayedPackets,
