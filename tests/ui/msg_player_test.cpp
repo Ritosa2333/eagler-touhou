@@ -564,11 +564,15 @@ TEST(msg_bubble_width_excludes_nul_terminator) {
 }
 
 TEST(msg_real_st01a_bytes) {
-    // 真实资产字节级用例：repo 根相对 ../artifacts/reference/raw/st01a.msg
-    //（主仓库布局；隔离子仓验证可用 TH13_RAW_DIR 覆盖）。缺席即跳过。
+    // 真实资产字节级用例：tests/ui/run.sh 以工作区根（=artifacts 的上级）为
+    // cwd，故首选 "artifacts/…"；保留 ../ 与 ../../../ 形态覆盖 eagler-touhou
+    // 根/嵌套 worktree 布局（TH13_RAW_DIR 可覆盖）。缺席即跳过。
+    // 注：跳过曾长期吞掉本用例——2026-11-06 裁决轮实证 run.sh cwd 下
+    // 仅 ../artifacts 候选永不命中，本用例在正典环境从未真正执行。
     std::vector<std::string> candidates;
     if (const char* override_dir = std::getenv("TH13_RAW_DIR"))
         candidates.push_back(std::string(override_dir) + "/st01a.msg");
+    candidates.push_back("artifacts/reference/raw/st01a.msg");
     candidates.push_back("../artifacts/reference/raw/st01a.msg");
     candidates.push_back("../../../artifacts/reference/raw/st01a.msg");
     FILE* asset = nullptr;
@@ -619,14 +623,19 @@ TEST(msg_real_st01a_bytes) {
     CHECK_EQ(clears[1], 1);
     CHECK(texts_entry0 >= 10);
     CHECK_EQ(first_text, std::string(u8"さーて、幽霊の親玉を倒さないとね！"));
-    // 同句 34 CP932 字节（17 字）→ ((34-1)*8)&~0xf-28 = 228。
+    // 同句 34 CP932 字节（17 字）→ ((34*8)&~0xf)-28 = 244。宽度算术 0x428ae0
+    // 反汇编直读（2026-11-06 裁决，两处同构 0x428eb7/0x4290d9）：
+    //   lea edx,[eax+1]（start+1）→ 扫至 NUL（eax 停 NUL+1）→ sub eax,edx = len
+    //   → lea ecx,[eax*8] → and ecx,0xfffffff0 → fsub 28.0(0x4af038)。
+    // 即 len*8 对齐减 28——旧断言 228 是 (len-1)*8 旧实现的算术，ff8d2eb 改
+    // 公式时漏更新本用例（629 行），长期被"资产缺席即跳过"掩盖。
     RecordHost host;
     MsgPlayer player;
     CHECK(player.open(file, 0, host, error));
     for (int frame = 0; frame < 40 && player.state().lines_meta.empty(); frame++)
         player.step(false);
     CHECK_EQ(player.state().lines_meta.size(), 1u);
-    CHECK_EQ(player.state().lines_meta[0].bubble_width, 228.0f);
+    CHECK_EQ(player.state().lines_meta[0].bubble_width, 244.0f);
 }
 
 TEST(msg_ruby_and_cp932_metadata) {
