@@ -34,7 +34,11 @@ bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource*
         if(!texture.image.load(translated?patched:source,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
         const auto id=next_handle++;textures.emplace(id,std::move(texture));handles.push_back(id);backend.prepare(id);
     }
-    resources.emplace(&file,std::move(handles));return true;
+    resources.emplace(&file,std::move(handles));
+    // Sprite bounds are already cached and the device owns the prepared
+    // pixels, including any replacement atlas or format conversion.
+    for(auto& source:file.textures)std::vector<u8>().swap(source.pixels);
+    return true;
 }
 void GraphicsDevice::unload(const AnmResource& file){
     if(last_resource==&file){last_resource=nullptr;last_resource_handles=nullptr;}

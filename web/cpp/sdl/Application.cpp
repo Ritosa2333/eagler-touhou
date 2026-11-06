@@ -33,7 +33,7 @@ bool ApplicationState::read(const std::string& requested,std::vector<u8>& bytes)
    return true;
   }
  }
- if(!archive_bytes.empty()){const auto at=archive_names.find(name);if(at==archive_names.end()||!archive.read(at->second,bytes))return fail("Missing or invalid game archive entry: "+name);}
+ if(archive_file){const auto at=archive_names.find(name);if(at==archive_names.end()||!archive.read(at->second,bytes))return fail("Missing or invalid game archive entry: "+name);}
  else {size_t n=0;auto* data=static_cast<u8*>(SDL_LoadFile(("/assets/"+name).c_str(),&n));if(!data)return fail("Missing game asset: "+name);bytes.assign(data,data+n);SDL_free(data);}
  if(bytes.size()<=1024*1024&&name.size()>=4&&name.substr(name.size()-4)!=".wav"&&name.substr(name.size()-4)!=".anm")resource_cache.emplace(name,bytes);return true;
 }
@@ -43,7 +43,15 @@ bool ApplicationState::initialize(bool device){
  has_language_pack=SDL_GetPathInfo("/thcrap/th17/localization/options.json",&language_path);
  graphics.language_pack=has_language_pack;
  if(!graphics.initialize()||!fonts.initialize())return fail(graphics.error.empty()?fonts.error:graphics.error);graphics.backend.defer=true;
- size_t n=0;auto* packed=static_cast<u8*>(SDL_LoadFile("/th17.dat",&n));if(packed){archive_bytes.assign(packed,packed+n);SDL_free(packed);if(!archive.open(archive_bytes.data(),archive_bytes.size()))return fail("Invalid TH17 asset archive");for(u32 i=0;i<archive.entries.size();i++)archive_names.emplace(archive.entries[i].name,i);}
+ archive_file.reset(SDL_IOFromFile("/th17.dat","rb"));
+ if(auto* stream=archive_file.get()){
+  const auto size=SDL_GetIOSize(stream);
+  const auto read_at=[stream](u32 offset,u8* bytes,u32 count){
+   return SDL_SeekIO(stream,offset,SDL_IO_SEEK_SET)==offset&&SDL_ReadIO(stream,bytes,count)==count;
+  };
+  if(size<0||u64(size)>UINT32_MAX||!archive.open(u32(size),read_at))return fail("Invalid TH17 asset archive");
+  for(u32 i=0;i<archive.entries.size();i++)archive_names.emplace(archive.entries[i].name,i);
+ }
  if(!files.initialize(records,config,visual))return fail(files.error);std::memcpy(controller.values.data(),config.bytes.data()+4,20);volumes={config.music_volume(),config.sound_volume(),u8(config.auto_focus())};
  if(!audio_device.initialize(*this,device)||!volume(volumes.music_volume,volumes.sound_volume,0))return fail(audio_device.error);
  animations.resource_release=[this](const AnmResource& resource){graphics.unload(resource);};std::vector<u8> bytes;

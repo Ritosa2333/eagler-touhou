@@ -89,6 +89,8 @@ Windows 从 Visual Studio 开发者终端执行，可加 `-DCMAKE_LINKER_TYPE=SY
 
 多人 Wasm 使用 `node ports/th17/web/scripts/build-sdl-application.mjs --release --multiplayer` 构建，再用 `node ports/th17/portable/package-eagler.mjs --multiplayer` 打包。`node ports/th17/web/tests/multiplayer/room-browser.mjs` 启动本地 Relay 和 Chromium，创建双人和三人房，在 WebRTC 输入通道注入延迟并逐帧比较各端确认后的战斗状态。加 `--lockstep` 验证纯延迟模式，加 `--extended` 运行 Normal 双人长测，加 `--through-stage-two` 验证 Easy 第一面道中、非符、符卡和切关。`TH17_ROOM_DIFFICULTY=4` 从 Extra 开局。用 `TH17_ROOM_DELAY_MS`、`TH17_ROOM_JITTER_MS` 和 `TH17_ROOM_CPU_THROTTLE` 调整网络与 CPU 条件。脚本读取 `EAGLER_TH17_BUILD`、`EAGLER_TH17_DATA`、`TH17_ROOM_GOTHIC` 和 `TH17_ROOM_UNIFONT`，把截图和 JSON 报告写入 `TH17_ROOM_EVIDENCE`。
 
+加 `--dense-extra` 记录 Extra 的密集区段、活跃堆采样峰值和 Wasm 线性内存高水位。耗时统计以最近确认帧的敌弹数量分组，密集组从 256 颗开始，采样限于游戏画面。用 `TH17_ROOM_SAMPLES` 调整每个房间的确认帧样本数。
+
 ## 检查
 
 ```sh

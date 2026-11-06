@@ -49,6 +49,7 @@ target_sources(th17-team-spirits PRIVATE
     ${game}/BulletFormation.cpp ${game}/BulletFrame.cpp ${game}/BulletManager.cpp
     ${game}/BulletScene.cpp ${game}/BulletShooter.cpp ${game}/BulletSpawn.cpp
     ${game}/BulletState.cpp ${game}/BulletVisual.cpp
+    ${game}/EnemyCallbacks.cpp
     ${game}/CurveCancellation.cpp ${game}/CurveGeometry.cpp ${game}/CurveMotion.cpp
     ${game}/CurvePath.cpp ${game}/CurveProgram.cpp ${game}/LaserCancellation.cpp
     ${game}/LaserContact.cpp ${game}/LaserDynamics.cpp ${game}/LaserManager.cpp

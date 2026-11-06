@@ -26,20 +26,29 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         std::vector<Node*> children;
     };
     std::vector<SavedNode> saved;
-    std::unordered_set<Node*> seen;
+    std::array<u32,(slot_mask+31)/32> seen_slots{};
+    std::unordered_set<Node*> seen_other;
     std::array<std::vector<Node*>,2> order;
+    saved.reserve(active_count+external.size());
     const auto remember=[&](Node* n){
-        if(!n||!seen.insert(n).second)return;
+        if(!n)return;
+        if(n->slot<slot_mask){
+            auto& word=seen_slots[n->slot/32];
+            const auto bit=u32(1)<<(n->slot%32);
+            if(word&bit)return;
+            word|=bit;
+        }else if(!seen_other.insert(n).second)return;
         auto& row=saved.emplace_back(SavedNode{n,n->borrowed,n->borrowed?*n->borrowed:n->vm,n->handle,
             n->active,n->registered,n->alternate,n->frozen_root,{}});
         for(auto* child:n->children)row.children.push_back(child);
     };
     for(u32 group=0;group<groups.size();++group){
+        order[group].reserve(groups[group].size());
         for(auto* n:groups[group]){order[group].push_back(n);remember(n);}
     }
     for(const auto& entry:external)remember(entry.second.get());
     for(const auto& layer:layers)for(auto* vm:layer)remember(node(*vm));
-    image.save(generation,active_count,error);
+    image.save(generation,active_count,next_slot,error);
     image.restore_with([this,saved=std::move(saved),order=std::move(order),borrowed=external,
                         free_slots=free_slots,free_overflow=free_overflow,layers=layers]{
         for(auto& group:groups){

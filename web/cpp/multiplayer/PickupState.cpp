@@ -1,28 +1,31 @@
 #include "FrameImage.hpp"
 #include "../game/ItemSpirits.hpp"
 #include "../game/ScreenEffects.hpp"
-#include <optional>
 
 namespace th17 {
 void ItemManager::save_rollback(multiplayer::FrameImage& image){
-    struct Visual {AnmVm* owner=nullptr;std::optional<AnmVm> vm;};
-    struct SavedSlot {u32 index;ItemState state;Visual body,arrow;bool arrow_ended;};
-    const auto save_visual=[](const auto& owner){
-        Visual visual;
-        if(owner){visual.owner=owner.get();visual.vm=*owner;}
-        return visual;
-    };
+    struct Visual {AnmVm* owner;AnmVm vm;};
+    struct SavedSlot {u32 index;ItemState state;bool body,arrow,arrow_ended;};
     std::vector<SavedSlot> saved;
+    std::vector<Visual> visuals;
+    size_t visual_count=0;
+    for(const auto& slot:slots)visual_count+=bool(slot.body)+bool(slot.arrow);
+    visuals.reserve(visual_count);
     for(u32 i=0;i<slots.size();++i){
         const auto& s=slots[i];
-        if(s.state.state||s.body||s.arrow)saved.push_back({i,s.state,save_visual(s.body),save_visual(s.arrow),s.arrow_ended});
+        if(!(s.state.state||s.body||s.arrow))continue;
+        saved.push_back({i,s.state,bool(s.body),bool(s.arrow),s.arrow_ended});
+        if(s.body)visuals.push_back({s.body.get(),*s.body});
+        if(s.arrow)visuals.push_back({s.arrow.get(),*s.arrow});
     }
     image.save(free_slots,requests,cancel_density,cancel_stamp,active_count,motion_scale,error);
-    image.restore_with([this,saved=std::move(saved)]{
-        const auto restore_visual=[](auto& owner,const Visual& visual){
-            if(!visual.owner){owner.reset();return true;}
+    image.restore_with([this,saved=std::move(saved),visuals=std::move(visuals)]{
+        auto vm=visuals.begin();
+        const auto restore_visual=[&](auto& owner,bool present){
+            if(!present){owner.reset();return true;}
+            const auto& visual=*vm++;
             if(owner.get()!=visual.owner)return false;
-            *owner=*visual.vm;return true;
+            *owner=visual.vm;return true;
         };
         auto next=saved.begin();
         for(u32 i=0;i<slots.size();++i){

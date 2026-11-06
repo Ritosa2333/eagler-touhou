@@ -4,6 +4,7 @@
 #include "Interpolation.hpp"
 #include "PlayerCollision.hpp"
 #include "BulletAppearance.hpp"
+#include <memory>
 #include <string>
 namespace th17 {
 struct EnemySpawnRequest;struct MovingLaserRequest;struct StationaryLaserRequest;
@@ -58,7 +59,8 @@ struct BulletState {
     BulletReflection reflection{};BulletWrapping wrapping{};BulletDrift drift{};
     BulletPositionCurve position_curve{};i32 transform_sound=-1;
     BulletTurn turn{};BulletInitialMotion saved{};
-    std::array<BulletTransform,18> transforms{};i32 transform_index=0,transform_loop=0;BulletHoming homing{};
+    std::shared_ptr<const BulletProgram> program;
+    i32 transform_index=0,transform_loop=0;BulletHoming homing{};
     Timer wait{},invulnerability{},freeze{};i32 wait_outside=0,boost_stage=0,step_limit=0;
     i32 collision_delay=0,cancel_item=0,phase=1;u32 flags=0,visual_flags=0;
     ScalarInterpolation scale_curve{};float scale=1;
@@ -71,7 +73,8 @@ struct BulletState {
     BulletFrameResult update(const BulletFrameContext& context,Rng& random,BulletFrameHost& host,std::string& error);
     PlayerContact collide(const PlayerCollision& player,bool graze_only,float rate,Rng& random,Rng& visual_random,BulletContactHost& host,std::string& error);
     bool appearance(i32 type,i32 color,BulletAnimationHost& host,bool replacement,std::string& error);
-    bool initialize(const BulletShooter&,i32 column,i32 row,float aim,const Vec3& player,float minimum_distance_squared,Rng&,BulletFrameHost&,std::string& error);
+    const BulletProgram& transforms()const noexcept;
+    bool initialize(const BulletShooter&,i32 column,i32 row,float aim,const Vec3& player,float minimum_distance_squared,Rng&,BulletFrameHost&,std::string& error,const std::shared_ptr<const BulletProgram>&);
     bool cancel(i32 item_kind,float rate,Rng&,BulletCancellationRewards&,BulletFrameHost&,BulletContactHost&,std::string& error);
     void velocity(float speed,float angle)noexcept;
     bool update_boost(float rate)noexcept;

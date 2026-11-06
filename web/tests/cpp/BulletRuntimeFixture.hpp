@@ -9,7 +9,14 @@ API(bullet_state_field) void* bullet_state_field(BulletStateFixture* fixture,u32
 API(bullet_state_step) u32 bullet_state_step(BulletStateFixture* p,u32 kind,float rate){auto& s=p->state;switch(kind){case 0:return s.update_boost(rate);case 1:return s.update_acceleration(rate);case 2:return s.update_acceleration(rate,true);case 3:return s.update_angular(rate);case 4:return s.update_drift(rate);case 5:return s.reflect_edge(4,p->bounds);case 6:return s.reflect_edge(8,p->bounds);case 7:return s.reflect_edge(1,p->bounds);case 8:return s.reflect_edge(2,p->bounds);case 9:return s.update_reflection(p->bounds,p);case 10:return s.update_wrap(p->size,p);case 11:return s.update_position_curve(rate);case 13:return s.update_wait(rate,p->size);default:return s.update_turn(rate,p->player,p);}}
 API(bullet_sound_count) u32 bullet_sound_count(BulletStateFixture* p){return p->sounds;}
 API(bullet_sound_last) i32 bullet_sound_last(BulletStateFixture* p){return p->last_sound;}
-API(bullet_transform_read) void bullet_transform_read(BulletStateFixture* p,u32 slot,const u8* bytes){auto& t=(p->external_state?*p->external_state:p->state).transforms[slot];std::memcpy(t.floats.data(),bytes,16);std::memcpy(t.integers.data(),bytes+16,16);std::memcpy(&t.type,bytes+32,4);std::memcpy(&t.active,bytes+36,4);t.payload.clear();}
+static BulletTransform& edit_bullet_transform(BulletStateFixture* p,u32 index){
+    auto& state=p->external_state?*p->external_state:p->state;
+    auto program=std::make_shared<BulletProgram>(state.transforms());
+    auto& transform=(*program)[index];
+    state.program=std::move(program);
+    return transform;
+}
+API(bullet_transform_read) void bullet_transform_read(BulletStateFixture* p,u32 slot,const u8* bytes){auto& t=edit_bullet_transform(p,slot);std::memcpy(t.floats.data(),bytes,16);std::memcpy(t.integers.data(),bytes+16,16);std::memcpy(&t.type,bytes+32,4);std::memcpy(&t.active,bytes+36,4);t.payload.clear();}
 API(bullet_activate) u32 bullet_activate(BulletStateFixture* p){p->error.clear();return p->state.activate(p->player,p->random,p,p,p->error);}
 API(bullet_activation_error) const char* bullet_activation_error(BulletStateFixture* p){return p->error.c_str();}
 API(bullet_activation_rng) Rng* bullet_activation_rng(BulletStateFixture* p){return &p->random;}
@@ -47,7 +54,7 @@ API(bullet_manager_group_slot) u32 bullet_manager_group_slot(BulletManagerFixtur
 
 API(bullet_children_count) u32 bullet_children_count(BulletStateFixture* p){return p->emissions;}
 API(bullet_children_bytes) const u8* bullet_children_bytes(BulletStateFixture* p){return shooter_bytes(p->children);}
-API(bullet_object_payload) void bullet_object_payload(BulletStateFixture* p,u32 index,const char* text){auto& t=(p->external_state?*p->external_state:p->state).transforms[index];t.payload.assign(text,text+std::strlen(text)+1);}
+API(bullet_object_payload) void bullet_object_payload(BulletStateFixture* p,u32 index,const char* text){auto& t=edit_bullet_transform(p,index);t.payload.assign(text,text+std::strlen(text)+1);}
 API(bullet_object_count) u32 bullet_object_count(BulletStateFixture* p,u32 enemy){return enemy?p->spawned_count:p->object_lasers.count;}
 API(bullet_object_laser_kind) u32 bullet_object_laser_kind(BulletStateFixture* p){return p->object_lasers.kind;}
 API(bullet_object_laser) const u8* bullet_object_laser(BulletStateFixture* p){return p->object_lasers.bytes.data();}
