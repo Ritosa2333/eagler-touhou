@@ -30,5 +30,6 @@ public:
     bool update(ItemFrameContext&,const std::array<ItemFrameContext*,2>& partners={});
     bool draw(AnmRenderer&);
     u32 free_head(bool cancel)const noexcept{return free_slots[cancel].empty()?0:free_slots[cancel].back()+1;}
+    void save_rollback(multiplayer::FrameImage&);
 };
 }

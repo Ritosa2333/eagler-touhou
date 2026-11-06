@@ -71,11 +71,11 @@ TH17 普通版的产品能力表登记实际构建功能。逐项运行验收记
 
 ## 多人房间
 
-测试版大厅提供双人和三人合作房。每个席位选择原版角色与动物组合，使用自己的自机、火力、残机、Bomb 和原版 HUD。房间身份绑定难度、各席位配置、种子、输入延迟与 Wasm 构建。浏览器房间按确认输入推进，可设置 0–9 帧延迟。
+测试版大厅提供双人和三人合作房。每个席位选择原版角色与动物组合，使用自己的自机、火力、残机、Bomb 和原版 HUD。房间身份绑定难度、各席位配置、种子、输入时序与 Wasm 构建。回滚模式保留 12 帧战斗快照，方向最多预测两帧。纯延迟模式可设置 0–9 帧输入延迟。
 
 动物灵池、五格库存和暴走计时全队共享。有效席位中距离最近的玩家拾取灵体，距离相同按席位顺序处理。拾取残机碎片或 Bomb 碎片时，全队各得一份。满残玩家把自己的残机碎片转为 Bomb 碎片，其余席位按自己的库存结算。小 P 只给拾取者补充火力，双人房增加 `0.02`，三人房增加 `0.03`。
 
-原生会话测试覆盖迟到输入纠正和确认输出，关卡内的完整战斗快照待接入。资源测试覆盖多人合力触发暴走、碎片分发和独立溢出。
+战斗快照保存各席位的自机和 Bomb、敌机与 ECL 线程、弹幕和激光池、道具与共享暴走、符卡、背景、动画关系及随机数状态。迟到输入与预测有差异时，从最早受影响的帧恢复并重演。音效按连续确认帧提交。对话、暂停、曲目切换和关卡加载在确认帧进入，保持文字、音频和场景资源的创建顺序。
 
 ```sh
 cmake -S ports/th17/web/tests/multiplayer -B build/th17-multiplayer -G Ninja -DCMAKE_CXX_COMPILER=clang++
@@ -85,7 +85,7 @@ ctest --test-dir build/th17-multiplayer --output-on-failure
 
 Windows 从 Visual Studio 开发者终端执行，可加 `-DCMAKE_LINKER_TYPE=SYSTEM` 选用系统链接器。
 
-多人 Wasm 使用 `node ports/th17/web/scripts/build-sdl-application.mjs --release --multiplayer` 构建，再用 `node ports/th17/portable/package-eagler.mjs --multiplayer` 打包。`node ports/th17/web/tests/multiplayer/room-browser.mjs` 启动本地 Relay 和 Chromium，创建双人和三人房，逐帧比较各端的一面战斗状态。脚本读取 `EAGLER_TH17_BUILD`、`EAGLER_TH17_DATA`、`TH17_ROOM_GOTHIC` 和 `TH17_ROOM_UNIFONT`，把截图和 JSON 报告写入 `TH17_ROOM_EVIDENCE`。
+多人 Wasm 使用 `node ports/th17/web/scripts/build-sdl-application.mjs --release --multiplayer` 构建，再用 `node ports/th17/portable/package-eagler.mjs --multiplayer` 打包。`node ports/th17/web/tests/multiplayer/room-browser.mjs` 启动本地 Relay 和 Chromium，创建双人和三人房，在 WebRTC 输入通道注入延迟并逐帧比较各端确认后的战斗状态。加 `--lockstep` 验证纯延迟模式，加 `--extended` 运行双人长测。脚本读取 `EAGLER_TH17_BUILD`、`EAGLER_TH17_DATA`、`TH17_ROOM_GOTHIC` 和 `TH17_ROOM_UNIFONT`，把截图和 JSON 报告写入 `TH17_ROOM_EVIDENCE`。
 
 ## 检查
 

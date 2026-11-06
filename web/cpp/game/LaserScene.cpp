@@ -1,4 +1,7 @@
 #include "LaserScene.hpp"
+#if TH17_MULTIPLAYER
+#include "../multiplayer/FrameImage.hpp"
+#endif
 #include <cmath>
 namespace th17 {
 namespace {
@@ -31,7 +34,7 @@ struct LaserScene::MovingLaser final:LaserObject,LaserCancellationHost,LaserCont
             return lane.moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,player,scene.host,*this);
         });
     }
-    bool retire()override{return true;}
+    bool retire()override{visual.detach();return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{const i32 n=cancellation.rectangle(motion,flags,request.type,request.color,outside_count,honor,p,size,angle,reward);request.maximum_length=motion.maximum_length;if(n<0)error=cancellation.error;return n;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{const i32 n=cancellation.circle(motion,flags,request.type,request.color,outside_count,honor,p,radius,reward);request.maximum_length=motion.maximum_length;if(n<0)error=cancellation.error;return n;}
     bool cancel_all(i32 reward,bool honor)override{const i32 n=cancellation.all(motion.position,motion.angle,motion.length,request.type,request.color,outside_count,honor,reward,state);if(n<0)error=cancellation.error;return n>=0;}
@@ -67,7 +70,7 @@ struct LaserScene::StationaryLaser final:LaserObject,LaserCancellationHost,Laser
             return lane.stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,player,scene.host,*this);
         });
     }
-    bool retire()override{return true;}
+    bool retire()override{visual.detach();return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{MovingLaserMotion partial;partial.position=motion.position;partial.angle=motion.angle;partial.length=motion.length;const i32 n=cancellation.rectangle(partial,flags,request.type,request.color,outside_count,honor,p,size,angle,reward,true);motion.length=partial.length;if(n<0)error=cancellation.error;return n;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{MovingLaserMotion partial;partial.position=motion.position;partial.angle=motion.angle;partial.length=motion.length;const i32 n=cancellation.circle(partial,flags,request.type,request.color,outside_count,honor,p,radius,reward,true);motion.length=partial.length;if(n<0)error=cancellation.error;return n;}
     bool cancel_all(i32 reward,bool honor)override{const i32 n=cancellation.all(motion.position,motion.angle,motion.length,request.type,request.color,outside_count,honor,reward,state,true);motion.state=state;if(n<0)error=cancellation.error;return n>=0;}
@@ -101,7 +104,7 @@ struct LaserScene::CurveLaser final:LaserObject,CurveCancellationHost,LaserConta
             return lane.curved(motion,graze_only,rate,player,scene.host,*this);
         });
     }
-    bool retire()override{visual.retain_children_on_retire=true;return true;}
+    bool retire()override{visual.retain_children_on_retire=true;visual.detach();return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{if(cancellation.rectangle(motion,flags,request.color,outside_count,honor,p,size,angle,reward,scene.rate))return 0;error=cancellation.error;return -1;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{const i32 n=cancellation.circle(motion,flags,request.color,outside_count,honor,p,radius,reward,scene.rate);if(n<0)error=cancellation.error;return n;}
     bool cancel_all(i32,bool honor)override{const bool ok=cancellation.all(motion,request.color,outside_count,honor,state);if(!ok)error=cancellation.error;return ok;}
@@ -172,4 +175,40 @@ CurveProgram* LaserScene::curve_program(u32 id)noexcept{auto* object=manager.fin
 namespace th17 {
 u32 LaserScene::create_segmented(const SegmentedLaserRequest& request){error.clear();if(manager.count()>=LaserManager::capacity)return 0;auto object=std::make_unique<SegmentedLaser>(request);auto* laser=object.get();const u32 generation=manager.insert(std::move(object));laser->id=request.id;return generation;}
 MovingLaserMotion* LaserScene::segmented_motion(u32 id)noexcept{auto* object=manager.find(id);return object&&object->kind==LaserKind::segmented?&static_cast<SegmentedLaser*>(object)->motion:nullptr;}
+#if TH17_MULTIPLAYER
+void LaserScene::save_rollback(multiplayer::FrameImage& image){
+    image.save(error,rate,manager.generation,manager.query_position,manager.query_size,manager.query_count,manager.error);
+    image.restore_with([this,owners=manager.objects]{
+        for(auto& object:manager.objects){
+            // Graph restoration removes the abandoned links as a unit.
+            switch(object->kind){
+            case LaserKind::moving:static_cast<MovingLaser&>(*object).visual.linked=false;break;
+            case LaserKind::stationary:static_cast<StationaryLaser&>(*object).visual.linked=false;break;
+            case LaserKind::curved:static_cast<CurveLaser&>(*object).visual.linked=false;break;
+            case LaserKind::segmented:break;
+            }
+        }
+        manager.objects=owners;
+        return true;
+    });
+    const auto save_laser=[&](auto& laser){
+        auto& v=laser.visual;
+        image.save(laser.request,laser.motion,laser.program,laser.contact,laser.partner_contacts,laser.cancellation.error);
+        image.save(v.body,v.head,v.tip,v.type,v.color,v.curve_source,v.linked,v.retain_children_on_retire,v.error);
+    };
+    manager.each([&](LaserObject& laser){
+        image.save(laser.flags,laser.id,laser.state,laser.age,laser.outside_delay,laser.outside_count,laser.error);
+        switch(laser.kind){
+        case LaserKind::moving:save_laser(static_cast<MovingLaser&>(laser));break;
+        case LaserKind::stationary:save_laser(static_cast<StationaryLaser&>(laser));break;
+        case LaserKind::curved:save_laser(static_cast<CurveLaser&>(laser));break;
+        case LaserKind::segmented:{
+            auto& segment=static_cast<SegmentedLaser&>(laser);
+            image.save(segment.request,segment.motion,segment.script_vector,segment.script_width,segment.history);
+            break;
+        }
+        }
+    });
+}
+#endif
 }

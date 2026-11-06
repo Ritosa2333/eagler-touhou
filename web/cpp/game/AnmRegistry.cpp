@@ -40,7 +40,7 @@ bool AnmRegistry::attach(AnmVm& child,AnmVm& parent){
     auto* entry=node(child);auto* owner=node(parent);if(!entry||entry->borrowed||!entry->active||entry==owner||entry->parent){error="Animation child relationship invalid";return false;}
     // Player and bullet objects embed their root VM instead of allocating it
     // in the global pool. Track only its child list; never own its lifetime.
-    if(!owner){auto borrowed=std::make_unique<Node>();borrowed->borrowed=&parent;borrowed->active=true;owner=borrowed.get();external.emplace(&parent,std::move(borrowed));}
+    if(!owner){auto borrowed=std::make_shared<Node>();borrowed->borrowed=&parent;borrowed->active=true;owner=borrowed.get();external.emplace(&parent,std::move(borrowed));}
     if(!owner->active){error="Animation parent inactive";return false;}
     for(auto* ancestor=owner;ancestor;ancestor=ancestor->parent)if(ancestor==entry){error="Animation parent cycle";return false;}
     entry->parent=owner;entry->child_position=owner->children.insert(owner->children.begin(),entry->child_link);return true;

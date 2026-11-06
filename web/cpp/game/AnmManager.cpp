@@ -2,6 +2,7 @@
 namespace th17 {
 void AnmManager::unload(i32 id){auto found=banks.find(id);if(found==banks.end())return;if(last_instantiated_bank==found->second.get())last_instantiated_bank=nullptr;auto* resource=&found->second->data;registry.retire_resource(resource);if(environment.fallback_sprite_resource==resource)environment.fallback_sprite_resource=nullptr;retired_banks.push_back(std::move(found->second));banks.erase(found);resource_names.erase(id);collect_resources();}
 void AnmManager::collect_resources(){
+ if(rollback_leases)return;
  for(auto next=retired_banks.begin();next!=retired_banks.end();){const auto* resource=&(*next)->data;bool referenced=registry.references_resource(resource);if(!referenced)for(const auto& bank:banks){for(const auto& vm:bank.second->templates)if(vm.resource==resource||vm.sprite_resource==resource){referenced=true;break;}if(referenced)break;}
   if(referenced){++next;continue;}if(resource_release)resource_release(*resource);next=retired_banks.erase(next);
  }

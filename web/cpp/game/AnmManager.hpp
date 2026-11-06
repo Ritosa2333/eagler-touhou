@@ -9,6 +9,7 @@ class AnmManager final:public AnmObjectHost {
     std::unordered_map<i32,std::unique_ptr<Bank>> banks;
     std::vector<std::unique_ptr<Bank>> retired_banks;
     Bank* last_instantiated_bank=nullptr;
+    u32 rollback_leases=0;
     Rng& random;AnmEnvironment& environment;
     static void copy_template(AnmVm&,const AnmVm&);
     AnmVm* instantiate(AnmResource&,i32);
@@ -28,6 +29,7 @@ public:
     bool load(i32 id,const u8*,u32 size);
     bool load(i32 id,AnmResource&&);
     void unload(i32 id);void collect_resources();
+    bool save_rollback(multiplayer::FrameImage&);
     u32 resource_count()const noexcept{return banks.size();}
     u32 retired_resource_count()const noexcept{return retired_banks.size();}
     std::function<void(const AnmResource&)> resource_release;

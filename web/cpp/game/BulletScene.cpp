@@ -1,5 +1,8 @@
 #include "BulletScene.hpp"
 #include "BulletArea.hpp"
+#if TH17_MULTIPLAYER
+#include "../multiplayer/FrameImage.hpp"
+#endif
 namespace th17 {
 struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     BulletScene& scene;u32 index;BulletState& state;BulletVisual visual;bool cancelling=false;
@@ -77,4 +80,26 @@ bool BulletScene::cancel_all(i32 reward){
     error.clear();for(u32 i=manager.next_occupied(0);i!=BulletManager::none;i=manager.next_occupied(i+1)){auto& slot=*slots[i];if(slot.state.phase!=0&&slot.state.phase!=3){slot.visual.rate=manager.context.rate;if(!slot.cancel_bullet(0))return false;}}return error.empty();
 }
 bool BulletScene::cancel_slot(u32 index,i32 reward){error.clear();if(index>=slots.size()){error="Bullet cancellation slot outside pool";return false;}auto& slot=*slots[index];slot.visual.rate=manager.context.rate;return slot.cancel_bullet(reward)&&error.empty();}
+#if TH17_MULTIPLAYER
+void BulletScene::save_rollback(multiplayer::FrameImage& image){
+    manager.save_rollback(image);
+    image.save(cancellation_animations,error,drawing_disabled);
+    std::vector<u32> bound;
+    for(u32 i=0;i<slots.size();++i){
+        auto& slot=*slots[i];auto& v=slot.visual;
+        if(!v.resource)continue;
+        bound.push_back(i);
+        image.save(slot.cancelling,v.body,v.resource,v.manager,v.overlay_handle,v.rate,v.error);
+    }
+    image.restore_with([this,bound=std::move(bound)]{
+        auto next=bound.begin();
+        for(u32 i=0;i<slots.size();++i){
+            if(next!=bound.end()&&*next==i){++next;continue;}
+            auto& s=*slots[i];auto& v=s.visual;
+            s.cancelling=false;v.body={};v.resource=nullptr;v.manager=nullptr;v.overlay_handle=0;v.rate=1;v.error.clear();
+        }
+        return true;
+    });
+}
+#endif
 }

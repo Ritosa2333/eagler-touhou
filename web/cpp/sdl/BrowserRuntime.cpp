@@ -15,6 +15,7 @@
 #include <optional>
 #if TH17_MULTIPLAYER
 #include "../multiplayer/Session.hpp"
+#include "../multiplayer/FrameImage.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #endif
 EM_JS(void, th17_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
@@ -31,17 +32,58 @@ std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH17_MULTIPLAYER
 struct RoomRuntime final : multiplayer::World {
+ using Status=std::array<u32,38>;
+ struct Frame {
+  u32 number=Netplay::INVALID_FRAME;
+  multiplayer::FrameImage image;
+  std::vector<ApplicationState::RoomSound> sounds;
+  Status snapshot{};
+ };
+ std::array<Frame,multiplayer::Session::rollback_frames+1> history;
+ std::array<Status,16> confirmed{};
  Netplay::BrowserPeerTransport transport;
  multiplayer::Session session{transport};
  multiplayer::SessionSetup setup;
  GameInput main_input;
  bool entered=false;
+ u32 barrier=Netplay::INVALID_FRAME;
+ u32 combat_corrections=0,spell_corrections=0;
 
- bool can_predict() const override{return false;}
- bool capture(u32) override{return false;}
- bool restore(u32) override{return false;}
- bool confirm(u32,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&) override{return true;}
- bool step(u32,const Netplay::FrameDecision& frame) override{
+ Frame& state(u32 frame){return history[frame%history.size()];}
+ Status status(u32 number) const;
+ bool can_predict() const override{return entered&&barrier!=session.next_frame()&&app->can_rollback();}
+ void speculating(bool active) override{app->room_speculative=active;}
+ bool blocked() const override{return app->room_barrier;}
+ bool capture(u32 frame) override{
+  auto& saved=state(frame);saved.number=frame;saved.image.clear();saved.image.save(main_input);
+  return app->save_rollback(saved.image);
+ }
+ bool restore(u32 frame) override{
+  auto& saved=state(frame);
+  if(saved.number!=frame)return false;
+  if(frame<session.next_frame()){
+   const auto& battle=app->scene()->battle;
+   if(battle.bullet_scene->manager.visible_count||battle.laser_scene->manager.count())++combat_corrections;
+   if(battle.spell.flags&1)++spell_corrections;
+  }
+  if(!saved.image.restore())return false;
+  for(auto& future:history)if(future.number!=Netplay::INVALID_FRAME&&future.number>=frame){
+   future.image.clear();future.sounds.clear();future.number=Netplay::INVALID_FRAME;
+  }
+  if(barrier!=Netplay::INVALID_FRAME&&barrier>frame)barrier=Netplay::INVALID_FRAME;
+  return true;
+ }
+ bool confirm(u32 frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&) override{
+  auto& saved=state(frame);
+  if(saved.number!=frame)return app->fail("TH17 confirmed frame output is missing");
+  for(const auto& sound:saved.sounds)if(!app->audio(sound.id,sound.pan,sound.action,sound.queued))return false;
+  app->audio_device.update();
+  confirmed[(frame+1)%confirmed.size()]=saved.snapshot;
+  saved.image.clear();saved.sounds.clear();saved.number=Netplay::INVALID_FRAME;
+  return app->audio_device.error.empty()||app->fail(app->audio_device.error);
+ }
+ bool step(u32 number,const Netplay::FrameDecision& frame) override{
+  app->room_barrier=false;
   if(!entered){
    std::array<std::array<i32,2>,3> loadouts{};
    for(u32 seat=0;seat<setup.seats;++seat)
@@ -55,11 +97,20 @@ struct RoomRuntime final : multiplayer::World {
    return {input.unlimited?2:1,input.x,input.y};
   };
   main_input.update(frame.inputs[0].buttons);
+  if((main_input.pressed&0x100)&&!app->rollback_boundary()){barrier=number;return false;}
   app->touch=movement(frame.inputs[0]);
   for(u32 seat=1;seat<setup.seats;++seat)
    app->room_partners[seat-1]={frame.inputs[seat].buttons,movement(frame.inputs[seat])};
   app->controller_buttons=0;app->keyboard_state={};
-  return app->step(main_input.held,main_input.pressed,main_input.repeated,60,false);
+  auto& output=state(number);
+  if(!app->room_speculative)output.image.clear();
+  output.number=number;output.sounds.clear();app->room_sounds=&output.sounds;
+  const bool ok=app->step(main_input.held,main_input.pressed,main_input.repeated,60,false);
+  app->room_sounds=nullptr;
+  if(!ok){if(app->room_barrier)barrier=number;return false;}
+  if(barrier==number)barrier=Netplay::INVALID_FRAME;
+  output.snapshot=status(number+1);
+  return true;
  }
  bool update(u32 held,const PlayerTouch& touch){
   const auto now=std::uint64_t(emscripten_get_now());
@@ -78,6 +129,55 @@ struct RoomRuntime final : multiplayer::World {
  }
 };
 std::unique_ptr<RoomRuntime> room;
+RoomRuntime::Status RoomRuntime::status(u32 number)const{
+ Status result{};
+ result[0]=number;result[1]=setup.seats;result[2]=setup.local;
+ if(const auto* scene=app->scene()){
+  auto& battle=scene->battle;
+  result[3]=u32(battle.stage);result[4]=u32(scene->controller->counters[0]);
+  result[5]=u32(battle.items->roaring.state.count);result[6]=u32(battle.items->roaring.state.countdown.current);
+  result[7]=app->environment.game_rng.seed;result[8]=app->environment.game_rng.calls;
+  result[9]=battle.enemies->count();result[10]=battle.bullet_scene->manager.visible_count;result[11]=u32(battle.score.score);
+  for(u32 seat=0;seat<battle.pilot_count();++seat){
+   const auto& pilot=battle.pilot(seat);
+   result[12+seat*4]=u32(pilot.motion.position_fixed.x);result[13+seat*4]=u32(pilot.motion.position_fixed.y);
+   result[14+seat*4]=u32(pilot.session.extra_lives);result[15+seat*4]=u32(pilot.session.bombs);
+   result[24+seat]=u32(pilot.session.power);
+  }
+  result[27]=battle.items->items.active_count;result[28]=battle.items->spirits.count();
+  result[29]=battle.laser_scene->manager.count();result[30]=battle.spell.flags;result[31]=app->visual.calls;
+  // Hash semantic fields in execution order so diagnostics expose changes to
+  // movement and script state even when entity counts happen to match.
+  u32 hash=2166136261u;
+  const auto word=[&](u32 value){hash=(hash^value)*16777619u;};
+  const auto position=[&](const Vec3& p){word(float_to_bits(p.x));word(float_to_bits(p.y));word(float_to_bits(p.z));};
+  for(const auto* e:battle.enemy_world.enemies){
+   word(e->id);position(e->motion.position);word(e->flags);word(u32(e->life));
+   auto& scripts=battle.enemies->find(e->id)->scripts;
+   for(u32 n=0;n<scripts.count();++n){
+    const auto* code=scripts.at(n);word(u32(code->routine));word(u32(code->instruction_offset));word(float_to_bits(code->time));
+   }
+  }
+  auto& bullets=battle.bullet_scene->manager;
+  for(u32 n=bullets.first_active();n!=BulletManager::none;n=bullets.next_active(n)){
+   const auto& b=*bullets.state(n);word(n);position(b.motion.position);word(b.flags);word(u32(b.phase));word(u32(b.transform_index));
+  }
+  battle.laser_scene->manager.each([&](const LaserObject& laser){word(laser.id);word(laser.flags);word(u32(laser.age.current));});
+  for(u32 n=1;n<=ItemManager::pool_size;++n){
+   const auto& item=battle.items->items.find(n)->state;
+   if(item.state){word(n);word(u32(item.kind));position(item.position);word(u32(item.age.current));}
+  }
+  for(u32 seat=0;seat<battle.pilot_count();++seat){
+   const auto& p=battle.pilot(seat);word(u32(p.session.life_pieces));word(u32(p.session.bomb_pieces));word(u32(p.life.state));
+   for(const auto& shot:p.shots.shots)if(shot.state){word(u32(shot.index));position(shot.motion.position);word(u32(shot.state));}
+  }
+  result[32]=hash;
+  result[33]=battle.dialogue_present();result[34]=battle.items->roaring.state.flags;
+  result[35]=u32(battle.items->roaring.visuals.hit_delay);
+  result[36]=float_to_bits(battle.frame_state().rate);result[37]=app->visual.seed;
+ }
+ return result;
+}
 #endif
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
@@ -177,14 +277,15 @@ EMSCRIPTEN_KEEPALIVE int th17_initialize(){using namespace th17::sdl;if(running)
 #if TH17_MULTIPLAYER
 EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,const char* url){
  using namespace th17::sdl;
- if(!app||!app->title||running||room||!words||count!=18||words[0]!=1||!url||
-    words[1]>3||words[2]>=words[1]||words[3]>4||words[4]>65535||words[7]>9)return 0;
+ if(!app||!app->title||running||room||!words||count!=19||words[0]!=2||!url||
+    words[1]>3||words[2]>=words[1]||words[3]>4||words[4]>65535||words[7]>9||words[18]>1||
+    (words[18]&&words[7]))return 0;
  auto candidate=std::make_unique<RoomRuntime>();
  auto& setup=candidate->setup;
  setup.seats=std::uint8_t(words[1]);setup.local=std::uint8_t(words[2]);
  setup.difficulty=std::uint8_t(words[3]);setup.seed=th17::u16(words[4]);
  setup.room=words[5]|(std::uint64_t(words[6])<<32);
- setup.delay=std::uint8_t(words[7]);setup.rollback=false;
+ setup.delay=std::uint8_t(words[7]);setup.rollback=words[18]!=0;
  for(unsigned seat=0;seat<3;++seat){
   if(words[8+seat*2]>2||words[9+seat*2]>2)return 0;
   setup.loadouts[seat]={std::uint8_t(words[8+seat*2]),std::uint8_t(words[9+seat*2])};
@@ -198,31 +299,22 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
 EMSCRIPTEN_KEEPALIVE void th17_room_close(){th17::sdl::room.reset();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_status(){
  using namespace th17::sdl;
- static std::array<unsigned,24> value{};
- value.fill(0);
- if(!room||!app)return value.data();
- value[0]=room->session.next_frame();
- value[1]=room->setup.seats;
- value[2]=room->setup.local;
- if(const auto* scene=app->scene()){
-  auto& battle=app->scene()->battle;
-  value[3]=unsigned(battle.stage);
-  value[4]=unsigned(scene->controller->counters[0]);
-  value[5]=unsigned(battle.items->roaring.state.count);
-  value[6]=unsigned(battle.items->roaring.state.countdown.current);
-  value[7]=app->environment.game_rng.seed;
-  value[8]=app->environment.game_rng.calls;
-  value[9]=battle.enemies->count();
-  value[10]=battle.bullet_scene->manager.visible_count;
-  value[11]=unsigned(battle.score.score);
-  for(unsigned seat=0;seat<battle.pilot_count();++seat){
-   const auto& pilot=battle.pilot(seat);
-   value[12+seat*4]=unsigned(pilot.motion.position_fixed.x);
-   value[13+seat*4]=unsigned(pilot.motion.position_fixed.y);
-   value[14+seat*4]=unsigned(pilot.session.extra_lives);
-   value[15+seat*4]=unsigned(pilot.session.bombs);
-  }
- }
+ static RoomRuntime::Status value{};
+ value=room&&app?room->status(room->session.next_frame()):RoomRuntime::Status{};
+ return value.data();
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_confirmed(unsigned number){
+ using namespace th17::sdl;
+ static RoomRuntime::Status empty{};
+ if(!room)return empty.data();
+ if(!number)number=room->session.confirmed_frames();
+ const auto& value=room->confirmed[number%room->confirmed.size()];
+ return value[0]==number?value.data():empty.data();
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_rollback(){
+ using namespace th17::sdl;
+ static std::array<unsigned,6> value{};
+ value=room?std::array<unsigned,6>{room->session.next_frame(),room->session.confirmed_frames(),room->session.corrections(),room->session.resimulated_frames(),room->combat_corrections,room->spell_corrections}:std::array<unsigned,6>{};
  return value.data();
 }
 #endif

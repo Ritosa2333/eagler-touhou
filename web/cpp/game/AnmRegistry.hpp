@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 namespace th17 {
+namespace multiplayer { class FrameImage; }
 // A typed instance pool. Handles retain the original generation/slot scheme
 // so stale owners cannot accidentally address a reused animation.
 class AnmRegistry {
@@ -51,7 +52,7 @@ private:
     // Overflow handles share slot 0x3fff. Index their generation instead of
     // scanning every animation when a cancellation burst exceeds the pool.
     std::unordered_multimap<u32,Node*> overflow_handles;
-    std::unordered_map<AnmVm*,std::unique_ptr<Node>> external;
+    std::unordered_map<AnmVm*,std::shared_ptr<Node>> external;
     std::vector<u32> free_slots;
     std::array<NodeList,2> groups;
     // The original alternate-group mapping also accepts layer 31 -> 43;
@@ -83,5 +84,6 @@ public:
     u32 ordered_handle(bool alternate,u32 index)const noexcept;
     u32 ordered_count(bool alternate)const noexcept{return groups[alternate].size();}
     u32& generation_counter()noexcept{return generation;}
+    bool save_rollback(multiplayer::FrameImage&);
 };
 }

@@ -3,6 +3,9 @@
 #include "StageAssets.hpp"
 #include <algorithm>
 #include <optional>
+#if TH17_MULTIPLAYER
+#include "../multiplayer/FrameImage.hpp"
+#endif
 namespace th17 {
 struct GameBattle::Services {
     struct PlayerServices final:PlayerHost {
@@ -357,7 +360,7 @@ bool GameBattle::life_hud(i32 lives,i32 pieces,u32 seat){return hud?(hud->lives(
 bool GameBattle::bomb_hud(i32 stock,i32 pieces,u32 seat){return hud?(hud->bombs(stock,pieces,seat)||fail(hud->error)):seat||check(presentation.bomb_hud(stock,pieces),"Bomb HUD unavailable");}
 bool GameBattle::configure_hud(const HudStartContext& context,HudResources visuals,bool initialize_now){if(hud)return fail("HUD already configured");hud_context=context;hud=std::make_unique<Hud>(animations,enemy_world,session,player->motion,spell,visuals);hud->sound=[this](i32 id){return sound(id,0,PlayerShots::SoundAction::play,true);};enemy_world.boss_seconds=-1;return !initialize_now||hud->initialize(context)||fail(hud->error);}
 bool GameBattle::configure_dialogue(const StageConfiguration& stage,const MessageResource& messages,DialogueServices& host,DialogueResources visuals){if(dialogue||!hud)return fail("Dialogue configuration requires an idle HUD");dialogue_stage=&stage;message_resource=&messages;dialogue_host=&host;dialogue_resources=visuals;hud->update_dialogue=[this](){return update_dialogue();};return true;}
-bool GameBattle::scene_message(i32 id){if(id<0||!message_resource)return check(presentation.scene_message(id),"Dialogue scene command unavailable");dialogue.reset();dialogue=std::make_unique<Dialogue>(animations,services->dialogues,*dialogue_stage,dialogue_resources);return dialogue->initialize(*message_resource,id)||fail(dialogue->error);}
+bool GameBattle::scene_message(i32 id){if(id<0||!message_resource)return check(presentation.scene_message(id),"Dialogue scene command unavailable");if(!presentation.rollback_boundary())return false;dialogue.reset();dialogue=std::make_unique<Dialogue>(animations,services->dialogues,*dialogue_stage,dialogue_resources);return dialogue->initialize(*message_resource,id)||fail(dialogue->error);}
 bool GameBattle::message_complete(bool& done){if(!message_resource)return check(presentation.message_complete(done),"Dialogue state unavailable");done=!dialogue||dialogue->complete_pulse!=0;return true;}
 bool GameBattle::update_dialogue(){if(!dialogue)return true;const i32 result=dialogue->update({input.rate,input.held,input.pressed,input.shoot_frames,input.skip_frames});if(result<0)return fail(dialogue->error);if(result>0)dialogue.reset();return true;}
 bool GameBattle::configure_spell(SpellRecords& records,SpellVisualResources visuals){if(spell.flags&1)return fail("Cannot reconfigure an active spell");spell_context.visuals=std::move(visuals);spell_visuals=std::make_unique<SpellAnmHost>(animations,enemy_world,services->spells);spell_card=std::make_unique<SpellCard>(spell,score.score,records,items->roaring.state.flags,*spell_visuals);return true;}
@@ -444,6 +447,60 @@ i32 GameBattle::update_spirits(){
     return refresh_world()?1:5;
 }
 i32 GameBattle::update_hud(){if(hud){hud->current_seconds=enemy_world.boss_seconds;hud->game_flags=input.game_flags;hud->dialogue=dialogue_present();if(!hud->update(input.rate)){fail(hud->error);return 5;}}return error.empty()?1:5;}
+#if TH17_MULTIPLAYER
+void GameBattle::save_rollback(multiplayer::FrameImage& image){
+    image.save(primary_retired,spell_context,hud_context,input,world_running,session,spell,score,
+        effects.handles,effects.cursor,effects.error,grid_viewport,graze_total,graze_chapter,error);
+    image.restore_with([this]{dialogue.reset();targets.clear();services->projectiles.finish_contacts();return true;});
+    const auto save_pilot=[&](Player& p,BombController& b,i32 ch){
+        auto& v=p.visuals;auto& f=p.frame;auto& life=p.life;auto& shot=p.shot_context;auto& shooting=f.shooting;
+        image.save(p.resource.header,p.motion,p.damage,p.error,p.initialized,v.root,v.focus_handle,v.barrier_handle,
+            v.option_handles,p.options.power_level,p.options.error);
+        image.save(p.shots.shots,p.shots.error,p.shots.rate,p.shots.reward_counter,p.shots.reward_auxiliary,
+            shot.option_angles,shot.laser_power,shot.power,shot.power_step,shot.shoot_frame,shot.player_state,
+            shot.roaring_kind,shot.roaring_flags,shot.enemy_scene,shot.bomb_active,shot.screen_origin,shot.background_delta);
+        image.save(life.state,life.age,life.invulnerability,life.last_death_position,life.error,
+            f.input_age,f.ready_age,f.bounds,f.collision,f.error,shooting.shot,shooting.continuous,shooting.charge,
+            shooting.charge_origin,shooting.charge_handle,shooting.auxiliary,shooting.auxiliary_active,shooting.error);
+        image.restore_with([&p]{p.frame.context={};p.frame.active_rate=nullptr;p.shot_context.targets.clear();p.visuals.hitbox_display.reset();return true;});
+        auto& c=b.context;
+        image.save(b.position,b.angle,b.age,b.main_handle,b.secondary_handle,b.aura_handle,b.failed_spell,b.error,
+            b.score_popup,b.rate,c.hud_available,c.hud_collect,c.roaring_available,c.enemy_available);
+        if(ch==0){
+            auto& reimu=static_cast<BombReimu&>(b);
+            std::optional<std::array<BombOrb,24>> orbs;
+            if(reimu.orbs)orbs=*reimu.orbs;
+            image.restore_with([&reimu,orbs]{
+                if(orbs){if(!reimu.orbs)reimu.orbs=std::make_unique<std::array<BombOrb,24>>();*reimu.orbs=*orbs;}
+                else reimu.orbs.reset();
+                return true;
+            });
+        }else if(ch==2){
+            auto& youmu=static_cast<BombYoumu&>(b);
+            image.save(youmu.handles,youmu.sides,youmu.heights,youmu.timers,youmu.emitted,youmu.interval,youmu.spawn_age);
+        }
+    };
+    save_pilot(*player,*bomb,character);
+    for(u32 seat=0;seat<partner_count;++seat){
+        auto& p=*partners[seat];
+        image.save(p.session,p.life_piece_tier,p.collection.error,p.input,p.retired);
+        save_pilot(p.player,*p.bomb,p.character);
+    }
+    auto& h=*hud;auto& s=*spell_card;
+    image.save(h.partner_stock,h.life_handles,h.bomb_handles,h.clock_handles,h.gauges,h.phase_handles,
+        h.bonus_digits,h.bonus_separators,h.result_banner,h.pickup_banner,h.result_panel,h.result_active,
+        h.stage_clear_notice,h.chapter_result_notice,h.stage_clear_bonus,h.displayed_score,h.score_increment,h.chapter_result,
+        h.base,h.indicator,h.difficulty_banner,h.difficulty_label,h.loadout_label,h.boss_name,h.notice_handle,
+        h.flags,h.age,h.notice_age,h.phase_count,h.current_seconds,h.previous_seconds,h.dialogue,h.boss_hidden,h.game_flags,h.error);
+    image.save(s.age,s.maximum_bonus,s.duration,s.active_frames,s.loadout,s.result_clock,s.name,s.error,s.anchor,s.handles,
+        s.replay,s.practice,s.uncap_score,s.hide_master);
+    screen_effects.save_rollback(image);
+    items->save_rollback(image);
+    enemies->save_rollback(image);
+    bullet_scene->save_rollback(image);
+    laser_scene->save_rollback(image);
+}
+#endif
 i32 GameBattle::update_spell(){if(spell_card&&!spell_card->update({input.rate,player->motion.position.y,session.bomb_state,(session.practice_tools&PracticeTimeLock)!=0})){fail(spell_card->error);return 5;}return error.empty()?1:5;}
 bool GameBattle::record_graze(const Vec3& p,u32 seat){graze_total=std::min(wrapping_add(graze_total,1),99999999);graze_chapter=std::min(wrapping_add(graze_chapter,1),99999999);const auto& player_position=pilot(seat).motion.position;const Vec3 middle{float(float(p.x+player_position.x)*.5f),float(float(p.y+player_position.y)*.5f),0};if(!animations.create(resources.effect,24,-1,0,middle))return fail(animations.error);return check(presentation.popup(middle,graze_chapter,0xffc0c0ff),"Graze popup unavailable")&&sound(42);}
 }

@@ -2,7 +2,7 @@
 #include <algorithm>
 namespace th17 {
 bool EnemyManager::spawn_at_rate(const EnemySpawnRequest& request,float initial_rate){
-    auto enemy=std::make_unique<EnemyRuntime>(program,world,random,visual_random,host);
+    auto enemy=std::make_shared<EnemyRuntime>(program,world,random,visual_random,host);
     const u32 identifier=next_identifier;world.total=identifier;next_identifier++;if(!next_identifier)next_identifier=1;
     enemy->commands.attributes.host=&host;enemy->commands.spawning.spawning=this;enemy->commands.scene.host=&host;enemy->commands.scene.spawning=this;
     if(!enemy->initialize(request,identifier)){error=enemy->error;return false;}
@@ -27,7 +27,7 @@ bool EnemyManager::clear_field(bool suppress_death_script){
 }
 EnemyRuntime* EnemyManager::find(u32 identifier)noexcept{for(auto& enemy:active)if(enemy->state.id==identifier)return enemy.get();return nullptr;}
 EnemyRuntime* EnemyManager::at(u32 index)noexcept{for(auto& enemy:active)if(index--==0)return enemy.get();return nullptr;}
-bool EnemyManager::erase(std::list<std::unique_ptr<EnemyRuntime>>::iterator entry){auto* enemy=entry->get();if(!host.destroy(enemy->state)){error="Enemy cleanup failed";return false;}auto position=std::find(world.enemies.begin(),world.enemies.end(),&enemy->state);if(position!=world.enemies.end())world.enemies.erase(position);world.refresh_boss();if(!(enemy->state.lifecycle_flags&4))world.enemy_count=wrapping_add(world.enemy_count,-1);active.erase(entry);return true;}
+bool EnemyManager::erase(std::list<std::shared_ptr<EnemyRuntime>>::iterator entry){auto* enemy=entry->get();if(!host.destroy(enemy->state)){error="Enemy cleanup failed";return false;}auto position=std::find(world.enemies.begin(),world.enemies.end(),&enemy->state);if(position!=world.enemies.end())world.enemies.erase(position);world.refresh_boss();if(!(enemy->state.lifecycle_flags&4))world.enemy_count=wrapping_add(world.enemy_count,-1);active.erase(entry);return true;}
 bool EnemyManager::update(){
     if(((world.game_frame_flags>>2|world.game_frame_flags)&1)||(world.game_frame_flags&0x402))return true;
     world.shot_damage=world.other_damage=0;

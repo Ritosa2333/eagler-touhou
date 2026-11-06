@@ -2,6 +2,7 @@
 #include "BulletState.hpp"
 #include <vector>
 namespace th17 {
+namespace multiplayer { class FrameImage; }
 struct BulletManagerHost:BulletSoundHost {virtual ~BulletManagerHost()=default;virtual BulletFrameHost& bullet(u32 slot)=0;virtual void prepare(u32 slot,BulletFrameContext& context)=0;virtual const std::string* failure()const noexcept{return nullptr;}};
 class BulletManager final:public BulletEmissionHost {
 public:
@@ -30,5 +31,6 @@ public:
     // Rectangle/full-field cancellation uses native storage order, which differs
     // from the update list. Skip empty slots without changing that order.
     u32 next_occupied(u32 start)const noexcept;
+    void save_rollback(multiplayer::FrameImage&);
 };
 }

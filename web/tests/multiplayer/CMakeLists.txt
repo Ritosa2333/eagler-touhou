@@ -14,6 +14,8 @@ add_test(NAME th17-multiplayer-session COMMAND th17-multiplayer-session)
 
 set(game ../../cpp/game)
 add_executable(th17-team-spirits team-spirits.cpp
+    ../../cpp/multiplayer/AnimationState.cpp
+    ../../cpp/multiplayer/PickupState.cpp
     ${game}/AnimalSpirits.cpp
     ${game}/AnmCamera.cpp
     ${game}/AnmCoordinates.cpp
@@ -41,6 +43,19 @@ add_executable(th17-team-spirits team-spirits.cpp
     ${game}/ItemSpirits.cpp
     ${game}/MotionState.cpp
     ${game}/RoaringSystem.cpp)
+target_sources(th17-team-spirits PRIVATE
+    ${game}/BulletActivation.cpp ${game}/BulletAppearance.cpp ${game}/BulletArea.cpp
+    ${game}/BulletCancellation.cpp ${game}/BulletCollision.cpp ${game}/BulletDraw.cpp
+    ${game}/BulletFormation.cpp ${game}/BulletFrame.cpp ${game}/BulletManager.cpp
+    ${game}/BulletScene.cpp ${game}/BulletShooter.cpp ${game}/BulletSpawn.cpp
+    ${game}/BulletState.cpp ${game}/BulletVisual.cpp
+    ${game}/CurveCancellation.cpp ${game}/CurveGeometry.cpp ${game}/CurveMotion.cpp
+    ${game}/CurvePath.cpp ${game}/CurveProgram.cpp ${game}/LaserCancellation.cpp
+    ${game}/LaserContact.cpp ${game}/LaserDynamics.cpp ${game}/LaserManager.cpp
+    ${game}/LaserMotion.cpp ${game}/LaserProgram.cpp ${game}/LaserReflection.cpp
+    ${game}/LaserScene.cpp ${game}/LaserVisual.cpp ${game}/LineIntersection.cpp
+    ${game}/PlayerCollision.cpp ${game}/SegmentIntersection.cpp ${game}/StationaryLaserProgram.cpp)
+set_source_files_properties(${game}/LaserScene.cpp PROPERTIES COMPILE_DEFINITIONS TH17_MULTIPLAYER=1)
 target_compile_features(th17-team-spirits PRIVATE cxx_std_17)
 target_compile_options(th17-team-spirits PRIVATE -ffp-contract=off)
 add_test(NAME th17-team-spirits COMMAND th17-team-spirits)

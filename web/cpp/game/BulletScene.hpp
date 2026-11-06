@@ -46,5 +46,6 @@ public:
     bool cancel_all(i32 reward);
     bool cancel_slot(u32 slot,i32 reward);
     BulletVisual* visual(u32 slot)noexcept;
+    void save_rollback(multiplayer::FrameImage&);
 };
 }

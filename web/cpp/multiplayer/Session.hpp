@@ -28,6 +28,8 @@ public:
     virtual ~World() = default;
     virtual bool can_predict() const = 0;
     virtual bool capture(std::uint32_t frame) = 0;
+    virtual void speculating(bool) {}
+    virtual bool blocked() const { return false; }
     virtual bool step(std::uint32_t frame, const Netplay::FrameDecision&) = 0;
     virtual bool restore(std::uint32_t frame) = 0;
     virtual bool confirm(std::uint32_t frame,
@@ -46,6 +48,9 @@ public:
     bool capture_input(const Netplay::FrameInput&, std::uint64_t now_ms);
     Tick tick(World&);
     std::uint32_t next_frame() const;
+    std::uint32_t confirmed_frames() const { return next_commit_; }
+    std::uint32_t corrections() const { return corrections_; }
+    std::uint32_t resimulated_frames() const { return resimulated_; }
     const char* error() const;
 
 private:
@@ -57,6 +62,7 @@ private:
     Netplay::RollbackCore core_;
     Netplay::SessionChannel channel_;
     std::uint32_t next_capture_ = 0, next_commit_ = 0, replay_end_ = 0;
+    std::uint32_t corrections_ = 0, resimulated_ = 0;
     const char* error_ = nullptr;
 };
 }

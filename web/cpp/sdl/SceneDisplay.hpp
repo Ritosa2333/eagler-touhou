@@ -25,6 +25,6 @@ public:
     bool capture(u32& handle,bool results);
     bool hud_text(const HudTextDraw& value){return captions.hud_text(value);}
     void pause(PauseDraw* p,ReplayCalendarServices* dates,std::array<u8,0xa0>* header=nullptr){if(game){game->pause=p;game->dates=dates;game->replay_header=header;}}
-    bool draw();
+    bool draw(double logical_seconds=-1);
 };
 }

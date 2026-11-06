@@ -17,6 +17,7 @@ struct AnimalSpiritHost {
     virtual bool sound(i32)=0;virtual bool trophy(i32)=0;virtual bool collect_spirit(i32)=0;
 };
 class AnimalSpirits {
+    friend class ItemSpirits;
     struct Entry {u32 id;AnimalSpiritState state;i32 collector=-1;};
     AnmManager& animations;Rng& random;AnimalSpiritHost& host;i32 resource;std::list<Entry> entries;u32 generation=0;
     bool adjust_direction(AnimalSpiritState&,float angle);
