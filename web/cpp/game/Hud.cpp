@@ -17,14 +17,16 @@ std::array<u32,8>& Hud::stock_handles(u32 seat,bool bomb) noexcept{
     if(!seat)return bomb?bomb_handles:life_handles;
     auto& stock=partner_stock[seat-1];return bomb?stock.bomb:stock.life;
 }
-float Hud::life_row(u32 seat)const noexcept{return seats==1?96.f:92.f+seat*(seats==3?58.f:86.f);}
-float Hud::bomb_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?18.f:seats==2?33.f:38.f);}
-float Hud::power_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?36.f:seats==2?64.f:86.f);}
+float Hud::life_row(u32 seat)const noexcept{return 96.f+seat*(seats==3?78.f:120.f);}
+float Hud::bomb_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?26.f:38.f);}
+float Hud::power_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?54.f:86.f);}
+float Hud::point_row()const noexcept{return seats==1?204.f:seats==2?342.f:330.f;}
 bool Hud::layout_stock(AnmVm& root,u32 seat){
     struct Row {i32 script;float original,target;};
     const float life=life_row(seat),bomb=bomb_row(seat),power=power_row(seat);
-    const Row rows[]={{8,96,life},{9,112,life+13},{10,134,bomb},{11,150,bomb+13},{12,182,power},
-        {20,128,bomb-2},{21,128,bomb-2},{22,166,power-2},{23,166,power-2},{24,198,power+16},{25,198,power+16}};
+    const float life_divider=bomb-6.f,bomb_divider=power-(seats==3?8.f:16.f);
+    const Row rows[]={{8,96,life},{9,112,life+16},{10,134,bomb},{11,150,bomb+16},{12,182,power},
+        {20,128,life_divider},{21,128,life_divider},{22,166,bomb_divider},{23,166,bomb_divider},{24,198,power+16},{25,198,power+16}};
     for(const auto& row:rows){
         const bool compact_fragment=seats==3&&(row.script==9||row.script==11);
         if(seat&&compact_fragment)continue;
@@ -36,16 +38,10 @@ bool Hud::layout_stock(AnmVm& root,u32 seat){
     return true;
 }
 bool Hud::layout_team(AnmVm& root){
-    for(i32 script:{13,26,27,28,29}){
+    for(i32 script:{13,14,26,27,28,29}){
         auto* vm=animations.registry.find_child_script(root,script,0);
         if(!check(vm!=nullptr,"HUD team label unavailable"))return false;
-        // The original TH17 frame has the title art directly below this panel.
-        move_row(*vm,script==13||script==26||script==27?room_point_row-204.f:room_graze_row-226.f);
-    }
-    // The retail graze label sprite is blank. The room uses the ASCII label.
-    if(auto* vm=animations.registry.find_child_script(root,14,0)){
-        auto handle=animations.registry.handle(*vm);
-        if(!check(animations.retire(handle),"HUD graze label retirement failed"))return false;
+        move_row(*vm,script==13||script==26||script==27?point_row()-204.f:graze_row()-226.f);
     }
     return true;
 }

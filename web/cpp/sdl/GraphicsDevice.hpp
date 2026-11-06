@@ -12,6 +12,9 @@ class GraphicsDevice final:public ZunGraphics {
     const std::vector<u32>* last_resource_handles=nullptr;
     u32 next_handle=3;
     bool patch_texture(const AnmResource&,const AnmTexture&,u32,AnmTexture&);
+#if TH17_MULTIPLAYER
+    static bool layout_room_front(TextureImage&);
+#endif
     static touhou::sdl::Surface resolve(void*,u32);
 public:
     // Profile 10 selects shared float-alpha/D16 precision and world-quad
@@ -21,7 +24,7 @@ public:
     std::string error;u32 render_scale=1;bool language_pack=false;
     bool logical_drawing=false;
     bool initialize();
-    bool preload(AnmResource&,bool low_color=false,const AnmResource* detailed=nullptr);
+    bool preload(AnmResource&,bool low_color=false,const AnmResource* detailed=nullptr,bool room_front=false);
     void unload(const AnmResource&);
     u32 texture(const AnmResource&,u32)override;
     TextureImage* pixels(u32 handle){auto it=textures.find(handle);return it==textures.end()?nullptr:&it->second.image;}

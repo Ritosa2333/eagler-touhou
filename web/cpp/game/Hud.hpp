@@ -23,7 +23,8 @@ class Hud {
     struct PartnerStock {std::array<u32,8> life{},bomb{};};
     std::array<PartnerStock,2> partner_stock;
     u32 seats=1;
-    static constexpr float room_point_row=267.f,room_graze_row=285.f;
+    float point_row()const noexcept;
+    float graze_row()const noexcept{return point_row()+22.f;}
     float life_row(u32 seat)const noexcept;
     float bomb_row(u32 seat)const noexcept;
     float power_row(u32 seat)const noexcept;

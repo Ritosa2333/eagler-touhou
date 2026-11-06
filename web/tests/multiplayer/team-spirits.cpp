@@ -2,6 +2,7 @@
 #include "../../cpp/game/EnemyCallbacks.hpp"
 #include "../../cpp/game/LaserScene.hpp"
 #include "../../cpp/game/Hud.hpp"
+#include "../../cpp/game/AnmCoordinates.hpp"
 #include "../../cpp/multiplayer/FrameImage.hpp"
 #include <algorithm>
 #include <array>
@@ -426,21 +427,27 @@ void room_hud(const char* asset) {
         const std::array<HudPilotStock,3> pilots{{{&stock[0],0},{&stock[1],9},{&stock[2],0}}};
         require(hud.draw({score,progress,678},text,seats-1,pilots),hud.error.c_str());
         require(text.count("15")==1&&text.count("37")==unsigned(seats>=2)&&text.count("49")==unsigned(seats==3),"per-seat Power");
-        require(text.count("90,000")==1&&text.count("678")==1&&text.count("Graze")==unsigned(seats>1),"shared PIV and graze");
+        require(text.count("90,000")==1&&text.count("678")==1&&text.count("Graze")==0,"shared PIV and graze use native labels");
         require(text.count("---/---")==unsigned(seats==2)&&text.count("/3")==unsigned(seats==1?2:seats==2?3:0),"native fragment displays");
         for (u32 seat=0;seat<seats;++seat) {
             const auto tag=std::to_string(seat+1)+"P";
             const auto it=std::find_if(text.entries.begin(),text.entries.end(),[&](const auto& entry){return entry.text==tag;});
             if (seats==1) require(it==text.entries.end(),"ordinary HUD has no seat tag");
-            else require(it!=text.entries.end()&&(it->style.color&0xffffffu)==(seat==seats-1?0xffff80u:0xffffffu),"local seat is highlighted");
+            else require(it!=text.entries.end()&&it->position.y==99.f+seat*(seats==2?120.f:78.f)&&
+                (it->style.color&0xffffffu)==(seat==seats-1?0xffff80u:0xffffffu),"seat spacing and local highlight");
         }
-        unsigned life=0,bomb=0;
+        unsigned life=0,bomb=0,graze=0;
         for (auto* vm : animations.registry.layer(37)) {
             life+=vm->source_script==8;
             bomb+=vm->source_script==10;
+            if (vm->source_script==14) {
+                Vec3 position;
+                require(anm_position(*vm,position)&&position.y==(seats==1?226.f:seats==2?364.f:352.f),"native Graze sprite row");
+                ++graze;
+            }
             if (vm->source_script==30||vm->source_script==38) require(vm->hud_viewer==(seats==1?1:0),"each seat sees every room stock row");
         }
-        require(life==seats&&bomb==seats,"native stock labels are on the HUD overlay layer");
+        require(life==seats&&bomb==seats&&graze==1,"native labels are on the HUD overlay layer");
     }
 }
 }
