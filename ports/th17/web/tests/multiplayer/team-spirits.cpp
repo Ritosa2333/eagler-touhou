@@ -6,6 +6,7 @@
 #include "../../cpp/game/AnmCoordinates.hpp"
 #include "../../cpp/game/PlayerShots.hpp"
 #include "../../cpp/multiplayer/FrameImage.hpp"
+#include "../../cpp/multiplayer/AnmCheckpoint.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdlib>
@@ -310,6 +311,37 @@ void borrowed_animation_graph(){
     const auto children=registry.children(root);
     require(children.size()==1&&children[0]==child&&child->creation_parent==&root,"restore borrowed child relationship");
     require(registry.submit(*registry.allocate())==next_handle,"restore slot and generation allocation order");
+}
+
+void animation_curve_rollback(){
+    AnmVm vm;
+    vm.interpolators.mask_valid=true;
+    vm.interpolators.position.control1={1,2,3};
+    vm.geometry.screen_vertices.resize(2);
+    vm.geometry.screen_vertices[0].color=0x80402010;
+    multiplayer::AnmCheckpoint::Cache cache;
+    multiplayer::AnmCheckpoint::Curves first_curves,second_curves,live_curves;
+    multiplayer::AnmCheckpoint first(vm,cache,first_curves);
+    const auto first_resting=cache.lock();
+    multiplayer::AnmCheckpoint identical(vm,cache,second_curves);
+    require(cache.lock()==first_resting&&second_curves.changing.empty(),"unchanged dormant curves share storage");
+    vm.interpolators.position.control1[0]=4;
+    multiplayer::AnmCheckpoint second(vm,cache,second_curves);
+    require(cache.lock()!=first_resting,"different dormant controls require separate snapshots");
+    vm.interpolators.position.begin(6,0,{1,2,3},{4,5,6});
+    vm.interpolators.invalidate();
+    vm.geometry.clear();
+    multiplayer::AnmCheckpoint live(vm,cache,live_curves);
+    require(live_curves.changing.size()==1,"active curves are copied into the frame");
+    first.restore(vm,cache,first_curves);
+    require(vm.interpolators.position.duration==0&&vm.interpolators.position.control1[0]==1&&
+            vm.geometry.screen_vertices[0].color==0x80402010,"restore dormant controls and geometry");
+    live.restore(vm,cache,live_curves);
+    require(vm.interpolators.position.duration==6&&!vm.interpolators.mask_valid&&vm.geometry.screen_vertices.empty(),
+            "restore pending interpolation and cleared geometry");
+    second.restore(vm,cache,second_curves);
+    require(vm.interpolators.position.duration==0&&vm.interpolators.position.control1[0]==4,
+            "restore a separate dormant snapshot after changing branches");
 }
 
 void animation_page_rollback(){
@@ -620,6 +652,7 @@ int main(int argc, char** argv) {
     shared_otter_barriers(asset);
     borrowed_animation_graph();
     animation_page_rollback();
+    animation_curve_rollback();
     recycled_item_rollback();
     immutable_bullet_program();
     logical_animation_draw();

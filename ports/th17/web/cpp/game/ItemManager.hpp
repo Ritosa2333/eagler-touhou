@@ -17,7 +17,11 @@ private:
     AnmManager& animations;EffectManager& effects;i32 resource;
     std::array<Slot,pool_size> slots;std::array<std::vector<u32>,2> free_slots;
     std::array<u32,(pool_size+31)/32> used{};
-    struct IdleVisuals {std::weak_ptr<const AnmVm> body,arrow;};
+    struct CachedVisual {
+        std::weak_ptr<const AnmVm> idle;
+        std::weak_ptr<const AnmInterpolators> curves;
+    };
+    struct IdleVisuals {CachedVisual body,arrow;};
     std::unique_ptr<std::array<IdleVisuals,pool_size>> idle_visuals;
     void touch(u32 index){used[index/32]|=u32(1)<<(index%32);if(idle_visuals)(*idle_visuals)[index]={};}
     bool appearance(Slot&,i32 kind);bool birth_effect(const ItemState&);

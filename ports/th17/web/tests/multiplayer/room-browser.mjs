@@ -197,12 +197,21 @@ try{
      globalThis.densePresentIntervals=[];
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
-     let previousCosts=Array(6).fill(0);
+     let previousCosts=Array(10).fill(0);
      Module.onGameFrame=(ok,time,ticks,presented)=>{
       callback(ok,time,ticks,presented);
       const r=Module._th17_room_rollback()>>>2;
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
       const phase=Module._th17_phase();
+      let costs;
+      if(extraBoss){
+       const d=Module._th17_room_benchmark_draw()>>>2,c=Module._th17_room_performance()>>>2;
+       const h=Module._th17_room_benchmark_history?.()>>>2;
+       const totals=[...Module.HEAPU32.subarray(d,d+4),...Module.HEAPU32.subarray(c,c+2),
+        ...(h?Module.HEAPU32.subarray(h,h+4):[0,0,0,0])];
+       costs=totals.map((value,index)=>(value-previousCosts[index])>>>0);
+       previousCosts=totals;
+      }
       if(n>120&&ticks){
        const now=performance.now();
        diagnostics.measuredFrom??=now;
@@ -229,11 +238,8 @@ try{
        bullets=confirmed?.[10]??bullets;
        const entry={time,repair:resimulated>diagnostics.resimulated,bullets};
        if(extraBoss){
-        const d=Module._th17_room_benchmark_draw()>>>2;
-        const c=Module._th17_room_performance()>>>2;
-        const totals=[...Module.HEAPU32.subarray(d,d+4),...Module.HEAPU32.subarray(c,c+2)];
-        entry.costs=totals.map((value,index)=>(value-previousCosts[index])>>>0);
-        previousCosts=totals;
+        entry.costs=costs;
+        entry.frame=n;
         entry.boss=confirmed?.[41]||0;
         entry.spell=confirmed?.[30]&1?confirmed[39]:-1;
        }
@@ -341,7 +347,7 @@ try{
     if(extraBoss)for(const boss of new Set(frameCosts.map(entry=>entry.boss).filter(Boolean))){
      const aggregate=rows=>{
       const totals=Array(6).fill(0);
-      for(const row of rows)row.costs.forEach((value,index)=>totals[index]+=value);
+      for(const row of rows)for(let index=0;index<totals.length;index++)totals[index]+=row.costs[index];
       const [physical,physicalUs,logical,logicalUs,capture,captureUs]=totals;
       return {physical,physicalUs,logical,logicalUs,capture,captureUs,repairs:summarize(rows.filter(row=>row.repair).map(row=>row.time))};
      };
@@ -350,7 +356,22 @@ try{
       dense:aggregate(rows.filter(entry=>entry.bullets>=256))});
     }
     const canvas=Module.canvas,gl=canvas.getContext('webgl2'),info=gl?.getExtension('WEBGL_debug_renderer_info');
+    const denseCallbacks=extraBoss?frameCosts.filter(row=>row.frame>=9000&&row.bullets>=256):[];
+    const longCallbacks=denseCallbacks.filter(row=>row.time>1000/60);
+    const tail=extraBoss?{
+     callbacks:denseCallbacks.length,
+     overBudget:longCallbacks.length,
+     overBudgetWithRepair:longCallbacks.filter(row=>row.repair).length,
+     totalMs:summarize(longCallbacks.map(row=>row.time)),
+     captureMs:summarize(longCallbacks.map(row=>row.costs[5]/1000)),
+     physicalDrawMs:summarize(longCallbacks.map(row=>row.costs[1]/1000)),
+     logicalDrawMs:summarize(longCallbacks.map(row=>row.costs[3]/1000)),
+     restoreMs:summarize(longCallbacks.map(row=>row.costs[7]/1000)),
+     releaseMs:summarize(longCallbacks.map(row=>row.costs[9]/1000)),
+     remainingMs:summarize(longCallbacks.map(row=>Math.max(0,row.time-(row.costs[1]+row.costs[3]+row.costs[5]+row.costs[7]+row.costs[9])/1000))),
+    }:undefined;
     return {...diagnostics,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
+     tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
      presentIntervals:summarize(presentIntervals),
      densePresentIntervals:{...summarize(densePresentIntervals),fps:densePresentIntervals.length?
