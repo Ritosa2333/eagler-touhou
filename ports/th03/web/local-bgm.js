@@ -16,10 +16,13 @@ export class LocalBgm {
     this.unsubscribeVersion=onBgmVersion(()=>{
       if(this.closed||this.lastHash===undefined||!this.manifest)return;
       const previous=this.requested,hash=this.lastHash;
-      this.play(hash);
-      if(previous&&this.requested?.generation===this.generation){
-        this.requested.volume=previous.volume;this.requested.fade=previous.fade;
-      }
+      void this.loadAlbum().then(()=>{
+        if(this.closed||hash!==this.lastHash)return;
+        this.play(hash);
+        if(previous&&this.requested?.generation===this.generation){
+          this.requested.volume=previous.volume;this.requested.fade=previous.fade;
+        }
+      }).catch(error=>this.report(error.message));
     });this.encoded=new Map();this.decoded=new Map();
     this.downloads=new Map();this.pendingCommands=[];this.abort=new AbortController();
     this.generation=0;this.sequence=0;this.mailbox=-1;this.active=null;this.closed=false;
@@ -31,9 +34,7 @@ export class LocalBgm {
       {cache:'no-store',signal:AbortSignal.any([this.abort.signal,AbortSignal.timeout(15000)])});
     if(!response.ok)throw Error('本地音乐清单读取失败');
     const manifest=await response.json();
-    const alternate=await fetch(new URL('./bgm/akyu/manifest.json',import.meta.url),{signal:this.abort.signal});
-    if(!alternate.ok)throw Error('新版音乐清单读取失败');
-    this.newTracks=(await alternate.json()).tracks;
+    await this.loadAlbum();
     this.midiTracks=await loadMidiTracks(this.abort.signal);
     this.manifest=manifest;
     if(this.closed)return;
@@ -45,6 +46,12 @@ export class LocalBgm {
     // Warm compressed opening tracks without delaying the game or allocating
     // two full decoded waveforms before the driver selects its music mode.
     if(!commands.length&&config.warmOpening!==false)for(const type of ['m26','m86'])this.prefetch(`${first}-${type}`);
+  }
+  async loadAlbum(){
+    if(bgmVersion()!=='new'||this.albumLoaded)return;
+    const response=await fetch(new URL('./bgm/akyu/manifest.json',import.meta.url),{signal:this.abort.signal});
+    if(!response.ok)throw Error('新版音乐清单读取失败');
+    this.newTracks=(await response.json()).tracks;this.albumLoaded=true;
   }
   track(id){return resolveBgmTrack(id,this.manifest.tracks,this.newTracks,this.midiTracks);}
   warmOriginal(id){

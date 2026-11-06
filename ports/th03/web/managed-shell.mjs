@@ -1,3 +1,4 @@
+import {setManagedBgmVersion} from './bgm-version.js';
 import {createPc98SpectatorPublisher} from './pc98-spectator-publisher.mjs';
 import {mountGameFps} from './pc98-game-fps.mjs';
 import {ManagedContent,installManagedWorkers} from './managed-data.mjs';
@@ -40,7 +41,7 @@ globalThis.__eaglerPC98FileCommands=async message=>{
     await store.write(path,bytes);return {};
   }throw Error('用户文件操作无效');
 };
-let playerApi;
+let playerApi,content;
 let queue=Promise.resolve();
 async function command(message){
   if(!ready)throw Error('游戏资源尚未就绪');
@@ -54,15 +55,17 @@ async function command(message){
       if(message.runtimePack)throw Error('此入口使用已打包的 PC-98 语言资源');
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
       const next={...message.options};
+      if(next.musicSource!==undefined&&!['original','akyu'].includes(next.musicSource))throw Error('音乐音源无效');
       for(const key of ['th03FocusEnabled','alwaysHitbox','netplayDisableFocus'])if(next[key]!==undefined&&typeof next[key]!=='boolean')throw Error('运行配置无效');
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
       if(next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();
+      setManagedBgmVersion(next.musicSource ?? 'original');
       options=next;music=message.music;language=nextLanguage;configured=true;
       globalThis.Module ??= {}; globalThis.Module.eaglerOptions=options;
       return {};
     }
-    case 'resources':if(!Array.isArray(message.resources)||message.resources.length)throw Error('此资源包已包含运行所需的资源');return {};
+    case 'resources':await content.addResources(message.resources);return {};
     case 'prepare-room':if(!multiplayer||!configured||launched)throw Error('房间预载状态无效');return preview.prepare(language);
     case 'launch':
       if(!configured||launched)throw Error('游戏启动状态无效');
@@ -95,7 +98,7 @@ try{
   const provider=parent.__eaglerPrepareManagedRuntimeDataV1;
   if(typeof provider!=='function')throw Error('启动器未提供游戏资源');
   const result=await provider.call(parent,{game,generation:query.get('gameGeneration'),epoch});
-  const content=await ManagedContent.open(result.buffer,game),base=new URL('.',location.href).href;
+  content=await ManagedContent.open(result.buffer,game);const base=new URL('.',location.href).href;
   content.install(globalThis,base);installManagedWorkers(globalThis,content,base);
   store=globalThis.__eaglerPC98Files=await openUserFiles({multiplayer});
   if(multiplayer){

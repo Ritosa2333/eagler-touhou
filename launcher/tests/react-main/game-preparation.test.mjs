@@ -82,11 +82,11 @@ function host(extra = {}) {
 }
 function catalog(revision = 'package-r1') {return {schema: 'eagler-touhou/release-catalog/1', games: {th06: {revision, descriptor: 'games/th06/package.json'}}};}
 function acquisitionFixture({current = generation(), hostValue = null, catalogValue = null, dependencies = {}, fetchImpl, network,
-  initialize = async () => {}} = {}) {
+  initialize = async () => {}, testBuild = false} = {}) {
   const calls = [], metadata = {siteManifest: hostValue, releaseCatalog: catalogValue};
   const installation = () => ({generation: current, installation: current ? {game: 'th06', currentGeneration: current.id,
     pendingGeneration: null, source: 'local'} : null});
-  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true,
+  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true, testBuild,
     network,
     fetchImpl: fetchImpl ?? (async () => {throw new Error('Unexpected real network path');}),
     metadata: {getSnapshot: () => metadata, initialize: async () => {calls.push('metadata'); await initialize();},
@@ -223,6 +223,42 @@ test('TH05 album acquisition includes its declared soundtrack files', async () =
   const result = await acquisition.acquire({productId: 'th05', music: 'ogg-akyu', language: 'ja'});
   assert.equal(result.generation, current);
   assert.deepEqual(downloaded, ['/deploy/development/th05.data', '/deploy/music/op.ogg', '/deploy/music/akyu-01.ogg']);
+});
+
+
+
+for(const game of ['th01','th03']) test(`${game} original mode never attaches cached album or downloads it in background`,async()=>{
+  const current=generation({ogg:['track-1','track-2','track-3','track-4']});
+  current.game=current.descriptor.game=game;current.descriptor.runtimeRequirement.target=game;
+  current.descriptor.files['game-data'].target=`/${game}.data`;
+  const f=acquisitionFixture({current,testBuild:true}),r=runtimeFixture();
+  const state=settingsFixture({productId:game,music:'ogg-stream'});
+  const prepared=await api.prepareGame(gameInput(f,state,{productId:game,runtime:r.service}));
+  assert.equal(prepared.plan.localOgg,undefined);
+  assert.equal(prepared.plan.configure.options.musicSource,'original');
+  assert.equal(r.outbound.filter(m=>m.command==='resources').flatMap(m=>m.resources).filter(x=>x.path.includes('track-')).length,0);
+  assert.equal(f.calls.some(call=>call.startsWith('install')),false);
+});
+
+for (const game of ['th01','th03']) test(`${game} album files are acquired only when selected`,async()=>{
+  const declared=host().games.th06;
+  const development=api.validateSiteManifest({...host(),profile:'web-development',shared:{...host().shared,testBuild:true},games:{[game]:{
+    ...declared,runtime:api.PRODUCT_GAMES[game].runtime,gameData:{...declared.gameData,path:`${game}.data`,source:`development/${game}.data`},
+    music:{midi:{files:[],supported:false},ogg:{base:'music/',mount:'/bgm/akyu',files:['01.ogg'],sizes:[bytes.length],sha256:[hash],version:`sha256-${hash}`}}
+  }}});
+  for(const music of ['ogg-stream','none','ogg-akyu']){
+    let current=null;const downloaded=[];
+    const acquisition=api.createPackageAcquisition({baseUrl,translate:t,indexedDBAvailable:()=>true,
+      metadata:{getSnapshot:()=>({siteManifest:development,releaseCatalog:null}),initialize:async()=>{}},
+      fetchImpl:async url=>{downloaded.push(new URL(url).pathname);return new Response(bytes);},
+      dependencies:{readCurrent:async()=>({generation:current,installation:null}),repairInstalled:async value=>value.generation,
+        installAcquired:async options=>{for(const id of options.desiredFileIds)await options.acquire(id,options.descriptor.files[id]);
+          current={id:'dev',game,descriptor:options.descriptor,files:Object.fromEntries(options.desiredFileIds.map(id=>[id,ref(id)]))};return {generation:current};}}});
+    await acquisition.acquire({productId:game,music,language:'ja'});
+    assert.deepEqual(downloaded,music==='ogg-akyu'?[`/deploy/development/${game}.data`,'/deploy/music/01.ogg']:[`/deploy/development/${game}.data`]);
+    const opts=api.gameRuntimeOptions({productId:game,settings:settingsFixture({productId:game,music}).snapshot},'ja',music,null);
+    assert.equal(opts.musicSource,music==='ogg-akyu'?'akyu':'original');
+  }
 });
 
 for (const productId of ['th11', 'th11mp']) test(`${productId} high refresh setting reaches Runtime without changing room options`, () => {

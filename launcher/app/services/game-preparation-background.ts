@@ -27,7 +27,7 @@ export async function startPreparedGameBackground({input, prepared, epoch, defer
     productId: input.productId, gameVersion: input.settings.gameVersion, music: prepared.music, language: input.settings.language,
     onUpdateReady: () => input.onUpdateReady?.(epoch),
   }).catch(error => {input.onBackgroundError?.(error, `${game}: background Package update failed${deferredUpdate.installation?.source === 'local' ? ' for local install' : ''}`);}) : Promise.resolve();
-  if (!loaded || !resources || !oggMusic(prepared.music) || !currentOgg()) {await backgroundUpdate; return;}
+  if (!loaded || !resources || !oggMusic(prepared.music) || !currentOgg() || ((game === 'th01' || game === 'th03') && prepared.music !== 'ogg-akyu')) {await backgroundUpdate; return;}
   const initial = new Set(prepared.plan.localOgg?.fileIds ?? []);
   const ids = componentFileIds(resources.descriptor, 'ogg');
   const remaining = ids.filter(id => !initial.has(id));

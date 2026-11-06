@@ -34,8 +34,8 @@ export declare const PRODUCT_GAMES: Readonly<{
         storage:Readonly<{saveRoot:'/savesth01';scoreFile:'scores.dat';configFiles:readonly string[]}>;
         runtime:'./runtime/th01/th01.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
-        package:Readonly<{dataFileId:'game-data';dataTarget:'/th01.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
-        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th01.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
         touchFire:Readonly<{mode:'held-key';labelKey:'touch.actionHold';key:Readonly<{code:'KeyZ';key:'z';keyCode:90}>}>;
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th01';extensions:readonly string[];naming:'filename'}>;
@@ -62,8 +62,8 @@ export declare const PRODUCT_GAMES: Readonly<{
         storage:Readonly<{saveRoot:'/savesth03';scoreFile:'YUME.NEM';configFiles:readonly string[]}>;
         runtime:'./runtime/th03/th03.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
-        package:Readonly<{dataFileId:'game-data';dataTarget:'/th03.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
-        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th03.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;sources:readonly ['original','akyu']}>;
         touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th03';extensions:readonly string[];naming:'filename'}>;

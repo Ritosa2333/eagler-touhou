@@ -125,8 +125,9 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
 }): Promise<{generation: InstalledPackageGeneration | null; music: MusicMode}> {
   if (!generation || !oggMusic(music)) return {generation, music};
   const musicPolicy = PRODUCT_GAMES[generation.game].musicRuntime;
-  if ('embeddedOgg' in musicPolicy && musicPolicy.embeddedOgg === true) return {generation, music};
-  const fallback: MusicMode = PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
+  const embedded = 'embeddedOgg' in musicPolicy && musicPolicy.embeddedOgg === true;
+  if (embedded && music !== 'ogg-akyu') return {generation, music};
+  const fallback: MusicMode = embedded ? 'ogg-stream' : PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
   checkPreparationAbort(signal);
   const declared = componentFileIds(generation.descriptor, 'ogg');
   const initial = completeSet ? declared : declared.slice(0, 2);

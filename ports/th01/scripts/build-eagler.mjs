@@ -42,7 +42,9 @@ await mkdir(output,{recursive:true});await mkdir(content,{recursive:true});
 const runtime=[], payload=[], entries=[];let offset=0;
 for(const item of input) {
   const bytes=await readInput(item.path);
-  if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
+  if(/^bgm\/akyu\/\d{2}\.opus$/.test(item.path)) {
+    const target=resolve(content,'music',item.path.split('/').at(-1).replace(/\.opus$/,'.ogg'));await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);
+  } else if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
     const target=resolve(output,item.path);await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);runtime.push(item.path);
   } else {
     if(!bytes.length) continue;
@@ -53,6 +55,7 @@ function replaceOnce(text,from,to,label) { if(text.split(from).length!==2) throw
 const patch=async(name,edit)=>{const path=resolve(output,name);await writeFile(path,edit((await readFile(path,'utf8')).replaceAll('\r\n','\n')));};
 const {adaptRuntime}=await import('./adapt-runtime.mjs');
 await adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput});
+await patch('bgm/akyu/manifest.json',text=>text.replace(/\.opus/g,'.ogg'));
 // Adapted sources have their own verified identity; keep upstream asset checks active.
 for(const manifestPath of ['netplay/runtime.json','lockstep-runtime.json']) {
   let manifest;try{manifest=JSON.parse(await readFile(resolve(output,manifestPath),'utf8'));}catch(error){if(error.code==='ENOENT')continue;throw error;}

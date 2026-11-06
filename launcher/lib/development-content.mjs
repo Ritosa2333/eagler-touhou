@@ -63,7 +63,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       runtime: `${ws('th01','build-eagler','th01.html')}?hosted=1`,
       multiplayerRuntime: `${ws('th01','build-eagler','th01.html')}?hosted=1&runtimeVariant=multiplayer`,
       data:Object.freeze({source:ws('th01','content','th01.data'),layout:PRODUCT_CONTENT.th01.dataLayout}),
-      music:Object.freeze({}),
+      music:availableMusic({ogg:Object.freeze({base:wsDir('th01','content','music'),...PRODUCT_CONTENT.th01.music.ogg})}),
     }),
     th02: Object.freeze({
       runtime: `${ws('th02','build-eagler','th02.html')}?hosted=1`,
@@ -75,7 +75,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       runtime: `${ws('th03','build-eagler','th03.html')}?hosted=1`,
       multiplayerRuntime: `${ws('th03','build-eagler','th03.html')}?hosted=1&runtimeVariant=multiplayer`,
       data:Object.freeze({source:ws('th03','content','th03.data'),layout:PRODUCT_CONTENT.th03.dataLayout}),
-      music:Object.freeze({}),
+      music:availableMusic({ogg:Object.freeze({base:wsDir('th03','content','music'),...PRODUCT_CONTENT.th03.music.ogg})}),
     }),
     th04: Object.freeze({
       runtime: `${ws('th04','build-eagler','th04.html')}?hosted=1`,

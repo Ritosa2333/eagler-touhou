@@ -22,5 +22,7 @@ for(const file of manifest.files){
 }
 if(base+end!==bytes.length)throw Error('Invalid TH03 DATA length');
 await mkdir(output,{recursive:true});await copyFile(resolve(prepared,'th03.data'),resolve(output,'th03.data'));
+await mkdir(resolve(output,'music'),{recursive:true});
+for(let n=1;n<=21;n++){const name=String(n).padStart(2,'0')+'.ogg';await copyFile(resolve(prepared,'music',name),resolve(output,'music',name));}
 if(existsSync(resolve(prepared,'source.json')))await copyFile(resolve(prepared,'source.json'),resolve(output,'source.json'));
 console.log('Prepared verified TH03 content: '+output);
