@@ -8,7 +8,7 @@ namespace multiplayer { class FrameImage; }
 struct SpellRecord {std::string name;std::array<i32,2> captures{},attempts{};};
 class SpellRecords {
     struct Checkpoint;
-    std::weak_ptr<const Checkpoint> rollback_record;
+    std::shared_ptr<const Checkpoint> rollback_record;
 public:
     static constexpr u32 spell_count=101,loadout_count=9;
     std::array<std::array<SpellRecord,spell_count>,loadout_count> loadouts;
