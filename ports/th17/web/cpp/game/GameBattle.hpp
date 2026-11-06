@@ -62,6 +62,8 @@ class GameBattle {
     BombController* pilot_bomb(u32 seat) const noexcept;
     bool pilot_game_over(u32 seat);
     bool pilot_active(u32 seat) const noexcept;
+    Vec3 aim_target(const Vec3& origin) noexcept;
+    void protect_teammates(u32 caster,i32 frames) noexcept;
     i32 update_animations(bool);i32 update_player();i32 update_bomb();i32 update_enemies();i32 update_lasers();i32 update_bullets();i32 update_items();i32 update_spirits();i32 update_spell();i32 update_hud();
     bool life_hud(i32,i32,u32 seat=0);bool bomb_hud(i32,i32,u32 seat=0);
     bool scene_message(i32);bool message_complete(bool&);bool update_dialogue();

@@ -92,7 +92,7 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
 
 void ItemSpirits::save_rollback(multiplayer::FrameImage& image){
     image.save(practice,collection.error,spirits.entries,spirits.generation,spirits.error,
-        roaring.state,roaring.visuals,roaring.error,error);
+        roaring.state,roaring.visuals,roaring.partner_orbs,roaring.error,error);
     items.save_rollback(image);
 }
 

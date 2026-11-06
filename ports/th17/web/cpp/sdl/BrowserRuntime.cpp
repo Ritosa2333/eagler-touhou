@@ -62,7 +62,7 @@ struct RoomRuntime final : multiplayer::World {
  bool spectator=false,playing_replay=false,local_results=false,publisher_failed=false,ended=false;
  bool publication_started=false,terminal=false;
  u32 playback_frame=0,bootstrap_target=0,start_stage=1,entry_stage=0,confirmed_score=0;
- u32 published_through=0;
+ u32 published_through=0,current_stage=0;
  u64 spectator_deadline=0;
  std::string saved_path,saved_name="PLAYER";
  bool save_replay(i32 slot=-1,const char* name=nullptr,bool completed=false);
@@ -133,7 +133,10 @@ struct RoomRuntime final : multiplayer::World {
    }
    saved.publication.inputs=inputs;saved.publication.hasInputs=true;
    if(!publisher.Record(std::move(saved.publication))){publisher_failed=true;transport.StopSpectators();}
-   else {published_through=frame;publish();}
+   else {
+    published_through=frame;
+    if(frame+1-publisher.Published()>=4)publish();
+   }
   }
   confirmed[(frame+1)%confirmed.size()]=saved.snapshot;
   saved.image.clear();saved.sounds.clear();saved.number=Netplay::INVALID_FRAME;
@@ -165,7 +168,9 @@ struct RoomRuntime final : multiplayer::World {
   auto& output=state(number);
   if(!app->room_speculative)output.image.clear();
   output.number=number;output.sounds.clear();app->room_sounds=&output.sounds;
-  output.stage=app->scene()?u32(app->scene()->battle.stage):(setup.difficulty==4?7u:1u);
+  if(app->scene())current_stage=u32(app->scene()->battle.stage);
+  if(!current_stage)current_stage=setup.difficulty==4?7u:1u;
+  output.stage=current_stage;
   output.publication={};output.publication.frame=number;output.publication.stage=output.stage;
   if(!spectator&&!playing_replay&&!setup.local&&!publisher_failed&&app->scene()&&!app->scene()->active()&&
      entry_stage!=app->room_stage_generation&&app->loading_destination==AppScene::Uninitialized){
@@ -617,7 +622,10 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
 #if TH17_MULTIPLAYER
    if(!room||room->spectator||room->playing_replay||room->local_results||
       (!room->session.repair_pending()&&room->session.next_frame()!=previous_input_frame))++completed;
-   if(room&&room->session.repair_pending())break;
+   if(room&&room->session.repair_pending()){
+    cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);
+    break;
+   }
 #else
    ++completed;
 #endif

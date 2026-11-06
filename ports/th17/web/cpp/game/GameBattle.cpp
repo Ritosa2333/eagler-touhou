@@ -12,7 +12,12 @@ struct GameBattle::Services {
         GameBattle& g;u32 seat;
         explicit PlayerServices(GameBattle& value,u32 index=0):g(value),seat(index){}
         bool allow_bomb()override{const auto* bomb=g.pilot_bomb(seat);return bomb&&bomb->allowed();}
-        bool begin_bomb()override{auto* bomb=g.pilot_bomb(seat);return (bomb&&bomb->begin())||g.fail(bomb?bomb->error:"Bomb owner unavailable");}
+        bool begin_bomb()override{
+            auto* bomb=g.pilot_bomb(seat);
+            if(!bomb||!bomb->begin())return g.fail(bomb?bomb->error:"Bomb owner unavailable");
+            g.protect_teammates(seat,120);
+            return true;
+        }
         bool end_roaring(bool death)override{return g.items->end_roaring(death)||g.fail(g.items->error);}
         bool cancel_lasers_near(const Vec3& p,float r,i32 kind,bool honor)override{return g.laser_scene->cancel_circle(p,r,kind,honor)>=0||g.fail(g.laser_scene->error);}
         // PlayerLife's flag selects the unprotected native circle routine.
@@ -32,6 +37,7 @@ struct GameBattle::Services {
     struct Projectiles final:LaserSceneHost {
         GameBattle& g;u32 seat=0;explicit Projectiles(GameBattle& value):g(value){}
         const PlayerCollision& player_collision()const noexcept override{return g.player_collision();}
+        Vec3 aim_target(const Vec3& origin)const noexcept override{return g.partner_count?g.aim_target(origin):LaserSceneHost::aim_target(origin);}
         u32 contact_players()const noexcept override{return g.pilot_count();}
         const PlayerCollision* select_contact(u32 index)noexcept override{
             seat=index;
@@ -284,6 +290,10 @@ bool GameBattle::add_coop_player(const ShtResource& shots,i32 character,i32 anim
     auto partner=std::make_unique<Partner>(*this,partner_count+1,shots,character,animal,bank);
     if(!partner->player.initialize()||!partner->player.configure_options())return fail(partner->player.error);
     partners[partner_count++]=std::move(partner);
+    if(partner_count==1){
+        enemy_world.multiplayer_target=[this](const Vec3& origin){return aim_target(origin);};
+        bullet_scene->manager.context.multiplayer_target=&enemy_world.multiplayer_target;
+    }
     return true;
 }
 bool GameBattle::pilot_game_over(u32 seat){
@@ -294,6 +304,26 @@ bool GameBattle::pilot_game_over(u32 seat){
     return check(presentation.game_over(),"Game-over scene unavailable");
 }
 bool GameBattle::pilot_active(u32 seat) const noexcept{return seat?!partners[seat-1]->retired:!primary_retired;}
+Vec3 GameBattle::aim_target(const Vec3& origin) noexcept{
+    if(!partner_count)return player->motion.position;
+    const Vec3* target=nullptr;
+    float nearest=0;
+    for(u32 seat=0;seat<pilot_count();++seat){
+        const auto& p=pilot(seat);
+        if(!pilot_active(seat)||p.session.extra_lives<0||p.life.state!=1)continue;
+        const auto& position=p.motion.position;
+        const float x=position.x-origin.x,y=position.y-origin.y,distance=x*x+y*y;
+        if(!target||distance<nearest){target=&position;nearest=distance;}
+    }
+    return target?*target:Vec3{0,400,0};
+}
+void GameBattle::protect_teammates(u32 caster,i32 frames) noexcept{
+    for(u32 seat=0;seat<pilot_count();++seat){
+        if(seat==caster||!pilot_active(seat))continue;
+        auto& timer=pilot(seat).life.invulnerability;
+        if(timer.current<frames)timer.set(frames);
+    }
+}
 bool GameBattle::reset_players(){
     if(!primary_retired&&!player->reset_for_stage())return fail(player->error);
     for(u32 index=0;index<partner_count;++index){
@@ -354,6 +384,11 @@ bool GameBattle::refresh_world(){
     enemy_world.cooperative=partner_count!=0;
     enemy_world.mode=character;enemy_world.submode=session.animal;enemy_world.stage_number=stage;enemy_world.difficulty=score.difficulty;enemy_world.state=session.power;enemy_world.counter3=session.deaths;enemy_world.game_frame_flags=input.game_flags;
     enemy_world.player_position=player->motion.position;enemy_world.player_damage_state=player->life.state;enemy_world.player_behavior_flags=player->motion.behavior_flags;enemy_world.player_damage_scale=player->frame.bounds.damage_multiplier;enemy_world.game_state=session.bomb_state;
+    if(partner_count){
+        enemy_world.state=score.max_power;
+        for(u32 seat=0;seat<pilot_count();++seat)
+            if(pilot_active(seat))enemy_world.state=std::min(enemy_world.state,pilot(seat).session.power);
+    }
     enemy_world.roaring_kind=items->roaring.state.kind;enemy_world.spirit_count=items->spirits.count();enemy_world.graze_history=bullet_scene->manager.graze_history;enemy_world.damage_disabled=dialogue_present()?1:0;
     bullet_scene->manager.context.player=player->motion.position;bullet_scene->manager.context.rate=input.rate;bullet_scene->manager.cancellation_rewards.spell_active=spell.flags&1;
     return error.empty();
@@ -430,7 +465,9 @@ i32 GameBattle::update_player(){
 i32 GameBattle::update_bomb(){
     for(u32 seat=0;seat<pilot_count();++seat){
         auto* controller=pilot_bomb(seat);
+        const bool active=pilot(seat).session.bomb_state==1;
         if(!controller||!controller->update(input.rate)){fail(controller?controller->error:"Bomb owner unavailable");return 5;}
+        if(active)protect_teammates(seat,40);
     }
     return refresh_world()?1:5;
 }
@@ -451,7 +488,7 @@ i32 GameBattle::update_items(){
             partner.input.held,frame.hud_collect,!partner.retired});
         lanes[i]=&*contexts[i];
     }
-    if(!items->update_items(frame,lanes)){fail(items->error);return 5;}
+    if(!items->update_items(frame,lanes,!primary_retired)){fail(items->error);return 5;}
     return refresh_world()?1:5;
 }
 i32 GameBattle::update_spirits(){
@@ -462,7 +499,7 @@ i32 GameBattle::update_spirits(){
         AnimalSpiritTargets team;
         for(u32 seat=0;seat<pilot_count();++seat){
             const auto& p=pilot(seat);
-            team[seat]={p.motion.position,p.life.state==1};
+            team[seat]={p.motion.position,pilot_active(seat)&&p.life.state==1};
         }
         for(u32 i=0;i<partner_count;++i)frame.held|=partners[i]->input.held;
         if(!items->update_spirits(frame,team)){fail(items->error);return 5;}

@@ -12,6 +12,9 @@ const rollback=!process.argv.includes('--lockstep');
 const throughStageTwo=process.argv.includes('--through-stage-two');
 const extraFinale=process.argv.includes('--extra-finale');
 const launcherPreview=process.argv.includes('--launcher-preview');
+const verifyReplay=process.argv.includes('--replay');
+const renderScale=Number(process.env.TH17_ROOM_RENDER_SCALE??1);
+assert.ok(renderScale===1||renderScale===2);
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
 const denseExtra=extraBoss||process.argv.includes('--dense-extra');
 const extended=throughStageTwo||process.argv.includes('--extended');
@@ -93,7 +96,7 @@ window.rpc=(seat,command,fields={})=>new Promise((resolve,reject)=>{
 window.startRuntime=async seat=>{
  const options=(await(await fetch('/options')).json())[seat];
  const configure={music:'none',language:'ja'};
- await rpc(seat,'configure',{...configure,sharedResources:['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path})),options:${launcherPreview}?{}:options});
+ await rpc(seat,'configure',{...configure,sharedResources:['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path})),options:${launcherPreview}?{renderScale:options.renderScale}:options});
  if(${launcherPreview}){
   const result=await rpc(seat,'prepare-room');
   const runtime=document.getElementById('p'+seat).contentWindow.Module;
@@ -143,7 +146,7 @@ try{
   options=Array.from({length:seats},(_,seat)=>({
    netplayMode:'lan',netplayAdonisMode:timing.adonisMode,netplayInputDelay:timing.inputDelay,netplayAllowWebsocketFallback:!extraBoss,
    netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:difficulty,netplayLoadouts:loadouts,
-   renderScale:1,netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
+   renderScale,netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
   }));
   const context=await browser.newContext({viewport:{width:seats*640,height:480}});
   if(rollback)await context.addInitScript(({delayMs,jitterMs})=>{
@@ -191,6 +194,13 @@ try{
       const r=Module._th17_room_rollback()>>>2;
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
       const phase=Module._th17_phase();
+      if(n>120&&ticks){
+       const now=performance.now();
+       diagnostics.measuredFrom??=now;
+       diagnostics.measuredThrough=now;
+       diagnostics.presentations=(diagnostics.presentations||0)+1;
+       diagnostics.simulationTicks=(diagnostics.simulationTicks||0)+ticks;
+      }
       if(n>120&&(ticks||resimulated>diagnostics.resimulated)&&(!denseExtra||phase===1)){
        const confirmed=samples.get(recorded);
        bullets=confirmed?.[10]??bullets;
@@ -402,12 +412,49 @@ try{
    if(seats===3)assert.ok(agreed.some(([,state])=>state[21]<state[13]),'third pilot moved up independently');
    await page.screenshot({path:resolve(out,seats+'p.png')});
    console.log(seats+' players, '+agreed.length+' matching confirmed frames, '+diagnostics.map(item=>item.corrections).join('/')+' corrections');
+   if(verifyReplay){
+    const replay=await frames[0].evaluate(()=>{
+     if(!Module._th17_mp_replay_save())throw Error('Native Replay save failed');
+     return Array.from(FS.readFile('/savesth17mp/replay/th17mp_01.rpy'));
+    });
+    await Promise.all(frames.map(frame=>frame.evaluate(()=>Module._th17_loop_stop())));
+    await page.evaluate(seats=>addRuntime(seats),seats);
+    await page.waitForFunction(epoch=>ready.has(epoch),seats+1,{timeout:45000});
+    const viewer=page.frames().at(-1),path='replay/th17mp_98.rpy';
+    await page.evaluate(async({seat,path,bytes})=>{
+     await rpc(seat,'configure',{music:'none',language:'ja',options:{replayViewer:true,renderScale:1},
+      sharedResources:['/msgothic.ttc','/unifont.otf'].map(path=>({path,url:path}))});
+     await rpc(seat,'launch');
+     await rpc(seat,'write',{path,bytes});
+     await rpc(seat,'playback',{action:'open',path});
+    },{seat:seats,path,bytes:replay});
+    const waitReplay=frame=>viewer.waitForFunction(target=>{
+     const pointer=Module._eagler_replay_state()>>>2;
+     return Module.HEAPU32[pointer]>=target;
+    },frame,{timeout:15000});
+    await waitReplay(120);
+    const canvas=viewer.locator('canvas');
+    const firstImage=await canvas.screenshot();
+    await waitReplay(220);
+    assert.notDeepEqual(await canvas.screenshot(),firstImage,'Replay presents new gameplay frames');
+    await page.evaluate(async seat=>{
+     await rpc(seat,'playback',{action:'pause'});
+     await rpc(seat,'playback',{action:'seek',value:150});
+    },seats);
+    await viewer.waitForFunction(()=>Module.HEAPU32[Module._eagler_replay_state()>>>2]===150,null,{timeout:15000});
+    assert.notDeepEqual(await canvas.screenshot(),firstImage,'Paused seek presents its destination');
+    await page.evaluate(seat=>rpc(seat,'playback',{action:'play'}),seats);
+    await waitReplay(240);
+    assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
+    reports.at(-1).replay={playedThrough:240,seekTarget:150,canvasAdvanced:true};
+    console.log(seats+' players, saved Replay plays, presents and seeks');
+   }
   }finally{await context.close();for(const socket of members)socket.close();}
  }
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,denseExtra,extraBoss,extraFinale,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,extraBoss,extraFinale,renderScale,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
   fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
   samples:finaleSamples})+'\n');

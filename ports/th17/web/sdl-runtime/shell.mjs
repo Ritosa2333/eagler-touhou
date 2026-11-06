@@ -94,7 +94,8 @@ function initializeGame(){
  let scaleOption=query.get('renderScale');
  if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}
  const requested=Number(scaleOption);
- core._th17_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);
+ const scale=[options.renderScale,requested].find(value=>value===1||value===2)??(roomRuntime?1:2);
+ core._th17_render_scale(scale);
  if(!core._th17_initialize())throw Error(err());
 }
 async function openRoom(){
@@ -151,6 +152,8 @@ const localReplay=createNativeLocalReplay({
  core:()=>core,module:()=>core,physical:value=>saveRoot+'/'+path(value),
  stopLoop:()=>{clearKeyboard();core._th17_loop_stop();},
  pauseAudio:paused=>core._th17_loop_pause(+paused),
+ waitForAudio:false,
+ deferPresentation:false,
  async openReplay(value,stage){
   if(!roomRuntime)throw Error('请使用多人录像运行包');
   core._th17_loop_stop();core._th17_room_close();initializeGame();

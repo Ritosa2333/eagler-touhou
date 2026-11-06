@@ -11,7 +11,7 @@
 #include "CurveProgram.hpp"
 #include "CurveCancellation.hpp"
 namespace th17 {
-struct LaserSceneHost:BulletSceneHost,LaserProgramHost {virtual const Vec3* stationary_laser_anchor()const noexcept{return nullptr;}};
+struct LaserSceneHost:BulletSceneHost,LaserProgramHost {virtual Vec3 aim_target(const Vec3&)const noexcept{const auto& p=player_collision().position;return {p.x,p.y,0};}virtual const Vec3* stationary_laser_anchor()const noexcept{return nullptr;}};
 // Owns concrete lasers and connects their embedded animations to the shared
 // player predicate, cancellation rewards, effects and typed game services.
 class LaserScene {

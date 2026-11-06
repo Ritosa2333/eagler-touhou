@@ -13,19 +13,21 @@ BulletFrameResult BulletState::update(const BulletFrameContext& context,Rng& ran
     if(phase==2){move(.5f);if((spawn.current<8||host.contact(*this,false)!=1)&&spawn_animation_finished){phase=1;active=true;}}
     else if(phase==3)move(.5f);
     if(active){
+        // Most bullets have no aimed transform after emission.
+        const auto target=[&](){return context.target(motion.position);};
         u32 iterations=0;
         for(;;){
             if(++iterations>4096){error="Bullet transform completion cycle";return BulletFrameResult::error;}
-            if(!(transform_flags&0x4000000)&&!activate(context.player,random,&host,&host,error))return BulletFrameResult::error;
+            if(!(transform_flags&0x4000000)&&!activate(context.multiplayer_target&&transform_index>=0&&transform_index<18&&transforms()[transform_index].type?target():context.player,random,&host,&host,error))return BulletFrameResult::error;
             if(!transform_flags)break;
             u32 completed=0;
             if(transform_flags&1)completed+=update_boost(rate);
             if(transform_flags&4)completed+=update_acceleration(rate);
             if(transform_flags&0x200000)completed+=update_acceleration(rate,true);
             if(transform_flags&8)completed+=update_angular(rate);
-            if(transform_flags&16)completed+=update_turn(rate,context.player,&host);
+            if(transform_flags&16)completed+=update_turn(rate,target(),&host);
             if(transform_flags&64)completed+=update_reflection(context.reflection_bounds,&host);
-            if(transform_flags&0x40000000)completed+=update_homing(rate,context.player);
+            if(transform_flags&0x40000000)completed+=update_homing(rate,target());
             if(transform_flags&0x20000)completed+=update_position_curve(rate);
             if(transform_flags&0x80000)completed+=update_drift(rate);
             if(transform_flags&0x100)completed+=update_wait(rate,sprite_size());

@@ -19,5 +19,6 @@ public:
     std::string error;
     ItemCollection(PlayerLifeSession& p,ItemScoreState& s,PlayerMotion& m,ItemCollectionHost& h,i32 ch,i32* own_tier=nullptr):player(p),score(s),motion(m),world(h),character(ch),life_piece_tier(own_tier?*own_tier:s.life_piece_tier){}
     bool award(const ItemState&,i32 small_power=1);
+    bool needs_power()const noexcept{return player.power<score.max_power;}
 };
 }

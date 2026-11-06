@@ -50,7 +50,7 @@ bool ApplicationState::step_loading(){
  if(!updated)return fail(animations.error);
  if(!draw_loading())return false;
 #if TH17_MULTIPLAYER
- if(!room_seats)
+ if(!room_sounds)
 #endif
   audio_device.update();
  audio_device.pump();if(!audio_device.error.empty())return fail(audio_device.error);

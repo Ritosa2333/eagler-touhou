@@ -220,7 +220,7 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  }else {if(scheduler.update()<0)return fail(title&&!title->error.empty()?title->error:ending&&!ending->error.empty()?ending->error:animations.error);}
 #if TH17_MULTIPLAYER
  if(room_speculative&&(flow.current!=flow.pending||(progress.screen!=0&&progress.screen!=7)))return rollback_boundary();
- if(!room_seats)
+ if(!room_sounds)
 #endif
   audio_device.update();
  if(!audio_device.error.empty())return fail(audio_device.error);

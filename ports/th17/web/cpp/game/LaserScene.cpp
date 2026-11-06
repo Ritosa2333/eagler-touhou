@@ -26,7 +26,7 @@ struct LaserScene::MovingLaser final:LaserObject,LaserCancellationHost,LaserCont
         motion.angle=request.angle;motion.maximum_length=request.maximum_length;motion.length=request.initial_length;motion.end_distance=request.end_distance;motion.width=request.width;motion.speed=request.speed;motion.traveled=motion.length>motion.maximum_length?.01f:0;motion.set_velocity();return true;
     }
     bool update(float rate,bool& finished)override{
-        const auto& player=scene.host.player_collision();LaserProgramContext context{motion,visual,id,state,outside_count,{player.position.x,player.position.y,0},*this,request.reflection_sound};if(!program.update(request.transforms,context,rate)){error=program.error;return false;}motion.outside_delay=outside_delay;finished=motion.advance(rate);request.maximum_length=motion.maximum_length;outside_delay=motion.outside_delay;if(finished)return true;
+        LaserProgramContext context{motion,visual,id,state,outside_count,scene.host.aim_target(motion.position),*this,request.reflection_sound};if(!program.update(request.transforms,context,rate)){error=program.error;return false;}motion.outside_delay=outside_delay;finished=motion.advance(rate);request.maximum_length=motion.maximum_length;outside_delay=motion.outside_delay;if(finished)return true;
         if(!update_visual(rate,false))return false;if(!visual.update(motion.width,motion.length,motion.traveled,true)){error=visual.error;return false;}motion.finish_frame(rate);return true;
     }
     bool update_visual(float rate,bool graze_only)override{
