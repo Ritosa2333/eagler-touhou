@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {launchBrowser} from '../../../../tools/browser/launch.mjs';
+import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 
 const repository=resolve(import.meta.dirname,'../../../..');
 const build=resolve(process.env.EAGLER_TH17_BUILD||resolve(repository,'ports/th17-mp/build-eagler-multiplayer'));
@@ -38,7 +39,8 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
  await new Promise(yes=>server.listen(0,'127.0.0.1',yes));
  let browser;
  try{
-  browser=await launchBrowser();const page=await browser.newPage({viewport:{width:1024,height:900}});
+  browser=process.env.TH17_BROWSER==='webkit'?await (await loadPlaywright()).webkit.launch():await launchBrowser();
+  const page=await browser.newPage({viewport:{width:1024,height:900}});
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.click('#start');
@@ -80,6 +82,20 @@ test('TH17 production adapter binds epochs and runs configure, files, input, hea
   await mkdir(output,{recursive:true});
   const frame=page.frames().find(f=>f.url().includes('/runtime/'));
   await frame.waitForFunction(()=>Module._th17_frame()>160);
+  await frame.locator('canvas').evaluate(canvas=>{
+   const {x,y,width,height}=canvas.getBoundingClientRect();
+   const event=(type,id)=>new PointerEvent(type,{pointerId:id,pointerType:'touch',clientX:x+width/2,clientY:y+height/2,bubbles:true,cancelable:true});
+   // Rapid taps can arrive before the next animation frame. A capture
+   // cancellation must discard their queued confirmation.
+   for(let id=1;id<=5;id++){
+    canvas.dispatchEvent(event('pointerdown',id));
+    window.dispatchEvent(event('pointerup',id));
+   }
+   canvas.dispatchEvent(event('pointerdown',6));
+   canvas.dispatchEvent(event('pointercancel',6));
+  });
+  await frame.waitForFunction(()=>Module._th17_frame()>170);
+  assert.equal(await frame.evaluate(()=>Module._th17_phase()),0);
   await page.screenshot({path:resolve(output,'title.png')});
   for(let i=0;i<2;i++){
    await command('keyboard',{code:'Escape',down:true});await page.waitForTimeout(80);
