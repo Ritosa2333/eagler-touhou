@@ -152,11 +152,11 @@
     "multiplayerJoin": "e164e472b1ccc6fecde6984cc4d45fdeae5abf2e"
   },
   "projection": {
-    "sourceHead": "d86d4dc1213ccac4a907242c795cd3e6051338a7",
+    "sourceHead": "d9e8a12ccae8e1fe79cbd81167e85a88b3c7b796",
     "game": "th17",
     "results": {
       "th17": {
-        "head": "13abf1b68472d79b0fe736f1d847531f9205aba5",
+        "head": "c160d5045c8e9cf886d3eef6832f0e038a3257b9",
         "ref": "refs/heads/port-history/th17",
         "initialAncestor": true,
         "latestAncestor": true,
@@ -165,11 +165,15 @@
           {
             "source": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
             "projected": "13abf1b68472d79b0fe736f1d847531f9205aba5"
+          },
+          {
+            "source": "8619b754e288c7f38b71eb2f5879222091dca927",
+            "projected": "c160d5045c8e9cf886d3eef6832f0e038a3257b9"
           }
         ]
       },
       "th17mp": {
-        "head": "4cf7fe1a28608cd40fbea59fc5051f000d414a2e",
+        "head": "679442c9e653adf5e0ebf10f7ca2291ea62a24d0",
         "ref": "refs/heads/port-history/th17mp",
         "initialAncestor": true,
         "latestAncestor": true,
@@ -178,32 +182,22 @@
           {
             "source": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
             "projected": "03c59757b7dee05288e86fb7f2ba6e36815f99ad"
+          },
+          {
+            "source": "8619b754e288c7f38b71eb2f5879222091dca927",
+            "projected": "97376f97203e99ee7bdcb193c80967b66998ba05"
           }
         ]
       }
     },
     "mergeBases": [
-      "13abf1b68472d79b0fe736f1d847531f9205aba5"
+      "c160d5045c8e9cf886d3eef6832f0e038a3257b9"
     ],
-    "aheadBehind": "0\t2"
-  },
-  "writeback": {
-    "sourceHead": "28c01b663bd3c5e20fc24f59dee6ca66c7bb5c05",
-    "game": "th17",
-    "target": "ports/th17-mp",
-    "merged": "4cf7fe1a28608cd40fbea59fc5051f000d414a2e",
-    "tree": "c493469495e1923a8b637322671c1e5afb0b5af5",
-    "parents": [
-      "28c01b663bd3c5e20fc24f59dee6ca66c7bb5c05",
-      "4cf7fe1a28608cd40fbea59fc5051f000d414a2e"
-    ],
-    "message": "接回 TH17 普通版与多人版同步父链\n\ngit-subtree-dir: ports/th17-mp\ngit-subtree-mainline: 28c01b663bd3c5e20fc24f59dee6ca66c7bb5c05\ngit-subtree-split: 4cf7fe1a28608cd40fbea59fc5051f000d414a2e\nPort-History-Writeback: 1\n",
-    "changed": [],
-    "candidateCommit": "ce244c8b68e54e698d379ea4b71d7846223cc57f"
+    "aheadBehind": "0\t4"
   },
   "exports": {
-    "normal": "76518c2b88c9750e3a35ced1d5a25855d27eb878",
-    "multiplayer": "4cf7fe1a28608cd40fbea59fc5051f000d414a2e"
+    "normal": "8956b95381e960dcee6160dee5ff8e4b5e9ff9c8",
+    "multiplayer": "679442c9e653adf5e0ebf10f7ca2291ea62a24d0"
   },
   "builds": {
     "normal": {
@@ -295,7 +289,42 @@
       "passed": 10,
       "total": 10
     },
-    "normalAdapter": true
+    "normalAdapter": true,
+    "sourceHistory": {
+      "passed": true,
+      "head": "d9e8a12ccae8e1fe79cbd81167e85a88b3c7b796",
+      "exports": {
+        "ports/th17": "8956b95381e960dcee6160dee5ff8e4b5e9ff9c8",
+        "ports/th17-mp": "679442c9e653adf5e0ebf10f7ca2291ea62a24d0"
+      },
+      "deliverySnapshots": [
+        "ports/th17",
+        "ports/th19"
+      ],
+      "retainedSourceAnchors": 25,
+      "unchangedExistingSubtrees": [
+        "ports/th12",
+        "ports/th12-mp",
+        "ports/th15-mp"
+      ],
+      "scope": "TH17 normal and MP standard subtree exports, join parents, source ancestry, exact directory trees, original delivery manifest, retained original anchors and unchanged earlier subtree registrations/trees"
+    },
+    "repositoryHistory": {
+      "status": "timeout",
+      "scope": "whole-repository source history",
+      "directory": "ports/th12",
+      "elapsedSeconds": 714.0,
+      "newDirectoriesVerified": [
+        "ports/th17",
+        "ports/th17-mp"
+      ],
+      "command": "python tools/ports/check-history.py --repo history-validation --head d86d4dc1213ccac4a907242c795cd3e6051338a7 --base 39e4474113aa883fc937146605cdaa221a972d58"
+    },
+    "documentation": {
+      "documents": 446,
+      "sourceDirectories": 19,
+      "passed": true
+    }
   },
   "rooms": {
     "rollback": true,
@@ -1240,5 +1269,35 @@
         "web/cpp/sdl/ThpracUi.cpp"
       ]
     }
-  }
+  },
+  "historyWritebacks": [
+    {
+      "sourceHead": "28c01b663bd3c5e20fc24f59dee6ca66c7bb5c05",
+      "game": "th17",
+      "target": "ports/th17-mp",
+      "merged": "4cf7fe1a28608cd40fbea59fc5051f000d414a2e",
+      "tree": "c493469495e1923a8b637322671c1e5afb0b5af5",
+      "parents": [
+        "28c01b663bd3c5e20fc24f59dee6ca66c7bb5c05",
+        "4cf7fe1a28608cd40fbea59fc5051f000d414a2e"
+      ],
+      "message": "接回 TH17 普通版与多人版同步父链\n\ngit-subtree-dir: ports/th17-mp\ngit-subtree-mainline: 28c01b663bd3c5e20fc24f59dee6ca66c7bb5c05\ngit-subtree-split: 4cf7fe1a28608cd40fbea59fc5051f000d414a2e\nPort-History-Writeback: 1\n",
+      "changed": [],
+      "candidateCommit": "ce244c8b68e54e698d379ea4b71d7846223cc57f"
+    },
+    {
+      "sourceHead": "8619b754e288c7f38b71eb2f5879222091dca927",
+      "game": "th17",
+      "target": "ports/th17-mp",
+      "merged": "679442c9e653adf5e0ebf10f7ca2291ea62a24d0",
+      "tree": "17d7e65c0f3449efc8ee0ab9b98e77a2696ef9fa",
+      "parents": [
+        "8619b754e288c7f38b71eb2f5879222091dca927",
+        "679442c9e653adf5e0ebf10f7ca2291ea62a24d0"
+      ],
+      "message": "保留 TH17 适配验证的同步父链\n\ngit-subtree-dir: ports/th17-mp\ngit-subtree-mainline: 8619b754e288c7f38b71eb2f5879222091dca927\ngit-subtree-split: 679442c9e653adf5e0ebf10f7ca2291ea62a24d0\nPort-History-Writeback: 1\n",
+      "changed": [],
+      "candidateCommit": "72c046509f143302f978c9cf7336fca4ce74cb01"
+    }
+  ]
 }
