@@ -223,6 +223,16 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
                 if (!state.replay_name.empty()) state.replay_name.pop_back();
             } else if (state.name_cursor == 90) {
                 if (state.name_is_result) {
+                    // LAB_00440520（0x43fa90 态 0x13 END 路径）：录入完成才建
+                    // 菜单脚本 142（进榜路径 open() 延迟未建）→ 态 0xf 续关菜单。
+                    if (!state.menu_animation) {
+                        state.menu_animation = animations.create(
+                            state.front_bank, kGameOverMenuScript, -1, 4);
+                        if (!state.menu_animation)
+                            return check(false, animations.error.c_str());
+                        if (auto* vm = animations.registry.find(state.menu_animation))
+                            vm->visual.render_flags &= ~0xc000u;
+                    }
                     if (!host.record_result_name(state.replay_name) ||
                         !interrupt(state.menu_animation,3,true) || !configure_entries()) return false;
                     phase(6); break;
@@ -237,8 +247,9 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             }
         } else if (pressed & 0x102) {
             if (!state.replay_name.empty()) state.replay_name.pop_back();
-            else if (state.name_is_result) { if (!configure_entries()) return false; phase(6); }
-            else phase(17);
+            // 0x43fa90 态 0x13：空名 Esc 原地不动（rank>=0 无 LAB_00440520 旁路）；
+            // 回放保存名前录入（A 机态 10）才退回选槽。
+            else if (!state.name_is_result) phase(17);
         }
         break;
     }

@@ -591,6 +591,36 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_ending(int character, int difficulty) {
     return 1;
 }
 
+// Debug 直入 GameOver 覆盖层（仅诊断面）：走生产 0x43f570 同链
+// request_game_over()（真实 exhausted-lives 死亡的同一入口）。回放会话的
+// player game-over 改走结算A（00443240），浏览器无法自然到达本路径；
+// 与 th13_debug_ending 同为产品级验证入口——GameOver→名前录入覆盖层
+// 的绘制健康（2026-11-06 "ASCII glyph sprite unavailable: 313" 卡死回归）。
+EMSCRIPTEN_KEEPALIVE int th13_debug_game_over() {
+    using namespace th13::sdl;
+    if (!app || !app->initialized || !app->run) return 0;
+    if (!app->request_game_over()) { last_error = app->failure; return 0; }
+    return 1;
+}
+
+// 只读暂停覆盖层状态埋点（诊断面）：GameOver/名前录入验证时观察
+// screen/phase/age/名字缓冲与门控位，不参与任何生产判定。
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_pause_state() {
+    using namespace th13::sdl;
+    static char report[512];
+    if (!app || !app->pause) { report[0] = 0; return report; }
+    const auto& state = app->pause->state;
+    std::snprintf(report, sizeof report,
+        "{\"screen\":%d,\"phase\":%d,\"age\":%d,\"cursor\":%d,\"menu_count\":%d,"
+        "\"can_continue\":%d,\"can_save\":%d,\"needs_name\":%d,\"name_is_result\":%d,"
+        "\"replay_slot\":%d,\"name_cursor\":%d,\"name\":\"%s\"}",
+        int(state.screen), state.phase, state.age.current, state.menu.cursor,
+        state.menu.count, int(state.can_continue), int(state.can_save_replay),
+        int(state.result_needs_name), int(state.name_is_result),
+        state.replay_slot, state.name_cursor, state.replay_name.c_str());
+    return report;
+}
+
 // 确定性单帧泵：固定 1/60 步长、恰一逻辑帧 + 绘制提交，不经过 rAF 帧钟与
 // FrameCadence。装载挡板（正常启动序）按同一步长推进。1 = ok，0 = 失败。
 EMSCRIPTEN_KEEPALIVE int th13_debug_frame() {
