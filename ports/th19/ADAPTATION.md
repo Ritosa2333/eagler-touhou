@@ -31,22 +31,22 @@
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 检查失败 | 检查失败 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 检查失败 | 检查失败 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 检查失败 | 检查失败 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-04 | [本地导入与在线安装一致](../../docs/adaptation/runtime.md#package-04) | 检查失败 | 检查失败 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-04 | [本地导入与在线安装一致](../../docs/adaptation/runtime.md#package-04) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-05 | [已安装游戏离线启动](../../docs/adaptation/runtime.md#package-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| PACKAGE-06 | [统一安装和更新入口](../../docs/adaptation/runtime.md#package-06) | 检查失败 | 检查失败 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
+| PACKAGE-06 | [统一安装和更新入口](../../docs/adaptation/runtime.md#package-06) | 已实现 | 已实现 | normal：[package-store](../../docs/adaptation/status.json)；multiplayer：[package-store](../../docs/adaptation/status.json) |
 
 ## 键盘、手柄与触控
 
 | 编号 | 检查项 | normal | multiplayer | 记录 |
 | --- | --- | --- | --- | --- |
 | INPUT-01 | [键盘逻辑输入](../../docs/adaptation/input.md#input-01) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| INPUT-02 | [启动器键盘改键](../../docs/adaptation/input.md#input-02) | 检查失败 | 检查失败 | normal：[launcher-input-owners](../../docs/adaptation/status.json)；multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
-| INPUT-03 | [启动器手柄映射](../../docs/adaptation/input.md#input-03) | 检查失败 | 检查失败 | normal：[launcher-input-owners](../../docs/adaptation/status.json)；multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
+| INPUT-02 | [启动器键盘改键](../../docs/adaptation/input.md#input-02) | 已实现 | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json)；multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
+| INPUT-03 | [启动器手柄映射](../../docs/adaptation/input.md#input-03) | 已实现 | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json)；multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
 | INPUT-04 | [手柄方向与按钮](../../docs/adaptation/input.md#input-04) | 已实现 | 已实现 | normal：[native-gamepad](../../docs/adaptation/status.json)；multiplayer：[native-gamepad](../../docs/adaptation/status.json) |
-| INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 检查失败 | 检查失败 | normal：[launcher-input-owners](../../docs/adaptation/status.json)；multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
+| INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 已实现 | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json)；multiplayer：[launcher-input-owners](../../docs/adaptation/status.json) |
 | INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-01 | [限速滑动移动](../../docs/adaptation/input.md#touch-01) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -57,7 +57,7 @@
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 检查失败 | 检查失败 | normal：[held-touch-continuity](../../docs/adaptation/status.json)；multiplayer：[held-touch-continuity](../../docs/adaptation/status.json) |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | 待核对 | normal：[held-touch-continuity](../../docs/adaptation/status.json)；multiplayer：[held-touch-continuity](../../docs/adaptation/status.json) |
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -65,17 +65,17 @@
 | TOUCH-14 | [100–300% 灵敏度](../../docs/adaptation/input.md#touch-14) | 已实现 | 已实现 | normal：[touch-sensitivity](../../docs/adaptation/status.json)；multiplayer：[touch-sensitivity](../../docs/adaptation/status.json) |
 | TOUCH-15 | [触控与其他输入隔离](../../docs/adaptation/input.md#touch-15) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | TOUCH-16 | [触控取消与生命周期](../../docs/adaptation/input.md#touch-16) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
-| TOUCH-17 | [共用布局编辑器](../../docs/adaptation/input.md#touch-17) | 检查失败 | 检查失败 | normal：[shared-touch-controls](../../docs/adaptation/status.json)；multiplayer：[shared-touch-controls](../../docs/adaptation/status.json) |
-| TOUCH-18 | [共用重开按钮](../../docs/adaptation/input.md#touch-18) | 检查失败 | 检查失败 | normal：[shared-touch-controls](../../docs/adaptation/status.json)；multiplayer：[shared-touch-controls](../../docs/adaptation/status.json) |
-| TOUCH-19 | [共用双指放大镜](../../docs/adaptation/input.md#touch-19) | 检查失败 | 检查失败 | normal：[shared-touch-controls](../../docs/adaptation/status.json)；multiplayer：[shared-touch-controls](../../docs/adaptation/status.json) |
+| TOUCH-17 | [共用布局编辑器](../../docs/adaptation/input.md#touch-17) | 已实现 | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json)；multiplayer：[shared-touch-controls](../../docs/adaptation/status.json) |
+| TOUCH-18 | [共用重开按钮](../../docs/adaptation/input.md#touch-18) | 已实现 | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json)；multiplayer：[shared-touch-controls](../../docs/adaptation/status.json) |
+| TOUCH-19 | [共用双指放大镜](../../docs/adaptation/input.md#touch-19) | 已实现 | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json)；multiplayer：[shared-touch-controls](../../docs/adaptation/status.json) |
 
 ## 画面与声音
 
 | 编号 | 检查项 | normal | multiplayer | 记录 |
 | --- | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 检查失败 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 检查失败 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 检查失败 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | 待核对 | normal：[normal-presentation](../../docs/adaptation/status.json)；multiplayer：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | 待核对 | normal：按本项步骤执行，结果写入验证记录；multiplayer：按本项步骤执行，结果写入验证记录 |

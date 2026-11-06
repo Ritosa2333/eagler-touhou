@@ -6,7 +6,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "b4cb20f54ff7de37e10f04c62d8247c0e5c703f20e863e292ee8afa4d0b1e11e",
+      "sourceDigest": "f9af2b05676f79c3c5e1ec879e153d217e45c2aae7d69791d0f874677c0d2105",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -195,7 +195,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "058d2240e0e0e6e958a7e99fd9f84d27d5f674ab39187e23d98b9d9b67a895c3",
+      "sourceDigest": "a2fc6984f4033320f8c646cd3692e858c8a75816fb441b464376105e5fc60246",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -405,7 +405,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "99225c3861270dc0211b8726e14d3069b12f15d2315996d3dda1536f2d73c491",
+      "sourceDigest": "842de898f1b38ba0c122fc7e4a00957202ce1a333ad53193b61444319843f8e1",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -594,7 +594,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "636d7703cd56a57e50fa9a432280240296c1ed0039ca76ce91a2bf0f712f28c2",
+      "sourceDigest": "cce6e2a1515b3cdd14edeefe8111fd48a24d441d2961edd59ba0eb7a7c8d1e5e",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -804,7 +804,7 @@
       "game": "th075",
       "variant": "multiplayer",
       "directory": "ports/th075-mp",
-      "sourceDigest": "7e7174d1f3e46f9c88fe573102edf92ddc3ca9d62583e32a4acbfa9cda3ab8ec",
+      "sourceDigest": "329444c525aca41e67e1700e83773dd1a7e493daba850e06942b5142a488d0e3",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 207,
@@ -958,7 +958,7 @@
       "game": "th075",
       "variant": "normal",
       "directory": "ports/th075",
-      "sourceDigest": "437627619c6d1566bc4bb29739f394367c78df798285c7cb9e7957123f58068c",
+      "sourceDigest": "04c622a6f46a9f290b3971762085f4966e17cf76ca3b0a2309d64324d49a62bf",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 200,
@@ -1132,7 +1132,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "e131a0cca613b4832b7015c4637f0015bbf31afb6f1156eaa3383583f2d97d9a",
+      "sourceDigest": "bd6895ec68e83d1d1cedc7ed607a750ab1e71f894b5266f98ea4620b2bbe351b",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -1287,7 +1287,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "dbe77ffdb067fd653203e32c8446732549f5d3a9eb3893019eaa0f913b08c1a3",
+      "sourceDigest": "b85c35eace698fae8ed9ab719768a4a079f848ed9a8a3c526232561a24199e4d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1462,7 +1462,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "17122226697d5e2b5a56d7f9ab1957451a74b402dc07f0fa9db41bafa7fb2009",
+      "sourceDigest": "16bcbb3d606a6256053481a84fda49c1d65c5add0de153e1a478296ba063bd71",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1614,7 +1614,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "e7827a365217296083d84ca990ec1349c53c8ee33244457430b657506b3aa70c",
+      "sourceDigest": "3cd161525862d80db81ee0ff8dfea6257bc7d7b8339e73f550e69ee1151366f3",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1787,7 +1787,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "e12a2384fd1257820fa1178809b6e8b036e7f89fd27cc1b0d9f440ee686a514f",
+      "sourceDigest": "167ce37dab7d1d646325d1cc4e153e61ada8c41194dee80f9d5b2f88a324e255",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 277,
@@ -1941,7 +1941,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "9758f0c97d7fa034af077204d2773cf27190b03f6b19fb8b9661b0cfbcc7b669",
+      "sourceDigest": "94d400a345df946823ef9091395780f67573c8bef60040583718635e0c6461bd",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -2116,7 +2116,7 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "d7b00406a499377dcd211b7e9210e2a29853afa22afe1368f35e6d3573679400",
+      "sourceDigest": "35337af7466ad8f73c56e33130fc0d2ff81e87d77940726c08aed3d6efd982a6",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 139,
@@ -2270,7 +2270,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "4305c6d8049356b87ef5dc0638b3aa0644ef354cc1932329871370fa9f011d57",
+      "sourceDigest": "1bff06c176c5f48edd48f51ea1da97ae6efa36afbdc0ccb33dcd174c4d8c98b1",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 115,
@@ -2445,7 +2445,7 @@
       "game": "th12",
       "variant": "multiplayer",
       "directory": "ports/th12-mp",
-      "sourceDigest": "2dbf9f6085d47643513a6b181b37f190c9e7af9a946317d72110d6d0bd717eb3",
+      "sourceDigest": "e92e168ea1fd04834121d8eafc7b79d8e43bcae397a5f934ade8bf01c7ca6e43",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 95,
@@ -2605,7 +2605,7 @@
       "game": "th12",
       "variant": "normal",
       "directory": "ports/th12",
-      "sourceDigest": "d3538c6f5f85c7c27ef53620c88f1685c5e6c0be8d027f39e4a5d62f42fc69e6",
+      "sourceDigest": "4697adf794e3d1b4984b0665dbed5372eab7026cb5ee25b1dc277c00beeaea4c",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 81,
@@ -2786,7 +2786,7 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "f70f5ddea665ef9c4d23eb308e263333472fc2e15c3a3d4635d6ca91bb1448bc",
+      "sourceDigest": "70ef32590e39201868536fab336fb3f2440178c132d97f6ee46ffa2392ffb436",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 271,
@@ -2939,7 +2939,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "a93de8a4abcc79542526cd036f49502c3a175d5017baa54483e9d487a663edf6",
+      "sourceDigest": "26c2bc6d1f05db3300297416f879b6c3ab1a23bc51f1790e54028f0d0141538c",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -3113,7 +3113,7 @@
       "game": "th17",
       "variant": "normal",
       "directory": "ports/th17",
-      "sourceDigest": "a1788580002396c5ad0319382ce1c3d9cfd05ccf50db4d3821da5c71aeaee094",
+      "sourceDigest": "b1201727121bc63b413d373352a6e7ae61aa7e371e6c38c6d3ae65f7dbfaf425",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 211,
@@ -3373,8 +3373,7 @@
           "files": [
             "tools/ports/touch-continuity.test.mjs"
           ],
-          "status": "failed",
-          "error": "Executable checks failed; see held-touch-continuity.log"
+          "status": "passed"
         },
         {
           "id": "immediate-sfx-routing",
@@ -3406,8 +3405,7 @@
             "launcher/tests/test-runtime-preparation.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see package-store.log"
+          "status": "passed"
         },
         {
           "id": "launcher-input-owners",
@@ -3426,8 +3424,7 @@
             "launcher/tests/react-main/gamepad-matrix.test.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see launcher-input-owners.log"
+          "status": "passed"
         },
         {
           "id": "shared-touch-controls",
@@ -3445,8 +3442,7 @@
             "launcher/tests/react-main/touch-editor-selects.test.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see shared-touch-controls.log"
+          "status": "passed"
         }
       ]
     },
@@ -3528,8 +3524,7 @@
           "files": [
             "tools/ports/touch-continuity.test.mjs"
           ],
-          "status": "failed",
-          "error": "Executable checks failed; see held-touch-continuity.log"
+          "status": "passed"
         },
         {
           "id": "immediate-sfx-routing",
@@ -3561,8 +3556,7 @@
             "launcher/tests/test-runtime-preparation.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see package-store.log"
+          "status": "passed"
         },
         {
           "id": "launcher-input-owners",
@@ -3581,8 +3575,7 @@
             "launcher/tests/react-main/gamepad-matrix.test.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see launcher-input-owners.log"
+          "status": "passed"
         },
         {
           "id": "shared-touch-controls",
@@ -3600,8 +3593,7 @@
             "launcher/tests/react-main/touch-editor-selects.test.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see shared-touch-controls.log"
+          "status": "passed"
         },
         {
           "id": "normal-presentation",
@@ -3622,8 +3614,7 @@
             "launcher/tests/test-presentation-contract-coverage.mjs"
           ],
           "complete": true,
-          "status": "failed",
-          "error": "Executable checks failed; see normal-presentation.log"
+          "status": "passed"
         }
       ]
     },
@@ -3631,7 +3622,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "c4d183cd9515425d641a78a47a02af0d47e7a9f4b8e4d98acb685a1d58494414",
+      "sourceDigest": "469bea17163a5e7d8f0584a0d268266c460f22ace84a2aff4ded7e4a2fe7d255",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,
