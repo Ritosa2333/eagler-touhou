@@ -5,6 +5,7 @@ import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/mul
 import {useLocale} from '../../i18n';
 import {roomPresentation} from './presentation';
 import {RoomPacketLoss} from './RoomPacketLoss';
+import {RoomLoadoutFields} from './RoomLoadoutFields';
 import type {RoomNetworkPresentation} from './types';
 export function RoomPersonal({state, service, network, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setDisplayName' | 'changeLoadout' | 'standUp' | 'checkGame' | 'setPreferTurn'>; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
   const {t} = useLocale(), {room, loadout, label, config} = roomPresentation(state, t)!;
@@ -32,9 +33,10 @@ export function RoomPersonal({state, service, network, assetUrl, th09NetworkOver
     <section className="mp-spectator" id="mpUnseatedNote" hidden={room.synced === true && state.seat != null}>
       <div className="mp-spectator-title">{t(!room.synced ? 'multiplayer.connectingRoom' : state.spectatorRequested ? 'multiplayer.spectatorSeat' : 'multiplayer.notSeated')}</div>
       <div className="mp-spectator-hint">{t(!room.synced ? 'multiplayer.syncingState' : state.spectatorRequested ? 'multiplayer.waitSpectatorStream' : 'multiplayer.chooseSeatOrSpectate')}</div>
-      <div className="mp-spectator-loadout" hidden={!room.synced || state.spectatorRequested}><div className="mp-local-character" aria-hidden="true" hidden={config.inGameSelection}><span id="mpLocalCharacterGlyph">{loadout.glyph}</span></div><div className="mp-local-copy"><strong>{t('multiplayer.you')}</strong><span id="mpLocalLoadoutLabel" hidden={config.inGameSelection}>{label(state.preferredLoadout)}</span></div><div className="mp-local-actions">{arrow('mpLoadoutPrev', true)}{arrow('mpLoadoutNext', false)}</div></div>
+      {!config.loadoutFields && <div className="mp-spectator-loadout" hidden={!room.synced || state.spectatorRequested}><div className="mp-local-character" aria-hidden="true" hidden={config.inGameSelection}><span id="mpLocalCharacterGlyph">{loadout.glyph}</span></div><div className="mp-local-copy"><strong>{t('multiplayer.you')}</strong><span id="mpLocalLoadoutLabel" hidden={config.inGameSelection}>{label(state.preferredLoadout)}</span></div><div className="mp-local-actions">{arrow('mpLoadoutPrev', true)}{arrow('mpLoadoutNext', false)}</div></div>}
     </section>
-    <div className="mp-local-player" id="mpLocalPlayer" hidden={!room.synced || state.seat == null}><UiButton className="mp-stand-button" id="mpStandUp" type="button" onClick={service.standUp}>{t('multiplayer.leaveSeat')}</UiButton><div className="mp-seated-loadout">{arrow('mpLoadoutPrevSeat', true)}<span id="mpLocalRoleLabel" hidden={config.inGameSelection}>{label(state.preferredLoadout)}</span>{arrow('mpLoadoutNextSeat', false)}</div></div>
+    <div className="mp-local-player" id="mpLocalPlayer" hidden={!room.synced || state.seat == null}><UiButton className="mp-stand-button" id="mpStandUp" type="button" onClick={service.standUp}>{t('multiplayer.leaveSeat')}</UiButton>{!config.loadoutFields && <div className="mp-seated-loadout">{arrow('mpLoadoutPrevSeat', true)}<span id="mpLocalRoleLabel" hidden={config.inGameSelection}>{label(state.preferredLoadout)}</span>{arrow('mpLoadoutNextSeat', false)}</div>}</div>
+    {config.loadoutFields && <RoomLoadoutFields state={state} service={service}/>}
     <UiButton className="mp-game-check-button" id="mpCheckGame" type="button" hidden={state.seat == null || th09NetworkOverlayOpen} disabled={state.seat == null || !!room.phase && room.phase !== 'lobby' || state.ready || state.checkBusy || state.launchBusy} onClick={() => {void service.checkGame();}}>{t(state.checkBusy ? 'multiplayer.checkingGame' : 'multiplayer.checkGame')}</UiButton>
     <RoomPacketLoss state={state} network={network} service={service}/>
   </div>;

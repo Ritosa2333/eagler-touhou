@@ -325,6 +325,35 @@ test('Real join, stand, spectator, loadout and become-host button ports retain r
   await click('#mpLoadoutPrev'); assert.equal(f.service.getSnapshot().preferredLoadout, 0);
 });
 
+test('TH17 and TH075 use separate loadout fields with relay indices', async () => {
+  for (const product of ['th17mp', 'th075mp']) {
+    const f = await fixture({product, locale: 'zh-CN'}).live(), {m} = await mountRoom(f, {panel: {kind: 'personal'}});
+    const config = owners.multiplayerConfigForProduct(product);
+    const change = (index, value) => act(() => {
+      const select = n('#mpLoadoutField'+index);
+      select.value = String(value);
+      select.dispatchEvent(new env.window.Event('change', {bubbles:true}));
+    });
+    assert.equal(all('.mp-loadout-fields select').length, product === 'th17mp' ? 2 : 3);
+    assert.equal(all('#mpLoadoutPrevSeat, #mpLoadoutNextSeat').length, 0);
+    const acknowledge = async loadout => {
+      assert.deepEqual(f.socket.sent.at(-1), {type: 'set-loadout', loadout});
+      assert.equal(n('#mpLoadoutField0').disabled, true);
+      await f.receive({seats: [{clientId: f.id, name: 'A', loadout}, null]});
+      assert.equal(n('#mpLoadoutField0').disabled, false);
+    };
+    await change(1, 2);
+    await acknowledge(2);
+    await change(0, 2);
+    const next = product === 'th17mp' ? 8 : 20;
+    await acknowledge(next);
+    assert.equal(n('#mpLoadoutField1').value, '2');
+    const label = config.loadouts[next].selection[1].labelKey;
+    assert.equal(n('#mpLoadoutField1 option:checked').textContent, t('zh-CN', label));
+    await m.unmount();
+  }
+});
+
 test('Room settings remain synchronized while owner and phase change', async () => {
  const f=await fixture().live();await mountRoom(f);await click('#roomWorkspaceTab-game');
  const select=async(selector,value)=>act(()=>{const node=n(selector);node.value=value;node.dispatchEvent(new env.window.Event('change',{bubbles:true}));});

@@ -6,7 +6,7 @@
     {
       "seat": 0,
       "phase": 1,
-      "confirmed": 190,
+      "confirmed": 201,
       "difficulty": 4,
       "loadouts": [
         {
@@ -27,7 +27,7 @@
     {
       "seat": 1,
       "phase": 1,
-      "confirmed": 190,
+      "confirmed": 200,
       "difficulty": 4,
       "loadouts": [
         {
@@ -48,7 +48,7 @@
     {
       "seat": 2,
       "phase": 1,
-      "confirmed": 190,
+      "confirmed": 201,
       "difficulty": 4,
       "loadouts": [
         {

@@ -243,6 +243,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-local-player{display:flex;flex-direction:column-reverse;gap:12px;margin:0;padding:0;border:0;background:none}
 #mpRoomView :is(.mp-seated-loadout,.mp-local-actions){display:flex;align-items:center;justify-content:space-between;gap:12px;height:auto}
 #mpRoomView .mp-seated-loadout span{font:500 13px/1.5 var(--kit-font)}
+#mpRoomView .mp-loadout-fields{display:grid;gap:12px}
 #mpRoomView :is(#mpStandUp,#mpCheckGame,#mpSpectatorJoin){display:flex;width:100%;margin-top:12px}
 #mpRoomView .mp-room-network header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
 #mpRoomView .mp-room-network header h3{display:none}

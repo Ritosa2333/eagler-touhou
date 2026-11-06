@@ -61,6 +61,10 @@ const TH15_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu", "marisa", "sanae", "re
 const TH17_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu","marisa","youmu"].flatMap((name,character)=>
     ["wolf","otter","eagle"].map((animal,shot)=>Object.freeze({
         labelKey:`multiplayer.loadout.th17_${name}_${animal}`, glyph:["霊","魔","妖"][character],character,shot,
+        selection:Object.freeze([
+            Object.freeze({value:character,labelKey:`multiplayer.character.th17_${name}`}),
+            Object.freeze({value:shot,labelKey:`multiplayer.spirit.th17_${animal}`}),
+        ]),
     }))));
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
@@ -606,6 +610,10 @@ export const PRODUCT_GAMES = Object.freeze({
             titleKey: "game.title.th17mp", gameplay: "cooperative",
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH17_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th17PeerTransport",
+            loadoutFields: Object.freeze([
+                Object.freeze({labelKey:"multiplayer.character"}),
+                Object.freeze({labelKey:"multiplayer.animalSpirit"}),
+            ]),
             spectator: false, titleRoomEntry: false,
             inputTiming: Object.freeze({rollbackLimit: 12, sendPredictionLimit: 12, manualDelayLimit: 9}),
         }),

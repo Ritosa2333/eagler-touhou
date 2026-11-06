@@ -978,6 +978,7 @@ export interface MultiplayerLoadoutConfig {
     glyph: string;
     character: number;
     shot: number;
+    selection?: readonly Readonly<{value: number; labelKey: string}>[];
 }
 export interface MultiplayerInputTimingConfig {
     rollbackDefault?: boolean;
