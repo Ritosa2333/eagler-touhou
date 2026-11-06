@@ -7,7 +7,9 @@ struct EnemyCombatServices {
     virtual ~EnemyCombatServices()=default;
     virtual bool bomb_damage(const DamageQuery&,i32& amount)=0;
     virtual bool partner_damage(const DamageQuery&,EnemyShotDamage&){return true;}
+    virtual i32 primary_damage(i32 amount){return amount;}
     virtual bool additional_damage(EnemyState&,i32 incoming,i32& amount)=0;
+    virtual i32 final_damage(EnemyState&,i32 amount){return amount;}
     virtual int enemy_death(EnemyRuntime&,float rate)=0;
     virtual bool contact_override(EnemyState&,AnmVm*,i32& result,bool& handled)=0;
     virtual bool graze(const Vec3&)=0;
@@ -22,6 +24,7 @@ public:
     EnemyCombat(Player& p,EnemyCombatServices& w):EnemyCombat(p.damage,p.frame.collision,p,p.life.age,w){}
     bool shot_damage(EnemyState&,bool special,EnemyShotDamage&)override;
     bool additional_damage(EnemyState& e,i32 incoming,i32& amount)override{return world.additional_damage(e,incoming,amount);}
+    i32 final_damage(EnemyState& e,i32 amount)override{return world.final_damage(e,amount);}
     int die(EnemyRuntime& e,float rate)override{return world.enemy_death(e,rate);}
     bool contact(EnemyState&,AnmVm*,i32& result)override;
     bool graze(const Vec3& p)override{return world.graze(p);}

@@ -17,7 +17,12 @@
 #include <malloc.h>
 #include "../multiplayer/Session.hpp"
 #include "../multiplayer/FrameImage.hpp"
+#include "../multiplayer/ReplayArchive.hpp"
+#include "../multiplayer/StageEntry.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
+#include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorStageView.hpp>
+#include <eagler/replay/Workspace.hpp>
 #endif
 EM_JS(void, th17_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
 EM_JS(void, th17_browser_frame_begin, (), { Module["onGameFrameStart"]?.(); });
@@ -42,12 +47,28 @@ struct RoomRuntime final : multiplayer::World {
   multiplayer::FrameImage image;
   std::vector<ApplicationState::RoomSound> sounds;
   Status snapshot{};
+  u32 stage=0,score=0;
+  Netplay::SpectatorStagePublisher::Frame publication;
  };
  std::array<Frame,multiplayer::Session::rollback_frames+1> history;
  std::array<Status,16> confirmed{};
  Netplay::BrowserPeerTransport transport;
  multiplayer::Session session{transport};
  multiplayer::SessionSetup setup;
+ multiplayer::ReplayArchive replay;
+ Netplay::SpectatorStagePublisher publisher;
+ Netplay::SpectatorStagePlayback playback;
+ Netplay::SpectatorStageView spectator_view;
+ bool spectator=false,playing_replay=false,local_results=false,publisher_failed=false,ended=false;
+ bool publication_started=false,terminal=false;
+ u32 playback_frame=0,bootstrap_target=0,start_stage=1,entry_stage=0,confirmed_score=0;
+ u32 published_through=0;
+ u64 spectator_deadline=0;
+ std::string saved_path,saved_name="PLAYER";
+ bool save_replay(i32 slot=-1,const char* name=nullptr,bool completed=false);
+ bool publish(bool finish=false);
+ bool receive_spectator();
+ bool advance_playback(bool advance);
  GameInput main_input;
  bool entered=false, trace=false;
  double replay_deadline=0;
@@ -97,11 +118,23 @@ struct RoomRuntime final : multiplayer::World {
   if(barrier!=Netplay::INVALID_FRAME&&barrier>frame)barrier=Netplay::INVALID_FRAME;
   return true;
  }
- bool confirm(u32 frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&) override{
+ bool confirm(u32 frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs) override{
   auto& saved=state(frame);
   if(saved.number!=frame)return app->fail("TH17 confirmed frame output is missing");
   for(const auto& sound:saved.sounds)if(!app->audio(sound.id,sound.pan,sound.action,sound.queued))return false;
   app->audio_device.update();
+  if(!replay.append(frame,saved.stage,inputs.data()))return app->fail("TH17 confirmed Replay capacity exhausted");
+  confirmed_score=saved.score;
+  if(!setup.local&&!publisher_failed&&(publication_started||saved.publication.schema)){
+   if(!publication_started){
+    if(!publisher.Reset('G',setup.seats,setup.room,setup.gameplay_abi(),frame)){
+     publisher_failed=true;transport.StopSpectators();
+    }else publication_started=true;
+   }
+   saved.publication.inputs=inputs;saved.publication.hasInputs=true;
+   if(!publisher.Record(std::move(saved.publication))){publisher_failed=true;transport.StopSpectators();}
+   else {published_through=frame;publish();}
+  }
   confirmed[(frame+1)%confirmed.size()]=saved.snapshot;
   saved.image.clear();saved.sounds.clear();saved.number=Netplay::INVALID_FRAME;
   return app->audio_device.error.empty()||app->fail(app->audio_device.error);
@@ -116,10 +149,13 @@ struct RoomRuntime final : multiplayer::World {
    app->renderer.hud_viewer=setup.local+1;
    entered=true;
   }
+  app->room_preview=false;
+  if(app->title)app->title->state.room_preview=false;
   const auto movement=[](const Netplay::FrameInput& input)->PlayerTouch{
    if(input.analogMode!=Netplay::AnalogMode::DirectTouch)return {};
    return {input.unlimited?2:1,input.x,input.y};
   };
+  const auto menu_before=main_input;
   main_input.update(frame.inputs[0].buttons);
   if((main_input.pressed&0x100)&&!app->rollback_boundary()){barrier=number;return false;}
   app->touch=movement(frame.inputs[0]);
@@ -129,6 +165,15 @@ struct RoomRuntime final : multiplayer::World {
   auto& output=state(number);
   if(!app->room_speculative)output.image.clear();
   output.number=number;output.sounds.clear();app->room_sounds=&output.sounds;
+  output.stage=app->scene()?u32(app->scene()->battle.stage):(setup.difficulty==4?7u:1u);
+  output.publication={};output.publication.frame=number;output.publication.stage=output.stage;
+  if(!spectator&&!playing_replay&&!setup.local&&!publisher_failed&&app->scene()&&!app->scene()->active()&&
+     entry_stage!=app->room_stage_generation&&app->loading_destination==AppScene::Uninitialized){
+   if(multiplayer::capture_stage_entry(*app,setup,menu_before,number,output.publication.initializer)){
+    output.publication.schema=multiplayer::StageEntry::schema;entry_stage=app->room_stage_generation;
+   }else {publisher_failed=true;transport.StopSpectators();}
+  }
+  const auto bosses_before=app->scene()?app->scene()->battle.enemy_world.boss_ids:std::array<u32,3>{};
 #if TH17_ROOM_BENCHMARK
   if(auto* scene=app->scene();scene&&scene->battle.stage==7){
    for(u32 seat=0;seat<scene->battle.pilot_count();++seat)scene->battle.pilot(seat).life.invulnerability.set(2);
@@ -137,6 +182,10 @@ struct RoomRuntime final : multiplayer::World {
   const bool ok=app->step(main_input.held,main_input.pressed,main_input.repeated,60,false);
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
+  output.score=app->scene()?u32(app->scene()->battle.score.score):u32(app->selection_score.score);
+  if(app->scene())for(unsigned slot=0;slot<3;++slot)
+   if(app->scene()->battle.enemy_world.boss_ids[slot]&&app->scene()->battle.enemy_world.boss_ids[slot]!=bosses_before[slot])
+    output.publication.bossSlots|=u8(1u<<slot);
   if(barrier==number)barrier=Netplay::INVALID_FRAME;
   if(trace){
    output.snapshot=status(number+1);
@@ -149,6 +198,9 @@ struct RoomRuntime final : multiplayer::World {
   now_ms=std::uint64_t(now);
   session.capture_phase(entered&&!can_predict(),std::uint64_t(now*1000));
   replay_deadline=now+8;
+  if(spectator)return receive_spectator();
+  if(playing_replay)return true;
+  if(local_results){session.pump(now_ms);publish(true);return true;}
   return session.pump(now_ms)||app->fail(session.error());
  }
  bool capture_physical(u32 held,const PlayerTouch& touch){
@@ -178,12 +230,24 @@ struct RoomRuntime final : multiplayer::World {
   return session.capture_input(sample,now_ms)||app->fail(session.error());
  }
  bool update(bool advance=true){
-  const auto result=session.tick(*this,advance);
+  if(spectator||playing_replay)return advance_playback(advance);
+  if(local_results)return true;
+  const auto result=terminal?multiplayer::Session::Tick::Waiting:session.tick(*this,advance);
   if(trace&&result==multiplayer::Session::Tick::Waiting&&session.repair_pending())++replay_slices;
-  return result!=multiplayer::Session::Tick::Failed||app->fail(session.error());
+  if(result==multiplayer::Session::Tick::Failed)return app->fail(session.error());
+  if(entered&&(app->title||app->exiting)&&session.confirmed_frames()==session.next_frame()){
+   terminal=true;
+   if(!session.retire(now_ms))return !*session.error()||app->fail(session.error());
+   if(app->title&&app->flow.title_return_reason==3)app->completed_recording=true;
+   local_results=true;
+   if(!save_replay(-1,nullptr,app->completed_recording))return false;
+   publish(true);
+  }
+  return true;
  }
 };
 std::unique_ptr<RoomRuntime> room;
+#include "RoomPlayback.inc"
 RoomRuntime::Status RoomRuntime::status(u32 number)const{
  Status result{};
  result[0]=number;result[1]=setup.seats;result[2]=setup.local;
@@ -303,9 +367,19 @@ bool sample_and_tick(){
 #if TH17_MULTIPLAYER
  if(room){
   if(!room->poll())return false;
-  if(!room->session.needs_input())return room->update();
+  if(!room->local_results){
+   if(room->spectator||room->playing_replay)return room->update();
+   if(room->terminal)return room->update(false);
+   if(!room->session.needs_input())return room->update();
+  }
  }
 #endif
+ #if TH17_MULTIPLAYER
+ if(app->room_preview){
+  if(!app->title||app->run)return false;
+  app->title->state.room_preview=true;app->title->frame.demo_idle=0;
+ }
+ #endif
  bool keys[256]{};const auto* physical=SDL_GetKeyboardState(nullptr);const bool browser_keyboard=th17_browser_keyboard_owned();
  for(const auto& key:keyboard_map)if(key.hosted||(!browser_keyboard&&key.native!=SDL_SCANCODE_UNKNOWN&&physical[key.native])){if(key.vk<256)keys[key.vk]=true;if(key.vk>=160&&key.vk<=165)keys[16+(key.vk-160)/2]=true;if(key.scan==28||key.scan==156)keys[13]=true;}
  const int mappedPad=eagler::input::BrowserGamepadState();eagler::input::ApplyGamepadVirtualKeys(keys,mappedPad);
@@ -330,7 +404,7 @@ bool sample_and_tick(){
  }
  if(ThpracUi::captures_game_input(*app)){held=buttons=0;app->touch={};}
 #if TH17_MULTIPLAYER
- if(room)return room->capture_physical(held,app->touch)&&room->update();
+ if(room&&!room->local_results)return room->capture_physical(held,app->touch)&&room->update();
 #endif
  controls.update(held);app->controller_buttons=buttons;
  if(app->display)app->display->presentation_fps=presentation_fps;
@@ -348,7 +422,8 @@ EMSCRIPTEN_KEEPALIVE int th17_initialize(){using namespace th17::sdl;if(running)
 EMSCRIPTEN_KEEPALIVE int th17_room_preview(){
  using namespace th17::sdl;
  if(running||room||!app||!app->title)return 0;
- // Finish the title entrance without leaving a simulation loop running in the lobby.
+ app->room_preview=app->title->state.room_preview=true;
+ // Settle the entrance before handing animation and Options to the preview loop.
  app->graphics.backend.defer=true;
  bool ok=true;
  for(unsigned frame=0;frame<120&&ok;++frame)
@@ -357,12 +432,13 @@ EMSCRIPTEN_KEEPALIVE int th17_room_preview(){
  app->graphics.backend.defer=false;
  return ok&&presented&&app->title;
 }
-EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,const char* url){
+EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,const char* url,const char* spectator_id){
  using namespace th17::sdl;
  if(!app||!app->title||running||room||!words||count!=19||words[0]!=2||!url||
     words[1]>3||words[2]>=words[1]||words[3]>4||words[4]>65535||words[7]>9||words[18]>1||
     (words[18]&&words[7]))return 0;
  auto candidate=std::make_unique<RoomRuntime>();
+ candidate->spectator=spectator_id&&*spectator_id;
  auto& setup=candidate->setup;
  setup.seats=std::uint8_t(words[1]);setup.local=std::uint8_t(words[2]);
  setup.difficulty=std::uint8_t(words[3]);setup.seed=th17::u16(words[4]);
@@ -373,10 +449,61 @@ EMSCRIPTEN_KEEPALIVE int th17_room_open(const unsigned* words,unsigned count,con
   setup.loadouts[seat]={std::uint8_t(words[8+seat*2]),std::uint8_t(words[9+seat*2])};
  }
  for(unsigned i=0;i<4;++i)setup.build[i]=words[14+i];
- if(!setup.valid()||!candidate->transport.Connect(url,setup.local,setup.seats)||
-    !candidate->session.begin(setup,std::uint64_t(emscripten_get_now())))return 0;
+ if(!setup.valid())return 0;
+ if(candidate->spectator){
+  if(!candidate->transport.ConnectSpectator(url,spectator_id,setup.seats,true))return 0;
+  candidate->spectator_deadline=std::uint64_t(emscripten_get_now())+90000;
+ }else{
+  if(!candidate->transport.Connect(url,setup.local,setup.seats,true)||
+     !candidate->session.begin(setup,std::uint64_t(emscripten_get_now()))||
+     !candidate->replay.begin(setup,std::uint64_t(std::time(nullptr))))return 0;
+  candidate->transport.BeginSpectatorSession(setup.room,setup.seed);
+ }
  room=std::move(candidate);
+ app->frames=0;
+ app->room_preview=false;app->title->state.room_preview=false;
+ app->room_replay_save=[](th17::i32 slot,const std::array<char,9>& name,bool completed){
+  return room&&room->save_replay(slot,name.data(),completed);
+ };
  return 1;
+}
+EMSCRIPTEN_KEEPALIVE int th17_room_return(){
+ using namespace th17::sdl;
+ if(running||!app)return 0;
+ room.reset();app->room_replay_save={};app->room_seats=0;app->room_partners={};
+ app->flow.pending=th17::AppScene::Title;
+ if(!app->release_ending()||!app->release_game()||!app->release_title())return 0;
+ app->recording.reset();app->room_description.reset();app->selected_replay.reset();
+ app->exiting=false;app->loading_destination=th17::AppScene::Uninitialized;app->loading_handle=app->transition_overlay=0;
+ app->progress={};app->selection={};app->physical_input={};app->retained_input={};
+ app->flow.current=app->flow.pending=th17::AppScene::Title;app->flow.title_return_reason=1;
+ app->room_preview=true;clear_inputs();
+ return app->begin_title();
+}
+EMSCRIPTEN_KEEPALIVE int th17_mp_replay_save(){using namespace th17::sdl;return !room||room->save_replay(-1,nullptr,app->completed_recording);}
+EMSCRIPTEN_KEEPALIVE int th17_mp_replay_validate(const unsigned char* bytes,unsigned count){
+ th17::multiplayer::ReplayArchive replay;return replay.load(bytes,count);
+}
+EMSCRIPTEN_KEEPALIVE const char* th17_mp_spectator_state(){
+ using namespace th17::sdl;return room&&room->spectator?room->spectator_view.State(room->playback):nullptr;
+}
+EMSCRIPTEN_KEEPALIVE int th17_mp_spectator_control(const char* run,const char* action,unsigned frame){
+ using namespace th17::sdl;
+ return room&&room->spectator&&room->spectator_view.Control(room->playback,run,action,frame);
+}
+EMSCRIPTEN_KEEPALIVE int th17_mp_spectator_result(const unsigned char* bytes,unsigned count){
+ using namespace th17::sdl;
+ if(!room||!room->spectator||!room->playback.History().Ended()||room->playback.Paused()||
+    room->playback.Seeking()||room->playback.Position()<room->playback.History().Received())return 0;
+ th17::multiplayer::ReplayArchive replay;
+ if(!replay.load(bytes,count)||replay.setup().room!=room->setup.room||
+    replay.setup().gameplay_abi()!=room->setup.gameplay_abi())return 0;
+ room->replay=std::move(replay);room->confirmed_score=room->replay.score();room->local_results=true;
+ app->room_replay_save=[](th17::i32 slot,const std::array<char,9>& name,bool completed){
+  return room&&room->save_replay(slot,name.data(),completed);
+ };
+ app->completed_recording=room->replay.completed();
+ return app->prepare_live_replay(app->completed_recording)&&app->finish_practice();
 }
 EMSCRIPTEN_KEEPALIVE void th17_room_close(){th17::sdl::room.reset();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_status(){
@@ -445,7 +572,14 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_rollback(){
 EMSCRIPTEN_KEEPALIVE void th17_always_hitbox(unsigned enabled){th17::presentation::always_hitbox=enabled!=0;}
 EMSCRIPTEN_KEEPALIVE void th17_render_scale(unsigned scale){if(!th17::sdl::running)th17::sdl::render_scale=scale>=2?2:1;}
 EMSCRIPTEN_KEEPALIVE const char* th17_error(){using namespace th17::sdl;return app?app->failure.c_str():last_error.c_str();}
-EMSCRIPTEN_KEEPALIVE unsigned th17_phase(){using namespace th17::sdl;return !app?4:app->exiting?4:app->title?0:app->ending?3:app->pause&&app->pause->state.screen!=th17::PauseScreen::Inactive?2:1;}
+EMSCRIPTEN_KEEPALIVE unsigned th17_phase(){
+ using namespace th17::sdl;
+#if TH17_MULTIPLAYER
+ if(room&&room->terminal&&!room->local_results)return 2;
+ if(room&&room->local_results&&app&&app->title&&app->title->state.screen==th17::TitleScreen::Main)return 4;
+#endif
+ return !app?4:app->exiting?4:app->title?0:app->ending?3:app->pause&&app->pause->state.screen!=th17::PauseScreen::Inactive?2:1;
+}
 EMSCRIPTEN_KEEPALIVE unsigned th17_frame(){using namespace th17::sdl;return app?app->frames:0;}
 EMSCRIPTEN_KEEPALIVE int th17_save_scores(){using namespace th17::sdl;return !app||app->save_settings();}
 EMSCRIPTEN_KEEPALIVE int th17_save_replay(unsigned slot,const char* name){using namespace th17::sdl;if(!app||!name||std::strlen(name)>8||slot>=25)return 0;std::array<char,9> text{};std::memcpy(text.data(),name,std::strlen(name));return app->prepare_live_replay(false)&&app->save_slot(slot,text);}
@@ -479,7 +613,8 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
 #endif
    ok=sample_and_tick();
 #if TH17_MULTIPLAYER
-   if(!room||(!room->session.repair_pending()&&room->session.next_frame()!=previous_input_frame))++completed;
+   if(!room||room->spectator||room->playing_replay||room->local_results||
+      (!room->session.repair_pending()&&room->session.next_frame()!=previous_input_frame))++completed;
    if(room&&room->session.repair_pending())break;
 #else
    ++completed;
@@ -550,3 +685,6 @@ EMSCRIPTEN_KEEPALIVE const int* th17_probe_hud_score(){using namespace th17::sdl
 EMSCRIPTEN_KEEPALIVE const int* th17_probe_pause_state(){using namespace th17::sdl;static std::array<int,7> value{};value.fill(-1);if(app&&app->pause){const auto& p=app->pause->state;value={int(p.screen),p.phase,p.menu.selected,p.menu.count,p.names.selected,p.name_length,p.age.current};}return value.data();}
 #endif
 }
+#if TH17_MULTIPLAYER
+#include "RoomReplayWorkspace.inc"
+#endif

@@ -95,8 +95,11 @@ public:
     bool attach(FrameScheduler&);bool detach(FrameScheduler&);
     bool add_coop_player(const ShtResource&,i32 character,i32 animal,i32 bank);
     u32 pilot_count() const noexcept {return partner_count+1;}
+    u32 viable_pilots() const noexcept;
+    i32 boss_damage(EnemyState&,i32);
     Player& pilot(u32 seat) noexcept;
     i32 life_piece_tier(u32 seat) const noexcept;
+    void restore_piece_tier(u32 seat,i32 value) noexcept;
     bool initialize_partner_hud();
     void save_rollback(multiplayer::FrameImage&);
     bool reset_players();

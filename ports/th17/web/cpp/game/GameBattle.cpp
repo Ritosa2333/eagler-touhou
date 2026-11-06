@@ -93,19 +93,24 @@ struct GameBattle::Services {
         bool emit(const CurveLaserRequest& r)override{return g.laser_scene->create_curved(r)!=0||g.laser_scene->error.empty();}
         bool emit(const SegmentedLaserRequest& r)override{return g.laser_scene->create_segmented(r)!=0||g.laser_scene->error.empty();}
         bool bomb_damage(const DamageQuery&,i32& amount)override{amount=0;return true;}
+        i32 primary_damage(i32 amount)override{
+            return g.partner_count&&(g.player->life.state==0||g.player->life.state==2)?amount/5:amount;
+        }
         bool partner_damage(const DamageQuery& query,EnemyShotDamage& hit)override{
             for(u32 seat=1;seat<g.pilot_count();++seat){
                 auto& player=g.pilot(seat);
                 if(!g.pilot_active(seat))continue;
                 const auto result=player.damage.query(query,player.life.age.current!=player.life.age.previous);
                 if(!player.damage.error.empty())return g.fail(player.damage.error);
-                hit.amount=wrapping_add(hit.amount,result.amount);
+                const i32 amount=player.life.state==0||player.life.state==2?result.amount/5:result.amount;
+                hit.amount=wrapping_add(hit.amount,amount);
                 hit.direct|=result.direct;
                 if(result.position_written)hit.position=result.position;
             }
             return true;
         }
         bool additional_damage(EnemyState&,i32,i32& amount)override{amount=0;return true;}
+        i32 final_damage(EnemyState& enemy,i32 amount)override{return g.boss_damage(enemy,amount);}
         int enemy_death(EnemyRuntime& e,float rate)override{return g.enemy_death->execute(e,rate);}
         bool contact_override(EnemyState& enemy,AnmVm* visual,i32& result,bool& handled)override{
             handled=g.pilot_count()>1;
@@ -247,7 +252,24 @@ GameBattle::GameBattle(AnmManager& a,AnmEnvironment& env,Rng& game,Rng& visual,B
 }
 GameBattle::~GameBattle(){active_schedule->remove(hud_callback);active_schedule->remove(spell_callback);for(auto& callback:callbacks)active_schedule->remove(callback);dialogue.reset();if(enemies)enemies->clear();for(auto& partner:partners)partner.reset();}
 Player& GameBattle::pilot(u32 seat) noexcept{return seat?partners[seat-1]->player:*player;}
+u32 GameBattle::viable_pilots() const noexcept{
+    u32 count=!primary_retired&&session.extra_lives>=0;
+    for(u32 seat=0;seat<partner_count;++seat)
+        count+=!partners[seat]->retired&&partners[seat]->session.extra_lives>=0;
+    return count;
+}
+i32 GameBattle::boss_damage(EnemyState& enemy,i32 amount){
+    if(!partner_count||amount<=0||!(enemy.flags&0x40800000u))return amount;
+    const u32 count=viable_pilots(),numerator=count>=3?8:count==2?9:12;
+    const u64 scaled=u64(u32(amount))*numerator+enemy.multiplayer_damage_remainder;
+    enemy.multiplayer_damage_remainder=u32(scaled%12);
+    return i32(scaled/12);
+}
 i32 GameBattle::life_piece_tier(u32 seat) const noexcept{return seat?partners[seat-1]->life_piece_tier:score.life_piece_tier;}
+void GameBattle::restore_piece_tier(u32 seat,i32 value) noexcept{
+    if(seat){partners[seat-1]->life_piece_tier=value;partners[seat-1]->retired=partners[seat-1]->session.extra_lives<0;}
+    else {score.life_piece_tier=value;primary_retired=session.extra_lives<0;}
+}
 bool GameBattle::initialize_partner_hud(){
     for(u32 index=0;index<partner_count;++index){
         const auto& partner=*partners[index];
@@ -329,6 +351,7 @@ const PlayerCollision& GameBattle::player_collision(u32 seat)noexcept{
     auto& p=pilot(seat);auto& c=p.frame.collision;c.position={p.motion.position.x,p.motion.position.y};c.state=p.life.state;c.invulnerability=(p.session.practice_tools&PracticeInvincible)?1:p.life.invulnerability.current;c.radius=p.resource.header.hitbox;c.size_multiplier=p.motion.enlargement;c.enlarged=p.motion.behavior_flags&16;c.laser_half_size={p.frame.bounds.hit_half_size.x,p.frame.bounds.hit_half_size.y};c.bomb_active=input.hud_collect||dialogue_present();return c;
 }
 bool GameBattle::refresh_world(){
+    enemy_world.cooperative=partner_count!=0;
     enemy_world.mode=character;enemy_world.submode=session.animal;enemy_world.stage_number=stage;enemy_world.difficulty=score.difficulty;enemy_world.state=session.power;enemy_world.counter3=session.deaths;enemy_world.game_frame_flags=input.game_flags;
     enemy_world.player_position=player->motion.position;enemy_world.player_damage_state=player->life.state;enemy_world.player_behavior_flags=player->motion.behavior_flags;enemy_world.player_damage_scale=player->frame.bounds.damage_multiplier;enemy_world.game_state=session.bomb_state;
     enemy_world.roaring_kind=items->roaring.state.kind;enemy_world.spirit_count=items->spirits.count();enemy_world.graze_history=bullet_scene->manager.graze_history;enemy_world.damage_disabled=dialogue_present()?1:0;

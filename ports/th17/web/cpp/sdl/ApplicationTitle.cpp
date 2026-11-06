@@ -3,7 +3,12 @@
 #include <ctime>
 #include <cstdio>
 namespace th17::sdl {
-bool ApplicationState::sound(i32 id){return audio_device.effects.enqueue(id)||fail(audio_device.effects.error);}
+bool ApplicationState::sound(i32 id){
+#if TH17_MULTIPLAYER
+ if(room_silent)return true;
+#endif
+ return audio_device.effects.enqueue(id)||fail(audio_device.effects.error);
+}
 bool ApplicationState::text(AnmVm& vm,const TextureText& value){if(!ending||value.utf8||!fonts.translated_message(value.bytes))return fonts.text(vm,value)||fail(fonts.error);
  auto translated=value;translated.utf8=true;
  return fonts.text(vm,translated)||fail(fonts.error);}
@@ -79,10 +84,51 @@ bool ApplicationState::start_replay(const ReplayStartRequest& value){
 bool ApplicationState::clear_page(){auto* bank=animations.resource(19);return bank&&graphics.clear_image(graphics.texture(*bank,1))||fail(graphics.error);}
 bool ApplicationState::request_page(i32 page){char name[32];std::snprintf(name,sizeof name,"help_%.2d.png",page+1);if(!read(name,pending_png))return false;pending_page=page;return true;}
 bool ApplicationState::upload_page(i32){auto* bank=animations.resource(19);return bank&&graphics.upload_png(graphics.texture(*bank,1),pending_png.data(),pending_png.size())||fail(graphics.error);}
-bool ApplicationState::read_slot(i32 slot,std::shared_ptr<Replay>& value){return files.replay_slot(slot,value)||fail(files.error);}
-bool ApplicationState::prepare_live_replay(bool cleared){if(!recording)return fail("No live recording to save");if(!completed_recording){recording->finish(i64(std::time(nullptr)),progress.stage,cleared);completed_recording=true;}live_description=recording->description();if(title)title->live=recording.get();return true;}
-bool ApplicationState::save_slot(i32 slot,const std::array<char,9>& name){if(!recording)return fail("Replay save has no recording");ReplayCalendar date;if(!calendar(i64(std::time(nullptr)),date))return false;const i32 score=scene()?scene()->battle.score.score:selection_score.score;const ReplayExportDetails details{score,performance.requested?performance.delivered:1,performance.requested?performance.requested:1,date.year,date.month,date.day,date.hour,date.minute};return files.save_replay(slot,*recording,name,details)||fail(files.error);}
-bool ApplicationState::release_live_replay(){if(title)title->live=nullptr;return true;}
+bool ApplicationState::read_slot(i32 slot,std::shared_ptr<Replay>& value){
+#if TH17_MULTIPLAYER
+ if(room_seats){value.reset();return true;}
+#endif
+ return files.replay_slot(slot,value)||fail(files.error);
+}
+bool ApplicationState::prepare_live_replay(bool cleared){
+#if TH17_MULTIPLAYER
+ if(room_seats){
+  if(!room_replay_save)return fail("Multiplayer Replay owner is unavailable");
+  if(!room_description)room_description=std::make_unique<ReplayRecording>();
+  auto& metadata=room_description->description();
+  const i64 now=std::time(nullptr);
+  std::memcpy(metadata.data()+0x10,&now,8);
+  std::memcpy(metadata.data()+0x88,&progress.character,4);
+  std::memcpy(metadata.data()+0x8c,&progress.animal,4);
+  std::memcpy(metadata.data()+0x90,&progress.difficulty,4);
+  metadata[0x94]=u8(cleared?(progress.difficulty==4?9:8):progress.stage);
+  live_description=metadata;
+  if(title)title->live=room_description.get();
+  completed_recording|=cleared;
+  return true;
+ }
+#endif
+ if(!recording)return fail("No live recording to save");
+ if(!completed_recording){recording->finish(i64(std::time(nullptr)),progress.stage,cleared);completed_recording=true;}
+ live_description=recording->description();if(title)title->live=recording.get();return true;
+}
+bool ApplicationState::save_slot(i32 slot,const std::array<char,9>& name){
+#if TH17_MULTIPLAYER
+ if(room_seats)return room_replay_save&&room_replay_save(slot,name,completed_recording);
+#endif
+ if(!recording)return fail("Replay save has no recording");
+ ReplayCalendar date;if(!calendar(i64(std::time(nullptr)),date))return false;
+ const i32 score=scene()?scene()->battle.score.score:selection_score.score;
+ const ReplayExportDetails details{score,performance.requested?performance.delivered:1,performance.requested?performance.requested:1,date.year,date.month,date.day,date.hour,date.minute};
+ return files.save_replay(slot,*recording,name,details)||fail(files.error);
+}
+bool ApplicationState::release_live_replay(){
+ if(title)title->live=nullptr;
+#if TH17_MULTIPLAYER
+ if(room_seats)exiting=true;
+#endif
+ return true;
+}
 bool ApplicationState::release_transient_animations(){for(i32 bank=20;bank<24;bank++)animations.unload(bank);return true;}
 bool ApplicationState::clear_title_overlay(){return animations.retire(transition_overlay)||fail(animations.error);}
 bool ApplicationState::read_demo(i32 index,std::shared_ptr<Replay>& value){std::vector<u8> bytes;if(index<0||index>=3||!read("demo"+std::to_string(index+1)+".rpy",bytes))return fail("Original demonstration unavailable");value=std::make_shared<Replay>();return value->open(bytes.data(),bytes.size())||fail(value->error());}

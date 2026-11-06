@@ -15,6 +15,7 @@
 #include "../game/RunPause.hpp"
 #include "../game/ScreenFade.hpp"
 #include "../game/FramePerformance.hpp"
+namespace th17::multiplayer {struct StageEntry;}
 namespace th17::sdl {
 // Each game scene owns its callback schedule. Title/ending share the global
 // ANM draw schedule; stage gameplay owns the complete battle/compositor schedule.
@@ -61,10 +62,17 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  struct RoomSound {i32 id;float pan;PlayerShots::SoundAction action;bool queued;};
  std::vector<RoomSound>* room_sounds=nullptr;
  bool room_speculative=false,room_barrier=false;
+ bool room_silent=false;
  std::array<std::array<i32,2>,3> room_loadouts{};
  std::array<CoopPlayerInput,2> room_partners{};
  u32 room_seats=0;
+ u32 room_stage_generation=0;
+ Rng room_stage_game,room_stage_visual;
+ bool room_preview=false;
+ std::function<bool(i32,const std::array<char,9>&,bool)> room_replay_save;
+ std::unique_ptr<ReplayRecording> room_description;
  bool begin_room(u16 seed,i32 difficulty,u32 seats,const std::array<std::array<i32,2>,3>& loadouts);
+ bool restore_room_stage(const multiplayer::StageEntry&);
  bool can_rollback() const;
  bool save_rollback(multiplayer::FrameImage&);
  bool rollback_boundary() override;
