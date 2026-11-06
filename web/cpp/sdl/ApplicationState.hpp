@@ -240,9 +240,15 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     double slow_window_time_ = 0.0;
     u32 slow_window_frames_ = 0;
     float slow_window_fps_ = 60.0f;
+    // 0x424990:37-50 fps 管理器计数器（对象 0x4c218c +0x24 num / +0x2c den 的
+    // port 对应物）：每个有效采样窗（游戏态门与 slow_actual_ 同一分支）den+=60、
+    // 窗 fps≤57 计实测值、否则计满 60。0x42b990 关首清零 → 保存时 +0x54 反映
+    // 末段关卡。save_replay_slot 默认 ReplaySaveMeta 的实时慢速率来源。
+    double slow_num_ = 0.0, slow_den_ = 0.0;
     void reset_slow_rate() {
         slow_actual_ = 0.0; slow_budget_ = 0.0;
         slow_window_time_ = 0.0; slow_window_frames_ = 0;
+        slow_num_ = 0.0; slow_den_ = 0.0;
     }
     unsigned pending_load = 0, loading_frames = 0;
     bool loading_startup = false;
@@ -288,11 +294,28 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 0x448200 节奏逐帧接管 controls——装载态/难度/角色取自录像头，直入对局。
     ReplayFile replay_file;
     ReplayRecorder recorder;
+    // D-fix（0x448ec0 关首输入沿复位）：0x448ec0 在关首清 0x4e4c08/0x4e4c0c/
+    // 0x4e4c14/0x4e4c18 与 duration/repeat 阵列 → 关内 frame 0 的 pressed =
+    // 全量 held、released = 0（真机五处关界实录一致）。置位后首条录制帧按
+    // 该语义落盘，随后自动清除。
+    bool record_edge_reset_pending_ = false;
+    // B' 端到端注入缝：顶层头 +0x18..+0x53 未映射域在原版承接保存时刻的
+    // 内存底（0x4484d0 只覆写名字/日期/分/慢速率/槽计数等已名字段），属
+    // 不可再现快照。enabled 时 recorder.start 以该 verbatim 顶层头替代
+    // top_snapshot（名字/日期/分等仍由 encode 按生产语义覆写）。
+    std::vector<u8> replay_top_pin_;
+    bool replay_top_pin_enabled_ = false;
     // 00412ee0 edges are latched from 00413270/00413a60 events, not by
     // sampling manager+0x7c bit0 at Update 26: a same-tick Begin+End must
     // still advance manager+0x8c once. Clock owns start stamp + slot index.
     SpellTimeClock spell_time_clock;
     i32 spell_time_stage = 0, spell_time_packed = 0;
+    // B' 端到端注入缝：符卡经过时间钉住表（stage 1..7 → 0x70 + 4·slot 的
+    // 21 dword）。原版 0x412ee0 的经过时间取实时钟（FUN_0045d880 = QPC），
+    // 与保存 date/slow 同属「保存时刻实时量」；表由端到端测试自原 .rpy
+    // stage 头注入，enabled=false（默认）= 生产实时钟语义不变。
+    std::array<std::array<i32, 21>, 8> spell_time_pin_{};
+    bool spell_time_pin_enabled_ = false;
     bool stage_transition_loading = false, stage_transition_active = false;
     i32 stage_startup_age = -1;
     // 0xc 换关门内帧计数（prepare_next_stage 当帧=0，门内每 step 尾 +1）。
@@ -584,6 +607,11 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool save_replay() override;
     bool can_save_replay() const override;
     bool save_replay_slot(i32, const std::string&) override;
+    // 0x4484d0 保存元数据注入缝（端到端逐字节复刻用）：pinned 非空时其
+    // date/slow/stage_field/EOF/version 原样进 encode；nullptr = 生产默认
+    // （真实时钟 + 实时 slow_num_/slow_den_ 计数，A 项语义）。生产调用点
+    // （RunPause/TitleResultEntry 虚槽）不变，仍走 2 参重载。
+    bool save_replay_slot(i32, const std::string&, const ReplaySaveMeta* pinned);
     bool can_open_pause_options() const override;
     bool open_pause_options() override;
     bool change_pause_option(i32, i32) override;
@@ -595,6 +623,9 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool record_clear_result_name(const std::string&) override;
     bool record_result_entry(const std::string& name, i32 stage);
     bool result_needs_name() const override;
+    // 0x43f8f0 排名门 + 0x43d6b0 插入预览（复用 result_screen_data 的
+    // ties-before-old 插入）：返回 0 基入榜行，不合格 -1。
+    i32 result_ranking(TitlePlayerDataScore rows[10]) const override;
     // 0x43e3f0/0x43e700：暂停激活/恢复对对话 VM 面 +0x18 bit1 清/置。
     bool dialogue_visible(bool visible) override;
     // 0x454050 state3：DAT_004be7c8（续关数）==0 → 流程 0xf（0x4549d0

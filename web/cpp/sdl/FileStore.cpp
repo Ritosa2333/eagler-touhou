@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -52,6 +53,31 @@ EM_JS(int, th13_save_read_js, (char* out, int capacity), {
     } catch (e) {
         // 读侧异常按缺档处理（原版读不到 score.dat = 默认值照常开局）；
         // 持久化失败在写侧（save）如实暴露，不在此阻断启动。
+        return 0;
+    }
+});
+// scoreth13.dat 原版格式通道（base64，同上语义）。
+EM_JS(bool, th13_scoredat_write_js, (const char* data, int length), {
+    try {
+        let binary = '';
+        const bytes = new Uint8Array(HEAPU8.buffer, data, length);
+        for (let i = 0; i < length; ++i) binary += String.fromCharCode(bytes[i]);
+        localStorage.setItem('th13.scoredat', btoa(binary));
+        return true;
+    } catch (e) {
+        return false;
+    }
+});
+EM_JS(int, th13_scoredat_read_js, (char* out, int capacity), {
+    try {
+        const text = localStorage.getItem('th13.scoredat');
+        if (text === null || text === '') return 0;
+        const binary = atob(text);
+        if (binary.length > capacity) return 0;
+        const bytes = new Uint8Array(HEAPU8.buffer, out, binary.length);
+        for (let i = 0; i < binary.length; ++i) bytes[i] = binary.charCodeAt(i);
+        return binary.length;
+    } catch (e) {
         return 0;
     }
 });
@@ -292,6 +318,33 @@ bool FileStore::initialize() {
     ending_history_complete = true;
     migrated_save_bytes_.clear();
     pre_ending_save_bytes_.clear();
+    score_dat_loaded_ = false;
+    // ST LCG boot 种子：原版 boot 取 (u16)timeGetTime()（0x43a040），此处取
+    // steady 时钟毫秒 u16（同为无符号截断的易变源，语义对照）。表生成一次后，
+    // 文件 ST 块校验通过则整体覆盖回文件值——首存后随存档持久（0x449b00→0x449cd0）。
+    const auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::steady_clock::now().time_since_epoch())
+                            .count();
+    score_dat_seed = u16(u64(now_ms) & 0xFFFF);
+    score_dat.set_defaults(score_dat_seed);
+    if (!load_v6()) return false;
+    // scoreth13.dat 原版格式通道（仅 web 激活；native 构建读侧恒缺档）。语义：
+    // v6 有效 ⇒ v6 是应用侧唯一权威，dat 导入仅限 (a) v6 缺失/无效、(b) dat
+    // 明显更新（全条目最大 u64 时间戳 > 榜表最大时间戳）；否则 dat 永不覆盖，
+    // 也不在装载期落盘（镜像只由 save_score() 写出）。parse 在局部副本上进行，
+    // 弃用的 dat 不污染 save_score 待写镜像。
+    std::vector<u8> dat;
+    ScoreDat candidate;
+    if (read_score_dat(dat) && candidate.parse_file(dat.data(), dat.size()) &&
+        score_dat_should_import(candidate.max_entry_timestamp())) {
+        score_dat = candidate;
+        score_dat_loaded_ = true;
+        overlay_score_face_from_dat();
+    }
+    return true;
+}
+
+bool FileStore::load_v6() {
     // One extra byte detects overlong native saves instead of accepting a prefix.
     std::vector<u8> buffer(kSaveBytes + 1);
 #ifdef __EMSCRIPTEN__
@@ -449,7 +502,22 @@ bool FileStore::save() {
 }
 
 bool FileStore::save_score() {
-    return write_save(true);
+    // 原版保存点（0x42bfa0/0x4399e0 → 0x449e50）：v6 应用档与 scoreth13.dat
+    // 得分面镜像同一提交点。v6 档失败即失败；web 通道镜像写失败同如实报错；
+    // native 构建通道不激活（write_score_dat no-op），语义与旧版逐字节一致。
+    if (!write_save(true)) return false;
+    sync_score_face_to_dat();
+    return write_score_dat();
+}
+
+i64 FileStore::max_ranking_timestamp() const {
+    i64 newest = 0;
+    for (const auto& records : ordinary_records) {
+        for (const auto& rank : records.ranking) {
+            for (const auto& score : rank) newest = std::max(newest, score.timestamp);
+        }
+    }
+    return newest;
 }
 
 bool FileStore::write_save(bool commit_ending) {
@@ -551,6 +619,192 @@ bool FileStore::write_save(bool commit_ending) {
     if (ok && commit_ending) committed_ending_bytes_ = ending_seen_bytes;
     return ok;
 #endif
+}
+
+bool FileStore::score_dat_file_ready() {
+    // ReplayFile::deflate（bit-exact 0x458c30）已交付并经黄金整文件逐字节
+    // 验证（tests/score/score_dat_test.cpp build_file_round_trip_golden），
+    // th13.scoredat 通道读写全线接通。
+    return true;
+}
+
+i32 FileStore::score_dat_chara(i32 character) {
+    switch (character) {
+    case 0: return 0;   // 霊夢 → ReimuA（IPhoneDia chara 0..5 惯例序）
+    case 1: return 2;   // 魔理沙 → MarisaA
+    case 2: return 4;   // 早苗 → SanaeA
+    default: return -1; // 妖夢：端口扩展角色，原版 6 chara 无对应，不写不覆盖
+    }
+}
+
+bool FileStore::read_score_dat(std::vector<u8>& out) {
+    out.clear();
+#ifdef __EMSCRIPTEN__
+    std::vector<char> buffer(1 << 20);
+    const int length = th13_scoredat_read_js(buffer.data(), int(buffer.size()));
+    if (length <= 0) return false;
+    out.assign(buffer.begin(), buffer.begin() + length);
+    return true;
+#else
+    // native/WASI 构建通道完全不激活：无 localStorage，也不做任何文件访问
+    // （native 仅单测/诊断用；历史上按 cwd 找 scoreth13.dat 曾把无关文件卷进
+    // 装载并互相改写）。恒缺档 = 走 v6/默认路径，行为与无此通道版本一致。
+    return false;
+#endif
+}
+
+bool FileStore::write_score_dat() {
+#ifdef __EMSCRIPTEN__
+    if (!score_dat_file_ready()) return true;  // 阶段 B 门（见上）
+    std::vector<u8> file;
+    if (!score_dat.build_file(file)) {
+        error = "ScoreDat build failed: " + score_dat.error;
+        return false;
+    }
+    if (!th13_scoredat_write_js(reinterpret_cast<const char*>(file.data()),
+                                int(file.size()))) {
+        error = "ScoreDat storage write failed";
+        return false;
+    }
+    return true;
+#else
+    // native/WASI 构建通道不激活：不落盘（save_score 语义 = 仅写 v6，与旧版
+    // 逐字节一致）。镜像仍由 sync_score_face_to_dat() 留在内存供测试检视。
+    return true;
+#endif
+}
+
+void FileStore::sync_score_face_to_dat() {
+    // FileStore 字段 → ScoreDat 镜像。只写有原版写入点依据的字段；端口扩展
+    // （continues 位、per-char 练习最好成绩、total_frames、Extra 解禁位、
+    // spell 计数）无证据不入档，保持 parse/默认透传。字段映射详见
+    // docs/plans/scoredat.md。
+    for (int diff = 0; diff < kSaveDifficulties; ++diff) {
+        if (!score_dat.cr_present[size_t(diff)]) {
+            // 缺席块（剔除怪癖/未落档）：等价 0x449b00 boot 重建默认块再存。
+            score_dat.cr_present[size_t(diff)] = true;
+            score_dat.set_default_cr_block(u32(diff));
+        }
+        u8* block = score_dat.cr[size_t(diff)].data();
+        for (i32 character = 0; character < kSaveCharacters; ++character) {
+            const i32 chara = score_dat_chara(character);
+            if (chara < 0) continue;
+            const auto& records = ordinary_records[size_t(character)];
+            for (size_t rank = 0; rank < 10; ++rank) {
+                const auto& score = records.ranking[size_t(diff)][rank];
+                ScoreDat::Entry entry;
+                entry.score = u32(std::max(score.score, 0));
+                entry.stage = u8(score.stage);
+                // v6 +5 存的是 continues，原版条目 +5 是通关旗（0x43d6b0 写
+                // DAT_004be7c8）：端口未跟踪 per-entry 通关旗，恒 0 不臆造。
+                entry.clear = 0;
+                const size_t name_bytes = std::min(score.name.size(), size_t(8));
+                std::memcpy(entry.name.data(), score.name.data(), name_bytes);
+                std::fill(entry.name.begin() + ptrdiff_t(name_bytes), entry.name.end(), u8(0));
+                entry.time_lo = u32(u64(score.timestamp));
+                entry.time_hi = u32(u64(score.timestamp) >> 32);
+                entry.rate_bits = float_to_bits(score.progress_percent);
+                ScoreDat::write_entry(block, chara, i32(rank), entry);
+            }
+            // 进度计数：0x42cd40（通关/无续关通关，上限 99999）。原版寻址为
+            // “所玩难度块内 +0x7C0/+0x7DC”（0042cd40.c: (diff)*0x56dc+0x7c0/…，
+            // 结构常量 = 块内 +8），端口 clear_count 本就按难度分列，一一对应。
+            // 游戏回数（+0x7B8，0x42b990 同为难度块内）端口无难度维度——v6
+            // play_count 是全难度合计，写入每块会臆造 per-difficulty 计数，
+            // 故两侧都不映射（v6 自留、dat 保持 parse/默认）。
+            ScoreDat::set_progress_u32(block, 0x7C0, chara,
+                                       u32(std::min(records.clear_count[size_t(diff)], 99999)));
+            ScoreDat::set_progress_u32(
+                block, 0x7DC, chara,
+                u32(std::min(records.no_continue_clear_count[size_t(diff)], 99999)));
+            // 进度行 +5 游玩旗（0x42b990）← practice_played（diff 0..3）。
+            if (diff < 4) {
+                for (i32 stage = 1; stage <= 6; ++stage) {
+                    if (practice_stage_played(character, diff, stage))
+                        ScoreDat::set_progress_row_flag(block, chara, stage - 1, 1, 1);
+                }
+            }
+        }
+        // 练习记录最好成绩（0x42cd40 对 +0x98 的 max 写）：原版每难度每符单值，
+        // 端口 5 列（4 角色+合计）取 max 合流；已 parse 的更大历史值保留。
+        for (i32 slot = 0; slot < kSaveSpellSlots; ++slot) {
+            u32 best = 0;
+            for (i32 column = 0; column < kSaveSpellColumns; ++column) {
+                best = std::max(best,
+                                u32(std::max(spell_records[size_t(slot)]
+                                                 .columns[size_t(column)]
+                                                 .practice_best_score,
+                                             0)));
+            }
+            const u32 current = ScoreDat::practice_u32(block, slot, 0x98);
+            ScoreDat::set_practice_u32(block, slot, 0x98, std::max(current, best));
+        }
+    }
+    // ending seen 13 字节（0x416130 读写 score+0x1b26a..0x1b276 = ST+0x16..0x22）。
+    u8 seen[ScoreDat::kEndingBytes];
+    std::copy(ending_seen_bytes.begin(), ending_seen_bytes.end(), seen);
+    ScoreDat::write_ending_bytes(score_dat.st.data(), seen);
+    // ST 上次名（+0x0C）：端口暂无名牌输入追踪，保持 parse/默认透传不臆造。
+}
+
+void FileStore::overlay_score_face_from_dat() {
+    // ScoreDat 镜像 → FileStore 得分字段（装载覆盖；v6 设置类字段不动）。
+    for (int diff = 0; diff < kSaveDifficulties; ++diff) {
+        if (!score_dat.cr_present[size_t(diff)]) continue;  // 缺席块：该难度保持 v6/默认
+        const u8* block = score_dat.cr[size_t(diff)].data();
+        for (i32 character = 0; character < kSaveCharacters; ++character) {
+            const i32 chara = score_dat_chara(character);
+            if (chara < 0) continue;
+            auto& records = ordinary_records[size_t(character)];
+            for (size_t rank = 0; rank < 10; ++rank) {
+                const ScoreDat::Entry entry = ScoreDat::read_entry(block, chara, i32(rank));
+                auto& score = records.ranking[size_t(diff)][rank];
+                score.score = i32(entry.score);
+                score.stage = entry.stage;
+                score.continues = 0;  // 原版条目无续关数字段（+5 是通关旗）
+                size_t length = 0;
+                while (length < 8 && entry.name[length] != 0) ++length;
+                score.name.assign(reinterpret_cast<const char*>(entry.name.data()), length);
+                score.timestamp =
+                    i64(u64(entry.time_lo) | u64(entry.time_hi) << 32);
+                score.progress_percent = float_from_bits(entry.rate_bits);
+                score.available = true;  // 原版全 60 行常在（默认行即 100000..10000）
+            }
+            // 游戏回数（+0x7B8）不映射（见 sync 侧说明）；通关计数按难度覆盖。
+            records.clear_count[size_t(diff)] =
+                i32(std::min(ScoreDat::progress_u32(block, 0x7C0, chara), 99999u));
+            const u32 no_continue =
+                std::min(ScoreDat::progress_u32(block, 0x7DC, chara), 99999u);
+            records.no_continue_clear_count[size_t(diff)] = i32(no_continue);
+            // cleared 位镜像 v6 写语义（record_run_clear 的 no-continue 置位）；
+            // 该位是派生得分面，随存档覆盖重算。
+            const u32 bit = 1u << u32(character * kSaveDifficulties + diff);
+            cleared_mask &= ~bit;
+            if (no_continue != 0) cleared_mask |= bit;
+            records.history_complete = true;  // 原版档即完整历史
+            if (diff < 4) {
+                u8& played = practice_played[size_t(character * 4 + diff)];
+                for (i32 stage = 1; stage <= 6; ++stage) {
+                    if (ScoreDat::progress_row_flag(block, chara, stage - 1, 1) != 0)
+                        played |= u8(1u << (stage - 1));
+                }
+            }
+        }
+        // 练习最好成绩：原版每难度每符单值 → 合计列（per-char 列为端口扩展，
+        // 保持 v6 值不臆造归属）。多难度块取 max（端口无 per-difficulty 维度）。
+        for (i32 slot = 0; slot < kSaveSpellSlots; ++slot) {
+            const u32 best = ScoreDat::practice_u32(block, slot, 0x98);
+            auto& aggregate =
+                spell_records[size_t(slot)].columns[size_t(kSaveCharacters)].practice_best_score;
+            aggregate = std::max(aggregate, i32(std::min(best, u32(INT32_MAX))));
+        }
+    }
+    // ending seen 13 字节与完整历史旗。
+    u8 seen[ScoreDat::kEndingBytes];
+    ScoreDat::read_ending_bytes(score_dat.st.data(), seen);
+    std::copy(seen, seen + ScoreDat::kEndingBytes, ending_seen_bytes.begin());
+    ending_history_complete = true;
+    // ST 上次名留在 score_dat.st（端口读侧未接名牌显示，透传保真）。
 }
 
 }  // namespace th13::sdl
