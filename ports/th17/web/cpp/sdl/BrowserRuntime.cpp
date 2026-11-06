@@ -14,6 +14,7 @@
 #include <ctime>
 #include <optional>
 #if TH17_MULTIPLAYER
+#include <malloc.h>
 #include "../multiplayer/Session.hpp"
 #include "../multiplayer/FrameImage.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
@@ -352,6 +353,14 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_performance(){
  static std::array<unsigned,7> value{};
  value=room?std::array<unsigned,7>{room->capture_count,room->capture_us,room->replay_slices,room->logical_draws,
   room->phase_corrections[0],room->phase_corrections[1],room->phase_corrections[2]}:std::array<unsigned,7>{};
+ return value.data();
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_load(){
+ using namespace th17::sdl;
+ static std::array<unsigned,2> value{};
+ const auto* scene=app?app->scene():nullptr;
+ value=scene&&room&&room->trace?std::array<unsigned,2>{
+  scene->battle.bullet_scene->manager.visible_count,unsigned(mallinfo().uordblks)}:std::array<unsigned,2>{};
  return value.data();
 }
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_rollback(){

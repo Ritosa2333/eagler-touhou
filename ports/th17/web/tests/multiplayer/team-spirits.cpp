@@ -1,4 +1,5 @@
 #include "../../cpp/game/ItemSpirits.hpp"
+#include "../../cpp/game/EnemyCallbacks.hpp"
 #include "../../cpp/game/LaserScene.hpp"
 #include "../../cpp/multiplayer/FrameImage.hpp"
 #include <array>
@@ -173,6 +174,62 @@ void borrowed_animation_graph(){
     require(registry.submit(*registry.allocate())==next_handle,"restore slot and generation allocation order");
 }
 
+void animation_page_rollback(){
+    AnmRegistry registry;
+    for(unsigned i=0;i<128;++i)
+        require(registry.submit(*registry.allocate())!=0,"fill first animation page");
+    multiplayer::FrameImage image;
+    require(registry.save_rollback(image),"capture at animation page boundary");
+    auto* vm=registry.allocate();
+    const auto handle=registry.submit(*vm);
+    vm->visual.translation={42,8,0};
+    require(registry.find(handle)==vm&&registry.slot(*vm)==128,"allocate next animation page");
+    require(image.restore()&&registry.find(handle)==nullptr,"remove abandoned animation handle");
+    require(registry.allocate()==vm&&vm->visual.translation.x==0,"fresh slot reuses its stable address with initial state");
+    require(registry.submit(*vm)==handle,"restore generation across animation pages");
+}
+
+void immutable_bullet_program(){
+    struct Host final:BulletManagerHost,BulletFrameHost {
+        BulletFrameHost& bullet(u32)override{return *this;}
+        void prepare(u32,BulletFrameContext&)override{}
+        void play(i32)override{}
+        bool interrupt(i32)override{return true;}
+        bool bind_appearance(i32,i32)override{return true;}
+        bool spawn_animation()override{return true;}
+        bool emit_children(const BulletShooter&)override{return true;}
+        bool cancel_bullet(i32)override{return true;}
+        i32 contact(BulletState&,bool)override{return 0;}
+        bool animation_finished(bool)override{return false;}
+        void cancellation_effect(i32,const Vec3&,const Vec3&)override{}
+        void recycle()override{}
+    } host;
+    Rng random;
+    BulletManager bullets(host);
+    bullets.random=&random;
+    BulletShooter shot;
+    shot.rows=1;shot.count=2;shot.speed=1;
+    shot.transforms[8].payload={1,2,0};
+    require(bullets.emit(shot,0),"emit first two bullets");
+    auto* first=bullets.state(bullets.first_active());
+    auto* second=bullets.state(bullets.next_active(bullets.first_active()));
+    require(first->program&&first->program==second->program,"one emission shares its program");
+    first->step_limit=100;
+    multiplayer::FrameImage image;
+    image.save(*first);
+    EnemyState redirect;
+    redirect.update_rule=EnemyUpdateRule::redirect_bullets;
+    redirect.integer_registers={60,1};
+    require(enemy_update_rule(redirect,bullets,random),"redirect just the matching bullet");
+    require(first->transform_index==8&&first->transforms()[8].type==0x20000&&second->transforms()[8].type==0,
+            "redirect forks a program without modifying its other owners");
+    require(image.restore()&&first->program==second->program,"rollback restores the shared program");
+    shot.transforms[8].payload[0]=7;
+    require(bullets.emit(shot,0),"emit edited program");
+    require(first->transforms()[8].payload[0]==1&&bullets.state(bullets.first_active())->transforms()[8].payload[0]==7,
+            "editing the shooter preserves existing bullets and payloads");
+}
+
 void laser_restore(const char* asset){
     struct Host final:LaserSceneHost {
         PlayerCollision player;
@@ -270,6 +327,8 @@ int main(int argc, char** argv) {
     shared_fragments(2);
     shared_fragments(3);
     borrowed_animation_graph();
+    animation_page_rollback();
+    immutable_bullet_program();
     laser_restore(asset);
     std::cout << "TH17 spirit inventory, countdown, fragments and laser rollback passed\n";
 }

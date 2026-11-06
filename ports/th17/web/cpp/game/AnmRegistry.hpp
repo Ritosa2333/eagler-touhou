@@ -43,9 +43,10 @@ private:
         Link group_link{this},child_link{this};
         NodeList::iterator position,child_position;
     };
-    // Allocate the native-sized pool once, before gameplay, with adjacent VMs
-    // in one slab. Bursts must not allocate thousands of individual pool nodes.
-    std::unique_ptr<Node[]> pool;
+    // Pages keep VM addresses stable while committing memory as slots are used.
+    static constexpr u32 page_size=128;
+    std::array<std::unique_ptr<Node[]>,(slot_mask+page_size-1)/page_size> pages;
+    u32 next_slot=0,page_count=0;
     std::unordered_map<AnmVm*,Node*> nodes;
     std::unordered_map<Node*,std::unique_ptr<Node>> overflow;
     std::vector<Node*> free_overflow;
@@ -53,7 +54,7 @@ private:
     // scanning every animation when a cancellation burst exceeds the pool.
     std::unordered_multimap<u32,Node*> overflow_handles;
     std::unordered_map<AnmVm*,std::shared_ptr<Node>> external;
-    std::vector<u32> free_slots;
+    std::vector<u16> free_slots;
     std::array<NodeList,2> groups;
     // The original alternate-group mapping also accepts layer 31 -> 43;
     // ordinary scene drawing consumes layers 0..42. Keep that mapping intact.
@@ -61,9 +62,9 @@ private:
     std::vector<Node*> pending_deletion;
     u32 generation=0;u32 active_count=0;
     void collect(Node&);void retire(Node&);void erase(Node&);Node* node(AnmVm&)const noexcept;
+    Node* pooled(u32 slot)const noexcept;
 public:
     std::string error;
-    AnmRegistry();
     AnmVm* allocate();u32 submit(AnmVm&,u32 ordering=0);
     AnmVm* find(u32 handle)const noexcept;
     AnmVm* find_child_script(AnmVm&,i32 script,i32 occurrence)const noexcept;

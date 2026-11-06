@@ -178,3 +178,4 @@
 - 2026-11-06，multiplayer：[双人和三人房间验证](../../archive/th17-multiplayer-room-20261106/room-validation.md)。生产 Wasm 使用本地 Relay 同步开局，对照确认输入模式的一面战斗状态及席位资源。
 - 2026-11-06，multiplayer：[战斗回滚验证](../../archive/th17-combat-rollback-20261106/room-validation.md)。生产 Wasm 在双人和三人 WebRTC 房间注入迟到输入，对照重演后的确认帧。
 - 2026-11-06，multiplayer：[回滚分帧压测](../../archive/th17-combat-rollback-20261106/performance-validation.md)。生产 Wasm 在 Chromium CPU 限速和 WebRTC 输入抖动下测量纠错回调耗时，逐帧比对双人和三人房的确认状态。
+- 2026-11-06，multiplayer：[Extra 密集弹幕压测](../../archive/th17-extra-dense-20261106/README.md)。生产 Wasm 在真实 Extra 房比对确认帧，并测量敌弹密集区段的活跃堆和纠错耗时。

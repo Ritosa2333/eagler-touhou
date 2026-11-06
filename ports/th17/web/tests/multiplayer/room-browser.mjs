@@ -10,11 +10,12 @@ const runtime=resolve(process.env.EAGLER_TH17_BUILD||resolve(repo,'ports/th17/bu
 const out=resolve(process.env.TH17_ROOM_EVIDENCE||resolve(repo,'artifacts/th17-room'));
 const rollback=!process.argv.includes('--lockstep');
 const throughStageTwo=process.argv.includes('--through-stage-two');
+const denseExtra=process.argv.includes('--dense-extra');
 const extended=throughStageTwo||process.argv.includes('--extended');
-const difficulty=Number(process.env.TH17_ROOM_DIFFICULTY??(throughStageTwo?0:1));
+const difficulty=Number(process.env.TH17_ROOM_DIFFICULTY??(denseExtra?4:throughStageTwo?0:1));
 assert.ok(Number.isInteger(difficulty)&&difficulty>=0&&difficulty<=4);
 assert.ok(!throughStageTwo||difficulty!==4);
-const minimumSamples=Number(process.env.TH17_ROOM_SAMPLES||1050);
+const minimumSamples=Number(process.env.TH17_ROOM_SAMPLES||(denseExtra?4200:1050));
 const extendedTarget=Number(process.env.TH17_ROOM_TICKS||12000);
 const delayMs=Number(process.env.TH17_ROOM_DELAY_MS||110);
 const jitterMs=Number(process.env.TH17_ROOM_JITTER_MS||0);
@@ -137,20 +138,32 @@ try{
    await page.evaluate(seats=>Promise.all(Array.from({length:seats},(_,seat)=>startRuntime(seat))),seats);
    const frames=page.frames().filter(frame=>frame.url().includes('/runtime/'));
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra})=>{
      const callback=Module.onGameFrame;
      const optimized=typeof Module._th17_room_trace==='function';
      Module._th17_room_trace?.(1);
      globalThis.samples=new Map();
      globalThis.diagnostics={corrections:0,resimulated:0,maxPrediction:0,combatCorrections:0};
      globalThis.frameCosts=[];
-     let recorded=0;
+     let recorded=0,loadSample=0,bullets=0;
      Module.onGameFrame=(ok,time,ticks)=>{
       callback(ok,time,ticks);
       const r=Module._th17_room_rollback()>>>2;
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
-      if(n>120&&(ticks||resimulated>diagnostics.resimulated))
-       frameCosts.push({time,repair:resimulated>diagnostics.resimulated});
+      const phase=Module._th17_phase();
+      if(n>120&&(ticks||resimulated>diagnostics.resimulated)&&(!denseExtra||phase===1)){
+       bullets=samples.get(recorded)?.[10]??bullets;
+       frameCosts.push({time,repair:resimulated>diagnostics.resimulated,bullets});
+       diagnostics.peakLinearMemory=Math.max(diagnostics.peakLinearMemory||0,Module.HEAPU8.buffer.byteLength);
+       if(denseExtra&&++loadSample%12===0){
+        const pointer=Module._th17_room_load?.()>>>2;
+        if(pointer){
+         const [liveBullets,heap]=Module.HEAPU32.subarray(pointer,pointer+2);
+         diagnostics.peakLiveHeap=Math.max(diagnostics.peakLiveHeap||0,heap);
+         if(liveBullets>=256)diagnostics.densePeakLiveHeap=Math.max(diagnostics.densePeakLiveHeap||0,heap);
+        }
+       }
+      }
       diagnostics.corrections=corrections;diagnostics.resimulated=resimulated;
       diagnostics.combatCorrections=combatCorrections;diagnostics.spellCorrections=spellCorrections;
       diagnostics.maxPrediction=Math.max(diagnostics.maxPrediction,n-committed);
@@ -165,18 +178,19 @@ try{
       }
       recorded=committed;
       diagnostics.lastConfirmed=committed;
-      diagnostics.phase=Module._th17_phase();
+      diagnostics.phase=phase;
       const centerGuest=extended&&seat===1&&n>=900&&n<952;
-      const reserve=throughStageTwo&&seat===1&&n>=1500;
+      const reserve=(throughStageTwo||denseExtra)&&seat===1&&n>=1500;
       const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve;
       Module._th17_key(205,+(seat===1&&n>=120&&n<170||moveGuest&&n%96<12||extended&&seat===0&&n>=300&&n<350));
       Module._th17_key(203,+(seat===0&&n>=120&&n<170||moveGuest&&n%96>=48&&n%96<60||centerGuest||reserve&&n<1630));
       Module._th17_key(200,+(seat===2&&n>=120&&n<150||reserve&&n<1630));
       Module._th17_key(44,+(n>=140&&n<260||extended&&n>=900));
       Module._th17_key(46,+(extended&&seat===0&&n>=1400&&n%120<100));
-      Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9));
+      Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
+       denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo});
+    },{seat,rollback,extended,throughStageTwo,denseExtra});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    try{await wait(async()=>{
@@ -194,7 +208,7 @@ try{
     if(throughStageTwo)return status.every(item=>item.diagnostics.stageTwoFrames>=240);
     return status.every(item=>item.samples>=minimumSamples)&&(!extended||!rollback||
      status.some(item=>item.diagnostics.spellCorrections>0)||current>=extendedTarget);
-   },throughStageTwo?'Stage 1 to Stage 2 transition':'independent pilot motion through Stage 1',throughStageTwo?540000:extended?300000:90000);}
+   },throughStageTwo?'Stage 1 to Stage 2 transition':'confirmed room samples',throughStageTwo?540000:extended||denseExtra?300000:90000);}
    catch(error){coverageFailure=error;}
    const states=await Promise.all(frames.map(frame=>frame.evaluate(()=>Array.from(samples))));
    const first=new Map(states[0]),other=states.slice(1).map(state=>new Map(state));
@@ -217,15 +231,23 @@ try{
     const [captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections]=pointer?Module.HEAPU32.subarray(pointer,pointer+7):[];
     return {...diagnostics,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,
      updates:summarize(frameCosts.filter(entry=>!entry.repair).map(entry=>entry.time)),
-     repairs:summarize(frameCosts.filter(entry=>entry.repair).map(entry=>entry.time))};
+     repairs:summarize(frameCosts.filter(entry=>entry.repair).map(entry=>entry.time)),
+     denseUpdates:summarize(frameCosts.filter(entry=>!entry.repair&&entry.bullets>=256).map(entry=>entry.time)),
+     denseRepairs:summarize(frameCosts.filter(entry=>entry.repair&&entry.bullets>=256).map(entry=>entry.time))};
    })));
    const maxEnemyBullets=Math.max(...agreed.map(([,state])=>state[10]));
+   const denseWindows=[];
+   if(denseExtra)for(const [frame,state] of [...agreed].sort((a,b)=>b[1][10]-a[1][10])){
+    if(denseWindows.some(window=>Math.abs(window.stageClock-state[4])<=120))continue;
+    denseWindows.push({frame,stageClock:state[4],bullets:state[10],spell:state[30]});
+    if(denseWindows.length===5)break;
+   }
    const maxLasers=Math.max(...agreed.map(([,state])=>state[29]));
    const activeSpellFrames=agreed.filter(([,state])=>state[30]&1).length;
    const dialogueFrames=agreed.filter(([,state])=>state[33]).length;
    const bossNonspellFrames=agreed.filter(([,state])=>state[38]&&!(state[30]&1)&&!state[33]).length;
    const stageTwoFrames=agreed.filter(([,state])=>state[3]===2).length;
-   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,diagnostics,last,difference});
+   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,denseWindows,diagnostics,last,difference});
    if(coverageFailure)throw coverageFailure;
    if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
    if(rollback){
@@ -254,6 +276,6 @@ try{
 }finally{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
-  throughStageTwo,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,reports},null,2)+'\n');
+  throughStageTwo,denseExtra,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,reports},null,2)+'\n');
  await writeFile(resolve(out,'relay.log'),log);
 }

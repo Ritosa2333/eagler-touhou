@@ -50,7 +50,9 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<RunInput> run_input;std::unique_ptr<RunPause> pause;std::unique_ptr<SceneDisplay> display;
  std::shared_ptr<Replay> selected_replay;std::unique_ptr<ReplayRecording> recording;std::array<u8,0xa0> live_description{};
  std::vector<std::unique_ptr<ScreenFade>> fades;std::unique_ptr<Manual> pause_manual;FrameCallback manual_callback;std::array<FrameCallback,4> global_callbacks;
- std::unordered_map<std::string,std::vector<u8>> resource_cache;Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
+ std::unordered_map<std::string,std::vector<u8>> resource_cache;
+ std::unique_ptr<SDL_IOStream,decltype(&SDL_CloseIO)> archive_file{nullptr,SDL_CloseIO};
+ Archive archive;std::unordered_map<std::string,u32> archive_names;
  StageCamera camera;PlayerTouch touch;GameInput physical_input,retained_input;FramePerformance performance;u32 controller_buttons=0,frames=0,manual_pressed=0,manual_repeated=0,transition_overlay=0,loading_handle=0;u16 stage_seed=0;
  std::vector<u8> pending_png,pending_animation;i32 pending_page=-1,pending_bank=-1,frame_skip=0,preview_index=-1;
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;

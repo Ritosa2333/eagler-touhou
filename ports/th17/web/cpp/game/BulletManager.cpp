@@ -37,10 +37,12 @@ bool BulletManager::emit(const BulletShooter& shooter,float minimum){
     if(!random){error="Bullet manager random state unavailable";return false;}
     struct DistanceScope {float& value;float previous;~DistanceScope(){value=previous;}} distance_scope{minimum_distance_squared,minimum_distance_squared};minimum_distance_squared=minimum;
     const float aim=bullet_aim(shooter.position,context.player);
+    std::shared_ptr<const BulletProgram> program;
     for(i32 row=0;row<shooter.rows;row++){
         for(i32 column=0;column<shooter.count;column++){
             const u32 index=acquire();if(index==none)goto finished;
-            if(!slots[index].state.initialize(shooter,column,row,aim,context.player,minimum,*random,host.bullet(index),error)&&!error.empty()){recycle(index);return false;}
+            if(!program)program=std::make_shared<const BulletProgram>(shooter.transforms);
+            if(!slots[index].state.initialize(shooter,column,row,aim,context.player,minimum,*random,host.bullet(index),error,program)&&!error.empty()){recycle(index);return false;}
             if(const auto* failure=host.failure();failure&&!failure->empty()){error=*failure;return false;}
         }
     }
