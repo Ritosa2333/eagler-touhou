@@ -179,3 +179,4 @@
 - 2026-11-06，multiplayer：[战斗回滚验证](../../archive/th17-combat-rollback-20261106/room-validation.md)。生产 Wasm 在双人和三人 WebRTC 房间注入迟到输入，对照重演后的确认帧。
 - 2026-11-06，multiplayer：[回滚分帧压测](../../archive/th17-combat-rollback-20261106/performance-validation.md)。生产 Wasm 在 Chromium CPU 限速和 WebRTC 输入抖动下测量纠错回调耗时，逐帧比对双人和三人房的确认状态。
 - 2026-11-06，multiplayer：[Extra 密集弹幕压测](../../archive/th17-extra-dense-20261106/README.md)。生产 Wasm 在真实 Extra 房比对确认帧，并测量敌弹密集区段的活跃堆和纠错耗时。
+- 2026-11-06，multiplayer：[Extra Boss 三人回滚压测](../../archive/th17-extra-boss-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房核对关底非符和符卡，并分项测量快照、逻辑绘制与纠错耗时。

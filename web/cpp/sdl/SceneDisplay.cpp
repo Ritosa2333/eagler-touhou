@@ -1,6 +1,9 @@
 #include "SceneDisplay.hpp"
 #include <cstdio>
 namespace th17::sdl {
+#if TH17_ROOM_BENCHMARK
+std::array<u32,4> room_benchmark_draw{};
+#endif
 SceneDisplay::SceneDisplay(StageGameplay& s,AnmManager& a,AnmEnvironment& e,GraphicsDevice& g,AnmRenderer& r):scene(s),animations(a),environment(e),graphics(g),renderer(r),views(r,e),captions(a,e),capture_device(g,r){}
 SceneDisplay::~SceneDisplay(){renderer.flush();scene.frame_scheduler().remove(fps_callback);screenshots.reset();scene.scene_animations.fill(nullptr);targets.reset();game.reset();outgoing_background.reset();compositor.reset();letters.reset();layers.reset();graphics.select_target(nullptr,0);}
 bool SceneDisplay::fail(const std::string& reason){if(error.empty())error=reason.empty()?"TH17 scene drawing failed":reason;return false;}
@@ -21,6 +24,17 @@ bool SceneDisplay::initialize(GameRun& run,GameRecords& records,SpellRecords& sp
 }
 bool SceneDisplay::capture(u32& handle,bool results){return screenshots&&screenshots->capture(handle,results)||fail(screenshots?screenshots->error:"Screenshot outside an active playfield");}
 bool SceneDisplay::draw(double logical_seconds){
+#if TH17_ROOM_BENCHMARK
+    struct DrawTimer {
+        u32 index;u64 start=SDL_GetTicksNS();
+        ~DrawTimer(){++room_benchmark_draw[index];room_benchmark_draw[index+1]+=u32((SDL_GetTicksNS()-start)/1000);}
+    } timer{graphics.logical_drawing?2u:0u};
+#endif
+    struct LogicalDraw {
+        AnmRenderer& renderer;
+        ~LogicalDraw(){renderer.logical_only=false;}
+    } logical{renderer};
+    renderer.logical_only=graphics.logical_drawing;
     if(!error.empty()||!compositor||!game)return false;if(!graphics.select_target(nullptr,0))return fail(graphics.error);
     if(!game->draw())return fail(game->error.empty()?game->background.error:game->error);
     if(outgoing_background&&!outgoing_background->error.empty())return fail(outgoing_background->error);

@@ -28,12 +28,15 @@ EM_JS(int, th17_host_has_focus, (), {
 EM_JS(int, th17_browser_keyboard_owned, (), { return typeof Module.resetBrowserKeyboard === "function"; });
 EM_JS(void, th17_browser_keyboard_reset, (), { Module.resetBrowserKeyboard?.(); });
 namespace th17::sdl {
+#if TH17_ROOM_BENCHMARK
+extern std::array<u32,4> room_benchmark_draw;
+#endif
 namespace {
 std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH17_MULTIPLAYER
 struct RoomRuntime final : multiplayer::World {
- using Status=std::array<u32,39>;
+ using Status=std::array<u32,43>;
  struct Frame {
   u32 number=Netplay::INVALID_FRAME;
   multiplayer::FrameImage image;
@@ -53,6 +56,9 @@ struct RoomRuntime final : multiplayer::World {
  std::array<u32,3> phase_corrections{};
  u32 barrier=Netplay::INVALID_FRAME;
  u32 combat_corrections=0,spell_corrections=0;
+#if TH17_ROOM_BENCHMARK
+ u32 benchmark_input_frame=0;
+#endif
 
  Frame& state(u32 frame){return history[frame%history.size()];}
  Status status(u32 number) const;
@@ -123,6 +129,11 @@ struct RoomRuntime final : multiplayer::World {
   auto& output=state(number);
   if(!app->room_speculative)output.image.clear();
   output.number=number;output.sounds.clear();app->room_sounds=&output.sounds;
+#if TH17_ROOM_BENCHMARK
+  if(auto* scene=app->scene();scene&&scene->battle.stage==7){
+   for(u32 seat=0;seat<scene->battle.pilot_count();++seat)scene->battle.pilot(seat).life.invulnerability.set(2);
+  }
+#endif
   const bool ok=app->step(main_input.held,main_input.pressed,main_input.repeated,60,false);
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
@@ -142,6 +153,23 @@ struct RoomRuntime final : multiplayer::World {
  }
  bool capture_physical(u32 held,const PlayerTouch& touch){
   Netplay::FrameInput sample(u16(held&0x3fbu));
+#if TH17_ROOM_BENCHMARK
+  if(setup.difficulty==4){
+   // Use the physical capture index so real network pacing and corrections
+   // do not change the input sequence between benchmark builds.
+   const u32 n=benchmark_input_frame++;
+   const u32 seat=setup.local;
+   const bool move=seat==1&&n>=600&&!(n>=900&&n<952);
+   const bool left=(seat==0&&n>=120&&n<170)||(move&&n%96>=48&&n%96<60)||(seat==1&&n>=900&&n<952);
+   const bool right=(seat==1&&n>=120&&n<170)||(seat==0&&n>=300&&n<350)||(move&&n%96<12);
+   const bool up=seat==2&&n>=120&&n<150;
+   const bool fire=(n>=140&&n<260)||(n>=900&&n%240<180);
+   const bool skip=seat==0&&n>=1400&&n%120<100;
+   const bool bomb=seat==1&&n>=185&&n<193;
+   sample=Netplay::FrameInput(u16(fire|bomb*2|up*0x10|left*0x40|right*0x80|skip*0x200));
+   return session.capture_input(sample,now_ms)||app->fail(session.error());
+  }
+#endif
   if(touch.mode){
    sample.analogMode=Netplay::AnalogMode::DirectTouch;
    sample.x=touch.x;sample.y=touch.y;
@@ -178,6 +206,13 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
   result[36]=float_to_bits(battle.frame_state().rate);result[37]=app->visual.seed;
   result[38]=battle.enemy_world.boss_at(0)||battle.enemy_world.boss_at(1)||battle.enemy_world.boss_at(2);
   if(!trace)return result;
+  result[39]=u32(battle.spell.id);
+  result[40]=u32(battle.spell.frame);
+  for(i32 index=0;index<3;++index)if(const auto* boss=battle.enemy_world.boss_at(index)){
+   result[41]=boss->id;
+   result[42]=u32(battle.enemies->find(boss->id)->scripts.at(0)->routine);
+   break;
+  }
   // The room fixture compares entity and script state on each confirmed frame.
   u32 hash=2166136261u;
   const auto word=[&](u32 value){hash=(hash^value)*16777619u;};
@@ -363,6 +398,9 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_load(){
   scene->battle.bullet_scene->manager.visible_count,unsigned(mallinfo().uordblks)}:std::array<unsigned,2>{};
  return value.data();
 }
+#if TH17_ROOM_BENCHMARK
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_draw(){return th17::sdl::room_benchmark_draw.data();}
+#endif
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_rollback(){
  using namespace th17::sdl;
  static std::array<unsigned,6> value{};

@@ -91,6 +91,8 @@ Windows 从 Visual Studio 开发者终端执行，可加 `-DCMAKE_LINKER_TYPE=SY
 
 加 `--dense-extra` 记录 Extra 的密集区段、活跃堆采样峰值和 Wasm 线性内存高水位。耗时统计以最近确认帧的敌弹数量分组，密集组从 256 颗开始，采样限于游戏画面。用 `TH17_ROOM_SAMPLES` 调整每个房间的确认帧样本数。
 
+Extra Boss 压测为构建和打包命令同时加 `--room-benchmark`，并为 `TH17_OUTPUT` 和 `EAGLER_RUNTIME_OUTPUT` 指定独立目录。用该包运行 `room-browser.mjs --extra-boss`，三席按物理采样编号发送固定输入，并使用碰撞保护持续经过原版非符和符卡。报告分开记录快照、逻辑绘制和实际绘制耗时。`TH17_ROOM_TICKS` 指定结束确认帧，`TH17_ROOM_BASELINE` 指向同一输入长度的旧版报告，以核对 Boss 段落和终点状态。复测在基线关底 Boss 开始前 1500 帧应用 CPU 限速。
+
 ## 检查
 
 ```sh

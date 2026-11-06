@@ -26,8 +26,15 @@ bool LaserVisual::initialize_curved(i32 sprite,i32 colour){
 }
 bool LaserVisual::update_curved(){return tick(body)&&tick(head);}
 bool LaserVisual::draw_curved(const CurveLaserMotion& motion,AnmRenderer& renderer){
-    const Vec2 position=body.environment?Vec2{float(body.environment->screen_offsets[0]),float(body.environment->screen_offsets[1])}:Vec2{};if(!curve_strip(motion.points.data(),u32(motion.points.size()),motion.render_width,position,{body.visual.uv[0].y,body.visual.uv[2].y},curve_vertices)){error="Curve drawing point count invalid";return false;}
-    if(renderer.draw_screen_strip(body,curve_vertices.data(),u32(curve_vertices.size()))<-1){error=renderer.error;return false;}if(!motion.points.empty()&&i32(motion.points.size())>=motion.path_age.current){head.variables.position=motion.points.back().position;if(renderer.draw(head)<-1){error=renderer.error;return false;}}return true;
+    const u32 count=u32(motion.points.size());
+    if(count>0x100000){error="Curve drawing point count invalid";return false;}
+    if(!renderer.logical_only){
+        const Vec2 position=body.environment?Vec2{float(body.environment->screen_offsets[0]),float(body.environment->screen_offsets[1])}:Vec2{};
+        if(!curve_strip(motion.points.data(),count,motion.render_width,position,{body.visual.uv[0].y,body.visual.uv[2].y},curve_vertices)){error="Curve drawing point count invalid";return false;}
+    }
+    if(renderer.draw_screen_strip(body,renderer.logical_only?nullptr:curve_vertices.data(),count*2)<-1){error=renderer.error;return false;}
+    if(count&&i32(count)>=motion.path_age.current){head.variables.position=motion.points.back().position;if(renderer.draw(head)<-1){error=renderer.error;return false;}}
+    return true;
 }
 bool LaserVisual::rebind_body(i32 sprite,i32 colour){const auto* appearance=bullet_appearance(sprite);if(!appearance){error="Laser replacement animation type unavailable";return false;}if(!animations.bind_template(body,resource_id,wrapping_add(appearance->script,colour))){error=animations.error;return false;}return tick(body);}
 bool LaserVisual::update(float width,float length,float traveled,bool moving){if(!body.sprite){error="Laser body sprite unavailable";return false;}body.visual.flags|=8;body.visual.scale.x=float(width/body.sprite->width);body.visual.scale.y=float(length/body.sprite->height);if(!tick(body))return false;if(traveled==0&&!tick(head))return false;return !moving||tick(tip);}
