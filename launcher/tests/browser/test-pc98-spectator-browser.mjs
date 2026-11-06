@@ -112,6 +112,13 @@ try{
   }
   async function measure(label){const start=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame))),at=performance.now();await new Promise(r=>setTimeout(r,5000));const end=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));const seconds=(performance.now()-at)/1000;console.log('QA player rate',label,end.map((value,i)=>((value-start[i])/seconds).toFixed(1)));}
   if(process.env.PC98_SPECTATOR_PERF==='1')await measure('before spectator');
+  if(game==='th03'){
+    await wait(async()=>(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(()=>globalThis.th03SyncState?.phase===1)))).every(Boolean),'battle before native pause',30000);
+    const key=async(code)=>{for(const down of [true,false]){await page.evaluate(({code,down})=>rpc(0,'keyboard',{code,down}),{code,down});await new Promise(r=>setTimeout(r,150));}};
+    await key('Escape');await wait(async()=>await frames()[0].evaluate(()=>globalThis.th03SyncState?.pauseSeat===0),'recorded native pause',30000);
+    await new Promise(r=>setTimeout(r,800));await key('ArrowDown');await new Promise(r=>setTimeout(r,500));await key('Escape');
+    await wait(async()=>await frames()[0].evaluate(()=>globalThis.th03SyncState?.pauseSeat===null),'recorded native resume',30000);
+  }
   await configure(2,1);
   await page.waitForFunction(()=>events.some(e=>e.epoch===3&&['first-frame','error'].includes(e.event)),{timeout:120000});const viewerError=await page.evaluate(()=>events.find(e=>e.epoch===3&&e.event==='error'));if(viewerError)throw Error(JSON.stringify(viewerError));
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});

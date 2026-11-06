@@ -344,6 +344,7 @@ function openPause(seat) {
   if (closed || closing || !emulator || emulator.state === 'exited' || nativePause?.pending || pauseSeat !== null || (!online && $('settings').open)) return;
   nativeState = nativePause?.update(nativeNow());
   if (!nativeState?.phase) return;
+  if(online){if(!nativePause.menuOpen(seat,nativeNow(),activeLang))return;controls.release();pauseSeat=seat;pauseSelection=0;return;}
   clearEscape();
   controls.release(); visibilityPaused = false; emulator.pause(); save();
   pauseSeat = seat; pauseSelection = 0;
@@ -355,6 +356,7 @@ function openPause(seat) {
 }
 function closePause() {
   if(enqueue('resume'))return;
+  if(online&&pauseSeat!==null){nativePause.menuInput('resume');return;}
   controls.release(); pauseSeat = null;
   $('pause-menu').hidden = $('pause-shade').hidden = true;
   visibilityPaused = document.hidden;
@@ -364,6 +366,7 @@ function closePause() {
 function choosePause(choice) {
   if(enqueue(choice))return;
   if (pauseSeat === null) return;
+  if(online){nativePause.menuInput(choice);return;}
   if (choice === 'resume') { closePause(); return; }
   if (!nativePause?.request(choice === 'round' ? 1 : 2, pauseSeat,nativeNow())) {
     $('pause-message').textContent = activeLang==='cn'?'当前回合无法认输。':'このラウンドでは降参できません。';
@@ -375,6 +378,7 @@ function navigatePause(seat, action) {
   if(enqueue(action))return;
   if (netplay && !sync?.applying && seat !== null) seat = seat === 0 ? netplay.localSeat : -1;
   if (pauseSeat === null || (seat !== null && seat !== pauseSeat)) return;
+  if(online){nativePause.menuInput(action);return;}
   const buttons = pauseButtons();
   if (action === 'resume') { closePause(); return; }
   if (action === 'confirm') { buttons[pauseSelection].click(); return; }
@@ -390,11 +394,18 @@ pauseButtons().forEach((button, i) => {
 // Clicking away from a pause button must not strand keyboard input on the
 // canvas, touch overlay or iframe body. Restore focus without changing selection.
 player.stage.addEventListener('pointerdown',event=>{
+  if(online)return;
   if(pauseSeat===null||event.target.closest('#pause-menu'))return;
   event.preventDefault();event.stopPropagation();pauseButtons()[pauseSelection].focus();
 },true);
 window.addEventListener('focus',()=>{
-  if(pauseSeat!==null&&!$('settings').open)pauseButtons()[pauseSelection].focus();
+  if(!online&&pauseSeat!==null&&!$('settings').open)pauseButtons()[pauseSelection].focus();
+});
+player.stage.addEventListener('pointerup',event=>{
+  if(!online||pauseSeat===null||event.pointerType!=='mouse'||pauseSeat!==netplay?.localSeat)return;
+  const rect=visibleCanvas.getBoundingClientRect(),x=(event.clientX-rect.left)*640/rect.width,y=(event.clientY-rect.top)*400/rect.height;
+  const left=pauseSeat?336:16,row=Math.floor((y-100)/46),inside=(y-100)-row*46;
+  if(x>=left&&x<left+288&&row>=0&&row<3&&inside>=0&&inside<40)choosePause(['resume','round','match'][row]);
 });
 function clearEscape() { escapeAt = -Infinity; clearTimeout(escapeTimer); }
 function handleEscape() {
@@ -466,15 +477,17 @@ function stepSynchronized(inputs,frame,replay=false){
     const paused=pauseSeat!==null||hiddenSeats.size>0;
     const applied=paused?inputs.map(input=>({...input,actions:[],touch:0})):inputs;
     controls.applyFrame(applied);
-    if(!paused){
+    if(!hiddenSeats.size){
       emulator.run();emulator.step();
       confirmedMusic?.stage(frame,nativeMusic.read(emulator.module.HEAPU8));
       nativeState=nativePause.update(nativeNow(),nativeMusic.dosRange(emulator.module.HEAPU8));
+      if(pauseSeat!==null&&nativeState?.menuState===2)pauseSelection=nativeState.menuChoice;
+      if(pauseSeat!==null&&nativeState?.menuState===3){const result=nativeState.menuResult,seat=pauseSeat;nativePause.menuClear();if(result>1)nativePause.request(result-1,seat,nativeNow());pauseSeat=null;}
       nativePause.result(nativeNow());
     }else emulator.pause();
     if(pauseSeat!==null&&!replay)refreshPauseMenu();
     window.th03SyncState={frame:frame+1,tick:emulator.module.netInfo().tick,phase:nativeState?.phase??0,
-      selecting:nativePause.selecting,pauseSeat,hidden:[...hiddenSeats]};
+      selecting:nativePause.selecting,pauseSeat,pauseSelection,hidden:[...hiddenSeats]};
   }finally{
     emulator.module.netEndFrame();
     syncReplaying=false;
@@ -490,9 +503,8 @@ function restoreSynchronized(frame){
   emulator.module.netRestore(frame);lastUpload=-1;const state=saved.app;
   pauseSeat=state.pauseSeat;pauseSelection=state.pauseSelection;hiddenSeats.clear();for(const seat of state.hidden)hiddenSeats.add(seat);
   visibilityPaused=state.visibilityPaused;nativePause.restore(state.nativePause);nativeMusic.restore(state.music);confirmedMusic.rewind(frame);controls.restore(state.controls);
-  localizePause();
-  $('pause-menu').hidden=$('pause-shade').hidden=pauseSeat===null;
-  if(pauseSeat===null)emulator.run();else emulator.pause();
+  $('pause-menu').hidden=$('pause-shade').hidden=true;
+  if(hiddenSeats.size)emulator.pause();else emulator.run();
   for(const key of [...syncSnapshots.keys()])if(key>=frame)syncSnapshots.delete(key);
   return frame;
 }
@@ -517,10 +529,9 @@ function syncHash(){
 function reflectNetworkSnapshot(snapshot){
   const oldPause=pauseSeat;nativeState=snapshot.nativeState;
   pauseSeat=snapshot.pauseSeat;pauseSelection=snapshot.selection;hiddenSeats.clear();for(const seat of snapshot.hidden||[])hiddenSeats.add(seat);
-  $('pause-menu').hidden=$('pause-shade').hidden=pauseSeat===null;
-  if(pauseSeat!==null){$('pause-menu').dataset.seat=String(pauseSeat);localizePause();refreshPauseMenu();}
-  if(oldPause!==pauseSeat){controls.release();if(pauseSeat!==null)pauseButtons()[pauseSelection].focus();reflectState();}
-  window.th03SyncState={frame:sync?.queue.frame??0,tick:snapshot.tick,phase:nativeState?.phase??0,selecting:snapshot.selecting,pauseSeat,hidden:[...hiddenSeats]};
+  $('pause-menu').hidden=$('pause-shade').hidden=true;
+  if(oldPause!==pauseSeat){controls.release();reflectState();}
+  window.th03SyncState={frame:sync?.queue.frame??0,tick:snapshot.tick,phase:nativeState?.phase??0,selecting:snapshot.selecting,pauseSeat,pauseSelection,hidden:[...hiddenSeats]};
 }
 $('start').addEventListener('click', async () => {
   if (starting || (emulator && !closed) || closing) return;
@@ -585,7 +596,7 @@ $('start').addEventListener('click', async () => {
     const useWorker=!online&&netQuery.get('runtime')!=='main'&&supportsSoloWorker();
     // Keep simulation off the page by default, with an explicit main-thread
     // compatibility option using the same resources and input policy.
-    emulator=useNetworkWorker?await WorkerNetworkSimulation.create(config,{patch:nativePause.meta,music:networkAudio,
+    emulator=useNetworkWorker?await WorkerNetworkSimulation.create(config,{patch:nativePause.meta,music:networkAudio,language:activeLang,
       focusEnabled:roomFocusEnabled,touchUnlimitedAllowed:roomTouchUnlimitedAllowed,fullHash:netQuery.get('fullHash')==='1'})
       :useWorker?await WorkerNP21.create(config,{game:'03local',patch:nativePause.meta,music:(await nativeAssets()).meta.startup.music,onError:report}):await DOSBoxPC98.create(config);
     if(emulator.isWorker)nativePause=emulator.isNetworkWorker?workerNetworkPause(emulator):workerLocalPause(emulator);

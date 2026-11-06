@@ -5,8 +5,8 @@ import {createFrameControls} from './frame-controls.js';
 import {readNativeCoreDiagnostics} from '../network-performance.js';
 // All mutable guest/bridge/control state stays on the simulation thread.
 export class NetworkSimulation {
-  constructor(emulator,{patch,music,focusEnabled,touchUnlimitedAllowed,fullHash=false},onAudio=()=>{}){
-    this.emulator=emulator;this.pause=new NativePause(()=>emulator,patch);this.music=new NativeMusic(music);
+  constructor(emulator,{patch,music,focusEnabled,touchUnlimitedAllowed,language='cn',fullHash=false},onAudio=()=>{}){
+    this.emulator=emulator;this.language=language;this.pause=new NativePause(()=>emulator,patch);this.music=new NativeMusic(music);
     this.controls=createFrameControls(emulator,this.pause,{focusEnabled,touchUnlimitedAllowed});
     this.audio=new ConfirmedMusic({command:(...event)=>onAudio(event)});
     this.snapshots=new Map();this.hidden=new Set();this.pauseSeat=null;this.selection=0;this.state=null;this.fullHash=fullHash;this.renderEpoch=0;
@@ -17,27 +17,22 @@ export class NetworkSimulation {
   open(seat){
     if(this.emulator.state==='exited'||this.pause.pending||this.pauseSeat!==null)return;
     this.update();if(!this.state?.phase)return;
-    this.emulator.pause();this.pauseSeat=seat;this.selection=0;
+    if(!this.pause.menuOpen(seat,this.now(),this.language))return;this.pauseSeat=seat;this.selection=0;
   }
   close(){this.pauseSeat=null;if(this.emulator.state!=='exited')this.emulator.run();}
   choose(choice){
     if(this.pauseSeat===null)return;
-    if(choice==='resume'){this.close();return;}
-    if(!this.pause.request(choice==='round'?1:2,this.pauseSeat,this.now())){this.update();this.selection=0;return;}
-    this.close();
+    this.pause.menuInput(choice);
   }
   command(seat,command){
     if(command==='hidden'){this.hidden.add(seat);return;}
     if(command==='visible'){this.hidden.delete(seat);return;}
     if(command==='pause'||command==='escape'){
-      if(this.pauseSeat===seat)this.close();else if(this.pauseSeat===null)this.open(seat);return;
+      if(this.pauseSeat===seat)this.choose('resume');else if(this.pauseSeat===null)this.open(seat);return;
     }
     if(this.pauseSeat!==seat)return;
     if(['round','match','resume'].includes(command)){this.choose(command);return;}
-    if(command==='confirm'){this.choose(['resume','round','match'][this.selection]);return;}
-    if(['up','down'].includes(command)){
-      this.selection=this.allowed()?(this.selection+(command==='up'?2:1))%3:0;
-    }
+    if(['up','down','confirm'].includes(command))this.pause.menuInput(command);
   }
   step(inputs,frame,replay=false){
     const e=this.emulator,m=e.module;m.netBeginFrame(frame,replay);
@@ -46,8 +41,16 @@ export class NetworkSimulation {
       for(let seat=0;seat<2;seat++)for(const command of inputs[seat].commands)this.command(seat,command);
       const paused=this.pauseSeat!==null||this.hidden.size>0;
       this.controls.applyFrame(paused?inputs.map(input=>({...input,actions:[],touch:0})):inputs);
-      if(!paused){e.run();e.step();this.audio.stage(frame,this.music.read(m.HEAPU8));this.update();this.pause.result(this.now());}
-      else e.pause();
+      if(!this.hidden.size){
+        e.run();e.step();this.audio.stage(frame,this.music.read(m.HEAPU8));this.update();
+        if(this.pauseSeat!==null&&this.state?.menuState===2)this.selection=this.state.menuChoice;
+        if(this.pauseSeat!==null&&this.state?.menuState===3){
+          const result=this.state.menuResult,seat=this.pauseSeat;this.pause.menuClear();
+          if(result>1)this.pause.request(result-1,seat,this.now());
+          this.close();
+        }
+        this.pause.result(this.now());
+      }else e.pause();
     }finally{m.netEndFrame();}
   }
   capture(frame){

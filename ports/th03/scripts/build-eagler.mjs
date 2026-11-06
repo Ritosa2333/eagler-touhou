@@ -18,48 +18,41 @@ async function nativeMarkerInputs(){
   const meta=JSON.parse(await readFile(resolve(web,'native-patch.json'),'utf8'));
   const source=await readFile(resolve(privateInputs.has('native/main.exe')?assets:web,'native/main.exe'));
   if(createHash('sha256').update(source).digest('hex')!==meta.sha256)throw Error('TH03 native marker source identity mismatch');
-  const bytes=Buffer.from(source), header=bytes.readUInt16LE(8)*16;
-  const origin=header+meta.codeSegment*16+meta.hooks.find(h=>h.imageOffset===0x990b).target;
-  const region=bytes.subarray(origin,origin+256);
-  // One VRAM row is two display pixels, so two rows make a 4x4 square.
-  for(const [before,after] of [['bbf800','bbf000'],['26899da000','9090909090'],['bb7000d3cbb0ff','bb6000d3cbb0ff']]){
-    const old=Buffer.from(before,'hex'), at=region.indexOf(old);
-    if(at<0||region.indexOf(old,at+1)!==-1)throw Error('TH03 native marker instruction changed');
-    Buffer.from(after,'hex').copy(region,at);
-  }
-  const sha=createHash('sha256').update(bytes).digest('hex');
   const soloMeta=JSON.parse(await readFile(resolve(web,'solo-assist.json'),'utf8'));
   const original=await readFile(resolve(privateInputs.has('native/original-main.exe')?assets:web,'native/original-main.exe'));
   if(createHash('sha256').update(original).digest('hex')!==soloMeta.originalSha256)throw Error('TH03 solo source identity mismatch');
   const temp=await mkdtemp(resolve(tmpdir(),'th03-native-marker-'));
-  let payload;
-  try{
-    const out=resolve(temp,'solo.bin');
-    execFileSync(process.env.NASM||'nasm',['-f','bin','patches/solo-marker.asm','-o',out],{cwd:port,stdio:'inherit'});
-    payload=await readFile(out);
-  }finally{await rm(temp,{recursive:true,force:true});}
-  const entries=Array.from({length:6},(_,i)=>payload.readUInt16LE(i*2));
-  const insert=0xe8f0, codeBase=0x96e0, tail=Buffer.from('ff207c9a5f5ec9c3','hex');
-  const gap=(tail.length+payload.length+15)&~15, headerSize=original.readUInt16LE(8)*16;
-  const hdr=Buffer.from(original.subarray(0,headerSize)),image=Buffer.from(original.subarray(headerSize));
-  if(!image.subarray(insert,insert+tail.length).equals(tail))throw Error('TH03 solo native insertion anchor changed');
-  const count=hdr.readUInt16LE(6),table=hdr.readUInt16LE(24),relocations=[];
-  for(let i=0;i<count;i++){
-    const at=hdr.readUInt16LE(table+i*4)+hdr.readUInt16LE(table+i*4+2)*16;relocations.push(at);
-    const target=image.readUInt16LE(at);if(target*16>=insert)image.writeUInt16LE(target+gap/16,at);
-    const moved=at+(at>=insert?gap:0);hdr.writeUInt16LE(moved%16,table+i*4);hdr.writeUInt16LE(Math.floor(moved/16),table+i*4+2);
+  const compile=async(name)=>{const out=resolve(temp,name+'.bin');execFileSync(process.env.NASM||'nasm',['-f','bin',`patches/${name}.asm`,'-o',out],{cwd:port,stdio:'inherit'});return readFile(out);};
+  let soloPayload,versusPayload;try{soloPayload=await compile('solo-marker');versusPayload=await compile('pause');}finally{await rm(temp,{recursive:true,force:true});}
+  function build(payload,isSolo){
+    const entries=Array.from({length:isSolo?6:5},(_,i)=>payload.readUInt16LE(i*2));
+    const insert=0xe8f0, codeBase=0x96e0,tail=Buffer.from('ff207c9a5f5ec9c3','hex');
+    const gap=(tail.length+payload.length+15)&~15,headerSize=original.readUInt16LE(8)*16;
+    if(insert-codeBase+gap>=65536)throw Error('TH03 native patch exceeds code segment');
+    const hdr=Buffer.from(original.subarray(0,headerSize)),image=Buffer.from(original.subarray(headerSize));
+    if(!image.subarray(insert,insert+tail.length).equals(tail))throw Error('TH03 native insertion anchor changed');
+    const count=hdr.readUInt16LE(6),table=hdr.readUInt16LE(24),relocations=[];
+    for(let i=0;i<count;i++){
+      const at=hdr.readUInt16LE(table+i*4)+hdr.readUInt16LE(table+i*4+2)*16;relocations.push(at);
+      const target=image.readUInt16LE(at);if(target*16>=insert)image.writeUInt16LE(target+gap/16,at);
+      const moved=at+(at>=insert?gap:0);hdr.writeUInt16LE(moved%16,table+i*4);hdr.writeUInt16LE(Math.floor(moved/16),table+i*4+2);
+    }
+    for(const at of [14,22]){const segment=hdr.readUInt16LE(at);if(segment*16>=insert)hdr.writeUInt16LE(segment+gap/16,at);}
+    const hooks=[[0x977e,'e8b70c',entries[0]],[0x972f,'e84600',entries[1]],[0xdaca,'e851fc',entries[3]],...(isSolo?[[0x9842,'e8602f',entries[4]]]:[]),[0x990b,'e80a46',entries[isSolo?5:4]]];
+    for(const [at,expected,target] of hooks){
+      if(image.subarray(at,at+3).toString('hex')!==expected||relocations.some(x=>x>=at-1&&x<at+3))throw Error('TH03 native hook changed');
+      image[at]=0xe8;image.writeUInt16LE((codeBase+target-at-3)&0xffff,at+1);
+    }
+    if(!isSolo){if(image.subarray(0x9842,0x9845).toString('hex')!=='e8602f')throw Error('TH03 native pause anchor changed');image.fill(0x90,0x9842,0x9845);}
+    const body=Buffer.concat([image.subarray(0,insert),tail,payload,Buffer.alloc(gap-tail.length-payload.length),image.subarray(insert)]);
+    const length=hdr.length+body.length;hdr.writeUInt16LE(length%512,2);hdr.writeUInt16LE(Math.ceil(length/512),4);
+    const result=Buffer.concat([hdr,body]),hash=createHash('sha256').update(result).digest('hex');
+    const info={sha256:hash,bytes:result.length,insertSize:gap,dataSegment:0x1d56+gap/16,mailboxCsOffset:entries[2],hooks:hooks.map(([imageOffset,original,target])=>({imageOffset,original,target}))};
+    return {result,info};
   }
-  for(const at of [14,22]){const segment=hdr.readUInt16LE(at);if(segment*16>=insert)hdr.writeUInt16LE(segment+gap/16,at);}
-  const hooks=[[0x977e,'e8b70c',entries[0]],[0x972f,'e84600',entries[1]],[0xdaca,'e851fc',entries[3]],[0x9842,'e8602f',entries[4]],[0x990b,'e80a46',entries[5]]];
-  for(const [at,expected,target] of hooks){
-    if(image.subarray(at,at+3).toString('hex')!==expected||relocations.some(x=>x>=at-1&&x<at+3))throw Error('TH03 solo native hook changed');
-    image[at]=0xe8;image.writeUInt16LE((codeBase+target-at-3)&0xffff,at+1);
-  }
-  const body=Buffer.concat([image.subarray(0,insert),tail,payload,Buffer.alloc(gap-tail.length-payload.length),image.subarray(insert)]);
-  const length=hdr.length+body.length;hdr.writeUInt16LE(length%512,2);hdr.writeUInt16LE(Math.ceil(length/512),4);
-  const soloBytes=Buffer.concat([hdr,body]);
-  const newSoloMeta={...soloMeta,sha256:createHash('sha256').update(soloBytes).digest('hex'),bytes:soloBytes.length,insertSize:gap,dataSegment:0x1d56+gap/16,mailboxCsOffset:entries[2],hooks:hooks.map(([imageOffset,original,target])=>({imageOffset,original,target}))};
-  return {bytes,meta:Buffer.from(JSON.stringify({...meta,sha256:sha,acceptedMainHashes:[...new Set([...meta.acceptedMainHashes,sha])]},null,2)+'\n'),soloBytes,soloMeta:Buffer.from(JSON.stringify(newSoloMeta,null,2)+'\n')};
+  const solo=build(soloPayload,true),versus=build(versusPayload,false);
+  const newMeta={...meta,...versus.info,mailboxSize:51,fields:{...meta.fields,menuState:44,menuAction:45,menuSeat:46,menuChoice:47,menuResult:48,menuAllowed:49,menuLanguage:50},acceptedMainHashes:[...new Set([...meta.acceptedMainHashes,versus.info.sha256])]};
+  return {bytes:versus.result,meta:Buffer.from(JSON.stringify(newMeta,null,2)+'\n'),soloBytes:solo.result,soloMeta:Buffer.from(JSON.stringify({...soloMeta,...solo.info},null,2)+'\n')};
 }
 let markerInputs;
 async function readInput(name){

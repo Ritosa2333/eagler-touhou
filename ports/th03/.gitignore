@@ -33,6 +33,9 @@
 /patches/*
 !/patches/solo-pause.inc
 !/patches/solo-pause-font.inc
+!/patches/pause.asm
+!/patches/versus-pause.inc
+!/patches/versus-pause-font.inc
 /reports/
 /build/
 /vendor-source/

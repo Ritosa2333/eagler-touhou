@@ -75,8 +75,21 @@ export class NativePause {
     if (!this.valid(heap, this.live)) return null;
     const at = this.live;
     return {at, phase: heap[at + f.phase], ack: heap[at + f.ack], command: heap[at + f.command],
-      generation: view.getUint16(at + f.generation, true)};
+      generation: view.getUint16(at + f.generation, true),
+      ...(f.menuState===undefined?{}:{menuState:heap[at+f.menuState],menuChoice:heap[at+f.menuChoice],menuResult:heap[at+f.menuResult]})};
   }
+  menuOpen(seat,now=performance.now(),language='cn'){
+    const s=this.update(now);if(!s||!s.phase||s.menuState||![0,1].includes(seat))return false;
+    const h=this.getEmulator().module.HEAPU8,f=this.meta.fields;this.getEmulator().module.thDirtyMark?.(s.at,this.meta.mailboxSize);
+    h[s.at+f.menuSeat]=seat;h[s.at+f.menuAction]=0;h[s.at+f.menuResult]=0;h[s.at+f.menuAllowed]=Number(s.phase===1&&!this.pending);h[s.at+f.menuLanguage]=Number(language==='jp');h[s.at+f.menuState]=1;return true;
+  }
+  menuInput(action){
+    const h=this.getEmulator().module.HEAPU8,at=this.live,f=this.meta.fields;
+    if(!this.valid(h,at)||h[at+f.menuState]!==2||h[at+f.menuAction])return false;
+    const code={up:1,down:2,confirm:3,resume:4,round:5,match:6}[action];if(!code)return false;
+    this.getEmulator().module.thDirtyMark?.(at,this.meta.mailboxSize);h[at+f.menuAction]=code;return true;
+  }
+  menuClear(){const h=this.getEmulator().module.HEAPU8,at=this.live,f=this.meta.fields;if(this.valid(h,at)){this.getEmulator().module.thDirtyMark?.(at,this.meta.mailboxSize);h[at+f.menuState]=0;h[at+f.menuResult]=0;}}
   request(command, seat, now=performance.now()) {
     const state = this.update(now);
     if (!state || state.phase !== 1 || state.command || this.pending || ![1, 2].includes(command) || ![0, 1].includes(seat)) return false;
