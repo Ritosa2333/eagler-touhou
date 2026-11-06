@@ -47,8 +47,8 @@ bool FrameState::restore(FrameScheduler& scheduler, const CallbackResolver& call
             auto* owner = entry.owner && owners ? owners(entry.owner) : entry.owner;
             if (!target || (entry.owner && !owner) ||
                 (target->scheduler && target->scheduler != &scheduler) ||
-                std::any_of(targets.begin(), targets.end(),
-                    [&](const Target& value) { return value.callback == target; })) return false;
+                (callbacks && std::any_of(targets.begin(), targets.end(),
+                    [&](const Target& value) { return value.callback == target; }))) return false;
             targets.push_back({target, owner});
         }
     }

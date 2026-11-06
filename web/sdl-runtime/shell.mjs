@@ -94,7 +94,7 @@ function initializeGame(){
  let scaleOption=query.get('renderScale');
  if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}
  const requested=Number(scaleOption);
- const scale=[options.renderScale,requested].find(value=>value===1||value===2)??(roomRuntime?1:2);
+ const scale=[options.renderScale,requested].find(value=>value===1||value===2)??2;
  core._th17_render_scale(scale);
  if(!core._th17_initialize())throw Error(err());
 }
@@ -253,9 +253,33 @@ window.addEventListener('blur',()=>{clearKeyboard();core?._th17_touch_cancel();}
 // canvas listener alone misses keys when the child BODY owns focus.
 for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!inputActive()||e.altKey||e.metaKey)return;if(keyboard.mapNative(e,event==='keydown')){e.preventDefault();e.stopImmediatePropagation();return;}if(keyboard.event(e,event==='keydown')){e.preventDefault();e.stopPropagation();}},{capture:true});
 for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>core?.SDL3?.audioContext?.resume().catch(()=>{}),{capture:true});
-for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['pointercancel',2]])document.body.addEventListener(name,e=>{
- if(!inputActive()||!options.touchEnabled||e.pointerType==='mouse')return;e.preventDefault();if(e.type==='pointercancel'){core._th17_touch_cancel();return;}if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th17_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);
+const canvasPointers=new Set();
+function cancelCanvasPointers(){
+ canvasPointers.clear();
+ core?._th17_touch_cancel();
+}
+canvas.addEventListener('pointerdown',e=>{
+ if(!inputActive()||!options.touchEnabled||e.pointerType==='mouse')return;
+ e.preventDefault();
+ canvasPointers.add(e.pointerId);
+ try{canvas.setPointerCapture(e.pointerId);}catch(error){if(error.name!=='NotFoundError')throw error;}
+ sendCanvasTouch(0,e);
 });
+function sendCanvasTouch(type,e){
+ const bounds=canvas.getBoundingClientRect();
+ if(bounds.width&&bounds.height)core._th17_touch(type,e.pointerId,(e.clientX-bounds.left)/bounds.width,(e.clientY-bounds.top)/bounds.height);
+}
+for(const [name,type] of [['pointermove',1],['pointerup',2]])window.addEventListener(name,e=>{
+ if(!canvasPointers.has(e.pointerId))return;
+ e.preventDefault();
+ if(type===2)canvasPointers.delete(e.pointerId);
+ if(inputActive()&&options.touchEnabled)sendCanvasTouch(type,e);
+}, {capture:true});
+for(const event of ['pointercancel','lostpointercapture'])window.addEventListener(event,e=>{
+ if(canvasPointers.has(e.pointerId))cancelCanvasPointers();
+}, {capture:true});
+window.addEventListener('blur',cancelCanvasPointers);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelCanvasPointers();});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fatal(Error('图形环境失效，请退出后重新开始。'));});
 window.addEventListener('pagehide',()=>{if(launched||roomPreview){core._th17_loop_stop();if(launched)try{void save().catch(fatal);}catch(e){fatal(e);}core._th17_room_close?.();closeAudio();}});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.

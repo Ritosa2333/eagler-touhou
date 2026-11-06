@@ -47,6 +47,8 @@ class GameBattle {
     std::array<std::unique_ptr<Partner>,2> partners;
     u32 partner_count=0;
     bool primary_retired=false;
+    struct TransferGesture {u8 life=0,power=0;};
+    std::array<TransferGesture,3> transfers{};
     AnmManager& animations;AnmEnvironment& environment;Rng& game_random;Rng& visual_random;BattleWorldServices& presentation;BattleResources resources;
     std::array<FrameCallback,9> callbacks;FrameCallback spell_callback,hud_callback;FrameScheduler schedule;FrameScheduler* active_schedule=&schedule;
     SpellStartContext spell_context;
@@ -62,6 +64,8 @@ class GameBattle {
     BombController* pilot_bomb(u32 seat) const noexcept;
     bool pilot_game_over(u32 seat);
     bool pilot_active(u32 seat) const noexcept;
+    bool revive_pilot(u32 seat,i32 invulnerability);
+    bool update_transfers();
     Vec3 aim_target(const Vec3& origin) noexcept;
     void protect_teammates(u32 caster,i32 frames) noexcept;
     i32 update_animations(bool);i32 update_player();i32 update_bomb();i32 update_enemies();i32 update_lasers();i32 update_bullets();i32 update_items();i32 update_spirits();i32 update_spell();i32 update_hud();
@@ -106,6 +110,7 @@ public:
     void save_rollback(multiplayer::FrameImage&);
     bool reset_players();
     bool finish_player_options();
+    bool draw_transfer_hints(HudDrawServices&);
     bool stop_bombs();
     bool draw_players(AnmRenderer&);
     void prepare_player_presentation(AnmRenderer&);

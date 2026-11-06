@@ -49,7 +49,7 @@ bool AudioDevice::initialize(AssetSource& resources,bool device){
  for(u32 n=0;n<a.samples.size();n++)if(!resources.read(sound_samples[n],a.samples[n])){error=std::string("Missing original sound: ")+sound_samples[n];return false;}
  for(u32 id=0;id<a.sounds.size();id++){auto next=std::make_unique<Impl::Voice>();const auto& bytes=a.samples[effects.voices[id].definition->sample];auto decode=ma_decoder_config_init(ma_format_f32,2,44100);if(ma_decoder_init_memory(bytes.data(),bytes.size(),&decode,&next->decoder)!=MA_SUCCESS){error="Invalid TH17 WAV sample";return false;}next->decoded=true;if(!a.attach(*next)){error="Unable to attach sound voice";return false;}  if(device){ma_uint64 frames=0,read=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&frames)==MA_SUCCESS&&frames&&frames<=UINT32_MAX/8){std::vector<float> pcm(size_t(frames)*2);if(ma_decoder_read_pcm_frames(&next->decoder,pcm.data(),frames,&read)==MA_SUCCESS&&read==frames)web_sfx::upload(&next->sound,pcm.data(),unsigned(frames),2,44100);ma_decoder_seek_to_pcm_frame(&next->decoder,0);}}
  a.sounds[id]=std::move(next);}
- std::vector<u8> format;if(!resources.read("thbgm.fmt",format)||!a.layout.open(format.data(),format.size())){error=a.layout.error.empty()?"Missing TH17 music layout":a.layout.error;return false;}a.music_cache.resize(a.layout.count());if(a.stream)SDL_ResumeAudioStreamDevice(a.stream);a.ready=true;error.clear();return true;
+ std::vector<u8> format;if(!resources.read("thbgm.fmt",format)||!a.layout.open(format.data(),format.size())){error=a.layout.error.empty()?"Missing TH17 music layout":a.layout.error;return false;}a.music_cache.resize(a.layout.count());if(a.stream){web_sfx::suspend(false);SDL_ResumeAudioStreamDevice(a.stream);}a.ready=true;error.clear();return true;
 }
 bool AudioDevice::prepare_music(const std::string& value){
  if(!music_enabled)return true;
@@ -70,6 +70,17 @@ void AudioDevice::refresh_volume(){auto& a=*impl;if(auto* voice=a.current()){con
 bool AudioDevice::queue_music(i32 code,i32 value,const std::string& text){if(!impl->commands.enqueue(code,value,text)){error=impl->commands.error;return false;}return true;}
 bool AudioDevice::queue_music_track(i32 slot,const std::string& stem){if(!impl->commands.preload_track(slot,stem)){error=impl->commands.error;return false;}return true;}
 void AudioDevice::clear_current_wave(){impl->commands.current_wave.clear();}
+bool AudioDevice::restore_stage_music(const StageConfiguration& stage){
+ auto& a=*impl;
+ stop_music();
+ if(a.stream)SDL_ClearAudioStream(a.stream);
+ a.commands.requests={};
+ a.commands.prepared={};
+ a.commands.current_wave.clear();
+ a.command_ready=true;
+ return queue_music_track(0,stage.stage_music)&&queue_music_track(1,stage.boss_music)&&
+        finish_music_requests()&&music(stage.stage_music_index);
+}
 const MusicCommands& AudioDevice::music_commands()const{return impl->commands;}
 bool AudioDevice::finish_music_requests(){auto& a=*impl;a.commands.music_mode=music_enabled?1:0;for(u32 n=0;n<1024&&a.commands.pending();n++)if(!a.commands.process()){if(error.empty())error=a.commands.error;return false;}if(a.commands.pending()){error="Music commands did not complete";return false;}effects.process();return true;}
 void AudioDevice::update(){auto& a=*impl;a.commands.music_mode=music_enabled?1:0;if(!a.commands.process()&&error.empty())error=a.commands.error;effects.process();if(a.fade&&!a.music_paused){if(--a.fade==0)if(auto* voice=a.current())ma_sound_stop(&voice->sound);}refresh_volume();}
@@ -80,7 +91,7 @@ void AudioDevice::pump(){
  // Waiting until 4096 forced several OGG/mixer blocks onto one game frame.
  for(i32 n=0;n<6&&queued<6144;n++){float pcm[2048]{};if(!mix(pcm,1024)){a.stats[3]=1;return;}if(!SDL_PutAudioStreamData(a.stream,pcm,sizeof pcm)){a.stats[3]=2;return;}a.stats[1]++;a.stats[2]+=1024;queued+=1024;}
 }
-void AudioDevice::suspend(bool value){auto& a=*impl;a.suspended=value;web_sfx::suspend(value);if(a.stream){if(value)SDL_PauseAudioStreamDevice(a.stream);else SDL_ResumeAudioStreamDevice(a.stream);}}
+void AudioDevice::suspend(bool value){auto& a=*impl;if(a.suspended==value)return;a.suspended=value;web_sfx::suspend(value);if(a.stream){if(value)SDL_PauseAudioStreamDevice(a.stream);else SDL_ResumeAudioStreamDevice(a.stream);}}
 bool AudioDevice::sound_available(u32 id)const{return id<impl->sounds.size()&&impl->sounds[id]!=nullptr;}
 bool AudioDevice::sound_playing(u32 id){auto* voice=impl->voice(id);return voice&&(web_sfx::contains(&voice->sound)?web_sfx::playing(&voice->sound):ma_sound_is_playing(&voice->sound));}
 void AudioDevice::sound_stop(u32 id){if(auto* voice=impl->voice(id)){web_sfx::stop(&voice->sound);ma_sound_stop(&voice->sound);}}

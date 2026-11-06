@@ -16,7 +16,8 @@ const verifyReplay=process.argv.includes('--replay');
 const checkPresentation=process.argv.includes('--check-presentation');
 const independent=process.argv.includes('--independent-pages');
 assert.ok(!independent||!verifyReplay,'Replay fixture uses the shared page');
-const renderScale=Number(process.env.TH17_ROOM_RENDER_SCALE??1);
+const requestedRenderScale=process.env.TH17_ROOM_RENDER_SCALE;
+const renderScale=Number(requestedRenderScale??2);
 assert.ok(renderScale===1||renderScale===2);
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
 const denseExtra=extraBoss||process.argv.includes('--dense-extra');
@@ -153,7 +154,7 @@ try{
   options=Array.from({length:seats},(_,seat)=>({
    netplayMode:'lan',netplayAdonisMode:timing.adonisMode,netplayInputDelay:timing.inputDelay,netplayAllowWebsocketFallback:!extraBoss,
    netplayPlayer:seat,netplayPlayerCount:seats,netplaySeed:1234,netplayDifficulty:difficulty,netplayLoadouts:loadouts,
-   renderScale,netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
+   ...(requestedRenderScale?{renderScale}:{}),netplayUrl:endpoint+new URLSearchParams({room,run:String(start.serial),member:room+'-private-'+seat}),
   }));
   const contexts=await Promise.all(Array.from({length:independent?seats:1},()=>browser.newContext({viewport:{width:independent?640:seats*640,height:480}})));
   if(rollback)await Promise.all(contexts.map(context=>context.addInitScript(({delayMs,jitterMs})=>{
