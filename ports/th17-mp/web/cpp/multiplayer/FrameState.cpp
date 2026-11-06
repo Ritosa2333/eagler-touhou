@@ -9,14 +9,18 @@ bool FrameState::capture(const FrameScheduler& scheduler) {
     bool has_continuation = !scheduler.continuation;
     for (unsigned pass = 0; pass < heads.size(); ++pass) {
         FrameCallback* previous = nullptr;
+        size_t count = 0;
         for (auto* callback = heads[pass]; callback; callback = callback->next) {
             if (callback->scheduler != &scheduler || callback->previous != previous ||
                 callback->pass != FramePass(pass)) return false;
-            entries_[pass].push_back({callback, callback->run, callback->initialize,
-                callback->cleanup, callback->owner, callback->priority, callback->enabled});
+            ++count;
             has_continuation |= callback == scheduler.continuation;
             previous = callback;
         }
+        entries_[pass].reserve(count);
+        for (auto* callback = heads[pass]; callback; callback = callback->next)
+            entries_[pass].push_back({callback, callback->run, callback->initialize,
+                callback->cleanup, callback->owner, callback->priority, callback->enabled});
     }
     continuation_ = scheduler.continuation;
     closing_ = scheduler.closing;
