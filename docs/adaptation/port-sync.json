@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+      "base": "8619b754e288c7f38b71eb2f5879222091dca927",
       "history": [
         {
           "kind": "manual",
@@ -1182,6 +1182,16 @@
           "targetHead": "ce244c8b68e54e698d379ea4b71d7846223cc57f",
           "paths": [],
           "note": "普通版按独立目录移除联机源码和测试并固定普通构建入口；MP 保留独立会话、回滚、旁观与录像及对应构建入口。通用战斗、渲染、字体与音频源码完整保留。已在临时克隆合并双方投影并通过完整 MP 子树和两个父提交写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+          "source": "8619b754e288c7f38b71eb2f5879222091dca927",
+          "targetHead": "72c046509f143302f978c9cf7336fca4ce74cb01",
+          "paths": [
+            "ports/th17-mp/ADAPTATION.md"
+          ],
+          "note": "两侧适配表分别接收普通版 11 项、MP 10 项检查结果，保留各自模式与验证范围；已合并普通版投影并保留双父链写回。"
         }
       ]
     }
