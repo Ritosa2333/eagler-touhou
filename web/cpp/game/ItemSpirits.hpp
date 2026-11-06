@@ -35,6 +35,7 @@ public:
     bool spawn(i32 kind,const Vec3&,float angle,float speed,i32 delay=0,i32 sound=-1);
     bool update_items(const ItemSpiritFrame&);
     bool update_spirits(const ItemSpiritFrame&);
+    bool update_spirits(const ItemSpiritFrame&,const AnimalSpiritTargets&);
     void before_player()noexcept;
     void after_player()noexcept;
     bool end_roaring(bool death);

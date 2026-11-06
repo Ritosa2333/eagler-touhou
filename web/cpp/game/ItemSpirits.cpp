@@ -15,7 +15,11 @@ bool ItemSpirits::update_items(const ItemSpiritFrame& frame){
     if(items.update(context))return true;error=items.error;return false;
 }
 bool ItemSpirits::update_spirits(const ItemSpiritFrame& frame){
-    error.clear();practice=frame.practice;if(!spirits.update(player.position,frame.rate)){error=spirits.error;return false;}
+    return update_spirits(frame,{AnimalSpiritTarget{player.position,true},{},{}});
+}
+bool ItemSpirits::update_spirits(const ItemSpiritFrame& frame,const AnimalSpiritTargets& team){
+    // Every seat contributes to this run's single Roaring inventory and timer.
+    error.clear();practice=frame.practice;if(!spirits.update_team(team,frame.rate)){error=spirits.error;return false;}
     if(!roaring.update(frame.rate,frame.hud_collect,frame.held)){error=roaring.error;return false;}before_player();return true;
 }
 void ItemSpirits::before_player()noexcept{session.roaring_flags=roaring.state.flags;session.roaring_countdown=roaring.state.countdown;}
