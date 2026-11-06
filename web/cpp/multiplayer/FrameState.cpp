@@ -40,7 +40,8 @@ bool FrameState::restore(FrameScheduler& scheduler, const CallbackResolver& call
     if (!valid_) return false;
     struct Target {FrameCallback* callback; void* owner;};
     std::vector<Target> targets;
-    targets.reserve(entries_[0].size() + entries_[1].size());
+    const bool remap=callbacks||owners;
+    if(remap)targets.reserve(entries_[0].size() + entries_[1].size());
     for (const auto& pass : entries_) {
         for (const auto& entry : pass) {
             auto* target = callbacks ? callbacks(entry.callback) : entry.callback;
@@ -49,7 +50,7 @@ bool FrameState::restore(FrameScheduler& scheduler, const CallbackResolver& call
                 (target->scheduler && target->scheduler != &scheduler) ||
                 (callbacks && std::any_of(targets.begin(), targets.end(),
                     [&](const Target& value) { return value.callback == target; }))) return false;
-            targets.push_back({target, owner});
+            if(remap)targets.push_back({target, owner});
         }
     }
 
@@ -60,7 +61,7 @@ bool FrameState::restore(FrameScheduler& scheduler, const CallbackResolver& call
         auto** head = pass == 0 ? &scheduler.updates : &scheduler.draws;
         FrameCallback* previous = nullptr;
         for (const auto& entry : entries_[pass]) {
-            const auto [target, owner] = targets[index++];
+            const auto [target, owner] = remap ? targets[index++] : Target{entry.callback, entry.owner};
             target->run = entry.run;
             target->initialize = entry.initialize;
             target->cleanup = entry.cleanup;
