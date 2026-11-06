@@ -114,7 +114,18 @@ bool ApplicationState::begin_title(){
  title=std::make_unique<TitleScene>(progress,selection,selection_player,selection_score,records,choices,volumes,controller,comments,trophy_catalog,spell_memory,animations,*this,scheduler);
  title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();return title->error.empty()||fail(title->error);
 }
-bool ApplicationState::preload_run(){if(!assets())return fail("Run resources unavailable");for(const auto& bank:assets()->loaded_animations()){auto* resource=animations.resource(bank.second);if(!resource||!graphics.preload(*resource))return fail(graphics.error.empty()?"Missing run animation: "+bank.first:graphics.error);}return true;}
+bool ApplicationState::preload_run(){
+ if(!assets())return fail("Run resources unavailable");
+ for(const auto& bank:assets()->loaded_animations()){
+  auto* resource=animations.resource(bank.second);
+  bool room_front=false;
+#if TH17_MULTIPLAYER
+  room_front=room_seats&&bank.first=="front.anm";
+#endif
+  if(!resource||!graphics.preload(*resource,false,nullptr,room_front))return fail(graphics.error.empty()?"Missing run animation: "+bank.first:graphics.error);
+ }
+ return true;
+}
 bool ApplicationState::bind_display(StageGameplay* previous){
  if(!scene()||!assets()||!run_input)return fail("Run display requires active scene/input");pause=std::make_unique<RunPause>(*scene(),progress,records,animations,*this,frame_skip,assets()->front);if(!pause->prepare())return fail(pause->error);
  display=std::make_unique<SceneDisplay>(*scene(),animations,environment,graphics,renderer);if(!display->initialize(progress,records.game,records.spells,*this,assets()->text,assets()->ascii,previous))return fail(display->error);

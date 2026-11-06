@@ -13,7 +13,7 @@ bool GraphicsDevice::initialize(){
     SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT,"#canvas");
     if(!backend.initialize()){error=backend.error();return false;}SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(),"Touhou 17");SDL_SetWindowSize(SDL_GL_GetCurrentWindow(),640*render_scale,480*render_scale);backend.state.target=screen;backend.state.depth=depth;configure_game(1);return true;
 }
-bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource* detailed){
+bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource* detailed,bool room_front){
     if(resources.find(&file)!=resources.end())return true;
     if(detailed){
         // The caller normalizes detailed glyph rectangles to logical pixels
@@ -32,6 +32,9 @@ bool GraphicsDevice::preload(AnmResource& file,bool low_color,const AnmResource*
         const bool translated=language_pack&&patch_texture(detailed?*detailed:file,source,index,patched);
         if(translated)file.alpha_bounds.clear();
         if(!texture.image.load(translated?patched:source,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
+#if TH17_MULTIPLAYER
+        if(room_front&&source.name=="front/front00.png"&&layout_room_front(texture.image))file.alpha_bounds.clear();
+#endif
         const auto id=next_handle++;textures.emplace(id,std::move(texture));handles.push_back(id);backend.prepare(id);
     }
     resources.emplace(&file,std::move(handles));

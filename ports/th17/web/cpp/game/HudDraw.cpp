@@ -32,7 +32,7 @@ bool Hud::draw(const HudDrawContext& context,HudDrawServices& services,u32 viewe
         }
         style={};style.font=4;style.color=alpha(0xffffffff,icon->visual.color);style.scale={.6f,.6f};
         if(seats!=3){
-            const float offset=seats==1?24.f:19.f,life=life_row(seat)+offset,bomb=bomb_row(seat)+offset;
+            const float life=life_row(seat)+24.f,bomb=bomb_row(seat)+24.f;
             const i32 required=score.difficulty==4&&tier==9?99999999:3;
             if(required<999999){if(!text(576,life,format("%3d",stock.life_pieces))||!text(597,life,format("/%d",required)))return false;}
             else if(!text(569,life,"---/---"))return false;
@@ -46,10 +46,8 @@ bool Hud::draw(const HudDrawContext& context,HudDrawServices& services,u32 viewe
         style.scale={.6f,.6f};if(!text(606,power+7,"00"))return false;
     }
     style.color=alpha(0xff40c0ff,root->visual.color);style.scale={1,1};style.alignment=2;
-    if(!text(620,seats==1?204.f:room_point_row,grouped_number(u32(score.point_value/100-(score.point_value/100)%10))))return false;
-    style.color=alpha(0xffffffff,root->visual.color);if(!text(620,seats==1?226.f:room_graze_row,grouped_number(u32(context.graze_total))))return false;
-    if(seats>1){style.font=1;style.alignment=1;if(!text(448,room_graze_row+4,"Graze"))return false;}
-    style={};
+    if(!text(620,point_row(),grouped_number(u32(score.point_value/100-(score.point_value/100)%10))))return false;
+    style.color=alpha(0xffffffff,root->visual.color);if(!text(620,graze_row(),grouped_number(u32(context.graze_total))))return false;style={};
     if(current_seconds>=0&&enemies.boss_at(0)&&!(enemies.manager_flags&1)&&!dialogue&&!(game_flags&0x10000)){
         const auto* vm=animations.registry.find(clock_handles[0]);if(!check(vm!=nullptr,"HUD clock animation unavailable"))return false;const float x=float(vm->variables.position.x+16.f),y=float(vm->variables.position.y-7.f);style.color=vm->visual.color;style.font=4;style.coordinate_space=2;if(!text(x,y,"."))return false;style.scale={.6f,.6f};if(!text(float(x+8.f),float(y+6.f),format("%.2d",enemies.boss_hundredths)))return false;
     }
