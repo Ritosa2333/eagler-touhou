@@ -14,8 +14,10 @@ bool PlayerShots::laser_update(PlayerShot& shot,const ShotSpec& s,bool focus_tur
     const float old=shot.motion.angle,target=normalize_angle(focus_turn&&context.player.focus?-1.5707964f:s.angle);
     shot.motion.angle=std::abs(normalize_angle(difference(old,target)))>=.001f?normalize_angle(target):normalize_angle(float(old+normalize_angle(float(normalize_angle(difference(target,old))*.1f))));
     if(shot.state==2)return true;
-    if(sound&&!sound(20,context.player.position.x,SoundAction::pan)){error="Laser pan update failed";return false;}
     auto* source=damage.find(shot.damage_source);if(!source){error="Laser damage source unavailable";return false;}
+    if(context.cooperative&&(!(source->flags&1)||source->callback_kind!=1||source->shot_index!=shot.index))
+        return retire_laser(shot,s);
+    if(sound&&!sound(20,context.player.position.x,SoundAction::pan)){error="Laser pan update failed";return false;}
     if(shot.hitbox.x<512){shot.hitbox.x=float(shot.hitbox.x+18);source->size.x=shot.hitbox.x;}
     const float distance=float(shot.hitbox.x*.5f),x=float(std::cos(double(shot.motion.angle))*double(distance)),y=float(std::sin(double(shot.motion.angle))*double(distance));source->motion.position={float(x+origin.x),float(y+origin.y),0};
     if(auto* vm=animations.registry.find(shot.animation)){vm->visual.flags|=8|16;vm->visual.sprite_size.x=shot.hitbox.x;vm->visual.uv_scale.x=float(shot.hitbox.x*.001953125f);}else shot.animation=0;
@@ -51,7 +53,13 @@ bool PlayerShots::update_behavior(PlayerShot& shot,const ShotSpec& s){
     }
 }
 bool PlayerShots::update_one(PlayerShot& shot){
-    const auto* spec=specification(shot.specification);if(!spec){error="Active shot specification unavailable";return false;}if(!update_behavior(shot,*spec))return false;shot.motion.integrate(rate);shot.motion.advance(rate);auto* vm=animations.registry.find(shot.animation);auto* source=damage.find(shot.damage_source);
+    const auto* spec=specification(shot.specification);if(!spec){error="Active shot specification unavailable";return false;}
+    if(context.cooperative&&spec->type==2&&!animations.registry.find(shot.animation))
+        return retire_laser(shot,*spec);
+    if(!update_behavior(shot,*spec))return false;
+    if(!shot.state)return true;
+    shot.motion.integrate(rate);shot.motion.advance(rate);auto* vm=animations.registry.find(shot.animation);auto* source=damage.find(shot.damage_source);
+    if(context.cooperative&&source&&(source->callback_kind!=1||source->shot_index!=shot.index))source=nullptr;
     if(!vm){shot.state=0;shot.animation=0;if(source)source->flags&=~1u;return true;}bool inside=spec->type==2||shot.age.current<15;
     if(!inside){Vec3 p[4];if(!anm_quad_positions(*vm,p)){error="Player shot geometry unavailable";return false;}for(const auto& point:p)if(context.screen_origin.x<point.x&&point.x<float(context.screen_origin.x+384)&&context.screen_origin.y<point.y&&point.y<float(context.screen_origin.y+448))inside=true;}
     if(!inside){if(!animations.retire(shot.animation)){error=animations.error;return false;}shot.state=0;if(source)source->flags&=~1u;return true;}

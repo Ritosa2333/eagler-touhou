@@ -263,7 +263,29 @@ window.addEventListener('pagehide',()=>{if(launched||roomPreview){core._th17_loo
 setInterval(()=>{if(launched&&!document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}},30000);
 const initialized=(async()=>{
  let last=performance.now(),ticks=0,presents=0,maxFrameMs=0;
- core=await createModule({canvas,printErr:console.error,onGameFrameStart(){gpuMonitor??=gpuTiming(canvas.getContext('webgl2'));gpuMonitor.begin();},onGameFrame(ok,ms,count){gpuMonitor?.end();if(!ok){fatal(Error(err()));return;}if(!launched)return;reportRoom();if(!count)return;ticks+=count;presents++;maxFrameMs=Math.max(maxFrameMs,ms);if(!first){first=true;last=performance.now();ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){const p=core._th17_audio_statistics();if(p){const a=Array.from(core.HEAPU32.subarray(p>>>2,(p>>>2)+11));emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});}emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs,gpuMs:gpuMonitor?.value()??null});last=now;ticks=0;presents=0;maxFrameMs=0;}if(core._th17_phase()===4)void stop().catch(fatal);}});
+ core=await createModule({
+  canvas,printErr:console.error,
+  onGameFrameStart(){gpuMonitor??=gpuTiming(canvas.getContext('webgl2'));gpuMonitor.begin();},
+  onGameFrame(ok,ms,count,presented){
+   gpuMonitor?.end();
+   if(!ok){fatal(Error(err()));return;}
+   if(!launched)return;
+   reportRoom();
+   ticks+=count;presents+=Number(presented);maxFrameMs=Math.max(maxFrameMs,ms);
+   const now=performance.now();
+   if(!first&&presented){first=true;last=now;ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}
+   if(first&&now-last>=1000){
+    const p=core._th17_audio_statistics();
+    if(p){
+     const a=core.HEAPU32.subarray(p>>>2,(p>>>2)+11);
+     emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});
+    }
+    emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs,gpuMs:gpuMonitor?.value()??null});
+    last=now;ticks=0;presents=0;maxFrameMs=0;
+   }
+   if(core._th17_phase()===4)void stop().catch(fatal);
+  }
+ });
  core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  window.Module=core;window.FS=core.FS;core.resetBrowserKeyboard=()=>keyboard.clear();
  roomRuntime=typeof core._th17_room_open==='function';

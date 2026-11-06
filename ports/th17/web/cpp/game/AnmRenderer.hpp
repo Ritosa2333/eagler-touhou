@@ -14,6 +14,7 @@ public:
     Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;
     bool logical_only=false;
     u8 hud_viewer=1;
+    std::array<u8,4> pilot_opacity{255,255,255,255};
     // A triangle strip can leave 6141 vertices before a six-vertex sprite.
     // Retain the original post-append flush threshold, including that tail.
     // Both graphics implementations keep their pipeline object and quad

@@ -25,7 +25,8 @@ bool PlayerFrame::update(const PlayerFrameContext& frame,float& rate){
     if(!world.refresh(context)){error="Player world context unavailable";return false;}animations.rate=rate;shots.set_rate(rate);damage.tick(rate);
     if(!visual_feedback(rate))return false;motion.movement_scale=1;motion.external_velocity=context.background_delta;
     if(animations.tick_instance(visuals.root)<0){error=animations.error;return false;}bounds.update(motion,life.age,visuals.root,rate);life.age.tick(&rate);input_age.tick(&rate);ready_age.tick(&rate);motion.input_frame=input_age.current;
-    auto& session=life.session_state();shot_context.power=session.power;shot_context.power_step=session.power_step;shot_context.enemy_scene=context.enemy_present;shot_context.targets=context.targets;shot_context.bomb_active=context.hud_bomb_active;shot_context.background_delta=context.background_delta;shot_context.player_state=life.state;shot_context.roaring_flags=session.roaring_flags;shot_context.roaring_kind=context.roaring_kind;
+    auto& session=life.session_state();shot_context.power=session.power;shot_context.power_step=session.power_step;shot_context.enemy_scene=context.enemy_present;shot_context.targets=context.targets;shot_context.bomb_active=context.hud_bomb_active;shot_context.background_delta=context.background_delta;shot_context.player_state=life.state;
+    if(!shots.synchronize_roaring(session.roaring_flags,context.roaring_kind)){error=shots.error;return false;}
     if(!context.hud_bomb_active&&context.enemy_present&&context.focus_allowed&&!(context.game_flags&0x4000)&&ready_age.current>19&&!(motion.behavior_flags&20)){
         if(!shooting.update(life.state,context.held&1,rate,character,session.animal,session.roaring_flags,context.roaring_kind)){error=shooting.error.empty()?"Player shooting service failed":shooting.error;return false;}
     }else if(!shooting.blocked()){error="Player blocked-shooting cleanup failed";return false;}

@@ -13,6 +13,7 @@ const throughStageTwo=process.argv.includes('--through-stage-two');
 const extraFinale=process.argv.includes('--extra-finale');
 const launcherPreview=process.argv.includes('--launcher-preview');
 const verifyReplay=process.argv.includes('--replay');
+const checkPresentation=process.argv.includes('--check-presentation');
 const renderScale=Number(process.env.TH17_ROOM_RENDER_SCALE??1);
 assert.ok(renderScale===1||renderScale===2);
 const extraBoss=extraFinale||process.argv.includes('--extra-boss');
@@ -189,8 +190,8 @@ try{
      globalThis.heapSamples=[];
      let recorded=0,loadSample=0,bullets=0;
      let previousCosts=Array(6).fill(0);
-     Module.onGameFrame=(ok,time,ticks)=>{
-      callback(ok,time,ticks);
+     Module.onGameFrame=(ok,time,ticks,presented)=>{
+      callback(ok,time,ticks,presented);
       const r=Module._th17_room_rollback()>>>2;
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
       const phase=Module._th17_phase();
@@ -200,6 +201,12 @@ try{
        diagnostics.measuredThrough=now;
        diagnostics.presentations=(diagnostics.presentations||0)+1;
        diagnostics.simulationTicks=(diagnostics.simulationTicks||0)+ticks;
+      }
+      if(n>120&&presented!==undefined){
+       const now=performance.now();
+       diagnostics.presentationStart??=now;
+       diagnostics.presentationEnd=now;
+       diagnostics.actualPresentations=(diagnostics.actualPresentations||0)+presented;
       }
       if(n>120&&(ticks||resimulated>diagnostics.resimulated)&&(!denseExtra||phase===1)){
        const confirmed=samples.get(recorded);
@@ -290,7 +297,7 @@ try{
     if(extraBoss)return current>=extendedTarget;
     return status.every(item=>item.samples>=minimumSamples)&&(!extended||!rollback||
      status.some(item=>item.diagnostics.spellCorrections>0)||current>=extendedTarget);
-   },throughStageTwo?'Stage 1 to Stage 2 transition':'confirmed room samples',extraFinale?1500000:extraBoss?900000:throughStageTwo?540000:extended||denseExtra?300000:90000);}
+   },throughStageTwo?'Stage 1 to Stage 2 transition':'confirmed room samples',extraFinale?1500000:extraBoss?900000:throughStageTwo?540000:extended||denseExtra?300000:90000*cpuThrottle);}
    catch(error){coverageFailure=error;}
    const states=await Promise.all(frames.map(frame=>frame.evaluate(()=>Array.from(samples))));
    if(extraFinale)finaleSamples=await frames[0].evaluate(()=>heapSamples);
@@ -305,6 +312,8 @@ try{
    const [,initial]=agreed[0];
    const [,last]=agreed.at(-1);
    assert.equal(initial[3],difficulty===4?7:1,'room starts the selected stage');
+   if(checkPresentation)
+    assert.deepEqual(initial.slice(24,24+seats),Array(seats).fill(difficulty===4?400:100),'all pilots start with the stage power');
    const diagnostics=await Promise.all(frames.map(frame=>frame.evaluate(extraBoss=>{
     const summarize=values=>{
      values.sort((a,b)=>a-b);
@@ -324,13 +333,27 @@ try{
      bossCosts.push({boss,nonspell:aggregate(rows.filter(entry=>entry.spell<0)),spell:aggregate(rows.filter(entry=>entry.spell>=0)),
       dense:aggregate(rows.filter(entry=>entry.bullets>=256))});
     }
+    const canvas=Module.canvas;
     return {...diagnostics,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
+     canvas:[canvas.width,canvas.height],
      delayedPackets:globalThis.delayedPackets,
      updates:summarize(frameCosts.filter(entry=>!entry.repair).map(entry=>entry.time)),
      repairs:summarize(frameCosts.filter(entry=>entry.repair).map(entry=>entry.time)),
      denseUpdates:summarize(frameCosts.filter(entry=>!entry.repair&&entry.bullets>=256).map(entry=>entry.time)),
      denseRepairs:summarize(frameCosts.filter(entry=>entry.repair&&entry.bullets>=256).map(entry=>entry.time))};
    },extraBoss)));
+   if(checkPresentation){
+    for(const lane of diagnostics){
+     assert.deepEqual(lane.canvas,[640*renderScale,480*renderScale],'room uses the requested output resolution');
+     assert.ok(lane.actualPresentations>0&&lane.presentationEnd>lane.presentationStart,'window commits are counted');
+    }
+    const health=await page.evaluate(()=>events.filter(event=>event.event==='frame-health'));
+    for(let seat=0;seat<seats;seat++){
+     const samples=health.filter(event=>event.epoch===seat+1).slice(-5);
+     assert.ok(samples.length>0&&samples.every(event=>Number.isFinite(event.fps)&&event.fps>=0),'frame health reports window commits');
+     if(cpuThrottle>1)assert.ok(samples.some(event=>event.fps<59),'frame health reports missed presentations');
+    }
+   }
    const maxEnemyBullets=Math.max(...agreed.map(([,state])=>state[10]));
    const denseWindows=[];
    if(denseExtra)for(const [frame,state] of [...agreed].sort((a,b)=>b[1][10]-a[1][10])){
@@ -371,7 +394,7 @@ try{
    reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,denseWindows,
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
     ...(priorMemory?{matchedMemory:compareMemory(priorMemory.samples,finaleSamples),lateMatchedMemory:compareMemory(priorMemory.samples,finaleSamples,lateStart)}:{}),
-    settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,last,difference});
+    settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,initialPower:initial.slice(24,24+seats),last,difference});
    if(coverageFailure)throw coverageFailure;
    if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
    if(rollback){

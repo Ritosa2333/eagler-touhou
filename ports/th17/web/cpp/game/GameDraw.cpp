@@ -31,6 +31,7 @@ bool GameDraw::pass(u32 index){
 }
 bool GameDraw::draw(){
     if(!scene.ready())return fail("Game scene is not ready for drawing");background.rate=scene.battle.frame_state().rate;
+    scene.battle.prepare_player_presentation(renderer);
     // Native shake writes the Playfield and Interface camera offsets. Keep the
     // final fullscreen/pause overlays still and let the ordinary layer schedule
     // apply these offsets, including the offscreen capture passes.

@@ -13,7 +13,7 @@ class ScreenCompositor {
  bool fail(const char*);bool select(const ScreenSurface&);bool compose(u32,bool camera,bool layer);bool run(u32);
 public:
  static constexpr std::array<i32,10> priorities{1,14,15,25,26,44,45,57,58,86};
- ScreenSurface main,alternate;std::array<AnmVm*,4> captures{};bool active=false;
+ ScreenSurface main,alternate;std::array<AnmVm*,4> captures{};bool active=false,skip_opening_screen_clear=false;
  u32 clear_color=0xff000000;Vec2 playfield_size{384,448};std::array<std::function<bool()>,2> replacement;
  std::string error;
  ScreenCompositor(FrameScheduler&,AnmManager&,AnmEnvironment&,AnmRenderer&,ZunGraphics&,ScreenViews&);

@@ -24,7 +24,7 @@
 #include <eagler/netplay/SpectatorStageView.hpp>
 #include <eagler/replay/Workspace.hpp>
 #endif
-EM_JS(void, th17_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
+EM_JS(void, th17_browser_frame, (int ok,double milliseconds,unsigned ticks,int presented), { Module["onGameFrame"]?.(ok,milliseconds,ticks,presented); });
 EM_JS(void, th17_browser_frame_begin, (), { Module["onGameFrameStart"]?.(); });
 EM_JS(int, th17_host_has_focus, (), {
  try { return parent.document.hasFocus() && !parent.document.hidden ? 1 : 0; }
@@ -85,7 +85,7 @@ struct RoomRuntime final : multiplayer::World {
  Status status(u32 number) const;
  bool can_predict() const override{return entered&&barrier!=session.next_frame()&&app->can_rollback();}
  void speculating(bool active) override{app->room_speculative=active;}
- void replaying(bool intermediate) override{app->graphics.logical_drawing=intermediate&&app->can_rollback();}
+ void replaying(bool intermediate) override{app->graphics.logical_drawing=intermediate;}
  bool replay_budget(unsigned replayed) const override{
   return replayed<4&&emscripten_get_now()<replay_deadline;
  }
@@ -184,7 +184,13 @@ struct RoomRuntime final : multiplayer::World {
    for(u32 seat=0;seat<scene->battle.pilot_count();++seat)scene->battle.pilot(seat).life.invulnerability.set(2);
   }
 #endif
+  const bool previous_draw_mode=app->graphics.logical_drawing;
+  // Keep one completed image per RAF and advance draw-dependent state on the extra ticks.
+  app->graphics.logical_drawing=(previous_draw_mode||
+      (!spectator&&!playing_replay&&app->graphics.backend.presentation_pending()))&&app->can_rollback();
   const bool ok=app->step(main_input.held,main_input.pressed,main_input.repeated,60,false);
+  const bool logical=app->graphics.logical_drawing;
+  app->graphics.logical_drawing=previous_draw_mode;
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
   output.score=app->scene()?u32(app->scene()->battle.score.score):u32(app->selection_score.score);
@@ -194,7 +200,7 @@ struct RoomRuntime final : multiplayer::World {
   if(barrier==number)barrier=Netplay::INVALID_FRAME;
   if(trace){
    output.snapshot=status(number+1);
-   if(app->graphics.logical_drawing)++logical_draws;
+   if(logical)++logical_draws;
   }
   return true;
  }
@@ -414,7 +420,6 @@ bool sample_and_tick(){
  if(room&&!room->local_results)return room->capture_physical(held,app->touch)&&room->update();
 #endif
  controls.update(held);app->controller_buttons=buttons;
- if(app->display)app->display->presentation_fps=presentation_fps;
  const bool focus=lost_focus;lost_focus=false;
  const bool ok=app->step(controls.held,controls.pressed,controls.repeated,measured_fps,focus);
  const double now=double(SDL_GetTicksNS())/1e9;if(!window_start)window_start=now;
@@ -604,6 +609,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const double period=app->practice.enabled&&app->scene()?app->practice.speed.interval(app->progress.practice_record,practice_fast,practice_slow,practice_debug):touhou::sdl::FrameCadence::interval;
   if(period!=previous_period){cadence.reset();previous_period=period;}
+  if(app->display)app->display->presentation_fps=presentation_fps;
   const auto ticks=cadence.advance(delta,period);bool ok=true;app->graphics.backend.defer=true;
   bool work=ticks!=0;
 #if TH17_MULTIPLAYER
@@ -640,7 +646,8 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   if(ok&&completed)ok=ThpracUi::render(*app);
   const bool presented=app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
   if(ok&&presented)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
-  if(work)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
+  if(work||presented||elapsed>=1000)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed,presented);
+  if(!ok||app->exiting)running=false;return running?EM_TRUE:EM_FALSE;
  },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 EMSCRIPTEN_KEEPALIVE void th17_touch(unsigned type,int id,float x,float y){
