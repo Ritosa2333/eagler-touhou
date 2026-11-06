@@ -108,6 +108,7 @@ bool ApplicationState::restore_room_stage(const multiplayer::StageEntry& entry){
     progress.scene_flags=entry.scene_flags;frames=entry.app_frame;
     environment.game_rng=entry.game;visual=entry.visual;
     if(!bind_display())return false;
-    return music_control(0,assets()->definition->stage_music_index)&&flush_audio()&&display->draw(double(frames)/60);
+    if(!audio_device.restore_stage_music(*assets()->definition))return fail(audio_device.error);
+    return display->draw(double(frames)/60);
 }
 }

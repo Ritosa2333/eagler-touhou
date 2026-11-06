@@ -3,6 +3,7 @@
 #include "StageAssets.hpp"
 #include <algorithm>
 #include <optional>
+#include <eagler/gameplay/CooperativeRules.hpp>
 #if TH17_MULTIPLAYER
 #include "../multiplayer/FrameImage.hpp"
 #endif
@@ -310,6 +311,7 @@ bool GameBattle::add_coop_player(const ShtResource& shots,i32 character,i32 anim
     return true;
 }
 bool GameBattle::pilot_game_over(u32 seat){
+    transfers[seat]={};
     if(seat)partners[seat-1]->retired=true;
     else if(partner_count)primary_retired=true;
     for(u32 index=0;index<pilot_count();++index)
@@ -317,6 +319,97 @@ bool GameBattle::pilot_game_over(u32 seat){
     return check(presentation.game_over(),"Game-over scene unavailable");
 }
 bool GameBattle::pilot_active(u32 seat) const noexcept{return seat?!partners[seat-1]->retired:!primary_retired;}
+bool GameBattle::revive_pilot(u32 seat,i32 invulnerability){
+    auto& target=pilot(seat);
+    auto& stock=target.session;
+    stock.extra_lives=std::max(0,stock.extra_lives);
+    stock.power=score.max_power/2;
+    stock.bombs=std::clamp(stock.initial_bombs,0,8);
+    if(!pilot_bomb(seat)->stop())return fail(pilot_bomb(seat)->error);
+    if(!target.visuals.pose(0))return fail(animations.error);
+    if(!target.reset_for_stage())return fail(target.error);
+    target.motion.snap_options();
+    target.life.invulnerability.set(invulnerability);
+    transfers[seat]={};
+    if(seat)partners[seat-1]->retired=false;
+    else primary_retired=false;
+    return bomb_hud(stock.bombs,stock.bomb_pieces,seat);
+}
+bool GameBattle::update_transfers(){
+    namespace coop=eagler::cooperative;
+    if(!partner_count)return true;
+    if(!world_running||input.game_flags&(4|0x70|0x4000|0x10000)||dialogue_present()){
+        transfers={};return true;
+    }
+    for(u32 seat=0;seat<pilot_count();++seat){
+        auto& taps=transfers[seat];
+        auto& giver=pilot(seat);
+        if(!pilot_active(seat)||giver.life.state!=1){taps={};continue;}
+        const u32 held=seat?partners[seat-1]->input.held:input.held;
+        const u32 pressed=seat?partners[seat-1]->input.pressed:input.pressed;
+        const auto nearby=[&](u32 other){
+            if(seat==other)return false;
+            const auto& a=giver.motion.position;const auto& b=pilot(other).motion.position;
+            const float dx=a.x-b.x,dy=a.y-b.y;
+            return dx*dx+dy*dy<=400.f;
+        };
+        const auto send=[&](i32 kind,u32 other){
+            const auto id=items->items.spawn(kind,giver.motion.position,0,0);
+            if(!id)return false;
+            auto& item=items->items.find(id)->state;
+            item.gift_seat(other+1);item.state=3;item.attraction_speed=5;
+            return true;
+        };
+        i32 life_receiver=-1;
+        if((taps.life||(pressed&8))&&!(held&1)&&giver.session.extra_lives>0){
+            for(u32 other=0;other<pilot_count();++other){
+                if(!nearby(other))continue;
+                const auto& target=pilot(other);
+                const bool retired=!pilot_active(other);
+                if(!retired&&(target.life.state!=1||target.session.extra_lives>=8))continue;
+                if(life_receiver<0||retired>!pilot_active(u32(life_receiver))||
+                   (retired==!pilot_active(u32(life_receiver))&&target.session.extra_lives<pilot(u32(life_receiver)).session.extra_lives))
+                    life_receiver=i32(other);
+            }
+        }
+        if(coop::AdvanceLifeTransfer(taps.life,(pressed&8)!=0,life_receiver>=0)){
+            const u32 other=u32(life_receiver);
+            const bool rescue=!pilot_active(other);
+            if(rescue||send(i32(ItemKind::Life),other)){
+                --giver.session.extra_lives;
+                if(rescue&&(!revive_pilot(other,280)||!sound(17,0,PlayerShots::SoundAction::play,true)))return false;
+                if(!life_hud(giver.session.extra_lives,giver.session.life_pieces,seat))return false;
+            }else if(!items->items.error.empty())return fail(items->items.error);
+        }
+        const i32 step=giver.session.power_step;
+        if(pressed&8)taps.power=0;
+        const i32 power_receiver=(taps.power||(pressed&1))&&step>0&&giver.session.power-step>=step?coop::LowestPower(pilot_count(),
+            [&](u32 other){const auto& target=pilot(other);return nearby(other)&&pilot_active(other)&&target.life.state==1&&target.session.power<score.max_power;},
+            [&](u32 other){return pilot(other).session.power;},[&](u32 other){return pilot(other).session.power_step;}):-1;
+        if(coop::AdvanceLifeTransfer(taps.power,(pressed&1)!=0,power_receiver>=0)){
+            if(send(i32(ItemKind::LargePower),u32(power_receiver))){
+                giver.session.power-=step;
+                if(!giver.configure_options())return fail(giver.options.error);
+            }else if(!items->items.error.empty())return fail(items->items.error);
+        }
+    }
+    return true;
+}
+bool GameBattle::draw_transfer_hints(HudDrawServices& text){
+    for(u32 seat=0;seat<pilot_count();++seat){
+        const auto life=eagler::cooperative::TapCount(transfers[seat].life);
+        const auto power=eagler::cooperative::TapCount(transfers[seat].power);
+        if(life<3&&power<3)continue;
+        const auto& position=pilot(seat).motion.position;
+        HudTextDraw hint;
+        hint.position={position.x+224,position.y-10,0};
+        hint.style.font=1;hint.style.coordinate_space=2;hint.style.alignment=0;hint.style.shadow=true;
+        hint.style.color=life>=3?0xffffa0c0:0xffffa070;
+        hint.text=(life>=3?"L ":"P ")+std::to_string(life>=3?life:power)+"/5";
+        if(!text.hud_text(hint))return false;
+    }
+    return true;
+}
 Vec3 GameBattle::aim_target(const Vec3& origin) noexcept{
     if(!partner_count)return player->motion.position;
     const Vec3* target=nullptr;
@@ -338,6 +431,7 @@ void GameBattle::protect_teammates(u32 caster,i32 frames) noexcept{
     }
 }
 bool GameBattle::reset_players(){
+    transfers={};
     if(!primary_retired&&!player->reset_for_stage())return fail(player->error);
     for(u32 index=0;index<partner_count;++index){
         auto& partner=*partners[index];
@@ -501,6 +595,7 @@ i32 GameBattle::update_bullets(){if((input.game_flags>>2|input.game_flags)&1)ret
 ItemSpiritFrame GameBattle::item_frame()const{return {input.rate,player->resource.header.attraction_speed,player->life.state,session.bomb_state,bomb?bomb->age.current:0,input.held,input.hud_collect||dialogue_present(),input.practice};}
 i32 GameBattle::update_items(){
     if(((input.game_flags>>2|input.game_flags)&1)||(input.game_flags&0x400))return 1;
+    if(!update_transfers())return 5;
     std::array<std::optional<ItemFrameContext>,2> contexts;
     std::array<ItemFrameContext*,2> lanes{};
     const auto frame=item_frame();
@@ -538,7 +633,7 @@ i32 GameBattle::update_spirits(){
 i32 GameBattle::update_hud(){if(hud){hud->current_seconds=enemy_world.boss_seconds;hud->game_flags=input.game_flags;hud->dialogue=dialogue_present();if(!hud->update(input.rate)){fail(hud->error);return 5;}}return error.empty()?1:5;}
 #if TH17_MULTIPLAYER
 void GameBattle::save_rollback(multiplayer::FrameImage& image){
-    image.save(primary_retired,spell_context,hud_context,input,world_running,session,spell,score,
+    image.save(primary_retired,transfers,spell_context,hud_context,input,world_running,session,spell,score,
         effects.handles,effects.cursor,effects.error,grid_viewport,graze_total,graze_chapter,error);
     image.restore_with([this]{dialogue.reset();targets.clear();services->projectiles.finish_contacts();return true;});
     const auto save_pilot=[&](Player& p,BombController& b,i32 ch){

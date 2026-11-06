@@ -16,7 +16,7 @@ bool GameDraw::pass(u32 index){
     case 3:return b.laser_scene&&b.laser_scene->draw(renderer)||fail(b.laser_scene?b.laser_scene->error:"Laser draw owner unavailable");
     case 4:if(run.scene_flags&4)return true;return b.bullet_scene&&b.bullet_scene->draw(renderer)||fail(b.bullet_scene?b.bullet_scene->error:"Bullet draw owner unavailable");
     case 5:return b.bomb&&b.bomb->score_popup.draw(text,b.player->motion.position,background.rate,error);
-    case 6:return b.player&&scene.popups.draw(*this,b.player->motion.position)||fail(scene.popups.error);
+    case 6:return b.player&&scene.popups.draw(*this,b.player->motion.position)&&b.draw_transfer_hints(text)||fail(scene.popups.error.empty()?text.error:scene.popups.error);
     case 7:{
         if(!b.hud||!b.hud->life_handles[0])return true;
         std::array<HudPilotStock,3> pilots{};

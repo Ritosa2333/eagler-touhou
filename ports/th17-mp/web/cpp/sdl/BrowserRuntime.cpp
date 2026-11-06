@@ -374,7 +374,9 @@ void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystic
 void clear_inputs(){th17_browser_keyboard_reset();for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();practice_pointers.reset();imgui_touch.reset();ThpracUi::reset_input();practice_fast=practice_slow=practice_debug=false;controls={};if(app){app->keyboard_state={};app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
- touhou::input::TouchState value;if(!app||!app->scene()||!app->run_input)return value;
+ touhou::input::TouchState value;
+ if(app&&app->title)value.instance=1+int(app->title->state.screen)*256+app->title->state.substate;
+ if(!app||!app->scene()||!app->run_input)return value;
  if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)return value;
  if(app->progress.practice_record){value.context=3;return value;}
  auto& stage=*app->scene();

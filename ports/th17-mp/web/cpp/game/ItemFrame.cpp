@@ -63,7 +63,13 @@ bool ItemManager::update(ItemFrameContext& primary,const std::array<ItemFrameCon
     for(u32 index=next_used(0);index<pool_size;index=next_used(index+1)){
         auto& slot=slots[index];auto& s=slot.state;if(!s.state)continue;
         if(s.state==5){s.delay=wrapping_sub(s.delay,1);if(s.delay<0&&!falling(index+1))return false;continue;}
-        auto& c=select_player(primary,partners,s);
+        const auto seat=s.gift_seat();
+        auto* receiver=seat?std::array{&primary,partners[0],partners[1]}[seat-1]:nullptr;
+        if(seat&&(!receiver||!receiver->active)){
+            s.gift_seat(0);s.state=1;s.velocity={};
+            receiver=nullptr;
+        }
+        auto& c=receiver?*receiver:select_player(primary,partners,s);
         if(s.state==1){
             if(s.delay>0){s.delay=wrapping_sub(s.delay,1);if(s.delay<1&&!birth_effect(s))return false;continue;}
             if(auto_collect(c)){s.state=3;s.attraction_speed=c.attraction_speed;}
@@ -73,10 +79,10 @@ bool ItemManager::update(ItemFrameContext& primary,const std::array<ItemFrameCon
                 if(s.position.y>472.f||std::fabs(s.position.x)>=200.f){if(!release(index+1))return false;continue;}}
         }else if(s.state==2){translate(s,c.rate);s.velocity.y=float(s.velocity.y+float(c.rate*.03f));if(s.velocity.y>=0){s.state=3;s.attraction_speed=c.attraction_speed;}else if(s.position.y>472.f||std::fabs(s.position.x)>=200.f){if(!release(index+1))return false;continue;}}
         else if(s.state==4){if(auto_collect(c)){s.state=3;s.attraction_speed=c.attraction_speed;}else{approach(s,c.player.position,c.rate);if(c.player_state==4){s.velocity.x=s.velocity.y=0;s.state=1;}}}
-        if(s.state==3){approach(s,c.player.position,c.rate);if(c.player_state==4){s.velocity.x=s.velocity.y=0;s.state=1;}}
-        if(c.active&&c.player_state!=2){
-            if(contains(c.bounds.item_near,s.position)){
-                if(seats>1&&power_recipient(c,primary,partners,s)){
+        if(s.state==3){if(!receiver||collectible(c))approach(s,c.player.position,c.rate);if(!receiver&&c.player_state==4){s.velocity.x=s.velocity.y=0;s.state=1;}}
+        if(receiver?collectible(c):c.active&&c.player_state!=2){
+            if(receiver?distance_squared(c,s)<=64:contains(c.bounds.item_near,s.position)){
+                if(!receiver&&seats>1&&power_recipient(c,primary,partners,s)){
                     forward_power(s);
                 }else{
                     if(seats>1&&(s.kind==4||s.kind==6)){
