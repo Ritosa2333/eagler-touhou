@@ -16,6 +16,7 @@ set(game ../../cpp/game)
 add_executable(th17-team-spirits team-spirits.cpp
     ../../cpp/multiplayer/AnimationState.cpp
     ../../cpp/multiplayer/PickupState.cpp
+    ../../cpp/multiplayer/ProjectileState.cpp
     ${game}/AnimalSpirits.cpp
     ${game}/AnmCamera.cpp
     ${game}/AnmCoordinates.cpp
@@ -36,7 +37,9 @@ add_executable(th17-team-spirits team-spirits.cpp
     ${game}/AnmVisualState.cpp
     ${game}/DamageSources.cpp
     ${game}/EclContext.cpp
+    ${game}/EclInterpreter.cpp
     ${game}/EclResource.cpp
+    ${game}/EclThreads.cpp
     ${game}/EffectManager.cpp
     ${game}/EnemyVisualCommands.cpp
     ${game}/Hud.cpp

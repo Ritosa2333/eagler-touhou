@@ -22,10 +22,10 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
     free.reserve(capacity);
     for(u32 index=active_head;index!=none;index=slots[index].active_next)
         active.emplace_back(u16(index),slots[index].state);
-    for(u32 index=free_head;index!=none;index=slots[index].free_next)free.push_back(u16(index));
-    for(u32 index=0;index<capacity;++index){
+    for(u32 index=free_head;index!=none;index=slots[index].free_next){
         auto& slot=slots[index];
-        if(slot.active||slot.pristine)continue;
+        free.push_back(u16(index));
+        if(slot.pristine)continue;
         // Reused bullets inherit fields from their previous life. The image
         // stays immutable until this slot leaves the free list again.
         auto cached=slot.inactive_image.lock();
@@ -41,18 +41,14 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
     image.restore_with([this,active=std::move(active),inactive=std::move(inactive),free=std::move(free)]{
         // Collision hosts keep permanent references into the slot array.
         u32 next=none;
+        auto cached=inactive.rbegin();
         for(auto entry=free.rbegin();entry!=free.rend();++entry){
             const auto index=*entry;
             auto& slot=slots[index];
             slot.active=false;slot.active_next=slot.active_previous=none;
             slot.free_next=next;
             next=index;
-        }
-        auto cached=inactive.begin();
-        for(u32 index=0;index<capacity;++index){
-            if(occupied[index/32]&(u32(1)<<(index%32)))continue;
-            auto& slot=slots[index];
-            if(cached!=inactive.end()&&cached->index==index){
+            if(cached!=inactive.rend()&&cached->index==index){
                 if(slot.inactive_image.lock()!=cached->state)slot.state=*cached->state;
                 slot.inactive_image=cached->state;slot.pristine=false;
                 ++cached;

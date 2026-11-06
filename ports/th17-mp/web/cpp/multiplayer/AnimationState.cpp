@@ -24,11 +24,11 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         multiplayer::AnmCheckpoint value;
         u32 handle;
         bool active,registered,alternate,frozen;
-        std::vector<Node*> children;
-        SavedNode(Node& n,multiplayer::AnmCheckpoint::Curves& curves):
+        u32 child_start,child_count;
+        SavedNode(Node& n,multiplayer::AnmCheckpoint::Curves& curves,std::vector<Node*>& children):
             owner(&n),borrowed(n.borrowed),value(borrowed?*borrowed:n.vm,n.rollback_curves,curves),
-            handle(n.handle),active(n.active),registered(n.registered),alternate(n.alternate),frozen(n.frozen_root){
-            children.reserve(n.children.size());
+            handle(n.handle),active(n.active),registered(n.registered),alternate(n.alternate),frozen(n.frozen_root),
+            child_start(u32(children.size())),child_count(n.children.size()){
             for(auto* child:n.children)children.push_back(child);
         }
     };
@@ -56,18 +56,24 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     // Layers can still reference nodes retired after their draw list was
     // built. Count those before allocating the large VM records.
     std::vector<SavedNode> saved;
+    std::vector<Node*> children;
     multiplayer::AnmCheckpoint::Curves curves;
+    size_t child_count=0,changing=0;
+    for(const auto* n:selected){
+        child_count+=n->children.size();
+        changing+=multiplayer::AnmCheckpoint::changing(n->borrowed?*n->borrowed:n->vm);
+    }
     saved.reserve(selected.size());
-    curves.changing.reserve(std::count_if(selected.begin(),selected.end(),[](const Node* n){
-        return multiplayer::AnmCheckpoint::changing(n->borrowed?*n->borrowed:n->vm);
-    }));
-    for(auto* n:selected)saved.emplace_back(*n,curves);
+    children.reserve(child_count);
+    curves.changing.reserve(changing);
+    for(auto* n:selected)saved.emplace_back(*n,curves,children);
 #if TH17_ROOM_BENCHMARK
-    image.payload[image.Animation]=u32(saved.capacity()*sizeof(SavedNode)+curves.changing.capacity()*sizeof(AnmInterpolators));
+    image.payload[image.Animation]=u32(saved.capacity()*sizeof(SavedNode)+children.capacity()*sizeof(Node*)+curves.changing.capacity()*sizeof(AnmInterpolators));
     image.unused_capacity+=u32((saved.capacity()-saved.size())*sizeof(SavedNode));
 #endif
     image.save(generation,active_count,next_slot,error);
-    image.restore_with([this,saved=std::move(saved),curves=std::move(curves),order=std::move(order),borrowed=external,
+    image.restore_with([this,saved=std::move(saved),children=std::move(children),curves=std::move(curves),
+                        order=std::move(order),borrowed=external,
                         free_slots=free_slots,free_overflow=free_overflow,layers=layers]{
         for(auto& group:groups){
             for(auto* n:group){n->children.clear();n->parent=nullptr;n->active=n->registered=false;n->handle=0;}
@@ -102,9 +108,12 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
                 if(n->slot==slot_mask)overflow_handles.emplace(n->handle,n);
             }
         }
-        for(const auto& row:saved)for(auto* child:row.children){
+        for(const auto& row:saved){
             auto& n=*row.owner;
-            child->parent=&n;child->child_position=n.children.insert(n.children.end(),child->child_link);
+            for(u32 i=row.child_start;i<row.child_start+row.child_count;++i){
+                auto* child=children[i];
+                child->parent=&n;child->child_position=n.children.insert(n.children.end(),child->child_link);
+            }
         }
         this->layers=layers;
         return true;

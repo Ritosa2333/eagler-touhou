@@ -455,6 +455,22 @@ void immutable_bullet_program(){
     require(bullets.emit(shot,0),"emit edited program");
     require(first->transforms()[8].payload[0]==1&&bullets.state(bullets.first_active())->transforms()[8].payload[0]==7,
             "editing the shooter preserves existing bullets and payloads");
+
+    const auto a=bullets.first_active(),b=bullets.next_active(a);
+    const auto pristine=bullets.first_free();
+    bullets.recycle(a);bullets.recycle(b);
+    multiplayer::FrameImage free_image;
+    bullets.save_rollback(free_image);
+    shot.count=3;
+    require(bullets.emit(shot,0),"reuse two bullets and claim a pristine slot");
+    require(bullets.first_active()==pristine,"allocate bullets in free-list order");
+    require(free_image.restore(),"rewind mixed recycled and pristine bullets");
+    require(bullets.first_free()==b&&!bullets.active(a)&&!bullets.active(pristine)&&
+            bullets.state(a)->transforms()[8].payload[0]==7&&bullets.state(pristine)->phase==0,
+            "restore the free-list head and both kinds of inactive state");
+    require(bullets.emit(shot,0)&&bullets.first_active()==pristine&&
+            bullets.next_active(pristine)==a&&bullets.next_active(a)==b,
+            "replay preserves exact bullet allocation order");
 }
 
 void logical_animation_draw(){
