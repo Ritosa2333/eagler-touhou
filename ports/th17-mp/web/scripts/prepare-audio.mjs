@@ -1,0 +1,9 @@
+import{readFileSync,writeFileSync,mkdirSync}from'node:fs';import{resolve}from'node:path';import{fileURLToPath}from'node:url';import{createHash}from'node:crypto';import{PEImage}from'./native/pe.mjs';
+const root=fileURLToPath(new URL('../',import.meta.url)),target=JSON.parse(readFileSync(resolve(root,'target.json'),'utf8')),bytes=readFileSync(resolve(root,target.executable));
+if(createHash('sha256').update(bytes).digest('hex')!==target.sha256)throw Error('TH17 original identity changed');const pe=new PEImage(bytes),off=p=>pe.offset(p-pe.base),voices=[];
+for(let n=0;n<80;n++){const p=off(0x4b2bf0+n*20);voices.push({id:bytes.readInt32LE(p),sample:bytes.readInt32LE(p+4),volume:bytes.readInt16LE(p+8),renew:bytes.readInt16LE(p+10),flags:bytes.readUInt32LE(p+12),reserved:bytes.readUInt32LE(p+16)});}
+if(new Set(voices.map(v=>v.id)).size!==80||voices.some(v=>v.id<0||v.id>=80))throw Error('Invalid TH17 original sound voices');const count=Math.max(...voices.map(v=>v.sample))+1,samples=[];
+for(let n=0;n<count;n++){const p=off(pe.u32(off(0x4a1060+n*4))),name=pe.ascii(p);if(!/^se_\w+\.wav$/.test(name))throw Error('Invalid original sample name '+name);samples.push(name);}
+mkdirSync(resolve(root,'reference'),{recursive:true});writeFileSync(resolve(root,'reference/sound-definitions.json'),JSON.stringify({target:target.sha256,source:'Original TH17 table 0x4b2bf0, sample names 0x4a1060',voices,samples},null,2)+'\n');
+const data='// TH17 JP 1.00b: original source-row order is distinct from voice ID.\nconst std::array<SoundDefinition,80> sound_definitions{{\n'+voices.map(v=>' {'+[v.id,v.sample,v.volume,v.renew,v.flags,v.reserved].join(',')+'},').join('\n')+'\n}};\nconst std::array<const char*,'+count+'> sound_samples{{\n'+samples.map(s=>' '+JSON.stringify(s)+',').join('\n')+'\n}};\n';
+writeFileSync(resolve(root,'cpp/game/SoundDefinitions.inc'),data);console.log(JSON.stringify({voices:voices.length,samples:count}));
