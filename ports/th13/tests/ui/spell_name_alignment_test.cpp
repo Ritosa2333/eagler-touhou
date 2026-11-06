@@ -1,6 +1,6 @@
-// 符卡宣言名（text.anm script74 / sprite9）栅格落点窄测试。
-// 依据：0046ea30.c L26-27 中心式 x = W/2 - (nominal-1)*len/4；原版
-// original-spell-ms f0008 墨列 294..418（320/662 挤压后纹理 ~90.5 起）。
+// 符卡宣言名（text.anm script74 / sprite9）右对齐栅格落点测试。
+// 原版 004135c3 -> 0046e970 -> 0046e810 -> 0045aef0：
+// layout x = W - (nominal-1)*len/2，TextOutA 再乘 2。
 // sprite9 = (0,92,320,17)（text.anm entry0 实测），nominal 17。
 #include "../harness/test_framework.hpp"
 #include "game/AnmText.hpp"
@@ -46,7 +46,7 @@ struct Fixture {
                                             size_t(px) * 2, &value, 2);
                         }
                 return true;
-            }, 0xffffffu, std::string(size_t(chars) * 2, '\x81'), AnmTextAlignment::Center, 17));
+            }, 0xffffffu, std::string(size_t(chars) * 2, '\x81'), AnmTextAlignment::Right, 17));
         return drawn;
     }
     int ink_start() const {
@@ -63,25 +63,23 @@ struct Fixture {
 };
 }  // namespace
 
-// 16 字节名（符牒「死蝶の舞」形）：中心式 = 320/2 - 16*16/4 = 96（scratch 192），
-// 320/662 挤压后墨列应落在纹理 ~92.8（原版实测 90.5±2.5）。
-TEST(spell_name_center_lands_on_original_ink_columns) {
+// 16 CP932 bytes: original layout192 -> TextOutA384 (Unicorn arithmetic probe).
+TEST(spell_name_right_alignment_keeps_the_double_resolution_text_origin) {
     Fixture fixture;
     const int drawn = fixture.fill(8);
-    CHECK_EQ(drawn, 192);
+    CHECK_EQ(drawn, 384);
     const int start = fixture.ink_start();
-    CHECK(start >= 88 && start <= 97);
+    CHECK(start >= 186 && start <= 193);
     CHECK_EQ(fixture.sink.changes.size(), size_t(1));
     CHECK((fixture.sink.changes[0] == std::array<u32, 4>{0, 92, 320, 109}));
 }
 
-// 12 字节名：中心式 = 160 - 16*12/4 = 112（scratch 224）；右对齐旧读法
-// （W-(nominal-1)*len/2 = 224，scratch 448）会把墨列推到纹理 ~216（原版排除）。
-TEST(spell_name_center_scales_with_cp932_byte_count) {
+// 12 CP932 bytes: original layout224 -> TextOutA448; shorter names move right.
+TEST(spell_name_right_alignment_scales_with_cp932_byte_count) {
     Fixture fixture;
-    CHECK_EQ(fixture.fill(6), 224);
+    CHECK_EQ(fixture.fill(6), 448);
     const int start = fixture.ink_start();
-    CHECK(start >= 105 && start <= 114);
+    CHECK(start >= 217 && start <= 224);
 }
 
 int main() { return th13test::run_all("spell_name_alignment_test"); }

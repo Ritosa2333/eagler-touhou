@@ -760,6 +760,11 @@ bool StageSim::step_frame() {
             else entry->tick_gate = false;
         }
         if (remove) {
+            // 0x419320 destructor, 0x41938b..0x41939a: unregister the boss
+            // even when ECL returns or movement leaves the playfield before
+            // setBoss(-1). Otherwise Update26 keeps a stale timer gate open.
+            for (i32& slot : boss_slot)
+                if (slot == entry->script_id) slot = -1;
             // 敌机销毁（0x418e00 销毁支路）先经宿主回收其槽位 VM 句柄
             // （enemies_from_ecl 路径的敌机本体 VM 所有权在 registry——
             // 敌机结构消亡后句柄即悬空，此处回收防泄漏）。damage() 致死

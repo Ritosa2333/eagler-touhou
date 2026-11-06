@@ -5,6 +5,7 @@
 //   脚本 2/3、数字字模 sprite 270-279、血环色族脚本 81..93 的池装载与选取。
 #include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "../ecl/ecl_test_fixtures.hpp"
 
 #include "game/BossPresentation.hpp"
 #include "game/SpellPresentation.hpp"
@@ -104,6 +105,99 @@ TEST(boss_timer_stays_visible_while_slot_occupied_after_capture) {
     CHECK(h.boss.timer_visible());
     input.boss_slot_present = false;  // 512(-1) 清槽后（对话门前）
     CHECK(h.boss.update(input, {}));
+    CHECK(!h.boss.timer_visible());
+}
+
+TEST(boss_timer_retires_when_ecl_returns_without_explicit_unregister) {
+    BossHarness h;
+    CHECK(h.boss.initialize());
+    StageSim sim;
+    std::vector<u8> routine;
+    th13test::emit(routine, 0, 512, 0, 255, 0, {0});
+    th13test::emit(routine, 4, 10, 0, 255, 0, {}); // return, no setBoss(-1)
+    const auto data = th13test::build_scpt({{"Boss", routine}});
+    CHECK_EQ(sim.program.attach(data.data(), u32(data.size())), 0);
+    sim.commands.sim = &sim;
+    sim.gvars.sim = &sim;
+    CHECK(sim.spawn_enemy("Boss", 0, 100, 1000, nullptr, false));
+    CHECK(sim.boss_slot[0] >= 0);
+    BossFrameInput input;
+    input.timer_seconds = 32;
+    input.timer_centiseconds = 91;
+    const auto update = [&] {
+        input.boss = sim.boss();
+        input.boss_slot_present = sim.boss_slot[0] >= 0;
+        CHECK(h.boss.update(input, {}));
+    };
+    update();
+    CHECK(h.boss.timer_visible());
+    for (int frame = 0; frame < 8 && !sim.enemies.empty(); ++frame) {
+        CHECK(sim.step_frame());
+        update();
+        CHECK_EQ(h.boss.timer_visible(), !sim.enemies.empty());
+    }
+    CHECK(sim.enemies.empty());
+    CHECK_EQ(sim.boss_slot[0], -1);
+    CHECK(!shown(h.vm(h.boss.digit_tens_handle())));
+    CHECK(!shown(h.vm(h.boss.digit_ones_handle())));
+}
+
+TEST(boss_out_of_bounds_cleanup_clears_only_its_own_slot) {
+    StageSim sim;
+    auto departing = std::make_unique<StageEnemy>();
+    departing->script_id = 11;
+    departing->flags = 0x1020000u; // boss, previously inside playfield
+    departing->vel.pos[0] = -256.f;
+    departing->vel.pos[1] = 64.f;
+    auto survivor = std::make_unique<StageEnemy>();
+    survivor->script_id = 12;
+    survivor->vel.pos[1] = 100.f;
+    sim.enemies.push_back(std::move(departing));
+    sim.enemies.push_back(std::move(survivor));
+    sim.boss_slot[0] = 11;
+    sim.boss_slot[1] = 12;
+    CHECK(sim.step_frame());
+    CHECK_EQ(sim.enemies.size(), size_t(1));
+    CHECK_EQ(sim.boss_slot[0], -1);
+    CHECK_EQ(sim.boss_slot[1], 12);
+    CHECK(sim.boss() == sim.enemies.front().get());
+}
+
+TEST(real_stage4_seiga_departure_retires_timer_before_setboss_minus_one) {
+    struct Provider final : EclResourceProvider {
+        bool read(const std::string& name, std::vector<u8>& data) override {
+            data = read_raw(("artifacts/reference/raw/" + name).c_str());
+            return !data.empty();
+        }
+        bool animation(u32, const std::string&) override { return true; }
+    } provider;
+    StageSim sim;
+    CHECK(sim.program.load("st04.ecl", provider));
+    sim.commands.sim = &sim;
+    sim.gvars.sim = &sim;
+    auto* enemy = sim.spawn_enemy("MBossDead", 0, 128, 1000, nullptr, false);
+    CHECK(enemy);
+    CHECK(sim.error().empty());
+    const i32 id = enemy->script_id;
+    enemy->flags |= 0x1000000u;
+    sim.boss_slot[0] = id;
+    BossHarness h;
+    CHECK(h.boss.initialize());
+    BossFrameInput input;
+    input.timer_seconds = 32;
+    bool departed = false;
+    for (int frame = 0; frame < 260 && !departed; ++frame) {
+        CHECK(sim.step_frame());
+        departed = true;
+        for (const auto& entry : sim.enemies)
+            if (entry->script_id == id) departed = false;
+        input.boss = sim.boss();
+        input.boss_slot_present = sim.boss_slot[0] >= 0;
+        CHECK(h.boss.update(input, {}));
+        CHECK_EQ(h.boss.timer_visible(), !departed);
+    }
+    CHECK(departed);
+    CHECK_EQ(sim.boss_slot[0], -1);
     CHECK(!h.boss.timer_visible());
 }
 

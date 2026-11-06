@@ -77,14 +77,19 @@ void GameHud::update_score() {
 
 bool GameHud::draw_trance_countdown(HudDrawServices& services) {
     if (!trance_active(progress)) return true;
-    // 405d60 ->405940: screen-space ASCII font7 at(224,112), gauge/60 seconds.
+    // 405d60 ->405940: screen-space ASCII font7, gauge/60 seconds.
+    // Keep the decimal mark on the playfield centre (screen x224), including
+    // the two-digit 10.00s entrance. ascii sprite295 has ink at columns2..8;
+    // its centre is 5px from the glyph origin after the pixel draw offset.
     HudTextStyle style;
     style.font = 7;
-    style.alignment = 0;
+    style.alignment = 1;
     const i32 gauge = progress.ending_points;
     const bool red = gauge < 30 ? (gauge & 1) != 0 : gauge < 90 && (gauge & 7) != 0;
     style.color = red ? 0xffff0000u : 0xffffffffu;
-    if (services.hud_text({{224,112,0},style,format("%.2fs",double(gauge)/60.0)})) return true;
+    const auto text = format("%.2fs",double(gauge)/60.0);
+    const float x = 224.f - 5.f - 30.f * float(text.find('.'));
+    if (services.hud_text({{x,112,0},style,text})) return true;
     error = "Trance countdown text service failed";
     return false;
 }

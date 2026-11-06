@@ -536,9 +536,12 @@ bool RunScene::update_spell() {
     battle.sim.spell.update_visibility(battle.player_y);
     // Spell time starts/ends on the Begin/End events consumed above, not by
     // sampling active() here (same-tick begin+end would be lost).
-    // 符卡背景位置在 consume() 开始时一次性写入（0x413270:180-194），逐帧
-    // sync 不携带 boss 位置——原版无追随。
     spell_presentation->sync(battle.sim.spell.state());
+    // 00412dfe follows boss slot0 once in Update26, after spell state/timer
+    // update and before ANM Update34. Draw-time sync must not move the ring.
+    if (const auto* boss = battle.sim.boss();
+        boss && boss->script_id == battle.sim.boss_slot[0])
+        spell_presentation->update_background(boss->position);
     return true;
 }
 

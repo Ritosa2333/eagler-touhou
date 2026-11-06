@@ -71,6 +71,12 @@
 
 ## 画面与声音
 
+本轮在独立仓库主线 `29c24f7` 上迁入五项显示修复：[对话字形缩放](archive/th13-dialogue-filter-20261105/README.md)、[符卡名右对齐](archive/th13-spell-name-alignment-20261105/README.md)、[符卡环跟随](archive/th13-spell-ring-follow-20261105/README.md)、[青娥退场倒计时](archive/th13-seiga-timer-retirement-20261105/README.md)和[灵界倒计时定位](archive/th13-trance-decimal-anchor-20261105/README.md)。
+
+[性能试验和测量数据](archive/th13-performance-investigation-20261105/README.md)对应记录所列的原生产 WASM 和外部诊断构建。六面绘制热点与补帧对照的适用范围见该记录。
+
+独立仓库迁入验证覆盖 10 套、92 项定向原生回归，生产 WASM 构建通过（SHA256 `5886e702f53c249c81c4b9ab9a1ca70d1651e9a1343eb9a6da4e9a9ae8e91f03`）。浏览器在二面 Lunatic 符卡中验证环的横移和暂停冻结，在一面灵界画面中量得小数点中心为横坐标 224。两组页面异常均为零。青娥倒计时通过真实四面退场脚本的定向测试。
+
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
 | DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
