@@ -65,7 +65,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       ...(mode==='record'&&runStart!==null?{timeline:{startBoundary:runStart,skipRanges,reason:runReason,stage:runStage}}:{})};
     let snapshot;
     try{snapshot=inspect?.();}catch(error){finishFailed(error);return;}
-    Promise.resolve(snapshot).then(extra=>onEnd({...result,...extra})).catch(finishFailed);
+    Promise.resolve(snapshot).then(extra=>{releaseSeal();return onEnd({...result,...extra});}).catch(finishFailed);
   }
   function time(kind){
     if(detached)return kind===1?realPerformance.now():RealDate.now();
