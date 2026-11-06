@@ -21,8 +21,10 @@ const replaySources=['../direct-drag.js','../player-ui.js','../solo.js','../solo
   './external-host.js','./external-loader.js','./external-codec.js','./external-recorder.js','./external-ui.js','./external-lifecycle.js'];
 const keys={1:['ArrowUp','ArrowUp',38],2:['ArrowDown','ArrowDown',40],4:['ArrowLeft','ArrowLeft',37],8:['ArrowRight','ArrowRight',39],
   16:['KeyX','x',88],32:['KeyZ','z',90],128:['Escape','Escape',27],256:['Enter','Enter',13]};
+const versusKeys=[{1:'KeyT',2:'KeyB',4:'KeyF',8:'KeyH',16:'KeyX',32:'KeyZ'},
+  {1:'Numpad8',2:'Numpad2',4:'Numpad4',8:'Numpad6',16:'ArrowRight',32:'ArrowLeft'}];
 let emulator,assist,soloMusic,localSfx,recorder,lang,previous=0,loop=0,playback=false,pauseState=null,pauseTransition=false,guestPaused=false,pauseRequestHandled=false;
-const fire=new FireControl(),writes=new Set();
+const fire=new FireControl(),secondFire=new FireControl(),writes=new Set();let versusHeld=new Set(),lastVersus=false;
 const report=error=>globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});
 function pausePointer(message){
   const state=emulator?.snapshot.state;if(state?.phase!==2)return false;
@@ -47,7 +49,7 @@ function send(bits){
   previous=bits;
 }
 function releaseInput(){
-  globalThis.__eaglerPC98Input.clear();send(0);emulator?.clearInput();fire.reset();
+  globalThis.__eaglerPC98Input.clear();send(0);for(const code of versusHeld)emulator?.send('key',[{type:'keyup',code}]);versusHeld.clear();emulator?.clearInput();fire.reset();secondFire.reset();
 }
 function onVisibilityChange(){if(document.hidden)releaseInput();}
 function transition(save,restart=false){
@@ -59,6 +61,7 @@ function transition(save,restart=false){
 function tick(now){
   if(!emulator)return;
   const state=emulator.snapshot.state,paused=state?.phase===2;
+  const versus=state?.phase===3||emulator.snapshot.selecting;if(versus!==lastVersus){releaseInput();lastVersus=versus;}
   if(!paused||!state.command)pauseRequestHandled=false;
   if(paused!==guestPaused){guestPaused=paused;releaseInput();if(paused){soloMusic?.suspend();void localSfx?.context.suspend();}else{soloMusic?.resume();void localSfx?.resume().catch(()=>{});}}
   const sample=globalThis.__eaglerPC98Input.sample({play:state?.phase===1});
@@ -68,8 +71,14 @@ function tick(now){
     let bits=sample;
     const shot=fire.sample(!!(bits&512),!!(bits&32),now);
     bits=(bits&~544)|(shot?32:0);
-    send(bits);
-    emulator.setInput({generation:state?.generation,focus:playing&&!!(bits&64)?1:0,
+    let focus=playing&&!!(bits&64)?1:0;
+    if(versus){
+      send(0);let second=input.localSecond();if(bits&64)focus|=1;if(second&64)focus|=2;second=(second&~544)|(secondFire.sample(!!(second&512),!!(second&32),now)?32:0);
+      const next=new Set();for(const [slot,value] of [bits,second].entries())for(const [mask,code] of Object.entries(versusKeys[slot]))if(value&mask)next.add(code);
+      for(const code of new Set([...versusHeld,...next]))if(versusHeld.has(code)!==next.has(code))emulator.send('key',[{type:next.has(code)?'keydown':'keyup',code}]);
+      versusHeld=next;
+    }else send(bits);
+    emulator.setInput({generation:state?.generation,focus,
       touch:[playing?packTouch(0,{...input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox}):0,0]});
   }
   loop=requestAnimationFrame(tick);
@@ -162,6 +171,6 @@ export const managedAPI={
   async saveRecording(){if(!recorder?.state.ready)return null;return saveReplay(await recorder.save());},
   finishRecording(){recorder?.finish();},
   playback(message){if(emulator)throw Error('请先结束本局');return start({language:'ja',music:'ogg',options:{replayPath:message.path}});},
-  stop(){cancelAnimationFrame(loop);releaseInput();previous=0;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);window.removeEventListener('blur',releaseInput);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
+  stop(){cancelAnimationFrame(loop);releaseInput();previous=0;lastVersus=false;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);window.removeEventListener('blur',releaseInput);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
     recorder=localSfx=soloMusic=undefined;const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;},
 };

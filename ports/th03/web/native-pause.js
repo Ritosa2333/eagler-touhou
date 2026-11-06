@@ -90,11 +90,13 @@ export class NativePause {
   }
   setFocus(mask, points) {
     const emulator = this.getEmulator(), heap = emulator?.module.HEAPU8;
-    if (!heap || !this.valid(heap, this.live) || heap[this.live + this.meta.fields.phase] !== 1) return;
+    if (!heap || !this.valid(heap, this.live)) return;
     const at = this.live, f = this.meta.fields;
+    const localVersus=this.meta.signature==='TH03SOLOASSIST1!'&&heap[at+f.phase]===3;
+    if(heap[at+f.phase]!==1&&!localVersus)return;
     emulator.module.thDirtyMark?.(at,this.meta.mailboxSize);
-    heap[at + f.points] = this.nativeMarkers ? (this.meta.signature === 'TH03SOLOASSIST1!' ? 1 : 3) : 0;
-    heap[at + f.focus] = emulator.state === 'running' && heap[at + f.phase] === 1 ? mask & 3 : 0;
+    heap[at + f.points] = this.nativeMarkers ? (this.meta.signature === 'TH03SOLOASSIST1!'&&!localVersus ? 1 : 3) : 0;
+    heap[at + f.focus] = emulator.state === 'running' ? mask & 3 : 0;
   }
   setTouch(inputs) {
     const emulator=this.getEmulator(),heap=emulator?.module.HEAPU8,f=this.meta.fields;
@@ -119,7 +121,7 @@ export class NativePause {
   }
   markers() {
     const heap=this.getEmulator()?.module.HEAPU8,at=this.live,f=this.meta.fields;
-    if(!heap||!this.valid(heap,at)||heap[at+f.phase]!==1)return [];
+    if(!heap||!this.valid(heap,at)||(heap[at+f.phase]!==1&&!(this.meta.signature==='TH03SOLOASSIST1!'&&heap[at+f.phase]===3)))return [];
     const data=at-this.meta.mailboxCsOffset+(this.meta.dataSegment-this.meta.codeSegment)*16;
     const view=new DataView(heap.buffer,heap.byteOffset,heap.byteLength);
     return [0,1].flatMap(seat=>{

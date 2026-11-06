@@ -46,7 +46,15 @@ frame_hook:
     cmp byte [es:bx+0x0e],0  ; only the human left-hand player
     jne .done
     cmp byte [es:bx+0x0f],0  ; never touch local two-player matches
-    je .done
+    jne .solo
+    cmp byte [es:bx+0x28],0x81 ; local 1P vs 2P uses distinct native keys
+    jne .done
+    mov byte [cs:phase],3
+    mov al,[cs:focus_input]
+    and al,3
+    mov [cs:focus_active],al
+    jmp .done
+.solo:
     mov al,[es:bx+0x28]
     cmp al,1                 ; Story
     je .mode_ok
@@ -129,8 +137,7 @@ render_hook:
     ; TH03 uses 200 VRAM rows. Include PLAYFIELD_TOP=16 screen pixels.
     ; sprite16_put divides screen Y by two (native player top is y-16,
     ; sprite height is 64 screen pixels, so its center is y+16).
-    ; Keep the white center on the collision origin in both axes. Each
-    ; VRAM row displays as two screen pixels.
+    ; Two VRAM rows display as four screen pixels: a 4x4 square.
     mov dx,[si+2]
     sar dx,5
     add dx,8-1
@@ -145,7 +152,7 @@ render_hook:
     and cx,7
     shr ax,3
     add di,ax
-    mov bx,0x00f8
+    mov bx,0x00f0
     ror bx,cl                  ; spans two bytes at every X alignment
     mov ax,0xa800
     mov es,ax
@@ -158,8 +165,7 @@ render_hook:
     out 0x7e,al
     mov [es:di],bx
     mov [es:di+80],bx
-    mov [es:di+160],bx
-    mov bx,0x0070
+    mov bx,0x0060
     ror bx,cl
     mov al,0xff
     out 0x7e,al
@@ -172,6 +178,10 @@ render_hook:
 .next:
     inc bp
     cmp bp,1
+    jb .player
+    cmp byte [cs:phase],3
+    jne .done
+    cmp bp,2
     jb .player
 .done:
     pop es

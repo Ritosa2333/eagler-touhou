@@ -1,12 +1,14 @@
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:512,ShiftLeft:32,ShiftRight:32,Space:64,Escape:128,Enter:256};
 export function managedInput({game, epoch, active, options}) {
-  const held = new Set(), secondary = new Set(); let touch = {}, pulse = 0, menuPulse = 0, menuUntil = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
+  const held = new Set(), secondary = new Set(), localKeys = new Set(); let touch = {}, pulse = 0, menuPulse = 0, menuUntil = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
+  const local2={KeyW:1,KeyS:2,KeyA:4,KeyD:8,KeyL:16,KeyK:32,ControlLeft:64,ControlRight:64,KeyJ:512};
   const keyboard = createBrowserKeyboard({send:(code, down) => {if(down){held.add(code);keyPulse|=buttons[code]??0;}else held.delete(code);},
     hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
   const input = {
-    key(message) { keyboard.event(message, message.down, 'hosted'); },
-    clear() { secondary.clear(); keyboard.clear(); touch = {}; pulse = keyPulse = menuPulse = menuUntil = 0; point = null; motion = {x:0,y:0,active:false}; },
+    key(message) { if(message.down)localKeys.add(message.code);else localKeys.delete(message.code);keyboard.event(message, message.down, 'hosted'); },
+    clear() { secondary.clear(); localKeys.clear();keyboard.clear(); touch = {}; pulse = keyPulse = menuPulse = menuUntil = 0; point = null; motion = {x:0,y:0,active:false}; },
+    localSecond() {let bits=0;for(const code of localKeys)bits|=local2[code]??0;return bits;},
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
       if (message.bombSerial !== bomb) pulse |= 16;
@@ -44,6 +46,7 @@ export function managedInput({game, epoch, active, options}) {
   };
   for (const type of ['keydown','keyup']) addEventListener(type, event => {
     if (event.__eaglerPC98Synthetic) return;
+    if(type==='keydown')localKeys.add(event.code);else localKeys.delete(event.code);
     const down=type==='keydown',handled=keyboard.mapped()?keyboard.mapNative(event,down):keyboard.event(event,down);
     if (handled) { event.preventDefault(); event.stopImmediatePropagation(); }
   }, true);
