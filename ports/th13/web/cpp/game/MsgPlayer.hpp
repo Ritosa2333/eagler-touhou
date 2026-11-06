@@ -90,7 +90,7 @@ struct MsgLine {
                                   // TextOut 后前进 param_9*2 scratch 像素）
     std::string ruby_cp932;       // ruby CP932 读音注记
     std::string ruby_utf8;        // 派生 UTF-8 读音注记
-    float bubble_width = 0.0f;    // 0x428ae0 原版气泡排版宽度 ((len-1)*8)&~0xf - 28.0
+    float bubble_width = 0.0f;    // 0x428ae0 原版气泡排版宽度 ((len*8)&~0xf) - 28.0（0x428eb7 直读：edx=start+1 扫至 NUL，差=len 前字节数）
     u32 block = 0;                // 行块序号（0x428ae0 +0x5f/+0x60 配对周期）
     i32 side = 0;                 // +0x184：0=左（文字 x=box_x）、1=右
                                   // （文字 x=box_x-(bubble_width+30)，0x428ae0:499）
