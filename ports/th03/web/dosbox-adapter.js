@@ -116,6 +116,7 @@ export class DOSBoxPC98 {
     };
     ops.write=function(stream,...args){
       const result=write.call(this,stream,...args);
+      if(result&&!emulator.installingDisk&&!emulator.config.lockstep&&/\/YUME\.NEM$/i.test(m.FS.getPath(stream.node)))emulator.config.onScoreSaved?.();
       if(result&&!emulator.installingDisk&&!emulator.config.lockstep&&emulator.extracted?.owns(m.FS.getPath(stream.node)))emulator.config.onDiskChange?.(emulator.diskName);
       return result;
     };

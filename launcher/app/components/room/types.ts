@@ -43,6 +43,7 @@ export interface RoomViewProps {
   workspaceHost?: HTMLElement | null;
   workspaceStage?: HTMLElement | null;
   playbackControls?: ReactNode;
+  th03Replays?: ReadonlyArray<{id:string; winner:number; blob:Blob}>;
   reloadPending?: boolean;
   onReloadResources?(): void;
   onRestoreSettings?(): void;

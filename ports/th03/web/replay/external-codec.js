@@ -57,7 +57,8 @@ function validAssist(game,input){
   if(game==='02')return integer(input.currentInput,0,256)&&!(input.currentInput&255)&&typeof input.focusEnabled==='boolean'&&
     integer(input.points,0,15)&&['add','keep','clear'].includes(input.touchAction)&&typeof input.unlimited==='boolean'&&
     Number.isSafeInteger(input.x)&&Number.isSafeInteger(input.y);
-  if(game==='03')return (input.quit===undefined||input.quit===true)&&(input.restart===undefined||input.restart===true)&&!(input.quit&&input.restart)&&integer(input.focus,0,3)&&Array.isArray(input.touch)&&input.touch.length===2&&
+  if(game==='03')return (input.quit===undefined||input.quit===true)&&(input.restart===undefined||input.restart===true)&&!(input.quit&&input.restart)&&
+    (input.pauseSelection===undefined||integer(input.pauseSelection,0,3))&&integer(input.focus,0,3)&&Array.isArray(input.touch)&&input.touch.length===2&&
     input.touch.every(value=>integer(value,0,2**45-1));
   const touch=input.touch;
   return integer(input.points,0,15)&&(touch==null||typeof touch==='object'&&!Array.isArray(touch)&&

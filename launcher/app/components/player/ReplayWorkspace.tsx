@@ -140,9 +140,10 @@ function ReplaySummary({description: d, game}: {description: ReplayDescription; 
   const {locale,t} = useLocale();
   return <span className="replay-file-summary"><span title={t('replay.ui.playerName')}>{d.name || '—'}</span><span title={t('replay.ui.loadout')}>{replayLoadout(d, game, t)}</span><span title={t('replay.ui.date')}>{replayDate(d,locale)}</span><span title={d.spell ? t('replay.ui.spell') : t('replay.ui.difficulty')}>{d.spell || replayRank(d.difficulty)}</span></span>;
 }
-const replayRank = (difficulty: number) => ['Easy','Normal','Hard','Lunatic','Extra','Phantasm'][difficulty] ?? difficulty;
+const replayRank = (difficulty: number) => difficulty < 0 ? '—' : ['Easy','Normal','Hard','Lunatic','Extra','Phantasm'][difficulty] ?? difficulty;
 const replayDate = (d: ReplayDescription, locale: string) => d.date || (d.timestamp && d.timestamp <= 8.64e12 ? new Date(d.timestamp * 1000).toLocaleDateString(locale) : '—');
 function replayLoadout(d: ReplayDescription, game: keyof typeof PRODUCT_GAMES, t: (key: UiMessageKey) => string) {
+  if(d.character < 0)return '—';
   const product = PRODUCT_GAMES[game], loadouts = 'multiplayer' in product ? product.multiplayer.loadouts : [];
   const loadout = loadouts.find(item => item.character === d.character && item.shot === (d.shot ?? 0));
   return loadout ? t(loadout.labelKey as UiMessageKey) : String(d.character);

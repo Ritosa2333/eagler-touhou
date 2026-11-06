@@ -619,7 +619,7 @@ $('start').addEventListener('click', async () => {
     confirmedMusic = new ConfirmedMusic({command:(ax,hash)=>{
       if((ax>>>8)===0x0c)localSfx?.command(ax);else localBgm.command(ax,hash);
     }});
-    const reportMatch=match=>{if(online&&netQuery.get('role')==='host')globalThis.__eaglerPC98Emit?.({event:'runtime-info',th03Match:match});};
+    const reportMatch=match=>{if(online){replayRecorder?.match(match);if(netQuery.get('role')==='host')globalThis.__eaglerPC98Emit?.({event:'runtime-info',th03Match:match});}};
     matchResults=new ConfirmedMatchResults(reportMatch);
     if(emulator.isNetworkWorker)emulator.onMatch=reportMatch;
     if(emulator.isNetworkWorker)emulator.onAudio=(ax,hash)=>{if((ax>>>8)===0x0c)localSfx?.command(ax);else localBgm?.command(ax,hash);};
@@ -661,7 +661,7 @@ $('start').addEventListener('click', async () => {
       await netplay.synchronize(syncIdentity);
       status('正在确认双方输入缓冲');
       const inputPolicy=await netplay.negotiateInputPolicy({rollbackEnabled});
-      replayRecorder=createRecorder($('screen').querySelector('.player-toolbar'));globalThis.th03Replay=replayRecorder;
+      replayRecorder=createRecorder($('screen').querySelector('.player-toolbar'),{onBattleReplay:replay=>globalThis.__eaglerPC98Emit?.({event:'runtime-info',th03Replay:replay})});globalThis.th03Replay=replayRecorder;
       await replayRecorder.boot({settings:{language:activeLang,difficulty:$('difficulty').value,clock:$('clock').value,rollback:rollbackEnabled,focusEnabled:roomFocusEnabled,touchUnlimitedAllowed:roomTouchUnlimitedAllowed,hostSeat:roomHostSeat},players:2,hostSlot:roomHostSeat,opening:syncIdentity});
       if(netQuery.get('role')==='host')replayRecorder.connectNetwork({room:netQuery.get('room'),token:netQuery.get('token'),runId:Number(netQuery.get('runId'))});
       const options={recorder:replayRecorder,proof:()=>battleProof(emulator,nativePause,controls,nativeMusic,pauseSeat,pauseSelection,hiddenSeats),scene:()=>nativePause.selecting?2:nativeState?.phase===1?1:0,network:netplay,rollbackEnabled,inputDelay:inputPolicy.inputDelay,predictionLead:inputPolicy.predictionLead,snapshotStride:2,onError:report,onState:message=>status(message)};

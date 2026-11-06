@@ -56,7 +56,7 @@ export function runtimeFileNames(game, files) {
   if (names.length > 2048 || product.runtimeAssets.some(name => !Object.hasOwn(files, name))) throw new Error(`${game}: incomplete directory Runtime`);
   for (const name of names) {
     if (product.runtimeFileTree === true && isCanonicalRelativePath(name) &&
-        /^(?:[a-z0-9._-]+\/)*[a-z0-9._-]+\.(?:html|js|mjs|css|wasm|json|png|jpe?g|webp|gif)$/i.test(name)) continue;
+        /^(?:[a-z0-9._-]+\/)*[a-z0-9._-]+\.(?:html|js|mjs|css|wasm|json|txt|png|jpe?g|webp|gif)$/i.test(name)) continue;
     if (!isCanonicalRelativePath(name) || !(
       name === `${stem}.html` || name === "manifest.json" || name === "runtime-crash-reporter.js" ||
       /^[a-z0-9._-]+\.mjs$/i.test(name) ||

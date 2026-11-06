@@ -106,6 +106,7 @@ export interface BrowserSessionSnapshot {
   th09NetworkOverlayOpen: boolean;
   bootTouchPreview: 'touch' | 'touch-hud' | null;
   bootTouchPreviewImage: string | undefined;
+  th03RoomReplays?: ReadonlyArray<{id:string; winner:number; blob:Blob; roomEpoch:number}>;
 }
 /** One document owner. Construction is browser-only and intentionally separate
  * from React render. The permanent iframe is attached once by its callback ref. */
@@ -608,6 +609,14 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (message.event === 'network-request') titleNetwork.open();
       if (message.event === 'runtime-info' && message.netplayTiming) {calibration.record(message.netplayTiming, runtime!.getSnapshot().epoch ?? 0); roomSession?.service.acceptMeasuredTiming(message.netplayTiming);}
       if (message.event === 'runtime-info' && (message.th09Match || message.th03Match)) roomSession?.service.acceptTh09Match(message.th09Match || message.th03Match);
+      if (message.event === 'runtime-info' && message.th03Replay && typeof message.th03Replay === 'object') {
+        const value = message.th03Replay as {id?:unknown; winner?:unknown; blob?:unknown}, room = roomSession?.service.getSnapshot();
+        if (room?.room && room.product === 'th03mp' && typeof value.id === 'string' && /^[a-f0-9]{32}$/.test(value.id) &&
+            (value.winner === 0 || value.winner === 1) && value.blob instanceof Blob && value.blob.size > 0 && value.blob.size <= 48 * 1024 * 1024) {
+          const previous = (snapshot.th03RoomReplays ?? []).filter(item => item.roomEpoch === room.epoch);
+          if (!previous.some(item => item.id === value.id)) publish({th03RoomReplays:[...previous,{id:value.id,winner:value.winner,blob:value.blob,roomEpoch:room.epoch}]});
+        }
+      }
       if (message.event === 'notice' && typeof message.message === 'string' && message.message) feedback.toast(message.message);
       if (message.event === 'room-menu' && runtime?.getSnapshot().roomPreview && !runtime.getSnapshot().launched) {
         void nativeTouch.exitPlayerFullscreen().catch(reportError);
@@ -1163,6 +1172,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   let spectatorEntry = '';
   const unsubscribeRoom = room.service.subscribe(() => {
     const current = room.service.getSnapshot();
+    if (snapshot.th03RoomReplays?.length && (!current.room || snapshot.th03RoomReplays[0].roomEpoch !== current.epoch)) publish({th03RoomReplays:[]});
     if (roomSettingsBaseline && (!current.room || current.epoch !== roomSettingsBaseline.epoch)) {
       roomSettingsBaseline = null;
       publish({roomReloadPending: false});

@@ -13,6 +13,7 @@ import {fingerprint} from './replay/tape.js';
 import {userPath} from './managed-storage.mjs';
 import {extractOriginalPmd} from './pmd-archives.mjs';
 import {PmdPlayer} from './pmd-player.mjs';
+import {downloadReplay} from './replay/download.js';
 
 let canvas=document.getElementById('canvas');
 const replaySources=['../direct-drag.js','../player-ui.js','../solo.js','../solo-worker.js','../solo-worker-client.js','../dosbox-adapter.js','../solo-assist.js','../solo-assist.json',
@@ -23,8 +24,8 @@ const keys={1:['ArrowUp','ArrowUp',38],2:['ArrowDown','ArrowDown',40],4:['ArrowL
   16:['KeyX','x',88],32:['KeyZ','z',90],128:['Escape','Escape',27],256:['Enter','Enter',13]};
 const versusKeys=[{1:'KeyT',2:'KeyB',4:'KeyF',8:'KeyH',16:'KeyX',32:'KeyZ'},
   {1:'Numpad8',2:'Numpad2',4:'Numpad4',8:'Numpad6',16:'ArrowRight',32:'ArrowLeft'}];
-let emulator,assist,soloMusic,localSfx,recorder,lang,previous=0,loop=0,playback=false,pauseState=null,pauseTransition=false,guestPaused=false,pauseRequestHandled=false;
-const fire=new FireControl(),secondFire=new FireControl(),writes=new Set();let versusHeld=new Set(),lastVersus=false;
+let emulator,assist,soloMusic,localSfx,recorder,battleReplay,viewerSettings,playbackPath,playbackDescription,lang,previous=0,loop=0,playback=false,pauseState=null,pauseTransition=false,guestPaused=false,pauseRequestHandled=false,scoreOffer=null,lastReplayStatus=0,lastReplayKey='';
+const fire=new FireControl(),secondFire=new FireControl();let versusHeld=new Set(),lastVersus=false;
 const report=error=>globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});
 function pausePointer(message){
   const state=emulator?.snapshot.state;if(state?.phase!==2)return false;
@@ -39,8 +40,15 @@ function canvasPausePointer(event){
   const box=canvas.getBoundingClientRect();pausePointer({type:'up',x:(event.clientX-box.left)/box.width,y:(event.clientY-box.top)/box.height});
 }
 async function saveReplay(blob){
-  const task=globalThis.__eaglerPC98Files.write(`replay/th03_${Date.now()}_${crypto.randomUUID().slice(0,8)}.th03r`,await blob.arrayBuffer());
-  writes.add(task);try{await task;}finally{writes.delete(task);}
+  downloadReplay(blob,`th03-${Date.now()}.th03r`);
+}
+function scoreSaved(){
+  const recording=recorder,current=emulator;
+  if(!recording||scoreOffer||!recording.state.ready)return;
+  scoreOffer=(async()=>{
+    if(window.confirm('是否保存本局 Replay？'))await saveReplay(await recording.save());
+    if(emulator===current&&recorder===recording)await recording.rearm();
+  })().catch(report).finally(()=>{scoreOffer=null;});
 }
 function send(bits){
   for(const [mask,[code,key,keyCode]] of Object.entries(keys))if(!!(previous&mask)!==!!(bits&mask)){
@@ -65,7 +73,7 @@ function tick(now){
   if(!paused||!state.command)pauseRequestHandled=false;
   if(paused!==guestPaused){guestPaused=paused;releaseInput();if(paused){soloMusic?.suspend();void localSfx?.context.suspend();}else{soloMusic?.resume();void localSfx?.resume().catch(()=>{});}}
   const sample=globalThis.__eaglerPC98Input.sample({play:state?.phase===1});
-  if(paused&&state.command&&!pauseTransition&&!pauseRequestHandled){pauseRequestHandled=true;pauseState=state;send(0);transition(state.command===1,state.command===3);}
+  if(!playback&&paused&&state.command&&!pauseTransition&&!pauseRequestHandled){pauseRequestHandled=true;pauseState=state;send(0);transition(state.command===1,state.command===3);}
   if(emulator.state==='running'&&!playback){
     const playing=state?.phase===1,input=globalThis.__eaglerPC98Input;
     let bits=sample;
@@ -93,22 +101,28 @@ async function syncFiles(){
   }
 }
 async function returnToTitle(save,restart=false,current=emulator){
-  const recording=recorder;if(recording?.state.failed&&!save){recording.dispose();recorder=undefined;}else if(recording){recording.finish();const until=performance.now()+10000;while(emulator===current&&!recording.state.ready&&!recording.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(emulator!==current)return;if(!recording.state.ready)throw Error('录像未能完成');if(save)await managedAPI.saveRecording();if(emulator!==current)return;await recording.rearm();}
+  const recording=recorder;if(recording?.state.failed){recording.dispose();recorder=undefined;}else if(recording){recording.finish();const until=performance.now()+10000;while(emulator===current&&!recording.state.ready&&!recording.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(emulator!==current)return;if(recording.state.failed){recording.dispose();recorder=undefined;}else if(!recording.state.ready)throw Error('录像未能完成');else if(!save)await recording.rearm();}
   if(emulator!==current)return;const generation=pauseState?.generation;
-  await syncFiles();if(emulator!==current)return;if(!await emulator.call('soloQuit',[generation,restart,pauseState?.at]))throw Error('当前对局无法退出');if(emulator!==current)return;
+  await syncFiles();if(emulator!==current)return;if(!await emulator.call('soloQuit',[generation,restart,pauseState?.at,save&&!restart]))throw Error('当前对局无法退出');if(emulator!==current)return;
   globalThis.__eaglerPC98Input.clear();emulator.run();canvas.focus();
 }
 async function naturalExit(){
   soloMusic?.reset();
-  await Promise.allSettled([...writes]);
+  if(scoreOffer)await scoreOffer;
   try{await syncFiles();}finally{globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 }
 async function start({language,music,options}){
+  if(options.replayViewer&&!options.replayPath){viewerSettings={language,music};playback=true;return;}
   lang=language==='ja'?'jp':'cn';playback=!!options.replayPath;
   let replay;
   if(playback){
     const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(options.replayPath));
     if(!bytes)throw Error('录像不存在');
+    if(new TextDecoder().decode(bytes.subarray(0,8))==='P98TAPE1'){
+      const [{decodeTape},{startBattleReplay}]=await Promise.all([import('./replay/tape.js'),import('./managed-battle-replay.mjs')]);
+      const tape=await decodeTape(new Blob([bytes]));if(tape.header.game!=='03'||tape.header.players!==2)throw Error('录像作品或模式不匹配');
+      battleReplay=await startBattleReplay({tape,canvas,music,onError:report,onStatus:state=>publishBattleStatus(state)});return;
+    }
     replay=await decodeExternalReplay(new Blob([bytes]),'03');
     if(replay.header.identity!==await fingerprint(replaySources))throw Error('Replay 与当前游戏或模拟器版本不一致');
     lang=replay.header.language;
@@ -148,6 +162,7 @@ async function start({language,music,options}){
     SampleHz:44100,SNDboard:4,nativeSoloAudio:false,independentSfx:!!localSfx,no_mouse:true,use_menu:false,fontfile:lang==='cn'?'font_cn.bmp':'font.bmp',
     onDiskChange:()=>{},onExit:()=>void naturalExit().catch(report)};
   emulator=await WorkerNP21.create(config,{game:'03',patch:assist.bridge.meta,music:soloMusic?.reader.patch,onError:report});
+  emulator.onScoreSaved=scoreSaved;
   globalThis.__eaglerPC98Input.menuPointer=pausePointer;canvas.addEventListener('pointerup',canvasPausePointer);window.addEventListener('blur',releaseInput);document.addEventListener('visibilitychange',onVisibilityChange);
   recorder?.attach(emulator);
   emulator.onMusic=(ax,hash)=>{if((ax>>>8)===0x0c)localSfx?.command(ax);else soloMusic?.player.command(ax,hash);};
@@ -156,7 +171,7 @@ async function start({language,music,options}){
 }
 export const managedAPI={
   start,
-  health(){return {gameFrame:emulator?.snapshot?.state?.ticks,frames:emulator?.module.frameUploads??0,audio:{state:emulator?.context?.state,music:soloMusic?.player.active?.id??null,musicStatus:soloMusic?.player.status??null,
+  health(){if(battleReplay)return battleReplay.health();if(viewerSettings&&!emulator)return {frames:1,audio:{state:'running'}};return {gameFrame:emulator?.snapshot?.state?.ticks,frames:emulator?.module.frameUploads??0,audio:{state:emulator?.context?.state,music:soloMusic?.player.active?.id??null,musicStatus:soloMusic?.player.status??null,
     effectsPlayed:localSfx?.played??0,effectsPeak:localSfx?.peak??0,queuedMs:Math.max(0,((emulator?.audioEnd??0)-(emulator?.context?.currentTime??0))*1000)}};},
   async files(message){
     const store=globalThis.__eaglerPC98Files;
@@ -164,14 +179,38 @@ export const managedAPI={
     if(message.command==='list'){await syncFiles();return {files:[...store.memory].map(([path,bytes])=>({path,size:bytes.byteLength}))};}
     const path=userPath(message.path);
     if(message.command==='read'){await syncFiles();const bytes=store.memory.get(path);if(!bytes)throw Error('文件不存在');return {bytes:Array.from(bytes)};}
-    if(emulator)throw Error('请退出游戏后管理文件');
+    if(emulator||battleReplay)throw Error('请退出游戏后管理文件');
     if(message.command==='remove'){await store.remove(path);return {};}
     if(message.command==='write'){await store.write(path,new Uint8Array(message.bytes));return {};}
     throw Error('用户文件操作无效');
   },
   async saveRecording(){if(!recorder?.state.ready)return null;return saveReplay(await recorder.save());},
   finishRecording(){recorder?.finish();},
-  playback(message){if(emulator)throw Error('请先结束本局');return start({language:'ja',music:'ogg',options:{replayPath:message.path}});},
+  async playback(message){
+    if(!viewerSettings)throw Error('请先打开录像工作台');
+    if(message.action==='inspect'||message.action==='open'){
+      const path=userPath(message.path),bytes=globalThis.__eaglerPC98Files.memory.get(path);if(!bytes)throw Error('录像不存在');
+      const blob=new Blob([bytes]),battle=new TextDecoder().decode(bytes.subarray(0,8))==='P98TAPE1';
+      const value=battle?await (await import('./replay/tape.js')).decodeTape(blob):await decodeExternalReplay(blob,'03');
+      if(value.header.game!=='03')throw Error('录像作品不匹配');
+      const difficulty=battle&&Number.isInteger(Number(value.header.settings.difficulty))?Number(value.header.settings.difficulty):-1;
+      const description={name:'',character:-1,difficulty,stages:[{id:0,label:'Replay',score:null,...(battle?{frames:value.rows.length-value.matchStart}:{})}]};
+      if(message.action==='inspect')return {description};
+      const settings=viewerSettings;managedAPI.stop();viewerSettings=settings;playbackPath=path;playbackDescription=description;
+      await start({...settings,options:{replayPath:path}});
+      if(battleReplay)publishBattleStatus(battleReplay.status(),true);
+      return {};
+    }
+    if(battleReplay){battleReplay.control(message.action,message.value);return {};}
+    if(emulator&&['pause','play'].includes(message.action)){emulator.pauseReplay(message.action==='pause');return {};}
+    throw Error('录像操作无效');
+  },
   stop(){cancelAnimationFrame(loop);releaseInput();previous=0;lastVersus=false;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);window.removeEventListener('blur',releaseInput);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
-    recorder=localSfx=soloMusic=undefined;const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;},
+    battleReplay?.stop();battleReplay=undefined;viewerSettings=playbackPath=playbackDescription=undefined;lastReplayStatus=0;lastReplayKey='';recorder=localSfx=soloMusic=undefined;const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;},
 };
+function publishBattleStatus(state,force=false){
+  if(!playbackPath)return;
+  const now=performance.now(),key=[state.paused,state.seeking,state.target,state.rate,state.ended].join(':');
+  if(!force&&key===lastReplayKey&&now-lastReplayStatus<250)return;lastReplayStatus=now;lastReplayKey=key;
+  globalThis.__eaglerPC98Emit({event:'runtime-info',playback:{kind:'replay',path:playbackPath,description:playbackDescription,difficulty:playbackDescription.difficulty,left:-1,right:-1,stage:0,...state}});
+}

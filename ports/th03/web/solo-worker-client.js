@@ -71,6 +71,7 @@ export class WorkerNP21 {
       for(const cost of data.costs)this.module.observeLocalFrame?.(cost);
       for(const [ax,hash]of data.events)this.onMusic?.(ax,hash);
     }else if(data.type==='diskChange')this.config.onDiskChange?.(data.name);
+    else if(data.type==='scoreSaved')this.onScoreSaved?.();
     else if(data.type==='exit'){this.state='exited';this.flushAudio();this.config.onExit?.();}
   }
   async pumpAudio(){

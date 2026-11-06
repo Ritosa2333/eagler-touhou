@@ -77,9 +77,38 @@ export async function encodeTape(tape){
   const payload=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
   const header=new TextEncoder().encode('P98TAPE1'+await digest(payload));return new Blob([header,payload],{type:'application/octet-stream'});
 }
+// Encode a confirmed match without expanding the entire session into JS
+// objects. Published prefix bytes never change, even when the live buffer grows.
+export async function encodeBattleMatch(tape,start,end){
+  if(!(tape instanceof ConfirmedTape)||tape.header.game!=='03'||tape.header.adapter!=='confirmed-worker/1'||tape.header.players!==2||
+    !Number.isInteger(start)||!Number.isInteger(end)||start<0||start>=end||end>tape.length)throw Error('对战录像范围无效');
+  const encoder=new TextEncoder(),data=tape.data,offsets=tape.offsets,byteEnd=end===tape.length?tape.used:offsets[end];
+  const head=encoder.encode('{"header":'+JSON.stringify(tape.header)+',"rows":[');
+  const tail=encoder.encode('],"matchStart":'+start+',"end":{"frame":'+end+',"reason":"对局结束"}}');
+  if(head.length+byteEnd+Math.max(0,end-1)+tail.length>MAX_RAW)throw Error('录像超过容量');
+  let index=-1;
+  const stream=new ReadableStream({pull(controller){
+    if(index===-1){index=0;controller.enqueue(head);return;}
+    if(index===end){index++;controller.enqueue(tail);controller.close();return;}
+    const chunks=[];let size=0;
+    while(index<end){
+      const begin=offsets[index],finish=index+1===end?byteEnd:offsets[index+1],length=finish-begin+(index?1:0);
+      if(size&&size+length>65536)break;
+      chunks.push({begin,finish,comma:index>0});size+=length;index++;
+    }
+    const output=new Uint8Array(size);let at=0;
+    for(const chunk of chunks){if(chunk.comma)output[at++]=44;output.set(data.subarray(chunk.begin,chunk.finish),at);at+=chunk.finish-chunk.begin;}
+    controller.enqueue(output);
+  }});
+  const payload=new Uint8Array(await new Response(stream.pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  const envelope=encoder.encode('P98TAPE1'+await digest(payload));return new Blob([envelope,payload],{type:'application/octet-stream'});
+}
 export function validateTape(tape){
-  if(tape?.header?.game!=='01'||tape?.header?.adapter!=='native-local/1'||tape?.header?.players!==1)throw Error('多人 Replay 文件已停用；多人仅支持实时旁观');
+  const solo=tape?.header?.game==='01'&&tape?.header?.adapter==='native-local/1'&&tape?.header?.players===1;
+  const battle=tape?.header?.game==='03'&&tape?.header?.adapter==='confirmed-worker/1'&&tape?.header?.players===2;
+  if(!solo&&!battle)throw Error('录像作品或模式不受支持');
   validateHeader(tape?.header);if(!Array.isArray(tape.rows)||tape.rows.length>MAX_FRAMES||tape.end?.frame!==tape.rows.length||typeof tape.end.reason!=='string')throw Error('录像长度或结尾无效');
+  if(battle&&(!Number.isInteger(tape.matchStart)||tape.matchStart<0||tape.matchStart>=tape.rows.length))throw Error('对战录像起点无效');
   tape.rows.forEach((r,f)=>validateRow(r,tape.header,f));
   if(tape.points!==undefined){
     if(!Array.isArray(tape.points)||tape.points.length>128)throw Error('录像检查点索引无效');let previous=-1,total=0;

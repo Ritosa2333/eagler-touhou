@@ -25,7 +25,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const {t} = useLocale(), {service, network, context, assetUrl} = props;
   const state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   useSyncExternalStore(network.subscribe, network.getSnapshot, network.getSnapshot);
-  const [tab, setTab] = useState<'chat'|'game'>('chat');
+  const [tab, setTab] = useState<'chat'|'game'|'replay'>('chat');
   const [narrow, setNarrow] = useState(false);
   const [loungeHost, setLoungeHost] = useState<HTMLDivElement | null>(null);
   const [playbackHost, setPlaybackHost] = useState<HTMLDivElement | null>(null);
@@ -66,11 +66,12 @@ export function RoomWorkspace(props: RoomViewProps) {
         <div className="room-workspace-top-actions"><UiButton size="lg" className="mp-room-code mp-room-top-action" id="mpCopyRoomCode" type="button" aria-label={t('multiplayer.copyRoomCode')} onClick={()=>{void props.onCopyRoomCode(room.code);}}><span className="mp-room-code-label">{t('multiplayer.roomCode')}</span><strong id="mpRoomCode">{room.code}</strong>{icon('room-copy')}</UiButton>
           <UiButton size="lg" className="mp-room-top-action" id="mpSettingsRoomDrawerToggle" type="button" aria-label={t('settings.title')} aria-expanded={props.settingsOpen} aria-controls="mpSettingsRoomDrawer" disabled={locked} onClick={props.onOpenSettings}>{icon('room-gear-six')}<span>{t('room.gameSettingsGroup')}</span></UiButton></div>
       </header>
-      <div className="room-workspace-column"><Tabs value={tab} onValueChange={value=>setTab(value as 'chat'|'game')} asChild><aside className="room-workspace-sidebar"><TabsList asChild><div className="room-workspace-tabs" role="tablist" aria-label={t('multiplayer.gameSettings')}>
-        {(['chat','game'] as const).map(name=><TabsTrigger key={name} value={name} id={`roomWorkspaceTab-${name}`} aria-controls={`roomWorkspacePanel-${name}`}>{t(name==='chat'?'room.quickChat':'multiplayer.gameSettings')}</TabsTrigger>)}
+      <div className="room-workspace-column"><Tabs value={tab} onValueChange={value=>setTab(value as 'chat'|'game'|'replay')} asChild><aside className="room-workspace-sidebar"><TabsList asChild><div className="room-workspace-tabs" role="tablist" aria-label={t('multiplayer.gameSettings')}>
+        {(state.product==='th03mp'?['chat','game','replay'] as const:['chat','game'] as const).map(name=><TabsTrigger key={name} value={name} id={`roomWorkspaceTab-${name}`} aria-controls={`roomWorkspacePanel-${name}`}>{name==='replay'?'Replay':t(name==='chat'?'room.quickChat':'multiplayer.gameSettings')}</TabsTrigger>)}
       </div></TabsList><div className="room-workspace-panels">
         <TabsContent value="chat" forceMount asChild><div className="room-workspace-chat" id="roomWorkspacePanel-chat" role="tabpanel" aria-labelledby="roomWorkspaceTab-chat" hidden={tab!=='chat'}>{props.quickChat && <><RoomQuickChat model={props.quickChat} part="log"/><RoomQuickChat model={props.quickChat} part="actions"/></>}</div></TabsContent>
         <TabsContent value="game" forceMount asChild><div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings state={state} service={service} hidden={false}/></fieldset><UiButton variant="quiet" size="sm" id="mpRoomGuideOpen" type="button" onClick={props.onGuide}>{t('multiplayerGuide.action')}</UiButton></div></TabsContent>
+        {state.product==='th03mp'&&<TabsContent value="replay" forceMount asChild><div id="roomWorkspacePanel-replay" role="tabpanel" aria-labelledby="roomWorkspaceTab-replay" hidden={tab!=='replay'}>{(props.th03Replays??[]).map((replay,index)=><div className="room-replay-row" key={replay.id}><span>#{index+1} · {replay.winner+1}P</span><UiButton size="sm" type="button" onClick={()=>{const url=URL.createObjectURL(replay.blob),link=document.createElement('a');link.href=url;link.download=`th03-match-${index+1}.th03r`;link.click();window.setTimeout(()=>URL.revokeObjectURL(url),30000);}}>{t('action.download')}</UiButton></div>)}</div></TabsContent>}
       </div></aside></Tabs>
       <div className="room-workspace-playback-host" ref={setPlaybackHost}/>
       {!sideLounge && lounge}

@@ -37,7 +37,13 @@ globalThis.__eaglerPC98FileCommands=async message=>{
   if(message.command==='write'){
     if(!Array.isArray(message.bytes)||message.bytes.some(n=>!Number.isInteger(n)||n<0||n>255))throw Error('用户文件字节无效');
     const bytes=new Uint8Array(message.bytes);
-    if(path.endsWith('.th03r')){const {decodeExternalReplay}=await import('./replay/external-codec.js');await decodeExternalReplay(new Blob([bytes]),'03');}
+    if(path.endsWith('.th03r')){
+      const blob=new Blob([bytes]);
+      if(new TextDecoder().decode(bytes.subarray(0,8))==='P98TAPE1'){
+        const {decodeTape}=await import('./replay/tape.js'),tape=await decodeTape(blob);
+        if(tape.header.game!=='03'||tape.header.players!==2)throw Error('录像作品或模式不匹配');
+      }else{const {decodeExternalReplay}=await import('./replay/external-codec.js');await decodeExternalReplay(blob,'03');}
+    }
     await store.write(path,bytes);return {};
   }throw Error('用户文件操作无效');
 };
@@ -58,7 +64,6 @@ async function command(message){
       if(next.musicSource!==undefined&&!['original','akyu'].includes(next.musicSource))throw Error('音乐音源无效');
       for(const key of ['th03FocusEnabled','alwaysHitbox','netplayDisableFocus'])if(next[key]!==undefined&&typeof next[key]!=='boolean')throw Error('运行配置无效');
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
-      if(next.replayViewer)throw Error('此接入预览尚未启用多人观战与录像工作台');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();
       setManagedBgmVersion(next.musicSource ?? 'original');
       options=next;music=message.music;language=nextLanguage;configured=true;
@@ -76,7 +81,8 @@ async function command(message){
         emit({event:'first-frame',launchSerial});return {};
       }
       preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
-      api=multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('03',emit):playerApi;
+      api=options.replayViewer?(await import('./managed-solo.mjs')).managedAPI:multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('03',emit):playerApi;
+      if(options.replayViewer)document.querySelector('#cover')?.setAttribute('hidden','');
       try{await api.start({options,music,language});}catch(error){launched=false;api.stop();throw error;}
       emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});return {};
     case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();api.stop();launched=false;emit({event:'exit',code:0});return {};

@@ -1,11 +1,12 @@
-import {ConfirmedTape,VERSION,encodeTape,fingerprint,randomId,stable} from './tape.js';
+import {ConfirmedTape,VERSION,encodeTape,encodeBattleMatch,fingerprint,randomId,stable} from './tape.js';
 import {GAME,SOURCE_PATHS} from './profile.js';
 import {publishNetwork} from './network.js';
 import {LOCAL_CHUNK,pointSize,pointIndex} from './local-points.js';
 // Every public operation isolates failures from the player's execution loop.
-export function createRecorder(toolbar){
+export function createRecorder(toolbar,{onBattleReplay=()=>{}}={}){
   let tape=null,error='',channel=null,roomChannel=null,publisher=null,builder=null,pointError='',points=[],network=null,closed=false,localSolo=false;
   let id=randomId();
+  let matchStart=0,matchQueue=[],matchSeen=new Set(),exportQueue=Promise.resolve();
   const watch=document.createElement('a'),info=document.createElement('span');
   watch.textContent='同浏览器观战';watch.target='_blank';watch.rel='noopener';watch.hidden=true;
   watch.href=new URL('../replay.html?watch='+id,import.meta.url).href;
@@ -22,6 +23,7 @@ export function createRecorder(toolbar){
       try{
         network?.stop();publisher?.stop();builder?.stop();channel?.close();roomChannel?.close();
         network=publisher=builder=channel=roomChannel=null;points=[];pointError=error='';closed=false;
+        matchStart=0;matchQueue=[];matchSeen=new Set();exportQueue=Promise.resolve();
         id=randomId();watch.href=new URL('../replay.html?watch='+id,import.meta.url).href;
         remote.hidden=true;upload.textContent='';
         const identity=await fingerprint(SOURCE_PATHS);if(closed)return;
@@ -55,7 +57,12 @@ export function createRecorder(toolbar){
     },
     stage:(frame,row)=>guard(()=>{if(!tape)return;if(frame<tape.length){if(stable(row)!==stable(tape.row(frame)))throw Error('已确认录像在分组回滚时改变');return;}tape.stage(frame,row);}),
     rewind:frame=>guard(()=>tape?.rewind(Math.max(frame,tape.length))),
-    confirm:(prefix,dirty)=>guard(()=>{tape?.confirm(prefix,dirty);builder?.kick();network?.kick();publisher?.kick();}),
+    confirm:(prefix,dirty)=>guard(()=>{tape?.confirm(prefix,dirty);drainMatches();builder?.kick();network?.kick();publisher?.kick();}),
+    match(result){guard(()=>{
+      const frame=result?.start;
+      if(!Number.isInteger(frame)||frame<0||![0,1].includes(result?.winner)||matchSeen.has(frame))return;
+      matchSeen.add(frame);matchQueue.push({end:frame+1,winner:result.winner});matchQueue.sort((a,b)=>a.end-b.end);drainMatches();
+    });},
     finish:reason=>guard(()=>{tape?.finish(reason);builder?.finish();network?.kick();publisher?.kick();}),
     connectNetwork(identity){guard(()=>{if(!tape||tape.header.adapter!=='confirmed-worker/1'||network||closed)return;network=publishNetwork(tape.header,()=>tape,()=>tape.end,identity,{getPoints:()=>({points,done:!builder||builder.done}),onLink:url=>{remote.href=url;remote.hidden=false;},onStatus:text=>{remote.title=text;upload.textContent=' · '+text;}});});},
     async sealPublisher(timeout=2000){return publisher?publisher.seal(timeout):true;},
@@ -78,4 +85,14 @@ export function createRecorder(toolbar){
     get ended(){return !tape||!!tape.end;},
     close(){closed=true;tape?.finish('观战来源关闭');channel?.close();roomChannel?.close();builder?.stop();network?.stop();publisher?.stop();}
   };
+  function drainMatches(){
+    while(tape&&matchQueue.length&&matchQueue[0].end<=tape.length){
+      const {end,winner}=matchQueue.shift(),boundary=matchStart;
+      if(end<=boundary)continue;
+      matchStart=end;
+      let start=boundary;for(let frame=boundary;frame<end;frame++)if(tape.row(frame).scene===1){start=frame;break;}
+      const source=tape;
+      exportQueue=exportQueue.then(async()=>onBattleReplay({id:randomId(),winner,blob:await encodeBattleMatch(source,start,end)})).catch(e=>{pointError='Replay 保存失败：'+String(e.message||e);update();});
+    }
+  }
 }

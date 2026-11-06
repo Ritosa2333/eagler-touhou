@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id),ctx=$('canvas').getContext('2d',{alpha:f
 let header=null,rows=[],end=null,replica=null,paused=false,target=null,epoch=0,channel=null,poll=null,available=0,loading=false,failed=false,latest=false;
 const viewer=randomId();let expectedHeader='',lastReply=performance.now(),receivedBytes=0;
 let audio,soundEnabled=false;
-let points=[],bootAbort,network,joinStarted=false,sceneIndex='';
+let points=[],bootAbort,network,joinStarted=false,sceneIndex='',playbackStart=0;
 function status(text){$('status').textContent=text;}
 function update(){const frame=replica?.frame||0;$('seek').max=rows.length;$('seek').value=frame;$('frame').max=rows.length;$('position').textContent=`${frame} / ${rows.length}${end?' · 片段结束':''}`;$('pause').textContent=paused?'继续':'暂停';
   const index=stable(points.filter(p=>p.frame<=rows.length).map(p=>[p.frame,p.scene]));
@@ -46,14 +46,14 @@ async function boot(token){
     loading=false;update();status('回放已就绪');
   }catch(e){if(token===epoch)fail(e);}
 }
-async function load(data){cancel();clearInterval(poll);channel?.close();network?.stop();channel=null;expectedHeader='';receivedBytes=0;header=data.header;rows=data.rows;points=data.points||[];end=data.end;available=rows.length;paused=false;target=null;failed=false;latest=false;await boot(epoch);update();}
-if(GAME==='01'&&$('file'))$('file').onchange=async event=>{try{
+async function load(data){cancel();clearInterval(poll);channel?.close();network?.stop();channel=null;expectedHeader='';receivedBytes=0;header=data.header;rows=data.rows;points=data.points||[];end=data.end;available=rows.length;playbackStart=data.matchStart||0;$('seek').min=playbackStart;$('frame').min=playbackStart;paused=false;target=playbackStart||null;failed=false;latest=false;await boot(epoch);update();}
+if((GAME==='01'||GAME==='03')&&$('file'))$('file').onchange=async event=>{try{
   const file=event.target.files[0];if(!file)return;const data=await decodeTape(file);
-  if(data.header.game!==GAME||data.header.adapter!=='native-local/1'||data.header.players!==1)throw Error('TH01 仅支持单人 Replay 文件；多人历史只能通过旁观链接观看');
+  if(data.header.game!==GAME)throw Error('录像作品不匹配');
   await load(data);
 }catch(e){fail(e);}};
 function seekTo(value){
-  if(!header||failed||!Number.isSafeInteger(value)||value<0||value>rows.length)return;
+  if(!header||failed||!Number.isSafeInteger(value)||value<playbackStart||value>rows.length)return;
   target=value;latest=false;paused=false;const point=points.filter(p=>p.frame<=target).at(-1);
   if(loading||!replica||target<replica.frame||point&&point.frame>replica.frame){cancel();void boot(epoch);}update();
 }
