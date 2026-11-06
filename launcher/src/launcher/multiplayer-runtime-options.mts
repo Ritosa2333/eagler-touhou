@@ -258,7 +258,7 @@ export function buildMultiplayerRuntimeOptions(
     netplaySpectatorId: spectator ? input.spectatorId : '',
     netplaySpectatorCount: Math.max(0, Number(input.spectatorCount) || 0),
     ...(input.spectatorTimeline === true ? { netplaySpectatorTimeline: true } : {}),
-    ...(roomProduct === 'th09mp' && !spectator ? {
+    ...(['th09mp','th19mp'].includes(roomProduct) && !spectator ? {
       netplayReplayAutoSave: input.replayAutoSave !== false,
       netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
     } : {}),

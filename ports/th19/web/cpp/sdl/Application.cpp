@@ -1,3 +1,4 @@
+#include "ReplayInput.hpp"
 #include "WorldCheckpoint.hpp"
 #include "ResourceCrypt.hpp"
 #include "Lzss.hpp"
@@ -135,6 +136,10 @@ i32 g_help_anim_next = 0;   // 动画结束动作：1=下一页 2=上一页 3=�
 // eagler-host 协议状态（在 loop 之前定义，供 loop 读取）
 static bool g_loop_started = false;
 static bool g_loop_paused = false;
+static bool g_exit_requested = false;
+static u32 g_played_frames=0;
+static th19::ReplayInput g_replay_input;
+static bool g_replay_keys[512]{};
 static th19::FixedStep g_fixed_step;
 static bool g_skip_present=false;
 
@@ -155,6 +160,7 @@ static u32 g_network_frame=0;
 static bool g_network_unlimited[2]{};
 static float g_network_motion_x[2]{},g_network_motion_y[2]{};
 const bool* game_keyboard_state(){
+    if(g_replay_input.playing)return g_replay_keys;
     static const bool neutral[512]{};
     static bool mapped[512]{};
     if(g_network_active)return neutral;
@@ -459,6 +465,7 @@ i32 g_key_mode = 0;          // KeyConfig 0=Controller Select 1=按键绑定列�
 float g_story_cursor = 0.0f;   // Story 难度列表滑动游标
 float g_vs_cursor = 0.0f;      // VS 菜单列表滑动游标
 i32 g_story_difficulty = 0;   // 选中的难度 0-3（Story 难度选择后存档）
+i32 g_story_menu_difficulty = 1; // Remember Story's cursor independently of VS/network matches.
 i32 g_vs_mode = 0;            // 0 story, 1 local VS CPU (VS menu selection)
 i32 g_vs_player_select=0;     // 0=1P vs CPU, 1=1P vs 2P
 i32 g_vs_rule_confirmed=0;
@@ -471,6 +478,7 @@ bool g_vs_first_confirmed=false;bool g_vs_second_confirmed=false;int g_vs_match_
 th19::VsMatch g_vs_match;bool g_battle_timeout=false;
 int g_vs_rules[7]={0,1,1,4,4,1,1};bool g_vs_rule_edit=false;int g_vs_rule_pending=0;
 i32 g_vs_rule_time=5,g_vs_rule_round=1,g_vs_rule_card=0,g_vs_rule_p1life=5,g_vs_rule_p2life=5;
+bool g_vs_random_reveal=false;
 i32 g_char_sel = 0;           // 角色选择页选中角色 0-18
 // 角色选择 19 角色 4 方向邻接表（原版 DAT_005a9c18，表序 [上,下,左,右]，位 0x10/0x20/0x40/0x80）
 // 蜂窝导航：上下走对角、左右走同排；首尾 2 角色行左右回绕到唯一邻位
@@ -480,9 +488,16 @@ static const i32 CHAR_NAV[19][4] = {
     {7, 13, 9, 8}, {8, 14, 13, 12}, {9, 15, 11, 13}, {10, 16, 12, 11}, {11, 17, 16, 15},
     {12, 18, 14, 16}, {13, 18, 15, 14}, {14, 0, 18, 18}, {16, 1, 17, 17}
 };
+// EXE DAT_005a9ad8: VS navigation includes Random (19).
+static const i32 VS_CHAR_NAV[20][4] = {
+ {17,2,1,1},{18,4,0,0},{0,5,4,3},{1,6,2,4},{1,7,3,2},
+ {2,8,7,6},{3,9,5,7},{4,10,6,5},{5,11,10,9},{6,12,8,10},
+ {7,13,9,8},{8,14,13,12},{9,15,11,13},{10,16,12,11},{11,17,16,15},
+ {12,18,14,16},{13,19,15,14},{14,0,19,18},{15,1,17,19},{16,1,18,17}
+};
 // 角色选择 19 图标六边形坐标（父锚点 script#76 pos=(640,200)）
-static const float CH_CX[19] = {576,704, 512,640,768, 576,704,832, 512,640,768, 448,576,704, 512,640,768, 576,704};
-static const float CH_CY[19] = {200,200, 312,312,312, 424,424,424, 536,536,536, 648,648,648, 760,760,760, 872,872};
+static const float CH_CX[20] = {576,704, 512,640,768, 576,704,832, 512,640,768, 448,576,704, 512,640,768, 576,704,832};
+static const float CH_CY[20] = {200,200, 312,312,312, 424,424,424, 536,536,536, 648,648,648, 760,760,760, 872,872,872};
 // 角色选择页入场动画（原版 title.anm 脚本）
 i32 g_charsel_frame = 0;       // 进入角色选择后的帧计数（标题滑入/图标入场/光标弹出/Clear展开）
 i32 g_cursor_select = 0;       // 选择动画剩余帧（Z 按下：切 cursor1pd 按下态 + 缩放 1.5→1）
@@ -565,7 +580,9 @@ std::unordered_map<i32,th19::AnmScriptLoc> g_ability_scripts;
 std::vector<int> g_owned_cards;
 std::vector<int> g_opponent_cards;
 const std::vector<int>& player_cards(int side){return side?g_opponent_cards:g_owned_cards;}
-std::vector<th19::AnmVm> g_owned_card_vms;
+std::vector<th19::AnmVm> g_owned_card_vms,g_opponent_card_vms;
+bool g_opponent_cards_dim=false;
+int g_opponent_cards_draw_frame=-1;
 bool g_cards_dim=false;
 int g_cards_draw_frame=-1;
 int g_card_reward=-1,g_card_reward_frame=0,g_card_reward_exit=-1;
@@ -711,6 +728,8 @@ th19::AnmVm g_focus_vm[2];
 th19::AnmVm g_barrier_vm[2],g_charge_pattern[2],g_region_vm[2];
 th19::AnmVm g_gauge_markers[2][8];
 th19::AnmVm g_gauge_particles[2];
+th19::AnmVm g_gauge_warning[2];
+bool g_gauge_warning_active[2]{};
 int g_gauge_marker_state[2][4]={};
 th19::AutoBarrier g_barrier[2];
 th19::PlayerBomb g_bombs[2];
@@ -1111,7 +1130,7 @@ i32 g_end_loaded_id = -1;               // 当前台词行号
 // 进入子界面：绑定该界面的标题条/图标脚本。返回 false 表示无需额外脚本（Option）。
 void init_vs_cards(int side){
  load_ability_cards();auto&list=g_vs_card_vms[side];list.clear();
- if(g_vs_rules[2]<2)return;
+ if(g_vs_rules[2]<2||!character_available(side?g_opp_sel:g_char_sel))return;
  const bool all=g_vs_rules[2]==3;const int count=all?39:2;
  auto it=g_card_scripts.find(25);if(it==g_card_scripts.end())return;
  g_vs_cards[side].index%=count;
@@ -1133,13 +1152,21 @@ void start_sub_screen(i32 screen) {
         case SCR_MANUAL:  bind(207); g_help_sel = 0; g_help_page = 0; start_help_menu(); break; // sl_manual 标题条 + 帮助菜单
         case SCR_OPTION:  break;                        // Option 无标题条，标题+内容全部文字渲染（OptionTaskInf / text.anm）
         case SCR_CHARSEL:
-            g_vs_first_confirmed=false;g_vs_second_confirmed=false;g_vs_match_confirm=-1;
+            // 556340: native grid roots76/77 and heading209, not approximated quads.
+            bind(g_vs_mode?77:76);
+            if(!g_sub_vms.empty()){
+                auto&grid=g_sub_vms.front();grid.tick();
+                for(size_t i=0;i<19&&i<grid.children.size();++i)
+                    if(!character_available(int(i)))grid.children[i].interrupt_returning(2);
+            }
+            bind(209);
+            g_vs_first_confirmed=false;g_vs_second_confirmed=false;g_vs_match_confirm=-1;g_vs_random_reveal=false;
             g_vs_cursor_vm[0]={};bind_script(21,g_vs_cursor_vm[0]);
-            if(!character_available(g_char_sel))for(int i=0;i<19;++i)if(character_available(i)){g_char_sel=i;break;}
-            if(!character_available(g_opp_sel))for(int i=0;i<19;++i)if(character_available(i)){g_opp_sel=i;break;}
+            if(g_char_sel<0||g_char_sel>=(g_vs_mode?20:19))g_char_sel=0;
+            if(g_opp_sel<0||g_opp_sel>=20)g_opp_sel=1;
             if(g_vs_mode){
                 init_vs_cards(0);init_vs_cards(1);
-                g_vs_first_confirmed=false;g_vs_second_confirmed=false;g_vs_match_confirm=-1;g_p2_cursor_cx=CH_CX[g_opp_sel];g_p2_cursor_cy=CH_CY[g_opp_sel];
+                g_vs_first_confirmed=false;g_vs_second_confirmed=false;g_vs_match_confirm=-1;g_vs_random_reveal=false;g_p2_cursor_cx=CH_CX[g_opp_sel];g_p2_cursor_cy=CH_CY[g_opp_sel];
                 // 556340 selects 21/22, 21/24, or 23/24 for the three VS entries.
                 const int scripts[2]={g_vs_entry==2?23:21,g_vs_entry==0?22:24};
                 for(int side=0;side<2;++side){
@@ -1353,7 +1380,9 @@ void collect_vm(const th19::AnmVm& vm, float ox = 0.0f, float oy = 0.0f, bool vs
                 u32 a = u32(vm.alpha > 255 ? 255 : vm.alpha);
                 a = u32(a * g_alpha_scale);            // 转场淡出淡入
                 const u32 tint = (a << 24) | (u32(vm.r) << 16) | (u32(vm.g) << 8) | u32(vm.b);
-                emit_quad(vm.layer, ti->second, s, x, y, vm.sx, vm.sy,
+                // Native 4c6910 projects the rotated sprite plane; character
+                // icons rotate around Y, including mirrored negative scale.
+                emit_quad(vm.layer, ti->second, s, x, y, vm.sx*(vm.render_mode==8?std::cos(vm.rot_y):1.f), vm.sy*(vm.render_mode==8?std::cos(vm.rot_x):1.f),
                           vm.anchor_x, vm.anchor_y, tint, vm.rot_z);
             }
         }
@@ -2313,7 +2342,7 @@ void draw_charsel() {
     const float inf_e = inf_t * inf_t;                              // ease-in x²（原版 m1）
 
     // 左：选中角色大立绘 face_plXXbs（原版 script#46 case7：pos(-320,960)→(0,960) 10帧 + 淡入，锚点左下(1,2)，layer29）
-    if(!g_vs_mode){
+    if(!g_vs_mode&&character_available(g_char_sel)){
         const i32 fentry = 34 + g_char_sel;
         auto fit = g_title_tex.find(fentry);
         if (fit != g_title_tex.end() && !g_title[fentry].sprites.empty()) {
@@ -2325,7 +2354,8 @@ void draw_charsel() {
         }
     }
 
-    if(g_vs_mode){for(const auto&vm:g_vs_portrait_vm)collect_vm(vm);
+    // Native roots78/79 include Random's name98 description (159/138).
+    if(g_vs_mode){for(int side=0;side<2;++side)if(character_available(side?g_opp_sel:g_char_sel)||(side?g_opp_sel:g_char_sel)==19)collect_vm(g_vs_portrait_vm[side]);
  for(int side=0;side<2;++side)for(const auto&v:g_vs_card_vms[side])if(v.visible&&v.alpha>0)for(int ei=0;ei<int(g_abcard.size());++ei)for(const auto&sp:g_abcard[ei].sprites)if(int(sp.id)==v.sprite){auto tx=g_abcard_tex.find(ei);if(tx!=g_abcard_tex.end())emit_quad(v.layer,tx->second,sp,(side?1020.f:280.f)+v.x,810+v.y,v.sx,v.sy,v.anchor_x,v.anchor_y,v.color(),v.rot_z);}
  }
 
@@ -2351,42 +2381,11 @@ void draw_charsel() {
     }
 
 
-    // 顶部标题条 sl_player（原版 script#209：sprite123 512×128，锚点下中(0,2)，从 y0 滑到 y128，layer30）
-    {
-        const i32 tentry = 95;
-        auto tit = g_title_tex.find(tentry);
-        if (tit != g_title_tex.end() && !g_title[tentry].sprites.empty()) {
-            const auto& ts = g_title[tentry].sprites[0];
-            th19::AnmSprite sp; sp.id = 0; sp.x = ts.x; sp.y = ts.y; sp.w = ts.w; sp.h = ts.h;
-            float ty = 128.0f;
-            if (g_charsel_frame < 16) ty = 128.0f * float(g_charsel_frame) / 16.0f;
-            emit_quad(30, tit->second, sp, 640.0f, ty, 1.0f, 1.0f, 0, 2, 0xffffffff, 0);
-        }
-    }
-
-    // 六边形图标网格（layer30）：逐行延迟 + 绕Y轴翻转展开(scaleX 0→1, 30帧) + 快速淡入（原版 chara 脚本）
-    for (i32 i = 0; i < 19; ++i) {
-        const i32 entry = character_available(i)?15+i:13; // title.anm scripts27..45 interrupt2 -> sprite23/chara99.png
-        auto it = g_title_tex.find(entry);
-        if (it == g_title_tex.end() || g_title[entry].sprites.empty()) continue;
-        const auto& s = g_title[entry].sprites[0];
-        th19::AnmSprite sp; sp.id = 0; sp.x = s.x; sp.y = s.y; sp.w = s.w; sp.h = s.h;
-        const i32 row = i32((CH_CY[i] - 200.0f) / 112.0f + 0.5f);
-        const i32 t = g_charsel_frame - row * 3;                    // 原版 wait = 行号×3
-        float scx = 1.0f, alpha = 1.0f;
-        if (t < 0) { scx = 0.0f; alpha = 0.0f; }
-        else {
-            if (t < 30) scx = float(t) / 30.0f;                     // 绕Y轴翻转展开
-            if (t < 6) alpha = float(t) / 6.0f;                     // 快速淡入
-        }
-        const u32 base = (i == g_char_sel || (g_vs_mode && i == g_opp_sel)) ? 0xffffff : 0xb0b0b0;
-        const u32 tint = (u32(alpha * 255.0f) << 24) | base;
-        emit_quad(30, it->second, sp, CH_CX[i], CH_CY[i], scx, 1.0f, 0, 0, tint, 0);
-    }
+    // Character grid and heading are original title.anm roots in g_sub_vms.
 
     // 通关标记 rank00 sprite14（原版 script#81：pos(930,290) scale(1,0)→(1,1) 10帧展开，layer35）
     // 显示条件 = 通关标志 0x2eb16（原版 score.dat）；存档未接入前用 g_char_cleared 占位（当前全 false）
-    if (!g_vs_mode && g_char_cleared[g_char_sel]) {
+    if (!g_vs_mode && character_available(g_char_sel) && g_char_cleared[g_char_sel]) {
         const i32 rentry = 4;   // title/rank00.png
         auto rit = g_title_tex.find(rentry);
         if (rit != g_title_tex.end()) {
@@ -2403,7 +2402,7 @@ void draw_charsel() {
     }
 
     // 左侧称号 nameXX（原版 script#118 case7：pos(-50,720)→(270,640) 16帧 ease-in + 淡入，layer34）
-    if(!g_vs_mode){
+    if(!g_vs_mode&&character_available(g_char_sel)){
         const i32 nentry = 53 + g_char_sel;
         auto nit = g_title_tex.find(nentry);
         if (nit != g_title_tex.end() && !g_title[nentry].sprites.empty()) {
@@ -2417,7 +2416,7 @@ void draw_charsel() {
     }
 
     // 右侧介绍 storyXX（原版 script#160 case7：pos(720,580)→(1040,500) 16帧 ease-in + 淡入，layer34）
-    if(!g_vs_mode){
+    if(!g_vs_mode&&character_available(g_char_sel)){
         const i32 sentry = 73 + g_char_sel;
         auto sit = g_title_tex.find(sentry);
         if (sit != g_title_tex.end() && !g_title[sentry].sprites.empty()) {
@@ -2431,12 +2430,12 @@ void draw_charsel() {
     }
 
     // VS uses the original cursor scripts including the CPU label and easing.
-    if(g_vs_mode){
+    if(g_vs_mode&&g_charsel_frame>=15){
         collect_vm(g_vs_cursor_vm[0],g_cursor_cx,g_cursor_cy);
         collect_vm(g_vs_cursor_vm[1],g_p2_cursor_cx,g_p2_cursor_cy);
     }
     // Story shares the native 1P cursor (21), including confirmation interrupt6.
-    if(!g_vs_mode)collect_vm(g_vs_cursor_vm[0],g_cursor_cx,g_cursor_cy);
+    if(!g_vs_mode&&g_charsel_frame>=15)collect_vm(g_vs_cursor_vm[0],g_cursor_cx,g_cursor_cy);
 
 }
 
@@ -2583,7 +2582,9 @@ void draw_charge_gauge(float cx,const th19::ChargeGauge& gauge){
     auto rect=[&](float x,float y,float w,float h,u32 color){th19::AnmSprite sp;sp.w=sp.h=1;emit_quad(34,g_white_tex,sp,x,y,w,h,1,1,color,0);};
     const float left=cx-226, y=912;
     rect(left,y,452,8,0xffffffff);rect(left+1,y+1,450,6,0x80000020);
-    rect(left,y,452.f*gauge.energy/2500,7,0xff2060a8);
+    const int gaugeSide = cx > 640 ? 1 : 0;
+    const auto& warning = g_gauge_warning[gaugeSide];
+    rect(left,y,452.f*gauge.energy/2500,7,warning.stream ? warning.color() : 0xff2060a8);
     if(gauge.charge>0)rect(left,y,452.f*gauge.charge/2500,7,0xffffffff);
     const int side=cx>640?1:0;
     // aura.anm 13 creates six script-14 points per frame; +4 is native
@@ -2676,7 +2677,7 @@ int g_timer_audit[2][8]{};
 struct Timer {th19::AnmVm digits[2];u32 generation=0;int frame=-1,seconds=-1;bool shown=false,dim=false,spell=false;};
 Timer rb_draw_boss_timer_timers[2];
 void draw_boss_timer(int side,float cx){
-    
+
     static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
     if(scripts.empty())for(const auto&e:g_ascii)for(const auto&sc:e.scripts)
         scripts[sc.id]={g_ascii_bytes.data()+e.base+sc.offset,u32(g_ascii_bytes.size()-e.base-sc.offset),&e.scripts};
@@ -2720,6 +2721,8 @@ void draw_boss_timer(int side,float cx){
     glyph(239+hundredths%10,x+(8+7.2f)*GAME_SCALE,y+6*GAME_SCALE,.6f,.6f,v.color(),1,1);
 }
 // 画某个玩家（场 center cx）的 HUD：命数心形 + boom 星形 + 充能槽圆点
+th19::AnmVm rb_draw_field_hud_hearts[2][7];
+int rb_draw_field_hud_heart_labels[2][7]{};
 th19::AnmVm rb_draw_field_hud_stars[2][7];int rb_draw_field_hud_labels[2][7]{};
 u32 rb_draw_field_hud_generation=~0u,rb_draw_field_hud_last[2]{};
 th19::AnmVm rb_draw_field_hud_wins[2][3];int rb_draw_field_hud_counts[2]{};int rb_draw_field_hud_winFrame[2]={-1,-1};
@@ -2753,15 +2756,40 @@ void draw_field_hud(float cx, i32 lives, i32 bombs, i32 charge, i32 fragments) {
     draw_charge_gauge(cx,g_charge[cx>640?1:0]);
     // front.anm script16 selects native layer30 (foreground HUD).
     // Local layer30 is player shots; use the HUD pass shared by gauge rb_draw_field_hud_labels.
-    for(i32 i=0;i<g_life_capacity[cx>640?1:0];++i)draw_front_sprite(i<lives?13:10,cx-16*g_life_capacity[cx>640?1:0]+i*32,32,35,0xffffffff);
+
     // 515200 -> front.anm17 interrupts: stock20/2, active7, fragments18/19, empty3.
     static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
-    
-    
+
+
     if(scripts.empty())for(const auto&e:g_front)for(const auto&sc:e.scripts)
         scripts[sc.id]={g_front_bytes.data()+e.base+sc.offset,u32(g_front_bytes.size()-e.base-sc.offset),&e.scripts};
-    if(rb_draw_field_hud_generation!=g_ecl_generation){for(auto&row:rb_draw_field_hud_labels)for(auto&l:row)l=0;rb_draw_field_hud_generation=g_ecl_generation;}
+    if(rb_draw_field_hud_generation!=g_ecl_generation){for(auto&row:rb_draw_field_hud_labels)for(auto&l:row)l=0;for(auto&row:rb_draw_field_hud_heart_labels)for(auto&l:row)l=0;rb_draw_field_hud_generation=g_ecl_generation;}
     const int side=cx>640?1:0,stock=std::clamp(bombs,0,7);
+    // 0x5141c0 selects front.anm 16 label 7 for the last heart.
+    for (int i = 0; i < g_life_capacity[side]; ++i) {
+        auto& heart = rb_draw_field_hud_hearts[side][i];
+        int& previousLabel = rb_draw_field_hud_heart_labels[side][i];
+        const int label = i >= lives ? 3 : lives == 1 ? 7 : 2;
+        if (previousLabel != label) {
+            if (!previousLabel) {
+                auto script = scripts.find(16);
+                if (script == scripts.end()) continue;
+                heart = {};
+                heart.bind_entry(script->second.stream, script->second.len, &scripts);
+                heart.tick();
+                // Script16 starts hidden (label5). Label4 reveals the stock;
+                // labels2/3/7 only select its sprite/color, not its opacity.
+                heart.interrupt(4);
+                heart.tick();
+            }
+            heart.interrupt(2);
+            heart.tick();
+            heart.interrupt(label);
+            previousLabel = label;
+        }
+        if (!g_paused && rb_draw_field_hud_last[side] != g_frame) heart.tick();
+        draw_front_sprite(heart.sprite, cx - 16 * g_life_capacity[side] + i * 32, 32, 35, heart.color());
+    }
     for(int i=0;i<7;++i){auto&v=rb_draw_field_hud_stars[side][i];
         int label=i<stock?20:i==stock&&g_bombs[side].occupied()?7:
             i==stock+(g_bombs[side].occupied()?1:0)&&fragments>0?17+std::clamp(fragments,1,2):3;
@@ -2779,8 +2807,8 @@ void draw_field_hud(float cx, i32 lives, i32 bombs, i32 charge, i32 fragments) {
 
     // 5142f0: front.anm18, left(32+32*i,16), right(1248-32*i,16).
     // Separate victory rb_draw_field_hud_stars from the bomb stock's front.anm17 instances.
-    
-    
+
+
     if(!g_vs_mode||g_vs_match.round<rb_draw_field_hud_matchRound||g_vs_match.wins[0]+g_vs_match.wins[1]==0){
         rb_draw_field_hud_counts[0]=rb_draw_field_hud_counts[1]=0;rb_draw_field_hud_matchRound=g_vs_match.round;
     }
@@ -3095,7 +3123,7 @@ void start_vs_match(bool newMatch=true) {
         // 0x517790: subsequent rounds reuse the participating side already chosen.
         g_vs_scene_side=g_vs_scene_rng.next()&1;
         g_vs_scene=th19::vsScene(g_char_sel,g_opp_sel,g_vs_scene_side);
-        g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
+        g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_opponent_card_vms.clear();g_cards_draw_frame=g_opponent_cards_draw_frame=-1;g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
         load_ability_cards();
         for(int side=0;side<2;++side){
             const int mode=g_vs_rules[2],character=side?g_opp_sel:g_char_sel;
@@ -3110,7 +3138,16 @@ void start_vs_match(bool newMatch=true) {
     g_story_session.skip_scene();
     g_p1_lives=g_vs_rules[3]+1;g_p2_lives=g_vs_rules[4]+1;g_p1_bombs=g_p2_bombs=3;g_p1_fragments=g_p2_fragments=0;
     g_life_capacity[0]=g_p1_lives;g_life_capacity[1]=g_p2_lives;
-    start_game(!newMatch);play_story_music(g_vs_scene.music);
+    const std::array<th19::ChargeGauge,2> previousCharge{g_charge[0],g_charge[1]};
+    start_game(!newMatch);
+    if (!newMatch) {
+        // EXE 0x518067..0x518109 subtracts two, clamping each rank to 0..7.
+        for (int side = 0; side < 2; ++side) {
+            g_charge[side].ex_level = std::clamp(previousCharge[side].ex_level - 2, 0, 7);
+            g_charge[side].boss_level = std::clamp(previousCharge[side].boss_level - 2, 0, 7);
+        }
+    }
+    play_story_music(g_vs_scene.music);
     g_cpu_automatic=g_vs_entry!=0;g_opponent_controls=0;
     g_game_load_frames=0;g_screen=SCR_GAME;
     // EXE 50efc0: completed wins choose the announcement; draws repeat it.
@@ -3212,7 +3249,7 @@ void start_dialogue() {
     g_vs_mode=0;g_life_capacity[0]=g_life_capacity[1]=5;
     g_story_challenge_run=true;g_story_initial_lives=5;g_story_continues=0;
     g_story_switch.phase=0;
-    g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
+    g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_opponent_card_vms.clear();g_cards_draw_frame=g_opponent_cards_draw_frame=-1;g_card_options.clear();g_card_reward=-1;g_card_reward_exit=-1;
     g_p1_lives=g_p2_lives=5;g_p1_bombs=g_p2_bombs=3;g_p1_fragments=g_p2_fragments=0;g_player_collision_enabled=true;
     g_story_session.begin(th19::STORY_ROUTES[g_char_sel]);
     enter_story_stage();
@@ -3375,7 +3412,7 @@ void start_game(bool preserveMusic) {
     g_cpu_control={};g_cpu_left_control={};g_cpu_left_bits=0;g_cpu_automatic=true;g_cpu_frames=g_cpu_steers=g_cpu_story_events=0;std::fill(std::begin(g_cpu_releases),std::end(g_cpu_releases),0);g_cpu_story.reset(g_story_session.stage_index()+1,g_story_difficulty);g_cpu_difficulty.reset(g_story_difficulty,0);g_attacks[0]={};g_attacks[1]={};g_player_projectiles.clear();g_player_hit_effects.clear();g_shoot_frame=g_opp_shoot_frame=0;g_opponent_controls=0;g_opp_direction=0;g_shot_table={};g_attacks[0].charge_attack={};g_attacks[0].charge_area={};g_attacks[0].charge_area_vm={};g_attacks[0].tsukasa_skill_back={};g_attacks[0].ran_skill={};g_attacks[0].reimu_skills.clear();g_attacks[0].marisa_skills.clear();g_attacks[0].marisa_skill_arrivals=0;g_reflected_flights.clear();g_reflection_arrivals=0;g_reflection_rng={};g_attacks[0].chiyari_skill={};g_attacks[0].chiyari_skill_spawns=0;g_attacks[0].skill_damage_circles.clear();
     {char path[32];std::snprintf(path,sizeof path,"/pl%02d.sht",g_char_sel);std::vector<u8> data;if(read_asset(path,data))g_shot_table.load(data);}
 
-    for(int side=0;side<2;++side){g_charge[side]=th19::ChargeGauge{};char shot[32];std::snprintf(shot,sizeof(shot),"/pl%02d.sht",side?g_opp_sel:g_char_sel);std::vector<u8> data;if(read_asset(shot,data))g_charge[side].load(data);}
+    for(int side=0;side<2;++side){g_charge[side]=th19::ChargeGauge{};char shot[32];std::snprintf(shot,sizeof(shot),"/pl%02d.sht",side?g_opp_sel:g_char_sel);std::vector<u8> data;if(read_asset(shot,data))g_charge[side].load(data);if(g_vs_mode)g_charge[side].initialize_versus_rank(g_story_difficulty);else g_charge[side].initialize_story_rank(g_story_difficulty,side);}
 
     char path[32]; std::snprintf(path, sizeof path, "/pl%02d.anm", g_char_sel);
     for (const auto& kv : g_player_tex) gfx.destroy(kv.second.handle);
@@ -3578,17 +3615,17 @@ u32 rb_draw_ecl_objects_generation=0;
 void draw_ecl_objects() {
     if (!g_ecl_ready) return;
 
-    
+
     static std::unordered_map<i32,th19::AnmScriptLoc> scripts;
-    
-    
-    
-    
-    
+
+
+
+
+
     static std::unordered_map<i32,th19::AnmScriptLoc> spellAsciiScripts;
     struct AttackAsset {std::vector<u8> bytes;std::vector<th19::AnmEntry> entries;std::map<i32,TextureAllocation> textures;std::map<u32,std::pair<i32,i32>> sprites;std::unordered_map<i32,th19::AnmScriptLoc> scripts;bool attempted=false;};
     static std::map<std::string,AttackAsset> attackAssets;
-    
+
     if(rb_draw_ecl_objects_generation!=g_ecl_generation){rb_draw_ecl_objects_animations[0].clear();rb_draw_ecl_objects_animations[1].clear();rb_draw_ecl_objects_laserHeads[0].clear();rb_draw_ecl_objects_laserHeads[1].clear();rb_draw_ecl_objects_curveVisuals[0].clear();rb_draw_ecl_objects_curveVisuals[1].clear();rb_draw_ecl_objects_curveOrigins[0].clear();rb_draw_ecl_objects_curveOrigins[1].clear();rb_draw_ecl_objects_extraAnimations[0].clear();rb_draw_ecl_objects_extraAnimations[1].clear();rb_draw_ecl_objects_spellNames[0]={};rb_draw_ecl_objects_spellNames[1]={};rb_draw_ecl_objects_spellRings[0]={};rb_draw_ecl_objects_spellRings[1]={};rb_draw_ecl_objects_spellUnderlines[0]={};rb_draw_ecl_objects_spellUnderlines[1]={};rb_draw_ecl_objects_generation=g_ecl_generation;}
     if(spellAsciiScripts.empty())for(const auto&e:g_ascii)for(const auto&sc:e.scripts)
         spellAsciiScripts[sc.id]={g_ascii_bytes.data()+e.base+sc.offset,u32(g_ascii_bytes.size()-e.base-sc.offset),&e.scripts};
@@ -4061,21 +4098,30 @@ void start_owned_card_menu(){
 void tick_owned_card_menu(){if(g_card_menu_exit>=0){if(++g_card_menu_exit>=10){g_pause_view=0;g_card_menu_exit=-1;}return;}for(auto&v:g_card_menu_cards)v.tick();}
 void draw_card_reward(){
     load_ability_cards();
-    if(g_owned_card_vms.size()!=g_owned_cards.size()){
-        g_owned_card_vms.clear();g_cards_dim=false;
-        auto it=g_card_scripts.find(6);
-        if(it!=g_card_scripts.end())for(int id:g_owned_cards){
-            th19::AnmVm vm;vm.bind_entry(it->second.stream,it->second.len,&g_card_scripts);vm.tick();
-            if(!vm.children.empty())vm.children[0].sprite=6+2*id;
-            g_owned_card_vms.push_back(std::move(vm));
+    // Both VS fields use the same native owned-card animation (script 6).
+    // Keep separate cursors and fade state for each player's inventory.
+    for(int side=0;side<2;++side){
+        const auto&cards=player_cards(side);
+        auto&vms=side?g_opponent_card_vms:g_owned_card_vms;
+        auto&dimmed=side?g_opponent_cards_dim:g_cards_dim;
+        auto&drawFrame=side?g_opponent_cards_draw_frame:g_cards_draw_frame;
+        if(vms.size()!=cards.size()){
+            vms.clear();dimmed=false;drawFrame=-1;
+            auto it=g_card_scripts.find(6);
+            if(it!=g_card_scripts.end())for(int id:cards){
+                th19::AnmVm vm;vm.bind_entry(it->second.stream,it->second.len,&g_card_scripts);vm.tick();
+                if(!vm.children.empty())vm.children[0].sprite=6+2*id;
+                vms.push_back(std::move(vm));
+            }
         }
-    }
-    if(!g_paused&&g_cards_draw_frame!=g_frame){
-        bool dim=g_cards_dim;
-        if(!dim&&g_p1_y>368&&g_p1_x<-96)dim=true;
-        else if(dim&&(g_p1_y<352||g_p1_x>-80))dim=false;
-        for(auto&vm:g_owned_card_vms){if(dim!=g_cards_dim)vm.interrupt_all(dim?5:4);vm.tick();}
-        g_cards_dim=dim;g_cards_draw_frame=g_frame;
+        if(!g_paused&&drawFrame!=g_frame){
+            const float x=side?g_p2_x:g_p1_x,y=side?g_p2_y:g_p1_y;
+            bool dim=dimmed;
+            if(!dim&&y>368&&x<-96)dim=true;
+            else if(dim&&(y<352||x>-80))dim=false;
+            for(auto&vm:vms){if(dim!=dimmed)vm.interrupt_all(dim?5:4);vm.tick();}
+            dimmed=dim;drawFrame=g_frame;
+        }
     }
     auto draw=[&](auto&&self,const th19::AnmVm&vm,float x,float y,float sx,float sy)->void{
         x+=vm.x*sx;y+=vm.y*sy;sx*=vm.sx;sy*=vm.sy;
@@ -4084,7 +4130,10 @@ void draw_card_reward(){
         }
         for(const auto&child:vm.children)self(self,child,x,y,sx,sy);
     };
-    for(size_t i=0;i<g_owned_card_vms.size();++i)draw(draw,g_owned_card_vms[i],24+56.f*(i+1)/(g_owned_card_vms.size()+1),0,1,1);
+    for(int side=0;side<2;++side){
+        const auto&vms=side?g_opponent_card_vms:g_owned_card_vms;
+        for(size_t i=0;i<vms.size();++i)draw(draw,vms[i],24+624.f*side+56.f*(i+1)/(vms.size()+1),0,1,1);
+    }
     if(g_card_reward<0)return;
     const auto&v=g_card_reward_vm;
     if(g_card_reward_exit<0){
@@ -4113,6 +4162,16 @@ void init_charge_visuals(){
     for(int side=0;side<2;++side){
         g_charge_visual_held[side]=false;g_charge_visual_level[side]=0;g_charge_pattern[side]={};g_region_vm[side]={};g_barrier_vm[side]={};
         g_gauge_particles[side]={};
+        g_gauge_warning[side] = {};
+        g_gauge_warning_active[side] = false;
+        auto warningScript = g_aura_scripts.find(3);
+        if (warningScript != g_aura_scripts.end()) {
+            auto& warning = g_gauge_warning[side];
+            warning.bind_entry(warningScript->second.stream, warningScript->second.len, &g_aura_scripts);
+            warning.tick();
+            warning.interrupt(3);
+            warning.tick();
+        }
         for(int i=0;i<8;++i){auto&v=g_gauge_markers[side][i];v={};auto it=g_aura_scripts.find(5+i);if(it!=g_aura_scripts.end()){v.bind_entry(it->second.stream,it->second.len,&g_aura_scripts);v.tick();}}
         std::fill(std::begin(g_gauge_marker_state[side]),std::end(g_gauge_marker_state[side]),0);
         g_barrier[side].reset();
@@ -4123,6 +4182,14 @@ void init_charge_visuals(){
 void tick_charge_visuals(){
     for(int side=0;side<2;++side){
         const auto&g=g_charge[side];
+        // 0x4e9532..0x4e95b1 drives aura.anm 3 labels 2/3.
+        const bool needsBarrier = !g_barrier[side].ready() && g.energy >= g.thresholds[2];
+        auto& warning = g_gauge_warning[side];
+        if (needsBarrier != g_gauge_warning_active[side]) {
+            warning.interrupt(needsBarrier ? 2 : 3);
+            g_gauge_warning_active[side] = needsBarrier;
+        }
+        warning.tick();
         auto&particles=g_gauge_particles[side];
         if(g.charge<1)particles={};
         else{
@@ -4297,11 +4364,30 @@ void draw_player_options(){
     }g_actor_clip=-1;
 }
 // SHT groups 0..4 are power levels, 5..9 their focused counterparts.
+void bind_warning_portrait(int ch,int sender);
 void tick_spirit_transits(){
     for(int side=0;side<2;++side){
         auto&field=g_ecl_fields[side];std::vector<const th19::EclProgram*> source;
         for(const auto&p:field.programs)source.push_back(p.get());
         field.world.send_native_extra_credit(g_ecl_fields[1-side].world,source,side?g_opp_sel:g_char_sel);
+        const unsigned automatic = field.world.combo_attack.tick();
+        for (unsigned bit = 1; bit <= 2; bit <<= 1) {
+            if (!(automatic & bit)) continue;
+            auto& target = g_ecl_fields[1-side].world;
+            const int tier = bit == 2 && !target.boss_occupied() ? 4 : 3;
+            if (!target.receive_charge_attack(tier, 0, 0, source)) continue;
+            auto& count = g_vs_attack_counts[side][tier == 4 ? 1 : 0];
+            count = std::min(999, count + 1);
+            g_attack_warning.start(side, tier, g_charge[side].ex_level, g_charge[side].boss_level);
+            g_attack_warning_vm = {};
+            auto script = g_aura_scripts.find(g_attack_warning.aura_script());
+            if (script != g_aura_scripts.end()) {
+                g_attack_warning_vm.bind_entry(script->second.stream, script->second.len, &g_aura_scripts);
+            }
+            g_attack_warning_frame = -1;
+            bind_warning_portrait(side ? g_opp_sel : g_char_sel, side);
+            play_sfx(77);
+        }
     }
 
     ++g_spirit_clock;
@@ -4363,11 +4449,18 @@ void tick_player_shots(bool firing,bool focused){
     // 54e490: ordinary emitter is disabled while the aura/charge counter is active.
     firing=firing&&!g_charge[0].held;
     const bool rightFiring=(g_opponent_controls&1)&&g_player_damage[1].controllable()&&!g_charge[1].held;
-    for(int side=0;side<2;++side)g_ecl_fields[side].world.card_near_damage=th19::ownsCard(player_cards(side),28);
+    for(int side=0;side<2;++side){
+        auto& world=g_ecl_fields[side].world;
+        world.card_near_damage=th19::ownsCard(player_cards(side),28);
+        world.player_damage_cap=(side?g_opp_shot_table:g_shot_table).damage_cap;
+    }
     for(auto&v:g_reflected_flights){auto&s=v.state;
-        if(++s.frame>=s.duration){auto&b=g_ecl_fields[v.target_side].world.spawn_bullet();b.x=v.target_x;b.y=v.target_y;
+        if(++s.frame>=s.duration){
+            const float angleRandom=g_reflection_rng.unit(),speedRandom=g_reflection_rng.unit();
+            auto&w=g_ecl_fields[v.target_side].world;if(w.bullets.size()>=th19::GameWorld::bullet_capacity){++w.dropped_bullets;continue;}
+            auto&b=w.spawn_bullet();b.x=v.target_x;b.y=v.target_y;
             b.kind=s.type;b.color=s.color;b.sprite=th19::nativeBulletSprite(s.type,s.color);b.reflected=true;
-            float angle=s.arrivalAngle(b.x,g_reflection_rng.unit());float speed=th19::cardArrivalSpeed(s.arrivalSpeed(g_reflection_rng.unit(),g_reflection_rank,g_reflection_rank_cap),th19::ownsCard(player_cards(v.target_side),36));
+            float angle=s.arrivalAngle(b.x,angleRandom);float speed=th19::cardArrivalSpeed(s.arrivalSpeed(speedRandom,g_reflection_rank,g_reflection_rank_cap),th19::ownsCard(player_cards(v.target_side),36));
             b.vx=std::cos(angle)*speed;b.vy=std::sin(angle)*speed;++g_reflection_arrivals;}}
     g_reflected_flights.erase(std::remove_if(g_reflected_flights.begin(),g_reflected_flights.end(),[](const auto&v){return v.state.arrived();}),g_reflected_flights.end());
     for(int side=0;side<2;++side){
@@ -4450,7 +4543,27 @@ void tick_player_shots(bool firing,bool focused){
     if(g_attacks[side].charge_area.character==8&&!g_attacks[side].charge_area.active()){g_attacks[side].charge_area_vm.visible=false;g_attacks[side].tsukasa_skill_back.visible=false;}
     }
     for(auto& effect:g_player_hit_effects)effect.vm.tick();
-    g_player_hit_effects.erase(std::remove_if(g_player_hit_effects.begin(),g_player_hit_effects.end(),[](const auto&e){return !e.vm.visible;}),g_player_hit_effects.end());
+    g_player_hit_effects.erase(std::remove_if(g_player_hit_effects.begin(),g_player_hit_effects.end(),[](const auto&e){return e.vm.deleted&&e.vm.children.empty();}),g_player_hit_effects.end());
+    auto spawnImpactEffect=[&](const PlayerProjectile& b){
+                        // Native hit table 0x5a03d0: callbacks 1/5/6 create
+                        // eff_base ANM142, then run the default impact callback.
+                        if(b.hit_callback==1||b.hit_callback==5||b.hit_callback==6){
+                            PlayerProjectile effect{};effect.x=b.x;effect.y=b.y;effect.side=b.side;effect.effect_bank=true;
+                            effect.angle=std::remainder(b.angle+(th19::AnmVm::rand_unit()*2-1)*.3490658504f+(b.hit_callback==1?3.14159265359f:0.f),6.28318530718f);
+                            if(bind_player_animation(effect.vm,142,g_focus_entries,g_focus_scripts)){
+                                effect.vm.rot_z=effect.angle;
+                                auto randomByte=[](){th19::AnmVm::rand_unit();return th19::AnmVm::random_checkpoint()&255;};
+                                if(b.hit_callback==1||b.hit_callback==6){
+                                    effect.vm.r=(randomByte()&127)+127;
+                                    effect.vm.g=(randomByte()&(b.hit_callback==6?127:63))+64;
+                                    effect.vm.b=(randomByte()&63)+64;
+                                    if(b.hit_callback==1)effect.vm.alpha=(randomByte()&63)+96;
+                                    else {auto&ip=effect.vm.ip_scale;ip={};ip.active=true;ip.dur=20;ip.v0=ip.v1=1;ip.t0=ip.t1=3;}
+                                }
+                                g_player_hit_effects.push_back(std::move(effect));
+                            }
+                        }
+    };
     for(auto& b:g_player_projectiles){
         const float old_x=b.x,old_y=b.y;const int side=b.side;
         const bool sideFiring=side?rightFiring:firing;
@@ -4466,7 +4579,7 @@ void tick_player_shots(bool firing,bool focused){
             const bool expired=b.update==9?b.age>=120:(b.laser_duration>0?b.age>=b.laser_duration:!sideFiring);
             if(expired&&!b.ending){b.vm.interrupt_all(1);b.ending=true;}
         }else{
-            if(b.update==1){float speed=std::hypot(b.vx,b.vy),angle=std::atan2(b.vy,b.vx);const th19::Enemy*target=nullptr;float best=1e20f;
+            if(!b.ending&&b.update==1){float speed=std::hypot(b.vx,b.vy),angle=std::atan2(b.vy,b.vx);const th19::Enemy*target=nullptr;float best=1e20f;
                 for(const auto&e:g_ecl_fields[side].world.enemies)if(e.active&&e.sprite>=0&&!(e.flags&3)&&e.y>=0&&e.y<448){float d=(e.x-b.x)*(e.x-b.x)+(e.y-b.y)*(e.y-b.y);if(e.id==b.target_id){target=&e;break;}if(d<best){target=&e;best=d;}}
                 b.target_id=target?target->id:0;th19::advanceHomingShot(b.age,target!=nullptr,target?std::atan2(target->y-b.y,target->x-b.x):angle,angle,speed);
                 b.angle=angle;b.speed=speed;b.vx=std::cos(angle)*speed;b.vy=std::sin(angle)*speed;
@@ -4477,7 +4590,7 @@ void tick_player_shots(bool firing,bool focused){
                 b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;
             }
             if(b.update==6&&!b.ending)b.speed+=.1f; //54b780
-            if(b.update==8)th19::advanceChargeTalisman(b.age,b.speed);
+            if(!b.ending&&b.update==8)th19::advanceChargeTalisman(b.age,b.speed);
             if(b.update==11){b.speed+=.1f;b.length+=b.speed;
                 if(!b.vm.children.empty())b.vm.children[0].sx=b.length;
                 if(b.age>129)b.consumed=true;
@@ -4513,13 +4626,9 @@ void tick_player_shots(bool firing,bool focused){
                 if(b.update==11){x0=b.x-std::cos(b.angle)*b.length;y0=b.y-std::sin(b.angle)*b.length;}
                 if(th19::sweptShotHit(x0,y0,x1,y1,b.angle,b.hit_width,b.update==11?28.f:b.hit_height,e.x,e.y,e.hitbox_w,e.hitbox_h)){
                     if(beam){b.target_id=e.id;if(th19::laserDamageTick(b.hit_callback,b.age,b.init_callback))world.damage_enemy(e,b.damage);}
-                    else if(b.update==11||b.piercing)world.damage_enemy(e,b.damage);
+                    else if(b.update==11||b.piercing){world.damage_enemy(e,b.damage);spawnImpactEffect(b);}
                     else {float d=(e.x-old_x)*(e.x-old_x)+(e.y-old_y)*(e.y-old_y);if(d<distance){distance=d;nearest=&e;}}
-                    // The Enoko trap (SHT update 13, init 21) is a one-contact
-                    // projectile.  Mark it consumed at the collision site,
-                    // matching the native hit callback instead of allowing the
-                    // swept rectangle to register the same trap on later frames.
-                    if(b.update==13){world.damage_enemy(e,b.damage);b.consumed=true;nearest=nullptr;break;}
+
                 }
             }
             if(nearest){
@@ -4547,17 +4656,11 @@ void tick_player_shots(bool firing,bool focused){
                         world.damage_enemy(*nearest,b.damage);
                         b.speed=speed;play_sfx(65);
                     }else{world.damage_enemy(*nearest,b.damage);
-                        if(b.ability_bank&&b.hit_callback==5){PlayerProjectile effect{};effect.x=b.x;effect.y=b.y;effect.side=side;effect.effect_bank=true;effect.angle=b.angle+(th19::AnmVm::rand_unit()*2-1)*.3490658504f;
-                            if(bind_player_animation(effect.vm,142,g_focus_entries,g_focus_scripts))g_player_hit_effects.push_back(std::move(effect));}
+                        spawnImpactEffect(b);
                         b.speed/=8.f;}
-                    if(b.ability_bank||flameHit||frog){b.ending=true;b.damage=0;b.table_acceleration=b.table_turn=0;b.vm.interrupt_all(1);}
-                    else {
-                        // Enoko's trap is the native update-13 projectile.  Its
-                        // contact callback enters the hit/vanish label; keeping
-                        // the live SHT record after contact leaves a second trap
-                        // body behind when several enemies overlap its rectangle.
-                        b.consumed=true;
-                    }
+                    // 0x54fba0: preserve the character's own ANM and interrupt1;
+                    // remove its damage area immediately, retire with the ANM.
+                    b.ending=true;b.damage=0;b.table_acceleration=b.table_turn=0;b.vm.interrupt_all(1);
                 }}
             // Native hit callbacks enter ANM label 2; update returns to 3
             // when contact ends. Keep the beam alive throughout contact.
@@ -4572,7 +4675,7 @@ void tick_player_shots(bool firing,bool focused){
         // 0x54df10 skips viewport culling for SHT types 2 and 8. In
         // particular Orin's tail remains visible after its head leaves.
         const bool outside=b.type!=2&&b.type!=8&&(b.y < -64||b.y>512||std::abs(b.x)>220);
-        return b.consumed||!b.vm.visible||outside||(b.age>std::max(1200,b.lifetime+120));
+        return b.consumed||(b.vm.deleted&&b.vm.children.empty())||outside||(b.age>std::max(1200,b.lifetime+120));
     }),g_player_projectiles.end());
     auto emit=[&](int side,int group,int clock,int secondary,bool charged,const PlayerProjectile*card=nullptr){
     const auto&table=side?g_opp_shot_table:g_shot_table;
@@ -4595,7 +4698,8 @@ void tick_player_shots(bool firing,bool focused){
         b.angle=std::atan2(b.vy,b.vx);if(d.speed==0)b.angle=d.angle;b.speed=d.speed;
         if(d.init==17){b.angle=-1.57079632679f+(side?g_opp_direction:g_p1_dir)*3.14159265359f/30;b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;b.length=16;}
         if(d.init==14||d.init==16||d.init==20||d.init==22){b.angle=th19::initializeSpecialShot(d.init,b.angle,th19::AnmVm::rand_unit());b.vx=std::cos(b.angle)*b.speed;b.vy=std::sin(b.angle)*b.speed;}
-        b.piercing=d.init==11||d.init==16;b.hit_script=d.hit_script;b.hit_callback=d.hit;b.hit_growth=d.hit_growth;b.damage=d.damage;b.hit_width=d.hit_width;b.hit_height=d.hit_height;b.option=d.option;b.type=d.type;b.update=d.update;b.laser_id=d.laser_id;b.offset_x=d.x;b.offset_y=d.y;
+        // 0x54aca0 sets +0x114, which 0x54fba0 checks before hit removal.
+        b.piercing=d.init==11||d.init==16||d.init==21;b.hit_script=d.hit_script;b.hit_callback=d.hit;b.hit_growth=d.hit_growth;b.damage=d.damage;b.hit_width=d.hit_width;b.hit_height=d.hit_height;b.option=d.option;b.type=d.type;b.update=d.update;b.laser_id=d.laser_id;b.offset_x=d.x;b.offset_y=d.y;
         b.table_turn=d.angular_velocity;b.table_acceleration=d.acceleration;b.lifetime=d.lifetime;b.laser_duration=d.laser_duration;b.transition_frame=d.transition_frame;b.charged=charged;
         play_sfx(d.sound);
         if(d.init==2||d.init==12||d.init==18)play_sfx(20);
@@ -4687,6 +4791,14 @@ void tick_charge_release(int side,bool down,bool slow){
  float cx=side?GAME_F2_CX:GAME_F1_CX,ocx=side?GAME_F1_CX:GAME_F2_CX;
  auto&entries=side?g_opp:g_player;auto&scripts=side?g_opp_scripts:g_player_scripts;
  auto&bombs=side?g_p2_bombs:g_p1_bombs;auto&fragments=side?g_p2_fragments:g_p1_fragments;
+if (!g_player_damage[side].controllable()) {
+    // 0x4e79e0 clears charge state before the release branch when Player != Playing.
+    g_charge[side].charge = 0;
+    g_charge[side].held = false;
+    g_charge[side].last_release = 0;
+    stop_sfx(84);stop_sfx(88);
+    return;
+}
 bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].charge_speed_percent=th19::ownsCard(player_cards(side),9)?125:100;g_charge[side].tick(g_player_damage[side].controllable()&&down,g_attacks[side].charge_attack.frame>=0||g_attacks[side].charge_area.frame>=0);
                 if(g_charge[side].held&&!held)play_sfx(84);
                 if(g_charge[side].level()>level)play_sfx(g_charge[side].level()==4?88:86);
@@ -4729,6 +4841,11 @@ bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].ch
                             if(ch==6)play_sfx(49);if(ch==13)play_sfx(45);}
                     }
                     if(g_charge[side].last_release>=3){
+                        // 0x4e83e3 starts the original default.ecl cancellation script
+                        // at the releasing player's position. Its VM controls radius and duration.
+                        g_ecl_fields[side].world.spawn_enemy(
+                            g_charge[side].last_release == 4 ? "Ecl_EtBreakLv4" : "Ecl_EtBreakLv3",
+                            px, py, 1, 0, 0);
                         // 0x4e79e0 C3/C4 -> 0x40b420, before opponent attack dispatch.
                         if(g_barrier[side].restore_from_charge(g_charge[side].last_release))g_barrier_vm[side]={};
                         auto&target=g_ecl_fields[1-side].world;
@@ -4869,9 +4986,9 @@ void draw_player_shots(){
             auto tail=b.vm.children[0];tail.rot_z+=b.angle;draw_procedural_node(tail,b.side,b.x,b.y);
         }
         auto draw=[&](auto&&self,const th19::AnmVm&v,float x,float y,float inheritedX,float inheritedY)->void{
-        if(!v.visible)return;x+=(v.x+v.child_x)*inheritedX;y+=(v.y+v.child_y)*inheritedY;
+        x+=(v.x+v.child_x)*inheritedX;y+=(v.y+v.child_y)*inheritedY;
         auto it=sprites.find(v.sprite);
-        if(it!=sprites.end()){auto tex=textures.find(it->second.first);if(tex!=textures.end()){
+        if(v.visible&&it!=sprites.end()){auto tex=textures.find(it->second.first);if(tex!=textures.end()){
         const auto&sp=entries[it->second.first].sprites[it->second.second];
         float rotation=v.rot_z,flip=1;const float angle=b.angle;
         if(v.rotation_mode==1)rotation=angle;
@@ -4919,9 +5036,9 @@ std::vector<ChainVisual> rb_draw_combat_items_chainVisuals;
 std::unordered_map<u32,Visual> rb_draw_combat_items_items[2];std::vector<Visual> rb_draw_combat_items_deaths,rb_draw_combat_items_cancels;
 u32 rb_draw_combat_items_generation=0;
 void draw_combat_items(){
-    
-    
-    
+
+
+
     static std::vector<u8> ghostBytes;static std::vector<th19::AnmEntry> ghostEntries;
     static std::unordered_map<i32,th19::AnmScriptLoc> ghostScripts;
     static std::map<i32,TextureAllocation> ghostTextures;
@@ -4947,9 +5064,9 @@ void draw_combat_items(){
     };
     for(auto&v:g_spirit_flights){if(!v.vm.stream){auto s=ghostScripts.find(v.state.script);if(s!=ghostScripts.end()){v.vm.bind_entry(s->second.stream,s->second.len,&ghostScripts);v.vm.tick();}}
         auto p=v.curve.position();drawSpirit(drawSpirit,v.vm,p.x,p.y,1,1);}
-    
+
     static std::unordered_map<i32,th19::AnmScriptLoc> itemScripts;
-    
+
     if(rb_draw_combat_items_generation!=g_ecl_generation){rb_draw_combat_items_items[0].clear();rb_draw_combat_items_items[1].clear();rb_draw_combat_items_deaths.clear();rb_draw_combat_items_cancels.clear();rb_draw_combat_items_chainVisuals.clear();rb_draw_combat_items_generation=g_ecl_generation;}
     if(itemScripts.empty())for(const auto&e:g_bullet)for(const auto&sc:e.scripts)itemScripts[sc.id]={g_bullet_bytes.data()+e.base+sc.offset,u32(g_bullet_bytes.size()-e.base-sc.offset),&e.scripts};
     auto draw=[&](auto&&self,const th19::AnmVm&v,float x,float y,int side,bool effect,float sx,float sy)->void{
@@ -5117,6 +5234,8 @@ void check_player_contacts(){
         }
         if(!hit)continue;
         bool shield=trigger_player_barrier(side);d.contact(shield,px,py,sx,sy,barrier.invulnerable);
+        g_charge[side].held=false;g_charge[side].charge=0;g_charge[side].last_release=0;
+        stop_sfx(84);stop_sfx(88);
         if(shield)play_sfx(27);
         else{play_sfx(2);w.deaths.push_back({px,py,0,22,-1,1});g_charge[side].held=false;g_charge[side].charge=0;}
     }
@@ -5222,7 +5341,7 @@ void frame() {
     ++g_sfx_tick;
     const bool* pauseKeys=game_keyboard_state();
     auto pressed=[&](int code){return pauseKeys[code]||g_injected_keys[code];};
-    
+
     if(g_network_active&&g_network_frame==0)rb_frame_oldEsc=rb_frame_oldUp=rb_frame_oldDown=rb_frame_oldOk=rb_frame_oldCancel=false;
     bool esc=pressed(SDL_SCANCODE_ESCAPE),pu=pressed(SDL_SCANCODE_UP),pd=pressed(SDL_SCANCODE_DOWN);
     bool ok=pressed(SDL_SCANCODE_Z)||pressed(SDL_SCANCODE_RETURN),cancel=pressed(SDL_SCANCODE_X);
@@ -5237,7 +5356,7 @@ void frame() {
         if(esc&&!rb_frame_oldEsc){if(g_paused){if(g_pause_view==1&&g_help_mode==1){start_help_menu();}else if(g_pause_view==4)close_owned_card_menu();else if(g_pause_view)g_pause_view=0;else if(g_pause_animation.inputReady()){if(g_pause_confirm){g_pause_confirm=false;g_pause_animation.cancel();}else g_pause_animation.close(false);}}else{g_paused=true;g_pause_choice=0;g_pause_confirm=false;init_pause_animation();play_sfx(14);}}
         else if(g_paused){
             if(g_pause_view){
-                
+
                 bool left=pressed(SDL_SCANCODE_LEFT),right=pressed(SDL_SCANCODE_RIGHT);
                 if(cancel&&!rb_frame_oldCancel){if(g_pause_view==1&&g_help_mode==1){start_help_menu();}else if(g_pause_view==3)g_pause_view=2;else if(g_pause_view==4)close_owned_card_menu();else g_pause_view=0;play_sfx(9);}
                 else if(g_pause_view==1){
@@ -5302,11 +5421,18 @@ void frame() {
         if(g_screen==SCR_TITLE){g_sel=g_vs_mode?1:0;bind_title_vms(true);g_title_frame=271;g_logo_fast=0;}
         else{g_sub_sel=g_vs_entry;start_sub_screen(g_screen);}
     }
-    // 556340 state5: after six ticks release the VS selection VMs using
+    // 556340 state5 (Story and VS): after six ticks release selection VMs using
     // their exit interrupt; the difficulty screen restores the chosen rank.
     if(g_charsel_cancel_frame>=0&&++g_charsel_cancel_frame>=6){
-        g_charsel_cancel_frame=-1;g_retiring_menu.clear();g_retiring_age=0;g_retiring_vs=false;
-        for(auto&v:g_vs_cursor_vm){v.interrupt_all(1);g_retiring_menu.push_back(std::move(v));v={};}
+        g_charsel_cancel_frame=-1;g_retiring_menu=std::move(g_sub_vms);g_retiring_age=0;g_retiring_vs=false;
+        for(auto&v:g_retiring_menu)v.interrupt_all(1);
+        for(int side=0;side<2;++side){auto&v=g_vs_cursor_vm[side];
+            v.interrupt_all(1);
+            // The native cursor keeps its world position on exit. Our cursor
+            // scripts are local to their draw origin, so retain that parent.
+            th19::AnmVm origin;origin.halted=true;
+            origin.x=side?g_p2_cursor_cx:g_cursor_cx;origin.y=side?g_p2_cursor_cy:g_cursor_cy;
+            origin.children.push_back(std::move(v));g_retiring_menu.push_back(std::move(origin));v={};}
         for(auto&v:g_vs_portrait_vm){v.interrupt_all(1);g_retiring_menu.push_back(std::move(v));v={};}
         g_screen=SCR_STORY;g_sub_sel=g_story_difficulty;g_story_cursor=float(g_sub_sel);
         g_trans=TRANS_NONE;g_fade=1;start_sub_screen(SCR_STORY);
@@ -5321,7 +5447,7 @@ void frame() {
         start_sub_screen(SCR_CHARSEL);
     }
     // 556340 state4: confirmation animation, screen switch at10, battle at40.
-    if(g_vs_match_confirm>=0&&++g_vs_match_confirm==10){
+    if(g_vs_match_confirm>=0&&++g_vs_match_confirm==(g_vs_random_reveal?70:10)){
         g_vs_match_confirm=-1;g_story_switch.vs_match=g_vs_mode;g_story_switch.story_start=!g_vs_mode;
         if(bind_story_switch(3))g_story_switch.phase=1;
         else if(g_vs_mode)start_vs_match();else start_dialogue();
@@ -5350,10 +5476,15 @@ void frame() {
         return;
     }
     // 游戏场内 tick 玩家 idle 动画（其余转场逻辑照常走）
-    if (g_screen == SCR_GAME || g_screen == SCR_DIALOG) { g_player_vm.tick(); g_opp_vm.tick(); tick_player_options(pressed(SDL_SCANCODE_LSHIFT)||pressed(SDL_SCANCODE_RSHIFT)); ++g_bg_scroll; tick_world(); if (g_screen == SCR_GAME && g_big_sprite < 0 && g_ecl_ready) { for(int side=0;side<2;++side){auto& field=g_ecl_fields[side];field.world.player_x=side?g_p2_x:g_p1_x;field.world.player_y=side?g_p2_y:g_p1_y;field.world.opponent_x=side?g_p1_x:g_p2_x;field.world.opponent_y=side?g_p1_y:g_p2_y;field.world.opponent_controls=side?((pressed(SDL_SCANCODE_LEFT)?64:0)|(pressed(SDL_SCANCODE_RIGHT)?128:0)|g_cpu_left_bits):g_opponent_controls;field.world.incoming_extra_level=g_charge[1-side].ex_level;field.world.incoming_boss_level=g_charge[1-side].boss_level;field.vm.step();field.world.tick_wave();for(const auto&request:field.world.screen_shake_events)g_screen_shake.start(request);field.world.screen_shake_events.clear();for(int sound:field.world.sound_events)play_sfx(sound);field.world.sound_events.clear();} } }
+    if (g_screen == SCR_GAME || g_screen == SCR_DIALOG) { g_player_vm.tick(); g_opp_vm.tick(); tick_player_options(pressed(SDL_SCANCODE_LSHIFT)||pressed(SDL_SCANCODE_RSHIFT)); ++g_bg_scroll; tick_world(); if (g_screen == SCR_GAME && g_big_sprite < 0 && g_ecl_ready) { ++g_played_frames; for(int side=0;side<2;++side){auto& field=g_ecl_fields[side];field.world.player_x=side?g_p2_x:g_p1_x;field.world.player_y=side?g_p2_y:g_p1_y;field.world.opponent_x=side?g_p1_x:g_p2_x;field.world.opponent_y=side?g_p1_y:g_p2_y;field.world.opponent_controls=side?((pressed(SDL_SCANCODE_LEFT)?64:0)|(pressed(SDL_SCANCODE_RIGHT)?128:0)|g_cpu_left_bits):g_opponent_controls;field.world.incoming_extra_level=g_charge[1-side].ex_level;field.world.incoming_boss_level=g_charge[1-side].boss_level;field.vm.step();field.world.tick_wave();for(const auto&request:field.world.screen_shake_events)g_screen_shake.start(request);field.world.screen_shake_events.clear();for(int sound:field.world.sound_events)play_sfx(sound);field.world.sound_events.clear();} } }
     if (g_screen == SCR_CHARSEL) {
-        if(!g_vs_mode)g_vs_cursor_vm[0].tick();
-        if(g_vs_mode){for(auto&list:g_vs_card_vms)for(auto&v:list)v.tick();for(auto&vm:g_vs_cursor_vm)vm.tick();for(auto&vm:g_vs_portrait_vm)vm.tick();}
+        // Native state2 begins selection highlights only after its 30-frame entrance.
+        if(g_charsel_frame==30&&!g_sub_vms.empty()){
+            g_sub_vms.front().interrupt_all(g_char_sel+7);
+            if(g_vs_mode)g_sub_vms.front().interrupt_all(g_opp_sel+7);
+        }
+        if(!g_vs_mode&&g_charsel_frame>=14)g_vs_cursor_vm[0].tick();
+        if(g_vs_mode){for(auto&list:g_vs_card_vms)for(auto&v:list)v.tick();if(g_charsel_frame>=14)for(auto&vm:g_vs_cursor_vm)vm.tick();for(auto&vm:g_vs_portrait_vm)vm.tick();}
         g_p2_cursor_cx+=(CH_CX[g_opp_sel]-g_p2_cursor_cx)*0.28f;
         g_p2_cursor_cy+=(CH_CY[g_opp_sel]-g_p2_cursor_cy)*0.28f;
         if(std::fabs(CH_CX[g_opp_sel]-g_p2_cursor_cx)<.5f)g_p2_cursor_cx=CH_CX[g_opp_sel];
@@ -5407,7 +5538,9 @@ void frame() {
         } else {
             for (auto& vm : g_title_vms) vm.tick();
         }
-        if (g_trans == TRANS_NONE) {
+        // Character entrance age advances during the return fade as well.
+        // Its grid must advance with it before the frame-30 highlight interrupt.
+        if (g_trans == TRANS_NONE || (g_screen == SCR_CHARSEL && g_trans == TRANS_IN)) {
             if (g_screen != SCR_TITLE) for (auto& vm : g_sub_vms) vm.tick();
             if (g_screen == SCR_MANUAL && g_help_mode == 0) for (auto& vm : g_help_vms) vm.tick();
             // 进入 Music：子 VM 首次 tick 已 createChild 出列表项，发 case=sel+7 驱动选中态
@@ -5432,7 +5565,7 @@ void frame() {
             g_screen = g_next_screen;
             if((old_screen==SCR_GAME||old_screen==SCR_DIALOG)&&g_screen!=SCR_GAME&&g_screen!=SCR_DIALOG){start_title_music();g_story_music=-1;}
             if (g_screen == SCR_CHARSEL) { g_charsel_frame = 0; g_cursor_select = 0; g_char_switch_frame = 0; g_cursor_cx = CH_CX[g_char_sel]; g_cursor_cy = CH_CY[g_char_sel]; }
-            g_sub_sel = (g_screen == SCR_STORY) ? 1 : 0;   // Story 默认 normal(1)
+            g_sub_sel = (g_screen == SCR_STORY) ? (old_screen == SCR_CHARSEL ? g_story_difficulty : g_vs_mode ? 1 : g_story_menu_difficulty) : 0;
             g_story_cursor = (float)g_sub_sel;   // 同步游标，进入直接停在默认项
             g_vs_cursor = (float)g_sub_sel;
             g_cancel_fade = 1.0f;   // 重置取消淡出（否则再次进入时图标全透明，只剩背景盖过难度）
@@ -5490,11 +5623,18 @@ void sample_touch_input(){
 }
 void game_tick() {
     if (g_loop_paused) return;
-    sample_touch_input();
+    if(g_replay_input.playing){
+        if(!g_replay_input.next(g_replay_keys,g_injected_keys,g_touch_motion_x,g_touch_motion_y,g_touch_unlimited)){
+            g_loop_paused=true;EM_ASM({Module.onReplayEnd?.();});return;
+        }
+    }else{
+        sample_touch_input();
+        if(!g_network_active)g_replay_input.capture(game_keyboard_state(),g_injected_keys,g_touch_motion_x,g_touch_motion_y,g_touch_unlimited);
+    }
     tick_trophy_popup();
     const bool* keys = game_keyboard_state();
-    
-    
+
+
     if(g_network_active&&g_network_frame==0)rb_game_tick_prev_up=rb_game_tick_prev_dn=rb_game_tick_prev_z=rb_game_tick_prev_x=rb_game_tick_prev_left=rb_game_tick_prev_right=rb_game_tick_prev_v=rb_game_tick_prev_c=false;
     const bool up = keys[SDL_SCANCODE_UP]    || g_injected_keys[SDL_SCANCODE_UP];
     const bool dn = keys[SDL_SCANCODE_DOWN]  || g_injected_keys[SDL_SCANCODE_DOWN];
@@ -5510,7 +5650,7 @@ void game_tick() {
     // Match the actual menu reveal; keep updating key edges while blocked,
     // so holding confirm during the intro cannot activate it on reveal.
     const bool titleIntroBlocked=g_screen==SCR_TITLE&&menu_intro_alpha()==0;
-    const bool gameInputBlocked=titleIntroBlocked||noticeBlocked||g_charsel_cancel_frame>=0||g_difficulty_confirm_frame>=0||g_menu_cancel_frame>=0||g_vs_entry_transition>=0||g_battle_report_frame>=0||g_attack_warning.freeze_frames>0||g_final_exit>=0||g_story_switch.phase!=0||(g_screen==SCR_GAME||g_screen==SCR_DIALOG)&&(g_paused||keys[SDL_SCANCODE_ESCAPE]||g_injected_keys[SDL_SCANCODE_ESCAPE]);
+    const bool gameInputBlocked=titleIntroBlocked||(g_screen==SCR_CHARSEL&&g_charsel_frame<31)||noticeBlocked||g_charsel_cancel_frame>=0||g_difficulty_confirm_frame>=0||g_menu_cancel_frame>=0||g_vs_entry_transition>=0||g_battle_report_frame>=0||g_attack_warning.freeze_frames>0||g_final_exit>=0||g_story_switch.phase!=0||(g_screen==SCR_GAME||g_screen==SCR_DIALOG)&&(g_paused||keys[SDL_SCANCODE_ESCAPE]||g_injected_keys[SDL_SCANCODE_ESCAPE]);
     if(g_final_exit>=0&&++g_final_exit>=240){g_final_exit=-1;g_screen=SCR_ENDING;g_trans=TRANS_NONE;start_sub_screen(SCR_ENDING);}
     if(g_screen==SCR_STAFF&&g_trans==TRANS_NONE){
         //507a90 returns6 until every12th update when replay is permitted.
@@ -5534,7 +5674,7 @@ void game_tick() {
             if (z && !rb_game_tick_prev_z) {
                 // Z 确认：选中项快速闪几下（FUN_00402650(30) 设闪烁相位），
                 // 闪烁约 19 帧后再淡出转场（FUN_0055a110 case2→4 的 0x13 帧延迟）
-                play_sfx(7);
+                play_sfx(g_sel == 7 ? 9 : 7);
                 switch (g_sel) {
                     case 0: g_vs_mode=0;g_next_screen = SCR_STORY;   break;
                     case 1: g_next_screen = SCR_VS;      break;
@@ -5542,7 +5682,7 @@ void game_tick() {
                     case 4: g_next_screen = SCR_MUSIC;   break;
                     case 5: g_next_screen = SCR_OPTION;  break;
                     case 6: g_next_screen = SCR_MANUAL;  break;
-                    case 7: g_next_screen = SCR_TITLE;   break; // Quit 暂不退出
+                    case 7:g_exit_requested=true;g_loop_paused=true;std::fill(std::begin(g_injected_keys),std::end(g_injected_keys),0);EM_ASM({Module.onGameExit?.();});return;
                     default: g_next_screen = SCR_TITLE;  break;
                 }
                 g_bob_phase = 8;
@@ -5551,17 +5691,20 @@ void game_tick() {
             }
         } else if (g_screen == SCR_STORY || g_screen == SCR_VS) {
             const int maxSel=g_screen==SCR_STORY?3:4;
-            if(up&&!rb_game_tick_prev_up){g_sub_sel=(g_sub_sel+maxSel)%(maxSel+1);play_sfx(10);}
-            if(dn&&!rb_game_tick_prev_dn){g_sub_sel=(g_sub_sel+1)%(maxSel+1);play_sfx(10);}
+            // 5596a0/5593b0 set cursor +0xd0 (TitleInf+0xfc) to zero:
+            // 4d4fa0 clamps both ends. Sound/ANM run only on a changed index.
+            const int previousSelection=g_sub_sel;
+            if((up&&!rb_game_tick_prev_up)||(left&&!rb_game_tick_prev_left))g_sub_sel=std::max(0,g_sub_sel-1);
+            if((dn&&!rb_game_tick_prev_dn)||(right&&!rb_game_tick_prev_right))g_sub_sel=std::min(maxSel,g_sub_sel+1);
+            if(g_screen==SCR_STORY&&!g_vs_mode)g_story_menu_difficulty=g_sub_sel;
+            if(g_sub_sel!=previousSelection){play_sfx(10);for(auto&vm:g_sub_vms){vm.interrupt_all(3);vm.tick();vm.interrupt_all(g_sub_sel+7);}}
             if(g_screen==SCR_VS){
-                if((up&&!rb_game_tick_prev_up)||(dn&&!rb_game_tick_prev_dn))for(auto&vm:g_sub_vms){vm.interrupt_all(3);vm.tick();vm.interrupt_all(g_sub_sel+7);}
                 if(z&&!rb_game_tick_prev_z){
                     g_vs_entry=g_sub_sel;g_vs_mode=1;g_vs_entry_transition=0;
                     for(auto&vm:g_sub_vms)vm.interrupt_all(6);
                     play_sfx(7);
                 }
             }else {
-                if((up&&!rb_game_tick_prev_up)||(dn&&!rb_game_tick_prev_dn))for(auto&vm:g_sub_vms){vm.interrupt_all(3);vm.tick();vm.interrupt_all(g_sub_sel+7);}
                 if(z&&!rb_game_tick_prev_z){
                     g_story_difficulty=g_sub_sel;g_difficulty_confirm_frame=0;play_sfx(7);
                     // 5596a0: interrupt6 on the difficulty tree, then interrupt2
@@ -5649,10 +5792,10 @@ void game_tick() {
                 if(g_ending_group+1>=END_GROUP_OFFSETS[g_ending_id+1])g_ending_tail=0;
                 else {++g_ending_group;g_ending_line=END_GROUPS[g_ending_group].last;g_ending_reveal_frame=g_frame;}
             }
-        } else if (g_screen == SCR_CHARSEL) {
+        } else if (g_screen == SCR_CHARSEL && g_charsel_frame>=31) {
             // 556340: CPU entries share input, choosing side 1 then side 2.
             const bool second=g_vs_mode&&g_vs_first_confirmed;
-            
+
             auto key2=[&](int c){return keys[c]||g_injected_keys[c];};
             const u8 p2=(key2(SDL_SCANCODE_W)?1:0)|(key2(SDL_SCANCODE_S)?2:0)|(key2(SDL_SCANCODE_A)?4:0)|(key2(SDL_SCANCODE_D)?8:0)|(key2(SDL_SCANCODE_J)?16:0)|(key2(SDL_SCANCODE_K)?32:0);
             const u8 p2edge=p2&~rb_game_tick_previousP2;rb_game_tick_previousP2=p2;
@@ -5662,24 +5805,37 @@ void game_tick() {
             else if(left&&!rb_game_tick_prev_left)dir=2;else if(right&&!rb_game_tick_prev_right)dir=3;
             if(second&&g_vs_entry==0){if(p2edge&1)dir=0;else if(p2edge&2)dir=1;else if(p2edge&4)dir=2;else if(p2edge&8)dir=3;}
             if(g_vs_mode&&(key2(SDL_SCANCODE_LSHIFT)||key2(SDL_SCANCODE_RSHIFT))){if(dir>=2&&g_vs_match_confirm<0&&g_vs_rules[2]>=2){move_vs_card(second?1:0,dir==2?-1:1);play_sfx(0);}dir=-1;}
-            if(dir>=0&&g_vs_match_confirm<0){int next=CHAR_NAV[choice][dir];for(int attempt=0;attempt<19&&!character_available(next);++attempt)next=CHAR_NAV[next][dir];if(character_available(next)&&next!=choice){choice=next;g_bob_phase=8;g_char_switch_frame=0;play_sfx(10);
+            if(dir>=0&&g_vs_match_confirm<0){int next=(g_vs_mode?VS_CHAR_NAV:CHAR_NAV)[choice][dir];if(next!=choice){const int oldChoice=choice;choice=next;
+                if(!g_sub_vms.empty()){auto&grid=g_sub_vms.front();if(!g_vs_mode||oldChoice!=(second?g_char_sel:g_opp_sel))grid.interrupt_all(oldChoice+37);grid.interrupt_all(choice+7);}g_bob_phase=8;g_char_switch_frame=0;play_sfx(10);
                 if(g_vs_mode){
                     init_vs_cards(second?1:0);auto&vm=g_vs_portrait_vm[second?1:0];vm.interrupt_all(3);vm.tick();vm.interrupt_all(choice+7);
 
                 }}}
-            if(g_vs_match_confirm<0&&character_available(choice)&&((z&&!rb_game_tick_prev_z)||(second&&g_vs_entry==0&&(p2edge&16)))){
+            // 0x557c04: an unavailable slot stays selected and plays sound16.
+            if(g_vs_match_confirm<0&&!character_available(choice)&&!(g_vs_mode&&choice==19)&&((z&&!rb_game_tick_prev_z)||(second&&g_vs_entry==0&&(p2edge&16))))play_sfx(16);
+            if(g_vs_match_confirm<0&&(character_available(choice)||(g_vs_mode&&choice==19))&&((z&&!rb_game_tick_prev_z)||(second&&g_vs_entry==0&&(p2edge&16)))){
                 play_sfx(7);g_cursor_select=10;
                 if(g_vs_mode&&!second){g_vs_first_confirmed=true;g_vs_cursor_vm[0].interrupt(6);}
                 else if(g_vs_mode&&!g_vs_second_confirmed){g_vs_second_confirmed=true;g_vs_cursor_vm[1].interrupt(6);g_vs_match_confirm=0;}
                 else if(!g_vs_mode){g_vs_first_confirmed=true;g_vs_cursor_vm[0].interrupt(6);g_vs_match_confirm=0;}
+                // EXE 0x557c8a: both seats confirmed, rejection sample unlocked
+                // characters with next()%19; confirmation timer starts at -60.
+                if(g_vs_mode&&g_vs_second_confirmed){
+                    for(int side=0;side<2;++side){
+                        int&selected=side?g_opp_sel:g_char_sel;
+                        if(selected!=19)continue;
+                        do{selected=int(th19::AnmVm::rand_integer()%19);}while(!g_vs_available[selected]);
+                        g_vs_random_reveal=true;play_sfx(10);init_vs_cards(side);
+                        auto&portrait=g_vs_portrait_vm[side];portrait.interrupt_all(3);portrait.tick();portrait.interrupt_all(selected+7);
+                    }
+                }
             }
             if((x&&!rb_game_tick_prev_x)||(second&&g_vs_entry==0&&(p2edge&32))){
                 play_sfx(9);
                 if(!g_vs_mode&&g_vs_first_confirmed){g_vs_first_confirmed=false;g_vs_match_confirm=-1;g_vs_cursor_vm[0].interrupt(3);}
                 else if(g_vs_second_confirmed){g_vs_second_confirmed=false;g_vs_match_confirm=-1;g_vs_cursor_vm[1].interrupt(3);}
                 else if(second){g_vs_first_confirmed=false;g_vs_cursor_vm[0].interrupt(3);}
-                else if(g_vs_mode){g_charsel_cancel_frame=0;}
-                else {g_cancel_delay=20;g_cancel_fade=1;g_cancel_slide=0;g_next_screen=SCR_STORY;}
+                else {g_charsel_cancel_frame=0;}
             }
         } else if (g_screen == SCR_DIALOG) {
             if(const auto* scene=g_story_session.scene())g_story_final_music=scene->final_music;
@@ -5887,6 +6043,25 @@ void loop(void*) {
 
 extern "C" {
 
+__attribute__((export_name("th19_played_frames"))) u32 th19_played_frames(){return g_played_frames;}
+
+__attribute__((export_name("th19_exit_requested"))) u32 th19_exit_requested(){return g_exit_requested;}
+
+__attribute__((export_name("th19_record_begin"))) void th19_record_begin(){g_played_frames=0;g_replay_input.begin();}
+__attribute__((export_name("th19_record_data"))) u32 th19_record_data(){return u32(g_replay_input.records.data());}
+__attribute__((export_name("th19_record_size"))) u32 th19_record_size(){return g_replay_input.records.size()*sizeof(th19::ReplayTick);}
+__attribute__((export_name("th19_record_info"))) u32 th19_record_info(){static u32 v[8];v[0]=g_replay_input.recording;v[1]=g_replay_input.frames;v[2]=g_replay_input.records.size();v[3]=g_replay_input.playing;v[4]=g_replay_input.position;v[5]=g_replay_input.frames;v[6]=g_replay_input.limited;v[7]=g_screen;return u32(v);}
+__attribute__((export_name("th19_replay_buffer"))) u32 th19_replay_buffer(u32 bytes){if(!bytes||bytes>th19::ReplayInput::frame_limit*sizeof(th19::ReplayTick))return 0;g_replay_input.transfer.resize(bytes);return u32(g_replay_input.transfer.data());}
+__attribute__((export_name("th19_replay_load"))) u32 th19_replay_load(u32 bytes){return g_replay_input.load(bytes);}
+__attribute__((export_name("th19_replay_step"))) u32 th19_replay_step(u32 present){if(!g_replay_input.playing||g_replay_input.position>=g_replay_input.frames||g_exit_requested)return 0;g_loop_paused=false;g_skip_present=!present;game_tick();g_skip_present=false;g_loop_paused=true;return 1;}
+__attribute__((export_name("th19_core_shutdown"))) void th19_core_shutdown(){
+ g_loop_paused=true;if(g_loop_started){emscripten_cancel_main_loop();g_loop_started=false;}
+ g_audio.music.reset();g_audio.sfx.clear();if(g_audio.stream){SDL_DestroyAudioStream(g_audio.stream);g_audio.stream=nullptr;}
+ if(g_audio.engine_ready){ma_engine_uninit(&g_audio.engine);g_audio.engine_ready=false;}
+ g_audio.ready=false;gfx.~GraphicsDevice();
+}
+
+
 // Prediction is restricted to live gameplay. Pause, dialogue, result cards,
 // and resource-changing transitions run only with contiguous confirmed input.
 __attribute__((export_name("th19_rollback_can_predict"))) u32 th19_rollback_can_predict(u32 keys){
@@ -5934,12 +6109,18 @@ __attribute__((export_name("th19_network_set_rules"))) u32 th19_network_set_rule
 // Only confirmed input reaches this entry point; SDL device state is excluded.
 __attribute__((export_name("th19_network_begin"))) u32 th19_network_begin(u32 seed,i32 difficulty,i32 left,i32 right){
     if(g_network_active||difficulty<0||difficulty>3||left<0||left>=19||right<0||right>=19)return 0;
+    g_replay_input.playing=g_replay_input.recording=false;g_played_frames=0;
     g_network_active=true;g_network_finished=false;g_network_frame=0;
     g_game_seed=seed?seed:1;g_vs_scene_rng.state=g_game_seed;
     th19::AnmVm::seed_random(g_game_seed);
     g_frame=0;g_phase=PHASE_TITLE;g_screen=SCR_GAME;g_trans=TRANS_NONE;
     g_story_switch.phase=0;g_vs_dialogue_active=false;g_paused=g_pause_confirm=false;
     g_confirm_delay=g_cancel_delay=g_game_load_frames=0;g_notice_id=-1;
+    // A replay/rematch owns a fresh result state, independent of the match
+    // previously played in this Runtime. The winner participates in its hash.
+    g_battle_winner=0;g_battle_timeout=false;g_battle_report_frame=-1;
+    g_charsel_cancel_frame=g_difficulty_confirm_frame=g_menu_cancel_frame=-1;
+    g_vs_entry_transition=g_final_exit=-1;
     g_vs_entry=0;g_char_sel=left;g_opp_sel=right;g_story_difficulty=difficulty;
     std::copy(networkRules,networkRules+7,g_vs_rules);g_vs_cards[0].reset(networkRules[7]);g_vs_cards[1].reset(networkRules[8]);
     std::fill(std::begin(g_injected_keys),std::end(g_injected_keys),0);
@@ -6023,7 +6204,8 @@ __attribute__((export_name("th19_network_info"))) u32 th19_network_info(){
 }
 
 __attribute__((export_name("th19_game_open"))) u32 th19_game_open(u32 seed) {
-    g_game_seed = seed;g_vs_scene_rng.state=seed?seed:1;
+    g_exit_requested=false;g_played_frames=0;
+    g_game_seed = seed;g_vs_scene_rng.state=seed?seed:1;th19::AnmVm::seed_random(seed?seed:1);
     if (!gfx.initialize()) return 0;
     init_audio();
     if (!load_anm("/ascii1280.anm", g_ascii_bytes, g_ascii)) return 0;
@@ -6426,6 +6608,16 @@ __attribute__((export_name("th19_test_flame_hit"))) u32 th19_test_flame_hit(i32 
     }
     r[7]=int(g_player_hit_effects.size());return (u32)r;
 }
+// Impact observations after real SHT collision; no synthetic hit callback.
+__attribute__((export_name("th19_test_shot_impact"))) u32 th19_test_shot_impact(i32 mode){
+    if(mode==1){th19_test_flame_hit(1);auto&e=g_ecl_fields[0].world.enemies.front();e.animation_files={"enemy.anm"};e.animations[0].file=2;e.animations[0].script=0;e.animations[0].generation++;}
+    if(mode==2){th19_test_flame_hit(2);g_attacks[0].charge_attack={};g_test_card_shoot_only=true;}
+    static i32 r[16];std::fill(std::begin(r),std::end(r),0);
+    auto&w=g_ecl_fields[0].world;r[0]=w.enemies.empty()?-1:w.enemies.front().life;
+    for(const auto&b:g_player_projectiles)if(b.side==0){++r[1];if(b.ending){++r[2];r[3]+=b.damage;r[4]+=b.vm.visible;r[5]+=int(b.vm.children.size());r[6]|=1<<b.hit_callback;}if(b.piercing)++r[7];}
+    r[8]=int(g_player_hit_effects.size());for(const auto&b:g_player_hit_effects)if(b.effect_bank){++r[9];r[10]=b.vm.r;r[11]=b.vm.g;r[12]=b.vm.b;r[13]=b.vm.alpha;}
+    return (u32)r;
+}
 // Deterministic laser occlusion fixture: actual input/shots, two durable targets.
 __attribute__((export_name("th19_test_laser_targets"))) u32 th19_test_laser_targets(i32 reset){
     auto&w=g_ecl_fields[0].world;
@@ -6463,6 +6655,112 @@ __attribute__((export_name("th19_test_ticks"))) void th19_test_ticks(i32 count){
     count=std::clamp(count,0,600);
     for(int i=0;i<count;++i){g_skip_present=i+1<count;game_tick();}
     g_skip_present=false;g_loop_paused=paused;g_fixed_step.reset();
+}
+// Saturate both original bullet emitters while exercising native retirement,
+// rendering and checkpoint code in the browser pressure test.
+// Gameplay parity fixture: drive production state and expose observations.
+__attribute__((export_name("th19_test_gameplay_parity"))) u32 th19_test_gameplay_parity(i32 action) {
+    auto& world = g_ecl_fields[0].world;
+    if (action == 1) {
+        for (auto& field : g_ecl_fields) {
+            field.vm.start("DebugSkipFunc");
+            field.world.enemies.clear();
+            field.world.bullets.clear();
+            field.world.combo_attack = {};
+        }
+        g_cpu_automatic = false;
+        g_opponent_controls = 0;
+        g_attack_warning = {};
+        g_player_projectiles.clear();
+    }
+    if (action == 2) {
+        g_p1_lives = 1;
+        g_barrier[0].state = 2;
+        g_charge[0].energy = g_charge[0].thresholds[2];
+    }
+    if (action == 3) {
+        for (auto& shot : g_player_projectiles) {
+            if (shot.init_callback != 21) continue;
+            auto& enemy = world.spawn_enemy("", shot.x, shot.y, 100000, 0, 0);
+            enemy.sprite = 0;
+            enemy.hitbox_w = enemy.hitbox_h = 48;
+            break;
+        }
+    }
+    if (action == 4) {
+        world.combo = 5;
+        for (int i = 0; i < 7; ++i) {
+            auto& enemy = world.spawn_enemy("", 0, 100, 1, 0, 0);
+            enemy.sprite = 0;
+            world.set_spirit_kind(enemy, 2, false);
+            world.damage_enemy(enemy, 1);
+        }
+    }
+    if (action == 5) g_barrier[0].state = 1;
+    static i32 state[20];
+    std::fill(std::begin(state), std::end(state), 0);
+    state[0] = g_charge[0].ex_level;
+    state[1] = g_charge[0].boss_level;
+    state[2] = g_charge[1].ex_level;
+    state[3] = g_charge[1].boss_level;
+    state[4] = g_gauge_warning[0].color();
+    state[5] = rb_draw_field_hud_hearts[0][0].color();
+    state[6] = g_vs_attack_counts[0][0];
+    state[7] = g_vs_attack_counts[0][1];
+    state[8] = g_charge[0].energy;
+    state[9] = g_barrier[0].state;
+    for (const auto& shot : g_player_projectiles) {
+        if (shot.init_callback == 21) ++state[10];
+    }
+    state[11] = world.combo_attack.extraCredit;
+    state[12] = world.combo_attack.bossCredit;
+    state[13] = g_attack_warning.tier;
+    state[14] = g_exit_requested;
+    state[15] = g_flash_phase;
+    state[16] = world.enemies.empty() ? -1 : world.enemies.back().life;
+    return u32(uintptr_t(state));
+}
+// Fixtures drive production round, collision and charge handlers.
+__attribute__((export_name("th19_test_charsel_anm"))) u32 th19_test_charsel_anm(){
+    static i32 out[22];std::fill(std::begin(out),std::end(out),0);out[0]=g_charsel_frame;out[1]=g_sub_vms.empty()?0:g_sub_vms.front().children.size();
+    if(!g_sub_vms.empty())for(int i=0;i<2;++i){int index=i?18:0;if(index>=int(g_sub_vms.front().children.size()))continue;
+        const auto&v=g_sub_vms.front().children[index];int p=2+i*10;
+        out[p]=v.time;out[p+1]=v.sprite;out[p+2]=v.alpha;out[p+3]=v.render_mode;out[p+4]=int(v.rot_y*1000000);out[p+5]=int(v.sx*1000000);out[p+6]=v.r;out[p+7]=int(v.x);out[p+8]=int(v.y);out[p+9]=int(v.sx*std::cos(v.rot_y)*1000000);
+    }return u32(out);
+}
+__attribute__((export_name("th19_test_round_charge"))) u32 th19_test_round_charge(i32 action,i32 value){
+    if(action==1){for(int side=0;side<2;++side){g_charge[side].ex_level=value;g_charge[side].boss_level=std::max(0,value-1);}}
+    if(action==2)start_vs_match(false);
+    if(action==3){g_player_damage[0]={};g_barrier[0].state=1;g_barrier[0].invulnerable=0;
+        g_charge[0].energy=2500;g_charge[0].charge=g_charge[0].thresholds[value==4?3:2];g_charge[0].held=true;g_charge[0].cooldown=0;
+        auto&b=g_ecl_fields[0].world.spawn_bullet();b.state=1;b.x=g_p1_x;b.y=g_p1_y;b.hit_width=4;b.kind=0;
+        g_big_sprite=-1;g_player_collision_enabled=true;check_player_contacts();tick_charge_release(0,true,false);}
+    if(action==4){g_player_damage[0]={};g_charge[0].energy=2500;g_charge[0].charge=g_charge[0].thresholds[value==4?3:2];g_charge[0].held=true;g_charge[0].cooldown=0;tick_charge_release(0,false,false);}
+    return th19_test_gameplay_parity(0);
+}
+__attribute__((export_name("th19_test_world_pressure"))) u32 th19_test_world_pressure(u32 retire){
+ static u32 out[6];g_player_collision_enabled=false;
+ for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;
+  if(retire)for(auto&b:w.bullets)b.state=4;
+  th19::LaserShooter shot;shot.type=0;shot.count1=64;shot.count2=64;shot.speed=shot.speed2=0;w.fire_bullets(shot,0,100);
+  for(int n=0;n<100;++n){auto&e=w.spawn_enemy("",0,0,1,0,0);e.active=false;}
+  out[side*3]=w.bullets.size();out[side*3+1]=w.enemies.size();out[side*3+2]=w.dropped_bullets;
+ }return u32(out);
+}
+__attribute__((export_name("th19_test_spirit_pressure"))) u32 th19_test_spirit_pressure(i32 count){
+    static u32 out[8];g_player_collision_enabled=false;
+    for(int side=0;side<2;++side){auto&w=g_ecl_fields[side].world;
+        if(count>0){g_ecl_fields[side].vm.start("DebugSkipFunc");
+            for(int i=0;i<std::min(count,2000);++i){
+                const auto arrival=th19::spiritArrival(0,2+i%3,0,0,true,false);
+                w.receive_spirit(arrival,float(i%20)*14-133,float(i/20%20)*18+30);
+            }
+        }
+        out[side*3]=w.enemies.size();out[side*3+1]=w.bullets.size();out[side*3+2]=w.spirit_requests.size();
+        auto nodes=[](auto&&self,const th19::AnmVm&v)->u32{u32 n=1;for(const auto&c:v.children)n+=self(self,c);return n;};
+        out[6+side]=0;for(const auto&entry:rb_draw_ecl_objects_animations[side])out[6+side]+=nodes(nodes,entry.second.vm);
+    }
+    return u32(out);
 }
 // Exercise actual dialogue input/timing without presenting each key edge.
 // Stops at battle/ending/title; it never injects a result or skips a scene.
@@ -6541,7 +6839,7 @@ __attribute__((export_name("th19_test_battle_result"))) i32 th19_test_battle_res
 // No keyboard shortcut in normal gameplay.
 __attribute__((export_name("th19_test_card_reward"))) void th19_test_card_reward(i32 id){
     const bool append=id<0;if(append)id=-id;
-    if(id<1||id>38)return;load_ability_cards();if(!append){g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_card_options.clear();}
+    if(id<1||id>38)return;load_ability_cards();if(!append){g_owned_cards.clear();g_opponent_cards.clear();g_owned_card_vms.clear();g_opponent_card_vms.clear();g_cards_draw_frame=g_opponent_cards_draw_frame=-1;g_card_options.clear();}
     begin_card_reward((id-1)/2);g_card_reward=id;g_card_reward_vm.sprite=5+2*id;
     for(int i=0;i<120;++i)tick_card_reward(false);tick_card_reward(true);
     for(int i=0;i<10;++i)tick_card_reward(false);g_card_reward_exit=-1;
@@ -6650,8 +6948,3 @@ __attribute__((export_name("th19_error"))) const char* th19_error() {
     return gfx.error();
 }
 }
-
-
-
-
-

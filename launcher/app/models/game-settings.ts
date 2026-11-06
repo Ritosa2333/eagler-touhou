@@ -151,7 +151,7 @@ export function createGameSettingsModel({storage, onChange}: {
     if (multiplayer) options.thpracEnabled = false;
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
-      ...(context.productId === 'th09mp' ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
+      ...(['th09mp','th19mp'].includes(context.productId) ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
       music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
       musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
       gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
@@ -272,7 +272,7 @@ export function createGameSettingsModel({storage, onChange}: {
     },
     setReplayAutoSave(enabled: boolean) {
       const state = required();
-      if (state.context.productId !== 'th09mp' || state.replayAutoSave === enabled) return;
+      if (!['th09mp','th19mp'].includes(state.context.productId) || state.replayAutoSave === enabled) return;
       multiplayerPreferences.persistReplayAutoSave(state.context.productId, enabled);
       publish({...state, replayAutoSave: enabled}, 'replay-auto-save');
     },
