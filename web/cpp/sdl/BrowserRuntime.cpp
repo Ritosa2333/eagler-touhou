@@ -235,7 +235,9 @@ struct RoomRuntime final : multiplayer::World {
   const auto result=terminal?multiplayer::Session::Tick::Waiting:session.tick(*this,advance);
   if(trace&&result==multiplayer::Session::Tick::Waiting&&session.repair_pending())++replay_slices;
   if(result==multiplayer::Session::Tick::Failed)return app->fail(session.error());
-  if(entered&&(app->title||app->exiting)&&session.confirmed_frames()==session.next_frame()){
+  // The opening loader keeps the outgoing title alive until it constructs Stage 1.
+  const bool returned_to_title=app->title&&app->loading_destination==AppScene::Uninitialized;
+  if(entered&&(returned_to_title||app->exiting)&&session.confirmed_frames()==session.next_frame()){
    terminal=true;
    if(!session.retire(now_ms))return !*session.error()||app->fail(session.error());
    if(app->title&&app->flow.title_return_reason==3)app->completed_recording=true;
