@@ -36,6 +36,9 @@ add_executable(th17-team-spirits team-spirits.cpp
     ${game}/AnmVisualState.cpp
     ${game}/DamageSources.cpp
     ${game}/EffectManager.cpp
+    ${game}/Hud.cpp
+    ${game}/HudDraw.cpp
+    ${game}/HudResults.cpp
     ${game}/Interpolation.cpp
     ${game}/ItemCollection.cpp
     ${game}/ItemFrame.cpp

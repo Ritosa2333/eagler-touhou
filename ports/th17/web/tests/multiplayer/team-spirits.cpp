@@ -1,7 +1,9 @@
 #include "../../cpp/game/ItemSpirits.hpp"
 #include "../../cpp/game/EnemyCallbacks.hpp"
 #include "../../cpp/game/LaserScene.hpp"
+#include "../../cpp/game/Hud.hpp"
 #include "../../cpp/multiplayer/FrameImage.hpp"
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <filesystem>
@@ -387,6 +389,60 @@ void team_contact(const char* asset) {
     if (!spirits->update_spirits({}, team)) require(false, spirits->error.c_str());
     require(spirits->spirits.find(id)->position.x < collected_x, "tie chooses first seat and retains it");
 }
+
+void room_hud(const char* asset) {
+    if (!asset) return;
+    const auto front = std::filesystem::path(asset).parent_path() / "front.anm";
+    std::ifstream source(front, std::ios::binary);
+    const std::vector<u8> bytes{std::istreambuf_iterator<char>(source), {}};
+    struct TextCapture : HudDrawServices {
+        std::vector<HudTextDraw> entries;
+        bool hud_text(const HudTextDraw& entry) override { entries.push_back(entry); return true; }
+        unsigned count(const std::string& value) const {
+            return std::count_if(entries.begin(),entries.end(),[&](const auto& entry){return entry.text==value;});
+        }
+    };
+    for (u32 seats : {1u,2u,3u}) {
+        AnmEnvironment env;
+        Rng visual;
+        AnmManager animations(visual,env);
+        load_bank(animations,asset);
+        require(animations.load(5,bytes.data(),u32(bytes.size())),"load front.anm");
+        EnemyWorldState enemies;
+        PlayerMotion motion;
+        PlayerSpellStatus spell;
+        std::array<PlayerLifeSession,3> stock;
+        stock[0].power=115;stock[1].power=237;stock[2].power=349;
+        for (u32 seat=0;seat<seats;++seat) stock[seat].life_pieces=stock[seat].bomb_pieces=i32(seat);
+        Hud hud(animations,enemies,stock[0],motion,spell);
+        HudStartContext start;
+        start.stage=7;start.screen=8;start.difficulty=4;
+        require(hud.initialize(start,seats),hud.error.c_str());
+        for (u32 seat=1;seat<seats;++seat) require(hud.initialize_partner(seat,i32(seat),stock[seat]),hud.error.c_str());
+        for (int i=0;i<140;++i) require(animations.update(true),animations.error.c_str());
+        TextCapture text;
+        ItemScoreState score;score.difficulty=4;score.point_value=9000000;
+        HudScoreState progress;
+        const std::array<HudPilotStock,3> pilots{{{&stock[0],0},{&stock[1],9},{&stock[2],0}}};
+        require(hud.draw({score,progress,678},text,seats-1,pilots),hud.error.c_str());
+        require(text.count("15")==1&&text.count("37")==unsigned(seats>=2)&&text.count("49")==unsigned(seats==3),"per-seat Power");
+        require(text.count("90,000")==1&&text.count("678")==1&&text.count("Graze")==unsigned(seats>1),"shared PIV and graze");
+        require(text.count("---/---")==unsigned(seats==2)&&text.count("/3")==unsigned(seats==1?2:seats==2?3:0),"native fragment displays");
+        for (u32 seat=0;seat<seats;++seat) {
+            const auto tag=std::to_string(seat+1)+"P";
+            const auto it=std::find_if(text.entries.begin(),text.entries.end(),[&](const auto& entry){return entry.text==tag;});
+            if (seats==1) require(it==text.entries.end(),"ordinary HUD has no seat tag");
+            else require(it!=text.entries.end()&&(it->style.color&0xffffffu)==(seat==seats-1?0xffff80u:0xffffffu),"local seat is highlighted");
+        }
+        unsigned life=0,bomb=0;
+        for (auto* vm : animations.registry.layer(37)) {
+            life+=vm->source_script==8;
+            bomb+=vm->source_script==10;
+            if (vm->source_script==30||vm->source_script==38) require(vm->hud_viewer==(seats==1?1:0),"each seat sees every room stock row");
+        }
+        require(life==seats&&bomb==seats,"native stock labels are on the HUD overlay layer");
+    }
+}
 }
 
 int main(int argc, char** argv) {
@@ -401,5 +457,6 @@ int main(int argc, char** argv) {
     immutable_bullet_program();
     logical_animation_draw();
     laser_restore(asset);
-    std::cout << "TH17 spirit inventory, countdown, fragments and laser rollback passed\n";
+    room_hud(asset);
+    std::cout << "TH17 spirit inventory, countdown, fragments, laser rollback and HUD passed\n";
 }

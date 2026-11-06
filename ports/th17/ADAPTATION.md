@@ -181,3 +181,4 @@
 - 2026-11-06，multiplayer：[Extra 密集弹幕压测](../../archive/th17-extra-dense-20261106/README.md)。生产 Wasm 在真实 Extra 房比对确认帧，并测量敌弹密集区段的活跃堆和纠错耗时。
 - 2026-11-06，multiplayer：[Extra Boss 三人回滚压测](../../archive/th17-extra-boss-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房核对关底非符和符卡，并分项测量快照、逻辑绘制与纠错耗时。
 - 2026-11-06，multiplayer：[Extra 关底全程回滚压测](../../archive/th17-extra-finale-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房跑完整个关底，并配对比较密集帧的活跃堆与快照容量。
+- 2026-11-06，multiplayer：[双人和三人 HUD 验证](../../archive/th17-multiplayer-hud-20261106/README.md)。正式多人包在 Extra 房显示分席资源和共享计数，原生测试核对图标层、席位高亮和碎片显示。

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 427 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 428 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -299,6 +299,7 @@
 | 历史记录 | [archive/th17-extra-boss-20261106/README.md](../archive/th17-extra-boss-20261106/README.md) | TH17 Extra Boss 三人回滚压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-dense-20261106/README.md](../archive/th17-extra-dense-20261106/README.md) | TH17 Extra 密集弹幕压测 · 2026-11-06 |
 | 历史记录 | [archive/th17-extra-finale-20261106/README.md](../archive/th17-extra-finale-20261106/README.md) | TH17 Extra 关底全程回滚压测 · 2026-11-06 |
+| 历史记录 | [archive/th17-multiplayer-hud-20261106/README.md](../archive/th17-multiplayer-hud-20261106/README.md) | TH17 双人和三人 HUD 验证 · 2026-11-06 |
 | 历史记录 | [archive/th17-multiplayer-room-20261106/room-validation.md](../archive/th17-multiplayer-room-20261106/room-validation.md) | TH17 多人房间验证 · 2026-11-06 |
 | 历史记录 | [archive/th19-audio-20261105/README.md](../archive/th19-audio-20261105/README.md) | TH19 重复音效验收 |
 | 历史记录 | [archive/th19-development-20261104/README.md](../archive/th19-development-20261104/README.md) | TH19 源码交付来源 |

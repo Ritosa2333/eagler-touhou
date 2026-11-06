@@ -487,7 +487,7 @@ void GameBattle::save_rollback(multiplayer::FrameImage& image){
         save_pilot(p.player,*p.bomb,p.character);
     }
     auto& h=*hud;auto& s=*spell_card;
-    image.save(h.partner_stock,h.life_handles,h.bomb_handles,h.clock_handles,h.gauges,h.phase_handles,
+    image.save(h.seats,h.partner_stock,h.life_handles,h.bomb_handles,h.clock_handles,h.gauges,h.phase_handles,
         h.bonus_digits,h.bonus_separators,h.result_banner,h.pickup_banner,h.result_panel,h.result_active,
         h.stage_clear_notice,h.chapter_result_notice,h.stage_clear_bonus,h.displayed_score,h.score_increment,h.chapter_result,
         h.base,h.indicator,h.difficulty_banner,h.difficulty_label,h.loadout_label,h.boss_name,h.notice_handle,
