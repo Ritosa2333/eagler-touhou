@@ -15,10 +15,18 @@ AnmRegistry::Node* AnmRegistry::pooled(u32 slot)const noexcept{
 }
 AnmRegistry::Node* AnmRegistry::node(AnmVm& vm)const noexcept{
     const auto address=reinterpret_cast<uintptr_t>(&vm);
-    for(u32 page=0;page<page_count;++page){
-        const auto base=reinterpret_cast<uintptr_t>(&pages[page][0].vm);
-        if(address>=base&&address-base<size_t(page_size)*sizeof(Node)&&(address-base)%sizeof(Node)==0)
-            return &pages[page][(address-base)/sizeof(Node)];
+    const auto within=[&](Node* page)->Node*{
+        if(!page)return nullptr;
+        const auto base=reinterpret_cast<uintptr_t>(&page[0].vm);
+        if(address<base||address-base>=size_t(page_size)*sizeof(Node)||(address-base)%sizeof(Node)!=0)return nullptr;
+        return &page[(address-base)/sizeof(Node)];
+    };
+    if(auto* entry=within(recent_page))return entry;
+    auto page=std::upper_bound(address_pages.begin(),address_pages.end(),address,
+        [](uintptr_t key,const Node* first){return key<reinterpret_cast<uintptr_t>(&first->vm);});
+    if(page!=address_pages.begin())if(auto* entry=within(*--page)){
+        recent_page=*page;
+        return entry;
     }
     const auto it=nodes.find(&vm);if(it!=nodes.end())return it->second;const auto borrowed=external.find(&vm);return borrowed==external.end()?nullptr:borrowed->second.get();
 }
@@ -26,7 +34,14 @@ AnmVm* AnmRegistry::allocate(){
     Node* entry=nullptr;if(!free_slots.empty()){entry=pooled(free_slots.back());free_slots.pop_back();}
     else if(next_slot<slot_mask){
         const auto slot=next_slot++;
-        if(slot/page_size==page_count)pages[page_count++]=std::make_unique<Node[]>(page_size);
+        if(slot/page_size==page_count){
+            auto page=std::make_unique<Node[]>(page_size);
+            auto* first=page.get();
+            const auto position=std::lower_bound(address_pages.begin(),address_pages.end(),first,
+                [](const Node* a,const Node* b){return reinterpret_cast<uintptr_t>(a)<reinterpret_cast<uintptr_t>(b);});
+            address_pages.insert(position,first);
+            pages[page_count++]=std::move(page);
+        }
         entry=pooled(slot);
         if(entry->slot!=slot_mask)entry->vm=AnmVm{};
         entry->slot=slot;
