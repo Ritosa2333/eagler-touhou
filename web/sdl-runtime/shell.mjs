@@ -7,6 +7,7 @@ const game='th17',protocol='eagler-touhou/1',query=new URLSearchParams(location.
 const epoch=Number(query.get('runtimeEpoch')),validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 let configured=false;
 let roomRuntime=false;
+let roomPreview=false,runtimeLanguage='ja';
 let core,gpuMonitor,launched=false,first=false,stopping=false,options={},music=true,chain=Promise.resolve(),queue=Promise.resolve();
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!stopping,reset:clearKeyboard},accept:code=>!!scanCodes[code],send:(code,down)=>core?._th17_key(scanCodes[code],+down)});
@@ -72,6 +73,13 @@ function mountLanguagePack(pack,language){
  runtimePackFiles.push(runtimeLocalePath);
 }
 function openReplay(value){const name=path(value).replace(/^replay\//,'');if(!/\.rpyx?$/.test(name))throw Error('录像路径无效');const bytes=new TextEncoder().encode(name+String.fromCharCode(0)),ptr=core._malloc(bytes.length);if(!ptr)throw Error('录像内存不足');try{core.HEAPU8.set(bytes,ptr);if(!core._th17_open_replay(ptr,0))throw Error('录像启动失败');}finally{core._free(ptr);}}
+function initializeGame(){
+ let scaleOption=query.get('renderScale');
+ if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}
+ const requested=Number(scaleOption);
+ core._th17_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);
+ if(!core._th17_initialize())throw Error(err());
+}
 async function openRoom(){
  const o=options,loadouts=o.netplayLoadouts,count=o.netplayPlayerCount,seat=o.netplayPlayer;
  const relay=new URL(o.netplayUrl),room=relay.searchParams.get('room'),run=relay.searchParams.get('run');
@@ -104,7 +112,25 @@ async function openRoom(){
  }finally{core._free(address);core._free(params);}
 }
 async function command(m){switch(m.command){
-case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');configured=false;options=m.options||{};if(options.touchSensitivity!=null&&!(Number.isFinite(options.touchSensitivity)&&options.touchSensitivity>=100&&options.touchSensitivity<=300))throw Error('触控灵敏度无效');music=m.music!=='none';for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);mountLanguagePack(m.runtimePack,m.language||m.runtimePack?.language||'ja');apply();configured=true;return {};
+case 'configure':{
+ if(launched)throw Error('游戏已启动');
+ if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');
+ const nextOptions=m.options||{},language=m.language||m.runtimePack?.language||'ja';
+ if(nextOptions.touchSensitivity!=null&&!(Number.isFinite(nextOptions.touchSensitivity)&&nextOptions.touchSensitivity>=100&&nextOptions.touchSensitivity<=300))throw Error('触控灵敏度无效');
+ if(roomPreview&&(language!==runtimeLanguage||m.runtimePack))throw Error('请重新加载游戏以切换语言');
+ configured=false;
+ for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);
+ if(!roomPreview){mountLanguagePack(m.runtimePack,language);runtimeLanguage=language;}
+ options=nextOptions;music=m.music!=='none';apply();configured=true;return {};
+}
+case 'prepare-room':
+ if(!roomRuntime||!configured||launched||options.netplayMode==='lan')throw Error('请先配置多人游戏');
+ if(!roomPreview){
+  initializeGame();
+  if(!core._th17_room_preview())throw Error(err()||'TH17 房间预览加载失败');
+  roomPreview=true;$('#loading').textContent='';
+ }
+ return {presented:true};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
 case 'keyboard':if(typeof m.code!=='string'||typeof m.down!=='boolean')throw Error('键盘参数无效');if(launched)keyboard.event(m,m.down,'hosted');return {};
 case 'keyboard-clear':clearKeyboard();return {};
@@ -117,7 +143,17 @@ case 'thprac-mouse':{
  if(scale>0)core._th17_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(m.x-r.left-(r.width-640*scale)/2)/scale,(m.y-r.top-(r.height-480*scale)/2)/scale);
  return {};
 }
-case 'launch':if(!configured)throw Error('请先配置游戏');if(!launched){if(!roomRuntime&&options.netplayMode==='lan')throw Error('请使用 TH17 多人运行包');let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}const requested=Number(scaleOption);core._th17_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);if(!core._th17_initialize())throw Error(err());if(roomRuntime)await openRoom();else if(options.replayPath)openReplay(options.replayPath);launched=true;apply();first=false;$('#loading').textContent='';core._th17_loop_start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++ · WEB '+runtimeBuild.version.split('-sdl3-')[0],architecture:protocol,...runtimeBuild});}return {};
+case 'launch':
+ if(!configured)throw Error('请先配置游戏');
+ if(!launched){
+  const network=options.netplayMode==='lan';
+  if(network&&!roomRuntime)throw Error('请使用 TH17 多人运行包');
+  if(!roomPreview)initializeGame();
+  if(network)await openRoom();else if(!roomRuntime&&options.replayPath)openReplay(options.replayPath);
+  launched=true;roomPreview=false;apply();first=false;$('#loading').textContent='';core._th17_loop_start();
+  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++ · WEB '+runtimeBuild.version.split('-sdl3-')[0],architecture:protocol,...runtimeBuild});
+ }
+ return {};
 case 'sync':await save();return {};
 case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of core.FS.readdir('/savesth17'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=core.FS.stat('/savesth17/'+n);if(core.FS.isFile(s.mode))files.push({path:n,size:s.size});}return {files};}
 case 'read':return {bytes:Array.from(core.FS.readFile('/savesth17/'+path(m.path)))};
@@ -141,7 +177,7 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
  if(!launched||!options.touchEnabled||e.pointerType==='mouse')return;e.preventDefault();if(e.type==='pointercancel'){core._th17_touch_cancel();return;}if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th17_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);
 });
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fatal(Error('图形环境失效，请退出后重新开始。'));});
-window.addEventListener('pagehide',()=>{if(launched){core._th17_loop_stop();core._th17_room_close?.();try{void save().catch(fatal);}catch(e){fatal(e);}closeAudio();}});
+window.addEventListener('pagehide',()=>{if(roomPreview)closeAudio();else if(launched){core._th17_loop_stop();core._th17_room_close?.();try{void save().catch(fatal);}catch(e){fatal(e);}closeAudio();}});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}},30000);
@@ -161,5 +197,5 @@ const initialized=(async()=>{
  const response=await fetch('./resources.json');if(!response.ok)throw Error('资源清单加载失败');const manifest=await response.json();
  if(manifest.schema!=='eagler-sdl-resources/1'||manifest.game!==game||!Array.isArray(manifest.resources)||manifest.resources.length!==fontNames.length||new Set(manifest.resources.map(r=>r.path)).size!==fontNames.length||manifest.resources.some(r=>!fontNames.some(n=>r.path==='/fonts/'+n)))throw Error('资源清单无效');
  for(const r of manifest.resources)await resource(r);
- emit('ready',{saveRoot:'/savesth17'});
+ emit('ready',{saveRoot:'/savesth17',roomPreview:roomRuntime});
 })().catch(e=>{if(e?.name==='AbortError'&&e?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED')return false;fatal(e);throw e;});
