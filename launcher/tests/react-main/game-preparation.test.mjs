@@ -271,6 +271,19 @@ test('TH075 room uses the split index without installing DATA or preloading OGG'
   assert.deepEqual(f.calls, []);
 });
 
+test('TH075 native resolution is opt-in and scoped to multiplayer', () => {
+  const state = settingsFixture({productId: 'th075mp'});
+  const optionsFor = (settings, multiplayer) =>
+    api.gameRuntimeOptions({productId: settings.context.productId, settings, multiplayer}, 'ja', 'none', null);
+  const room = {kind: 'room-preload'};
+  assert.equal(optionsFor(state.snapshot, room).renderScale, undefined);
+  state.model.setOption('th075NativeResolution', true);
+  state.model.hydrate(state.snapshot.context);
+  assert.equal(optionsFor(state.model.getSnapshot(), room).renderScale, 1);
+  state.model.hydrate({...state.snapshot.context, productId: 'th075'});
+  assert.equal(optionsFor(state.model.getSnapshot()).renderScale, undefined);
+});
+
 test('main 5890: local current is chosen without initializing or waiting for remote metadata', async () => {
   const f = acquisitionFixture({initialize: async () => {throw new Error('Must not be reached');}});
   const result = await f.acquisition.acquire({productId: 'th06', music: 'none', language: 'ja'});

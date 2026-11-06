@@ -2490,6 +2490,14 @@
     "id": "settings_localPlayerVisibilityHint",
     "params": []
   },
+  "settings.th075NativeResolution": {
+    "id": "settings_th075NativeResolution",
+    "params": []
+  },
+  "settings.th075NativeResolutionHint": {
+    "id": "settings_th075NativeResolutionHint",
+    "params": []
+  },
   "options.touch": {
     "id": "options_touch",
     "params": []

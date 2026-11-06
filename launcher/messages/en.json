@@ -600,6 +600,8 @@
   "settings_appleNotice": "(Apple users: please read)",
   "settings_localPlayerVisibility": "Enhance local player visibility",
   "settings_localPlayerVisibilityHint": "Show the local player with a white guide line in the game area.",
+  "settings_th075NativeResolution": "Low-cost rendering (640×480)",
+  "settings_th075NativeResolutionHint": "Reload the room to render at native resolution on this device and reduce graphics load.",
   "options_touch": "Touch settings",
   "options_files": "Saves & replays",
   "settings_faithBar": "Overhead faith gauge",

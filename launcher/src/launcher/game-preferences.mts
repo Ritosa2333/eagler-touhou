@@ -21,6 +21,7 @@ export function normalizeTh05MultiplayerDisplay(value: unknown): Readonly<Th05Mu
 
 export interface GameOptions {
   th05MultiplayerDisplay: Readonly<Th05MultiplayerDisplay>;
+  th075NativeResolution: boolean;
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
@@ -46,6 +47,7 @@ export interface GameOptions {
 
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   th05MultiplayerDisplay: DEFAULT_TH05_MULTIPLAYER_DISPLAY,
+  th075NativeResolution: false,
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
@@ -262,6 +264,7 @@ export function normalizeStoredGamePreferences(
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
     faithBarEnabled: booleanOption(rawOptions, "faithBarEnabled", DEFAULT_GAME_OPTIONS.faithBarEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
+    th075NativeResolution: booleanOption(rawOptions, "th075NativeResolution", DEFAULT_GAME_OPTIONS.th075NativeResolution),
     pixelPerfectEnabled: booleanOption(rawOptions, "pixelPerfectEnabled", DEFAULT_GAME_OPTIONS.pixelPerfectEnabled),
     touchEnabled: booleanOption(rawOptions, "touchEnabled", DEFAULT_GAME_OPTIONS.touchEnabled),
     touchMovementMode: migratedMovement,

@@ -600,6 +600,8 @@
   "settings_appleNotice": "（Apple製品をご利用の方へ）",
   "settings_localPlayerVisibility": "自機を見やすくする",
   "settings_localPlayerVisibilityHint": "ゲーム画面に白い補助線を表示して、自機を見やすくします。",
+  "settings_th075NativeResolution": "低負荷描画（640×480）",
+  "settings_th075NativeResolutionHint": "ルームを再読み込みすると、この端末の描画を原寸解像度にして負荷を抑えます。",
   "options_touch": "タッチ設定",
   "options_files": "セーブ・リプレイ",
   "settings_faithBar": "自機上の信仰ゲージ",
