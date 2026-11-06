@@ -69,6 +69,20 @@ TH17 普通版的产品能力表登记实际构建功能。逐项运行验收记
 
 当前生产构建的接入结果见[2026-10-30 验证记录](../../../archive/th17-development-20261030/migration-validation.md)，覆盖桌面 Chromium 的生产 Wasm、两种音乐模式、存档恢复与指定原版演示文件启动。
 
+## 多人分支的原生验证
+
+多人会话使用公共的 `SessionChannel` 和 `RollbackCore`。房间身份绑定关卡难度、各席位的角色与动物、种子、输入时序及运行包身份。回滚保留 12 帧，方向最多预测 2 帧。逻辑世界负责恢复目标帧开始前的状态，音效、存档、录像等输出由连续确认帧提交。
+
+动物灵池、五格库存和暴走计时归同一关卡。灵体由范围内最近的有效席位拾取，距离相同时按席位顺序处理，拾取动画继续追随该席位。原生测试覆盖会话、迟到输入纠正、确认输出，以及不同席位合力触发一次暴走。浏览器大厅和完整关卡快照属于后续接入范围。
+
+```sh
+cmake -S ports/th17/web/tests/multiplayer -B build/th17-multiplayer -G Ninja -DCMAKE_CXX_COMPILER=clang++
+cmake --build build/th17-multiplayer
+ctest --test-dir build/th17-multiplayer --output-on-failure
+```
+
+Windows 从 Visual Studio 开发者终端执行，可加 `-DCMAKE_LINKER_TYPE=SYSTEM` 选用系统链接器。
+
 ## 检查
 
 ```sh
