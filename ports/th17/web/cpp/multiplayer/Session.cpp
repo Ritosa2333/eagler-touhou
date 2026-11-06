@@ -66,9 +66,10 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     input.inputDelay = setup.delay;
     input.allowPrediction = setup.rollback;
     input.maxRollbackFrames = rollback_frames;
-    // Z, Shift and directions can be held. Bomb, pause and skip require
-    // actual input; directional prediction expires before the history window.
-    input.predictableButtons = 0xf9;
+    // Predict held controls during battle, including dialogue skip. The
+    // dialogue boundary waits for confirmed input before consuming skip.
+    // Bomb and pause still require actual input.
+    input.predictableButtons = 0x2f9;
     input.directionButtons = 0xf0;
     input.maxDirectionPredictionFrames = 2;
     input.directTouchIsAbsolute = true;
