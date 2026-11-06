@@ -156,6 +156,31 @@ void shared_fragments(unsigned seats, i32 difficulty) {
         require(items->update(first,partners),"forwarded Power approaches the teammate");
     require(!items->find(forwarded)->state.state&&stocks[0].power==initial_power+i32(seats),
             "underpowered teammate receives the room-sized Power value");
+
+    // P1 and P3 are closer to the gift than P2 during the flight.
+    motion[2].position=motion[0].position;
+    bounds[2].item_near=bounds[0].item_near;
+    stocks[0].extra_lives=2;
+    stocks[0].power=100;
+    stocks[1].power=100;
+    stocks[2].power=100;
+    const auto send_gift=[&](ItemKind kind){
+        const auto id=items->spawn(i32(kind),motion[0].position,0,0);
+        require(id!=0,"spawn a teammate gift");
+        auto& item=items->find(id)->state;
+        item.gift_seat(2);
+        item.state=3;
+        item.attraction_speed=5;
+        for(unsigned frame=0;frame<120&&item.state;++frame)
+            require(items->update(first,partners),"gift chases its assigned teammate");
+        require(!item.state,"assigned teammate collected the gift");
+    };
+    send_gift(ItemKind::Life);
+    require(stocks[0].extra_lives==2&&stocks[1].extra_lives==4&&stocks[2].extra_lives==2,
+            "only the assigned teammate receives the gifted life");
+    send_gift(ItemKind::LargePower);
+    require(stocks[0].power==100&&stocks[1].power==200&&stocks[2].power==100,
+            "gift is worth one full Power and cannot be intercepted");
 }
 
 void marisa_laser_modes(const char* asset){
