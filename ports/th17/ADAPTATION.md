@@ -183,3 +183,4 @@
 - 2026-11-06，multiplayer：[Extra 关底全程回滚压测](../../archive/th17-extra-finale-20261106/README.md)。独立诊断包在高延迟三人 WebRTC 房跑完整个关底，并配对比较密集帧的活跃堆与快照容量。
 - 2026-11-06，multiplayer：[双人和三人 HUD 验证](../../archive/th17-multiplayer-hud-20261106/README.md)。正式多人包在 Extra 房显示分席资源和共享计数，原生测试核对图标层、席位高亮和碎片显示。
 - 2026-11-06，multiplayer：[HUD 行距和原版擦弹贴图](../../archive/th17-hud-spacing-20261106/README.md)。正式多人包在 Extra 房使用 TH15 的席位行距，并由 TH17 原生 ANM 绘制共享擦弹行。
+- 2026-11-06，multiplayer：[三人 HUD 碎片提示](../../archive/th17-3p-hud-fragments-20261106/README.md)。三人房为每席显示两种碎片计数，共享 PIV 和擦弹放在右栏底部。

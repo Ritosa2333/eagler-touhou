@@ -17,23 +17,19 @@ std::array<u32,8>& Hud::stock_handles(u32 seat,bool bomb) noexcept{
     if(!seat)return bomb?bomb_handles:life_handles;
     auto& stock=partner_stock[seat-1];return bomb?stock.bomb:stock.life;
 }
-float Hud::life_row(u32 seat)const noexcept{return 96.f+seat*(seats==3?78.f:120.f);}
-float Hud::bomb_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?26.f:38.f);}
-float Hud::power_row(u32 seat)const noexcept{return life_row(seat)+(seats==3?54.f:86.f);}
-float Hud::point_row()const noexcept{return seats==1?204.f:seats==2?342.f:330.f;}
+float Hud::life_row(u32 seat)const noexcept{return 96.f+seat*(seats==3?108.f:120.f);}
+float Hud::bomb_row(u32 seat)const noexcept{return life_row(seat)+38.f;}
+float Hud::power_row(u32 seat)const noexcept{return life_row(seat)+86.f;}
+float Hud::point_row()const noexcept{return seats==1?204.f:seats==2?342.f:426.f;}
 bool Hud::layout_stock(AnmVm& root,u32 seat){
     struct Row {i32 script;float original,target;};
     const float life=life_row(seat),bomb=bomb_row(seat),power=power_row(seat);
-    const float life_divider=bomb-6.f,bomb_divider=power-(seats==3?8.f:16.f);
     const Row rows[]={{8,96,life},{9,112,life+16},{10,134,bomb},{11,150,bomb+16},{12,182,power},
-        {20,128,life_divider},{21,128,life_divider},{22,166,bomb_divider},{23,166,bomb_divider},{24,198,power+16},{25,198,power+16}};
+        {20,128,bomb-6},{21,128,bomb-6},{22,166,power-16},{23,166,power-16},{24,198,power+16},{25,198,power+16}};
     for(const auto& row:rows){
-        const bool compact_fragment=seats==3&&(row.script==9||row.script==11);
-        if(seat&&compact_fragment)continue;
         auto* vm=seat?animations.spawn_child(root,row.script,4):animations.registry.find_child_script(root,row.script,0);
         if(!check(vm!=nullptr,"HUD stock label unavailable"))return false;
-        if(compact_fragment){auto handle=animations.registry.handle(*vm);if(!check(animations.retire(handle),"HUD fragment label retirement failed"))return false;}
-        else move_row(*vm,row.target-row.original);
+        move_row(*vm,row.target-row.original);
     }
     return true;
 }

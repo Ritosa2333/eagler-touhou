@@ -31,13 +31,11 @@ bool Hud::draw(const HudDrawContext& context,HudDrawServices& services,u32 viewe
             if(!text(491,life_row(seat)+3,format("%uP",seat+1)))return false;
         }
         style={};style.font=4;style.color=alpha(0xffffffff,icon->visual.color);style.scale={.6f,.6f};
-        if(seats!=3){
-            const float life=life_row(seat)+24.f,bomb=bomb_row(seat)+24.f;
-            const i32 required=score.difficulty==4&&tier==9?99999999:3;
-            if(required<999999){if(!text(576,life,format("%3d",stock.life_pieces))||!text(597,life,format("/%d",required)))return false;}
-            else if(!text(569,life,"---/---"))return false;
-            if(!text(576,bomb,format("%3d",stock.bomb_pieces))||!text(597,bomb,"/3"))return false;
-        }
+        const float life=life_row(seat)+24.f,bomb=bomb_row(seat)+24.f;
+        const bool life_capped=score.difficulty==4&&tier==9;
+        if(!life_capped){if(!text(576,life,format("%3d",stock.life_pieces))||!text(597,life,"/3"))return false;}
+        else if(!text(569,life,"---/---"))return false;
+        if(!text(576,bomb,format("%3d",stock.bomb_pieces))||!text(597,bomb,"/3"))return false;
         if(!check(stock.power_step>0,"HUD power step must be positive"))return false;
         const float power=power_row(seat);
         style.color=alpha(0xffff8030,icon->visual.color);style.scale={1,1};if(!text(540,power,format("%d.",stock.power/stock.power_step)))return false;
