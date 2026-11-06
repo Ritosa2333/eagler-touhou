@@ -9,13 +9,13 @@ struct SpellRecords::Checkpoint {
 };
 
 void SpellRecords::save_rollback(multiplayer::FrameImage& image){
-    auto saved=rollback_record.lock();
+    auto saved=rollback_record;
     if(!saved){
         saved=std::make_shared<const Checkpoint>(*this);
         rollback_record=saved;
     }
     image.restore_with([this,saved=std::move(saved)]{
-        if(rollback_record.lock()!=saved){
+        if(rollback_record!=saved){
             loadouts=saved->personal;
             aggregate=saved->total;
             rollback_record=saved;
