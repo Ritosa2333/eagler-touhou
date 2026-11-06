@@ -7,6 +7,7 @@ template<class T>void write(u8* p,u32 at,T value){std::memcpy(p+at,&value,sizeof
 }
 bool RecordStore::fail(const char* reason){if(error.empty())error=reason;return false;}
 void RecordStore::decode(){
+    spells.invalidate_rollback();
     for(u32 loadout=0;loadout<10;loadout++){
         const auto* block=file.characters[loadout].data();
         for(u32 d=0;d<6;d++)for(u32 row=0;row<10;row++)std::memcpy(&scores[loadout][d][row],block+0x10+(d*10+row)*32,32);

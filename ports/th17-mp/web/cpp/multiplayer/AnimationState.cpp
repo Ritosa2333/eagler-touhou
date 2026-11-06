@@ -35,7 +35,6 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     std::vector<Node*> selected;
     std::array<u32,(slot_mask+31)/32> seen_slots{};
     std::unordered_set<Node*> seen_other;
-    std::array<std::vector<Node*>,2> order;
     selected.reserve(active_count+external.size());
     const auto remember=[&](Node* n){
         if(!n)return;
@@ -47,10 +46,7 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         }else if(!seen_other.insert(n).second)return;
         selected.push_back(n);
     };
-    for(u32 group=0;group<groups.size();++group){
-        order[group].reserve(groups[group].size());
-        for(auto* n:groups[group]){order[group].push_back(n);remember(n);}
-    }
+    for(const auto& group:groups)for(auto* n:group)remember(n);
     for(const auto& entry:external)remember(entry.second.get());
     for(const auto& layer:layers)for(auto* vm:layer)remember(node(*vm));
     // Layers can still reference nodes retired after their draw list was
@@ -73,7 +69,7 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
 #endif
     image.save(generation,active_count,next_slot,error);
     image.restore_with([this,saved=std::move(saved),children=std::move(children),curves=std::move(curves),
-                        order=std::move(order),borrowed=external,
+                        borrowed=external,
                         free_slots=free_slots,free_overflow=free_overflow,layers=layers]{
         for(auto& group:groups){
             for(auto* n:group){n->children.clear();n->parent=nullptr;n->active=n->registered=false;n->handle=0;}
@@ -101,12 +97,12 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         }
         auto& free=this->free_overflow;
         free.erase(std::remove_if(free.begin(),free.end(),[](const Node* n){return n->active;}),free.end());
-        for(u32 group=0;group<groups.size();++group){
-            auto& list=groups[group];
-            for(auto* n:order[group]){
-                n->position=list.insert(list.end(),n->group_link);
-                if(n->slot==slot_mask)overflow_handles.emplace(n->handle,n);
-            }
+        // Saved nodes begin with both registration groups in queue order.
+        for(const auto& row:saved)if(row.registered){
+            auto* n=row.owner;
+            auto& list=groups[row.alternate];
+            n->position=list.insert(list.end(),n->group_link);
+            if(n->slot==slot_mask)overflow_handles.emplace(n->handle,n);
         }
         for(const auto& row:saved){
             auto& n=*row.owner;

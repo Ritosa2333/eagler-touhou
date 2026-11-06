@@ -17,6 +17,8 @@ add_executable(th17-team-spirits team-spirits.cpp
     ../../cpp/multiplayer/AnimationState.cpp
     ../../cpp/multiplayer/PickupState.cpp
     ../../cpp/multiplayer/ProjectileState.cpp
+    ../../cpp/multiplayer/RecordState.cpp
+    ${game}/SpellRecords.cpp
     ${game}/AnimalSpirits.cpp
     ${game}/AnmCamera.cpp
     ${game}/AnmCoordinates.cpp
