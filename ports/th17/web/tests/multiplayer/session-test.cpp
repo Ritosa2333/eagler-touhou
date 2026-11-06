@@ -60,6 +60,8 @@ struct World final : th17::multiplayer::World {
     unsigned restores = 0, bombs_committed = 0, frames_committed = 0;
     bool prediction_allowed = true;
     bool speculative=false, block_prediction=false, frame_blocked=false;
+    bool logical_draw=false;
+    unsigned replay_limit=0,logical_steps=0;
 
     World() {
         stage_callback.owner = this;
@@ -74,6 +76,8 @@ struct World final : th17::multiplayer::World {
 
     bool can_predict() const override { return prediction_allowed; }
     void speculating(bool active) override { speculative=active; }
+    void replaying(bool intermediate) override { logical_draw=intermediate; }
+    bool replay_budget(unsigned replayed) const override { return !replay_limit||replayed<replay_limit; }
     bool blocked() const override { return frame_blocked; }
     bool capture(std::uint32_t frame) override {
         auto [snapshot, fresh] = snapshots.try_emplace(frame);
@@ -90,6 +94,7 @@ struct World final : th17::multiplayer::World {
         }
         state.bombs += bombs;
         if(speculative&&block_prediction){frame_blocked=true;return false;}
+        if(logical_draw)++logical_steps;
         end_callback = frame == 1 && (decision.inputs[1].buttons & 0x80) != 0;
         return scheduler.update() >= 0 && outputs.emplace(frame, bombs).second;
     }
@@ -212,6 +217,29 @@ void scenario(unsigned seats, bool rollback) {
         require(sessions[0].tick(worlds[0])==advanced,"confirmed input crosses the boundary");
         require(worlds[0].state.position[0]==2&&worlds[0].bombs_committed==2,"confirmed boundary publishes one action");
     }
+    if(rollback&&seats==2){
+        worlds[0].block_prediction=false;
+        worlds[0].replay_limit=1;
+        require(sessions[1].tick(worlds[1])==advanced,"guest reaches the repair fixture");
+        links[1].mute_input=true;
+        capture(1,0x82);
+        for(unsigned i=0;i<4;++i){
+            capture(0,0);
+            require(sessions[0].tick(worlds[0])==advanced,"predict a burst of late inputs");
+        }
+        links[1].mute_input=false;
+        pump(8);
+        for(unsigned i=0;i<3;++i){
+            require(sessions[0].tick(worlds[0],false)==waiting&&sessions[0].repair_pending(),
+                    "repair-only callback yields with correction pending");
+            require(worlds[0].frames_committed==5&&worlds[0].bombs_committed==3,
+                    "contiguous corrected output is committed once before yielding");
+        }
+        require(sessions[0].tick(worlds[0],false)==advanced&&!sessions[0].repair_pending(),
+                "last repair-only callback completes the correction");
+        require(worlds[0].logical_steps==3&&!worlds[0].logical_draw&&sessions[0].next_frame()==8,
+                "only the final repaired frame submits a draw and no extra input tick runs");
+    }
 }
 
 void incompatible_loadout() {
@@ -229,6 +257,44 @@ void incompatible_loadout() {
     require(p1.pump(1), "first sends HELLO");
     require(!p2.pump(2), "animal mismatch fails HELLO");
 }
+
+void confirmed_input_pipeline() {
+    Link a,b;
+    a.links[1]=&b;b.links[0]=&a;
+    Session p1(a),p2(b);
+    World world;
+    world.prediction_allowed=false;
+    SessionSetup setup;
+    setup.room=170;
+    setup.build[0]=1;
+    require(p1.begin(setup,0),"pipeline host setup");
+    setup.local=1;
+    require(p2.begin(setup,0),"pipeline guest setup");
+    for(unsigned now=1;now<=32;++now)
+        require(p1.pump(now)&&p2.pump(now),"pipeline ready");
+
+    using Clock=Netplay::ConfirmedInputClock;
+    const std::uint64_t start=40'000;
+    for(unsigned n=0;n<Clock::MaxLead;++n){
+        const auto due=start+n*Clock::IntervalUs;
+        p1.capture_phase(true,due);
+        p2.capture_phase(true,due);
+        require(p1.capture_input(Netplay::FrameInput(n==3?2:0),due/1000),"queue host input during transition");
+        require(p2.capture_input(Netplay::FrameInput{},due/1000),"queue guest input during transition");
+        require(!p1.needs_input()&&!p2.needs_input(),"one physical capture per due time");
+    }
+    p1.capture_phase(true,start+8*Clock::IntervalUs);
+    require(!p1.needs_input(),"transition input queue is bounded");
+    const auto now=(start+8*Clock::IntervalUs)/1000;
+    require(p2.pump(now)&&p1.pump(now),"deliver queued input");
+    p1.capture_phase(false,now*1000);
+    for(unsigned n=0;n<Clock::MaxLead;++n){
+        require(!p1.needs_input(),"queued samples drain on resume before taking fresh input");
+        require(p1.tick(world)==advanced,"transition advances using exact queued inputs");
+    }
+    require(p1.needs_input()&&world.frames_committed==Clock::MaxLead&&world.bombs_committed==1,
+            "pipeline preserves a single bomb edge and restores ordinary capture");
+}
 }
 
 int main() {
@@ -236,5 +302,6 @@ int main() {
     scenario(3, true);
     scenario(2, false);
     incompatible_loadout();
+    confirmed_input_pipeline();
     std::cout << "TH17 session transport, late correction and confirmed output passed\n";
 }

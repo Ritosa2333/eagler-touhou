@@ -32,7 +32,10 @@ bool ApplicationState::save_rollback(multiplayer::FrameImage& image){
 }
 
 bool ApplicationState::rollback_boundary(){
-    if(!room_speculative)return true;
+    if(!room_speculative){
+        graphics.logical_drawing=false;
+        return true;
+    }
     room_barrier=true;
     return false;
 }

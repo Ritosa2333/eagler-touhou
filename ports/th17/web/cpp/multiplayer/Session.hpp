@@ -1,4 +1,5 @@
 #pragma once
+#include <eagler/netplay/ConfirmedInputClock.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
 
 namespace th17::multiplayer {
@@ -29,6 +30,8 @@ public:
     virtual bool can_predict() const = 0;
     virtual bool capture(std::uint32_t frame) = 0;
     virtual void speculating(bool) {}
+    virtual void replaying(bool intermediate) {}
+    virtual bool replay_budget(unsigned replayed) const { return true; }
     virtual bool blocked() const { return false; }
     virtual bool step(std::uint32_t frame, const Netplay::FrameDecision&) = 0;
     virtual bool restore(std::uint32_t frame) = 0;
@@ -44,9 +47,11 @@ public:
     explicit Session(Netplay::PeerTransport& transport) : channel_(transport) {}
     bool begin(const SessionSetup&, std::uint64_t now_ms);
     bool pump(std::uint64_t now_ms);
+    void capture_phase(bool confirmed, std::uint64_t now_us);
     bool needs_input() const;
     bool capture_input(const Netplay::FrameInput&, std::uint64_t now_ms);
-    Tick tick(World&);
+    Tick tick(World&, bool advance = true);
+    bool repair_pending() const { return replay_end_ != 0 || core_.HasRollbackRequest(); }
     std::uint32_t next_frame() const;
     std::uint32_t confirmed_frames() const { return next_commit_; }
     std::uint32_t corrections() const { return corrections_; }
@@ -61,6 +66,9 @@ private:
     Netplay::SessionGate gate_;
     Netplay::RollbackCore core_;
     Netplay::SessionChannel channel_;
+    Netplay::ConfirmedInputClock capture_clock_;
+    std::uint64_t capture_now_us_ = 0;
+    bool confirmed_phase_ = false;
     std::uint32_t next_capture_ = 0, next_commit_ = 0, replay_end_ = 0;
     std::uint32_t corrections_ = 0, resimulated_ = 0;
     const char* error_ = nullptr;
