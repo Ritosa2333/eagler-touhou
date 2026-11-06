@@ -58,6 +58,10 @@ struct SessionState {
     // score 数据块 +0x7fc 起的关卡通过位（内存态；ScoreFile 落档属后期阶段）。
     // 位序 = stage + difficulty*8（0x42cd40:100 的字节写位同式）。
     u32 stage_cleared_bits = 0;
+    // DAT_004be7d8（0x42e380:227 逐点道具取得 +1；跨关累计，0xc 延续不清，
+    // 新局/Retry 随 0x42b990 dcc30!=0 分支的块复位归零）。stage 头 +0x34
+    // 快照源（0x449070 恢复域 22 dword 之一）。
+    i32 point_items = 0;
     // ---- th13 对局 HUD 数值通道（原版 DAT_004beXXX 家族的会话态）----
     // 最大得点/点值（DAT_004be7dc）：初值 = 0x42b990:107-110 两条表写中的
     // 0x4c0ab0[diff]×100（EXE .data 实读 5000/10000/15000/20000 → be7e0；

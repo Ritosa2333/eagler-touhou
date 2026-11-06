@@ -101,9 +101,12 @@ TEST(encode_preserves_mode_byte_and_roundtrips_name) {
         CHECK_EQ(file.stages.size(), 1u);
         CHECK_EQ(file.stages[0].number, u16(1));
         CHECK_EQ(file.stages[0].stamp, u16(12345));
-        // 2 个录制帧 + 保存侧 EOF 6 字节。
-        CHECK_EQ(file.stages[0].frame_count, 3u);
-        CHECK_EQ(file.stages[0].input.size(), size_t(18));
+        // 2 个录制帧，无 EOF：0x4484d0 第三参=0（保存对话框 0x4549d0:201 /
+        // game over 流 0x43fa90:347、0x440960:348 均传 0）时不走 0x44854c..
+        // 0x448598 的 6×0xFF 追加；事件也不补 0（0x4480a0 事件只写在录制路径，
+        // (帧数+29)/30 不变式由 tests/replay/replay_test.cpp 锁定）。
+        CHECK_EQ(file.stages[0].frame_count, 2u);
+        CHECK_EQ(file.stages[0].input.size(), size_t(12));
         CHECK_EQ(file.stages[0].header[0x0C], u8(0xed));  // -6163 = 0xffffe7ed 低字节
         CHECK_EQ(file.stages[0].header[0x0D], u8(0xe7));
     }

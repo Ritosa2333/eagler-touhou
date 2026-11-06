@@ -10,8 +10,9 @@
 // 解压后：0x74 顶层头（+0x00 名字、+0x14 分数、+0x54 慢速率 f32、+0x58 关卡数、
 //   +0x5C 角色、+0x60 机体、+0x64 难度、+0x70 练习关卡 -1=本篇），+0x74 起 stage 块链。
 // stage 块：0xC4 头（+0x00 u16 关卡号、+0x02 u16 戳、+0x04 u32 帧数、+0x08 u32
-//   数据字节长、+0x1C u32 关卡起始分）+ 帧数据（6×帧数）+ 事件数据（(帧数+29)/30
-//   字节慢速率）+ 下一块；块步进 = 0xC4 + 数据长（0x448c40:79）。
+//   数据字节长、+0x1C u32 关卡起始分）+ 帧数据（6×帧数）+ 事件数据（每 30 帧 1
+//   字节慢速率；EOF 帧不计——0x44854c 追加的 6×0xFF 无事件字节）+ 下一块；
+//   块步进 = 0xC4 + 数据长（0x448c40:79）。
 #pragma once
 #include "Types.hpp"
 #include <string>
@@ -78,6 +79,12 @@ public:
     // 0x458f30：MSB 位流 LZ77。字面量=1+8 位；拷贝=0+13 位环地址+4 位长
     // （长=n+3）；地址 0 终止。环 0x2000，写游标初值 1（与原版全局一致）。
     static bool inflate(const u8* src, size_t src_size, std::vector<u8>& out, size_t limit);
+
+    // 0x458c30 bit-exact 移植：Okumura 型二叉搜索树 LZ77（规格见
+    // docs/plans/replay.md 压缩章节）。输出为合法 0x458f30 流，且与原版
+    // 压缩器逐字节一致（oracle/replay_compress.py 8/8 真 .rpy 往返 +
+    // 35/35 Unicorn 向量；本移植另见 tests/replay/deflate_test.cpp）。
+    static std::vector<u8> deflate(const u8* src, size_t size);
 
 private:
     std::string error_;

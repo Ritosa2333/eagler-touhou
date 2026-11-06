@@ -45,9 +45,13 @@ const fatal = e => {
   emit('error', {error: message});
 };
 
-function readLocalStorageSave() {
+// 存档读：优先 'th13.scoredat'（原版格式存档键，launcher 存档线写入）；
+// 新键缺席时回退读旧 'th13.save'——过渡兼容：已放出去的旧存档在壳升级后
+// 不至于「消失」。回退只读不写：写路径一律落新键（旧键并存由 remove 统一
+// 清理），一旦写过新键即恒优先。
+function readSaveBytes() {
   try {
-    const text = localStorage.getItem('th13.save');
+    const text = localStorage.getItem('th13.scoredat') ?? localStorage.getItem('th13.save');
     if (!text) return null;
     const binary = atob(text);
     const bytes = new Uint8Array(binary.length);
@@ -58,14 +62,126 @@ function readLocalStorageSave() {
   }
 }
 
-function writeLocalStorageSave(bytes) {
+// 存档写：一律落 'th13.scoredat'。旧 'th13.save' 保留不动，供旧版本壳
+// 过渡回退读取。
+function writeSaveBytes(bytes) {
   try {
     let binary = '';
     for (let i = 0; i < bytes.length; ++i) binary += String.fromCharCode(bytes[i]);
-    localStorage.setItem('th13.save', btoa(binary));
+    localStorage.setItem('th13.scoredat', btoa(binary));
     return true;
   } catch {
     return false;
+  }
+}
+
+// ---- Replay 文件通道（replay/th13_(\d{2}|ud[a-z0-9]{4})\.rpyx? 命名空间）----
+// launcher Replay 工作台经 list/read/write/remove postMessage 命令读写本
+// 存储区；游戏内保存经 Module.onReplaySaved 落同一索引（C++ 已先行 import
+// 进 catalog），launch 时 restoreReplaysToCatalog 重导入。键定死（与
+// th13.html 同款内联实现——打包名册固定，不新增模块文件）：索引
+// th13.replays = JSON 数组 [{name,size,ts}]，blob th13.replay.<name> =
+// base64；name 恒为小写（sanitizePath 已归一）。护栏：单条 >1MiB 拒收；
+// 索引总量（base64 账面）超 5MiB 先逐出最旧条目，配额溢出再逐出重试——
+// 正在写入的条目绝不逐出，全部失败返回 false 由调用方报错（不静默丢档）。
+const replayIndexKey = 'th13.replays', replayBlobPrefix = 'th13.replay.';
+const replayNamePattern = /^th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/;
+const replaySingleMax = 1024 * 1024, replayTotalMax = 5 * 1024 * 1024;
+function replayIndex() {
+  try {
+    const list = JSON.parse(localStorage.getItem(replayIndexKey) || '[]');
+    return Array.isArray(list)
+      ? list.filter(entry => entry && typeof entry.name === 'string' && replayNamePattern.test(entry.name)) : [];
+  } catch {
+    return [];
+  }
+}
+function replayWriteIndex(list) {
+  localStorage.setItem(replayIndexKey, JSON.stringify(list));
+}
+function replayToBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; ++i) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+function replayFromBase64(text) {
+  const binary = atob(text);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; ++i) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+function readReplayFile(name) {
+  try {
+    const text = localStorage.getItem(replayBlobPrefix + name);
+    return text === null ? null : replayFromBase64(text);
+  } catch {
+    return null;
+  }
+}
+function writeReplayFile(name, bytes) {
+  try {
+    if (!replayNamePattern.test(name) || !bytes || !bytes.length || bytes.length > replaySingleMax) return false;
+    const list = replayIndex().filter(entry => entry.name !== name);
+    list.push({name, size: bytes.length, ts: Date.now()});
+    const weight = entry => Math.ceil((entry.size || 0) * 4 / 3);  // base64 账面
+    const dropOldest = () => {
+      let oldest = 0;
+      for (let i = 1; i < list.length; ++i) if ((list[i].ts ?? 0) < (list[oldest].ts ?? 0)) oldest = i;
+      const [gone] = list.splice(oldest, 1);
+      localStorage.removeItem(replayBlobPrefix + gone.name);
+      return gone.name;
+    };
+    const save = () => {
+      localStorage.setItem(replayBlobPrefix + name, replayToBase64(bytes));
+      replayWriteIndex(list);
+    };
+    try {
+      // list 已含本次条目：超总量时逐最旧，绝不逐出正写入的条目（最新 ts，
+      // 且 list.length>1 兜底——单条 ≤1MiB 恒小于总量上限，理论到不了）。
+      while (list.reduce((sum, entry) => sum + weight(entry), 0) > replayTotalMax && list.length > 1)
+        dropOldest();
+      save();
+      return true;
+    } catch (quota) {
+      while (list.length > 1) {
+        try {
+          dropOldest();
+          save();
+          return true;
+        } catch { /* 继续逐出最旧 */ }
+      }
+      return false;
+    }
+  } catch {
+    return false;
+  }
+}
+function removeReplayFile(name) {
+  if (localStorage.getItem(replayBlobPrefix + name) === null &&
+      !replayIndex().some(entry => entry.name === name)) return false;
+  localStorage.removeItem(replayBlobPrefix + name);
+  replayWriteIndex(replayIndex().filter(entry => entry.name !== name));
+  return true;
+}
+// launch 时按索引把持久化录像重导入 catalog（与手动导入同一
+// _th13_replay_import 路径：th13_NN.rpy → 编号槽 NN-1 覆盖，其余 → 首个
+// 空闲用户槽；原文件名 → 槽位语义不变）。失败只记 console——持久档损坏
+// 不阻断启动，launcher 工作台仍可读/删原文件。
+function restoreReplaysToCatalog() {
+  for (const entry of replayIndex()) {
+    const bytes = readReplayFile(entry.name);
+    if (!bytes) continue;
+    const dataPtr = core._malloc(bytes.length);
+    const namePtr = core.allocateUTF8(entry.name);
+    try {
+      core.HEAPU8.set(bytes, dataPtr);
+      if (!core._th13_replay_import(dataPtr, bytes.length, namePtr))
+        console.warn('[th13] replay restore failed:', entry.name,
+          core._th13_replay_import_error ? core.UTF8ToString(core._th13_replay_import_error()) : err());
+    } finally {
+      core._free(dataPtr);
+      core._free(namePtr);
+    }
   }
 }
 
@@ -201,6 +317,9 @@ async function command(m) {
         first = false;
         $('#loading').textContent = '';
         core._th13_loop_start();
+        // 持久化录像回灌 catalog（launcher 工作台经 write 写入的、以及上次
+        // 会话游戏内保存的）：晚于 loop_start，与 th13.html 内置预装同一拍。
+        restoreReplaysToCatalog();
         emit('runtime-info', {renderer: 'SDL3 / WebGL2 / C++', architecture: protocol, ...runtimeBuild});
       }
       return {};
@@ -208,17 +327,23 @@ async function command(m) {
       return {};
     case 'list': {
       const files = [];
-      const saveBytes = readLocalStorageSave();
+      const saveBytes = readSaveBytes();
       if (saveBytes && saveBytes.length > 0) {
         files.push({path: 'scoreth13.dat', size: saveBytes.length});
       }
+      for (const entry of replayIndex()) files.push({path: 'replay/' + entry.name, size: entry.size || 0});
       return {files};
     }
     case 'read': {
       const target = sanitizePath(m.path);
       if (target === 'scoreth13.dat') {
-        const bytes = readLocalStorageSave();
+        const bytes = readSaveBytes();
         if (!bytes) throw Error('存档不存在');
+        return {bytes: Array.from(bytes)};
+      }
+      if (target.startsWith('replay/')) {
+        const bytes = readReplayFile(target.slice(7));
+        if (!bytes) throw Error('文件不存在');
         return {bytes: Array.from(bytes)};
       }
       throw Error('文件不存在');
@@ -229,7 +354,12 @@ async function command(m) {
       const bytes = new Uint8Array(m.bytes || []);
       if (!bytes.length || bytes.length > 64 * 1024 * 1024) throw Error('文件大小无效');
       if (target === 'scoreth13.dat') {
-        if (!writeLocalStorageSave(bytes)) throw Error('保存 localStorage 失败');
+        if (!writeSaveBytes(bytes)) throw Error('保存 localStorage 失败');
+        return {};
+      }
+      if (target.startsWith('replay/')) {
+        if (bytes.length > replaySingleMax) throw Error('录像文件过大');
+        if (!writeReplayFile(target.slice(7), bytes)) throw Error('保存 localStorage 失败');
         return {};
       }
       throw Error('不支持写入此文件');
@@ -238,7 +368,13 @@ async function command(m) {
       if (launched) throw Error('请先退出游戏');
       const target = sanitizePath(m.path);
       if (target === 'scoreth13.dat') {
+        localStorage.removeItem('th13.scoredat');
+        // 过渡键一并清除：readSaveBytes 的回退读会 resurrect 旧档。
         localStorage.removeItem('th13.save');
+        return {};
+      }
+      if (target.startsWith('replay/')) {
+        if (!removeReplayFile(target.slice(7))) throw Error('文件不存在');
         return {};
       }
       throw Error('不支持删除此文件');
@@ -358,6 +494,16 @@ const initialized = (async () => {
   window.Module = core;
   window.FS = core.FS;
   core.resetBrowserKeyboard = () => keyboard.clear();
+  // 游戏内保存录像（save_replay_slot → 下载 EM_JS 钩子）：catalog 已由
+  // C++ 侧 import_replay_bytes 入槽，这里只补 localStorage 持久化。自吞
+  // 异常——持久化失败不影响游戏内保存/下载流程。
+  core.onReplaySaved = (name, bytes) => {
+    try {
+      writeReplayFile(String(name).toLowerCase(), bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+    } catch (error) {
+      console.warn('[th13] replay persist failed:', error);
+    }
+  };
 
   if (query.get('managedData') === '1') {
     if (!validEpoch || parent === window || typeof parent.__eaglerPrepareManagedRuntimeDataV1 !== 'function') {

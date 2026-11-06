@@ -151,6 +151,166 @@ bool ReplayFile::inflate(const u8* src, size_t src_size, std::vector<u8>& out, s
     return out.size() == limit;
 }
 
+// ---- 0x458c30 压缩器（bit-exact 移植，规格 = capstone 直读反汇编）----
+// 树/环布局与 0x458f30 解压侧严格镜像；与 oracle/replay_compress.py 完全同构
+// （该实现已过 8/8 真 .rpy 逐字节往返 + 35/35 Unicorn 直调向量）。
+namespace {
+constexpr u32 kDeflateRing = 0x2000;     // 文本环 0x4da2f8
+constexpr u32 kDeflateMask = 0x1FFF;     // 绝对环位掩码
+constexpr u32 kDeflateMaxMatch = 0x12;   // 18：窗口超前量 = 最大匹配长
+constexpr u32 kDeflateMinMatch = 3;
+constexpr u32 kDeflateSentinel = 0x2000; // 下标 8192：rgt[8192]=根（0x4da2f0）
+
+// 0x4593a0/0x4593f0/0x459440/0x4594d0：BST 删除。单子顶替父槽先查 rgt；
+// 两子取左子树最右 v（先递归删 v，v 必无右子），再拼到 x 位（父槽先查 lft）。
+void deflate_tree_remove(std::vector<i32>& dad, std::vector<i32>& lft,
+                         std::vector<i32>& rgt, u32 x) {
+    if (dad[x] == 0) return;
+    u32 repl;
+    if (rgt[x] == 0) {
+        repl = u32(lft[x]);
+    } else if (lft[x] == 0) {
+        repl = u32(rgt[x]);
+    } else {
+        u32 v = u32(lft[x]);                    // 0x4594d0：左子树最右
+        while (rgt[v] != 0) v = u32(rgt[v]);
+        deflate_tree_remove(dad, lft, rgt, v);  // v 无右子 → 简单顶替摘除
+        const i32 dd = dad[x];                  // 0x459440：v 拼到 x 位（先查 lft）
+        if (lft[dd] == i32(x)) lft[dd] = i32(v); else rgt[dd] = i32(v);
+        dad[v] = dd;
+        lft[v] = lft[x];
+        rgt[v] = rgt[x];
+        dad[lft[v]] = i32(v);
+        dad[rgt[v]] = i32(v);
+        dad[x] = 0;
+        return;
+    }
+    const i32 dd = dad[x];                      // 0x4593f0：简单顶替（先查 rgt）
+    dad[repl] = dd;
+    if (rgt[dd] == i32(x)) rgt[dd] = i32(repl); else lft[dd] = i32(repl);
+    dad[x] = 0;
+}
+}  // namespace
+
+std::vector<u8> ReplayFile::deflate(const u8* src, size_t size) {
+    std::vector<u8> out;
+    u32 acc = 0;
+    u32 mask = 0x80;
+    const auto put_bit = [&](u32 bit) {         // MSB 先行位流（0x458d0c 出位序）
+        if (bit) acc |= mask;
+        mask >>= 1;
+        if (!mask) {
+            out.push_back(u8(acc));
+            acc = 0;
+            mask = 0x80;
+        }
+    };
+
+    // 文本环翻倍镜像（0x4da2f8 起memset 0；翻倍仅省环绕切片，不改语义）。
+    std::vector<u8> ring(size_t(2) * kDeflateRing, 0);
+    // dad/lft/rgt 每环位 12 字节交错（0x4c22e8 起）；含下标 8192 的越界哨兵项。
+    std::vector<i32> dad(kDeflateSentinel + 1, 0);
+    std::vector<i32> lft(kDeflateSentinel + 1, 0);
+    std::vector<i32> rgt(kDeflateSentinel + 1, 0);
+
+    // 预入环（0x458c96..0x458cbf）：n=min(18,size) 字节进 ring[1..n]，wp=1。
+    u32 n = 0;
+    size_t pos = 0;
+    while (n < kDeflateMaxMatch && pos < size) {
+        ring[1 + n] = src[pos];
+        ring[1 + size_t(n) + kDeflateRing] = src[pos];
+        ++pos;
+        ++n;
+    }
+    u32 lookahead = n;
+    size_t fill = pos;
+    u32 wp = 1;
+
+    // 树初始化（0x458cc5..0x458cdf）：root=rgt[8192]=1、dad[1]=8192（删根经
+    // 哨兵别名改根）、lft[1]=rgt[1]=0。每次调用自初始化，与调用历史无关。
+    rgt[kDeflateSentinel] = 1;
+    dad[1] = i32(kDeflateSentinel);
+
+    u32 match_len = 0;   // 首个 token 前为 0 → 必为字面量
+    u32 match_pos = 0;
+
+    // 0x459160：自根顺序比较 18 字节，首失配处 i>=best 含并列更新（后访问者
+    // 胜）；i==18 幽灵顶替（0x4592df：node 被 p 原位顶替，返回 18）；wp==0 不入树。
+    const auto tree_insert = [&](u32 p) -> u32 {
+        if (p == 0) return 0;
+        u32 node = u32(rgt[kDeflateSentinel]);
+        u32 best = 0;
+        while (true) {
+            u32 i = 0;
+            i32 c = 0;
+            for (; i < kDeflateMaxMatch; ++i) {
+                c = i32(ring[p + i]) - i32(ring[node + i]);
+                if (c != 0) break;
+            }
+            if (i >= best) {
+                best = i;
+                match_pos = node;
+            }
+            if (i >= kDeflateMaxMatch) {
+                const i32 dd = dad[node];       // 0x4592df..0x459355
+                if (lft[dd] == i32(node)) lft[dd] = i32(p); else rgt[dd] = i32(p);
+                dad[p] = dd;
+                lft[p] = lft[node];
+                rgt[p] = rgt[node];
+                dad[lft[p]] = i32(p);
+                dad[rgt[p]] = i32(p);
+                dad[node] = 0;
+                return kDeflateMaxMatch;
+            }
+            const u32 child = c < 0 ? u32(lft[node]) : u32(rgt[node]);
+            if (child == 0) {                   // 0x459369..0x459394：挂叶子
+                if (c < 0) lft[node] = i32(p); else rgt[node] = i32(p);
+                dad[p] = i32(node);
+                lft[p] = 0;
+                rgt[p] = 0;
+                return best;
+            }
+            node = child;
+        }
+    };
+
+    // 主循环（0x458ceb..0x458eec）：贪心无 lazy，ml=min(match_len, lookahead)。
+    while (lookahead > 0) {
+        const u32 ml = match_len < lookahead ? match_len : lookahead;
+        u32 count;
+        if (ml <= 2) {
+            put_bit(1);                          // 字面量：1 位标志 + 8 位 ring[wp]
+            const u8 byte = ring[wp];
+            for (int shift = 7; shift >= 0; --shift) put_bit(u32(byte >> shift) & 1);
+            count = 1;
+        } else {
+            put_bit(0);                          // 拷贝：13 位绝对环址 + 4 位 (ml-3)
+            for (int shift = 12; shift >= 0; --shift) put_bit(match_pos >> shift & 1);
+            for (int shift = 3; shift >= 0; --shift) put_bit((ml - kDeflateMinMatch) >> shift & 1);
+            count = ml;
+        }
+        for (u32 step = 0; step < count; ++step) {  // 0x458dd2..0x458ee6 前进
+            const u32 r = (wp + kDeflateMaxMatch) & kDeflateMask;
+            if (dad[r] != 0) deflate_tree_remove(dad, lft, rgt, r);
+            if (fill < size) {                   // 超前 18 预填（fill 指针 ++）
+                const u8 byte = src[fill];
+                ++fill;
+                ring[r] = byte;
+                ring[size_t(r) + kDeflateRing] = byte;
+            } else {
+                --lookahead;
+            }
+            wp = (wp + 1) & kDeflateMask;
+            if (lookahead != 0) match_len = tree_insert(wp);
+        }
+    }
+
+    // 终止（0x458ef2..0x458f15）：1+13 = 14 个 0 位（解压侧地址 0 即终止）。
+    put_bit(0);
+    for (int i = 0; i < 13; ++i) put_bit(0);
+    return out;
+}
+
 bool ReplayFile::decode(const u8* data, size_t size) {
     if (size < kHeaderSize) return fail("file too small");
     if (std::memcmp(data, "t13r", 4) != 0) return fail("bad magic");
@@ -208,7 +368,13 @@ bool ReplayFile::decode(const u8* data, size_t size) {
                            plain.begin() + ptrdiff_t(pos + kStageHeaderSize + input_bytes));
         stage.events.assign(plain.begin() + ptrdiff_t(pos + kStageHeaderSize + input_bytes),
                             plain.begin() + ptrdiff_t(pos + kStageHeaderSize + stage.blob_size));
-        if (stage.events.size() != (stage.frame_count + 29) / 30)
+        // 事件流长度：录制期每 30 帧一字节（0x4480a0:25-37）；中断保存的 EOF
+        // 帧（0x4484d0:53-58 追加的三字全 F）不产生事件字节，故以末帧是否为
+        // EOF 计录制帧数基准（判定与回放消费方 0x448200:26 一致）。完整录像
+        // 无 EOF，基准不变。
+        u32 recorded = stage.frame_count;
+        if (recorded > 0 && stage.frame(recorded - 1).eof()) --recorded;
+        if (stage.events.size() != (recorded + 29) / 30)
             return fail("stage event stream length mismatch");
         stages.push_back(std::move(stage));
         pos += kStageHeaderSize + stage.blob_size;
