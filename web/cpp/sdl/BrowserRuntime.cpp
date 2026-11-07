@@ -584,6 +584,9 @@ EMSCRIPTEN_KEEPALIVE int th13_debug_ending(int character, int difficulty) {
     app->progress.continues = 0;
     app->progress.practice_mode = 0;
     app->progress.stage = 6;
+    // A diagnostic jump may originate from the title; the production Ending
+    // handoff originates from Run and therefore has no title task to retire.
+    app->title.reset();
     app->pending_destination = th13::i32(Destination::Ending);
     if (!app->apply_destination()) { last_error = app->failure; return 0; }
     clear_inputs();
@@ -619,6 +622,25 @@ EMSCRIPTEN_KEEPALIVE const char* th13_debug_pause_state() {
         int(state.result_needs_name), int(state.name_is_result),
         state.replay_slot, state.name_cursor, state.replay_name.c_str());
     return report;
+}
+
+// Read-only result preview used by the actual title/result renderer. This
+// observer does not set score, stage, sampling counters or completion flags.
+EMSCRIPTEN_KEEPALIVE const char* th13_debug_result_state() {
+    using namespace th13::sdl;
+    static std::string report;
+    report.clear();
+    if (!app || !app->initialized) return report.c_str();
+    th13::TitleResultScreenData data;
+    if (!app->result_screen_data(data)) return report.c_str();
+    char row[256];
+    std::snprintf(row, sizeof row,
+        "{\"stage\":%d,\"slowdown\":%.9g,\"score\":%d,\"rank\":%d,"
+        "\"has_run\":%s,\"slow_actual\":%.17g,\"slow_budget\":%.17g}",
+        data.current.stage, double(data.current.progress_percent), data.current.score,
+        data.rank, app->run ? "true" : "false", app->slow_actual_, app->slow_budget_);
+    report = row;
+    return report.c_str();
 }
 
 // 确定性单帧泵：固定 1/60 步长、恰一逻辑帧 + 绘制提交，不经过 rAF 帧钟与

@@ -102,6 +102,8 @@ public:
     bool initialize();
     // 每帧 0x416610 → 0x416a10（END 时经 request_destination(0x10) 请求出口）。
     bool update(const GameInput& input);
+    // 00416610: after update(), restart the Update chain until frame % 12 == 0.
+    bool should_restart(const GameInput& input) const;
     // 0x4165f0→0x4163b0 拆卸（ANM 槽释放 + 文本面收尾）。
     void teardown();
 

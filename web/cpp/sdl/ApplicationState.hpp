@@ -340,6 +340,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 签名幕存续到整场（原生 gate-01 全窗逐帧 2 op 实证）。
     bool title_flow_ran = false;
     u32 replay_consumed = 0;
+    FrameCallback replay_fast_forward{}, ending_update{};
+    const GameInput* physical_input = nullptr;
+    u32 replay_pass_start = 0;
+    bool restart_update = false;
     GameInput replay_input; // recorded input history, frozen with the stage
     // 回放恢复挂点：begin_replay_run 备好 stage 指针，begin_run 在关首表
     // 重置（0x42b990:103-110 等价）之后、场景构造/ECL 第 0 帧之前应用
@@ -382,6 +386,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     ~ApplicationState();
     // Physical input drives menus; Replay gameplay consumes its own stream
     // at the RunScene update gate (00448200/00414f30).
+    bool update_scene_pass(const GameInput& input);
     bool step(const GameInput& input, float fps, bool lost_focus);
     bool apply_destination();
     bool quit(); // original global score cleanup/save; reports storage failure

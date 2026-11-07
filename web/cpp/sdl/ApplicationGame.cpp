@@ -5,6 +5,7 @@
 #include "../game/RunScene.hpp"
 #include "../game/SpellPresentation.hpp"
 #include "../game/SpellElapsedTime.hpp"
+#include "../game/ResultRecord.hpp"
 
 #include <array>
 #include <algorithm>
@@ -354,10 +355,26 @@ bool ApplicationState::result_screen_data(TitleResultScreenData& out) const {
     out.difficulty = progress.difficulty;
     out.rank = -1;
     out.current.score = selection_score.score;
-    out.current.stage = progress.stage;
+    // 0x43d6b0 写入点：+0x14=DAT_004be81c（stage）、+0x15=DAT_004be7c8（续关）、
+    // +0x28=slowdown float。0x454050 全通建面在 FUN_0043d6b0 前临时置
+    // DAT_004be81c=8（插入后复位 0）→ 标题侧全通预插行 stage 恒 8
+    // （成绩表 kStageNames[8]="Clear"；Replay 路线表 kRouteNames[8] 才是
+    // "All"）；对局内 0x43f8f0→RunPause 榜覆盖层（run 存活）仍用当前
+    // progress.stage。
+    // TitleFrame::initialize selects ResultName only for AfterEnding reason 3;
+    // other title returns must not invent a clear preview for this observer.
+    const bool clear_result = !run && title &&
+        (title->state.return_reason == 3 ||
+         title->state.screen == TitleScreen::ResultName ||
+         title->state.screen == TitleScreen::ResultReplaySlot);
+    out.current.stage = result_record_stage(clear_result, progress.stage);
     out.current.continues = progress.continues;
     out.current.timestamp = i64(std::time(nullptr));
     out.current.available = true;
+    // 0x43d6b0 +0x28 slowdown（非完成率，不得硬编码 0/100 制造虚假进度）：
+    // 与 record_result_entry 落盘共用同一表达式；原实现漏填导致预览行恒
+    // 0.0%，与 END 实际记录漂移。
+    out.current.progress_percent = result_slowdown_percent(slow_actual_, slow_budget_);
     const auto& ranking = files.ordinary_records[size_t(progress.character)]
                               .ranking[size_t(progress.difficulty)];
     for (size_t i = 0; i < out.records.size(); ++i) out.records[i] = ranking[i];
@@ -459,8 +476,9 @@ bool ApplicationState::record_result_entry(const std::string& name, i32 stage) {
     result.timestamp=i64(std::time(nullptr));
     // 0x43d6b0:42-44：float@24 = 100 − 慢速率分子/分母×100（0x424990 累加
     // 器，关首 0x42b990 清零 → 末段值）；分母为 0（无有效帧）时记 0。
-    result.progress_percent = slow_budget_ > 0.0
-        ? float(100.0 - slow_actual_ / slow_budget_ * 100.0) : 0.0f;
+    // 与 result_screen_data 预插行共用 result_slowdown_percent（同一 slowdown
+    // 字段语义，预览=落盘）。
+    result.progress_percent = result_slowdown_percent(slow_actual_, slow_budget_);
     result.available=true;
     files.record_high_score(progress.character, progress.difficulty, result);
     return files.save_score() || fail(files.error);
