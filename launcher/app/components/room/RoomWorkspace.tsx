@@ -2,6 +2,7 @@ import {RoomMusicStrip,RoomMusicPanel,RoomMusicToggle,type MusicPanelTab} from '
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '../../ui/tabs';
 import {Button as UiButton} from '../../ui/controls';
 import {BookRoomProductMenu} from '../launcher/BookDirectoryGames';
+import {ChevronDown} from 'lucide-react';
 import {useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocale} from '../../i18n';
@@ -82,7 +83,11 @@ export function RoomWorkspace(props: RoomViewProps) {
           <div className="room-product-heading">
             <h2 id="mpRoomTitle">{game.title}</h2>
             {canChangeProduct && state.product && <BookRoomProductMenu products={props.products} value={state.product}
-              assetUrl={assetUrl} disabled={locked || !state.connected || state.checkBusy} onChange={service.switchProduct}/>}
+              assetUrl={assetUrl} onChange={service.switchProduct}
+              trigger={<UiButton id="roomProductSelect" variant="unstyled" className="room-product-trigger"
+                disabled={locked || !state.connected || state.checkBusy} aria-label={t('lobby.game')} title={t('lobby.game')}>
+                <ChevronDown aria-hidden="true"/>
+              </UiButton>}/>}
           </div>
           <div className="room-workspace-meta"><span id="mpRoomMode">{t(config.gameplay === 'versus' ? 'room.versus' : 'room.coop',{count:room.playerCount})}</span><span id="mpRoomDifficultyBadge">{config.difficulties[room.difficulty] || 'Normal'}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</div>
         </div>

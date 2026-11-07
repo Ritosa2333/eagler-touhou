@@ -214,9 +214,11 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-spectator-preview-join{width:100%;min-height:32px;margin:auto 0 0;padding:6px 4px;font-size:11px}
  .room-workspace-actions{position:fixed;z-index:220;bottom:0;left:0;right:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--kit-background) 94%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(16px)}
 }
-@media(max-width:399px){
- .room-workspace-heading{flex-direction:column;gap:1px}
- .room-workspace-meta>span{padding-left:0}
+@media(max-width:540px){
+ .room-workspace-heading{flex-direction:column;align-items:flex-start;gap:2px}
+ .room-product-heading{justify-content:flex-start;max-width:100%}
+ .room-workspace-heading h2{text-align:left}
+ .room-product-heading .room-product-trigger{margin-block:-11px}
 }
 @media(orientation:portrait){
  #player.room-workspace .room-workspace-chat:has(>.mp-room-chat-log)>.mp-room-quick-chat{order:-1;flex:none;margin:0 0 12px}

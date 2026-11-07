@@ -1,6 +1,6 @@
 import {Checkbox} from 'radix-ui';
-import {Check,ChevronDown,LayoutGrid,List,Star} from 'lucide-react';
-import {useEffect,useState} from 'react';
+import {Check,LayoutGrid,List,Star} from 'lucide-react';
+import {useEffect,useState,type ReactElement} from 'react';
 import {ActionMenu,ActionMenuItem,ActionMenuCheckboxItem,ActionMenuGroup,ActionMenuLabel,ActionMenuRadioGroup,ActionMenuRadioItem} from '../../ui/action-menu';
 import {useLocale} from '../../i18n';
 import {BookButton} from './BookButton';
@@ -35,20 +35,17 @@ function ProductCopy({product}:{product:LibraryProduct}) {
   </span>;
 }
 
-export function BookRoomProductMenu({products,value,assetUrl,onChange,disabled}:{
+export function BookRoomProductMenu({products,value,assetUrl,onChange,trigger}:{
   products:readonly MultiplayerProductId[];
-  value:MultiplayerProductId;
+  value:MultiplayerProductId | '';
   assetUrl(path:string):string;
   onChange(product:MultiplayerProductId):void;
-  disabled:boolean;
+  trigger:ReactElement;
 }) {
   const {t}=useLocale();
   const label=t('lobby.game');
   const entries=createLibraryProducts(products,assetUrl,id=>`?game=${id}`).sort((a,b)=>Number(a.number)-Number(b.number));
-  return <ActionMenu variant="selection" label={label} align="start" minimumWidth={280} className="book-lobby-picker"
-    trigger={<BookButton id="roomProductSelect" variant="unstyled" className="room-product-trigger" disabled={disabled} aria-label={label} title={label}>
-      <ChevronDown aria-hidden="true"/>
-    </BookButton>}>
+  return <ActionMenu variant="selection" label={label} align="start" minimumWidth={280} className="book-lobby-picker" trigger={trigger}>
     <ActionMenuRadioGroup value={value} onValueChange={next=>{if(isMultiplayerProductId(next))onChange(next);}}>
       {groupGames(entries).map(group=><ActionMenuGroup key={group.id} aria-label={t(groupLabelKey(group.id))} data-lobby-category={group.id}>
         <ActionMenuLabel className="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground">{t(groupLabelKey(group.id))}</ActionMenuLabel>
@@ -118,7 +115,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
       <BookButton variant="icon" type="button" className="book-lobby-favorite" aria-label={t('directory.favoriteGame',{game:product.title})} aria-pressed={favorites.includes(product.id)} disabled={!interactive} onClick={event=>{impressFavorite(event.currentTarget);favorite(product.id);}}><Star aria-hidden="true"/></BookButton>
     </div>)}</section>)}</div></div>
     <div className="book-lobby-mobile"><ActionMenu variant="selection" label={t('directory.games')} align="start" minimumWidth={280} className="book-lobby-picker" trigger={<BookButton variant="action" size="icon" className="book-lobby-picker-trigger size-12" disabled={!interactive} aria-label={t('directory.games')}><List aria-hidden="true"/></BookButton>}>{choices}</ActionMenu>
-      <div className="book-lobby-icon-strip" id="lobbyGameRail"><BookButton variant="choice" size="icon" type="button" className="book-lobby-icon book-lobby-all" aria-label={t('directory.allGames')} aria-pressed={!selected.length} disabled={!interactive} onClick={reset}><LayoutGrid aria-hidden="true"/></BookButton>{visible.map(product=><div key={product.id} className="book-lobby-tile" data-selected={selected.includes(product.id)}>
+      <div className="book-lobby-icon-strip" id="lobbyGameRail"><BookButton variant="choice" size="icon" type="button" className="book-lobby-icon book-lobby-all" aria-label={t('directory.allGames')} aria-pressed={!selected.length} disabled={!interactive} onClick={reset}><LayoutGrid aria-hidden="true"/></BookButton>{groups.flatMap(group=>group.products).map(product=><div key={product.id} className="book-lobby-tile" data-selected={selected.includes(product.id)}>
         <BookButton variant="choice" size="icon" type="button" className="book-lobby-icon" title={product.title} aria-label={t('directory.viewGame',{game:product.title})} aria-pressed={selected.includes(product.id)} data-lobby-icon={product.id} disabled={!interactive} onClick={()=>selectOnly(product.id)}><ProductCover product={product}/><span className="book-lobby-short" aria-hidden="true">{product.shortTitle}</span></BookButton>
         <Checkbox.Root asChild checked={selected.includes(product.id)} disabled={!interactive} onCheckedChange={checked=>toggle(product.id,checked===true)}><BookButton variant="choice" className="book-lobby-tile-toggle" data-lobby-toggle={product.id} aria-label={t('directory.filterGame',{game:product.title})}>{checkmark(selected.includes(product.id))}</BookButton></Checkbox.Root>
       </div>)}</div>
