@@ -41,7 +41,7 @@ test('prebuilt-only TH05 stays out of source checks and explains explicit source
   const all=targets();
   assert.equal(all.some(target=>target.game==='th05'),false,
     'prebuilt Runtime Release products must not receive source-input evidence');
-  assert.equal(all.length,22,'all existing native source targets remain in --all');
+  assert.equal(all.length,23,'all existing native source targets remain in --all');
   assert.deepEqual(all.filter(target=>target.game==='th19').map(target=>target.variant).sort(),['multiplayer','normal']);
   assert.ok(all.some(target=>target.game==='th06'&&target.variant==='normal'));
   assert.ok(all.some(target=>target.game==='th20'&&target.variant==='normal'));
