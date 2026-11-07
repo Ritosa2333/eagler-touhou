@@ -7,6 +7,7 @@
   "engines": {"node": ">=22.13"},
   "scripts": {
     "start": "node src/netplay-relay.mjs",
+    "start:anonymous-api": "node src/anonymous-api.mjs",
     "test": "node scripts/check.mjs",
     "check": "node scripts/check.mjs",
     "benchmark:directory": "node scripts/benchmark-directory.mjs",

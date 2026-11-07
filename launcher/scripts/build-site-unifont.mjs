@@ -13,7 +13,6 @@ const font = resolve(workspace, "dependencies", "unifont-15.1.05", "unifont-15.1
 const output = resolve(PUBLIC_SOURCE_ROOT, "assets", "fonts", "unifont-site.woff2");
 const sources = [
   ...APP_SHELL_FILES.filter(path => !path.startsWith("vendor/") && /\.(?:html|css|js|mjs)$/.test(path)),
-  "NOTICE.txt",
   "content/FIRST_USE_NOTICE.md",
   "content/MULTIPLAYER.md",
   "product-catalog.mjs",

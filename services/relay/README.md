@@ -2,6 +2,8 @@
 
 Relay 为联机客户端提供房间目录、等待室、信令、WebSocket 回退、旁观转发和昵称服务。产品规则与昵称规范从 [`common/contracts/`](../../common/contracts/README.md) 读取。
 
+匿名昵称也可以作为独立 HTTP 服务运行。配置 `EAGLER_NETPLAY_NICKNAME_STATE`、`EAGLER_NETPLAY_NICKNAME_API_KEY` 和至少 32 字符的 `NICKNAME_BRIDGE_SECRET`，执行 `npm run start:anonymous-api`。它默认监听本机 18411 端口，支持通过 Bearer 凭据调用 `POST /current` 和 `POST /submit`。同一份游客数据库由一个审核进程使用。
+
 ## 本地运行
 
 需要 Node.js 22.13 或更新版本。在本目录安装依赖、运行测试并启动：
@@ -28,6 +30,7 @@ npm run package -- /absolute/path/to/new-relay-package
 | `EAGLER_NETPLAY_RELAY_HOST` | `0.0.0.0` | 监听地址 |
 | `EAGLER_NETPLAY_RELAY_PORT` | `18142` | 监听端口 |
 | `EAGLER_NETPLAY_STATUS_PORT` | 未启用 | 可选房间统计 HTTP 端口，仅监听 `127.0.0.1` |
+| `EAGLER_NETPLAY_LISTEN_TOGETHER` | 未启用 | 设为 `1` 开启等待室一起听协议 |
 | `EAGLER_NETPLAY_TRUSTED_PROXIES` | 空 | 可信反向代理 IP，逗号分隔 |
 | `EAGLER_NETPLAY_STUN_URLS` | `stun:stun.cloudflare.com:3478` | 客户端 ICE STUN 地址 |
 | `EAGLER_NETPLAY_TURN_URLS` | 空 | 可选 TURN 地址；需配置共享密钥或静态凭据 |

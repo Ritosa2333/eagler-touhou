@@ -7,10 +7,15 @@ import {originalBootstrap as original} from 'virtual:original-bootstrap';
 import {useLocation} from 'react-router';
 import {translate} from '../../i18n';
 import {useDocumentUiLocale} from '../../navigation/document-locale';
+import {isLauncherHomePath} from '../../navigation/addresses';
 
 // ES5 dispatch only: the original compatibility gate must precede the modern
 // bundle. Static SPA fallback HTML serves both original document contexts.
-const dispatch = `(function(){var lobby=/\\/(?:lobby|lobby\\.html)\\/?$/.test(location.pathname);document.documentElement.setAttribute('data-original-entry',lobby?'lobby':'library');if(lobby){document.documentElement.setAttribute('data-lobby-boot','loading');}else{${original.library.compatibility}\n${original.library.script}\n}}());`;
+const backgroundWait = 'var sources = ["assets/launcher-background.webp"];';
+if (!original.library.script.includes(backgroundWait)) throw new Error('Original launcher bootstrap background wait anchor changed');
+const libraryScript = original.library.script.replace(backgroundWait,
+  'var sources = document.documentElement.hasAttribute("data-ui-app") && document.documentElement.hasAttribute("data-ui-home") ? [] : ["assets/launcher-background.webp"];');
+const dispatch = `(function(){var lobby=/\\/(?:lobby|lobby\\.html)\\/?$/.test(location.pathname);document.documentElement.setAttribute('data-original-entry',lobby?'lobby':'library');if(lobby){document.documentElement.setAttribute('data-lobby-boot','loading');}else{${original.library.compatibility}\n${libraryScript}\n}}());`;
 const tail = `(function(){var module=document.querySelector('script[type="module"][data-eagler-entry]');if(module)module.id='lobbyModule';if(document.documentElement.getAttribute('data-original-entry')==='lobby'){${original.lobby.script}\n}}());`;
 // One authored loading presentation for both document entries and warm routes.
 // Keep the lobby's failure carrier, while deriving its motion from Launcher.
@@ -25,7 +30,8 @@ export function OriginalBootstrapHead() {
   const locale = useDocumentUiLocale();
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
   const account = /\/login\.html\/?$/.test(pathname);
-  const profile = /\/profile\.html\/?$/.test(pathname);
+  const profile = /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
+  const home = isLauncherHomePath(pathname);
   const title = account ? translate(locale, 'account.documentTitle') : lobby ? `${translate(locale, 'lobby.title')} ~ EAGLER TOUHOU` : profile ? `${translate(locale, 'profile.navigation')} ~ EAGLER TOUHOU` : translate(locale, 'site.documentTitle');
   const description = translate(locale, 'site.description');
   return <>
@@ -62,7 +68,7 @@ export function OriginalBootstrapHead() {
     </>}
     <link rel="icon" href={lobby ? 'favicon.ico' : 'assets/favicon.ico'} type={lobby ? undefined : 'image/x-icon'}/>
     <link rel="icon" type="image/png" sizes="512x512" href="assets/brand/portrait.png"/>
-    <link rel="preload" href={backgroundUrl} as="image" fetchPriority="high"/>
+    {!home && <link rel="preload" href={backgroundUrl} as="image" fetchPriority="high"/>}
     <link rel="preload" href={touhouFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>
     <link rel="preload" href={yatraFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>
     <link rel="preload" href={mediumFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>

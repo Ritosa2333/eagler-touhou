@@ -10,10 +10,10 @@ const MenuAction = createContext<((action: () => void) => void) | null>(null);
 const MenuVariant=createContext<'action'|'selection'>('action');
 
 /** Menus share placement, keyboard navigation, theme scope and focus return. */
-export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end',variant='action'}: {
+export function ActionMenu({label, trigger, children, className, minimumWidth = 200, side = 'bottom', align = 'end',variant='action',openOnClick=false}: {
   label: string; trigger: ReactElement; children: ReactNode; className?: string; minimumWidth?: number;
   side?: 'top' | 'right' | 'bottom' | 'left'; align?: 'start' | 'center' | 'end';
-  variant?: 'action'|'selection';
+  variant?: 'action'|'selection'; openOnClick?: boolean;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
   const afterClose = useRef<(() => void) | null>(null);
@@ -25,10 +25,14 @@ export function ActionMenu({label, trigger, children, className, minimumWidth = 
     document.addEventListener('fullscreenchange', close); document.addEventListener('webkitfullscreenchange', close);
     return () => {document.removeEventListener('fullscreenchange', close);document.removeEventListener('webkitfullscreenchange', close);};
   }, [open]);
-  return <MenuVariant value={variant}><MenuAction.Provider value={action=>{afterClose.current=action;}}><DropdownMenu.Root modal={false} open={open} onOpenChange={next => {
+  function changeOpen(next: boolean) {
     if (next) {setHost(uiPortalHost(anchor.current));setSurface(anchor.current?.closest('[data-ui-surface]')?.getAttribute('data-ui-surface') ?? undefined);}
     setOpen(next);
-  }}><DropdownMenu.Trigger asChild ref={anchor}>{trigger}</DropdownMenu.Trigger>
+  }
+  return <MenuVariant value={variant}><MenuAction.Provider value={action=>{afterClose.current=action;}}><DropdownMenu.Root modal={false} open={open} onOpenChange={changeOpen}>
+    <DropdownMenu.Trigger asChild ref={anchor}
+      onPointerDownCapture={openOnClick ? event => event.stopPropagation() : undefined}
+      onClick={openOnClick ? () => changeOpen(!open) : undefined}>{trigger}</DropdownMenu.Trigger>
     <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn(variant==='selection'?`${listPopupPanelClass} overflow-y-auto`:'ui-menu', 'ui-dropdown-motion', className)} aria-label={label} data-ui-surface={surface}
       side={side} align={align} sideOffset={6} collisionPadding={padding} style={{minWidth:`min(${minimumWidth}px, var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px)))`,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
         const action=afterClose.current;afterClose.current=null;

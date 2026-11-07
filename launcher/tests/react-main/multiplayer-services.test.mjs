@@ -42,7 +42,18 @@ before(async () => {
     format: 'esm',
     packages: 'external',
     logLevel: 'silent',
-    plugins: [authoredSourcesPlugin(project)],
+    plugins: [{name:'account-request-fixture',setup(context){
+      context.onResolve({filter:/account-client/},()=>({path:'account-client-fixture',namespace:'fixture'}));
+      context.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
+        export class AccountRequestError extends Error {constructor(code,status){super(code);this.name='AccountRequestError';this.code=code;this.status=status;}}
+        export function cancelAccountRequests() {}
+        export async function accountRequest(path,body,options){
+          const request=globalThis.__multiplayerAccountRequest;
+          if(!request)throw Error('room account API fixture is missing');
+          return request(path,body,options);
+        }
+      `}));
+    }},authoredSourcesPlugin(project)],
   });
   owner = await import(pathToFileURL(file).href);
 });
@@ -448,6 +459,47 @@ async function joinedRoom(extra = {}) {
   });
   return fixture;
 }
+
+test('account refresh replaces only the lobby socket and fences late nickname tickets',async()=>{
+  let resolveOldTicket;
+  const oldTicket=new Promise(resolve=>{resolveOldTicket=resolve;});
+  let nicknameCalls=0;
+  globalThis.__multiplayerAccountRequest=path=>{
+    assert.equal(path,'v1/me/room-nickname');
+    nicknameCalls++;
+    return nicknameCalls===1?oldTicket:Promise.resolve({ticket:'current-ticket'});
+  };
+  const f=await joinedRoom({isLaunched:()=>true}), oldSocket=f.sockets[0], id=f.identity.lobbyClientId('th06mp');
+  try{
+    oldSocket.message({type:'state',accountChallenge:'old-challenge',room:roomState(id,{phase:'running',startSerial:11,
+      seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest123456',name:'B',loadout:1,ready:true}]})});
+    assert.equal(nicknameCalls,1);
+    f.service.refreshAccount();
+    assert.equal(f.sockets.length,2);
+    assert.equal(oldSocket.readyState,3);
+    assert.equal(f.service.getSnapshot().room.code,'1234');
+    assert.equal(f.service.getSnapshot().room.phase,'running');
+    assert.equal(f.service.getSnapshot().seat,0);
+    assert.equal(f.service.getSnapshot().ready,true);
+    assert.equal(f.events.some(event=>event[0]==='launch'||event[0]==='check'),false,
+      'changing lobby identity does not recreate or check the active Runtime');
+    const nextSocket=f.sockets[1];
+    nextSocket.open();
+    nextSocket.message({type:'state',accountChallenge:'new-challenge',room:roomState(id,{phase:'running',startSerial:11,
+      seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest123456',name:'B',loadout:1,ready:true}]})});
+    await flush();
+    assert.equal(nicknameCalls,2);
+    assert.ok(nextSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='current-ticket'));
+    resolveOldTicket({ticket:'late-old-ticket'});
+    await flush();
+    assert.equal(nextSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='late-old-ticket'),false);
+    assert.equal(oldSocket.sent.some(message=>message.type==='account-nickname'&&message.ticket==='late-old-ticket'),false);
+    assert.equal(f.service.getSnapshot().room.code,'1234');
+  }finally{
+    globalThis.__multiplayerAccountRequest=undefined;
+    f.service.dispose();
+  }
+});
 
 test('room program versions refresh before readiness and pin the agreed generation into transport', async () => {
   let preparations = 0;

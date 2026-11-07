@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": [
+    "menu, selection and dialogue alone never save recordings",
+    ".rpy export/import roundtrip",
+    "normal gameplay tape reproduces native state",
+    "two fresh-module rewinds reproduce the same state",
+    "recording persists after reload",
+    "native Quit emits launcher exit",
+    "menu-only Quit creates no extra recording"
+  ],
+  "recorded": {
+    "frame": 1415,
+    "title": [
+      1235,
+      11,
+      0,
+      4,
+      1,
+      0,
+      1,
+      1
+    ],
+    "hash": 3557096483
+  }
+}

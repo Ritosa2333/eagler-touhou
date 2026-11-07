@@ -1,3 +1,4 @@
+#include "ComboAttack.hpp"
 #include "ScreenShake.hpp"
 #include "CurveLaserPath.hpp"
 #include "BossPhase.hpp"
@@ -189,6 +190,7 @@ struct Enemy {
     float invulnerability_time=0; // ECL515 native timer +0x5128; integer value truncates float clock.
     int cpu_target_cooldown=0;
     int card_damage_frame=-1,card_damage_sum=0;
+    int damage_budget_frame=-1,damage_budget_used=0;
     int hit_cooldown=0,hit_sound=-1;bool hit_pending=false;
     u32 feedback_color=0; // zero: use original ANM color, otherwise native secondary color
     int phase_health()const{for(const auto&t:phases.entries)if(t.hp>=0)return life-t.hp;return life;}
@@ -251,6 +253,9 @@ public:
     // 0x50d8a0/0x50d800: receiving world, sender program set, life200.
     bool receive_charge_attack(int tier,float x,float y,const std::vector<const EclProgram*>& source);
     bool fire_bullets(const LaserShooter& shooter,float origin_x,float origin_y);
+    // Retail 1.10c BulletInf clamps its pool to 0x7d0 (0x4edfd3 / 0x4ee194).
+    static constexpr size_t bullet_capacity=2000;
+    u32 dropped_bullets=0;
     Bullet& spawn_bullet();
     void tick_bullet_graze(float px,float py,float player_radius=3);
     struct ExtraFlight {
@@ -296,6 +301,7 @@ public:
     int defeated=0,collected=0,combo=0,combo_timer=0,combo_peak=0,pickup_rate=100,pickup_fraction=0,graze_fraction=0;
     float pickup_speed=5,pickup_range=70;
     int combo_display=0,combo_display_timer=0;
+    ComboAttack combo_attack;
     int incoming_extra_level=0,incoming_boss_level=0;
     // Native manager +0x54..+0x90: enemy IDs, not a count or phase variable.
     std::array<u32,16> boss_slots{};
@@ -309,6 +315,7 @@ public:
     struct Spell {u32 host_id=0;bool active=false;int number=0,timeout=0,flags=0;u32 generation=0;std::string name_bytes,animation_file;} spell;
     i64 earned_score=0;
     bool card_near_damage=false;
+    int player_damage_cap=0; // SHT+0x28; zero for worlds without a player SHT.
     bool damage_enemy(Enemy& enemy,int damage,bool forced=false);
     void finish_hit_feedback(u32 native_mode_flags=0);
     int cancel_bullets_circle(float x,float y,float radius,int limit=99999,bool respect_lock=true);

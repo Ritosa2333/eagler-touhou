@@ -4,6 +4,7 @@ import { multiplayerDisplayInitial } from '../../../src/launcher/multiplayer-ide
 import type { RoomOwnerSnapshot, MultiplayerRoomService } from '../../services/multiplayer-room';
 import { useLocale } from '../../i18n';
 import { roomPresentation } from './presentation';
+import {ParticipantAvatar} from './ParticipantAvatar';
 type SpectatorActions = Pick<MultiplayerRoomService, 'removeSpectator' | 'spectate' | 'leaveSpectator'>;
 export function RoomSpectators({
   state,
@@ -42,9 +43,9 @@ export function RoomSpectators({
                 key={entry.clientId}
                 title={title}
               >
-                <span className="mp-spectator-avatar">
+                <ParticipantAvatar className="mp-spectator-avatar" profile={entry.profile} name={title}>
                   {multiplayerDisplayInitial(entry.name, '?')}
-                </span>
+                </ParticipantAvatar>
                 <div className="mp-spectator-copy">
                   <strong><OverflowText>{title}</OverflowText></strong>
                   <small>
