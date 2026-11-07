@@ -13,10 +13,28 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
     };
     struct Idle {AnmVm* owner;std::shared_ptr<const AnmVm> vm;};
     struct SavedSlot {u32 index;ItemState state;u8 flags;bool arrow_ended;};
-    std::vector<SavedSlot> saved;
-    std::vector<Visual> visuals;
-    std::vector<Idle> idle;
-    multiplayer::AnmCheckpoint::Curves curves;
+    struct Snapshot {
+        std::vector<SavedSlot> saved;
+        std::vector<Visual> visuals;
+        std::vector<Idle> idle;
+        multiplayer::AnmCheckpoint::Curves curves;
+        std::array<std::vector<u32>,2> recycled;
+
+        void reset(){
+            const size_t bytes=saved.capacity()*sizeof(SavedSlot)+visuals.capacity()*sizeof(Visual)+
+                idle.capacity()*sizeof(Idle)+curves.changing.capacity()*sizeof(AnmInterpolators)+
+                (recycled[0].capacity()+recycled[1].capacity())*sizeof(u32);
+            if(bytes>256*1024){*this=Snapshot{};return;}
+            saved.clear();visuals.clear();idle.clear();curves.changing.clear();curves.last_resting.reset();
+            for(auto& free:recycled)free.clear();
+        }
+    };
+    auto& snapshot=image.reuse<Snapshot>();
+    auto& saved=snapshot.saved;
+    auto& visuals=snapshot.visuals;
+    auto& idle=snapshot.idle;
+    auto& curves=snapshot.curves;
+    snapshot.recycled=recycled;
     std::array<u8,pool_size> flags{};
     if(!idle_visuals)idle_visuals=std::make_unique<std::array<IdleVisuals,pool_size>>();
     size_t slot_count=0,visual_count=0,idle_count=0,changing=0;
@@ -65,13 +83,18 @@ void ItemManager::save_rollback(multiplayer::FrameImage& image){
 #endif
     }
 #if TH17_ROOM_BENCHMARK
-    image.payload[image.ItemVisual]=u32(saved.capacity()*sizeof(SavedSlot)+visuals.capacity()*sizeof(Visual)+idle.capacity()*sizeof(Idle)+curves.changing.capacity()*sizeof(AnmInterpolators));
+    image.payload[image.ItemVisual]=u32(saved.capacity()*sizeof(SavedSlot)+visuals.capacity()*sizeof(Visual)+
+        idle.capacity()*sizeof(Idle)+curves.changing.capacity()*sizeof(AnmInterpolators)+
+        (snapshot.recycled[0].capacity()+snapshot.recycled[1].capacity())*sizeof(u32));
 #endif
-    image.save(free_slots,requests,cancel_density,cancel_stamp,active_count,motion_scale,error);
-    image.restore_with([this,saved=std::move(saved),visuals=std::move(visuals),idle=std::move(idle),curves=std::move(curves)]{
+    image.save(unused_free,requests,cancel_density,cancel_stamp,active_count,motion_scale,error);
+    image.restore_with([this,checkpoint=&snapshot]{
         if(!idle_visuals)return false;
-        auto vm=visuals.begin();
-        auto shared=idle.begin();
+        const auto& saved=checkpoint->saved;
+        const auto& curves=checkpoint->curves;
+        recycled=checkpoint->recycled;
+        auto vm=checkpoint->visuals.begin();
+        auto shared=checkpoint->idle.begin();
         const auto restore_visual=[&](auto& owner,CachedVisual& cache,bool present,bool share){
             if(!present){owner.reset();cache={};return true;}
             if(share){
