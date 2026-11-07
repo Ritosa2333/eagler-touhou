@@ -171,7 +171,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   }
   guard();
   const musicPolicy=PRODUCT_GAMES[input.settings.gameId].musicRuntime;
-  const completeOgg = (music === 'ogg-akyu' && (input.settings.gameId === 'th01' || input.settings.gameId === 'th03')) || input.multiplayer?.kind === 'room-preload' || ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) || input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
+  const completeOgg = (music === 'ogg-akyu' && (['th01','th02','th03','th04'].includes(input.settings.gameId))) || input.multiplayer?.kind === 'room-preload' || ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) || input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
   ({generation, music} = await ensureOggStartup({generation, music, acquisition, signal: input.signal,
     completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,

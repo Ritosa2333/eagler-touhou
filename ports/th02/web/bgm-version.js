@@ -8,7 +8,7 @@ const normalize=next=>bgmVersions.some(([id])=>id===next)?next:'old';
 let value='old';
 try{value=normalize(localStorage.getItem(storageKey));}catch{}
 const listeners=new Set(),controls=new Set();
-let needsRestart=false;
+let needsRestart=false,managed=false;
 export const bgmVersion=()=>value;
 export function resolveBgmTrack(id,tracks,album={},midi={}){
   if(value==='new')return album[id]??tracks[id];
@@ -44,7 +44,13 @@ export function setBgmVersion(next){
   value=next;try{localStorage.setItem(storageKey,value);}catch{}
   updateControls();for(const callback of listeners)callback(value);
 }
+export function setManagedBgmVersion(source){
+  if(source!=='original'&&source!=='akyu')throw Error('音乐音源无效');
+  managed=true;const next=source==='akyu'?'new':'old';
+  if(next!==value){value=next;updateControls();for(const callback of listeners)callback(value);}
+}
 window.addEventListener('storage',event=>{
+  if(managed)return;
   if(event.key===storageKey||event.key===null){
     let next='old';try{next=normalize(localStorage.getItem(storageKey));}catch{}
     if(next!==value){value=next;updateControls();for(const callback of listeners)callback(value);}

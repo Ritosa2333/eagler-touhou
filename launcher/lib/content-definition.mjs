@@ -27,8 +27,8 @@ export const PRODUCT_CONTENT = Object.freeze({
   th02: Object.freeze({
     original:Object.freeze({files:Object.freeze(['th02.data']),preparedAlternative:Object.freeze({directory:'content',markerFiles:Object.freeze(['th02.data'])})}),
     dataLayout:'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579',
-    music:Object.freeze({}),
-    hostPreparation:Object.freeze({artwork:Object.freeze({kind:'prepared-artwork'}),preparedContent:Object.freeze({directory:'content',markerFiles:Object.freeze(['th02.data']),script:'scripts/prepare-th02-content.mjs'}),dataAssets:Object.freeze({kind:'prepared-content'})}),
+    music:Object.freeze({ogg:Object.freeze({mount:'/bgm/akyu',files:Object.freeze(Array.from({length:15},(_,i)=>String(i+1).padStart(2,'0')+'.ogg'))})}),
+    hostPreparation:Object.freeze({ogg:Object.freeze({kind:'prepared-content'}),artwork:Object.freeze({kind:'prepared-artwork'}),preparedContent:Object.freeze({directory:'content',markerFiles:Object.freeze(['th02.data']),script:'scripts/prepare-th02-content.mjs'}),dataAssets:Object.freeze({kind:'prepared-content'})}),
   }),
   th03: Object.freeze({
     original:Object.freeze({files:Object.freeze(['th03.data']),preparedAlternative:Object.freeze({directory:'content',markerFiles:Object.freeze(['th03.data'])})}),
@@ -39,8 +39,8 @@ export const PRODUCT_CONTENT = Object.freeze({
   th04: Object.freeze({
     original:Object.freeze({files:Object.freeze(['th04.data']),preparedAlternative:Object.freeze({directory:'content',markerFiles:Object.freeze(['th04.data'])})}),
     dataLayout:'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579',
-    music:Object.freeze({}),
-    hostPreparation:Object.freeze({artwork:Object.freeze({kind:'prepared-artwork'}),preparedContent:Object.freeze({directory:'content',markerFiles:Object.freeze(['th04.data']),script:'scripts/prepare-th04-content.mjs'}),dataAssets:Object.freeze({kind:'prepared-content'})}),
+    music:Object.freeze({ogg:Object.freeze({mount:'/bgm/akyu',files:Object.freeze(Array.from({length:22},(_,i)=>String(i+1).padStart(2,'0')+'.ogg'))})}),
+    hostPreparation:Object.freeze({ogg:Object.freeze({kind:'prepared-content'}),artwork:Object.freeze({kind:'prepared-artwork'}),preparedContent:Object.freeze({directory:'content',markerFiles:Object.freeze(['th04.data']),script:'scripts/prepare-th04-content.mjs'}),dataAssets:Object.freeze({kind:'prepared-content'})}),
   }),
   th05: Object.freeze({
     original: Object.freeze({files: Object.freeze(["kaiki1.dat", "kaiki2.dat", "zun.com"]), preparedAlternative: TH05_PREPARED_CONTENT}),

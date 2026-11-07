@@ -237,7 +237,7 @@ test('TH05 album acquisition includes its declared soundtrack files', async () =
 
 
 
-for(const game of ['th01','th03']) test(`${game} original mode never attaches cached album or downloads it in background`,async()=>{
+for(const game of ['th01','th02','th03','th04']) test(`${game} original mode never attaches cached album or downloads it in background`,async()=>{
   const current=generation({ogg:['track-1','track-2','track-3','track-4']});
   current.game=current.descriptor.game=game;current.descriptor.runtimeRequirement.target=game;
   current.descriptor.files['game-data'].target=`/${game}.data`;
@@ -250,7 +250,7 @@ for(const game of ['th01','th03']) test(`${game} original mode never attaches ca
   assert.equal(f.calls.some(call=>call.startsWith('install')),false);
 });
 
-for (const game of ['th01','th03']) test(`${game} album files are acquired only when selected`,async()=>{
+for (const game of ['th01','th02','th03','th04']) test(`${game} album files are acquired only when selected`,async()=>{
   const declared=host().games.th06;
   const development=api.validateSiteManifest({...host(),profile:'web-development',shared:{...host().shared,testBuild:true},games:{[game]:{
     ...declared,runtime:api.PRODUCT_GAMES[game].runtime,gameData:{...declared.gameData,path:`${game}.data`,source:`development/${game}.data`},

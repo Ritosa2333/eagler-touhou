@@ -48,7 +48,9 @@ const runtime=[], payload=[], entries=[];let offset=0;
 await installPc98Pmd(repo,output,runtime);
 for(const item of input) {
   const bytes=await readInput(item.path);
-  if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
+  if(/^bgm\/akyu\/\d{2}\.opus$/.test(item.path)) {
+    const target=resolve(content,'music',item.path.split('/').at(-1).replace(/\.opus$/,'.ogg'));await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);
+  } else if(/\.(?:js|mjs|css|html|wasm|json)$/.test(item.path)) {
     const target=resolve(output,item.path);await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);runtime.push(item.path);
   } else {
     if(!bytes.length) continue;
@@ -57,6 +59,7 @@ for(const item of input) {
 }
 function replaceOnce(text,from,to,label) { if(text.split(from).length!==2) throw Error('Upstream changed at '+label); return text.replace(from,to); }
 const patch=async(name,edit)=>{const path=resolve(output,name);await writeFile(path,edit(await readFile(path,'utf8')));};
+await patch('bgm/akyu/manifest.json',text=>text.replace(/\.opus/g,'.ogg'));
 await patch('solo.js',text=>{
   text=replaceOnce(text,'volume:.7','volume:managedMusicMode===\'none\'?0:.7','practice restart music preference');
   text=replaceOnce(text,'function release(){','function release(){globalThis.__eaglerPC98Input.releaseGameplay();','release managed keys');
