@@ -56,6 +56,9 @@ private:
     std::map<u32,GPU> surfaces;std::map<u32,Depth> depths;std::map<std::array<u32,10>,Program> programs;
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
+    // Lookup results only; utility draws can still change the GL bindings.
+    std::array<u32,10> lastProgramKey{};Program* lastProgram=nullptr;
+    std::array<u32,6> lastLayoutKey{};GLuint* lastLayout=nullptr;
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
 #if TH_ENABLE_THPRAC
     GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;GLint imguiProjMtx=-1,imguiTexture=-1;
