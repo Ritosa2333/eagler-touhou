@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "d2f09129a7434199864cc8110c541053335ee71d",
+      "base": "3aa413997220673db16d8b319d4226857c61bf7a",
       "history": [
         {
           "kind": "manual",
@@ -1256,6 +1256,17 @@
             "ports/th17-mp/web/tests/direct-input-browser.mjs"
           ],
           "note": "多人版同步触控通道、手势几何缓存和运行包资源；复用浏览器输入回归，在多人房间验证，普通版适配器继续验证原版录像。"
+        },
+        {
+          "kind": "manual",
+          "base": "d2f09129a7434199864cc8110c541053335ee71d",
+          "source": "3aa413997220673db16d8b319d4226857c61bf7a",
+          "targetHead": "fa9349b0cda2cd860ea070ad79a9caa0cc5b66cd",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/AnmResource.cpp",
+            "ports/th17-mp/web/cpp/game/Lzss.cpp"
+          ],
+          "note": "普通版和多人版同步优化 LZSS 回拷与 ANM 透明边界扫描，多人长帧记录归属多人目录。"
         }
       ]
     }
