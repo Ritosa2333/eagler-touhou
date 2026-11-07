@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   Search,
@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
+import { Skeleton } from '../../ui/skeleton';
 import { ChoiceGroup, ChoiceItem } from '../../ui/choice-group';
 import { InputGroup, InputGroupInput } from '../../ui/input-group';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../ui/select';
@@ -34,7 +35,7 @@ import {impressFavorite} from './ink-feedback';
 import { BookWorkNumber } from './BookWorkNumber';
 import {useLibraryMotion} from './use-library-motion';
 
-type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & { footer?: ReactNode };
+type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'>;
 const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
   { id: 'all', Icon: LayoutGrid },
   { id: 'favorites', Icon: Star },
@@ -45,7 +46,7 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 ];
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, footer }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const [category, setCategory] = useState<BookCategory>('all');
@@ -112,7 +113,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     onSelect(product.id);
     onActivate(product.id);
   };
-  const gameLink = (product: LibraryProduct, recentLink = false) => (
+  const gameLink = (product: LibraryProduct, recentLink = false, priority = false) => (
     <a
       ref={
         openedProduct === product.id && (!recentLink || !list.some((item) => item.id === product.id))
@@ -135,7 +136,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       }
     >
       <span className="book-art">
-        <BookCover product={product} />
+        <BookCover key={bookArtwork(product)} product={product} priority={priority} />
       </span>
       <span className="book-identity">
         <span className="book-title-line">
@@ -236,8 +237,8 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 <h2 id="bookRecentTitle">{t('library.recent')}</h2>
               </div>
               <div className="book-recent-games">
-                {history.map((product) => (
-                  <article key={product.id}>{gameLink(product, true)}</article>
+                {history.map((product, index) => (
+                  <article key={product.id}>{gameLink(product, true, index === 0)}</article>
                 ))}
               </div>
             </section>
@@ -311,9 +312,9 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
             data-empty={!list.length || undefined}
             style={resultsMinHeight ? { minHeight: resultsMinHeight } : undefined}
           >
-            {list.map((product) => (
+            {list.map((product, index) => (
               <article key={product.id} className="book-card" data-book-card={product.id}>
-                {gameLink(product)}
+                {gameLink(product, false, history.length === 0 && index === 0)}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -348,17 +349,25 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
             )}
           </div>
         </div>
-        {footer}
       </div>
     </div>
   );
 }
 
-function BookCover({ product }: { product: LibraryProduct }) {
-  const [failed, setFailed] = useState(false),
+function BookCover({ product, priority }: { product: LibraryProduct; priority: boolean }) {
+  const image = useRef<HTMLImageElement>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading'),
     source = bookArtwork(product);
-  return source && !failed ? (
-    <img src={source} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+  useEffect(() => {
+    // A cached image may finish before hydration attaches its load listener.
+    if (source && image.current?.complete) setStatus(image.current.naturalWidth ? 'ready' : 'error');
+  }, [source]);
+  return source && status !== 'error' ? (
+    <>
+      {status === 'loading' && <Skeleton className="absolute inset-0 rounded-none"/>}
+      <img ref={image} src={source} alt="" loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined}
+        decoding="async" onLoad={() => setStatus('ready')} onError={() => setStatus('error')} />
+    </>
   ) : (
     <span className="book-cover-fallback">
       th{product.number}

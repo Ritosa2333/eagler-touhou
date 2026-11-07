@@ -25,6 +25,8 @@
 .ui-kit-choice {transition:background-color 320ms cubic-bezier(.22,.7,.2,1),color 320ms cubic-bezier(.22,.7,.2,1),box-shadow 320ms cubic-bezier(.22,.7,.2,1)}
 @media(prefers-reduced-motion:reduce) {.ui-kit-choice {transition:none}}
 .less-motion .ui-kit-choice {transition:none}
+@media(prefers-reduced-motion:reduce) {.ui-skeleton {animation:none}}
+.less-motion .ui-skeleton {animation:none}
 @layer components {
   .ui-kit-button,.ui-kit-choice,.ui-kit-select-trigger {cursor:pointer;line-height:1.4;touch-action:manipulation}
   .ui-kit-input-group:has(:disabled) {opacity:.5}

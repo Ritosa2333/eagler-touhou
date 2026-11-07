@@ -57,7 +57,7 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
       faqHref={withUiLanguage(assetUrl('faq.html'), locale)} aboutHref={withUiLanguage(assetUrl('about.html'), locale)}
       migrationPolicyKnown={migration.known} migrationHref={migration.available ? assetUrl('migrate.html') : undefined}
       menuOpen={menu} onMenuOpenChange={setMenu} lessMotion={prefs.lessMotion} onToggleMotion={preferences.toggleMotion}
-      noticeEnabled={prefs.noticeEnabled} onToggleNotice={preferences.toggleNotice} diagnosticsEnabled={diagnostics}
+      diagnosticsEnabled={diagnostics}
       onToggleDiagnostics={() => {const next = !diagnostics; try {localStorageOrNull()?.setItem(RUNTIME_DIAGNOSTICS_STORAGE_KEY, next ? '1' : '0');} catch {} setDiagnostics(next);}}
       onDonation={() => setDonation(true)} donationAvailable={donationAvailable} onFirstUse={() => {void firstUse.current?.showManual();}}
       languageControl={<MainSelect id="uiLanguageSelect" aria-label={t('ui.language')} value={locale} onChange={event => {

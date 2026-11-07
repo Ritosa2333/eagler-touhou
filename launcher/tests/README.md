@@ -46,7 +46,6 @@ Host 工作区检查覆盖 th12 的原始音轨输入与 `assets-eagler` 成品�
 
 旧界面的对照输入保存在 [`fixtures/ui-history/`](fixtures/ui-history/README.md)，按固定 SHA-256 校验；完整检出与稀疏检出使用同一组输入。Python 场景比较通过标准输入接收检查脚本，支持 Windows 下的大份历史输入。
 
-`bun run test` 最后会运行 [`site-notice.run.mjs`](react-main/site-notice.run.mjs)。该检查把临时 bundle 与源目录分开构建，历史输入仍由 [`ui-history.mjs`](support/ui-history.mjs) 从固定夹具读取并校验。
 
 `npm run test:netplay-windows:browser` 挂载生产连接窗口、标定模型、报告、更新确认和资源导入组件，检查桌面、手机竖屏和横屏的按钮可达性，以及全屏中的报告和更新选择。缺字体的导入提示、下载链接与启动错误分别验证房间内和全屏中的实际点击命中，关闭后恢复房间操作。截图和结果位于 `.cache/netplay-windows/`。网络事件由明确的展示夹具提供。
 

@@ -1,6 +1,6 @@
 # 资源来源与生成
 
-本文记录 Launcher 图像、字体的来源、Host 生成方式和发布位置。许可证见 [`THIRD_PARTY.md`](THIRD_PARTY.md)；保留随资源提供的上游许可证文件和 [`NOTICE.txt`](NOTICE.txt)。
+本文记录 Launcher 图像、字体的来源、Host 生成方式和发布位置。许可证见 [`THIRD_PARTY.md`](THIRD_PARTY.md)；保留随资源提供的上游许可证文件。
 
 ## 游戏封面
 
@@ -20,7 +20,7 @@ PWA 图标 `pwa/icon-192.png`、`icon-512.png`、`icon-maskable-512.png` 和 `ap
 
 浏览器图标、README 标识和安装图标均从同一套徽标资源派生，默认图标使用莉莉白。`scripts/build-site-icon.py` 更新浏览器图标与文档预览。Host 将其复制为 `assets/favicon.ico`，并生成安装图标；运营者也可提供自定义 favicon。
 
-公告栏使用本地 Bilibili、QQ、GitHub SVG，来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1）。`notice-touhou-cloud.png` 是 [Touhou Cloud](https://cloud.touhou.best/) 发布的标志，项目负责人已确认可用于标识服务提供方。其他服务入口保留文字链接，其图标的再分发许可尚未记录。
+游戏来源说明使用本地 Bilibili 和 GitHub SVG，来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1）。
 
 作品集合菜单内嵌 Material Symbols `language`、`history`、`person`、`warning`；触控帮助内嵌 `fullscreen`、`fullscreen_exit`、`help`、`screen_rotation`。资源来自 `@iconify-json/material-symbols@1.2.86`，随站点内联，不请求图标服务。
 

@@ -112,5 +112,12 @@ export function createRelayAbuseGuard({ now = Date.now, ...config } = relayAbuse
     --addresses.get(address).rooms;
     owners.delete(id);
   }
-  return { allowHandshake, allowRoomLookup, trackSocket, canCreateRoom, createRoom, releaseRoom, sweep };
+  function moveRoom(from, to) {
+    const address = owners.get(from);
+    if (address === undefined || owners.has(to)) return false;
+    owners.delete(from);
+    owners.set(to, address);
+    return true;
+  }
+  return { allowHandshake, allowRoomLookup, trackSocket, canCreateRoom, createRoom, releaseRoom, moveRoom, sweep };
 }

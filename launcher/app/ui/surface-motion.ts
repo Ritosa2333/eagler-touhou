@@ -1,7 +1,7 @@
 import {animate} from 'motion/mini';
 
 export type SurfacePhase = 'enter' | 'exit';
-export type SurfaceKind = 'panel' | 'dialog' | 'menu' | 'backdrop' | 'content' | 'notice';
+export type SurfaceKind = 'panel' | 'dialog' | 'menu' | 'backdrop' | 'content';
 export interface SurfaceAnimation {
   finished: Promise<void>;
   cancel(): void;
@@ -16,7 +16,7 @@ export interface SurfaceMotionOptions {
 
 type Easing = [number, number, number, number];
 const defaultEase: Easing = [.2, 0, 0, 1];
-const distances: Record<SurfaceKind, number> = {panel: 0, dialog: 6, menu: 4, backdrop: 0, content: 0, notice: 0};
+const distances: Record<SurfaceKind, number> = {panel: 0, dialog: 6, menu: 4, backdrop: 0, content: 0};
 const active = new WeakMap<HTMLElement, Map<string, SurfaceAnimation>>();
 
 export function surfaceMotionTokens(element: HTMLElement, kind: SurfaceKind = 'panel') {
@@ -72,10 +72,7 @@ export function animateSurface(element: HTMLElement, phase: SurfacePhase, option
   if (!view) {previous?.cancel(); return null;}
   const {distance} = surfaceMotionTokens(element, options.kind);
   const opening = phase === 'enter';
-  const noticeOffset = options.kind === 'notice'
-    ? view.matchMedia?.('(max-width: 780px)').matches ? `0 ${element.offsetHeight + 32}px` : `${-element.offsetWidth - 32}px 0`
-    : undefined;
-  const offset = noticeOffset ?? (distance ? `0 ${distance}px` : undefined);
+  const offset = distance ? `0 ${distance}px` : undefined;
   const keyframes = {
     opacity: [currentOpacity || (opening ? options.kind === 'content' ? '.25' : '0' : '1'), opening ? '1' : '0'],
     ...(offset ? {translate: [currentTranslate && currentTranslate !== 'none' ? currentTranslate : opening ? offset : '0 0', opening ? '0 0' : offset]} : {}),

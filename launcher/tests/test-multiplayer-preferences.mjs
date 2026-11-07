@@ -38,6 +38,11 @@ assert.equal(createMultiplayerPreferenceStore({storage}).replayAutoSave('th09mp'
 preferences.persistReplayAutoSave('th09mp', true);
 assert.equal(preferences.replayAutoSave('th09mp'), true);
 assert.equal(preferences.replayAutoSave('th07mp'), false);
+assert.equal(preferences.replayAutoSave('th19mp'), true);
+preferences.persistReplayAutoSave('th19mp',false);
+assert.equal(createMultiplayerPreferenceStore({storage}).replayAutoSave('th19mp'),false);
+assert.equal(preferences.replayAutoSave('th09mp'),true,'each title owns its recording preference');
+preferences.persistReplayAutoSave('th19mp',true);
 assert.deepEqual(preferences.load({ product: "th06mp", multiplayer: true, maxLoadout: 4 }), {
   shareSingleplayerSettings: false,
   preferredLoadout: 3,

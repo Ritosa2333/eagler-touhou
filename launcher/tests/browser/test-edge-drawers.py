@@ -57,7 +57,6 @@ def main() -> int:
             page.wait_for_timeout(800)
             page.evaluate("""() => {
               document.getElementById('firstUseNoticeDialog')?.close();
-              document.getElementById('siteNotice').hidden = true;
             }""")
             page.wait_for_timeout(240)
             assert page.locator("#firstUseNoticeEdgeCue").count() == 0
@@ -92,24 +91,12 @@ def main() -> int:
             swipe(page, (90, 320), (170, 321))
             page.wait_for_function("document.getElementById('firstUseNoticeDialog')?.open === false")
 
-            swipe(page, (2, 600), (82, 601))
-            page.wait_for_function("document.getElementById('siteNotice')?.hidden === false")
-            page.wait_for_timeout(300)
-            notice_box = page.locator("#siteNotice").bounding_box()
-            assert notice_box and abs(notice_box["x"]) < 1.5, notice_box
-            if artifact_dir:
-                page.screenshot(path=str(Path(artifact_dir) / "notice-left.png"), full_page=True)
-
-            swipe(page, (300, 600), (220, 601))
-            page.wait_for_function("document.getElementById('siteNotice')?.hidden === true")
-
             result = {
                 "pass": True,
                 "viewport": [430, 820],
                 "firstUseNotice": {"side": "right", "box": first_use_notice_box, "backdrop": backdrop, "heading": heading_style},
                 "cue": "removed",
-                "notice": {"side": "left", "box": notice_box},
-                "gestures": ["right-edge-reveal", "bottom-hint-close", "right-retract", "left-edge-reveal", "left-retract"],
+                "gestures": ["right-edge-reveal", "bottom-hint-close", "right-retract"],
             }
             print(json.dumps(result, ensure_ascii=False))
             browser.close()

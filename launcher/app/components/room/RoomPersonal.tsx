@@ -3,13 +3,20 @@ import {Button as UiButton} from '../../ui/controls';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import {useLocale} from '../../i18n';
+import {withUiLanguage} from '../../../src/launcher/i18n.mts';
+import {accountsEnabled} from '../../release-features';
+import {useAccountSession} from '../../services/account-session';
 import {roomPresentation} from './presentation';
 import {RoomPacketLoss} from './RoomPacketLoss';
 import type {RoomNetworkPresentation} from './types';
 export function RoomPersonal({state, service, network, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setDisplayName' | 'changeLoadout' | 'standUp' | 'checkGame' | 'setPreferTurn'>; network: Pick<RoomNetworkPresentation, 'loss' | 'lossReady' | 'testLoss'>; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
-  const {t} = useLocale(), {room, loadout, label, config} = roomPresentation(state, t)!;
+  const {locale,t} = useLocale(), {room, loadout, label, config} = roomPresentation(state, t)!;
+  const {state:account} = useAccountSession(accountsEnabled);
+  const member = account.status === 'member' ? account.user : null;
+  const roomMember = state.seat == null ? room.spectators?.find(entry => entry.clientId === state.localClientId) : room.seats?.[state.seat];
+  const memberName = roomMember?.profile?.username === member?.username.toLowerCase() ? roomMember?.name || member?.name : member?.name;
   const input = useRef<HTMLInputElement>(null), latest = useRef(service); latest.current = service;
-  const moderated = !!state.nickname, moderatedRef = useRef(moderated); moderatedRef.current = moderated;
+  const moderated = !member && !!state.nickname, moderatedRef = useRef(moderated); moderatedRef.current = moderated;
   const [clock, setClock] = useState(Date.now);
   useEffect(() => {if (!moderated || hidden) return; const timer=setInterval(()=>setClock(Date.now()),60000);return()=>clearInterval(timer);},[moderated,hidden]);
   const queued = state.nickname?.status === 'queued';
@@ -19,12 +26,24 @@ export function RoomPersonal({state, service, network, assetUrl, th09NetworkOver
   const draft = state.nickname?.pendingName || state.displayName;
   const save = useCallback(() => {if (input.current) input.current.value = latest.current.setDisplayName(input.current.value);}, []);
   const commit = useCallback(() => {if (!moderatedRef.current) save();}, [save]);
-  useEffect(() => {const node = input.current; node?.addEventListener('change', commit); return () => node?.removeEventListener('change', commit);}, [commit]);
+  useEffect(() => {
+    if (member) return;
+    const node = input.current;
+    node?.addEventListener('change', commit);
+    return () => node?.removeEventListener('change', commit);
+  }, [commit, member]);
   useLayoutEffect(() => {if (input.current && document.activeElement !== input.current) input.current.value = draft;}, [draft]);
   const editor = <label className="mp-name-editor" id="mpNameEditor"><span>{t('multiplayer.name')}</span><Input ref={input} id="mpDisplayName" type="text" maxLength={12} autoComplete="off" placeholder={t('multiplayer.namePlaceholder')} aria-label={t('multiplayer.nameAria')} title={t(moderated ? 'nickname.hint' : 'multiplayer.nameEditableHint')} disabled={moderated && (locked || pending)} defaultValue={draft} onBlur={commit}/></label>;
   const arrow = (id: string, previous: boolean) => config.inGameSelection ? null : <UiButton variant="icon" id={id} type="button" aria-label={t(previous ? 'multiplayer.previousCharacter' : 'multiplayer.nextCharacter')} onClick={() => service.changeLoadout(previous ? -1 : 1)}><img className="room-icon" src={assetUrl(previous ? 'assets/room-caret-left.svg' : 'assets/room-caret-right.svg')} alt=""/></UiButton>;
   return <div className="mp-room-body" data-room-panel="personal" hidden={hidden}>
-    {moderated ? <div className="mp-nickname-editor" data-status={state.nickname!.status}>
+    {member ? <div className="room-personal-account">
+      <strong>{memberName}</strong>
+      <UiButton asChild variant="action" size="sm">
+        <a href={withUiLanguage('/u/' + encodeURIComponent(member.username) + '#edit', locale)} target="_blank" rel="noopener">
+          {t('room.editAccountNickname')}
+        </a>
+      </UiButton>
+    </div> : moderated ? <div className="mp-nickname-editor" data-status={state.nickname!.status}>
       {editor}
       <UiButton variant="primary" id="mpNicknameSave" className="lobby-button" type="button" disabled={!state.connected || locked || pending} onClick={save}>{t(queued ? 'nickname.submitted' : state.nickname!.status === 'reviewing' ? 'nickname.reviewing' : 'nickname.save')}</UiButton>
       <div className="mp-nickname-review" id="mpNicknameStatus" role="status"><strong>{t(statusKey)}</strong>{detail && <span>{detail}</span>}</div>
