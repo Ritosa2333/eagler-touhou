@@ -225,6 +225,8 @@ jobs:
       with:
         sparse-checkout: |
           ${{ needs.scope.outputs.checkout }}
+          ports/th05
+          ports/th05-mp
           ports/th06
     - uses: actions/setup-node@v7
       with:
