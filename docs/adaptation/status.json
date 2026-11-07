@@ -405,7 +405,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "4936c4d25d74eec93294ae5b598179cf4b518c54cb82396a4769b8e8ec630235",
+      "sourceDigest": "6ea6928ccfe7ed0cdb11172c8a59806828e036608edf0ea0d6d84fc530386e78",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -594,7 +594,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "d0cfd0ef48e7c30b84a30ccf056ac0537e787f7e85d30e9348e4472088898eb2",
+      "sourceDigest": "98a2c0977d10a72daad0aa86f2bed7893726921845cf0e414dcf055d9098629a",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
