@@ -29,6 +29,10 @@
 
 [三人追帧试验的分段采样](3p-catchup-trace.json)还记录了 P2 无补算回调耗时 34.82 ms，其中确认处理为 28.17 ms。同轮滑动开始时一次恢复快照耗时 15.90 ms。
 
+## 主站发布
+
+2026-11-07 18:43（UTC+8）主站切换到 TH17 多人版 `1.0.14-eagler-92f0e136e0fe`。公网核对启动器入口、TH17 两套运行包共 30 个文件和 Wasm 类型。镜像核对相同发布标识及多人版 15 个运行文件。[发布回执](activation.json) · [公网校验](public-verification.json) · [镜像校验](mirror-verification.json)
+
 ## 复测入口
 
 资源配置沿用[双席移动复测](../th17-render-release-pressure-20261107/README.md#复测)。用 `TH17_ROOM_SEATS=2` 或 `3` 分别开房。启用 `--observe-display` 后，画布采集视频的帧数取 `presentedFrames`。相邻帧提交间隔取 `presentationTime`，回调合并时跳过该间隔。用 `--trace-phases` 额外记录 C++ 阶段耗时，帧率对照采用关闭分段计时的房测。
