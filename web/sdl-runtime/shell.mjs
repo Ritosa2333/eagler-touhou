@@ -266,7 +266,7 @@ async function command(m) {
       if (m.type === 'cancel') { core._th13_touch_cancel(); return {}; }
       if (!launched || document.hidden || stopping || !options.touchEnabled ||
           !['down', 'move', 'up'].includes(m.type) || ![m.x, m.y, m.id].every(Number.isFinite)) return {};
-      const b = canvasRect();
+      const b = canvas.getBoundingClientRect();
       if (b.width && b.height) core._th13_touch(({down: 0, move: 1, up: 2})[m.type], m.id,
         (m.x * innerWidth - b.left) / b.width, (m.y * innerHeight - b.top) / b.height);
       return {};
