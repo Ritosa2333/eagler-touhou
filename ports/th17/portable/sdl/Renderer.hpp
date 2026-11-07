@@ -68,6 +68,7 @@ private:
 #endif
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
+    std::array<u32,10> selectedProgramKey{2}; // The texture field in a valid key is 0 or 1.
     Stream vertices{},indices{},instances{};GLuint quadIndices=0;u32 quadIndexCapacity=0;State batchState{};
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;
     u32 batchCount=0,pending=0;std::string failure;

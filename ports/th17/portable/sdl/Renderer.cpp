@@ -91,8 +91,12 @@ void Renderer::transform(MatrixKind kind,const void* p){auto& m=state.matrix[u32
 void Renderer::viewport(const Viewport& v){state.viewport=v;}
 void Renderer::select(const State& s){
  const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
- std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)|(u32(version==10&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))<<8)};auto it=programs.find(key);
- if(it==programs.end()&&!warming){program=&generic;++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}return;}
+ const std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)|(u32(version==10&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))<<8)};
+ const auto bind=[&](Program& next){program=&next;if(program==&generic)++stats.genericBatches;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}};
+ if(!warming&&key==selectedProgramKey){bind(*program);return;}
+ if(!warming)selectedProgramKey=key;
+ auto it=programs.find(key);
+ if(it==programs.end()&&!warming){bind(generic);return;}
  if(it==programs.end()){
   ++stats.programCompiles;
   static const char* constants[]{"hasTexture","alphaTest","fogEnabled","colorOp","alphaOp","colorArg1","colorArg2","alphaArg1","alphaArg2","alphaFunc"};
@@ -105,7 +109,7 @@ void Renderer::select(const State& s){
   const char* names[]{"viewport","transformed","textureTransform","instanced","world","view","projection","textureMatrix","fogEnabled","rangeFog","fogMode","fogParams","fogColor","hasTexture","factor","colorOp","colorArg1","colorArg2","alphaOp","alphaArg1","alphaArg2","alphaTest","alphaRef","alphaFunc","depth16","tex"};
   for(int i=0;i<26;i++)p.uniforms[i].location=glGetUniformLocation(p.id,names[i]);it=programs.emplace(key,p).first;
  }
- program=&it->second;if(currentProgram!=program->id){glUseProgram(program->id);currentProgram=program->id;}
+ bind(it->second);
 }
 void Renderer::uniform(int i,int n,const float* p){auto& u=program->uniforms[i];if(u.location<0)return;if(u.count==n&&!std::memcmp(u.value.data(),p,n*4))return;std::memcpy(u.value.data(),p,n*4);u.count=n;if(n==16)glUniformMatrix4fv(u.location,1,false,p);else if(n==4)glUniform4fv(u.location,1,p);else if(n==3)glUniform3fv(u.location,1,p);else glUniform1f(u.location,*p);}
 void Renderer::integer(int i,int n){auto& u=program->uniforms[i];if(u.location<0)return;float f=float(n);if(u.count==1&&u.value[0]==f)return;u.count=1;u.value[0]=f;glUniform1i(u.location,n);}
@@ -329,9 +333,15 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  // world sprites supply world/texture matrices and tint through attributes.
  // Do not upload unused matrices after every intervening background draw.
  if(!transformed){for(int i=0;i<4;i++)if(!(instance&&(i==0||i==3))&&(i!=3||p.textureTransform))uniform(4+i,16,d.matrix[i].data());}
- integer(8,p.fog);if(p.fog){integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);uniform(12,4,color(p.fogColor).data());}integer(13,!!texture);if(!instance)uniform(14,4,color(p.textureFactor).data());
- auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
- integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);integer(23,u32(p.alphaCompare));integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
+ if(p.fog){integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);uniform(12,4,color(p.fogColor).data());}
+ if(!instance&&program->uniforms[14].location>=0)uniform(14,4,color(p.textureFactor).data());
+ // Prelinked variants bake these combiner inputs into the fragment shader.
+ if(program==&generic){
+  auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
+  integer(8,p.fog);integer(13,!!texture);integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);integer(23,u32(p.alphaCompare));
+ }
+ float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);
+ if(program->uniforms[24].location>=0)integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
  if(texture){
   bind_texture(texture->texture);
   constexpr GLint address[]{GL_REPEAT,GL_MIRRORED_REPEAT,GL_CLAMP_TO_EDGE};GLint sampler[]{address[u32(p.addressU)],address[u32(p.addressV)],p.minFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR,p.magFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR};
