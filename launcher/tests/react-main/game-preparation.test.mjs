@@ -70,7 +70,8 @@ test('TH05 development install acquires both PR soundtrack entries for the album
   gameData:{...declared.gameData,path:'th05.data',source:'development/th05.data'},music:{midi:{files:[],supported:false},ogg:{base:'music/',mount:'/music',files:['op.ogg','akyu-01.ogg'],sizes:[bytes.length,bytes.length],sha256:[hash,hash],version:'sha256-'+hash}}}}});
  let current=null;const downloaded=[];
  const acquisition=api.createPackageAcquisition({baseUrl,translate:t,indexedDBAvailable:()=>true,metadata:{getSnapshot:()=>({siteManifest:development,releaseCatalog:null}),initialize:async()=>{}},
-  fetchImpl:async url=>{downloaded.push(new URL(url).pathname);return new Response(bytes);},dependencies:{readCurrent:async()=>({generation:current,installation:null}),installAcquired:async options=>{
+  fetchImpl:async url=>{downloaded.push(new URL(url).pathname);return new Response(bytes);},dependencies:{readCurrent:async()=>({generation:current,installation:null}),
+   repairInstalled:async installed=>installed.generation,installAcquired:async options=>{
    assert.deepEqual(options.desiredFileIds,['game-data','ogg:op.ogg','ogg:akyu-01.ogg']);
    for(const id of options.desiredFileIds)await options.acquire(id,options.descriptor.files[id]);
    current={id:'dev-th05',game:'th05',descriptor:options.descriptor,files:Object.fromEntries(options.desiredFileIds.map(id=>[id,ref(id)]))};return {generation:current};
@@ -654,8 +655,9 @@ test('complete OGG startup accepts a single continuous stream and downloads it b
   const cached = await api.ensureOggStartup({generation: result.generation, music: 'ogg-stream', completeSet: true, acquisition, translate: t});
   assert.equal(cached.music, 'ogg-stream');
   assert.equal(requests.length, 1);
-  const normal = await api.ensureOggStartup({generation: current, music: 'ogg-stream', acquisition, translate: t});
-  assert.equal(normal.music, 'midi', 'ordinary per-track mode retains its two-track requirement');
+  const normal = await api.ensureOggStartup({generation: result.generation, music: 'ogg-stream', acquisition, translate: t});
+  assert.equal(normal.music, 'ogg-stream');
+  assert.equal(requests.length, 1);
 });
 
 test('room native preload mounts the complete OGG set before reporting prepared', async () => {
