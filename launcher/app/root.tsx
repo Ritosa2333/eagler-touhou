@@ -29,7 +29,7 @@ import { UiScrollbars } from './ui/scrollbars';
 import { isLauncherHomePath } from './navigation/addresses';
 import UptimeRoute from './routes/uptime';
 import { helpDocumentAtPath, isStandalonePage } from './components/documents/catalog';
-import { isPreviewOnlyPage, previewFeaturesEnabled } from './release-features';
+import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
 const HelpRoute = lazy(() => import('./routes/help'));
 
@@ -39,7 +39,7 @@ const pageScrollKey = (location: { pathname: string; key: string }) =>
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const previewOnly = !previewFeaturesEnabled && isPreviewOnlyPage(pathname);
+  const previewOnly = isPreviewOnlyPage(pathname);
   const review = !previewOnly && (/\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname));
   const home = previewOnly || isLauncherHomePath(pathname);
   const locale = useDocumentUiLocale();
@@ -105,7 +105,7 @@ export default function App() {
   const location = useLocation(),
     navigate = useNavigate(),
     pathname = location.pathname,
-    previewOnly = !previewFeaturesEnabled && isPreviewOnlyPage(pathname);
+    previewOnly = isPreviewOnlyPage(pathname);
   useEffect(() => {
     if (previewOnly) navigate({ pathname: '/', search: location.search }, { replace: true });
   }, [location.search, navigate, previewOnly]);

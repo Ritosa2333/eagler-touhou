@@ -1,0 +1,353 @@
+@layer components {
+  .account-settings {
+    display: grid;
+    grid-template-columns: 176px minmax(0, 1fr);
+    align-items: start;
+    gap: 48px;
+    width: min(1080px, calc(100% - 64px));
+    margin: 36px auto 72px;
+    color: var(--kit-foreground);
+    font: 400 14px/1.6 var(--kit-font);
+  }
+  .account-settings-nav {
+    position: static;
+    min-width: 0;
+  }
+  .account-settings-nav h1 {
+    margin: 0 0 16px 10px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 28px;
+  }
+  .account-settings-nav nav {
+    display: grid;
+    gap: 4px;
+  }
+  .account-settings-nav nav > :is(a, span) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: var(--kit-muted-foreground);
+    text-decoration: none;
+    font-size: 13px;
+    transition: background-color var(--ui-feedback-duration) var(--ui-feedback-easing),
+      color var(--ui-feedback-duration) var(--ui-feedback-easing);
+  }
+  .account-settings-nav nav > a:hover,
+  .account-settings-nav a[aria-current="page"] {
+    background: var(--kit-accent);
+    color: var(--kit-foreground);
+  }
+  .account-settings-nav svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+  .account-settings-nav a > svg:last-child,
+  .account-settings-back {
+    display: none;
+  }
+  .account-settings-nav small {
+    margin-left: auto;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .account-settings-content {
+    min-width: 0;
+    max-width: 800px;
+  }
+  .account-settings-heading {
+    margin-bottom: 8px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--kit-border);
+  }
+  .account-settings h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+  }
+  .account-settings h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+  .account-settings .ui-field[data-orientation="responsive"] {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    align-items: start;
+    gap: 20px;
+    padding-block: 16px;
+    border: 0;
+  }
+  .account-settings .ui-field[data-orientation="responsive"] > .ui-field-label {
+    padding-top: 8px;
+    font-weight: 400;
+    color: var(--kit-muted-foreground);
+  }
+  .account-settings .ui-field-content {
+    gap: 10px;
+  }
+  .profile-settings-editor {
+    display: grid;
+    grid-template-columns: minmax(200px, .85fr) minmax(0, 1.4fr);
+    gap: 28px;
+    align-items: start;
+    padding-top: 20px;
+  }
+  .settings-artwork,
+  .settings-text-fields {
+    min-width: 0;
+  }
+  .settings-profile-preview {
+    overflow: hidden;
+    border: 1px solid var(--kit-border);
+    border-radius: 8px;
+    background: var(--kit-card);
+  }
+  .settings-preview-cover {
+    aspect-ratio: 2.9;
+    overflow: hidden;
+    background: var(--kit-secondary);
+  }
+  .settings-preview-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .settings-preview-identity {
+    --account-avatar-size: 64px;
+    --account-avatar-radius: 15px;
+    padding: 0 16px 16px;
+  }
+  .settings-preview-identity > .account-avatar {
+    display: block;
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin-top: -22px;
+    border: 4px solid var(--kit-card);
+    border-radius: 15px;
+  }
+  .settings-preview-identity strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .settings-preview-identity p {
+    display: -webkit-box;
+    margin: 4px 0 0;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--kit-muted-foreground);
+  }
+  .account-settings .settings-artwork-upload {
+    padding: 12px 0;
+    gap: 8px;
+    border: 0;
+  }
+  .settings-artwork-upload .ui-field-content {
+    flex: none;
+  }
+  .settings-image-hint,
+  .settings-character-count {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--kit-muted-foreground);
+  }
+  .settings-character-count {
+    text-align: right;
+  }
+  .settings-text-fields > .ui-field-group > .ui-field {
+    gap: 7px;
+    padding: 0;
+    border: 0;
+  }
+  .settings-text-fields > .ui-field-group {
+    gap: 20px;
+  }
+  .settings-text-fields .ui-field-content {
+    align-items: stretch;
+  }
+  .settings-text-fields .ui-field-content > .ui-kit-button {
+    align-self: flex-start;
+  }
+  .settings-text-fields .settings-section {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+  .settings-profile-actions {
+    justify-content: flex-end;
+    padding-top: 20px;
+    border-top: 1px solid var(--kit-border);
+  }
+  .settings-media-actions,
+  .settings-form-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .settings-links {
+    display: grid;
+    gap: 10px;
+  }
+  .settings-link {
+    display: grid;
+    grid-template-columns: minmax(72px, 1fr) minmax(0, 2fr) auto;
+    gap: 8px;
+    align-items: center;
+  }
+  .settings-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--kit-border);
+  }
+  .settings-section-first {
+    margin-top: 24px;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .account-settings .settings-switch-row {
+    padding: 12px 0;
+  }
+  .account-settings .settings-switch-row .ui-field-label {
+    font-weight: 400;
+  }
+  .settings-switch-row .ui-field-content {
+    flex: none;
+  }
+  .settings-form-actions {
+    margin: 16px 0 0 136px;
+  }
+  .settings-form-actions.settings-profile-actions {
+    margin: 24px 0 0;
+  }
+  .settings-form-actions :is([role="alert"], [role="status"]),
+  .settings-feedback {
+    color: var(--kit-muted-foreground);
+    font-size: 13px;
+  }
+  .settings-form-actions [role="alert"],
+  .settings-feedback[role="alert"] {
+    color: var(--kit-destructive);
+  }
+  .settings-email-code {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .account-settings a:focus-visible {
+    outline: 2px solid var(--kit-ring);
+    outline-offset: 3px;
+  }
+  @media (max-width: 1000px) {
+    .profile-settings-editor {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+    }
+    .settings-artwork {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 12px 18px;
+    }
+    .settings-image-hint {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 700px), (orientation: portrait) and (max-width: 900px) {
+    .account-settings {
+      display: block;
+      width: calc(100% - 40px);
+      margin: 20px auto 48px;
+    }
+    .account-settings-nav h1 {
+      margin: 0 0 16px;
+      font-size: 20px;
+    }
+    .account-settings-nav nav {
+      gap: 0;
+    }
+    .account-settings-nav nav > :is(a, span) {
+      min-height: 52px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--kit-border);
+      border-radius: 0;
+      font-size: 14px;
+    }
+    .account-settings-nav a[aria-current="page"] {
+      background: transparent;
+    }
+    .account-settings-nav a > svg:last-child {
+      display: block;
+      margin-left: auto;
+    }
+    .account-settings-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 32px;
+      margin: 0 0 12px -4px;
+      color: var(--kit-muted-foreground);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .account-settings-back svg {
+      width: 16px;
+      height: 16px;
+    }
+    .account-settings[data-detail="false"] .account-settings-content,
+    .account-settings[data-detail="true"] .account-settings-nav {
+      display: none;
+    }
+    .account-settings .ui-field[data-orientation="responsive"] {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+      padding-block: 12px;
+    }
+    .account-settings .ui-field[data-orientation="responsive"] > .ui-field-label {
+      padding-top: 0;
+    }
+    .settings-form-actions {
+      margin-left: 0;
+    }
+    .settings-artwork {
+      display: block;
+    }
+    .settings-artwork > .ui-field-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 16px;
+    }
+    .settings-artwork .settings-artwork-upload {
+      display: grid;
+      gap: 6px;
+    }
+    .settings-artwork-upload .settings-media-actions {
+      gap: 4px;
+    }
+    .settings-artwork .settings-artwork-upload .ui-kit-button {
+      min-height: 36px;
+    }
+    .settings-link {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .settings-link > input:first-child {
+      grid-column: 1 / -1;
+    }
+  }
+}
+@layer components{.settings-save-profile{min-width:104px}}

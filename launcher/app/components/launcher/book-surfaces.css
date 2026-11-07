@@ -1,14 +1,5 @@
 @layer foundation {
 /* Page surfaces and typography; shared colors and controls live in the UI system. */
-.site-footer{position:relative;z-index:1;display:grid;justify-items:end;min-width:0;padding:12px var(--launcher-layout-gutter) max(24px,env(safe-area-inset-bottom));background:none;color:var(--kit-muted-foreground);font:400 12px/1.6 var(--kit-font);letter-spacing:normal;text-align:right;text-transform:none}
-.site-footer-inner{display:grid;justify-items:end;gap:2px;color:inherit;font:inherit}
-.site-footer p{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:0 6px;margin:0}
-.site-footer i{margin-inline:2px;color:var(--kit-border);font-style:normal}
-.site-footer :is(a,a:visited,.site-footer-link){display:inline-flex;align-items:center;min-height:24px;padding:0;border:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;text-decoration:none;cursor:pointer}
-.site-footer :is(a,.site-footer-link):hover{color:var(--kit-foreground)}
-.site-footer :is(a,.site-footer-link):focus-visible{outline:2px solid var(--kit-ring);outline-offset:2px}
-@media(pointer:coarse){.site-footer :is(a,.site-footer-link){min-height:44px}}
-
 body:not(.mp-room-active):has(.book-masthead) {
   background:var(--book-bg);color:var(--book-ink);
 }

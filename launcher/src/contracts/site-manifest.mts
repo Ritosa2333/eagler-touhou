@@ -63,6 +63,7 @@ export interface SiteLanguageOption {
 export interface SiteGameManifest {
   runtime: string;
   multiplayerRuntime?: string;
+  th075MultiplayerAssets?: {path: string; sha256: string};
   gameData: SiteGameData;
   music: {
     midi: SiteMidiManifest;
@@ -226,6 +227,11 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
   // game available; Launcher availability is derived from this Host field.
   if (value.multiplayerRuntime != null &&
       (!("multiplayerRuntime" in product) || typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime)) return false;
+  const split = value.th075MultiplayerAssets;
+  if (split !== undefined && (gameId !== "th075" || resourceMode === RESOURCE_MODE_IMPORT || !value.multiplayerRuntime ||
+      !isRecord(split) || typeof split.path !== "string" || typeof split.sha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(split.sha256) || !/^\/?(?:[a-zA-Z0-9_-]+\/)+[a-f0-9]{64}\.json$/.test(split.path) ||
+      !split.path.endsWith("/" + split.sha256 + ".json"))) return false;
   const expectedDataPath = product.package.dataTarget.slice(1);
   const packagePointer = value.package;
   const validExternalPackage = resourceMode !== RESOURCE_MODE_EXTERNAL ||

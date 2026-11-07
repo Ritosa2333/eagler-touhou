@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "vs": false,
+      "age": 0,
+      "actual": 1,
+      "screen": 9
+    },
+    {
+      "vs": false,
+      "age": 6,
+      "actual": 7,
+      "screen": 9
+    },
+    {
+      "vs": false,
+      "age": 20,
+      "actual": 21,
+      "screen": 9
+    },
+    {
+      "vs": false,
+      "age": 30,
+      "actual": 31,
+      "screen": 1
+    },
+    {
+      "vs": false,
+      "age": 31,
+      "actual": 32,
+      "screen": 1
+    },
+    {
+      "vs": true,
+      "age": 0,
+      "actual": 1,
+      "screen": 9
+    },
+    {
+      "vs": true,
+      "age": 6,
+      "actual": 7,
+      "screen": 9
+    },
+    {
+      "vs": true,
+      "age": 20,
+      "actual": 21,
+      "screen": 9
+    },
+    {
+      "vs": true,
+      "age": 30,
+      "actual": 31,
+      "screen": 1
+    },
+    {
+      "vs": true,
+      "age": 31,
+      "actual": 32,
+      "screen": 1
+    }
+  ]
+}

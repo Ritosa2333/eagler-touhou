@@ -17,6 +17,7 @@ writeFileSync(resolve(directory,'gameplay-report.json'),JSON.stringify({passed:f
 let page;
 try{
  page=await browser.newPage();
+ await page.evaluateOnNewDocument(()=>{localStorage.setItem('eagler-touhou-beta-opt-in-v1','1');localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');});
  await page.evaluateOnNewDocument(()=>{window.__TH19_SMOKE_EVENTS=[];addEventListener("message",e=>{if(e.data?.protocol==="eagler-touhou/1"&&e.data.game==="th19")window.__TH19_SMOKE_EVENTS.push({event:e.data.event,ok:e.data.ok,error:e.data.error,request:e.data.request});});});
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
  await page.goto(new URL('?game=th19',base).href,{waitUntil:'domcontentloaded',timeout:120000});
@@ -58,6 +59,9 @@ try{
  await page.screenshot({path:resolve(directory,'gameplay.png')});
  const diagnostics=await page.evaluate(()=>{const c=document.querySelector('#gameFrame').contentWindow.__th19Runtime.core;return {sfxVoices:c.eaglerSfxOutput?.voices.size||0,storageRevision:c._th19_storage_revision(),title:Array.from(c.HEAP32.subarray(c._th19_title_status()/4,c._th19_title_status()/4+19))};});
  assert.ok(diagnostics.sfxVoices>0,'shared immediate SFX output owns native sound voices');
+ await page.evaluate(()=>{const c=document.querySelector('#gameFrame').contentWindow.Module;c._th19_room_title();c._th19_test_ticks(600);c._th19_key(82,1);c._th19_test_ticks(1);c._th19_key(82,0);c._th19_test_ticks(1);c._th19_key(29,1);c._th19_test_ticks(1);});
+ await until(()=>page.evaluate(()=>document.querySelector('#launch')?.getClientRects().length>0&&!document.querySelector('#gameFrame')?.contentWindow?.__th19Runtime),'Quit returns to Launcher');
+ results.push({check:'Native Quit returns to the actual Launcher page',passed:true});
  assert.deepEqual(errors,[]);
  writeFileSync(resolve(directory,'gameplay-report.json'),JSON.stringify({passed:true,results,diagnostics,errors},null,2));
  console.log(JSON.stringify({passed:true,results,diagnostics,errors}));

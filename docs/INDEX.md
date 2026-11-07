@@ -1,6 +1,6 @@
 # 文档总表
 
-共 421 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 438 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -136,6 +136,7 @@
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th17/docs/DEVELOPMENT.md](../ports/th17/docs/DEVELOPMENT.md) | TH17 开发指南 |
 | 作品源码文档 | [ports/th19/docs/DEVELOPMENT.md](../ports/th19/docs/DEVELOPMENT.md) | TH19 开发与构建 |
+| 作品源码文档 | [ports/th19/docs/REPLAY.md](../ports/th19/docs/REPLAY.md) | 旁观与扩展录像 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
 | 公共库 | [common/README.md](../common/README.md) | common/ |
 | 公共库 | [common/browser/README.md](../common/browser/README.md) | 浏览器共享模块 |
@@ -294,10 +295,22 @@
 | 历史记录 | [archive/th17-development-20261030/docs/当前开发状态.md](../archive/th17-development-20261030/docs/当前开发状态.md) | 鬼形兽 C++ 重建状态 |
 | 历史记录 | [archive/th17-development-20261030/docs/验收计划.md](../archive/th17-development-20261030/docs/验收计划.md) | 鬼形兽还原与发布验收 |
 | 历史记录 | [archive/th17-development-20261030/migration-validation.md](../archive/th17-development-20261030/migration-validation.md) | TH17 共用启动器接入验证 · 2026-10-30 |
+| 历史记录 | [archive/th19-all-shots-20261106/README.md](../archive/th19-all-shots-20261106/README.md) | 19 名角色普通射击检查 |
 | 历史记录 | [archive/th19-audio-20261105/README.md](../archive/th19-audio-20261105/README.md) | TH19 重复音效验收 |
+| 历史记录 | [archive/th19-character-grid-20261106/README.md](../archive/th19-character-grid-20261106/README.md) | Character-grid entrance |
 | 历史记录 | [archive/th19-development-20261104/README.md](../archive/th19-development-20261104/README.md) | TH19 源码交付来源 |
+| 历史记录 | [archive/th19-gameplay-20261105/README.md](../archive/th19-gameplay-20261105/README.md) | TH19 1.10c gameplay verification |
+| 历史记录 | [archive/th19-gameplay-20261105/multiplayer-splash.md](../archive/th19-gameplay-20261105/multiplayer-splash.md) | Multiplayer recording and splash damage |
+| 历史记录 | [archive/th19-gameplay-20261105/replay-audit.md](../archive/th19-gameplay-20261105/replay-audit.md) | Original ReplayInf evidence |
+| 历史记录 | [archive/th19-gameplay-20261105/replay-v2.md](../archive/th19-gameplay-20261105/replay-v2.md) | 联机录像与旁观重写验证 |
+| 历史记录 | [archive/th19-gameplay-20261105/round-fixes.md](../archive/th19-gameplay-20261105/round-fixes.md) | TH19 round and dense-spirit verification |
+| 历史记录 | [archive/th19-gameplay-20261105/story-rank-and-replay-audit.md](../archive/th19-gameplay-20261105/story-rank-and-replay-audit.md) | Story difficulty ranks and replay audit |
 | 历史记录 | [archive/th19-integration-20261105/README.md](../archive/th19-integration-20261105/README.md) | TH19 接入验收 |
+| 历史记录 | [archive/th19-junowen-interop-20261106/README.md](../archive/th19-junowen-interop-20261106/README.md) | Ju.N.Owen static interoperability audit |
 | 历史记录 | [archive/th19-match-policy-20261105/README.md](../archive/th19-match-policy-20261105/README.md) | TH19 统一生命与固定对局规则 |
+| 历史记录 | [archive/th19-menu-20261106/README.md](../archive/th19-menu-20261106/README.md) | TH19 menu navigation parity |
+| 历史记录 | [archive/th19-recording-20261105/README.md](../archive/th19-recording-20261105/README.md) | TH19 旁观、录像与容量验证 |
+| 历史记录 | [archive/th19-shot-impact-20261106/README.md](../archive/th19-shot-impact-20261106/README.md) | TH19 projectile impacts |
 | 历史记录 | [archive/th19-touch-charge-20261105/README.md](../archive/th19-touch-charge-20261105/README.md) | TH19 蓄力触屏按钮 |
 | 历史记录 | [archive/th19-versus-settings-20261105/README.md](../archive/th19-versus-settings-20261105/README.md) | TH19 专属输入与对局设置验收 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |
@@ -315,7 +328,6 @@
 | 许可证与声明 | [common/contracts/LICENSE](../common/contracts/LICENSE) | LICENSE |
 | 许可证与声明 | [common/include/eagler/thprac/THPRAC-LICENSE.txt](../common/include/eagler/thprac/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [launcher/LICENSE](../launcher/LICENSE) | LICENSE |
-| 许可证与声明 | [launcher/NOTICE.txt](../launcher/NOTICE.txt) | 本项目是[车万云](https://cloud.touhou.best/)的一个子项目。 |
 | 许可证与声明 | [launcher/content/FIRST_USE_NOTICE.md](../launcher/content/FIRST_USE_NOTICE.md) | 首次使用须知 |
 | 许可证与声明 | [launcher/public/assets/LICENSE-Phosphor.txt](../launcher/public/assets/LICENSE-Phosphor.txt) | MIT License |
 | 许可证与声明 | [launcher/public/assets/brand/LICENSE.txt](../launcher/public/assets/brand/LICENSE.txt) | Creative Commons Legal Code |
@@ -323,7 +335,12 @@
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-Unifont.txt](../launcher/public/assets/fonts/OFL-Unifont.txt) | OFL Unifont |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-YatraOne.txt](../launcher/public/assets/fonts/OFL-YatraOne.txt) | OFL YatraOne |
 | 许可证与声明 | [launcher/public/assets/room-icons-LICENSE.txt](../launcher/public/assets/room-icons-LICENSE.txt) | MIT License |
+| 许可证与声明 | [launcher/public/vendor/browser-image-compression.LICENSE](../launcher/public/vendor/browser-image-compression.LICENSE) | browser image compression |
+| 许可证与声明 | [launcher/public/vendor/country-flag-icons.LICENSE](../launcher/public/vendor/country-flag-icons.LICENSE) | country flag icons |
 | 许可证与声明 | [launcher/public/vendor/fflate.LICENSE](../launcher/public/vendor/fflate.LICENSE) | fflate |
+| 许可证与声明 | [launcher/public/vendor/normalize-wheel.LICENSE](../launcher/public/vendor/normalize-wheel.LICENSE) | normalize wheel |
+| 许可证与声明 | [launcher/public/vendor/react-easy-crop.LICENSE](../launcher/public/vendor/react-easy-crop.LICENSE) | react easy crop |
+| 许可证与声明 | [launcher/public/vendor/uzip.LICENSE](../launcher/public/vendor/uzip.LICENSE) | uzip |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
 | 许可证与声明 | [ports/th06/LICENSE](../ports/th06/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th06/portable/THPRAC-LICENSE.txt](../ports/th06/portable/THPRAC-LICENSE.txt) | MIT License |

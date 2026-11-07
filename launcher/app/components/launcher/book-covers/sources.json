@@ -90,6 +90,15 @@
     "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
   },
   {
+    "game": "th19",
+    "file": "th19.webp",
+    "source_file": "docs/assets/game-covers/th19.png",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E4%B8%9C%E6%96%B9%E5%85%BD%E7%8E%8B%E5%9B%AD%E5%B0%81%E9%9D%A2.png",
+    "source_sha256": "251c834b098a6a11a13c4139996eebb2eb16d2fb25f93e711abbd15cb0b83a2f",
+    "generated_sha256": "725f14d0a2cc71c7a117fcb41a98fcca1155f51234839d71906587794f5f735d",
+    "conversion": "Pillow; RGB; maximum 640x640; WebP quality 82, method 6"
+  },
+  {
     "game": "th20",
     "file": "th20.webp",
     "source_file": "docs/assets/game-covers/th20.jpg",

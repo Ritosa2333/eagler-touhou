@@ -219,7 +219,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th075/multiplayer/th075.html",
         multiplayer: Object.freeze({
             titleKey:"game.title.th075mp", gameplay:"versus",
-            inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
+            inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,measuredStartup:true,manualDelayLimit:9}),
             playerCounts:Object.freeze([2]), difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts:TH075_MULTIPLAYER_LOADOUTS, peerTransportGlobal:"__th075PeerTransport",
             loadoutFields:Object.freeze([
@@ -597,6 +597,7 @@ export const PRODUCT_GAMES = Object.freeze({
             rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
             musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
         replay: Object.freeze({prefix: "th17"}),
+        thpracRuntime: Object.freeze({session: "native"}),
         thpracExtraFunctionKeys: Object.freeze(["U"]),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),
@@ -606,7 +607,7 @@ export const PRODUCT_GAMES = Object.freeze({
         storage: Object.freeze({saveRoot: "/savesth19", scoreFile: "scoreth19.dat", configFiles: Object.freeze(["th19.cfg"])}),
         runtime: "./runtime/th19/th19.html", runtimeFileLayout: "directory", dataProvider: "retail-memory",
         requiredShared: Object.freeze(["/msgothic.ttc"]),
-        runtimeAssets: Object.freeze(["th19.html","manifest.json","resource-integrity.mjs","shell.mjs","managed.css","keyboard.mjs","directory-keyboard.mjs","keyboard-owners.mjs","keyboard-input-bridge.mjs","netplay.mjs","peer-socket.mjs","rollback-session.mjs","native-adapter.mjs","th19.mjs","th19.wasm"]),
+        runtimeAssets: Object.freeze(["th19.html","manifest.json","resource-integrity.mjs","shell.mjs","managed.css","keyboard.mjs","directory-keyboard.mjs","keyboard-owners.mjs","keyboard-input-bridge.mjs","netplay.mjs","peer-socket.mjs","rollback-session.mjs","native-adapter.mjs","th19-recording.mjs","replay-session.mjs","th19.mjs","th19.wasm"]),
         musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Ritosa2333/eagler-touhou", adaptationNotice: "early-test"}),
@@ -615,7 +616,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th19/multiplayer/th19.html",
         multiplayer: Object.freeze({titleKey: "game.title.th19mp",gameplay: "versus",playerCounts: Object.freeze([2]),difficulties: TH19_MULTIPLAYER_DIFFICULTIES,
             loadouts: Object.freeze(TH19_CHARACTERS.map((glyph,character)=>Object.freeze({labelKey:`multiplayer.loadout.th19_${character}`,glyph,character,shot:0}))),
-            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,manualDelayLimit:8}),peerTransportGlobal:"__th19PeerTransport",spectator:false,titleRoomEntry:false}),
+            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,manualDelayLimit:8}),peerTransportGlobal:"__th19PeerTransport",spectator:true,titleRoomEntry:false}),
         features: Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th20: Object.freeze({
