@@ -32,3 +32,7 @@ Windows 使用同一工作树中已经构建的 Clang、Ninja 原生多人测试
 4 倍共享版首轮和复跑的平均快照采集分别为 2.382–2.399 ms 与 1.780–1.823 ms。6 倍共享版为 2.513–2.552 ms，6 倍旧包复跑为 2.566–2.633 ms。两版 Wasm 线性内存峰值均为 265.5 MiB。逐槽复用对照使用同一快照内容，空闲容量各槽独立保留。[常规档](updated-120ms.json) · [常规档复跑](updated-120ms-repeat.json) · [加压档](updated-120ms-6x.json)
 
 房间复测参数沿用[普通关长帧复测](../th17-no-repair-spike-20261107/README.md#复测)。
+
+## 主站发布
+
+2026-11-07 16:21，主站 TH17 多人入口切到 `1.0.14-eagler-6a86b648f464`。公网核对 TH17 两套运行包共 30 个文件的长度、SHA-256 和 Wasm 类型，备用镜像核对发布标识与多人 Wasm SHA-256。[发布回执](activation.json) · [公网校验](public-verification.json) · [镜像回执](mirror-verification.json)
