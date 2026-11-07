@@ -1,9 +1,12 @@
-import { createContext, forwardRef, useContext, useLayoutEffect, useRef, useState, useCallback, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { createContext, forwardRef, useContext, useLayoutEffect, useRef, useState, useCallback, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react';
 import { useLocale } from '../../i18n';
 import { usePopupPadding } from '../../ui/use-popup-padding';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, closeSelectMenus } from '../../ui/select';
 
-export type MainSelectProps = SelectHTMLAttributes<HTMLSelectElement> & { 'data-trigger-i18n'?: string };
+export type MainSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  'data-trigger-i18n'?: string;
+  renderPicker?(change: (value: string) => void, ref: Ref<HTMLButtonElement>): ReactNode;
+};
 const Prefix = createContext<ReactNode>(null);
 const emptyValue = '__eagler_empty_selection__';
 
@@ -14,7 +17,7 @@ export function MainSelectPrefix({ children, prefix }: { children: ReactNode; pr
 export const closeMainSelectMenus = closeSelectMenus;
 
 /** The native element owns forms, refs and change events; shared Select owns the popup. */
-export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect(props, ref) {
+export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect({renderPicker, ...props}, ref) {
   const { t } = useLocale();
   const native = useRef<HTMLSelectElement | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -61,7 +64,7 @@ export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(functio
       >
         {props.children}
       </select>
-      <Select
+      {renderPicker ? renderPicker(change, trigger) : <Select
         value={value || emptyValue}
         onValueChange={change}
         open={open}
@@ -97,7 +100,7 @@ export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(functio
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </Select>}
     </div>
   );
 });

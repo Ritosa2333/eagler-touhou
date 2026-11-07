@@ -386,7 +386,6 @@
   "lobby_roomCode": "Room code",
   "lobby_cancel": "Cancel",
   "lobby_publicRoom": "Your room will appear in the lobby for other players to join.",
-  "lobby_codeHint": "Select a game, then enter your friend's room code.",
   "lobby_mine": "This browser is already in room {code}",
   "lobby_mineHint": "Continue in the original tab, or leave the old room here if that page is gone. This also disconnects the original tab.",
   "lobby_release": "Leave old room",
