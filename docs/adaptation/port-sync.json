@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "933600b5b44a1adecacf3002446c0109c32097e8",
+      "base": "fb134fde8978d267f319a67dc4e563947413cdec",
       "history": [
         {
           "kind": "manual",
@@ -1293,6 +1293,23 @@
             "ports/th17-mp/web/cpp/game/DamageSources.cpp"
           ],
           "note": "多人版同步自机弹判定的按角度复用。缓存随单次查询销毁，判定顺序与战斗状态沿用普通版。"
+        },
+        {
+          "kind": "manual",
+          "base": "933600b5b44a1adecacf3002446c0109c32097e8",
+          "source": "fb134fde8978d267f319a67dc4e563947413cdec",
+          "targetHead": "5897e1ffa5b784360a0ac19c19eaf4dbe0acaea5",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/portable/sdl/Renderer.hpp",
+            "ports/th17-mp/web/cpp/game/AnmCoordinates.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRenderer.cpp",
+            "ports/th17-mp/web/cpp/game/AnmStrip.cpp",
+            "ports/th17-mp/web/cpp/game/AnmStrip.hpp",
+            "ports/th17-mp/web/cpp/game/AnmUpdate.cpp",
+            "ports/th17-mp/web/tests/cpp/BulletRuntimeFixture.hpp"
+          ],
+          "note": "同步 ANM 等待更新、条带和精灵几何、WebGL 着色器选择及原版对照夹具。MP 保留队友射击淡化，按双人实战测量出画与确认帧。"
         }
       ]
     }
