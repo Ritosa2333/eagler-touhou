@@ -5,7 +5,7 @@
     "jp": {
       "url": "practice-jp.exe.gz",
       "size": 141766,
-      "sha256": "b389927301c902a0ffe3e2765d2db0366d9139029abf438e871f00110f7711cd",
+      "sha256": "4f2471fe5d8ad3891512ebed8daf24ae4fb3d8f380e83877f5098a1441c19833",
       "sourceMainSha256": "eec57979b004fc9ecb356d8f96202b6f98749e1d7ed30738e04650983f732302",
       "patch": {
         "file": "th02-solo-jp.hdi.gz",
@@ -28,7 +28,7 @@
         "dataSegment": 8029,
         "gap": 7008,
         "originalMainSha256": "9e9a323781e793738c8e3a5b575d99c0cb6a71bac8c3d581178976b4977f0a92",
-        "mainSha256": "b389927301c902a0ffe3e2765d2db0366d9139029abf438e871f00110f7711cd",
+        "mainSha256": "4f2471fe5d8ad3891512ebed8daf24ae4fb3d8f380e83877f5098a1441c19833",
         "hooks": [
           {
             "offset": 46619,
@@ -160,7 +160,7 @@
     "cn": {
       "url": "practice-cn.exe.gz",
       "size": 141766,
-      "sha256": "4bd4b0627bc37c54b4eae2a68a2cd2389bd8ab6550e2fdab939beac8a8e071c2",
+      "sha256": "2576f0a021e6dda2c50fb72ef53e818475a6fb6667fe7ea54090be3053ebb90d",
       "sourceMainSha256": "74a315562d6f37ee1ff4b4bd229e98937a3ca4c989becdc51e101798d52f8f5d",
       "patch": {
         "file": "th02-solo-cn.hdi.gz",
@@ -183,7 +183,7 @@
         "dataSegment": 8029,
         "gap": 7008,
         "originalMainSha256": "d54640c76acab16c3f0bdf34774c5153468172d7ca132426ab845ef2a1c8dce8",
-        "mainSha256": "4bd4b0627bc37c54b4eae2a68a2cd2389bd8ab6550e2fdab939beac8a8e071c2",
+        "mainSha256": "2576f0a021e6dda2c50fb72ef53e818475a6fb6667fe7ea54090be3053ebb90d",
         "hooks": [
           {
             "offset": 46619,

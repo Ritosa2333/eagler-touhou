@@ -1,6 +1,6 @@
 ; Six native text rows at the upper left, matching uth05's compact list.
 ; Save only the cells occupied by the menu, not unrelated game text.
-%define ASSIST_XY (160+4)
+%define ASSIST_XY (160+16)
 %define ASSIST_WIDTH 20
 practice_assists_draw:
     push ds
