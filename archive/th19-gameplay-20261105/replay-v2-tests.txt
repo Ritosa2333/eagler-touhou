@@ -1,0 +1,25 @@
+✔ standalone Runtime and Relay decode the exact same recording protocol (4.7626ms)
+✔ portable versus file validates CRC, sequence, result and metadata (3.6461ms)
+✔ new files reject single-player and unplayed sessions (0.4799ms)
+✔ only contiguous committed frames are saved once, transport failure leaves players connected (3.4037ms)
+✔ spectator never sends input and drains only verified ordered frames (31.4741ms)
+✔ Launcher sync updates one file and leaves the match recorder live (2.7378ms)
+✔ versus initialization and countdown without actual gameplay never save a recording (1.3571ms)
+✔ native edge tuples preserve press, hold, release for both seats (1.2917ms)
+✔ pending save and rematch never mix headers, paths or inputs (1.038ms)
+✔ shared runner restarts seed on rewind and stops at first mismatch (0.7175ms)
+✔ paused observer saves received confirmed input once, independent of its cursor (1.3909ms)
+✔ disconnect retains observer history and finalizes a partial recording (0.6395ms)
+✔ timeline rejects duplicate, missing and post-result input without advancing (0.3259ms)
+TH19 RTC/Relay late-join history, live delivery and receive-only isolation PASS
+✔ services\relay\tests\test-th19-spectator-relay.mjs (5913.4741ms)
+✔ TH19 history owns bounded sequential packets and closes after the final frame (3.2544ms)
+✔ TH19 history rejects gaps and input before a valid initializer (1.8407ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6321.1763

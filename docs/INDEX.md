@@ -1,6 +1,6 @@
 # 文档总表
 
-共 450 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 470 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -134,6 +134,12 @@
 | 作品源码文档 | [ports/th12/third_party/stb_vorbis/README.md](../ports/th12/third_party/stb_vorbis/README.md) | stb_vorbis README |
 | 作品源码文档 | [ports/th12/tools/frame-inspector/README.md](../ports/th12/tools/frame-inspector/README.md) | TH12 原版逐帧检查 |
 | 作品源码文档 | [ports/th12/tools/replay-verifier/README.md](../ports/th12/tools/replay-verifier/README.md) | TH12 Replay verification |
+| 作品源码文档 | [ports/th13/archive/th13-dialogue-filter-20261105/README.md](../ports/th13/archive/th13-dialogue-filter-20261105/README.md) | 神灵庙对话文字缩放 |
+| 作品源码文档 | [ports/th13/archive/th13-performance-investigation-20261105/README.md](../ports/th13/archive/th13-performance-investigation-20261105/README.md) | 神灵庙绘制开销与补帧放大试验 |
+| 作品源码文档 | [ports/th13/archive/th13-seiga-timer-retirement-20261105/README.md](../ports/th13/archive/th13-seiga-timer-retirement-20261105/README.md) | 神灵庙青娥退场倒计时清理 |
+| 作品源码文档 | [ports/th13/archive/th13-spell-name-alignment-20261105/README.md](../ports/th13/archive/th13-spell-name-alignment-20261105/README.md) | 神灵庙符卡名右对齐 |
+| 作品源码文档 | [ports/th13/archive/th13-spell-ring-follow-20261105/README.md](../ports/th13/archive/th13-spell-ring-follow-20261105/README.md) | 神灵庙符卡环跟随 |
+| 作品源码文档 | [ports/th13/archive/th13-trance-decimal-anchor-20261105/README.md](../ports/th13/archive/th13-trance-decimal-anchor-20261105/README.md) | 神灵庙灵界倒计时小数点定位 |
 | 作品源码文档 | [ports/th13/docs/ASSETS.md](../ports/th13/docs/ASSETS.md) | th13 资源格式清单 |
 | 作品源码文档 | [ports/th13/docs/DECOMP.md](../ports/th13/docs/DECOMP.md) | th13 反编译函数地图 |
 | 作品源码文档 | [ports/th13/docs/DEVELOPMENT.md](../ports/th13/docs/DEVELOPMENT.md) | th13 开发指南 |
@@ -150,6 +156,7 @@
 | 作品源码文档 | [ports/th13/docs/plans/replay.md](../ports/th13/docs/plans/replay.md) | 录像（.rpy）格式与回放注入 |
 | 作品源码文档 | [ports/th13/docs/plans/results-flow.md](../ports/th13/docs/plans/results-flow.md) | th13 Stage 终了 → 结算 → 下一关 / 标题 / 结局 场景链（反编译研究报告） |
 | 作品源码文档 | [ports/th13/docs/plans/results-overlay-anatomy.md](../ports/th13/docs/plans/results-overlay-anatomy.md) | 结算幕（对局内覆盖层）静态解剖（S3 关键前置研究报告） |
+| 作品源码文档 | [ports/th13/docs/plans/scoredat.md](../ports/th13/docs/plans/scoredat.md) | scoreth13.dat 原版格式落移植（ScoreDat + FileStore 集成） |
 | 作品源码文档 | [ports/th13/docs/plans/stage1-acceptance.md](../ports/th13/docs/plans/stage1-acceptance.md) | Stage 1 全链路验收合同 |
 | 作品源码文档 | [ports/th13/docs/plans/title-anm-blueprint.md](../ports/th13/docs/plans/title-anm-blueprint.md) | th13 主菜单 ANM 蓝图（title.anm / titlev.anm 脚本号总表与重锚方案） |
 | 作品源码文档 | [ports/th13/docs/plans/ui-base.md](../ports/th13/docs/plans/ui-base.md) | TH13–15 同代引擎 UI 基座移植方案 |
@@ -160,6 +167,7 @@
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th17/docs/DEVELOPMENT.md](../ports/th17/docs/DEVELOPMENT.md) | TH17 开发指南 |
 | 作品源码文档 | [ports/th19/docs/DEVELOPMENT.md](../ports/th19/docs/DEVELOPMENT.md) | TH19 开发与构建 |
+| 作品源码文档 | [ports/th19/docs/REPLAY.md](../ports/th19/docs/REPLAY.md) | 旁观与扩展录像 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
 | 公共库 | [common/README.md](../common/README.md) | common/ |
 | 公共库 | [common/browser/README.md](../common/browser/README.md) | 浏览器共享模块 |
@@ -319,10 +327,22 @@
 | 历史记录 | [archive/th17-development-20261030/docs/当前开发状态.md](../archive/th17-development-20261030/docs/当前开发状态.md) | 鬼形兽 C++ 重建状态 |
 | 历史记录 | [archive/th17-development-20261030/docs/验收计划.md](../archive/th17-development-20261030/docs/验收计划.md) | 鬼形兽还原与发布验收 |
 | 历史记录 | [archive/th17-development-20261030/migration-validation.md](../archive/th17-development-20261030/migration-validation.md) | TH17 共用启动器接入验证 · 2026-10-30 |
+| 历史记录 | [archive/th19-all-shots-20261106/README.md](../archive/th19-all-shots-20261106/README.md) | 19 名角色普通射击检查 |
 | 历史记录 | [archive/th19-audio-20261105/README.md](../archive/th19-audio-20261105/README.md) | TH19 重复音效验收 |
+| 历史记录 | [archive/th19-character-grid-20261106/README.md](../archive/th19-character-grid-20261106/README.md) | Character-grid entrance |
 | 历史记录 | [archive/th19-development-20261104/README.md](../archive/th19-development-20261104/README.md) | TH19 源码交付来源 |
+| 历史记录 | [archive/th19-gameplay-20261105/README.md](../archive/th19-gameplay-20261105/README.md) | TH19 1.10c gameplay verification |
+| 历史记录 | [archive/th19-gameplay-20261105/multiplayer-splash.md](../archive/th19-gameplay-20261105/multiplayer-splash.md) | Multiplayer recording and splash damage |
+| 历史记录 | [archive/th19-gameplay-20261105/replay-audit.md](../archive/th19-gameplay-20261105/replay-audit.md) | Original ReplayInf evidence |
+| 历史记录 | [archive/th19-gameplay-20261105/replay-v2.md](../archive/th19-gameplay-20261105/replay-v2.md) | 联机录像与旁观重写验证 |
+| 历史记录 | [archive/th19-gameplay-20261105/round-fixes.md](../archive/th19-gameplay-20261105/round-fixes.md) | TH19 round and dense-spirit verification |
+| 历史记录 | [archive/th19-gameplay-20261105/story-rank-and-replay-audit.md](../archive/th19-gameplay-20261105/story-rank-and-replay-audit.md) | Story difficulty ranks and replay audit |
 | 历史记录 | [archive/th19-integration-20261105/README.md](../archive/th19-integration-20261105/README.md) | TH19 接入验收 |
+| 历史记录 | [archive/th19-junowen-interop-20261106/README.md](../archive/th19-junowen-interop-20261106/README.md) | Ju.N.Owen static interoperability audit |
 | 历史记录 | [archive/th19-match-policy-20261105/README.md](../archive/th19-match-policy-20261105/README.md) | TH19 统一生命与固定对局规则 |
+| 历史记录 | [archive/th19-menu-20261106/README.md](../archive/th19-menu-20261106/README.md) | TH19 menu navigation parity |
+| 历史记录 | [archive/th19-recording-20261105/README.md](../archive/th19-recording-20261105/README.md) | TH19 旁观、录像与容量验证 |
+| 历史记录 | [archive/th19-shot-impact-20261106/README.md](../archive/th19-shot-impact-20261106/README.md) | TH19 projectile impacts |
 | 历史记录 | [archive/th19-touch-charge-20261105/README.md](../archive/th19-touch-charge-20261105/README.md) | TH19 蓄力触屏按钮 |
 | 历史记录 | [archive/th19-versus-settings-20261105/README.md](../archive/th19-versus-settings-20261105/README.md) | TH19 专属输入与对局设置验收 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |

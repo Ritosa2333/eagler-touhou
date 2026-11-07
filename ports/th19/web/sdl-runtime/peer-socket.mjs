@@ -13,7 +13,8 @@ export class PeerSocket {
   this.timeout=setTimeout(()=>this.fail(Error('WebRTC 连接超时')),45000);
   // Both relay streams must exist before the server can release its fallback
   // barrier. Opening one only after receiving that barrier would deadlock.
-  if(options.netplayAllowWebsocketFallback===true)this.openRelay();
+  this.spectatorPending=[];
+  if(options.netplayAllowWebsocketFallback===true||this.side===0)this.openRelay();
  }
  get bufferedAmount(){return (this.route==='relay'?this.relay:this.channel)?.bufferedAmount||0;}
  signalMessage(value){if(this.signal.readyState===WebSocket.OPEN)this.signal.send(JSON.stringify(value));}
@@ -68,7 +69,7 @@ export class PeerSocket {
    this.openRelay();
    this.channel?.close();this.pc?.close();
   }else{
-   this.relay?.close();
+   if(this.side!==0)this.relay?.close();
   }
   this.open();
  }
@@ -89,7 +90,7 @@ export class PeerSocket {
     }
    }catch(error){this.fail(error);}
   };
-  this.relay.onopen=()=>this.open();
+  this.relay.onopen=()=>{this.open();for(const bytes of this.spectatorPending.splice(0))this.relay.send(bytes);};
   this.relay.onclose=()=>{if(!this.closed&&this.route==='relay')this.fail(Error('中继连接已关闭'));};
   this.relay.onerror=()=>{if(this.route==='relay')this.fail(Error('中继连接失败'));};
  }
@@ -101,6 +102,13 @@ export class PeerSocket {
   for(const event of this.pending.splice(0))this.onmessage?.(event);
  }
  send(bytes){if(this.readyState!==1)throw Error('对局通道未就绪');if(this.bufferedAmount>256*1024)throw Error('对局通道拥塞');(this.route==='rtc'?this.channel:this.relay).send(bytes);}
+ sendSpectator(payload){
+  if(this.side!==0||this.closed)return;
+  const bytes=new Uint8Array(payload.length+1);bytes[0]=0xe8;bytes.set(payload,1);
+  if(this.relay?.readyState===WebSocket.OPEN){if(this.relay.bufferedAmount>256*1024)throw Error('旁观上传积压');this.relay.send(bytes);}
+  else if(this.relay?.readyState===0){if(this.spectatorPending.length>=256)throw Error('旁观上传未就绪');this.spectatorPending.push(bytes);}
+  else throw Error('旁观上传连接已断开');
+ }
  fail(error){if(this.closed)return;this.error=error;this.onerror?.({error});this.close();}
  close(){if(this.closed)return;this.closed=true;this.readyState=3;clearTimeout(this.timeout);this.channel?.close();this.pc?.close();this.relay?.close();this.signal?.close();this.pending.length=0;this.onclose?.({reason:this.error?.message||''});}
 }
