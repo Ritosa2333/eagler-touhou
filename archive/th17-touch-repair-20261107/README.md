@@ -21,6 +21,10 @@
 
 约 100 ms 常规档首轮的 266.97 ms 间隔位于一面关卡计时 986，单次游戏回调用时 177.97 ms，补算数为零。该轮三席都在相近的关卡时刻出现尖峰。复跑最长间隔为 42.91 ms，滑动席有一次处于预测上限的未呈现回调，两名队友的补算未呈现回调均为零。
 
+## 主站发布
+
+2026-11-07 15:04，主站 TH17 多人入口切到 `1.0.14-eagler-c9a287a32e77`。发布源与备用镜像均核对了发布标识及多人 Wasm SHA-256。[发布回执](activation.json) · [公网校验](public-verification.json) · [镜像回执](mirror-verification.json)
+
 ## 复测
 
 环境变量和启动参数沿用[滑动复测入口](../th17-touch-rollback-20261107/README.md#复测入口)。三人档设 `TH17_ROOM_SEATS=3`，使用 `--symmetric-delay --trace-gaps`。原生测试 `th17-multiplayer-session` 和 `th17-team-spirits` 通过，会话测试覆盖第三个输入采样的发送及队列上限。
