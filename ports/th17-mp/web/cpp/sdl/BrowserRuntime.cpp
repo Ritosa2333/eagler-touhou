@@ -62,6 +62,7 @@ struct RoomRuntime final : multiplayer::World {
   u32 stage=0,score=0;
   Netplay::SpectatorStagePublisher::Frame publication;
  };
+ multiplayer::FrameImage::BufferPool snapshot_buffers;
  std::array<Frame,multiplayer::Session::rollback_frames+1> history;
  std::array<Status,16> confirmed{};
  Netplay::BrowserPeerTransport transport;
@@ -98,6 +99,8 @@ struct RoomRuntime final : multiplayer::World {
  u32 benchmark_ghost_seat=3;
  std::array<u32,4> benchmark_history{};
 #endif
+
+ RoomRuntime(){for(auto& frame:history)frame.image.use_buffer_pool(snapshot_buffers);}
 
  Frame& state(u32 frame){return history[frame%history.size()];}
  void clear_image(Frame& frame){

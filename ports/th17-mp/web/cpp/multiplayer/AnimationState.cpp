@@ -32,7 +32,29 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
             for(auto* child:n.children)children.push_back(child);
         }
     };
-    std::vector<Node*> selected;
+    struct Snapshot {
+        std::vector<Node*> selected,children,free_overflow;
+        std::vector<SavedNode> saved;
+        multiplayer::AnmCheckpoint::Curves curves;
+        std::unordered_map<AnmVm*,std::shared_ptr<Node>> borrowed;
+        std::vector<u16> free_slots;
+        std::array<std::vector<AnmVm*>,44> layers;
+
+        void reset(){
+            // A cancellation burst can fill every history slot. Retain
+            // ordinary capture capacity and release storage from large bursts.
+            size_t bytes=saved.capacity()*sizeof(SavedNode)+curves.changing.capacity()*sizeof(AnmInterpolators)+
+                (selected.capacity()+children.capacity()+free_overflow.capacity()+borrowed.bucket_count())*sizeof(Node*)+
+                free_slots.capacity()*sizeof(u16);
+            for(const auto& layer:layers)bytes+=layer.capacity()*sizeof(AnmVm*);
+            if(bytes>256*1024){*this=Snapshot{};return;}
+            selected.clear();children.clear();saved.clear();curves.changing.clear();curves.last_resting.reset();
+            borrowed.clear();free_slots.clear();free_overflow.clear();
+            for(auto& layer:layers)layer.clear();
+        }
+    };
+    auto& snapshot=image.reuse<Snapshot>();
+    auto& selected=snapshot.selected;
     std::array<u32,(slot_mask+31)/32> seen_slots{};
     std::unordered_set<Node*> seen_other;
     selected.reserve(active_count+external.size());
@@ -51,36 +73,38 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     for(const auto& layer:layers)for(auto* vm:layer)remember(node(*vm));
     // Layers can still reference nodes retired after their draw list was
     // built. Count those before allocating the large VM records.
-    std::vector<SavedNode> saved;
-    std::vector<Node*> children;
-    multiplayer::AnmCheckpoint::Curves curves;
+    auto& saved=snapshot.saved;
+    auto& children=snapshot.children;
+    auto& curves=snapshot.curves;
     size_t child_count=0,changing=0;
     for(const auto* n:selected){
         child_count+=n->children.size();
         changing+=multiplayer::AnmCheckpoint::changing(n->borrowed?*n->borrowed:n->vm);
     }
-    saved.reserve(selected.size());
+    saved.reserve((selected.size()+63)/64*64);
     children.reserve(child_count);
     curves.changing.reserve(changing);
     for(auto* n:selected)saved.emplace_back(*n,curves,children);
+    snapshot.borrowed=external;
+    snapshot.free_slots=free_slots;
+    snapshot.free_overflow=free_overflow;
+    snapshot.layers=layers;
 #if TH17_ROOM_BENCHMARK
     image.payload[image.Animation]=u32(saved.capacity()*sizeof(SavedNode)+children.capacity()*sizeof(Node*)+curves.changing.capacity()*sizeof(AnmInterpolators));
     image.unused_capacity+=u32((saved.capacity()-saved.size())*sizeof(SavedNode));
 #endif
     image.save(generation,active_count,next_slot,error);
-    image.restore_with([this,saved=std::move(saved),children=std::move(children),curves=std::move(curves),
-                        borrowed=external,
-                        free_slots=free_slots,free_overflow=free_overflow,layers=layers]{
+    image.restore_with([this,checkpoint=&snapshot]{
         for(auto& group:groups){
             for(auto* n:group){n->children.clear();n->parent=nullptr;n->active=n->registered=false;n->handle=0;}
             group.clear();
         }
         for(auto& entry:external)entry.second->children.clear();
-        external=borrowed;
+        external=checkpoint->borrowed;
         overflow_handles.clear();
         pending_deletion.clear();
-        this->free_slots=free_slots;
-        this->free_overflow=free_overflow;
+        free_slots=checkpoint->free_slots;
+        free_overflow=checkpoint->free_overflow;
         // Extra nodes allocated by the abandoned timeline stay recyclable.
         // Snapshot addresses remain valid while the registry is alive.
         for(const auto& entry:overflow){
@@ -88,30 +112,30 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
             if(!n->active&&std::find(this->free_overflow.begin(),this->free_overflow.end(),n)==this->free_overflow.end())
                 this->free_overflow.push_back(n);
         }
-        for(const auto& row:saved){
+        for(const auto& row:checkpoint->saved){
             auto& n=*row.owner;
             n.borrowed=row.borrowed;
-            row.value.restore(n.borrowed?*n.borrowed:n.vm,n.rollback_curves,curves);
+            row.value.restore(n.borrowed?*n.borrowed:n.vm,n.rollback_curves,checkpoint->curves);
             n.handle=row.handle;n.active=row.active;n.registered=row.registered;n.alternate=row.alternate;n.frozen_root=row.frozen;
             n.parent=nullptr;
         }
         auto& free=this->free_overflow;
         free.erase(std::remove_if(free.begin(),free.end(),[](const Node* n){return n->active;}),free.end());
         // Saved nodes begin with both registration groups in queue order.
-        for(const auto& row:saved)if(row.registered){
+        for(const auto& row:checkpoint->saved)if(row.registered){
             auto* n=row.owner;
             auto& list=groups[row.alternate];
             n->position=list.insert(list.end(),n->group_link);
             if(n->slot==slot_mask)overflow_handles.emplace(n->handle,n);
         }
-        for(const auto& row:saved){
+        for(const auto& row:checkpoint->saved){
             auto& n=*row.owner;
             for(u32 i=row.child_start;i<row.child_start+row.child_count;++i){
-                auto* child=children[i];
+                auto* child=checkpoint->children[i];
                 child->parent=&n;child->child_position=n.children.insert(n.children.end(),child->child_link);
             }
         }
-        this->layers=layers;
+        layers=checkpoint->layers;
         return true;
     });
     return true;
