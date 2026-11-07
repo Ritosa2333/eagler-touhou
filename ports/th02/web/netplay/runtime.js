@@ -29,7 +29,9 @@ function refreshMailbox(scan=false){
  // MAIN's exit hook clears +22 before freeing its resources. Mima also
  // publishes resident.stage=0x7f before executing the ending program.
  // A surviving signature alone does not mean MAIN still owns that memory.
- if(mailbox>=0&&(!mailboxActive(h,patch,mailbox)||!residentValid(residentAddress)))mailbox=-1;
+ if(mailbox>=0&&(!mailboxActive(h,patch,mailbox)||!residentValid(residentAddress))){
+  mailbox=-1;emulator.module.playerArt?.clearLayers();
+ }
  if(mailbox<0&&scan){
   if(!(residentAddress>=0&&residentSignature.every((b,i)=>h[residentAddress+i]===b)&&h[residentAddress+11]>5)){
    const candidate=locateMailbox(h,patch);

@@ -233,7 +233,7 @@ function findMailbox(){
 function refreshMailbox(){
   if(mailbox<0)return;
   if(mailboxOwned(mailbox,guestMemoryBase,residentAddress))return;
-  mailbox=-1;emulator.module.projectileArt?.bind(-1);
+  mailbox=-1;emulator.module.projectileArt?.clearLayers();emulator.module.projectileArt?.bind(-1);
 }
 function applyP1(bits){
   for(const [code,key,keyCode,bit]of keyTable){

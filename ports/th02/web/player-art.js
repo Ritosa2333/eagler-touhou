@@ -28,7 +28,8 @@ export function installPlayerArt(mod,patch,bytes){
   let mailbox=-1,checks=0;
   function setMailbox(at){
     const next=Number.isInteger(at)&&at>=0&&valid(at)&&mod.HEAPU8[at+22]===1?at:-1;
-    if(next===mailbox)return;
+    const context=next<0?0:next-patch.entries.mailbox+patch.entries.art_context;
+    if(next===mailbox&&view().getUint32(control,true)===context&&view().getUint32(control+12,true)===(next<0?0:next+22))return;
     mailbox=next;mod.thDirtyMark?.(control,32);
     view().setUint32(control,mailbox<0?0:mailbox-patch.entries.mailbox+patch.entries.art_context,true);
     view().setUint32(control+12,mailbox<0?0:mailbox+22,true);
@@ -45,6 +46,11 @@ export function installPlayerArt(mod,patch,bytes){
       setMailbox(candidate);break;
     }
   }
-  return {bind,view:slot=>api.thLayerSetView(Number.isInteger(slot)&&slot>=0&&slot<3?slot:-1),info:()=>({enabled:true,bound:valid(mailbox),source:patch.playerArt.bodySource,
+  function clearLayers(){
+    // Records are ignored wherever coverage is zero; they need not be cleared.
+    mod.thDirtyMark?.(tags,1048576);mod.thDirtyMark?.(coverage,524288);
+    mod.HEAPU8.fill(0,tags,tags+1048576);mod.HEAPU8.fill(0,coverage,coverage+524288);
+  }
+  return {bind,clearLayers,view:slot=>api.thLayerSetView(Number.isInteger(slot)&&slot>=0&&slot<3?slot:-1),info:()=>({enabled:true,bound:valid(mailbox),source:patch.playerArt.bodySource,
     variants:patch.playerArt.variants,originalGenjiiPreserved:true}),control,table,tags};
 }
