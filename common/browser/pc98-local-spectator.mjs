@@ -1,6 +1,6 @@
 import {createPc98MatchIndex} from './pc98-match-index.mjs';
 // A viewer owns its replica and only receives the host's confirmed prefix.
-export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,channelFactory=name=>new BroadcastChannel(name),onHeader=()=>{},onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
+export function createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,smoothPresentation=false,channelFactory=name=>new BroadcastChannel(name),onHeader=()=>{},onFrame=()=>{},onEvent=()=>{},onError=()=>{}}){
   const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
   if(!room||!run)throw Error('观战房间身份无效');
   const viewer=Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
@@ -8,32 +8,36 @@ export function createLocalSpectator({game,options,createReplica,validateHeader,
   const abort=new AbortController();
   let header,identity,replica,available=0,end=null,points=[],closed=false,busy=false,booting=false,paused=false,following=true,target=null,generation=0,timer=null,pullTimer=null,frames=0;
   let last=performance.now(),lastPresent=0,budget=0;
-  let catching=false,delayed=false,delayFrames=0,catchSince=0;
+  let catching=false,delayed=false,delayFrames=0,catchSince=0,catchStartLag=0;
   const fail=error=>{stop();onError(error);};
   function stop(){if(closed)return;closed=true;abort.abort();clearTimeout(timer);clearInterval(pullTimer);channel.close();replica?.stop();}
   function pull(){if(!closed)channel.postMessage({type:'pull',viewer,first:rows.length});}
   async function pump(){
     if(closed||busy||!replica)return;busy=true;
-    const owner=replica;
+    const owner=replica;let workPending=false;
     try{
       const now=performance.now(),tick=header.tickMs;budget=Math.min(8,budget+(now-last)/tick);last=now;
-      const lag=rows.length-owner.frame,normalDelay=Math.round(600/tick);
+      const lag=rows.length-owner.frame,normalDelay=Math.round((smoothPresentation?1200:600)/tick);
       catching=target!==null||following&&!delayed&&lag>normalDelay+30;
       if(catching&&following){
-        if(!catchSince)catchSince=now;
-        else if(now-catchSince>=4000){delayed=true;delayFrames=lag;target=null;catching=false;}
+        if(!catchSince){catchSince=now;catchStartLag=lag;}
+        else if(now-catchSince>=4000){
+          if(smoothPresentation&&catchStartLag-lag>=30){catchSince=now;catchStartLag=lag;}
+          else{delayed=true;delayFrames=lag;target=null;catching=false;}
+        }
       }else catchSince=0;
       const delay=delayed?delayFrames:normalDelay;
-      const limit=catching?32:Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.min(rows.length,Math.max(1,rows.length-delay)):rows.length;let count=0;
+      const limit=catching?32:smoothPresentation?Math.min(1,Math.floor(budget)):Math.floor(budget),edge=following&&!end&&target===null&&!catching?Math.min(rows.length,Math.max(1,rows.length-delay)):rows.length;let count=0;
       while(!closed&&owner===replica&&(!paused||target!==null)&&owner.frame<edge&&count<limit){
         if(target!==null&&owner.frame>=target)break;
         if(owner.advanceBatch){const end=Math.min(edge,owner.frame+limit-count,target??edge),batch=rows.slice(owner.frame,end);await owner.advanceBatch(batch);count+=batch.length;}
         else{await owner.advance(rows[owner.frame]);count++;}
       }
       if(!catching)budget=Math.max(0,budget-count);
+      workPending=count>0&&budget>=1;
       if(owner===replica&&target!==null&&owner.frame>=target){target=null;paused=!following;}
       if(count&&owner===replica&&(!catching||performance.now()-lastPresent>=150)){await owner.present();lastPresent=performance.now();}
-    }catch(error){if(!closed&&owner===replica)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,catching?0:8);}
+    }catch(error){if(!closed&&owner===replica)fail(error);}finally{busy=false;if(!closed)timer=setTimeout(pump,catching||smoothPresentation&&workPending?0:8);}
   }
   async function boot(){
     if(booting||replica||closed)return;booting=true;
