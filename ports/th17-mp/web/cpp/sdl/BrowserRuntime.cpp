@@ -33,6 +33,10 @@ EM_JS(int, th17_host_has_focus, (), {
 EM_JS(int, th17_browser_keyboard_owned, (), { return typeof Module.resetBrowserKeyboard === "function"; });
 EM_JS(void, th17_browser_keyboard_reset, (), { Module.resetBrowserKeyboard?.(); });
 namespace th17::sdl {
+#if TH17_MULTIPLAYER
+extern bool room_phase_trace;
+extern std::array<u32,3> room_application_us;
+#endif
 #if TH17_ROOM_BENCHMARK
 extern std::array<u32,4> room_benchmark_draw;
 #endif
@@ -40,11 +44,19 @@ namespace {
 std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH17_MULTIPLAYER
+enum RoomPhase { Input, Capture, Restore, Confirm, Canvas, Pcm, ImageRelease, RoomPhaseCount };
+std::array<u32,RoomPhaseCount> room_phase_us{};
+struct RoomPhaseTimer {
+ RoomPhase phase;
+ double begin=room_phase_trace?emscripten_get_now():0;
+ ~RoomPhaseTimer(){if(begin)room_phase_us[phase]+=u32((emscripten_get_now()-begin)*1000);}
+};
 struct RoomRuntime final : multiplayer::World {
  using Status=std::array<u32,44>;
  struct Frame {
   u32 number=Netplay::INVALID_FRAME;
   multiplayer::FrameImage image;
+  bool has_image=false,release_pending=false;
   std::vector<ApplicationState::RoomSound> sounds;
   Status snapshot{};
   u32 stage=0,score=0;
@@ -75,6 +87,8 @@ struct RoomRuntime final : multiplayer::World {
  double replay_step_start=0,logical_step_ms=4;
  std::uint64_t now_ms=0;
  u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
+ unsigned pending_releases=0;
+ bool released_confirmed=false;
  std::array<u32,3> phase_corrections{};
  u32 barrier=Netplay::INVALID_FRAME;
  u32 restored_checkpoint=Netplay::INVALID_FRAME;
@@ -87,6 +101,10 @@ struct RoomRuntime final : multiplayer::World {
 
  Frame& state(u32 frame){return history[frame%history.size()];}
  void clear_image(Frame& frame){
+  if(!frame.has_image)return;
+  const RoomPhaseTimer timing{ImageRelease};
+  frame.has_image=false;
+  if(frame.release_pending){frame.release_pending=false;--pending_releases;}
 #if TH17_ROOM_BENCHMARK
   if(trace&&!frame.image.empty()){
    const auto begin=emscripten_get_now();
@@ -96,6 +114,15 @@ struct RoomRuntime final : multiplayer::World {
   }
 #endif
   frame.image.clear();
+ }
+ void release_retired(double deadline){
+  if(!pending_releases)return;
+  const bool boundary=!app->can_rollback();
+  if(!boundary&&(released_confirmed||emscripten_get_now()+2>=deadline))return;
+  for(auto& saved:history)if(saved.release_pending){
+   clear_image(saved);
+   if(!boundary)break;
+  }
  }
  Status status(u32 number) const;
  bool can_predict() const override{return entered&&barrier!=session.next_frame()&&app->can_rollback();}
@@ -116,18 +143,20 @@ struct RoomRuntime final : multiplayer::World {
  }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
+  const RoomPhaseTimer timing{Capture};
   auto& saved=state(frame);
   saved.number=frame;
   // Rewinding to a speculative frame restores exactly its existing image.
   // Keep it until the corrected simulation consumes that frame.
   if(restored_checkpoint==frame)return true;
-  clear_image(saved);saved.image.save(main_input);
+  clear_image(saved);saved.has_image=true;saved.image.save(main_input);
   const double begin=trace?emscripten_get_now():0;
   const bool ok=app->save_rollback(saved.image);
   if(trace){++capture_count;capture_us+=u32((emscripten_get_now()-begin)*1000);}
   return ok;
  }
  bool restore(u32 frame) override{
+  const RoomPhaseTimer timing{Restore};
   auto& saved=state(frame);
   if(saved.number!=frame)return false;
   const bool rewinding=frame<session.next_frame();
@@ -161,6 +190,7 @@ struct RoomRuntime final : multiplayer::World {
   return true;
  }
  bool confirm(u32 frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs) override{
+  const RoomPhaseTimer timing{Confirm};
   auto& saved=state(frame);
   if(saved.number!=frame)return app->fail("TH17 confirmed frame output is missing");
   for(const auto& sound:saved.sounds)if(!app->audio(sound.id,sound.pan,sound.action,sound.queued))return false;
@@ -181,7 +211,14 @@ struct RoomRuntime final : multiplayer::World {
    }
   }
   confirmed[(frame+1)%confirmed.size()]=saved.snapshot;
-  clear_image(saved);saved.sounds.clear();saved.number=Netplay::INVALID_FRAME;
+  if(saved.has_image){
+   // A burst of confirmed inputs may retire several large images together.
+   // Keep at most two in the existing ring and release them as time permits.
+   if(released_confirmed&&pending_releases<2&&app->can_rollback()){
+    saved.release_pending=true;++pending_releases;
+   }else{clear_image(saved);released_confirmed=true;}
+  }
+  saved.sounds.clear();saved.number=Netplay::INVALID_FRAME;
   return app->audio_device.error.empty()||app->fail(app->audio_device.error);
  }
  bool step(u32 number,const Netplay::FrameDecision& frame) override{
@@ -262,6 +299,7 @@ struct RoomRuntime final : multiplayer::World {
   return true;
  }
  bool poll(bool capture_follows=false){
+  const RoomPhaseTimer timing{Input};
   const double now=emscripten_get_now();
   now_ms=std::uint64_t(now);
   session.capture_phase(entered&&!can_predict(),std::uint64_t(now*1000));
@@ -604,6 +642,14 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_confirmed(unsigned number){
 EMSCRIPTEN_KEEPALIVE void th17_room_trace(unsigned enabled){
  if(th17::sdl::room)th17::sdl::room->trace=enabled!=0;
 }
+EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_phase_costs(unsigned enabled){
+ using namespace th17::sdl;
+ room_phase_trace=enabled!=0;
+ static std::array<unsigned,RoomPhaseCount+3> costs{};
+ std::copy(room_phase_us.begin(),room_phase_us.end(),costs.begin());
+ std::copy(room_application_us.begin(),room_application_us.end(),costs.begin()+RoomPhaseCount);
+ return costs.data();
+}
 #if TH17_ROOM_BENCHMARK
 EMSCRIPTEN_KEEPALIVE int th17_room_fixture_ghost(unsigned seat){
  using namespace th17::sdl;
@@ -698,6 +744,9 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const double period=app->practice.enabled&&app->scene()?app->practice.speed.interval(app->progress.practice_record,practice_fast,practice_slow,practice_debug):touhou::sdl::FrameCadence::interval;
+#if TH17_MULTIPLAYER
+  if(room_phase_trace){room_phase_us.fill(0);room_application_us.fill(0);}
+#endif
   if(period!=previous_period){cadence.reset();previous_period=period;}
   if(app->display)app->display->presentation_fps=presentation_fps;
   const auto ticks=cadence.advance(delta,period);bool ok=true;app->graphics.backend.defer=true;
@@ -710,7 +759,7 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   // already done before this callback has consumed part of this refresh.
   const double deadline=begin+std::max(0.,1000./60.-std::max(0.,begin-time));
 #if TH17_MULTIPLAYER
-  if(room)room->refresh_deadline=deadline;
+  if(room){room->refresh_deadline=deadline;room->released_confirmed=false;}
 #endif
   for(unsigned i=0;i<ticks&&ok;i++){
    const double tick_begin=emscripten_get_now();
@@ -758,7 +807,22 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   }
 #endif
   if(ok&&completed)ok=ThpracUi::render(*app);
-  const bool presented=app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
+  bool presented;
+  {
+#if TH17_MULTIPLAYER
+   const RoomPhaseTimer timing{Canvas};
+#endif
+   presented=app->graphics.backend.commit();app->graphics.backend.defer=false;
+  }
+  {
+#if TH17_MULTIPLAYER
+   const RoomPhaseTimer timing{Pcm};
+#endif
+   app->audio_device.pump();
+  }
+#if TH17_MULTIPLAYER
+  if(room)room->release_retired(deadline);
+#endif
   if(ok&&presented)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
   if(work||presented||elapsed>=1000)th17_browser_frame(ok?1:0,emscripten_get_now()-begin,completed,presented);
   if(!ok||app->exiting)running=false;return running?EM_TRUE:EM_FALSE;
