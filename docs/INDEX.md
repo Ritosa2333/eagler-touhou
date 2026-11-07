@@ -1,6 +1,6 @@
 # 文档总表
 
-共 471 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 472 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -315,6 +315,7 @@
 | 历史记录 | [archive/th17-multiplayer-hud-20261106/README.md](../archive/th17-multiplayer-hud-20261106/README.md) | TH17 双人和三人 HUD 验证 · 2026-11-06 |
 | 历史记录 | [archive/th17-multiplayer-lifecycle-20261106/README.md](../archive/th17-multiplayer-lifecycle-20261106/README.md) | TH17 多人标题、录像与旁观 · 2026-11-06 |
 | 历史记录 | [archive/th17-multiplayer-room-20261106/room-validation.md](../archive/th17-multiplayer-room-20261106/room-validation.md) | TH17 多人房间验证 · 2026-11-06 |
+| 历史记录 | [archive/th17-no-repair-spike-20261107/README.md](../archive/th17-no-repair-spike-20261107/README.md) | TH17 普通关无补算长帧 · 2026-11-07 |
 | 历史记录 | [archive/th17-overhead-20261107/README.md](../archive/th17-overhead-20261107/README.md) | TH17 动画查找与符卡记录复用 · 2026-11-07 |
 | 历史记录 | [archive/th17-refresh-budget-20261107/README.md](../archive/th17-refresh-budget-20261107/README.md) | TH17 滑动补算与刷新预算 · 2026-11-07 |
 | 历史记录 | [archive/th17-release-profile-20261107/README.md](../archive/th17-release-profile-20261107/README.md) | TH17 主站发布与普通关函数采样 · 2026-11-07 |
