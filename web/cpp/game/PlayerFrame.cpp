@@ -1,6 +1,6 @@
 #include "PlayerFrame.hpp"
 namespace th17 {
-PlayerFrame::PlayerFrame(PlayerMotion& p,PlayerAnmHost& v,AnmManager& a,PlayerLife& l,DamageSources& d,PlayerShots& s,PlayerShotContext& c,PlayerFrameHost& w,i32 ch,i32 resource):motion(p),visuals(v),animations(a),life(l),damage(d),shots(s),shot_context(c),world(w),character(ch),player_resource(resource),shooting_host(a,resource),shooting(p,shooting_host){
+PlayerFrame::PlayerFrame(PlayerMotion& p,PlayerAnmHost& v,AnmManager& a,PlayerLife& l,DamageSources& d,PlayerShots& s,PlayerShotContext& c,PlayerFrameHost& w,i32 ch,i32 resource):motion(p),visuals(v),animations(a),life(l),damage(d),shots(s),shot_context(c),world(w),character(ch),player_resource(resource),shooting_host(a,resource,s.presentation_seat),shooting(p,shooting_host){
     shooting_host.shoot=[this](i32 frame,i32 continuous){shot_context.shoot_frame=frame;return shots.fire(frame,continuous);};
     shooting_host.audio=[this](i32 id,ShotSoundAction action,float x){return world.shot_audio(id,action,x);};
 }

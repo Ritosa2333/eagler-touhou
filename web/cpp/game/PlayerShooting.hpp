@@ -25,13 +25,17 @@ public:
     bool blocked();
 };
 class PlayerShootingAnmHost final:public PlayerShootingServices {
-    AnmManager& animations;i32 resource;
+    AnmManager& animations;
+    i32 resource;
+    const u8& presentation_seat;
 public:
     std::function<bool(i32,i32)> shoot;std::function<bool(i32,ShotSoundAction,float)> audio;
-    PlayerShootingAnmHost(AnmManager& a,i32 player):animations(a),resource(player){}
+    PlayerShootingAnmHost(AnmManager& a,i32 player,u8& seat):animations(a),resource(player),presentation_seat(seat){}
     bool fire(i32 frame,i32 continuous)override{return shoot&&shoot(frame,continuous);}
     bool sound(i32 id,ShotSoundAction action,float x)override{return audio&&audio(id,action,x);}
-    u32 charge_indicator(i32 script,const Vec3& p)override{return animations.create(resource,script,-1,0,p);}
+    u32 charge_indicator(i32 script,const Vec3& p)override{
+        return animations.create_pilot_effect(resource,script,presentation_seat,p);
+    }
     bool retire(u32 handle)override{return animations.retire(handle);}
     bool interrupt(u32 handle,i32 label)override{return animations.interrupt(handle,label);}
 };
