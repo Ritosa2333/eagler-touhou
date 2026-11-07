@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
-import {resolve,extname,sep} from 'node:path';
+import {resolve,extname,sep,basename} from 'node:path';
 import {createHash} from 'node:crypto';
 import {launchBrowser} from '../../../../tools/browser/launch.mjs';
 
 // A development-probe build uses the real hosted input, RAF, thprac and draw
 // paths. Release packaging rejects these probes; original game data stays local.
 const root=resolve(process.env.EAGLER_TH17_BUILD);
+const probeModule=process.env.TH17_SINGLE_MODULE?resolve(process.env.TH17_SINGLE_MODULE):resolve(root,'th17.mjs');
+const probeWasm=probeModule.replace(/\.mjs$/,'.wasm');
 const out=resolve(process.env.TH17_SINGLE_EVIDENCE||'artifacts/th17-single-player');
 const assets={'/game.dat':await readFile(process.env.EAGLER_TH17_DATA)};
 for(const name of ['msgothic.ttc','unifont.otf'])
@@ -26,7 +28,9 @@ const server=createServer(async(req,res)=>{
   res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');
   if(path==='/'){res.setHeader('Content-Type','text/html');return res.end(html);}
   if(assets[path])return res.end(assets[path]);
-  assert.ok(path.startsWith('/runtime/'));const file=resolve(root,path.slice(9));assert.ok(file.startsWith(root+sep));
+  assert.ok(path.startsWith('/runtime/'));
+  const file=path==='/runtime/th17.mjs'?probeModule:path==='/runtime/'+basename(probeWasm)?probeWasm:resolve(root,path.slice(9));
+  assert.ok(file===probeModule||file===probeWasm||file.startsWith(root+sep));
   res.setHeader('Content-Type',({'.mjs':'text/javascript','.wasm':'application/wasm','.html':'text/html'})[extname(file)]||'application/octet-stream');
   res.end(await readFile(file));
  }catch{res.writeHead(404).end();}
@@ -46,6 +50,8 @@ try{
  });
  const frame=page.frames().at(-1);
  await frame.waitForFunction(()=>Module._th17_frame()>100);
+ assert.equal(await frame.evaluate(()=>typeof Module._th17_probe_practice_state),'function','Use a development-probe build for single-player regressions');
+ const canvas=await frame.evaluate(()=>[Module.canvas.width,Module.canvas.height]);assert.deepEqual(canvas,[1280,960]);
  const state=async(name,count)=>frame.evaluate(({name,count})=>Array.from(Module.HEAP32.subarray(Module[name]()>>>2,(Module[name]()>>>2)+count)),{name,count});
  const practice=()=>state('_th17_probe_practice_state',8),pause=()=>state('_th17_probe_pause_state',7);
  assert.equal((await practice())[0],1);
@@ -103,7 +109,7 @@ try{
  assert.ok(transitions.some(v=>v[0]===2&&!v[4]&&v[3]>0&&v[3]<30));
  assert.ok(transitions.some(v=>v[0]===2&&v[3]===-1&&v[1]>=30),'outgoing background releases after its fade');
  assert.deepEqual(errors,[]);assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
- const wasm=createHash('sha256').update(await readFile(resolve(root,'th17.wasm'))).digest('hex');
- await writeFile(resolve(out,'single-player-report.json'),JSON.stringify({passed:true,wasm,canvas:[1280,960],checks,transitions},null,2)+'\n');
+ const wasm=createHash('sha256').update(await readFile(probeWasm)).digest('hex');
+ await writeFile(resolve(out,'single-player-report.json'),JSON.stringify({passed:true,wasm,canvas,checks,transitions},null,2)+'\n');
  console.log('TH17 desktop hotkeys, mobile coexistence, R restart and stage-clear background timing passed');
 }finally{await browser?.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
