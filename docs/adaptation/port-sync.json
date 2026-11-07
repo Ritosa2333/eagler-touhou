@@ -1272,7 +1272,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+      "base": "176ec64a5da260972a7df30a0ef8a5d1ce012edf",
       "history": [
         {
           "kind": "manual",
@@ -1419,6 +1419,19 @@
             "ports/th17-mp/portable/sdl/Renderer.cpp"
           ],
           "note": "顶点着色器保留 fogEnabled。四面与六面 54 个战斗画面采样和优化前一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+          "source": "176ec64a5da260972a7df30a0ef8a5d1ce012edf",
+          "targetHead": "faacbabc2c6a8b9aa91528d76f77bb34703782ad",
+          "paths": [
+            "ports/th17-mp/ADAPTATION.md",
+            "ports/th17-mp/portable/sdl/ImguiRenderer.inc",
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/portable/sdl/Renderer.hpp"
+          ],
+          "note": "普通版和多人版共用顶点与索引缓冲绑定缓存及渲染目标倍率读取，多人版保留回滚和独立渲染目录。"
         }
       ]
     }
