@@ -88,6 +88,7 @@ async function boot(settings){
  if(await sha256(exe)!==entry.mainSha256)throw Error('TH02 主程序校验失败');
  const overlay=(await get('./native-pause-overlay.json')).languages[config.language];
  if(!overlay||overlay.sourceMainSha256!==entry.mainSha256||overlay.codeSegment!==patch.codeSegment||overlay.dataSegment!==patch.dataSegment)throw Error('TH02 联机暂停补丁版本不匹配');
+ patch.pauseRestartResult=overlay.restartResult;
  // Patch only this session's verified MAIN; shipped disks and art layouts stay pinned.
  const swap=await get('./state-swap-patch.json'),swapBase=patch.headerSize+patch.codeSegment*16;
  const swapBytes=hex=>Uint8Array.from(hex.match(/../g)||[],n=>parseInt(n,16));
@@ -261,7 +262,7 @@ function step(inputs,{frame=ticks,replay=false,offlineMask=0}={}){
   // The original pause routine publishes its confirmed quit result in MAIN's
   // shared quit byte. Do not treat MAIN -> MAINE ending ownership as an exit.
   const quitAt=previousMailbox-patch.entries.mailbox+(patch.dataSegment-patch.codeSegment)*16+0x2b97;
-  const exit=pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[quitAt]===1;
+  const exit=pausedBefore&&!nativePaused(m.HEAPU8,mailbox,patch)&&m.HEAPU8[quitAt]===1&&m.HEAPU8[previousMailbox-patch.entries.mailbox+patch.pauseRestartResult]!==2;
   effects.set(frame,{exit,music:mailbox>=0?readMusic():null,sounds:mailbox>=0?readSfx():[]});if(!replay)pending=true;
  }finally{m.netEndFrame();}
 }

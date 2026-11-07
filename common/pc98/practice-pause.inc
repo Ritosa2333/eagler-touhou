@@ -73,7 +73,11 @@ practice_pause_draw:
     mov si,practice_pause_option_save
 %endif
     call practice_text_write
-%ifndef PRACTICE_NETWORK_PAUSE
+%ifdef PRACTICE_NETWORK_PAUSE
+    mov di,12*160+15*2
+    mov si,practice_pause_option_retry
+    call practice_text_write
+%else
     mov di,12*160+15*2
     mov si,practice_pause_option_exit
     call practice_text_write
@@ -102,7 +106,7 @@ practice_pause_option_exit: db '       QUIT NO REP        ',0
 practice_pause_option_retry: db '         RESTART          ',0
 practice_pause_positions: dw 8*160+15*2,10*160+15*2,12*160+15*2,14*160+15*2
 %ifdef PRACTICE_NETWORK_PAUSE
-practice_pause_labels: dw practice_pause_option_resume,practice_pause_option_exit
+practice_pause_labels: dw practice_pause_option_resume,practice_pause_option_exit,practice_pause_option_retry
 %else
 practice_pause_labels: dw practice_pause_option_resume,practice_pause_option_save,practice_pause_option_exit,practice_pause_option_retry
 %endif
@@ -122,7 +126,7 @@ practice_pause_screen_save:
     mov di,8*160+15*2
     mov bx,practice_pause_buffer
 %ifdef PRACTICE_NETWORK_PAUSE
-    mov dx,2
+    mov dx,3
 %else
     mov dx,4
 %endif
@@ -151,7 +155,7 @@ practice_pause_screen_restore:
     mov bx,practice_pause_buffer
     xor bp,bp
 %ifdef PRACTICE_NETWORK_PAUSE
-    mov dx,2
+    mov dx,3
 %else
     mov dx,4
 %endif
@@ -177,7 +181,7 @@ practice_pause_screen_restore:
     jnz .row
     ret
 %ifdef PRACTICE_NETWORK_PAUSE
-practice_pause_buffer: times 26*4*2 db 0
+practice_pause_buffer: times 26*4*3 db 0
 %else
 practice_pause_buffer: times 26*4*4 db 0
 %endif

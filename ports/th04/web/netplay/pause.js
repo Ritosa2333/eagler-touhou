@@ -13,10 +13,12 @@ export class PauseMenu {
     // A guest can only resume, regardless of the host's highlighted item.
     // Explicit resume takes precedence over simultaneous exit/navigation.
     if((guest&(128|256|32|512))||(host&(128|512))){this.paused=false;return 'resume';}
-    if(host&3)this.selection^=1;
+    if(host&1)this.selection=(this.selection+2)%3;
+    else if(host&2)this.selection=(this.selection+1)%3;
     if((host&1024)||((host&(256|32))&&this.selection===1)){
       this.exited=true;return 'exit';
     }
+    if((host&(256|32))&&this.selection===2){this.paused=false;return 'restart';}
     if(host&(256|32)){this.paused=false;return 'resume';}
     return 'paused';
   }

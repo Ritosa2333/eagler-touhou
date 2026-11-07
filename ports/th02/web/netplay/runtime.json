@@ -65,7 +65,7 @@
     "netplay/runtime-worker-client.js": "fddfa037e223a2219cd819fbc11bd43b70b9678c7054ce7aa3fa35282952281a",
     "netplay/runtime-worker.js": "f5c43356d63a82343d8bd615c83a5c59b4d3f7d2abfdcfa9c7378e7a09176263",
     "netplay/runtime.html": "4d770aeb0e4efb5a4b1e1eb6f00e76e8cfec7f1411b7f6e656ef70957a2b928f",
-    "netplay/runtime.js": "4c02d073b7eed16603fbe15ff7d777de5c3a810aa2742ef8f5c651c2698caea9",
+    "netplay/runtime.js": "fb24cecf62ff9b757dbe5292986fd646f20ed4262242136ed3ea20315daa6d7e",
     "netplay/sha256.js": "9cb7be2bc039bcea2a4d727ef98bcd9047a78dfd4c11950355723147423e1f43",
     "netplay/sound-patch.json": "18cf7b4164560a11ee6ff385196c3a09fe342527d43ee992ae749c569da42791",
     "netplay/state-swap-patch.json": "6a82abb129caa289abe3e96895ca8733ddc6e8f6add526cdfcabb6cd3fb37df7",
@@ -137,7 +137,7 @@
     "vendor/dosbox-x/emulators.js": "066176a9e9e6babfb5388552a5154f3c1f81ed778af3bf4a1f9f904161e3c4bb",
     "vendor/dosbox-x/snapshot-diff-tracked.wasm": "9b563935571f450950575e8feafb6bfa840f31dfdd7a033e2822396a299ac6e1",
     "vendor/dosbox-x/snapshot-diff.wasm": "bb1b100252f74fd6b7ee5e9428cb5d701d7053dab8bcae0b0ed9157b607a31b3",
-    "netplay/native-pause-overlay.json": "5901d7906449f27ca7244b231d755a5538d6d2571814102cfeb21c6663a7550e",
+    "netplay/native-pause-overlay.json": "6df85ec28389fe81f41277897ca2c5e1dc86ccda50a3d2749bb1b4e664d68c2d",
     "pc98-net-pause.mjs": "49d1219e24fcbd6bccdf7025020992345351ef26e72d496a8af111611afd5963"
   },
   "cores": {

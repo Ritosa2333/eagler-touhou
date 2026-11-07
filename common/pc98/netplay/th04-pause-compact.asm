@@ -7,17 +7,17 @@ org PATCH_ORG
     pushad
     push es
     push fs
-    sub sp,208
+    sub sp,144
     mov bp,sp
     push ss
     pop fs
     mov ax,0xa000
     mov es,ax
-    mov di,8*160+15*2
+    mov di,8*160+22*2
     mov bx,bp
-    mov dx,2
+    mov dx,3
 .save_row:
-    mov cx,26
+    mov cx,12
 .save_cell:
     mov ax,[es:di]
     mov [fs:bx],ax
@@ -26,15 +26,15 @@ org PATCH_ORG
     add bx,4
     add di,2
     loop .save_cell
-    add di,320-52
+    add di,320-24
     dec dx
     jnz .save_row
 .draw:
-    mov di,8*160+15*2
+    mov di,8*160+22*2
     mov si,labels
     xor dx,dx
 .draw_row:
-    mov cx,26
+    mov cx,12
     mov ah,0xe1
     cmp dl,[cs:PAUSE_STATE+2]
     jne .draw_cell
@@ -48,9 +48,9 @@ org PATCH_ORG
     inc si
     add di,2
     loop .draw_cell
-    add di,320-52
+    add di,320-24
     inc dx
-    cmp dl,2
+    cmp dl,3
     jb .draw_row
     mov bl,[cs:PAUSE_STATE+2]
 .wait:
@@ -64,12 +64,12 @@ org PATCH_ORG
 .restore:
     mov ax,0xa000
     mov es,ax
-    mov di,8*160+15*2
+    mov di,8*160+22*2
     mov bx,bp
     mov si,labels
-    mov dx,2
+    mov dx,3
 .restore_row:
-    mov cx,26
+    mov cx,12
 .restore_cell:
     mov al,[cs:si]
     cmp [es:di],al
@@ -83,13 +83,13 @@ org PATCH_ORG
     add bx,4
     add di,2
     loop .restore_cell
-    add di,320-52
+    add di,320-24
     dec dx
     jnz .restore_row
-    add sp,208
+    add sp,144
     pop fs
     pop es
     popad
     xor ax,ax
     ret
-labels: db '          RESUME          ','           QUIT           '
+labels: db '   RESUME   ','    QUIT    ','  RESTART   '

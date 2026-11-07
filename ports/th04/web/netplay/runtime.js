@@ -65,6 +65,20 @@ function nativePauseActive(){
   const at=nativePauseAddress();
   return at>=0&&emulator.module.HEAPU8[at+3]!==0;
 }
+function restartNativeGame(){
+  const h=emulator.module.HEAPU8,v=new DataView(h.buffer),code=mailbox-patch.mailbox_cs_offset,data=gameDataBase(),resident=residentAddress;
+  if(!mailboxOwned(mailbox,guestMemoryBase,resident)||h[code+0x86]!==0x75||h[code+0x87]!==5||h[code+0x8d]!==0x1e||h[code+0x8e]!==0x68||v.getUint16(code+0x8f,true)!==0xcd)throw Error('TH04 联机重开入口不匹配');
+  const stage=musicSettings.difficulty===4?6:0;
+  // Match the private launcher's fresh-run initialization, including stocks,
+  // score and P1 loadout. The sound-board bytes come from its resident config.
+  const board=h[resident+16],mode=h[resident+24],ownership=h[resident+48];h.fill(0,resident+11,resident+74);h[resident+48]=ownership;
+  for(const at of [11,12,58])h[resident+at]=musicSettings.lives;
+  for(const at of [13,14,59])h[resident+at]=musicSettings.bombs;
+  h[resident+15]=musicSettings.difficulty;h[resident+16]=board;h[resident+24]=mode;
+  h[resident+17]=stage;h[resident+19]=48+stage;h[resident+18]=48+(musicSettings.p1>>1);h[resident+25]=musicSettings.p1&1;
+  v.setUint32(resident+20,0x4a3d,true);h[resident+72]=1;
+  h.set([0x6d,0x61,0x69,0x6e,0],code+0x88);h[code+0x8d]=0x0e;v.setUint16(code+0x8f,0x88,true);h[data+0x5392]=1;
+}
 function predictionBlockReason(){
   if(pauseMenu.exited)return '退出同步';
   if(pauseMenu.paused)return '同步暂停菜单';
@@ -244,14 +258,15 @@ function stepInner(inputs){
   const wasPaused=pauseMenu.paused,result=mailbox>=0?pauseMenu.step(inputs):'play';
   ticks++;
   if(result==='exit')return 'exit';
+  if(result==='restart')restartNativeGame();
   if(result==='paused'&&!wasPaused)currentEffect.flushAudio=true;
-  if(result==='resume')blocked=[...inputs];
+  if(result==='resume'||result==='restart')blocked=[...inputs];
   inputs=inputs.map((value,i)=>{blocked[i]&=value;return value&~blocked[i]&~(128|512|1024);});
   const pauseAt=nativePauseAddress(),active=nativePauseActive();
   if(pauseAt>=0){
     const heap=emulator.module.HEAPU8;
     heap[pauseAt]=1;heap[pauseAt+1]=pauseMenu.paused?1:0;heap[pauseAt+2]=pauseMenu.selection;
-    if(pauseMenu.paused||active||result==='resume'){
+    if(pauseMenu.paused||active||result==='resume'||result==='restart'){
       inputs=Array(playerCount).fill(0);
       // Any seat can request the original P1 pause entry. Release Esc as soon
       // as native code acknowledges it; native menu commands use the bridge.

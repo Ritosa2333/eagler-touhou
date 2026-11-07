@@ -28,6 +28,8 @@ for game in (2,4):
    continue
   if game==2:
    hook=cs*16+p['entries']['pause_hook']+9;target=0xb9e2;delay=struct.unpack_from('<H',img,0xbca9)[0];state=0
+   assert img[cs*16+0x10e:cs*16+0x111]==bytes.fromhex('e8ae10')
+   assert img[cs*16+0x13b:cs*16+0x13f]==bytes.fromhex('1e68da02')
   else:
    state=p['native_pause_cs_offset'];hook=cs*16+state+16+6;target=0xb2cf;delay=0
   before=bytes(img[hook:hook+3]);assert before[0]==0xe8 and (hook+3+struct.unpack_from('<h',before,1)[0])&0xffff==target,(game,lang,hex(hook),before.hex())
@@ -41,4 +43,7 @@ for game in (2,4):
    for op in (0x1c8,0x1de):
     needle=b'\x9a'+struct.pack('<HH',op,delay);assert code.count(needle)==1;extra.append(ins+code.index(needle)+3)
   result['languages'][lang]={'sourceMainSha256':sha(exe),'codeSegment':cs,'dataSegment':ds,'insert':ins,'bytes':gap,'code':code.hex(),'hook':hook,'before':before.hex(),'extraRelocations':extra}
+  if game==2:
+   assert code.count(b'NPRST02!')==1
+   result['languages'][lang]['restartResult']=org+code.index(b'NPRST02!')+8
  out.write_text(json.dumps(result,indent=2)+'\n');print(out,[(k,len(v['code'])//2) for k,v in result['languages'].items()])
