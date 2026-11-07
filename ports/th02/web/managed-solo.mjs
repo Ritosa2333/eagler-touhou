@@ -14,7 +14,7 @@ const sources=['../managed-gameover.mjs','../managed-rapid-fire.mjs','../practic
   '../touch-input.js','../control-settings.js','./external-host.js','./external-loader.js','./external-codec.js','./external-recorder.js','./external-ui.js','./external-lifecycle.js',
   '../practice-config.js','../practice-engine.js','../practice-assets.js','../practice-assets.json','../practice-core.json','../practice-start.com','../practice-cn.exe.gz','../practice-jp.exe.gz','../vendor/dosbox-x/wdosbox-x-practice.wasm',
   '../solo-music.js','../solo-music.json','../solo-music.com','../solo-native-music.js','../netplay/local-bgm.js','../bgm/manifest.json'];
-let canvas=document.getElementById('canvas'),attempt,retrySlot,retryBlocked=false,lastRetry=null,emulator,music,recorder,patch,mailbox=-1,cursor=0,lastKeys=0,loop=0,playback=false,options={},language='jp',musicMode='ogg',recordBlob,lastPractice,currentSettings;
+let canvas=document.getElementById('canvas'),attempt,retrySlot,retryBlocked=false,lastRetry=null,emulator,music,recorder,patch,mailbox=-1,cursor=0,lastKeys=0,loop=0,playback=false,options={},language='jp',musicMode='ogg',recordBlob,lastPractice,currentSettings,suppressedLoad=null;
 const report=error=>globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});
 function valid(heap,at){
   if(!patch||at<0||at+104>heap.length)return false;
@@ -22,10 +22,11 @@ function valid(heap,at){
   const ds=heap[at+20]|heap[at+21]<<8,data=at-patch.entries.mailbox+(patch.dataSegment-patch.codeSegment)*16,base=data-ds*16;
   if(ds<=patch.dataSegment||base<0||base+0x100000>heap.length||data<base||data+0x2800>base+0xa0000||heap[at+22]>2)return false;
   const view=new DataView(heap.buffer,heap.byteOffset,heap.byteLength),resident=base+view.getUint16(data+0x27fc,true)+view.getUint16(data+0x27fe,true)*16;
-  return resident>=base&&resident+48<=base+0xa0000&&residentSignature.every((b,i)=>heap[resident+i]===b)&&heap[resident+11]<=5;
+  return resident>=base&&resident+48<=base+0xa0000&&residentSignature.every((b,i)=>heap[resident+i]===b)&&heap[resident+11]<=5&&heap[resident+39]===0;
 }
 function readState(){
   if(!emulator)return null;
+  if(suppressedLoad!==null){if(emulator.practice?.loadCount===suppressedLoad)return null;suppressedLoad=null;}
   const heap=emulator.module.HEAPU8;
   if(!valid(heap,mailbox)){
     mailbox=-1;const end=Math.min(heap.length,cursor+2*1024*1024);
@@ -49,7 +50,7 @@ function applyAssist(value){
       if(resident<ram||resident+48>ram+0xa0000||!residentSignature.every((b,i)=>heap[resident+i]===b)||heap[branch]!==0xe8||heap[branch+1]!==0xae||heap[branch+2]!==0x10||heap[base+0x13b]!==0x1e||heap[base+0x13c]!==0x68||view.getUint16(base+0x13d,true)!==0x2da)return;
       const config=emulator.config.practice,stage=config?.mode==='target'?config.setup.stage:heap[resident+22]===4?5:0;
       heap[resident+11]=stage;heap[data+0x8f5]=stage;heap.fill(0,resident+14,resident+20);heap[resident+20]=heap[resident+25];heap[resident+21]=heap[resident+26];
-      emulator.restartPractice();heap.set([0xe9,0x09,0x00,0x6d,0x61,0x69,0x6e,0],branch);heap[base+0x13b]=0x0e;view.setUint16(base+0x13d,0x111,true);
+      emulator.restartPractice(true);heap.set([0xe9,0x09,0x00,0x6d,0x61,0x69,0x6e,0],branch);heap[base+0x13b]=0x0e;view.setUint16(base+0x13d,0x111,true);
     }else{
       // Skip MAIN's game-over/continue prompt and let it execute OP directly.
       const branch=base+0x10e;
@@ -67,6 +68,8 @@ function applyAssist(value){
 }
 function release(){input.releaseGameplay();if(emulator)for(const [code,bit] of nativeKeys)if(lastKeys&bit)emulator.key(code,false);lastKeys=0;}
 let replayResult=null;
+let nativeResultBusy=false,nativeResultHandled=0;
+let nativePauseBusy=false,nativePauseHandled=0;
 let pausePrevious=0;
 const pauseMenu=mountPauseMenu(host.querySelector('.solo-screen'),{
   resume(){pauseMenu.close();input.clear();pausePrevious=0;emulator?.run();music?.resume();void attempt?.sfx?.resume();canvas.focus();},
@@ -88,23 +91,55 @@ async function returnToTitle(save,restarting=false,current=emulator){
   const branch=mailbox-patch.entries.mailbox+0x10e,expected=[0xe8,0xae,0x10];
   if(!expected.every((b,i)=>emulator.module.HEAPU8[branch+i]===b))throw Error('当前对局无法退出');
   discardRetry();if(!restarting){practiceUI.setRunning(false);lastPractice=normalizePractice(practiceUI.configuration());}
-  await syncFiles();if(emulator!==current)return;emulator.assist({address:mailbox,generation:state.generation,...(restarting?{restart:true}:{quit:true})});input.clear();pausePrevious=0;emulator.run();music?.resume();void attempt?.sfx?.resume().catch(()=>{});canvas.focus();
+  await syncFiles();if(emulator!==current)return;emulator.assist({address:mailbox,generation:state.generation,...(restarting?{restart:true}:{quit:true})});if(!restarting){suppressedLoad=emulator.practice?.loadCount??null;mailbox=-1;cursor=0;}input.clear();pausePrevious=0;emulator.run();music?.resume();void attempt?.sfx?.resume().catch(()=>{});canvas.focus();
 }
 async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
   onStart:value=>void restart(value).catch(report),onRetry:()=>void restart({...lastPractice,options:practiceUI.options},true).catch(report),onSave:()=>void saveRecording().catch(report),
   onPause:()=>{if(emulator&&!pauseMenu.visible){emulator.key('Escape',true);setTimeout(()=>emulator?.key('Escape',false),120);}}});
-const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.practice?.status})});
+const managedPractice=mountManagedPractice(practiceUI,input,{release,nativeKey:(code,down)=>emulator?.key(code,down),readState:()=>({...readState(),practice:emulator?.practice?.status})});
+async function handleNativeResult(ps,state){
+  const request=ps?.nativeResult?.request||0;if(!request){nativeResultHandled=0;return;}
+  if(nativeResultBusy||nativeResultHandled===request||!state)return;
+  nativeResultBusy=true;nativeResultHandled=request;const current=emulator,at=mailbox,generation=state.generation;
+  const acknowledge=ack=>{if(emulator!==current||!valid(current.module.HEAPU8,at))return;const h=current.module.HEAPU8,v=new DataView(h.buffer),e=patch.practice.entries,base=at-patch.entries.mailbox;if(v.getUint16(at+24,true)===generation&&h[base+e.resultVisible]&&h[base+e.resultRequest]===request)h[base+e.resultAck]=ack;};
+  try{
+    if(request===1){await restart({...lastPractice,options:ps.options});}
+    else if(request===2){const until=performance.now()+10000;while(recorder&&!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(!await saveRecording())throw Error('录像尚未就绪');acknowledge(1);}
+    else acknowledge(2);
+  }catch(error){acknowledge(2);report(error);}finally{nativeResultBusy=false;}
+}
+async function handleNativePause(ps,state){
+  const request=ps?.nativePause?.request||0;if(!request){nativePauseHandled=0;return;}
+  if(nativePauseBusy||nativePauseHandled===request||!state)return;
+  nativePauseBusy=true;nativePauseHandled=request;const current=emulator,at=mailbox,generation=state.generation;
+  const ack=value=>{if(emulator!==current||!valid(current.module.HEAPU8,at))return;const h=current.module.HEAPU8,v=new DataView(h.buffer),base=at-patch.entries.mailbox,e=patch.practice.entries;if(v.getUint16(at+24,true)===generation&&h[base+e.pauseRequest]===request)h[base+e.pauseAck]=value;};
+  try{await returnToTitle(request===1,request===3,current);ack(1);}catch(error){ack(2);report(error);}finally{nativePauseBusy=false;}
+}
 function tick(now){
   if(!emulator)return;const frameState=readState(),sample=input.sample({play:!pauseMenu.visible&&frameState?.mode===1&&!frameState.hit}),edge=sample&~pausePrevious;pausePrevious=sample;
   if(pauseMenu.visible){if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);if(edge&(32|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();loop=requestAnimationFrame(tick);return;}
   const state=frameState,ps=emulator.practice?.status;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});prepareRetry(ps);
+  if(state&&valid(emulator.module.HEAPU8,mailbox)&&Number.isInteger(patch.practice?.entries.pauseOpen)){
+    const h=emulator.module.HEAPU8,base=mailbox-patch.entries.mailbox,e=patch.practice.entries;
+    if((edge&128)&&state.mode===1&&!ps?.nativePause?.visible&&!ps?.nativeResult?.visible&&!playback)h[base+e.pauseOpen]=1;
+    if(h[base+e.pauseOpen])new DataView(h.buffer).setUint16(base+e.pauseInput,(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0),true);
+  }
+  if(state?.mode===1&&ps?.nativePause?.visible){void handleNativePause(ps,state);}
+  if(ps?.nativeResult?.visible&&emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);
+  if(ps?.nativeResult?.visible&&state&&valid(emulator.module.HEAPU8,mailbox)){
+    const resultInput=(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0);
+    new DataView(emulator.module.HEAPU8.buffer).setUint16(mailbox-patch.entries.mailbox+patch.practice.entries.resultInput,resultInput,true);
+  }
 
-  if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});
-  if((edge&128)&&state?.mode===1&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
+  if(ps?.outcome&&!playback){if(ps.nativeResult){void handleNativeResult(ps,state);if(ps.nativeResult.request===1)return;}else practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});}
+  if((edge&128)&&state?.mode===1&&!Number.isInteger(patch.practice?.entries.pauseOpen)&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
   if(emulator.state==='running'&&!playback){
     const playing=state?.mode===1&&!state.hit;let bits=sample;
-    if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;
+    if(playing){
+      if(Number.isInteger(patch.practice?.entries.pauseOpen))bits&=~128;
+      if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;
+    }
     if((bits&3)===3)bits&=~3;if((bits&12)===12)bits&=~12;
     for(const [code,bit] of nativeKeys)if(!!(bits&bit)!==!!(lastKeys&bit))emulator.key(code,!!(bits&bit));lastKeys=bits;
     if(state){const motion=input.motion();emulator.assist({address:mailbox,generation:state.generation,currentInput:bits&64?0x100:0,focusEnabled:!ps?.options.disableFocus,points:1|(options.alwaysHitbox||ps?.options.alwaysPoint?8:0),
@@ -117,14 +152,14 @@ function tick(now){
 function discardRetry(){retrySlot?.stop();retrySlot=undefined;}
 function makeAttempt(target,practice,settings,replay=null,standby=false,effects=null){return createSoloAttempt({canvas:target,practice,settings,replay,standby,effects,deferReplay:true,sources,applyReplayInput:applyAssist,callbacks:{onError:report,onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{replayResult=matches;if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
 function prepareRetry(ps){
-  if(playback||lastPractice?.mode!=='target'){discardRetry();return;}
+  if(playback||ps?.nativeResult||!ps?.options?.preparedRetry||lastPractice?.mode!=='target'){discardRetry();return;}
   if(retrySlot?.cancelled||retrySlot?.error){discardRetry();retryBlocked=true;}
   if(retrySlot||retryBlocked||document.hidden||!ps?.ready||ps.error)return;
   const slot=makeAttempt(canvas.cloneNode(false),{...lastPractice,options:practiceUI.options},currentSettings,null,true);retrySlot=slot;
   slot.task.catch(()=>{if(retrySlot===slot){retrySlot=undefined;retryBlocked=true;}});
 }
 async function launch(config,replay=null,cached=null,effects=null){
-  playback=!!replay;replayResult=null;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
+  suppressedLoad=null;playback=!!replay;replayResult=null;lastPractice=normalizePractice(replay?.header.practice||config);practiceUI.setRunning(!playback,lastPractice);
   const settings={language:replay?.header.language||language,audioMode:replay?.header.audioMode||'independent',runtime:'main',memoryScope:'pc98-guest-ram/1',exitOnGameQuit:true,recordEnabled:!playback,volume:musicMode==='none'?0:.7};
   currentSettings=settings;attempt=cached||makeAttempt(canvas,lastPractice,settings,replay,false,effects);
   const started=performance.now(),cachedReady=!!cached?.ready;await attempt.task;if(cached)await attempt.core.activatePractice(practiceUI.options);
@@ -133,7 +168,7 @@ async function launch(config,replay=null,cached=null,effects=null){
   if(emulator.practice?.debug.csBase>=0)mailbox=emulator.practice.debug.csBase+patch.entries.mailbox;
   canvas.focus();managedPractice.start({readOnly:playback});loop=requestAnimationFrame(tick);
 }
-async function restart(config,retry=false){const cached=retry?retrySlot:undefined;if(cached)retrySlot=undefined;discardRetry();release();cancelAnimationFrame(loop);const effects=!cached&&!playback?attempt?.takeEffects():null;attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;cursor=0;recordBlob=undefined;retryBlocked=false;await launch(config,null,cached,effects);}
+async function restart(config,retry=false){const cached=retry?retrySlot:undefined;if(cached)retrySlot=undefined;discardRetry();release();cancelAnimationFrame(loop);const effects=!cached&&!playback?attempt?.takeEffects():null;const stopped=attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;cursor=0;suppressedLoad=null;recordBlob=undefined;retryBlocked=false;await stopped;await launch(config,null,cached,effects);}
 export const managedAPI={
   async start(value){options=value.options;language=value.language==='ja'?'jp':'cn';musicMode=value.music;let replay;
     if(options.replayPath){const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(options.replayPath));if(!bytes)throw Error('录像不存在');replay=await decodeExternalReplay(new Blob([bytes]),'02');}
@@ -149,5 +184,5 @@ export const managedAPI={
     if(message.command==='write'){const bytes=new Uint8Array(message.bytes);if(path.endsWith('.th02r'))await decodeExternalReplay(new Blob([bytes]),'02');await store.write(path,bytes);return {};}
     throw Error('用户文件操作无效');},
   async playback(message){if(message.action!=='open'||emulator)throw Error('请从启动器打开录像');const bytes=globalThis.__eaglerPC98Files.memory.get(userPath(message.path));if(!bytes)throw Error('录像不存在');await launch(practiceUI.configuration(),await decodeExternalReplay(new Blob([bytes]),'02'));return {};},
-  stop(){pauseMenu.close();pausePrevious=0;managedPractice.stop();discardRetry();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;},
+  stop(){pauseMenu.close();pausePrevious=0;managedPractice.stop();discardRetry();release();cancelAnimationFrame(loop);attempt?.stop();emulator=music=recorder=undefined;mailbox=-1;suppressedLoad=null;},
 };

@@ -6,6 +6,7 @@ import {readFile,writeFile,mkdir,readdir,copyFile,stat,mkdtemp,rename,rm} from '
 import {resolve,relative,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import {gunzipSync} from 'node:zlib';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../web/managed-data.mjs';
 const port = resolve(fileURLToPath(new URL('..', import.meta.url))), repo=resolve(port,'../..');
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const at=arg.indexOf('='); return [arg.slice(2,at<0?undefined:at),at<0?true:arg.slice(at+1)]; }));
@@ -14,8 +15,9 @@ const source = resolve(args.source||port), web=resolve(source,'web');
 const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
 const privateInputs=new Set(sourceIdentity?.resources||[]);
 const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+const nativePractice=new Set(['practice-cn.exe.gz','practice-jp.exe.gz','practice-start.com']);
 async function readInput(name){
-  try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
+  try{return await readFile(resolve(nativePractice.has(name)?web:privateInputs.has(name)?assets:web,name));}
   catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
 }
 let revision=sourceIdentity?.commit??null;if(args.source){try{revision=execFileSync('git',['-c','safe.directory='+source.replaceAll('\\','/'),'rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();}catch{}}
@@ -32,6 +34,11 @@ async function files(directory,prefix='') {
 const retiredInputs=new Set(['local-music-disk.json','local-music-patch.json','netplay/frame-queue.js','netplay/input-wire.js','th04-local-music.hdi.gz']);
 const names=[...new Set([...(await files(web)).filter(name=>!/^managed-[^/]+\.(?:mjs|js)$/.test(name)),...privateInputs])].sort().filter(name=>!retiredInputs.has(name)&&name!=='room-title-th05.js'&&!/(?:^|\/)(?:build|reports|baseline|screenshots|backups|tools|test-results|__pycache__)(?:\/|$)/.test(name) && !/\.(?:map|wat|cpuprofile|log|tmp|bak)$/.test(name));
 const input=[]; for(const name of names) { const bytes=await readInput(name); input.push({path:name,bytes:bytes.length,sha256:sha(bytes)}); }
+const practiceManifest=JSON.parse(await readFile(resolve(web,'practice-assets.json'),'utf8'));
+for(const [language,spec] of Object.entries(practiceManifest.languages)){
+  const raw=gunzipSync(await readInput(spec.url));
+  if(raw.length!==spec.size||sha(raw)!==spec.sha256)throw Error(`TH04 ${language} native practice overlay is stale; rebuild it with tools/build_practice_assets.py`);
+}
 if(args['print-package-inputs']) { console.log(JSON.stringify({game:'th04',kind:'managed-import',inputs:input})); process.exit(0); }
 const cache=resolve(port,'.cache');await mkdir(cache,{recursive:true});
 const staging=await mkdtemp(resolve(cache,'build-')),output=resolve(staging,'build-eagler'),content=resolve(staging,'content');

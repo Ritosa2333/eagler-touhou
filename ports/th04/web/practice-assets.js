@@ -29,7 +29,7 @@ export async function installPractice(data,resources,value){
     patched[branch]=0xeb;
   }
   // Refresh the native score HUD immediately before the arrival pause.
-  const code=header+cs*16,call=entries.frame+32,cave=entries.entryPause-78;
+  const code=header+cs*16,call=entries.pauseCall??entries.frame+32,cave=entries.entryPause-78;
   const v=new DataView(patched.buffer,patched.byteOffset,patched.byteLength);
   const pause=call+3+v.getInt16(code+call+1,true);
   patched.set([0xe8,0,0,0xe9,0,0],code+cave);
@@ -37,11 +37,11 @@ export async function installPractice(data,resources,value){
   v.setInt16(code+cave+4,pause-(cave+6),true);
   v.setInt16(code+call+1,cave-(call+3),true);
   fat.replace(fat.find('GENSO/MAIN.EXE'),patched);
-  if(config.mode!=='target')return;
+  if(config.mode!=='target'&&!config.directStart)return;
   const bytes=await verified(manifest.launcher),signature=new TextEncoder().encode(manifest.launcher.signature);
   const at=bytes.findIndex((b,i)=>b===signature[0]&&signature.every((v,j)=>bytes[i+j]===v))+signature.length;
   if(at<signature.length||bytes[at]!==2)throw Error('练习启动器配置无效');
-  bytes[at+1]=config.setup.difficulty;bytes[at+2]=1;bytes[at+3]=2;
+  bytes[at+1]=config.setup.difficulty;bytes[at+2]=config.directStart?config.setup.lives+1:1;bytes[at+3]=config.directStart?config.setup.bombs:2;
   bytes[at+4]=config.setup.character>>>1;bytes[at+5]=config.setup.character&1;
   fat.put('GENSO/PRACTICE.COM',bytes);
   const entry=fat.find('GENSO/GAME.BAT');let text=Array.from(fat.read(entry),b=>String.fromCharCode(b)).join(''),count=0;

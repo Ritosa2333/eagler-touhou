@@ -204,7 +204,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
     // Let the ordinary exit request finish even if playback held its last
     // JSPI continuation. No tape or proof work survives disposal.
     dispose(){detached=true;recording=false;ending=false;used=0;queued=[];held=false;stopped=false;if(wake)timer=setTimeout(resume,0);},
-    pause(value){held=!!value;if(!held&&wake)timer=setTimeout(resume,0);},
+    pause(value){if(!value&&sealedHold)return;held=!!value;if(!held&&wake)timer=setTimeout(resume,0);},
     fastForward(value){manualFast=!!value;},
     get boundary(){return boundaryMode==='clock'?count:boundary;},
     get status(){return {mode,boundaryMode,boundary,count,stopped,held,recording,finished,extraClockReads,fastForward:isFast()};},

@@ -12,6 +12,9 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
   let entryCleanup=null,redrawFrames=0,fatal=false;
   const heap=()=>mod.HEAPU8,view=()=>new DataView(heap().buffer),u8=n=>heap()[d+n],u16=n=>view().getUint16(d+n,true),i16=n=>view().getInt16(d+n,true),w8=(n,x)=>{heap()[d+n]=x;},w16=(n,x)=>view().setUint16(d+n,x,true);
   const e=patch.practice.entries,flag=(name,value)=>{heap()[csBase+e[name]]=Number(!!value);};
+  const assistKeys=['invincible','lockLives','lockBombs','lockPower','lockTime','enemyInvincible'];
+  function writeGuestAssists(){if(csBase>=0&&Number.isInteger(e.assistFlags))heap()[csBase+e.assistFlags]=assistKeys.reduce((bits,key,i)=>bits|(options[key]?1<<i:0),0);}
+  function readGuestAssists(){if(csBase<0||!Number.isInteger(e.assistFlags))return;const bits=heap()[csBase+e.assistFlags];for(let i=0;i<assistKeys.length;i++){const key=assistKeys[i],next=!!(bits&(1<<i));if(key==='lockPower'&&next!==options[key])lockedPower=next&&ready?u8(0x4664):null;options[key]=next;}}
   function locate(packed){
     const cs=packed&65535,ds=packed>>>16,h=heap(),v=view();
     if(base>=0){csBase=base+cs*16;d=base+ds*16;return;}
@@ -26,10 +29,11 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     }
     throw Error('TH04 练习运行实例身份校验失败');
   }
-  function stocks(){if(targeted&&preparing){heap()[resident+11]=setup.lives+1;heap()[resident+13]=setup.bombs;}}
+  function stocks(){if(targeted&&preparing&&!Number.isInteger(e.initialPower)){heap()[resident+11]=setup.lives+1;heap()[resident+13]=setup.bombs;}}
   function refreshResources(bits){heap()[csBase+e.resourceDirty]|=bits;}
   function setPower(value){if(u8(0x4664)!==value){w8(0x4664,value);refreshResources(1);}}
   function resources(){
+    if(Number.isInteger(e.initialPower))return;
     stocks();setPower(setup.power);
     // TH04 Dream consists of a pickup count (0..7) and its score cache.
     // Preparation must not carry Dream pickups into the selected entry.
@@ -92,12 +96,17 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     const type=active(),phase=u8(type==='mid'?0x53c5:0x53d9),gengetsu=setup.stage===6&&u16(0xbcd0)===0xc7da;
     const wantedGen=setup.stage===6&&setup.branch==='gengetsu';
     const minimum=type==='mid'?(setup.stage===0?3:1):setup.stage===2?3:2;
-    if(!(setup.entry==='stage'||type===setup.entry&&(!wantedGen||gengetsu)&&(setup.phase?phase===setup.phase:phase>=minimum)))return false;
+    if(Number.isInteger(e.targetReached)?!heap()[csBase+e.targetReached]:!(setup.entry==='stage'||type===setup.entry&&(!wantedGen||gengetsu)&&(setup.phase?phase===setup.phase:phase>=minimum)))return false;
     // Preserve the real final-survival HP carried through the preceding kill.
     if(type==='boss'&&setup.phase&&i16(0x53d6)<=0&&seekFinalHp>0)w16(0x53d6,seekFinalHp);
-    if(setup.entry!=='stage')clearEntryProjectiles();
-    resources();heap().fill(0,d+0x4349,d+0x4351);heap().fill(0,d+0x435a,d+0x4362);w8(0x1a66,0);ready=true;preparing=false;waiting=true;selectedPhase=phase;refreshResources(3);clearEntry();
-    if(setup.hp&&type){const at=type==='mid'?0x53c2:0x53d6,max=i16(at),min=type==='mid'?0:i16(0x53e0);w16(at,Math.max(min+1,Math.min(max,setup.hp)));}
+    if(setup.entry!=='stage'){
+      if(Number.isInteger(e.cleanupPending)){
+        flag('cleanupKeepBits',setup.stage===3&&setup.entry==='boss'&&setup.character<2);
+        flag('cleanupPending',1);entryCleanup={native:true};
+      }else clearEntryProjectiles();
+    }
+    resources();if(Number.isInteger(e.arrivalPending))flag('arrivalPending',1);else{heap().fill(0,d+0x4349,d+0x4351);heap().fill(0,d+0x435a,d+0x4362);w8(0x1a66,0);clearEntry();}ready=true;preparing=false;if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);waiting=true;selectedPhase=phase;refreshResources(3);
+    if(setup.hp&&type&&!Number.isInteger(e.initialHp)){const at=type==='mid'?0x53c2:0x53d6,max=i16(at),min=type==='mid'?0:i16(0x53e0);w16(at,Math.max(min+1,Math.min(max,setup.hp)));}
     flag('entryPause',1);elapsed=misses=bombsUsed=0;lastNativeBombs=heap()[resident+50];clock?.setSpeed(options.speed);return true;
   }
   function prepare(){
@@ -106,7 +115,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
       warped=true;
       // Stage assets/STD are loaded; omit only the unrelated enemy VM. The
       // original dialog still allocates and loads all boss resources.
-      if(setup.entry!=='stage'){
+      if(!Number.isInteger(e.initialEntry)&&setup.entry!=='stage'){
         view().setUint32(d+0x4646,view().getUint32(d+0xbcd0,true),true);
         if(setup.entry==='boss'){w8(0x4277,0);view().setUint32(d+0x46b6,view().getUint32(d+0xbcd0,true),true);w8(0x53c5,255);w16(0x53c2,0);}
         else w16(0x538a,u16(0x53c0));
@@ -121,7 +130,7 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
       // Keep frame zero (Mugetsu installs her callbacks there), then let the
       // original update execute its terminal branch immediately. In particular,
       // phase 3 installs Mugetsu's next attack callback and cannot be bypassed.
-      if(setup.stage>=5){
+      if(!Number.isInteger(e.targetAdvance)&&setup.stage>=5){
         const deadline=phase===0?129:phase===1?64:setup.stage===6&&!gengetsu&&phase===3?64:setup.stage===6&&!gengetsu&&phase===5?128:0;
         if(deadline&&u16(0x53da)>0&&u16(0x53da)<deadline-1)w16(0x53da,deadline-1);
         if(gengetsu&&setup.phase>phase){
@@ -138,11 +147,11 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
         }
       }
       // Elly's prelude uses an absolute stage-frame deadline.
-      if(setup.stage===2&&phase===1)w16(0x538a,9240);
+      if(!Number.isInteger(e.targetAdvance)&&setup.stage===2&&phase===1)w16(0x538a,9240);
       const attacks=phaseList({...setup,entry:'boss',branch:gengetsu?'gengetsu':'auto'});
       if(attacks.includes(phase)&&(wantedGen&&!gengetsu||setup.phase>phase)){
         if(i16(0x53e0)===0&&i16(0x53d6)>0)seekFinalHp=i16(0x53d6);
-        w16(0x53d6,Math.max(0,i16(0x53e0)-1));
+        if(!Number.isInteger(e.targetAdvance))w16(0x53d6,Math.max(0,i16(0x53e0)-1));
       }
     }
   }
@@ -159,9 +168,10 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
     if(setup.stage===6&&setup.branch!=='gengetsu')return seenBoss&&seenGengetsu&&phase>=254;
     return seenBoss&&phase>=254;
   }
-  function status(){return {mode:targeted?'target':'full',ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
+  function liveGuest(){const h=heap(),at=csBase+patch.mailbox_cs_offset;return csBase>=0&&resident>=0&&at>=0&&at+36<=h.length&&resident+80<=h.length&&'TH04SOLOINPUTv1!'.split('').every((c,i)=>h[at+i]===c.charCodeAt(0))&&[1,2].includes(h[at+22])&&'HUMAConfig'.split('').every((c,i)=>h[resident+i]===c.charCodeAt(0))&&h[resident+10]===0&&![0xfd,0xfe,0xff].includes(heap()[resident+48]);}
+  function status(){const live=liveGuest();return {mode:targeted?'target':'full',ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(csBase>=0&&Number.isInteger(e.resultRequest)?{nativeResult:{visible:live&&!!heap()[csBase+e.resultVisible],request:live?heap()[csBase+e.resultRequest]:0}}:{}),...(resident>=0?{restartSetup:{stage:heap()[resident+15]===4?6:0,difficulty:heap()[resident+15],character:Math.max(0,heap()[resident+18]-48)*2+heap()[resident+25],lives:Math.max(0,heap()[resident+58]-1),bombs:heap()[resident+59]}}:{}),...(csBase>=0&&Number.isInteger(e.pauseOpen)?{nativePause:{visible:live&&!!heap()[csBase+e.pauseOpen],choice:live?heap()[csBase+e.pauseOpen+1]:0,request:live?heap()[csBase+e.pauseRequest]:0}}:{}),...(d>=0?{stage:u8(0x5394),phase:u8(0x53d9),midPhase:u8(0x53c5),bossHp:i16(0x53d6),phaseEndHp:i16(0x53e0),midHp:i16(0x53c2),phaseFrame:u16(0x53da),bossUpdate:u16(0xbcd0),midUpdate:u16(0x46b6),power:u8(0x4664),shotLevel:u8(0x4665),shotFunction:u16(0x449a),dream:u16(0xbccc)*10,dreamItems:u8(0x4676),rank:u8(0x5395),keys:effectiveKeys,focus:effectiveFocus,lives:heap()[resident+11]-1,bombs:heap()[resident+13],invincibility:u8(0x4662),missTimer:u8(0x466a),playerHit:u8(0x4669),bombActive:!!u8(0x4368)}:{})};}
   return {
-    exitPractice(){targeted=false;preparing=false;waiting=false;outcome=null;flag('targetPractice',0);flag('entryPause',0);flag('hold',0);clock?.setSpeed(options.speed);},
+    exitPractice(){targeted=false;preparing=false;waiting=false;outcome=null;flag('targetPractice',0);if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);flag('entryPause',0);flag('hold',0);clock?.setSpeed(options.speed);},
     gameOver(){if(targeted&&ready&&!outcome)finish('failed');},
     clear(){if(targeted&&ready&&!outcome)finish('clear');},
     observeBoundary(){
@@ -171,15 +181,18 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
       if(observedFrames!==frames){observedFrames=frames;idleBoundaries=0;}else if(++idleBoundaries>100000)error='目标准备未能继续，请按 F12 改选目标或重新开始';
       if(error)preparing=false;
     },
-    configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0x4664):null;options={...options,...value};clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
+    configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0x4664):null;options={...options,...value};writeGuestAssists();clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
     signal(port,packed){
       locate(packed);if(error||heap()[resident+62])return;
       if(port===0x7fe0){
+        writeGuestAssists();
+        if(Number.isInteger(e.initialPower)){heap()[csBase+e.initialLives]=setup.lives;heap()[csBase+e.initialBombs]=setup.bombs;heap()[csBase+e.initialPower]=setup.power;const [a,b]=limits[setup.difficulty];heap()[csBase+e.initialRank]=Math.max(a,Math.min(b,setup.rank));flag('targetPreparing',preparing);}if(Number.isInteger(e.initialEntry))heap()[csBase+e.initialEntry]=({stage:0,mid:1,boss:2})[setup.entry];if(Number.isInteger(e.initialPhase)){heap()[csBase+e.initialPhase]=setup.phase;flag('initialGengetsu',setup.branch==='gengetsu');}if(Number.isInteger(e.initialHp))view().setUint16(csBase+e.initialHp,setup.hp,true);if(Number.isInteger(e.initialReimu))flag('initialReimu',setup.character>=2);if(Number.isInteger(e.initialStage))heap()[csBase+e.initialStage]=setup.stage;
         heap()[resident+73]=1;w8(0x53a0,1);
         if(targeted){heap()[resident+17]=setup.stage;heap()[resident+19]=48+setup.stage;w8(0x5394,setup.stage);}
         initialized=true;flag('targetPractice',targeted);stocks();return;
       }
       if(!initialized||u8(0x5392)>2)return;
+      readGuestAssists();
       if(port===0x7fe1){
         frames++;if(!targeted&&!ready){ready=true;lastNativeBombs=heap()[resident+50];}
         // Native midboss activation runs immediately after this callback.
@@ -216,14 +229,14 @@ export function createPracticeEngine({mod,patch,config,clock,onComplete=()=>{}})
             if(options.invincible){w8(0x4669,0);pendingHitCounted=false;}
 
           }
-          if(targeted&&!outcome){const miss=u8(0x466a),lives=heap()[resident+11];if(miss>0&&miss<=32&&lives<=1)fatal=true;if(lives>1)fatal=false;if(fatal&&!miss&&lives<=1)finish('failed');else if(!miss&&!u8(0x4669)&&complete())finish('clear');}
+          if(targeted&&!outcome){if(Number.isInteger(e.targetOutcome)){const result=heap()[csBase+e.targetOutcome];if(result)finish(result===1?'clear':'failed');}else{const miss=u8(0x466a),lives=heap()[resident+11];if(miss>0&&miss<=32&&lives<=1)fatal=true;if(lives>1)fatal=false;if(fatal&&!miss&&lives<=1)finish('failed');else if(!miss&&!u8(0x4669)&&complete())finish('clear');}}
         }
       }
       // The state machine has changed phase, but the selected attack has not
       // updated yet. Retire old emitters before gather/items/render run.
       if(port===0x7fe5&&preparing&&warped&&setup.entry!=='stage')arrive();
-      if(port===0x7fe5&&targeted&&ready&&!waiting&&!outcome&&!u8(0x466a)&&!u8(0x4669)&&complete())finish('clear');
+      if(port===0x7fe5&&targeted&&ready&&!waiting&&!outcome){if(Number.isInteger(e.targetOutcome)){const result=heap()[csBase+e.targetOutcome];if(result)finish(result===1?'clear':'failed');}else if(!u8(0x466a)&&!u8(0x4669)&&complete())finish('clear');}
     },
-    get status(){return status();},get debug(){return {base,d,csBase,resident,prepareFrames,entryCleanup};}
+    get status(){return status();},get debug(){const cleanup=entryCleanup?.native&&csBase>=0?Object.fromEntries(['bullets','lasers','gather','items','circles','custom'].map((name,i)=>[name,view().getUint16(csBase+e.cleanupCounts+i*2,true)])):entryCleanup;return {base,d,csBase,resident,prepareFrames,entryCleanup:cleanup};}
   };
 }

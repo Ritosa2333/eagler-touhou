@@ -10,7 +10,7 @@ import {loadExternalDosboxFactory} from './replay/external-loader.js';
 import {createSoloReplayLifecycle} from './replay/external-lifecycle.js';
 import {createPracticeEngine} from './practice-engine.js';
 import {createPracticeClock} from './practice-config.js';
-const codes={ArrowUp:265,ArrowDown:264,ArrowLeft:263,ArrowRight:262,KeyZ:90,KeyX:88,ShiftLeft:340,ShiftRight:344,Escape:256,Enter:257,Space:32};
+const codes={ArrowUp:265,ArrowDown:264,ArrowLeft:263,ArrowRight:262,KeyZ:90,KeyX:88,ShiftLeft:340,ShiftRight:344,Escape:256,Enter:257,Space:32,Backspace:259,F1:290,F2:291,F3:292,F4:293,F5:294,KeyU:85};
 export const supportsWriteJournal=()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
 export class DOSBoxPC98 {
   static async create(config){const emulator=new DOSBoxPC98(config);try{await emulator.initialize();return emulator;}catch(error){emulator.dispose();throw error;}}
@@ -121,7 +121,7 @@ export class DOSBoxPC98 {
     this.practiceOptions(options);this.practiceStandby=false;this.practiceParked=false;this.practiceClock.setPaused(false);this.run();
   }
   practiceOptions(options){if(!this.practice||this.externalHost?.status.mode==='playback')return;if(this.config.externalReplay&&this.externalHost.status.recording)this.externalHost.queue({type:'practice-options',options});else this.practice.configure(options);}
-  restartPractice(){if(!this.practice)return;const config={...this.config.practice,options:this.practice.status.options};this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock});}
+  restartPractice(restarting=false){if(!this.practice)return;const config={...this.config.practice,options:this.practice.status.options};this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting});}
   assist(input){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'assist',input});}else this.config.applyReplayInput?.(input);}
   finishReplay(){this.externalHost?.finish();}
   rearmBrowserRecording(){if(!this.externalHost)throw Error('录像不可用');this.externalHost.rearm();}
@@ -132,7 +132,7 @@ export class DOSBoxPC98 {
   async setHdd(drive,name){
     if(drive!==0||!this.disks.has(name))throw Error('无效游戏磁盘');this.diskName=name;
     this.extracted=extractGame(this.disks.get(name));
-    const network=!!this.config.lockstep,directLaunch=!!this.config.launchFiles?.some(file=>file.path==='game/HUMAROKU/WEBSTART.COM'),launcher=prepareFastBoot(this.extracted,{network,directLaunch,practice:this.config.practice?.mode==='target',returnAfterPractice:this.config.practice?.mode==='target'});
+    const network=!!this.config.lockstep,directLaunch=!!this.config.launchFiles?.some(file=>file.path==='game/HUMAROKU/WEBSTART.COM'),launcher=prepareFastBoot(this.extracted,{network,directLaunch,practice:this.config.practice?.mode==='target',returnAfterPractice:this.config.practice?.mode==='target'||!!this.config.practice?.directStart});
     const init=[...this.extracted.files,...(this.config.launchFiles||[]),launcher,{dosboxConf:dosboxConfig({network,fastBoot:true,exitOnGameQuit:!!this.config.exitOnGameQuit}),jsdosConf:{version:'8'}}];
     this.ci=await globalThis.emulators.backend(init,this.transport,{});
     this.ci.events().onSoundPush(samples=>{this.module.audioPackets=(this.module.audioPackets||0)+1;const p=this.practice?.status;if(this.practiceStandby||this.externalHost?.status.fastForward||this.module.warmingBoot||this.config.independentEffects||p&&(p.preparing||p.waiting||p.outcome))return;if(this.config.workerRuntime){this.audioChunks.push(samples.slice());return;}if(this.frame!==null)this.outputs.get(this.frame)?.push(samples.slice());else this.audio.push([samples]);});
@@ -164,7 +164,7 @@ export class DOSBoxPC98 {
     if(!m.pendingWake)throw Error('DOSBox-X 未在同步边界挂起');
   }
   readAudio(){if(!this.audioChunks.length)return null;const length=this.audioChunks.reduce((n,s)=>n+s.length,0),samples=new Float32Array(length);let at=0;for(const block of this.audioChunks.splice(0)){samples.set(block,at);at+=block.length;}return [samples];}
-  dispose(){if(this.disposed)return;this.disposed=true;this.rejectPrepared?.(Error('练习实例已关闭'));this.externalHost?.disable();if(this.audio)this.pause();this.externalHost?.dispose();this.ci?.exit();this.module?.framePresenter?.dispose();this.audio?.disconnect();this.audio?.context.close().catch(()=>{});for(const type of ['keydown','keyup'])this.config.canvas.removeEventListener?.(type,this.onKey);if(typeof window!=='undefined')window.removeEventListener('message',this.onSleep);}
+  dispose(){if(this.disposed)return;this.disposed=true;this.rejectPrepared?.(Error('练习实例已关闭'));this.externalHost?.disable();if(this.audio)this.pause();this.externalHost?.dispose();const exiting=this.ci?.exit();this.module?.framePresenter?.dispose();this.audio?.disconnect();this.audio?.context.close().catch(()=>{});for(const type of ['keydown','keyup'])this.config.canvas.removeEventListener?.(type,this.onKey);if(typeof window!=='undefined')window.removeEventListener('message',this.onSleep);return exiting?.catch(()=>{});}
 }
 // Source imports keep their legacy class name, while every new instance uses DOSBox-X.
 export {DOSBoxPC98 as NP21};

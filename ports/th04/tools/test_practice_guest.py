@@ -1,7 +1,7 @@
 """Execute the shipped CN/JP practice overlays with real MZ relocations."""
 from pathlib import Path
 import gzip,json,struct
-from unicorn import Uc,UC_ARCH_X86,UC_MODE_16,UC_HOOK_CODE,UC_HOOK_INSN
+from unicorn import Uc,UC_ARCH_X86,UC_MODE_16,UC_HOOK_CODE,UC_HOOK_INSN,UC_HOOK_INTR
 from unicorn.x86_const import *
 ROOT=Path(__file__).resolve().parents[1]
 BASE=0x1000
@@ -24,10 +24,105 @@ def main():
                   UC_X86_REG_EDI:0x6789abcd,UC_X86_REG_EBP:0x789abcde,UC_X86_REG_EFLAGS:0x246}
             for r,v in regs.items():u.reg_write(r,v)
             u.mem_write(0x8ff00,struct.pack('<H',0xfff0));return regs
+        for preparing in (0,1):
+            u,_=guest(spec);init(u)
+            u.mem_write(db+0xba86,struct.pack('<HH',0,0x9000))
+            u.mem_write(0x9000b,b'\x07');u.mem_write(0x9000d,b'\x06')
+            u.mem_write(db+0x4664,b'\x01');u.mem_write(db+0x4676,b'\x05');u.mem_write(db+0xbccc,struct.pack('<H',123))
+            u.mem_write(db+0x5395,b'\x0a');u.mem_write(cb+e['resourceDirty'],b'\x00')
+            u.mem_write(cb+e['targetPreparing'],bytes([preparing]));u.mem_write(cb+e['initialLives'],b'\x02')
+            u.mem_write(cb+e['initialBombs'],b'\x03');u.mem_write(cb+e['initialPower'],b'\x40');u.mem_write(cb+e['initialRank'],b'\x12')
+            u.emu_start(cb+e['targetResources'],cb+0xfff0,count=1000)
+            assert u.mem_read(0x9000b,1)==bytes([3 if preparing else 7])
+            assert u.mem_read(0x9000d,1)==bytes([3 if preparing else 6])
+            assert u.mem_read(db+0x4664,1)==bytes([64 if preparing else 1])
+            assert u.mem_read(db+0x4676,1)==bytes([0 if preparing else 5])
+            assert struct.unpack('<H',u.mem_read(db+0xbccc,2))[0]==(0 if preparing else 123)
+            assert u.mem_read(db+0x5395,1)==bytes([18 if preparing else 10])
+            assert u.mem_read(cb+e['resourceDirty'],1)==bytes([3 if preparing else 0]);checked+=1
+        for entry in (0,1,2):
+            u,_=guest(spec);init(u);u.mem_write(cb+e['targetPreparing'],b'\x01');u.mem_write(cb+e['initialEntry'],bytes([entry]))
+            u.mem_write(db+0xbcd0,struct.pack('<HH',0x1234,0x5678));u.mem_write(db+0x53c0,struct.pack('<H',93))
+            u.mem_write(db+0x4646,b'\x00\x00\x00\x00');u.mem_write(db+0x46b6,b'\x00\x00\x00\x00')
+            u.mem_write(db+0x4277,b'\x09');u.mem_write(db+0x53c5,b'\x04');u.mem_write(db+0x53c2,struct.pack('<H',100))
+            u.emu_start(cb+e['targetWarp'],cb+0xfff0,count=1000)
+            assert bytes(u.mem_read(db+0x4646,4))==(struct.pack('<HH',0x1234,0x5678) if entry else bytes(4))
+            if entry==1:assert struct.unpack('<H',u.mem_read(db+0x538a,2))[0]==93
+            if entry==2:
+                assert bytes(u.mem_read(db+0x46b6,4))==struct.pack('<HH',0x1234,0x5678)
+                assert u.mem_read(db+0x4277,1)==b'\x00' and u.mem_read(db+0x53c5,1)==b'\xff'
+                assert u.mem_read(db+0x53c2,2)==b'\x00\x00'
+            checked+=1
+        target_cases=[(0,0,0,0,0,0,1),(1,0,2,0,0,0,0),(1,0,3,0,0,0,1),
+                      (2,2,2,0,0,0,0),(2,2,3,0,0,0,1),(2,0,3,4,0,0,0),
+                      (2,0,3,3,0,0,1),(2,6,2,0,1,0x6013,0),(2,6,2,0,1,0xc7da,1)]
+        for entry,stage,phase,wanted,gen,boss,expected in target_cases:
+            u,_=guest(spec);init(u);u.mem_write(cb+e['targetPreparing'],b'\x01');u.mem_write(cb+e['initialEntry'],bytes([entry]))
+            u.mem_write(cb+e['initialPhase'],bytes([wanted]));u.mem_write(cb+e['initialGengetsu'],bytes([gen]))
+            u.mem_write(db+0x5394,bytes([stage]));u.mem_write(db+0x53d9,bytes([phase]));u.mem_write(db+0x53c5,bytes([phase]))
+            u.mem_write(db+0xbcd0,struct.pack('<H',boss or (0x6013 if entry==2 else 0x11c0)))
+            u.mem_write(db+0x46b6,struct.pack('<H',0x6013 if entry==1 else 0x11c0))
+            u.emu_start(cb+e['targetCheck'],cb+0xfff0,count=1000)
+            assert u.mem_read(cb+e['targetReached'],1)==bytes([expected]),(lang,entry,stage,phase,wanted,gen,boss)
+            checked+=1
+        u,_=guest(spec);init(u);u.mem_write(cb+e['arrivalPending'],b'\x01')
+        for at in (0x1a66,0x4662,0x4663,0x4669,0x466a,0xbcca,0xbcba):u.mem_write(db+at,b'\x05')
+        for at in (0x4349,0x435a):u.mem_write(db+at,bytes([9])*8)
+        for at in (0x4656,0x4658,0x3974):u.mem_write(db+at,struct.pack('<H',123))
+        u.emu_start(cb+e['targetArrival'],cb+0xfff0,count=1000)
+        for at in (0x1a66,0x4662,0x4663,0x4669,0x466a,0xbcca,0xbcba):assert u.mem_read(db+at,1)==b'\x00'
+        for at in (0x4349,0x435a):assert bytes(u.mem_read(db+at,8))==bytes(8)
+        for at in (0x4656,0x4658,0x3974):assert u.mem_read(db+at,2)==b'\x00\x00'
+        assert u.mem_read(cb+e['arrivalPending'],1)==b'\x00';checked+=1
+        for entry,hp,maximum,minimum,expected in ((0,100,800,300,800),(1,0,500,0,500),(1,600,500,0,500),(1,50,500,0,50),(2,100,1200,300,301),(2,2000,1200,300,1200),(2,500,1200,300,500)):
+            u,_=guest(spec);init(u);u.mem_write(cb+e['initialEntry'],bytes([entry]));u.mem_write(cb+e['initialHp'],struct.pack('<H',hp))
+            at=0x53c2 if entry==1 else 0x53d6
+            u.mem_write(db+at,struct.pack('<H',maximum));u.mem_write(db+0x53e0,struct.pack('<H',minimum))
+            u.emu_start(cb+e['targetHp'],cb+0xfff0,count=1000)
+            assert struct.unpack('<H',u.mem_read(db+at,2))[0]==expected,(lang,entry,hp,maximum,minimum)
+            checked+=1
+        u,_=guest(spec);init(u);u.mem_write(db+0xba86,struct.pack('<HH',0,0x9000));u.mem_write(0x9000b,b'\x01')
+        u.mem_write(cb+e['targetPractice'],b'\x01');u.mem_write(cb+e['initialEntry'],b'\x02');u.mem_write(cb+e['initialStage'],b'\x00');u.mem_write(cb+e['initialPhase'],b'\x03')
+        u.mem_write(db+0x5394,b'\x00');u.mem_write(db+0x53d9,b'\x03');u.mem_write(db+0xbcd0,struct.pack('<H',0x6013))
+        def step(name):
+            u.reg_write(UC_X86_REG_SP,0xff00);u.mem_write(0x8ff00,struct.pack('<H',0xfff0));u.emu_start(cb+e[name],cb+0xfff0,count=2000)
+        u.mem_write(cb+e['arrivalPending'],b'\x01');step('targetArrival');step('targetOutcomeStep')
+        assert u.mem_read(cb+e['targetOutcome'],1)==b'\x00'
+        u.mem_write(db+0x53d9,b'\x04');u.mem_write(db+0x4669,b'\x01');step('targetOutcomeStep');assert u.mem_read(cb+e['targetOutcome'],1)==b'\x00'
+        u.mem_write(db+0x4669,b'\x00');step('targetOutcomeStep');assert u.mem_read(cb+e['targetOutcome'],1)==b'\x01' and u.mem_read(cb+e['hold'],1)==b'\x01'
+        u.mem_write(db+0x53d9,b'\x03');u.mem_write(cb+e['arrivalPending'],b'\x01');step('targetArrival');u.mem_write(cb+e['hold'],b'\x00')
+        u.mem_write(db+0x466a,b'\x05');step('targetOutcomeStep');assert u.mem_read(cb+e['targetOutcome'],1)==b'\x00'
+        u.mem_write(db+0x466a,b'\x00');step('targetOutcomeStep');assert u.mem_read(cb+e['targetOutcome'],1)==b'\x02' and u.mem_read(cb+e['hold'],1)==b'\x01';checked+=1
+        u.mem_write(cb+e['initialStage'],b'\x06');u.mem_write(cb+e['initialPhase'],b'\x00');u.mem_write(cb+e['initialGengetsu'],b'\x00')
+        u.mem_write(db+0x5394,b'\x06');u.mem_write(db+0x53d9,b'\x02');u.mem_write(cb+e['arrivalPending'],b'\x01');step('targetArrival');u.mem_write(cb+e['hold'],b'\x00');step('targetOutcomeStep')
+        u.mem_write(db+0x53d9,b'\xfe');step('targetOutcomeStep');assert u.mem_read(cb+e['targetOutcome'],1)==b'\x00'
+        u.mem_write(db+0xbcd0,struct.pack('<H',0xc7da));u.mem_write(db+0x53d9,b'\x02');step('targetOutcomeStep')
+        u.mem_write(db+0x53d9,b'\xfe');step('targetOutcomeStep');assert u.mem_read(cb+e['targetOutcome'],1)==b'\x01';checked+=1
+        for stage,phase,wanted,reimu,gen,ptr,expected in ((0,2,3,0,0,0x6013,299),(0,3,3,0,0,0x6013,1000),(3,4,6,1,0,0x6013,299),(3,4,6,0,0,0x6013,1000),(6,2,0,0,1,0x6013,299),(6,2,0,0,1,0xc7da,1000),(6,2,3,0,1,0xc7da,299)):
+            u,_=guest(spec);init(u);u.mem_write(cb+e['targetPreparing'],b'\x01');u.mem_write(cb+e['initialEntry'],b'\x02')
+            u.mem_write(cb+e['initialPhase'],bytes([wanted]));u.mem_write(cb+e['initialReimu'],bytes([reimu]));u.mem_write(cb+e['initialGengetsu'],bytes([gen]))
+            u.mem_write(db+0x5394,bytes([stage]));u.mem_write(db+0x53d9,bytes([phase]));u.mem_write(db+0xbcd0,struct.pack('<H',ptr))
+            u.mem_write(db+0x53d6,struct.pack('<H',1000));u.mem_write(db+0x53e0,struct.pack('<H',300))
+            u.emu_start(cb+e['targetAdvance'],cb+0xfff0,count=1000)
+            assert struct.unpack('<H',u.mem_read(db+0x53d6,2))[0]==expected,(lang,stage,phase,wanted,reimu,gen,ptr)
+            checked+=1
+        for stage,phase,ptr,frame,expected in ((5,0,0x6013,1,128),(5,1,0x6013,1,63),(6,3,0x6013,1,63),(6,5,0x6013,1,127),(6,6,0xc7da,2,127),(5,0,0x6013,0,0)):
+            u,_=guest(spec);init(u);u.mem_write(cb+e['targetPreparing'],b'\x01');u.mem_write(cb+e['initialEntry'],b'\x02');u.mem_write(cb+e['initialPhase'],b'\x08')
+            u.mem_write(db+0x5394,bytes([stage]));u.mem_write(db+0x53d9,bytes([phase]));u.mem_write(db+0xbcd0,struct.pack('<H',ptr));u.mem_write(db+0x53da,struct.pack('<H',frame))
+            u.emu_start(cb+e['targetAdvance'],cb+0xfff0,count=2000)
+            assert struct.unpack('<H',u.mem_read(db+0x53da,2))[0]==expected,(lang,stage,phase,ptr,frame)
+            checked+=1
+        u,_=guest(spec);init(u);u.mem_write(cb+e['targetPreparing'],b'\x01');u.mem_write(cb+e['initialEntry'],b'\x02');u.mem_write(cb+e['initialPhase'],b'\x08')
+        u.mem_write(db+0x5394,b'\x06');u.mem_write(db+0x53d9,b'\x03');u.mem_write(db+0x53dd,b'\xff');u.mem_write(db+0xbcd0,struct.pack('<H',0xc7da))
+        u.mem_write(db+0x53da,struct.pack('<H',20));u.mem_write(db+0x53ca,struct.pack('<h',3000));u.mem_write(db+0x53d2,struct.pack('<h',-12))
+        u.emu_start(cb+e['targetAdvance'],cb+0xfff0,count=2000)
+        assert struct.unpack('<H',u.mem_read(db+0x53da,2))[0]==64
+        assert struct.unpack('<h',u.mem_read(db+0x53ca,2))[0]==3000-(64-20)*12;checked+=1
         for name,native,ports in [('load',0xad03-p['code_segment']*16,[0x7fe0]),('frame',0x50,[0x7fe1]),
                                  ('player',p['entries'][1],[0x7fe2,0x7fe3]),('world',p['entries'][7],[0x7fe4])]:
             u,_=guest(spec);regs=init(u);u.mem_write(cb+native,b'\xc3');u.mem_write(db+0x428a,struct.pack('<H',native));seen=[]
-            u.hook_add(UC_HOOK_INSN,lambda uc,port,size,value,data:seen.append((port,size,value)),None,1,0,UC_X86_INS_OUT)
+            u.hook_add(UC_HOOK_INSN,lambda uc,port,size,value,data:seen.append((port,size,value)) if size==4 else None,None,1,0,UC_X86_INS_OUT)
+            u.hook_add(UC_HOOK_INTR,lambda uc,number,data: None if number==0x18 else (_ for _ in ()).throw(AssertionError(number)))
             u.emu_start(cb+e[name],cb+0xfff0,count=1000)
             assert seen==[(port,4,ds<<16|cs) for port in ports],(lang,name,seen)
             for r,v in regs.items():assert u.reg_read(r)==v+(2 if r==UC_X86_REG_SP else 0),(lang,name,r)
@@ -65,6 +160,33 @@ def main():
             assert order==['boss']+(['arrival']+(['redraw'] if pause else []) if target else []),(lang,target,pause,order)
             for reg,value in regs.items():assert u.reg_read(reg)==value+(2 if reg==UC_X86_REG_SP else 0),(lang,'boss',reg)
             checked+=1
+        for keep in (0,1):
+            u,_=guest(spec);regs=init(u);native=0x60;redraw=0x70
+            u.mem_write(cb+native,b'\xcb');u.mem_write(cb+redraw,b'\xc3')
+            u.mem_write(db+0xbcd0,struct.pack('<HH',native,cs));u.mem_write(db+0x4268,struct.pack('<H',redraw))
+            u.mem_write(cb+e['targetPractice'],b'\x01');u.mem_write(cb+e['cleanupKeepBits'],bytes([keep]))
+            pools=[(0x5a22,26,440),(0x42f0,24,2),(0x9292,42,16),(0xaf34,20,32),(0x9594,10,16),(0xb204,26,32)]
+            for offset,stride,count in pools:
+                for i in range(count):u.mem_write(db+offset+stride*i,b'\x01\x5a')
+            u.mem_write(db+0xbcb9,b'\x0c\x2d')
+            def arrival_cleanup(uc,port,size,value,data):
+                uc.mem_write(cb+e['entryPause'],b'\x01');uc.mem_write(cb+e['cleanupPending'],b'\x01')
+            u.hook_add(UC_HOOK_INSN,arrival_cleanup,None,1,0,UC_X86_INS_OUT)
+            u.emu_start(cb+e['boss'],cb+0xfff0,count=20000)
+            for pool,(offset,stride,count) in enumerate(pools):
+                for i in range(count):
+                    alive=keep and pool==5 and i<4
+                    assert bytes(u.mem_read(db+offset+stride*i,2))==bytes([int(alive),0x5a])
+                assert struct.unpack('<H',u.mem_read(cb+e['cleanupCounts']+pool*2,2))[0]==count-(4 if keep and pool==5 else 0)
+            assert bytes(u.mem_read(db+0xbcb9,2))==b'\x00\x00'
+            assert all(x==1 for x in u.mem_read(db+0x4700,0x640))
+            assert u.mem_read(cb+e['cleanupPending'],1)==b'\x00'
+            for reg,value in regs.items():assert u.reg_read(reg)==value+(2 if reg==UC_X86_REG_SP else 0)
+            for frame in range(3):
+                u.mem_write(db+0x4700,bytes(0x640));u.reg_write(UC_X86_REG_SP,0xff00)
+                u.mem_write(0x8ff00,struct.pack('<H',0xfff0));u.emu_start(cb+e['redrawFrame'],cb+0xfff0,count=10000)
+                assert all(x==(1 if frame<2 else 0) for x in u.mem_read(db+0x4700,0x640))
+            checked+=1
         # Execute the real power updater, not a JS mirror of its byte value.
         # A fake loaded character table lets us verify the selected function
         # and all thresholds without depending on DOS-loaded shot resources.
@@ -100,6 +222,19 @@ def main():
                 u.emu_start(cb+e[name],BASE*16+cont,count=100)
                 assert u.mem_read(0x90000+field,1)==bytes([value if target else 7]);assert u.reg_read(UC_X86_REG_SP)==0xfefe
                 assert u.reg_read(UC_X86_REG_EFLAGS)==0x246;checked+=1
+        image=gzip.decompress((ROOT/'web'/spec['url']).read_bytes())
+        header=struct.unpack_from('<H',image,8)[0]*16
+        marker=image[header:].find(b'P98AST01')
+        assert marker>=0
+        assist=BASE*16+marker+8+5
+        u,_=guest(spec);init(u);u.reg_write(UC_X86_REG_BX,0)
+        u.mem_write(assist,b'\x02');u.mem_write(0x9000b,b'\x00')
+        u.emu_start(cb+e['respawnLives'],BASE*16+0x10a9a,count=100)
+        u.mem_write(assist,b'\x04');u.mem_write(0x9000d,b'\x00')
+        u.emu_start(cb+e['bombGate'],BASE*16+0xffc9,count=100)
+        u.mem_write(0x9000d,b'\x02');u.mem_write(0x8ff00,struct.pack('<H',0xfff0))
+        u.emu_start(cb+e['bombConsume'],cb+0xfff0,count=100)
+        assert u.mem_read(0x9000d,1)==b'\x02';checked+=3
         for lock in (0,1):
             for stock in (0,1,2):
                 u,_=guest(spec);init(u);u.reg_write(UC_X86_REG_BX,0);u.mem_write(0x9000b,bytes([stock]));u.mem_write(cb+e['lockLives'],bytes([lock]))

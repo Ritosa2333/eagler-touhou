@@ -5,15 +5,51 @@ import {PRACTICE_DEFAULTS,PRACTICE_SETUP,PRACTICE_VERSION,normalizePractice,crea
 const patch=JSON.parse(fs.readFileSync(new URL('../web/practice-assets.json',import.meta.url))).languages.jp.patch;
 const entries=patch.practice.entries,cs=0x1aaf,ds=0x4000,base=0x10000,cb=base+cs*16,d=base+ds*16,r=base+0x90000;
 let checks=0;
-function instance(mode='target',setup={},options={}){
+function instance(mode='target',setup={},options={},nativeResources=false){
   const mod={HEAPU8:new Uint8Array(0x120000)},h=mod.HEAPU8,v=new DataView(h.buffer);
   h.set(new TextEncoder().encode(patch.signature),cb+patch.mailbox_cs_offset);h.set(new TextEncoder().encode('HUMAConfig\0'),r);
   v.setUint16(d+0xba86,0,true);v.setUint16(d+0xba88,0x9000,true);v.setUint16(d+0xbcd0,0x11c0,true);v.setUint16(d+0x46b6,0x11c0,true);
   h[r+11]=4;h[r+13]=3;h[d+0x4664]=1;
   h[d+0x4676]=7;v.setUint16(d+0xbccc,1280,true);
   const config=normalizePractice({version:PRACTICE_VERSION,mode,setup:{...PRACTICE_SETUP,...setup},options:{...PRACTICE_DEFAULTS,...options}}),clock={speed:1,setSpeed(s){this.speed=s;}};
-  const engine=createPracticeEngine({mod,patch,config,clock}),signal=port=>engine.signal(port,ds<<16|cs),b=(at,n)=>{h[d+at]=n;},w=(at,n)=>v.setUint16(d+at,n&65535,true);
+  const fixturePatch={...patch,practice:{...patch.practice,entries:{...entries}}};
+  if(!nativeResources)delete fixturePatch.practice.entries.initialPower;
+  delete fixturePatch.practice.entries.initialEntry; // JS-only fixture covers the legacy compatibility path.
+  delete fixturePatch.practice.entries.arrivalPending;
+  delete fixturePatch.practice.entries.targetReached;
+  delete fixturePatch.practice.entries.initialHp;
+  delete fixturePatch.practice.entries.targetAdvance;
+  delete fixturePatch.practice.entries.targetOutcome;
+  const engine=createPracticeEngine({mod,patch:fixturePatch,config,clock}),signal=port=>engine.signal(port,ds<<16|cs),b=(at,n)=>{h[d+at]=n;},w=(at,n)=>v.setUint16(d+at,n&65535,true);
   return {mod,h,v,engine,signal,b,w,clock};
+}
+{
+  const t=instance('full');t.signal(0x7fe0);
+  const mailbox=cb+patch.mailbox_cs_offset;t.h[mailbox+22]=1;
+  t.h[cb+entries.resultVisible]=1;t.h[cb+entries.resultRequest]=2;
+  t.h[cb+entries.pauseOpen]=1;t.h[cb+entries.pauseRequest]=3;
+  assert.equal(t.engine.status.nativeResult.visible,true);assert.equal(t.engine.status.nativePause.request,3);
+  for(const sequence of [0xfd,0xfe,0xff]){
+    t.h[r+48]=sequence;
+    assert.deepEqual(t.engine.status.nativeResult,{visible:false,request:0});
+    assert.deepEqual(t.engine.status.nativePause,{visible:false,choice:0,request:0});
+  }
+  t.h[r+48]=0;t.h[mailbox]=0;
+  assert.equal(t.engine.status.nativeResult.visible,false);assert.equal(t.engine.status.nativePause.visible,false);checks++;
+}
+{
+  const t=instance('target',{power:64,rank:16,lives:2,bombs:3},{},true);t.signal(0x7fe0);
+  assert.equal(t.h[cb+entries.targetPreparing],1);assert.equal(t.h[cb+entries.initialPower],64);
+  assert.equal(t.h[cb+entries.initialLives],2);assert.equal(t.h[cb+entries.initialBombs],3);
+  assert.equal(t.h[r+11],4,'host leaves resident stock to guest');assert.equal(t.h[d+0x4664],1);checks++;
+}
+{
+  const t=instance('target',{}, {lockBombs:true});t.signal(0x7fe0);t.signal(0x7fe1);t.signal(0x7fe2);
+  assert.equal(t.h[cb+entries.assistFlags],4,'initial settings seed guest flags');
+  t.h[cb+entries.assistFlags]=5;t.b(0x4669,1);t.signal(0x7fe4);
+  assert.equal(t.engine.status.options.invincible,true);assert.equal(t.engine.status.outcome,null);
+  assert.equal(t.engine.status.playerHit,0);assert.equal(t.engine.status.misses,1);
+  t.engine.configure({lockBombs:false});assert.equal(t.h[cb+entries.assistFlags],1,'host setting updates guest flags');checks++;
 }
 for(const stage of [5,6]){
   const t=instance('target',{stage,entry:'stage'});t.signal(0x7fe0);t.signal(0x7fe1);t.signal(0x7fe2);
@@ -121,21 +157,16 @@ for(const setup of [
   t.b(setup.entry==='mid'?0x53c5:0x53d9,setup.phase);t.w(setup.entry==='mid'?0x53c2:0x53d6,1200);
   t.signal(0x7fe5);assert(t.engine.status.ready&&t.engine.status.waiting);assert.equal(t.engine.status.outcome,null);
   assert.equal(t.engine.status[setup.entry==='mid'?'midHp':'bossHp'],1200);
-  for(const [name,offset,stride,count]of pools){
-    let cleared=0;
-    for(let i=0;i<count;i++){
-      const keep=name==='custom'&&setup.stage===3&&setup.character===0&&i<4;
-      assert.equal(t.h[d+offset+i*stride],keep?1+i%3:0,`${JSON.stringify(setup)} ${name} ${i}`);
-      assert.equal(t.h[d+offset+i*stride+1],0x5a,'Only flags may be cleared');if(!keep)cleared++;
-    }
-    assert.equal(t.engine.debug.entryCleanup[name],cleared);
+  assert.equal(t.h[cb+entries.cleanupPending],1,'guest cleanup must run before the next native render');
+  assert.equal(t.h[cb+entries.cleanupKeepBits],Number(setup.stage===3&&setup.entry==='boss'&&setup.character===0));
+  for(const [,offset,stride,count]of pools)for(let i=0;i<count;i++){
+    assert.equal(t.h[d+offset+i*stride],1+i%3,'host must leave native entity cleanup to guest');
+    assert.equal(t.h[d+offset+i*stride+1],0x5a);
   }
-  assert.equal(t.h[d+0xbcb9],0);assert.equal(t.h[d+0xbcba],0);assert.equal(t.h[d+0x42d8],0x6b);assert.equal(t.h[d+0x5a08],0x7c);
-  assert(t.h.subarray(d+0x4700,d+0x4d40).every(n=>n===1));
   t.b(0x5a22,1);t.b(0x9292,1);
   for(let frame=0;frame<3;frame++){
     t.h.fill(0,d+0x4700,d+0x4d40);t.signal(0x7fe1);
-    assert(t.h.subarray(d+0x4700,d+0x4d40).every(n=>n===(frame<2?1:0)),'Both VRAM pages must be invalidated, then stop');
+    assert(t.h.subarray(d+0x4700,d+0x4d40).every(n=>n===0),'host must not invalidate the guest background');
     t.signal(0x7fe2);t.signal(0x7fe5);t.signal(0x7fe4);
     assert.equal(t.h[d+0x5a22],1);assert.equal(t.h[d+0x9292],1,'New attack emitters must survive');
   }

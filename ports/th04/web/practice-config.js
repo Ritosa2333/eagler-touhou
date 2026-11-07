@@ -26,7 +26,7 @@ export function normalizePracticeSetup(value={}){
 }
 export function normalizePractice(value){
   if(!value||value.version!==PRACTICE_VERSION||!['full','target'].includes(value.mode))throw Error('TH04 练习版本不支持');
-  return {version:PRACTICE_VERSION,mode:value.mode,setup:normalizePracticeSetup(value.setup),options:{...PRACTICE_DEFAULTS,...validatePracticeOptions(value.options||{},true)}};
+  return {version:PRACTICE_VERSION,mode:value.mode,...(value.directStart===true&&value.mode==='full'?{directStart:true}:{}),setup:normalizePracticeSetup(value.setup),options:{...PRACTICE_DEFAULTS,...validatePracticeOptions(value.options||{},true)}};
 }
 export function createPracticeClock(initial=1){
   let speed=initial,anchor=performance.now(),elapsed=anchor,paused=false;const epoch=Date.now()-anchor,RealDate=Date;

@@ -25,6 +25,17 @@
 !/configure-turn.bat
 
 # tools/, patches/, build/ and reports/ are excluded by the root allowlist.
+!/patches/
+/patches/*
+!/patches/practice.asm
+!/patches/practice-resources.inc
+!/patches/practice-phase.inc
+!/patches/practice-outcome.inc
+!/patches/launch.asm
+!/tools/
+/tools/*
+!/tools/build_practice_assets.py
+!/tools/test_practice_guest.py
 # This also excludes public-test-url.txt and turn-config.local.json.
 # Keep runtime JS/MJS/WASM, music, assets, manifests and bundled licenses.
 # Never ignore *.wasm, *.mjs, *.com or *.opus globally.

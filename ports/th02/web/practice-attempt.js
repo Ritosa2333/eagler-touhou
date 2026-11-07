@@ -29,7 +29,7 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
   const emit=(name,...args)=>{if(attempt.foreground&&!attempt.cancelled)callbacks[name]?.(...args);};
   const attempt={canvas,practice,settings,standby,sfx:effects,timings,
     takeEffects(){const value=this.sfx;this.sfx=null;value?.stop();return value;},core:null,recorder:null,music:null,patch:null,blob:null,ready:false,foreground:false,cancelled:false,
-    stop(){if(this.cancelled)return;this.cancelled=true;this.foreground=false;clearTimeout(this.timeout);this.recorder?.dispose();this.sfx?.dispose();this.music?.dispose();this.core?.dispose();}};
+    stop(){if(this.cancelled)return;this.cancelled=true;this.foreground=false;clearTimeout(this.timeout);this.recorder?.dispose();this.sfx?.dispose();this.music?.dispose();return this.core?.dispose();}};
   const fail=error=>{attempt.error=error;if(attempt.foreground)emit('onError',error);else attempt.stop();};
   attempt.task=(async()=>{
     try{

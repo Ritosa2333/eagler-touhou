@@ -1,11 +1,13 @@
 // The lab owns the browser panel, practice configuration and native engine.
 // This boundary only restores its entry and routes the Launcher's keyboard.
-export function mountManagedPractice(ui, input, {release, readState}) {
+export function mountManagedPractice(ui, input, {release, readState, nativeKey}) {
   const panel = document.querySelector('#practice-panel');
   const screen = panel.parentElement;
   const button = document.querySelector('[data-practice-toolbar]');
   button.closest('.th02-player,.th04-player').classList.add('managed-browser-game');
-  const modifiers = new Set();
+  const modifiers = new Set(), nativeHeld = new Set();
+  const nativeCodes = new Set(['Backspace','F1','F2','F3','F4','F5','KeyU']);
+  const clearNative = () => { for(const code of nativeHeld)nativeKey?.(code,false);nativeHeld.clear(); };
   let enabled = false, mobileVisible = false;
   button.classList.add('managed-practice-open');
   button.textContent = '练习 / 辅助 · F12';
@@ -58,6 +60,10 @@ export function mountManagedPractice(ui, input, {release, readState}) {
     nativeKey(event) { if (enabled && event.type === 'keydown') ui.handleKey(event); },
     key(code, down) {
       if (down) modifiers.add(code); else modifiers.delete(code);
+      if (nativeCodes.has(code) && nativeKey && (enabled || nativeHeld.has(code)) && (nativeHeld.has(code) || !blocked() && !editing())) {
+        if(down)nativeHeld.add(code);else nativeHeld.delete(code);
+        nativeKey(code,down);return true;
+      }
       if (!enabled || !down) return false;
       let consumed = false;
       ui.handleKey({code, target:document.activeElement, repeat:false,
@@ -68,7 +74,7 @@ export function mountManagedPractice(ui, input, {release, readState}) {
         preventDefault(){consumed = true;}, stopImmediatePropagation(){consumed = true;}});
       return consumed || blocked();
     },
-    clear() { modifiers.clear(); contacts.clear(); },
+    clear() { clearNative();modifiers.clear(); contacts.clear(); },
     touch(message) {
       const visible = message.thpracMobilePanelsEnabled === true && message.thpracMobilePanelsVisible === true;
       if (!enabled || visible === mobileVisible) return;
@@ -80,7 +86,7 @@ export function mountManagedPractice(ui, input, {release, readState}) {
   input.setPractice(boundary);
   return {
     start({readOnly = false} = {}) { enabled = !readOnly; button.hidden = !enabled; syncControls(); },
-    stop() { enabled = false; button.hidden = true; modifiers.clear(); contacts.clear(); syncControls(); },
+    stop() { clearNative();enabled = false; button.hidden = true; modifiers.clear(); contacts.clear(); syncControls(); },
     state: () => ({configuration:ui.configuration(), options:ui.options, native:readState()}),
   };
 }

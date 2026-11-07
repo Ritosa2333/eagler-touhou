@@ -21,6 +21,8 @@ const readState=()=>emulator?.snapshot.state??null;
 function key(code,number,down){emulator.send('key',[{type:down?'keydown':'keyup',code,key:code==='KeyZ'?'z':code==='KeyX'?'x':code,keyCode:number,which:number}]);}
 function release(){input.releaseGameplay();if(emulator)for(const [code,bit,number] of nativeKeys)if(lastKeys&bit)key(code,number,false);lastKeys=0;emulator?.clearInput();}
 let replayResult=null;
+let nativeResultBusy=false,nativeResultHandled=0;
+let nativePauseBusy=false,nativePauseHandled=0;
 let pausePrevious=0,pauseState=null;
 const pauseMenu=mountPauseMenu(host.querySelector('.solo-screen'),{
   resume(){pauseMenu.close();input.clear();pausePrevious=0;emulator?.run();music?.resume();void attempt?.sfx?.resume();canvas.focus();},
@@ -46,19 +48,45 @@ async function naturalExit(){await syncFiles();globalThis.__eaglerPC98Emit({even
 const practiceUI=mountPractice({host,onRelease:release,onFocus:()=>canvas.focus(),onChange:value=>{emulator?.practiceOptions(value);},
   onStart:value=>void restart(value).catch(report),onRetry:()=>void restart({...lastPractice,options:practiceUI.options},true).catch(report),onSave:()=>void saveRecording().catch(report),
   onPause:()=>{if(emulator&&!pauseMenu.visible){key('Escape',27,true);setTimeout(()=>emulator&&key('Escape',27,false),120);}}});
-const managedPractice=mountManagedPractice(practiceUI,input,{release,readState:()=>({...readState(),practice:emulator?.snapshot.practice})});
+const managedPractice=mountManagedPractice(practiceUI,input,{release,nativeKey:(code,down)=>{const number={Backspace:8,F1:112,F2:113,F3:114,F4:115,F5:116,KeyU:85}[code];if(emulator)key(code,number,down);},readState:()=>({...readState(),practice:emulator?.snapshot.practice})});
+async function handleNativeResult(ps,state){
+  const request=ps?.nativeResult?.request||0;if(!request){nativeResultHandled=0;return;}
+  if(nativeResultBusy||nativeResultHandled===request||!state)return;
+  nativeResultBusy=true;nativeResultHandled=request;const current=emulator,at=state.at,generation=state.generation;
+  const acknowledge=async ack=>{if(emulator===current)await current.call('practiceResultAck',[at,generation,ack]);};
+  try{
+    if(request===1){await restart({...lastPractice,options:ps.options});}
+    else if(request===2){const until=performance.now()+10000;while(recorder&&!recorder.state.ready&&!recorder.state.failed&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,25));if(!await saveRecording())throw Error('录像尚未就绪');await acknowledge(1);}
+    else await acknowledge(2);
+  }catch(error){await acknowledge(2);report(error);}finally{nativeResultBusy=false;}
+}
+async function handleNativePause(ps,state){
+  const request=ps?.nativePause?.request||0;if(!request){nativePauseHandled=0;return;}
+  if(nativePauseBusy||nativePauseHandled===request||!state)return;
+  nativePauseBusy=true;nativePauseHandled=request;const current=emulator,at=state.at,generation=state.generation;
+  const ack=async value=>{if(emulator===current)await current.call('practicePauseAck',[at,generation,value]);};
+  try{if(request===3){pauseState=state;await returnToTitle(false,true,current);await ack(1);}else{pauseState=state;await returnToTitle(request===1,false,current);await ack(1);}}catch(error){await ack(2);report(error);}finally{nativePauseBusy=false;}
+}
 function tick(){
   if(!emulator)return;const frameState=readState(),sample=input.sample({play:!pauseMenu.visible&&frameState?.mode===1&&!frameState.flags}),edge=sample&~pausePrevious;pausePrevious=sample;
   if(pauseMenu.visible){if(edge&1)pauseMenu.move(-1);if(edge&2)pauseMenu.move(1);if(edge&(32|256))pauseMenu.confirm();else if(edge&(128|16))pauseMenu.confirmResume();loop=requestAnimationFrame(tick);return;}
   const state=frameState,ps=emulator.snapshot.practice;practiceUI.update({practice:ps,retryReady:!!retrySlot?.ready});prepareRetry(ps);
-  if(ps?.outcome&&!playback)practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});
-  if((edge&128)&&state?.mode===1&&!document.documentElement.dataset.browserPracticeOpen?.includes('true')&&!playback){pauseState=state;release();emulator.pause();music?.suspend();void attempt?.sfx?.context.suspend();input.clear();pausePrevious=0;pauseMenu.open();loop=requestAnimationFrame(tick);return;}
+  if(state&&!playback&&(ps?.nativePause?.visible||((edge&128)&&state.mode===1&&!ps?.nativeResult?.visible))){
+    const pauseInput=(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0);
+    emulator.setInput({address:state.at,generation:state.generation,pauseInput,openPause:!!((edge&128)&&!ps?.nativePause?.visible)});
+  }
+  if(ps?.nativePause?.visible){void handleNativePause(ps,state);}
+  if(ps?.nativeResult?.visible&&state){const resultInput=(sample&1?1:0)|(sample&2?2:0)|(sample&(32|256)?4:0)|(sample&(128|16)?8:0);emulator.setInput({address:state.at,generation:state.generation,resultInput});}
+  if(ps?.outcome&&!playback){if(ps.nativeResult){void handleNativeResult(ps,state);if(ps.nativeResult.request===1)return;}else practiceUI.complete({outcome:ps.outcome,recording:!!recorder,ready:!!recorder?.state.ready,failed:recorder?.state.failed});}
   if(emulator.state==='running'&&!playback){
     const playing=state?.mode===1&&!state.flags;let bits=sample;
-    if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;
+    if(playing){
+      bits&=~128;
+      if(ps?.options.disableBomb)bits&=~16;if(ps?.options.disableShot)bits&=~32;if(ps?.options.disableFocus)bits&=~64;else if(ps?.options.forceFocus)bits|=64;
+    }
     if((bits&3)===3)bits&=~3;if((bits&12)===12)bits&=~12;
     for(const [code,bit,number] of nativeKeys)if(!!(bits&bit)!==!!(lastKeys&bit))key(code,number,!!(bits&bit));lastKeys=bits;
-    const motion=input.motion();emulator.setInput({address:state?.at,generation:state?.generation,points:(bits&64?1:0)|(options.alwaysHitbox||ps?.options.alwaysPoint?8:0),touch:playing&&motion.active?motion:null});
+    const motion=input.motion();if(!ps?.nativeResult?.visible&&!ps?.nativePause?.visible&&!(edge&128))emulator.setInput({address:state?.at,generation:state?.generation,points:(bits&64?1:0)|(options.alwaysHitbox||ps?.options.alwaysPoint?8:0),touch:playing&&motion.active?motion:null});
   }
   if(music){if(document.hidden||emulator.state!=='running'||state?.mode===2||lastPractice?.mode==='target'&&(!ps?.ready||ps.waiting||ps.outcome))music.suspend();else music.resume();}
   loop=requestAnimationFrame(tick);
@@ -66,7 +94,7 @@ function tick(){
 function discardRetry(){retrySlot?.stop();retrySlot=undefined;}
 function makeAttempt(target,practice,settings,replay=null,standby=false,effects=null){return createSoloAttempt({canvas:target,practice,settings,replay,standby,effects,deferReplay:true,sources,callbacks:{onError:report,onExit:()=>void naturalExit().catch(report),onPlaybackEnd:matches=>{replayResult=matches;if(!matches)report(Error('Replay 终态内存校验不一致'));}}});}
 function prepareRetry(ps){
-  if(playback||lastPractice?.mode!=='target'){discardRetry();return;}
+  if(playback||ps?.nativeResult||!ps?.options?.preparedRetry||lastPractice?.mode!=='target'){discardRetry();return;}
   if(retrySlot?.cancelled||retrySlot?.error){discardRetry();retryBlocked=true;}
   if(retrySlot||retryBlocked||document.hidden||!ps?.ready||ps.error)return;
   const slot=makeAttempt(canvas.cloneNode(false),{...lastPractice,options:practiceUI.options},currentSettings,null,true);retrySlot=slot;

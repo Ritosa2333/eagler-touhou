@@ -10,7 +10,7 @@ import {loadExternalDosboxFactory} from './replay/external-loader.js';
 import {createSoloReplayLifecycle} from './replay/external-lifecycle.js';
 import {createPracticeEngine} from './practice-engine.js';
 import {createPracticeClock} from './practice-config.js';
-const codes={ArrowUp:265,ArrowDown:264,ArrowLeft:263,ArrowRight:262,KeyZ:90,KeyX:88,ShiftLeft:340,ShiftRight:344,Escape:256,Enter:257,Space:32};
+const codes={ArrowUp:265,ArrowDown:264,ArrowLeft:263,ArrowRight:262,KeyZ:90,KeyX:88,ShiftLeft:340,ShiftRight:344,Escape:256,Enter:257,Space:32,Backspace:259,F1:290,F2:291,F3:292,F4:293,F5:294,KeyU:85};
 export class DOSBoxPC98 {
   static async create(config){const emulator=new DOSBoxPC98(config);try{await emulator.initialize();return emulator;}catch(error){emulator.dispose();throw error;}}
   constructor(config){this.config=config;this.state='loading';this.disks=new Map();this.keys=new Set();this.outputs=new Map();this.frame=null;this.replaying=false;this.tick=0;this.audioChunks=[];this.externalHost=null;this.practiceStandby=!!config.practiceStandby;this.practiceParked=false;this.prepared=new Promise((resolve,reject)=>{this.resolvePrepared=resolve;this.rejectPrepared=reject;});this.prepared.catch(()=>{});}
@@ -128,7 +128,7 @@ export class DOSBoxPC98 {
   async setHdd(drive,name){
     if(drive!==0||!this.disks.has(name))throw Error('无效游戏磁盘');this.diskName=name;
     this.extracted=extractGame(this.disks.get(name));
-    const network=!!this.config.lockstep,launcher=prepareFastBoot(this.extracted,{network,practice:!!this.config.practice,returnAfterPractice:this.config.practice?.mode==='target'});
+    const network=!!this.config.lockstep,launcher=prepareFastBoot(this.extracted,{network,practice:!!this.config.practice,returnAfterPractice:this.config.practice?.mode==='target'||!!this.config.practice?.directStart});
     const init=[...this.extracted.files,launcher,{dosboxConf:dosboxConfig({network,fastBoot:true,exitOnGameQuit:!!this.config.exitOnGameQuit}),jsdosConf:{version:'8'}}];
     this.ci=await globalThis.emulators.backend(init,this.transport,{});
     this.ci.events().onSoundPush(samples=>{this.module.audioPackets=(this.module.audioPackets||0)+1;const p=this.practice?.status;if(this.practiceStandby||this.externalHost?.status.fastForward||this.module.warmingBoot||this.config.externalEffects||p&&(p.preparing||p.waiting||p.outcome))return;if(this.config.workerRuntime){this.audioChunks.push(samples.slice());return;}if(this.frame!==null)this.outputs.get(this.frame)?.push(samples.slice());else this.audio.push([samples]);});

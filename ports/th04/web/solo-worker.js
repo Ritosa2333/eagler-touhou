@@ -21,7 +21,21 @@ function applyAssist(value){
   const at=Number.isInteger(value.address)?value.address:mailbox;
   const h=emulator.module.HEAPU8,v=new DataView(h.buffer);
   if(at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b))return;
+  if(!ownsSoloMailbox(h,v,at))return;
   if(value.generation!==v.getUint16(at+24,true))return;
+  if(Number.isInteger(value.pauseInput)){
+    const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
+    if(entries&&Number.isInteger(entries.pauseOpen)){
+      if(value.openPause&&!h[base+entries.resultVisible])h[base+entries.pauseOpen]=1;
+      if(h[base+entries.pauseOpen])v.setUint16(base+entries.pauseInput,value.pauseInput&15,true);
+    }
+    return;
+  }
+  if(Number.isInteger(value.resultInput)){
+    const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
+    if(entries&&h[base+entries.resultVisible])v.setUint16(base+entries.resultInput,value.resultInput&15,true);
+    return;
+  }
   if(value.quit||value.restart){
     const data=at-patch.mailbox_cs_offset+(patch.data_segment-patch.code_segment)*16,ds=v.getUint16(at+20,true),base=data-ds*16;
     if(base<0||base+0x100000>h.length||data<base||data+0xba8a>base+0xa0000)return;
@@ -44,6 +58,14 @@ function applyAssist(value){
     for(const [offset,delta]of [[30,t.x],[32,t.y]])v.setInt16(at+offset,Math.max(-8192,Math.min(8191,v.getInt16(at+offset,true)+delta)),true);
   }else h.fill(0,at+28,at+36);
 }
+function ownsSoloMailbox(h,v,at){
+  const data=at-patch.mailbox_cs_offset+(patch.data_segment-patch.code_segment)*16;
+  if(at<0||at+36>h.length||data<0||data+0xba8a>h.length||![1,2].includes(h[at+22])||!signature.every((b,i)=>h[at+i]===b))return false;
+  const base=data-v.getUint16(at+20,true)*16;
+  if(base<0||base+0x100000>h.length)return false;
+  const resident=base+v.getUint16(data+0xba86,true)+v.getUint16(data+0xba88,true)*16;
+  return resident>=base&&resident+80<=base+0xa0000&&[72,85,77,65,67,111,110,102,105,103,0].every((b,i)=>h[resident+i]===b)&&![0xfd,0xfe,0xff].includes(h[resident+48]);
+}
 function queueAssist(value){if(emulator?.assist)emulator.assist(value);else applyAssist(value);}
 function observeFrames(){
   emulator.module.observeLocalFrame=cost=>{if(costs.length<120)costs.push(cost);};
@@ -55,7 +77,7 @@ function scan04(now){
     if(!signature.every((b,i)=>h[at+i]===b)){seen.delete(at);continue;}
     const ticks=v.getUint32(at+16,true);
     if(ticks!==candidate.ticks){candidate.ticks=ticks;candidate.changed=now;}
-    if((now-candidate.changed<200||h[at+22]===2)&&h[at+22]!==0)mailbox=at;
+    if((now-candidate.changed<200||h[at+22]===2)&&ownsSoloMailbox(h,v,at))mailbox=at;
   }
   if(mailbox<0){
     if(cursor>=h.length)cursor=0;
@@ -124,6 +146,19 @@ async function dispatch(message){
   if(method==='snapshotAck'){awaitingSnapshot=false;return;}
   if(method==='practiceActivate'){lastInput=performance.now();emulator.activatePractice(args[0]);awaitingSnapshot=false;update(true);return;}
   if(method==='practiceOptions'){emulator.practiceOptions(args[0]);return;}
+  if(method==='practiceResultAck'){
+    const [at,generation,ack]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),entries=patch?.practice?.entries;
+    if(game!=='04'||!entries||![1,2].includes(ack)||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||v.getUint16(at+24,true)!==generation)return false;
+    const base=at-patch.mailbox_cs_offset;
+    if(!h[base+entries.resultVisible]||!h[base+entries.resultRequest])return false;
+    h[base+entries.resultAck]=ack;return true;
+  }
+  if(method==='practicePauseAck'){
+    const [at,generation,ack]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),entries=patch?.practice?.entries;
+    if(game!=='04'||!entries||![1,2].includes(ack)||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||v.getUint16(at+24,true)!==generation)return false;
+    const base=at-patch.mailbox_cs_offset;if(!h[base+entries.pauseOpen]||!h[base+entries.pauseRequest])return false;
+    h[base+entries.pauseAck]=ack;return true;
+  }
   if(method==='audio')return emulator.state==='running'?(emulator.readAudio?.()||environment.audio()):null;
   if(method==='key'){
     lastInput=performance.now();const event=args[0];
@@ -131,7 +166,7 @@ async function dispatch(message){
     if(emulator.key)emulator.key(event.code,event.type==='keydown');else environment.key(event);return;
   }
   if(method==='input'){
-    lastInput=performance.now();input=args[0];queueAssist(input);return;
+    lastInput=performance.now();input=args[0];if(Number.isInteger(input.resultInput)||Number.isInteger(input.pauseInput)){applyAssist(input);if(emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);}else queueAssist(input);return;
   }
   if(method==='clear'){clear();return;}
   if(method==='coopHit'){if(!coop)throw Error('本地合作尚未启动');coop.hit();return;}
