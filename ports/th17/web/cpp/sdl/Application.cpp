@@ -33,7 +33,7 @@ bool ApplicationState::read(const std::string& requested,std::vector<u8>& bytes)
    return true;
   }
  }
- if(!archive_bytes.empty()){const auto at=archive_names.find(name);if(at==archive_names.end()||!archive.read(at->second,bytes))return fail("Missing or invalid game archive entry: "+name);}
+ if(archive_file){const auto at=archive_names.find(name);if(at==archive_names.end()||!archive.read(at->second,bytes))return fail("Missing or invalid game archive entry: "+name);}
  else {size_t n=0;auto* data=static_cast<u8*>(SDL_LoadFile(("/assets/"+name).c_str(),&n));if(!data)return fail("Missing game asset: "+name);bytes.assign(data,data+n);SDL_free(data);}
  if(bytes.size()<=1024*1024&&name.size()>=4&&name.substr(name.size()-4)!=".wav"&&name.substr(name.size()-4)!=".anm")resource_cache.emplace(name,bytes);return true;
 }
@@ -43,7 +43,15 @@ bool ApplicationState::initialize(bool device){
  has_language_pack=SDL_GetPathInfo("/thcrap/th17/localization/options.json",&language_path);
  graphics.language_pack=has_language_pack;
  if(!graphics.initialize()||!fonts.initialize())return fail(graphics.error.empty()?fonts.error:graphics.error);graphics.backend.defer=true;
- size_t n=0;auto* packed=static_cast<u8*>(SDL_LoadFile("/th17.dat",&n));if(packed){archive_bytes.assign(packed,packed+n);SDL_free(packed);if(!archive.open(archive_bytes.data(),archive_bytes.size()))return fail("Invalid TH17 asset archive");for(u32 i=0;i<archive.entries.size();i++)archive_names.emplace(archive.entries[i].name,i);}
+ archive_file.reset(SDL_IOFromFile("/th17.dat","rb"));
+ if(auto* stream=archive_file.get()){
+  const auto size=SDL_GetIOSize(stream);
+  const auto read_at=[stream](u32 offset,u8* bytes,u32 count){
+   return SDL_SeekIO(stream,offset,SDL_IO_SEEK_SET)==offset&&SDL_ReadIO(stream,bytes,count)==count;
+  };
+  if(size<0||u64(size)>UINT32_MAX||!archive.open(u32(size),read_at))return fail("Invalid TH17 asset archive");
+  for(u32 i=0;i<archive.entries.size();i++)archive_names.emplace(archive.entries[i].name,i);
+ }
  if(!files.initialize(records,config,visual))return fail(files.error);std::memcpy(controller.values.data(),config.bytes.data()+4,20);volumes={config.music_volume(),config.sound_volume(),u8(config.auto_focus())};
  if(!audio_device.initialize(*this,device)||!volume(volumes.music_volume,volumes.sound_volume,0))return fail(audio_device.error);
  animations.resource_release=[this](const AnmResource& resource){graphics.unload(resource);};std::vector<u8> bytes;
@@ -83,6 +91,9 @@ bool ApplicationState::initialize(bool device){
 ApplicationState::~ApplicationState(){exiting=true;title.reset();ending.reset();release_game();fades.clear();for(auto& callback:global_callbacks)scheduler.remove(callback);global_letters.reset();global_layers.reset();scene_effects.reset();animations.resource_release=nullptr;}
 void ApplicationState::remember_title()noexcept{if(title){title_demo_idle=title->frame.demo_idle;title_demo_index=title->frame.demo_index;title_saved_difficulty=title->frame.saved_difficulty;title_saved_replay_selection=title->saved_replay_selection;}}
 bool ApplicationState::save_settings(){
+#if TH17_MULTIPLAYER
+ if(room_seats)return true;
+#endif
  // Title choices are session globals in 1.00b. Bytes 0x1c..0x21 belong to
  // display settings; writing a selected difficulty there corrupts th17.cfg.
  config.bytes[0x22]=u8(volumes.music_volume);config.bytes[0x23]=u8(volumes.sound_volume);config.bytes[0x29]=(config.bytes[0x29]&~2u)|(volumes.controller_option?2u:0u);std::memcpy(config.bytes.data()+4,controller.values.data(),20);return files.save(records,config)||fail(files.error);
@@ -101,9 +112,25 @@ bool ApplicationState::begin_title(){
  practice.active={};practice.menu=practice.confirmed=practice.cancelled=practice.accepted=false;
  reset_graphics();if(!scene_effects)scene_effects=std::make_unique<AnmSceneEffects>(animations,environment.game_rng,visual,8);
  title=std::make_unique<TitleScene>(progress,selection,selection_player,selection_score,records,choices,volumes,controller,comments,trophy_catalog,spell_memory,animations,*this,scheduler);
- title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();return title->error.empty()||fail(title->error);
+ title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;title->state.return_reason=flow.title_return_reason;title->live=recording.get();
+#if TH17_MULTIPLAYER
+ title->state.room_preview=room_preview;
+ if(room_description)title->live=room_description.get();
+#endif
+ return title->error.empty()||fail(title->error);
 }
-bool ApplicationState::preload_run(){if(!assets())return fail("Run resources unavailable");for(const auto& bank:assets()->loaded_animations()){auto* resource=animations.resource(bank.second);if(!resource||!graphics.preload(*resource))return fail(graphics.error.empty()?"Missing run animation: "+bank.first:graphics.error);}return true;}
+bool ApplicationState::preload_run(){
+ if(!assets())return fail("Run resources unavailable");
+ for(const auto& bank:assets()->loaded_animations()){
+  auto* resource=animations.resource(bank.second);
+  bool room_front=false;
+#if TH17_MULTIPLAYER
+  room_front=room_seats&&bank.first=="front.anm";
+#endif
+  if(!resource||!graphics.preload(*resource,false,nullptr,room_front))return fail(graphics.error.empty()?"Missing run animation: "+bank.first:graphics.error);
+ }
+ return true;
+}
 bool ApplicationState::bind_display(StageGameplay* previous){
  if(!scene()||!assets()||!run_input)return fail("Run display requires active scene/input");pause=std::make_unique<RunPause>(*scene(),progress,records,animations,*this,frame_skip,assets()->front);if(!pause->prepare())return fail(pause->error);
  display=std::make_unique<SceneDisplay>(*scene(),animations,environment,graphics,renderer);if(!display->initialize(progress,records.game,records.spells,*this,assets()->text,assets()->ascii,previous))return fail(display->error);
@@ -123,9 +150,19 @@ bool ApplicationState::begin_game(bool playback){
   initial=&entry;stage_seed=entry.seed;
  }
  else {stage_seed=environment.game_rng.seed;if(!flow.fresh)visual.seed=stage_seed;environment.game_rng.calls=0;}
+#if TH17_MULTIPLAYER
+ if(room_seats){room_stage_game=environment.game_rng;room_stage_visual=visual;}
+#endif
  if(flow.fresh){run.reset();run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,records.game,records.spells,*this,&shared);
   if(!playback){recording=std::make_unique<ReplayRecording>();auto& description=recording->description();std::memcpy(description.data()+0x88,&progress.character,4);std::memcpy(description.data()+0x8c,&progress.animal,4);std::memcpy(description.data()+0x90,&progress.difficulty,4);std::memcpy(description.data()+0x98,&progress.scoring.continues,4);std::memcpy(description.data()+0x9c,&progress.spell_id,4);description[10]=u8((progress.scoring.mode_flags>>4&1)|((progress.scoring.mode_flags&0x30)==0x20?2:0));}
   else recording.reset();completed_recording=false;if(!run->load(progress.stage,camera,initial,practice.active))return fail(run->error);
+#if TH17_MULTIPLAYER
+  if(room_seats){
+   recording.reset();
+   for(u32 seat=1;seat<room_seats;++seat)
+    if(!run->add_coop_player(room_loadouts[seat][0],room_loadouts[seat][1]))return fail(run->error);
+  }
+#endif
   if(practice.active){
    if(recording)recording->use_practice(practice.active);
    const auto* parameters=playback?selected_replay->native_practice_settings():&practice.settings;
@@ -141,6 +178,9 @@ bool ApplicationState::begin_game(bool playback){
   }
  }else if(!run||!run->next(progress.stage,camera,initial))return fail(run?run->error:"Retained run unavailable");
  if(!preload_run())return false;if(!(progress.scoring.mode_flags&0x40)&&(!audio_device.queue_music_track(0,practice.active&&!practice.active.dialogue&&practice_bgm(practice.active.section)?assets()->definition->boss_music:assets()->definition->stage_music)||!audio_device.queue_music_track(1,assets()->definition->boss_music)||!audio_device.finish_music_requests()))return fail(audio_device.error);run_input=std::make_unique<RunInput>(*scene(),progress,*this,playback?selected_replay.get():nullptr,recording.get(),stage_seed,flow.fresh);run_input->auto_focus=config.auto_focus();
+#if TH17_MULTIPLAYER
+ if(room_seats)run_input->auto_focus=false;
+#endif
  if(!flow.fresh)run_input->input=retained_input;
  if(recording){recording->use_current_web_rules();live_description=recording->description();}else if(selected_replay)std::copy_n(selected_replay->decoded().begin(),live_description.size(),live_description.begin());
  if(!bind_display(run->previous_scene())||!retire_loading())return false;
@@ -149,7 +189,11 @@ bool ApplicationState::begin_game(bool playback){
   if(!vm||(vm->visual.render_flags&0x60)){u32 handle=0;if(!begin_transition(handle)||!animations.interrupt(handle,7))return false;}
   if(!animations.interrupt(transition_overlay,1))return fail(animations.error);
  }
- performance.reset_result();progress.scoring.mode_flags&=~0xbu;scene()->battle.enemy_world.mode_flags=progress.scoring.mode_flags;return true;
+ performance.reset_result();progress.scoring.mode_flags&=~0xbu;scene()->battle.enemy_world.mode_flags=progress.scoring.mode_flags;
+#if TH17_MULTIPLAYER
+ if(room_seats)++room_stage_generation;
+#endif
+ return true;
 }
 bool ApplicationState::begin_ending(){ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,6);const i32 index=preview_index;preview_index=-1;return ending->initialize(progress,index)||fail(ending->error);}
 bool ApplicationState::draw_global(){
@@ -168,12 +212,28 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   ThpracUi::record_keys(*this,held);
   if(scene()->battle.spell_card)scene()->battle.spell_card->hide_master=practice.hide_master;
   if(pause)pause->controls({pressed,repeated,lost_focus,true});run_input->controls(held,fps,touch,practice.active&&!progress.practice_record?practice.active_tools(progress.scoring.continues):0);StageGameplayFrame input;input.battle.held=held;input.battle.pressed=pressed;input.battle.rate=progress.rate;input.battle.practice=(progress.scoring.mode_flags&0x30)!=0;
+#if TH17_MULTIPLAYER
+  input.battle.partners=room_partners;
+#endif
   if(!scene()->step(input))return fail(scene()->error.empty()?run_input->error:scene()->error);
   if(run->previous_scene()&&!run->update_previous(progress.rate))return fail(run->error);
  }else {if(scheduler.update()<0)return fail(title&&!title->error.empty()?title->error:ending&&!ending->error.empty()?ending->error:animations.error);}
- audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);
+#if TH17_MULTIPLAYER
+ if(room_speculative&&(flow.current!=flow.pending||(progress.screen!=0&&progress.screen!=7)))return rollback_boundary();
+ if(!room_sounds)
+#endif
+  audio_device.update();
+ if(!audio_device.error.empty())return fail(audio_device.error);
  if(scene()){
-  if(!display->draw())return fail(display->error);if(recording){auto& clock=scene()->battle.spell_card->result_clock;
+#if TH17_MULTIPLAYER
+  // A tick can open a pause or cross a scene boundary during its update.
+  if(graphics.logical_drawing&&room_sounds&&!can_rollback())graphics.logical_drawing=false;
+#endif
+  double clock_seconds=-1;
+#if TH17_MULTIPLAYER
+  if(room_seats)clock_seconds=double(frames)/60;
+#endif
+  if(!display->draw(clock_seconds))return fail(display->error);if(recording){auto& clock=scene()->battle.spell_card->result_clock;
    // Progression advances the run's stage before this final outgoing draw.
    // Its capture clock still belongs to the scene that produced the result.
    if(clock.completed&&!recording->spell_timing(u32(scene()->battle.stage),u32(clock.completed-1),clock.encoded_time))return fail(recording->error());}

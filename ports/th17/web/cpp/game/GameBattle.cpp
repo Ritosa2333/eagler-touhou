@@ -2,39 +2,57 @@
 #include "AnmVisualState.hpp"
 #include "StageAssets.hpp"
 #include <algorithm>
+#include <optional>
+#if TH17_MULTIPLAYER
+#include "../multiplayer/FrameImage.hpp"
+#endif
 namespace th17 {
 struct GameBattle::Services {
     struct PlayerServices final:PlayerHost {
-        GameBattle& g;explicit PlayerServices(GameBattle& value):g(value){}
-        bool allow_bomb()override{return g.bomb&&g.bomb->allowed();}
-        bool begin_bomb()override{return (g.bomb&&g.bomb->begin())||g.fail(g.bomb?g.bomb->error:"Bomb owner unavailable");}
+        GameBattle& g;u32 seat;
+        explicit PlayerServices(GameBattle& value,u32 index=0):g(value),seat(index){}
+        bool allow_bomb()override{const auto* bomb=g.pilot_bomb(seat);return bomb&&bomb->allowed();}
+        bool begin_bomb()override{
+            auto* bomb=g.pilot_bomb(seat);
+            if(!bomb||!bomb->begin())return g.fail(bomb?bomb->error:"Bomb owner unavailable");
+            g.protect_teammates(seat,120);
+            return true;
+        }
         bool end_roaring(bool death)override{return g.items->end_roaring(death)||g.fail(g.items->error);}
         bool cancel_lasers_near(const Vec3& p,float r,i32 kind,bool honor)override{return g.laser_scene->cancel_circle(p,r,kind,honor)>=0||g.fail(g.laser_scene->error);}
         // PlayerLife's flag selects the unprotected native circle routine.
         bool cancel_bullets_near(const Vec3& p,float r,i32 kind,bool all)override{return g.bullet_scene->cancel_circle(p,r,kind,g.historical_web_replay?all:!all)||g.fail(g.bullet_scene->error);}
         bool cancel_lasers(i32 kind,bool honor)override{return g.laser_scene->cancel_all(kind,honor)||g.fail(g.laser_scene->error);}
         bool item(i32 kind,const Vec3& p,float angle,float speed)override{return g.spawn_item(kind,p,angle,speed);}
-        bool options_changed()override{return g.player->configure_options();}
-        bool game_over()override{return g.check(g.presentation.game_over(),"Game-over scene unavailable");}
-        bool respawn_damage(const Vec3& p,float radius,float growth,i32 life,i32 amount)override{return g.player->damage.circle(p,radius,growth,life,amount)>0;}
+        bool options_changed()override{return g.pilot(seat).configure_options();}
+        bool game_over()override{return g.pilot_game_over(seat);}
+        bool respawn_damage(const Vec3& p,float radius,float growth,i32 life,i32 amount)override{return g.pilot(seat).damage.circle(p,radius,growth,life,amount)>0;}
         bool shot_audio(i32 id,ShotSoundAction action,float pan)override{return g.sound(id,pan,static_cast<PlayerShots::SoundAction>(action));}
-        bool refresh(PlayerFrameContext& frame)override{return g.refresh_player(frame);}
+        bool refresh(PlayerFrameContext& frame)override{return seat?g.refresh_partner(g.pilot(seat),frame):g.refresh_player(frame);}
         bool sound(i32 id,float pan,PlayerShots::SoundAction action)override{return g.sound(id,pan,action);}
         bool hit_sound(i32 id)override{return g.sound(id);}
-        bool life_hud(i32 lives,i32 pieces)override{return g.life_hud(lives,pieces);}
-        bool bomb_hud(i32 stock,i32 pieces)override{return g.bomb_hud(stock,pieces);}
+        bool life_hud(i32 lives,i32 pieces)override{return g.life_hud(lives,pieces,seat);}
+        bool bomb_hud(i32 stock,i32 pieces)override{return g.bomb_hud(stock,pieces,seat);}
     } player;
     struct Projectiles final:LaserSceneHost {
-        GameBattle& g;explicit Projectiles(GameBattle& value):g(value){}
+        GameBattle& g;u32 seat=0;explicit Projectiles(GameBattle& value):g(value){}
         const PlayerCollision& player_collision()const noexcept override{return g.player_collision();}
+        Vec3 aim_target(const Vec3& origin)const noexcept override{return g.partner_count?g.aim_target(origin):LaserSceneHost::aim_target(origin);}
+        u32 contact_players()const noexcept override{return g.pilot_count();}
+        const PlayerCollision* select_contact(u32 index)noexcept override{
+            seat=index;
+            if(!g.pilot_active(seat)||g.pilot(seat).life.state==2)return nullptr;
+            return &g.player_collision(seat);
+        }
+        void finish_contacts()noexcept override{seat=0;}
         const Vec3* stationary_laser_anchor()const noexcept override{if(g.historical_web_replay)return nullptr;const auto* boss=g.enemy_world.boss_at(0);return boss?&boss->motion.position:nullptr;}
-        void hit()override{g.player->hit();if(!g.player->error.empty())g.fail(g.player->error);}
+        void hit()override{auto& player=g.pilot(seat);player.hit();if(!player.error.empty())g.fail(player.error);}
         void sound(i32 id)override{g.sound(id);}
         void laser_sound(i32 id,bool queued)override{g.sound(id,0,PlayerShots::SoundAction::play,queued);}
         void cancellation_effect(i32 script,const Vec3& p,const Vec3& velocity)override{
             const auto handle=g.animations.create(g.resources.bullet,script,-1,0,p);auto* vm=g.animations.registry.find(handle);if(!vm){g.fail(g.animations.error);return;}vm->interpolators.invalidate();vm->interpolators.position.begin(30,6,{0,0,0},{velocity.x,velocity.y,velocity.z});
         }
-        void graze_spark(const Vec3& p)override{g.record_graze(p);}
+        void graze_spark(const Vec3& p)override{g.record_graze(p,seat);}
         void graze()override{}
         void graze_resonance(float value)override{g.items->items.motion_scale=value;}
         void item(i32 kind,const Vec3& p,float angle,float speed)override{g.spawn_item(kind,p,angle,speed);}
@@ -45,17 +63,21 @@ struct GameBattle::Services {
         bool erase_emitting_laser()override{return g.fail("Laser erasure must be handled by its concrete owner");}
     } projectiles;
     struct Items final:ItemSpiritHost {
-        GameBattle& g;explicit Items(GameBattle& value):g(value){}
-        bool options_changed()override{return g.player->configure_options()||g.fail(g.player->options.error);}
+        GameBattle& g;u32 seat;explicit Items(GameBattle& value,u32 index=0):g(value),seat(index){}
+        bool options_changed()override{auto& pilot=g.pilot(seat);return pilot.configure_options()||g.fail(pilot.options.error);}
         bool notice(i32 kind)override{return g.hud?(g.hud->result(0,kind)||g.fail(g.hud->error)):g.check(g.presentation.notice(kind),"Item notice unavailable");}
         bool sound(i32 id,bool queued)override{return g.sound(id,0,PlayerShots::SoundAction::play,queued);}
         bool popup(const Vec3& p,i32 amount,u32 color)override{return g.check(g.presentation.popup(p,amount,color),"Item popup unavailable");}
-        bool life_hud(i32 lives,i32 pieces)override{return g.life_hud(lives,pieces);}
-        bool bomb_hud(i32 stock,i32 pieces)override{return g.bomb_hud(stock,pieces);}
+        bool life_hud(i32 lives,i32 pieces)override{return g.life_hud(lives,pieces,seat);}
+        bool bomb_hud(i32 stock,i32 pieces)override{return g.bomb_hud(stock,pieces,seat);}
         bool trophy(i32 id)override{return g.check(g.presentation.trophy(id),"Trophy recording unavailable");}
         bool cancel_bullets(const Vec3& p,float radius,i32 reward)override{return g.bullet_scene->cancel_circle(p,radius,reward,!g.historical_web_replay)||g.fail(g.bullet_scene->error);}
         bool cancel_lasers(const Vec3& p,float radius,i32 reward,bool honor)override{return g.laser_scene->cancel_circle(p,radius,reward,honor)>=0||g.fail(g.laser_scene->error);}
-        bool active_player_shot()const override{for(const auto& shot:g.player->shots.shots)if(shot.state!=0)return true;return false;}
+        bool active_player_shot()const override{
+            for(u32 seat=0;seat<g.pilot_count();++seat)
+                for(const auto& shot:g.pilot(seat).shots.shots)if(shot.state!=0)return true;
+            return false;
+        }
     } items;
     struct Enemies final:EnemyManagerHost,EnemyCombatServices,EnemyDeathHost,BulletEmissionHost,LaserEmissionHost {
         GameBattle& g;explicit Enemies(GameBattle& value):g(value){}
@@ -77,9 +99,40 @@ struct GameBattle::Services {
         bool emit(const CurveLaserRequest& r)override{return g.laser_scene->create_curved(r)!=0||g.laser_scene->error.empty();}
         bool emit(const SegmentedLaserRequest& r)override{return g.laser_scene->create_segmented(r)!=0||g.laser_scene->error.empty();}
         bool bomb_damage(const DamageQuery&,i32& amount)override{amount=0;return true;}
+        i32 primary_damage(i32 amount)override{
+            return g.partner_count&&(g.player->life.state==0||g.player->life.state==2)?amount/5:amount;
+        }
+        bool partner_damage(const DamageQuery& query,EnemyShotDamage& hit)override{
+            for(u32 seat=1;seat<g.pilot_count();++seat){
+                auto& player=g.pilot(seat);
+                if(!g.pilot_active(seat))continue;
+                const auto result=player.damage.query(query,player.life.age.current!=player.life.age.previous);
+                if(!player.damage.error.empty())return g.fail(player.damage.error);
+                const i32 amount=player.life.state==0||player.life.state==2?result.amount/5:result.amount;
+                hit.amount=wrapping_add(hit.amount,amount);
+                hit.direct|=result.direct;
+                if(result.position_written)hit.position=result.position;
+            }
+            return true;
+        }
         bool additional_damage(EnemyState&,i32,i32& amount)override{amount=0;return true;}
+        i32 final_damage(EnemyState& enemy,i32 amount)override{return g.boss_damage(enemy,amount);}
         int enemy_death(EnemyRuntime& e,float rate)override{return g.enemy_death->execute(e,rate);}
-        bool contact_override(EnemyState&,AnmVm*,i32&,bool& handled)override{handled=false;return true;}
+        bool contact_override(EnemyState& enemy,AnmVm* visual,i32& result,bool& handled)override{
+            handled=g.pilot_count()>1;
+            if(!handled)return true;
+            result=0;
+            for(u32 seat=0;seat<g.pilot_count();++seat){
+                if(!g.pilot_active(seat))continue;
+                auto& player=g.pilot(seat);
+                const auto contact=enemy_player_contact(enemy,visual,g.player_collision(seat),&player);
+                if(!player.error.empty())return g.fail(player.error);
+                if(contact==PlayerContact::hit)result=1;
+                if(contact==PlayerContact::graze&&(enemy.flags&0x200)&&enemy.age_timer.current%6==0
+                    &&!g.record_graze(player.motion.position,seat))return false;
+            }
+            return true;
+        }
         bool graze(const Vec3& p)override{return g.record_graze(p);}
         bool spawn_item(const ItemSpawnRequest& r)override{return g.spawn_item(r.type,r.position,r.angle,r.speed);}
         bool effect(const EnemyDeathEffect& r)override{return g.death_effect(r);}
@@ -108,9 +161,9 @@ struct GameBattle::Services {
         bool bullet_bounds(const Vec2& size)override{g.bullet_scene->manager.context.reflection_bounds=size;return true;}
     } enemies;
     struct Bombs final:BombHost {
-        GameBattle& g;explicit Bombs(GameBattle& value):g(value){}
+        GameBattle& g;u32 seat;explicit Bombs(GameBattle& value,u32 index=0):g(value),seat(index){}
         bool sound(i32 id,bool queued)override{return g.sound(id,0,PlayerShots::SoundAction::play,queued);}
-        bool bomb_hud(i32 stock,i32 pieces)override{return g.bomb_hud(stock,pieces);}
+        bool bomb_hud(i32 stock,i32 pieces)override{return g.bomb_hud(stock,pieces,seat);}
         bool screen_effect(const BombScreenEffect& r)override{if(r.kind==1)return g.screen_effects.nudge({r.strength,r.rise,r.hold})||g.fail(g.screen_effects.error);if(r.kind==8)return g.screen_effects.shake({r.strength,r.rise,r.hold,r.fall})||g.fail(g.screen_effects.error);return g.fail("Unknown bomb screen effect");}
         bool cancel_bullets(const Vec3& p,float radius,i32 reward,bool honor)override{return g.bullet_scene->cancel_circle(p,radius,reward,honor)||g.fail(g.bullet_scene->error);}
         bool cancel_lasers(const Vec3& p,float radius,i32 reward,bool honor)override{return g.laser_scene->cancel_circle(p,radius,reward,honor)>=0||g.fail(g.laser_scene->error);}
@@ -140,6 +193,48 @@ struct GameBattle::Services {
     } dialogues;
     explicit Services(GameBattle& g):player(g),projectiles(g),items(g),enemies(g),bombs(g),spells(g),dialogues(g){}
 };
+namespace {
+std::unique_ptr<BombController> make_bomb(i32 character,BombContext& context){
+    switch(character){
+    case 0:return std::make_unique<BombReimu>(context);
+    case 1:return std::make_unique<BombMarisa>(context);
+    case 2:return std::make_unique<BombYoumu>(context);
+    default:return {};
+    }
+}
+}
+struct GameBattle::Partner {
+    Services::PlayerServices player_services;
+    Services::Bombs bomb_services;
+    Services::Items item_services;
+    PlayerLifeSession session;
+    Player player;
+    BombContext bomb_context;
+    std::unique_ptr<BombController> bomb;
+    i32 life_piece_tier=0;
+    ItemCollection collection;
+    GameInput input;
+    i32 character;
+    bool retired=false;
+
+    Partner(GameBattle& battle,u32 seat,const ShtResource& shots,i32 character,i32 animal,i32 bank):
+        player_services(battle,seat),bomb_services(battle,seat),item_services(battle,seat),
+        player(shots,battle.animations,battle.effects,battle.game_random,battle.visual_random,
+               session,battle.spell,player_services,character,bank,battle.resources.effect),
+        bomb_context{battle.animations,player.motion,player.life.invulnerability,session,battle.spell,
+                     player.damage,battle.game_random,bomb_services,battle.items->roaring.state.flags,
+                     battle.enemy_world.enemy_count,bank},
+        bomb(make_bomb(character,bomb_context)),collection(session,battle.score,player.motion,item_services,character,&life_piece_tier),
+        character(character){
+        session.animal=animal;
+        session.initial_bombs=session.bombs=animal==1?4:3;
+        player.damage.shared_score=&battle.score.score;
+        player.damage.hit_callback=[this](DamageSource& source,const DamageQuery& query){
+            if(source.callback_kind==3)return bomb->hit(source,query);
+            return player.shots.hit(source,query);
+        };
+    }
+};
 GameBattle::GameBattle(AnmManager& a,AnmEnvironment& env,Rng& game,Rng& visual,BattleWorldServices& host,EclProgram& program,const ShtResource& sht,i32 ch,BattleResources ids):services(std::make_unique<Services>(*this)),animations(a),environment(env),game_random(game),visual_random(visual),presentation(host),resources(ids),enemy_visuals(a),effects(a,ids.effect),screen_effects(schedule,game,visual),character(ch){
     enemy_world.frame_rate=&input.rate;enemy_world.spell_status=&spell;enemy_world.random=&game;
     enemy_world.shared_counters={{&session.enemy_deaths,&session.roaring_breaks,&session.enemy_chain}};
@@ -149,7 +244,7 @@ GameBattle::GameBattle(AnmManager& a,AnmEnvironment& env,Rng& game,Rng& visual,B
     items=std::make_unique<ItemSpirits>(a,effects,game,visual,player->motion,player->frame.bounds,session,player->life.invulnerability,spell,player->damage,score,services->items,ch,ids.bullet,ids.animal);
     enemy_world.shared_roaring_flags=&items->roaring.state.flags;
     bomb_context=std::make_unique<BombContext>(BombContext{a,player->motion,player->life.invulnerability,session,spell,player->damage,game,services->bombs,items->roaring.state.flags,enemy_world.enemy_count,ids.player});
-    if(ch==0)bomb=std::make_unique<BombReimu>(*bomb_context);else if(ch==1)bomb=std::make_unique<BombMarisa>(*bomb_context);else if(ch==2)bomb=std::make_unique<BombYoumu>(*bomb_context);
+    bomb=make_bomb(ch,*bomb_context);
     player->damage.hit_callback=[this](DamageSource& source,const DamageQuery& query)->i32{if(source.callback_kind==4)return items->roaring.otter_hit();if(source.callback_kind==3&&bomb)return bomb->hit(source,query);return player->shots.hit(source,query);};
     bullet_scene=std::make_unique<BulletScene>(services->projectiles,game,visual);bullet_scene->resource=a.resource(ids.bullet);bullet_scene->environment=&env;bullet_scene->animation_objects=&a;bullet_scene->own_cancellation_animations(a,ids.bullet);
     laser_scene=std::make_unique<LaserScene>(services->projectiles,a,effects,game,visual,bullet_scene->manager.cancellation_rewards,ids.bullet);laser_scene->attach_bullets(*bullet_scene);
@@ -161,7 +256,125 @@ GameBattle::GameBattle(AnmManager& a,AnmEnvironment& env,Rng& game,Rng& visual,B
     spell_callback.owner=this;spell_callback.run=[](void* p)->i32{return static_cast<GameBattle*>(p)->update_spell();};spell_callback.enabled=true;schedule.add(spell_callback,FramePass::Update,32);
     hud_callback.owner=this;hud_callback.run=[](void* p)->i32{return static_cast<GameBattle*>(p)->update_hud();};hud_callback.enabled=true;schedule.add(hud_callback,FramePass::Update,34);
 }
-GameBattle::~GameBattle(){active_schedule->remove(hud_callback);active_schedule->remove(spell_callback);for(auto& callback:callbacks)active_schedule->remove(callback);dialogue.reset();if(enemies)enemies->clear();}
+GameBattle::~GameBattle(){active_schedule->remove(hud_callback);active_schedule->remove(spell_callback);for(auto& callback:callbacks)active_schedule->remove(callback);dialogue.reset();if(enemies)enemies->clear();for(auto& partner:partners)partner.reset();}
+Player& GameBattle::pilot(u32 seat) noexcept{return seat?partners[seat-1]->player:*player;}
+u32 GameBattle::viable_pilots() const noexcept{
+    u32 count=!primary_retired&&session.extra_lives>=0;
+    for(u32 seat=0;seat<partner_count;++seat)
+        count+=!partners[seat]->retired&&partners[seat]->session.extra_lives>=0;
+    return count;
+}
+i32 GameBattle::boss_damage(EnemyState& enemy,i32 amount){
+    if(!partner_count||amount<=0||!(enemy.flags&0x40800000u))return amount;
+    const u32 count=viable_pilots(),numerator=count>=3?8:count==2?9:12;
+    const u64 scaled=u64(u32(amount))*numerator+enemy.multiplayer_damage_remainder;
+    enemy.multiplayer_damage_remainder=u32(scaled%12);
+    return i32(scaled/12);
+}
+i32 GameBattle::life_piece_tier(u32 seat) const noexcept{return seat?partners[seat-1]->life_piece_tier:score.life_piece_tier;}
+void GameBattle::restore_piece_tier(u32 seat,i32 value) noexcept{
+    if(seat){partners[seat-1]->life_piece_tier=value;partners[seat-1]->retired=partners[seat-1]->session.extra_lives<0;}
+    else {score.life_piece_tier=value;primary_retired=session.extra_lives<0;}
+}
+bool GameBattle::initialize_partner_hud(){
+    for(u32 index=0;index<partner_count;++index){
+        const auto& partner=*partners[index];
+        if(!hud->initialize_partner(index+1,partner.character,partner.session))return fail(hud->error);
+    }
+    return true;
+}
+BombController* GameBattle::pilot_bomb(u32 seat) const noexcept{return seat?partners[seat-1]->bomb.get():bomb.get();}
+bool GameBattle::add_coop_player(const ShtResource& shots,i32 character,i32 animal,i32 bank){
+    if(!initialized||partner_count>=partners.size()||u32(character)>=3||u32(animal)>=3||!animations.resource(bank))
+        return fail("Invalid TH17 partner loadout");
+    auto partner=std::make_unique<Partner>(*this,partner_count+1,shots,character,animal,bank);
+    if(stage==7)partner->session.power=score.max_power;
+    partner->player.shot_context.cooperative=true;
+    partner->player.visuals.presentation_seat=partner->player.shots.presentation_seat=u8(partner_count+2);
+    if(!partner->player.initialize()||!partner->player.configure_options())return fail(partner->player.error);
+    partners[partner_count++]=std::move(partner);
+    if(partner_count==1){
+        player->shot_context.cooperative=true;
+        auto& visuals=player->visuals;
+        visuals.presentation_seat=player->shots.presentation_seat=1;
+        const auto tag_primary=[&](auto&& tag,AnmVm& vm)->void{
+            vm.pilot_draw_owner=1;
+            for(auto* child:animations.registry.children(vm))tag(tag,*child);
+        };
+        tag_primary(tag_primary,visuals.root);
+        for(const auto& pair:visuals.option_handles)for(auto handle:pair)
+            if(auto* vm=animations.registry.find(handle))tag_primary(tag_primary,*vm);
+        enemy_world.multiplayer_target=[this](const Vec3& origin){return aim_target(origin);};
+        bullet_scene->manager.context.multiplayer_target=&enemy_world.multiplayer_target;
+    }
+    return true;
+}
+bool GameBattle::pilot_game_over(u32 seat){
+    if(seat)partners[seat-1]->retired=true;
+    else if(partner_count)primary_retired=true;
+    for(u32 index=0;index<pilot_count();++index)
+        if(index!=seat&&pilot_active(index))return true;
+    return check(presentation.game_over(),"Game-over scene unavailable");
+}
+bool GameBattle::pilot_active(u32 seat) const noexcept{return seat?!partners[seat-1]->retired:!primary_retired;}
+Vec3 GameBattle::aim_target(const Vec3& origin) noexcept{
+    if(!partner_count)return player->motion.position;
+    const Vec3* target=nullptr;
+    float nearest=0;
+    for(u32 seat=0;seat<pilot_count();++seat){
+        const auto& p=pilot(seat);
+        if(!pilot_active(seat)||p.session.extra_lives<0||p.life.state!=1)continue;
+        const auto& position=p.motion.position;
+        const float x=position.x-origin.x,y=position.y-origin.y,distance=x*x+y*y;
+        if(!target||distance<nearest){target=&position;nearest=distance;}
+    }
+    return target?*target:Vec3{0,400,0};
+}
+void GameBattle::protect_teammates(u32 caster,i32 frames) noexcept{
+    for(u32 seat=0;seat<pilot_count();++seat){
+        if(seat==caster||!pilot_active(seat))continue;
+        auto& timer=pilot(seat).life.invulnerability;
+        if(timer.current<frames)timer.set(frames);
+    }
+}
+bool GameBattle::reset_players(){
+    if(!primary_retired&&!player->reset_for_stage())return fail(player->error);
+    for(u32 index=0;index<partner_count;++index){
+        auto& partner=*partners[index];
+        if(partner.retired)continue;
+        partner.input={};
+        if(!partner.player.reset_for_stage())return fail(partner.player.error);
+    }
+    return true;
+}
+bool GameBattle::finish_player_options(){
+    for(u32 seat=0;seat<pilot_count();++seat)
+        if(!pilot(seat).finish_stage_options())return fail(pilot(seat).error);
+    return true;
+}
+bool GameBattle::stop_bombs(){
+    for(u32 seat=0;seat<pilot_count();++seat){
+        auto* controller=pilot_bomb(seat);
+        if(!controller||!controller->stop())return fail(controller?controller->error:"Bomb owner unavailable");
+    }
+    return true;
+}
+bool GameBattle::draw_players(AnmRenderer& renderer){
+    for(u32 seat=0;seat<pilot_count();++seat)
+        if(!pilot(seat).draw(renderer))return fail(pilot(seat).error);
+    return true;
+}
+void GameBattle::prepare_player_presentation(AnmRenderer& renderer){
+    if(!partner_count)return;
+    const u32 local=renderer.hud_viewer-1;
+    if(local>=pilot_count())return;
+    const auto& origin=pilot(local).motion.position;
+    for(u32 seat=0;seat<pilot_count();++seat){
+        const auto& position=pilot(seat).motion.position;
+        const float dx=position.x-origin.x,dy=position.y-origin.y;
+        renderer.pilot_opacity[seat+1]=seat==local?255:dx*dx+dy*dy<2304?72:160;
+    }
+}
 bool GameBattle::replace_stage(StageAssets& next){
     if(!initialized||!error.empty()||next.character!=character||next.animal!=session.animal)return fail("Stage replacement differs from active run");
     if(spell.flags&1)return fail("Active spell must finish before normal stage replacement");
@@ -188,12 +401,18 @@ bool GameBattle::spawn_item(i32 kind,const Vec3& p,float angle,float speed){retu
 bool GameBattle::scene_effect(const EnemyEffectRequest& r){const auto h=animations.create(enemy_visuals.resource_id(r.resource),r.script,-1,r.ordering,r.position);if(!h)return fail(animations.error);effects.track(h);return true;}
 bool GameBattle::death_effect(const EnemyDeathEffect& r){const auto h=animations.create(enemy_visuals.resource_id(r.resource),r.script,r.layer,0,r.position,r.rotation);if(!h)return fail(animations.error);effects.track(h);return true;}
 bool GameBattle::cleanup_enemy(EnemyState& e){if(e.lifecycle_flags&4)return true;if((e.flags&0x800000)&&e.boss_slot>=0&&e.boss_slot<3)enemy_world.boss_ids[e.boss_slot]=0;if(!e.distortion_mesh.retire(animations))return fail(animations.error);for(auto& h:e.animation_handles)if(!animations.retire(h))return fail(animations.error);return true;}
-const PlayerCollision& GameBattle::player_collision()noexcept{
-    auto& c=player->frame.collision;c.position={player->motion.position.x,player->motion.position.y};c.state=player->life.state;c.invulnerability=(session.practice_tools&PracticeInvincible)?1:player->life.invulnerability.current;c.radius=player->resource.header.hitbox;c.size_multiplier=player->motion.enlargement;c.enlarged=player->motion.behavior_flags&16;c.laser_half_size={player->frame.bounds.hit_half_size.x,player->frame.bounds.hit_half_size.y};c.bomb_active=input.hud_collect||dialogue_present();return c;
+const PlayerCollision& GameBattle::player_collision(u32 seat)noexcept{
+    auto& p=pilot(seat);auto& c=p.frame.collision;c.position={p.motion.position.x,p.motion.position.y};c.state=p.life.state;c.invulnerability=(p.session.practice_tools&PracticeInvincible)?1:p.life.invulnerability.current;c.radius=p.resource.header.hitbox;c.size_multiplier=p.motion.enlargement;c.enlarged=p.motion.behavior_flags&16;c.laser_half_size={p.frame.bounds.hit_half_size.x,p.frame.bounds.hit_half_size.y};c.bomb_active=input.hud_collect||dialogue_present();return c;
 }
 bool GameBattle::refresh_world(){
+    enemy_world.cooperative=partner_count!=0;
     enemy_world.mode=character;enemy_world.submode=session.animal;enemy_world.stage_number=stage;enemy_world.difficulty=score.difficulty;enemy_world.state=session.power;enemy_world.counter3=session.deaths;enemy_world.game_frame_flags=input.game_flags;
     enemy_world.player_position=player->motion.position;enemy_world.player_damage_state=player->life.state;enemy_world.player_behavior_flags=player->motion.behavior_flags;enemy_world.player_damage_scale=player->frame.bounds.damage_multiplier;enemy_world.game_state=session.bomb_state;
+    if(partner_count){
+        enemy_world.state=score.max_power;
+        for(u32 seat=0;seat<pilot_count();++seat)
+            if(pilot_active(seat))enemy_world.state=std::min(enemy_world.state,pilot(seat).session.power);
+    }
     enemy_world.roaring_kind=items->roaring.state.kind;enemy_world.spirit_count=items->spirits.count();enemy_world.graze_history=bullet_scene->manager.graze_history;enemy_world.damage_disabled=dialogue_present()?1:0;
     bullet_scene->manager.context.player=player->motion.position;bullet_scene->manager.context.rate=input.rate;bullet_scene->manager.cancellation_rewards.spell_active=spell.flags&1;
     return error.empty();
@@ -205,12 +424,25 @@ bool GameBattle::refresh_player(PlayerFrameContext& frame){
     items->after_player();frame.game_flags=input.game_flags;frame.hud_available=input.hud_available;frame.hud_bomb_active=input.hud_collect||dialogue_present();frame.focus_allowed=input.focus_allowed&&enemy_world.enemy_count!=0;frame.enemy_present=true;frame.background_delta=input.background_delta;frame.roaring_kind=items->roaring.state.kind;
     targets.clear();targets.reserve(enemy_world.enemies.size());for(const auto* e:enemy_world.enemies)targets.push_back({e->motion.position,e->flags,e->id});frame.targets.clear();frame.targets.reserve(targets.size());for(auto& target:targets)frame.targets.push_back(&target);return refresh_world();
 }
+bool GameBattle::refresh_partner(Player& pilot,PlayerFrameContext& frame){
+    pilot.shot_context.screen_origin=environment.playfield_origin;
+    frame.game_flags=input.game_flags;
+    frame.hud_available=input.hud_available;
+    frame.hud_bomb_active=input.hud_collect||dialogue_present();
+    frame.focus_allowed=input.focus_allowed&&enemy_world.enemy_count!=0;
+    frame.enemy_present=true;
+    frame.background_delta=input.background_delta;
+    frame.roaring_kind=items->roaring.state.kind;
+    frame.targets.clear();
+    for(auto& target:targets)frame.targets.push_back(&target);
+    return error.empty();
+}
 bool GameBattle::initialize(bool initialize_roaring_hud){if(initialized)return fail("Battle already initialized");if(!bullet_scene->resource||!animations.resource(resources.player)||!animations.resource(resources.effect)||!animations.resource(resources.animal))return fail("Battle animation bank unavailable");if(!player->initialize())return fail(player->error);if(!player->configure_options())return fail(player->options.error);if(initialize_roaring_hud&&!items->initialize())return fail(items->error);initialized=true;return refresh_world();}
-bool GameBattle::life_hud(i32 lives,i32 pieces){return hud?(hud->lives(lives,pieces)||fail(hud->error)):check(presentation.life_hud(lives,pieces),"Life HUD unavailable");}
-bool GameBattle::bomb_hud(i32 stock,i32 pieces){return hud?(hud->bombs(stock,pieces)||fail(hud->error)):check(presentation.bomb_hud(stock,pieces),"Bomb HUD unavailable");}
+bool GameBattle::life_hud(i32 lives,i32 pieces,u32 seat){return hud?(hud->lives(lives,pieces,seat)||fail(hud->error)):seat||check(presentation.life_hud(lives,pieces),"Life HUD unavailable");}
+bool GameBattle::bomb_hud(i32 stock,i32 pieces,u32 seat){return hud?(hud->bombs(stock,pieces,seat)||fail(hud->error)):seat||check(presentation.bomb_hud(stock,pieces),"Bomb HUD unavailable");}
 bool GameBattle::configure_hud(const HudStartContext& context,HudResources visuals,bool initialize_now){if(hud)return fail("HUD already configured");hud_context=context;hud=std::make_unique<Hud>(animations,enemy_world,session,player->motion,spell,visuals);hud->sound=[this](i32 id){return sound(id,0,PlayerShots::SoundAction::play,true);};enemy_world.boss_seconds=-1;return !initialize_now||hud->initialize(context)||fail(hud->error);}
 bool GameBattle::configure_dialogue(const StageConfiguration& stage,const MessageResource& messages,DialogueServices& host,DialogueResources visuals){if(dialogue||!hud)return fail("Dialogue configuration requires an idle HUD");dialogue_stage=&stage;message_resource=&messages;dialogue_host=&host;dialogue_resources=visuals;hud->update_dialogue=[this](){return update_dialogue();};return true;}
-bool GameBattle::scene_message(i32 id){if(id<0||!message_resource)return check(presentation.scene_message(id),"Dialogue scene command unavailable");dialogue.reset();dialogue=std::make_unique<Dialogue>(animations,services->dialogues,*dialogue_stage,dialogue_resources);return dialogue->initialize(*message_resource,id)||fail(dialogue->error);}
+bool GameBattle::scene_message(i32 id){if(id<0||!message_resource)return check(presentation.scene_message(id),"Dialogue scene command unavailable");if(!presentation.rollback_boundary())return false;dialogue.reset();dialogue=std::make_unique<Dialogue>(animations,services->dialogues,*dialogue_stage,dialogue_resources);return dialogue->initialize(*message_resource,id)||fail(dialogue->error);}
 bool GameBattle::message_complete(bool& done){if(!message_resource)return check(presentation.message_complete(done),"Dialogue state unavailable");done=!dialogue||dialogue->complete_pulse!=0;return true;}
 bool GameBattle::update_dialogue(){if(!dialogue)return true;const i32 result=dialogue->update({input.rate,input.held,input.pressed,input.shoot_frames,input.skip_frames});if(result<0)return fail(dialogue->error);if(result>0)dialogue.reset();return true;}
 bool GameBattle::configure_spell(SpellRecords& records,SpellVisualResources visuals){if(spell.flags&1)return fail("Cannot reconfigure an active spell");spell_context.visuals=std::move(visuals);spell_visuals=std::make_unique<SpellAnmHost>(animations,enemy_world,services->spells);spell_card=std::make_unique<SpellCard>(spell,score.score,records,items->roaring.state.flags,*spell_visuals);return true;}
@@ -231,15 +463,133 @@ void GameBattle::world_active(bool active)noexcept{
 }
 bool GameBattle::step(const BattleFrame& frame){return prepare_frame(frame)&&active_schedule->update()>=0&&error.empty();}
 i32 GameBattle::update_animations(bool alternate){animations.rate=input.rate;if(!animations.update(alternate)){fail(animations.error);return 5;}return error.empty()?1:5;}
-i32 GameBattle::update_player(){PlayerFrameContext frame;frame.held=input.held;frame.pressed=input.pressed;items->before_player();if(!refresh_player(frame)||!player->update(frame,input.rate)){fail(player->error);return 5;}items->after_player();return refresh_world()?1:5;}
-i32 GameBattle::update_bomb(){if(!bomb||!bomb->update(input.rate)){fail(bomb?bomb->error:"Bomb owner unavailable");return 5;}return refresh_world()?1:5;}
+i32 GameBattle::update_player(){
+    PlayerFrameContext frame;frame.held=input.held;frame.pressed=input.pressed;items->before_player();
+    if(!refresh_player(frame)||(!primary_retired&&!player->update(frame,input.rate))){fail(player->error);return 5;}
+    items->after_player();
+    for(u32 i=0;i<partner_count;++i){
+        auto& partner=*partners[i];if(partner.retired)continue;
+        partner.input.update(input.partners[i].held);
+        partner.player.motion.touch=input.partners[i].touch;
+        const auto timer=items->roaring.state.countdown.current;
+        partner.session.roaring_flags=items->roaring.state.flags;
+        partner.session.roaring_countdown=items->roaring.state.countdown;
+        partner.bomb_context.hud_available=input.hud_available;
+        partner.bomb_context.hud_collect=input.hud_collect||dialogue_present();
+        PlayerFrameContext lane;lane.held=partner.input.held;lane.pressed=partner.input.pressed;
+        if(!refresh_partner(partner.player,lane)||!partner.player.update(lane,input.rate)){fail(partner.player.error);return 5;}
+        // A partner's miss can end the shared mode. Direct breaks already
+        // update the owner, so avoid writing the partner's stale countdown.
+        if(partner.session.roaring_countdown.current!=timer&&items->roaring.state.countdown.current==timer)
+            items->roaring.state.countdown=partner.session.roaring_countdown;
+    }
+    items->before_player();
+    return refresh_world()?1:5;
+}
+i32 GameBattle::update_bomb(){
+    for(u32 seat=0;seat<pilot_count();++seat){
+        auto* controller=pilot_bomb(seat);
+        const bool active=pilot(seat).session.bomb_state==1;
+        if(!controller||!controller->update(input.rate)){fail(controller?controller->error:"Bomb owner unavailable");return 5;}
+        if(active)protect_teammates(seat,40);
+    }
+    return refresh_world()?1:5;
+}
 i32 GameBattle::update_enemies(){refresh_world();enemies->rate=input.rate;enemies->background_delta=input.background_delta;const bool ok=enemies->update();player->motion.behavior_flags=enemy_world.player_behavior_flags;player->frame.bounds.damage_multiplier=enemy_world.player_damage_scale;if(!ok){fail(enemies->error);return 5;}return error.empty()?1:5;}
 i32 GameBattle::update_lasers(){refresh_world();if(!laser_scene->update(input.rate,input.game_flags)){fail(laser_scene->error);return 5;}return error.empty()?1:5;}
 i32 GameBattle::update_bullets(){if((input.game_flags>>2|input.game_flags)&1)return 1;refresh_world();bullet_scene->manager.world_paused=input.game_flags&2;if(!bullet_scene->update()){fail(bullet_scene->error);return 5;}return error.empty()?1:5;}
 ItemSpiritFrame GameBattle::item_frame()const{return {input.rate,player->resource.header.attraction_speed,player->life.state,session.bomb_state,bomb?bomb->age.current:0,input.held,input.hud_collect||dialogue_present(),input.practice};}
-i32 GameBattle::update_items(){if(((input.game_flags>>2|input.game_flags)&1)||(input.game_flags&0x400))return 1;if(!items->update_items(item_frame())){fail(items->error);return 5;}return refresh_world()?1:5;}
-i32 GameBattle::update_spirits(){if(!items->update_spirits(item_frame())){fail(items->error);return 5;}return refresh_world()?1:5;}
+i32 GameBattle::update_items(){
+    if(((input.game_flags>>2|input.game_flags)&1)||(input.game_flags&0x400))return 1;
+    std::array<std::optional<ItemFrameContext>,2> contexts;
+    std::array<ItemFrameContext*,2> lanes{};
+    const auto frame=item_frame();
+    for(u32 i=0;i<partner_count;++i){
+        auto& partner=*partners[i];
+        auto& p=partner.player;
+        contexts[i].emplace(ItemFrameContext{p.motion,p.frame.bounds,partner.collection,visual_random,frame.rate,
+            p.resource.header.attraction_speed,partner.character,p.life.state,p.session.bomb_state,partner.bomb->age.current,
+            partner.input.held,frame.hud_collect,!partner.retired});
+        lanes[i]=&*contexts[i];
+    }
+    if(!items->update_items(frame,lanes,!primary_retired)){fail(items->error);return 5;}
+    return refresh_world()?1:5;
+}
+i32 GameBattle::update_spirits(){
+    auto frame=item_frame();
+    if(!partner_count){
+        if(!items->update_spirits(frame)){fail(items->error);return 5;}
+    }else{
+        AnimalSpiritTargets team;
+        for(u32 seat=0;seat<pilot_count();++seat){
+            const auto& p=pilot(seat);
+            team[seat]={p.motion.position,pilot_active(seat)&&p.life.state==1};
+        }
+        for(u32 i=0;i<partner_count;++i)frame.held|=partners[i]->input.held;
+        if(!items->update_spirits(frame,team)){fail(items->error);return 5;}
+        const auto& roaring=items->roaring.state;
+        for(u32 seat=0;seat<pilot_count();++seat){
+            auto& shots=pilot(seat).shots;
+            if(!shots.synchronize_roaring(roaring.flags,roaring.kind)){fail(shots.error);return 5;}
+        }
+    }
+    return refresh_world()?1:5;
+}
 i32 GameBattle::update_hud(){if(hud){hud->current_seconds=enemy_world.boss_seconds;hud->game_flags=input.game_flags;hud->dialogue=dialogue_present();if(!hud->update(input.rate)){fail(hud->error);return 5;}}return error.empty()?1:5;}
+#if TH17_MULTIPLAYER
+void GameBattle::save_rollback(multiplayer::FrameImage& image){
+    image.save(primary_retired,spell_context,hud_context,input,world_running,session,spell,score,
+        effects.handles,effects.cursor,effects.error,grid_viewport,graze_total,graze_chapter,error);
+    image.restore_with([this]{dialogue.reset();targets.clear();services->projectiles.finish_contacts();return true;});
+    const auto save_pilot=[&](Player& p,BombController& b,i32 ch){
+        auto& v=p.visuals;auto& f=p.frame;auto& life=p.life;auto& shot=p.shot_context;auto& shooting=f.shooting;
+        image.save(p.resource.header,p.motion,p.damage,p.error,p.initialized,v.root,v.focus_handle,v.barrier_handle,
+            v.option_handles,p.options.power_level,p.options.error);
+        image.save(p.shots.shots,p.shots.error,p.shots.rate,p.shots.reward_counter,p.shots.reward_auxiliary,
+            shot.option_angles,shot.laser_power,shot.power,shot.power_step,shot.shoot_frame,shot.player_state,
+            shot.roaring_kind,shot.roaring_flags,shot.enemy_scene,shot.bomb_active,shot.screen_origin,shot.background_delta);
+        image.save(life.state,life.age,life.invulnerability,life.last_death_position,life.error,
+            f.input_age,f.ready_age,f.bounds,f.collision,f.error,shooting.shot,shooting.continuous,shooting.charge,
+            shooting.charge_origin,shooting.charge_handle,shooting.auxiliary,shooting.auxiliary_active,shooting.error);
+        image.restore_with([&p]{p.frame.context={};p.frame.active_rate=nullptr;p.shot_context.targets.clear();p.visuals.hitbox_display.reset();return true;});
+        auto& c=b.context;
+        image.save(b.position,b.angle,b.age,b.main_handle,b.secondary_handle,b.aura_handle,b.failed_spell,b.error,
+            b.score_popup,b.rate,c.hud_available,c.hud_collect,c.roaring_available,c.enemy_available);
+        if(ch==0){
+            auto& reimu=static_cast<BombReimu&>(b);
+            std::optional<std::array<BombOrb,24>> orbs;
+            if(reimu.orbs)orbs=*reimu.orbs;
+            image.restore_with([&reimu,orbs]{
+                if(orbs){if(!reimu.orbs)reimu.orbs=std::make_unique<std::array<BombOrb,24>>();*reimu.orbs=*orbs;}
+                else reimu.orbs.reset();
+                return true;
+            });
+        }else if(ch==2){
+            auto& youmu=static_cast<BombYoumu&>(b);
+            image.save(youmu.handles,youmu.sides,youmu.heights,youmu.timers,youmu.emitted,youmu.interval,youmu.spawn_age);
+        }
+    };
+    save_pilot(*player,*bomb,character);
+    for(u32 seat=0;seat<partner_count;++seat){
+        auto& p=*partners[seat];
+        image.save(p.session,p.life_piece_tier,p.collection.error,p.input,p.retired);
+        save_pilot(p.player,*p.bomb,p.character);
+    }
+    auto& h=*hud;auto& s=*spell_card;
+    image.save(h.seats,h.partner_stock,h.life_handles,h.bomb_handles,h.clock_handles,h.gauges,h.phase_handles,
+        h.bonus_digits,h.bonus_separators,h.result_banner,h.pickup_banner,h.result_panel,h.result_active,
+        h.stage_clear_notice,h.chapter_result_notice,h.stage_clear_bonus,h.displayed_score,h.score_increment,h.chapter_result,
+        h.base,h.indicator,h.difficulty_banner,h.difficulty_label,h.loadout_label,h.boss_name,h.notice_handle,
+        h.flags,h.age,h.notice_age,h.phase_count,h.current_seconds,h.previous_seconds,h.dialogue,h.boss_hidden,h.game_flags,h.error);
+    image.save(s.age,s.maximum_bonus,s.duration,s.active_frames,s.loadout,s.result_clock,s.name,s.error,s.anchor,s.handles,
+        s.replay,s.practice,s.uncap_score,s.hide_master);
+    screen_effects.save_rollback(image);
+    items->save_rollback(image);
+    enemies->save_rollback(image);
+    bullet_scene->save_rollback(image);
+    laser_scene->save_rollback(image);
+}
+#endif
 i32 GameBattle::update_spell(){if(spell_card&&!spell_card->update({input.rate,player->motion.position.y,session.bomb_state,(session.practice_tools&PracticeTimeLock)!=0})){fail(spell_card->error);return 5;}return error.empty()?1:5;}
-bool GameBattle::record_graze(const Vec3& p){graze_total=std::min(wrapping_add(graze_total,1),99999999);graze_chapter=std::min(wrapping_add(graze_chapter,1),99999999);const auto& player_position=player->motion.position;const Vec3 middle{float(float(p.x+player_position.x)*.5f),float(float(p.y+player_position.y)*.5f),0};if(!animations.create(resources.effect,24,-1,0,middle))return fail(animations.error);return check(presentation.popup(middle,graze_chapter,0xffc0c0ff),"Graze popup unavailable")&&sound(42);}
+bool GameBattle::record_graze(const Vec3& p,u32 seat){graze_total=std::min(wrapping_add(graze_total,1),99999999);graze_chapter=std::min(wrapping_add(graze_chapter,1),99999999);const auto& player_position=pilot(seat).motion.position;const Vec3 middle{float(float(p.x+player_position.x)*.5f),float(float(p.y+player_position.y)*.5f),0};if(!animations.create(resources.effect,24,-1,0,middle))return fail(animations.error);return check(presentation.popup(middle,graze_chapter,0xffc0c0ff),"Graze popup unavailable")&&sound(42);}
 }

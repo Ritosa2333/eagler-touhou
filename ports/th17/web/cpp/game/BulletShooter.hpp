@@ -9,10 +9,11 @@ struct BulletTransform {
     u32 type=0;i32 active=0;
     std::vector<u8> payload;
 };
+using BulletProgram = std::array<BulletTransform,18>;
 struct BulletShooter {
     i32 sprite=0,color=0;Vec3 position{};
     float angle=0,angle_step=0,speed=0,speed_step=0,radius=0;
-    std::array<BulletTransform,18> transforms{};
+    BulletProgram transforms{};
     std::array<u32,9> extra{};
     i16 count=0,rows=0,pattern=0;u16 reserved=0;
     u32 flags=0;i32 shoot_sound=0,transform_sound=0;

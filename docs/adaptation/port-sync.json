@@ -1169,6 +1169,159 @@
           ]
         }
       }
+    },
+    "th17": {
+      "normal": "ports/th17",
+      "multiplayer": "ports/th17-mp",
+      "base": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+      "history": [
+        {
+          "kind": "manual",
+          "base": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+          "source": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+          "targetHead": "ce244c8b68e54e698d379ea4b71d7846223cc57f",
+          "paths": [],
+          "note": "普通版按独立目录移除联机源码和测试并固定普通构建入口；MP 保留独立会话、回滚、旁观与录像及对应构建入口。通用战斗、渲染、字体与音频源码完整保留。已在临时克隆合并双方投影并通过完整 MP 子树和两个父提交写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "6e63fdc7ea62fe1a4dec7bbf18d70dd91f2d7e6e",
+          "source": "8619b754e288c7f38b71eb2f5879222091dca927",
+          "targetHead": "72c046509f143302f978c9cf7336fca4ce74cb01",
+          "paths": [
+            "ports/th17-mp/ADAPTATION.md"
+          ],
+          "note": "两侧适配表分别接收普通版 11 项、MP 10 项检查结果，保留各自模式与验证范围；已合并普通版投影并保留双父链写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "8619b754e288c7f38b71eb2f5879222091dca927",
+          "source": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
+          "targetHead": "dc68e9c3ea7c7c23fc449841427db19fd84f6b10",
+          "paths": [
+            "ports/th17-mp/portable/input/TouchController.hpp",
+            "ports/th17-mp/web/cpp/game/TitleMainMenu.cpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/sdl-runtime/shell.mjs",
+            "ports/th17-mp/web/tests/adapter-browser.test.mjs"
+          ],
+          "note": "同步标题点按、捕获取消与确认脉冲的处理，保留多人房间标题流程并接收浏览器回归。"
+        },
+        {
+          "kind": "manual",
+          "base": "5b0195aa47a124c7f0b6f0669d1ddcfc371afe36",
+          "source": "235ab562c539e81f43b94d109b44527d3a7a6573",
+          "targetHead": "bf79550822cb6e18563d88ea6228a2d718a9c97c",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/AnmRegistry.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRegistry.hpp"
+          ],
+          "note": "两侧接收有序页地址查找和最近页缓存，多人回滚保持地址索引有效并恢复原动画队列顺序。"
+        },
+        {
+          "kind": "manual",
+          "base": "235ab562c539e81f43b94d109b44527d3a7a6573",
+          "source": "e230de27135e855645105092fcd2ff660b0831d1",
+          "targetHead": "e230de27135e855645105092fcd2ff660b0831d1",
+          "paths": [
+            "ports/th17-mp/portable/input/KeyboardMap.inc",
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/web/cpp/game/PauseMenu.cpp",
+            "ports/th17-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th17-mp/web/cpp/sdl/SceneDisplay.cpp",
+            "ports/th17-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th17-mp/web/tests/single-player-browser.mjs"
+          ],
+          "note": "接收单人键盘 Tab/Backspace、R 重开、结算换面等待、桌面快捷键与触控面板共存，以及实例 VAO 属性初始化。通用源码在 MP 完整保留，联机运行包继续关闭练习器；single-player-browser.mjs 属于单人 thprac 浏览器回归，MP 沿独立房间回归维护。已在临时克隆合并双方投影，核对完整 MP 内容树并通过双父提交写回。"
+        },
+        {
+          "kind": "manual",
+          "base": "e230de27135e855645105092fcd2ff660b0831d1",
+          "source": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "targetHead": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "paths": [
+            "ports/th17-mp/web/tests/single-player-browser.mjs"
+          ],
+          "note": "单人浏览器回归核对实际 1280×960 并支持单独诊断模块；测试入口按单人目录保留，MP 继续使用双人三人房间回归。投影合并与完整 MP 内容树写回已核验。"
+        },
+        {
+          "kind": "manual",
+          "base": "cd0b9fc7f299b2b76e6c84e9cfa6964e955351af",
+          "source": "d2f09129a7434199864cc8110c541053335ee71d",
+          "targetHead": "694c78e986c4ba9533f83a289aa23640affca5b8",
+          "paths": [
+            "ports/th17-mp/portable/package-eagler.mjs",
+            "ports/th17-mp/web/sdl-runtime/shell.mjs",
+            "ports/th17-mp/web/tests/adapter-browser.test.mjs",
+            "ports/th17-mp/web/tests/direct-input-browser.mjs"
+          ],
+          "note": "多人版同步触控通道、手势几何缓存和运行包资源；复用浏览器输入回归，在多人房间验证，普通版适配器继续验证原版录像。"
+        },
+        {
+          "kind": "manual",
+          "base": "d2f09129a7434199864cc8110c541053335ee71d",
+          "source": "3aa413997220673db16d8b319d4226857c61bf7a",
+          "targetHead": "fa9349b0cda2cd860ea070ad79a9caa0cc5b66cd",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/AnmResource.cpp",
+            "ports/th17-mp/web/cpp/game/Lzss.cpp"
+          ],
+          "note": "普通版和多人版同步优化 LZSS 回拷与 ANM 透明边界扫描，多人长帧记录归属多人目录。"
+        },
+        {
+          "kind": "manual",
+          "base": "3aa413997220673db16d8b319d4226857c61bf7a",
+          "source": "66e117e10191fc6e04b0bccfde60a30d6173fe8b",
+          "targetHead": "36735292fc1870b8fbb1e42b9dfc9b9c59fb3f3d",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRenderer.cpp",
+            "ports/th17-mp/web/cpp/game/SoundEffects.cpp",
+            "ports/th17-mp/web/cpp/game/SoundEffects.hpp",
+            "ports/th17-mp/web/cpp/sdl/AudioDevice.cpp",
+            "ports/th17-mp/web/cpp/sdl/AudioDevice.hpp",
+            "ports/th17-mp/web/tests/story-render-browser.mjs"
+          ],
+          "note": "两版复用相同的 ANM 材质与音效重播优化。多人版已有短绘制批次优化，普通版本轮接收。单人录像采样与多人房测各自维护。"
+        },
+        {
+          "kind": "manual",
+          "base": "66e117e10191fc6e04b0bccfde60a30d6173fe8b",
+          "source": "933600b5b44a1adecacf3002446c0109c32097e8",
+          "targetHead": "839b161450480f6b225669421488f904ff0a997c",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/DamageSources.cpp"
+          ],
+          "note": "多人版同步自机弹判定的按角度复用。缓存随单次查询销毁，判定顺序与战斗状态沿用普通版。"
+        },
+        {
+          "kind": "manual",
+          "base": "933600b5b44a1adecacf3002446c0109c32097e8",
+          "source": "fb134fde8978d267f319a67dc4e563947413cdec",
+          "targetHead": "5897e1ffa5b784360a0ac19c19eaf4dbe0acaea5",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/portable/sdl/Renderer.hpp",
+            "ports/th17-mp/web/cpp/game/AnmCoordinates.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRenderer.cpp",
+            "ports/th17-mp/web/cpp/game/AnmStrip.cpp",
+            "ports/th17-mp/web/cpp/game/AnmStrip.hpp",
+            "ports/th17-mp/web/cpp/game/AnmUpdate.cpp",
+            "ports/th17-mp/web/tests/cpp/BulletRuntimeFixture.hpp"
+          ],
+          "note": "同步 ANM 等待更新、条带和精灵几何、WebGL 着色器选择及原版对照夹具。MP 保留队友射击淡化，按双人实战测量出画与确认帧。"
+        },
+        {
+          "kind": "manual",
+          "base": "fb134fde8978d267f319a67dc4e563947413cdec",
+          "source": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+          "targetHead": "6c56932132f6f9077924cb3bf19e30846932617d",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp"
+          ],
+          "note": "顶点着色器保留 fogEnabled。四面与六面 54 个战斗画面采样和优化前一致。"
+        }
+      ]
     }
   }
 }

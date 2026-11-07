@@ -10,13 +10,17 @@ bool ItemSpirits::spawn(i32 kind,const Vec3& p,float angle,float speed,i32 delay
     error.clear();ItemSpawnContext context{game_random,player.position,[this](i32 type,const Vec3& p,float angle){return spirit(type,p,angle);}};
     items.spawn(kind,p,angle,speed,delay,sound,&context);if(items.error.empty())return true;error=items.error;return false;
 }
-bool ItemSpirits::update_items(const ItemSpiritFrame& frame){
-    error.clear();practice=frame.practice;ItemFrameContext context{player,bounds,collection,visual_random,frame.rate,frame.attraction_speed,character,frame.player_state,frame.bomb_state,frame.bomb_frame,frame.held,frame.hud_collect};
-    if(items.update(context))return true;error=items.error;return false;
+bool ItemSpirits::update_items(const ItemSpiritFrame& frame,const std::array<ItemFrameContext*,2>& partners,bool primary_active){
+    error.clear();practice=frame.practice;ItemFrameContext context{player,bounds,collection,visual_random,frame.rate,frame.attraction_speed,character,frame.player_state,frame.bomb_state,frame.bomb_frame,frame.held,frame.hud_collect,primary_active};
+    if(items.update(context,partners))return true;error=items.error;return false;
 }
 bool ItemSpirits::update_spirits(const ItemSpiritFrame& frame){
-    error.clear();practice=frame.practice;if(!spirits.update(player.position,frame.rate)){error=spirits.error;return false;}
-    if(!roaring.update(frame.rate,frame.hud_collect,frame.held)){error=roaring.error;return false;}before_player();return true;
+    return update_spirits(frame,{AnimalSpiritTarget{player.position,true},{},{}},false);
+}
+bool ItemSpirits::update_spirits(const ItemSpiritFrame& frame,const AnimalSpiritTargets& team,bool cooperative){
+    // Every seat contributes to this run's single Roaring inventory and timer.
+    error.clear();practice=frame.practice;if(!spirits.update_team(team,frame.rate)){error=spirits.error;return false;}
+    if(!roaring.update(frame.rate,frame.hud_collect,frame.held,cooperative?&team:nullptr)){error=roaring.error;return false;}before_player();return true;
 }
 void ItemSpirits::before_player()noexcept{session.roaring_flags=roaring.state.flags;session.roaring_countdown=roaring.state.countdown;}
 void ItemSpirits::after_player()noexcept{roaring.state.flags=session.roaring_flags;roaring.state.countdown=session.roaring_countdown;}

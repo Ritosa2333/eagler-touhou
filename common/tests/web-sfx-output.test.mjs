@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../include/eagler/audio/WebSfx.hpp',import.meta.url),'utf8');
 const body=source.split('// BEGIN_WEB_SFX_JS')[1].split('// END_WEB_SFX_JS')[0];
-const command=new Function('Module','HEAPU8','op','id','pcm','frames','channels','rate','format','value',body);
+const command=new Function('Module','HEAPU8','op','id','pcm','frames','channels','rate','format','value','balance',body);
 function context(){
  const nodes=[];
  const node=()=>{const n={connections:[],disconnect(){this.connections=[];},connect(...args){this.connections.push(args);return args[0];}};nodes.push(n);return n;};
@@ -38,6 +38,19 @@ call(7,1,1);assert.equal(voice.node,resumed,'unchanged pitch must not restart ou
 call(3);assert.equal(call(9),0);
 assert.equal(voice.merge.connections.length,0);
 call(4,1,1);call(2);assert.equal(voice.node.offset,.01);
+const beforeRestart=voice.node;
+command(Module,heap,13,1,0,0,0,0,1,.5,-.5);
+assert.equal(beforeRestart.stopped,true);
+assert.equal(voice.node.offset,0);
+assert.equal(voice.node.loop,true);
+assert.equal(voice.left.gain.value,.5);
+assert.equal(voice.right.gain.value,.25);
+assert.equal(voice.merge.connections.length,1,'restarting retains one output route');
+call(10,0,1);
+command(Module,heap,13,1,0,0,0,0,0,.6,.5);
+assert.equal(voice.node,null);
+assert.equal(voice.merge.connections.length,0);
+call(10,0,0);assert.equal(voice.node.offset,0);
 call(1);assert.equal(call(11),0);assert.equal(voice.merge.connections.length,0);
 call(0);call(2);voice=Module.eaglerSfxOutput.voices.get(1);const removed=voice.node;
 assert.equal(call(0,1,0,0),0);assert.equal(removed.stopped,true);assert.equal(call(11),0,'failed replacement must retire old output');

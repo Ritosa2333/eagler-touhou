@@ -263,6 +263,7 @@ export interface GameOptionClassification {
 // decided whether the next Runtime had to implement it.
 export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   th05MultiplayerDisplay: {capability: "multiplayer", class: "optional", owner: "product"},
+  renderScale: {capability: "render-resolution", class: "optional", owner: "product"},
   th075NativeResolution: {capability: "multiplayer", class: "optional", owner: "product"},
   thpracEnabled: { capability: "thprac", class: "optional", owner: "product" },
   thpracTouchControlsEnabled: { capability: "thprac-touch-bridge", class: "profile-required", owner: "launcher-runtime" },
@@ -346,6 +347,9 @@ export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
   { id: "faith-bar", class: "optional", owner: "product", declaration: "display.faithBar",
     verification: ["repository:tests/test-product-catalog.mjs", "repository:tests/test-game-preferences.mjs", "browser:tests/test-th10-original-options-browser.mjs"],
     summary: "original player overhead faith gauge controlled through the title's custom configuration" },
+  { id: "render-resolution", class: "optional", owner: "product", declaration: "renderScales",
+    verification: ["unit:tests/react-main/game-preparation.test.mjs", "unit:tests/react-main/settings-primitives.test.mjs"],
+    summary: "local drawing buffer scale applied during runtime initialization" },
   { id: "hint-files", class: "optional", owner: "product", declaration: "storage.hintFiles",
     verification: ["repository:tests/test-product-catalog.mjs", "browser:tests/test-th10-original-options-browser.mjs"],
     summary: "original stage Hint text files in mutable save storage" },

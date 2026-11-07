@@ -153,7 +153,7 @@ export interface RuntimeConfigureOptions {
  */
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   th05MultiplayerDisplay: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH05 multiplayer local presentation"}),
-  renderScale: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH075 multiplayer local rendering resolution"}),
+  renderScale: Object.freeze({requirement: "optional", capability: "render-resolution", productDeclaration: "renderScales", when: "product declares renderScales or TH075 multiplayer selects native resolution"}),
   netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),

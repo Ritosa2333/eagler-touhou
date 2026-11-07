@@ -1,0 +1,33 @@
+Eagler Touhou netplay relay listening ws://127.0.0.1:51995 delay=0 jitter=0 dropEvery=0 dropFirstInput=0 dropInputLatest=off
+LOBBY JOIN room=th17mp-room-test-2 client=th17mp-room-test-2-0 peers=1
+LOBBY JOIN room=th17mp-room-test-2 client=th17mp-room-test-2-1 peers=2
+JOIN room=th17mp-room-test-2 run=1 player=0 peers=1
+SIGNAL JOIN room=th17mp-room-test-2 run=1 player=0 peers=1
+JOIN room=th17mp-room-test-2 run=1 player=1 peers=2
+SIGNAL JOIN room=th17mp-room-test-2 run=1 player=1 peers=2
+ROUTE room=th17mp-room-test-2 run=1 mode=rtc
+LEAVE room=th17mp-room-test-2 run=1 player=0
+LEAVE room=th17mp-room-test-2 run=1 player=1
+LOBBY JOIN room=th17mp-room-test-3 client=th17mp-room-test-3-0 peers=1
+LOBBY LEAVE room=th17mp-room-test-2 client=th17mp-room-test-2-1
+LOBBY LEAVE room=th17mp-room-test-2 client=th17mp-room-test-2-0
+LOBBY JOIN room=th17mp-room-test-3 client=th17mp-room-test-3-1 peers=2
+SIGNAL LEAVE room=th17mp-room-test-2 run=1 player=0
+SIGNAL LEAVE room=th17mp-room-test-2 run=1 player=1
+LOBBY JOIN room=th17mp-room-test-3 client=th17mp-room-test-3-2 peers=3
+JOIN room=th17mp-room-test-3 run=1 player=1 peers=1
+SIGNAL JOIN room=th17mp-room-test-3 run=1 player=1 peers=1
+JOIN room=th17mp-room-test-3 run=1 player=0 peers=2
+SIGNAL JOIN room=th17mp-room-test-3 run=1 player=0 peers=2
+JOIN room=th17mp-room-test-3 run=1 player=2 peers=3
+SIGNAL JOIN room=th17mp-room-test-3 run=1 player=2 peers=3
+ROUTE room=th17mp-room-test-3 run=1 mode=rtc
+LEAVE room=th17mp-room-test-3 run=1 player=1
+LEAVE room=th17mp-room-test-3 run=1 player=0
+LEAVE room=th17mp-room-test-3 run=1 player=2
+SIGNAL LEAVE room=th17mp-room-test-3 run=1 player=1
+SIGNAL LEAVE room=th17mp-room-test-3 run=1 player=2
+SIGNAL LEAVE room=th17mp-room-test-3 run=1 player=0
+LOBBY LEAVE room=th17mp-room-test-3 client=th17mp-room-test-3-0
+LOBBY LEAVE room=th17mp-room-test-3 client=th17mp-room-test-3-2
+LOBBY LEAVE room=th17mp-room-test-3 client=th17mp-room-test-3-1

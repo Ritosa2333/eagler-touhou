@@ -146,6 +146,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     ...(productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
     ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
+    ...('renderScales' in product && options.renderScale != null ? {renderScale: options.renderScale} : {}),
     ...(input.productId === 'th075mp' && options.th075NativeResolution ? {renderScale: 1 as const} : {}),
     ...(isMultiplayer ? {multiplayerLocalPlayerVisibility: options.multiplayerLocalPlayerVisibility,
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),

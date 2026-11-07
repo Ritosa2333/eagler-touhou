@@ -200,6 +200,12 @@
             "thprac": true
           },
           "cache": {}
+        },
+        "multiplayer": {
+          "workspaceRepository": "th17mp",
+          "sourceBuild": { "build": ["web/scripts/build-sdl-application.mjs", "--release", "--multiplayer"] },
+          "features": { "thcrap": true, "thprac": false },
+          "cache": {}
         }
       }
     },

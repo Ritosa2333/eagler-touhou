@@ -842,6 +842,8 @@ export declare const PRODUCT_GAMES: Readonly<{
         title: "東方鬼形獣";
         subtitle: "Wily Beast and Weakest Creature";
         cardArtwork: "th17-card.webp";
+        renderScales: readonly [2, 1];
+        thpracRuntime: Readonly<{session: "native"}>;
         storage: Readonly<{
             saveRoot: "/savesth17";
             scoreFile: "scoreth17.dat";
@@ -864,7 +866,7 @@ export declare const PRODUCT_GAMES: Readonly<{
             adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
-        requiredShared: readonly never[];
+        requiredShared: readonly ["/msgothic.ttc", "/unifont.otf"];
         runtimeAssets: readonly string[];
         dataProvider: "retail-memory";
         package: Readonly<{
@@ -883,9 +885,12 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th17";
         }>;
+        multiplayerRuntime: "./runtime/th17/multiplayer/th17.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
+        thpracExtraFunctionKeys: readonly ["U"];
         features: Readonly<{
-            thprac: false;
-            languages: false;
+            thprac: true;
+            languages: true;
             focusHitbox: false;
         }>;
     }>;
@@ -975,6 +980,7 @@ export interface MultiplayerLoadoutConfig {
     glyph: string;
     character: number;
     shot: number;
+    selection?: readonly Readonly<{value: number; labelKey: string}>[];
 }
 export interface MultiplayerInputTimingConfig {
     rollbackDefault?: boolean;

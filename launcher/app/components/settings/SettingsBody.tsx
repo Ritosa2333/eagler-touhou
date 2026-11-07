@@ -249,6 +249,19 @@ export function SettingsBody({
             />
           }
         />
+        {'renderScales' in product && (
+          <SettingsSelect
+            id={id('renderResolution')}
+            label={t('settings.renderResolution')}
+            description={t('settings.renderResolutionHint')}
+            value={String(options.renderScale ?? product.renderScales[0])}
+            onChange={(event) => model.setOption('renderScale', event.target.value === '1' ? 1 : 2)}
+          >
+            {product.renderScales.map(scale => (
+              <option key={scale} value={scale}>{640 * scale}×{480 * scale}</option>
+            ))}
+          </SettingsSelect>
+        )}
         {context.productId === 'th075mp' && (
           <OptionRow
             className={item('option-frame-limit')}
