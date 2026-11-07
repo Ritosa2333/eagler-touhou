@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "fb134fde8978d267f319a67dc4e563947413cdec",
+      "base": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
       "history": [
         {
           "kind": "manual",
@@ -1310,6 +1310,16 @@
             "ports/th17-mp/web/tests/cpp/BulletRuntimeFixture.hpp"
           ],
           "note": "同步 ANM 等待更新、条带和精灵几何、WebGL 着色器选择及原版对照夹具。MP 保留队友射击淡化，按双人实战测量出画与确认帧。"
+        },
+        {
+          "kind": "manual",
+          "base": "fb134fde8978d267f319a67dc4e563947413cdec",
+          "source": "97e7dcb809b7834f6b1c3e8b89e09538a5092626",
+          "targetHead": "6c56932132f6f9077924cb3bf19e30846932617d",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp"
+          ],
+          "note": "顶点着色器保留 fogEnabled。四面与六面 54 个战斗画面采样和优化前一致。"
         }
       ]
     }
