@@ -60,7 +60,9 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool initialized=false,exiting=false,completed_recording=false,has_language_pack=false;std::array<i32,16> projected{};std::string failure;
 #if TH17_MULTIPLAYER
  struct RoomSound {i32 id;float pan;PlayerShots::SoundAction action;bool queued;};
+ struct RoomSpellTitle {TextLayout layout;TextureText request;};
  std::vector<RoomSound>* room_sounds=nullptr;
+ std::shared_ptr<const RoomSpellTitle> room_spell_title,drawn_room_spell_title;
  bool room_speculative=false,room_barrier=false;
  bool room_silent=false;
  std::array<std::array<i32,2>,3> room_loadouts{};

@@ -20,7 +20,9 @@ public:
  ~FontDevice();
  bool translated_message(const std::string&)const;
  bool initialize();bool text(AnmVm&,const TextureText&);
+ bool write_text(const TextLayout&,const TextureText&);
  bool dialogue(AnmVm&,u32 color,u32 outline,i32 style,i32 x,i32 spacing,const std::string&);
- bool spell_title(AnmVm&,const std::string&,bool utf8);
+ static TextureText spell_title_request(const std::string&,bool utf8);
+ bool spell_title(AnmVm&,const std::string&,bool utf8=false);
 };
 }

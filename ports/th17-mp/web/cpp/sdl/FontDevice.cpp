@@ -14,10 +14,17 @@ bool FontDevice::initialize(){
  return load_localized_font();
 }
 bool FontDevice::text(AnmVm& vm,const TextureText& request){
- TextLayout layout;if(!TextLayout::prepare(vm,request,fallback,layout)){error="Missing text animation or style";return false;}if(!initialize())return false;
+ TextLayout layout;if(!TextLayout::prepare(vm,request,fallback,layout)){error="Missing text animation or style";return false;}
+ if(!write_text(layout,request))return false;
+ vm.visual.flags|=1;
+ return true;
+}
+bool FontDevice::write_text(const TextLayout& layout,const TextureText& request){
+ if(!initialize())return false;
  const u32 handle=graphics.texture(*layout.resource,layout.texture);auto* image=graphics.pixels(handle);if(!image){error="Text texture was not prepared";return false;}
- graphics.backend.flush();if(!(request.utf8?write_localized(*image,layout,request):raster.write(*image,layout.region,request.bytes,layout.style))){error="TH17 text raster bounds or format";return false;}graphics.changed(handle,{u32(layout.region.left),u32(layout.region.top),u32(layout.region.right),u32(layout.region.bottom)});vm.visual.flags|=1;++writes;return true;
+ graphics.backend.flush();if(!(request.utf8?write_localized(*image,layout,request):raster.write(*image,layout.region,request.bytes,layout.style))){error="TH17 text raster bounds or format";return false;}graphics.changed(handle,{u32(layout.region.left),u32(layout.region.top),u32(layout.region.right),u32(layout.region.bottom)});++writes;return true;
 }
 bool FontDevice::dialogue(AnmVm& vm,u32 color,u32 outline,i32 style,i32 x,i32 spacing,const std::string& bytes){return text(vm,{color,outline,style,x,spacing,false,false,bytes,translated_message(bytes)});}
-bool FontDevice::spell_title(AnmVm& vm,const std::string& bytes,bool utf8){return text(vm,{0xffffff,0,utf8?8:0,0,0,true,false,bytes,utf8});}
+TextureText FontDevice::spell_title_request(const std::string& bytes,bool utf8){return {0xffffff,0,utf8?8:0,0,0,true,false,bytes,utf8};}
+bool FontDevice::spell_title(AnmVm& vm,const std::string& bytes,bool utf8){return text(vm,spell_title_request(bytes,utf8));}
 }

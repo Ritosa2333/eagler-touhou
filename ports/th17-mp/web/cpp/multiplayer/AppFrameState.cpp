@@ -20,7 +20,7 @@ bool ApplicationState::save_rollback(multiplayer::FrameImage& image){
     image.restore_with([&schedule]{multiplayer::FrameState::detach(schedule);return true;});
     image.save(progress,environment,visual,
         touch,physical_input,room_partners,manual_pressed,manual_repeated,frames,failure,
-        flow.pending,flow.title_return_reason,pause->state);
+        flow.pending,flow.title_return_reason,pause->state,room_spell_title);
     // File and ranking writes run after the confirmed transition boundary.
     // Spell history shares one immutable copy until begin/capture changes it.
     image.save(records.game,records.music,records.trophies,records.error);
