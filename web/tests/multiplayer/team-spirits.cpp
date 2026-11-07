@@ -632,6 +632,11 @@ void immutable_bullet_program(){
     require(bullets.emit(shot,0)&&bullets.first_active()==pristine&&
             bullets.next_active(pristine)==a&&bullets.next_active(a)==b,
             "replay preserves exact bullet allocation order");
+    multiplayer::FrameImage later;
+    bullets.save_rollback(later);
+    require(free_image.restore()&&!bullets.active(pristine),"older image restores the pristine suffix");
+    require(later.restore()&&bullets.active(pristine)&&bullets.first_free()==pristine-1,
+            "newer image restores a slot that the older image returned to the suffix");
 }
 
 void logical_animation_draw(){

@@ -15,17 +15,16 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
     struct Inactive {u16 index;std::shared_ptr<const BulletState> state;};
     std::vector<Active> active;
     std::vector<Inactive> inactive;
-    std::vector<u16> free;
     size_t active_count=0;
     for(u32 word:occupied)active_count+=__builtin_popcount(word);
     active.reserve(active_count);
-    free.reserve(capacity);
     for(u32 index=active_head;index!=none;index=slots[index].active_next)
         active.emplace_back(u16(index),slots[index].state);
-    for(u32 index=free_head;index!=none;index=slots[index].free_next){
-        auto& slot=slots[index];
-        free.push_back(u16(index));
-        if(slot.pristine)continue;
+    // Allocation removes the head and recycling prepends a used slot. The
+    // untouched suffix therefore stays in its original descending order.
+    u32 pristine_head=free_head;
+    for(;pristine_head!=none&&!slots[pristine_head].pristine;pristine_head=slots[pristine_head].free_next){
+        auto& slot=slots[pristine_head];
         // Reused bullets inherit fields from their previous life. The image
         // stays immutable until this slot leaves the free list again.
         auto cached=slot.inactive_image.lock();
@@ -33,28 +32,27 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
             cached=std::shared_ptr<const BulletState>(new BulletState(slot.state));
             slot.inactive_image=cached;
         }
-        inactive.push_back({u16(index),std::move(cached)});
+        inactive.push_back({u16(pristine_head),std::move(cached)});
     }
 #if TH17_ROOM_BENCHMARK
-    image.payload[image.BulletState]=u32(active.capacity()*sizeof(Active)+inactive.capacity()*sizeof(Inactive)+free.capacity()*sizeof(u16));
+    image.payload[image.BulletState]=u32(active.capacity()*sizeof(Active)+inactive.capacity()*sizeof(Inactive));
 #endif
-    image.restore_with([this,active=std::move(active),inactive=std::move(inactive),free=std::move(free)]{
+    image.restore_with([this,active=std::move(active),inactive=std::move(inactive),pristine_head]{
         // Collision hosts keep permanent references into the slot array.
-        u32 next=none;
-        auto cached=inactive.rbegin();
-        for(auto entry=free.rbegin();entry!=free.rend();++entry){
-            const auto index=*entry;
+        for(u32 index=pristine_head;index!=none&&!slots[index].pristine;--index){
             auto& slot=slots[index];
             slot.active=false;slot.active_next=slot.active_previous=none;
+            slot.free_next=index-1;
+            slot.state=pristine_state;slot.inactive_image.reset();slot.pristine=true;
+        }
+        u32 next=pristine_head;
+        for(auto cached=inactive.rbegin();cached!=inactive.rend();++cached){
+            auto& slot=slots[cached->index];
+            slot.active=false;slot.active_next=slot.active_previous=none;
             slot.free_next=next;
-            next=index;
-            if(cached!=inactive.rend()&&cached->index==index){
-                if(slot.inactive_image.lock()!=cached->state)slot.state=*cached->state;
-                slot.inactive_image=cached->state;slot.pristine=false;
-                ++cached;
-            }else if(!slot.pristine){
-                slot.state=pristine_state;slot.inactive_image.reset();slot.pristine=true;
-            }
+            next=cached->index;
+            if(slot.inactive_image.lock()!=cached->state)slot.state=*cached->state;
+            slot.inactive_image=cached->state;slot.pristine=false;
         }
         u32 previous=none;
         for(const auto& entry:active){

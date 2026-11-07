@@ -4,6 +4,10 @@
 #include <algorithm>
 #include <ctime>
 namespace th17::sdl {
+#if TH17_MULTIPLAYER
+bool room_phase_trace=false;
+std::array<u32,3> room_application_us{};
+#endif
 namespace {
 void load_table(LocalizationTable& table,const char* name){
  const std::string path=std::string("/thcrap/th17/localization/")+name;
@@ -204,7 +208,22 @@ bool ApplicationState::draw_global(){
  if(scheduler.draw()<0)return fail(title&&!title->error.empty()?title->error:global_layers->error.empty()?global_letters->error:global_layers->error);renderer.flush();graphics.present();return graphics.error.empty()||fail(graphics.error);
 }
 bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool lost_focus){
- if(!initialized||exiting||!failure.empty())return false;if(loading_destination!=AppScene::Uninitialized)return step_loading();manual_pressed=pressed;manual_repeated=repeated;physical_input.update(held);
+ if(!initialized||exiting||!failure.empty())return false;
+#if TH17_MULTIPLAYER
+ u64 phase_started=room_phase_trace?SDL_GetTicksNS():0;
+ const auto mark_phase=[&](unsigned phase){
+  if(!phase_started)return;
+  const auto now=SDL_GetTicksNS();room_application_us[phase]+=u32((now-phase_started)/1000);phase_started=now;
+ };
+#endif
+ if(loading_destination!=AppScene::Uninitialized){
+  const bool ok=step_loading();
+#if TH17_MULTIPLAYER
+  mark_phase(2);
+#endif
+  return ok;
+ }
+ manual_pressed=pressed;manual_repeated=repeated;physical_input.update(held);
  if(pending_page>=0){pending_page=-1;if(title){if(!title->manual_page_ready())return fail(title->error);}else if(pause_manual&&!pause_manual->page_loaded())return fail(pause_manual->error);}
  if(pending_bank>=0&&ending){const auto bank=pending_bank;pending_bank=-1;auto bytes=std::move(pending_animation);if(!ending->animation_ready(bank,bytes.data(),bytes.size()))return fail(ending->error);}
  if(title){
@@ -227,6 +246,9 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
 #endif
   audio_device.update();
  if(!audio_device.error.empty())return fail(audio_device.error);
+#if TH17_MULTIPLAYER
+ mark_phase(0);
+#endif
  if(scene()){
 #if TH17_MULTIPLAYER
   // A tick can open a pause or cross a scene boundary during its update.
@@ -247,6 +269,9 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   if(run->previous_scene()&&(run->previous_scene()->background_flags&8)){display->release_previous();if(!run->release_previous())return fail(run->error);}
   if(progress.screen!=0&&progress.screen!=7){if(progress.screen==2){flow.title_return_reason=4;flow.pending=AppScene::Title;}else flow.pending=AppScene(progress.screen);}
  }else if(!draw_global())return false;
+#if TH17_MULTIPLAYER
+ mark_phase(1);
+#endif
  performance.sample(double(SDL_GetTicksNS())/1e9,scene()!=nullptr,progress.scene_flags,u32(frame_skip));
  fades.erase(std::remove_if(fades.begin(),fades.end(),[](const auto& item){return !item->active;}),fades.end());animations.collect_resources();
 #if TH17_MULTIPLAYER
@@ -255,7 +280,11 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
 #endif
   audio_device.pump();
  ++frames;
- return advance_flow();
+ const bool ok=advance_flow();
+#if TH17_MULTIPLAYER
+ mark_phase(2);
+#endif
+ return ok;
 }
 const i32* ApplicationState::projection(){
  projected.fill(0);projected[0]=title?0:ending?2:run?1:-1;projected[1]=i32(flow.current);projected[2]=progress.stage;projected[3]=progress.difficulty;projected[4]=progress.character;projected[5]=scene()&&scene()->controller?scene()->controller->age.current:0;projected[6]=i32(progress.scene_flags);projected[7]=i32(frames);
