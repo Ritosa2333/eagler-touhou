@@ -1,6 +1,6 @@
 # 文档总表
 
-共 470 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 471 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -143,6 +143,7 @@
 | 作品源码文档 | [ports/th13/docs/ASSETS.md](../ports/th13/docs/ASSETS.md) | th13 资源格式清单 |
 | 作品源码文档 | [ports/th13/docs/DECOMP.md](../ports/th13/docs/DECOMP.md) | th13 反编译函数地图 |
 | 作品源码文档 | [ports/th13/docs/DEVELOPMENT.md](../ports/th13/docs/DEVELOPMENT.md) | th13 开发指南 |
+| 作品源码文档 | [ports/th13/docs/feedback-fast-forward-20261107.md](../ports/th13/docs/feedback-fast-forward-20261107.md) | 2026-11-07 Replay / result / staff feedback fixes |
 | 作品源码文档 | [ports/th13/docs/plans/anm-pipeline.md](../ports/th13/docs/plans/anm-pipeline.md) | TH13 ANM（v8）管线行为规格与移植方案 |
 | 作品源码文档 | [ports/th13/docs/plans/coverage-matrix.md](../ports/th13/docs/plans/coverage-matrix.md) | 场景覆盖矩阵（coverage matrix） |
 | 作品源码文档 | [ports/th13/docs/plans/draw-contract.md](../ports/th13/docs/plans/draw-contract.md) | 语义绘制清单契约（draw contract）v1 |
