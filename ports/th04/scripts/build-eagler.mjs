@@ -135,6 +135,7 @@ await patch('netplay/room.js',text=>{
   text=replaceOnce(text,"if(session){\n    const q=new URLSearchParams", "if(false){\n    const q=new URLSearchParams",'legacy progress');
   text=replaceOnce(text,"if(session.role==='host')replayRecorder.connectNetwork", "if(false)replayRecorder.connectNetwork",'legacy replay service');
   text=replaceOnce(text,"if(session)navigator.sendBeacon", "if(false)navigator.sendBeacon",'legacy leave beacon');
+  text=replaceOnce(text,'function captureLocalInput(frontier=queue.frame,context=null){','globalThis.__eaglerPC98Input.onChange=()=>{if(running&&!stopped){observeInput();wake();}};\nfunction captureLocalInput(frontier=queue.frame,context=null){','wake on managed input');
   text=replaceOnce(text,'normalize(player.sample(keyboardBits(keys)|childBits|gamepadBits())|pendingAction)','normalize(globalThis.__eaglerPC98Input.sample({play:runtime?.touchContext()?.play===true})|pendingAction)','host input');
   text=replaceOnce(text,'packed=player.pack(bits|pendingAction,{includePointPreference:false});','packed=packTouch(bits|pendingAction,{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','host direct touch');
   text="import {packTouch} from '../touch-input.js';\n"+text;
