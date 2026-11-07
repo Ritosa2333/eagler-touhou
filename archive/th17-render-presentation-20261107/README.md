@@ -23,6 +23,17 @@ TH17 单人和房间的「游戏设置 → 显示 → 渲染分辨率」共用�
 
 启动器检查覆盖选项显示、选择和跨模式恢复，以及两种倍率的配置消息。两份设置与启动准备测试通过，共 63 项。启动器应用类型检查与三种界面语言的消息检查通过。
 
+### 混合分辨率三人房
+
+使用同一优化包、本地 Relay、4 倍浏览器 CPU 限速和相同的双向输入延迟。两轮都让 P2 在一面持续滑动。逐席检查画布的实际像素尺寸，并逐帧对比确认状态和战斗校验值。校验覆盖敌机脚本、弹幕、激光、道具和自机射击。
+
+| 房测 | 实际画布（P1 / P2 / P3） | 一致确认帧 | 补算帧（P1 / P2 / P3） |
+| --- | --- | ---: | --- |
+| [1280×960 房主](mixed-host-1280.json) | 1280×960 / 640×480 / 1280×960 | 2,202 | 152 / 69 / 220 |
+| [640×480 房主](mixed-host-640.json) | 640×480 / 1280×960 / 640×480 | 2,201 | 165 / 87 / 282 |
+
+复测时用 `TH17_ROOM_RENDER_SCALES=2,1,2` 或 `1,2,1` 代替单一倍率，设置 `TH17_ROOM_SAMPLES=2200`，用 `--touch-drag` 代替 `--touch-comparison`。两种排列均由 P2 发送 1,180 帧滑动输入。
+
 ## 复测
 
 运行资产沿用[普通关长帧复测](../th17-no-repair-spike-20261107/README.md#复测)。设置 `TH17_ROOM_SEATS=3`、`TH17_ROOM_RENDER_SCALE=2`、`TH17_ROOM_DELAY_MS=60`、`TH17_ROOM_JITTER_MS=15`、`TH17_ROOM_CPU_THROTTLE=4`。在 `ports/th17-mp/web/tests/multiplayer/room-browser.mjs` 使用 `--launcher-preview --check-presentation --independent-pages --touch-comparison --symmetric-delay --trace-gaps`，追加 `--trace-phases` 记录各阶段耗时。
