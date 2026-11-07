@@ -322,7 +322,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       seats: Object.freeze(seats),
       disableCheatMovement: row.disableCheatMovement === true,
       challengeMode: row.challengeMode === true,
-      disableFocus: row.product === 'th03mp' && row.disableFocus === true,
+      ...(row.product === 'th03mp' ? {disableFocus: row.disableFocus !== false} : {}),
       ...(row.product === 'th01mp' ? {ballCount:[1,2,3,4,6,8].includes(row.ballCount as number) ? row.ballCount as number : 2} : {}),
       players: seats.filter(Boolean).length,
       ready: bounded(row.ready, capacity),
@@ -458,7 +458,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function formDefaults(product: MultiplayerProductId | '') {
     const policy = product ? multiplayerConfigForProduct(product) : null;
-    return { product, capacity: policy?.playerCounts[0] ?? 2, difficulty: 1 } as const;
+    return { product, capacity: policy?.playerCounts[0] ?? 2, difficulty: product === 'th03mp' ? 3 : 1 } as const;
   }
   async function initialize() {
     if (bootRunning || disposed || snapshot.leaving) return;

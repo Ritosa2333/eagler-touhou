@@ -344,9 +344,9 @@ export function mountControls({canvas, getEmulator, getNetwork, getTouch, getMan
     for(let slot=0;slot<2;slot++){
       const rapid=target.delete(`${slot}:shot`),charge=target.delete(`${slot}:charge`);
       if(network?.isLockstep){
-        if(rapid)target.add(`${slot}:rapid`);
+        if(rapid)target.add(`${slot}:${globalThis.__eaglerPC98Options?.().th03RapidFire===false?'shot':'rapid'}`);
         if(charge)target.add(`${slot}:shot`);
-      }else if(fire[slot].sample(rapid,charge,performance.now()))target.add(`${slot}:shot`);
+      }else if(fire[slot].sample(rapid,charge,performance.now(),globalThis.__eaglerPC98Options?.().th03RapidFire!==false))target.add(`${slot}:shot`);
     }
     if(isPaused()||getEmulator()?.state!=='running'){target.clear();if(!network?.isLockstep)fire.forEach(f=>f.reset());}
     if((!focused&&!managed)||document.hidden||dialog.open||touch?.isEditing()||isPaused()||getEmulator()?.state!=='running')network?.clearLocal?.();

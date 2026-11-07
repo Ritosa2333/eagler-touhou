@@ -37,12 +37,12 @@ try {
     assert.equal(code,1008);assert.equal(String(reason),'runtime version mismatch');
   }
   const host=connect({lobby:'th03_host_123',member:'host_member_123',intent:'create'}),guest=connect({lobby:'th03_guest_123',member:'guest_member_123'});
-  const first=await host.wait(m=>m.type==='state');await guest.wait(m=>m.type==='state');assert.equal(first.room.disableFocus,false);
+  const first=await host.wait(m=>m.type==='state');await guest.wait(m=>m.type==='state');assert.equal(first.room.disableFocus,true);assert.equal(first.room.difficulty,3);
   await send(host,{type:'take-seat',seat:0,loadout:0},m=>m.room?.seats[0]);await send(guest,{type:'take-seat',seat:1,loadout:0},m=>m.room?.seats[1]);
   await send(host,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[0]?.ready);await send(guest,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[1]?.ready);
-  const changed=await send(host,{type:'settings',playerCount:2,difficulty:1,disableFocus:true},m=>m.room?.disableFocus===true);
-  assert(changed.room.seats.slice(0,2).every(s=>!s.ready));assert(changed.room.settingsVersion>first.room.settingsVersion);await guest.wait(m=>m.room?.disableFocus===true);
-  const denied=await send(guest,{type:'settings',playerCount:2,difficulty:1,disableFocus:false},m=>m.type==='error');assert(denied.error);
+  const changed=await send(host,{type:'settings',playerCount:2,difficulty:1,disableFocus:false},m=>m.room?.disableFocus===false);
+  assert(changed.room.seats.slice(0,2).every(s=>!s.ready));assert(changed.room.settingsVersion>first.room.settingsVersion);await guest.wait(m=>m.room?.disableFocus===false);
+  const denied=await send(guest,{type:'settings',playerCount:2,difficulty:1,disableFocus:true},m=>m.type==='error');assert(denied.error);
   await send(host,{type:'settings',playerCount:2,difficulty:1,disableFocus:'yes'},m=>m.type==='error');
   console.log('TH03 relay focus rule, host authority and ready reset PASS');
 } finally {

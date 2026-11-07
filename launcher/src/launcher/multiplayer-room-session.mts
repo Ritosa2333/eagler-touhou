@@ -123,7 +123,7 @@ export function createMultiplayerRoomSessionStore({
         disableCheatMovement: room.disableCheatMovement === true,
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
         ...(product === 'th01mp' ? {ballCount:[1,2,3,4,6,8].includes(room.ballCount as number) ? room.ballCount as number : 2} : {}),
-        ...(product === 'th03mp' ? {disableFocus:room.disableFocus===true} : {}),
+        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),

@@ -4,7 +4,8 @@ const frameMs=1000/60;
 export class FireControl {
   constructor(){this.reset();}
   reset(){this.state={held:false,next:0,until:0,charging:false};}
-  sample(rapid,charge,now){
+  sample(rapid,charge,now,rapidEnabled=true){
+    if(!rapidEnabled){this.reset();return !!(rapid||charge);}
     const s=this.state;
     // Dialogue also waits for a fresh press: keep pulsing Z outside combat.
     if(charge){s.held=false;s.until=0;s.charging=true;return true;}

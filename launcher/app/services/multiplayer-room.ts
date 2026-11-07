@@ -423,7 +423,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
-      ...(product === 'th03mp' ? {disableFocus:!!room.disableFocus} : {}),
+      ...(product === 'th03mp' ? {disableFocus:room.disableFocus !== false} : {}),
       ...(product === 'th01mp' ? {ballCount:room.ballCount ?? 2} : {}),
       ...(product === "th15mp"
         ? {
@@ -459,7 +459,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(product==='th19mp'?{th19Rules:[...(normalized.th19Rules??TH19_VERSUS_RULES)]}:{}),
       ...((product==='th05mp'||isPc98StockProduct(product))?{initialSpares:normalized.initialSpares??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,initialBombs:normalized.initialBombs??(isPc98StockProduct(product)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
       ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
-      ...(product === 'th03mp' ? {disableFocus:normalized.disableFocus ?? false} : {}),
+      ...(product === 'th03mp' ? {disableFocus:normalized.disableFocus ?? true} : {}),
       ...(product === 'th01mp' ? {ballCount:normalized.ballCount ?? 2} : {}),
       prankMode: false,
       inputDelayAuto: normalized.inputDelayAuto ?? false,
@@ -768,13 +768,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty:
         saved?.room.difficulty ??
         (created
-          ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? 0)))
-          : 1),
+          ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? (product === 'th03mp' ? 3 : 0))))
+          : product === 'th03mp' ? 3 : 1),
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
       ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
-      ...(product === 'th03mp' ? {disableFocus:saved?.room.disableFocus ?? false} : {}),
+      ...(product === 'th03mp' ? {disableFocus:saved?.room.disableFocus ?? true} : {}),
       ...(product === 'th01mp' ? {ballCount:saved?.room.ballCount ?? 2} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
       ...(product==='th19mp'?{th19Rules:[...(saved?.room.th19Rules??TH19_VERSUS_RULES)]}:{}),
@@ -811,7 +811,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     room = {
       code,
       playerCount: policy()!.playerCounts[0],
-      difficulty: 1,
+      difficulty: nextProduct === 'th03mp' ? 3 : 1,
+      ...(nextProduct === 'th03mp' ? {disableFocus:true} : {}),
       created,
       seats: null,
       synced: false,
@@ -1075,7 +1076,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
       ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
-      ...(product === 'th03mp' ? {disableFocus:patch.disableFocus ?? !!room.disableFocus} : {}),
+      ...(product === 'th03mp' ? {disableFocus:patch.disableFocus ?? (room.disableFocus !== false)} : {}),
       ...(product === 'th01mp' ? {ballCount:patch.ballCount ?? room.ballCount ?? 2} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
       prankMode: false,
@@ -1231,7 +1232,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorId: spectator ? clientId : '',
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
-        ...(product === 'th03mp' ? {disableFocus:room.disableFocus===true} : {}),
+        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false} : {}),
         ...(product === 'th01mp' ? {ballCount:room.ballCount ?? 2} : {}),
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,

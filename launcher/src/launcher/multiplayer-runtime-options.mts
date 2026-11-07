@@ -223,7 +223,7 @@ export function buildMultiplayerRuntimeOptions(
     ...(input.challengeMode !== undefined ? { netplayChallengeMode: input.challengeMode } : {}),
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
     ...(roomProduct === 'th01mp' ? {netplayBallCount:input.ballCount ?? 2} : {}),
-    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),
+    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false} : {}),
     netplayUrl: url.href,
     netplayPlayer: player,
     netplayPlayerCount: playerCount,

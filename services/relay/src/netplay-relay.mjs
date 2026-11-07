@@ -386,12 +386,12 @@ function getRoom(id, socket) {
       runs: new Map(),
       lobby: {
         playerCount: defaultPlayerCount(multiplayer),
-        difficulty: 1,
+        difficulty: id.startsWith('th03mp-') ? 3 : 1,
         ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
         visibility: 'public',
         disableCheatMovement: false,
         ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
-        ...(id.startsWith('th03mp-') ? {disableFocus:false} : {}),
+        ...(id.startsWith('th03mp-') ? {disableFocus:true} : {}),
         ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
         ...(pc98StockRoom(id)?{initialSpares:PC98_INITIAL_STOCK.spares,initialBombs:PC98_INITIAL_STOCK.bombs}:{}),
         ...(id.startsWith("th15mp-")
@@ -1042,7 +1042,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
-    if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
+    if(room.id.startsWith('th03mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus!==false;
     if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
     if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
@@ -1968,7 +1968,7 @@ server.on('connection', (socket, request) => {
       visibility: url.searchParams.get('visibility'),
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
       disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
-      disableFocus: url.searchParams.get('disableFocus') === '1',
+      disableFocus: url.searchParams.has('disableFocus') ? url.searchParams.get('disableFocus') === '1' : undefined,
       ballCount: url.searchParams.has('ballCount') ? Number(url.searchParams.get('ballCount')) : undefined,
       initialSpares: url.searchParams.has('initialSpares') ? Number(url.searchParams.get('initialSpares')) : undefined,
       initialBombs: url.searchParams.has('initialBombs') ? Number(url.searchParams.get('initialBombs')) : undefined,

@@ -62,7 +62,7 @@ async function command(message){
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
       const next={...message.options};
       if(next.musicSource!==undefined&&!['original','akyu'].includes(next.musicSource))throw Error('音乐音源无效');
-      for(const key of ['th03FocusEnabled','alwaysHitbox','netplayDisableFocus'])if(next[key]!==undefined&&typeof next[key]!=='boolean')throw Error('运行配置无效');
+      for(const key of ['th03FocusEnabled','th03RapidFire','alwaysHitbox','netplayDisableFocus'])if(next[key]!==undefined&&typeof next[key]!=='boolean')throw Error('运行配置无效');
       if(next.touchSensitivity!==undefined&&(!Number.isFinite(next.touchSensitivity)||next.touchSensitivity<100||next.touchSensitivity>300))throw Error('触控灵敏度无效');
       const nextLanguage=message.language??'ja';if(nextLanguage!==language)preview?.stop();
       setManagedBgmVersion(next.musicSource ?? 'original');

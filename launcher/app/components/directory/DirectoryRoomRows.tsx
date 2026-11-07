@@ -82,7 +82,7 @@ function RoomRow({
   const duel = policy.gameplay === 'versus', hasScore=room.product==='th09mp'||room.product==='th03mp';
   const score = hasScore&&room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS';
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
-  const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
+  const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
@@ -128,8 +128,8 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode && !room.disableFocus && (room.ballCount ?? 2) === 2 ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.disableFocus ? t('room.th03SpecialFocus') : '', (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !(room.product === 'th03mp' && room.disableFocus === false) && (room.ballCount ?? 2) === 2 ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.product === 'th03mp' && room.disableFocus === false ? t('room.th03SpecialFocus') : '', (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <div className="lobby-room-status">
         <span className="lobby-room-state" data-state={state}>{t(`lobby.${state}`)}</span>

@@ -24,7 +24,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
         </MainSelect></label>
       </div>
       <p className="room-setting-description" hidden={room.visibility !== 'private'}>{t('room.privateHint')}</p>
-      {config.inGameSelection ? <p className="room-setting-description">{t('room.inGameSelectionHint')}</p> : <RoomChoiceGroup title={<><span>{t('multiplayer.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
+      {config.inGameSelection && state.product !== 'th03mp' ? <p className="room-setting-description">{t('room.inGameSelectionHint')}</p> : <RoomChoiceGroup title={<><span>{t('multiplayer.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
@@ -58,7 +58,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
       {state.product === 'th09mp' && <div className="room-rule-field"><div><strong>{t('room.disableLocalChargePriority')}</strong><p className="room-setting-description" id="mpLocalChargeReplayHint">{t('room.localChargeReplayHint')}</p></div>
         <OptionSwitch id="mpDisableLocalChargePriority" label={t('room.disableLocalChargePriority')} describedBy="mpLocalChargeReplayHint" checked={!!room.disableLocalChargePriority} disabled={disabled} onChange={()=>service.setRoomSettings({disableLocalChargePriority:!room.disableLocalChargePriority})}/>
       </div>}
-      {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('room.th03DisableFocus')}</strong></div><OptionSwitch id="mpTh03DisableFocus" label={t('room.th03DisableFocus')} checked={!!room.disableFocus} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:!room.disableFocus})}/></div>}
+      {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('room.th03SpecialFocus')}</strong></div><OptionSwitch id="mpTh03DisableFocus" label={t('room.th03SpecialFocus')} checked={room.disableFocus === false} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:room.disableFocus === false})}/></div>}
     </section>
     {!owner && <p className="room-setting-description" id="mpRoomSettingsHint">{t(!room.seats?.[0] ? 'room.hostAvailable' : 'multiplayer.ownerRemoteHint')}</p>}
     <UiButton id="mpTakeHostSeat" type="button" hidden={!!room.seats?.[0] || owner} disabled={!ready || room.phase !== 'lobby'} onClick={()=>{void service.takeSeat(0);}}>{t('room.takeHostSeat')}</UiButton>

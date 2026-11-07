@@ -557,7 +557,7 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
     const policy = owners.multiplayerConfigForProduct(product);
-    if (policy.inGameSelection) {
+    if (policy.inGameSelection && product !== 'th03mp') {
       assert.equal(env.document.querySelector('.lobby-difficulty'),null);
       assert.equal(all('.difficulty-label').length, 0);
     } else {
@@ -579,9 +579,9 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     const policy = owners.multiplayerConfigForProduct(product);
     assert.deepEqual(all('#capacitySelect option').map(x => [x.value, x.textContent]), policy.playerCounts.map(count => [String(count), t(locale, 'lobby.playersCount', {count})]));
     assert.deepEqual(all('#difficultySelect option').map(x => [x.value, x.textContent]), policy.difficulties.map((name, index) => [String(index), name]));
-    assert.equal(n('#difficultySelect').disabled,!!policy.inGameSelection);
-    assert.equal(n('#difficultySelect').closest('label').hidden,!!policy.inGameSelection);
-    if(policy.inGameSelection) assert.ok(n('#roomForm').textContent.includes(t(locale,'room.inGameSelectionHint')));
+    assert.equal(n('#difficultySelect').disabled,!!policy.inGameSelection&&product!=='th03mp');
+    assert.equal(n('#difficultySelect').closest('label').hidden,!!policy.inGameSelection&&product!=='th03mp');
+    if(policy.inGameSelection&&product!=='th03mp') assert.ok(n('#roomForm').textContent.includes(t(locale,'room.inGameSelectionHint')));
   }
   await m.update({open: false});
 });
@@ -765,12 +765,25 @@ test('TH01 directory marks ball counts other than two as special',async()=>{
   assert.equal(n('.lobby-room-rules').textContent,'6 球');
 });
 
-test('TH03 versus rooms use the duel layout and mark disabled focus as a special rule',async()=>{
-  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live([room({product:'th03mp',capacity:2,disableFocus:true,seats:[{initial:'A',online:true,stats:{wins:2,losses:1,minutes:0}},{initial:'B',online:true,stats:{wins:1,losses:2,minutes:0}}]})]);
-  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+test('TH03 versus rooms use the duel layout and mark enabled focus as a special rule',async()=>{
+  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live([room({product:'th03mp',capacity:2,disableFocus:false,seats:[{initial:'A',online:true,stats:{wins:2,losses:1,minutes:0}},{initial:'B',online:true,stats:{wins:1,losses:2,minutes:0}}]})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
   assert.equal(n('.lobby-seats').dataset.duel,'true');
   assert.equal(n('.book-room-score-value').textContent,'2 : 1');
   assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','room.th03SpecialFocus'));
+  await f.receive([room({product:'th03mp',capacity:2,disableFocus:true})]);await m.update({snapshot:f.service.getSnapshot()});
+  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
+});
+
+test('TH03 creation exposes difficulty and defaults to Lunatic',async()=>{
+  const f=await fixture({selectedProduct:'th03mp',locale:'zh-CN',host:{games:['th03']}}).live();
+  const {m}=await mountDialog(f,'create',{}, {locale:'zh-CN'});
+  assert.equal(n('#gameSelect').value,'th03mp');
+  assert.equal(n('#difficultySelect').value,'3');
+  assert.equal(n('#difficultySelect').disabled,false);
+  assert.equal(n('#difficultySelect').closest('label').hidden,false);
+  await change('#difficultySelect','1');assert.equal(f.service.getSnapshot().form.difficulty,1);
+  await m.unmount();
 });
 
 test('Directory gameplay flags use their own column and regular rooms name their rules', async () => {

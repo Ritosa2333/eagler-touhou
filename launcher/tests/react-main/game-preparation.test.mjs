@@ -176,6 +176,16 @@ test('TH05 native thprac preference reaches configure without a Windows session 
   assert.equal('thpracSession' in options, false);
 });
 
+for(const productId of ['th03','th03mp']) test(`${productId} saves and applies its rapid-fire preference`,()=>{
+  const state=settingsFixture({productId});
+  const multiplayer=productId.endsWith('mp')?{kind:'room',options:{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?room=th03mp-1234',netplayPlayer:0,netplayPlayerCount:2,netplaySeed:1,netplayDifficulty:3}}:undefined;
+  const configure=model=>api.gameRuntimeOptions({productId,settings:model.getSnapshot(),multiplayer},'ja','none',null);
+  assert.equal(configure(state.model).th03RapidFire,true);
+  state.model.setOption('th03RapidFire',false);assert.equal(configure(state.model).th03RapidFire,false);
+  const restored=api.createGameSettingsModel({storage:{getItem:key=>state.storage.get(key)??null,setItem:(key,value)=>state.storage.set(key,value),removeItem:key=>state.storage.delete(key)}});
+  restored.hydrate(state.snapshot.context);assert.equal(configure(restored).th03RapidFire,false);
+});
+
 test('TH05 album preparation sends the source to Runtime and reads its declared OGG targets', async () => {
   const current = generation({ogg: ['track-1', 'track-2']});
   current.game = current.descriptor.game = 'th05';

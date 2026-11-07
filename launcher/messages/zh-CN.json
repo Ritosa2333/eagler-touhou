@@ -2118,7 +2118,7 @@
   "settings_th02RapidFire": "连射",
   "settings_th03Focus": "启用低速",
   "room_th03DisableFocus": "禁用低速",
-  "room_th03SpecialFocus": "禁用低速",
+  "room_th03SpecialFocus": "启用低速",
   "room_th01BallCount": "球的数量",
   "room_th01SpecialBalls": "{count} 球"
 }
