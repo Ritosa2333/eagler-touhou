@@ -1173,7 +1173,7 @@
     "th17": {
       "normal": "ports/th17",
       "multiplayer": "ports/th17-mp",
-      "base": "3aa413997220673db16d8b319d4226857c61bf7a",
+      "base": "933600b5b44a1adecacf3002446c0109c32097e8",
       "history": [
         {
           "kind": "manual",
@@ -1267,6 +1267,32 @@
             "ports/th17-mp/web/cpp/game/Lzss.cpp"
           ],
           "note": "普通版和多人版同步优化 LZSS 回拷与 ANM 透明边界扫描，多人长帧记录归属多人目录。"
+        },
+        {
+          "kind": "manual",
+          "base": "3aa413997220673db16d8b319d4226857c61bf7a",
+          "source": "66e117e10191fc6e04b0bccfde60a30d6173fe8b",
+          "targetHead": "36735292fc1870b8fbb1e42b9dfc9b9c59fb3f3d",
+          "paths": [
+            "ports/th17-mp/portable/sdl/Renderer.cpp",
+            "ports/th17-mp/web/cpp/game/AnmRenderer.cpp",
+            "ports/th17-mp/web/cpp/game/SoundEffects.cpp",
+            "ports/th17-mp/web/cpp/game/SoundEffects.hpp",
+            "ports/th17-mp/web/cpp/sdl/AudioDevice.cpp",
+            "ports/th17-mp/web/cpp/sdl/AudioDevice.hpp",
+            "ports/th17-mp/web/tests/story-render-browser.mjs"
+          ],
+          "note": "两版复用相同的 ANM 材质与音效重播优化。多人版已有短绘制批次优化，普通版本轮接收。单人录像采样与多人房测各自维护。"
+        },
+        {
+          "kind": "manual",
+          "base": "66e117e10191fc6e04b0bccfde60a30d6173fe8b",
+          "source": "933600b5b44a1adecacf3002446c0109c32097e8",
+          "targetHead": "839b161450480f6b225669421488f904ff0a997c",
+          "paths": [
+            "ports/th17-mp/web/cpp/game/DamageSources.cpp"
+          ],
+          "note": "多人版同步自机弹判定的按角度复用。缓存随单次查询销毁，判定顺序与战斗状态沿用普通版。"
         }
       ]
     }
