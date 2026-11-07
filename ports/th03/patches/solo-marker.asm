@@ -77,10 +77,29 @@ frame_hook:
     popf
     ret
 
-; Use the native single-player menu only during an eligible solo round.
+; MAIN calls this only after its native input poll detects Escape. Movement
+; eligibility changes during hit/death animations and results, so phase is
+; not a safe way to decide whether Escape belongs to our menu.
 pause_hook:
-    cmp byte [cs:phase],1
+    pushf
+    push bx
+    push es
+    les bx,[0x1d90]
+    cmp byte [es:bx+0x39],0  ; leave attract demos with their original exit
     jne .original
+    cmp byte [es:bx+0x0e],0  ; a human owns the left side
+    jne .original
+    mov bl,[es:bx+0x28]
+    cmp bl,1                 ; Story
+    je .menu
+    cmp bl,0x80              ; 1P vs CPU
+    je .menu
+    cmp bl,0x81              ; local 1P vs 2P
+    jne .original
+.menu:
+    pop es
+    pop bx
+    popf
     mov byte [cs:phase],0
     mov byte [cs:focus_active],0
     mov dword [cs:touch_state],0
@@ -89,6 +108,9 @@ pause_hook:
     call solo_pause
     ret
 .original:
+    pop es
+    pop bx
+    popf
     call ORIGINAL(0xc7a5)
     ret
 

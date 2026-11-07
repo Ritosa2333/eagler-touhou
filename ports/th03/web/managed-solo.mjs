@@ -81,7 +81,7 @@ function tick(now){
     bits=(bits&~544)|(shot?32:0);
     let focus=playing&&!!(bits&64)?1:0;
     if(versus){
-      send(0);let second=input.localSecond();if(bits&64)focus|=1;if(second&64)focus|=2;second=(second&~544)|(secondFire.sample(!!(second&512),!!(second&32),now)?32:0);
+      send(state?.phase===3?bits&128:0);let second=input.localSecond();if(bits&64)focus|=1;if(second&64)focus|=2;second=(second&~544)|(secondFire.sample(!!(second&512),!!(second&32),now)?32:0);
       const next=new Set();for(const [slot,value] of [bits,second].entries())for(const [mask,code] of Object.entries(versusKeys[slot]))if(value&mask)next.add(code);
       for(const code of new Set([...versusHeld,...next]))if(versusHeld.has(code)!==next.has(code))emulator.send('key',[{type:next.has(code)?'keydown':'keyup',code}]);
       versusHeld=next;

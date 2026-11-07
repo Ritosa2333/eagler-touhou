@@ -51,7 +51,7 @@ let matchResults;
 let nativePause, nativeState, pauseSeat = null, pauseSelection = 0, localBgm, nativeMusic, confirmedMusic;
 let localSfx, networkAudio;
 let replayRecorder;
-let closed = false, closing = false, escapeAt = -Infinity, escapeTimer;
+let closed = false, closing = false;
 let sync, syncIdentity, syncFrame=0, syncReplaying=false;
 const nativeCanvas = document.createElement('canvas');
 nativeCanvas.width = 640; nativeCanvas.height = 400;
@@ -127,7 +127,7 @@ const enqueue=value=>{if(netplay?.isLockstep&&!sync?.applying){netplay.command(v
 const nativeNow=()=>online?(emulator?.module.virtualNow??0):performance.now();
 const inGameplay = () => !!nativeState?.phase;
 const screenChildren = [...$('screen').children];
-const player = mountPlayer($('screen'), {solo: true,network:online, onGesture: () => { clearEscape(); resumeAudio(); },
+const player = mountPlayer($('screen'), {solo: true,network:online, onGesture: resumeAudio,
   onFullscreenExit: () => { if(pauseSeat===null)openPause(0); }});
 if(online)mountNetworkStatus($('screen').querySelector('.player-toolbar'));
 if(embedded){
@@ -146,7 +146,7 @@ for (const id of ['cover', 'pause-shade', 'pause-menu']) player.stage.append($(i
 player.setLabel(online ? '等待分配席位' : '1P');
 const controls = mountControls({canvas: $('canvas'), getEmulator: () => emulator, getNetwork: () => netplay,
   networkMode:online||controlsOnly,
-  dialog: $('settings'), onGesture: () => { clearEscape(); resumeAudio(); }, onOtherInput: clearEscape,
+  dialog: $('settings'), onGesture: resumeAudio, onOtherInput: () => {},
   onPause: openPause, onMenu: navigatePause, onEscape: handleEscape,
   onFocus: (mask, points) => nativePause?.setFocus(mask, points),
   getTouch: () => player, getManagedInput:()=>roomHost?globalThis.__eaglerPC98Input:null, getRoomFocus: () => roomFocusEnabled, getRoomUnlimited: () => !online||roomTouchUnlimitedAllowed, onTouch: inputs => nativePause?.setTouch(inputs),
@@ -347,7 +347,6 @@ function openPause(seat) {
   nativeState = nativePause?.update(nativeNow());
   if (!nativeState?.phase) return;
   if(online){if(!nativePause.menuOpen(seat,nativeNow(),activeLang))return;controls.release();pauseSeat=seat;pauseSelection=0;return;}
-  clearEscape();
   controls.release(); visibilityPaused = false; emulator.pause(); save();
   pauseSeat = seat; pauseSelection = 0;
   $('pause-menu').dataset.seat = String(seat);
@@ -409,33 +408,11 @@ player.stage.addEventListener('pointerup',event=>{
   const left=pauseSeat?336:16,row=Math.floor((y-100)/46),inside=(y-100)-row*46;
   if(x>=left&&x<left+288&&row>=0&&row<3&&inside>=0&&inside<40)choosePause(['resume','round','match'][row]);
 });
-function clearEscape() { escapeAt = -Infinity; clearTimeout(escapeTimer); }
 function handleEscape() {
   if(enqueue('escape'))return;
   if (closed || closing || !emulator || emulator.state !== 'running') return;
   nativeState = nativePause?.update(nativeNow());
   if (nativeState?.phase) { openPause(0); return; }
-  if (!nativePause?.selecting) return;
-  const now = performance.now();
-  if (now - escapeAt <= 1000) { clearEscape(); closeGame(); return; }
-  escapeAt = now;
-  status('再按一次 Esc 关闭游戏');
-  escapeTimer = setTimeout(() => { clearEscape(); reflectState(); }, 1000);
-}
-async function closeGame() {
-  if(online){returnRoom();return;}
-  closing = true; controls.release(); visibilityPaused = false;
-  emulator.pause(); clearTimeout(saveTimer); saveTimer = null;
-  localBgm?.dispose(); localBgm = null;
-  localSfx?.dispose(); localSfx = null;
-  try { await emulator.module.SDL2?.audioContext?.suspend(); } catch {}
-  await save();
-  closed = true; closing = false; nativePause.reset(); nativeState = null; pauseSeat = null;
-  $('pause-menu').hidden = $('pause-shade').hidden = true;
-  $('cover').hidden = false; $('start').disabled = false; $('start').textContent = '启动游戏';
-  for (const id of ['language', 'difficulty', 'clock', 'import']) $(id).disabled = false;
-  $('reset').disabled = true;
-  status(saved === dirty ? '游戏已关闭' : '游戏已关闭；存档保存失败，可导出备份', saved !== dirty); $('start').focus();
 }
 function trackNativePause() {
   if (!online && !closed && !closing && nativePause && emulator?.state !== 'exited') {
@@ -443,7 +420,6 @@ function trackNativePause() {
     if (!emulator.isWorker && nativeMusic && localBgm) {
       for (const [ax,hash] of nativeMusic.read(emulator.module.HEAPU8)) localBgm.command(ax,hash);
     }
-    if (!nativePause.selecting && escapeAt !== -Infinity) { clearEscape(); reflectState(); }
     const result = nativePause.result();
     if (result === 'accepted') reflectState();
     if (result === 'rejected') {
@@ -583,7 +559,7 @@ $('start').addEventListener('click', async () => {
         language:activeLang,difficulty:$('difficulty').value,clock:$('clock').value,rollback:rollbackEnabled,focusEnabled:roomFocusEnabled,touchUnlimitedAllowed:roomTouchUnlimitedAllowed};
     }
     nativePause = new NativePause(() => emulator, (await nativeAssets()).meta);
-    nativeState = null; clearEscape();
+    nativeState = null;
     status('正在启动 DOSBox-X');
     const config={canvas:online?nativeCanvas:visibleCanvas,lockstep:online,independentSfx:online,rollbackEnabled,wasmBinary,lockstepEpoch:946684800000,onError:report,
       DIPswtch: [0x3e, 0xf3, 0x7b], ExMemory: 7, Latencys: online?40:100, SampleHz: 44100, SNDboard: 4,
@@ -698,7 +674,7 @@ $('reset').addEventListener('click', async () => {
   controls.release(); emulator.pause(); await save();
   netplay?.close(); netplay = null;
   if (saved !== dirty && !confirm('存档未成功保存，仍要重新启动？')) { reflectState(); return; }
-  clearEscape(); pauseSeat = null; nativeState = null; nativePause.reset();
+  pauseSeat = null; nativeState = null; nativePause.reset();
   $('pause-menu').hidden = $('pause-shade').hidden = true;
   localBgm?.stop(); nativeMusic?.reset(); confirmedMusic?.frames.clear();
   visibilityPaused = false; await emulator.reset(); emulator.run(); reflectState(); $('canvas').focus(); resumeAudio();
@@ -715,7 +691,7 @@ window.addEventListener('message',event=>{
 $('fullscreen').addEventListener('click', async () => {
   if ($('screen').classList.contains('immersive')) await player.exit(); else await player.enter();
 });
-$('canvas').addEventListener('pointerdown', () => { clearEscape(); $('canvas').focus(); resumeAudio(); });
+$('canvas').addEventListener('pointerdown', () => { $('canvas').focus(); resumeAudio(); });
 $('canvas').addEventListener('contextmenu', event => event.preventDefault());
 $('export').addEventListener('click', async () => {
   try {
@@ -738,7 +714,6 @@ $('import').addEventListener('change', async event => {
   finally { event.target.value = ''; }
 });
 document.addEventListener('visibilitychange', () => {
-  clearEscape();
   if (closed || closing) return;
   if(online&&netplay){controls.release();netplay.command(document.hidden?'hidden':'visible');return;}
   if (document.hidden) {
@@ -748,7 +723,6 @@ document.addEventListener('visibilitychange', () => {
   } else if (visibilityPaused) { visibilityPaused = false; if (pauseSeat === null) emulator?.run(); }
   reflectState();
 });
-window.addEventListener('blur', clearEscape);
 window.addEventListener('beforeunload', event => {
   if (emulator && dirty !== saved) { event.preventDefault(); event.returnValue = ''; }
 });
