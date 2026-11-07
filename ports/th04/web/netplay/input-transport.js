@@ -1,5 +1,5 @@
-// Canonical source; tools/sync_input_transport.mjs copies this into each title.
-const WIRE='pc98-input/1',RETRY_MS=32,REPAIR_MS=80;
+// PC-98 input transport; keep protocol compatibility across titles.
+const WIRE='pc98-input/1',RETRY_MS=16,REPAIR_MS=80;
 const MAX_PENDING=256,MAX_BYTES=262144,PACKET_BYTES=1150,REPAIR_BYTES=16384;
 const states=new WeakMap();
 const encoder=new TextEncoder();
@@ -48,7 +48,7 @@ export class InputTransport {
   open(){
     if(this.readyState!=='connecting'||!this.remoteHello||this.control?.readyState!=='open'||this.fast?.readyState!=='open')return;
     this.readyState='open';this.lastProgress=this.lastRepair=this.lastAckRepair=this.now();
-    this.timer=this.repeat(()=>this.guard(()=>this.pump()),16);
+    this.timer=this.repeat(()=>this.guard(()=>this.pump()),8);
     this.onopen?.();this.drain();
   }
   send(text){

@@ -1,8 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {InputTransport} from '../web/netplay/input-transport.js';
+const transports = await Promise.all(['th01', 'th02', 'th03', 'th04'].map(async game =>
+  [game, (await import(`../../${game}/web/netplay/input-transport.js`)).InputTransport]));
 
-function setup() {
+function setup(InputTransport) {
   let now = 0;
   const queues = [[], []], timers = [], received = [[], []];
   const peers = [0, 1].map(() => new InputTransport('test', {now: () => now,
@@ -19,8 +20,8 @@ function setup() {
   return {peers, queues, received, timers, deliver, time: value => {now = value;}, close: () => peers.forEach(p => p.close())};
 }
 
-test('lost last frame is retried within one 60 Hz tick without breaking control order', () => {
-  const f = setup();
+for (const [game, InputTransport] of transports) test(`${game}: lost last frame is retried within one 60 Hz tick without breaking control order`, () => {
+  const f = setup(InputTransport);
   try {
     assert.deepEqual(f.timers, [8, 8]);
     f.peers[0].send(JSON.stringify({type: 'frame', frame: 0}));
