@@ -599,7 +599,7 @@ export const PRODUCT_GAMES = Object.freeze({
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/eagler-touhou", adaptationNotice: "early-test"}),
         runtimeFileLayout: "directory", requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
-        runtimeAssets: Object.freeze(["th17.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs", "directory-keyboard.mjs", "gpu-timing.mjs", "th17.mjs", "th17.wasm", "resources.json", "fonts/cp932.bin", "local-replay.mjs", "local-replay-native.mjs", "spectator-playback.mjs"]),
+        runtimeAssets: Object.freeze(["th17.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs", "directory-keyboard.mjs", "direct-input-bridge.mjs", "gpu-timing.mjs", "th17.mjs", "th17.wasm", "resources.json", "fonts/cp932.bin", "local-replay.mjs", "local-replay-native.mjs", "spectator-playback.mjs"]),
         dataProvider: "retail-memory",
         package: Object.freeze({dataFileId: "game-data", dataTarget: "/th17.dat",
             rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
