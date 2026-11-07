@@ -67,7 +67,7 @@ target_sources(th17-team-spirits PRIVATE
     ${game}/LaserMotion.cpp ${game}/LaserProgram.cpp ${game}/LaserReflection.cpp
     ${game}/LaserScene.cpp ${game}/LaserVisual.cpp ${game}/LineIntersection.cpp ${game}/LineRectangle.cpp
     ${game}/PlayerCollision.cpp ${game}/PlayerLaserHit.cpp ${game}/PlayerShotFrame.cpp
-    ${game}/PlayerShotHits.cpp ${game}/PlayerShots.cpp ${game}/SegmentIntersection.cpp
+    ${game}/PlayerShotHits.cpp ${game}/PlayerShots.cpp ${game}/PlayerShooting.cpp ${game}/SegmentIntersection.cpp
     ${game}/ShtResource.cpp ${game}/StationaryLaserProgram.cpp)
 set_source_files_properties(${game}/LaserScene.cpp PROPERTIES COMPILE_DEFINITIONS TH17_MULTIPLAYER=1)
 target_compile_features(th17-team-spirits PRIVATE cxx_std_17)

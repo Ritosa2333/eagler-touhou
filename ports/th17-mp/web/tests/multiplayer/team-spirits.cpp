@@ -6,6 +6,7 @@
 #include "../../cpp/game/SpellRecords.hpp"
 #include "../../cpp/game/AnmCoordinates.hpp"
 #include "../../cpp/game/PlayerShots.hpp"
+#include "../../cpp/game/PlayerShooting.hpp"
 #include "../../cpp/multiplayer/FrameImage.hpp"
 #include "../../cpp/multiplayer/AnmCheckpoint.hpp"
 #include <algorithm>
@@ -240,6 +241,85 @@ void marisa_laser_modes(const char* asset){
         for(auto& shot:shots.shots)require(animations.retire(shot.animation),"retire fixture animation");
         require(animations.update(false),"release fixture animations");
     }
+}
+
+void all_player_shot_effects(const char* asset){
+    if(!asset)return;
+    const auto directory=std::filesystem::path(asset).parent_path();
+    const auto read=[&](const std::string& name){
+        std::ifstream file(directory/name,std::ios::binary);
+        return std::vector<u8>{std::istreambuf_iterator<char>(file),{}};
+    };
+    AnmEnvironment environment;
+    Rng random,visual;
+    AnmManager animations(visual,environment);
+    load_bank(animations,asset);
+    unsigned checked=0;
+    for(i32 character=0;character<3;++character){
+        const auto prefix="pl0"+std::to_string(character);
+        const i32 bank=10+character;
+        const auto atlas=read(prefix+".anm");
+        require(animations.load(bank,atlas.data(),u32(atlas.size())),"load original player animation bank");
+        u8 seat=u8(character+1);
+        const auto check_effects=[&]{
+            require(animations.registry.count()>0,"player emits visible-effect animations");
+            for(bool alternate:{false,true})for(u32 index=0;index<animations.registry.ordered_count(alternate);++index){
+                const auto* vm=animations.registry.find(animations.registry.ordered_handle(alternate,index));
+                require(vm&&vm->pilot_effect&&vm->pilot_draw_owner==seat,
+                        "player shot, child and detached effect keep the shooter's seat");
+            }
+            animations.retire_resource(bank);
+            require(animations.update(false)&&animations.update(true)&&!animations.registry.count(),
+                    "clear tested player effects");
+        };
+        for(i32 animal=0;animal<3;++animal){
+            const auto bytes=read(prefix+char('a'+animal)+".sht");
+            ShtResource resource;
+            require(resource.open(bytes.data(),u32(bytes.size())),"load original player shot table");
+            // All power levels of unfocused, focused, Wolf and Eagle shots.
+            // Otter and mixed Roaring use the ordinary shot groups.
+            for(u32 group=0;group<resource.groups.size();++group){
+                const auto& specs=resource.groups[group];
+                if(specs.empty())continue;
+                PlayerMotion motion;
+                motion.position={0,400,0};
+                motion.focus=group>=5&&group<10;
+                motion.option_count=4;
+                PlayerShotContext context{motion};
+                context.power_step=resource.header.power_step;
+                context.power=i32(group%5)*context.power_step;
+                context.cooperative=true;
+                DamageSources damage;
+                PlayerShots shots(resource,context,damage,animations,random,visual,bank,30);
+                shots.presentation_seat=seat;
+                for(u32 index=0;index<specs.size();++index){
+                    context.laser_power.fill(0);
+                    require(shots.spawn((group<<8)|index,motion.position)>=0,shots.error.c_str());
+                    const auto& shot=shots.shots[index];
+                    const auto* vm=animations.registry.find(shot.animation);
+                    require(shot.state&&vm&&vm->pilot_effect&&vm->pilot_draw_owner==seat,
+                            "original shot entry creates a projectile with the shooter's fade");
+                    ++checked;
+                }
+                require(animations.update(false)&&animations.update(true),animations.error.c_str());
+                check_effects();
+            }
+            if(character==2){
+                PlayerMotion motion;
+                motion.focus=1;
+                PlayerShootingAnmHost host(animations,bank,seat);
+                host.audio=[](i32,ShotSoundAction,float){return true;};
+                PlayerShooting shooting(motion,host);
+                for(i32 frame=0;frame<62;++frame){
+                    require(shooting.update(1,true,1,character,animal,0,0),shooting.error.c_str());
+                    require(animations.update(false)&&animations.update(true),animations.error.c_str());
+                }
+                require(shooting.charge.current==62&&shooting.charge_handle,"Youmu completes charge animation");
+                check_effects();
+            }
+        }
+    }
+    std::cout << "TH17 checked " << checked << " original shot entries and all Youmu charge variants\n";
 }
 
 void shared_otter_barriers(const char* asset) {
@@ -804,6 +884,7 @@ int main(int argc, char** argv) {
     team_contact(asset);
     for(i32 difficulty:{1,4})for(unsigned seats:{2u,3u})shared_fragments(seats,difficulty);
     marisa_laser_modes(asset);
+    all_player_shot_effects(asset);
     shared_otter_barriers(asset);
     borrowed_animation_graph();
     animation_page_rollback();
