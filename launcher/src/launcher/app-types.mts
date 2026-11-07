@@ -139,6 +139,7 @@ export interface BootWatchdog {
 export interface MidiSynth {
   send(bytes: readonly number[]): void;
   reset(): void;
+  setMasterVol?(volume: number): void;
   getAudioContext(): AudioContext;
 }
 

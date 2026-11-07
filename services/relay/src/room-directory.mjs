@@ -14,6 +14,8 @@ export function publicControlMode(seat) {
 // it prevents accidental multi-tab seats, not multiple accounts/devices.
 export function createRoomDirectory({
   publicNames = false,
+  publicTrack,
+  publicProfile,
   rooms,
   clearSeat,
   invalidateReady,
@@ -70,6 +72,7 @@ export function createRoomDirectory({
     return {
       ...(publicNames ? {publicNames:true} : {}),
       product: match[1],
+      listeningTrack: publicTrack?.(room),
       code: match[2],
       phase: room.lobby.phase,
       capacity: room.lobby.playerCount,
@@ -92,6 +95,7 @@ export function createRoomDirectory({
               initial: initial(seat.name),
               loadout: seat.loadout,
               ...(publicNames ? {name:seat.name || ''} : {}),
+              profile: publicProfile?.(room, seat.clientId),
               ...(match[1] === 'th09mp'
                 ? {
                     ...(!publicNames && typeof seat.machineSign === 'string' && seat.machineSign.trim()
@@ -166,6 +170,7 @@ export function createRoomDirectory({
       type: 'directory',
       version: 1,
       membershipRecovery: true,
+      globalRoomCodes: true,
       product,
       rooms: page.rooms,
       total: page.total,
@@ -375,6 +380,13 @@ export function createRoomDirectory({
     const entry = clients.get(clientId);
     return entry?.roomId === roomId ? entry.memberId : undefined;
   };
+  function moveMembers(from, to, clientIds) {
+    for (const clientId of clientIds) {
+      const entry = clients.get(clientId);
+      if (entry?.roomId === from) entry.roomId = to;
+    }
+    changed();
+  }
   return {
     admit,
     connect,
@@ -384,6 +396,7 @@ export function createRoomDirectory({
     evict,
     track,
     memberIdFor,
+    moveMembers,
     memberLocation: memberId => members.get(memberId),
     close() {
       clearInterval(maintenance);

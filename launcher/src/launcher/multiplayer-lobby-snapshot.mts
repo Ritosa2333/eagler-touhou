@@ -16,16 +16,19 @@ import {
   validMultiplayerClientId,
 } from './multiplayer-identity.mjs';
 import { parseTh09PlayerStats, type Th09PlayerStats } from './th09-room-stats.mjs';
+import {parseRoomAccountProfile, type RoomAccountProfile} from './room-account-profile.mjs';
 
 export interface MultiplayerLobbySeat {
   clientId: string;
   name: string;
+  profile?: RoomAccountProfile;
   stats?: Th09PlayerStats;
   loadout: number;
   ready: boolean;
   runtimeGeneration?: string;
   offline: boolean;
   controlMode: ReturnType<typeof multiplayerControlMode>;
+  touchEnabled?: boolean;
   mobileDevice: boolean;
   resource: MultiplayerResourceProgress | null;
 }
@@ -41,6 +44,7 @@ export interface MultiplayerResourceProgress {
 export interface MultiplayerLobbySpectator {
   clientId: string;
   name: string;
+  profile?: RoomAccountProfile;
 }
 
 export interface NormalizedMultiplayerLobbySnapshot {
@@ -168,7 +172,8 @@ export function normalizeMultiplayerLobbySnapshot(
         const item = record(entry);
         const clientId = String(item?.clientId || '');
         if (!validMultiplayerClientId(clientId)) return [];
-        return [{ clientId, name: normalizeMultiplayerDisplayName(item?.name || '') }];
+        const profile = parseRoomAccountProfile(item?.profile);
+        return [{clientId, name: normalizeMultiplayerDisplayName(item?.name || ''), ...(profile ? {profile} : {})}];
       })
     : [];
 
@@ -191,9 +196,11 @@ export function normalizeMultiplayerLobbySnapshot(
       loadout >= normalizedLoadoutCount
     )
       return null;
+    const profile = parseRoomAccountProfile(seat.profile);
     return {
       clientId,
       name: normalizeMultiplayerDisplayName(seat.name || ''),
+      ...(profile ? {profile} : {}),
       stats: parseTh09PlayerStats(seat.stats),
       loadout,
       ready: !!seat.ready,
@@ -201,6 +208,7 @@ export function normalizeMultiplayerLobbySnapshot(
         ? {runtimeGeneration: seat.runtimeGeneration} : {}),
       offline: !!seat.offline,
       controlMode: multiplayerControlMode(seat.controlMode),
+      ...(typeof seat.touchEnabled === 'boolean' ? {touchEnabled: seat.touchEnabled} : {}),
       mobileDevice: seat.mobileDevice === true,
       resource: normalizeResourceProgress(seat.resource),
     };

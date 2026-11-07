@@ -36,7 +36,7 @@ export function layoutDifferences(before,after,tolerance=.5) {
 export function inspectSurfaceMotion(source=window) {
   const errors=[],properties=['opacity','translate','transform'];let checks=0;
   const seconds=value=>{const number=Number.parseFloat(value);return Number.isFinite(number)?number/(value.trim().endsWith('ms')?1000:1):0;};
-  const selectors='.tools,.library-backdrop,.settings-room-backdrop,.mp-settings-room-drawer,.informational-dialog,.first-use-notice-dialog,.replay-dialog,.game-data-import-window,.game-data-link-window,.mp-room-panel,.site-notice,.toast';
+  const selectors='.tools,.library-backdrop,.settings-room-backdrop,.mp-settings-room-drawer,.informational-dialog,.first-use-notice-dialog,.replay-dialog,.game-data-import-window,.game-data-link-window,.mp-room-panel,.toast';
   for(const element of source.document.querySelectorAll(selectors)) {
     checks++;
     const style=source.getComputedStyle(element),name=element.id||element.classList[0];

@@ -3,7 +3,7 @@ import {assertReactFrontendEnvironment} from '../../compat/frontend-environment.
 import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
+import {cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -277,7 +277,12 @@ test('packaged artifact reader uses operator parsers without compiler or React d
       await mkdir(resolve(operator, 'lib'), {recursive: true}); await cp(resolve('lib', file), resolve(operator, 'lib', file));
     }
     await mkdir(resolve(operator, 'node_modules'), {recursive: true});
-    for (const dependency of ['acorn', 'parse5', 'entities']) await cp(resolve('node_modules', dependency), resolve(operator, 'node_modules', dependency), {recursive: true});
+    // Worktree dependencies may be junctions into the shared install. Copy the
+    // resolved package directory so the temporary operator bundle stays portable.
+    for (const dependency of ['acorn', 'parse5', 'entities']) {
+      const source = await realpath(resolve('node_modules', dependency));
+      await cp(source, resolve(operator, 'node_modules', dependency), {recursive: true});
+    }
     const script = `import {readReactFrontendArtifact} from ${JSON.stringify(pathToFileURL(resolve(operator, 'lib/react-frontend-artifact.mjs')).href)}; const artifact = await readReactFrontendArtifact({directory:${JSON.stringify(directory)}}); if (artifact.packageFiles.includes('app.js')) throw new Error('legacy fallback'); console.log(artifact.kind);`;
     assert.equal(execFileSync(process.execPath, ['--input-type=module', '-e', script], {cwd: operator, encoding: 'utf8'}).trim(), 'react');
   });
