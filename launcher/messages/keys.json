@@ -4955,6 +4955,14 @@
     "id": "touch_leftControls",
     "params": []
   },
+  "touch.th01Slide": {
+    "id": "touch_th01Slide",
+    "params": []
+  },
+  "touch.th01SlideHold": {
+    "id": "touch_th01SlideHold",
+    "params": []
+  },
   "touch.focus": {
     "id": "touch_focus",
     "params": []

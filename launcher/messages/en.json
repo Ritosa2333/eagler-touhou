@@ -1156,6 +1156,8 @@
   "touch_adjustViewport": "＋ Adjust game viewport",
   "touch_adjustDone": "Done",
   "touch_leftControls": "Left-side touch controls",
+  "touch_th01Slide": "Slide",
+  "touch_th01SlideHold": "Hold to slide",
   "touch_focus": "Focus",
   "touch_specialFunction": "Special",
   "touch_functionKeyHint": "Function key",

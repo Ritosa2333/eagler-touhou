@@ -11,6 +11,7 @@ export function managedInput({game, epoch, active, options}) {
     clear() { secondary.clear(); keyboard.clear(); touch = {}; pulse = menuPulse = localPulse = netKeyPulse = localKeyPulse = keyPulse = 0; point = null; motion = {x:0,y:0,active:false}; },
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
+      if (message.focusEnabled && !touch.focusEnabled) {netKeyPulse |= 8; localKeyPulse |= 8; keyPulse |= 16;}
       if (message.bombSerial !== bomb) {pulse |= 16; localPulse |= 16;}
       if (message.escapeSerial !== escape) pulse |= 128;
       bomb = message.bombSerial; escape = message.escapeSerial; touch = message;
@@ -37,6 +38,7 @@ export function managedInput({game, epoch, active, options}) {
       if(touch.joystickY<0)bits|=16;if(touch.joystickY>0)bits|=32;
       if(menu){bits|=menuPulse;menuPulse=0;motion.x=motion.y=0;}
       else if(options().netplayMode){if(motion.x<0)bits|=1;else if(motion.x>0)bits|=2;motion.x=motion.y=0;menuPulse=0;}
+      if(touch.focusEnabled)bits|=8;
       if(touch.fireEnabled&&!menu)bits|=4;if(pulse&16)bits|=4096;if(pulse&128)bits|=128; pulse = 0;
       const pad=globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer??0);
       if(pad>=0)for(const [mask,out] of [[1,4],[2,8],[4,4096],[16,16],[32,32],[64,1],[128,2],[512,64]])if(pad&mask)bits|=out;
@@ -47,6 +49,7 @@ export function managedInput({game, epoch, active, options}) {
       let bits=localKeyPulse;localKeyPulse=0;for(const code of held)bits|=localButtons[code]??0;
       if(touch.joystickX<0||motion.x<0)bits|=1;if(touch.joystickX>0||motion.x>0)bits|=2;
       motion.x=motion.y=0;menuPulse=0;
+      if(touch.focusEnabled)bits|=8;
       if(touch.fireEnabled)bits|=4;if(localPulse&16)bits|=16; localPulse = 0;
       const pad=globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer??0);
       if(pad>=0)for(const [mask,out] of [[1,4],[2,8],[4,16],[64,1],[128,2]])if(pad&mask)bits|=out;
@@ -57,7 +60,7 @@ export function managedInput({game, epoch, active, options}) {
       let bits = pulse | keyPulse; pulse = keyPulse = 0;
       for (const code of held) bits |= buttons[code] ?? 0;
       if (touch.fireEnabled) bits |= 32;
-      if (touch.focusEnabled) bits |= 64;
+      if (touch.focusEnabled) bits |= 16;
       if (touch.joystickX < 0) bits |= 4; if (touch.joystickX > 0) bits |= 8;
       if (touch.joystickY < 0) bits |= 1; if (touch.joystickY > 0) bits |= 2;
       const pad = globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer ?? 0);

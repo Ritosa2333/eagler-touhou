@@ -1156,6 +1156,8 @@
   "touch_adjustViewport": "＋ ゲーム画面を調整",
   "touch_adjustDone": "完了",
   "touch_leftControls": "左側のタッチ操作",
+  "touch_th01Slide": "スライディング",
+  "touch_th01SlideHold": "長押しでスライディング",
   "touch_focus": "低速移動",
   "touch_specialFunction": "特殊",
   "touch_functionKeyHint": "機能キー",

@@ -1156,6 +1156,8 @@
   "touch_adjustViewport": "＋ 调整游戏画面",
   "touch_adjustDone": "调整完成",
   "touch_leftControls": "左手触控按键",
+  "touch_th01Slide": "滑铲",
+  "touch_th01SlideHold": "按住滑铲",
   "touch_focus": "低速",
   "touch_specialFunction": "特殊功能",
   "touch_functionKeyHint": "功能按键",

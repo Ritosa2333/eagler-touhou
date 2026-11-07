@@ -33,7 +33,18 @@ try {
         input.clear(); input.pointer({type:'down',id:1,x:.5,y:.5}); input.pointer({type:'down',id:2,x:.6,y:.5});
         input.pointer({type:'up',id:2,x:.6,y:.5}); input.pointer({type:'up',id:1,x:.5,y:.5}); back = menu();
       }
-      return {idle,tap,down,gameplayTap,movement,focus,releasedFocus,back};
+      let slide;
+      if (game === 'th01') {
+        const touch = focusEnabled => input.touch({fireEnabled:false,focusEnabled,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0});
+        input.clear(); touch(true);
+        const localHeld = input.localSample(), netHeld = input.nativeSample(), compatHeld = input.sample();
+        touch(false);
+        const localReleased = input.localSample(), netReleased = input.nativeSample(), compatReleased = input.sample();
+        touch(true); touch(false);
+        const localTap = input.localSample(), netTap = input.nativeSample(), compatTap = input.sample();
+        slide = {localHeld,netHeld,compatHeld,localReleased,netReleased,compatReleased,localTap,netTap,compatTap};
+      }
+      return {idle,tap,down,gameplayTap,movement,focus,releasedFocus,back,slide};
     }, game);
     assert.equal(result.idle & (game === 'th01' ? 4 : game === 'th03' ? 512 : 256), 0, `${game}: menu must not auto-confirm`);
     assert.equal(result.tap & (game === 'th01' ? 64 : game === 'th03' ? 512 : 256), game === 'th01' ? 64 : game === 'th03' ? 512 : 256, `${game}: tap confirms`);
@@ -45,6 +56,12 @@ try {
       assert.equal(result.releasedFocus & 64, 0, `${game}: releasing second finger releases focus`);
       assert.equal(result.back & (game === 'th03' ? 640 : 384), 128, `${game}: two-finger menu tap goes back without confirming`);
     } else assert.equal(result.back & 192, 128, `${game}: two-finger menu tap goes back without confirming`);
+    if (game === 'th01') {
+      for (const key of ['localHeld','netHeld','localTap','netTap']) assert.equal(result.slide[key] & 8, 8, key);
+      for (const key of ['compatHeld','compatTap']) assert.equal(result.slide[key] & 16, 16, key);
+      for (const key of ['localReleased','netReleased']) assert.equal(result.slide[key] & 8, 0, key);
+      assert.equal(result.slide.compatReleased & 16, 0);
+    }
     console.log('PASS', game, result);
   }
 } finally { await browser.close(); }

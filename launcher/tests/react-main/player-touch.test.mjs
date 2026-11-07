@@ -48,6 +48,17 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
   }; active.push(f); return f;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+test('TH01 slide holds and releases even with an old focus preference', () => {
+  for (const focus of ['two-finger', 'toggle-button']) {
+    const f = fixture({game: 'th01', focus});
+    f.pointer('focus', 'pointerdown'); assert.equal(f.sent.at(-1).focusEnabled, true);
+    f.pointer('focus', 'pointerup'); assert.equal(f.sent.at(-1).focusEnabled, false);
+    f.pointer('focus', 'pointerdown'); f.pointer('focus', 'pointercancel'); assert.equal(f.sent.at(-1).focusEnabled, false);
+  }
+  const f = fixture({game: 'th01', focus: 'two-finger', ios: true});
+  f.iosEvent('focus', 'touchstart', [{identifier: 1}]); assert.equal(f.sent.at(-1).focusEnabled, true);
+  f.iosEvent('focus', 'touchcancel', [{identifier: 1}]); assert.equal(f.sent.at(-1).focusEnabled, false);
+});
 test('TH03 fire is a persistent toggle like TH02 and TH04', () => {
   const f=fixture({game:'th03'});
   f.touch.syncControls(); assert.equal(f.sent.at(-1).fireEnabled,true);
