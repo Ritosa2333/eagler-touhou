@@ -1487,10 +1487,6 @@
     "id": "lobby_publicRoom",
     "params": []
   },
-  "lobby.codeHint": {
-    "id": "lobby_codeHint",
-    "params": []
-  },
   "lobby.mine": {
     "id": "lobby_mine",
     "params": [

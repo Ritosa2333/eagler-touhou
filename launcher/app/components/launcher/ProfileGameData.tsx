@@ -45,6 +45,7 @@ function ClearMatrix({data}: {data:ProfileStatistics}) {
   useEffect(()=>{const observer=new MutationObserver(()=>setLessMotion(document.body.classList.contains('less-motion')));observer.observe(document.body,{attributes:true,attributeFilter:['class']});return()=>observer.disconnect();},[]);
   const [selected,setSelected]=useState<GameId|null>(null),[mode,setMode]=useState<'pointdevice'|'legacy'>('legacy');
   const plot=useRef<HTMLDivElement>(null),[tilted,setTilted]=useState(false);
+  const chart=useRef<HTMLDivElement>(null),[chartHeight,setChartHeight]=useState<number>();
   const games=useMemo(()=>Object.entries(PRODUCT_GAMES).filter(([game,definition])=>!('testOnly'in definition&&definition.testOnly)||data.games.some(item=>item.statistics.game===game)).map(([game])=>game as GameId),[data.games]);
   const statistics=data.games.find(item=>item.statistics.game===selected)?.statistics;
   const active=useMemo(()=>statistics?.progress.filter(item=>!item.mode||item.mode===mode)??[],[statistics,mode]);
@@ -70,6 +71,14 @@ function ClearMatrix({data}: {data:ProfileStatistics}) {
     for(const item of active){if(!map.has(item.character))map.set(item.character,new Map());const variants=map.get(item.character)!;if(!variants.has(item.shot))variants.set(item.shot,[]);variants.get(item.shot)!.push(item);}
     return [...map].sort(([a],[b])=>a-b).map(([character,variants])=>({character,variants:[...variants].sort(([a],[b])=>(a??0)-(b??0))}));
   },[active]);
+  useLayoutEffect(()=>{
+    const node=chart.current;
+    if(!node||typeof ResizeObserver==='undefined')return;
+    const measure=()=>setChartHeight(node.getBoundingClientRect().height);
+    const observer=new ResizeObserver(measure);
+    measure();observer.observe(node);
+    return()=>observer.disconnect();
+  },[]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Loadout and language changes can alter label overflow at the same plot width.
   useLayoutEffect(()=>{
     const node=plot.current;
@@ -83,9 +92,12 @@ function ClearMatrix({data}: {data:ProfileStatistics}) {
     window.addEventListener('resize',measure);void document.fonts?.ready.then(measure);
     return()=>{current=false;observer?.disconnect();window.removeEventListener('resize',measure);};
   },[selected,groups,t]);
-  return <div className="profile-clear-chart">
+  return <div className="profile-clear-frame" style={{height:chartHeight}}>
+    <div ref={chart} className="profile-clear-chart">
     <div className="profile-clear-toolbar"><div className="profile-clear-legend">{(['one-credit','cleared','uncleared'] as const).map(state=><span key={state}><i className="profile-clear-cell" data-status={state}/>{statusLabel(state)}</span>)}</div>
-      {selected&&<Button variant="ghost" size="sm" onClick={()=>setSelected(null)}><ArrowLeft/>{t('profile.clear.allGames')}</Button>}
+      {selected&&<Button variant="ghost" size="sm" aria-label={t('profile.clear.allGames')} onClick={()=>setSelected(null)}>
+        <ArrowLeft/><span className="profile-clear-back-label">{t('profile.clear.allGames')}</span>
+      </Button>}
       {selected==='th15'&&<div className="profile-clear-modes">{(['legacy','pointdevice'] as const).map(value=><Button key={value} variant={mode===value?'secondary':'ghost'} size="sm" aria-pressed={mode===value} onClick={()=>setMode(value)}>{t(value==='legacy'?'profile.mode.legacy':'profile.mode.pointdevice')}</Button>)}</div>}
     </div>
     <div className="profile-clear-scroll"><div ref={plot} className="profile-clear-plot" data-detail={!!selected} data-tilted={tilted}>
@@ -101,5 +113,6 @@ function ClearMatrix({data}: {data:ProfileStatistics}) {
         })}
       </AnimatePresence>
     </div></div>
+    </div>
   </div>;
 }

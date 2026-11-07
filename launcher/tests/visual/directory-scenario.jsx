@@ -45,7 +45,7 @@ function Scenario(){
     <LobbyDirectoryView service={model.service} assetUrl={assetUrl} masthead={null} products={products} interactive
       onSelect={model.select} onActivate={model.select} onGuide={null} onNetwork={null}
       onOpenForm={mode=>{if(model.service.prepareForm(mode))setFormOpen(true);}}/>
-    <DirectoryRoomDialog service={model.service} open={formOpen} onCloseRequest={()=>setFormOpen(false)}/>
+    <DirectoryRoomDialog service={model.service} assetUrl={assetUrl} open={formOpen} onCloseRequest={()=>setFormOpen(false)}/>
     <aside className="directory-specimen-note">本地房间数据 | 无真实联机 <button onClick={()=>setTheme(theme==='light'?'dark':'light')}>{theme==='light'?'深色':'亮色'}</button><button onClick={model.toggleEmpty}>切换空列表</button></aside>
   </MemoryRouter></LocaleProvider>;
 }
