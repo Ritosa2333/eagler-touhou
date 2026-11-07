@@ -333,12 +333,14 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  // world sprites supply world/texture matrices and tint through attributes.
  // Do not upload unused matrices after every intervening background draw.
  if(!transformed){for(int i=0;i<4;i++)if(!(instance&&(i==0||i==3))&&(i!=3||p.textureTransform))uniform(4+i,16,d.matrix[i].data());}
+ // The vertex shader still reads fogEnabled in specialized programs.
+ integer(8,p.fog);
  if(p.fog){integer(9,p.rangeFog);integer(10,u32(p.fogMode));float fog[]{p.fogNear,p.fogFar,p.fogDensity};uniform(11,3,fog);uniform(12,4,color(p.fogColor).data());}
  if(!instance&&program->uniforms[14].location>=0)uniform(14,4,color(p.textureFactor).data());
  // Prelinked variants bake these combiner inputs into the fragment shader.
  if(program==&generic){
   auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
-  integer(8,p.fog);integer(13,!!texture);integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);integer(23,u32(p.alphaCompare));
+  integer(13,!!texture);integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);integer(23,u32(p.alphaCompare));
  }
  float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);
  if(program->uniforms[24].location>=0)integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
