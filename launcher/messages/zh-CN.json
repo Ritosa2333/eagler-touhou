@@ -617,6 +617,8 @@
   "settings_externalMidiDenied": "MIDI 权限被拒绝，本次仍使用内置合成器。",
   "settings_externalMidiFailed": "无法启用外部 MIDI 设备：{reason}",
   "settings_frameLimitHint": "插帧显示，逻辑保持 60 Hz。约增加 16.67 ms 输入延迟。",
+  "settings_renderResolution": "渲染分辨率",
+  "settings_renderResolutionHint": "重新加载游戏时生效。640×480 可降低绘制负担。",
   "settings_appleNotice": "(苹果用户注意)",
   "settings_localPlayerVisibility": "增强本机玩家可见性",
   "settings_localPlayerVisibilityHint": "在游戏区域中使用白色定位线标出本机玩家。",

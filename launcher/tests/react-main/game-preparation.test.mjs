@@ -239,6 +239,17 @@ for (const productId of ['th11', 'th11mp']) test(`${productId} high refresh sett
   assert.deepEqual(configure(), {...unlimited, limitPresentationTo60: true});
 });
 
+for (const productId of ['th17', 'th17mp']) test(`${productId} forwards both render scales through runtime configure`, () => {
+  const {model} = settingsFixture({productId});
+  const multiplayer = productId === 'th17mp' ? {kind: 'room-preload'} : undefined;
+  const configure = () => api.gameRuntimeOptions({productId, settings: model.getSnapshot(), multiplayer}, 'ja', 'none', null);
+  assert.equal(configure().renderScale, undefined);
+  model.setOption('renderScale', 1);
+  assert.equal(configure().renderScale, 1);
+  model.setOption('renderScale', 2);
+  assert.equal(configure().renderScale, 2);
+});
+
 for (const kind of ['room', 'room-preload']) test(`${kind} program version policy reaches code preparation before native ready and configure`, async () => {
   const calls=[],f=acquisitionFixture(),state=settingsFixture({productId:'th06mp'});
   const r=runtimeFixture([],{prepareCode:async(entry,options)=>{calls.push(options);return {url:new URL(entry,baseUrl).href,generation:hash,cached:true};}});

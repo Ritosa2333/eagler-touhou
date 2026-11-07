@@ -91,6 +91,7 @@ export interface Th05MultiplayerDisplay {
 }
 export interface RuntimeConfigureOptions {
   th05MultiplayerDisplay?: Readonly<Th05MultiplayerDisplay>;
+  renderScale?: 1 | 2;
   thpracEnabled?: boolean;
   limitPresentationTo60?: boolean;
   touchEnabled?: boolean;
@@ -152,6 +153,7 @@ export interface RuntimeConfigureOptions {
  */
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   th05MultiplayerDisplay: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH05 multiplayer local presentation"}),
+  renderScale: Object.freeze({requirement: "optional", capability: "render-resolution", productDeclaration: "renderScales", when: "product declares renderScales"}),
   netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),

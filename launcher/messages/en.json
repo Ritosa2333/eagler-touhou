@@ -617,6 +617,8 @@
   "settings_externalMidiDenied": "MIDI permission was denied; the built-in synthesizer is still used.",
   "settings_externalMidiFailed": "Could not enable the external MIDI device: {reason}",
   "settings_frameLimitHint": "Interpolates visuals while logic stays at 60 Hz. Adds about 16.67 ms of input latency.",
+  "settings_renderResolution": "Render resolution",
+  "settings_renderResolutionHint": "Applies when the game is loaded. 640×480 reduces rendering load.",
   "settings_appleNotice": "(Apple users: please read)",
   "settings_localPlayerVisibility": "Enhance local player visibility",
   "settings_localPlayerVisibilityHint": "Show the local player with a white guide line in the game area.",

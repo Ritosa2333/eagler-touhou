@@ -842,6 +842,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         title: "東方鬼形獣";
         subtitle: "Wily Beast and Weakest Creature";
         cardArtwork: "th17-card.webp";
+        renderScales: readonly [2, 1];
         storage: Readonly<{
             saveRoot: "/savesth17";
             scoreFile: "scoreth17.dat";

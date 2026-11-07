@@ -2562,6 +2562,14 @@
     "id": "settings_appleNotice",
     "params": []
   },
+  "settings.renderResolution": {
+    "id": "settings_renderResolution",
+    "params": []
+  },
+  "settings.renderResolutionHint": {
+    "id": "settings_renderResolutionHint",
+    "params": []
+  },
   "settings.localPlayerVisibility": {
     "id": "settings_localPlayerVisibility",
     "params": []

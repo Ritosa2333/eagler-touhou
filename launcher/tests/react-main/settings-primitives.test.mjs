@@ -165,6 +165,22 @@ test('TH05 MP display normalization and persistence keep only options valid for 
   assert.equal(context.productId, 'th05mp');
 });
 
+test('TH17 render resolution uses the shared local preference in single-player and rooms', async () => {
+  const {model, values} = createSettings('th17mp');
+  const actions = settingsActions();
+  const mount = current => render(React.createElement(owners.LocaleProvider, {locale: 'en'},
+    React.createElement(owners.SettingsBody, {model: current, actions, onOpenTouchLayout: () => {}})));
+  await mount(model);
+  assert.equal(n('#mpRenderResolution').value, '2');
+  await act(() => n('#mpRenderResolution-trigger').click());
+  await act(() => n('[role="option"][data-value="1"]').click());
+  assert.equal(model.getSnapshot().options.renderScale, 1);
+  await mount(createSettings('th17', values).model);
+  assert.equal(n('#renderResolution').value, '1');
+  await mount(createSettings('th15mp', values).model);
+  assert.equal(env.document.querySelector('#mpRenderResolution'), null);
+});
+
 test('TH05 MP display controls track EoSD/ring dependencies and stay hidden for single-player', async () => {
   const {model} = createSettings('th05mp');
   const actions = settingsActions();
