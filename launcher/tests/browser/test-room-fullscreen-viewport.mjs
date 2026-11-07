@@ -38,7 +38,7 @@ function App(){
 }
 createRoot(document.getElementById('root')).render(<App/>);
 `;
-const result = await build({absWorkingDir: project, stdin: {contents: entry, loader: 'tsx', resolveDir: project}, bundle: true, format: 'esm', jsx: 'automatic', write: false, outdir: out, external: ['/assets/*','assets/*'], plugins: [authoredSourcesPlugin(project)]});
+const result = await build({absWorkingDir: project, stdin: {contents: entry, loader: 'tsx', resolveDir: project}, bundle: true, format: 'esm', jsx: 'automatic', write: false, outdir: out, external: ['/assets/*','assets/*'], loader: {'.webp': 'dataurl'}, plugins: [authoredSourcesPlugin(project)]});
 const js = result.outputFiles.find(file => file.path.endsWith('.js')).text;
 const css = result.outputFiles.find(file => file.path.endsWith('.css')).text;
 const publicRoot = resolve(project, 'public');

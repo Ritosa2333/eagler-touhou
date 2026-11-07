@@ -619,7 +619,6 @@ export const PRODUCT_GAMES = Object.freeze({
             spectator: true, titleRoomEntry: false,
             inputTiming: Object.freeze({rollbackLimit: 12, sendPredictionLimit: 12, manualDelayLimit: 9}),
         }),
-        thpracRuntime: Object.freeze({session: "native"}),
         thpracExtraFunctionKeys: Object.freeze(["U"]),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),

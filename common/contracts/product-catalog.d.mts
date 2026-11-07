@@ -1230,8 +1230,7 @@ export declare function createLocalProductManifest(): {
                 pack: null;
             }[];
         } | {
-            thpracRuntime: Readonly<{session: "native"}>;
-        thpracExtraFunctionKeys: readonly ["U"];
+            thpracExtraFunctionKeys: readonly ["U"];
             cardArtwork: "th08-card.webp";
             number: "08";
             title: "東方永夜抄";
