@@ -1,6 +1,6 @@
 #pragma once
 #include "../game/AnmVm.hpp"
-#include <cstring>
+#include "SnapshotCompare.hpp"
 #include <type_traits>
 
 namespace th17::multiplayer {
@@ -28,7 +28,7 @@ public:
         }
         static_assert(std::is_trivially_copyable_v<AnmInterpolators>);
         const auto matches=[&](const auto& saved){
-            return saved&&std::memcmp(saved.get(),&vm.interpolators,sizeof(AnmInterpolators))==0;
+            return saved&&snapshot_equal<sizeof(AnmInterpolators)>(saved.get(),&vm.interpolators);
         };
         resting=cache.lock();
         if(!matches(resting)){
