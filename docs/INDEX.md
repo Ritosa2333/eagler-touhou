@@ -1,6 +1,6 @@
 # 文档总表
 
-共 470 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 471 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -326,6 +326,7 @@
 | 历史记录 | [archive/th17-tail-20261106/README.md](../archive/th17-tail-20261106/README.md) | TH17 密集弹幕快照与长帧 · 2026-11-06 |
 | 历史记录 | [archive/th17-teammate-effects-20261107/README.md](../archive/th17-teammate-effects-20261107/README.md) | TH17 队友射击与 Hyper 淡化 · 2026-11-07 |
 | 历史记录 | [archive/th17-touch-input-20261107/README.md](../archive/th17-touch-input-20261107/README.md) | TH17 多人滑动输入 · 2026-11-07 |
+| 历史记录 | [archive/th17-touch-repair-20261107/README.md](../archive/th17-touch-repair-20261107/README.md) | TH17 三人滑动补算 · 2026-11-07 |
 | 历史记录 | [archive/th17-touch-rollback-20261107/README.md](../archive/th17-touch-rollback-20261107/README.md) | TH17 滑动联机与魂魄复活 · 2026-11-07 |
 | 历史记录 | [archive/th17mp-main-beta-20261106/README.md](../archive/th17mp-main-beta-20261106/README.md) | TH17 多人主站测试版 · 2026-11-06 |
 | 历史记录 | [archive/th19-all-shots-20261106/README.md](../archive/th19-all-shots-20261106/README.md) | 19 名角色普通射击检查 |
