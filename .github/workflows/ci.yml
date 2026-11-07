@@ -1,6 +1,7 @@
 name: CI
 'on':
-  push: null
+  push:
+    branches: [main]
   pull_request: null
   workflow_dispatch: null
 permissions:
@@ -110,6 +111,10 @@ jobs:
   ui-behavior:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
     - uses: actions/checkout@v7
       with:
@@ -147,21 +152,28 @@ jobs:
     - run: python -m pip install --requirement requirements-ci.txt
     - run: npm --prefix ../services/relay ci --ignore-scripts
     - run: bun run lint
+      if: matrix.shard == 1
     - run: bun run i18n:check
-    - run: bun run test
+      if: matrix.shard == 1
+    - run: bun run test --shard=${{ matrix.shard }}/4
     - run: python -m pip install --requirement tests/requirements-browser.txt
+      if: matrix.shard == 1
     - run: python -m playwright install --with-deps chromium
+      if: matrix.shard == 1
     - run: node tests/browser/test-room-fullscreen-viewport.mjs
+      if: matrix.shard == 1
     - name: Build preview artifact for handbook browser checks
+      if: matrix.shard == 1
       run: bun run build:ui-rewrite
       env:
         EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
         VITE_PREVIEW_FEATURES: 'true'
     - run: bun run test:ui-handbook:browser
+      if: matrix.shard == 1
       env:
         EAGLER_REACT_BUILD_DIRECTORY: .cache/build/ui-handbook-preview
     - uses: actions/upload-artifact@v4
-      if: always()
+      if: ${{ always() && matrix.shard == 1 }}
       with:
         name: ui-handbook
         path: artifacts/validation/ui-handbook/
