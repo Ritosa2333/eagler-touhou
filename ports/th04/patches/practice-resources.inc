@@ -129,6 +129,20 @@ practice_target_check:
     jb .done
 .reached:
     mov byte [cs:practice_target_reached],1
+    mov byte [cs:target_preparing],0
+    mov byte [cs:practice_arrival_pending],1
+    mov byte [cs:entry_pause],1
+    cmp byte [cs:practice_initial_entry],0
+    je .done
+    mov byte [cs:practice_cleanup_pending],1
+    mov byte [cs:practice_cleanup_keep_bits],0
+    cmp byte [cs:practice_initial_stage],3
+    jne .done
+    cmp byte [cs:practice_initial_entry],2
+    jne .done
+    cmp byte [cs:practice_initial_reimu],0
+    jne .done
+    mov byte [cs:practice_cleanup_keep_bits],1
 .done:
     ret
 practice_initial_phase: db 0
@@ -140,6 +154,17 @@ practice_target_arrival:
     cmp byte [cs:practice_arrival_pending],0
     je .done
     mov byte [cs:practice_arrival_pending],0
+    cmp byte [cs:practice_initial_entry],2
+    jne .target_hp
+    cmp byte [cs:practice_initial_phase],0
+    je .target_hp
+    cmp word [0x53d6],0
+    jg .target_hp
+    mov ax,[cs:practice_seek_final_hp]
+    test ax,ax
+    jle .target_hp
+    mov [0x53d6],ax
+.target_hp:
     call practice_target_hp
     mov al,[0x53d9]
     cmp byte [cs:practice_initial_entry],1

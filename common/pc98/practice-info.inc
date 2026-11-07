@@ -58,7 +58,7 @@ practice_info_draw:
     push di
     mov cx,20
 .background:
-    mov word [es:di],0x21
+    mov word [es:di],0x20
     mov word [es:di+0x2000],0x05
     add di,2
     loop .background

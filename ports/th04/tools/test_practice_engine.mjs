@@ -5,7 +5,7 @@ import {PRACTICE_DEFAULTS,PRACTICE_SETUP,PRACTICE_VERSION,normalizePractice,crea
 const patch=JSON.parse(fs.readFileSync(new URL('../web/practice-assets.json',import.meta.url))).languages.jp.patch;
 const entries=patch.practice.entries,cs=0x1aaf,ds=0x4000,base=0x10000,cb=base+cs*16,d=base+ds*16,r=base+0x90000;
 let checks=0;
-function instance(mode='target',setup={},options={},nativeResources=false){
+function instance(mode='target',setup={},options={},nativeResources=false,restarting=false){
   const mod={HEAPU8:new Uint8Array(0x120000)},h=mod.HEAPU8,v=new DataView(h.buffer);
   h.set(new TextEncoder().encode(patch.signature),cb+patch.mailbox_cs_offset);h.set(new TextEncoder().encode('HUMAConfig\0'),r);
   v.setUint16(d+0xba86,0,true);v.setUint16(d+0xba88,0x9000,true);v.setUint16(d+0xbcd0,0x11c0,true);v.setUint16(d+0x46b6,0x11c0,true);
@@ -20,8 +20,13 @@ function instance(mode='target',setup={},options={},nativeResources=false){
   delete fixturePatch.practice.entries.initialHp;
   delete fixturePatch.practice.entries.targetAdvance;
   delete fixturePatch.practice.entries.targetOutcome;
-  const engine=createPracticeEngine({mod,patch:fixturePatch,config,clock}),signal=port=>engine.signal(port,ds<<16|cs),b=(at,n)=>{h[d+at]=n;},w=(at,n)=>v.setUint16(d+at,n&65535,true);
+  const engine=createPracticeEngine({mod,patch:fixturePatch,config,clock,restarting}),signal=port=>engine.signal(port,ds<<16|cs),b=(at,n)=>{h[d+at]=n;},w=(at,n)=>v.setUint16(d+at,n&65535,true);
   return {mod,h,v,engine,signal,b,w,clock};
+}
+{
+  const t=instance('target',{}, {}, false,true);t.mod._emGetRunningProgram=()=>1;t.mod.UTF8ToString=()=> 'OP';
+  t.signal(0x7fe0);t.engine.observeBoundary();assert.equal(t.engine.status.error,null,'same-session reload may retain the parent OP process name');
+  t.signal(0x7fe1);assert(t.engine.status.ready);checks++;
 }
 {
   const t=instance('full');t.signal(0x7fe0);
@@ -66,7 +71,7 @@ for(const stage of [5,6]){
   t.b(0x4669,1);t.signal(0x7fe4);assert.equal(t.engine.status.misses,1);t.signal(0x7fe2);assert.equal(t.engine.status.misses,1);checks++;
 }
 {
-  const t=instance();t.h.fill(7,d+0x4349,d+0x4351);t.h.fill(9,d+0x435a,d+0x4362);t.b(0x1a66,3);t.signal(0x7fe0);t.signal(0x7fe1);
+  const t=instance('target',{lives:0,bombs:0});t.h.fill(7,d+0x4349,d+0x4351);t.h.fill(9,d+0x435a,d+0x4362);t.b(0x1a66,3);t.signal(0x7fe0);t.signal(0x7fe1);
   assert.equal(t.h[r+73],1);assert.equal(t.h[d+0x53a0],1,'target practice uses native Turbo mode');
   assert(t.h.slice(d+0x4349,d+0x4351).every(n=>n===0));assert(t.h.slice(d+0x435a,d+0x4362).every(n=>n===0));assert.equal(t.h[d+0x1a66],0);
   assert(t.engine.status.ready&&t.engine.status.waiting);assert.equal(t.h[cb+entries.entryPause],1);assert.equal(t.h[r+11],1);assert.equal(t.h[r+13],0);

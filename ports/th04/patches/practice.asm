@@ -24,6 +24,7 @@ dw practice_initial_stage,practice_outcome,practice_target_outcome
 dw practice_result_visible,practice_result_request,practice_result_ack,practice_result_input
 dw practice_pause_open,practice_pause_request,practice_pause_ack,practice_pause_input
 dw practice_form_open,practice_form_input,practice_form_values,practice_form_request,practice_form_hp,practice_form_options,practice_info_enabled,practice_info_values
+dw practice_restart_pending,practice_restart_values,practice_result_selecting
 entry_pause: db 0
 hold: db 0
 target_practice: db 0
@@ -81,15 +82,26 @@ load_hook:
     pop dx
     pushf
     pushad
+    call practice_loading_clear_if_present
+    call practice_native_setup
     call practice_target_stocks
     popad
     popf
     ret
+%macro PRACTICE_CAPTURE_SCROLL 0
+    movzx si,byte [0x46fd]
+    shl si,1
+    mov ax,[si+0x4260]
+%endmacro
 frame_hook:
     pushf
     pushad
     push es
+    PRACTICE_CAPTURE_SCROLL
+    mov [cs:practice_form_scroll],ax
     call practice_target_resources
+    call practice_loading_clear
+    call practice_preparation_guard
     call practice_target_check
     pop es
     popad
@@ -143,9 +155,17 @@ frame_hook:
     push fs
     push gs
     call practice_form
+    cmp byte [cs:practice_restart_committed],0
+    je .form_returned
+    mov byte [cs:practice_restart_committed],0
+    mov byte [cs:practice_form_request],0
+.form_returned:
     pop gs
     pop fs
 .form_closed:
+    call practice_quick_retry_tick
+    call practice_restart_tick
+    call practice_native_restrictions
     ; Poll the PC-98 BIOS keyboard bitmap in the game process. The native
     ; trainer state is independent of browser keyboard focus or DOM controls.
     push es
@@ -168,6 +188,11 @@ frame_hook:
     popf
     jmp word [0x428a]
 player_hook:
+    pushf
+    pushad
+    call practice_native_restrictions
+    popad
+    popf
     push dx
     mov dx,0x7fe2
     call signal
@@ -220,6 +245,7 @@ world_hook:
     pushad
     push es
     call practice_result_tick
+    call practice_restart_tick
     pop es
     popad
     popf
@@ -417,6 +443,7 @@ dialog_run_fast:
 %include 'practice-resources.inc'
 %include 'practice-advance.inc'
 %include 'practice-outcome.inc'
+%define PRACTICE_NATIVE_FORM_START 1
 %include 'practice-result.inc'
 %macro PRACTICE_PAUSE_WAIT 0
     call (0xaaf2-0xaaf0)
@@ -424,11 +451,6 @@ dialog_run_fast:
 %define PRACTICE_PAGE_FRONT 0x46fd
 %define PRACTICE_PAGE_BACK 0x46fc
 
-%macro PRACTICE_CAPTURE_SCROLL 0
-    movzx si,byte [0x46fd]
-    shl si,1
-    mov ax,[si+0x4260]
-%endmacro
 %include 'practice-pause.inc'
 %define FORM_STAGE_MAX 6
 %define FORM_CHARACTER_MAX 3
@@ -442,4 +464,5 @@ dialog_run_fast:
 %define FORM_HP_MAX 30000
 %include 'practice-form.inc'
 %include 'practice-info.inc'
+%include 'practice-restart.inc'
 practice_pause_call equ frame_hook.pause_call

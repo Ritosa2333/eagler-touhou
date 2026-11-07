@@ -31,7 +31,7 @@ export function createBrowserSoloRecorder({game,language,runtime='main',identity
     return encoding;
   }
   return {config,attach(value){core=value;if(failed)core?.stopBrowserRecording();},finish(){if(!ending&&!failed)core?.finishReplay();},save:encode,
-    async rearm(){if(!reuse||!result||failed||disposed)throw Error('Replay 尚未就绪');await core.rearmBrowserRecording();ending=false;result=null;file=null;encoding=null;},
+    async rearm(keepPaused=false){if(!reuse||!result||failed||disposed)throw Error('Replay 尚未就绪');await core.rearmBrowserRecording(keepPaused);ending=false;result=null;file=null;encoding=null;},
     dispose(){disposed=true;core?.stopBrowserRecording();events=[];clockChunks=[];file=null;},
     get state(){return {failed,ending,ready:!!result,clockBytes,eventBytes,result};},get file(){return file;}};
 }

@@ -28,6 +28,9 @@ dw practice_result_visible,practice_result_request,practice_result_ack,practice_
 dw wait_hold
 dw practice_pause_open,practice_pause_request,practice_pause_ack,practice_pause_input
 dw practice_form_open,practice_form_input,practice_form_values,practice_form_request,practice_form_hp,practice_form_options,practice_info_enabled,practice_info_values
+dw practice_restart_pending,practice_restart_values,practice_result_selecting
+dw practice_focus_hook
+dw practice_focus_test
 entry_pause: db 0
 hold: db 0
 target_practice: db 0
@@ -68,16 +71,27 @@ load_hook:
     pushf
     pushad
     push es
+    call practice_loading_clear_if_present
+    call practice_native_setup
     call practice_target_resources
     pop es
     popad
     popf
     ret
+%macro PRACTICE_CAPTURE_SCROLL 0
+    movzx si,byte [0x2ba9]
+    shl si,1
+    mov ax,[ss:bp+si-8]
+%endmacro
 frame_hook:
     pushf
     pushad
     push es
+    PRACTICE_CAPTURE_SCROLL
+    mov [cs:practice_form_scroll],ax
     call practice_target_resources
+    call practice_loading_clear
+    call practice_preparation_guard
     call practice_target_check
     pop es
     popad
@@ -130,9 +144,17 @@ frame_hook:
     push fs
     push gs
     call practice_form
+    cmp byte [cs:practice_restart_committed],0
+    je .form_returned
+    mov byte [cs:practice_restart_committed],0
+    mov byte [cs:practice_form_request],0
+.form_returned:
     pop gs
     pop fs
 .form_closed:
+    call practice_quick_retry_tick
+    call practice_restart_tick
+    call practice_native_restrictions
     push es
     xor ax,ax
     mov es,ax
@@ -164,6 +186,7 @@ wait_hold:
     pushad
     push es
     call practice_result_tick
+    call practice_restart_tick
     pop es
     popad
     popf
@@ -199,6 +222,20 @@ world_hook:
     pushf
     pushad
     call practice_target_outcome
+    cmp byte [cs:target_practice],0
+    je .native_time_done
+    cmp byte [cs:target_preparing],0
+    jne .native_time_done
+    test byte [cs:practice_assists],0x10
+    jz .native_time_done
+    cmp byte [0x8f5],5
+    jne .native_time_done
+    cmp byte [0x2baa],0
+    je .native_time_done
+    cmp word [0x2be0],420
+    jb .native_time_done
+    mov word [0x2be0],0
+.native_time_done:
     popad
     popf
     pushf
@@ -430,6 +467,7 @@ BACK dialog_return,(0x13c90-0xfac0)
 %include 'practice-resources.inc'
 %include 'practice-phase.inc'
 %include 'practice-outcome.inc'
+%define PRACTICE_NATIVE_FORM_START 1
 %include 'practice-result.inc'
 %macro PRACTICE_PAUSE_WAIT 0
     push word 1
@@ -438,11 +476,6 @@ BACK dialog_return,(0x13c90-0xfac0)
 %define PRACTICE_PAGE_FRONT 0x2ba9
 %define PRACTICE_PAGE_BACK 0x2ba8
 
-%macro PRACTICE_CAPTURE_SCROLL 0
-    movzx si,byte [0x2ba9]
-    shl si,1
-    mov ax,[ss:bp+si-8]
-%endmacro
 %include 'practice-pause.inc'
 %define FORM_STAGE_MAX 5
 %define FORM_TH02 1
@@ -457,4 +490,6 @@ BACK dialog_return,(0x13c90-0xfac0)
 %define FORM_HP_MAX 8500
 %include 'practice-form.inc'
 %include 'practice-info.inc'
+%define PRACTICE_RESTART_TH02 1
+%include 'practice-restart.inc'
 practice_pause_call equ frame_hook.pause_call

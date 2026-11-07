@@ -199,7 +199,7 @@ export function createExternalReplayHost({mode,clocks,events=[],endBoundary,endR
       if(boundaryMode==='clock')finish();
       else if(wake)resume();
     },
-    rearm(){if(mode!=='record'||stopped||!finished)throw Error('Replay 尚未结束');finished=false;recording=true;ending=false;runStart=null;runStage=0;runReason='manual';pauseStart=null;skipRanges.length=0;waitForInactive=true;releaseSeal();},
+    rearm(keepPaused=false){if(mode!=='record'||stopped||!finished)throw Error('Replay 尚未结束');finished=false;recording=true;ending=false;runStart=null;runStage=0;runReason='manual';pauseStart=null;skipRanges.length=0;waitForInactive=true;releaseSeal();if(keepPaused)held=true;},
     disable(){recording=false;ending=false;used=0;releaseSeal();},
     // Let the ordinary exit request finish even if playback held its last
     // JSPI continuation. No tape or proof work survives disposal.

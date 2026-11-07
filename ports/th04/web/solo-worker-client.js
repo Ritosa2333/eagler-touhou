@@ -117,7 +117,7 @@ export class WorkerNP21 {
   }
   clearInput(){this.queuedInput=null;this.send('clear');}
   finishReplay(){this.send('externalReplayFinish');}
-  rearmBrowserRecording(){return this.call('externalReplayRearm');}
+  rearmBrowserRecording(keepPaused=false){return this.call('externalReplayRearm',[keepPaused]);}
   async activatePractice(options){await this.call('practiceActivate',[options]);this.practiceParked=false;this.config.practiceStandby=false;this.state='running';this.context.resume().catch(()=>{});}
   practiceOptions(options){this.send('practiceOptions',[options]);}
   fastForwardReplay(value){this.send('externalReplayFast',[!!value]);}

@@ -64,6 +64,10 @@ def main():
             u.mem_write(db+0x46b6,struct.pack('<H',0x6013 if entry==1 else 0x11c0))
             u.emu_start(cb+e['targetCheck'],cb+0xfff0,count=1000)
             assert u.mem_read(cb+e['targetReached'],1)==bytes([expected]),(lang,entry,stage,phase,wanted,gen,boss)
+            assert u.mem_read(cb+e['targetPreparing'],1)==bytes([1-expected])
+            assert u.mem_read(cb+e['arrivalPending'],1)==bytes([expected])
+            assert u.mem_read(cb+e['entryPause'],1)==bytes([expected])
+            assert u.mem_read(cb+e['cleanupPending'],1)==bytes([int(bool(expected and entry))])
             checked+=1
         u,_=guest(spec);init(u);u.mem_write(cb+e['arrivalPending'],b'\x01')
         for at in (0x1a66,0x4662,0x4663,0x4669,0x466a,0xbcca,0xbcba):u.mem_write(db+at,b'\x05')
@@ -106,6 +110,14 @@ def main():
             u.emu_start(cb+e['targetAdvance'],cb+0xfff0,count=1000)
             assert struct.unpack('<H',u.mem_read(db+0x53d6,2))[0]==expected,(lang,stage,phase,wanted,reimu,gen,ptr)
             checked+=1
+        # Earlier survival attack HP is retained by the guest and restored
+        # before applying an optional custom HP at the selected arrival.
+        u,_=guest(spec);init(u);u.mem_write(cb+e['targetPreparing'],b'\x01');u.mem_write(cb+e['initialEntry'],b'\x02');u.mem_write(cb+e['initialPhase'],b'\x10')
+        u.mem_write(db+0x5394,b'\x05');u.mem_write(db+0x53d9,b'\x0e');u.mem_write(db+0xbcd0,struct.pack('<H',0x6013))
+        u.mem_write(db+0x53d6,struct.pack('<H',1200));u.mem_write(db+0x53e0,b'\0\0')
+        u.emu_start(cb+e['targetAdvance'],cb+0xfff0,count=2000);assert u.mem_read(db+0x53d6,2)==b'\0\0'
+        u.mem_write(cb+e['arrivalPending'],b'\1');u.mem_write(cb+e['initialHp'],b'\0\0');u.emu_start(cb+e['targetArrival'],cb+0xfff0,count=2000)
+        assert struct.unpack('<H',u.mem_read(db+0x53d6,2))[0]==1200;checked+=1
         for stage,phase,ptr,frame,expected in ((5,0,0x6013,1,128),(5,1,0x6013,1,63),(6,3,0x6013,1,63),(6,5,0x6013,1,127),(6,6,0xc7da,2,127),(5,0,0x6013,0,0)):
             u,_=guest(spec);init(u);u.mem_write(cb+e['targetPreparing'],b'\x01');u.mem_write(cb+e['initialEntry'],b'\x02');u.mem_write(cb+e['initialPhase'],b'\x08')
             u.mem_write(db+0x5394,bytes([stage]));u.mem_write(db+0x53d9,bytes([phase]));u.mem_write(db+0xbcd0,struct.pack('<H',ptr));u.mem_write(db+0x53da,struct.pack('<H',frame))

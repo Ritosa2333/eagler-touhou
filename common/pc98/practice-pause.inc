@@ -21,6 +21,13 @@ practice_pause:
     call practice_pause_draw
     jmp .loop
 .form_finish:
+%ifdef PRACTICE_NATIVE_FORM_START
+    cmp byte [cs:practice_restart_committed],0
+    je .form_finish_legacy
+    mov byte [cs:practice_restart_committed],0
+    mov byte [cs:practice_form_request],0
+.form_finish_legacy:
+%endif
     mov byte [cs:practice_pause_open],0
     mov byte [cs:practice_pause_request],0
     mov byte [cs:practice_pause_ack],0

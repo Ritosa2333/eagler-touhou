@@ -120,6 +120,13 @@ practice_target_advance:
     cmp dl,[cs:practice_initial_phase]
     jae .done
 .end_attack:
+    cmp word [0x53e0],0
+    jne .end_attack_threshold
+    mov ax,[0x53d6]
+    test ax,ax
+    jle .end_attack_threshold
+    mov [cs:practice_seek_final_hp],ax
+.end_attack_threshold:
     mov ax,[0x53e0]
     dec ax
     jns .store
@@ -129,6 +136,7 @@ practice_target_advance:
 .done:
     ret
 practice_initial_reimu: db 0
+practice_seek_final_hp: dw 0
 practice_attack_states:
     db 0,2, 0,3, 0,4, 1,2, 1,3, 1,4, 1,5, 2,3, 3,2
     db 4,2, 4,4, 4,5, 4,7, 4,8, 4,10, 4,11, 4,13, 4,14, 4,16, 4,17

@@ -1,6 +1,6 @@
-import {normalizePractice,validatePracticeOptions} from './practice-config.js';
+import {normalizePractice,validatePracticeOptions,encodeNativeOptions} from './practice-config.js';
 // Every mutation runs synchronously inside TH02's audited OUT boundary.
-export function createPracticeEngine({mod,patch,config,clock,restarting=false}){
+export function createPracticeEngine({mod,patch,config,clock,restarting=false,nativeSetup=false}){
   const initial=normalizePractice(config),setup=initial.setup;let targeted=initial.mode==='target',options=initial.options;
   let base=-1,d=-1,csBase=-1,resident=-1,ready=false,preparing=targeted,waiting=false,outcome=null,error=null,warped=false;
   let frames=0,elapsed=0,misses=0,bombsUsed=0,lastBombs=0,lockedPower=null,prepareFrames=0,selectedPhase=0,seenBoss=false,lastPort=0,entryRedraw=0,fatal=false;
@@ -40,12 +40,12 @@ export function createPracticeEngine({mod,patch,config,clock,restarting=false}){
   }
   function locks(){
     stocks();if(options.lockPower&&ready){lockedPower??=u8(0xaa6);power(lockedPower);}
-    if(options.lockRank)w16(0x2802,Math.min(u8(0x8f4)===0?4:16,setup.rank));
+    if(options.lockRank&&!(targeted&&nativeSetup))w16(0x2802,Math.min(u8(0x8f4)===0?4:16,setup.rank));
     flag('lockLives',ready&&options.lockLives);flag('unlimitedBombs',ready&&options.lockBombs);flag('enemyLock',ready&&options.enemyInvincible);
     flag('lockTime',ready&&options.lockTime);
     // Extra's mid encounter is a 420-frame script with no HP. Repeat its
     // complete pattern, allowing native frame-one initialization each cycle.
-    if(ready&&options.lockTime&&active()==='mid'&&u8(0x8f5)===5&&u16(0x2be0)>=420)w16(0x2be0,0);
+    if(!nativeSetup&&ready&&options.lockTime&&active()==='mid'&&u8(0x8f5)===5&&u16(0x2be0)>=420)w16(0x2be0,0);
   }
   function clearEntry(){for(const n of [0x2b94,0x2b95,0x2b96,0x2b99,0xaa7,0x2b97])w8(n,0);w16(0x2538,0);w8(0x109d,255);w8(0x109e,255);}
   function prepare(){
@@ -53,7 +53,7 @@ export function createPracticeEngine({mod,patch,config,clock,restarting=false}){
     if(prepareFrames===1&&setup.entry!=='stage'){
       // Let the next native loop erase both title rows before the Boss
       // initializer can reset the stage clock. Keep this frame on the stage.
-      resources();w8(0x2b94,0);w8(0x2b95,2);w32(0x2ba2,159);return;
+      if(!Number.isInteger(e.restartPending)){resources();w8(0x2b94,0);w8(0x2b95,2);w32(0x2ba2,159);}return;
     }
     if(!warped){
       warped=true;const nil=u32(0x1a0c);
@@ -67,16 +67,16 @@ export function createPracticeEngine({mod,patch,config,clock,restarting=false}){
     if(type==='boss')reached=reached&&!u8(0x2bfa)&&(setup.phase?p===setup.phase:s>=4?p%2===1:true);
     if(Number.isInteger(e.targetReached))reached=!!heap()[csBase+e.targetReached];
     if(reached){
-      resources();if(Number.isInteger(e.arrivalPending))flag('arrivalPending',1);else{w32(0xb28,0);w32(0x3e3c,0);w16(0x3e40,0);w16(0xb46,0);clearEntry();}ready=true;preparing=false;if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);waiting=true;selectedPhase=p;setHP();flag('entryPause',1);elapsed=misses=bombsUsed=0;lastBombs=u8(0xbde);clock?.setSpeed(options.speed);return;
+      resources();if(!Number.isInteger(e.targetReached)){if(Number.isInteger(e.arrivalPending))flag('arrivalPending',1);else{w32(0xb28,0);w32(0x3e3c,0);w16(0x3e40,0);w16(0xb46,0);clearEntry();}if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);flag('entryPause',1);}ready=true;preparing=false;waiting=true;selectedPhase=p;setHP();elapsed=misses=bombsUsed=0;lastBombs=u8(0xbde);clock?.setSpeed(options.speed);return;
     }
-    resources();w8(0x2b94,0);w8(0x2b95,2);
+    if(!Number.isInteger(e.restartPending)){resources();w8(0x2b94,0);w8(0x2b95,2);}
     if(!Number.isInteger(e.initialPhase)&&type==='boss'&&setup.phase>p&&s===4&&p%2===0&&p<8)w16(0x2be0,100);
     if(!Number.isInteger(e.initialPhase)&&type==='boss'&&s===5&&p===0)w16(0x2be0,50);
     // Reach later attacks via native transitions, without executing a prior
     // stage or inventing object pointers. Their initializer remains native.
     if(!Number.isInteger(e.initialPhase)&&type==='boss'&&setup.phase>p){if(s===0)w16(0x2bea,setup.phase===2?700:1400);else if(s===1)w16(0x2bea,p===1?701:1501);else if(s>=4&&p%2)w16(0x2bea,s===4?1600:1900);}
   }
-  function finish(value){if(outcome)return;outcome=value;flag('hold',1);}
+  function finish(value){if(outcome)return;if(Number.isInteger(e.formValues)&&Number.isInteger(e.formOptions)&&Number.isInteger(e.formHp)){heap().set([setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,0,setup.rank+6],csBase+e.formValues);heap().set(encodeNativeOptions(options),csBase+e.formOptions);view().setUint16(csBase+e.formHp,setup.hp,true);}outcome=value;flag('hold',1);}
   function completed(){
     if(u8(0x8f5)!==setup.stage||u8(0x19f6)===2)return true;
     if(setup.entry==='mid')return !u8(0x2baa);
@@ -85,8 +85,8 @@ export function createPracticeEngine({mod,patch,config,clock,restarting=false}){
     return seenBoss&&u8(0x2bfa)!==0;
   }
   function liveGuest(){const h=heap(),at=csBase+patch.entries.mailbox;return csBase>=0&&resident>=0&&at>=0&&at+36<=h.length&&resident+80<=h.length&&'TH02SOLOINPUTv1!'.split('').every((c,i)=>h[at+i]===c.charCodeAt(0))&&[1,2].includes(h[at+22])&&'MIKOConfig'.split('').every((c,i)=>h[resident+i]===c.charCodeAt(0))&&h[resident+10]===0&&h[resident+11]<=5&&h[resident+39]===0;}
-  function status(){const live=liveGuest();return {nativeInfo:Number.isInteger(e.infoEnabled),mode:targeted?'target':'full',ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(csBase>=0&&Number.isInteger(e.resultRequest)?{nativeResult:{visible:live&&!!heap()[csBase+e.resultVisible],request:live?heap()[csBase+e.resultRequest]:0}}:{}),...(resident>=0?{restartSetup:{stage:heap()[resident+22]===4?5:0,difficulty:heap()[resident+22],character:heap()[resident+38],lives:heap()[resident+26],bombs:heap()[resident+25]}}:{}),...(csBase>=0&&Number.isInteger(e.formOpen)?{nativeForm:{visible:live&&heap()[csBase+e.formOpen]===2,request:live?heap()[csBase+e.formRequest]:0,values:live?Array.from(heap().subarray(csBase+e.formValues,csBase+e.formValues+10)):[],hp:live?view().getUint16(csBase+e.formHp,true):0,settings:live?Array.from(heap().subarray(csBase+e.formOptions,csBase+e.formOptions+11)):[]}}:{}),...(csBase>=0&&Number.isInteger(e.pauseOpen)?{nativePause:{visible:live&&!!heap()[csBase+e.pauseOpen],choice:live?heap()[csBase+e.pauseOpen+1]:0,request:live?heap()[csBase+e.pauseRequest]:0}}:{}),...(d>=0?{stage:u8(0x8f5),phase:phase(),active:active(),phaseFrame:u16(0x2be0),damage:u16(0x2bea),power:u8(0xaa6),rank:i16(0x2802),keys:u16(0x2538),lives:u8(0xb2c),bombs:u8(0xb2d),invincibility:u8(0x2b95),missTimer:u8(0x2b99),playerHit:u8(0x2b94),bombActive:!!u8(0x3e44)}:{})};}
-  return {exitPractice(){targeted=false;preparing=false;waiting=false;outcome=null;flag('targetPractice',0);if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);flag('entryPause',0);flag('hold',0);clock?.setSpeed(options.speed);},gameOver(){if(targeted&&ready&&!outcome)finish('failed');},clear(){if(targeted&&ready&&!outcome)finish('clear');},configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0xaa6):null;options={...options,...value};writeGuestAssists();clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
+  function status(){const live=liveGuest();return {nativeInfo:Number.isInteger(e.infoEnabled),mode:targeted?'target':'full',ready,preparing,waiting,outcome,error,frames,elapsed,misses,bombsUsed,options:{...options},setup:{...setup},...(csBase>=0&&Number.isInteger(e.resultRequest)?{nativeResult:{visible:live&&!!heap()[csBase+e.resultVisible],request:live&&!(Number.isInteger(e.restartPending)&&heap()[csBase+e.resultRequest]===1)?heap()[csBase+e.resultRequest]:0}}:{}),...(resident>=0?{restartSetup:{stage:heap()[resident+22]===4?5:0,difficulty:heap()[resident+22],character:heap()[resident+38],lives:heap()[resident+26],bombs:heap()[resident+25]}}:{}),...(csBase>=0&&Number.isInteger(e.formOpen)?{nativeForm:{visible:live&&heap()[csBase+e.formOpen]===2,request:live&&!(Number.isInteger(e.restartPending)&&heap()[csBase+e.formRequest]===1)?heap()[csBase+e.formRequest]:0,values:live?Array.from(heap().subarray(csBase+e.formValues,csBase+e.formValues+10)):[],hp:live?view().getUint16(csBase+e.formHp,true):0,settings:live?Array.from(heap().subarray(csBase+e.formOptions,csBase+e.formOptions+11)):[]}}:{}),...(csBase>=0&&Number.isInteger(e.pauseOpen)?{nativePause:{visible:live&&!!heap()[csBase+e.pauseOpen],choice:live?heap()[csBase+e.pauseOpen+1]:0,request:live?heap()[csBase+e.pauseRequest]:0}}:{}),...(d>=0?{stage:u8(0x8f5),phase:phase(),active:active(),phaseFrame:u16(0x2be0),damage:u16(0x2bea),power:u8(0xaa6),rank:i16(0x2802),keys:u16(0x2538),lives:u8(0xb2c),bombs:u8(0xb2d),invincibility:u8(0x2b95),missTimer:u8(0x2b99),playerHit:u8(0x2b94),bombActive:!!u8(0x3e44)}:{})};}
+  return {exitPractice(){targeted=false;preparing=false;waiting=false;outcome=null;flag('targetPractice',0);if(Number.isInteger(e.targetPreparing))flag('targetPreparing',0);flag('entryPause',0);flag('hold',0);clock?.setSpeed(options.speed);},gameOver(){if(targeted&&ready&&!outcome)finish('failed');},clear(){if(targeted&&ready&&!outcome)finish('clear');},configure(value){validatePracticeOptions(value,true);if('lockPower'in value&&value.lockPower!==options.lockPower)lockedPower=value.lockPower&&ready?u8(0xaa6):null;options={...options,...value};writeGuestAssists();if(targeted&&nativeSetup&&csBase>=0&&Number.isInteger(e.formOptions))heap().set(encodeNativeOptions(options),csBase+e.formOptions);clock?.setSpeed(preparing&&prepareFrames?8:options.speed);},
     signal(port,packed){
       lastPort=port;
       locate(packed);if(heap()[resident+39])return;
@@ -94,7 +94,7 @@ export function createPracticeEngine({mod,patch,config,clock,restarting=false}){
       // status never reaches 0xff. Skip this wait once, then restore its code.
       if(port===0x7fd0&&restarting){const at=csBase+0x73d;if(heap()[at]!==0x9a)throw Error('TH02 restart music wait mismatch');restartMusicWait={at,bytes:heap().slice(at,at+5)};heap().fill(0x90,at,at+5);restarting=false;}
       if(port===0x7fd1&&restartMusicWait){heap().set(restartMusicWait.bytes,restartMusicWait.at);restartMusicWait=null;}
-      if(port===0x7fd0){loadCount++;writeGuestAssists();flag('targetPractice',targeted);if(Number.isInteger(e.targetPreparing))flag('targetPreparing',preparing);if(Number.isInteger(e.initialPower)){heap()[csBase+e.initialLives]=setup.lives;heap()[csBase+e.initialBombs]=setup.bombs;heap()[csBase+e.initialPower]=setup.power;view().setInt16(csBase+e.initialRank,Math.min(setup.difficulty===0?4:16,setup.rank),true);}if(Number.isInteger(e.initialPhase))heap()[csBase+e.initialPhase]=setup.phase;if(Number.isInteger(e.initialEntry))heap()[csBase+e.initialEntry]=({stage:0,mid:1,boss:2})[setup.entry];if(Number.isInteger(e.initialHp))view().setUint16(csBase+e.initialHp,setup.hp,true);if(Number.isInteger(e.initialStage))heap()[csBase+e.initialStage]=setup.stage;stocks();return;}
+      if(port===0x7fd0){loadCount++;writeGuestAssists();if(!nativeSetup){flag('targetPractice',targeted);if(Number.isInteger(e.targetPreparing))flag('targetPreparing',preparing);if(Number.isInteger(e.initialPower)){heap()[csBase+e.initialLives]=setup.lives;heap()[csBase+e.initialBombs]=setup.bombs;heap()[csBase+e.initialPower]=setup.power;view().setInt16(csBase+e.initialRank,Math.min(setup.difficulty===0?4:16,setup.rank),true);}if(Number.isInteger(e.initialPhase))heap()[csBase+e.initialPhase]=setup.phase;if(Number.isInteger(e.initialEntry))heap()[csBase+e.initialEntry]=({stage:0,mid:1,boss:2})[setup.entry];if(Number.isInteger(e.initialHp))view().setUint16(csBase+e.initialHp,setup.hp,true);if(Number.isInteger(e.initialStage))heap()[csBase+e.initialStage]=setup.stage;}stocks();return;}
       readGuestAssists();
       if(port===0x7fd3&&!Number.isInteger(e.initialPhase)&&preparing&&setup.phase>phase()&&phase()%2&&active()==='boss')w16(0x2be0,0);
       if(port===0x7fd1){
@@ -107,7 +107,7 @@ export function createPracticeEngine({mod,patch,config,clock,restarting=false}){
         if(waiting)waiting=false;
         if(preparing){if(!prepareFrames&&setup.entry!=='stage')clock?.setSpeed(8);prepare();}
         if(ready&&!waiting&&!outcome)elapsed++;
-        let bits=u16(0x2538);if(preparing||outcome)bits=0;if(options.disableBomb)bits&=~32;if(options.disableShot)bits&=~16;w16(0x2538,bits);locks();
+        if(!(targeted&&nativeSetup)){let bits=u16(0x2538);if(preparing||outcome)bits=0;if(options.disableBomb)bits&=~32;if(options.disableShot)bits&=~16;w16(0x2538,bits);}locks();
       }
       if(port===0x7fd2&&ready&&!outcome&&!u8(0x2b99)){
         misses++;if(options.invincible)w8(0x2b94,0);

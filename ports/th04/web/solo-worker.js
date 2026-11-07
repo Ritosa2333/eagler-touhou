@@ -1,10 +1,11 @@
 import {workerEnvironment} from './solo-worker-environment.js';
 import {readSoloDiagnostics,writeSoloTestCommand} from './solo-test-tools.js';
 import {readSoloFault} from './solo-fault.js';
+import {normalizePractice} from './practice-config.js';
 
 let emulator,environment,bridge,music,game,patch,coop,mailbox=-1,cursor=0;
 const seen=new Map(),signature=new TextEncoder().encode('TH04SOLOINPUTv1!');
-let awaitingSnapshot=false,pendingMusic=[],lastPublish=0,costs=[],lastInput=performance.now(),held=new Map();
+let awaitingSnapshot=false,pendingMusic=[],lastPublish=0,costs=[],lastInput=performance.now(),held=new Map(),transitionHold=false;
 let input={focus:0,points:0,touch:[0,0]},timer;
 let drawTimes=[],lastRenderPublish=-Infinity;
 function postReplay(type,value){
@@ -23,9 +24,10 @@ function applyAssist(value){
   if(at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b))return;
   if(!ownsSoloMailbox(h,v,at))return;
   if(value.generation!==v.getUint16(at+24,true))return;
+  if(value.formOpen){const e=patch.practice?.entries,f=value.formOpen,base=at-patch.mailbox_cs_offset;if(!e||h[base+e.resultVisible]||!Array.isArray(f.values)||f.values.length!==10||!Array.isArray(f.settings)||f.settings.length!==11||f.settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1))||!Number.isInteger(f.hp)||f.hp<0||f.hp>30000||f.values.some(n=>!Number.isInteger(n)||n<0||n>255))return;h.set(f.values,base+e.formValues);h.set(f.settings,base+e.formOptions);v.setUint16(base+e.formHp,f.hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;return;}
   if(Number.isInteger(value.formInput)){
     const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
-    if(entries&&h[base+entries.formOpen])v.setUint16(base+entries.formInput,value.formInput&63,true);
+    if(entries&&(h[base+entries.formOpen]||value.formInput===64))v.setUint16(base+entries.formInput,value.formInput&127,true);
     return;
   }
   if(Number.isInteger(value.pauseInput)){
@@ -36,22 +38,26 @@ function applyAssist(value){
     }
     return;
   }
+  if(Number.isInteger(value.pauseAck)){const e=patch.practice?.entries,base=at-patch.mailbox_cs_offset;if(e&&h[base+e.pauseOpen]&&h[base+e.pauseRequest])h[base+e.pauseAck]=value.pauseAck;return;}
   if(Number.isInteger(value.resultInput)){
     const entries=patch.practice?.entries,base=at-patch.mailbox_cs_offset;
     if(entries&&h[base+entries.resultVisible])v.setUint16(base+entries.resultInput,value.resultInput&15,true);
     return;
   }
+  if(Number.isInteger(value.resultAck)){const e=patch.practice?.entries,base=at-patch.mailbox_cs_offset;if(e&&h[base+e.resultVisible]&&h[base+e.resultRequest])h[base+e.resultAck]=value.resultAck;return;}
+  if(value.resultRetry===true){const e=patch.practice?.entries,base=at-patch.mailbox_cs_offset;if(e&&h[base+e.resultVisible]&&!h[base+e.resultRequest])h[base+e.resultRequest]=1;return;}
   if(value.quit||value.restart){
     const data=at-patch.mailbox_cs_offset+(patch.data_segment-patch.code_segment)*16,ds=v.getUint16(at+20,true),base=data-ds*16;
     if(base<0||base+0x100000>h.length||data<base||data+0xba8a>base+0xa0000)return;
     if(value.restart){
       const resident=base+v.getUint16(data+0xba86,true)+v.getUint16(data+0xba88,true)*16;
       if(resident<base||resident+80>base+0xa0000||new TextDecoder().decode(h.subarray(resident,resident+11))!=='HUMAConfig\0')return;
-      const config=emulator.config.practice,stage=config?.mode==='target'?config.setup.stage:h[resident+15]===4?6:0;
+      const config=value.practiceConfig?normalizePractice(value.practiceConfig):emulator.config.practice,stage=value.practiceConfig?(config.setup.difficulty===4?6:0):config?.mode==='target'?config.setup.stage:h[resident+15]===4?6:0;
       const code=at-patch.mailbox_cs_offset;
       if(h[code+0x86]!==0x75||h[code+0x87]!==5||h[code+0x8d]!==0x1e||h[code+0x8e]!==0x68||v.getUint16(code+0x8f,true)!==0xcd)return;
-      h[resident+17]=stage;h[resident+19]=48+stage;emulator.restartPractice();
-      h.set([0x6d,0x61,0x69,0x6e,0],code+0x88);h[code+0x8d]=0x0e;v.setUint16(code+0x8f,0x88,true);h[data+0x5392]=1;
+      const e=patch.practice?.entries;if(!Number.isInteger(e?.restartPending)||!Number.isInteger(e?.restartValues))return;
+      const s=config.setup;h.set([stage,s.difficulty,s.character,s.lives,s.bombs,value.practiceConfig?1:0],code+e.restartValues);h[code+e.restartPending]=1;
+      if(value.practiceConfig)emulator.config.practice=config;emulator.restartPractice();
     }else{emulator.practice?.exitPractice();h[data+0x5392]=1;}
     return;
   }
@@ -156,21 +162,26 @@ async function dispatch(message){
     if(game!=='04'||!entries||![1,2].includes(ack)||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||v.getUint16(at+24,true)!==generation)return false;
     const base=at-patch.mailbox_cs_offset;
     if(!h[base+entries.resultVisible]||!h[base+entries.resultRequest])return false;
-    h[base+entries.resultAck]=ack;return true;
+    emulator.assist({address:at,generation,resultAck:ack});return true;
+  }
+  if(method==='practiceResultRetry'){
+    const [at,generation]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),e=patch?.practice?.entries;
+    if(game!=='04'||!e||at<0||at+36>h.length||!ownsSoloMailbox(h,v,at)||v.getUint16(at+24,true)!==generation||!h[at-patch.mailbox_cs_offset+e.resultVisible])return false;
+    emulator.assist({address:at,generation,resultRetry:true});return true;
   }
   if(method==='practiceFormOpen'||method==='practiceFormTake'){
     const [at,generation,values,hp,settings]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),e=patch?.practice?.entries;
     if(game!=='04'||!e||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||!ownsSoloMailbox(h,v,at)||v.getUint16(at+24,true)!==generation)return false;
     const base=at-patch.mailbox_cs_offset;
-    if(method==='practiceFormTake'){if(!h[base+e.formRequest])return false;h[base+e.formRequest]=0;return true;}
+    if(method==='practiceFormTake'){if(![1,2].includes(values)||h[base+e.formOpen]||h[base+e.formRequest]!==values)return false;h[base+e.formRequest]=0;return true;}
     if(h[base+e.resultVisible]||!Array.isArray(values)||values.length!==10||!Array.isArray(settings)||settings.length!==11||settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1))||!Number.isInteger(hp)||hp<0||hp>30000||values.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
-    h.set(values,base+e.formValues);h.set(settings,base+e.formOptions);v.setUint16(base+e.formHp,hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;return true;
+    emulator.assist({address:at,generation,formOpen:{values,hp,settings}});return true;
   }
   if(method==='practicePauseAck'){
     const [at,generation,ack]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),entries=patch?.practice?.entries;
     if(game!=='04'||!entries||![1,2].includes(ack)||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||v.getUint16(at+24,true)!==generation)return false;
     const base=at-patch.mailbox_cs_offset;if(!h[base+entries.pauseOpen]||!h[base+entries.pauseRequest])return false;
-    h[base+entries.pauseAck]=ack;return true;
+    emulator.assist({address:at,generation,pauseAck:ack});return true;
   }
   if(method==='audio')return emulator.state==='running'?(emulator.readAudio?.()||environment.audio()):null;
   if(method==='key'){
@@ -179,7 +190,7 @@ async function dispatch(message){
     if(emulator.key)emulator.key(event.code,event.type==='keydown');else environment.key(event);return;
   }
   if(method==='input'){
-    lastInput=performance.now();input=args[0];if(Number.isInteger(input.resultInput)||Number.isInteger(input.pauseInput)||Number.isInteger(input.formInput)){applyAssist(input);if(emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);}else queueAssist(input);return;
+    lastInput=performance.now();input=args[0];queueAssist(input);if(!transitionHold&&(Number.isInteger(input.resultInput)||Number.isInteger(input.pauseInput)||Number.isInteger(input.formInput))&&emulator.state==='running'&&emulator.externalHost?.status.held)emulator.externalHost.pause(false);return;
   }
   if(method==='clear'){clear();return;}
   if(method==='coopHit'){if(!coop)throw Error('本地合作尚未启动');coop.hit();return;}
@@ -190,13 +201,14 @@ async function dispatch(message){
   if(method==='soloQuit'){
     const h=emulator.module.HEAPU8,at=args[2],v=new DataView(h.buffer);
     if(game!=='04'||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||h[at+22]!==1||v.getUint16(at+24,true)!==args[0])return false;
-    emulator.assist({address:at,generation:args[0],...(args[1]?{restart:true}:{quit:true})});return true;
+    emulator.assist({address:at,generation:args[0],...(args[1]?{restart:true,...(args[3]?{practiceConfig:normalizePractice(args[3])}:{})}:{quit:true})});return true;
   }
   if(method==='pause'){clear();emulator.pause();return;}
   if(method==='reset'){pendingMusic=[];clear();bridge?.reset();music?.reset();seen.clear();mailbox=-1;cursor=0;await emulator.reset();costs=[];drawTimes=[];lastRenderPublish=-Infinity;observeFrames();return;}
   if(method==='run'){lastInput=performance.now();emulator.run();return;}
   if(method==='externalReplayFinish'){emulator?.finishReplay();return;}
-  if(method==='externalReplayRearm'){emulator?.rearmBrowserRecording();return;}
+  if(method==='externalReplayRearm'){emulator?.rearmBrowserRecording(!!args[0]);return;}
+  if(method==='externalReplayHold'){transitionHold=!!args[0];emulator?.externalHost?.pause(transitionHold);return;}
   if(method==='externalReplayFast'){emulator?.fastForwardReplay(args[0]);return;}
   if(method==='externalReplayDisable'){emulator?.stopBrowserRecording();return;}
   if(method==='externalReplayPause'){const paused=!!args[0];if(paused)emulator?.pause();else emulator?.run();return;}

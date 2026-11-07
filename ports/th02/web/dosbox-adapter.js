@@ -9,7 +9,7 @@ import {createExternalReplayHost,inspectExternalMemory} from './replay/external-
 import {loadExternalDosboxFactory} from './replay/external-loader.js';
 import {createSoloReplayLifecycle} from './replay/external-lifecycle.js';
 import {createPracticeEngine} from './practice-engine.js';
-import {createPracticeClock} from './practice-config.js';
+import {createPracticeClock,normalizePractice,decodeNativeOptions} from './practice-config.js';
 const codes={ArrowUp:265,ArrowDown:264,ArrowLeft:263,ArrowRight:262,KeyZ:90,KeyX:88,ShiftLeft:340,ShiftRight:344,Escape:256,Enter:257,Space:32,Backspace:259,F1:290,F2:291,F3:292,F4:293,F5:294,KeyU:85};
 export const supportsWriteJournal=()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,5,5,2,0,1,0,1]));
 export class DOSBoxPC98 {
@@ -47,7 +47,7 @@ export class DOSBoxPC98 {
       if(this.config.practice){
         this.practiceClock=createPracticeClock(this.config.practice.mode==='target'?8:this.config.practice.options.speed);
         this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config:this.config.practice,clock:this.practiceClock});
-        this.module.practiceSignal=(port,packed)=>this.practice.signal(port,packed);
+        this.module.practiceSignal=(port,packed)=>{if(!this.acceptNativePracticeForm(port))this.practice.signal(port,packed);};
         this.module.practicePreparing=()=>this.practice.status.preparing;
       }
       const lifeConfig=replay.lifecycle||(this.config.practice?{game:'02',patch:this.config.practicePatch}:null);
@@ -55,7 +55,7 @@ export class DOSBoxPC98 {
       this.externalHost=createExternalReplayHost({...replay,
         clock:this.practiceClock,shouldHold:()=>this.holdPreparedPractice(),
         shouldFastForward:()=>!!this.practice?.status.preparing,onBoundary:()=>{if(replay.mode==='record'){lifeState=lifecycle?.();if(lifeState?.finish==='game-over')this.practice?.gameOver();else if(lifeState?.finish==='clear')this.practice?.clear();}this.module.observeReplayBoundary?.();},
-        observe:()=>{const p=this.practice?.status;if(p?.outcome)return {active:true,stage:p.stage,paused:true,finish:p.outcome==='clear'?'clear':'game-over'};return lifeState;},
+        observe:()=>{const p=this.practice?.status;if(this.nativeTransition){if(!p?.ready)return {active:false,paused:true,finish:null};this.nativeTransition=false;}if(p?.outcome)return {active:true,stage:p.stage,paused:true,finish:null};return lifeState;},
         applyInput:command=>this.applyReplayInput(command),inspect:()=>inspectExternalMemory(this.module,{scope:replay.memoryScope,patch:this.config.practicePatch}),
         onChunk:value=>replay.onChunk?.(value),onEnd:value=>replay.onEnd?.(value),
         onError:error=>{if(replay.onError)replay.onError(error);else this.config.onError?.(error);},
@@ -121,10 +121,18 @@ export class DOSBoxPC98 {
     this.practiceOptions(options);this.practiceStandby=false;this.practiceParked=false;this.practiceClock.setPaused(false);this.run();
   }
   practiceOptions(options){if(!this.practice||this.externalHost?.status.mode==='playback')return;if(this.config.externalReplay&&this.externalHost.status.recording)this.externalHost.queue({type:'practice-options',options});else this.practice.configure(options);}
+  acceptNativePracticeForm(port){
+    if(port!==0x7fd1||!this.practice)return false;const e=this.config.practicePatch.practice.entries,base=this.practice.debug.csBase,h=this.module.HEAPU8;
+    if(base<0||!Number.isInteger(e.resultSelecting)||h[base+e.formOpen]||h[base+e.formRequest]!==1)return false;
+    const [stage,character,difficulty,entry,phase,lives,bombs,power,,rank]=h.subarray(base+e.formValues,base+e.formValues+10);
+    const options=decodeNativeOptions(Array.from(h.subarray(base+e.formOptions,base+e.formOptions+11)),this.practice.status.options),hp=new DataView(h.buffer).getUint16(base+e.formHp,true);
+    const config=normalizePractice({...this.config.practice,mode:'target',setup:{...this.config.practice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,rank:rank-6,hp},options});
+    this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting:true,nativeSetup:true});this.nativeTransition=true;return true;
+  }
   restartPractice(restarting=false){if(!this.practice)return;const config={...this.config.practice,options:this.practice.status.options};this.config.practice=config;this.practice=createPracticeEngine({mod:this.module,patch:this.config.practicePatch,config,clock:this.practiceClock,restarting});}
   assist(input){if(this.externalHost){if(this.externalHost.status.mode==='playback')return;this.externalHost.queue({type:'assist',input});}else this.config.applyReplayInput?.(input);}
   finishReplay(){this.externalHost?.finish();}
-  rearmBrowserRecording(){if(!this.externalHost)throw Error('录像不可用');this.externalHost.rearm();}
+  rearmBrowserRecording(keepPaused=false){if(!this.externalHost)throw Error('录像不可用');this.externalHost.rearm(keepPaused);}
   fastForwardReplay(value){this.externalHost?.fastForward(value);}
   stopBrowserRecording(){this.externalHost?.disable();}
   pauseReplay(value){if(value)this.pause();else this.run();}

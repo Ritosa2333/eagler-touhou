@@ -205,17 +205,7 @@ function makeAttempt(practice,standby=false,replay=null){
     onPlaybackEnd:matches=>{const text=matches?'Replay 播放完成，终态内存校验一致。':'Replay 已停止：终态内存校验不一致。';$('status').textContent=text;player.note(text);player.diagnostics(text);emulator?.pauseReplay(true);$('replay-pause').disabled=true;replayUI.showEnd(matches);}
   }});
 }
-function prepareRetry(){
-  if(disposed||launching)return;
-  const eligible=!playback&&committedPractice?.mode==='target'&&practiceUI.options.preparedRetry;
-  if(!eligible){discardRetry();return;}
-  if(retrySlot?.cancelled||retrySlot?.error){discardRetry();retryBlocked=true;}
-  const key=retryKey(committedPractice);if(retrySlot?.key!==key)discardRetry();
-  if(retrySlot||retryBlocked||document.hidden||!activeAttempt||performance.now()<warmAfter)return;
-  const ps=emulator?.isWorker?emulator.snapshot.practice:emulator?.practice?.status;if(!ps?.ready||ps.error)return;
-  const slot=makeAttempt({...committedPractice,options:practiceUI.options},true);slot.key=key;retrySlot=slot;
-  slot.task.catch(()=>{if(retrySlot===slot){retrySlot=null;retryBlocked=true;}});
-}
+function prepareRetry(){discardRetry();}
 export function readRetryState(){return {state:retrySlot?(retrySlot.ready?'ready':'preparing'):retryBlocked?'unavailable':'idle',last:lastRetry};}
 for(const id of ['record-enabled','language','audio-mode','runtime-mode'])$(id)?.addEventListener('change',()=>{discardRetry();retryBlocked=false;});
 async function startGame(replay=null,practiceConfig=null,cached=null){

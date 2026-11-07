@@ -189,6 +189,9 @@ practice_target_check:
     jb .done
 .reached:
     mov byte [cs:practice_target_reached],1
+    mov byte [cs:target_preparing],0
+    mov byte [cs:practice_arrival_pending],1
+    mov byte [cs:entry_pause],1
 .done:
     ret
 practice_initial_phase: db 0

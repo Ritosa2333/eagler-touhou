@@ -1,11 +1,12 @@
 // The lab owns the browser panel, practice configuration and native engine.
 // This boundary only restores its entry and routes the Launcher's keyboard.
-export function mountManagedPractice(ui, input, {release, readState, nativeKey, nativeOpen}) {
+export function mountManagedPractice(ui, input, {release, readState, nativeKey, nativeOpen, nativeRetry}) {
   const panel = document.querySelector('#practice-panel');
   const screen = panel.parentElement;
   const button = document.querySelector('[data-practice-toolbar]');
   button.closest('.th02-player,.th04-player').classList.add('managed-browser-game');
   const modifiers = new Set(), nativeHeld = new Set();
+  let retryHeld = false;
   const nativeCodes = new Set(['Backspace','F1','F2','F3','F4','F5','KeyU']);
   const clearNative = () => { for(const code of nativeHeld)nativeKey?.(code,false);nativeHeld.clear(); };
   let enabled = false, mobileVisible = false;
@@ -18,6 +19,7 @@ export function mountManagedPractice(ui, input, {release, readState, nativeKey, 
   style.textContent = `html,body{overflow:hidden}
     .managed-browser-game{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;min-height:0!important;margin:0!important;padding:0!important;gap:0!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;grid-template-areas:"stage"!important;border:0!important;border-radius:0!important;z-index:10000}
     .managed-browser-game .player-stage{width:100%;height:100%}.managed-browser-game canvas{touch-action:none}
+    .managed-browser-game .practice-preparing{display:none!important}
     .managed-practice-open{position:absolute;right:1%;top:1%;z-index:16;pointer-events:auto;min-height:32px;padding:4px 10px;color:#fff;background:#000c;border:1px solid #777;border-radius:4px;font:13px/1.5 system-ui;cursor:pointer}
     .managed-practice-open[hidden],.practice-screen:has(.practice-panel:not([hidden]))>.managed-practice-open{display:none!important}`;
   document.head.append(style);
@@ -60,6 +62,13 @@ export function mountManagedPractice(ui, input, {release, readState, nativeKey, 
     nativeKey(event) { if (enabled && event.type === 'keydown') ui.handleKey(event); },
     key(code, down) {
       if (down) modifiers.add(code); else modifiers.delete(code);
+      if(code==='KeyF'&&!down)retryHeld=false;
+      if(code==='KeyF'&&down&&enabled&&nativeRetry&&(modifiers.has('ShiftLeft')||modifiers.has('ShiftRight'))){
+        const practice=readState()?.practice;
+        if(practice?.mode==='target'&&practice.options?.quickRetry&&!blocked()&&!editing()){
+          if(!retryHeld){retryHeld=true;nativeRetry();}return true;
+        }
+      }
       if (nativeCodes.has(code) && nativeKey && (enabled || nativeHeld.has(code)) && (nativeHeld.has(code) || !blocked() && !editing())) {
         if(down)nativeHeld.add(code);else nativeHeld.delete(code);
         nativeKey(code,down);return true;
@@ -74,7 +83,7 @@ export function mountManagedPractice(ui, input, {release, readState, nativeKey, 
         preventDefault(){consumed = true;}, stopImmediatePropagation(){consumed = true;}});
       return consumed || blocked();
     },
-    clear() { clearNative();modifiers.clear(); contacts.clear(); },
+    clear() { clearNative();modifiers.clear();retryHeld=false; contacts.clear(); },
     touch(message) {
       const visible = message.thpracMobilePanelsEnabled === true && message.thpracMobilePanelsVisible === true;
       if (!enabled || visible === mobileVisible) return;

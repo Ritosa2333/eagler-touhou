@@ -11,6 +11,8 @@ NAMES=('load','frame','miss','world','entryPause','hold','targetPractice','lockL
        'deathGate','lifeConsume','bombGate','bombConsume','livesZero','bombsZero','shotsReturn','dialogBox','dialogPre','dialogPost',
        'powerDirty','lockTime','timeMid1','timeMid2','timeMid3','timeMid4','timeMima','transition','entities','pauseCall','assistFlags','targetPreparing','initialLives','initialBombs','initialPower','initialRank','targetResources','initialPhase','bossPhase','targetAdvance','initialEntry','warpState','targetWarp','arrivalPending','targetArrival','targetReached','targetCheck','initialHp','targetHp','initialStage','targetOutcome','targetOutcomeStep','resultVisible','resultRequest','resultAck','resultInput','waitHold','pauseOpen','pauseRequest','pauseAck','pauseInput')
 NAMES+=('formOpen','formInput','formValues','formRequest','formHp','formOptions','infoEnabled','infoValues')
+NAMES+=('restartPending','restartValues','resultSelecting')
+NAMES+=('focusHook','focusTest')
 def main():
     out=ROOT/'build/practice';out.mkdir(parents=True,exist_ok=True)
     nasm=os.environ.get('NASM','nasm')
@@ -27,14 +29,14 @@ def main():
         dialog_cs=0xfac0//16+oldgap//16
         assert image[0xbca4:0xbca9]==bytes.fromhex('6a019ac801') and 0xbca9 in rel
         delay_segment=struct.unpack_from('<H',image,0xbca9)[0]
-        cfg={'PRACTICE_ORG':insert-cs*16,'SOLO_UPDATE':p['entries']['update'],'SOLO_PAUSE':p['entries']['pause'],'SOLO_MAILBOX':p['entries']['mailbox'],'PRACTICE_DELAY_SEGMENT':delay_segment,
+        cfg={'PRACTICE_ORG':insert-cs*16,'SOLO_UPDATE':p['entries']['update'],'SOLO_PAUSE':p['entries']['pause'],'SOLO_MAILBOX':p['entries']['mailbox'],'SOLO_CURRENT_INPUT':p['entries']['currentInput'],'PRACTICE_DELAY_SEGMENT':delay_segment,
              'DIALOG_DELTA':p['dataSegment']-dialog_cs}
         (out/'practice-config.inc').write_text(''.join(f'%define {k} {v}\n' for k,v in cfg.items()))
         common=ROOT.parent.parent/'common/pc98'
         subprocess.run([str(nasm),'-f','bin','-I',str(out)+'/', '-I',str(common)+'/', '-I',str(ROOT/'patches')+'/',str(ROOT/'patches/practice.asm'),'-o',str(out/'practice.bin')],check=True)
         code=(out/'practice.bin').read_bytes();assert code[:8]==b'T02PRA01'
         entries=dict(zip(NAMES,struct.unpack_from('<'+str(len(NAMES))+'H',code,8)));gap=(len(code)+15)&~15
-        assert gap<=10240 and insert-cs*16+gap<65536
+        assert gap<=12288 and insert-cs*16+gap<65536
         insert_bridge(h,image,rel,insert,gap);image[insert:insert+len(code)]=code
         edits=[]
         def patch(at,before,after):
@@ -46,6 +48,12 @@ def main():
         near(0xb1ca,bytes.fromhex('e8de00'),'load')
         near(0xbdcc,b'\xe8'+struct.pack('<H',(cs*16+p['entries']['update']-0xbdcf)&65535),'frame')
         near(0xbdeb,bytes.fromhex('e8021d'),'entities')
+        focus_pattern=b'\x2e\xa1'+struct.pack('<H',p['entries']['currentInput'])+b'\xc3'
+        assert image.count(focus_pattern)==1
+        focus_at=image.index(focus_pattern)
+        near(focus_at,focus_pattern[:4],'focusHook')
+        focus_test=b'\x2e\xf7\x06'+struct.pack('<H',p['entries']['currentInput'])+b'\x00\x01'
+        near(cs*16+p['entries']['update']+0xae,focus_test,'focusTest')
         near(0xef69,bytes.fromhex('e88600'),'miss')
         near(0xf0da,bytes.fromhex('803e2c0b007526'),'deathGate',True)
         near(0xf142,bytes.fromhex('fe0e2c0b'),'lifeConsume')

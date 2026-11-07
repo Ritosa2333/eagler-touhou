@@ -32,6 +32,15 @@ for lang,item in manifest['languages'].items():
         assert u.reg_read(UC_X86_REG_IP)==end,(lang,name,hex(u.reg_read(UC_X86_REG_IP)))
         assert u.reg_read(UC_X86_REG_DS)==ds
     original=lambda at:at-0xb160
+    # The adapter's actual focus accessor must obey native options, including
+    # disabled input taking priority over force-focus.
+    for targeted,disabled,forced,raw,expected in ((0,1,1,0x100,0x100),(1,1,0,0x100,0),(1,0,1,0,0x100),(1,1,1,0x100,0),(1,0,0,0x100,0x100)):
+        byte(cb+e['targetPractice'],targeted);byte(cb+e['formOptions']+2,disabled);byte(cb+e['formOptions']+4,forced);w(cb+p['entries']['currentInput'],raw)
+        run('focusHook');assert u.reg_read(UC_X86_REG_AX)==expected,(lang,targeted,disabled,forced)
+        u.reg_write(UC_X86_REG_AX,0x5a5a);run('focusTest')
+        assert u.reg_read(UC_X86_REG_AX)==0x5a5a
+        assert bool(u.reg_read(UC_X86_REG_EFLAGS)&0x40)==(expected==0),(lang,targeted,disabled,forced)
+    checks.append(lang+': native focus restrictions')
     # The real guest resource routine owns preparation stock, power and Rank.
     power_update=cb+original(0xdead);saved_power_update=bytes(u.mem_read(power_update,1));u.mem_write(power_update,b'\xc3')
     byte(cb+e['initialLives'],2);byte(cb+e['initialBombs'],3);byte(cb+e['initialPower'],64);w(cb+e['initialRank'],-4)
@@ -63,10 +72,14 @@ for lang,item in manifest['languages'].items():
     byte(cb+e['targetPreparing'],0);checks.append(lang+': guest initializes native target spawners')
     for entry,stage,phase,requested,clock,boss,expected in ((0,0,0,0,0,False,1),(1,0,0,0,17,False,0),(1,0,0,0,18,False,1),(1,1,0,0,320,False,1),(2,4,2,0,0,True,0),(2,4,3,0,0,True,1),(2,4,3,5,0,True,0),(2,4,3,3,0,True,1)):
         byte(cb+e['targetPreparing'],1);byte(cb+e['initialEntry'],entry);byte(cb+e['initialPhase'],requested)
+        byte(cb+e['arrivalPending'],0);byte(cb+e['entryPause'],0)
         byte(db+0x8f5,stage);byte(db+0x19f6,int(boss));byte(db+0x2baa,1);byte(db+0x2bfa,0)
         w(db+0x1a0c,0x1234);w(db+0x1a0e,0x5678);w(db+0x1a10,0x1234);w(db+0x1a12,0x5678)
         w(db+0x91f8,phase);w(db+0x2be0,clock);run('targetCheck')
         assert u.mem_read(cb+e['targetReached'],1)[0]==expected,(lang,entry,stage,phase,clock)
+        assert u.mem_read(cb+e['targetPreparing'],1)[0]==1-expected
+        assert u.mem_read(cb+e['arrivalPending'],1)[0]==expected
+        assert u.mem_read(cb+e['entryPause'],1)[0]==expected
     byte(cb+e['targetPreparing'],0);checks.append(lang+': guest detects native target arrival')
     arrival_bytes=(0x2b94,0x2b95,0x2b96,0x2b99,0xaa7,0x2b97)
     for at in arrival_bytes:byte(db+at,7)

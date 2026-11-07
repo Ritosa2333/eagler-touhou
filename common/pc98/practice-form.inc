@@ -45,7 +45,7 @@ practice_form_step:
     mov ch,13
     cmp byte [cs:practice_form_options_page],0
     je .input_ready
-    mov ch,12
+    mov ch,11
 .input_ready:
     call practice_menu_input
     mov [cs:practice_form_keys],bx
@@ -65,7 +65,9 @@ practice_form_step:
     je .start
     cmp cl,12
     je .options_open
-    jmp .changed
+    ; Confirming an editable field is not the START action.
+    xor ax,ax
+    jmp .done
 .edit:
     cmp cl,11
     jae .changed
@@ -120,11 +122,20 @@ practice_form_step:
 %endif
     mov byte [cs:practice_form_values+3],2
 .entry_valid:
+%ifndef FORM_TH02
+    ; Gengetsu exists only in Extra; do not retain that branch on a normal stage.
+    cmp byte [cs:practice_form_values],6
+    je .branch_valid
+    mov byte [cs:practice_form_values+8],0
+.branch_valid:
+%endif
     cmp cl,0
     je .reset_dependent
     cmp cl,1
     je .reset_dependent
     cmp cl,3
+    je .reset_dependent
+    cmp cl,2
     je .reset_dependent
     cmp cl,8
     jne .edited
@@ -200,7 +211,7 @@ practice_form_step:
 .options_page:
     cmp ax,3
     je .options_close
-    cmp cl,11
+    cmp cl,10
     jne .options_edit
     cmp ax,2
     je .options_close
@@ -215,6 +226,10 @@ practice_form_step:
 .option_toggle:
     xor bx,bx
     mov bl,cl
+    cmp bl,9
+    jne .option_index_ready
+    mov bl,10
+.option_index_ready:
     cmp bl,10
     jne .option_bool
     inc byte [cs:practice_form_options+bx]
@@ -240,6 +255,7 @@ practice_form:
     mov word [cs:practice_form_keys],0xffff
     mov word [cs:practice_form_repeat_key],0
     mov byte [cs:practice_form_repeat_ticks],0
+    mov byte [cs:practice_form_armed],0
     call practice_form_graphics_save
     call practice_form_save
     call practice_form_draw_screen
@@ -248,6 +264,14 @@ practice_form:
     inc dword [cs:SOLO_MAILBOX+16]
     PRACTICE_PAUSE_WAIT
     mov ax,[cs:practice_form_input]
+    cmp byte [cs:practice_form_armed],0
+    jne .armed
+    mov [cs:practice_form_keys],ax
+    test ax,ax
+    jnz .loop
+    mov byte [cs:practice_form_armed],1
+    jmp .loop
+.armed:
     call practice_form_step
     cmp ax,2
     je .start
@@ -266,6 +290,12 @@ practice_form:
     call practice_form_restore
     call practice_form_graphics_restore
     mov byte [cs:practice_form_open],0
+%ifdef PRACTICE_NATIVE_FORM_START
+    cmp byte [cs:practice_form_request],1
+    jne .closed
+    call practice_form_native_start
+.closed:
+%endif
     ret
 
 practice_form_draw_screen:
@@ -278,11 +308,11 @@ practice_form_draw_screen:
 practice_form_save:
     mov ax,0xa000
     mov es,ax
-    mov di,5*160+20*2
+    mov di,5*160+19*2
     mov si,practice_text_saved
     mov dx,13
 .row:
-    mov cx,25
+    mov cx,27
 .cell:
     mov ax,[es:di]
     mov [cs:si],ax
@@ -291,18 +321,18 @@ practice_form_save:
     add si,4
     add di,2
     loop .cell
-    add di,110
+    add di,106
     dec dx
     jnz .row
     ret
 practice_form_restore:
     mov ax,0xa000
     mov es,ax
-    mov di,5*160+20*2
+    mov di,5*160+19*2
     mov si,practice_text_saved
     mov dx,13
 .row:
-    mov cx,25
+    mov cx,27
 .cell:
     mov ax,[cs:si]
     mov [es:di],ax
@@ -311,7 +341,7 @@ practice_form_restore:
     add si,4
     add di,2
     loop .cell
-    add di,110
+    add di,106
     dec dx
     jnz .row
     ret
@@ -323,6 +353,16 @@ practice_form_graphics_save:
     pushf
     cld
     push ds
+    mov ax,[cs:practice_form_scroll]
+    add ax,80
+    xor dx,dx
+    mov cx,400
+    div cx
+    mov ax,dx
+    mov cx,80
+    mul cx
+    add ax,20
+    mov [cs:practice_form_offset],ax
     mov al,[PRACTICE_PAGE_BACK]
     mov [cs:practice_form_page],al
     mov bx,2600                 ; 25 bytes * 208 lines * 4 planes * 2 pages
@@ -342,7 +382,7 @@ practice_form_graphics_save:
 .plane:
     mov ax,[cs:practice_form_planes+bx]
     mov ds,ax
-    mov si,6420                ; x=160, y=80 at 80 bytes per raster line
+    mov si,[cs:practice_form_offset]
     mov bp,208
 .row:
     mov cx,25
@@ -352,6 +392,10 @@ practice_form_graphics_save:
     mov byte [si-1],0
     loop .cell
     add si,55
+    cmp si,32000
+    jb .next_row
+    sub si,32000
+.next_row:
     dec bp
     jnz .row
     add bx,2
@@ -390,12 +434,16 @@ practice_form_graphics_restore:
 .plane:
     mov ax,[cs:practice_form_planes+bx]
     mov es,ax
-    mov di,6420
+    mov di,[cs:practice_form_offset]
     mov bp,208
 .row:
     mov cx,25
     rep movsb
     add di,55
+    cmp di,32000
+    jb .next_row
+    sub di,32000
+.next_row:
     dec bp
     jnz .row
     add bx,2
@@ -418,6 +466,8 @@ practice_form_planes: dw 0xa800,0xb000,0xb800,0xe000
 practice_form_buffer: dw 0
 practice_form_page: db 0
 practice_form_page_index: db 0
+practice_form_scroll: dw 0
+practice_form_offset: dw 0
 
 ; ES = A000h. Draw ten rows in the native PC-98 text plane.
 practice_form_draw:
@@ -433,6 +483,12 @@ practice_form_draw:
     xor dx,dx
 .row:
     mov si,[cs:bp]
+    ; A double-width game glyph beginning just outside the form can extend
+    ; into its first cell. Hide both neighbouring text cells while it is open.
+    mov word [es:di-2],0x20
+    mov word [es:di-2+0x2000],0
+    mov word [es:di+50],0x20
+    mov word [es:di+50+0x2000],0
     mov bl,0xe5
     cmp dl,[cs:practice_form_choice]
     jne .background
@@ -496,16 +552,20 @@ practice_form_draw:
     mov [es:bx+0x2004],al
     jmp .next
 .draw_option:
-    cmp dl,11
+    cmp dl,10
     jae .next
     xor bx,bx
     mov bl,dl
+    cmp bl,9
+    jne .draw_option_index_ready
+    mov bl,10
+.draw_option_index_ready:
     mov al,[cs:practice_form_options+bx]
     xor ah,ah
     shl ax,1
     mov bx,ax
     mov si,[cs:practice_form_option_values+bx]
-    cmp dl,10
+    cmp dl,9
     jne .option_text
     mov si,[cs:practice_form_speed_values+bx]
 .option_text:
@@ -601,6 +661,7 @@ practice_form_row_attr: db 0
 practice_form_keys: dw 0
 practice_form_repeat_key: dw 0
 practice_form_repeat_ticks: db 0
+practice_form_armed: db 0
 practice_form_open: db 0
 practice_form_input: dw 0
 practice_form_request: db 0
@@ -743,7 +804,7 @@ practice_form_labels:
 .start: db 'START PRACTICE         ',0
 .options: db 'OPTIONS                ',0
 practice_form_option_labels:
-    dw .rank,.bomb,.focus,.shot,.force,.retry,.point,.keys,.info,.prepared,.speed,.back,.blank
+    dw .rank,.bomb,.focus,.shot,.force,.retry,.point,.keys,.info,.speed,.back,.blank,.blank
 .rank: db 'LOCK RANK              ',0
 .bomb: db 'DISABLE BOMB           ',0
 .focus: db 'DISABLE FOCUS          ',0
@@ -753,7 +814,6 @@ practice_form_option_labels:
 .point: db 'ALWAYS HITBOX          ',0
 .keys: db 'SHOW KEYS              ',0
 .info: db 'SHOW INFO              ',0
-.prepared: db 'PREPARED RETRY         ',0
 .speed: db 'GAME SPEED             ',0
 .back: db 'BACK                   ',0
 .blank: db '                       ',0
