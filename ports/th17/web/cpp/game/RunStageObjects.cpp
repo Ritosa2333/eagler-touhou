@@ -2,6 +2,7 @@
 namespace th17 {
 struct RunStageObjects::Services final:BattleWorldServices {
     BattleWorldServices* host;explicit Services(BattleWorldServices& value):host(&value){}
+    bool rollback_boundary()override{return host->rollback_boundary();}
     bool audio(i32 id,float pan,PlayerShots::SoundAction action,bool queued)override{return host->audio(id,pan,action,queued);}
     bool life_hud(i32 count,i32 pieces)override{return host->life_hud(count,pieces);}
     bool bomb_hud(i32 count,i32 pieces)override{return host->bomb_hud(count,pieces);}

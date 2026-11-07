@@ -11,7 +11,7 @@ DamageSource* BombController::rectangle(const Vec3& p,float angle,const Vec2& si
 bool BombController::allowed()const noexcept{return context.session.bomb_state!=1&&context.roaring_available&&!(context.roaring_flags&6)&&context.hud_available&&!context.hud_collect&&context.enemy_available&&context.enemy_count!=0;}
 bool BombController::begin(){
     if(context.session.bomb_state!=0)return false;context.session.bomb_state=1;age.set(0);
-    auto& s=context.session;s.bombs=std::clamp(wrapping_sub(s.bombs,1),0,8);
+    auto& s=context.session;if(!(s.practice_tools&PracticeInfiniteBombs))s.bombs=std::clamp(wrapping_sub(s.bombs,1),0,8);
     if(context.hud_available&&!context.world.bomb_hud(s.bombs,s.bomb_pieces))return fail("Bomb HUD unavailable");
     if(context.spell.flags&1){if(context.spell.frame>=60)failed_spell=1;if(context.spell.id==100&&!context.world.cancel_bullets(context.motion.position,192,0,false))return fail("Bomb activation cancellation failed");}
     if(!sound(44)||!start())return false;s.enemy_chain=0;return true;

@@ -1,0 +1,21 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/th05-pen-20261102",
+  "candidate": "/var/www/eagler-touhou/releases/th05-spectator-20261102",
+  "releaseId": "sha256-2e3c94180645b6cda68c17606e74f91f897edbb79c9bfd4cd90629f570cc3e01",
+  "buildId": "8d678810e0ce15d3277c",
+  "siteUrl": "https://touhouonline.com/",
+  "files": 7994,
+  "preserved": 7955,
+  "updates": [
+    {
+      "game": "th05",
+      "variant": "multiplayer",
+      "root": "runtime/th05/multiplayer/",
+      "previousGeneration": "a6fcecd2de8ab2afd5d2a2d233bb0d380ab4aa02520dcc420284650e67b0f10e",
+      "generation": "176bc34ef06747fd5fc9dac394af21590f9794bfa9d439fcf1b1c05693a8b360",
+      "files": 26
+    }
+  ],
+  "revision": "732940099a721fd97a955a02975fa758ad2e2870",
+  "syncPointerExceptions": []
+}

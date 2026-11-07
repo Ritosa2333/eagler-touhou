@@ -2,6 +2,7 @@
 #include "PlayerAnmHost.hpp"
 #include "EffectManager.hpp"
 #include "SpellStatus.hpp"
+#include "Practice.hpp"
 #include <functional>
 namespace th17 {
 struct PlayerLifeSession {
@@ -9,6 +10,7 @@ struct PlayerLifeSession {
     i32 power=100,power_step=100,bombs=3,bomb_pieces=0,initial_bombs=3,animal=0,replay_state=0;
     u32 roaring_flags=0;Timer roaring_countdown;bool bomb_available=true;
     i32 roaring_breaks=0;
+    u32 practice_tools=0;
 };
 struct PlayerLifeServices {
     virtual ~PlayerLifeServices()=default;

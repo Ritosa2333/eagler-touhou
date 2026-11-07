@@ -1,0 +1,107 @@
+{
+  "siteUrl": "https://touhouonline.com/",
+  "passed": true,
+  "language": "lang_zh-hans",
+  "rollback": true,
+  "playerFrames": [
+    241,
+    241
+  ],
+  "spectator": {
+    "errors": [],
+    "paused": {
+      "version": 1,
+      "run": "s98f5bcf81183bd1d_0",
+      "revision": 7,
+      "min": 0,
+      "position": 3271,
+      "received": 3272,
+      "edge": 3272,
+      "target": 3271,
+      "paused": true,
+      "seeking": false,
+      "following": false,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "receivedWhilePaused": 3283,
+    "live": {
+      "version": 1,
+      "run": "s98f5bcf81183bd1d_0",
+      "revision": 15,
+      "min": 0,
+      "position": 3337,
+      "received": 3338,
+      "edge": 3338,
+      "target": 3338,
+      "paused": false,
+      "seeking": false,
+      "following": true,
+      "ended": false,
+      "nodes": [
+        {
+          "id": 1,
+          "kind": "stage",
+          "frame": 0,
+          "stage": 1,
+          "bossSlots": 0
+        }
+      ]
+    },
+    "exitPreservesPlayers": true
+  },
+  "spectatorLanguage": {
+    "codepage": 936,
+    "config": "MOD_FILE = chs.dat\n",
+    "simplifiedGlyphs": 0,
+    "practiceLabel": "无敌"
+  },
+  "discoveryMisses": [
+    {
+      "seat": 0,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+      "status": 503
+    },
+    {
+      "seat": 0,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+      "status": 503
+    },
+    {
+      "seat": 1,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+      "status": 503
+    },
+    {
+      "seat": 1,
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+      "status": 503
+    },
+    {
+      "seat": "spectator",
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Fth05.data",
+      "status": 503
+    },
+    {
+      "seat": "spectator",
+      "url": "https://touhouonline.com/_eagler/resource-routes?path=%2Fgames%2Fth05%2Flanguage%2Flang_zh-hans.zip%3Fv%3Df05a1c93332bab2a01ef261ad7d4a1e426d2a1b0e6e8daadfb9460812ed44cc5",
+      "status": 503
+    }
+  ],
+  "httpErrors": [],
+  "errors": [],
+  "sourceCommit": "0f0f21ea12341a43dba24e924f4d6bbea47f9c0b",
+  "mirrorPublication": {
+    "primary": "th05-spectator-status-20261102",
+    "jp": "hk-th05-spectator-status-20261102-0e97bfe76aa2",
+    "cn": "hk-th05-spectator-status-20261102-0e97bfe76aa2-mirror-8639da15aa3d"
+  }
+}

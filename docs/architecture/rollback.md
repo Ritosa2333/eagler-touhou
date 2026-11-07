@@ -18,6 +18,8 @@
 
 常见标题侧所有者：
 
+- TH05：[`Netplay.cpp`](../../ports/th05-mp/portable/Netplay.cpp) 协调公共输入核心、8 帧世界日志和确认音频；[`WorldRollback.cpp`](../../ports/th05-mp/Game/Coop/WorldRollback.cpp) 捕获原生固定对象，场景与资源工厂经过完整确认边界。
+
 - TH08：[`RollbackDriver`](../../ports/th08-mp/web/cpp/multiplayer/RollbackDriver.cpp) 协调帧和输出；[`WorldJournal`](../../ports/th08-mp/web/cpp/multiplayer/WorldJournal.cpp) 组合主状态、敌人池、对象池与资源日志；`PoolsJournal`、`EnemyJournal`、`TextureJournal` 负责各自区域。
 - TH09：[`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.cpp) 管理输入帧；[`Application.cpp`](../../ports/th09/web/cpp/sdl/Application.cpp) 的 `checkpoint`、`rollback_tick` 及 SDL 帧循环接管标题世界、恢复和重模拟。
 - TH10：[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 通过稀疏池捕获器和 `RollbackJournal` 接线各领域状态；`NetplayRuntime` 只提供网络和输入决策。
@@ -123,6 +125,20 @@ TH08 MP 的活动索引在 Item 更新后、Bullet/Laser 更新前重建，替�
 - 确认输出环的退休点独立于“待纠正帧”。按最旧未提交输出保留空间，恢复工作跨显示回调时，已经确认的音频/Replay/观战帧仍可顺序排空。
 
 输入恢复记录：[TH09 输入调度与 Present 后恢复](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
+
+### th15：值状态、版本身份与基础更新成本
+
+五帧纠正包含恢复、五次历史演算和一次新帧推进，基础更新成本会被重复支付。th15 将受控子弹的运动状态与变换程序分开，ANM 采用可平凡复制的值状态，空闲插值器在新命令到来时唤醒。快照采用每页 64 个 VM 的稳定存储，深层几何复制复用已有容量。
+
+冷程序、图集与分席位擦弹状态按单调版本更新。道具空槽在出生、回收、清空和章节替换时更新版本，活动道具与其动画照常捕获。恢复只回退对象的版本身份，分配版本的计数器继续前进，避免分歧未来误用旧缓存。公开可变引用一旦逸出，该槽位永久走完整捕获路径。复杂几何、父子关系与注册动画继续由所有权图恢复。
+
+存档的封装编码块按私有版本复用，公开的命名记录逐帧复制。子弹更新期间复用玩家几何边界，候选范围先做整体拒绝，再检查各席位，命中与宿主回调使缓存失效。精确碰撞继续读取实时存活、无敌、放雷和对话状态。
+
+历史 Draw 执行会影响后续演算的写入，并省去最终画面才需要的顶点打包。多人子弹的擦弹视图原本写入临时 VM，可直接完成其持久状态准备。性能验收同时比较完整输入执行的世界指纹、确认录像输入和 canvas，测量范围包含音频泵、帧日志、恢复、重模拟与最终绘制提交。对应构建与数据见 [th15 性能验证](../../archive/th15-rollback-performance-20261105/README.md)。
+
+th15 的实时联机循环复用公共 `PendingFrameSchedule`。缺包保留当前到期更新，收包可在两次 rAF 之间唤醒；短时积欠的更新在提交画面后继续执行，每次回调最多推进两帧，第二帧须已确认。只有 rAF 增加时钟额度，历史纠正复用已采样输入。
+
+恢复被暂停边界打断时，已呈现的历史前沿与当前恢复游标分别计数。恢复尾部结束后继续执行原先到期的新帧，避免将历史重演当成新推进。双人／三人世界、确认录像、部分恢复和旧回调失效的验证见 [th15 输入时序验证](../../archive/th15-input-latency-20261105/README.md)。
 
 ## 修改回滚覆盖时的检查顺序
 

@@ -32,8 +32,7 @@ const publicAssets = new Set([
   "assets/donation.webp",
   "assets/touch-rotate-landscape.webp",
   "assets/notice-bilibili.svg",
-  "assets/notice-touhou-cloud.png",
-  "assets/notice-github.svg", "assets/notice-qq.svg",
+  "assets/notice-github.svg",
   // Repository-owned Phosphor room controls; the MIT notice ships with them.
   "assets/room-caret-left.svg", "assets/room-caret-right.svg",
   "assets/room-chart-bar.svg", "assets/room-copy.svg",

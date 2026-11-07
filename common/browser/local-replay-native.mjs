@@ -16,7 +16,7 @@ export function listLocalReplayFiles(fs,root,validate,describe=(path)=>({path}))
   return files;
 }
 // Adapt the small native ABI without teaching the host any Replay file format.
-export function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,pauseAudio,resumeAudio,onState,onError}) {
+export function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,pauseAudio,resumeAudio,onState,onError,waitForAudio=true,deferPresentation}) {
   const api=key=>{const c=getCore();return c[key]??c['_'+key];};
   let audioPaused=true,outputPaused=null,wasSeeking=false,resuming=null;
   function discardTransientSounds(){const pool=getModule()?.eaglerSfxOutput;if(pool)for(const voice of pool.voices.values())if(!voice.loop)pool.stop(voice);}
@@ -35,7 +35,7 @@ export function createNativeLocalReplay({core: getCore,module: getModule,physica
       try{Promise.resolve(resumeAudio?resumeAudio():context?.resume()).catch(()=>{}).finally(()=>{if(resuming===pending)resuming=null;});}
       catch{resuming=null;}
     }
-    return !gated||audioPaused;
+    return !waitForAudio||!gated||audioPaused;
   }
   const heap=()=>getModule().HEAPU8??new Uint8Array(getCore().memory.buffer);
   const text=p=>{if(!p)throw Error('录像无法解析');const b=heap(),end=b.indexOf(0,p);if(end<0||end-p>65536)throw Error('录像信息无效');return new TextDecoder().decode(b.subarray(p,end));};
@@ -64,7 +64,7 @@ export function createNativeLocalReplay({core: getCore,module: getModule,physica
       if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));
       (api('eagler_replay_audio_pump')??api('sdl_audio_pump'))?.();return ok;},
     present(){api('eagler_replay_present')?.();},
-    deferPresentation(){return typeof api('eagler_replay_present')==='function';},
+    deferPresentation(){return deferPresentation??(typeof api('eagler_replay_present')==='function');},
     state(){const preparing=api('eagler_replay_preparing'),extra=preparing?{preparing:!!preparing()}:{};
       if(replayState)return {...replayState(),...extra};const p=api('eagler_replay_state')(),v=Array.from(new Uint32Array(heap().buffer,p,5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],...extra};},
     stopLoop,...(pauseAudio?{audioState}:{}),onState,onError,

@@ -1,0 +1,8 @@
+{
+  "publishedAt": "2026-11-02T02:56:49Z",
+  "beforeSha256": "da0b80c3f88e53c82f04177fbc4ab46e48b185f857a6d61b411b0ac665e0d849",
+  "afterSha256": "afc801d5aea55fdf785399b4c5a313331d65cfaa53849ae19b5fc7200e4a1626",
+  "patches": 10,
+  "policy": "TH05 product, starting stocks and authenticated relay source envelope and TH05 fallback; existing game rules retained",
+  "scope": "TH05-only gameplay fallback; other games retain production policy"
+}

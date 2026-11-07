@@ -1,0 +1,10 @@
+import {spawnSync} from 'node:child_process';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const multiplayer=process.argv.includes('--multiplayer');
+for(const arg of process.argv.slice(2))if(arg!=='--multiplayer')throw Error(`Unknown package argument: ${arg}`);
+const output=resolve(process.env.TH19_PACKAGE_DIR||resolve(root,multiplayer?'build-eagler-multiplayer':'build-eagler'));
+const result=spawnSync(process.execPath,[resolve(root,'scripts/build-eagler.mjs'),'--package-only',...(multiplayer?['--multiplayer']:[])],{cwd:root,env:{...process.env,TH19_OUTPUT_DIR:output},stdio:'inherit',windowsHide:true});
+if(result.error)throw result.error;
+if(result.status!==0)process.exit(result.status??1);

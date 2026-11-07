@@ -28,6 +28,7 @@ test("presentation contract coverage", async () => {
 
 
 const verification = Object.freeze({
+  th05: {kind: "runtime", scripts: ["tests/presentation.mjs"]},
   th06: Object.freeze({ kind: "shared-preload", tests: Object.freeze([
     "tests/test-mobile-frame-pacing.mjs",
     "tests/test-native-frame-pacing.mjs",
@@ -50,6 +51,7 @@ const verification = Object.freeze({
   th12: {kind:'runtime', source:'portable/sdl/Application.cpp', scripts:['tests/sdl-clock.test.mjs']},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th17: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
+  th19: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
 

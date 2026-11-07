@@ -349,8 +349,22 @@ export const PRODUCT_CONTENT = Object.freeze({
         textures: Object.freeze(["title/title_bk00.png", "title/title_ch00.png", "title/title_logo.png"])})}),
       preparedContent: Object.freeze({directory: "assets-ogg", markerFiles: Object.freeze(["th17.data", "music/th17_01.ogg"]), script: "scripts/prepare-th17-content.mjs", baseline: "host/ogg-baselines/th17.json"}),
       ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
+      languagePack: Object.freeze({
+        kind: "thcrap-runtime-compiler",
+        inputMode: "archive",
+        archive: "th17.dat",
+        developmentEnv: "EAGLER_TH17_ARCHIVES",
+        developmentFiles: Object.freeze(["th17.dat", "assets-ogg/th17.data"]),
+        preparedArchive: "assets-ogg/th17.data",
+      }),
     }),
   }),
+    th19: Object.freeze({
+        original: Object.freeze({files:Object.freeze(["th19.dat"])}),
+        dataLayout: "sha256-9f5de5e45de240535cbf33ef75749509ecc93e21f2b24b8e23b3201b7b430d95",
+        music: Object.freeze({ogg:Object.freeze({mount:"/music",files:Object.freeze(["th19_01.ogg", "th19_02.ogg", "th19_03.ogg", "th19_04.ogg", "th19_05.ogg", "th19_06.ogg", "th19_07.ogg", "th19_08.ogg", "th19_09.ogg", "th19_10.ogg", "th19_11.ogg", "th19_12.ogg", "th19_13.ogg", "th19_14.ogg", "th19_15.ogg", "th19_16.ogg", "th19_17.ogg", "th19_18.ogg", "th19_19.ogg", "th19_20.ogg", "th19_21.ogg", "th19_22.ogg", "th19_90.ogg", "th19_91.ogg"])})}),
+        hostPreparation: Object.freeze({artwork:Object.freeze({kind:"retail-memory-title-no-reader"}),dataAssets:Object.freeze({kind:"prepared-content"}),preparedContent:Object.freeze({directory:"assets-eagler",markerFiles:Object.freeze(["th19.data","music/th19_01.ogg"]),script:"scripts/prepare-th19-content.mjs"}),ogg:Object.freeze({kind:"prepared-content"})}),
+    }),
   th20: Object.freeze({
     original: Object.freeze({
       files: Object.freeze(["th20.dat"]),

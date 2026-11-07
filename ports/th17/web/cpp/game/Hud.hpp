@@ -9,6 +9,7 @@ struct HudStartContext {
     u32 mode_flags=0;i32 screen=0,stage=1,character=0,animal=0,difficulty=1,continues=0;
     bool game_active=true,practice_record=false;
 };
+struct HudPilotStock {const PlayerLifeSession* session=nullptr;i32 life_piece_tier=0;};
 struct HudBossGauge {
     float displayed=0,target=0;i32 life=0,reserved=0;
     struct Mark {float fraction=0;u32 color=0;};std::array<Mark,4> marks{};
@@ -16,9 +17,21 @@ struct HudBossGauge {
 };
 static_assert(sizeof(HudBossGauge)==0x54);
 class Hud {
+    friend class GameBattle;
     AnmManager& animations;EnemyWorldState& enemies;PlayerLifeSession& session;PlayerMotion& player;PlayerSpellStatus& spell;HudResources resources;
     bool check(bool,const char*);bool root_interrupt(u32,i32,bool=false);bool visible(u32,bool);AnmVm* find(u32&);
-    bool stock(std::array<u32,8>&,i32,i32,bool);bool retire_gauge(HudBossGauge&);
+    struct PartnerStock {std::array<u32,8> life{},bomb{};};
+    std::array<PartnerStock,2> partner_stock;
+    u32 seats=1;
+    float point_row()const noexcept;
+    float graze_row()const noexcept{return point_row()+22.f;}
+    float life_row(u32 seat)const noexcept;
+    float bomb_row(u32 seat)const noexcept;
+    float power_row(u32 seat)const noexcept;
+    bool layout_stock(AnmVm&,u32 seat);
+    bool layout_team(AnmVm&);
+    std::array<u32,8>& stock_handles(u32 seat,bool bomb) noexcept;
+    bool stock(u32 seat,i32,i32,bool);bool create_stock(u32 seat);bool retire_gauge(HudBossGauge&);
     bool update_clock(float);bool update_gauges();bool update_indicator();
 public:
     std::array<u32,8> life_handles{},bomb_handles{};std::array<u32,2> clock_handles{};
@@ -31,17 +44,18 @@ public:
     bool dialogue=false,boss_hidden=false;u32 game_flags=0;
     std::function<bool(i32)> sound;std::function<bool()> update_dialogue;std::string error;
     Hud(AnmManager& a,EnemyWorldState& e,PlayerLifeSession& s,PlayerMotion& p,PlayerSpellStatus& b,HudResources r={}):animations(a),enemies(e),session(s),player(p),spell(b),resources(r){age.set(0);}
-    bool initialize(const HudStartContext&);bool update(float rate);
+    bool initialize(const HudStartContext&,u32 seat_count=1);bool update(float rate);
     void stage_resources(HudResources value,i32 score)noexcept{resources=value;age.set(0);displayed_score=score;current_seconds=previous_seconds=-1;}
-    bool lives(i32 stock,i32 pieces){return this->stock(life_handles,stock,pieces,false);}
-    bool bombs(i32 stock,i32 pieces){return this->stock(bomb_handles,stock,pieces,true);}
+    bool lives(i32 stock,i32 pieces,u32 seat=0){return this->stock(seat,stock,pieces,false);}
+    bool bombs(i32 stock,i32 pieces,u32 seat=0){return this->stock(seat,stock,pieces,true);}
+    bool initialize_partner(u32 seat,i32 character,const PlayerLifeSession&);
     bool prepare_spell(bool start);
     bool segment(i32 boss,i32 index,float fraction,u32 color);
     bool segments(i32 count);bool stage_logo(const HudStartContext&);
     bool result(i32 amount,i32 kind);
     bool begin_stage_clear(i32 bonus);bool update_notices(float rate);
     void update_score(i32 score,HudScoreState&)noexcept;
-    bool draw(const HudDrawContext&,HudDrawServices&);
+    bool draw(const HudDrawContext&,HudDrawServices&,u32 viewer,const std::array<HudPilotStock,3>&);
     bool ensure_boss_name();
 };
 }

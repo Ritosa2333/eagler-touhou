@@ -6,6 +6,18 @@ export interface DecisionInput {
   readonly description?: string;
   readonly validate?: (value: string) => string | null;
 }
+interface DecisionVersion {
+  title: string;
+  mark?: {tone: 'newer' | 'changed'; label: string};
+  empty?: string;
+  timestamp?: {label: string; value: string};
+  rows: readonly {label: string; value: string}[];
+  files: readonly {name: string; size: string}[];
+}
+export interface DecisionComparison {
+  filesLabel: string;
+  versions: readonly [DecisionVersion, DecisionVersion];
+}
 export interface DecisionOptions {
   title?: string;
   message?: string;
@@ -17,6 +29,7 @@ export interface DecisionOptions {
   hideCancel?: boolean;
   confirmOnEnter?: boolean;
   input?: DecisionInput;
+  comparison?: DecisionComparison;
 }
 export interface DecisionRequest extends Readonly<DecisionOptions> {readonly requestId: number;}
 export interface DecisionStore {

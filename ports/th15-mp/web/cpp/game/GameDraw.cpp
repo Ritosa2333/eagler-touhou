@@ -40,7 +40,8 @@ bool GameDraw::draw_text(const Vec3& position,u32 color,const std::string& value
 bool GameDraw::run(u32 index){
  if(!error.empty())return false;auto& b=scene.battle;
  switch(index){
- case 0:prepare_frame();return draw_spell_card(b.spell_card,animations,records,spell_context,text,error);
+ // The draw entry point prepares the frame before scheduled layers run.
+ case 0:return draw_spell_card(b.spell_card,animations,records,spell_context,text,error);
  case 1:
 #if TH15_MULTIPLAYER
  if(b.mp_enabled){if(!b.mp_draw(renderer))return fail(b.error);return !multiplayer_hud||multiplayer_hud->draw_transfer_feedback(renderer,text)||fail(multiplayer_hud->error);}

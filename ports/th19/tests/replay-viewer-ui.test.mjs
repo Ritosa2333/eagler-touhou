@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+import {decodeTh19Replay,encodeTh19Replay,th19StreamFrame} from '../web/sdl-runtime/th19-recording.mjs';
+
+test('viewer uses existing replay commands, isolates game input, and preserves version rejection',async()=>{
+ const build='a'.repeat(64),config={protocol:1,build,seed:1,difficulty:1,characters:[0,1],delay:0,rollback:true,rules:[0,1,1,4,4,1,1,0,0]};
+ const input={keys:0,direct:0,x:0,y:0};
+ const tape=encodeTh19Replay({kind:'versus',config,build,seed:1,frames:1,startedAt:0},th19StreamFrame(0,input,input,{played:true}));
+ const nodes=new Map(),commands=[],handlers={};let iframe;
+ const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',disabled:true,value:'1',append:f=>iframe=f});return nodes.get(id);};
+ const location=new URL('http://127.0.0.1:1234/token/');
+ const document={getElementById:node,createElement:()=>({contentWindow:{postMessage(m){commands.push(m);queueMicrotask(()=>handlers.message({origin:location.origin,source:iframe.contentWindow,data:{...m,ok:true,playback:{frame:0,total:1,paused:m.action==='pause'}}}));}}})};
+ const window={addEventListener:(name,fn)=>handlers[name]=fn};
+ const context=vm.createContext({decodeTh19Replay,window,document,location,URL,Map,Uint8Array,Array,Date,Error,Number,setTimeout,clearTimeout,console,fetch:async url=>({ok:true,json:async()=>({build,hasReplay:true,config:{gameData:{source:'content/th19.dat'},music:{ogg:{base:'content/music/',files:[]}}}}),arrayBuffer:async()=>tape.buffer})});
+ const source=(await readFile(new URL('../tools/replay/viewer.mjs',import.meta.url),'utf8')).replace(/^import .*?;\r?\n/,'');
+ await vm.runInContext(`(async()=>{${source}})()`,context);
+ const epoch=Number(new URL(iframe.src).searchParams.get('runtimeEpoch'));
+ await handlers.message({origin:location.origin,source:iframe.contentWindow,data:{protocol:'eagler-touhou/1',game:'th19',epoch,event:'ready'}});
+ assert.deepEqual(commands.map(c=>c.command),['configure','write','playback']);
+ assert.equal(commands[0].options.replayViewer,true);
+ assert.equal(commands[0].options.touchEnabled,false);
+ assert.equal(commands[2].action,'open');
+ assert.deepEqual(Uint8Array.from(commands[1].bytes),tape);
+ assert.equal(node('play').disabled,false);
+ await node('pause').onclick();assert.equal(commands.at(-1).action,'pause');
+ await node('restart').onclick();assert.deepEqual(commands.slice(-2).map(c=>c.action),['seek','play']);
+ const wrong=encodeTh19Replay({kind:'versus',config:{...config,build:'b'.repeat(64)},build:'b'.repeat(64),seed:1,frames:1,startedAt:0},th19StreamFrame(0,input,input,{played:true}));
+ node('file').files=[{size:wrong.length,arrayBuffer:async()=>wrong.buffer}];
+ const count=commands.length;await node('file').onchange();assert.equal(commands.length,count);assert.match(node('error').textContent,/版本不同/);
+});

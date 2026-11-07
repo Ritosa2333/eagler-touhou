@@ -1,0 +1,243 @@
+.cloud-save-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.account-settings .cloud-save-heading h3 {
+  margin: 0;
+}
+
+.cloud-save-empty,
+.cloud-save-loading {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  margin: 0;
+  color: var(--kit-muted-foreground);
+}
+
+.cloud-save-loading svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cloud-save-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--kit-border);
+  list-style: none;
+}
+
+.cloud-save-entry {
+  border-bottom: 1px solid var(--kit-border);
+}
+
+.cloud-save-list .cloud-save-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto 16px;
+  gap: 12px;
+  justify-items: start;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  min-height: 62px;
+  padding: 10px 8px;
+  text-align: start;
+  white-space: normal;
+}
+
+.cloud-save-cover {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--kit-muted);
+  color: var(--kit-muted-foreground);
+}
+
+.cloud-save-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cloud-save-identity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cloud-save-identity strong {
+  color: var(--kit-foreground);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cloud-save-identity :is(time, span),
+.cloud-save-hint,
+.cloud-save-version time {
+  color: var(--kit-muted-foreground);
+  font-size: 12px;
+}
+
+.cloud-save-identity :is(time, span) {
+  font-weight: 400;
+}
+
+.cloud-save-row [data-slot="badge"] {
+  text-align: start;
+  white-space: normal;
+}
+
+.cloud-save-chevron {
+  grid-column: 4;
+  color: var(--kit-muted-foreground);
+}
+
+.cloud-save-row[aria-expanded="true"] .cloud-save-chevron {
+  transform: rotate(180deg);
+}
+
+.cloud-save-details {
+  display: grid;
+  gap: 16px;
+  padding: 10px 8px 16px 56px;
+}
+
+.cloud-save-current {
+  display: grid;
+  gap: 8px;
+}
+
+.cloud-save-version,
+.cloud-save-actions,
+.cloud-save-sync-message {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cloud-save-version {
+  justify-content: space-between;
+}
+
+.cloud-save-version time {
+  display: inline-block;
+  margin-inline-start: 6px;
+}
+
+
+
+.cloud-save-hint,
+.cloud-save-error,
+.cloud-save-sync-message p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cloud-save-upload {
+  display: grid;
+  gap: 8px;
+}
+
+.cloud-save-current + .cloud-save-upload,
+.cloud-save-danger {
+  padding-top: 12px;
+  border-top: 1px solid var(--kit-border);
+}
+
+.cloud-save-selected {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cloud-save-selected li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.cloud-save-selected small {
+  flex: none;
+  color: var(--kit-muted-foreground);
+}
+
+.cloud-save-add {
+  margin-top: 12px;
+}
+
+.cloud-save-add [data-slot="select-trigger"] {
+  width: min(100%, 280px);
+}
+
+.cloud-save-section > .cloud-save-error,
+.cloud-save-preference > .cloud-save-error {
+  margin-top: 8px;
+}
+
+.cloud-save-error,
+.cloud-save-details .cloud-save-delete {
+  color: var(--kit-destructive);
+}
+
+.cloud-save-sync-message {
+  color: var(--kit-muted-foreground);
+  font-size: 13px;
+}
+
+.cloud-save-switch-row {
+  align-items: center;
+  gap: 16px;
+}
+
+.cloud-save-switch-row .ui-field-content {
+  min-width: 0;
+}
+
+.cloud-save-switch-row [data-slot="switch"] {
+  flex: none;
+}
+
+@media (max-width: 520px) {
+  .cloud-save-list .cloud-save-row {
+    gap: 8px;
+    padding-inline: 4px;
+  }
+
+  .cloud-save-details {
+    padding-inline: 4px;
+  }
+
+  .cloud-save-add [data-slot="select-trigger"] {
+    width: 100%;
+  }
+}
+
+@media (max-width: 370px) {
+  .cloud-save-list .cloud-save-row {
+    grid-template-columns: 36px minmax(0, 1fr) 16px;
+    row-gap: 4px;
+  }
+
+  .cloud-save-row [data-slot="badge"] {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .cloud-save-row .cloud-save-chevron {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}

@@ -5,6 +5,7 @@ import {spawnSync, execFileSync} from 'node:child_process';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {targets, root, inspectInputs, sourceDependencies, sourceIdentity, slash} from './inputs.mjs';
 import {checkRuntimeSource, runtimeSourceFiles} from './runtime-contracts.mjs';
+import {nodeHostExecutable} from '../../launcher/lib/node-runtime.mjs';
 import {STATUS_SCHEMA, checkStates, retainedVerification, validateStatusReport, readStatusReport} from './status.mjs';
 import {adaptationMarkdown, preserveManualEvidence, portDefinitions, notApplicable} from '../docs/new-adaptation.mjs';
 
@@ -26,7 +27,7 @@ function bunExecutableOnPath() {
       const candidate = resolve(directory.replace(/^"|"$/g, ''), name);
       if (!existsSync(candidate)) continue;
       try {
-        const actual = execFileSync(candidate,['--version'],{encoding:'utf8',windowsHide:true,timeout:5_000}).trim();
+        const actual = execFileSync(candidate,['--version'],{encoding:'utf8',windowsHide:true,timeout:30_000}).trim();
         if (actual === version) return cachedBunExecutable = candidate;
       } catch { /* Continue past shims and incompatible Bun installations. */ }
   }
@@ -35,7 +36,7 @@ function bunExecutableOnPath() {
 
 export function sharedCheckInvocation(gate, {bunExecutable} = {}) {
   if (!gate.runner) {
-    return {executable:process.execPath, args:gate.files.map(file=>resolve(root,file))};
+    return {executable:nodeHostExecutable(), args:gate.files.map(file=>resolve(root,file))};
   }
   if (gate.runner !== 'vitest' || !['repository','unit','workspace'].includes(gate.project))
     throw new Error(`Unknown shared check runner: ${gate.runner}/${gate.project ?? ''}`);
@@ -141,7 +142,7 @@ async function main(args) {
   const previous = readStatusReport(root);
   const games = [...new Set(selected.map(target=>target.game))];
   const shared = sharedPlan.gates.filter(gate=>selected.some(target=>
-    (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
+    !gate.excludeGames?.includes(target.game) && (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
     .map(gate => ({...gate, ...commandCheck(gate, options.output, games)}));
   const records = [];
   for (const target of selected) {
@@ -158,7 +159,7 @@ async function main(args) {
       const gates = [{id:'source-inputs', status:issues.length ? 'failed':'passed', level:'source-inputs', complete:true,
         checks:['BUILD-01'], files:[target.directory], ...(issues.length ? {error:issues.join('\n')}: {})},
         ...checkRuntimeSource({...target, product:PRODUCT_GAMES[target.game], nativeFiles, root}),
-        ...shared.filter(gate => (!gate.games || gate.games.includes(target.game)) &&
+        ...shared.filter(gate => !gate.excludeGames?.includes(target.game) && (!gate.games || gate.games.includes(target.game)) &&
           (!gate.variants || gate.variants.includes(target.variant)))];
       const identity = sourceIdentity(files,{game:target.game,variant:target.variant,
         features:target.definition.features,selection:input.selection,dependencies,

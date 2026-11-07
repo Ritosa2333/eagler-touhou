@@ -9,15 +9,38 @@ bool MusicComments::open(const u8* bytes,u32 size){
  while(offset<size){if(bytes[offset]!=64){skip();continue;}if(entries.size()==18){error="Music comment entry capacity exceeded";return false;}offset++;MusicComment entry;if(!line(entry.file,64)||!line(entry.title,66)){error="Invalid music comment heading";return false;}for(auto& text:entry.comments)if(!line(text,66)){error="Invalid music comment line";return false;}entries.push_back(std::move(entry));}
  if(entries.empty()){error="Empty music comment catalog";return false;}return true;
 }
+void MusicComments::localize(const LocalizationTable& themes,const LocalizationTable& comments){
+ for(u32 i=0;i<entries.size();++i){
+  auto& entry=entries[i];
+  // thpatch keys use the one-based Music Room order, independent of the WAV name.
+  const u32 track=i+1;
+  const auto* theme=themes.find(track);
+  if(theme&&!theme->empty()){
+   char number[16];std::snprintf(number,sizeof number,"No.%2u  ",track);
+   entry.title=number+*theme;entry.utf8_title=true;
+  }
+  bool translated=false;
+  for(u16 row=0;row<entry.comments.size();++row)translated|=comments.find(track,row)!=nullptr;
+  for(u16 row=0;row<entry.comments.size();++row){
+   if(!translated&&row!=0)break;
+   const auto* value=comments.find(track,row);
+   if((value&&*value=="@")||(!translated&&row==0)){
+    if(!theme||theme->empty())continue;
+    entry.comments[row]="♪"+*theme;
+   }else entry.comments[row]=value?*value:"";
+   entry.utf8_comments[row]=true;
+  }
+ }
+}
 bool TitleMusicRoom::check(bool ok){if(!ok&&error.empty())error=visuals.error.empty()?animations.error:visuals.error;return ok;}
 bool TitleMusicRoom::interrupt(u32 handle,i32 label){return check(animations.interrupt(handle,label));}
-bool TitleMusicRoom::text(u32 handle,const std::string& bytes,u32 color){auto* vm=animations.registry.find(handle);if(!vm){error="Music text animation unavailable";return false;}TextureText request;request.bytes=bytes;request.color=color;return services.text(*vm,request)||check(false);}
+bool TitleMusicRoom::text(u32 handle,const std::string& bytes,u32 color,bool utf8,bool centered,bool detail){auto* vm=animations.registry.find(handle);if(!vm){error="Music text animation unavailable";return false;}TextureText request;request.bytes=bytes;request.color=color;request.utf8=utf8;request.centered=centered;request.music_detail=detail;return services.text(*vm,request)||check(false);}
 bool TitleMusicRoom::create_entries(){
  const i32 start=2*state.age.current-2,end=2*state.age.current;float y=float(float(float(96.f-float(float(scroll)*20.f))+float(state.age.current*40-40))*2.f);
  for(i32 i=start;i<end&&i<i32(catalog.count());i++){
   if(i<0){error="Music Room entered before its first frame";return false;}auto& handle=state.handles[307+i];handle=animations.create(title_bank,170+i,-1,0);auto* vm=animations.registry.find(handle);if(!vm)return check(false);
   std::string caption=catalog.entry(i)->title;if(!unlocked[i]){char number[16];std::snprintf(number,sizeof number,"No.%2d  ",i+1);caption=number;for(i32 j=0;j<11;j++){caption+=char(0x81);caption+=char(0x48);}}
-  if(!text(handle,caption,0xffffff)||!check(animations.pause(handle,i<scroll||i>=scroll+10)))return false;
+  if(!text(handle,caption,0xffffff,unlocked[i]&&catalog.entry(i)->utf8_title)||!check(animations.pause(handle,i<scroll||i>=scroll+10)))return false;
   const float x=state.menu.selected==i?float(double(128.f)-8.):128.f;const Vec3 target{x,y,0};vm->interpolators.invalidate();auto& p=vm->interpolators.position;p.control1={};p.control2={};p.begin(4,0,{vm->variables.position.x,vm->variables.position.y,vm->variables.position.z},{target.x,target.y,target.z});
   y=float(y+40.f);if(!interrupt(handle,state.menu.selected==i?2:3))return false;
  }
@@ -41,7 +64,11 @@ const std::array<std::string,8> music_warning={std::string("\x81\x40"),std::stri
 bool TitleMusicRoom::paint_comment(){
  if(state.age.current%2||comment_line>=8)return true;if(comment_track<0||comment_track>=i32(catalog.count())){error="Music comment selection out of range";return false;}
  const bool locked=!unlocked[comment_track]&&warning;
- if(!text(state.handles[327+comment_line],locked?music_warning[comment_line]:catalog.entry(comment_track)->comments[comment_line],locked?0x8080ff:0xffffff)||!interrupt(state.handles[327+comment_line],2))return false;comment_line++;return true;
+ const auto& entry=*catalog.entry(comment_track);
+ const auto* translated_warning=locked?catalog.warning_line(comment_line):nullptr;
+ const auto& line=translated_warning?*translated_warning:locked?music_warning[comment_line]:entry.comments[comment_line];
+ const bool utf8=locked?translated_warning!=nullptr:entry.utf8_comments[comment_line];
+ if(!text(state.handles[327+comment_line],line,locked?0x8080ff:0xffffff,utf8,translated_warning!=nullptr,comment_line>0)||!interrupt(state.handles[327+comment_line],2))return false;comment_line++;return true;
 }
 bool TitleMusicRoom::cancel(){
  for(i32 i=0;i<i32(catalog.count());i++)if(!interrupt(state.handles[307+i],1))return false;

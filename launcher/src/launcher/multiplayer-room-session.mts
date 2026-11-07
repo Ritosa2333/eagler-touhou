@@ -1,3 +1,4 @@
+import {validTh19VersusRules} from './th19-versus-rules.mjs';
 import {validTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
 import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 export const multiplayerRoomSessionStorageKey = (product: string): string =>
@@ -16,7 +17,8 @@ export interface MultiplayerRoomSessionSnapshot {
     disableLocalChargePriority?: boolean;
     challengeMode?:boolean;
   chapterThreshold?: number;
-    initialSpares?: number;
+    th19Rules?: number[];
+  initialSpares?: number;
     initialBombs?: number;
     prankMode?:boolean;
     code: string;
@@ -68,6 +70,7 @@ export function createMultiplayerRoomSessionStore({
           disableCheatMovement: snapshot.room.disableCheatMovement,
           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,prankMode:snapshot.room.prankMode,
+          th19Rules:product==='th19mp'?snapshot.room.th19Rules:undefined,
           initialSpares:snapshot.room.initialSpares,initialBombs:snapshot.room.initialBombs,
           playerCount: snapshot.room.playerCount,
           difficulty: snapshot.room.difficulty,
@@ -115,6 +118,7 @@ export function createMultiplayerRoomSessionStore({
         disableCheatMovement: room.disableCheatMovement === true,
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
+        ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
         ...(product==='th05mp'&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
         ...(product==='th05mp'&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),

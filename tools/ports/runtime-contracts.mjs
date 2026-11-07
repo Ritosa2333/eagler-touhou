@@ -11,10 +11,11 @@ const require = createRequire(new URL('../../launcher/package.json', import.meta
 const {parse} = require('acorn');
 
 export function runtimeSourceFiles(game, product) {
+  if (game === 'th05') return ['web/managed.mjs','web/shell.mjs','web/input.mjs'];
   if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game-sdl.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
-  if (['th075', 'th15', 'th17'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
+  if (['th075', 'th15', 'th17', 'th19'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
   return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/eagler-host.mjs'];
 }
 
@@ -35,6 +36,13 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
   const nativeBodies = nativeFiles.map(path => ({path, text:readFileSync(path, 'utf8')}));
   const native = nativeBodies.map(item => item.text).join('\n');
   const records = [];
+  if (game === 'th05') {
+    const testFile='tests/managed-adapter.test.mjs';
+    const rows=[['runtime-protocol',['RUNTIME-01','RUNTIME-02','RUNTIME-03'],'managed protocol:'],['touch-sensitivity',['TOUCH-14'],'managed touch:'],['practice-toggle',['PRACTICE-01'],'managed practice:']];
+    const results=rows.map(([id,checks,pattern])=>result(id,checks,[...files,testFile],()=>{execFileSync(process.execPath,['--test','--test-name-pattern='+pattern,resolve(root,directory,testFile)],{cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});}));
+    results.push(result('native-gamepad',['INPUT-04'],nativeFiles.map(path=>relative(resolve(root,directory),path).replaceAll('\\','/')),()=>{assert.match(native,/BrowserGamepadState\(/);assert.match(native,/ApplyGamepadVirtualKeys\(/);}));
+    return results;
+  }
   if (game === 'th12') {
     const testFile='tests/managed-adapter.test.mjs';
     return [
@@ -71,7 +79,7 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
   const padFiles = nativeBodies.filter(item => /BrowserGamepadState\(|ApplyGamepadVirtualKeys\(|SDL_GetGamepadButton|SDL_GetGamepadAxis/.test(item.text))
     .map(item => relative(resolve(root,directory),item.path).replaceAll('\\','/'));
   records.push(result('native-gamepad', ['INPUT-04'], padFiles, () => {
-    if (['th11', 'th15', 'th17', 'th20'].includes(game)) {
+    if (['th11', 'th15', 'th17', 'th19', 'th20'].includes(game)) {
       assert.match(native, /BrowserGamepadState\(/, 'Compiled native source must sample the Launcher gamepad owner');
       assert.match(native, /ApplyGamepadVirtualKeys\(/, 'Compiled native source must deliver normalized gamepad actions');
     } else {

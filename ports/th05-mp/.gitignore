@@ -1,0 +1,9 @@
+/artifacts/
+/artifacts-build.log
+/Release/
+/Debug/
+/lib/*.lib
+/lib/*.dll
+*.user
+*.suo
+__pycache__/

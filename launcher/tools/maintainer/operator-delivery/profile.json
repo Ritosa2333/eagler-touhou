@@ -152,6 +152,12 @@
         "normal"
       ]
     },
+    "th19": {
+      "languages": ["ja"],
+      "music": ["ogg"],
+      "thprac": false,
+      "runtimeVariants": ["normal"]
+    },
     "th20": {
       "languages": [
         "ja"

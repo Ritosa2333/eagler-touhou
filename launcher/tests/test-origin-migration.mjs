@@ -48,14 +48,14 @@ assert.ok(Array.isArray(databaseOwners), "origin migration IndexedDB owner list 
 for (const product of Object.values(PRODUCT_GAMES)) {
   assert.ok(databaseOwners.includes(product.storage.saveRoot),
     `origin migration does not cover registered save root: ${product.storage.saveRoot}`);
-  assert.ok(databaseOwners.includes(`beta:${product.storage.saveRoot}`),
-    `origin migration does not cover beta save root: ${product.storage.saveRoot}`);
 }
 for (const product of PRODUCT_IDS) {
   const {database} = replayStorageLocation(product);
   assert.ok(databaseOwners.includes(database), `origin migration does not cover ${product}: ${database}`);
-  assert.ok(databaseOwners.includes(`beta:${database}`), `origin migration does not cover beta ${product}: ${database}`);
 }
+assert.ok(databaseOwners.every(name => !name.startsWith('beta:')),
+  'origin migration must cover only the shared Runtime and player-data stores');
+assert.doesNotMatch(html, /beta:/, 'the migration page must not expose retired beta storage namespaces');
 for (const database of ["eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]) {
   assert.ok(databaseOwners.includes(database), `origin migration lost persistent database owner: ${database}`);
 }
@@ -64,8 +64,8 @@ assert.deepEqual(cacheOwners, ["eagler-touhou-game-data-v1", "eagler-touhou-lang
   "origin migration Cache Storage owners changed without an explicit data-ownership decision");
 assert.ok(!cacheOwners.some(name => name.startsWith("eagler-touhou-app-shell-")),
   "deployment/App Shell caches must never migrate as player data");
-assert.match(html, /const EXPLICIT_LOCAL_STORAGE_KEYS = new Set\(\["eagler\.mpSpectatorRail\.mobilePosition\.v1", "th13\.save", "beta:th13\.save"\]\);/,
-  "legacy spectator-rail and both TH13 save keys must be explicitly migratable");
+assert.match(html, /const EXPLICIT_LOCAL_STORAGE_KEYS = new Set\(\["eagler\.mpSpectatorRail\.mobilePosition\.v1", "th13\.save"\]\);/,
+  "legacy spectator-rail and TH13 save keys must be explicitly migratable");
 assert.match(html, /!key\.startsWith\("eagler-touhou-origin-migration-"\)[\s\S]*key\.startsWith\("eagler-"\)[\s\S]*EXPLICIT_LOCAL_STORAGE_KEYS\.has\(key\)/,
   "migration authorization state must never migrate as player data");
 

@@ -41,8 +41,10 @@ def runtime_source(workspace, target):
         return "const launched=true,protocol='eagler-touhou/1',game='" + game + "',epoch=1;window.Module={eaglerControls:{},eaglerOptions:{}};" + source[start:end] + "\nwindow.clearRuntime=clearBrowserKeyboard;window.getKeys=()=>({bits:Module.eaglerControls.keyboardBits||0,pulse:Module.eaglerControls.keyboardPulseBits||0});"
     if game == "th12":
         return managed_runtime_fixture(repo)
-    source = (repo / "web/sdl-runtime/directory-keyboard.mjs").read_text(encoding="utf-8")
-    return source.replace("export ", "") + """
+    receiver = (workspace / "common/browser/directory-keyboard.mjs" if game == "th05"
+                else repo / "web/sdl-runtime/directory-keyboard.mjs")
+    contents = """
+      import {createBrowserKeyboard} from 'KEYBOARD';
       const held=new Set();window.fixtureProfile='standard';
       const keyboard=createBrowserKeyboard({hostContext:{protocol:'eagler-touhou/1',game:'GAME',epoch:1,origin:location.origin,
         ready:()=>true,reset:()=>keyboard.clear(),profile:()=>window.fixtureProfile},
@@ -52,7 +54,8 @@ def runtime_source(workspace, target):
         keyboard.event(e,type==='keydown');
       },true);
       window.clearRuntime=()=>keyboard.clear();window.getKeys=()=>({keys:[...held].sort()});
-    """.replace("GAME", game)
+    """.replace("GAME", game).replace("KEYBOARD", receiver.as_posix())
+    return bundle_runtime_fixture(contents)
 
 
 def managed_runtime_fixture(repo):
@@ -70,6 +73,10 @@ def managed_runtime_fixture(repo):
       installManagedShell({key:(code,down,raw)=>key(raw,down,raw.inputSource==='physical'?'physical':'virtual'),clearKeyboard:clearRuntime});
       for(const type of ['keydown','keyup'])addEventListener(type,event=>{if(input.key(event,type==='keydown','physical',dispatch))event.preventDefault();},true);
     """.replace("INPUT", (repo / "src/managed-input.mjs").as_posix()).replace("SHELL", (repo / "src/managed-shell.mjs").as_posix())
+    return bundle_runtime_fixture(contents)
+
+
+def bundle_runtime_fixture(contents):
     script = """import {build} from 'esbuild';const result=await build({stdin:{resolveDir:process.cwd(),contents:CONTENTS},bundle:true,write:false,format:'iife',platform:'browser'});process.stdout.write(result.outputFiles[0].text);""".replace("CONTENTS", json.dumps(contents))
     return subprocess.run(["node", "--input-type=module", "-e", script], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", check=True).stdout
 
@@ -98,15 +105,15 @@ def run(browser, launcher, workspace, target, broken=False):
         postInput:(command,body)=>ProductionKeyboard.deliverRuntimeInput(context,{...body,protocol:context.protocol,game,epoch:1,command})};
       const post=target.postMessage.bind(target);target.postMessage=(...args)=>{window.messages++;post(...args);};
       window.flushInput=()=>new Promise(resolve=>{const done=event=>{if(event.data!=='fixture-input-drained')return;target.removeEventListener('message',done);resolve();};target.addEventListener('message',done);post('fixture-input-drained',location.origin);});
-      window.keyboardPreferences=ProductionKeyboard.createKeyboardPreferences(null);
-      window.owner=ProductionKeyboard.createPlayerKeyboard({runtime,window,document,frame,preferences:keyboardPreferences,playerOpen:()=>true,
+      window.keyboardPreferences=ProductionKeyboard.createKeyboardPreferences(null,game==='th19'?'th19':undefined);
+      window.owner=ProductionKeyboard.createPlayerKeyboard({runtime,window,document,frame,preferences:keyboardPreferences,th19Preferences:keyboardPreferences,playerOpen:()=>true,
         launcherOwnsTarget:t=>!!t?.closest?.('input,textarea,select,button'),releaseHeldTouchFire(){},cancelTouchFunction(){},
         toggleFullscreen(){window.fullscreens++;},isPlayerFullscreen:()=>true,android:false});
       window.pad={id:'Input boundary fixture',index:0,connected:true,mapping:'standard',buttons:Array.from({length:17},()=>({pressed:false,value:0})),axes:[0,0,0,0]};
-      window.gamepadModel=ProductionKeyboard.createGamepadMappingModel({storage:null,getGamepads:()=>[window.pad]});
+      window.gamepadModel=ProductionKeyboard.createGamepadMappingModel({storage:null,scope:game==='th19'?'th19':undefined,getGamepads:()=>[window.pad]});
       gamepadModel.refresh();gamepadModel.select(0,gamepadModel.getSnapshot().devices[0].key);gamepadModel.setEnabled(true);
-      window.gamepadOwner=ProductionKeyboard.createPlayerGamepad({runtime,model:gamepadModel,window,document,playerOpen:()=>true});
-      window.touch=down=>ProductionKeyboard.postHostedKey(context,{code:'KeyC',key:'c',keyCode:67},down);
+      window.gamepadOwner=ProductionKeyboard.createPlayerGamepad({runtime,model:gamepadModel,th19Model:gamepadModel,window,document,playerOpen:()=>true});
+      window.touch=down=>ProductionKeyboard.postHostedKey(context,game==='th19'?{code:'KeyX',key:'x',keyCode:88}:{code:'KeyC',key:'c',keyCode:67},down);
       window.hostKey=(code,down)=>document.querySelector('#host').dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{code,key:'',keyCode:0,bubbles:true,cancelable:true}));
     }""", game)
     if broken:
@@ -173,17 +180,19 @@ def run(browser, launcher, workspace, target, broken=False):
     expect_held("ShiftLeft", 4, False)
 
     page.keyboard.down("k")
-    expect_held("KeyX", 2)
+    bomb_key = "KeyC" if game == "th19" else "KeyX"
+    expect_held(bomb_key, 2)
     page.keyboard.up("k")
-    expect_held("KeyX", 2, False)
+    expect_held(bomb_key, 2, False)
 
     # Touch is already canonical and must not be remapped or own a physical H.
+    function_key = "KeyX" if game == "th19" else "KeyC"
     page.keyboard.down("h")
-    frame.wait_for_function("fixtureKeyDown('KeyC')", timeout=3000)
+    frame.wait_for_function("code=>fixtureKeyDown(code)", arg=function_key, timeout=3000)
     page.evaluate("touch(true);touch(false)")
-    frame.wait_for_function("fixtureKeyDown('KeyC')", timeout=3000)
+    frame.wait_for_function("code=>fixtureKeyDown(code)", arg=function_key, timeout=3000)
     page.keyboard.up("h")
-    frame.wait_for_function("!fixtureKeyDown('KeyC')", timeout=3000)
+    frame.wait_for_function("code=>!fixtureKeyDown(code)", arg=function_key, timeout=3000)
     page.keyboard.press("Alt+Enter")
     assert page.evaluate("fullscreens") == 1
     expect_held("Enter", 4096, False)

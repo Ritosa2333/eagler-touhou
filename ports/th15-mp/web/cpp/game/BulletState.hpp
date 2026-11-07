@@ -5,6 +5,7 @@
 #include "PlayerCollision.hpp"
 #include "BulletAppearance.hpp"
 #include <string>
+#include <type_traits>
 namespace th15 {
 struct EnemySpawnRequest;struct MovingLaserRequest;struct StationaryLaserRequest;
 struct BulletAcceleration {Timer timer{};float speed=0,angle=0;Vec3 vector{};i32 duration=0;};
@@ -51,23 +52,31 @@ struct BulletFrameContext {
 struct BulletCancellationRewards {i32 count=0;bool spell_active=false;};
 void cancellation_reward(const Vec3&,i32 kind,Rng&,BulletCancellationRewards&,CancellationRewardHost&);
 enum class BulletFrameResult:i32 { recycled=-1,alive=0,error=-2 };
-struct BulletState {
-    BulletInitialMotion motion{};u32 transform_flags=0;Timer boost{};
-    BulletAcceleration acceleration{},approach{};BulletAngularAcceleration angular{};
-    BulletReflection reflection{};BulletWrapping wrapping{};BulletDrift drift{};
-    BulletPositionCurve position_curve{};i32 transform_sound=-1;
-    BulletTurn turn{};BulletInitialMotion saved{};
-    std::array<BulletTransform,18> transforms{};i32 transform_index=0;
-    Timer wait{},invulnerability{},freeze{};i32 wait_outside=0,boost_stage=0,step_limit=0;
-    i32 collision_delay=0,cancel_item=0,phase=1;u32 flags=0,visual_flags=0;
-    ScalarInterpolation scale_curve{};float scale=1;
-    Timer lifetime{},spawn{};i32 offscreen_grace=0,cancellation_script=-1;
+struct BulletMotion {
+    BulletInitialMotion motion{};u32 transform_flags=0;i32 transform_index=0;
+    Timer lifetime{},spawn{};i32 offscreen_grace=0,collision_delay=0,cancel_item=0,phase=1;
+    u32 flags=0,visual_flags=0;float scale=1;
     bool spawn_animation_finished=false,overlay_active=false;
     Vec2 hitbox{};Timer graze_flash{},graze_duration{};i32 graze_interval=1,hit_interrupt=0;
     Vec3 visual_jitter{};u32 graze_color=0;
     i16 sprite_type=0,color=0;u32 initial_transform_flags=0;
+};
+static_assert(std::is_trivially_copyable_v<BulletMotion>);
+struct BulletRuntime:BulletMotion {
+    Timer boost{};
+    BulletAcceleration acceleration{},approach{};BulletAngularAcceleration angular{};
+    BulletReflection reflection{};BulletWrapping wrapping{};BulletDrift drift{};
+    BulletPositionCurve position_curve{};i32 transform_sound=-1;
+    BulletTurn turn{};BulletInitialMotion saved{};
+    Timer wait{},invulnerability{},freeze{};i32 wait_outside=0,boost_stage=0,step_limit=0;
+    ScalarInterpolation scale_curve{};i32 cancellation_script=-1;
+};
+static_assert(std::is_trivially_copyable_v<BulletRuntime>);
+struct BulletState:BulletRuntime {
+    std::array<BulletTransform,18> transforms{};
     bool activate(const Vec3& player,Rng& random,BulletSoundHost* sounds,BulletAnimationHost* animations,std::string& error);
     BulletFrameResult update(const BulletFrameContext& context,Rng& random,BulletFrameHost& host,std::string& error);
+    PlayerContact contact(const PlayerCollision&,bool graze_only,PlayerDamageHost* damage=nullptr)const;
     PlayerContact collide(const PlayerCollision& player,bool graze_only,float rate,Rng& random,Rng& visual_random,BulletContactHost& host,std::string& error);
     bool appearance(i32 type,i32 color,BulletAnimationHost& host,bool replacement,std::string& error);
     bool initialize(const BulletShooter&,i32 column,i32 row,float aim,const Vec3& player,float minimum_distance_squared,Rng&,BulletFrameHost&,std::string& error);

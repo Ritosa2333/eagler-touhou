@@ -24,7 +24,7 @@ before(async () => {
     export * from './app/components/player/TitleNetworkOverlay.tsx';
     export * from './app/components/room/RoomSeats.tsx';
     export * from './app/i18n.tsx';
-  `}, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', outfile,
+  `}, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile,
   logLevel: 'silent', plugins: [{name: 'shared-react', setup(ctx) {
     ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
   }}]});
@@ -81,7 +81,7 @@ for (const locale of ['zh-CN', 'en']) {
     let submitted = 0;
     const service = {getSnapshot: () => state, subscribe: () => () => {},
       formDidClose() {}, updateForm() {}, submitForm() {++submitted; return 'unavailable';}};
-    const node = await mount(views.DirectoryRoomDialog, {service, open: true, onCloseRequest() {}}, locale);
+    const node = await mount(views.DirectoryRoomDialog, {service, assetUrl: path => path, open: true, onCloseRequest() {}}, locale);
     assert.equal(node.querySelector('dialog').open, true);
     assert.equal(node.querySelector('#visibilitySelect option[value="private"]').textContent,
       locale === 'en' ? 'Unlisted' : '隐藏');

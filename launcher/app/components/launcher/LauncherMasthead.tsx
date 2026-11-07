@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Heart as HeartIcon,
   Info as InfoCircledIcon,
-  Bell as BellIcon,
   Activity as ActivityLogIcon,
   BookOpen as ReaderIcon,
   Check as CheckIcon,
@@ -22,14 +21,13 @@ import { useLocale } from '../../i18n';
 import { AppLink } from './AppLink';
 import { BookThemeToggle } from './BookThemeToggle';
 import { useLocation } from 'react-router';
-import { ProfilePreview } from './ProfilePreview';
+import { AccountMenu } from './AccountMenu';
 import { NavigationIcon } from './NavigationIcon';
 import { SiteBrand } from './SiteBrand';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
-import { previewFeaturesEnabled, siteNoticeEnabled } from '../../release-features';
+import { accountsEnabled, previewFeaturesEnabled } from '../../release-features';
 import '../../ui/menu-motion.css';
-import {BetaModeDialog} from './BetaModeDialog';
-import {betaModeEnabled,reloadReleaseMode} from '../../../src/launcher/release-channel.mts';
+import {testFeaturesEnabled,reloadTestFeatures} from '../../../src/launcher/test-features.mts';
 
 export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
@@ -48,8 +46,6 @@ export interface LauncherMastheadProps {
   onMenuOpenChange: (open: boolean) => void;
   lessMotion: boolean;
   onToggleMotion: () => void;
-  noticeEnabled: boolean;
-  onToggleNotice: () => void;
   diagnosticsEnabled: boolean;
   onToggleDiagnostics: () => void;
   onDonation: () => void;
@@ -63,7 +59,7 @@ export interface LauncherMastheadProps {
 
 export function LauncherMasthead(props: LauncherMastheadProps) {
   const { t, locale } = useLocale();
-  const profileOpen = /\/(?:profile|login)\.html\/?$/.test(useLocation().pathname);
+  const profileOpen = /^(?:\/(?:profile|login)\.html|\/u\/[^/]+)\/?$/.test(useLocation().pathname);
   const { variant, menuOpen, onMenuOpenChange, interactive = true } = props;
   const padding = usePopupPadding(interactive && menuOpen);
   const Link = interactive && !props.nativeLinks ? AppLink : 'a';
@@ -74,11 +70,10 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     returnToLanguage = useRef(false),
     replayAfterClose = useRef(false),
     [languagesOpen, setLanguagesOpen] = useState(false);
-  const [developerOpen,setDeveloperOpen]=useState(false),[betaWarning,setBetaWarning]=useState(false);
-  const betaAfterClose=useRef(false),returnToDeveloper=useRef(false);
-  const channelBase=props.assetUrl('./');
-  const [betaMode,setBetaMode]=useState(false);
-  useLayoutEffect(() => {if (interactive) setBetaMode(betaModeEnabled(window));}, [interactive]);
+  const [developerOpen,setDeveloperOpen]=useState(false);
+  const returnToDeveloper=useRef(false);
+  const [testFeatures,setTestFeatures]=useState(false);
+  useLayoutEffect(() => {if (interactive) setTestFeatures(testFeaturesEnabled(window));}, [interactive]);
   const masthead = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     if (!interactive) return;
@@ -127,7 +122,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     }
   }, [languagesOpen, developerOpen, menuOpen]);
   return (
-    <><header
+    <header
       ref={masthead}
       className={`masthead book-masthead${variant === 'lobby' ? ' lobby-masthead' : ''}${props.compactDocumentation ? ' documentation-masthead' : ''}`}
     >
@@ -161,12 +156,8 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
       </nav>
       <nav className="masthead-links" aria-label={t('nav.siteInfo')}>
         <BookThemeToggle interactive={interactive} />
-        {previewFeaturesEnabled && (
-          <ProfilePreview
-            interactive={interactive}
-            active={profileOpen}
-            href={withUiLanguage(props.assetUrl('profile.html'), locale)}
-          />
+        {accountsEnabled && (
+          <AccountMenu interactive={interactive}/>
         )}
         <a
           className="masthead-link"
@@ -217,12 +208,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
               sideOffset={8}
               collisionPadding={padding}
               onCloseAutoFocus={(event) => {
-                if(betaAfterClose.current){
-                  betaAfterClose.current=false;
-                  event.preventDefault();
-                  setBetaWarning(true);
-                  return;
-                }
                 if (!replayAfterClose.current) return;
                 replayAfterClose.current = false;
                 event.preventDefault();
@@ -251,13 +236,12 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                   checked={props.diagnosticsEnabled} onCheckedChange={props.onToggleDiagnostics}>
                   <ActivityLogIcon/>{t('diagnostics.toggle')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
                 </DropdownMenu.CheckboxItem>
-                <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={betaMode}
-                  onSelect={()=>{
-                    if(betaMode)reloadReleaseMode(window,false);
-                    else betaAfterClose.current=true;
-                  }}>
-                  <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
-                </DropdownMenu.CheckboxItem>
+                {previewFeaturesEnabled && (
+                  <DropdownMenu.CheckboxItem className="ui-menu-item" id="betaFeaturesToggle" checked={testFeatures}
+                    onCheckedChange={enabled=>reloadTestFeatures(window,enabled===true)}>
+                    <FlaskConical/>{t('developer.betaFeatures')}<DropdownMenu.ItemIndicator><CheckIcon/></DropdownMenu.ItemIndicator>
+                  </DropdownMenu.CheckboxItem>
+                )}
               </> : languagesOpen ? (
                 <>
                   <DropdownMenu.Item
@@ -300,24 +284,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                     <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
                     <DropdownMenu.Separator className="ui-menu-separator" />
                   </>}
-                  {previewFeaturesEnabled && (
-                    <>
-                      <DropdownMenu.Group aria-label={t('nav.account')}>
-                        <DropdownMenu.Item asChild>
-                          <Link className="ui-menu-item" href={withUiLanguage(props.assetUrl('profile.html'), locale)}>
-                            <NavigationIcon name="profile" />
-                            {t('nav.profile')}
-                          </Link>
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item asChild>
-                          <Link className="ui-menu-item" href={withUiLanguage(props.assetUrl('login.html'), locale)}>
-                            {t('nav.account')}
-                          </Link>
-                        </DropdownMenu.Item>
-                      </DropdownMenu.Group>
-                      <DropdownMenu.Separator className="ui-menu-separator" />
-                    </>
-                  )}
                   <DropdownMenu.Group aria-label={t('nav.settings')}>
                     <DropdownMenu.Label className="masthead-menu-heading">{t('nav.settings')}</DropdownMenu.Label>
                     <DropdownMenu.CheckboxItem
@@ -332,20 +298,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                         <CheckIcon />
                       </DropdownMenu.ItemIndicator>
                     </DropdownMenu.CheckboxItem>
-                    {siteNoticeEnabled && (
-                      <DropdownMenu.CheckboxItem
-                        className="ui-menu-item"
-                        id="siteNoticeToggle"
-                        checked={props.noticeEnabled}
-                        onCheckedChange={props.onToggleNotice}
-                      >
-                        <BellIcon />
-                        {t('notice.label')}
-                        <DropdownMenu.ItemIndicator>
-                          <CheckIcon />
-                        </DropdownMenu.ItemIndicator>
-                      </DropdownMenu.CheckboxItem>
-                    )}
                     <DropdownMenu.Item
                       className="ui-menu-item masthead-language-trigger"
                       onSelect={(event) => {
@@ -446,6 +398,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </nav>
-    </header><BetaModeDialog open={betaWarning} onOpenChange={setBetaWarning} onClosed={()=>trigger.current?.focus({preventScroll:true})} baseUrl={channelBase}/></>
+    </header>
   );
 }

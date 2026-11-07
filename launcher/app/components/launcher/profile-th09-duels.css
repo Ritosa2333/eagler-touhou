@@ -1,0 +1,12 @@
+.profile-th09-summary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 20px}
+.profile-th09-summary>div {padding:10px 12px;background:var(--book-raised);border-radius:6px;min-width:0}
+.profile-th09-summary dt,.profile-th09-history time,.profile-th09-history small {font-size:11px;color:var(--book-muted)}
+.profile-th09-summary dd {margin:2px 0 0;font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.profile-th09 h3 {font-size:13px;margin:0 0 6px}
+.profile-th09-history {list-style:none;margin:0;padding:0}
+.profile-th09-history li {display:grid;grid-template-columns:minmax(0,1fr) max-content minmax(0,6em);align-items:center;gap:8px 12px;padding:8px 0;border-bottom:1px solid var(--book-border);font-size:13px}
+.profile-th09-history a {min-width:0;overflow-wrap:anywhere}
+.profile-th09-history small {display:block;overflow:hidden;text-overflow:ellipsis}
+.profile-th09-history strong {font-variant-numeric:tabular-nums}
+.profile-th09-history time {text-align:right}
+.profile-th09-actions {display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px;color:var(--book-muted);font-size:12px}

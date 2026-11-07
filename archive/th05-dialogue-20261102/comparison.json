@@ -1,0 +1,27 @@
+{
+  "scope": "Deterministic simulation callbacks under identical synthetic reordered 1-7 callback input delivery; 720 confirmed frames per case, not physical-device FPS",
+  "sourceCommit": "c38e13d77",
+  "cases": [
+    {
+      "kind": "dialogue",
+      "frames": 720,
+      "beforeCallbacks": 1650,
+      "afterCallbacks": 1101,
+      "reduction": 0.33272727272727276
+    },
+    {
+      "kind": "stage-logo",
+      "frames": 720,
+      "beforeCallbacks": 1512,
+      "afterCallbacks": 731,
+      "reduction": 0.5165343915343915
+    },
+    {
+      "kind": "stage-fade",
+      "frames": 720,
+      "beforeCallbacks": 1789,
+      "afterCallbacks": 738,
+      "reduction": 0.5874790385690329
+    }
+  ]
+}

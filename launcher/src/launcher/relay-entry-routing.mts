@@ -13,7 +13,6 @@ export function createRelayEntryRouting(options: {
   shared(): SiteManifestShared | undefined;
   createSocket(url: string): WebSocket;
   connectTimeoutMs?: number;
-  betaMode?:boolean;
 }) {
   const selected = new Map<string, string>();
   function entries() {
@@ -23,14 +22,11 @@ export function createRelayEntryRouting(options: {
   }
   function resolve(base: string): string {
     const candidate = selected.get(base);
-    const value=candidate && entries().includes(candidate) ? candidate : base;
-    if(!options.betaMode||!value)return value;
-    const url=new URL(value);url.searchParams.set('channel','beta');return url.href;
+    return candidate && entries().includes(candidate) ? candidate : base;
   }
   function createSocket(value: string): RelayEntrySocket {
     const bases = entries();
     const input = new URL(value);
-    if(options.betaMode)input.searchParams.set('channel','beta');
     const primary = bases[0];
     const matching = bases.find(base => {
       const url = new URL(base);

@@ -1,0 +1,61 @@
+#include "SceneDisplay.hpp"
+#include <cstdio>
+namespace th17::sdl {
+#if TH17_ROOM_BENCHMARK
+std::array<u32,4> room_benchmark_draw{};
+#endif
+SceneDisplay::SceneDisplay(StageGameplay& s,AnmManager& a,AnmEnvironment& e,GraphicsDevice& g,AnmRenderer& r):scene(s),animations(a),environment(e),graphics(g),renderer(r),views(r,e),captions(a,e),capture_device(g,r){}
+SceneDisplay::~SceneDisplay(){renderer.flush();scene.frame_scheduler().remove(fps_callback);screenshots.reset();scene.scene_animations.fill(nullptr);targets.reset();game.reset();outgoing_background.reset();compositor.reset();letters.reset();layers.reset();graphics.select_target(nullptr,0);}
+bool SceneDisplay::fail(const std::string& reason){if(error.empty())error=reason.empty()?"TH17 scene drawing failed":reason;return false;}
+bool SceneDisplay::initialize(GameRun& run,GameRecords& records,SpellRecords& spells,StageDrawServices& host,i32 text_bank,i32 ascii_bank,StageGameplay* previous){
+    if(layers)return fail("TH17 scene display already initialized");if(!captions.initialize(ascii_bank))return fail(captions.error);
+    auto& scheduler=scene.frame_scheduler();
+    layers=std::make_unique<AnmDrawSchedule>(scheduler,animations,renderer,graphics,views);
+    letters=std::make_unique<AsciiDrawSchedule>(scheduler,captions,renderer,views);
+    compositor=std::make_unique<ScreenCompositor>(scheduler,animations,environment,renderer,graphics,views);
+    compositor->skip_opening_screen_clear=scene.battle.pilot_count()>1;
+    story_coop=compositor->skip_opening_screen_clear&&run.stage>=1&&run.stage<=6;
+    if(previous)outgoing_background=std::make_unique<StageDrawFrame>(scheduler,previous->background,previous->background_draw,animations,renderer,graphics,views,host);
+    game=std::make_unique<GameDraw>(scene,run,records,spells,animations,renderer,graphics,views,captions,host);
+    targets=std::make_unique<ScreenTargets>(animations,environment,views,*compositor,text_bank);
+    if(!targets->prepare())return fail(targets->error);
+    screenshots=std::make_unique<SceneCapture>(animations,environment,capture_device,text_bank);screenshots->pause_source=compositor->alternate;game->captured=&targets->captures[2];
+    for(u32 i=0;i<scene.scene_animations.size();i++)scene.scene_animations[i]=&targets->captures[i];
+    fps_callback.owner=this;fps_callback.enabled=true;fps_callback.run=[](void* owner)->i32{auto& self=*static_cast<SceneDisplay*>(owner);HudTextStyle style;style.font=1;style.color=self.presentation_fps<30?0xff5050ff:self.presentation_fps<40?0xffa0a0ff:0xffffffff;char value[32];std::snprintf(value,sizeof value,"%2.1ffps",double(self.presentation_fps)+.05);return self.captions.enqueue({{588,470,0},style,value})?1:5;};
+    return scheduler.add(fps_callback,FramePass::Draw,72)>=0||fail("Frame-rate callback registration failed");
+}
+bool SceneDisplay::capture(u32& handle,bool results){return screenshots&&screenshots->capture(handle,results)||fail(screenshots?screenshots->error:"Screenshot outside an active playfield");}
+bool SceneDisplay::draw(double logical_seconds){
+#if TH17_ROOM_BENCHMARK
+    struct DrawTimer {
+        u32 index;u64 start=SDL_GetTicksNS();
+        ~DrawTimer(){++room_benchmark_draw[index];room_benchmark_draw[index+1]+=u32((SDL_GetTicksNS()-start)/1000);}
+    } timer{graphics.logical_drawing?2u:0u};
+#endif
+    struct LogicalDraw {
+        AnmRenderer& renderer;
+        ~LogicalDraw(){renderer.logical_only=false;}
+    } logical{renderer};
+    renderer.logical_only=graphics.logical_drawing;
+    if(!error.empty()||!compositor||!game)return false;if(!graphics.select_target(nullptr,0))return fail(graphics.error);
+    if(outgoing_background){
+        const bool hold=scene.controller->waiting_for_stage_clear();
+        outgoing_background->hold_transition=hold;
+        game->background.hold_transition=hold;
+        game->background.retain_outgoing=true;
+    }
+    const auto& region=views.view(DrawCamera::Playfield).viewport;
+    const auto& background=game->background.viewport;
+    // The stage pass is the first draw after target selection. In steady
+    // story play it clears the same region before submitting any geometry.
+    compositor->skip_initial_playfield_clear=story_coop&&!outgoing_background&&
+        scene.background.ready()&&!(scene.background_flags&14)&&
+        region.x==background.x&&region.y==background.y&&region.width==background.width&&region.height==background.height;
+    if(!game->draw())return fail(game->error.empty()?game->background.error:game->error);
+    if(outgoing_background&&!outgoing_background->error.empty())return fail(outgoing_background->error);
+    if(!compositor->error.empty())return fail(compositor->error);if(!layers->error.empty())return fail(layers->error);if(!letters->error.empty())return fail(letters->error);
+    renderer.flush();if(!graphics.logical_drawing&&!screenshots->finish_frame())return fail(screenshots->error);graphics.present();
+    const double seconds=logical_seconds>=0?logical_seconds:double(SDL_GetPerformanceCounter())/double(SDL_GetPerformanceFrequency());
+    if(!scene.presented(seconds))return fail(scene.error);return graphics.error.empty()||fail(graphics.error);
+}
+}

@@ -842,6 +842,8 @@ export declare const PRODUCT_GAMES: Readonly<{
         title: "東方鬼形獣";
         subtitle: "Wily Beast and Weakest Creature";
         cardArtwork: "th17-card.webp";
+        renderScales: readonly [2, 1];
+        thpracRuntime: Readonly<{session: "native"}>;
         storage: Readonly<{
             saveRoot: "/savesth17";
             scoreFile: "scoreth17.dat";
@@ -864,7 +866,7 @@ export declare const PRODUCT_GAMES: Readonly<{
             adaptationNotice: "early-test";
         }>;
         runtimeFileLayout: "directory";
-        requiredShared: readonly never[];
+        requiredShared: readonly ["/msgothic.ttc", "/unifont.otf"];
         runtimeAssets: readonly string[];
         dataProvider: "retail-memory";
         package: Readonly<{
@@ -883,11 +885,28 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{
             prefix: "th17";
         }>;
+        multiplayerRuntime: "./runtime/th17/multiplayer/th17.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
+        thpracExtraFunctionKeys: readonly ["U"];
         features: Readonly<{
-            thprac: false;
-            languages: false;
+            thprac: true;
+            languages: true;
             focusHitbox: false;
         }>;
+    }>;
+    th19: Readonly<{
+        testOnly: true;
+        number: "19"; title: "東方獣王園"; subtitle: "Unfinished Dream of All Living Ghost";
+        storage: Readonly<{saveRoot:"/savesth19";scoreFile:"scoreth19.dat";configFiles:readonly string[]}>;
+        runtime:"./runtime/th19/th19.html";runtimeFileLayout:"directory";dataProvider:"retail-memory";
+        requiredShared:readonly string[];runtimeAssets:readonly string[];
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:"runtime-selection"}>;
+        touchFire:Readonly<{mode:"toggle";labelKey:"touch.tapToggle"}>;
+        support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:"early-test"}>;
+        package:Readonly<{dataFileId:"game-data";dataTarget:"/th19.dat";rawDataImport:Readonly<{fileNames:readonly string[]}>;musicSourceDirectories:Readonly<{ogg:"music"}>;musicMounts:Readonly<{ogg:"/music"}>}>;
+        replay:Readonly<{prefix:"th19"}>;multiplayerRuntime:"./runtime/th19/multiplayer/th19.html";
+        multiplayer:Readonly<MultiplayerProductConfig>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th20: Readonly<{
         testOnly: true;
@@ -961,6 +980,7 @@ export interface MultiplayerLoadoutConfig {
     glyph: string;
     character: number;
     shot: number;
+    selection?: readonly Readonly<{value: number; labelKey: string}>[];
 }
 export interface MultiplayerInputTimingConfig {
     rollbackDefault?: boolean;
@@ -1826,7 +1846,7 @@ export declare function createLocalProductManifest(): {
                 title: string;
                 pack: null;
             }[];
-        } | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
+        } | (typeof PRODUCT_GAMES.th19 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
             music: {midi: {files: never[]; supported: boolean}};
             languageOptions: {id: string; title: string; pack: null}[];
         });

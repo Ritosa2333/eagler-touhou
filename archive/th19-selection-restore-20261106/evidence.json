@@ -1,0 +1,9 @@
+{
+  "exeSha256": "8918fb39d511c9906ef769c6dd2761e7cb44ded5b7c4c1cd99c8992d12c078e9",
+  "selector": "0x556340",
+  "storyNavigation": "0x5a9c18",
+  "versusNavigation": "0x5a9ad8",
+  "lockedConfirm": "0x557c04: sound16, no confirmation",
+  "random": "0x557c8a: resolve index19 after both confirmations, RNG modulo19, retry while VS unlock byte is zero; timer=-60",
+  "scope": "Menu behavior and native navigation; does not establish identical whole-engine RNG call ordering."
+}

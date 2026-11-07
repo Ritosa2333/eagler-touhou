@@ -9,6 +9,24 @@ import {
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "../server/thcrap-ascii-contract.mjs";
 import { validateStringContract } from "../server/thcrap-string-contract.mjs";
 
+function decodeEtlTable(bytes) {
+  assert.equal(bytes.subarray(0, 4).toString("ascii"), "ETL1");
+  const count = bytes.readUInt32LE(4);
+  const records = [];
+  let offset = 8;
+  for (let index = 0; index < count; index++) {
+    const key = bytes.readUInt32LE(offset);
+    const line = bytes.readUInt16LE(offset + 4);
+    const length = bytes.readUInt16LE(offset + 6);
+    offset += 8;
+    const text = bytes.subarray(offset, offset + length).toString("utf8");
+    offset += length;
+    records.push({ key, line, text });
+  }
+  assert.equal(offset, bytes.length, "ETL1 decoder must consume the complete table");
+  return records;
+}
+
 test("thcrap compiler", async () => {
 assert.deepEqual(legacyAsciiPrintfSignature("%s %9d0 %% %3.2f %c"), ["string", "int", "double", "char"]);
 assert.throws(() => legacyAsciiPrintfSignature("%*d"), /unsupported printf '\*' width/);
@@ -47,23 +65,6 @@ function decodeStringTable(bytes) {
   return records;
 }
 
-function decodeEtlTable(bytes) {
-  assert.equal(bytes.subarray(0, 4).toString("ascii"), "ETL1");
-  const count = bytes.readUInt32LE(4);
-  const records = [];
-  let offset = 8;
-  for (let index = 0; index < count; index++) {
-    const key = bytes.readUInt32LE(offset);
-    const line = bytes.readUInt16LE(offset + 4);
-    const length = bytes.readUInt16LE(offset + 6);
-    offset += 8;
-    const text = bytes.subarray(offset, offset + length).toString("utf8");
-    offset += length;
-    records.push({ key, line, text });
-  }
-  assert.equal(offset, bytes.length, "ETL1 decoder must consume the complete table");
-  return records;
-}
 
 const stringBytes = encodeStringLocalizationTable({
   "th06 Bomb Reimu A": "Spirit Sign \"Fantasy Seal\"",
@@ -519,4 +520,51 @@ assert.throws(() => encodeSpellCommentsTable({ "1": { comment_1: "not-an-array" 
   /expected an array of lines/);
 
 console.log(JSON.stringify({ dialogue: "patched", extraLines: "inserted", ending: "patched", localization: "encoded", ascii: "EAS1", strings: "EST1", spellcomments: "ETL1", th08: "msg08" }));
+});
+
+test("TH17 compiles original-archive dialogue, Music Room tables and localized artwork", async () => {
+  const game = "th17";
+  const compiler = new ThcrapRuntimeCompiler({
+    archives: { th17: "th17.dat" },
+    runner: {
+      async extractArchiveEntry(archive, entry, version) {
+        assert.deepEqual([archive, entry, version], ["th17.dat", "st07i.msg", 17]);
+        return Buffer.from("original");
+      },
+      async dumpMessage(_base, version) {
+        assert.equal(version, 17);
+        return Buffer.from("entry 0 (256)\n@34\n\t17;Original\n\t7\n");
+      },
+      async compileMessage(source, version) {
+        assert.equal(version, 17);
+        return source;
+      }
+    }
+  });
+  const resource = (path, kind, value, extra = {}) => ({
+    game, path, kind, mountPath: "/thcrap/" + path,
+    bytes: Buffer.isBuffer(value) ? value : Buffer.from(JSON.stringify(value)), ...extra
+  });
+  const [dialogue, spells, themes, comments, art, warning] = await compiler.processPack([
+    resource("th17/st07i.msg.jdiff", "jdiff", {"0": {"34_0": {lines: ["鬼形兽"]}}}),
+    resource("th17/spells.js", "table", {"0": "石符", "2": "石之针叶林"}),
+    resource("themes.js", "table", {th17_02: "曲目二", th15_02: "Other game"}),
+    resource("th17/musiccmt.js", "table", {"2": ["@", "", "第二首的评论"]}),
+    resource("th17/title/selecttitle/sl_music.png", "image", Buffer.from([137, 80, 78, 71])),
+    resource("stringdefs.js", "table", {"th10 Music Room spoiler 1": "<c$尚未播放$>"}, {
+      sourceRole: "stringdefs", sourceOrder: 0, patch: "thpatch/lang_zh-hans"
+    })
+  ]);
+  assert.equal(dialogue.targetPath, "/thcrap/th17/st07i.msg");
+  assert.match(dialogue.bytes.toString(), /\t17;鬼形兽\n/);
+  assert.deepEqual(decodeEtlTable(spells.bytes), [
+    {key: 0, line: 0, text: "石符"}, {key: 2, line: 0, text: "石之针叶林"}
+  ]);
+  assert.deepEqual(decodeEtlTable(themes.bytes), [{key: 2, line: 0, text: "曲目二"}]);
+  assert.deepEqual(decodeEtlTable(comments.bytes), [
+    {key: 2, line: 0, text: "@"}, {key: 2, line: 1, text: ""}, {key: 2, line: 2, text: "第二首的评论"}
+  ]);
+  assert.equal(art.targetPath, "/thcrap/th17/title/selecttitle/sl_music.png");
+  assert.deepEqual(art.bytes, Buffer.from([137, 80, 78, 71]));
+  assert.deepEqual(decodeEtlTable(warning.bytes), [{key: 0, line: 1, text: "尚未播放"}]);
 });

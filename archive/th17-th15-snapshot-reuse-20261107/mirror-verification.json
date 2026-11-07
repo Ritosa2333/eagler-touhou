@@ -1,0 +1,10 @@
+{
+  "status": "published",
+  "identity": "fca62dc95a5840e065c8b4e8d86e9c9138149dee25ecb4c55dc8d0f99847fc91",
+  "previous": "/var/www/eagler-touhou/releases/hk-formal-th17-touch-repair-d7b4e55a1-2120e0a5be23",
+  "current": "/var/www/eagler-touhou/releases/hk-formal-th17-snapshot-reuse-83fe0e65f-fca62dc95a58",
+  "files": 9685,
+  "releaseId": "sha256-9f84360b72c2341c3c2712e43b030cf31948e3f14fbbe91380c5ec4fae41e8f6",
+  "wasmSha256": "6a86b648f4643c4a2024aa34337f84f0e7908f193e554c0cd751b23d66caad28",
+  "multiplayerEntry": "runtime/th17/multiplayer/460de07e87a1365212e45b7a8dcefe3483a47800e7fb41f1e58e162a69739c66/th17.html?hosted=1"
+}

@@ -1,42 +1,16 @@
+import {idbfsBytes, openIdbfsDatabase, type IdBfsEntry} from './idbfs';
 import type {ProductId} from '../../src/contracts/product-catalog.mts';
 import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import {isTh09ReplayDirectory, parseTh09ReplayMatch, type Th09ReplayMatch} from '../../src/launcher/th09-replay-match.mts';
 import {motionReplayName} from '../../src/launcher/replay-motion.mts';
 import {replayStorageLocation} from '../../src/launcher/replay-storage-policy.mts';
-import {BETA_STORAGE_PREFIX} from '../../src/launcher/release-channel.mts';
 
 export interface StoredReplay {path: string; size: number; bytes: Uint8Array; modifiedAt?: number; replayMatch?: Th09ReplayMatch}
 export interface ReplayStorageSelection {path?: string; directory?: string; language?: string}
 export interface ReplayStorageReader {read(product: ProductId, selection?: ReplayStorageSelection): Promise<StoredReplay[]>}
-interface IdBfsEntry {mode: number; timestamp: Date | number; contents: unknown}
-
-function idbfsBytes(contents: unknown): Uint8Array | null {
-  if (contents instanceof Uint8Array) return contents;
-  // Native MEMFS files may persist signed bytes. Keep the exact byte range.
-  if (contents instanceof Int8Array) return new Uint8Array(contents.buffer, contents.byteOffset, contents.byteLength);
-  return null;
-}
-
 /** Compatibility reader for Emscripten IDBFS v21. Runtime remains the sole writer.
  * A missing database is never created; an unknown schema fails without fallback. */
-export function createReplayStorageReader(environment: () => {indexedDB: IDBFactory; keyRange: typeof IDBKeyRange}, betaMode=false): ReplayStorageReader {
-  async function open(factory: IDBFactory, root: string): Promise<IDBDatabase | null> {
-    return new Promise((resolve, reject) => {
-      let missing = false, settled = false;
-      const request = factory.open(root);
-      request.onupgradeneeded = event => {missing = event.oldVersion === 0; request.transaction!.abort();};
-      request.onerror = () => {if (settled) return; settled = true; if (missing) resolve(null); else reject(request.error);};
-      request.onblocked = () => {settled = true; reject(new Error('本地录像存储正被占用，请重试'));};
-      request.onsuccess = () => {
-        const database = request.result;
-        if (settled) {database.close(); return;}
-        settled = true;
-        if (database.version !== 21 || !database.objectStoreNames.contains('FILE_DATA')) {database.close(); reject(new Error('无法识别本地录像存储版本')); return;}
-        database.onversionchange = () => database.close();
-        resolve(database);
-      };
-    });
-  }
+export function createReplayStorageReader(environment: () => {indexedDB: IDBFactory; keyRange: typeof IDBKeyRange}): ReplayStorageReader {
   return {async read(product, selection = {}) {
     const {game, database: databaseName, root, validName, sharedExtensionSlot} = replayStorageLocation(product, selection.language);
     const validPath = (path: string) => isReplayFilePath(path) && validName(path.slice(path.lastIndexOf('/') + 1));
@@ -44,7 +18,7 @@ export function createReplayStorageReader(environment: () => {indexedDB: IDBFact
     if (selection.directory && !isTh09ReplayDirectory(selection.directory)) throw new Error('录像文件夹无效');
     const {indexedDB, keyRange} = environment();
     if (!indexedDB || !keyRange) throw new Error('浏览器无法读取本地录像存储');
-    const database = await open(indexedDB, (betaMode?BETA_STORAGE_PREFIX:'')+databaseName);
+    const database = await openIdbfsDatabase(indexedDB, databaseName);
     if (!database) return [];
     try {
       return await new Promise<StoredReplay[]>((resolve, reject) => {

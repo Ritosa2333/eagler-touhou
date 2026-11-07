@@ -115,7 +115,6 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-sha256.mjs",
   "tests/test-route-state.mjs",
   "tests/test-netplay-telemetry.mjs",
-  "tests/test-site-notice.mjs",
   "tests/test-touch-layout-editor-state.mjs",
   "tests/test-touch-layout-model.mjs",
   "tests/test-touch-function-key.mjs",
@@ -161,6 +160,7 @@ export const REPOSITORY_PYTHON_TESTS = Object.freeze([
 export const WORKSPACE_PRECHECKS = Object.freeze([]);
 
 export const WORKSPACE_NODE_TESTS = Object.freeze([
+  "tests/test-th05-initial-stock.mjs",
   "tests/test-multiplayer-session-identity.mjs",
   "tests/test-th075-language-configure.mjs",
   "tests/test-shared-font-selection-workspace.mjs",

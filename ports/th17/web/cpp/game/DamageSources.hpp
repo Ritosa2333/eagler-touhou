@@ -19,7 +19,7 @@ struct DamageResult {i32 amount=0;bool direct=false;Vec3 position{};bool positio
 class DamageSources {
 public:
     std::array<DamageSource,256> sources{};i32 cursor=0,maximum_damage=60,score=0;
-    i32* shared_score=nullptr;
+    i32* shared_score=nullptr;bool uncap_score=false;
     std::string error;
     std::function<i32(DamageSource&,const DamageQuery&)> hit_callback;
     i32 circle(const Vec3&,float radius,float growth,i32 lifetime,i32 damage);

@@ -7,7 +7,7 @@ namespace th17 {
 struct SpellBackground {i32 resource=-1,script=-1;bool independent=false;i32 overlay_resource=-1,overlay_script=-1;};
 struct SpellVisualResources {i32 ascii=-1,name=-1,effect=-1;std::vector<SpellBackground> backgrounds;};
 struct SpellStartContext {i32 stage=1,difficulty=1,character=0,animal=0;bool replay=false,practice=false;SpellVisualResources visuals;};
-struct SpellFrameContext {float rate=1,player_y=0;i32 bomb_state=0;};
+struct SpellFrameContext {float rate=1,player_y=0;i32 bomb_state=0;bool timer_locked=false;};
 struct SpellCardHost {
     virtual ~SpellCardHost()=default;
     virtual bool background_visible(bool)=0;virtual bool prepare_hud(bool)=0;
@@ -25,7 +25,7 @@ class SpellCard {
 public:
     Timer age;i32 maximum_bonus=0,duration=0,active_frames=0,loadout=0;
     SpellCaptureClock result_clock;
-    std::string name,error;Vec3 anchor{};std::array<u32,5> handles{};bool replay=false,practice=false;
+    std::string name,error;Vec3 anchor{};std::array<u32,5> handles{};bool replay=false,practice=false,uncap_score=false,hide_master=false;
     SpellCard(PlayerSpellStatus& state,i32& score,SpellRecords& records,u32& roaring,SpellCardHost& services):status(state),host(services),records(records),score(score),roaring_flags(roaring){age.set(0);}
     bool begin(const SpellStartRequest&,const SpellStartContext&);bool update(const SpellFrameContext&);bool finish();
     PlayerSpellStatus& state()noexcept{return status;}

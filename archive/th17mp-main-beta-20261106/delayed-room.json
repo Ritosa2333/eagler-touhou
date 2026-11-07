@@ -1,0 +1,317 @@
+{
+  "rollback": true,
+  "extended": false,
+  "difficulty": 4,
+  "version": "1.0.14-eagler-0292d9a459b1",
+  "wasm": "0292d9a459b188e65ae025e7b17bae0e4808072cfd9a880078660e160b399d35",
+  "throughStageTwo": false,
+  "denseExtra": false,
+  "extraBoss": false,
+  "extraFinale": false,
+  "injectedDelayMs": 145,
+  "jitterMs": 20,
+  "cpuThrottle": 1,
+  "cpuWarmupThrough": 0,
+  "reports": [
+    {
+      "room": "th17mp-room-test-2",
+      "seats": 2,
+      "comparedFrames": 1056,
+      "maxEnemyBullets": 350,
+      "maxLasers": 0,
+      "activeSpellFrames": 0,
+      "dialogueFrames": 0,
+      "bossNonspellFrames": 0,
+      "stageTwoFrames": 0,
+      "denseWindows": [],
+      "bossPatterns": [],
+      "settledPeaks": [],
+      "diagnostics": [
+        {
+          "corrections": 48,
+          "resimulated": 256,
+          "maxPrediction": 12,
+          "combatCorrections": 33,
+          "spellCorrections": 0,
+          "lastConfirmed": 1179,
+          "phase": 1,
+          "peakLinearMemory": 278396928,
+          "captures": 1140,
+          "captureUs": 581106,
+          "replaySlices": 39,
+          "logicalDraws": 216,
+          "stageCorrections": 48,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "updates": {
+            "count": 360,
+            "p50": 2.889999993145466,
+            "p95": 5.174999997019768,
+            "max": 9.195000000298023
+          },
+          "repairs": {
+            "count": 79,
+            "p50": 2.655000001192093,
+            "p95": 5.704999998211861,
+            "max": 6.6450000032782555
+          },
+          "denseUpdates": {
+            "count": 43,
+            "p50": 3.3700000047683716,
+            "p95": 5.28999999910593,
+            "max": 5.950000002980232
+          },
+          "denseRepairs": {
+            "count": 12,
+            "p50": 3.339999996125698,
+            "p95": 4.7650000005960464,
+            "max": 4.7650000005960464
+          }
+        },
+        {
+          "corrections": 9,
+          "resimulated": 38,
+          "maxPrediction": 12,
+          "combatCorrections": 1,
+          "spellCorrections": 0,
+          "lastConfirmed": 1182,
+          "phase": 1,
+          "peakLinearMemory": 278396928,
+          "captures": 996,
+          "captureUs": 467095,
+          "replaySlices": 5,
+          "logicalDraws": 30,
+          "stageCorrections": 9,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "delayedPackets": 1518,
+          "updates": {
+            "count": 429,
+            "p50": 2.0549999997019768,
+            "p95": 4.159999996423721,
+            "max": 5.554999999701977
+          },
+          "repairs": {
+            "count": 13,
+            "p50": 2.135000005364418,
+            "p95": 16.679999999701977,
+            "max": 16.679999999701977
+          },
+          "denseUpdates": {
+            "count": 60,
+            "p50": 2.1599999964237213,
+            "p95": 4.369999997317791,
+            "max": 4.975000001490116
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        }
+      ],
+      "last": [
+        1176,
+        2,
+        0,
+        7,
+        1130,
+        0,
+        0,
+        12580,
+        4016,
+        15,
+        240,
+        4827,
+        0,
+        51200,
+        4294967295,
+        3,
+        12032,
+        51200,
+        1,
+        4,
+        0,
+        0,
+        0,
+        0,
+        254,
+        100,
+        0,
+        14,
+        8,
+        0,
+        0,
+        30628,
+        291736962,
+        0,
+        0,
+        0,
+        1065353216,
+        18699,
+        0
+      ]
+    },
+    {
+      "room": "th17mp-room-test-3",
+      "seats": 3,
+      "comparedFrames": 1055,
+      "maxEnemyBullets": 157,
+      "maxLasers": 0,
+      "activeSpellFrames": 0,
+      "dialogueFrames": 0,
+      "bossNonspellFrames": 0,
+      "stageTwoFrames": 0,
+      "denseWindows": [],
+      "bossPatterns": [],
+      "settledPeaks": [],
+      "diagnostics": [
+        {
+          "corrections": 54,
+          "resimulated": 288,
+          "maxPrediction": 12,
+          "combatCorrections": 29,
+          "spellCorrections": 0,
+          "lastConfirmed": 1182,
+          "phase": 1,
+          "peakLinearMemory": 278396928,
+          "captures": 1389,
+          "captureUs": 800228,
+          "replaySlices": 45,
+          "logicalDraws": 243,
+          "stageCorrections": 54,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "updates": {
+            "count": 455,
+            "p50": 2.684999994933605,
+            "p95": 5.195000000298023,
+            "max": 9.455000005662441
+          },
+          "repairs": {
+            "count": 90,
+            "p50": 3.394999995827675,
+            "p95": 6.5250000059604645,
+            "max": 7.71000000089407
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        },
+        {
+          "corrections": 13,
+          "resimulated": 63,
+          "maxPrediction": 12,
+          "combatCorrections": 1,
+          "spellCorrections": 0,
+          "lastConfirmed": 1182,
+          "phase": 1,
+          "peakLinearMemory": 278396928,
+          "captures": 1185,
+          "captureUs": 628652,
+          "replaySlices": 10,
+          "logicalDraws": 52,
+          "stageCorrections": 13,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "delayedPackets": 3274,
+          "updates": {
+            "count": 525,
+            "p50": 1.9650000035762787,
+            "p95": 4.0200000032782555,
+            "max": 6.594999998807907
+          },
+          "repairs": {
+            "count": 21,
+            "p50": 2.010000005364418,
+            "p95": 4.094999998807907,
+            "max": 4.375
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        },
+        {
+          "corrections": 19,
+          "resimulated": 45,
+          "maxPrediction": 12,
+          "combatCorrections": 8,
+          "spellCorrections": 0,
+          "lastConfirmed": 1183,
+          "phase": 1,
+          "peakLinearMemory": 278396928,
+          "captures": 276,
+          "captureUs": 131748,
+          "replaySlices": 3,
+          "logicalDraws": 26,
+          "stageCorrections": 19,
+          "bossCorrections": 0,
+          "bossCosts": [],
+          "updates": {
+            "count": 521,
+            "p50": 1.285000003874302,
+            "p95": 3.0850000008940697,
+            "max": 3.814999997615814
+          },
+          "repairs": {
+            "count": 22,
+            "p50": 1.4499999955296516,
+            "p95": 3.2299999967217445,
+            "max": 3.375
+          },
+          "denseUpdates": {
+            "count": 0
+          },
+          "denseRepairs": {
+            "count": 0
+          }
+        }
+      ],
+      "last": [
+        1175,
+        3,
+        0,
+        7,
+        1129,
+        1,
+        0,
+        58973,
+        3720,
+        4,
+        0,
+        3872,
+        0,
+        51200,
+        4294967295,
+        3,
+        4480,
+        51200,
+        1,
+        4,
+        0,
+        51200,
+        0,
+        3,
+        274,
+        157,
+        100,
+        10,
+        16,
+        0,
+        0,
+        38898,
+        973073375,
+        0,
+        0,
+        0,
+        1065353216,
+        27312,
+        0
+      ]
+    }
+  ]
+}

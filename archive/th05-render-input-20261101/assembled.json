@@ -1,0 +1,12 @@
+{
+  "siteUrl": "https://test.touhou.vip/",
+  "previous": "/var/www/eagler-touhou-test/releases/th05-mobile-music-room-20261101-62b3d441ba86",
+  "candidate": "/var/www/eagler-touhou-test/releases/th05-render-input-20261101-e63ee6d10d3d",
+  "releaseId": "sha256-cbdc6cee41992ccda0b24f49ca69dc6939da0af210624ba038988cc6a9bb1f00",
+  "buildId": "f2349d302618831a642d",
+  "generation": "28dd01bc23bc295a4f3fb4cff737ff1471f090aadd270ce847f201abd177e0c3",
+  "packageRevision": "c2bdca7b5b842835",
+  "files": 7656,
+  "preserved": 7383,
+  "sourceExceptions": []
+}

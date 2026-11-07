@@ -8,6 +8,7 @@ import {roomPresentation} from './presentation';
 import {MainSelect} from '../launcher/MainSelect';
 import {RoomTiming, type RoomTimingActions} from './RoomTiming';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
+import {Th19VersusSettings} from './Th19VersusSettings';
 import {SettingsSelect} from '../settings/SettingsSelect';
 export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setRoomSettings' | 'takeSeat'> & RoomTimingActions; hidden: boolean}) {
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
@@ -27,6 +28,7 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
     </section>
     <section className="room-settings-group"><h3>{t('room.gameSettingsGroup')}</h3>
       <RoomTiming state={state} service={service}/><RoomTiming state={state} service={service} settings/>
+      {state.product === 'th19mp' && <Th19VersusSettings rules={room.th19Rules} disabled={disabled} onChange={th19Rules=>service.setRoomSettings({th19Rules})}/>}
       {state.product === 'th05mp' && <>
         <fieldset className="room-basic-fields" aria-describedby="mpTh05InitialStockHint">
           <SettingsSelect id="mpTh05InitialSpares" label={t('room.th05InitialSpares')} value={room.initialSpares ?? TH05_INITIAL_STOCK.spares}

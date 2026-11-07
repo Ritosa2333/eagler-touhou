@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "scope": "TH19 non-Git delivery provenance, all retained source ancestors, upstream base ancestry and retained TH12 trees",
+  "deliverySnapshots": [
+    "ports/th17",
+    "ports/th19"
+  ],
+  "retainedAncestorChecks": 25,
+  "upstreamBase": "3e5b5edcf2ba6f2a1f964da1c11e37f3e62981a3",
+  "unchangedUpstreamSubtrees": {
+    "ports/th12": true,
+    "ports/th12-mp": true
+  },
+  "fullLegacySubtreeExport": {
+    "passed": false,
+    "reason": "Existing Windows Git Bash segfaults in git subtree split for upstream TH12 import; no changes to that subtree in this branch."
+  }
+}

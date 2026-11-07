@@ -22,6 +22,7 @@ struct PopupDrawServices {
 // The original has ten rotating score/graze slots, three reserved ordinary
 // slots and five bonus slots. Their lifetimes and drawing order are distinct.
 class PopupManager {
+    friend class StageGameplay;
     AnmManager& animations;
     AnmVm glyph;
     u32 next_number=0;

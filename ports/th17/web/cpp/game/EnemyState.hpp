@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "MotionState.hpp"
 #include "PositionInterpolation.hpp"
 #include "Timer.hpp"
@@ -39,6 +40,7 @@ struct EnemyState {
     i32 score=0,boss_slot=-1,hit_sound=-1,death_sound=0,death_animation=0,death_animation_resource=0;
     i32 inactive_animation=0,normal_animation=0;std::array<EnemyInterrupt,8> interrupts;std::string death_script;
     i32 pending_damage=0,cumulative_damage=0,damage_flash_frames=0;Timer damage_timer{0,0,0,0,0};Vec3 last_hit_position{};
+    u32 multiplayer_damage_remainder=0;
     float slowdown=0;u32 lifecycle_flags=0,life_flags=0;i32 chapter=0,chapter_contribution=0;
     EnemyUpdateRule update_rule=EnemyUpdateRule::none;i32 update_rule_state=0;
     EnemyDistortionState distortion;ScreenGridObject distortion_mesh;
@@ -50,6 +52,8 @@ struct EnemyState {
     EnemyMovementResult update_movement(float rate,const Vec3& background_delta,EnemyAnimationHost* animations=nullptr);
 };
 struct EnemyWorldState {
+    std::function<Vec3(const Vec3&)> multiplayer_target;
+    Vec3 target(const Vec3& origin)const{return multiplayer_target?multiplayer_target(origin):player_position;}
     Vec3 player_position{};EnemyState* boss=nullptr;std::vector<EnemyState*> enemies;Rng* random=nullptr;
     std::array<u32,3> boss_ids{};u32 manager_flags=0;
     i32 rank=0,difficulty=0,mode=0,submode=0,enemy_count=0;
@@ -68,8 +72,10 @@ struct EnemyWorldState {
     i32& spell_elapsed()noexcept{return (spell_status?*spell_status:local_spell).frame;}
     i32& spell_bonus()noexcept{return (spell_status?*spell_status:local_spell).bonus;}
     i32 player_damage_state=0,damage_disabled=0,shot_damage=0,other_damage=0;
+    bool cooperative=false;
     i32 boss_seconds=0,boss_hundredths=0,game_state=0,boss_damage_gate=0;float player_damage_scale=1;
-    u32 game_frame_flags=0,player_behavior_flags=0;float last_death_angle=0;
+    u32 game_frame_flags=0,player_behavior_flags=0,practice_tools=0;float last_death_angle=0;
+    std::array<i32,4> keiki_phase_frames{-1,-1,-1,-1};
     i32 active_count()const noexcept{u32 count=0;for(const auto* e:enemies)if(!(e->flags&0x31)&&e->collision_timer.current<=0)count++;return signed_bits(count);}
     EnemyState* find(u32 id)const noexcept{if(id)for(auto* e:enemies)if(e->id==id)return e;return nullptr;}
     EnemyState* lookup(u32 id)const noexcept{if(!id)return nullptr;EnemyState* last=nullptr;for(auto* e:enemies){last=e;if(e->id==id)break;}return last;}

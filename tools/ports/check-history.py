@@ -8,6 +8,9 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from time import perf_counter
 
 
 SHA = re.compile(r"[0-9a-f]{40}\Z")
@@ -91,7 +94,10 @@ def verify_subtree(repo, head, record, workspace):
     joins = record["subtree"]
     verify_join(repo, head, directory, joins["initialJoin"], joins["initialSplit"])
     verify_join(repo, head, directory, joins["latestJoin"], joins["currentSplit"])
+    started = perf_counter()
+    print(f"{directory}: exporting Git subtree", file=sys.stderr, flush=True)
     split = repo.git("subtree", "split", f"--prefix={directory}", "--quiet", head)
+    print(f"{directory}: exported in {perf_counter() - started:.1f}s", file=sys.stderr, flush=True)
     if not repo.ancestor(upstream, split):
         raise RuntimeError(f"{directory}: original upstream {upstream} is not an ancestor of exported history")
     if not repo.ancestor(joins["currentSplit"], split):
@@ -166,7 +172,7 @@ def delivery_snapshots(repo, head, workspace):
     return records
 
 
-def verify(repo, head="HEAD", base=None):
+def verify(repo, head="HEAD", base=None, jobs=1):
     head = repo.git("rev-parse", "--verify", f"{head}^{{commit}}")
     workspace = repo.document(head, "launcher/config/workspace.json")["repositories"]
     imports = repo.document(head, "docs/migration/import-sources.json")["imports"]
@@ -185,10 +191,15 @@ def verify(repo, head="HEAD", base=None):
 
     records = subtree_records(repo, head)
     snapshots = delivery_snapshots(repo, head, workspace)
-    splits = {}
-    for record in records:
-        directory = record["destination"]
-        splits[directory] = verify_subtree(repo, head, record, workspace)
+    def export(record):
+        return record["destination"], verify_subtree(repo, head, record, workspace)
+
+    if jobs > 1 and len(records) > 1:
+        # Each standard Git split owns its own process-specific subtree cache.
+        with ThreadPoolExecutor(max_workers=min(jobs, len(records))) as workers:
+            splits = dict(workers.map(export, records))
+    else:
+        splits = dict(map(export, records))
 
     if base and set(base) != {"0"}:
         base = repo.git("rev-parse", "--verify", f"{base}^{{commit}}")
@@ -223,8 +234,12 @@ def main():
     parser.add_argument("--repo", default=pathlib.Path(__file__).resolve().parents[2])
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--base")
+    parser.add_argument("--jobs", type=int, default=1, help="Maximum number of parallel subtree exports")
     args = parser.parse_args()
-    print(json.dumps(verify(Repository(args.repo), args.head, args.base), ensure_ascii=False, sort_keys=True))
+    if args.jobs < 1:
+        parser.error("--jobs must be positive")
+    result = verify(Repository(args.repo), args.head, args.base, args.jobs)
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":

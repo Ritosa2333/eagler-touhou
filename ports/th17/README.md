@@ -8,3 +8,5 @@
 - [原交付验证范围](../../archive/th17-development-20261030/README.md)
 
 游戏、原版素材和字体归 Team Shanghai Alice / ZUN 及各自权利人；启动器许可与第三方归属见 [许可](LICENSE-launcher.txt) 和 [说明](THIRD-PARTY-NOTICES.txt)。本作使用自己的普通版目录与构建身份。
+
+多人版源码与回滚测试位于 [ports/th17-mp](../th17-mp/README.md)。两侧按[目录同步流程](../../docs/adaptation/port-sync.md)分别维护。

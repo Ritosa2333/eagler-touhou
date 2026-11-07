@@ -2,9 +2,8 @@
 // behavioral authority; first-frame and localized fallback policy are restored
 // below. No candidate UI, core replacement or test oracle is imported.
 import type {Translate} from '../i18n';
-import {betaModeForBase} from '../../src/launcher/release-channel.mts';
 import {directPreloadRuntimeUrl} from './direct-preload-runtime';
-import {liveRuntimeEntryAuthorized} from './runtime-entry-authority';
+import {liveRuntimeEntryAuthorized, th075SplitAssetUrl} from './runtime-entry-authority';
 import {errorText} from './error-text';
 import {GameDataAcquisitionError} from './game-data-acquisition';
 import {isReplayFilePath, isSafeReplayArchivePath} from '../../src/launcher/replay-files.mts';
@@ -37,18 +36,19 @@ import { confirmRuntimeClose, type RuntimeCloseDecision } from '../../src/launch
 import { deliverRuntimeInput, type HostedKeySpec, type TouchRuntimeContext, type RuntimeMessageTarget } from '../../src/launcher/touch-runtime-protocol.mts';
 import type {TouchLayout} from '../../src/launcher/touch-layout-model.mts';
 import { retainPackageGeneration, releasePackageGeneration } from '../../package/package-store.mjs';
+import { createRuntimeAudioMix, type RuntimeAudioWindow } from './runtime-audio-mix';
 
 export interface RuntimeFilesystem {
   mkdirTree(path: string): void;
   writeFile(path: string, bytes: Uint8Array, options: { canOwn: boolean }): void;
 }
-export interface RuntimeWindow extends RuntimeMessageTarget {
+export interface RuntimeWindow extends RuntimeMessageTarget, RuntimeAudioWindow {
   readonly document: object;
   readonly location: { href: string; replace(url: string): void };
   addEventListener?(type: string, listener: EventListener): void;
   removeEventListener?(type: string, listener: EventListener): void;
   FS?: RuntimeFilesystem;
-  Module?: { FS?: RuntimeFilesystem; touhouMusicMode?: 'ogg' | 'midi' | 'none' };
+  Module?: RuntimeAudioWindow['Module'] & { FS?: RuntimeFilesystem; touhouMusicMode?: 'ogg' | 'midi' | 'none' };
 }
 /** Read-only native event surface; no filesystem or lifecycle mutation port. */
 export interface RuntimeMidiEventTarget {
@@ -100,6 +100,7 @@ export interface RuntimePlan {
   generation: InstalledPackageGeneration | null;
   /** Exact original hosted emscripten-preload fallback, with no Package DATA. */
   directPreloadHost?: SiteManifest;
+  th075SplitAssets?: true;
   /** Optional resources acquired after native ready; never replaces loaded DATA. */
   resourceGeneration?: InstalledPackageGeneration;
   entry: string;
@@ -272,11 +273,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     releaseGeneration: releasePackageGeneration, ...options.dependencies };
   const network = options.network ?? createNetworkActivityTracker({ fetchImpl: options.fetchImpl ?? globalThis.fetch.bind(globalThis), onChange: options.onNetworkChange });
   const programTransfers = new Map<string, {id: string; epoch: number}>();
-  const programInspections = new Map<number, AbortController>();
   function finishProgramTransfers(epoch?: number) {
-    for (const [id, controller] of programInspections) if (epoch === undefined || id === epoch) {
-      controller.abort(); programInspections.delete(id);
-    }
     for (const [key, task] of programTransfers) if (epoch === undefined || task.epoch === epoch) {
       network.finish(task.id); programTransfers.delete(key);
     }
@@ -293,6 +290,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (current) network.update(id, {phase: progress.phase, loaded: progress.loaded, total: progress.total});
   }
   const sessions = createRuntimeSessionOwner();
+  const audioMix = createRuntimeAudioMix();
   const generations = createManagedRuntimeGenerationLease();
   const listeners = new Set<() => void>();
   const eventListeners = new Set<(message: RuntimeEventMessage) => void>();
@@ -451,6 +449,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     operation++;
     finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
+    audioMix.detach();
     runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
@@ -580,11 +579,16 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (message.event === 'first-frame' && snapshot.roomReturnSupported && message.launchSerial !== roomLaunchSerial) return;
     const eventContext = Object.freeze({epoch: token.id, fileOnly: snapshot.fileOnly});
     if (message.event === 'ready' && !snapshot.ready) {
-      try { runtimeDocument = runtimeIdentity(token).document; }
+      let runtime: RuntimeWindow;
+      try {
+        const identity = runtimeIdentity(token);
+        runtime = identity.runtime;
+        runtimeDocument = identity.document;
+      }
       catch (error) { fail(error); return; }
-      if(betaModeForBase(baseUrl)&&(frame.contentWindow as unknown as {__eaglerStorageChannel?:string})?.__eaglerStorageChannel!=='beta'){
-        fail(new Error(options.translate('developer.betaUnavailable')));
-        return;
+      if (!snapshot.fileOnly) {
+        try { audioMix.attach(runtime, token.game); }
+        catch (error) { audioMix.detach(); warn(error); }
       }
       update({ ready: true, roomPreviewSupported: message.roomPreview === true, roomReturnSupported: message.roomReturn === true }); settle('ready');
     } else if (message.event === 'first-frame' && launchRequested &&
@@ -605,7 +609,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       for (const item of pending.values()) item.progress?.(String(message.mode ?? ''), Number(message.loaded));
       update({ progress: Object.freeze({ ...message }) });
     } else if (message.event === 'frame-health') queueHealth({ frameHealth: Object.freeze({ ...message }) });
-    else if (message.event === 'audio-health') queueHealth({ audioHealth: Object.freeze({ ...message }) });
+    else if (message.event === 'audio-health') {
+      audioMix.refresh();
+      queueHealth({ audioHealth: Object.freeze({ ...message }) });
+    }
     else if (message.event === 'error') {
       // Main emits a diagnostic plus runtime-error for readiness/frame waiters.
       // It is not an engine-exit event: retain the live writer and unrelated
@@ -853,9 +860,12 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (sessions.current() || closing || (fileClosing && fileOwner !== fileSession) || (fileSession && fileOwner !== fileSession)) throw new Error('Close the current Runtime before preparing another');
     if (!isGameId(input.game)) throw new Error('Invalid Runtime game');
     if (input.generation && (!input.generation.id || input.generation.game !== input.game || input.generation.descriptor.game !== input.game)) throw new Error('Invalid Runtime package generation');
+    const splitAssets = input.th075SplitAssets ? th075SplitAssetUrl(input, baseUrl) : null;
+    if (splitAssets && (input.generation || input.fileOnly || input.directPreloadHost))
+      throw new Error('TH075 split assets require a multiplayer room Runtime');
     if (!input.generation) {
-      directPreloadRuntimeUrl(input, baseUrl);
-      if (input.resourceGeneration || input.resourceFileIds?.length || input.localOgg) throw new Error('Direct preload cannot claim managed Package resources');
+      if (!splitAssets) directPreloadRuntimeUrl(input, baseUrl);
+      if (input.resourceGeneration || input.resourceFileIds?.length || input.localOgg) throw new Error('Unmanaged preload cannot claim managed Package resources');
     }
     if (input.runtimeVariant !== 'normal' && input.runtimeVariant !== 'multiplayer') throw new Error('Invalid Runtime variant');
     const source = new URL(input.entry, baseUrl);
@@ -896,7 +906,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           // cannot satisfy this owner's exact document/epoch binding.
           const offlineWorker = plan.localCatalogRuntime ? await options.worker : null;
           assertOperation(); assertCurrent(token);
-          if (plan.generation && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
+          if ((plan.generation || splitAssets) && (plan.publishedRuntime || plan.localCatalogRuntime || offlineWorker)) {
             // Keep current main's complete-generation verification + idle-based
             // download helper. No replacement timeout or latest-file fallback.
             const progressToken = token;
@@ -917,19 +927,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
             entry = prepared.url; codeGeneration = prepared.generation;
             codeUpdate = prepared.checkForUpdate ? {epoch:token.id,check:prepared.checkForUpdate} : null;
           }
-          const url = plan.generation ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
-          if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
-          if(betaModeForBase(baseUrl)){
-            if(!url.pathname.startsWith(new URL(baseUrl).pathname))throw Error(options.translate('developer.betaUnavailable'));
-            url.searchParams.set('storageChannel','beta');
-            const controller=new AbortController();programInspections.set(token.id,controller);
-            try {
-              const response=await network.fetch(url,{signal:controller.signal},packageNetworkMetadata(plan.game,url,baseUrl,options.translate));
-              if(!response.ok||!(await response.text()).includes('<!-- BEGIN GENERATED RUNTIME STORAGE CHANNEL -->'))
-                throw Error(options.translate('developer.betaUnavailable'));
-            } finally {programInspections.delete(token.id);}
-            assertOperation();assertCurrent(token);
+          const url = splitAssets ? new URL(entry) : plan.generation
+            ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
+          if (splitAssets) {
+            url.searchParams.set('runtimeVariant', 'multiplayer');
+            url.searchParams.set('th075Assets', splitAssets.url.href);
+            url.searchParams.set('th075AssetsHash', splitAssets.sha256);
           }
+          if (url.origin !== origin) throw new Error('Runtime must share the Launcher origin');
           url.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(token.id));
           update({ source: url.href, codeGeneration });
           const ready = waitFor('ready', token, options.timeouts?.ready ?? 120_000);
@@ -959,12 +964,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         const final = structuredClone(await onReady(token.id));
         assertOperation(); assertCurrent(token);
         if (final.game !== plan.game || final.runtimeVariant !== plan.runtimeVariant || final.entry !== plan.entry ||
-            final.publishedRuntime !== plan.publishedRuntime ||
+            final.publishedRuntime !== plan.publishedRuntime || final.th075SplitAssets !== plan.th075SplitAssets ||
             JSON.stringify(final.multiplayerProgram) !== JSON.stringify(plan.multiplayerProgram)) throw new Error('Ready continuation changed the Runtime identity');
         if (final.configure.options?.multiplayerPreflight && !checkOwner) throw new Error('Multiplayer preflight requires the game-check owner');
         const loaded = plan.generation;
         if (!loaded && final.generation) throw new Error('Ready continuation changed preload DATA ownership');
-        plan = {...final, generation: loaded, resourceGeneration: final.resourceGeneration ?? final.generation ?? undefined};
+        plan = {...final, generation: loaded, resourceGeneration: final.resourceGeneration ?? final.generation ?? undefined,
+          ...(splitAssets ? {runtimeHost: plan.runtimeHost} : {})};
       }
       if (plan.resourceGeneration) {
         const resources = plan.resourceGeneration, loaded = plan.generation;
@@ -1468,6 +1474,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   function finishDisposal() {
     disposed = true;
+    audioMix.detach();
     host.removeEventListener('message', onMessage); frame.removeEventListener('load', onLoad);
     if (host.__eaglerPrepareManagedRuntimeDataV1 === provideData) delete host.__eaglerPrepareManagedRuntimeDataV1;
     listeners.clear();
@@ -1504,6 +1511,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
   return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, returnToRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
+    setAudioLevels: audioMix.set,
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},

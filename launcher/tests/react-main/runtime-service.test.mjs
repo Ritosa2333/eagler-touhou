@@ -109,44 +109,20 @@ function fixture({onFrameRetired, onUpdateReady, onNetworkChange, worker, servic
   fixtures.push(result); return result;
 }
 
-test('beta refuses stable program URLs and old programs before navigating their native code', async () => {
-  const betaBase = origin + '/beta/';
-  for (const entry of [baseUrl + 'runtime/th10/old.html', betaBase + 'runtime/th10/old.html']) {
-    const f = fixture({serviceOptions: {baseUrl: betaBase, fetchImpl: async () => new Response('<html>old core</html>')},
-      async prepareCode() {return {url: entry, generation: 'beta-code'};}});
-    await assert.rejects(f.service.prepare(managedPlan()), /developer.betaUnavailable/);
-    assert.equal(f.navigations.some(url => url !== 'about:blank'), false);
-  }
-});
-
-test('beta runtime navigation includes its namespace and authenticates the installed storage channel', async () => {
-  const betaBase = origin + '/beta/';
-  const make = () => fixture({serviceOptions: {baseUrl: betaBase,
-    fetchImpl: async () => new Response('<!-- BEGIN GENERATED RUNTIME STORAGE CHANNEL -->')},
-    async prepareCode() {return {url: betaBase + 'runtime/th10/beta.html', generation: 'beta-code'};}});
-  const f = make(); f.runtime.__eaglerStorageChannel = 'beta';
-  const preparingBeta = f.service.prepare(managedPlan());
-  await vi.waitFor(() => assert.ok(f.navigations.some(url => url.startsWith(betaBase))));
-  f.event('ready'); await flush(); f.ack('configure'); await preparingBeta;
-  assert.equal(new URL(f.service.getSnapshot().source).searchParams.get('storageChannel'), 'beta');
-  const old = make(), preparing = old.service.prepare(managedPlan());
-  const rejected = assert.rejects(preparing, /developer.betaUnavailable/);
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    await vi.waitFor(() => assert.equal(old.navigations.filter(url => url.startsWith(betaBase)).length, attempt));
-    old.event('ready'); await flush();
-  }
-  await rejected;
-});
-
-test('cancel aborts beta program inspection and releases its network accounting', async () => {
-  let activeSignal;const states=[], betaBase=origin+'/beta/';
-  const f=fixture({onNetworkChange:value=>states.push(value), serviceOptions:{baseUrl:betaBase,fetchImpl:async(_url,init)=>{
-    activeSignal=init.signal;return new Promise(()=>{});
-  }},async prepareCode(){return {url:betaBase+'runtime/th10/beta.html',generation:'beta-code'};}});
-  const preparing=f.service.prepare(managedPlan()),rejected=assert.rejects(preparing,/SUPERSEDED/);
-  await vi.waitFor(()=>assert.ok(activeSignal));
-  f.service.cancel();await rejected;
-  assert.equal(activeSignal.aborted,true);assert.equal(states.at(-1).count,0);
+test('Runtime uses the ordinary Host entry and shared Runtime generation URL', async () => {
+  const codeRequests = [];
+  const f = fixture({async prepareCode(entry, options) {
+    codeRequests.push({entry, options});
+    return {url: `${baseUrl}runtime/th10/${hash}/th10.html`, generation: hash};
+  }});
+  const preparing = f.service.prepare(managedPlan());
+  await vi.waitFor(() => assert.ok(f.navigations.some(url => url.startsWith(baseUrl))));
+  assert.deepEqual(codeRequests.map(request => request.entry), [baseUrl + 'runtime/th10/th10.html']);
+  const navigation = f.navigations.find(url => url !== 'about:blank');
+  assert.ok(navigation.startsWith(baseUrl));
+  assert.equal(new URL(navigation).pathname.includes('/beta/'), false);
+  f.event('ready'); await flush(); f.ack('configure'); await preparing;
+  assert.equal(f.service.getSnapshot().source, navigation);
 });
 
 for (const cleanupFails of [false, true]) test(`game check preserves its original failure${cleanupFails ? ' together with failed frame retirement' : ''} and releases its owner`, async () => {
@@ -225,12 +201,13 @@ test('room preload: binding a run reuses the epoch/DATA and retains the prepared
 
 test('room return keeps the same engine, synchronizes first and rejects first frames from an older launch', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  plan.configure.language='lang_zh-hans';
   await f.prepare(plan,{roomReturn:true});
   const epoch=f.service.getSnapshot().epoch,document=f.runtime.document,navigations=f.navigations.length,reads=f.dataReads.length;
   let previousSerial=0;
   for(let attempt=0;attempt<3;attempt++){
     const configuring=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=7',netplaySpectator:true});
-    await flush();f.ack('configure');await configuring;
+    await flush();assert.equal(f.ack('configure').language,'lang_zh-hans');await configuring;
     const launching=f.service.launch({awaitFirstFrame:true});await flush();const launched=f.ack('launch');
     if(previousSerial){const events=f.eventContexts.length;f.event('first-frame',{launchSerial:previousSerial});f.event('room-menu',{launchSerial:previousSerial});assert.equal(f.service.getSnapshot().firstFrame,false);assert.equal(f.eventContexts.length,events,'old launch events never reach presentation owners');}
     f.event('first-frame',{launchSerial:launched.launchSerial});await launching;previousSerial=launched.launchSerial;
@@ -240,6 +217,7 @@ test('room return keeps the same engine, synchronizes first and rejects first fr
     assert.equal(f.service.getSnapshot().phase,'configuring');
     assert.equal(f.service.getInputContext().launched,false,'menu input waits for Runtime option restoration');
     const restored=f.ack('configure');
+    assert.equal(restored.language,'lang_zh-hans');assert.equal(restored.runtimePack,undefined);
     assert.equal(restored.options.netplayMode,undefined,'the actual Runtime receives local menu options');
     assert.equal(restored.options.netplaySpectator,undefined);
     assert.deepEqual(restored.resources,[]);assert.deepEqual(restored.runtimeResources,[]);assert.deepEqual(restored.sharedResources,[]);
@@ -286,6 +264,7 @@ test('room preload: a stale run cannot configure a replacement engine', async ()
 
 test('room preview is prelaunch, native-acknowledged, and binds the same engine without remounting resources', async () => {
   const f=fixture(), plan=managedPlan();plan.runtimeVariant='multiplayer';
+  plan.configure.language='lang_zh-hans';
   const preparing=f.service.prepare(plan);await flush();f.event('ready',{roomPreview:true});await flush();f.ack('configure');await preparing;
   const epoch=f.service.getSnapshot().epoch,navigations=f.navigations.length;
   const preview=f.service.prepareRoomPreview(epoch);await flush();
@@ -299,6 +278,7 @@ test('room preview is prelaunch, native-acknowledged, and binds the same engine 
   await flush();assert.equal(f.service.getInputContext().launched,false);
   assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
   const wire=f.ack('configure');await binding;
+  assert.equal(wire.language,'lang_zh-hans');
   assert.deepEqual(wire.resources,[]);assert.deepEqual(wire.runtimeResources,[]);assert.equal(wire.runtimePack,undefined);
   const launch=f.service.launch();await flush();f.ack('launch');await launch;
   assert.equal(f.service.getSnapshot().roomPreview,false);

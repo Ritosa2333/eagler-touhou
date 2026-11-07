@@ -20,30 +20,32 @@ class Socket extends EventTarget {
   close() {this.readyState = 3; this.dispatchEvent(new CloseEvent('close', {code: 1000}));}
   fail() {this.dispatchEvent(new Event('error'));}
 }
-function fixture(timeout = 1000, betaMode = false) {
+function fixture(timeout = 1000) {
   const sockets = [];
-  const router = createRelayEntryRouting({shared: () => ({netplayRelay: primary, netplayRelayFallbacks: [backup]}), connectTimeoutMs: timeout, betaMode,
+  const router = createRelayEntryRouting({shared: () => ({netplayRelay: primary, netplayRelayFallbacks: [backup]}), connectTimeoutMs: timeout,
     createSocket: url => {const socket = new Socket(url); sockets.push(socket); return socket;}});
   return {router, sockets};
 }
 const flush = () => new Promise(resolve => queueMicrotask(resolve));
 
-test('beta channel survives primary fallback and all room, directory and diagnostic roles', async () => {
-  const {router, sockets} = fixture(1000, true);
-  assert.equal(new URL(router.resolve(primary)).searchParams.get('channel'), 'beta');
-  const routed = router.createSocket(primary + '?room=th09-1234&member=a%2Bb');
-  await flush(); sockets[0].fail(); sockets[1].open();
-  for (const socket of sockets) {
-    const url = new URL(socket.url);
-    assert.equal(url.searchParams.get('channel'), 'beta');
-    assert.equal(url.searchParams.get('member'), 'a+b');
-  }
+test('room, directory and diagnostic roles use ordinary relay entries and preserve identity', async () => {
+  const {router, sockets} = fixture();
+  const query = '?room=th09-1234&run=run-1&member=a%2Bb&lobby=1';
+  assert.equal(router.resolve(primary), primary);
+  const routed = router.createSocket(primary + query);
+  await flush();
+  assert.equal(sockets[0].url, primary + query);
+  sockets[0].fail(); sockets[1].open();
+  assert.equal(sockets[1].url, backup + query);
   for (const role of ['directory', 'diagnostic']) {
-    const client = router.createSocket(router.resolve(primary) + '&' + role + '=1');
+    const client = router.createSocket(primary + query + `&${role}=1`);
     await flush();
     const url = new URL(sockets.at(-1).url);
     assert.equal(url.origin, new URL(backup).origin);
-    assert.equal(url.searchParams.get('channel'), 'beta');
+    assert.equal(url.searchParams.get('room'), 'th09-1234');
+    assert.equal(url.searchParams.get('run'), 'run-1');
+    assert.equal(url.searchParams.get('member'), 'a+b');
+    assert.equal(url.searchParams.has('channel'), false);
     assert.equal(url.searchParams.get(role), '1');
     client.close();
   }

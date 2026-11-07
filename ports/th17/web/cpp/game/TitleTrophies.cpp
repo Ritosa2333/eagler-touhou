@@ -15,13 +15,24 @@ bool TrophyCatalog::open(const u8* bytes,u32 size,Rng* visual){
   for(auto& state:item.descriptions)for(auto& text:state)if(!line(text)){error="Trophy description too long";return false;}
  }return true;
 }
+void TrophyCatalog::localize(const LocalizationTable& table){
+ for(u32 i=0;i<entries.size();++i){
+  auto& item=entries[i];
+  if(!item.present)continue;
+  if(const auto* title=table.find(i)){item.title=*title;item.utf8[0]=true;}
+  for(u16 row=1;row<item.utf8.size();++row)if(const auto* value=table.find(i,row)){
+   item.descriptions[(row-1)/3][(row-1)%3]=*value;
+   item.utf8[row]=true;
+  }
+ }
+}
 bool TitleTrophies::check(bool ok,const char* why){if(!ok&&error.empty())error=why;return ok;}
 bool TitleTrophies::visual(bool ok){return check(ok,visuals.error.c_str());}
-bool TitleTrophies::text(i32 slot,const std::string& bytes){auto* vm=animations.registry.find(state.handles[slot]);if(!vm){state.handles[slot]=0;return true;}TextureText request;request.bytes=bytes;request.font=4;request.centered=true;return check(host.text(*vm,request),"Trophy text rendering failed");}
+bool TitleTrophies::text(i32 slot,const std::string& bytes,bool utf8){auto* vm=animations.registry.find(state.handles[slot]);if(!vm){state.handles[slot]=0;return true;}TextureText request;request.bytes=bytes;request.utf8=utf8;request.font=4;request.centered=true;return check(host.text(*vm,request),"Trophy text rendering failed");}
 bool TitleTrophies::description(){
  if(description_age<8){const auto* item=catalog.entry(description_index);if(!item)return check(false,"Trophy description unavailable");const bool owned=records.trophies[description_index]!=0;
-  if(description_age==0){std::string hidden;for(i32 i=0;i<12;i++){hidden+=char(0x81);hidden+=char(0x48);}if(!text(197,owned?item->title:hidden)||!visual(visuals.interrupt(197,4)))return false;for(i32 i=198;i<=200;i++)if(!visual(visuals.interrupt(i,5)))return false;}
-  else if(description_age==3||description_age==5||description_age==7){const i32 row=(description_age-3)/2;if(!text(198+row,item->descriptions[owned?1:0][row])||!visual(visuals.interrupt(198+row,4)))return false;}
+  if(description_age==0){std::string hidden;for(i32 i=0;i<12;i++){hidden+=char(0x81);hidden+=char(0x48);}if(!text(197,owned?item->title:hidden,owned&&item->utf8[0])||!visual(visuals.interrupt(197,4)))return false;for(i32 i=198;i<=200;i++)if(!visual(visuals.interrupt(i,5)))return false;}
+  else if(description_age==3||description_age==5||description_age==7){const i32 row=(description_age-3)/2;if(!text(198+row,item->descriptions[owned?1:0][row],item->utf8[1+3*owned+row])||!visual(visuals.interrupt(198+row,4)))return false;}
  }description_age=wrapping_add(description_age,1);return true;
 }
 bool TitleTrophies::update(u32 pressed,u32 repeated){

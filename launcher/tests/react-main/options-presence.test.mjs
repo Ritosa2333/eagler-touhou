@@ -111,7 +111,7 @@ async function mount({entry = '/?game=th06', mobile = true, coarse = false, noHo
       context === 'library' ? React.createElement(React.Fragment,null,React.createElement(owners.LibrarySurface, {products,
         selectedProduct: 'th06', openedProduct: presence.openedProduct, optionsOpen: presence.open,
         onSelect() {}, onActivate: id => navigate(`/?game=${id}`), onBack,
-        masthead: null, footer: null, lobbyHref: '/lobby.html', roomUsersArtwork: '/fixtures/room-users.svg'}), React.createElement(owners.OptionsBackdrop,{onBack}),panel)
+        masthead: null, lobbyHref: '/lobby.html', roomUsersArtwork: '/fixtures/room-users.svg'}), React.createElement(owners.OptionsBackdrop,{onBack}),panel)
         : React.createElement('div', {'data-fixture-lobby': true, className: 'main library-layout'},
           React.createElement('div', {className: 'game-library', inert: presence.open},
             React.createElement(owners.LibraryCards, {products, variant: 'lobby', selectedProduct: 'th06', openedProduct: presence.openedProduct,

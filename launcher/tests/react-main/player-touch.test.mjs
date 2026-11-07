@@ -177,3 +177,18 @@ test('rapid native taps preserve every edge, drop duplicate capture releases and
  assert.equal(updates,0,'HUD renders are not synchronous with each input edge');
  assert.equal(f.touch.getSnapshot().actionButtons,0);await wait(40);assert.equal(updates,1);
 });
+
+for(const ios of [false,true])test('TH19 '+(ios?'iOS touch':'pointer')+' charge holds X until release without emitting a C tap',async()=>{
+ const f=fixture({game:'th19',ios});const events=()=>f.sent.filter(m=>m.command==='keyboard').map(m=>[m.code,m.down]);
+ if(ios)f.iosEvent('functionKey','touchstart',[{identifier:10}]);else f.pointer('functionKey','pointerdown',{pointerId:10});
+ await wait(90);assert.deepEqual(events(),[['KeyX',true]]);assert.equal(f.touch.getSnapshot().functionDown,true);
+ if(ios)f.iosEvent('functionKey','touchend',[{identifier:11}]);else f.pointer('functionKey','pointerup',{pointerId:11});
+ assert.equal(f.touch.getSnapshot().functionDown,true);
+ if(ios)f.iosEvent('functionKey','touchend',[{identifier:10}]);else f.pointer('functionKey','pointerup',{pointerId:10});
+ await wait(70);assert.deepEqual(events(),[['KeyX',true],['KeyX',false]]);assert.equal(f.touch.getSnapshot().functionDown,false);
+});
+for(const reason of ['pointercancel','lostpointercapture','editing','cancel'])test('TH19 charge releases on '+reason,()=>{
+ const f=fixture({game:'th19'});f.pointer('functionKey','pointerdown');
+ if(reason==='editing')f.edit(true);else if(reason==='cancel')f.touch.cancelPointers();else f.pointer('functionKey',reason);
+ assert.equal(f.touch.getSnapshot().functionDown,false);assert.deepEqual(f.sent.filter(m=>m.command==='keyboard').map(m=>[m.code,m.down]),[['KeyX',true],['KeyX',false]]);
+});

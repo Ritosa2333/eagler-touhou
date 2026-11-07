@@ -109,7 +109,7 @@ html[data-book-theme='light'] {
   "use strict";
   const PROTOCOL = "eagler-touhou/origin-migration/1";
   const AUTH_KEY = "eagler-touhou-origin-migration-authorized-v1";
-  const DATABASES = new Set(["/savesth05", "/savesth05mp", "/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth13", "/savesth15", "/savesth17", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1", "beta:/savesth05", "beta:/savesth05mp", "beta:/savesth06", "beta:/savesth07", "beta:/savesth075", "beta:/savesth08", "beta:/savesth09", "beta:/savesth10", "beta:/savesth11", "beta:/savesth12", "beta:/savesth13", "beta:/savesth15", "beta:/savesth17", "beta:/savesth20", "beta:/savesth06-multiplayer", "beta:/savesth07-multiplayer", "beta:/savesth075mp", "beta:/savesth08-multiplayer", "beta:/savesth09mp", "beta:/savesth10-multiplayer", "beta:/savesth11mp", "beta:/savesth12mp", "beta:/savesth15mp", "beta:EM_PRELOAD_CACHE", "beta:eagler-touhou-local-assets-v1"]);
+  const DATABASES = new Set(["/savesth05", "/savesth05mp", "/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth13", "/savesth15", "/savesth17", "/savesth19", "/savesth19mp", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "/savesth17mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]);
   const DATABASE_LABELS = new Map([
     ["/savesth05", "th05 存档 / Replay"],
     ["/savesth05mp", "th05 多人存档 / Replay"],
@@ -125,6 +125,8 @@ html[data-book-theme='light'] {
     ["/savesth13", "th13 存档 / Replay"],
     ["/savesth15", "th15 存档 / Replay"],
     ["/savesth17", "th17 存档 / Replay"],
+    ["/savesth19", "th19 存档 / Replay"],
+    ["/savesth19mp", "th19 多人存档 / Replay"],
     ["/savesth20", "th20 存档 / Replay"],
     ["/savesth06-multiplayer", "th06 多人存档 / Replay"],
     ["/savesth07-multiplayer", "th07 多人存档 / Replay"],
@@ -134,13 +136,11 @@ html[data-book-theme='light'] {
     ["/savesth10-multiplayer", "th10 多人存档 / Replay"],
     ["/savesth11mp", "th11 多人存档 / Replay"],
     ["/savesth15mp", "th15 多人存档 / Replay"],
+    ["/savesth17mp", "th17 多人存档 / Replay"],
     ["eagler-touhou-package-store-v1", "已安装游戏资源"],
     ["EM_PRELOAD_CACHE", "旧版 Emscripten 资源"],
     ["eagler-touhou-local-assets-v1", "旧版本地资源"],
   ]);
-  for (const [name, label] of [...DATABASE_LABELS]) {
-    if (name !== "eagler-touhou-package-store-v1") DATABASE_LABELS.set(`beta:${name}`, `测试版 | ${label}`);
-  }
   const CACHE_NAMES = new Set(["eagler-touhou-game-data-v1", "eagler-touhou-language-packs-v1"]);
   const CACHE_LABELS = new Map([
     ["eagler-touhou-game-data-v1", "旧版游戏资源缓存"],
@@ -177,7 +177,7 @@ html[data-book-theme='light'] {
   const setStatus = (text, kind = "") => { status.textContent = text; status.className = `status${kind ? ` ${kind}` : ""}`; };
   const request = req => new Promise((resolve, reject) => { req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error || new Error("IndexedDB request failed")); });
   const txDone = tx => new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || new Error("IndexedDB transaction failed")); });
-  const EXPLICIT_LOCAL_STORAGE_KEYS = new Set(["eagler.mpSpectatorRail.mobilePosition.v1", "th13.save", "beta:th13.save"]);
+  const EXPLICIT_LOCAL_STORAGE_KEYS = new Set(["eagler.mpSpectatorRail.mobilePosition.v1", "th13.save"]);
   const ownedLocalStorageKey = key => !key.startsWith("eagler-touhou-origin-migration-") &&
     (key.startsWith("eagler-") || EXPLICIT_LOCAL_STORAGE_KEYS.has(key));
   const randomNonce = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
@@ -292,10 +292,10 @@ html[data-book-theme='light'] {
       }
     }
     inventory = { local, dbs, caches: cachesFound };
-    const saves = dbs.filter(item => item.name.replace(/^beta:/, "").startsWith("/savesth")).reduce((sum, item) => sum + item.records, 0);
+    const saves = dbs.filter(item => item.name.startsWith("/savesth")).reduce((sum, item) => sum + item.records, 0);
     const installed = dbs.find(item => item.name === "eagler-touhou-package-store-v1")?.records || 0;
     const legacy = dbs
-      .filter(item => ["EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"].includes(item.name.replace(/^beta:/, "")))
+      .filter(item => ["EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"].includes(item.name))
       .reduce((sum, item) => sum + item.records, 0) + cachesFound.reduce((sum, item) => sum + item.entries, 0);
     document.getElementById("lsCount").textContent = `${local.length} 项`;
     document.getElementById("saveCount").textContent = `${saves} 条记录`;

@@ -1,0 +1,394 @@
+{
+  "cases": [
+    {
+      "kind": "dialogue",
+      "frames": 720,
+      "comparisons": 795,
+      "predicted": 2047,
+      "callbacks": 1650,
+      "corrections": 683,
+      "replayed": 2220,
+      "scenes": [
+        13,
+        4
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "stage-logo",
+      "frames": 720,
+      "comparisons": 930,
+      "predicted": 575,
+      "callbacks": 1512,
+      "corrections": 0,
+      "replayed": 0,
+      "scenes": [
+        4
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "stage-fade",
+      "frames": 720,
+      "comparisons": 1258,
+      "predicted": 524,
+      "callbacks": 1789,
+      "corrections": 0,
+      "replayed": 0,
+      "scenes": [
+        4
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "midboss-create",
+      "frames": 720,
+      "comparisons": 2,
+      "predicted": 719,
+      "callbacks": 728,
+      "corrections": 0,
+      "replayed": 0,
+      "scenes": [
+        4
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "midboss-retire",
+      "frames": 720,
+      "comparisons": 1,
+      "predicted": 723,
+      "callbacks": 725,
+      "corrections": 2,
+      "replayed": 4,
+      "scenes": [
+        4
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "mai-branch",
+      "frames": 720,
+      "comparisons": 300,
+      "predicted": 2311,
+      "callbacks": 1265,
+      "corrections": 771,
+      "replayed": 2506,
+      "scenes": [
+        4,
+        13
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "yuki-branch",
+      "frames": 720,
+      "comparisons": 287,
+      "predicted": 2316,
+      "callbacks": 1255,
+      "corrections": 773,
+      "replayed": 2511,
+      "scenes": [
+        4,
+        13
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "next-stage",
+      "frames": 720,
+      "comparisons": 935,
+      "predicted": 574,
+      "callbacks": 1516,
+      "corrections": 0,
+      "replayed": 0,
+      "scenes": [
+        4
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "pause-restart",
+      "frames": 720,
+      "comparisons": 127,
+      "predicted": 705,
+      "callbacks": 837,
+      "corrections": 4,
+      "replayed": 9,
+      "scenes": [
+        4,
+        0
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "ghost-rescue",
+      "frames": 720,
+      "comparisons": 1,
+      "predicted": 739,
+      "callbacks": 728,
+      "corrections": 7,
+      "replayed": 26,
+      "scenes": [
+        4
+      ],
+      "stock": [
+        [
+          2,
+          1,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          128,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "kind": "death",
+      "frames": 720,
+      "comparisons": 1,
+      "predicted": 723,
+      "callbacks": 725,
+      "corrections": 2,
+      "replayed": 4,
+      "scenes": [
+        4
+      ],
+      "stock": [
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          3,
+          3,
+          128,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          128,
+          0,
+          1
+        ]
+      ]
+    }
+  ],
+  "errors": []
+}
