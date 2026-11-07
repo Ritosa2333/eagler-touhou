@@ -26,7 +26,7 @@ export async function replicaBinary(bytes){
 }
 export function captureNative(simulation,identity){
   const e=simulation.core;if(!(e.__replay_stack instanceof WebAssembly.Global)||e.memory.buffer.byteLength!==HEAP)throw Error('原生状态布局无效');
-  return {host:{version:NATIVE_LAYOUT,identity,frame:simulation.frame,previous:simulation.previous.slice(),hostSlot:simulation.hostSlot,settings:simulation.settings,
+  return {host:{version:NATIVE_LAYOUT,identity,frame:simulation.frame,previous:simulation.previous.slice(),resultFrames:simulation.resultFrames??0,hostSlot:simulation.hostSlot,settings:simulation.settings,
     stack:e.__replay_stack.value,proof:JSON.stringify(simulation.checksum())},heap:new Uint8Array(e.memory.buffer).slice()};
 }
 export async function encodeNative(state,base){
@@ -51,7 +51,8 @@ export function restoreNative(simulation,state,identity){
   if(h.identity!==identity||h.version!==NATIVE_LAYOUT||h.hostSlot!==simulation.hostSlot||stable(h.settings)!==stable(simulation.settings)||
     !Number.isInteger(h.frame)||h.frame<0||h.frame>216000||!Array.isArray(h.previous)||
     (h.frame===0?h.previous.length!==0:h.previous.length!==simulation.settings.players)||h.previous.some(n=>!Number.isSafeInteger(n)||n<0||n>=2**44)||
+    !Number.isSafeInteger(h.resultFrames)||h.resultFrames<0||h.resultFrames>216000||
     !Number.isInteger(h.stack)||h.stack<0||h.stack>HEAP||typeof h.proof!=='string'||state.heap.length!==HEAP)throw Error('原生检查点身份或宿主状态无效');
-  new Uint8Array(e.memory.buffer).set(state.heap);e.__replay_stack.value=h.stack;simulation.frame=h.frame;simulation.previous=h.previous.slice();
+  new Uint8Array(e.memory.buffer).set(state.heap);e.__replay_stack.value=h.stack;simulation.frame=h.frame;simulation.previous=h.previous.slice();if('resultFrames' in simulation)simulation.resultFrames=h.resultFrames;
   if(JSON.stringify(simulation.checksum())!==h.proof)throw Error('原生检查点恢复证明不一致');return {frame:h.frame,proof:h.proof};
 }

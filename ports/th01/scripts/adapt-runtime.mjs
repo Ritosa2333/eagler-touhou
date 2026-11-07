@@ -21,6 +21,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
     text=replaceOnce(text,'function buttons(){','function nativeButtons(){','native input sampling');
     text=replaceOnce(text,'if(configuring){last=now;','managedMenuInput();if(configuring){last=now;','managed menu input');
     text=replaceOnce(text,'drawMs+=performance.now()-start;++draws;','drawMs+=performance.now()-start;++draws;++managedFrames;','render health');
+    text=replaceOnce(text,"if(!event.repeat&&(event.code==='KeyZ'||event.code==='Enter')&&(paused||core?.th_get(0,0)===2)){","if(!event.repeat&&(event.code==='KeyZ'||event.code==='Enter')&&core?.th_get(0,0)===2&&!managedResultReady()){event.preventDefault();return;}\n  if(!event.repeat&&(event.code==='KeyZ'||event.code==='Enter')&&(paused||core?.th_get(0,0)===2)){",'protect result presentation');
     text=replaceOnce(text,"window.addEventListener('blur',()=>{if(core&&started&&!configuring)setPaused(true);});","window.addEventListener('blur',release);",'hosted focus release');
     text=replaceOnce(text,'else if(action===3||action===4){paused=true;stopEffects();release();}',"else if(action===3||action===4){paused=true;stopEffects();release();if(action===3){nativeRecorder?.finish('退出');nativeRecording=null;nativeReplayFinished=true;core.th_menu_open(1,$('compensation').checked?1:0);}}",'managed return to title');
     text=text.replace("const dialog=$('solo-replay-dialog');\n  if(dialog){","const dialog=null;\n  if(dialog){");
@@ -30,7 +31,7 @@ export async function adaptRuntime({patch,replaceOnce,output,port,web,runtime,re
   await patch('netplay/session.js',text=>{
     text=replaceOnce(text,"import {createRelay} from './relay.js';","import {createManagedTransport} from '../managed-transport.mjs';\nconst createRelay=(_identity,_generation,roles,fail)=>createManagedTransport(globalThis.__eaglerPC98Options(),roles,fail);",'main transport');
     text=replaceOnce(text,"if(this.identity.role==='host')this.recorder.connectNetwork",'if(false)this.recorder.connectNetwork','standalone replay service');
-    text=replaceOnce(text,"if(this.sawGameplay&&nativeState?.menu===1){this.fail(Error('已返回标题，本局结束。'),false);return;}","if(this.sawGameplay&&nativeState?.menu===1){void globalThis.__eaglerPC98RoomEnd();return;}",'confirmed native room exit');
+    text=replaceOnce(text,"if(this.sawGameplay&&nativeState?.menu===1&&this.queue.frame<=this.queue.confirmed){this.fail(Error('已返回标题，本局结束。'),false);return;}","if(this.sawGameplay&&nativeState?.menu===1&&this.queue.frame<=this.queue.confirmed){void globalThis.__eaglerPC98RoomEnd();return;}",'confirmed native room exit');
     return text;
   });
   await writeFile(resolve(output,'netplay/app.js'),`import {NetSession} from './session.js';

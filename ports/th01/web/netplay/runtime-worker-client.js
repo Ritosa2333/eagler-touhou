@@ -8,7 +8,7 @@ export const supportsSimulationWorker=()=>typeof Worker==='function'&&typeof Off
 export class WorkerGameRuntime extends GameRuntime{
   constructor(...args){
     super(...args);this.asyncExecution=true;this.serial=0;this.requests=new Map();this.urls=[];this.cache=null;this.simulationBackend='worker';
-    this.performance={commands:0,roundTripMs:0,executionMs:0};this.audioState={end:0,start:0,cue:2,events:[]};
+    this.performance={commands:0,roundTripMs:0,executionMs:0};this.pendingEffects=new Map();this.audioState={end:0,start:0,cue:2,events:[]};
     this.audioCore={th_get:n=>n===11?this.audioState.end:n===79?this.audioState.cue:0,th_sound_event:i=>this.audioState.events[i-this.audioState.start]||0};
   }
   async load(settings,progress=()=>{}){
@@ -60,11 +60,23 @@ export class WorkerGameRuntime extends GameRuntime{
     if(pending.type!=='init'){this.performance.commands++;this.performance.roundTripMs+=performance.now()-pending.started;this.performance.executionMs+=data.executionMs;}
     pending.resolve(data.result);
   }
-  apply(result){
-    this.cache=result;this.frame=result.frame;this.audioState=result.audio;this.audio.update(this.audioCore);
-    if(result.scores&&!stageSelection(this.settings.startStage).practice)try{localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...result.scores)));}catch{this.scoreSaveError=true;}
+  apply(result,confirmed=true){
+    this.cache=result;this.frame=result.frame;
+    if(confirmed){this.audioState=result.audio;this.audio.update(this.audioCore);}else this.pendingEffects.set(result.frame-1,result);
+    if(confirmed)this.persistScores(result);
   }
-  async execute(inputs,frame){const result=await this.call('execute',{inputs,frame});if(!this.stopped)this.apply(result);return result;}
+  async execute(inputs,frame,capture=false){const result=await this.call('execute',{inputs,frame,capture});if(!this.stopped)this.apply(result,false);return result;}
+  async restore(frame){
+    if(this.presentRequest!==null)cancelAnimationFrame(this.presentRequest);this.presentRequest=null;
+    if(this.queuedFrame){this.releaseFrame(this.queuedFrame);this.queuedFrame=null;}
+    for(const at of this.pendingEffects.keys())if(at>=frame)this.pendingEffects.delete(at);
+    const result=await this.call('restore',{frame});if(!this.stopped){this.cache=result;this.frame=result.frame;}return result;
+  }
+  persistScores(result){if(result.scores&&!stageSelection(this.settings.startStage).practice)try{localStorage.setItem('th01-native-net-scores-v1',btoa(String.fromCharCode(...result.scores)));}catch{this.scoreSaveError=true;}}
+  confirm(prefix){
+    for(const [at,result] of this.pendingEffects)if(at<prefix){this.audioState=result.audio;this.audio.update(this.audioCore);this.persistScores(result);this.pendingEffects.delete(at);}
+    this.call('confirm',{prefix}).catch(error=>{if(!this.stopped)this.failWorker(error);});
+  }
   state(){return this.cache?.state??null;}
   checksum(){return this.cache?.checksum;}
   replayProof(){return JSON.stringify(this.checksum());}

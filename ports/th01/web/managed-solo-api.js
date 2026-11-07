@@ -1,11 +1,14 @@
-let managedFrames=0,managedPrevious=0,managedEnded=false;
+let managedFrames=0,managedPrevious=0,managedEnded=false,managedResultSince=null;
+function managedResultReady(){return managedResultSince!==null&&performance.now()-managedResultSince>=450;}
 function nativeSample(menu){return globalThis.__eaglerPC98Input.nativeSample?.({menu})??globalThis.__eaglerPC98Input.sample();}
 function buttons(){return [globalThis.__eaglerPC98Input.localSample(),0,0];}
 function managedMenuInput(){
  if(!started||configuring||managedEnded)return;
- const bits=nativeSample(!!core.th_get(50,0)),edge=bits&~managedPrevious;managedPrevious=bits;
+ const menu=core.th_get(50,0),phase=core.th_get(0,0);
+ if(phase===2&&!menu){managedResultSince??=performance.now();}else managedResultSince=null;
+ const bits=nativeSample(!!menu),edge=bits&~managedPrevious;managedPrevious=bits;
  if(core.th_get(50,0)){const key=edge&16?0:edge&32?1:edge&1?2:edge&2?3:edge&64?(core.th_get(50,0)===12?6:4):edge&4?4:edge&(8|128)?5:-1;if(key>=0)menuInput(key);}
- else if(edge&128)setPaused(!paused);else if(edge&(4|64)&&core.th_get(0,0)>=2){core.th_continue();updatePhase();}
+ else if(edge&128)setPaused(!paused);else if(edge&(4|64)&&phase>=2&&(phase!==2||managedResultReady())){core.th_continue();updatePhase();}
 }
 async function managedExit(){if(managedEnded)return;managedEnded=true;nativeRecorder?.finish('退出');managedAPI.stop();globalThis.__eaglerPC98Emit({event:'exit',code:0});}
 export const managedAPI={

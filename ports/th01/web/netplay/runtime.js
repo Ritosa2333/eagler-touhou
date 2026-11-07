@@ -9,7 +9,7 @@ import {assetBytes,freshJSON} from '../preload-cache.js';
 // Only this adapter knows about the native C++ core; it never runs its own clock.
 export class GameRuntime{
   constructor(canvas,hostSlot,localSlot=-1){
-    this.canvas=canvas;this.hostSlot=hostSlot;this.localSlot=localSlot;this.frame=0;this.previous=[];
+    this.canvas=canvas;this.hostSlot=hostSlot;this.localSlot=localSlot;this.frame=0;this.previous=[];this.resultFrames=0;
     this.context=canvas?.getContext('2d',{alpha:false});
     this.image=null;this.presentRequest=null;this.renderCost=0;this.displayFrames=0;
     this.renderBackend='main';this.renderBusy=false;this.mainRenderCost=0;

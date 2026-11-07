@@ -14,7 +14,7 @@ const wait=async(check,label,ms=90000)=>{const end=Date.now()+ms;while(Date.now(
 const html=`<!doctype html><style>body{margin:0;background:#111}iframe{width:640px;height:480px;border:0}</style><script>
 window.events=[];window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});
 addEventListener('message',e=>{if(e.data?.protocol==='eagler-touhou/1')events.push(e.data);});
-window.addRuntime=(seat,mp)=>{const f=document.createElement('iframe');f.id='p'+seat;f.src='/runtime/th01.html?runtimeEpoch='+(seat+1)+(mp?'&runtimeVariant=multiplayer':'');document.body.append(f);};
+window.addRuntime=(seat,mp)=>{const f=document.createElement('iframe');f.id='p'+seat;f.src='/runtime/th01.html?runtimeEpoch='+(seat+1)+(mp?'&runtimeVariant=multiplayer':'')+(window.forceNoWorker?'&netWorker=0':'');document.body.append(f);};
 window.rpc=(seat,command,fields={})=>new Promise((yes,no)=>{const f=document.getElementById('p'+seat),request=crypto.randomUUID(),timer=setTimeout(()=>{cleanup();no(Error(command+' timeout'));},120000);function cleanup(){clearTimeout(timer);removeEventListener('message',recv);}function recv(e){if(e.source===f.contentWindow&&e.data?.request===request){cleanup();e.data.ok?yes(e.data):no(Error(e.data.error));}}addEventListener('message',recv);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th01',epoch:seat+1,request,command,...fields},location.origin);});</script>`;
 const server=createServer(async(req,res)=>{try{
   const path=new URL(req.url,'http://localhost').pathname;
@@ -41,7 +41,7 @@ try{
   page.on('console',m=>{if(m.type()==='error')console.error('CONSOLE',m.text());});
   const load=async(count,mp)=>{
     await page.goto('http://127.0.0.1:'+server.address().port);
-    await page.evaluate(({count,mp})=>{for(let i=0;i<count;i++)addRuntime(i,mp);},{count,mp});
+    await page.evaluate(({count,mp,noWorker})=>{window.forceNoWorker=noWorker;for(let i=0;i<count;i++)addRuntime(i,mp);},{count,mp,noWorker:process.env.PC98_TEST_NO_WORKER==='1'});
     await wait(async()=>{const result=await page.evaluate(count=>({ready:events.filter(e=>e.event==='ready').length===count,errors:events.filter(e=>e.event==='error')}),count);if(result.errors.length)throw Error(JSON.stringify(result.errors));return result.ready;},'Runtime ready');
   };
   if(!process.argv.includes('--net-only')){
@@ -95,11 +95,37 @@ try{
       });
       assert.equal(audio.version,index===0?'new':'old','music choice is local to each player');if(index===0)assert(audio.duration>1,'album track decodes');
     }
+    if(process.env.PC98_TEST_LAG==='1'){
+      await frames()[1].evaluate(()=>{const peer=window.th01Net.session.peers.get('host'),send=peer.channel.send.bind(peer.channel),end=performance.now()+4000;
+        peer.channel.send=text=>{const data=JSON.parse(text);if(data.type==='input'&&performance.now()<end)setTimeout(()=>send(text),70);else send(text);};});
+    }
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard',{code:s%2?'ArrowLeft':'ArrowRight',down:true});},count);
+    if(process.env.PC98_TEST_LAG==='1')for(let i=0;i<8;i++){
+      await new Promise(resolve=>setTimeout(resolve,130));
+      await page.evaluate(async i=>{await rpc(1,'keyboard-clear');await rpc(1,'keyboard',{code:i%2?'ArrowLeft':'ArrowRight',down:true});},i);
+    }
     const before=(await health())[0].confirmed;
     await wait(async()=>(await health()).every(s=>s.confirmed>=before+360),'moving players remain synchronized',30000);
     await page.evaluate(async count=>{for(let s=0;s<count;s++)await rpc(s,'keyboard-clear');},count);
-    const states=await health();await page.screenshot({path:resolve(out,'multiplayer.png')});
+    const states=await health();
+    for(const frame of frames())assert.equal(await frame.evaluate(()=>window.th01Net.session.recorder.error),'','confirmed replay must remain valid during rollback');
+    if(process.env.PC98_TEST_LAG==='1'){
+      const checked=await frames()[0].evaluate(async()=>{
+        const tape=window.th01Net.session.recorder.snapshot(),{NativeSimulation}=await import('./netplay/runtime-core.js');
+        const core=(await WebAssembly.instantiateStreaming(fetch('./game.wasm'),{})).instance.exports;core.th_score_data();
+        const simulation=new NativeSimulation(core,tape.header.settings,tape.header.hostSlot);simulation.reset();
+        for(const [frame,row] of tape.rows.entries()){
+          simulation.step(row.inputs);
+          if(JSON.stringify(simulation.checksum())!==row.proof)throw Error('confirmed replay mismatch at '+frame);
+        }
+        return tape.rows.length;
+      });
+      assert(checked>120,'replay verification covers confirmed gameplay');
+      console.log('MP confirmed replay verified',checked);
+    }
+
+    if(process.env.PC98_TEST_LAG==='1')assert(states.some(s=>s.rollbackCount>0&&s.replayedFrames>0),'late inputs must trigger actual repair');
+    await page.screenshot({path:resolve(out,'multiplayer.png')});
     const route=process.env.PC98_TEST_RELAY==='1'?'relay':'rtc';
     assert(log.includes('mode='+route),'must exercise the requested '+route+' route: '+log);
     assert.equal((await page.evaluate(()=>events.filter(e=>e.event==='first-frame'))).length,count);results.push({players:count,states});console.log('MP confirmed gameplay',JSON.stringify(states));
