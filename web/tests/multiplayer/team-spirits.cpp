@@ -413,7 +413,9 @@ void borrowed_animation_graph(){
     const auto handle=registry.submit(*child);
     require(registry.attach(*child,root),"attach borrowed root");
     child->creation_parent=&root;
+    multiplayer::FrameImage::BufferPool buffers;
     multiplayer::FrameImage image;
+    image.use_buffer_pool(buffers);
     require(registry.save_rollback(image),"capture borrowed root");
     require(registry.preserve_embedded_children(root),"detach a curved laser root");
     auto* replacement=registry.allocate();
@@ -424,6 +426,14 @@ void borrowed_animation_graph(){
     const auto children=registry.children(root);
     require(children.size()==1&&children[0]==child&&child->creation_parent==&root,"restore borrowed child relationship");
     require(registry.submit(*registry.allocate())==next_handle,"restore slot and generation allocation order");
+    multiplayer::FrameImage overlapping;
+    overlapping.use_buffer_pool(buffers);
+    require(registry.save_rollback(overlapping),"capture an adjacent animation frame");
+    image.clear();
+    require(registry.discard(*registry.find(next_handle))&&registry.save_rollback(image),"reuse cleared animation capture storage");
+    require(overlapping.restore()&&registry.find(next_handle)!=nullptr,"adjacent capture survives buffer reuse");
+    require(image.restore()&&registry.find(next_handle)==nullptr&&registry.find(handle)==child,
+            "reused capture has the current handles and borrowed graph");
 }
 
 void animation_curve_rollback(){
@@ -620,7 +630,9 @@ void immutable_bullet_program(){
     const auto a=bullets.first_active(),b=bullets.next_active(a);
     const auto pristine=bullets.first_free();
     bullets.recycle(a);bullets.recycle(b);
+    multiplayer::FrameImage::BufferPool buffers;
     multiplayer::FrameImage free_image;
+    free_image.use_buffer_pool(buffers);
     bullets.save_rollback(free_image);
     shot.count=3;
     require(bullets.emit(shot,0),"reuse two bullets and claim a pristine slot");
@@ -633,10 +645,17 @@ void immutable_bullet_program(){
             bullets.next_active(pristine)==a&&bullets.next_active(a)==b,
             "replay preserves exact bullet allocation order");
     multiplayer::FrameImage later;
+    later.use_buffer_pool(buffers);
     bullets.save_rollback(later);
     require(free_image.restore()&&!bullets.active(pristine),"older image restores the pristine suffix");
     require(later.restore()&&bullets.active(pristine)&&bullets.first_free()==pristine-1,
             "newer image restores a slot that the older image returned to the suffix");
+    free_image.clear();
+    bullets.recycle(pristine);
+    bullets.save_rollback(free_image);
+    require(later.restore()&&bullets.active(pristine),"adjacent bullet capture survives buffer reuse");
+    require(free_image.restore()&&!bullets.active(pristine)&&bullets.first_free()==pristine,
+            "reused bullet capture restores the latest free-list head");
 }
 
 void logical_animation_draw(){

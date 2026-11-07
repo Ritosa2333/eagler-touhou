@@ -13,11 +13,23 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
         Active(u16 i,const BulletState& value):index(i),state(value){}
     };
     struct Inactive {u16 index;std::shared_ptr<const BulletState> state;};
-    std::vector<Active> active;
-    std::vector<Inactive> inactive;
+    struct Snapshot {
+        std::vector<Active> active;
+        std::vector<Inactive> inactive;
+        void reset(){
+            if(active.capacity()*sizeof(Active)+inactive.capacity()*sizeof(Inactive)>256*1024){
+                *this=Snapshot{};
+                return;
+            }
+            active.clear();inactive.clear();
+        }
+    };
+    auto& snapshot=image.reuse<Snapshot>();
+    auto& active=snapshot.active;
+    auto& inactive=snapshot.inactive;
     size_t active_count=0;
     for(u32 word:occupied)active_count+=__builtin_popcount(word);
-    active.reserve(active_count);
+    active.reserve((active_count+31)/32*32);
     for(u32 index=active_head;index!=none;index=slots[index].active_next)
         active.emplace_back(u16(index),slots[index].state);
     // Allocation removes the head and recycling prepends a used slot. The
@@ -37,7 +49,7 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
 #if TH17_ROOM_BENCHMARK
     image.payload[image.BulletState]=u32(active.capacity()*sizeof(Active)+inactive.capacity()*sizeof(Inactive));
 #endif
-    image.restore_with([this,active=std::move(active),inactive=std::move(inactive),pristine_head]{
+    image.restore_with([this,checkpoint=&snapshot,pristine_head]{
         // Collision hosts keep permanent references into the slot array.
         for(u32 index=pristine_head;index!=none&&!slots[index].pristine;--index){
             auto& slot=slots[index];
@@ -46,7 +58,7 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
             slot.state=pristine_state;slot.inactive_image.reset();slot.pristine=true;
         }
         u32 next=pristine_head;
-        for(auto cached=inactive.rbegin();cached!=inactive.rend();++cached){
+        for(auto cached=checkpoint->inactive.rbegin();cached!=checkpoint->inactive.rend();++cached){
             auto& slot=slots[cached->index];
             slot.active=false;slot.active_next=slot.active_previous=none;
             slot.free_next=next;
@@ -55,7 +67,7 @@ void BulletManager::save_rollback(multiplayer::FrameImage& image){
             slot.inactive_image=cached->state;slot.pristine=false;
         }
         u32 previous=none;
-        for(const auto& entry:active){
+        for(const auto& entry:checkpoint->active){
             auto& slot=slots[entry.index];
             slot.state=entry.state;slot.inactive_image.reset();slot.pristine=false;
             slot.active=true;slot.free_next=slot.active_next=none;slot.active_previous=previous;
