@@ -14,6 +14,12 @@ const throughStageThree=process.argv.includes('--through-stage-three');
 const throughStageTwo=throughStageThree||process.argv.includes('--through-stage-two');
 const fixtureStage=Number(process.env.TH17_ROOM_STORY_STAGE||0);
 assert.ok(Number.isInteger(fixtureStage)&&fixtureStage>=0&&fixtureStage<=6);
+const storyBulletFloor=Number(process.env.TH17_ROOM_STORY_BULLET_FLOOR||0);
+const storyBulletFrames=Number(process.env.TH17_ROOM_STORY_BULLET_FRAMES||0);
+const storySpellFrames=Number(process.env.TH17_ROOM_STORY_SPELL_FRAMES||0);
+assert.ok([storyBulletFloor,storyBulletFrames,storySpellFrames].every(value=>Number.isInteger(value)&&value>=0));
+assert.ok(!storyBulletFrames||fixtureStage&&storyBulletFloor>0);
+assert.ok(!storySpellFrames||fixtureStage);
 const storyStage=throughStageThree?3:2;
 const storySamples=throughStageThree?1800:240;
 const extraFinale=process.argv.includes('--extra-finale');
@@ -306,7 +312,7 @@ try{
     },1000/120);
    },{seat:touchSeat,touchWindow,touchComparison,stagger:touchSeats.length>1?1:0});
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,storyBulletFloor,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay})=>{
      const callback=Module.onGameFrame;
      if(traceGaps&&!Module._th17_room_wait_state)throw Error('Gap trace requires a runtime with room wait state');
      globalThis.stopRoomMeasurement=()=>{Module.onGameFrame=callback;};
@@ -399,6 +405,7 @@ try{
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
       const phase=Module._th17_phase();
       const waitState=traceGaps||touchDrag?Module._th17_room_wait_state?.()??0:0;
+      const phasePointer=tracePhases?Module._th17_room_phase_costs(1)>>>2:0;
       const touchPhase=n<touchWindow.keyboard?'stationary':n<touchWindow.start?'keyboard':
        n<touchWindow.end?'dragging':'released';
       const stage=samples.get(recorded)?.[3];
@@ -446,7 +453,6 @@ try{
        diagnostics.actualPresentations=(diagnostics.actualPresentations||0)+presented;
        if(traceGaps&&diagnostics.lastPresent){
         pendingCallbackMs+=time;
-        const phasePointer=tracePhases?Module._th17_room_phase_costs(1)>>>2:0;
         const timing={
          frame:n,confirmed:committed,offsetMs:now-diagnostics.lastPresent,callbackMs:time,ticks,presented,
          repair:resimulated-diagnostics.resimulated,waitState,
@@ -464,7 +470,7 @@ try{
           if(!touchPresentIntervals.has(touchPhase))touchPresentIntervals.set(touchPhase,[]);
           touchPresentIntervals.get(touchPhase).push(gap);
          }
-         if(bullets>=256&&phase===1)densePresentIntervals.push(gap);
+         if(bullets>=(storyBulletFloor||256)&&phase===1)densePresentIntervals.push(gap);
          const state=storyTiming&&samples.get(recorded);
          if(storyTiming&&(gap>=50||(traceGaps&&gap>25)))longPresentations.push({frame:n,confirmed:recorded,
           stage:state?.[3],stageClock:state?.[4],gap,callbackMs:time,
@@ -488,6 +494,10 @@ try{
        const confirmed=samples.get(recorded);
        bullets=confirmed?.[10]??bullets;
        const entry={time,repair:resimulated>diagnostics.resimulated,bullets};
+       if(storyBulletFloor&&bullets>=storyBulletFloor&&phasePointer){
+        entry.updateMs=Module.HEAPU32[phasePointer+7]/1000;
+        entry.drawMs=Module.HEAPU32[phasePointer+8]/1000;
+       }
        if(extraBoss){
         entry.costs=costs;
         entry.frame=n;
@@ -521,6 +531,10 @@ try{
        if(words[0]===number&&number>120&&words[3]){
         samples.set(number,words);
         if(words[3]===storyStage)diagnostics.storyFrames=(diagnostics.storyFrames||0)+1;
+        if(fixtureStage===words[3]){
+         if(storyBulletFloor&&words[10]>=storyBulletFloor)diagnostics.storyBulletFrames=(diagnostics.storyBulletFrames||0)+1;
+         if(words[30]&1)diagnostics.storySpellFrames=(diagnostics.storySpellFrames||0)+1;
+        }
         if(extraFinale){
          if((words[30]&1)&&words[39]===100){
           diagnostics.finalFirst??=number;
@@ -550,7 +564,7 @@ try{
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
+    },{seat,rollback,extended,throughStageTwo,storyStage,fixtureStage,storyBulletFloor,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
@@ -570,7 +584,8 @@ try{
     if(throughStageTwo&&status.every(item=>item.diagnostics.phase===2))
      throw Error('The fixture reached the pause or game-over menu before the story sample was complete');
     if(throughStageTwo)return status.every(item=>item.diagnostics.storyFrames>=storySamples);
-    if(fixtureStage)return status.every(item=>item.samples>=minimumSamples);
+    if(fixtureStage)return status.every(({samples,diagnostics})=>samples>=minimumSamples&&
+     (diagnostics.storyBulletFrames||0)>=storyBulletFrames&&(diagnostics.storySpellFrames||0)>=storySpellFrames);
     if(extraFinale&&status.every(item=>item.diagnostics.finalFinished)){
      cutoff=Math.min(...status.map(item=>item.diagnostics.finalFinished));
      return true;
@@ -600,7 +615,7 @@ try{
     assert.deepEqual(initial.slice(24,24+seats),Array(seats).fill(difficulty===4?400:100),'all pilots start with the stage power');
    const initialLives=Array.from({length:seats},(_,seat)=>initial[14+seat*4]);
    if(verifyTransfer)assert.deepEqual(initialLives,seats===2?[1,3]:[1,3,2],'one life goes to P2 without changing P3');
-   const diagnostics=await Promise.all(frames.map(frame=>frame.evaluate(({extraBoss,traceGaps})=>{
+   const diagnostics=await Promise.all(frames.map(frame=>frame.evaluate(({extraBoss,traceGaps,storyBulletFloor})=>{
     const summarize=values=>{
      values.sort((a,b)=>a-b);
      return {count:values.length,p50:values[Math.floor(values.length*.5)],p95:values[Math.floor(values.length*.95)],max:values.at(-1)};
@@ -666,12 +681,16 @@ try{
      }])),
      densePresentIntervals:{...summarize(densePresentIntervals),fps:densePresentIntervals.length?
       densePresentIntervals.length*1000/densePresentIntervals.reduce((a,b)=>a+b):null},
+     ...(storyBulletFloor?{denseStoryPhases:{
+      updateMs:summarize(frameCosts.filter(entry=>entry.updateMs!==undefined).map(entry=>entry.updateMs)),
+      drawMs:summarize(frameCosts.filter(entry=>entry.drawMs!==undefined).map(entry=>entry.drawMs)),
+     }}:{}),
      delayedPackets:globalThis.delayedPackets,
      updates:summarize(frameCosts.filter(entry=>!entry.repair).map(entry=>entry.time)),
      repairs:summarize(frameCosts.filter(entry=>entry.repair).map(entry=>entry.time)),
-     denseUpdates:summarize(frameCosts.filter(entry=>!entry.repair&&entry.bullets>=256).map(entry=>entry.time)),
-     denseRepairs:summarize(frameCosts.filter(entry=>entry.repair&&entry.bullets>=256).map(entry=>entry.time))};
-   },{extraBoss,traceGaps})));
+     denseUpdates:summarize(frameCosts.filter(entry=>!entry.repair&&entry.bullets>=(storyBulletFloor||256)).map(entry=>entry.time)),
+     denseRepairs:summarize(frameCosts.filter(entry=>entry.repair&&entry.bullets>=(storyBulletFloor||256)).map(entry=>entry.time))};
+   },{extraBoss,traceGaps,storyBulletFloor})));
    if(seatRenderScales||checkPresentation){
     for(const [seat,lane] of diagnostics.entries()){
      const scale=seatRenderScales?.[seat]??renderScale;
@@ -704,6 +723,18 @@ try{
    const bossNonspellFrames=agreed.filter(([,state])=>state[38]&&!(state[30]&1)&&!state[33]).length;
    const stageTwoFrames=agreed.filter(([,state])=>state[3]===2).length;
    const stageThreeFrames=agreed.filter(([,state])=>state[3]===3).length;
+   const keyboardMovement=fixtureStage?Array.from({length:seats},(_,seat)=>{
+    const x=12+seat*4,y=x+1;
+    let frames=0,denseFrames=0;
+    for(let i=1;i<agreed.length;i++){
+     const [number,state]=agreed[i], [prior,previous]=agreed[i-1];
+     if(number!==prior+1||state[3]!==fixtureStage||state[x]===previous[x]&&state[y]===previous[y])continue;
+     ++frames;
+     if(storyBulletFloor&&state[10]>=storyBulletFloor)++denseFrames;
+    }
+    return {frames,denseFrames};
+   }):undefined;
+   if(keyboardMovement)assert.ok(keyboardMovement.every(seat=>seat.frames>40),'both pilots move using keyboard input');
    let ghostRevival;
    if(verifyGhost){
     const ghosts=agreed.filter(([,state])=>state[3]===1&&(state[43]&4));
@@ -745,7 +776,7 @@ try{
     frames[seat].evaluate(()=>Array.from(touchInputs.keys())))):[];
    const otherTouches=touchFrames.slice(1).map(frames=>new Set(frames));
    const simultaneousTouchFrames=touchFrames[0]?.filter(frame=>otherTouches.every(touches=>touches.has(frame))).length;
-   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,stageThreeFrames,ghostRevival,denseWindows,
+   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,stageThreeFrames,keyboardMovement,ghostRevival,denseWindows,
     ...(movingSeats.length===1?{touchEvents:movingSeats[0].touchEvents,touchDelivery:movingSeats[0].touchDelivery}:{}),
     ...(movingSeats.length>1?{movingSeats,simultaneousTouchFrames}:{}),
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
@@ -845,6 +876,7 @@ try{
  await browser?.close();for(const socket of sockets)socket.close();relay.kill();server.closeAllConnections();server.close();
  await writeFile(resolve(out,'room-report.json'),JSON.stringify({rollback,extended,difficulty,version:manifest.version,wasm:manifest.execution.sha256,
   throughStageTwo,throughStageThree,fixtureStage,denseExtra,extraBoss,extraFinale,independent,
+  ...(fixtureStage?{storyBulletFloor,storyBulletFrames,storySpellFrames}:{}),
   ...(seatRenderScales?{seatRenderScales}:{renderScale}),music,cpuProfile,traceGaps,
   ...(tracePhases?{phaseOrder:['input','capture','restore','confirm','canvas','pcm','imageRelease','update','draw','flow']}:{}),
   glTrace,touchDrag,touchComparison,touchSeat,touchSeats,observeDisplay,throttleSeat,symmetricDelay,
