@@ -172,7 +172,7 @@ async function start({language,music,options}){
 export const managedAPI={
   start,
   health(){if(battleReplay)return battleReplay.health();if(viewerSettings&&!emulator)return {frames:1,audio:{state:'running'}};return {gameFrame:emulator?.snapshot?.state?.ticks,frames:emulator?.module.frameUploads??0,audio:{state:emulator?.context?.state,music:soloMusic?.player.active?.id??null,musicStatus:soloMusic?.player.status??null,
-    effectsPlayed:localSfx?.played??0,effectsPeak:localSfx?.peak??0,queuedMs:Math.max(0,((emulator?.audioEnd??0)-(emulator?.context?.currentTime??0))*1000)}};},
+    musicState:soloMusic?.context?.state,effectsState:localSfx?.context?.state,effectsPlayed:localSfx?.played??0,effectsPeak:localSfx?.peak??0,queuedMs:Math.max(0,((emulator?.audioEnd??0)-(emulator?.context?.currentTime??0))*1000)}};},
   async files(message){
     const store=globalThis.__eaglerPC98Files;
     if(message.command==='sync'){await syncFiles();return {};}
@@ -202,7 +202,12 @@ export const managedAPI={
       return {};
     }
     if(battleReplay){battleReplay.control(message.action,message.value);return {};}
-    if(emulator&&['pause','play'].includes(message.action)){emulator.pauseReplay(message.action==='pause');return {};}
+    if(emulator&&['pause','play'].includes(message.action)){
+      const paused=message.action==='pause';emulator.pauseReplay(paused);
+      if(paused){soloMusic?.suspend();await localSfx?.context.suspend();}
+      else if(!guestPaused){soloMusic?.resume();await localSfx?.resume();}
+      return {};
+    }
     throw Error('录像操作无效');
   },
   stop(){cancelAnimationFrame(loop);releaseInput();previous=0;lastVersus=false;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);window.removeEventListener('blur',releaseInput);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;

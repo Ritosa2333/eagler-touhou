@@ -8,7 +8,7 @@ import {sceneKey,sceneLabel} from './scenes.js';
 const $=id=>document.getElementById(id),ctx=$('canvas').getContext('2d',{alpha:false});
 let header=null,rows=[],end=null,replica=null,paused=false,target=null,epoch=0,channel=null,poll=null,available=0,loading=false,failed=false,latest=false;
 const viewer=randomId();let expectedHeader='',lastReply=performance.now(),receivedBytes=0;
-let audio,soundEnabled=false;
+let audio,soundEnabled=true;
 let points=[],bootAbort,network,joinStarted=false,sceneIndex='',playbackStart=0;
 function status(text){$('status').textContent=text;}
 function update(){const frame=replica?.frame||0;$('seek').max=rows.length;$('seek').value=frame;$('frame').max=rows.length;$('position').textContent=`${frame} / ${rows.length}${end?' · 片段结束':''}`;$('pause').textContent=paused?'继续':'暂停';
@@ -21,8 +21,8 @@ function update(){const frame=replica?.frame||0;$('seek').max=rows.length;$('see
 function cancel(){epoch++;bootAbort?.abort();replica?.stop();replica=null;loading=false;audio?.stop();audio=null;}
 function fail(e){failed=true;cancel();clearInterval(poll);channel?.close();network?.stop();status(String(e.message||e));}
 function resetAudio(token){
-  audio?.stop();audio=createReplayAudio(GAME,e=>{if(token===epoch)$('sound').textContent='声音读取失败，可重新打开录像';});
-  if(soundEnabled)void audio.enable();
+  audio?.stop();audio=createReplayAudio(GAME,e=>{if(token===epoch)$('sound').textContent='声音读取失败，可重新打开录像';},{language:header?.settings?.language});
+  if(soundEnabled)void audio.enable().then(()=>{if(token===epoch&&audio?.info().ready)$('sound').textContent='声音已启用';});
 }
 async function boot(token){
   loading=true;status('正在启动独立回放实例…');
@@ -68,7 +68,7 @@ $('live').onclick=()=>seekTo(rows.length);
 $('cancel').onclick=pausePosition;
 $('stop').onclick=()=>{cancel();clearInterval(poll);channel?.close();network?.stop();failed=true;status('观战已停止，刷新页面可重新连接。');};
 addEventListener('keydown',event=>{if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(event.target.tagName))return;if(event.code==='Space'||event.code==='Escape'){event.preventDefault();$('pause').click();}});
-$('sound').onclick=async()=>{soundEnabled=true;await audio?.enable();$('sound').textContent='声音已启用';audio?.mode(paused||target!==null||loading);};
+$('sound').onclick=async()=>{soundEnabled=true;await audio?.enable();if(audio?.info().ready)$('sound').textContent='声音已启用';audio?.mode(paused||target!==null||loading);};
 const watch=new URLSearchParams(location.search).get('watch');
 const remote=new URLSearchParams(location.search).get('remote');
 function receiveSlice(data){

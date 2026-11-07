@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {resolve,extname,sep} from 'node:path';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
-const repo=resolve(import.meta.dirname,'../../..'),downloads=await mkdtemp(resolve(tmpdir(),'th03-replay-test-'));const discard=process.env.TH03_TEST_DISCARD==='1';
+const repo=resolve(import.meta.dirname,'../../..'),downloads=await mkdtemp(resolve(tmpdir(),'th03-replay-test-'));const discard=process.env.TH03_TEST_DISCARD==='1',testAudio=process.env.TH03_TEST_REPLAY_AUDIO==='1';
 for(const game of ['th03']){
   const root=resolve(repo,'ports',game,'build-eagler'),data=await readFile(resolve(repo,'ports',game,'content',`${game}.data`));
   const html=`<!doctype html><style>html,body,iframe{border:0;margin:0;width:100%;height:100%;background:#000}</style><iframe src="/runtime/${game}.html?hosted=1&managedData=1&runtimeEpoch=1"></iframe><script>
@@ -23,12 +23,15 @@ for(const game of ['th03']){
   await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
   try{
     browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
-    const page=await browser.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.setViewport({width:1000,height:700});await page.goto('http://127.0.0.1:'+server.address().port);
+    const page=await browser.newPage(),errors=[];
+    if(testAudio)await page.evaluateOnNewDocument(()=>{const connect=AudioNode.prototype.connect;AudioNode.prototype.connect=function(destination,...args){if(destination instanceof AudioDestinationNode&&this instanceof GainNode){const analyser=this.context.createAnalyser();analyser.fftSize=1024;connect.call(this,analyser);connect.call(analyser,destination);(globalThis.__testReplayAnalysers??=[]).push(analyser);return destination;}return connect.call(this,destination,...args);};});
+    page.on('pageerror',error=>errors.push(error.message));await page.setViewport({width:1000,height:700});await page.goto('http://127.0.0.1:'+server.address().port);
     await page.waitForFunction(()=>events.some(e=>['ready','error'].includes(e.event)),{timeout:120000});assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
-    await page.evaluate(({language,focus,point})=>rpc('configure',{music:'none',language,options:{touchEnabled:false,th03FocusEnabled:focus,alwaysHitbox:point},resources:[],runtimeResources:[],sharedResources:[]}),{language:'ja',focus:process.env.PC98_TEST_SOLO_FOCUS!=='0',point:process.env.PC98_TEST_SOLO_POINT==='1'});await page.evaluate(()=>rpc('launch',{launchSerial:1}));
+    await page.evaluate(({language,focus,point,music})=>rpc('configure',{music,language,options:{touchEnabled:false,th03FocusEnabled:focus,alwaysHitbox:point},resources:[],runtimeResources:[],sharedResources:[]}),{language:'ja',music:testAudio?'ogg':'none',focus:process.env.PC98_TEST_SOLO_FOCUS!=='0',point:process.env.PC98_TEST_SOLO_POINT==='1'});await page.evaluate(()=>rpc('launch',{launchSerial:1}));
     const frame=page.frames().find(f=>f.url().includes('runtimeEpoch=1'));await page.waitForFunction(()=>events.some(e=>e.event==='first-frame'),{timeout:120000});
     await new Promise(r=>setTimeout(r,4000));for(let i=0;i<30;i++){await frame.click('#canvas');await page.keyboard.press('KeyZ',{delay:140});await new Promise(r=>setTimeout(r,600));if(await frame.evaluate(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1))break;}
     await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testState()?.phase===1,{timeout:30000});
+    if(testAudio){await page.keyboard.down('KeyZ');await new Promise(r=>setTimeout(r,4000));await page.keyboard.up('KeyZ');}
     let dialogs=0;page.on('dialog',async d=>{dialogs++;await d.accept();});const client=await page.createCDPSession();await client.send('Page.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
     await frame.click('#canvas');await page.keyboard.press('Escape',{delay:100});
     await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testState()?.phase===2,{timeout:10000});
@@ -47,11 +50,25 @@ for(const game of ['th03']){
       assert(file,'Replay should be downloaded');const bytes=await readFile(resolve(downloads,file)),{decodeExternalReplay}=await import('../../../ports/th03/web/replay/external-codec.js');await decodeExternalReplay(new Blob([bytes]),'03');
       await page.evaluate(()=>rpc('network-cancel'));
       await page.evaluate(bytes=>rpc('write',{path:'replay/downloaded.th03r',bytes}),Array.from(bytes));
-      await page.evaluate(()=>rpc('configure',{music:'none',language:'ja',options:{replayViewer:true},resources:[],runtimeResources:[],sharedResources:[]}));
+      await page.evaluate(music=>rpc('configure',{music,language:'ja',options:{replayViewer:true},resources:[],runtimeResources:[],sharedResources:[]}),testAudio?'ogg':'none');
       await page.evaluate(()=>rpc('launch',{launchSerial:2}));
       const inspected=await page.evaluate(()=>rpc('playback',{action:'inspect',path:'replay/downloaded.th03r'}));assert.equal(inspected.description.stages.length,1);
       await page.evaluate(()=>rpc('playback',{action:'open',path:'replay/downloaded.th03r',stage:0}));
-      await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testPlaybackEnded(),{timeout:120000});
+      if(testAudio){
+        let musicPeak=0,effectsPeak=0,effectsPlayed=0,musicStarted=false,ended=false,pausedAudio=false;
+        for(let i=0;i<1200&&!ended;i++){
+          const result=await frame.evaluate(async()=>{const m=await import('./managed-solo.mjs'),h=m.managedAPI.health();let peak=0;for(const analyser of globalThis.__testReplayAnalysers||[]){if(analyser.context.state!=='running')continue;const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);for(const value of values)peak=Math.max(peak,Math.abs(value));}return {h,peak,ended:m.testPlaybackEnded()};});
+          musicPeak=Math.max(musicPeak,result.peak);effectsPeak=Math.max(effectsPeak,result.h.audio.effectsPeak||0);effectsPlayed=Math.max(effectsPlayed,result.h.audio.effectsPlayed||0);musicStarted||=!!result.h.audio.music&&result.h.audio.musicStatus?.startsWith('原版 FM');ended=result.ended;
+          if(!ended&&!pausedAudio&&musicStarted&&musicPeak>0.0001&&effectsPeak>0.0001){
+            await page.evaluate(()=>rpc('playback',{action:'pause'}));
+            await frame.waitForFunction(async()=>{const a=(await import('./managed-solo.mjs')).managedAPI.health().audio;return a.musicState==='suspended'&&a.effectsState==='suspended';},{timeout:10000});
+            await page.evaluate(()=>rpc('playback',{action:'play'}));
+            await frame.waitForFunction(async()=>{const a=(await import('./managed-solo.mjs')).managedAPI.health().audio;return a.musicState==='running'&&a.effectsState==='running';},{timeout:10000});pausedAudio=true;
+          }
+          if(!ended)await new Promise(r=>setTimeout(r,100));
+        }
+        assert(ended,'solo Replay must reach its end');assert(musicStarted&&musicPeak>0.0001,'solo Replay must output original FM music');assert(effectsPlayed>0&&effectsPeak>0.0001,'solo Replay must output original FM effects');assert(pausedAudio,'solo Replay audio should pause and resume');
+      }else await frame.waitForFunction(async()=>(await import('./managed-solo.mjs')).testPlaybackEnded(),{timeout:120000});
     }
     assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);assert.deepEqual(errors,[]);console.log('PASS',discard?'discard without replay':'native name entry and Replay download');
 

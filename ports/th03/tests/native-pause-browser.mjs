@@ -9,7 +9,7 @@ const require=createRequire(new URL('../../../launcher/package.json',import.meta
 const root=resolve(import.meta.dirname,'../../..'),portRoot=resolve(import.meta.dirname,'..'),runtime=resolve(portRoot,'build-eagler'),out=resolve(portRoot,'.cache/browser');
 await mkdir(out,{recursive:true});
 const data=await readFile(resolve(portRoot,'content/th03.data'));
-let browser,relay,page,log='';const sockets=[],errors=[],requests=[],failures=[],results=[];
+let browser,relay,page,log='',battleReplayBytes;const sockets=[],errors=[],requests=[],failures=[],results=[];
 const wait=async(check,label,ms=90000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw Error(label+' timeout events='+JSON.stringify(await page.evaluate(()=>events))+'\n'+log);};
 const html=`<!doctype html><style>body{margin:0;background:#111}iframe{width:640px;height:480px;border:0}</style><script>
 window.events=[];window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});
@@ -33,6 +33,13 @@ function connection(url){
 try{
   browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
   page=await browser.newPage();await page.setViewport({width:1920,height:500});
+  if(process.env.PC98_TEST_REPLAY_AUDIO==='1')await page.evaluateOnNewDocument(()=>{
+    const connect=AudioNode.prototype.connect;
+    AudioNode.prototype.connect=function(destination,...args){
+      if(destination instanceof AudioDestinationNode&&this instanceof GainNode){const analyser=this.context.createAnalyser();analyser.fftSize=1024;connect.call(this,analyser);connect.call(analyser,destination);(globalThis.__testReplayAnalysers??=[]).push(analyser);return destination;}
+      return connect.call(this,destination,...args);
+    };
+  });
   page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE',e.message);});
   page.on('request',r=>requests.push(r.url()));page.on('requestfailed',r=>failures.push({url:r.url(),error:r.failure()?.errorText}));
   page.on('response',r=>{if(r.status()>=400)failures.push({url:r.url(),status:r.status()});});
@@ -73,6 +80,9 @@ try{
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:false});});await new Promise(r=>setTimeout(r,500));
     }
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'battle phase',60000);
+    if(process.env.PC98_TEST_REPLAY_AUDIO==='1'){
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:true}));await new Promise(resolve=>setTimeout(resolve,5000));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:false}));
+    }
     await page.evaluate(()=>rpc(0,'keyboard',{code:'Space',down:true}));await new Promise(r=>setTimeout(r,1200));
     const focus=await Promise.all(frames().map(f=>f.evaluate(async()=>(await import('./managed-room.mjs')).managedAPI.health().players.find(p=>p.seat===0)?.focused)));
     assert(focus.every(x=>x===(process.env.PC98_TEST_DISABLE_FOCUS!=='1')),'room focus policy controls native player focus');
@@ -99,6 +109,10 @@ try{
     }
     await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>window.th03SyncState?.selecting)))).every(Boolean),'match returns to selection',60000);
     await wait(()=>page.evaluate(()=>events.filter(e=>e.th03Match).length===1),'confirmed match outcome',10000);
+    if(process.env.PC98_TEST_REPLAY_AUDIO==='1'){
+      await wait(()=>page.evaluate(()=>events.some(e=>e.th03Replay?.blob instanceof Blob)),'recorded match Replay',60000);
+      battleReplayBytes=await page.evaluate(async()=>Array.from(new Uint8Array(await events.find(e=>e.th03Replay?.blob instanceof Blob).th03Replay.blob.arrayBuffer())));
+    }
     assert.equal((await page.evaluate(()=>events.filter(e=>e.th03Match)))[0].th03Match.winner,roundDecides?1:0);
     const match=(await page.evaluate(()=>events.find(e=>e.th03Match))).th03Match;
     const score=await lobbies[0].send({type:'th09-match',serial:start.serial,...match},m=>m.room?.seats?.[match.winner]?.stats?.wins===1);
@@ -112,6 +126,29 @@ try{
     await page.evaluate(async count=>Promise.all(Array.from({length:count},(_,s)=>rpc(s,'network-cancel'))),count);
     await wait(()=>page.evaluate(count=>events.filter(e=>e.event==='exit'&&e.status==='success').length===count,count),'all runtime exits',15000);
     console.log('MP all runtime instances exited');
+    if(battleReplayBytes){
+      await page.evaluate(()=>addRuntime(2,false));await wait(()=>page.evaluate(()=>events.some(e=>e.event==='ready'&&e.epoch===3)),'Replay runtime ready');
+      await page.evaluate(bytes=>rpc(2,'write',{path:'replay/audio.th03r',bytes}),battleReplayBytes);
+      const viewer=()=>page.frames().find(f=>f.url().includes('runtimeEpoch=3'));
+      for(const music of ['ogg','none']){
+        await page.evaluate(music=>rpc(2,'configure',{music,language:'ja',options:{replayViewer:true,musicSource:'original'},resources:[],runtimeResources:[],sharedResources:[]}),music);
+        await page.evaluate(()=>rpc(2,'launch',{launchSerial:1}));await page.evaluate(()=>rpc(2,'playback',{action:'open',path:'replay/audio.th03r',stage:0}));
+        let musicPeak=0,effectsPeak=0,effectsPlayed=0,musicStarted=false,last;
+        await wait(async()=>{
+          const result=await viewer().evaluate(async()=>{const h=(await import('./managed-solo.mjs')).managedAPI.health();let peak=0;for(const analyser of globalThis.__testReplayAnalysers||[]){const values=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(values);for(const value of values)peak=Math.max(peak,Math.abs(value));}return {h,peak};});
+          last=result.h;musicPeak=Math.max(musicPeak,result.peak);effectsPeak=Math.max(effectsPeak,last.audio.effects?.peak||0);effectsPlayed=Math.max(effectsPlayed,last.audio.effects?.played||0);musicStarted||=!!last.audio.music&&last.audio.musicStatus?.startsWith('原版 FM');
+          const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'&&e.epoch===3));if(errors.length)throw Error(JSON.stringify(errors));
+          return effectsPlayed>0&&effectsPeak>0.0001&&(music==='none'||musicStarted&&musicPeak>0.0001);
+        },`Replay ${music} original audio`,90000);
+        if(music==='none')assert.equal(last.audio.music,null,'disabling music must keep effects without starting BGM');
+        if(music==='ogg'){
+          await page.evaluate(()=>rpc(2,'playback',{action:'pause'}));await wait(async()=>{const a=await viewer().evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().audio);return a.state==='suspended'&&a.effectsState==='suspended';},'Replay audio paused',10000);
+          await page.evaluate(()=>rpc(2,'playback',{action:'play'}));await wait(async()=>{const a=await viewer().evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.health().audio);return a.state==='running'&&a.effectsState==='running';},'Replay audio resumed',10000);
+        }
+        await page.evaluate(()=>rpc(2,'network-cancel'));
+      }
+      console.log('PASS Replay original FM music, effects, pause and muted-music mode');
+    }
   }
   assert.deepEqual(errors,[]);
   assert.deepEqual(failures.filter(f=>!f.url.endsWith('/favicon.ico')&&!f.error?.includes('ERR_ABORTED')),[],'runtime assets including music must load');
