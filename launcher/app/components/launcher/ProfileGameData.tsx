@@ -47,7 +47,7 @@ function ClearMatrix({data}: {data:ProfileStatistics}) {
   const plot=useRef<HTMLDivElement>(null),[tilted,setTilted]=useState(false);
   const games=useMemo(()=>Object.entries(PRODUCT_GAMES).filter(([game,definition])=>!('testOnly'in definition&&definition.testOnly)||data.games.some(item=>item.statistics.game===game)).map(([game])=>game as GameId),[data.games]);
   const statistics=data.games.find(item=>item.statistics.game===selected)?.statistics;
-  const active=statistics?.progress.filter(item=>!item.mode||item.mode===mode)??[];
+  const active=useMemo(()=>statistics?.progress.filter(item=>!item.mode||item.mode===mode)??[],[statistics,mode]);
   const rows=difficulties.filter(difficulty=>selected?active.some(item=>item.difficulty===difficulty):data.games.some(game=>game.statistics.progress.some(item=>item.difficulty===difficulty)));
   const transition={duration:systemReduced||lessMotion?0:0.18,ease:[0.2,0,0,1] as const};
   const statusLabel=(state:string)=>t(state==='one-credit'?'profile.clear.oneCredit':state==='cleared'?'profile.clear.cleared':state==='uncleared'?'profile.clear.uncleared':state==='unavailable'?'profile.clear.unavailable':'profile.clear.unread');
@@ -66,11 +66,11 @@ function ClearMatrix({data}: {data:ProfileStatistics}) {
     </motion.div>;
   };
   const groups=useMemo(()=>{
-    if(!selected||!statistics)return [];
     const map=new Map<number,Map<number|null,SaveProgress[]>>();
     for(const item of active){if(!map.has(item.character))map.set(item.character,new Map());const variants=map.get(item.character)!;if(!variants.has(item.shot))variants.set(item.shot,[]);variants.get(item.shot)!.push(item);}
     return [...map].sort(([a],[b])=>a-b).map(([character,variants])=>({character,variants:[...variants].sort(([a],[b])=>(a??0)-(b??0))}));
-  },[selected,statistics,mode]);
+  },[active]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Loadout and language changes can alter label overflow at the same plot width.
   useLayoutEffect(()=>{
     const node=plot.current;
     if(!node||!selected){setTilted(false);return;}

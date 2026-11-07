@@ -26,7 +26,12 @@ export function RoomPersonal({state, service, network, assetUrl, th09NetworkOver
   const draft = state.nickname?.pendingName || state.displayName;
   const save = useCallback(() => {if (input.current) input.current.value = latest.current.setDisplayName(input.current.value);}, []);
   const commit = useCallback(() => {if (!moderatedRef.current) save();}, [save]);
-  useEffect(() => {const node = input.current; node?.addEventListener('change', commit); return () => node?.removeEventListener('change', commit);}, [commit, member]);
+  useEffect(() => {
+    if (member) return;
+    const node = input.current;
+    node?.addEventListener('change', commit);
+    return () => node?.removeEventListener('change', commit);
+  }, [commit, member]);
   useLayoutEffect(() => {if (input.current && document.activeElement !== input.current) input.current.value = draft;}, [draft]);
   const editor = <label className="mp-name-editor" id="mpNameEditor"><span>{t('multiplayer.name')}</span><Input ref={input} id="mpDisplayName" type="text" maxLength={12} autoComplete="off" placeholder={t('multiplayer.namePlaceholder')} aria-label={t('multiplayer.nameAria')} title={t(moderated ? 'nickname.hint' : 'multiplayer.nameEditableHint')} disabled={moderated && (locked || pending)} defaultValue={draft} onBlur={commit}/></label>;
   const arrow = (id: string, previous: boolean) => config.inGameSelection ? null : <UiButton variant="icon" id={id} type="button" aria-label={t(previous ? 'multiplayer.previousCharacter' : 'multiplayer.nextCharacter')} onClick={() => service.changeLoadout(previous ? -1 : 1)}><img className="room-icon" src={assetUrl(previous ? 'assets/room-caret-left.svg' : 'assets/room-caret-right.svg')} alt=""/></UiButton>;

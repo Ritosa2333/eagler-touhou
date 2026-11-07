@@ -31,6 +31,7 @@ export function AccountSettings({initialProfile, initialDisplay, panel, onSave,r
   const gameSettings = panel === '#game-settings';
   const detail = panel !== '#settings';
   const content = useRef<HTMLDivElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Panel navigation resets scroll and animates the new content.
   useLayoutEffect(() => {
     const node = content.current;
     if (!node) return;
@@ -198,7 +199,7 @@ function ProfileSettings({initialProfile,initialDisplay,onSave}: {
               <Textarea id="settings-bio" maxLength={500} rows={4} value={profile.bio} onChange={event=>change({...profile,bio:event.target.value})} placeholder={t('profile.bio.placeholder')}/>
               <small className="settings-character-count">{profile.bio.length} / 500</small>
             </FieldContent></Field>
-            <Field><FieldLabel>{t('profile.links')}</FieldLabel><FieldContent>
+            <Field aria-labelledby="settings-links-label"><span id="settings-links-label" data-slot="field-label" className="ui-field-label">{t('profile.links')}</span><FieldContent>
               <div className="settings-links">{profile.links.map((link,index)=><div className="settings-link" key={linkIds[index]}>
                 <Input aria-label={t('profile.links.name')} maxLength={40} value={link.label} placeholder={t('profile.links.name')} onChange={event=>change({...profile,links:profile.links.map((item,i)=>i===index?{...item,label:event.target.value}:item)})}/>
                 <Input aria-label={t('profile.links.address')} type="url" value={link.url} placeholder="https://" onChange={event=>change({...profile,links:profile.links.map((item,i)=>i===index?{...item,url:event.target.value}:item)})}/>

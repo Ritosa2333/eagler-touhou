@@ -33,7 +33,7 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
     return () => {current?.abort();window.removeEventListener('account-profile-change',refresh);};
   },[user]);
   if (state.status==='loading') return <span className="masthead-action account-loading" aria-busy="true"><span className="account-avatar account-avatar-loading"/></span>;
-  if (state.status==='error') return <button className="masthead-action" onClick={retry} aria-label={t('account.requestFailed')}><RotateCw aria-hidden="true"/></button>;
+  if (state.status==='error') return <button type="button" className="masthead-action" onClick={retry} aria-label={t('account.requestFailed')}><RotateCw aria-hidden="true"/></button>;
   if (!user) {
     const login=new URL(withUiLanguage('/login.html',locale),'https://launcher.invalid');
     if (path.pathname !== '/login.html') login.searchParams.set('next',path.pathname+path.search+path.hash);
@@ -56,7 +56,7 @@ export function AccountMenu({interactive}:{interactive:boolean}) {
     try {await accountRequest('auth/sign-out',{});notifyAccountChange();location.replace(new URL(localeHome(locale),location.origin+'/').href);}
     catch {setFailed(true);setBusy(false);setOpen(true);}
   }
-  return <DropdownMenu.Root open={open} onOpenChange={setOpen}><DropdownMenu.Trigger asChild><button className="masthead-account-entry" aria-label={t('account.actions')+' '+nickname}>
+  return <DropdownMenu.Root open={open} onOpenChange={setOpen}><DropdownMenu.Trigger asChild><button type="button" className="masthead-account-entry" aria-label={t('account.actions')+' '+nickname}>
     <AccountAvatar src={avatar}/><span className="account-handle">{nickname}</span>
   </button></DropdownMenu.Trigger><DropdownMenu.Portal container={uiPortalHost()}>
     <DropdownMenu.Content align="end" sideOffset={8} className="ui-menu account-menu-panel ui-dropdown-motion">

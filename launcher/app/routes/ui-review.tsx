@@ -258,7 +258,7 @@ function Catalog() {
             <FeedbackExamples />
             <div className="catalog-demo">
               <h3>图片与内容占位</h3>
-              <div className="flex items-center gap-3" aria-label="骨架加载样例">
+              <div className="flex items-center gap-3" role="img" aria-label="骨架加载样例">
                 <Skeleton className="size-20 shrink-0"/>
                 <div className="space-y-2"><Skeleton className="h-4 w-32"/><Skeleton className="h-3 w-24"/></div>
               </div>

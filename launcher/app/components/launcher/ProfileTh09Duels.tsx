@@ -64,7 +64,7 @@ export function ProfileTh09Duels({username, owner}: {username: string; owner: bo
           {item.opponent ? <Link to={'/u/' + encodeURIComponent(item.opponent.username)}>
             {item.opponent.displayName}<small>@{item.opponent.username}</small>
           </Link> : <span>{t('th09.guestOpponent')}</span>}
-          <strong aria-label={t('th09.score') + ' ' + item.wins + ' : ' + item.losses}>{numbers.format(item.wins)}:{numbers.format(item.losses)}</strong>
+          <strong role="img" aria-label={t('th09.score') + ' ' + item.wins + ' : ' + item.losses}>{numbers.format(item.wins)}:{numbers.format(item.losses)}</strong>
           <time dateTime={new Date(item.playedAt).toISOString()}>{dates.format(item.playedAt)}</time>
         </li>)}
       </ul> : <p className="profile-muted">{t('th09.noDuels')}</p>}

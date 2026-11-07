@@ -176,7 +176,7 @@ export function RoomMusicStrip({
 }: {
   model: RoomMusic;
   open: boolean;
-  onOpen(element: HTMLElement, tab: MusicPanelTab): void;
+  onOpen(element: HTMLElement, tab: MusicPanelTab, keyboard: boolean): void;
   embedded?: boolean;
 }) {
   const { t } = useLocale(),
@@ -231,7 +231,7 @@ export function RoomMusicStrip({
             aria-haspopup="dialog"
             aria-controls="mpRoomPanel"
             aria-expanded={open}
-            onClick={(event) => onOpen(event.currentTarget, 'search')}
+            onClick={(event) => onOpen(event.currentTarget, 'search', event.detail === 0)}
           >
             {heading}
           </Button>
@@ -255,7 +255,7 @@ export function RoomMusicStrip({
             size="icon-sm"
             aria-label={t('music.queue')}
             title={t('music.queue')}
-            onClick={(event) => onOpen(event.currentTarget, 'queue')}
+            onClick={(event) => onOpen(event.currentTarget, 'queue', event.detail === 0)}
           >
             <ListMusic aria-hidden="true" />
           </Button>
@@ -568,6 +568,7 @@ export function RoomMusicPanel({
             <InputGroup>
               {mode === 'playlist' ? <ListMusic aria-hidden="true" /> : <Search aria-hidden="true" />}
               <InputGroupInput
+                id="roomMusicQuery"
                 ref={queryInput}
                 aria-label={t(mode === 'search' ? 'music.keyword' : 'music.playlistInput')}
                 placeholder={t(mode === 'search' ? 'music.keyword' : 'music.playlistInput')}
@@ -709,7 +710,7 @@ export function RoomMusicPanel({
           </div>
         </TabsContent>
       </Tabs>}
-      <RoomMusicStrip model={model} open embedded onOpen={(_element, next) => onTabChange(next)} />
+      {state.session && <RoomMusicStrip model={model} open embedded onOpen={(_element, next) => onTabChange(next)} />}
     </section>
   );
 }

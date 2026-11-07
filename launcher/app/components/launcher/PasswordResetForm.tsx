@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, type FormEvent} from 'react';
+import {useEffect, useRef, useState, type FormEvent, type Ref} from 'react';
 import {ArrowLeft} from 'lucide-react';
 import {accountRequest, AccountRequestError} from '../../services/account-client';
 import {useLocale, type UiMessageKey} from '../../i18n';
@@ -6,7 +6,7 @@ import {Input} from '../../ui/input';
 import {BookButton} from './BookButton';
 import {PasswordField} from './PasswordField';
 
-export function PasswordResetForm({onBack}: {onBack(): void}) {
+export function PasswordResetForm({emailInputRef, onBack}: {emailInputRef: Ref<HTMLInputElement>; onBack(keyboard: boolean): void}) {
   const {t} = useLocale();
   const [email, setEmail] = useState(''), [code, setCode] = useState('');
   const [password, setPassword] = useState(''), [confirmation, setConfirmation] = useState('');
@@ -46,16 +46,16 @@ export function PasswordResetForm({onBack}: {onBack(): void}) {
   };
   const submit = (event: FormEvent<HTMLFormElement>) => {event.preventDefault();void request(sent);};
   return <div className="account-mode-content">
-    <BookButton variant="quiet" className="account-back" onClick={onBack}><ArrowLeft aria-hidden="true"/>{t('account.backToLogin')}</BookButton>
+    <BookButton variant="quiet" className="account-back" onClick={event => onBack(event.detail === 0)}><ArrowLeft aria-hidden="true"/>{t('account.backToLogin')}</BookButton>
     <header><h1 id="account-title">{t('account.resetPassword')}</h1></header>
-    {done ? <div className="account-reset-success"><p role="status">{t('account.passwordResetDone')}</p><BookButton variant="primary" className="account-submit" onClick={onBack}>{t('account.login')}</BookButton></div> :
+    {done ? <div className="account-reset-success"><p role="status">{t('account.passwordResetDone')}</p><BookButton variant="primary" className="account-submit" onClick={event => onBack(event.detail === 0)}>{t('account.login')}</BookButton></div> :
       <form method="post" onSubmit={submit} aria-busy={busy}>
-        <label>{t('account.email')}<Input className="max-[959px]:text-base" name="email" type="email" autoComplete="email" required disabled={busy || sent} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
+        <label>{t('account.email')}<Input ref={emailInputRef} className="max-[959px]:text-base" name="email" type="email" autoComplete="email" required disabled={busy || sent} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
         {sent && <>
           <p className="account-feedback" role="status">{t('account.resetCodeSent')}</p>
           <label>{t('account.emailCode')}<span className="account-code"><Input ref={codeInput} className="max-[959px]:text-base" name="code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('account.codePlaceholder')}/><BookButton variant="action" type="button" disabled={busy || remaining > 0} onClick={() => void request(false)}>{remaining ? `${remaining}s` : t('account.requestCode')}</BookButton></span></label>
-          <label>{t('account.newPassword')}<PasswordField name="password" autoComplete="new-password" minLength={8} maxLength={128} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} placeholder={t('account.newPasswordPlaceholder')}/></label>
-          <label>{t('account.confirmPassword')}<PasswordField name="confirmation" autoComplete="new-password" maxLength={128} required disabled={busy} value={confirmation} onChange={event => setConfirmation(event.target.value)} aria-invalid={confirmation.length > 0 && password !== confirmation ? true : undefined}/></label>
+          <label htmlFor="account-reset-password">{t('account.newPassword')}<PasswordField id="account-reset-password" name="password" autoComplete="new-password" minLength={8} maxLength={128} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} placeholder={t('account.newPasswordPlaceholder')}/></label>
+          <label htmlFor="account-reset-confirmation">{t('account.confirmPassword')}<PasswordField id="account-reset-confirmation" name="confirmation" autoComplete="new-password" maxLength={128} required disabled={busy} value={confirmation} onChange={event => setConfirmation(event.target.value)} aria-invalid={confirmation.length > 0 && password !== confirmation ? true : undefined}/></label>
         </>}
         {error && <p className="account-feedback is-error" role="alert">{t(error)}</p>}
         <BookButton variant="primary" type="submit" className="account-submit" disabled={busy}>{sent ? t('account.resetPassword') : t('account.requestCode')}</BookButton>

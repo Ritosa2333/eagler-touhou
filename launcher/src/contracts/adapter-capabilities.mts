@@ -271,6 +271,8 @@ export const GAME_OPTION_CLASSIFICATION = Object.freeze({
   focusHitboxEnabled: { capability: "focus-hitbox", class: "optional", owner: "product" },
   faithBarEnabled: { capability: "faith-bar", class: "optional", owner: "product" },
   frameLimit60Enabled: { capability: "frame-limit-control", class: "inherited", owner: "launcher" },
+  bgmVolume: { capability: "game-volume-control", class: "inherited", owner: "launcher" },
+  sfxVolume: { capability: "game-volume-control", class: "inherited", owner: "launcher" },
   touchEnabled: { capability: "touch-controls", class: "required", owner: "launcher-runtime" },
   touchMovementMode: { capability: "touch-controls", class: "required", owner: "launcher-runtime", note: "all four movement modes belong to REQUIRED_TOUCH_BEHAVIORS" },
   touchSensitivity: { capability: "touch-controls", class: "required", owner: "launcher-runtime", note: "100–300 percent protocol range" },
@@ -299,6 +301,7 @@ export const INHERITED_LAUNCHER_CAPABILITIES = Object.freeze([
   { id: "pwa-app-shell", class: "inherited", owner: "launcher", summary: "Service Worker/App Shell lifecycle for Launcher-owned files" },
   { id: "site-information", class: "inherited", owner: "launcher", summary: "FAQ, first-use notice and support surfaces" },
   { id: "frame-limit-control", class: "inherited", owner: "launcher", summary: "shared 60 Hz presentation-limit UI; the Runtime obligation is the required presentation-cadence contract" },
+  { id: "game-volume-control", class: "inherited", owner: "launcher", summary: "shared live volume settings for game music and sound effects, with temporary music muting during room playback" },
 ] satisfies readonly AdapterCapabilityDefinition[]);
 
 // A profile-required capability becomes mandatory when its parent optional

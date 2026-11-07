@@ -4,7 +4,7 @@ import {Input} from '../../ui/input';
 import {Tabs, TabsList, TabsTrigger, TabsContent} from '../../ui/tabs';
 import {Skeleton} from '../../ui/skeleton';
 import {BookButton} from './BookButton';
-import {useEffect, useRef, useState, type FormEvent} from 'react';
+import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
 import {ArrowRight} from 'lucide-react';
 import {PasswordField} from './PasswordField';
 import {PasswordResetForm} from './PasswordResetForm';
@@ -36,6 +36,18 @@ function AccountForm() {
   const registering = search.get('mode') === 'register';
   const resetting = search.get('mode') === 'reset';
   const changeMode = (mode: string) => setSearch(previous => {const next = new URLSearchParams(previous); if (mode === 'login') next.delete('mode'); else next.set('mode', mode); return next;});
+  const entryInput = useRef<HTMLInputElement>(null);
+  const focusMode = useRef<'login' | 'reset' | null>(null);
+  const activeMode = resetting ? 'reset' : registering ? 'register' : 'login';
+  const changePasswordMode = (mode: 'login' | 'reset', keyboard: boolean) => {
+    focusMode.current = keyboard ? mode : null;
+    changeMode(mode);
+  };
+  useLayoutEffect(() => {
+    if (focusMode.current !== activeMode) return;
+    focusMode.current = null;
+    entryInput.current?.focus({preventScroll: true});
+  }, [activeMode]);
   const [username, setUsername] = useState(''), [email, setEmail] = useState('');
   const [identity, setIdentity] = useState(''), [loginPassword, setLoginPassword] = useState(''), [registrationPassword, setRegistrationPassword] = useState(''), [confirmation, setConfirmation] = useState('');
   const [nickname, setNickname] = useState(''), [busy, setBusy] = useState(false), [apiError, setApiError] = useState<UiMessageKey | null>(null);
@@ -134,7 +146,7 @@ function AccountForm() {
     finally {setBusy(false);}
   };
   return <Tabs value={registering ? 'register' : 'login'} onValueChange={changeMode} asChild><div className="account-content">
-        {resetting ? <PasswordResetForm onBack={() => changeMode('login')}/> : <>
+        {resetting ? <PasswordResetForm emailInputRef={entryInput} onBack={keyboard => changePasswordMode('login', keyboard)}/> : <>
         <TabsList asChild><nav className="account-tabs" aria-label={t('account.actions')}>{[['login',t('account.login')],['register',t('account.register')]].map(([mode,label]) => <TabsTrigger key={mode} value={mode} aria-current={registering===(mode==='register') ? 'page' : undefined}>{label}</TabsTrigger>)}</nav></TabsList>
         <TabsContent asChild value={registering ? 'register' : 'login'}><div key={registering ? 'register' : 'login'} className="account-mode-content">
         <header><h1 id="account-title">{registering ? t('account.registerTitle') : t('account.login')}</h1></header>
@@ -143,10 +155,10 @@ function AccountForm() {
             <label>{t('account.username')}<Input className="max-[959px]:text-base" name="username" autoComplete="username" minLength={3} maxLength={12} pattern="[A-Za-z0-9_.]{3,12}" required disabled={busy || registrationLocked} value={username} onChange={event => setUsername(event.target.value)} placeholder={t('account.usernamePlaceholder')}/></label>
             <label>{t('profile.name')}<Input className="max-[959px]:text-base" name="nickname" required maxLength={24} disabled={busy || registrationLocked} value={nickname} onChange={event => setNickname([...event.target.value].slice(0,12).join(''))}/></label>
             <label>{t('account.email')}<Input className="max-[959px]:text-base" name="email" type="email" autoComplete="email" required disabled={busy || registrationLocked} value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
-          </> : <label>{t('account.identity')}<Input className="max-[959px]:text-base" name="identity" autoComplete="username" required value={identity} onChange={event => setIdentity(event.target.value)} placeholder={t('account.identityPlaceholder')}/></label>}
-          <label>{t('account.password')}<PasswordField key={registering ? 'register' : 'login'} aria-label={t('account.password')} name="password" autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} maxLength={128} required disabled={busy || (registering && registrationLocked)} value={registering ? registrationPassword : loginPassword} onChange={event => registering ? setRegistrationPassword(event.target.value) : setLoginPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : t('account.passwordPlaceholder')}/></label>
-          {!registering && <BookButton variant="quiet" className="account-forgot" type="button" onClick={() => changeMode('reset')}>{t('account.forgotPassword')}</BookButton>}
-          {registering && <><label>{t('account.confirmPassword')}<PasswordField name="confirmation" autoComplete="new-password" maxLength={128} required disabled={busy || registrationLocked} value={confirmation} onChange={event => setConfirmation(event.target.value)} placeholder={t('account.confirmationPlaceholder')} aria-invalid={confirmation.length > 0 && registrationPassword !== confirmation ? true : undefined}/>{confirmation.length > 0 && registrationPassword !== confirmation && <small className="account-field-error">{t('account.passwordMismatch')}</small>}</label>
+          </> : <label>{t('account.identity')}<Input ref={entryInput} className="max-[959px]:text-base" name="identity" autoComplete="username" required value={identity} onChange={event => setIdentity(event.target.value)} placeholder={t('account.identityPlaceholder')}/></label>}
+          <label htmlFor="account-password">{t('account.password')}<PasswordField id="account-password" key={registering ? 'register' : 'login'} aria-label={t('account.password')} name="password" autoComplete={registering ? 'new-password' : 'current-password'} minLength={registering ? 8 : undefined} maxLength={128} required disabled={busy || (registering && registrationLocked)} value={registering ? registrationPassword : loginPassword} onChange={event => registering ? setRegistrationPassword(event.target.value) : setLoginPassword(event.target.value)} placeholder={registering ? t('account.newPasswordPlaceholder') : t('account.passwordPlaceholder')}/></label>
+          {!registering && <BookButton variant="quiet" className="account-forgot" type="button" onClick={event => changePasswordMode('reset', event.detail === 0)}>{t('account.forgotPassword')}</BookButton>}
+          {registering && <><label htmlFor="account-password-confirmation">{t('account.confirmPassword')}<PasswordField id="account-password-confirmation" name="confirmation" autoComplete="new-password" maxLength={128} required disabled={busy || registrationLocked} value={confirmation} onChange={event => setConfirmation(event.target.value)} placeholder={t('account.confirmationPlaceholder')} aria-invalid={confirmation.length > 0 && registrationPassword !== confirmation ? true : undefined}/>{confirmation.length > 0 && registrationPassword !== confirmation && <small className="account-field-error">{t('account.passwordMismatch')}</small>}</label>
             <label>{t('account.emailCode')}<span className="account-code"><Input className="max-[959px]:text-base" name="code" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('account.codePlaceholder')}/><BookButton variant="action" type="button" disabled={busy || remaining > 0} onClick={sendCode}>{remaining ? `${remaining}s` : t('account.requestCode')}</BookButton></span></label>
           </>}
           {apiError && <p className="account-feedback is-error" role="alert">{t(apiError)}</p>}

@@ -111,21 +111,21 @@ export function QuickChatPhrases({ enabled, language, numbered, onSelect }: {
 }) {
   const { t } = useLocale();
   return (
-    <div className={`chat-phrase-grid${numbered ? ' mp-quick-chat-slots' : ''}`} role="group" aria-label={t('room.quickChat')}>
+    <fieldset className={`chat-phrase-grid m-0 min-w-0 border-0 p-0${numbered ? ' mp-quick-chat-slots' : ''}`} aria-label={t('room.quickChat')}>
       {QUICK_CHAT_PHRASES.map((phrase, index) => {
         const key = numbered && index < QUICK_CHAT_SLOT_COUNT ? String(index + 1) : undefined;
         const text = language === 'en' ? phrase.en : phrase.zh;
         return (
           <Button key={phrase.id} type="button" variant="outline" size="row"
             className="min-h-9 min-w-0 items-center gap-1.5 py-1.5 pointer-coarse:min-h-10 max-[780px]:min-h-10"
-            disabled={!enabled} data-phrase={phrase.id} title={text} aria-keyshortcuts={key}
+            disabled={!enabled} data-phrase={phrase.id} title={text} aria-label={text} aria-keyshortcuts={key}
             onClick={() => onSelect(phrase.id)}>
-            {key && <kbd aria-hidden="true">{key}</kbd>}
+            {key && <kbd>{key}</kbd>}
             <span className="min-w-0 truncate">{text}</span>
           </Button>
         );
       })}
-    </div>
+    </fieldset>
   );
 }
 

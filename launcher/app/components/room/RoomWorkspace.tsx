@@ -39,6 +39,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const [loungeHost, setLoungeHost] = useState<HTMLDivElement | null>(null);
   const [playbackHost, setPlaybackHost] = useState<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
+  const focusMusicSearch = useRef(false);
   const retainedPanel = useRef<NonNullable<RoomViewProps['panel']>>({kind:'personal'});
   if (props.panel) retainedPanel.current = props.panel;
   const currentPanel = props.panel || retainedPanel.current;
@@ -104,7 +105,11 @@ export function RoomWorkspace(props: RoomViewProps) {
         <TabsContent value="game" forceMount asChild><div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings state={state} service={service} hidden={false}/></fieldset><UiButton variant="quiet" size="sm" id="mpRoomGuideOpen" type="button" onClick={props.onGuide}>{t('multiplayerGuide.action')}</UiButton></div></TabsContent>
       </div></aside></Tabs>
       <div className="room-workspace-playback-host" ref={setPlaybackHost}/>
-      {props.music && musicOpen && <RoomMusicStrip model={props.music} open={props.panel?.kind==='music'} onOpen={(element,tab)=>{setMusicTab(tab);openPanel('music',element);}}/>}
+      {props.music && musicOpen && <RoomMusicStrip model={props.music} open={props.panel?.kind==='music'} onOpen={(element,tab,keyboard)=>{
+        focusMusicSearch.current = tab === 'search' && keyboard;
+        setMusicTab(tab);
+        openPanel('music',element);
+      }}/>}
       {!sideLounge && lounge}
       </div>
       <footer className="room-workspace-actions" hidden={!room.synced || !selecting}>
@@ -114,7 +119,9 @@ export function RoomWorkspace(props: RoomViewProps) {
           {t(owner ? 'multiplayer.startGame' : 'room.nudge')}
         </UiButton>
       </footer>
-      <RoomPanel open={!!activePanel} kind={currentPanel.kind} peerId={currentPanel.peerId} trigger={trigger} onCloseRequest={props.onClosePanel}>
+      <RoomPanel open={!!activePanel} kind={currentPanel.kind} peerId={currentPanel.peerId} trigger={trigger}
+        initialFocus={currentPanel.kind==='music' && focusMusicSearch.current ? '#roomMusicQuery' : undefined}
+        onCloseRequest={props.onClosePanel}>
         <RoomPersonal state={state} service={service} network={network} assetUrl={assetUrl} th09NetworkOverlayOpen={context.th09NetworkOverlayOpen} hidden={currentPanel.kind!=='personal'}/>
         <RoomNetwork state={state} network={network} context={context} peerId={currentPanel.peerId} hidden={currentPanel.kind!=='network'}/>
         {props.music && <RoomMusicPanel model={props.music} hidden={currentPanel.kind!=='music'} tab={musicTab} onTabChange={setMusicTab}/>}

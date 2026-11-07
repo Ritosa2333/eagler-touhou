@@ -106,7 +106,7 @@ function RoomRow({
     const label = t('th09.accountCard', {games, rate: rate ?? '?'});
     const caption = typeof games === 'number' && games >= 1000000
       ? t('th09.accountCard', {games: abbreviate(games), rate: rate ?? '?'}) : label;
-    return <span className="book-room-duel-summary" data-side={side} title={label}><span>{caption}</span></span>;
+    return <span key={side === 0 ? "left" : "right"} className="book-room-duel-summary" data-side={side} title={label}><span>{caption}</span></span>;
   }) : [];
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];

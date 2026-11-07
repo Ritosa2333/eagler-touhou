@@ -14,7 +14,7 @@ export function CountryFlag({ code, label }: { code: string; label?: string }) {
   return (
     <span
       className="country-flag"
-      role={label ? 'img' : undefined}
+      role="img"
       aria-label={label}
       aria-hidden={label ? undefined : true}
       title={label}

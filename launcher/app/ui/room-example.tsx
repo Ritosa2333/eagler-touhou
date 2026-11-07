@@ -139,7 +139,7 @@ export function RoomExample({
     });
     setChat(model);
     return () => model.dispose();
-  }, []);
+  }, [announce]);
   useEffect(() => {
     chat?.update({
       visible: true,

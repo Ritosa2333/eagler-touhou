@@ -60,6 +60,7 @@ function AccountProfile({pathname,viewer,readLocalSaves,cloudSync}: {pathname:st
   const panel = ['#edit','#settings','#security','#game-settings'].includes(hash) ? hash : '';
   const [state,setState] = useState<{profile?:RemoteProfile; owner?:boolean; error?:UiMessageKey}>({});
   const [attempt,setAttempt] = useState(0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: The retry counter starts a new request for the same profile.
   useEffect(() => {
     const controller = new AbortController();
     setState({});

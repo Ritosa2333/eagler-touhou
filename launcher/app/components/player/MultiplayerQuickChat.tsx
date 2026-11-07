@@ -186,6 +186,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
         type="button"
         className="mp-quick-chat-prompt text-inherit hover:text-inherit"
         aria-expanded={state.pickerOpen}
+        aria-label={t('chat.title')}
         aria-keyshortcuts="Alt"
         disabled={!enabled}
         onClick={model.togglePicker}
@@ -193,7 +194,7 @@ export function MultiplayerQuickChat({ model, iconUrl, decisions }: {
       >
         <img className="th09-chat-icon" src={iconUrl} alt="" />
         {t('chat.title')}
-        <kbd className="mp-quick-chat-shortcut" aria-hidden="true">Alt</kbd>
+        <kbd className="mp-quick-chat-shortcut">Alt</kbd>
       </UiButton>
       <div ref={picker} className="mp-quick-chat-picker" tabIndex={-1} hidden={!state.pickerOpen}>
         <ChatComposer model={model} gameplay />

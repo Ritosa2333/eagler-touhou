@@ -360,7 +360,7 @@ function BookCover({ product, priority }: { product: LibraryProduct; priority: b
     source = bookArtwork(product);
   useEffect(() => {
     // A cached image may finish before hydration attaches its load listener.
-    if (image.current?.complete) setStatus(image.current.naturalWidth ? 'ready' : 'error');
+    if (source && image.current?.complete) setStatus(image.current.naturalWidth ? 'ready' : 'error');
   }, [source]);
   return source && status !== 'error' ? (
     <>

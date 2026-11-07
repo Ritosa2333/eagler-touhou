@@ -590,6 +590,22 @@ async function panelFixture({strict = false} = {}) {
   const m = await mount(owners.RoomPanel, {open: true, kind: 'personal', onCloseRequest: () => requests++, onClosed: () => closures++, trigger: {current: trigger}, children: React.createElement('button', {id: 'child-action'}, 'Child')}, {strict});
   return {m, trigger, get requests() {return requests;}, get closures() {return closures;}, node: n('#mpRoomPanel')};
 }
+test('Music and spectator panels share the close control and opening music by keyboard focuses search', async () => {
+  const trigger = env.document.createElement('button');
+  env.document.body.append(trigger);
+  const m = await mount(owners.RoomPanel, {
+    open: true, kind: 'music', trigger: {current: trigger}, onCloseRequest() {},
+    initialFocus: '#roomMusicQuery', children: React.createElement('input', {id: 'roomMusicQuery'}),
+  });
+  assert.equal(env.document.activeElement, n('#roomMusicQuery'));
+  const close = n('#mpRoomPanelClose');
+  assert.equal(close.textContent, t('en', 'room.done'));
+  await m.update({open: false});
+  assert.equal(env.document.activeElement, trigger);
+  await m.update({open: true, kind: 'spectators', initialFocus: undefined});
+  assert.equal(n('#mpRoomPanelClose'), close);
+});
+
 test('Native modal Escape/backdrop request close; shared completion restores the exact original trigger', async () => {
   animationFixture();const h=await panelFixture();assert.equal(h.node.open,true);
   const cancel=new env.window.Event('cancel',{cancelable:true});await act(()=>h.node.dispatchEvent(cancel));assert.equal(cancel.defaultPrevented,true);assert.equal(h.requests,1);
