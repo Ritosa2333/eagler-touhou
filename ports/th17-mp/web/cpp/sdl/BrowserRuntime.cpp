@@ -32,6 +32,9 @@ EM_JS(int, th17_host_has_focus, (), {
 });
 EM_JS(int, th17_browser_keyboard_owned, (), { return typeof Module.resetBrowserKeyboard === "function"; });
 EM_JS(void, th17_browser_keyboard_reset, (), { Module.resetBrowserKeyboard?.(); });
+#if TH17_ROOM_BENCHMARK
+namespace th17 {extern u32 room_benchmark_route_defeats;}
+#endif
 namespace th17::sdl {
 #if TH17_MULTIPLAYER
 extern bool room_phase_trace;
@@ -52,7 +55,11 @@ struct RoomPhaseTimer {
  ~RoomPhaseTimer(){if(begin)room_phase_us[phase]+=u32((emscripten_get_now()-begin)*1000);}
 };
 struct RoomRuntime final : multiplayer::World {
+#if TH17_ROOM_BENCHMARK
+ using Status=std::array<u32,51>;
+#else
  using Status=std::array<u32,44>;
+#endif
  struct Frame {
   u32 number=Netplay::INVALID_FRAME;
   multiplayer::FrameImage image;
@@ -294,6 +301,9 @@ struct RoomRuntime final : multiplayer::World {
   // Keep one completed image per RAF and advance draw-dependent state on the extra ticks.
   app->graphics.logical_drawing=(previous_draw_mode||
       (!spectator&&!playing_replay&&app->graphics.backend.presentation_pending()))&&app->can_rollback();
+#if TH17_ROOM_BENCHMARK
+  room_benchmark_route_defeats=0;
+#endif
   const bool ok=app->step(main_input.held,main_input.pressed,main_input.repeated,60,false);
   const bool logical=app->graphics.logical_drawing;
   app->graphics.logical_drawing=previous_draw_mode;
@@ -434,8 +444,19 @@ RoomRuntime::Status RoomRuntime::status(u32 number)const{
   }
   for(u32 seat=0;seat<battle.pilot_count();++seat){
    const auto& p=battle.pilot(seat);word(u32(p.session.life_pieces));word(u32(p.session.bomb_pieces));word(u32(p.life.state));
-   for(const auto& shot:p.shots.shots)if(shot.state){word(u32(shot.index));position(shot.motion.position);word(u32(shot.state));}
+   for(const auto& shot:p.shots.shots)if(shot.state){
+    word(u32(shot.index));position(shot.motion.position);word(u32(shot.state));
+#if TH17_ROOM_BENCHMARK
+    ++result[44+seat];
+#endif
+   }
   }
+#if TH17_ROOM_BENCHMARK
+  result[47]=app->animations.registry.count();
+  result[48]=u32(std::max(0,battle.enemy_world.shot_damage));
+  result[49]=u32(std::max(0,battle.enemy_world.chapter_defeated));
+  result[50]=room_benchmark_route_defeats;
+#endif
   result[32]=hash;
  }
  return result;
@@ -709,6 +730,7 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_load(){
  return value.data();
 }
 #if TH17_ROOM_BENCHMARK
+EMSCRIPTEN_KEEPALIVE unsigned th17_room_benchmark_story_status_size(){return th17::sdl::RoomRuntime::Status{}.size();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_draw(){return th17::sdl::room_benchmark_draw.data();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_benchmark_history(){
  static const std::array<unsigned,4> empty{};

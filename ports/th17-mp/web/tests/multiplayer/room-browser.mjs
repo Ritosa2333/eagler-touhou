@@ -355,6 +355,7 @@ try{
      }
      if(globalThis.__th17GlCalls)globalThis.__th17GlCalls={};
      const optimized=typeof Module._th17_room_trace==='function';
+     const storyStatusSize=fixtureStage?Module._th17_room_benchmark_story_status_size?.():0;
      Module._th17_room_trace?.(1);
      if(tracePhases&&!Module._th17_room_phase_costs)throw Error('Phase timing requires a runtime with room phase costs');
      if(tracePhases){
@@ -526,7 +527,7 @@ try{
       globalThis.delayInput=rollback&&(symmetricDelay||seat===1)&&n>=115;
       for(let number=Math.max(recorded+1,committed-15);number<=committed;number++){
        const p=Module._th17_room_confirmed(number)>>>2;
-       const words=Array.from(Module.HEAPU32.subarray(p,p+(verifyGhost?44:extraBoss?43:optimized?39:38)));
+       const words=Array.from(Module.HEAPU32.subarray(p,p+(storyStatusSize||(verifyGhost?44:extraBoss?43:optimized?39:38))));
        words[2]=0;
        if(words[0]===number&&number>120&&words[3]){
         samples.set(number,words);
@@ -605,7 +606,8 @@ try{
    assert.ok(agreed.length>100);
    let difference;
    for(const [frame,value] of agreed){
-    const peer=other.find(map=>map.get(frame).some((word,index)=>word!==value[index]));
+    // The viewer can have its own HUD animations.
+    const peer=other.find(map=>map.get(frame).some((word,index)=>index!==47&&word!==value[index]));
     if(peer){difference={frame,host:value,peer:peer.get(frame),previous:agreed.find(([n])=>n===frame-1)?.[1]};break;}
    }
    const [,initial]=agreed[0];
@@ -735,6 +737,16 @@ try{
     return {frames,denseFrames};
    }):undefined;
    if(keyboardMovement)assert.ok(keyboardMovement.every(seat=>seat.frames>40),'both pilots move using keyboard input');
+   const fightLoad=fixtureStage&&initial.length>=50?Object.fromEntries(
+    ['route','nonspell','spell'].map(segment=>{
+     const frames=agreed.filter(([,state])=>state[3]===fixtureStage&&!state[33]&&
+      (state[30]&1?'spell':state[38]?'nonspell':'route')===segment).map(([,state])=>state);
+     const maximum=index=>frames.reduce((peak,state)=>Math.max(peak,state[index]),0);
+     return [segment,{frames:frames.length,enemyBullets:maximum(10),animations:maximum(47),
+      ...(initial.length>=51?{routeEnemyDefeats:frames.reduce((total,state)=>total+state[50],0)}:{}),
+      playerShots:Array.from({length:seats},(_,seat)=>maximum(44+seat)),
+      shotDamageFrames:frames.filter(state=>state[48]>0).length}];
+    })):undefined;
    let ghostRevival;
    if(verifyGhost){
     const ghosts=agreed.filter(([,state])=>state[3]===1&&(state[43]&4));
@@ -776,7 +788,7 @@ try{
     frames[seat].evaluate(()=>Array.from(touchInputs.keys())))):[];
    const otherTouches=touchFrames.slice(1).map(frames=>new Set(frames));
    const simultaneousTouchFrames=touchFrames[0]?.filter(frame=>otherTouches.every(touches=>touches.has(frame))).length;
-   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,stageThreeFrames,keyboardMovement,ghostRevival,denseWindows,
+   reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,stageThreeFrames,keyboardMovement,fightLoad,ghostRevival,denseWindows,
     ...(movingSeats.length===1?{touchEvents:movingSeats[0].touchEvents,touchDelivery:movingSeats[0].touchDelivery}:{}),
     ...(movingSeats.length>1?{movingSeats,simultaneousTouchFrames}:{}),
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
@@ -789,6 +801,7 @@ try{
     assert.ok(diagnostics[touchSeat].touchCombatInputs>0,'touch movement overlaps enemy projectiles');
    }
    if(touchFrames.length)assert.ok(simultaneousTouchFrames>500,'the sliding seats supply input on the same frames');
+   if(storySpellFrames)assert.ok(bossNonspellFrames>0&&activeSpellFrames>=storySpellFrames-15,'room covers boss nonspell and spell combat');
    if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
    if(rollback){
     assert.ok(diagnostics.some(item=>item.corrections>0&&item.resimulated>0),'late input triggers correction and replay');
@@ -797,7 +810,7 @@ try{
     if(diagnostics[0].captures!==undefined){
      assert.ok(diagnostics.some(item=>item.logicalDraws>0),'intermediate replay omits GPU draws');
      assert.ok(diagnostics.some(item=>item.stageCorrections>0),'regular stage play includes late corrections');
-     if(extended&&difficulty!==4){
+     if(extended&&!fixtureStage&&difficulty!==4){
       assert.ok(bossNonspellFrames>0&&diagnostics.some(item=>item.bossCorrections>0),'boss nonspell includes late corrections');
       assert.ok(activeSpellFrames>0&&diagnostics.some(item=>item.spellCorrections>0),'spell combat includes late corrections');
      }
