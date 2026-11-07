@@ -1300,6 +1300,19 @@ void StageBattle::collide_shots(StageEnemy& state) {
         (sim.bomb_active || invulnerable > 0 || (progress_ && trance_active(*progress_))))
         applied = float(i32(applied) / 5);
     if (applied <= 0) return;
+    // 0x419cce..0x419d2a（反汇编复核 tools/disas_ex_bomb_immunity.py）：猯藏
+    // EX 符卡（id 109..118）激活、bomb 对象在场（DAT_004c2170+0x40）、敌机
+    // 持有 BOSS 位（flags bit24，ECL 0x32 置位）时伤害完全豁免：跳过入命、
+    // 灵累加、命中动画与 marker，仅播音效 36（0x460c50(36, 敌机+0x27c)）。
+    // Overdrive（id 126）不在区间，bomb 伤害正常（经下方 ÷30）。命中计分
+    // 在 query 阶段已加（00419a90:121-134 早于本门），与原版一致保留。
+    // player+0x14698 bit2 排除门全二进制无写入者（死代码），不实现。
+    if (spell.active() && spell.id >= 109 && spell.id <= 118 && sim.bomb_active &&
+        (enemy->flags & 0x1000000u) != 0) {
+        if (host_ && !host_->hud_sound(36, enemy->position[0]))
+            error_ = "EX bomb immunity sound failed";
+        return;
+    }
     // 0x419a90:0x419d37-0x419d53（反汇编复核）：符卡激活
     // （DAT_004c2178+0x7c & 1）且炸弹保护位（同 flags & 0x20）时，
     // 整数伤害 idiv 30。原生 `test esi,esi` 在除法之前（0x419d2f），
@@ -1786,22 +1799,29 @@ bool StageBattle::kill_player() {
 
 bool StageBattle::commit_death() {
     sim.spell.player_hit(bomb_timer > 0);
-    // 0x444a10。死亡自动灵界保护：be808 >= 200 → 0x405a20(1)（激活位 +
-    // 保护位），玩家存活（state 1），灵界结束时 0x405b80 经 0x444a10
-    // 直接确定死亡，不再进入新的决死窗口；不满足 → 普通死亡。
-    if (!progress_ || trance_active(*progress_) ||
+    // 0x444a10:444a13-30 先过符卡练习/对话门（不调 0x405a20）→ 普通死亡。
+    // 0x444a3a call 0x405a20(1) + test eax：返回 0 = 存活（444a43 只写
+    // 0x65c=1，不扣命、timer 保留）；-1 = 普通死亡。0x405a20 有两个
+    // 返回 0 的出口：新激活（be808 >= 200，置激活位+保护位，BGM/任务钟
+    // 复位）与 already-active 早退（0x405a36 test bit0 → jne 0x405b64，
+    // xor eax,eax，bit1 与任务钟均不动）。决死窗内手动按 C 激活的灵界
+    // （0x4057f0 无 player state 门）在窗口到期时经早退出口保命且保持
+    // 手动语义：结束时正常 -200，不走 0x444a10 死亡（决死灵界）。
+    if (!progress_ ||
         (progress_->run_mode_flags & 0x30u) == 0x20u ||
-        (sim.dialog_host && sim.dialog_host->dialog_active()) ||
-        progress_->ending_points < 200) {
+        (sim.dialog_host && sim.dialog_host->dialog_active())) {
         return commit_death_normal();
     }
-    trance_protection_ = true;
-    trance_begin(*progress_);
-    item_manager.set_spirit_trance(true);
-    if (!(progress_->stage == 6 && progress_->chapter >= 6) && !host_->trance_music(true)) {
-        error_ = "Protective Trance music failed"; return false;
+    if (!trance_active(*progress_)) {
+        if (progress_->ending_points < 200) return commit_death_normal();
+        trance_protection_ = true;
+        trance_begin(*progress_);
+        item_manager.set_spirit_trance(true);
+        if (!(progress_->stage == 6 && progress_->chapter >= 6) && !host_->trance_music(true)) {
+            error_ = "Protective Trance music failed"; return false;
+        }
+        trance_task_frame_ = 0;
     }
-    trance_task_frame_ = 0;
     player_phase = PlayerPhase::Active;
     //444a10's successful405a20 path only changes state, preserving timer.
     return true;

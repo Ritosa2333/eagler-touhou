@@ -60,6 +60,45 @@ TEST(marisa_trance_scales_movement_on_activation_frame_in_fixed_units) {
  CHECK(battle.end_trance());input.update(0x10);CHECK(battle.step(input));
  CHECK_EQ(battle.player_y,220.9921875f);
 }
+TEST(deathbomb_window_trance_save_survives_as_manual_trance) {
+ // 0x4057f0 主动激活门无 player state 检查：决死窗（state4）内满计按 C
+ // 照常激活手动灵界。窗口到期 0x443240 case4 → 0x444a10 → 0x405a20(1)
+ // 走 already-active 早退（0x405b64 xor eax,eax）返回 0 → 存活（0x65c=1，
+ // 不扣命、timer 保留），bit1 不动 → 结束按手动语义 -200，不再死亡。
+ Provider p;Host h;SessionState s;HudPlayerState player;HudScoreState score;StageBattle battle;
+ p.names=&battle.sim.anim_list;s.character=0;
+ CHECK(battle.load(p,"test.ecl",2,h,s,player,score));battle.sim.enemies.clear();
+ GameInput input;for(int i=0;i<30;++i)CHECK(battle.step(input));
+ s.ending_points=600;const auto lives=player.extra_lives;
+ battle.player_phase=StageBattle::PlayerPhase::Deathbomb;battle.player_phase_frame=0;
+ input.update(0x800);CHECK(battle.step(input)); // C 在决死窗首帧
+ CHECK(trance_active(s));CHECK_EQ(h.sounds.back(),0x34);CHECK(h.music.back());
+ CHECK(battle.player_phase==StageBattle::PlayerPhase::Deathbomb); // 窗口未过期
+ for(int i=0;i<8;++i){input.update(0);CHECK(battle.step(input));} // timer 0..8
+ // 到期帧 commit_death：already-active 早退 → 存活，不扣命，灵界不被吞。
+ CHECK(battle.player_phase==StageBattle::PlayerPhase::Active);
+ CHECK_EQ(player.extra_lives,lives);CHECK_EQ(player.deaths,0);
+ CHECK(trance_active(s));CHECK(s.ending_points>0);
+ for(int i=0;i<600;++i)CHECK(battle.step(input)); // 手动语义耗完 600 帧
+ CHECK(!trance_active(s));CHECK_EQ(s.ending_points,0);
+ CHECK(battle.player_phase==StageBattle::PlayerPhase::Active);
+ CHECK_EQ(player.extra_lives,lives);CHECK_EQ(player.deaths,0);
+ CHECK_EQ(h.music.size(),size_t(2));CHECK(!h.music.back());
+}
+TEST(deathbomb_window_trance_save_keeps_gauge_if_window_outlives_activation) {
+ // 到期帧同帧按 C：0x4057f0（激活）先于 0x443240 case4（到期判定），
+ // 与原版 42c550→4057f0→443240 同序——最迟一帧的决死灵界同样保命。
+ Provider p;Host h;SessionState s;HudPlayerState player;HudScoreState score;StageBattle battle;
+ p.names=&battle.sim.anim_list;s.character=0;
+ CHECK(battle.load(p,"test.ecl",2,h,s,player,score));battle.sim.enemies.clear();
+ GameInput input;for(int i=0;i<30;++i)CHECK(battle.step(input));
+ s.ending_points=600;const auto lives=player.extra_lives;
+ battle.player_phase=StageBattle::PlayerPhase::Deathbomb;battle.player_phase_frame=8;
+ input.update(0x800);CHECK(battle.step(input)); // 到期帧同帧按 C
+ CHECK(trance_active(s));
+ CHECK(battle.player_phase==StageBattle::PlayerPhase::Active);
+ CHECK_EQ(player.extra_lives,lives);CHECK_EQ(player.deaths,0);
+}
 TEST(protective_trance_expiry_commits_death_without_a_second_deathbomb_window) {
  Provider p;Host h;SessionState s;HudPlayerState player;HudScoreState score;StageBattle battle;
  p.names=&battle.sim.anim_list;s.character=0;

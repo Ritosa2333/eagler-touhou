@@ -88,6 +88,16 @@ bool ApplicationState::start_game(i32 stage) {
     } else {
         progress.selected_spell_id = -1;
     }
+    // 0x42b990:133-155（dcc30!=0 新局/Retry 的开局灵力选择）：
+    // DAT_004be81c>1（stage≥2：练习/Retry 后段；Extra 菜单置 be81c=7）或
+    // mode==2（0x20 符卡练习）→ power = min(step*4, max)，stage1 新局 →
+    // step(1.00)。此前正常路径不经过 StageBattle::prepare_player 的
+    // cold_entry 块（那是 0x42b990 同段的 replay 冷启动副本），power 停在
+    // HudPlayerState 默认 100——EX/stage2+ 练习与 Retry 应为 4.00 而未达。
+    // 换关 0xc 延续（dcc30==0）不经此入口，跨关 power 保留。
+    const i32 entry_steps = (stage > 1 || (progress.run_mode_flags & 0x30u) == 0x20u) ? 4 : 1;
+    selection_player.power =
+        std::min(entry_steps * selection_player.power_step, selection_player.max_power);
     selection_score = HudScoreState{};
     progress.continues = 0;
     progress.life_piece_threshold_index = 0;
