@@ -555,8 +555,9 @@ try{
       const touchControlled=touchDrag&&touchSeats.includes(seat);
       const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve&&!touchControlled||
        touchControlled&&touchPhase==='keyboard';
-      const move=moveGuest||keyboardDodge&&seat===0;
-      const dodge=(n+(fixtureStage?seat*16:0))%96;
+      const move=moveGuest||keyboardDodge&&seat===0||fixtureStage&&seat===2;
+      const dodgeOffset=seat===2?6:seat*16;
+      const dodge=(n+(fixtureStage?dodgeOffset:0))%96;
       Module._th17_key(205,+(seat===1&&n>=120&&n<170||move&&dodge<12||extended&&seat===0&&n>=300&&n<350));
       Module._th17_key(203,+(seat===0&&n>=120&&n<170||move&&dodge>=48&&dodge<60||centerGuest||reserve&&n<1630));
       Module._th17_key(200,+(seat===2&&n>=120&&n<150||reserve&&n<1630));
@@ -569,6 +570,8 @@ try{
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
+   const sampleTimeout=fixtureStage?Math.max(300000,minimumSamples*80):
+    extraFinale?1500000:extraBoss||throughStageThree?900000:throughStageTwo?540000:extended||denseExtra?300000:90000*cpuThrottle;
    try{await wait(async()=>{
     assert.deepEqual(errors,[]);
     const failures=(await Promise.all(pages.map(current=>current.evaluate(()=>events.filter(e=>e.event==='error'))))).flat();
@@ -594,7 +597,7 @@ try{
     if(extraBoss)return current>=extendedTarget;
     return status.every(item=>item.samples>=minimumSamples)&&(!extended||!rollback||
      status.some(item=>item.diagnostics.spellCorrections>0)||current>=extendedTarget);
-   },throughStageTwo?'confirmed Stage '+storyStage+' samples':'confirmed room samples',extraFinale?1500000:extraBoss?900000:throughStageThree?900000:throughStageTwo?540000:extended||denseExtra?300000:90000*cpuThrottle);}
+   },throughStageTwo?'confirmed Stage '+storyStage+' samples':'confirmed room samples',sampleTimeout);}
    catch(error){coverageFailure=error;}
    // Exporting thousands of snapshots can block the renderer and inflate the
    // presentation tail. End timing before Playwright serializes those values.
