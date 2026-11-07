@@ -1,4 +1,5 @@
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../../common/contracts/th19-versus-rules.mjs';
+import {Th19SpectatorHistory} from './th19-spectator.mjs';
 import {createNicknameService} from './nickname-service.mjs';
 import {createNicknameRequestGuard} from './nickname-request-guard.mjs';
 import {normalizePublicNickname} from '../../../common/contracts/public-nickname.mjs';
@@ -467,7 +468,7 @@ function maybeDeleteRun(room, runId, run) {
 function startSpectatorGrace(roomId, room, runId, run) {
   if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
   run.spectatorTimeline =
-    process.env.EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE === '1' && roomId.startsWith('th09mp-');
+    roomId.startsWith('th19mp-') || process.env.EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE === '1' && roomId.startsWith('th09mp-');
   run.spectatorAdmissionOpen = true;
   run.onSpectatorAvailabilityChange = run.spectatorTimeline ? () => roomDirectory.changed() : null;
   clearSpectatorHistory(run);
@@ -487,6 +488,28 @@ function startSpectatorGrace(roomId, room, runId, run) {
     maybeDeleteRun(room, runId, run);
     maybeDeleteRoom(roomId, room);
   }, spectatorConnectGraceMs);
+}
+
+function acceptTh19SpectatorPayload(roomId,runId,room,run,payload){
+ if(!roomId.startsWith('th19mp-'))return false;
+ if(run.spectatorHistoryUnavailable)return true;
+ try{
+  const tape=run.th19Spectator??=new Th19SpectatorHistory();
+  const row=tape.accept(payload);if(!row)return true;
+  if(row.kind==='begin'&&!validTh19VersusRules(row.config.rules))throw Error('invalid TH19 spectator rules');
+  run.spectatorTimeline=true;run.spectatorHistory=tape.history;run.spectatorHistoryBytes=tape.bytes;
+  run.spectatorComplete=tape.ended;run.spectatorAdmissionOpen=!tape.ended;
+  for(const [id,target] of run.spectatorClients)if(!target.spectatorReplaying)sendSpectatorPayload(target,payload,roomId,runId,id);
+  if(row.kind==='begin'){
+   roomDirectory.changed();
+   for(const id of room.lobby.spectators.keys()){const lobby=room.lobbyClients.get(id);if(lobby)sendLobby(lobby,{type:'spectator-start',serial:room.lobby.startSerial,room:lobbySnapshot(room)});}
+  }
+ }catch(error){
+  run.spectatorAdmissionOpen=false;run.spectatorHistoryUnavailable=true;
+  for(const socket of run.spectatorClients.values())socket.close(1008,'invalid TH19 spectator stream');
+  console.log(`TH19 SPECTATOR STOP room=${roomId} run=${runId} ${error.message}`);
+ }
+ return true;
 }
 
 function sendSpectatorPayload(socket, payload, roomId, runId, spectatorId) {
@@ -2082,6 +2105,7 @@ server.on('connection', (socket, request) => {
       if (run.spectatorStopped) return;
       if (player !== 0) return;
       const payload = incoming.subarray(1);
+      if(acceptTh19SpectatorPayload(roomId,runId,room,run,payload))return;
       if (acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload)) return;
       if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0 && !run.spectatorHistoryUnavailable) return;
       const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;

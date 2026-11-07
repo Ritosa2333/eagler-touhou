@@ -4,7 +4,7 @@ TH19 的 C++ / SDL3 / WebAssembly 实现，提供独立浏览器入口与 Eagler
 
 启动器将 th19 普通版与双人对战入口列为抢先体验内容，通过共用测试功能开关显示，使用现有 Runtime、资源、存档和 Relay 流程。
 
-[开发与构建](docs/DEVELOPMENT.md) | [适配检查](ADAPTATION.md)
+[开发与构建](docs/DEVELOPMENT.md) | [旁观与扩展录像](docs/REPLAY.md) | [适配检查](ADAPTATION.md)
 
 ## 运行
 
