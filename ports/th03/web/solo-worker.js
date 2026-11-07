@@ -1,4 +1,5 @@
 import {workerEnvironment} from './solo-worker-environment.js';
+import {createRestartVisualGate} from './restart-visual.js';
 
 let emulator, environment, bridge, music, patch, game;
 let awaitingSnapshot=false, pendingMusic=[], pendingResults=[], lastPublish=0, costs=[], lastInput=performance.now();
@@ -53,6 +54,7 @@ function update(){
   const now=performance.now();
   if(now-lastInput>750)clear();
   const h=emulator.module.HEAPU8,state=bridge.update(now),markers=bridge.markers();
+  const visual=emulator.module.restartVisual;if(visual){visual.observe(state);if(visual.closed)emulator.module.restartVisual=null;}
   if(state)state.ticks=new DataView(h.buffer).getUint32(state.at+patch.fields.ticks,true);
   if(game==='03local'){
     const result=bridge.result(now);
@@ -106,6 +108,7 @@ async function dispatch({method,args=[]}){
     const h=emulator.module.HEAPU8,at=args[2],view=new DataView(h.buffer);
     if(game!=='03'||!bridge.valid(h,at)||h[at+patch.fields.phase]!==2||view.getUint16(at+patch.fields.generation,true)!==args[0])return false;
     if(args[1]||args[3]){const code=at-patch.mailboxCsOffset,branch=code+0x7c,hide=code+0x1d8a;if(h[branch]!==0x75||h[branch+1]!==6||h[hide]!==0x9a||view.getUint16(hide+1,true)!==0x1590)return false;}
+    if(args[1]){emulator.module.restartVisual?.release();emulator.module.restartVisual=createRestartVisualGate(emulator.module.framePresenter);}
     applyAssist({address:at,generation:args[0],focus:0,touch:[0,0],...(args[1]?{restart:true}:args[3]?{quit:true,scoreExit:true}:{quit:true})});
     return true;
   }

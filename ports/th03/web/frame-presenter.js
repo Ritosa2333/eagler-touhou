@@ -6,7 +6,7 @@ export function installFramePresenter(mod,{deferred=false,isReplaying=()=>false}
   if(!gl||mod.glfx)throw Error('TH03 画面呈现需要 PC-98 2D WebGL 上下文');
   const metrics={mode:deferred?'batch':'direct',submitted:0,uploaded:0,drawn:0,repeated:0,replaySubmitted:0,coalesced:0,restores:0};
   const gaps=new Float64Array(512);
-  let gapCount=0,gapCursor=0,lastDraw=null,latest=null,dirty=false,disposed=false;
+  let gapCount=0,gapCursor=0,lastDraw=null,latest=null,dirty=false,disposed=false,presentationGate=null;
   let width=0,height=0;
   function shader(type,source){
     const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);
@@ -39,6 +39,10 @@ export function installFramePresenter(mod,{deferred=false,isReplaying=()=>false}
     if(gl.isContextLost())throw Error('GPU 画面上下文已丢失，请重新开始');
     const {frame,frameWidth,frameHeight}=latest,size=frameWidth*frameHeight*3;
     if(dirty&&(frame<0||size<=0||frame+size>mod.HEAPU8.length))throw Error('TH03 画面缓冲范围无效');
+    if(presentationGate){
+      if(!dirty||!presentationGate(mod.HEAPU8.subarray(frame,frame+size),frameWidth,frameHeight))return false;
+      presentationGate=null;
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,frameWidth,frameHeight);gl.useProgram(program);
     for(const capability of capabilities)gl.disable(capability);
     gl.colorMask(true,true,true,true);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
@@ -76,6 +80,8 @@ export function installFramePresenter(mod,{deferred=false,isReplaying=()=>false}
     flush,
     capture:()=>latest?{...latest}:null,
     restore(saved){latest=saved?{...saved}:null;dirty=!!latest;metrics.restores++;},
+    holdUntil(predicate){if(typeof predicate!=='function')throw Error('无效的画面切换条件');presentationGate=predicate;},
+    releaseGate(){presentationGate=null;},
     resetTiming(){lastDraw=null;gapCount=gapCursor=0;},
     info(){
       const sorted=Array.from(gaps.subarray(0,gapCount)).sort((a,b)=>a-b);

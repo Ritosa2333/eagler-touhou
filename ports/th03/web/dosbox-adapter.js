@@ -110,6 +110,7 @@ export class DOSBoxPC98 {
       const stream=open.call(this,file,...args);
       if(!emulator.installingDisk&&(stream.flags&3)===0&&/\/(OP|MAINL|MAIN)\.EXE$/i.test(stream.path||'')){
         const name=stream.path.split('/').at(-1).toUpperCase(),previous=m.programReads.at(-1);
+        m.restartVisual?.program(name);
         if(previous?.name!==name||previous.tick!==emulator.tick){m.programReads.push({name,tick:emulator.tick,virtualNow:m.virtualNow,wall:performance.now()});if(m.programReads.length>64)m.programReads.shift();}
       }
       return stream;
