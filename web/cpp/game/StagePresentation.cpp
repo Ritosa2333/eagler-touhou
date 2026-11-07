@@ -1204,12 +1204,16 @@ bool StagePresentation::graze_effect(const Vec3& position) {
 
 bool StagePresentation::create_ecl_effect(i32 file, i32 script, const Vec3& position) {
     // kind=0 特效创建体（flush_ecl_animations 同款）：layer=-1（脚本自定
-    // 层）、anmArg=0；0x4243e0 语义为模板拷贝→立即 tick，AnmManager::create
-    // 自带首 tick。
+    // 层）、anmArg=0；0x4243e0 语义为模板拷贝（FUN_00403800 整块复制含
+    // instruction_offset/timer，t=-1 立即块只在装载预热时执行一次）→立即
+    // tick，AnmManager::create 自带首 tick。故必须 preserve_ip：通用 create
+    // 的 IP 回卷会让 t=-1 块与 t=0 指令各重跑一次——st07enm 脚本 8（猯藏
+    // 动物镜像变体）的 op308 是 toggle 翻转，二次执行抵消镜像 = EX 动物
+    // 弹幕贴图方向反（0x46f820 类创建才有时间重置语义）。
     const auto target = resolve_script_target(file, script);
     if (target.script < 0) return false;
     const u32 effect_handle =
-        animations.create(target.bank, target.script, -1, 2, position, 0, false);
+        animations.create_preserve_ip(target.bank, target.script, -1, 2, position, 0, false);
     if (!effect_handle)
         return fail("Effect animation creation failed: " + animations.error);
     if (anm_random_observer)
@@ -1262,8 +1266,10 @@ bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* co
         // aura up 层 4/8 对拍）。
         const auto target = resolve_script_target(request.file, request.script);
         if (target.script < 0) return false;
-        handle = animations.create(target.bank, target.script,
-                                   enemy->mirror_script_base + 7, 2, {}, 0, false);
+        // 0x41fe80:38 / 0x41b260:161 走 0x4243e0（模板拷贝保留 IP），同
+        // create_ecl_effect 注：不回卷，t=-1 立即块不重跑（op308 镜像）。
+        handle = animations.create_preserve_ip(target.bank, target.script,
+                                               enemy->mirror_script_base + 7, 2, {}, 0, false);
         if (!handle)
             return fail("Slot animation creation failed: " + animations.error);
         // 0x419731 镜像重挂基准：记录本次 slot0 创建的 bank 与本地→全局
@@ -1441,8 +1447,10 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                     // 316 重建 slot0 后 26c 仍是 306 值（敌机 +0x264..0x270
                     // 仅 306 写 / 318 清），而文件随最近创建变化。无记录
                     // （合成夹具直接造敌机不建槽）回退 anm_file 解析。
+                    // 0x419450 镜像重挂 = 0x403800 模板拷贝 + 0x462450 tick
+                    //（与 0x4243e0 同构，保留 IP），同上述 preserve_ip 依据。
                     if (enemy->anm_slot0_bank >= 0) {
-                        handle = animations.create(
+                        handle = animations.create_preserve_ip(
                             enemy->anm_slot0_bank,
                             enemy->anm_slot0_script_offset +
                                 enemy->anm_base_script + step,
@@ -1451,7 +1459,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                         const auto target = resolve_script_target(
                             enemy->anm_file, enemy->anm_base_script + step);
                         if (target.script < 0) return false;
-                        handle = animations.create(target.bank, target.script,
+                        handle = animations.create_preserve_ip(target.bank, target.script,
                                                    enemy->mirror_script_base + 7,
                                                    0, old_pos, 0, false);
                     }

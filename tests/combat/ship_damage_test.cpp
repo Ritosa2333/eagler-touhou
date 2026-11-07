@@ -187,5 +187,34 @@ TEST(spell_without_bomb_protection_keeps_full_damage) {
     CHECK_EQ(r.boss->spirit_accum, 60.f);
     CHECK_EQ(r.boss->life, 940.f);
 }
+// 0x419cce..0x419d2a（反汇编复核 tools/disas_ex_bomb_immunity.py）：猯藏 EX
+// 符卡 id 109..118 激活 + bomb 对象在场 + 敌机持有 BOSS 位（flags bit24，
+// ECL 0x32 置位）→ 伤害完全豁免：不入命、不累加灵，仅播音效 36。
+TEST(ex_spell_109_bomb_on_boss_bit_enemy_deals_no_damage) {
+    Rig r; CHECK(r.init());
+    r.boss->hurtbox[0] = r.boss->hurtbox[1] = 48;
+    r.boss->spirit_accum = 0; r.boss->spirit_threshold = 100000;
+    r.boss->flags |= 0x1000000u;
+    r.battle.sim.spell.begin(109, "ex-immune", 600, 4, 2, false);
+    r.battle.sim.bomb_active = true;
+    r.shot(0, 80, 60);
+    r.battle.sim.enemy_hit(*r.boss);
+    CHECK_EQ(r.boss->spirit_accum, 0.f);
+    CHECK_EQ(r.boss->life, 1000.f);
+}
+// Negative control: Overdrive id 126 falls outside [109,118] — the same bomb
+// + boss-bit setup takes full damage when no bomb-protection bit is set.
+TEST(overdrive_spell_126_bomb_damage_still_applies) {
+    Rig r; CHECK(r.init());
+    r.boss->hurtbox[0] = r.boss->hurtbox[1] = 48;
+    r.boss->spirit_accum = 0; r.boss->spirit_threshold = 100000;
+    r.boss->flags |= 0x1000000u;
+    r.battle.sim.spell.begin(126, "overdrive", 600, 4, 2, false);
+    r.battle.sim.bomb_active = true;
+    r.shot(0, 80, 60);
+    r.battle.sim.enemy_hit(*r.boss);
+    CHECK_EQ(r.boss->spirit_accum, 60.f);
+    CHECK_EQ(r.boss->life, 940.f);
+}
 }
 int main() { return th13test::run_all("Stage5 ship damage"); }
