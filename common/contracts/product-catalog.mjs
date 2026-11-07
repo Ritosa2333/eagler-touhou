@@ -227,7 +227,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime: "./runtime/th075/multiplayer/th075.html",
         multiplayer: Object.freeze({
             titleKey:"game.title.th075mp", gameplay:"versus",
-            inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
+            inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,measuredStartup:true,manualDelayLimit:9}),
             playerCounts:Object.freeze([2]), difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts:TH075_MULTIPLAYER_LOADOUTS, peerTransportGlobal:"__th075PeerTransport",
             loadoutFields:Object.freeze([

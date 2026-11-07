@@ -259,6 +259,42 @@ for (const kind of ['room', 'room-preload']) test(`${kind} program version polic
   assert.deepEqual(prepared.plan.multiplayerProgram,{generation:hash});
 });
 
+test('TH075 room uses the split index without installing DATA or preloading OGG', async () => {
+  const base = host(), sample = base.games.th06;
+  const assetPath = 'assets/th075mp/' + hash + '.json';
+  const hostValue = api.validateSiteManifest({...base, games: {th075: {
+    ...sample, runtime: './runtime/th075/th075.html', multiplayerRuntime: './runtime/th075mp/th075.html',
+    gameData: {...sample.gameData, path: 'th075.data'},
+    th075MultiplayerAssets: {path: assetPath, sha256: hash},
+  }}});
+  const f = acquisitionFixture({hostValue, current: null}), r = runtimeFixture();
+  const input = gameInput(f, settingsFixture({productId: 'th075mp', music: 'ogg-stream'}), {
+    productId: 'th075mp', runtime: r.service, multiplayer: {kind: 'room-preload'},
+  });
+  const prepared = await api.prepareGame(input);
+  const native = new URL(r.navigations[0]);
+  assert.equal(native.searchParams.get('th075Assets'), new URL(assetPath, baseUrl).href);
+  assert.equal(native.searchParams.get('th075AssetsHash'), hash);
+  assert(!native.searchParams.has('managedData'));
+  assert.equal(prepared.plan.configure.music, 'ogg');
+  assert.deepEqual(prepared.plan.configure.resources, []);
+  assert.deepEqual(r.retained, []);
+  assert.deepEqual(f.calls, []);
+});
+
+test('TH075 native resolution is opt-in and scoped to multiplayer', () => {
+  const state = settingsFixture({productId: 'th075mp'});
+  const optionsFor = (settings, multiplayer) =>
+    api.gameRuntimeOptions({productId: settings.context.productId, settings, multiplayer}, 'ja', 'none', null);
+  const room = {kind: 'room-preload'};
+  assert.equal(optionsFor(state.snapshot, room).renderScale, undefined);
+  state.model.setOption('th075NativeResolution', true);
+  state.model.hydrate(state.snapshot.context);
+  assert.equal(optionsFor(state.model.getSnapshot(), room).renderScale, 1);
+  state.model.hydrate({...state.snapshot.context, productId: 'th075'});
+  assert.equal(optionsFor(state.model.getSnapshot()).renderScale, undefined);
+});
+
 test('main 5890: local current is chosen without initializing or waiting for remote metadata', async () => {
   const f = acquisitionFixture({initialize: async () => {throw new Error('Must not be reached');}});
   const result = await f.acquisition.acquire({productId: 'th06', music: 'none', language: 'ja'});
@@ -748,15 +784,15 @@ test('main disclosure lifetime: ordinary product changes preserve folds; a fresh
   const model = api.createGameSettingsModel({storage: null}), context = settingsFixture().snapshot.context;
   model.hydrate({...context, mobile: true}); model.setDisclosure('touch', false); model.setDisclosure('advanced', true);
   model.hydrate({...context, productId: 'th07', mobile: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, audio: false, display: true, advanced: true});
   const lobby = {...context, productId: 'th06mp', mobile: true};
   model.hydrate(lobby); model.setDisclosure('files', false); model.setDisclosure('advanced', true);
   model.hydrate(lobby);
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: false, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: false, audio: false, display: true, advanced: true});
   model.hydrate(lobby, {resetDisclosure: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: true, display: true, advanced: false});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: true, audio: false, display: true, advanced: false});
   model.hydrate({...context, mobile: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, audio: false, display: true, advanced: true});
 });
 
 test('main 3630: initial two OGG reads run together; failure fences a sibling that completes after MIDI fallback', async () => {

@@ -56,8 +56,8 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
       {!product.multiplayer && product.adaptationNotice && <details className="tools-callout" id="gameNoticeCallout" aria-labelledby="gameNoticeCalloutTitle">
         <summary className="tools-callout-title" id="gameNoticeCalloutTitle"><Info aria-hidden="true"/><span>{t('options.adaptation')}</span></summary>
         <p>{t('gameNotice.earlyTest')}</p>
-        <p className="tools-callout-line"><span>{t('gameNotice.creditBefore')}</span><a className="site-notice-brand" id="gameNoticeCredit" href={credit.url} target="_blank" rel="noopener noreferrer"><span className="site-notice-brand-icon"><img src={assetUrl('assets/notice-bilibili.svg')} alt="" decoding="async"/></span><span id="gameNoticeCreditName">{credit.name}</span></a><span>{t('gameNotice.creditAfter')}</span></p>
-        <p className="tools-callout-line"><a className="site-notice-brand" id="gameNoticeRepo" href={product.sourceRepository} target="_blank" rel="noopener noreferrer"><span className="site-notice-brand-icon"><img src={assetUrl('assets/notice-github.svg')} alt="" decoding="async"/></span><span>{t('gameNotice.repo')}</span></a></p>
+        <p className="tools-callout-line"><span>{t('gameNotice.creditBefore')}</span><a className="game-source-link" id="gameNoticeCredit" href={credit.url} target="_blank" rel="noopener noreferrer"><span className="game-source-link-icon"><img src={assetUrl('assets/notice-bilibili.svg')} alt="" decoding="async"/></span><span id="gameNoticeCreditName">{credit.name}</span></a><span>{t('gameNotice.creditAfter')}</span></p>
+        <p className="tools-callout-line"><a className="game-source-link" id="gameNoticeRepo" href={product.sourceRepository} target="_blank" rel="noopener noreferrer"><span className="game-source-link-icon"><img src={assetUrl('assets/notice-github.svg')} alt="" decoding="async"/></span><span>{t('gameNotice.repo')}</span></a></p>
       </details>}
       {/* Main's MP shell/diagnostics exist before selection, hidden by product
           mode. Keep that DOM contract and one probe presentation owner while

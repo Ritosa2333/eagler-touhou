@@ -1,6 +1,6 @@
 # 文档总表
 
-共 478 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 482 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -369,7 +369,6 @@
 | 许可证与声明 | [common/contracts/LICENSE](../common/contracts/LICENSE) | LICENSE |
 | 许可证与声明 | [common/include/eagler/thprac/THPRAC-LICENSE.txt](../common/include/eagler/thprac/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [launcher/LICENSE](../launcher/LICENSE) | LICENSE |
-| 许可证与声明 | [launcher/NOTICE.txt](../launcher/NOTICE.txt) | 本项目是[车万云](https://cloud.touhou.best/)的一个子项目。 |
 | 许可证与声明 | [launcher/content/FIRST_USE_NOTICE.md](../launcher/content/FIRST_USE_NOTICE.md) | 首次使用须知 |
 | 许可证与声明 | [launcher/public/assets/LICENSE-Phosphor.txt](../launcher/public/assets/LICENSE-Phosphor.txt) | MIT License |
 | 许可证与声明 | [launcher/public/assets/brand/LICENSE.txt](../launcher/public/assets/brand/LICENSE.txt) | Creative Commons Legal Code |
@@ -377,7 +376,12 @@
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-Unifont.txt](../launcher/public/assets/fonts/OFL-Unifont.txt) | OFL Unifont |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-YatraOne.txt](../launcher/public/assets/fonts/OFL-YatraOne.txt) | OFL YatraOne |
 | 许可证与声明 | [launcher/public/assets/room-icons-LICENSE.txt](../launcher/public/assets/room-icons-LICENSE.txt) | MIT License |
+| 许可证与声明 | [launcher/public/vendor/browser-image-compression.LICENSE](../launcher/public/vendor/browser-image-compression.LICENSE) | browser image compression |
+| 许可证与声明 | [launcher/public/vendor/country-flag-icons.LICENSE](../launcher/public/vendor/country-flag-icons.LICENSE) | country flag icons |
 | 许可证与声明 | [launcher/public/vendor/fflate.LICENSE](../launcher/public/vendor/fflate.LICENSE) | fflate |
+| 许可证与声明 | [launcher/public/vendor/normalize-wheel.LICENSE](../launcher/public/vendor/normalize-wheel.LICENSE) | normalize wheel |
+| 许可证与声明 | [launcher/public/vendor/react-easy-crop.LICENSE](../launcher/public/vendor/react-easy-crop.LICENSE) | react easy crop |
+| 许可证与声明 | [launcher/public/vendor/uzip.LICENSE](../launcher/public/vendor/uzip.LICENSE) | uzip |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
 | 许可证与声明 | [ports/th06/LICENSE](../ports/th06/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th06/portable/THPRAC-LICENSE.txt](../ports/th06/portable/THPRAC-LICENSE.txt) | MIT License |

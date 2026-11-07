@@ -21,7 +21,6 @@ const allowed = new Map([
   ['→ P', 'Player-seat prefix'],
   ['vs', 'Match notation'],
   ['EAGLER TOUHOU', 'Brand'],
-  ['赣ICP备2025074288号-1', 'Statutory registration identifier'],
   ['R', 'Keyboard label'],
   ['Z', 'Keyboard label'],
   ['X', 'Keyboard label'],

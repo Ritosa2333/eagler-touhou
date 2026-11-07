@@ -56,12 +56,12 @@ for(const playerCount of [2,3]){
   assert.equal(automatic.netplayPredictionLimit,0);assert.equal(automatic.netplayInputDelayAuto,true);
   assert.equal(automatic.netplayLoadouts.length,playerCount);
 }
-for (const product of ['th12mp', 'th15mp']) {
+for (const [product, limit] of [['th075mp', 8], ['th12mp', 12], ['th15mp', 12]]) {
   const input = {...base, difficulty: 1, inputDelay: 0, url: base.url.replace('th06mp', product)};
   const config = PRODUCT_GAMES[product.slice(0, -2)].multiplayer;
   const enabled = buildMultiplayerRuntimeOptions({...input, loadouts: config.loadouts.slice(0, 2)}, config);
   assert.equal(enabled.netplayAdonisMode, 0, `${product}: default rollback`);
-  assert.equal(enabled.netplayPredictionLimit, 12);
+  assert.equal(enabled.netplayPredictionLimit, limit);
   const disabled = buildMultiplayerRuntimeOptions({...input, loadouts: config.loadouts.slice(0, 2), adonisMode: 1}, config);
   assert.equal(disabled.netplayAdonisMode, 1, `${product}: explicit pure delay`);
   assert.equal(disabled.netplayPredictionLimit, 0);
