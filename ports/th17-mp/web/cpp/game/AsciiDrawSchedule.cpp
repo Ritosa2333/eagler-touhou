@@ -7,6 +7,6 @@ AsciiDrawSchedule::~AsciiDrawSchedule(){for(auto& c:callbacks)scheduler.remove(c
 bool AsciiDrawSchedule::pass(u32 index){
     if(!error.empty())return false;if(!index){text.update();return true;}
     if(index<3){renderer.flush();if(!views.camera(DrawCamera::Hud,false)){error="Text camera selection failed";return false;}text.scene_origin(index==1);}
-    const bool ok=text.draw(index==3?0:i32(index),renderer);if(index<3){text.scene_origin(false);renderer.flush();views.camera(DrawCamera::Fullscreen,false);}if(!ok)error=text.error;return ok;
+    const bool ok=renderer.logical_only||text.draw(index==3?0:i32(index),renderer);if(index<3){text.scene_origin(false);renderer.flush();views.camera(DrawCamera::Fullscreen,false);}if(!ok)error=text.error;return ok;
 }
 }

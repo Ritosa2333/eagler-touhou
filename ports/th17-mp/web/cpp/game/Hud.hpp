@@ -55,7 +55,7 @@ public:
     bool result(i32 amount,i32 kind);
     bool begin_stage_clear(i32 bonus);bool update_notices(float rate);
     void update_score(i32 score,HudScoreState&)noexcept;
-    bool draw(const HudDrawContext&,HudDrawServices&,u32 viewer,const std::array<HudPilotStock,3>&);
+    bool draw(const HudDrawContext&,HudDrawServices&,u32 viewer,const std::array<HudPilotStock,3>&,bool captions=true);
     bool ensure_boss_name();
 };
 }

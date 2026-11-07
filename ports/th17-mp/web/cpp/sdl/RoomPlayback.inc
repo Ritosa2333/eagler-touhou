@@ -81,7 +81,7 @@ bool RoomRuntime::advance_playback(bool advance){
   const bool fast=playback.FastForwarding();
   app->audio_device.suspend(playback.Paused()||playback.Seeking());
   return playback.Step([&](const auto& checkpoint){
-   if(checkpoint.schema!=multiplayer::StageEntry::schema||
+   if(!multiplayer::StageEntry::supports(checkpoint.schema)||
       !multiplayer::restore_stage_entry(*app,setup,main_input,checkpoint.frame,checkpoint.state))
     return false;
    entered=true;app->renderer.hud_viewer=1;return true;

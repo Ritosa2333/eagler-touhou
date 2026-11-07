@@ -5,7 +5,7 @@
 namespace th17::multiplayer {
 namespace {
 template<class Codec> bool timer(Codec& c,Timer& t){return c.Values(t.previous,t.current,t.fractional,t.rate_index,t.flags);}
-template<class Codec> bool visit(Codec& c,StageEntry& e){
+template<class Codec> bool visit(Codec& c,StageEntry& e,u32 schema){
     auto& s=e.setup;
     if(!c.Values(e.frame,e.app_frame,e.scene_flags,e.deferred,s.room,s.seed,s.seats,s.local,s.difficulty,s.delay,s.rollback)||
        !c.Array(s.build))return false;
@@ -30,17 +30,21 @@ template<class Codec> bool visit(Codec& c,StageEntry& e){
     for(auto* input:{&e.menu,&e.input})
         if(!c.Values(input->held,input->previous,input->pressed,input->released,input->repeated,input->long_held)||
            !c.Array(input->duration)||!c.Array(input->repeat_age))return false;
-    return c.Array(e.piece_tiers);
+    return c.Array(e.piece_tiers)&&(schema==1||c.Value(e.ghost_mask));
 }
 }
 bool decode_stage_entry(const std::vector<u8>& bytes,StageEntry& out){
     StageEntry e;Netplay::SpectatorScalars::Reader reader(bytes);
     u32 schema=0;
-    if(!reader.Value(schema)||schema!=StageEntry::schema||!visit(reader,e)||!reader.Done()||!e.setup.valid()||
+    if(!reader.Value(schema)||!StageEntry::supports(schema)||!visit(reader,e,schema)||!reader.Done()||!e.setup.valid()||
        e.stage.stage<1||e.stage.stage>7||e.stage.run.stage!=e.stage.stage||
        e.stage.run.difficulty!=e.setup.difficulty||e.stage.run.character!=e.setup.loadouts[0].character||
        e.stage.run.animal!=e.setup.loadouts[0].animal)return false;
-    for(u32 n=0;n<e.setup.seats;++n)if(e.pilots[n].animal!=e.setup.loadouts[n].animal)return false;
+    for(u32 n=0;n<e.setup.seats;++n){
+        if(e.pilots[n].animal!=e.setup.loadouts[n].animal)return false;
+        if(schema==1&&e.pilots[n].extra_lives<0)e.ghost_mask|=u8(1u<<n);
+    }
+    if(e.ghost_mask>>e.setup.seats)return false;
     out=std::move(e);return true;
 }
 bool capture_stage_entry(sdl::ApplicationState& app,const SessionSetup& setup,const GameInput& menu,u32 frame,std::vector<u8>& bytes){
@@ -57,9 +61,10 @@ bool capture_stage_entry(sdl::ApplicationState& app,const SessionSetup& setup,co
         const auto& pilot=stage->battle.pilot(n);
         e.pilots[n]=pilot.session;e.positions[n]=pilot.motion.position_fixed;e.focus[n]=pilot.motion.focus;
         e.piece_tiers[n]=stage->battle.life_piece_tier(n);
+        if(stage->battle.pilot_ghost(n))e.ghost_mask|=u8(1u<<n);
     }
     Netplay::SpectatorScalars::Writer writer;writer.Value(StageEntry::schema);
-    if(!visit(writer,e)||!writer.Good())return false;
+    if(!visit(writer,e,StageEntry::schema)||!writer.Good())return false;
     bytes=writer.Bytes();return true;
 }
 bool restore_stage_entry(sdl::ApplicationState& app,const SessionSetup& setup,GameInput& menu,u32 frame,const std::vector<u8>& bytes){
@@ -99,7 +104,7 @@ bool ApplicationState::restore_room_stage(const multiplayer::StageEntry& entry){
         auto state=entry.stage;state.player=entry.positions[seat];state.focus=entry.focus[seat];
         state.restore_player(pilot.motion);
         if(!pilot.configure_options())return fail(pilot.options.error);
-        scene()->battle.restore_piece_tier(seat,entry.piece_tiers[seat]);
+        scene()->battle.restore_pilot_stock(seat,entry.piece_tiers[seat],(entry.ghost_mask&(1u<<seat))!=0);
     }
     if(!preload_run())return false;
     run_input=std::make_unique<RunInput>(*scene(),progress,*this,nullptr,nullptr,stage_seed,!entry.deferred);

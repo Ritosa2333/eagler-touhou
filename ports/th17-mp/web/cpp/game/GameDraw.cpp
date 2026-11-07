@@ -23,7 +23,7 @@ bool GameDraw::pass(u32 index){
         for(u32 seat=0;seat<b.pilot_count();++seat)pilots[seat]={&b.pilot(seat).session,b.life_piece_tier(seat)};
         const auto* card=b.spell_card.get();
         HudDrawContext context{b.score,run.scoring,b.graze_total,bool(card),card?card->result_clock.displayed_frames:0,card?card->result_clock.encoded_time:0};
-        return b.hud->draw(context,text,renderer.hud_viewer-1,pilots)||fail(b.hud->error);
+        return b.hud->draw(context,text,renderer.hud_viewer-1,pilots,!renderer.logical_only)||fail(b.hud->error);
     }
     case 8:return !pause||(dates&&pause->draw(text,*dates,replay_header,captured))||fail(pause->error.empty()?"Pause calendar service unavailable":pause->error);
     default:return fail("Game draw pass outside schedule");

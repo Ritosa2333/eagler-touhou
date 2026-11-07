@@ -50,7 +50,7 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     core_.Clear();
     capture_clock_.Reset();
     capture_now_us_ = 0;
-    confirmed_phase_ = false;
+    capture_lead_ = 0;
     next_capture_ = next_commit_ = replay_end_ = 0;
     corrections_ = resimulated_ = 0;
     error_ = nullptr;
@@ -84,21 +84,32 @@ std::uint32_t Session::next_frame() const {
     return last == Netplay::INVALID_FRAME ? 0 : last + 1;
 }
 
-bool Session::pump(std::uint64_t now_ms) {
-    return !error_ && channel_.Pump(gate_, core_, now_ms, next_capture_ != 0);
+bool Session::pump(std::uint64_t now_ms, bool capture_follows) {
+    const bool defer = capture_follows && setup_.rollback && needs_input();
+    return !error_ && channel_.Pump(gate_, core_, now_ms, next_capture_ != 0, defer);
+}
+
+bool Session::flush_inputs(std::uint64_t now_ms) {
+    return channel_.FlushDeferredInputs(core_, now_ms);
 }
 
 void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
-    confirmed = setup_.rollback && confirmed;
-    if (confirmed && !confirmed_phase_) capture_clock_.BeginPhase(now_us);
-    confirmed_phase_ = confirmed;
+    // A peer can keep sending physical input while its own repair is sliced
+    // across refreshes. Bound that battle lead to two 60 Hz samples so a
+    // temporary backlog drains when ordinary simulation resumes.
+    const bool waiting = repair_pending() || next_frame() - next_commit_ >= rollback_frames;
+    const auto lead = !setup_.rollback ? 0u :
+        confirmed ? Netplay::ConfirmedInputClock::MaxLead : waiting ? 2u : 0u;
+    if (lead && !capture_lead_) capture_clock_.BeginPhase(now_us);
+    capture_lead_ = lead;
     capture_now_us_ = now_us;
 }
 
 bool Session::needs_input() const {
+    const auto head = std::max(next_frame(), replay_end_);
     return !error_ && channel_.Active() && channel_.Error() == Netplay::SessionChannel::Failure::None &&
-        gate_.CanStart() && capture_clock_.CanCapture(next_capture_, std::max(next_frame(), replay_end_),
-            confirmed_phase_, capture_now_us_);
+        gate_.CanStart() && next_capture_ >= head && (next_capture_ == head || next_capture_ - head < capture_lead_) &&
+        capture_clock_.CanCapture(next_capture_, head, capture_lead_ != 0, capture_now_us_);
 }
 
 bool Session::capture_input(const Netplay::FrameInput& input, std::uint64_t now_ms) {

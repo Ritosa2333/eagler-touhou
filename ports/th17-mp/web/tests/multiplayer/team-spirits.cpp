@@ -873,6 +873,11 @@ void room_hud(const char* asset) {
             if (vm->source_script==30||vm->source_script==38) require(vm->hud_viewer==(seats==1?1:0),"each seat sees every room stock row");
         }
         require(life==seats&&bomb==seats&&fragment==seats*2&&graze==1,"native labels are on the HUD overlay layer");
+        require(hud.result(0,1)&&hud.result_active&&hud.result_panel,"create a spell result panel");
+        TextCapture logical;
+        require(hud.draw({score,progress,678},logical,seats-1,pilots,false),hud.error.c_str());
+        require(logical.entries.empty()&&!hud.result_active&&!hud.result_panel,
+                "logical drawing retires the result panel without generating captions");
     }
 }
 }
