@@ -1,9 +1,19 @@
 #include "EnemyDeath.hpp"
 #include <cmath>
+#if TH17_ROOM_BENCHMARK
+#include <algorithm>
+#endif
 namespace th17 {
+#if TH17_ROOM_BENCHMARK
+u32 room_benchmark_route_defeats=0;
+#endif
 int EnemyDeath::fail(EnemyRuntime& runtime,const char* message){runtime.error=message;return -2;}
 int EnemyDeath::execute(EnemyRuntime& runtime,float rate){
     auto& enemy=runtime.state;
+#if TH17_ROOM_BENCHMARK
+    const bool route_defeat=enemy.life<=0&&
+        std::find(world.boss_ids.begin(),world.boss_ids.end(),enemy.id)==world.boss_ids.end();
+#endif
     if(enemy.death_sound>=0&&!host.sound(enemy.death_sound,enemy.motion.position))return fail(runtime,"Enemy death sound unavailable");
     EnemyDeathEffect effect;effect.resource=enemy.death_animation_resource;effect.script=enemy.death_animation;effect.position=enemy.motion.position;
     const float x=float(enemy.last_hit_position.x-enemy.motion.position.x),y=float(enemy.last_hit_position.y-enemy.motion.position.y);
@@ -21,6 +31,10 @@ int EnemyDeath::execute(EnemyRuntime& runtime,float rate){
         // longer callable after this execution.
         enemy.death_script.clear();
     }
-    if(!host.callback(runtime))return fail(runtime,"Enemy death callback unavailable");return 1;
+    if(!host.callback(runtime))return fail(runtime,"Enemy death callback unavailable");
+#if TH17_ROOM_BENCHMARK
+    if(route_defeat)++room_benchmark_route_defeats;
+#endif
+    return 1;
 }
 }
