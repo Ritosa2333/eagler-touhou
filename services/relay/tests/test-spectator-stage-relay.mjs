@@ -6,10 +6,13 @@ import net from 'node:net';
 import {fileURLToPath} from 'node:url';
 import {COOPERATIVE_SPECTATOR_MARKERS} from '../src/spectator-stages.mjs';
 import {multiplayerConfigForProduct} from '../../../common/contracts/product-catalog.mjs';
+const endings=['failure','upload','signal'];
+const products=Object.entries(COOPERATIVE_SPECTATOR_MARKERS);
+const roomBudget=String(endings.length*products.length);
 const port=await new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p));});});
 const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{windowsHide:true,
   env:{...process.env,EAGLER_NETPLAY_GAMEPLAY_RELAY_FALLBACK:'1',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',
-    EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'24',EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE:'24',EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'480',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
+    EAGLER_NETPLAY_MAX_ROOMS_PER_IP:roomBudget,EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE:roomBudget,EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'480',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
 let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);const sockets=[];
 async function wait(check,label){const end=Date.now()+6000;while(!check()){if(Date.now()>end)throw Error(label+' timeout\n'+log);await new Promise(r=>setTimeout(r,5));}}
 async function open(query){const ws=new WebSocket(`ws://127.0.0.1:${port}/?${query}`),r={ws,json:[],binary:[],closed:false};sockets.push(ws);ws.binaryType='arraybuffer';
@@ -22,7 +25,7 @@ function input(marker,frame){const b=Buffer.alloc(48);b.set([69,marker,78,80,4,3
 function upload(p,b){p.ws.send(Buffer.concat([Buffer.from([0xe8]),b]));}
 try{
  await wait(()=>log.includes('listening'),'relay');let n=0;
- for(const ending of ['failure','upload','signal'])for(const [product,marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)){
+ for(const ending of endings)for(const [product,marker] of products){
   const id=`${product}-${6300+n++}`,base=`room=${id}&run=1&players=2`,prefix=product+'_';
   const forwarded=values=>Buffer.from([...(multiplayerConfigForProduct(product).relaySourceEnvelope?[0xe6,0]:[]),...values]);
   const host=await open(`room=${id}&lobby=${prefix}host&member=${prefix}member_host`),guest=await open(`room=${id}&lobby=${prefix}guest&member=${prefix}member_guest`);
