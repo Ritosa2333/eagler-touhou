@@ -248,7 +248,13 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   if(progress.screen!=0&&progress.screen!=7){if(progress.screen==2){flow.title_return_reason=4;flow.pending=AppScene::Title;}else flow.pending=AppScene(progress.screen);}
  }else if(!draw_global())return false;
  performance.sample(double(SDL_GetTicksNS())/1e9,scene()!=nullptr,progress.scene_flags,u32(frame_skip));
- fades.erase(std::remove_if(fades.begin(),fades.end(),[](const auto& item){return !item->active;}),fades.end());animations.collect_resources();audio_device.pump();frames++;
+ fades.erase(std::remove_if(fades.begin(),fades.end(),[](const auto& item){return !item->active;}),fades.end());animations.collect_resources();
+#if TH17_MULTIPLAYER
+ // The browser and replay drivers refill PCM after their complete slice.
+ if(!room_sounds)
+#endif
+  audio_device.pump();
+ ++frames;
  return advance_flow();
 }
 const i32* ApplicationState::projection(){

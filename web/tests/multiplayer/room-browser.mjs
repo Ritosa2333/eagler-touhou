@@ -304,9 +304,14 @@ try{
       const touchPhase=n<touchWindow.keyboard?'stationary':n<touchWindow.start?'keyboard':
        n<touchWindow.end?'dragging':'released';
       if(touchDrag&&n>120){
-       const cost=touchCosts[touchPhase]??={callbacks:0,withoutPresentation:0,corrections:0,resimulated:0};
+       const cost=touchCosts[touchPhase]??={
+        callbacks:0,withoutPresentation:0,atPredictionCap:0,corrections:0,resimulated:0,
+       };
        ++cost.callbacks;
-       if(!presented)++cost.withoutPresentation;
+       if(!presented){
+        ++cost.withoutPresentation;
+        if(n-committed>=12)++cost.atPredictionCap;
+       }
        cost.corrections+=corrections-diagnostics.corrections;
        cost.resimulated+=resimulated-diagnostics.resimulated;
       }

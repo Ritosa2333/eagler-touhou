@@ -70,8 +70,8 @@ struct RoomRuntime final : multiplayer::World {
  bool receive_spectator();
  bool advance_playback(bool advance);
  GameInput main_input;
- bool entered=false, trace=false, discarded_images=false;
- double replay_deadline=0;
+ bool entered=false, trace=false, discarded_images=false, retry_forward=false;
+ double replay_deadline=0,refresh_deadline=0,tick_cost_ms=5;
  std::uint64_t now_ms=0;
  u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
  std::array<u32,3> phase_corrections{};
@@ -99,8 +99,12 @@ struct RoomRuntime final : multiplayer::World {
  bool can_predict() const override{return entered&&barrier!=session.next_frame()&&app->can_rollback();}
  void speculating(bool active) override{app->room_speculative=active;}
  void replaying(bool intermediate) override{app->graphics.logical_drawing=intermediate;}
- bool replay_budget(unsigned replayed) const override{
-  return replayed<4&&emscripten_get_now()<replay_deadline;
+ bool replay_budget(unsigned replayed,unsigned remaining) const override{
+  const double now=emscripten_get_now();
+  if(replayed>=4)return false;
+  // A last repair can finish the image within this refresh. Leave time for
+  // the measured full tick and the final canvas commit.
+  return now<replay_deadline||(remaining==1&&now+tick_cost_ms+1<refresh_deadline);
  }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
@@ -686,29 +690,53 @@ EMSCRIPTEN_KEEPALIVE void th17_loop_start(){
   // RAF's timestamp and emscripten_get_now share the performance clock. Work
   // already done before this callback has consumed part of this refresh.
   const double deadline=begin+std::max(0.,1000./60.-std::max(0.,begin-time));
+#if TH17_MULTIPLAYER
+  if(room)room->refresh_deadline=deadline;
+#endif
   for(unsigned i=0;i<ticks&&ok;i++){
    const double tick_begin=emscripten_get_now();
 #if TH17_MULTIPLAYER
-   const auto previous_input_frame=room?room->session.next_frame():0;
+   const bool live=room&&!room->spectator&&!room->playing_replay&&!room->local_results;
+   const auto previous_head=live?room->session.prediction_head():0;
+   const auto previous_repairs=live?room->session.resimulated_frames():0;
+   const bool measure=live&&!app->graphics.backend.presentation_pending();
 #endif
    ok=sample_and_tick();
+   const double tick_end=emscripten_get_now();
 #if TH17_MULTIPLAYER
-   if(!room||room->spectator||room->playing_replay||room->local_results||
-      (!room->session.repair_pending()&&room->session.next_frame()!=previous_input_frame))++completed;
-   if(room&&room->session.repair_pending()){
+   const bool advanced=live&&room&&room->session.prediction_head()>previous_head;
+   if(!live||advanced)++completed;
+   if(measure&&advanced&&room->session.resimulated_frames()==previous_repairs&&app->graphics.backend.presentation_pending()){
+    const double cost=std::clamp(tick_end-tick_begin,1.,16.);
+    room->tick_cost_ms+=(cost-room->tick_cost_ms)*.25;
+   }
+   if(live&&room&&!room->terminal&&(room->session.repair_pending()||room->session.forward_deferred())){
+    room->retry_forward|=room->session.forward_deferred();
     cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);
     break;
    }
 #else
    ++completed;
 #endif
-   const double tick_end=emscripten_get_now();predicted_tick=std::max(predicted_tick,tick_end-tick_begin);if(app->exiting)break;
+   predicted_tick=std::max(predicted_tick,tick_end-tick_begin);if(app->exiting)break;
    // Check whether the NEXT complete update/draw fits, rather than noticing
    // an overrun only after it happened. Keep unexecuted ticks as short debt.
    if(i+1<ticks&&tick_end+predicted_tick>=deadline){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*period);break;}
   }
 #if TH17_MULTIPLAYER
   if(!ticks&&work)ok=room->poll()&&room->update(false);
+  // Spend the single saved tick only on an already confirmed input. A
+  // speculative catch-up would push the head forward and multiply repairs.
+  if(ok&&ticks==1&&completed==1&&room&&room->retry_forward&&!room->terminal&&!room->session.repair_pending()&&
+      room->session.has_confirmed_forward_input()&&emscripten_get_now()+room->tick_cost_ms+1<deadline){
+   const auto head=room->session.prediction_head();
+   room->retry_forward=false;
+   ok=sample_and_tick();
+   if(room){
+    completed+=unsigned(room->session.prediction_head()>head);
+    room->retry_forward=room->session.forward_deferred();
+   }
+  }
 #endif
   if(ok&&completed)ok=ThpracUi::render(*app);
   const bool presented=app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();

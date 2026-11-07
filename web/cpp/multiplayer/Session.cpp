@@ -51,6 +51,7 @@ bool Session::begin(const SessionSetup& setup, std::uint64_t now_ms) {
     capture_clock_.Reset();
     capture_now_us_ = 0;
     capture_lead_ = 0;
+    forward_deferred_ = false;
     next_capture_ = next_commit_ = replay_end_ = 0;
     corrections_ = resimulated_ = 0;
     error_ = nullptr;
@@ -84,6 +85,15 @@ std::uint32_t Session::next_frame() const {
     return last == Netplay::INVALID_FRAME ? 0 : last + 1;
 }
 
+std::uint32_t Session::prediction_head() const {
+    return std::max(next_frame(), replay_end_);
+}
+
+bool Session::has_confirmed_forward_input() const {
+    const auto confirmed = core_.ConfirmedThroughAllRemotes();
+    return confirmed != Netplay::INVALID_FRAME && confirmed >= prediction_head();
+}
+
 bool Session::pump(std::uint64_t now_ms, bool capture_follows) {
     const bool defer = capture_follows && setup_.rollback && needs_input();
     return !error_ && channel_.Pump(gate_, core_, now_ms, next_capture_ != 0, defer);
@@ -100,13 +110,14 @@ void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
     const bool waiting = repair_pending() || next_frame() - next_commit_ >= rollback_frames;
     const auto lead = !setup_.rollback ? 0u :
         confirmed ? Netplay::ConfirmedInputClock::MaxLead : waiting ? 2u : 0u;
-    if (lead && !capture_lead_) capture_clock_.BeginPhase(now_us);
+    // A combat repair continues the sampling clock set by the last capture.
+    if (confirmed && lead && !capture_lead_) capture_clock_.BeginPhase(now_us);
     capture_lead_ = lead;
     capture_now_us_ = now_us;
 }
 
 bool Session::needs_input() const {
-    const auto head = std::max(next_frame(), replay_end_);
+    const auto head = prediction_head();
     return !error_ && channel_.Active() && channel_.Error() == Netplay::SessionChannel::Failure::None &&
         gate_.CanStart() && next_capture_ >= head && (next_capture_ == head || next_capture_ - head < capture_lead_) &&
         capture_clock_.CanCapture(next_capture_, head, capture_lead_ != 0, capture_now_us_);
@@ -160,6 +171,7 @@ Session::Tick Session::simulate(World& world) {
 }
 
 Session::Tick Session::tick(World& world, bool advance) {
+    forward_deferred_ = false;
     if (error_ || channel_.Error() != Netplay::SessionChannel::Failure::None) return Tick::Failed;
     if (!channel_.Active() || !gate_.CanStart()) return Tick::Waiting;
 
@@ -175,7 +187,8 @@ Session::Tick Session::tick(World& world, bool advance) {
 
     const bool correcting = replay_end_ != 0;
     for (unsigned replayed = 0; next_frame() < replay_end_; ++replayed) {
-        if (replayed && !world.replay_budget(replayed)) {
+        if (replayed && !world.replay_budget(replayed, replay_end_ - next_frame())) {
+            forward_deferred_ = advance;
             return commit(world) ? Tick::Waiting : Tick::Failed;
         }
         world.replaying(next_frame() + 1 < replay_end_);
@@ -188,7 +201,10 @@ Session::Tick Session::tick(World& world, bool advance) {
     replay_end_ = 0;
     if (!commit(world)) return Tick::Failed;
     // Keep this tick when a small correction leaves room for the next update.
-    if (correcting && (!advance || !world.replay_budget(1))) return Tick::Advanced;
+    if (correcting && (!advance || !world.replay_budget(1, 0))) {
+        forward_deferred_ = advance;
+        return Tick::Advanced;
+    }
     if (!advance) return Tick::Waiting;
     const auto result = simulate(world);
     if (correcting && result == Tick::Waiting) return Tick::Advanced;
