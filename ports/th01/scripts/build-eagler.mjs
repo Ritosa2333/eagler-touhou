@@ -12,7 +12,7 @@ if(args['print-inputs']) await printPC98Inputs({port,game:'th01'});
 const source = resolve(args.source||port), web=resolve(source,'web');
 const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
 const privateInputs=new Set(sourceIdentity?.resources||[]);
-const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+const assets=resolve(args.assets||web);
 async function readInput(name){
   if(name==='game.wasm'){
     return await readFile(resolve(web,name));

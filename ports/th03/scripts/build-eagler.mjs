@@ -13,7 +13,7 @@ if(args['print-inputs']) await printPC98Inputs({port,game:'th03'});
 const source = resolve(args.source||port), web=resolve(source,'web');
 const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
 const privateInputs=new Set(sourceIdentity?.resources||[]);
-const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+const assets=resolve(args.assets||web);
 async function nativeMarkerInputs(){
   const meta=JSON.parse(await readFile(resolve(web,'native-patch.json'),'utf8'));
   const source=await readFile(resolve(privateInputs.has('native/main.exe')?assets:web,'native/main.exe'));

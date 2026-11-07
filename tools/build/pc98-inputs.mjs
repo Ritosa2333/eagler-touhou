@@ -2,8 +2,7 @@ import {readdir, readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {printRuntimeInputs} from './runtime-inputs.mjs';
 
-// Include checked-in runtime cores in the assembly fingerprint. Private disks
-// and music are inventoried separately by build-eagler's package receipt.
+// Include all checked-in PC-98 resources in the assembly fingerprint.
 export async function printPC98Inputs({port, game}) {
   const inputs = ['source-import.json'];
   async function visit(directory, prefix) {
@@ -27,6 +26,7 @@ export async function printPC98Inputs({port, game}) {
   }
   inputs.push('../../tools/build/pc98-inputs.mjs','../../tools/build/runtime-inputs.mjs');
   const baseline = JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
+  if(game!=='th05') inputs.push(...baseline.resources.map(name=>`web/${name}`));
   await printRuntimeInputs({workspace:port, root:port, sources:[], headers:inputs,
     flags:[`game=${game}`, 'assembly=managed-import', game==='th05'?'native-core=external-precompiled':'native-core=checked-in-precompiled', `source-baseline=${baseline.commit}`]});
 }

@@ -14,7 +14,7 @@ for(const game of ['th01','th02','th03','th04','th05'])test(`${game} source insp
     assert.ok(report.inputFiles.includes(resolve(owner,name)),`source identity covers ${name}`);
   assert.ok(report.inputFiles.includes(resolve(root,'common/browser/directory-keyboard.mjs')));
   for(const resource of baseline.resources) {
-    const checkedInCore=game!=='th05'&&resource.endsWith('.wasm');
+    const checkedInCore=game!=='th05';
     assert.equal(report.inputFiles.includes(resolve(owner,'web',resource)),checkedInCore,resource);
   }
   assert.ok(report.compilerFlags.includes(game==='th05'?'native-core=external-precompiled':'native-core=checked-in-precompiled'));

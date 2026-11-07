@@ -13,7 +13,7 @@ if(args['print-inputs']) await printPC98Inputs({port,game:'th02'});
 const source = resolve(args.source||port), web=resolve(source,'web');
 const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
 const privateInputs=new Set(sourceIdentity?.resources||[]);
-const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
+const assets=resolve(args.assets||web);
 const nativePractice=new Set(['practice-cn.exe.gz','practice-jp.exe.gz','practice-start.com']);
 async function readInput(name){
   try{return await readFile(resolve(nativePractice.has(name)?web:privateInputs.has(name)&&!name.endsWith('.wasm')?assets:web,name));}
