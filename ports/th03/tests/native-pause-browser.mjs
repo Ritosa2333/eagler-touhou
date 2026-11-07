@@ -80,6 +80,13 @@ try{
       await page.evaluate(async()=>{for(let seat=0;seat<2;seat++)await rpc(seat,'keyboard',{code:'KeyZ',down:false});});await new Promise(r=>setTimeout(r,500));
     }
     await wait(async()=>(await frames()[0].evaluate(()=>window.th03SyncState?.phase))===1,'battle phase',60000);
+    for(let seat=0;seat<count;seat++){
+      await page.evaluate(seat=>rpc(seat,'keyboard',{code:'KeyZ',down:true}),seat);
+      await wait(async()=>!!(await frames()[seat].evaluate(()=>window.__eaglerPC98Input.sample())&512),'shot pressed',5000);
+      await page.evaluate(seat=>rpc(seat,'keyboard',{code:'KeyZ',down:false}),seat);
+      await wait(async()=>!(await frames()[seat].evaluate(()=>window.__eaglerPC98Input.sample())&512),'shot released',5000);
+    }
+    console.log('PASS both players release shot');
     if(process.env.PC98_TEST_REPLAY_AUDIO==='1'){
       await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:true}));await new Promise(resolve=>setTimeout(resolve,5000));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',down:false}));
     }

@@ -75,6 +75,7 @@ function presentFrame() {
   if (!online || !emulator || closed || closing || emulator.state === 'exited') return;
   const uploaded=emulator.module.frameUploads||0;
   if(uploaded===lastUpload)return;
+  if(!presentationDue(performance.now()))return;
   const began=performance.now();
   if(!emulator.module.netPresent())return;
   lastUpload=uploaded;
@@ -644,7 +645,7 @@ $('start').addEventListener('click', async () => {
       const options={recorder:replayRecorder,proof:()=>battleProof(emulator,nativePause,controls,nativeMusic,pauseSeat,pauseSelection,hiddenSeats),scene:()=>nativePause.selecting?2:nativeState?.phase===1?1:0,network:netplay,rollbackEnabled,inputDelay:inputPolicy.inputDelay,predictionLead:inputPolicy.predictionLead,snapshotStride:2,onError:report,onState:message=>status(message)};
       sync=emulator.isNetworkWorker?new AsyncLockstep({...options,execute:(inputs,frame)=>emulator.execute(inputs,frame),replaySlice:(frame,plans)=>emulator.replaySlice(frame,plans),restore:frame=>emulator.restore(frame),
         confirmQueued:(prefix,retain)=>emulator.confirmQueued(prefix,retain),present:()=>emulator.present(presentationDue)})
-        :new Lockstep({...options,step:stepSynchronized,present:()=>{if(presentationDue(performance.now()))presentFrame();},hash:syncHash,capture:captureSynchronized,restore:restoreSynchronized,confirm:confirmSynchronized});
+        :new Lockstep({...options,step:stepSynchronized,present:presentFrame,hash:syncHash,capture:captureSynchronized,restore:restoreSynchronized,confirm:confirmSynchronized});
     }
     // Boot can contain menu SE while the other device is still loading.
     // Keep its BGM commands; do not play those old effects at room start.

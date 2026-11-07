@@ -3,20 +3,23 @@ const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:512
 export function managedInput({game, epoch, active, options}) {
   const held = new Set(), secondary = new Set(), localKeys = new Set(); let touch = {}, pulse = 0, menuPulse = 0, menuUntil = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
   const local2={KeyW:1,KeyS:2,KeyA:4,KeyD:8,KeyL:16,KeyK:32,ControlLeft:64,ControlRight:64,KeyJ:512};
-  const keyboard = createBrowserKeyboard({send:(code, down) => {if(down){held.add(code);keyPulse|=buttons[code]??0;}else held.delete(code);},
+  let notificationPending=false;
+  function changed(){if(notificationPending)return;notificationPending=true;queueMicrotask(()=>{notificationPending=false;input.onChange?.();});}
+  const keyboard = createBrowserKeyboard({send:(code, down) => {if(down){held.add(code);keyPulse|=buttons[code]??0;}else held.delete(code);changed();},
     hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
   const input = {
-    key(message) { if(message.down)localKeys.add(message.code);else localKeys.delete(message.code);keyboard.event(message, message.down, 'hosted'); },
-    clear() { secondary.clear(); localKeys.clear();keyboard.clear(); touch = {}; pulse = keyPulse = menuPulse = menuUntil = 0; point = null; motion = {x:0,y:0,active:false}; },
+    key(message) { if(message.down)localKeys.add(message.code);else localKeys.delete(message.code);keyboard.event(message, message.down, 'hosted');changed(); },
+    clear() { secondary.clear(); localKeys.clear();keyboard.clear(); touch = {}; pulse = keyPulse = menuPulse = menuUntil = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     localSecond() {let bits=0;for(const code of localKeys)bits|=local2[code]??0;return bits;},
     touch(message) {
       if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
       if (message.bombSerial !== bomb) pulse |= 16;
       if (message.escapeSerial !== escape) pulse |= 128;
-      bomb = message.bombSerial; escape = message.escapeSerial; touch = message;
+      bomb = message.bombSerial; escape = message.escapeSerial; touch = message; changed();
     },
     pointer(message) {
       if (!['down','move','up'].includes(message.type) || !Number.isSafeInteger(message.id) || !Number.isFinite(message.x) || !Number.isFinite(message.y)) throw Error('触控坐标无效');
+      try {
       if (input.menuPointer?.(message)) return;
       if (message.type === 'down' && point) { secondary.add(message.id); point.menuMoved=true; return; }
       if (message.type === 'up' && secondary.delete(message.id)) { menuPulse = 128; menuUntil = performance.now()+120; return; }
@@ -28,6 +31,7 @@ export function managedInput({game, epoch, active, options}) {
         if (!point.menuMoved && Math.max(Math.abs(dx),Math.abs(dy)) >= 0.05) {menuPulse = Math.abs(dx)>Math.abs(dy) ? (dx<0?4:8) : (dy<0?1:2);menuUntil=performance.now()+120;point.menuMoved=true;}
         point = {...point, x:message.x, y:message.y};
       } else if (point?.id === message.id) { if (!point.menuMoved) {menuPulse=512;menuUntil=performance.now()+120;} point = null; motion = {x:0,y:0,active:false}; }
+      } finally { changed(); }
     },
     sample({play = true} = {}) {
       if (!active()) return 0;
@@ -48,8 +52,10 @@ export function managedInput({game, epoch, active, options}) {
     if (event.__eaglerPC98Synthetic) return;
     if(type==='keydown')localKeys.add(event.code);else localKeys.delete(event.code);
     const down=type==='keydown',handled=keyboard.mapped()?keyboard.mapNative(event,down):keyboard.event(event,down);
-    if (handled) { event.preventDefault(); event.stopImmediatePropagation(); }
+    changed();if (handled) { event.preventDefault(); event.stopImmediatePropagation(); }
   }, true);
   addEventListener('blur', () => input.clear());
+  addEventListener('pagehide', () => input.clear());
+  document.addEventListener('visibilitychange', () => { if(document.hidden)input.clear(); });
   return input;
 }

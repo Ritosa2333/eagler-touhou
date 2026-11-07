@@ -25,7 +25,7 @@ const keys={1:['ArrowUp','ArrowUp',38],2:['ArrowDown','ArrowDown',40],4:['ArrowL
 const versusKeys=[{1:'KeyT',2:'KeyB',4:'KeyF',8:'KeyH',16:'KeyX',32:'KeyZ'},
   {1:'Numpad8',2:'Numpad2',4:'Numpad4',8:'Numpad6',16:'ArrowRight',32:'ArrowLeft'}];
 let emulator,assist,soloMusic,localSfx,recorder,battleReplay,viewerSettings,playbackPath,playbackDescription,lang,previous=0,loop=0,playback=false,pauseState=null,pauseTransition=false,guestPaused=false,pauseRequestHandled=false,scoreOffer=null,lastReplayStatus=0,lastReplayKey='';
-const fire=new FireControl(),secondFire=new FireControl();let versusHeld=new Set(),lastVersus=false;
+const fire=new FireControl(),secondFire=new FireControl();let versusHeld=new Set(),lastVersus=false,lastReconcile=0;
 const report=error=>globalThis.__eaglerPC98Emit({event:'error',message:String(error?.message||error)});
 function pausePointer(message){
   const state=emulator?.snapshot.state;if(state?.phase!==2)return false;
@@ -66,7 +66,7 @@ function transition(save,restart=false){
     if(emulator===current){await current.call('soloPauseCancel',[pauseState?.generation,pauseState?.at]).catch(()=>{});report(error);}
   }).finally(()=>{pauseTransition=false;});
 }
-function tick(now){
+function processInput(now){
   if(!emulator)return;
   const state=emulator.snapshot.state,paused=state?.phase===2;
   const versus=state?.phase===3||emulator.snapshot.selecting;if(versus!==lastVersus){releaseInput();lastVersus=versus;}
@@ -87,11 +87,15 @@ function tick(now){
       versusHeld=next;
     }else send(bits);
     const settings=globalThis.__eaglerPC98Options();if(settings.th03FocusEnabled===false)focus=0;
+    if(now-lastReconcile>=250){
+      const heldCodes=Object.entries(keys).filter(([mask])=>previous&mask).map(([,value])=>value[0]);
+      emulator.send('reconcileKeys',[[...new Set([...heldCodes,...versusHeld])]]);lastReconcile=now;
+    }
     emulator.setInput({generation:state?.generation,focus,
       touch:[playing||state?.phase===3?packTouch(0,{...(playing?input.motion():{}),alwaysPoint:!!settings.alwaysHitbox}):0,0]});
   }
-  loop=requestAnimationFrame(tick);
 }
+function tick(now){processInput(now);if(emulator)loop=requestAnimationFrame(tick);}
 async function syncFiles(){
   if(!emulator||playback)return;
   const fat=new Fat12(await emulator.getDiskImage(`3-${lang}.hdi`));
@@ -164,7 +168,7 @@ async function start({language,music,options}){
     onDiskChange:()=>{},onExit:()=>void naturalExit().catch(report)};
   emulator=await WorkerNP21.create(config,{game:'03',patch:assist.bridge.meta,music:soloMusic?.reader.patch,onError:report});
   emulator.onScoreSaved=scoreSaved;
-  globalThis.__eaglerPC98Input.menuPointer=pausePointer;canvas.addEventListener('pointerup',canvasPausePointer);window.addEventListener('blur',releaseInput);document.addEventListener('visibilitychange',onVisibilityChange);
+  globalThis.__eaglerPC98Input.menuPointer=pausePointer;globalThis.__eaglerPC98Input.onChange=()=>processInput(performance.now());canvas.addEventListener('pointerup',canvasPausePointer);window.addEventListener('blur',releaseInput);document.addEventListener('visibilitychange',onVisibilityChange);
   recorder?.attach(emulator);
   emulator.onMusic=(ax,hash)=>{if((ax>>>8)===0x0c)localSfx?.command(ax);else soloMusic?.player.command(ax,hash);};
   await emulator.addDiskImage(`3-${lang}.hdi`,disk);await emulator.setHdd(0,`3-${lang}.hdi`);
@@ -211,7 +215,7 @@ export const managedAPI={
     }
     throw Error('录像操作无效');
   },
-  stop(){cancelAnimationFrame(loop);releaseInput();previous=0;lastVersus=false;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);window.removeEventListener('blur',releaseInput);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
+  stop(){cancelAnimationFrame(loop);delete globalThis.__eaglerPC98Input.onChange;releaseInput();previous=0;lastReconcile=0;lastVersus=false;pauseState=null;pauseTransition=guestPaused=pauseRequestHandled=false;delete globalThis.__eaglerPC98Input.menuPointer;canvas.removeEventListener('pointerup',canvasPausePointer);window.removeEventListener('blur',releaseInput);document.removeEventListener('visibilitychange',onVisibilityChange);fire.reset();recorder?.dispose();localSfx?.dispose();soloMusic?.dispose();emulator?.dispose();emulator=undefined;
     battleReplay?.stop();battleReplay=undefined;viewerSettings=playbackPath=playbackDescription=undefined;lastReplayStatus=0;lastReplayKey='';recorder=localSfx=soloMusic=undefined;const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;},
 };
 function publishBattleStatus(state,force=false){

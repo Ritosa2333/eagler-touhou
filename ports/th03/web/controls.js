@@ -353,6 +353,7 @@ export function mountControls({canvas, getEmulator, getNetwork, getTouch, getMan
     send(target, packed, cancelled);
   }
   function poll(){refreshPads();sampleLocal();requestAnimationFrame(poll);}
+  const managedInput=getManagedInput();if(managedInput)managedInput.onChange=sampleChangedInput;
   render(); refreshPads(true); requestAnimationFrame(poll);
   function applyFrame(inputs){
     const target=new Set(),touches=inputs.map(input=>limitTouch(input.touch,getRoomUnlimited()));let mask=0,points=0;

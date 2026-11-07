@@ -96,6 +96,11 @@ async function dispatch({method,args=[]}){
     if(event.type==='keydown')held.set(event.code,event);else if(event.type==='keyup')held.delete(event.code);
     if(event.type==='keydown'||event.type==='keyup')emulator.key(event.code,event.type==='keydown');return;
   }
+  if(method==='reconcileKeys'){
+    const expected=new Set(args[0]);
+    for(const [code] of held)if(!expected.has(code)){held.delete(code);emulator.key(code,false);}
+    return;
+  }
   if(method==='input'){
     lastInput=performance.now();queueAssist(args[0]);return;
   }
