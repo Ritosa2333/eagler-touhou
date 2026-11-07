@@ -564,6 +564,15 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_confirmed(unsigned number){
 EMSCRIPTEN_KEEPALIVE void th17_room_trace(unsigned enabled){
  if(th17::sdl::room)th17::sdl::room->trace=enabled!=0;
 }
+EMSCRIPTEN_KEEPALIVE unsigned th17_room_wait_state(){
+ using namespace th17::sdl;
+ if(!room||!app)return 0;
+ const auto* scene=app->scene();
+ return (room->session.repair_pending()?1u:0u)|
+        (room->barrier==room->session.next_frame()?2u:0u)|
+        (!app->can_rollback()?4u:0u)|
+        (scene&&scene->battle.dialogue_present()?8u:0u);
+}
 EMSCRIPTEN_KEEPALIVE const unsigned* th17_room_performance(){
  using namespace th17::sdl;
  static std::array<unsigned,7> value{};
