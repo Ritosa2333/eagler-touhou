@@ -10,6 +10,7 @@ import type { GameSettingsModel } from '../../models/game-settings';
 import { useLocale } from '../../i18n';
 import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
 import { InputSettings } from './InputSettings';
+import { GameAudioFields } from './GameAudioControls';
 import { OptionRow } from './OptionRow';
 import { OptionSwitch } from './TouchSettingsFields';
 import { SettingsSelect } from './SettingsSelect';
@@ -350,6 +351,15 @@ export function SettingsBody({
           th09Local={state.gameId === 'th09' && !multiplayer ? actions.th09Local : undefined}
         />
       )}
+      <OptionsGroup
+        id={id('audioOptions')}
+        title={t('options.volume')}
+        open={state.disclosure.audio}
+        onOpenChange={(open) => model.setDisclosure('audio', open)}
+        bodyClassName="options-advanced-body"
+      >
+        <GameAudioFields model={model} />
+      </OptionsGroup>
       <OptionsGroup
         id={id('advancedOptions')}
         title={t('options.advanced')}

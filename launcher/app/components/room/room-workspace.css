@@ -38,6 +38,13 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace:has([data-preview-ready=true]) #gameFrame{opacity:1;pointer-events:auto}
 #mpRoomView.room-workspace-view .room-workspace-header{grid-column:1/-1;grid-row:1;justify-content:initial!important;min-width:0!important;max-width:100%;width:100%;box-sizing:border-box;flex-shrink:0}
 .room-workspace-heading,.room-workspace-meta,.room-workspace-top-actions{display:flex;align-items:center;gap:18px;min-width:0}
+.room-product-heading{display:flex;align-items:center;justify-content:center;min-width:0}
+.room-product-heading .room-product-trigger{display:grid;place-items:center;flex:none;width:28px;height:32px;margin-inline:2px 0;padding:0;border:0;background:transparent;color:var(--kit-muted-foreground)}
+.room-product-trigger:not(:disabled):is(:hover,[aria-expanded='true']){color:var(--kit-foreground)}
+.room-product-trigger svg{width:15px;height:15px}
+@media(max-width:780px),(pointer:coarse){
+ .room-product-heading .room-product-trigger{width:44px;height:44px;min-height:44px;margin-inline:-6px -9px}
+}
 .room-workspace-meta{font-size:17px;white-space:nowrap}
 .room-workspace-meta>span{padding-left:18px;border-left:1px solid var(--line)}
 .room-workspace-top-actions{margin-left:auto;gap:12px}
@@ -81,8 +88,9 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-workspace-preparation .mp-resource-tracks,.room-workspace-preparation #mpRoomResourceAmount{display:none}
 .room-workspace-preparation .mp-room-resource-progress{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;background:none;padding:0;border:0;font:14px/1.6 var(--ui-font);color:var(--paper)}
 .room-workspace-preparation .mp-room-resource-progress button{padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--paper);font:14px var(--ui-font)}
-.room-workspace-fullscreen{position:absolute;right:12px;bottom:12px;z-index:2;display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--kit-card);color:var(--paper)}
-.room-workspace-fullscreen svg{width:22px;height:22px}
+.room-workspace-viewport-tools{position:absolute;right:12px;bottom:12px;z-index:2;display:flex;gap:8px}
+.room-workspace-viewport-tools>button{display:grid;place-items:center;width:44px;height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--kit-card);color:var(--paper)}
+.room-workspace-viewport-tools>button svg{width:22px;height:22px}
 /* Grouped form reuses MainSelect, RoomTiming, RoomChoiceGroup and OptionSwitch. */
 #mpRoomView.room-workspace-view .room-grouped-settings{display:block!important;position:static!important;padding:0!important;background:none!important;border:0!important}
 #mpRoomView.room-workspace-view .mizuki-select{width:100%}
@@ -126,7 +134,6 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace .room-workspace-roster .mp-seat[data-manageable]{--seat-name-inset:44px}
 #player.room-workspace .room-workspace-roster .mp-seat-details{display:flex!important;gap:5px;max-width:100%;font-size:12px!important;align-items:center}
 #player.room-workspace .room-workspace-roster .mp-seat-loadout{font:500 12px/1.4 var(--kit-font)!important;opacity:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#player.room-workspace .room-workspace-roster .mp-seat-control{display:none!important}
 #player.room-workspace .room-workspace-roster .mp-seat-latency{display:flex;align-items:center;gap:12px;position:relative!important;min-height:20px!important;margin:4px 0 0!important;padding:0!important;background:none!important;border:0!important;color:var(--paper)!important;font:500 11px/1.4 var(--kit-font)!important;pointer-events:auto;flex-wrap:wrap;text-align:left}
 .room-seat-network-pair{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
 .room-seat-network-label{color:var(--muted)}
@@ -157,7 +164,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 
 @keyframes room-card-enter{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes room-panel-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:760px){
+@media (max-width: 760px), (max-width: 1000px) and (pointer: coarse) {
  #player.room-workspace{display:flex!important;flex-direction:column;height:100dvh!important;min-height:0;gap:12px;padding:12px 12px calc(100px + env(safe-area-inset-bottom))!important;overflow-y:auto!important;overflow-x:hidden!important;touch-action:pan-y!important;overscroll-behavior-y:contain}
  #player.room-workspace:has(.room-workspace-actions[hidden]){padding-bottom:calc(12px + env(safe-area-inset-bottom))!important}
  #player.room-workspace :is(.room-workspace-header,.room-workspace-roster,.room-workspace-roster button,.room-workspace-sidebar,.room-workspace-spectators){touch-action:pan-y!important}
@@ -188,12 +195,12 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{display:none}
  .room-workspace-spectators{order:2;gap:10px;padding:6px 10px;flex:none;min-height:36px}
  .room-workspace-column{display:contents}
- .room-workspace-sidebar{order:3;flex:none;min-height:max(216px,calc(360px - var(--room-playback-height,0px)));overflow:visible}
+ .room-workspace-sidebar{order:3;flex:none;overflow:visible}
  .room-workspace-panels{overflow:visible;padding:16px}
- .room-workspace-chat{height:clamp(156px,calc(300px - var(--room-playback-height,0px)),300px);min-height:0}
+ .room-workspace-chat{height:auto;min-height:0}
  .room-seat-player-tag{font-size:10px}
  /* Keep the original card contents beside an avatar-only spectator rail. */
- #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]){display:grid;grid-template-columns:minmax(0,3fr) minmax(64px,1fr);gap:8px}
+ #player.room-workspace .room-workspace-roster[data-side-lounge="true"]:is([data-player-count="2"],[data-player-count="3"]){display:grid;grid-template-columns:minmax(0,3fr) minmax(64px,1fr);gap:8px}
  #player.room-workspace .room-workspace-roster:is([data-player-count="2"],[data-player-count="3"]) .room-workspace-lounge-host{position:relative;align-self:stretch}
  #player.room-workspace .room-workspace-roster .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]){grid-template-columns:minmax(0,1fr)!important}
  #player.room-workspace .mp-seat-stage:is([data-player-count="2"],[data-player-count="3"]) .mp-seat{min-height:84px!important;padding:8px 10px!important}
@@ -212,7 +219,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  .room-workspace-meta>span{padding-left:0}
 }
 @media(orientation:portrait){
- #player.room-workspace .room-workspace-chat>.mp-room-quick-chat{order:-1;flex:none;margin:0 0 12px}
+ #player.room-workspace .room-workspace-chat:has(>.mp-room-chat-log)>.mp-room-quick-chat{order:-1;flex:none;margin:0 0 12px}
  #mpRoomView.room-workspace-view .room-workspace-chat>.mp-room-chat-log{justify-content:flex-start;margin:0!important}
 }
 @media(prefers-reduced-motion:reduce){.room-preparation-spinner,.room-seat-ring.indeterminate{animation:none}}
@@ -235,6 +242,19 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-room-panel{position:fixed;inset:0;box-sizing:border-box;width:min(520px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);margin:auto;padding:20px;border:1px solid var(--kit-border);border-radius:10px;background:var(--kit-card);color:var(--kit-foreground);box-shadow:0 16px 48px #0003;overflow:auto;font:400 13px/1.5 var(--kit-font)}
 #mpRoomView .mp-room-panel:not([open]){display:none}
 #mpRoomView .mp-room-panel::backdrop{background:#0008}
+/* Only the slider changes the history position on a narrow room layout. */
+.room-chat-history{display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:4px;height:152px;margin-bottom:12px}
+.room-chat-history-viewport{min-height:0;overflow:hidden;overflow-anchor:none;touch-action:pan-y;font-size:14px;line-height:1.65}
+.room-chat-history-rows{display:grid;align-content:end;gap:6px;min-height:100%}
+.room-chat-history-rows>p{margin:0;overflow-wrap:anywhere}
+.room-chat-history .chat-report-trigger{padding:0}
+.room-chat-history-empty{color:var(--kit-muted-foreground)}
+.room-workspace-chat:has(>.room-chat-history) .ui-kit-input{font-size:16px}
+.room-chat-history-slider.ui-kit-slider{justify-content:center;width:100%;height:100%;padding-block:5px;cursor:ns-resize}
+.room-chat-history-slider[data-disabled]{visibility:hidden}
+.room-chat-history-slider .ui-kit-slider-track{flex:none;width:4px;height:100%}
+.room-chat-history-slider .ui-kit-slider-range{width:100%;height:auto}
+.room-chat-history-slider .ui-kit-slider-thumb::before{inset:-8px -9px}
 #mpRoomView .mp-panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px}
 #mpRoomView .mp-panel-head h3{margin:0;color:var(--kit-foreground);font:600 16px/1.4 var(--kit-font)}
 #mpRoomView .mp-name-editor{display:grid;gap:6px;margin:0 0 16px;font-size:12px;color:var(--kit-muted-foreground)}
@@ -265,7 +285,9 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-spectator-copy strong{overflow:hidden;font-size:13px;text-overflow:ellipsis;white-space:nowrap}
 #mpRoomView :is(.mp-spectator-copy small,.mp-spectator-marker,.mp-spectator-empty){color:var(--kit-muted-foreground);font-size:12px}
 #mpRoomView .mp-room-setting-title{height:auto;margin:12px 0 8px;color:var(--kit-muted-foreground);font-size:12px}
-#mpRoomView .room-workspace-tabs{flex:none;gap:16px;padding:0 16px}
+#mpRoomView .room-workspace-tab-bar{display:flex;align-items:center;flex:none}
+#mpRoomView .room-workspace-tabs{flex:1;min-width:0;gap:clamp(4px,2vw,16px);padding:0 12px}
+#mpRoomView .room-workspace-music-toggle{flex:none;margin-inline-end:8px;white-space:nowrap}
 #mpRoomView .room-workspace-tabs button{flex:1;min-width:0}
 #mpRoomView .room-workspace-actions button{flex:1;min-height:44px;height:44px;font-size:14px}
 .room-settings-group{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--kit-border)}
@@ -277,7 +299,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView .mp-room-delay{flex-wrap:wrap}
 .room-rule-field{margin-top:12px;font-size:13px}
 @media(max-width:760px){
- #mpRoomView .mp-room-panel{inset:auto 0 0;width:100%;max-height:85dvh;margin:0;padding:20px 20px max(20px,env(safe-area-inset-bottom));border-bottom:0;border-radius:12px 12px 0 0}
+ #mpRoomView .mp-room-panel{inset:auto 0 0;width:100vw;max-height:85dvh;margin:0;padding:20px 20px max(20px,env(safe-area-inset-bottom));border-bottom:0;border-radius:12px 12px 0 0}
  #mpRoomView .mp-name-editor input{min-height:44px;font-size:16px}
  #mpRoomView .room-workspace-actions button{min-height:48px;height:48px;font-size:14px}
 }

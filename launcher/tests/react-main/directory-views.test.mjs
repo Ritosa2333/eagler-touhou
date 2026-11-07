@@ -455,6 +455,17 @@ for (const locale of ['zh-CN', 'en']) test(`Dialog invalid code uses native vali
   assert.equal(mounted.requests, 1); assert.equal(n('#roomDialog').open, true); assert.equal(f.navigations.length, 0);
   await mounted.m.update({open: false}); assert.equal(f.closeCalls, 1); assert.equal(f.navigations.length, 1); assert.equal(f.navigations[0].dialogOpen, false);
 });
+test('global room-code join hides the title picker and follows the listed title', async () => {
+  const f=await fixture({selectedProduct:''}).live([room({product:'th07mp',code:'5678'})],{globalRoomCodes:true});
+  const dialog=await mountDialog(f,'join');
+  assert.equal(n('#gameSelect').closest('label').hidden,true);
+  await change('#roomCodeInput','5678');
+  await submit();
+  await dialog.m.update({open:false});
+  assert.equal(f.navigations.length,1);
+  assert.ok(f.events.includes('identity:th07mp'));
+});
+
 test('Dialog unavailable service states disable submit and reject programmatic submit without closing', async () => {
   const f = await fixture().live(); const mounted = await mountDialog(f);
   await f.receive([], {mine: {product: 'th06mp', code: '1234', recoveryToken: 'token'}});

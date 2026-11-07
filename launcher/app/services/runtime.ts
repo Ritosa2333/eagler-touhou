@@ -36,18 +36,19 @@ import { confirmRuntimeClose, type RuntimeCloseDecision } from '../../src/launch
 import { deliverRuntimeInput, type HostedKeySpec, type TouchRuntimeContext, type RuntimeMessageTarget } from '../../src/launcher/touch-runtime-protocol.mts';
 import type {TouchLayout} from '../../src/launcher/touch-layout-model.mts';
 import { retainPackageGeneration, releasePackageGeneration } from '../../package/package-store.mjs';
+import { createRuntimeAudioMix, type RuntimeAudioWindow } from './runtime-audio-mix';
 
 export interface RuntimeFilesystem {
   mkdirTree(path: string): void;
   writeFile(path: string, bytes: Uint8Array, options: { canOwn: boolean }): void;
 }
-export interface RuntimeWindow extends RuntimeMessageTarget {
+export interface RuntimeWindow extends RuntimeMessageTarget, RuntimeAudioWindow {
   readonly document: object;
   readonly location: { href: string; replace(url: string): void };
   addEventListener?(type: string, listener: EventListener): void;
   removeEventListener?(type: string, listener: EventListener): void;
   FS?: RuntimeFilesystem;
-  Module?: { FS?: RuntimeFilesystem; touhouMusicMode?: 'ogg' | 'midi' | 'none' };
+  Module?: RuntimeAudioWindow['Module'] & { FS?: RuntimeFilesystem; touhouMusicMode?: 'ogg' | 'midi' | 'none' };
 }
 /** Read-only native event surface; no filesystem or lifecycle mutation port. */
 export interface RuntimeMidiEventTarget {
@@ -289,6 +290,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (current) network.update(id, {phase: progress.phase, loaded: progress.loaded, total: progress.total});
   }
   const sessions = createRuntimeSessionOwner();
+  const audioMix = createRuntimeAudioMix();
   const generations = createManagedRuntimeGenerationLease();
   const listeners = new Set<() => void>();
   const eventListeners = new Set<(message: RuntimeEventMessage) => void>();
@@ -447,6 +449,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     operation++;
     finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
+    audioMix.detach();
     runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
@@ -576,8 +579,17 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (message.event === 'first-frame' && snapshot.roomReturnSupported && message.launchSerial !== roomLaunchSerial) return;
     const eventContext = Object.freeze({epoch: token.id, fileOnly: snapshot.fileOnly});
     if (message.event === 'ready' && !snapshot.ready) {
-      try { runtimeDocument = runtimeIdentity(token).document; }
+      let runtime: RuntimeWindow;
+      try {
+        const identity = runtimeIdentity(token);
+        runtime = identity.runtime;
+        runtimeDocument = identity.document;
+      }
       catch (error) { fail(error); return; }
+      if (!snapshot.fileOnly) {
+        try { audioMix.attach(runtime, token.game); }
+        catch (error) { audioMix.detach(); warn(error); }
+      }
       update({ ready: true, roomPreviewSupported: message.roomPreview === true, roomReturnSupported: message.roomReturn === true }); settle('ready');
     } else if (message.event === 'first-frame' && launchRequested &&
         (!snapshot.roomReturnSupported || message.launchSerial === roomLaunchSerial)) {
@@ -597,7 +609,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       for (const item of pending.values()) item.progress?.(String(message.mode ?? ''), Number(message.loaded));
       update({ progress: Object.freeze({ ...message }) });
     } else if (message.event === 'frame-health') queueHealth({ frameHealth: Object.freeze({ ...message }) });
-    else if (message.event === 'audio-health') queueHealth({ audioHealth: Object.freeze({ ...message }) });
+    else if (message.event === 'audio-health') {
+      audioMix.refresh();
+      queueHealth({ audioHealth: Object.freeze({ ...message }) });
+    }
     else if (message.event === 'error') {
       // Main emits a diagnostic plus runtime-error for readiness/frame waiters.
       // It is not an engine-exit event: retain the live writer and unrelated
@@ -1459,6 +1474,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   }
   function finishDisposal() {
     disposed = true;
+    audioMix.detach();
     host.removeEventListener('message', onMessage); frame.removeEventListener('load', onLoad);
     if (host.__eaglerPrepareManagedRuntimeDataV1 === provideData) delete host.__eaglerPrepareManagedRuntimeDataV1;
     listeners.clear();
@@ -1495,6 +1511,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
   return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, returnToRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,
+    setAudioLevels: audioMix.set,
     getSnapshot: () => snapshot, getNetworkSnapshot: () => network.snapshot(),
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     subscribeEvents: (listener: (message: RuntimeEventMessage) => void) => {eventListeners.add(listener); return () => {eventListeners.delete(listener);};},

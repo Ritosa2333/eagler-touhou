@@ -773,15 +773,15 @@ test('main disclosure lifetime: ordinary product changes preserve folds; a fresh
   const model = api.createGameSettingsModel({storage: null}), context = settingsFixture().snapshot.context;
   model.hydrate({...context, mobile: true}); model.setDisclosure('touch', false); model.setDisclosure('advanced', true);
   model.hydrate({...context, productId: 'th07', mobile: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, audio: false, display: true, advanced: true});
   const lobby = {...context, productId: 'th06mp', mobile: true};
   model.hydrate(lobby); model.setDisclosure('files', false); model.setDisclosure('advanced', true);
   model.hydrate(lobby);
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: false, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: false, audio: false, display: true, advanced: true});
   model.hydrate(lobby, {resetDisclosure: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: true, display: true, advanced: false});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: true, files: true, audio: false, display: true, advanced: false});
   model.hydrate({...context, mobile: true});
-  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, display: true, advanced: true});
+  assert.deepEqual(model.getSnapshot().disclosure, {touch: false, files: true, audio: false, display: true, advanced: true});
 });
 
 test('main 3630: initial two OGG reads run together; failure fences a sibling that completes after MIDI fallback', async () => {
