@@ -174,15 +174,5 @@ Desktop.ini
 /web/sfx/se-21.wav
 /web/sfx/se-22.wav
 /web/solo-music.com
-/web/vendor/dosbox-x/snapshot-diff-tracked.wasm
-/web/vendor/dosbox-x/snapshot-diff.wasm
-/web/vendor/dosbox-x/wdosbox-x-fast.wasm
-/web/vendor/dosbox-x/wdosbox-x-jspi.wasm
-/web/vendor/dosbox-x/wdosbox-x-rollback-tracked.wasm
-/web/vendor/dosbox-x/wdosbox-x-rollback.wasm
 /web/vendor/np2/font.bmp
 /web/vendor/np2/font_cn.bmp
-/web/vendor/np2/np21-mobile.wasm
-/web/vendor/np2/np21-rollback-mobile.wasm
-/web/vendor/np2/np21-rollback.wasm
-/web/vendor/np2/np21.wasm

@@ -60,7 +60,7 @@ async function readInput(name){
     markerInputs??=await nativeMarkerInputs();
     return name==='native/main.exe'?markerInputs.bytes:name==='native-patch.json'?markerInputs.meta:name==='native/solo-main.exe'?markerInputs.soloBytes:markerInputs.soloMeta;
   }
-  try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
+  try{return await readFile(resolve(privateInputs.has(name)&&!name.endsWith('.wasm')?assets:web,name));}
   catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
 }
 let revision=sourceIdentity?.commit??null;if(args.source){try{revision=execFileSync('git',['-c','safe.directory='+source.replaceAll('\\','/'),'rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();}catch{}}

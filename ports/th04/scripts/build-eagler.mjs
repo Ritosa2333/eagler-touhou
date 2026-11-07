@@ -17,7 +17,7 @@ const privateInputs=new Set(sourceIdentity?.resources||[]);
 const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
 const nativePractice=new Set(['practice-cn.exe.gz','practice-jp.exe.gz','practice-start.com']);
 async function readInput(name){
-  try{return await readFile(resolve(nativePractice.has(name)?web:privateInputs.has(name)?assets:web,name));}
+  try{return await readFile(resolve(nativePractice.has(name)?web:privateInputs.has(name)&&!name.endsWith('.wasm')?assets:web,name));}
   catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
 }
 let revision=sourceIdentity?.commit??null;if(args.source){try{revision=execFileSync('git',['-c','safe.directory='+source.replaceAll('\\','/'),'rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();}catch{}}

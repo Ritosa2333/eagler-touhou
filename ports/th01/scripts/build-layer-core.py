@@ -21,7 +21,7 @@ assert core.count(start) == 1 and core.count(effects) == 1
 core = core.replace(effects, '    for(int i=0;i<current_players;++i)if(coop_effect_kind[i]==2)render_coop_effect(i);\n')
 core = core.replace(start, '    for(int i=0;i<current_players;++i)if(coop_effect_kind[i]==1||coop_effect_kind[i]==3)render_coop_effect(i);\n' + start)
 exports = ['th_init', 'th_set_netplay_rules', 'th_start_stage_entrance', 'th_step', 'th_render', 'th_render_for_slot', 'th_pixels', 'th_render_snapshot_info', 'th_checksum', 'th_net_checksum', 'th_get', 'th_continue', 'th_debug_hit', 'th_debug_position', 'th_debug_invincible', 'th_probe_init', 'th_probe_step', 'th_stage_probe', 'th_stage_command', 'th_sound_event', 'th_layout_probe', 'th_set_difficulty', 'th_set_pause_overlay', 'th_set_bomb_reduced_flash', 'th_menu_open', 'th_menu_input', 'th_score_data', 'th_score_size', 'th_score_load']
-output = port / '.cache/layer-core/game.wasm'
+output = port / 'web/game.wasm'
 output.parent.mkdir(parents=True, exist_ok=True)
 with tempfile.TemporaryDirectory(prefix='th01-layer-') as tmp:
     temp = Path(tmp)

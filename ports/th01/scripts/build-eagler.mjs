@@ -15,8 +15,7 @@ const privateInputs=new Set(sourceIdentity?.resources||[]);
 const assets=resolve(args.assets||resolve(port,'.cache/source-resources'));
 async function readInput(name){
   if(name==='game.wasm'){
-    try{return await readFile(resolve(port,'.cache/layer-core/game.wasm'));}
-    catch(error){if(error.code!=='ENOENT')throw error;throw Error('Build the TH01 layer-corrected core first: python ports/th01/scripts/build-layer-core.py --zig <zig>');}
+    return await readFile(resolve(web,name));
   }
   try{return await readFile(resolve(privateInputs.has(name)?assets:web,name));}
   catch(error){if(error.code==='ENOENT'&&privateInputs.has(name))throw Error('Missing private resource '+name+'; specify --assets=<standalone web directory>.');throw error;}
