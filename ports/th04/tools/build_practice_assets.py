@@ -50,9 +50,9 @@ def main():
         code=(out/'practice.bin').read_bytes();assert code[:8]==b'T04PRA01'
         names=('load','frame','player','world','entryPause','hold','targetPractice','lockLives','unlimitedBombs','enemyLock','respawnLives','bombGate','bombConsume','livesZero','bombsZero','shotsReturn','dialogRun','resourceDirty','boss','pauseCall','assistFlags','cleanupKeepBits','cleanupCounts','cleanupPending','redrawFrame','targetPreparing','initialLives','initialBombs','initialPower','initialRank','targetResources','initialEntry','warpState','targetWarp','arrivalPending','targetArrival','initialPhase','initialGengetsu','targetReached','targetCheck','initialHp','targetHp','initialReimu','targetAdvance','initialStage','targetOutcome','targetOutcomeStep','resultVisible','resultRequest','resultAck','resultInput')
         names+=('pauseOpen','pauseRequest','pauseAck','pauseInput')
-        names+=('formOpen','formInput','formValues','formRequest','formHp')
+        names+=('formOpen','formInput','formValues','formRequest','formHp','formOptions','infoEnabled','infoValues')
         entries=dict(zip(names,struct.unpack_from('<'+str(len(names))+'H',code,8)))
-        gap=(len(code)+15)&~15;assert gap<=8192 and insert-cs*16+gap<65536
+        gap=(len(code)+15)&~15;assert gap<=12288 and insert-cs*16+gap<65536
         insert_bridge(h,image,rel,insert,gap);image[insert:insert+len(code)]=code
         edits=[]
         def patch(at,before,after):

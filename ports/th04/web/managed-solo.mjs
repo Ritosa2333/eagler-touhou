@@ -1,7 +1,7 @@
 import {mountPauseMenu} from './pc98-pause-menu.mjs';
 import {createSoloAttempt} from './practice-attempt.js';
 import {mountPractice} from './practice-ui.js';
-import {normalizePractice} from './practice-config.js';
+import {normalizePractice,encodeNativeOptions,decodeNativeOptions} from './practice-config.js';
 import {mountManagedPractice} from './pc98-practice.mjs';
 import {Fat12} from './solo-fat12.js';
 import {decodeExternalReplay} from './replay/external-codec.js';
@@ -56,14 +56,15 @@ async function openNativeForm(){
     if(!formBooting){formBooting=true;deferredForm=true;void restart({...lastPractice,mode:'full',directStart:true}).catch(error=>{deferredForm=false;report(error);}).finally(()=>{formBooting=false;});}return;
   }
   const setup=lastPractice.setup,values=[setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,setup.branch==='gengetsu'?1:0,setup.rank-4];
-  release();await emulator.call('practiceFormOpen',[state.at,state.generation,values,setup.hp]);
+  release();await emulator.call('practiceFormOpen',[state.at,state.generation,values,setup.hp,encodeNativeOptions(emulator.snapshot.practice.options)]);
 }
 let formBusy=false;
 async function completeNativeForm(ps,state){
   if(formBusy||!ps?.nativeForm?.request||!state)return;formBusy=true;
   try{const current=emulator,values=ps.nativeForm.values;if(!await current.call('practiceFormTake',[state.at,state.generation]))return;
+    const options=decodeNativeOptions(ps.nativeForm.settings,ps.options);current.practiceOptions(options);lastPractice={...lastPractice,options};if(ps.nativeForm.request===2)return;
     const [stage,character,difficulty,entry,phase,lives,bombs,power,branch,rank]=values;
-    const config=normalizePractice({...lastPractice,mode:'target',setup:{...lastPractice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,branch:branch?'gengetsu':'auto',rank:rank+4,hp:ps.nativeForm.hp},options:ps.options});await restart(config);
+    const config=normalizePractice({...lastPractice,mode:'target',setup:{...lastPractice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,branch:branch?'gengetsu':'auto',rank:rank+4,hp:ps.nativeForm.hp},options});await restart(config);
   }catch(error){report(error);}finally{formBusy=false;}
 }
 async function handleNativeResult(ps,state){

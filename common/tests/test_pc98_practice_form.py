@@ -20,7 +20,9 @@ with tempfile.TemporaryDirectory() as tmp:
     assert key(8)==1 and machine.mem_read(base+values,1)==b'\1'
     assert key(4)==1 and machine.mem_read(base+values,1)==b'\0'
     assert key(1)==1 and machine.mem_read(base+choice,1)==b'\x0c'
-    assert key(16)==3
+    assert key(16)==1 and machine.mem_read(base+choice,1)==b'\0'
+    assert key(8)==1
+    assert key(32)==1 and machine.mem_read(base+choice,1)==b'\x0c'
     assert key(2)==1 and machine.mem_read(base+choice,1)==b'\0'
     machine.mem_write(base+values+7,b'\x80');call(draw)
     at=0xa0000+5*160+20*2

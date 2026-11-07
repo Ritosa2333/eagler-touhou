@@ -159,12 +159,12 @@ async function dispatch(message){
     h[base+entries.resultAck]=ack;return true;
   }
   if(method==='practiceFormOpen'||method==='practiceFormTake'){
-    const [at,generation,values,hp]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),e=patch?.practice?.entries;
+    const [at,generation,values,hp,settings]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),e=patch?.practice?.entries;
     if(game!=='04'||!e||at<0||at+36>h.length||!signature.every((b,i)=>h[at+i]===b)||!ownsSoloMailbox(h,v,at)||v.getUint16(at+24,true)!==generation)return false;
     const base=at-patch.mailbox_cs_offset;
     if(method==='practiceFormTake'){if(!h[base+e.formRequest])return false;h[base+e.formRequest]=0;return true;}
-    if(h[base+e.resultVisible]||!Array.isArray(values)||values.length!==10||!Number.isInteger(hp)||hp<0||hp>30000||values.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
-    h.set(values,base+e.formValues);v.setUint16(base+e.formHp,hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;return true;
+    if(h[base+e.resultVisible]||!Array.isArray(values)||values.length!==10||!Array.isArray(settings)||settings.length!==11||settings.some((n,i)=>!Number.isInteger(n)||n<0||n>(i===10?5:1))||!Number.isInteger(hp)||hp<0||hp>30000||values.some(n=>!Number.isInteger(n)||n<0||n>255))return false;
+    h.set(values,base+e.formValues);h.set(settings,base+e.formOptions);v.setUint16(base+e.formHp,hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;return true;
   }
   if(method==='practicePauseAck'){
     const [at,generation,ack]=args,h=emulator.module.HEAPU8,v=new DataView(h.buffer),entries=patch?.practice?.entries;

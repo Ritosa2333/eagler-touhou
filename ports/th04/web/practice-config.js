@@ -36,3 +36,11 @@ export function createPracticeClock(initial=1){
   const hostPerformance=new Proxy(performance,{get(t,k){if(k==='now')return now;const value=Reflect.get(t,k,t);return typeof value==='function'?value.bind(t):value;}});
   return {Date:PracticeDate,performance:hostPerformance,now,date:()=>Math.floor(epoch+now()),get speed(){return speed;},setPaused(value){elapsed=now();anchor=performance.now();paused=!!value;},setSpeed(value){if(![.25,.5,.75,1,1.5,2,8].includes(value))throw Error('无效变速');elapsed=now();anchor=performance.now();speed=value;}};
 }
+
+const NATIVE_OPTION_KEYS=['lockRank','disableBomb','disableFocus','disableShot','forceFocus','quickRetry','alwaysPoint','showKeys','showInfo','preparedRetry'];
+const NATIVE_SPEEDS=[.25,.5,.75,1,1.5,2];
+export function encodeNativeOptions(options){return [...NATIVE_OPTION_KEYS.map(key=>options[key]?1:0),Math.max(0,NATIVE_SPEEDS.indexOf(options.speed))];}
+export function decodeNativeOptions(values,previous){
+  if(!Array.isArray(values)||values.length!==11||values.some((v,i)=>!Number.isInteger(v)||v<0||v>(i===10?5:1)))throw Error('原生练习选项无效');
+  return {...previous,...Object.fromEntries(NATIVE_OPTION_KEYS.map((key,i)=>[key,!!values[i]])),speed:NATIVE_SPEEDS[values[10]]};
+}

@@ -23,7 +23,7 @@ dw practice_initial_reimu,practice_target_advance
 dw practice_initial_stage,practice_outcome,practice_target_outcome
 dw practice_result_visible,practice_result_request,practice_result_ack,practice_result_input
 dw practice_pause_open,practice_pause_request,practice_pause_ack,practice_pause_input
-dw practice_form_open,practice_form_input,practice_form_values,practice_form_request,practice_form_hp
+dw practice_form_open,practice_form_input,practice_form_values,practice_form_request,practice_form_hp,practice_form_options,practice_info_enabled,practice_info_values
 entry_pause: db 0
 hold: db 0
 target_practice: db 0
@@ -160,6 +160,7 @@ frame_hook:
     jz .assist_done
     call practice_assists_draw
 .assist_done:
+    call practice_info_draw
     pop es
     call practice_power_lock
     pop es
@@ -440,4 +441,5 @@ dialog_run_fast:
 %define FORM_RANK_BASE 4
 %define FORM_HP_MAX 30000
 %include 'practice-form.inc'
+%include 'practice-info.inc'
 practice_pause_call equ frame_hook.pause_call

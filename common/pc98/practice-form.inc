@@ -15,17 +15,28 @@ practice_form_step:
     mov bx,[cs:practice_form_keys]
     mov cl,[cs:practice_form_choice]
     mov ch,13
+    cmp byte [cs:practice_form_options_page],0
+    je .input_ready
+    mov ch,12
+.input_ready:
     call practice_menu_input
     mov [cs:practice_form_keys],bx
     mov [cs:practice_form_choice],cl
+    cmp byte [cs:practice_form_options_page],0
+    jne .options_page
     cmp ax,3
     je .cancel
     cmp ax,2
     jne .edit
+    cmp cl,10
+    jne .confirm_main
+    ; Left/right still edits HP; confirmation opens the options page only
+    ; through the dedicated OPTIONS row below.
+.confirm_main:
     cmp cl,11
     je .start
     cmp cl,12
-    je .cancel
+    je .options_open
     jmp .changed
 .edit:
     cmp cl,11
@@ -36,6 +47,9 @@ practice_form_step:
     ja .changed
     cmp cl,10
     je .edit_hp
+    cmp cl,4
+    je .edit_phase
+    push cx
     xor bx,bx
     mov bl,cl
     mov si,practice_form_values
@@ -43,20 +57,95 @@ practice_form_step:
     mov dh,[cs:practice_form_max+bx]
     mov dl,[cs:practice_form_min+bx]
     call practice_menu_value
+    pop cx
+    cmp cl,0
+    je .stage_changed
+    cmp cl,2
+    jne .dependencies
+    cmp byte [cs:practice_form_values+2],4
+    jne .normal_difficulty
+    mov byte [cs:practice_form_values],FORM_STAGE_MAX
+    jmp .dependencies
+.normal_difficulty:
+    cmp byte [cs:practice_form_values],FORM_STAGE_MAX
+    jne .dependencies
+    mov byte [cs:practice_form_values],0
+    jmp .dependencies
+.stage_changed:
+    cmp byte [cs:practice_form_values],FORM_STAGE_MAX
+    jne .normal_stage
+    mov byte [cs:practice_form_values+2],4
+    jmp .dependencies
+.normal_stage:
+    cmp byte [cs:practice_form_values+2],4
+    jne .dependencies
+    mov byte [cs:practice_form_values+2],1
+.dependencies:
+    cmp byte [cs:practice_form_values+3],1
+    jne .entry_valid
+%ifdef FORM_TH02
+    cmp byte [cs:practice_form_values],4
+    jne .entry_valid
+%else
+    cmp byte [cs:practice_form_values],3
+    jbe .entry_valid
+%endif
+    mov byte [cs:practice_form_values+3],2
+.entry_valid:
+    cmp cl,0
+    je .reset_dependent
+    cmp cl,1
+    je .reset_dependent
+    cmp cl,3
+    je .reset_dependent
+    cmp cl,8
+    jne .edited
+.reset_dependent:
+    mov byte [cs:practice_form_values+4],0
+    mov word [cs:practice_form_hp],0
+.edited:
+    mov ax,1
+    jmp .done
+.edit_phase:
+    push ax
+    call practice_form_phase_mask
+    pop ax
+    mov bl,[cs:practice_form_values+4]
+.next_phase:
+    cmp ax,4
+    jne .phase_up
+    test bl,bl
+    jnz .phase_dec
+    mov bl,FORM_PHASE_MAX+1
+.phase_dec:
+    dec bl
+    jmp .phase_test
+.phase_up:
+    inc bl
+    cmp bl,FORM_PHASE_MAX+1
+    jb .phase_test
+    xor bl,bl
+.phase_test:
+    movzx ecx,bl
+    bt edx,ecx
+    jnc .next_phase
+    mov [cs:practice_form_values+4],bl
+    mov word [cs:practice_form_hp],0
     mov ax,1
     jmp .done
 .edit_hp:
+    call practice_form_hp_limit
     cmp ax,4
     jne .hp_increase
     cmp word [cs:practice_form_hp],0
     jne .hp_decrease
-    mov word [cs:practice_form_hp],FORM_HP_MAX
+    mov [cs:practice_form_hp],dx
     jmp .hp_changed
 .hp_decrease:
     dec word [cs:practice_form_hp]
     jmp .hp_changed
 .hp_increase:
-    cmp word [cs:practice_form_hp],FORM_HP_MAX
+    cmp [cs:practice_form_hp],dx
     jb .hp_add
     mov word [cs:practice_form_hp],0
     jmp .hp_changed
@@ -75,9 +164,50 @@ practice_form_step:
 .done:
     pop ds
     ret
+.options_open:
+    mov byte [cs:practice_form_options_page],1
+    mov byte [cs:practice_form_choice],0
+    mov ax,1
+    jmp .done
+.options_page:
+    cmp ax,3
+    je .options_close
+    cmp cl,11
+    jne .options_edit
+    cmp ax,2
+    je .options_close
+    jmp .changed
+.options_edit:
+    cmp ax,2
+    je .option_toggle
+    cmp ax,4
+    je .option_toggle
+    cmp ax,5
+    jne .changed
+.option_toggle:
+    xor bx,bx
+    mov bl,cl
+    cmp bl,10
+    jne .option_bool
+    inc byte [cs:practice_form_options+bx]
+    cmp byte [cs:practice_form_options+bx],6
+    jb .option_done
+    mov byte [cs:practice_form_options+bx],0
+    jmp .option_done
+.option_bool:
+    xor byte [cs:practice_form_options+bx],1
+.option_done:
+    mov ax,1
+    jmp .done
+.options_close:
+    mov byte [cs:practice_form_options_page],0
+    mov byte [cs:practice_form_choice],12
+    mov ax,1
+    jmp .done
 
 ; Called inside MAIN. The regular frame wait keeps the host input bridge alive.
 practice_form:
+    mov byte [cs:practice_form_options_page],0
     mov byte [cs:practice_form_choice],0
     mov word [cs:practice_form_keys],0xffff
     call practice_form_graphics_save
@@ -92,13 +222,16 @@ practice_form:
     cmp ax,2
     je .start
     cmp ax,3
-    je .close
+    je .close_cancel
     test ax,ax
     jz .loop
     call practice_form_draw_screen
     jmp .loop
 .start:
     mov byte [cs:practice_form_request],1
+    jmp .close
+.close_cancel:
+    mov byte [cs:practice_form_request],2
 .close:
     call practice_form_restore
     call practice_form_graphics_restore
@@ -263,6 +396,10 @@ practice_form_draw:
     pop ds
     mov di,5*160+20*2
     mov bp,practice_form_labels
+    cmp byte [cs:practice_form_options_page],0
+    je .labels_ready
+    mov bp,practice_form_option_labels
+.labels_ready:
     xor dx,dx
 .row:
     mov si,[cs:bp]
@@ -283,6 +420,8 @@ practice_form_draw:
     pop di
 .label:
     call practice_text_write
+    cmp byte [cs:practice_form_options_page],0
+    jne .draw_option
     cmp dl,11
     jae .next
     cmp dl,10
@@ -325,6 +464,26 @@ practice_form_draw:
     mov [es:bx+0x2000],al
     mov [es:bx+0x2002],al
     mov [es:bx+0x2004],al
+    jmp .next
+.draw_option:
+    cmp dl,11
+    jae .next
+    xor bx,bx
+    mov bl,dl
+    mov al,[cs:practice_form_options+bx]
+    xor ah,ah
+    shl ax,1
+    mov bx,ax
+    mov si,[cs:practice_form_option_values+bx]
+    cmp dl,10
+    jne .option_text
+    mov si,[cs:practice_form_speed_values+bx]
+.option_text:
+    push di
+    add di,19*2
+    mov bl,[cs:practice_form_row_attr]
+    call practice_text_write
+    pop di
     jmp .next
 .character:
     mov bx,practice_form_characters
@@ -407,6 +566,7 @@ practice_form_draw:
     pop ds
     ret
 practice_form_choice: db 0
+practice_form_options_page: db 0
 practice_form_row_attr: db 0
 practice_form_keys: dw 0
 practice_form_open: db 0
@@ -414,10 +574,129 @@ practice_form_input: dw 0
 practice_form_request: db 0
 practice_form_values: db 0,0,1,0,0,3,2,FORM_POWER_MAX,0,FORM_RANK_DEFAULT
 practice_form_hp: dw 0
+; lock rank, disable bomb/focus/shot, force focus, quick retry, always point,
+; show keys, show info, prepared retry, speed index.
+practice_form_options: times 11 db 0
 practice_form_min: db 0,0,0,0,0,0,0,1,0,0
 practice_form_max: db FORM_STAGE_MAX,FORM_CHARACTER_MAX,4,2,FORM_PHASE_MAX,FORM_STOCK_MAX,FORM_STOCK_MAX,FORM_POWER_MAX,FORM_BRANCH_MAX,FORM_RANK_MAX
+
+; Phase bit zero is the normal entry. Other bits denote actual attack phases.
+practice_form_phase_mask:
+    mov edx,1
+    cmp byte [cs:practice_form_values+3],0
+    je .done
+    cmp byte [cs:practice_form_values+3],1
+    jne .boss
+%ifndef FORM_TH02
+    mov edx,3
+    cmp byte [cs:practice_form_values],0
+    jne .done
+    mov edx,9
+%endif
+    ret
+.boss:
+    xor bx,bx
+    mov bl,[cs:practice_form_values]
+    shl bx,2
+    mov edx,[cs:practice_form_phase_masks+bx]
+%ifndef FORM_TH02
+    cmp byte [cs:practice_form_values],3
+    jne .extra
+    cmp byte [cs:practice_form_values+1],2
+    jb .done
+    mov edx,0x00000b55
+.extra:
+    cmp byte [cs:practice_form_values],6
+    jne .done
+    cmp byte [cs:practice_form_values+8],1
+    jne .done
+    mov edx,0x000001bd
+%endif
+.done:
+    ret
+; Match the supported per-entry HP range, keeping zero as original HP.
+practice_form_hp_limit:
+    push bx
+    push cx
+    xor dx,dx
+    mov bl,[cs:practice_form_values+3]
+    test bl,bl
+    jz .done
+%ifdef FORM_TH02
+    xor bx,bx
+    mov bl,[cs:practice_form_values]
+    cmp bl,2
+    je .done
+    cmp byte [cs:practice_form_values+3],1
+    jne .boss
+    shl bx,1
+    mov dx,[cs:practice_form_mid_hp+bx]
+    jmp .done
+.boss:
+    cmp bl,0
+    je .first
+    cmp bl,1
+    je .second
+    cmp bl,3
+    jne .later
+    mov dx,900
+    jmp .done
+.first:
+    mov dx,2261
+    cmp byte [cs:practice_form_values+4],0
+    je .done
+    mov dx,700
+    cmp byte [cs:practice_form_values+4],3
+    jne .done
+    mov dx,861
+    jmp .done
+.second:
+    mov dx,2400
+    cmp byte [cs:practice_form_values+4],0
+    je .done
+    mov dx,701
+    cmp byte [cs:practice_form_values+4],1
+    je .done
+    mov dx,800
+    cmp byte [cs:practice_form_values+4],2
+    je .done
+    mov dx,899
+    jmp .done
+.later:
+    xor bx,bx
+    mov bl,[cs:practice_form_values+4]
+    test bl,bl
+    jnz .phase_index
+    inc bl
+.phase_index:
+    shr bx,1
+    shl bx,1
+    cmp byte [cs:practice_form_values],4
+    jne .extra_hp
+    mov dx,[cs:practice_form_late_hp+bx]
+    jmp .done
+.extra_hp:
+    mov dx,[cs:practice_form_extra_hp+bx]
+%else
+    mov dx,FORM_HP_MAX
+%endif
+.done:
+    pop cx
+    pop bx
+    ret
+%ifdef FORM_TH02
+practice_form_mid_hp: dw 301,381,0,400,0,0
+practice_form_late_hp: dw 600,700,800,1500,1100
+practice_form_extra_hp: dw 1800,1800,1800,1800,1300
+%endif
+practice_form_phase_masks:
+%ifdef FORM_TH02
+    dd 0x0f,0x0f,1,1,0x2ab,0x2ab
+%else
+    dd 0x1d,0x3d,0x09,0x05,0x36db5,0x15115,0x55
+%endif
 practice_form_labels:
-    dw .stage,.character,.difficulty,.entry,.phase,.lives,.bombs,.power,.branch,.rank,.hp,.start,.cancel
+    dw .stage,.character,.difficulty,.entry,.phase,.lives,.bombs,.power,.branch,.rank,.hp,.start,.options
 .stage: db 'STAGE                  ',0
 .character: db 'CHARACTER              ',0
 .difficulty: db 'DIFFICULTY             ',0
@@ -430,7 +709,32 @@ practice_form_labels:
 .rank: db 'RANK                   ',0
 .hp: db 'BOSS HP                ',0
 .start: db 'START PRACTICE         ',0
-.cancel: db 'CANCEL                 ',0
+.options: db 'OPTIONS                ',0
+practice_form_option_labels:
+    dw .rank,.bomb,.focus,.shot,.force,.retry,.point,.keys,.info,.prepared,.speed,.back,.blank
+.rank: db 'LOCK RANK              ',0
+.bomb: db 'DISABLE BOMB           ',0
+.focus: db 'DISABLE FOCUS          ',0
+.shot: db 'DISABLE SHOT           ',0
+.force: db 'FORCE FOCUS            ',0
+.retry: db 'QUICK RETRY            ',0
+.point: db 'ALWAYS HITBOX          ',0
+.keys: db 'SHOW KEYS              ',0
+.info: db 'SHOW INFO              ',0
+.prepared: db 'PREPARED RETRY         ',0
+.speed: db 'GAME SPEED             ',0
+.back: db 'BACK                   ',0
+.blank: db '                       ',0
+practice_form_option_values: dw practice_form_off,practice_form_on
+practice_form_speed_values: dw practice_form_speed25,practice_form_speed50,practice_form_speed75,practice_form_speed100,practice_form_speed150,practice_form_speed200
+practice_form_off: db 'OFF',0
+practice_form_on: db 'ON',0
+practice_form_speed25: db '25%',0
+practice_form_speed50: db '50%',0
+practice_form_speed75: db '75%',0
+practice_form_speed100: db '100%',0
+practice_form_speed150: db '150%',0
+practice_form_speed200: db '200%',0
 practice_form_characters: dw practice_form_reimua,practice_form_reimub,practice_form_character3,practice_form_character4
 practice_form_difficulties: dw practice_form_easy,practice_form_normal,practice_form_hard,practice_form_lunatic,practice_form_extra
 practice_form_entries: dw practice_form_stage_value,practice_form_mid,practice_form_boss

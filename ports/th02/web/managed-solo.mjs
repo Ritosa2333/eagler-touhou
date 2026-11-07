@@ -1,7 +1,7 @@
 import {mountPauseMenu} from './pc98-pause-menu.mjs';
 import {createSoloAttempt} from './practice-attempt.js';
 import {mountPractice} from './practice-ui.js';
-import {normalizePractice} from './practice-config.js';
+import {normalizePractice,encodeNativeOptions,decodeNativeOptions} from './practice-config.js';
 import {mountManagedPractice} from './pc98-practice.mjs';
 import {Fat12} from './solo-fat12.js';
 import {decodeExternalReplay} from './replay/external-codec.js';
@@ -107,13 +107,14 @@ function openNativeForm(){
   const h=emulator.module.HEAPU8,base=mailbox-patch.entries.mailbox,setup=lastPractice.setup;
   if(h[base+e.resultVisible])return;
   const values=[setup.stage,setup.character,setup.difficulty,({stage:0,mid:1,boss:2})[setup.entry],setup.phase,setup.lives,setup.bombs,setup.power,0,setup.rank+6];
-  h.set(values,base+e.formValues);new DataView(h.buffer).setUint16(base+e.formHp,setup.hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;release();
+  h.set(values,base+e.formValues);h.set(encodeNativeOptions(emulator.practice.status.options),base+e.formOptions);new DataView(h.buffer).setUint16(base+e.formHp,setup.hp,true);h[base+e.formRequest]=0;h[base+e.formOpen]=1;release();
 }
 function completeNativeForm(ps){
   const form=ps?.nativeForm,e=patch?.practice?.entries;if(!form?.request||!emulator||!valid(emulator.module.HEAPU8,mailbox))return;
   emulator.module.HEAPU8[mailbox-patch.entries.mailbox+e.formRequest]=0;
+  try{const options=decodeNativeOptions(form.settings,ps.options);emulator.practiceOptions(options);lastPractice={...lastPractice,options};if(form.request===2)return;
   const [stage,character,difficulty,entry,phase,lives,bombs,power,,rank]=form.values;
-  try{const config=normalizePractice({...lastPractice,mode:'target',setup:{...lastPractice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,rank:rank-6,hp:form.hp},options:ps.options});void restart(config).catch(report);}catch(error){report(error);}
+  const config=normalizePractice({...lastPractice,mode:'target',setup:{...lastPractice.setup,stage,character,difficulty,entry:['stage','mid','boss'][entry],phase,lives,bombs,power,rank:rank-6,hp:form.hp},options});void restart(config).catch(report);}catch(error){report(error);}
 }
 async function handleNativeResult(ps,state){
   const request=ps?.nativeResult?.request||0;if(!request){nativeResultHandled=0;return;}

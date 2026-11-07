@@ -14,8 +14,8 @@ practice_pause:
     je .request
     call practice_pause_screen_restore
     call practice_form
-    cmp byte [cs:practice_form_request],0
-    jne .form_finish
+    cmp byte [cs:practice_form_request],1
+    je .form_finish
     call practice_pause_screen_save
     mov word [cs:practice_pause_keys],0xffff
     call practice_pause_draw
