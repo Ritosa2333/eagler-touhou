@@ -105,7 +105,7 @@ export const PRODUCT_GAMES = Object.freeze({
         multiplayerRuntime:'./runtime/th01/multiplayer/th01.html',
         multiplayer:Object.freeze({titleKey:'game.title.th01mp',gameplay:'cooperative',playerCounts:STANDARD_MULTIPLAYER_PLAYER_COUNTS,difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts:Object.freeze([TH01_REIMU]),peerTransportGlobal:'__th01PeerTransport',relaySourceEnvelope:true,spectator:true,titleRoomEntry:false,preflightWithoutRoom:true,challengeMode:false,
-            inputTiming:Object.freeze({rollbackLimit:0,sendPredictionLimit:0,rollbackDefault:false,runtimeTiming:true})}),
+            inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:true,runtimeTiming:true})}),
         features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
     }),
     th02: Object.freeze({

@@ -150,6 +150,16 @@ test('TH09 local charge rule defaults on, restores native Replay by room agreeme
   assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
   assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
 });
+test('TH01 rollback is enabled by default and the host can disable it',async()=>{
+  const f=await fixture({product:'th01mp',locale:'zh-CN'}).live({adonisMode:0});
+  await mountRoom(f,{panel:{kind:'game'}});
+  assert.equal(f.service.getSnapshot().rollbackEnabled,true);
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'),'true');
+  assert.equal(n('#mpRollbackToggle').hidden,false);
+  assert.equal(f.service.runtimeOptions().netplayAdonisMode,0);
+  await act(()=>f.service.setRollbackEnabled(false));
+  assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'),'false');
+});
 test('TH01 ball count is host controlled and reaches runtime options',async()=>{
   const f=await fixture({product:'th01mp',locale:'zh-CN'}).live({adonisMode:1});await mountRoom(f,{panel:{kind:'game'}});
   assert.equal(f.service.runtimeOptions().netplayBallCount,2);

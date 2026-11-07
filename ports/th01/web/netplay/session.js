@@ -23,7 +23,7 @@ export class NetSession{
     this.recorder=createRecorder(document.querySelector('.toolbar'));globalThis.th01Replay=this.recorder;
     this.game.onFailure=e=>this.fail(e);
     this.autoBuffer=room.settings.delay===0;
-    this.queue=new FrameQueue(this.slot,this.autoBuffer?(room.settings.network==='public'?6:3):room.settings.delay,this.roles.length,{rollback:!!this.game.asyncExecution});
+    this.queue=new FrameQueue(this.slot,this.autoBuffer?(room.settings.network==='public'?6:3):room.settings.delay,this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});
     this.hashes=new Map();this.pendingHashes=new Map();this.confirmedPrefix=0;this.replayUntil=null;this.rollbackCount=0;this.replayedFrames=0;this.remoteHashes=new Map(this.remotes.map(r=>[r,new Map()]));this.iceCounts={};this.iceErrors=[];
     this.closed=false;this.running=false;this.connected=false;this.lastAdvance=performance.now();
     this.rtt=0;this.lastHash=0;this.waitHash=false;this.signalChain=Promise.resolve();
@@ -171,7 +171,7 @@ export class NetSession{
           }
         }
         if(this.links.every(r=>(this.peers.get(r)?.samples||0)>=BUFFER_PROBES)){
-          this.queue=new FrameQueue(this.slot,this.recommendedDelay(true),this.roles.length,{rollback:!!this.game.asyncExecution});this.bufferReady=true;
+          this.queue=new FrameQueue(this.slot,this.recommendedDelay(true),this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});this.bufferReady=true;
         }else{
           if(this.bufferTimer==null){
             this.status('测量连接延迟，选择输入缓冲…');
@@ -180,7 +180,7 @@ export class NetSession{
               try{
                 if(this.closed||this.running)return;
                 // Keep a conservative floor if a slow link did not finish probing.
-                this.queue=new FrameQueue(this.slot,Math.max(this.queue.delay,this.recommendedDelay(true)),this.roles.length,{rollback:!!this.game.asyncExecution});
+                this.queue=new FrameQueue(this.slot,Math.max(this.queue.delay,this.recommendedDelay(true)),this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});
                 this.bufferReady=true;this.bufferFallback=true;this.maybeHello();
               }catch(e){this.fail(e);}
             },BUFFER_PROBE_TIMEOUT);
@@ -217,7 +217,7 @@ export class NetSession{
         if(!Number.isInteger(message.delay)||message.delay<1||message.delay>12||
           (!this.autoBuffer&&message.delay!==this.room.settings.delay)||typeof message.fallback!=='boolean'||
           !Number.isFinite(message.startAfter)||message.startAfter<0||message.startAfter>10000)throw Error('开局输入缓冲无效');
-        this.queue=new FrameQueue(this.slot,message.delay,this.roles.length,{rollback:!!this.game.asyncExecution});this.bufferFallback=message.fallback;
+        this.queue=new FrameQueue(this.slot,message.delay,this.roles.length,{rollback:this.room.settings.rollback!==false&&!!this.game.asyncExecution});this.bufferFallback=message.fallback;
         this.start(message.startAfter);break;
       case 'input':{
         if(!this.running||message.slot!==this.room.seats[source])throw Error('输入座位或开局状态无效');

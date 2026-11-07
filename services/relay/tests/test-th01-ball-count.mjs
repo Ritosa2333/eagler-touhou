@@ -37,7 +37,7 @@ try {
     assert.equal(code,1008);assert.equal(String(reason),'runtime version mismatch');
   }
   const host=connect({lobby:'th01_host_123',member:'host_member_123',intent:'create'}),guest=connect({lobby:'th01_guest_123',member:'guest_member_123'});
-  const first=await host.wait(m=>m.type==='state');await guest.wait(m=>m.type==='state');assert.equal(first.room.ballCount,2);
+  const first=await host.wait(m=>m.type==='state');await guest.wait(m=>m.type==='state');assert.equal(first.room.ballCount,2);assert.equal(first.room.adonisMode,0,'TH01 room enables rollback by default');
   await send(host,{type:'take-seat',seat:0,loadout:0},m=>m.room?.seats[0]);await send(guest,{type:'take-seat',seat:1,loadout:0},m=>m.room?.seats[1]);
   await send(host,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[0]?.ready);await send(guest,{type:'set-ready',ready:true,runtimeGeneration:A},m=>m.room?.seats[1]?.ready);
   const changed=await send(host,{type:'settings',playerCount:2,difficulty:1,ballCount:6},m=>m.room?.ballCount===6);

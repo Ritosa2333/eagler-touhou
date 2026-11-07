@@ -83,6 +83,7 @@ try{
     const health=()=>Promise.all(frames().map(f=>f.evaluate(async()=>{const {managedAPI}=await import('./netplay/app.js');return managedAPI.health();})));
     await wait(async()=>{const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));if(errors.length)throw Error(JSON.stringify(errors));const states=await health();return states.length===count&&states.every(s=>s.running&&s.confirmed>=120&&s.frames>0);},'MP confirmed gameplay',120000);
     for(const frame of frames()) assert.equal(await frame.evaluate(()=>window.th01Net.room.settings.count),6,'each peer receives the six-ball rule');
+    for(const state of await health())assert.equal(state.rollbackEnabled,process.env.PC98_TEST_ROLLBACK==='1'&&process.env.PC98_TEST_NO_WORKER!=='1','room rollback setting must reach the simulation');
     for(const [index,frame] of frames().entries()){
       const audio=await frame.evaluate(async()=>{
         const version=await import('./bgm-version.js');

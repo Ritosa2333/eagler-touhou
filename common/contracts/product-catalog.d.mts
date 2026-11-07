@@ -40,7 +40,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         support:Readonly<{highRefreshRate:false;sourceRepository:string;adaptationNotice:'early-test'}>;
         replay:Readonly<{prefix:'th01';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th01/multiplayer/th01.html';
-        multiplayer:Readonly<{titleKey:'game.title.th01mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th01PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:0;sendPredictionLimit:0;rollbackDefault:false;runtimeTiming:true}>}>;
+        multiplayer:Readonly<{titleKey:'game.title.th01mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th01PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:false;inputTiming:Readonly<{rollbackLimit:8;sendPredictionLimit:8;rollbackDefault:true;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th02: Readonly<{
