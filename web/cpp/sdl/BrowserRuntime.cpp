@@ -136,11 +136,12 @@ struct RoomRuntime final : multiplayer::World {
  }
  bool replay_budget(unsigned replayed,unsigned remaining) const override{
   const double now=emscripten_get_now();
-  if(replayed>=4)return false;
-  if(now<replay_deadline)return true;
-  if(!remaining||remaining>4-replayed)return false;
-  // Spend the rest of the refresh only when the whole repair can produce
-  // an image. A single additional logical step can still miss this display.
+  constexpr unsigned usual_slice=4,maximum_slice=multiplayer::Session::rollback_frames;
+  if(replayed>=maximum_slice)return false;
+  if(replayed<usual_slice&&now<replay_deadline)return true;
+  if(!remaining||remaining>maximum_slice-replayed)return false;
+  // Two moving peers can produce a correction longer than the usual slice.
+  // Take the extra steps only if the entire repair can reach a visible draw.
   const double cost=(remaining-1)*logical_step_ms+tick_cost_ms;
   return now+cost+1<refresh_deadline;
  }
@@ -215,9 +216,9 @@ struct RoomRuntime final : multiplayer::World {
   }
   confirmed[(frame+1)%confirmed.size()]=saved.snapshot;
   if(saved.has_image){
-   // A burst of confirmed inputs may retire several large images together.
-   // Keep at most two in the existing ring and release them as time permits.
-   if(released_confirmed&&pending_releases<2&&app->can_rollback()){
+   // Retain even the first confirmed image until after the draw when the
+   // existing ring has room. Reclaim immediately at the bound or a scene edge.
+   if(pending_releases<2&&app->can_rollback()){
     saved.release_pending=true;++pending_releases;
    }else{clear_image(saved);released_confirmed=true;}
   }
@@ -287,7 +288,7 @@ struct RoomRuntime final : multiplayer::World {
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
   if(previous_draw_mode&&logical){
-   const double cost=std::clamp(emscripten_get_now()-replay_step_start,1.,16.);
+   const double cost=std::clamp(emscripten_get_now()-replay_step_start,.25,16.);
    logical_step_ms+=(cost-logical_step_ms)*.25;
   }
   output.score=app->scene()?u32(app->scene()->battle.score.score):u32(app->selection_score.score);

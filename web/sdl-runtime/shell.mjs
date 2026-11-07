@@ -326,7 +326,7 @@ window.addEventListener('pagehide',()=>{if(launched||roomPreview){core._th17_loo
 // Persist during play as well, with writes serialized by the sync chain.
 setInterval(()=>{if(launched&&!document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}},30000);
 const initialized=(async()=>{
- let last=performance.now(),ticks=0,presents=0,maxFrameMs=0;
+ let last=performance.now(),lastPresent=null,ticks=0,presents=0,maxGapMs=0;
  core=await createModule({
   canvas,printErr:console.error,
   onGameFrameStart(){gpuMonitor??=gpuTiming(canvas.getContext('webgl2'));gpuMonitor.begin();},
@@ -335,17 +335,23 @@ const initialized=(async()=>{
    if(!ok){fatal(Error(err()));return;}
    if(!launched)return;
    reportRoom();
-   ticks+=count;presents+=Number(presented);maxFrameMs=Math.max(maxFrameMs,ms);
    const now=performance.now();
-   if(!first&&presented){first=true;last=now;ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}
+   ticks+=count;
+   if(presented){
+    ++presents;
+    if(!first){first=true;last=now;ticks=0;presents=0;maxGapMs=0;emit('first-frame');}
+    else if(lastPresent!==null)maxGapMs=Math.max(maxGapMs,now-lastPresent);
+    lastPresent=now;
+   }
    if(first&&now-last>=1000){
     const p=core._th17_audio_statistics();
     if(p){
      const a=core.HEAPU32.subarray(p>>>2,(p>>>2)+11);
      emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});
     }
-    emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs,gpuMs:gpuMonitor?.value()??null});
-    last=now;ticks=0;presents=0;maxFrameMs=0;
+    const openGap=lastPresent===null?0:now-lastPresent;
+    emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:Math.max(maxGapMs,openGap),gpuMs:gpuMonitor?.value()??null});
+    last=now;ticks=0;presents=0;maxGapMs=0;
    }
    if(core._th17_phase()===4)void stop().catch(fatal);
   }

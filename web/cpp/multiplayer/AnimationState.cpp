@@ -36,7 +36,9 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
         std::vector<Node*> selected,children,free_overflow;
         std::vector<SavedNode> saved;
         multiplayer::AnmCheckpoint::Curves curves;
-        std::unordered_map<AnmVm*,std::shared_ptr<Node>> borrowed;
+        // Capture only needs ownership and keys. Rebuild the lookup table on
+        // restore so ordinary capture and release don't allocate map nodes.
+        std::vector<std::pair<AnmVm*,std::shared_ptr<Node>>> borrowed;
         std::vector<u16> free_slots;
         std::array<std::vector<AnmVm*>,44> layers;
 
@@ -44,7 +46,8 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
             // A cancellation burst can fill every history slot. Retain
             // ordinary capture capacity and release storage from large bursts.
             size_t bytes=saved.capacity()*sizeof(SavedNode)+curves.changing.capacity()*sizeof(AnmInterpolators)+
-                (selected.capacity()+children.capacity()+free_overflow.capacity()+borrowed.bucket_count())*sizeof(Node*)+
+                (selected.capacity()+children.capacity()+free_overflow.capacity())*sizeof(Node*)+
+                borrowed.capacity()*sizeof(decltype(borrowed)::value_type)+
                 free_slots.capacity()*sizeof(u16);
             for(const auto& layer:layers)bytes+=layer.capacity()*sizeof(AnmVm*);
             if(bytes>256*1024){*this=Snapshot{};return;}
@@ -85,7 +88,7 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
     children.reserve(child_count);
     curves.changing.reserve(changing);
     for(auto* n:selected)saved.emplace_back(*n,curves,children);
-    snapshot.borrowed=external;
+    snapshot.borrowed.assign(external.begin(),external.end());
     snapshot.free_slots=free_slots;
     snapshot.free_overflow=free_overflow;
     snapshot.layers=layers;
@@ -100,7 +103,8 @@ bool AnmRegistry::save_rollback(multiplayer::FrameImage& image){
             group.clear();
         }
         for(auto& entry:external)entry.second->children.clear();
-        external=checkpoint->borrowed;
+        external.clear();
+        external.insert(checkpoint->borrowed.begin(),checkpoint->borrowed.end());
         overflow_handles.clear();
         pending_deletion.clear();
         free_slots=checkpoint->free_slots;

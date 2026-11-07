@@ -27,6 +27,9 @@ const touchDrag=touchComparison||process.argv.includes('--touch-drag');
 const touchWindow=touchComparison?{keyboard:480,start:960,end:3500}:{keyboard:600,start:600,end:1800};
 const symmetricDelay=process.argv.includes('--symmetric-delay');
 const touchSeat=Number(process.env.TH17_ROOM_TOUCH_SEAT??1);
+const touchSeats=process.env.TH17_ROOM_TOUCH_SEATS?.split(',').map(Number)??[touchSeat];
+const observeDisplay=process.argv.includes('--observe-display');
+const throttleSeat=process.env.TH17_ROOM_CPU_THROTTLE_SEAT===undefined?null:Number(process.env.TH17_ROOM_CPU_THROTTLE_SEAT);
 const glTrace=process.env.TH17_ROOM_GL_TRACE==='1';
 const musicDirectory=process.env.TH17_ROOM_MUSIC_DIR;
 const music=musicDirectory?'ogg':'none';
@@ -47,6 +50,10 @@ const extendedSeats=Number(process.env.TH17_ROOM_SEATS??2);
 assert.ok(extendedSeats===2||extendedSeats===3);
 const roomSeatCounts=seatRenderScales?[seatRenderScales.length]:
  touchDrag?[extendedSeats]:extraBoss?[3]:extended?[extendedSeats]:[2,3];
+const validSeat=seat=>Number.isInteger(seat)&&seat>=0&&seat<Math.min(...roomSeatCounts);
+if(touchDrag)assert.ok(touchSeats.every(validSeat)&&new Set(touchSeats).size===touchSeats.length&&
+ (touchSeats.length===1||independent),'Multiple moving seats require independent pages and distinct valid seat indices');
+if(throttleSeat!==null)assert.ok(independent&&validSeat(throttleSeat),'Per-seat CPU throttling needs independent pages');
 const difficulty=Number(process.env.TH17_ROOM_DIFFICULTY??(denseExtra?4:throughStageTwo?0:1));
 assert.ok(Number.isInteger(difficulty)&&difficulty>=0&&difficulty<=4);
 assert.ok(!throughStageTwo||difficulty!==4);
@@ -228,7 +235,8 @@ try{
   let enableCpuThrottle;
   if(cpuThrottle>1){
    const sessions=await Promise.all(contexts.map((context,index)=>context.newCDPSession(pages[index])));
-   const throttle=()=>Promise.all(sessions.map(cdp=>cdp.send('Emulation.setCPUThrottlingRate',{rate:cpuThrottle})));
+   const throttle=()=>Promise.all(sessions.map((cdp,seat)=>cdp.send('Emulation.setCPUThrottlingRate',
+    {rate:throttleSeat===null||seat===throttleSeat?cpuThrottle:1})));
    if(cpuWarmupThrough)enableCpuThrottle=throttle;
    else await throttle();
   }
@@ -254,7 +262,7 @@ try{
    if(verifyGhost)for(const frame of frames)
     assert.equal(await frame.evaluate(()=>Module._th17_room_fixture_ghost(2)),1,'schedule the same last-life hit on each peer');
    if(touchDrag&&directInput)for(const [seat,frame] of frames.entries())await checkDirectInput(frame,seat+1);
-   if(touchDrag)await pageFor(touchSeat).evaluate(({seat,touchWindow,touchComparison})=>{
+   if(touchDrag)for(const touchSeat of touchSeats)await pageFor(touchSeat).evaluate(({seat,touchWindow,touchComparison,stagger})=>{
     let active=false,established=false,sent=0,lastDown=-100,downs=0,direct=0,fallback=0;
     let startedAt=0;
     globalThis.touchDriver=setInterval(()=>{
@@ -266,7 +274,7 @@ try{
      established||=target.touchInputs?.size>0;
      const now=performance.now();
      if(dragging&&!active)startedAt=now;
-     const time=touchComparison?(now-startedAt)/1000:n/60;
+     const time=(touchComparison?(now-startedAt)/1000:n/60)+stagger*seat;
      const message={protocol:'eagler-touhou/1',game:'th17',epoch:seat+1,command:'direct-touch',
       type:dragging?active&&(established||n-lastDown<20)?'move':'down':'up',id:73,
       x:.5+Math.sin(time*2)*.13+(touchComparison?Math.sin(time*11)*.025:0),
@@ -279,12 +287,39 @@ try{
      globalThis.touchEvents=sent;
      globalThis.touchDelivery={downs,direct,fallback};
     },1000/120);
-   },{seat:touchSeat,touchWindow,touchComparison});
+   },{seat:touchSeat,touchWindow,touchComparison,stagger:touchSeats.length>1?1:0});
    for(const [seat,frame] of frames.entries()){
-    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeat,touchWindow,symmetricDelay})=>{
+    await frame.evaluate(({seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,storyTiming,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay})=>{
      const callback=Module.onGameFrame;
      if(traceGaps&&!Module._th17_room_wait_state)throw Error('Gap trace requires a runtime with room wait state');
      globalThis.stopRoomMeasurement=()=>{Module.onGameFrame=callback;};
+     let displayPhase;
+     if(observeDisplay){
+      const video=document.createElement('video');
+      video.muted=true;video.playsInline=true;
+      video.style.cssText='position:fixed;top:0;left:0;width:2px;height:2px;pointer-events:none';
+      video.srcObject=Module.canvas.captureStream();
+      document.body.append(video);
+      globalThis.displayIntervals={};
+      let previousPhase,previousTime,previousFrame,id;
+      const observe=(now,metadata)=>{
+       if(displayPhase&&previousPhase===displayPhase){
+        const interval=displayIntervals[displayPhase]??={time:0,frames:0,callbacks:0,maxGapMs:0};
+        const gap=now-previousTime;
+        interval.time+=gap;interval.frames+=metadata.presentedFrames-previousFrame;
+        ++interval.callbacks;interval.maxGapMs=Math.max(interval.maxGapMs,gap);
+       }
+       previousPhase=displayPhase;previousTime=now;previousFrame=metadata.presentedFrames;
+       id=video.requestVideoFrameCallback(observe);
+      };
+      id=video.requestVideoFrameCallback(observe);
+      void video.play();
+      globalThis.stopRoomMeasurement=()=>{
+       Module.onGameFrame=callback;video.cancelVideoFrameCallback(id);
+       for(const track of video.srcObject.getTracks())track.stop();
+       video.remove();
+      };
+     }
      if(globalThis.__th17GlCalls)globalThis.__th17GlCalls={};
      const optimized=typeof Module._th17_room_trace==='function';
      Module._th17_room_trace?.(1);
@@ -338,6 +373,7 @@ try{
       const waitState=traceGaps||touchDrag?Module._th17_room_wait_state?.()??0:0;
       const touchPhase=n<touchWindow.keyboard?'stationary':n<touchWindow.start?'keyboard':
        n<touchWindow.end?'dragging':'released';
+      if(n>120)displayPhase=touchPhase;
       if(touchDrag&&n>120){
        const cost=touchCosts[touchPhase]??={
         callbacks:0,withoutPresentation:0,repairWithoutPresentation:0,atPredictionCap:0,corrections:0,resimulated:0,
@@ -464,8 +500,9 @@ try{
       if(verifyTransfer)Module._th17_key(42,+(seat===0&&n>=75&&n<105&&(n-75)%6<3));
       const centerGuest=extended&&seat===1&&n>=900&&n<952;
       const reserve=(throughStageTwo||denseExtra)&&seat===1&&n>=1500;
-      const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve&&!(touchDrag&&seat===touchSeat)||
-       touchDrag&&seat===touchSeat&&touchPhase==='keyboard';
+      const touchControlled=touchDrag&&touchSeats.includes(seat);
+      const moveGuest=seat===1&&n>=600&&!centerGuest&&!reserve&&!touchControlled||
+       touchControlled&&touchPhase==='keyboard';
       Module._th17_key(205,+(seat===1&&n>=120&&n<170||moveGuest&&n%96<12||extended&&seat===0&&n>=300&&n<350));
       Module._th17_key(203,+(seat===0&&n>=120&&n<170||moveGuest&&n%96>=48&&n%96<60||centerGuest||reserve&&n<1630));
       Module._th17_key(200,+(seat===2&&n>=120&&n<150||reserve&&n<1630));
@@ -474,7 +511,7 @@ try{
       Module._th17_key(45,+(seat===1&&n>=185&&n<193||extended&&n>=1800&&(n+seat*420)%840<9||
        denseExtra&&n>=1500&&(n+seat*420)%720<9));
      };
-    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeat,touchWindow,symmetricDelay,storyTiming:checkPresentation&&difficulty!==4});
+    },{seat,rollback,extended,throughStageTwo,denseExtra,extraBoss,extraFinale,traceGaps,tracePhases,verifyTransfer,verifyGhost,touchDrag,touchSeats,touchWindow,symmetricDelay,observeDisplay,storyTiming:checkPresentation&&difficulty!==4});
    }
    let frontier=0,progressAt=Date.now(),coverageFailure;
    let cutoff=extendedTarget;
@@ -574,7 +611,7 @@ try{
       overFrameBudget:gaps.filter(gap=>gap>1000/60).length,
       over25Ms:gaps.filter(gap=>gap>25).length,
      }])),
-     touchCosts,
+     touchCosts,displayIntervals:globalThis.displayIntervals,
      glCalls:globalThis.__th17GlCalls,liveHeapBytes,captures,captureUs,replaySlices,logicalDraws,stageCorrections,bossCorrections,spellCorrections:spellCorrections??diagnostics.spellCorrections,bossCosts,
      tail,
      canvas:[canvas.width,canvas.height],renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):null,
@@ -606,7 +643,7 @@ try{
     }
     const health=(await Promise.all(pages.map(current=>current.evaluate(()=>events.filter(event=>event.event==='frame-health'))))).flat();
     for(let seat=0;seat<seats;seat++){
-     const samples=health.filter(event=>event.epoch===seat+1).slice(-5);
+     const samples=health.filter(event=>event.epoch===seat+1);
      assert.ok(samples.length>0&&samples.every(event=>Number.isFinite(event.fps)&&event.fps>=0),'frame health reports window commits');
      const lane=diagnostics[seat];
      const measured=lane.actualPresentations*1000/(lane.presentationEnd-lane.presentationStart);
@@ -659,17 +696,26 @@ try{
      }
     }
    }
+   const movingSeats=touchDrag?await Promise.all(touchSeats.map(async seat=>({
+    seat,...await pageFor(seat).evaluate(()=>({touchEvents:touchEvents||0,touchDelivery})),
+   }))):[];
+   const touchFrames=touchDrag&&touchSeats.length>1?await Promise.all(touchSeats.map(seat=>
+    frames[seat].evaluate(()=>Array.from(touchInputs.keys())))):[];
+   const otherTouches=touchFrames.slice(1).map(frames=>new Set(frames));
+   const simultaneousTouchFrames=touchFrames[0]?.filter(frame=>otherTouches.every(touches=>touches.has(frame))).length;
    reports.push({room,seats,comparedFrames:agreed.length,maxEnemyBullets,maxLasers,activeSpellFrames,dialogueFrames,bossNonspellFrames,stageTwoFrames,ghostRevival,denseWindows,
-    ...(touchDrag?await pageFor(touchSeat).evaluate(()=>({touchEvents:touchEvents||0,touchDelivery})):{}),
+    ...(movingSeats.length===1?{touchEvents:movingSeats[0].touchEvents,touchDelivery:movingSeats[0].touchDelivery}:{}),
+    ...(movingSeats.length>1?{movingSeats,simultaneousTouchFrames}:{}),
     bossPatterns:bossPatterns.filter(pattern=>pattern.last-pattern.first>=30),
     ...(priorMemory?{matchedMemory:compareMemory(priorMemory.samples,finaleSamples),lateMatchedMemory:compareMemory(priorMemory.samples,finaleSamples,lateStart)}:{}),
     settledPeaks:settledPeaks.filter(peak=>peak.bullets||peak.lasers),diagnostics,initialPower:initial.slice(24,24+seats),initialLives,last,difference});
    if(coverageFailure)throw coverageFailure;
-   if(touchDrag){
+   if(touchDrag)for(const touchSeat of touchSeats){
     assert.ok(diagnostics[touchSeat].touchInputFrames>500,'touch movement reaches captured network inputs');
     assert.ok(diagnostics[touchSeat].touchInputTargets>100,'continuous drag produces changing field targets');
     assert.ok(diagnostics[touchSeat].touchCombatInputs>0,'touch movement overlaps enemy projectiles');
    }
+   if(touchFrames.length)assert.ok(simultaneousTouchFrames>500,'the sliding seats supply input on the same frames');
    if(difference)assert.deepEqual(difference.peer,difference.host,'world at frame '+difference.frame);
    if(rollback){
     assert.ok(diagnostics.some(item=>item.corrections>0&&item.resimulated>0),'late input triggers correction and replay');
@@ -759,7 +805,8 @@ try{
   throughStageTwo,denseExtra,extraBoss,extraFinale,independent,
   ...(seatRenderScales?{seatRenderScales}:{renderScale}),music,cpuProfile,traceGaps,
   ...(tracePhases?{phaseOrder:['input','capture','restore','confirm','canvas','pcm','imageRelease','update','draw','flow']}:{}),
-  glTrace,touchDrag,touchComparison,touchSeat,symmetricDelay,injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
+  glTrace,touchDrag,touchComparison,touchSeat,touchSeats,observeDisplay,throttleSeat,symmetricDelay,
+  injectedDelayMs:rollback?delayMs:0,jitterMs:rollback?jitterMs:0,cpuThrottle,cpuWarmupThrough,reports},null,2)+'\n');
  if(finaleSamples)await writeFile(resolve(out,'heap-samples.json'),JSON.stringify({
   fields:['nextFrame','bullets','spell','heap','lasers','snapshots','unusedCapacity','bulletState','bulletVisual','itemVisual','idleItemVisual','animation'],
   samples:finaleSamples})+'\n');
