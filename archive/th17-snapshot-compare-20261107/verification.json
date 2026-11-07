@@ -1,0 +1,35 @@
+{
+  "source": "ece5b749f3216d1bd137dc45ce8e0f1891b272a9",
+  "wasm": "eeed3989800aab4aced400effae0c18ce5301c14f0db8123ceaaa31271f36967",
+  "sources": 233,
+  "headers": 303,
+  "mismatches": [],
+  "comparisonBenchmark": {
+    "trials": 7,
+    "bytes": 804,
+    "iterationsPerTrial": 2400000,
+    "matchingFraction": 0.75,
+    "medianMs": {
+      "memcmp": 150.622,
+      "grouped": 88.421
+    },
+    "reductionPercent": 41.296092204326065
+  },
+  "nativeTests": {
+    "passed": 2,
+    "failed": 0,
+    "originalAnmRollback": true,
+    "allBytePositions": 804,
+    "alignments": 8,
+    "bothDirections": true
+  },
+  "history": {
+    "normal": "ffe7b105fc0db22f2d53618911d83d0e0f331c42",
+    "multiplayer": "529c8f8ffebe1928716b74fbe478c51d0cba2798",
+    "standardSubtreeSplit": "677755056f31269b708cfcac2e95ecb3de646733",
+    "normalBehind": 0,
+    "multiplayerAhead": 19,
+    "originalAncestor": true,
+    "treeMatches": true
+  }
+}
