@@ -245,6 +245,13 @@ void scenario(unsigned seats, bool rollback) {
                     "a sliced repair defers the unused forward tick");
             require(worlds[0].frames_committed==5&&worlds[0].bombs_committed==3,
                     "contiguous corrected output is committed once before yielding");
+            if(i==0){
+                sessions[0].capture_phase(false,now*1000);
+                capture(0,0);
+                now+=17;
+                sessions[0].capture_phase(false,now*1000);
+                require(!sessions[0].needs_input(),"an ongoing repair caps queued input at three samples");
+            }
         }
         require(sessions[0].tick(worlds[0])==advanced&&!sessions[0].repair_pending()&&sessions[0].forward_deferred(),
                 "the completed repair preserves the forward tick when the budget is spent");

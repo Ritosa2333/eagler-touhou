@@ -72,10 +72,12 @@ struct RoomRuntime final : multiplayer::World {
  GameInput main_input;
  bool entered=false, trace=false, discarded_images=false, retry_forward=false;
  double replay_deadline=0,refresh_deadline=0,tick_cost_ms=5;
+ double replay_step_start=0,logical_step_ms=4;
  std::uint64_t now_ms=0;
  u32 capture_count=0,capture_us=0,replay_slices=0,logical_draws=0;
  std::array<u32,3> phase_corrections{};
  u32 barrier=Netplay::INVALID_FRAME;
+ u32 restored_checkpoint=Netplay::INVALID_FRAME;
  u32 combat_corrections=0,spell_corrections=0;
 #if TH17_ROOM_BENCHMARK
  u32 benchmark_input_frame=0;
@@ -98,17 +100,28 @@ struct RoomRuntime final : multiplayer::World {
  Status status(u32 number) const;
  bool can_predict() const override{return entered&&barrier!=session.next_frame()&&app->can_rollback();}
  void speculating(bool active) override{app->room_speculative=active;}
- void replaying(bool intermediate) override{app->graphics.logical_drawing=intermediate;}
+ void replaying(bool intermediate) override{
+  app->graphics.logical_drawing=intermediate;
+  if(intermediate)replay_step_start=emscripten_get_now();
+ }
  bool replay_budget(unsigned replayed,unsigned remaining) const override{
   const double now=emscripten_get_now();
   if(replayed>=4)return false;
-  // A last repair can finish the image within this refresh. Leave time for
-  // the measured full tick and the final canvas commit.
-  return now<replay_deadline||(remaining==1&&now+tick_cost_ms+1<refresh_deadline);
+  if(now<replay_deadline)return true;
+  if(!remaining||remaining>4-replayed)return false;
+  // Spend the rest of the refresh only when the whole repair can produce
+  // an image. A single additional logical step can still miss this display.
+  const double cost=(remaining-1)*logical_step_ms+tick_cost_ms;
+  return now+cost+1<refresh_deadline;
  }
  bool blocked() const override{return app->room_barrier;}
  bool capture(u32 frame) override{
-  auto& saved=state(frame);clear_image(saved);saved.number=frame;saved.image.save(main_input);
+  auto& saved=state(frame);
+  saved.number=frame;
+  // Rewinding to a speculative frame restores exactly its existing image.
+  // Keep it until the corrected simulation consumes that frame.
+  if(restored_checkpoint==frame)return true;
+  clear_image(saved);saved.image.save(main_input);
   const double begin=trace?emscripten_get_now():0;
   const bool ok=app->save_rollback(saved.image);
   if(trace){++capture_count;capture_us+=u32((emscripten_get_now()-begin)*1000);}
@@ -133,6 +146,7 @@ struct RoomRuntime final : multiplayer::World {
   const auto begin=trace?emscripten_get_now():0;
 #endif
   if(!saved.image.restore())return false;
+  restored_checkpoint=rewinding?frame:Netplay::INVALID_FRAME;
 #if TH17_ROOM_BENCHMARK
   if(trace){++benchmark_history[0];benchmark_history[1]+=u32((emscripten_get_now()-begin)*1000);}
 #endif
@@ -171,6 +185,7 @@ struct RoomRuntime final : multiplayer::World {
   return app->audio_device.error.empty()||app->fail(app->audio_device.error);
  }
  bool step(u32 number,const Netplay::FrameDecision& frame) override{
+  restored_checkpoint=Netplay::INVALID_FRAME;
   app->room_barrier=false;
   if(!entered){
    std::array<std::array<i32,2>,3> loadouts{};
@@ -231,6 +246,10 @@ struct RoomRuntime final : multiplayer::World {
   app->graphics.logical_drawing=previous_draw_mode;
   app->room_sounds=nullptr;
   if(!ok){if(app->room_barrier)barrier=number;return false;}
+  if(previous_draw_mode&&logical){
+   const double cost=std::clamp(emscripten_get_now()-replay_step_start,1.,16.);
+   logical_step_ms+=(cost-logical_step_ms)*.25;
+  }
   output.score=app->scene()?u32(app->scene()->battle.score.score):u32(app->selection_score.score);
   if(app->scene())for(unsigned slot=0;slot<3;++slot)
    if(app->scene()->battle.enemy_world.boss_ids[slot]&&app->scene()->battle.enemy_world.boss_ids[slot]!=bosses_before[slot])

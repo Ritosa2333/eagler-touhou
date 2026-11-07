@@ -301,15 +301,17 @@ try{
       const r=Module._th17_room_rollback()>>>2;
       const [n,committed,corrections,resimulated,combatCorrections,spellCorrections]=Module.HEAPU32.subarray(r,r+6);
       const phase=Module._th17_phase();
+      const waitState=traceGaps||touchDrag?Module._th17_room_wait_state?.()??0:0;
       const touchPhase=n<touchWindow.keyboard?'stationary':n<touchWindow.start?'keyboard':
        n<touchWindow.end?'dragging':'released';
       if(touchDrag&&n>120){
        const cost=touchCosts[touchPhase]??={
-        callbacks:0,withoutPresentation:0,atPredictionCap:0,corrections:0,resimulated:0,
+        callbacks:0,withoutPresentation:0,repairWithoutPresentation:0,atPredictionCap:0,corrections:0,resimulated:0,
        };
        ++cost.callbacks;
        if(!presented){
         ++cost.withoutPresentation;
+        if(waitState&1)++cost.repairWithoutPresentation;
         if(n-committed>=12)++cost.atPredictionCap;
        }
        cost.corrections+=corrections-diagnostics.corrections;
@@ -340,7 +342,7 @@ try{
         pendingCallbackMs+=time;
         if(pendingCallbacks.length<120)pendingCallbacks.push({
          frame:n,confirmed:committed,offsetMs:now-diagnostics.lastPresent,callbackMs:time,ticks,
-         repair:resimulated-diagnostics.resimulated,waitState:Module._th17_room_wait_state(),
+         repair:resimulated-diagnostics.resimulated,waitState,
         });
        }
        if(presented){

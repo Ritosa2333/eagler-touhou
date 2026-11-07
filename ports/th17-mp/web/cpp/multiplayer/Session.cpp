@@ -104,12 +104,11 @@ bool Session::flush_inputs(std::uint64_t now_ms) {
 }
 
 void Session::capture_phase(bool confirmed, std::uint64_t now_us) {
-    // A peer can keep sending physical input while its own repair is sliced
-    // across refreshes. Bound that battle lead to two 60 Hz samples so a
-    // temporary backlog drains when ordinary simulation resumes.
+    // Keep sending while a repair spans refreshes. One extra slot lets a
+    // recovering peer cover another refresh before it starves its partners.
     const bool waiting = repair_pending() || next_frame() - next_commit_ >= rollback_frames;
     const auto lead = !setup_.rollback ? 0u :
-        confirmed ? Netplay::ConfirmedInputClock::MaxLead : waiting ? 2u : 0u;
+        confirmed ? Netplay::ConfirmedInputClock::MaxLead : replay_end_ ? 3u : waiting ? 2u : 0u;
     // A combat repair continues the sampling clock set by the last capture.
     if (confirmed && lead && !capture_lead_) capture_clock_.BeginPhase(now_us);
     capture_lead_ = lead;
